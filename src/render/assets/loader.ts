@@ -8,6 +8,18 @@ import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 /** The art directory under the asset base: 64x32 pixel art, each art pixel drawn as a hard 2x2 block (see compose.ts). */
 export const ART_DIR = '1x';
 
+/**
+ * Keep a sheet's texture on the GPU for as long as the atlas holds it. A sheet's decoded bitmap is closed once it is
+ * uploaded (see `toGpu`), so it can never be uploaded again from the CPU. Pixi's texture GC unloads an image source no
+ * sprite drew for a minute or so (`textureGCMaxIdle` frames: a region off screen, a view held somewhere else) and would
+ * then re-upload it from that closed bitmap on its next use: nothing. The sprites of every sheet that idled went blank
+ * while their halos (canvas textures, which keep their pixels) still drew (issue #102). The sheet store owns when a sheet
+ * is freed (budgets and eviction), so Pixi's GC must leave these sources alone.
+ */
+export function keepOnGpu(source: TextureSource): void {
+  source.autoGarbageCollect = false;
+}
+
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
 export function assetBase(): string {
   const env = import.meta.env.VITE_ASSET_BASE as string | undefined;
@@ -169,6 +181,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: mode, resolution } });
     t.source.scaleMode = mode;
     t.source.autoGenerateMipmaps = false;
+    keepOnGpu(t.source);
     // The bitmap is closed once uploaded; picking reads sprite alpha from this mask instead (moduleView/partPick).
     if (mask && hooks) {
       const m = buildMask(t.source.resource, t.source.pixelWidth, t.source.pixelHeight);
