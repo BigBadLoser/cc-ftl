@@ -55,6 +55,13 @@ The phase numbers below are names, not the order.
      - Finished projects unlock blueprints.
    - UI: a research panel listing the projects, their costs, progress and what each unlocks.
    - Art: a research module, as a new art pack.
+   - Decisions (user, 2026-10-26):
+     - Any crew member can work the research module; a new **science** skill makes them faster, as repair skill does.
+     - One active project per ship, with a queue. A second research module speeds up the active project instead of running
+       a second one.
+     - The research module's blueprint is known from the start, so research is reachable on day one.
+     - First projects: the Mk II/III reactors, shields and engines, as the alternative to buying them. Costs are materials
+       plus time: Mk II needs electronics and data cores; Mk III adds rarer items (artifacts, alien tissue).
 4. **Upgrade slots, weapons first.**
    - Some modules get slots. An upgrade is an item that changes module stats or behaviour; the first example is a
      nuclear warhead for the missile launcher.
@@ -79,5 +86,5 @@ shipgen (generated ships fit Mk II and Mk III cores by depth and faction; see `d
 
 - **Phase 1:** the exact Mk II and Mk III stat curves, and whether blueprints are items (tradeable, lootable) or
   instant unlocks.
-- **Phase 3:** research time versus crew skill: does a research skill make sense?
+- **Phase 3:** settled: a science skill speeds research (see phase 3).
 - **Phase 5:** which stations have shipyards, and how expansion is priced.
