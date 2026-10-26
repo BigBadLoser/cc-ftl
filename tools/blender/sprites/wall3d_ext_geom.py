@@ -117,7 +117,7 @@ class Face:
     corner's chamfer and carried round it (by the y face, once)."""
 
     def __init__(self, k, ax, plane, a, b, ends, sec, chamfer=None):
-        self.k, self.ax, self.plane, self.a, self.b, self.sec = k, ax, plane, a, b, sec
+        self.k, self.ax, self.plane, self.a, self.b, self.sec, self.ends = k, ax, plane, a, b, sec, ends
         self.mt = tuple(1.0 if e == "out" else 0.0 for e in ends)
         self.c = chamfer if chamfer and ends[1] == "out" else 0.0
         self.ch = sec.chamfer(chamfer) if self.c else None
@@ -148,19 +148,31 @@ class Face:
             prism(self.k, self.ax, self.plane, u0, u1 - short, prof, fam, lvl, cols, cap,
                   mitre=(m0, lambda d, z: d - ch(z)))
             if wrap and self.ax == "y":
-                corner_piece(self.k, self.b, self.plane, ch, prof, fam, lvl, cols, cap)
+                corner_piece(self.k, self.b, self.plane, ch, prof, fam, lvl, cols,
+                             cap[1] if isinstance(cap, tuple) else cap)
         else:
             prism(self.k, self.ax, self.plane, u0, u1, prof, fam, lvl, cols, cap, mitre=(m0, self.mt[1] if end else 0))
 
     def block(self, u0, u1, z0, z1, role="face", off=0.0):
-        """The armour over [u0, u1] x [z0, z1] (not across the bend), its front off in."""
+        """The armour over [u0, u1] x [z0, z1] (not across the bend), its front off in. Its ends on a tile's edge
+        (not the face's own, unless it runs on into the next tile) take its front's tone: the next tile hides them,
+        but where it meets this one on a slant on screen anti-aliasing mixes their samples in (dark, they read as
+        dots); its other ends (a recess's walls) keep their own."""
         pf = self.sec.sec(z0, z1, off)
-        self.part(u0, u1, pf, self.sec.cols(pf, role))
+        cols = self.sec.cols(pf, role)
 
-    def on(self, z0, z1, base, out):
-        """The section of a part on the front from `base` out to `out` (from the front, < 0: in)."""
-        fr = self.sec.front(z0, z1)
-        return [(d + base, z) for d, z in fr] + [(d + out, z) for d, z in fr[::-1]]
+        def seam(u, e, t):
+            return abs(u + 0.5 - round(u + 0.5)) < 1e-6 and not (abs(u - e) < 1e-6 and t != "cont")
+        caps = tuple(cols[1] if seam(u, e, t) else None for u, e, t in ((u0, self.a, self.ends[0]),
+                                                                         (u1, self.b, self.ends[1])))
+        self.part(u0, u1, pf, cols, caps)
+
+    def on(self, z0, z1, base, out, hang=True):
+        """The section of a part on the front from `base` out to `out` (from the front, < 0: in); hang: whether one on
+        the lean may stand out past the upright part's front by the bend (else it stops there)."""
+        fr, up = self.sec.front(z0, z1), self.sec.front(0.0, 0.0)[0][0]
+        lim = (lambda d, z: d) if hang or z0 < self.sec.zb - 1e-6 else (lambda d, z: min(d, up))
+        return [(d + base, z) for d, z in fr] + [(lim(d + out, z), z) for d, z in fr[::-1]]
 
     def line(self, u0, u1, z0, z1, col, wrap=True, end=None, bevel=True, weight=None):
         """A painted band on the front (all but flush); one that does not wrap an outer corner stops at the edge
@@ -203,18 +215,20 @@ class Face:
             prism(self.k, self.ax, self.plane, u1 - w * LINE, u1, pf, F, 3, cols, cap,
                   mitre=(lambda d, z: ch(z) - d, lambda d, z: d - ch(z)))
 
-    def raised(self, u0, u1, z0, z1, base, out, role="plate", col=None, cap=None):
+    def raised(self, u0, u1, z0, z1, base, out, role="plate", col=None, cap=None, end=None):
         """A part on the front from `base` out to `out`, toned by role or all col; its ends cap (by default col, or
-        the shell's tone for their facing: unlike on the two faces)."""
-        pf = self.on(z0, z1, base, out)
-        self.part(u0, u1, pf, [col] * len(pf) if col else self.sec.cols(pf, role), cap or col)
+        the shell's tone for their facing: unlike on the two faces); not overhanging the upright part."""
+        pf = self.on(z0, z1, base, out, hang=False)
+        self.part(u0, u1, pf, [col] * len(pf) if col else self.sec.cols(pf, role), cap or col, end=end)
 
-    def shade(self, u0, u1, z0, z1, col=YS[1], under=2):
-        """Painted shade round a part a px proud over [u0, u1] x [z0, z1] on this face: a px beside its far (-u) end
-        and `under` px under it (the part hides half a px of that), where its unseen faces are (painted behind the
-        part, over the seams: it hides the rest)."""
-        pf = self.on(self.sec.z_at(z0, under), z1, -0.01, SHADE)
-        self.part(u0 - LINE, u1, pf, [col] * len(pf), col, end=False)
+    def shade(self, u0, u1, z0, z1, col=YS[1], under=2, base=0.0, side=1.0):
+        """Painted shade round a part a px proud over [u0, u1] x [z0, z1] on this face (or on a recess's floor base
+        in from it): `side` px beside its far (-u) end and `under` px under it (the part hides half a px of that),
+        where its unseen faces are (painted behind the part, over the seams: it hides the rest; never across the
+        bend). (On the lean its side runs slant on screen: a px there breaks into dots, so it takes more.)"""
+        zb = self.sec.zb if z0 >= self.sec.zb - 1e-6 else 0.0
+        pf = self.on(max(zb, self.sec.z_at(z0, under)), z1, base - 0.01, base + SHADE)
+        self.part(u0 - side * LINE, u1, pf, [col] * len(pf), col, end=False)
 
     def shade_chamfer(self, t0, t1, z0, z1, col=YS[1], under=2):
         """shade for a part over [t0, t1] of the outer corner's chamfer: a px beside both its ends (each side on)."""

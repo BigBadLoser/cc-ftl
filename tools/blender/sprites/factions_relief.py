@@ -28,9 +28,9 @@ def ALONG(ax):
 
 def prism(k, ax, plane, u0, u1, prof, fam, lvl, cols=None, cap=None, mitre=(False, False)):
     """A part over [u0, u1] with a (d, z) cross-section (a convex polygon); cols: a fixed palette name per edge (edge
-    i runs from prof[i] to prof[i + 1]), cap: one for its two ends. A mitred end (an outer corner at u0 / u1) runs on
-    by each point's depth (times the mitre: True / 1 for a square corner, its diagonal; sqrt 2 - 1 for a 45-degree
-    chamfer, the 135-degree joint's bisector), so it meets the next part."""
+    i runs from prof[i] to prof[i + 1]), cap: one for its two ends (or a pair: its u0 end's, its u1 end's). A mitred
+    end (an outer corner at u0 / u1) runs on by each point's depth (times the mitre: True / 1 for a square corner, its
+    diagonal; sqrt 2 - 1 for a 45-degree chamfer, the 135-degree joint's bisector), so it meets the next part."""
     o, up = T.OUT(ax), Vector((0, 0, 1))
     ua = [u0 - (mitre[0](d, z) if callable(mitre[0]) else d * float(mitre[0])) for d, z in prof]  # (a callable:
     ub = [u1 + (mitre[1](d, z) if callable(mitre[1]) else d * float(mitre[1])) for d, z in prof]  # the run-on)
@@ -44,8 +44,9 @@ def prism(k, ax, plane, u0, u1, prof, fam, lvl, cols=None, cap=None, mitre=(Fals
         j = (i + 1) % n
         k.poly([T.P(ax, plane, ua[i], z0, d0), T.P(ax, plane, ub[i], z0, d0), T.P(ax, plane, ub[j], z1, d1),
                 T.P(ax, plane, ua[j], z1, d1)], fam, lvl, o * pd + up * pz, fixed=cols[i] if cols else None)
-    for us, sg in ((ua, -1), (ub, 1)):
-        k.poly([T.P(ax, plane, u, z, d) for u, (d, z) in zip(us, prof)], fam, lvl, ALONG(ax) * sg + o * 0.01, fixed=cap)
+    caps = cap if isinstance(cap, tuple) else (cap, cap)
+    for us, sg, cp in ((ua, -1, caps[0]), (ub, 1, caps[1])):
+        k.poly([T.P(ax, plane, u, z, d) for u, (d, z) in zip(us, prof)], fam, lvl, ALONG(ax) * sg + o * 0.01, fixed=cp)
 
 
 def tube_prof(dc, zc, r, n=8):
