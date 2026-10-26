@@ -31,8 +31,9 @@ export function shieldCapacity(sim: Sim, shipId: number, powered: boolean): numb
   let layers = 0;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const gen = m && shipIdOf(sim, m) === shipId ? sim.content.modules[m.def]?.shieldGen : undefined;
-    if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered)) continue;
+    // Cheap content and state checks before the ship lookup (all pure, so the order changes nothing).
+    const gen = m && sim.content.modules[m.def]?.shieldGen;
+    if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered) || shipIdOf(sim, m) !== shipId) continue;
     if (powered && (sim.world.has(id, IonC) || !isDeployed(sim, id))) continue;
     layers += Math.floor(Math.abs(sim.content.modules[m.def]?.power ?? 0) * gen.layersPerPower);
   }
@@ -144,8 +145,8 @@ export function shieldRechargeSec(sim: Sim, shipId: number): number {
   let best = Infinity;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    const gen = m && shipIdOf(sim, m) === shipId ? sim.content.modules[m.def]?.shieldGen : undefined;
-    if (m && gen && m.powered && m.hp > 0 && !sim.world.has(id, IonC)) best = Math.min(best, gen.rechargeSec);
+    const gen = m && sim.content.modules[m.def]?.shieldGen;
+    if (m && gen && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && shipIdOf(sim, m) === shipId) best = Math.min(best, gen.rechargeSec);
   }
   return best;
 }
