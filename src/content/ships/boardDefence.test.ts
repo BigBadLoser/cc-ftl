@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { sightLine } from '../../sim/fight/los';
-import { AllegianceC, CrewC, DeadC, DownedC, EmergencyArmC, EquipC, EquipOrderC, ModuleC, StorageC, storageAdd, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
+import { AllegianceC, CrewC, DeadC, DownedC, EmergencyArmC, EquipC, EquipOrderC, StowOrderC, ModuleC, StorageC, storageAdd, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
+import { DoorJam } from '../../sim/structure';
 import { EMERGENCY_STAND_DOWN_SEC } from '../../sim/tuning';
 import { shipIdOf, shipIds } from '../../sim/regions';
 
@@ -207,5 +208,80 @@ describe('emergency arming: unarmed crew fetch weapons from storage when boarder
     expect(sim.world.has(engineer, DownedC)).toBe(true);
     expect(sim.world.has(medic, EmergencyArmC) || sim.world.has(medic, EquipOrderC) || !!sim.world.get(medic, EquipC)?.weapon).toBe(false);
     expect(sim.world.get(medic, FighterC)?.mode).toBe('flee'); // hiding, free to take the rescue once the patient is out of the boarder's sight
+  });
+
+  /** Arm volunteers against one boarder, then make the ship safe and run to just before they would put the weapon back. */
+  function almostStandDown(): { sim: Sim; volunteers: number[]; storages: number[] } {
+    const sim = settle();
+    storageAdd(sim, crate(sim), 'item.rifle', 2);
+    const [boarder] = land(sim, 1) as [number];
+    run(sim, 20 * 6);
+    const volunteers = player(sim).filter((c) => sim.world.has(c, EmergencyArmC));
+    expect(volunteers.length).toBeGreaterThanOrEqual(1);
+    sim.world.add(boarder, AllegianceC, { faction: 'player' });
+    run(sim, 20 * (EMERGENCY_STAND_DOWN_SEC - 2));
+    const storages = sim.world.query(StorageC, ModuleC).filter((s) => shipIdOf(sim, sim.world.get(s, ModuleC)!) === ownShip(sim));
+    return { sim, volunteers, storages };
+  }
+  /** Jam shut every tile around the storage module (its own tiles included are solid anyway). */
+  function walledOff(sim: Sim, storage: number): void {
+    const m = sim.world.get(storage, ModuleC)!;
+    const grid = shipGrid(sim, ownShip(sim))!;
+    for (let y = m.y - 1; y <= m.y + 1; y++) for (let x = m.x - 1; x <= m.x + 1; x++) if (x !== m.x || y !== m.y) grid.set('jam', x, y, DoorJam.Shut);
+  }
+
+  it('puts the weapon in a reachable locker when the nearest one is cut off', { timeout: 60000 }, () => {
+    const { sim, volunteers, storages } = almostStandDown();
+    const v = volunteers[0] as number;
+    const at = sim.world.get(v, PositionC)!;
+    const dist = (s: number): number => { const m = sim.world.get(s, ModuleC)!; return Math.max(Math.abs(m.x - at.x), Math.abs(m.y - at.y)); };
+    const nearest = [...storages].sort((a, b) => dist(a) - dist(b) || a - b)[0] as number;
+    walledOff(sim, nearest);
+    const targets = new Set<number>();
+    for (let i = 0; i < 20 * 60; i++) {
+      run(sim, 1);
+      const o = sim.world.get(v, StowOrderC);
+      if (o) targets.add(o.storage);
+    }
+    expect(targets.has(nearest)).toBe(false);
+    expect(targets.size).toBeGreaterThan(0);
+    expect(sim.world.has(v, EmergencyArmC)).toBe(false);
+    expect(sim.world.get(v, EquipC)?.weapon ?? null).toBeNull();
+  });
+
+  it('drops the weapon and goes back to work when no locker can be reached', { timeout: 60000 }, () => {
+    const { sim, volunteers, storages } = almostStandDown();
+    for (const s of storages) walledOff(sim, s);
+    run(sim, 20 * 60);
+    for (const v of volunteers) {
+      expect(sim.world.has(v, EmergencyArmC)).toBe(false);
+      expect(sim.world.has(v, StowOrderC)).toBe(false);
+      expect(sim.world.get(v, EquipC)?.weapon ?? null).toBeNull();
+      expect(sim.world.get(v, FighterC)?.mode ?? 'idle').toBe('idle');
+    }
+  });
+
+  it('a crew member drafted beside the locker mid-stow keeps the weapon', { timeout: 60000 }, () => {
+    const { sim, volunteers } = almostStandDown();
+    let v = 0;
+    for (let i = 0; i < 20 * 60 && !v; i++) {
+      run(sim, 1);
+      v = volunteers.find((c) => sim.world.has(c, StowOrderC)) ?? 0;
+    }
+    expect(v).not.toBe(0);
+    const order = sim.world.get(v, StowOrderC)!;
+    const m = sim.world.get(order.storage, ModuleC)!;
+    while (sim.tick % 10 !== 4) {
+      run(sim, 1); // so that the next tick is not one the arming pass looks at
+      if (!sim.world.has(v, StowOrderC)) break;
+    }
+    expect(sim.world.has(v, StowOrderC)).toBe(true);
+    sim.world.add(v, PositionC, { x: m.x, y: m.y, toX: m.x, toY: m.y, progress: 0, facing: 0 });
+    const weapon = sim.world.get(v, EquipC)!.weapon;
+    expect(weapon).toBeTruthy();
+    sim.enqueue({ type: 'crew.draft', id: v, drafted: true });
+    run(sim, 1);
+    expect(sim.world.get(v, EquipC)?.weapon).toBe(weapon);
+    expect(sim.world.has(v, StowOrderC) || sim.world.has(v, EmergencyArmC)).toBe(false);
   });
 });

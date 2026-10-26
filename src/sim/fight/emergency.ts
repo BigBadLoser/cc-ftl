@@ -105,37 +105,42 @@ function standDown(sim: Sim, threatened: ReadonlySet<number>): void {
     }
     if (mark.quietSince < 0) mark.quietSince = sim.tick;
     if (sim.tick - mark.quietSince < EMERGENCY_STAND_DOWN_SEC * TICK_HZ || sim.world.has(id, StowOrderC) || isIncapacitated(sim, id)) continue;
-    const storage = nearestRoom(sim, id, mark.item);
+    const storage = reachableRoom(sim, id, mark.item);
     if (storage) {
       releaseAssignment(sim, id);
       sim.world.add(id, StowOrderC, { storage });
     } else {
-      // No locker has room: leave the weapon on the floor rather than stay armed for good.
-      const pos = sim.world.get(id, PositionC);
-      const eq = sim.world.get(id, EquipC);
-      if (pos && eq) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, mark.item, 1);
-      if (eq) eq.weapon = null;
-      sim.world.remove(id, EmergencyArmC);
+      // No locker with room that they can reach: leave the weapon on the floor rather than stay armed for good.
+      dropEmergencyWeapon(sim, id, mark.item);
     }
   }
 }
 
-/** The nearest storage module on the crew member's ship with room for `item`, or 0. */
-function nearestRoom(sim: Sim, crew: number, item: string): number {
+/** The nearest storage module on the crew member's ship with room for `item` that the crew member can reach (door jams, wreckage), or 0. */
+function reachableRoom(sim: Sim, crew: number, item: string): number {
   const pos = sim.world.get(crew, PositionC);
   if (!pos) return 0;
-  let best = 0;
-  let bestD = Infinity;
+  const near: { s: number; d: number; m: { x: number; y: number } }[] = [];
   for (const s of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(s, ModuleC);
     if (!m || m.hp <= 0 || shipIdOf(sim, m) !== shipIdOf(sim, pos) || storageSpace(sim, s, item) < 1) continue;
-    const d = Math.max(Math.abs(m.x - pos.x), Math.abs(m.y - pos.y));
-    if (d < bestD) {
-      best = s;
-      bestD = d;
-    }
+    near.push({ s, d: Math.max(Math.abs(m.x - pos.x), Math.abs(m.y - pos.y)), m });
   }
-  return best;
+  near.sort((a, b) => a.d - b.d || a.s - b.s);
+  for (const c of near) {
+    if (atStorage(sim, pos, c.s) || findPath(sim, shipIdOf(sim, pos), origin(pos), { x: c.m.x, y: c.m.y, adjacent: true })) return c.s;
+  }
+  return 0;
+}
+
+/** Put the weapon on the floor where the crew member stands and end the emergency (no locker to go to). */
+function dropEmergencyWeapon(sim: Sim, id: number, item: string): void {
+  const pos = sim.world.get(id, PositionC);
+  const eq = sim.world.get(id, EquipC);
+  if (pos && eq?.weapon) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, item, 1);
+  if (eq) eq.weapon = null;
+  sim.world.remove(id, StowOrderC);
+  sim.world.remove(id, EmergencyArmC);
 }
 
 /** Walk crew with a stow order to their storage and put the emergency weapon back. */
@@ -151,6 +156,12 @@ export function stowOrders(sim: Sim): void {
       sim.world.remove(id, StowOrderC);
       continue;
     }
+    if (sim.world.has(id, DraftedC)) {
+      // Drafted mid-walk (standDown only looks every 10th tick): the weapon stays with them as an ordinary fighter's.
+      sim.world.remove(id, StowOrderC);
+      sim.world.remove(id, EmergencyArmC);
+      continue;
+    }
     const settled = pos.toX === pos.x && pos.toY === pos.y;
     if (atStorage(sim, pos, order.storage) && settled) {
       if (storageAdd(sim, order.storage, eq.weapon, 1) < 1) spillItems(sim, shipIdOf(sim, pos), pos.x, pos.y, eq.weapon, 1);
@@ -161,7 +172,7 @@ export function stowOrders(sim: Sim): void {
       const m = sim.world.get(order.storage, ModuleC);
       const steps = m && findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y, adjacent: true });
       if (steps) path.steps = steps;
-      else sim.world.remove(id, StowOrderC);
+      else dropEmergencyWeapon(sim, id, mark.item); // the locker became unreachable on the way
     }
   }
 }
