@@ -10,6 +10,7 @@ import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
+import { createAimMarks, type AimHover } from './aimMarks';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
@@ -117,6 +118,8 @@ export interface Renderer {
   setCombatMarks(marks: CombatMarks): void;
   /** Module (0 = the hull itself) under a canvas-relative position inside the combat overlay, or null if outside the ship. */
   pickCombat(screenX: number, screenY: number): { moduleId: number } | null;
+  /** The enemy tile or module the pointer would aim at while "Target in view" is armed (null clears the preview). */
+  setAimHover(h: AimHover | null): void;
 }
 
 interface RendererContent {
@@ -211,6 +214,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
+  const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
@@ -357,6 +361,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       pods.update(dt);
       shuttles.update(dt);
       boxes.update();
+      aimMarks.update();
       fightFx.update(dt);
       crewMarks.update();
       fx.update(dt, alpha);
@@ -485,6 +490,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setCombatView: (v) => pass.set(v),
     setCombatMarks: (m) => pass.setMarks(m),
     pickCombat: (sx, sy) => pass.pick(sx, sy),
+    setAimHover: (h) => aimMarks.setHover(h),
     dispose() {
       asteroids.dispose();
       pods.dispose();

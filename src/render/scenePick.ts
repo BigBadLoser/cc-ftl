@@ -1,5 +1,6 @@
 import { Struct } from '../sim/structure';
 import type { Camera } from './camera';
+import { ROOF_H } from './heights';
 import { iso, tileAt, type Pt } from './iso';
 import type { Origin } from './sectorPos';
 import type { ShipScene } from './shipScene';
@@ -28,7 +29,8 @@ export function pickTileAcross(h: PickHost, sx: number, sy: number): { shipId: n
   // Regions never share tiles (padded frames keep a gap), so at most one owns the sector tile.
   for (const [id, sc] of h.scenes) {
     if (!sc.layers.visible || h.hidden?.(id)) continue;
-    const t = sectorTileAt(a);
+    // a roofed region is seen by its roof, which sits ROOF_H above the floor: read the point back down onto the tile under it
+    const t = sectorTileAt(sc.isRoofed() ? { x: a.x, y: a.y + ROOF_H } : a);
     if (sc.grid.inBounds(t.x, t.y) && sc.grid.get('struct', t.x, t.y) !== Struct.Space) return { shipId: id, x: t.x, y: t.y };
   }
   return null;

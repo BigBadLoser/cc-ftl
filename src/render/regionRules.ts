@@ -1,3 +1,4 @@
+import { factionsHostile } from '../sim/combat/factions';
 import type { Ship } from '../sim/combat/components';
 import { CombatC, ShipC, WeaponC } from '../sim/combat/components';
 import { CrewC, PositionC } from '../sim/crew/components';
@@ -12,20 +13,27 @@ import { REGION_PAD } from '../sim/tuning';
  * Roofing and visibility per region (ARCHITECTURE "Sector grid" §5), read from ShipC and the tiles. Renderer only.
  */
 
-/** True while any of the player's crew stand in this region's frame (boarders, or EVA crew on its hull). */
+/**
+ * True while any of the player's crew stand inside this region's rectangle (boarders aboard it). Crew floating in its EVA ring
+ * do not count: they are outside the hull, and a fly-by must not strip a roof.
+ */
 export function boarded(world: World, shipId: number): boolean {
+  const ship = world.get(shipId, ShipC);
+  if (!ship) return false;
   for (const id of world.query(CrewC, PositionC)) {
-    if ((p => !!p && shipIdAtTile(world, p.x, p.y) === shipId)(world.get(id, PositionC)) && world.get(id, AllegianceC)?.faction === 'player') return true;
+    const p = world.get(id, PositionC);
+    if (p && onShip(ship, p) && shipIdAtTile(world, p.x, p.y) === shipId && world.get(id, AllegianceC)?.faction === 'player') return true;
   }
   return false;
 }
 
 /**
- * A hostile region is roofed (when enemy roofs are on) unless player crew are in its frame, or it is a wreck.
+ * A region of a faction at war with the player (hostile, rogue AI, aliens) is roofed (when enemy roofs are on) unless player crew are
+ * aboard it, or it is a wreck. Enemy roofs can't be hidden without a scanning upgrade (planned research, DESIGN "Roofed view").
  * The player's own ship is roofed only when the player asks to see it from outside (`roofPlayer`).
  */
 export const wantsRoof = (world: World, shipId: number, s: Ship, roofEnemies: boolean, roofPlayer = false): boolean =>
-  (roofPlayer && s.faction === 'player' && s.state !== 'wreck') || (roofEnemies && s.faction === 'hostile' && s.state !== 'wreck' && !boarded(world, shipId));
+  (roofPlayer && s.faction === 'player' && s.state !== 'wreck') || (roofEnemies && factionsHostile(s.faction, 'player') && s.state !== 'wreck' && !boarded(world, shipId));
 
 /** An interior tile: floor, door, or under a module. Crew on one of a roofed region are hidden under its roof. */
 export function isInterior(grid: Grid, x: number, y: number): boolean {

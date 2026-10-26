@@ -4,13 +4,13 @@
   import { resolveTarget } from './combatTarget';
 
   /** The ship-wide target: what every weapon without its own aim shoots at. */
-  let { enemy, shipModuleId, hasTarget, onAim }: {
-    enemy: UiShipCombat; shipModuleId: number; hasTarget: boolean; onAim: (moduleId: number) => void;
+  let { enemy, shipModuleId, hasTarget, onAim, aimingAll, onInView, shipTile }: {
+    enemy: UiShipCombat; shipModuleId: number; hasTarget: boolean; onAim: (moduleId: number) => void; aimingAll: boolean; onInView: () => void; shipTile: { x: number; y: number } | null;
   } = $props();
   let open = $state(false);
 
   const targets = $derived(enemy.modules.filter((m) => m.kind !== 'other'));
-  const tgt = $derived(resolveTarget(enemy, shipModuleId, null));
+  const tgt = $derived(resolveTarget(enemy, shipModuleId, null, shipTile));
   const pick = (id: number) => { onAim(id); open = false; };
 </script>
 
@@ -19,6 +19,7 @@
     <span class="cap" title="Every weapon without its own target shoots at this">All weapons</span>
     <span class="name" title={tgt.label}><Icon name="target" size={14} /><span>{tgt.label}</span></span>
     <span class="int" class:low={tgt.pct < 35} title="Target integrity"><span class="bar" class:low={tgt.pct < 35}><i style="width:{tgt.pct}%"></i></span><b>{tgt.pct}%</b></span>
+    <button class="tile" class:on={aimingAll} aria-pressed={aimingAll} title={aimingAll ? 'Click an enemy tile in the main view (right-click or Esc cancels)' : 'Target in view: click an enemy tile in the main view to aim every weapon'} aria-label="Target in view: all weapons" data-testid="combat-inview-all" onclick={onInView}><Icon name="frame" size={16} /></button>
     <button class="tile" class:on={open} aria-expanded={open} title="Pick the ship-wide target module" aria-label="Pick the ship-wide target module" data-testid="combat-targets-toggle" onclick={() => (open = !open)}><Icon name="pick" size={16} /></button>
   </div>
 

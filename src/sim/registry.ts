@@ -254,6 +254,8 @@ export interface RoleDef {
   assemble?: { cost: readonly ItemQty[]; work: number };
   /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
   surrenderBelow?: number;
+  /** In a fight, this role's crew relieve a weapons or helm console that has been empty for RELIEF_AFTER_SEC, whatever their operating priority (0 still opts out). */
+  relievesStations?: true;
 }
 
 /** A species: base stats. Modifiers (traits, implants) come later via the stat resolver. */

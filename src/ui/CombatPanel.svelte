@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { UiApi, UiCombat, UiShipCombat } from './api';
+  import type { UiAiming, UiApi, UiCombat, UiShipCombat } from './api';
   import CombatPlayer from './CombatPlayer.svelte';
   import Icon from './Icon.svelte';
   import CombatTarget from './CombatTarget.svelte';
@@ -11,6 +11,8 @@
   let viewEl: HTMLDivElement | undefined = $state();
   /** The weapon chosen for aiming (0 = none: picks aim the whole ship's target). */
   let selWeapon = $state(0);
+  /** "Target in view" armed: the next left-click on the enemy in the main view aims (a weapon id, null = every weapon). */
+  let aiming = $state<UiAiming | null>(null);
 
   const enemy = $derived<UiShipCombat | undefined>(combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0]);
   const me = $derived(combat.player);
@@ -85,8 +87,10 @@
   }
   onMount(() => {
     raf = requestAnimationFrame(track);
+    return api.aiming.subscribe((a) => (aiming = a));
   });
   onDestroy(() => {
+    api.setAiming(null);
     cancelAnimationFrame(raf);
     api.setCombatView(null);
   });
@@ -116,13 +120,13 @@
       <div class="viewbox">
         <div class="view" bind:this={viewEl} onclick={tap} onpointermove={move} onpointerleave={() => (hover = 0)} role="presentation" data-testid="combat-view"></div>
       </div>
-      <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} />
+      <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} shipTile={me?.target?.tile ?? null} aimingAll={aiming !== null && aiming.weapon === null} onInView={() => api.setAiming(aiming && aiming.weapon === null ? null : { weapon: null })} />
     </div>
   {:else}
     <p class="none">No hostile ships in range.</p>
   {/if}
 
-  {#if me}<CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} />{/if}
+  {#if me}<CombatPlayer {api} {me} {enemy} {selWeapon} {aiming} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} />{/if}
 </section>
 
 <style>

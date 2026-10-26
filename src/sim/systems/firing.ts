@@ -64,7 +64,7 @@ function launchNext(
   const targetGrid = target.ship;
   const alive = shipIdOf(sim, sim.world.get(target.moduleId, ModuleC)) === targetGrid;
   const vehicle = target.vehicle && sim.world.has(target.vehicle, VehicleC) ? sim.world.get(target.vehicle, BodyC) : undefined;
-  const to = vehicle ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, targetGrid);
+  const to = vehicle ?? (target.tile ? { x: target.tile.x + 0.5, y: target.tile.y + 0.5 } : null) ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, targetGrid);
   if (!from || !to) return void (w.shotsLeft = 0);
   w.aim = aimDirection(to.x - from.x, to.y - from.y);
   const dist = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));

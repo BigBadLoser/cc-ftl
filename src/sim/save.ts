@@ -67,8 +67,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v53 (playtest fixes): optional `Module.wrecked` (set at 0 hp, cleared past half hp; a patched wreck is not announced twice).
  * v54 (blueprints): `StoryState.blueprints` (the bought module blueprints), Mk II / III core module defs, research stations.
  * v55 (shield tiers): `module.shieldGenSmall` removed (now `module.shieldGen`, 2x2); Mk II is 2x3, Mk III 3x3.
+ * v56 (tile aim): optional `Target.tile` (a blind aim at one tile of the target ship, on `CombatC.target` and `WeaponC.target`).
  */
-export const SAVE_VERSION = 55;
+export const SAVE_VERSION = 56;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

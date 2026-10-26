@@ -12,6 +12,7 @@ export const roles = {
     priorities: { firefighting: 2, medical: 4, operating: 3, repair: 1, construction: 1, hauling: 3, refining: 2, crafting: 2, cooking: 4, patrol: 0 },
     skills: { shielding: 2, repair: 2, hacking: 1 },
     emergencyLoadout: EMERGENCY_ARMS,
+    relievesStations: true,
   },
   'role.gunner': {
     name: 'Gunner',
@@ -25,6 +26,7 @@ export const roles = {
     skills: { medicine: 3 },
     emergencyLoadout: EMERGENCY_ARMS,
     priorities: { firefighting: 2, medical: 1, operating: 4, repair: 4, construction: 4, hauling: 3, refining: 3, crafting: 3, cooking: 3, patrol: 0 },
+    relievesStations: true,
   },
   'role.security': {
     name: 'Security',
@@ -46,6 +48,7 @@ export const roles = {
     species: 'species.robot',
     assemble: { cost: [{ item: 'item.parts', count: 6 }, { item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 4 }], work: 400 },
     priorities: { firefighting: 2, medical: 0, operating: 3, repair: 2, construction: 1, hauling: 1, refining: 2, crafting: 2, cooking: 0, patrol: 0 },
+    relievesStations: true,
   },
   'role.robot_security': {
     name: 'Security bot',

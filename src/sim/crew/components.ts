@@ -110,6 +110,8 @@ export interface Job {
   progress: number;
   /** Crew entity that reserved it, or 0. */
   reservedBy: number;
+  /** For 'operate' jobs: the tick since which nobody holds it (absent while someone does). Crew with a low operating priority relieve it after RELIEF_AFTER_SEC. */
+  freeSince?: number;
   /** For 'module' jobs: the blueprint. */
   module?: { def: string; rot: number };
   /** For 'module' jobs: the rotated footprint [w, h] from (x, y); builders work from beside it, never on it. */

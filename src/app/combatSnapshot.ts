@@ -13,7 +13,7 @@ function label(sim: Sim, t: Target | null): string | null {
   const ship = sim.world.get(t.ship, ShipC);
   const m = t.moduleId ? sim.world.get(t.moduleId, ModuleC) : undefined;
   const mod = m && sim.content.modules[m.def]?.name;
-  return `${ship?.name ?? 'Ship'}${mod ? `: ${mod}` : ''}`;
+  return `${ship?.name ?? 'Ship'}${mod ? `: ${mod}` : t.tile ? `: tile ${t.tile.x - (ship?.x ?? 0)}, ${t.tile.y - (ship?.y ?? 0)}` : ''}`;
 }
 
 function modulesOf(sim: Sim, shipId: number): UiShipModule[] {
@@ -36,10 +36,10 @@ function snapOf(sim: Sim, id: number): UiShipCombat | null {
   const need = shieldRechargeSec(sim, id);
   const t = c.target;
   return {
-    ship: id, name: ship.name, state: ship.state, integrity: round(ship.integrity),
+    ship: id, name: ship.name, x: ship.x, y: ship.y, state: ship.state, integrity: round(ship.integrity),
     shield: { layers: c.shield.layers, max: c.shield.max, progress: Number.isFinite(need) ? round(Math.min(1, c.shield.timer / need)) : 0 },
     evasion: round(c.evasion), hold: c.hold, ftl: round(c.ftl, 1), ftlMax: FTL_CHARGE_SEC,
-    target: t ? { ship: t.ship, moduleId: t.moduleId, label: label(sim, t) ?? '' } : null,
+    target: t ? { ship: t.ship, moduleId: t.moduleId, label: label(sim, t) ?? '', ...(t.tile ? { tile: t.tile } : {}) } : null,
     modules: modulesOf(sim, id),
   };
 }
@@ -65,7 +65,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           const ammo = sim.content.weapons?.[def.weapon]?.ammo;
           weapons.push({
             id: mid, name: def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
-            ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0,
+            ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
           });
         }
         if (def.console) {

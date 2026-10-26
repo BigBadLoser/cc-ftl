@@ -23,6 +23,8 @@ export function operateJobsSystem(sim: Sim): void {
     if (job?.kind !== 'operate') continue;
     if (consoleNeeded(sim, job.target ?? 0) && !open.has(job.target ?? 0)) {
       open.set(job.target ?? 0, jobId);
+      if (job.reservedBy) delete job.freeSince;
+      else job.freeSince ??= sim.tick;
       continue;
     }
     if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
@@ -40,7 +42,7 @@ export function operateJobsSystem(sim: Sim): void {
     const job = sim.world.createEntity();
     sim.world.add(job, JobC, {
       category: 'operating', kind: 'operate', x: at.x, y: at.y, struct: 0, work: 1, progress: 0,
-      reservedBy: 0, target: id,
+      reservedBy: 0, target: id, freeSince: sim.tick,
     });
     fresh.add(job);
   }

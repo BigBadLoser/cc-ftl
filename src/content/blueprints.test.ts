@@ -159,7 +159,7 @@ describe('blueprints', () => {
     step(sim);
     expect(isBlueprintKnown(sim, 'module.engine.mk3')).toBe(true);
     const saved = serialize(sim);
-    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(55);
+    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(56);
     const back = deserialize(saved, content);
     expect(isBlueprintKnown(back, 'module.engine.mk3')).toBe(true);
     expect(isBlueprintKnown(back, 'module.engine.mk2')).toBe(false);

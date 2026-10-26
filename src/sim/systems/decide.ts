@@ -19,7 +19,8 @@ import { operateAffinity } from '../combat/operators';
 import { goToBay, wantsBay } from '../robots/bay';
 import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
-import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
+import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW, RELIEF_AFTER_SEC } from '../tuning';
+import { TICK_HZ } from '../time';
 import { shipIdOf, shipGrid } from '../regions';
 import { strollTurn } from '../stations/life';
 
@@ -154,6 +155,14 @@ function fallAsleep(sim: Sim, id: number, crew: Crew): void {
   sim.events.emit({ type: 'crew.fellAsleep', crew: id });
 }
 
+/** True if an empty console may be relieved by crew whose operating priority is low: in a fight, left empty for RELIEF_AFTER_SEC, and one that matters unmanned (the shield console works at base strength without an operator). */
+function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
+  const role = sim.world.get(crewId, CrewC)?.role;
+  if (!role || !sim.content.roles[role]?.relievesStations || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
+  const m = sim.world.get(job.target ?? 0, ModuleC);
+  return !!m && sim.content.modules[m.def]?.console !== 'shields';
+}
+
 /** Reserve the best job by priority level, then shortest path, then lowest id. */
 function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
   const prio = sim.world.get(crewId, PrioritiesC) as Priorities;
@@ -166,7 +175,8 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
       if (!job || shipIdOf(sim, job) !== shipIdOf(sim, pos) || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
-      if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
+      // Operating is a high-priority job, except in a fight: a console left empty a while is relieved by crew of a role that relieves stations, with nothing better to do (disabled, 0, stays off).
+      if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL && !canRelieve(sim, crewId, job)) continue;
       if (!canTakeRobotJob(sim, crewId, job)) continue;
       const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
