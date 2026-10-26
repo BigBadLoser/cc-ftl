@@ -54,10 +54,10 @@
           <span class="chg {st.tone}" title="Charge {Math.round(w.charge * 100)}%"><i style="width:{Math.round(w.charge * 100)}%"></i></span>
           <span class="stt {st.tone}">{st.text}</span>
           <button class="tg" class:own class:armed={selWeapon === w.id} disabled={!enemy} title={selWeapon === w.id ? 'Now tap a module on the enemy ship (tap again to cancel)' : own ? `Own target: ${ownName}. Tap to re-aim` : 'Follows the ship target. Tap, then tap a module to aim just this weapon'} aria-pressed={selWeapon === w.id} onclick={() => onSelect(selWeapon === w.id ? 0 : w.id)}>
-            <span>{selWeapon === w.id ? 'tap enemy...' : own ? ownName : '\u21b3 ship target'}</span>
+            <span>{selWeapon === w.id ? 'tap enemy...' : own ? ownName : 'ship target'}</span><Icon name="chevDown" size={12} />
           </button>
-          <button class="iv" class:armed={aiming?.weapon === w.id} disabled={!enemy} aria-pressed={aiming?.weapon === w.id} title={aiming?.weapon === w.id ? 'Click an enemy tile in the main view (right-click or Esc cancels)' : 'Target in view: click an enemy tile in the main view to aim just this weapon'} aria-label="Target in view" data-testid="combat-inview" onclick={() => api.setAiming(aiming?.weapon === w.id ? null : { weapon: w.id })}><Icon name="frame" size={12} /></button>
           {#if own}<button class="rs" title="Reset to the ship target" aria-label="Reset to the ship target" onclick={() => clearWeapon(w.id)}><Icon name="rotate" size={12} /></button>{:else}<span class="nors"></span>{/if}
+          <button class="iv" class:armed={aiming?.weapon === w.id} disabled={!enemy} aria-pressed={aiming?.weapon === w.id} title={aiming?.weapon === w.id ? 'Click an enemy tile in the main view (right-click or Esc cancels)' : 'Target in view: click an enemy tile in the main view to aim just this weapon'} aria-label="Target in view" data-testid="combat-inview" onclick={() => api.setAiming(aiming?.weapon === w.id ? null : { weapon: w.id })}><Icon name="frame" size={12} /></button>
         </div>
       {/each}
       {#if me.weapons.length === 0}<p class="dim">No weapons installed.</p>{/if}
@@ -96,16 +96,18 @@
   h3 { margin: 0; font: 600 14px/1.2 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .link { min-height: 0; min-width: 0; height: 24px; padding: 0 8px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--cyan); background: transparent; border-color: var(--line); }
   .weapons { display: grid; gap: 3px; }
-  .w { display: grid; grid-template-columns: minmax(0, 1fr) 36px 52px 82px 22px 22px; align-items: center; gap: 5px; height: 36px; padding: 0 4px 0 8px; background: var(--panel-2); border: 1px solid var(--line); }
+  .w { display: grid; grid-template-columns: minmax(0, 1fr) 36px 46px 90px 22px 22px; align-items: center; gap: 5px; height: 36px; padding: 0 4px 0 8px; background: var(--panel-2); border: 1px solid var(--line); }
   .w.sel { border-color: var(--cyan); background: var(--panel-3); }
   .w.off { opacity: 0.7; }
   .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.2 var(--head-font); letter-spacing: 0.03em; }
   .chg { display: block; height: 4px; background: #0b1220; } .chg > i { display: block; height: 100%; }
   .chg.amber > i { background: var(--amber); } .chg.green > i { background: var(--green); } .chg.red > i { background: var(--red); }
   .stt { font-size: 11px; white-space: nowrap; } .stt.amber { color: var(--amber); } .stt.green { color: var(--green); } .stt.red { color: #ff8a8a; }
-  button.tg { min-height: 0; min-width: 0; height: 26px; padding: 0 4px; border-color: transparent; background: transparent; color: var(--dim); font-size: 11px; text-align: left; overflow: hidden; }
-  button.tg span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  button.tg { min-height: 0; min-width: 0; height: 26px; padding: 0 4px 0 7px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--line-hi); background: var(--panel); color: var(--text); font-size: 11px; text-align: left; overflow: hidden; }
+  button.tg :global(svg) { margin-left: auto; color: var(--dim); }
+  button.tg span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button.tg.own { color: var(--cyan); font-weight: 600; background: #0a3a52; border-color: var(--cyan); }
+  button.tg.own :global(svg) { color: var(--cyan); }
   button.tg.armed { color: #fff; border-color: var(--amber); background: var(--panel-3); }
   button.iv { min-height: 0; min-width: 0; width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--dim); }
   button.iv.armed { color: #fff; border-color: var(--amber); background: var(--panel-3); }
