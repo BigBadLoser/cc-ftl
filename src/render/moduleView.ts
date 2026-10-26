@@ -1,4 +1,5 @@
 import { haloTex, makeHalo } from './haloTex';
+import { animNow } from './animClock';
 import { Rectangle, Sprite, Texture, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
@@ -67,6 +68,19 @@ interface Entry {
 /** Depth key of a module sprite drawn on tile (tx, ty): solid modules sit just behind the crew of their tile, flat ones under everything. */
 export function moduleKey(def: ModuleDef, tx: number, ty: number): number {
   return depthKey(tx, ty) - (def.solid ? 0.05 : 0.5);
+}
+
+/**
+ * True if a layer of a big module is cut into depth strips although its art does not ask for it: a solid module covering
+ * more than one tile. Drawn whole and sorted by its front-most tile, such a sprite paints over crew standing beside it
+ * (an engine, a refinery, a pod bay): beside the module's back half their tile sorts lower than its front corner. Per
+ * diagonal strips sort each column by the front-most footprint tile on it, so crew in front of a column draw over it and
+ * crew behind it under it. Not for layers placed on their own tile (`at`), hung outside the hull (`out`, the bell), offset
+ * overlays (`dz`: a console's desk front over its operator), nor a roofed engine (sorted under the roof plates as a whole).
+ */
+export function autoStrips(def: ModuleDef, layer: ModuleLayer, w: number, h: number, roofed: boolean): boolean {
+  if (!def.solid || w * h <= 1 || layer.at || layer.out || layer.dz !== undefined) return false;
+  return !(roofed && def.hullEdge);
 }
 
 /** Width of a depth strip of a vehicle bay sprite: one footprint diagonal, half a tile wide each side of its centre line. */
@@ -175,7 +189,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         return;
       }
-      if (layer.strips && !art.fallback) {
+      // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
+      const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
+      if ((layer.strips || autoStrips(def, layer, w, h, roofed)) && !art.fallback && !flip) {
         // Cut into one strip per footprint diagonal, each sorted by the front-most footprint tile on its diagonal (the pit's
         // near lip, towers and gangway then draw over crew beside the pit, and under crew in front of it).
         const tx = m.x + w - 1;
@@ -196,8 +212,6 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         return;
       }
-      // A quarter turn of a non-square footprint without its own sprite is drawn mirrored.
-      const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
       const k = key(m.x + w - 1, m.y + h - 1);
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
       for (let j = from; j < out.length; j++) out[j]!.li = i;
@@ -267,7 +281,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const t = host.target();
     const live = new Set<number>();
     if (t) {
-      const now = performance.now();
+      const now = animNow();
       const progress = craftProgress(world);
       const manned = mannedConsoles(world);
       const { grid } = t;
