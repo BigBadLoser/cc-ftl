@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ModuleC, deserialize, engineFuelFactor, galaxyIndex, isBlueprintKnown, nodeOf, jumpFuel, newGame, playerShip, portBlueprints, SAVE_VERSION, serialize, shieldCapacity, shipGrid, type ModuleDef, type Sim, type StructureDef,
+  ModuleC, burnFuel, cheapestHop, fuelStock, isStranded, jumpBlocker, deserialize, engineFuelFactor, galaxyIndex, isBlueprintKnown, nodeOf, jumpFuel, newGame, playerShip, portBlueprints, SAVE_VERSION, serialize, shieldCapacity, shipGrid, type ModuleDef, type Sim, type StructureDef,
 } from '../sim';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { ensureAround } from '../sim/galaxy/state';
@@ -208,6 +208,27 @@ describe('module tiers', () => {
     swap(sim, 'module.shieldGen', 'module.shieldGen.mk3');
     expect(shieldCapacity(sim, ship, true)).toBeGreaterThan(before);
     expect(shieldCapacity(sim, ship, true)).toBe(7);
+  });
+
+  it('the stranded checks and the jump use the engine-discounted fuel: Mk III, a 4-fuel lane, 3 aboard is not stranded', () => {
+    const sim = newGame(7, content);
+    step(sim, 2);
+    ensureAround(sim, sim.galaxy.current);
+    const edges = galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current)!;
+    for (const e of edges) e.fuel = 4;
+    sim.enqueue({ type: 'debug.chargeFtl' });
+    step(sim);
+    burnFuel(sim, fuelStock(sim) - 3);
+    expect(fuelStock(sim)).toBe(3);
+    // Mk I: the 4-fuel lane is out of reach.
+    expect(cheapestHop(sim)).toBe(4);
+    expect(isStranded(sim)).toBe(true);
+    expect(jumpBlocker(sim, edges[0])).toBe('noFuel');
+    swap(sim, 'module.engine', 'module.engine.mk3');
+    expect(jumpFuel(sim, 4)).toBe(3);
+    expect(cheapestHop(sim)).toBe(3);
+    expect(isStranded(sim)).toBe(false);
+    expect(jumpBlocker(sim, edges[0])).toBeNull();
   });
 
   it('a better engine burns less fuel per jump', () => {

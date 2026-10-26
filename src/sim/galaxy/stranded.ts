@@ -4,7 +4,7 @@ import { spillItems } from '../items/stacks';
 import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { playerShip } from '../trade/player';
-import { FUEL_ITEM, fuelStock, storagesOf } from './fuel';
+import { FUEL_ITEM, fuelStock, jumpFuel, storagesOf } from './fuel';
 import { econOf, stockAt, valueAt } from './market';
 import { portsAt } from './portIndex';
 import { galaxyIndex } from './state';
@@ -17,13 +17,13 @@ import type { Distress } from './types';
  * costs reputation with the traders (`DISTRESS_UNPAID_REP`) instead of a debt, so there is nothing to track afterwards.
  */
 
-/** Fuel the cheapest jump out of the current node costs (over edges to discovered nodes, else any edge), or null when the node has no lane. */
+/** Fuel the cheapest jump out of the current node burns on this ship, engine discount included (over edges to discovered nodes, else any edge), or null when the node has no lane. */
 export function cheapestHop(sim: Sim): number | null {
   const g = sim.galaxy;
   const edges = galaxyIndex(g).adjacent.get(g.current) ?? [];
   const known = edges.filter((e) => g.discovered[e.a === g.current ? e.b : e.a] !== undefined);
   const list = known.length ? known : edges;
-  return list.length ? Math.min(...list.map((e) => e.fuel)) : null;
+  return list.length ? jumpFuel(sim, Math.min(...list.map((e) => e.fuel))) : null;
 }
 
 /** True while the ship sits at a node (not in hyperspace or an event grid) holding less fuel than its cheapest jump costs. */

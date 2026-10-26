@@ -58,7 +58,7 @@ function travelOf(sim: Sim): UiTravel | null {
   if (!t) return null;
   const next = t.phase === 'noFuel' ? edgeBetween(sim.galaxy, sim.galaxy.current, t.route[t.at + 1] as string) : undefined;
   const names = t.route.map((id) => (sim.galaxy.discovered[id] !== undefined ? nodeOf(sim, id)?.name : undefined) ?? 'Uncharted');
-  return { route: [...t.route], at: t.at, phase: t.phase, stopping: !!t.stopping, need: next?.fuel ?? 0, names };
+  return { route: [...t.route], at: t.at, phase: t.phase, stopping: !!t.stopping, need: next ? jumpFuel(sim, next.fuel) : 0, names };
 }
 
 /** The fuel, charge and progress figures (cheap; refreshed often). */
@@ -142,7 +142,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       exits.push({
         id: e.id, ax: Math.round(a.x), ay: Math.round(a.y), bx: Math.round(b.x), by: Math.round(b.y), to: to.id,
         name: k ? to.name : null, tone: k && to.faction ? toneOf(content?.factions[to.faction]?.kind) : 'dim', danger: to.danger,
-        kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: e.fuel,
+        kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: jumpFuel(sim, e.fuel),
       });
     }
   }
