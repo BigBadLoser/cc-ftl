@@ -25,6 +25,14 @@
   const giveUnits = $derived(Object.values(give).reduce((a, b) => a + b, 0));
   const getUnits = $derived(Object.values(get).reduce((a, b) => a + b, 0));
   const units = $derived(Math.max(giveUnits, getUnits));
+  /** Trips the standing offer will take, with the hold they are sized by. */
+  const offerTrips = $derived.by(() => {
+    const o = p?.offer;
+    const r = o && (o.give.length > 0 ? p?.out : p?.in);
+    if (!o || !r || r.cap <= 0) return 0;
+    const n = Math.max(o.give.reduce((a, l) => a + l.count, 0), o.get.reduce((a, l) => a + l.count, 0));
+    return Math.ceil(n / r.cap);
+  });
   const pays = $derived(barter ? 0 : balance);
   const route = $derived(giveUnits > 0 ? p?.out : p?.in);
   /** An order bigger than one hold runs as several trips, in turn. */
@@ -175,7 +183,7 @@
     {:else if p.offer}
       <div class="status" data-testid="trade-offer">
         <b>Offer: {fmt(p.offer.get)} for {fmt(p.offer.give)}</b>
-        <span>{bal(p.offer.balance, p.offer.barter)} · {courierNote}</span>
+        <span>{bal(p.offer.balance, p.offer.barter)} · {courierNote}{offerTrips > 1 ? ` ${offerTrips} trips, one after another.` : ''}</span>
         <div class="btns">
           <button class="go" data-testid="trade-accept" onclick={() => p.offer && api.dispatch({ type: 'trade.accept', offer: p.offer.id })}>Accept deal</button>
           <button data-testid="trade-withdraw" onclick={() => p.offer && api.dispatch({ type: 'trade.cancel', id: p.offer.id })}>Withdraw</button>

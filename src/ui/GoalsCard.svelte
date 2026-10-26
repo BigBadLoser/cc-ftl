@@ -102,7 +102,7 @@
   .done-act .head { color: var(--green); font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .title { flex: 1; display: flex; align-items: baseline; gap: 6px; min-height: 28px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
-  .name { font: 600 13px var(--head-font); }
+  .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .left { margin-left: auto; margin-right: 2px; color: var(--dim); font-size: 12px; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
   ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; }
