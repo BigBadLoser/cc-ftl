@@ -17,7 +17,7 @@
     const un = api.alerts.subscribe((a) => (list = a));
     return () => { un(); mq.removeEventListener('change', onMq); };
   });
-  $effect(() => { if (list.length < 2) open = false; });
+  $effect(() => { if (list.length < 1) open = false; });
   const split = $derived(splitAlerts(list));
   const extra = $derived(split.extra);
 
@@ -29,7 +29,7 @@
   };
 </script>
 
-{#snippet row(a: UiAlert)}
+{#snippet row(a: UiAlert, toast = false)}
   <div class="alert" class:danger={danger.has(a.kind)} class:good={good.has(a.kind)} data-testid="alert" data-kind={a.kind}>
     {#if a.notice}
       <button class="go story" data-testid="story-notice" disabled={!a.notice.lead} onclick={() => { if (a.notice) api.dispatch({ type: 'story.openNotice', notice: a.notice.id }); api.dismissAlert(a.id); }}>
@@ -38,7 +38,7 @@
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
     {:else}
-      <button class="go" disabled={!a.at} onclick={() => api.focusAlert(a.id)}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+      <button class="go" disabled={toast ? false : !a.at} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : api.focusAlert(a.id))}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
     <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
   </div>
@@ -46,15 +46,17 @@
 
 {#if list.length && narrow}
   <div class="alerts phone" data-testid="alerts">
-    <div class="toastrow">
-      <div class="one">{@render row(list[0] as UiAlert)}</div>
-      {#if extra > 0}
-        <button class="badge" aria-expanded={open} aria-label="{open ? 'Hide' : 'Show'} {extra} more notifications" data-testid="alerts-more" onclick={() => (open = !open)}>+{extra}<Icon name={open ? 'chevUp' : 'chevDown'} size={14} /></button>
-      {/if}
-    </div>
     {#if open}
-      <div class="drop" data-testid="alerts-list">
-        {#each split.rest as a (a.id)}{@render row(a)}{/each}
+      <button class="badge head" aria-expanded="true" data-testid="alerts-more" onclick={() => (open = false)}>Notifications · {list.length}<Icon name="chevUp" size={14} /></button>
+      <div class="drop full" data-testid="alerts-list">
+        {#each list as a (a.id)}{@render row(a)}{/each}
+      </div>
+    {:else}
+      <div class="toastrow">
+        <div class="one">{@render row(split.top as UiAlert, true)}</div>
+        {#if extra > 0}
+          <button class="badge" aria-expanded="false" aria-label="Show {extra} more notifications" data-testid="alerts-more" onclick={() => (open = true)}>+{extra}<Icon name="chevDown" size={14} /></button>
+        {/if}
       </div>
     {/if}
   </div>
@@ -96,5 +98,7 @@
   .phone .alert:hover .t, .phone .alert:focus-within .t { -webkit-line-clamp: 1; line-clamp: 1; }
   .phone .alert button { min-height: 30px; }
   .badge { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 0 8px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--cyan); font: 600 13px var(--head-font); }
+  .badge.head { width: 100%; justify-content: space-between; min-height: 30px; }
+  .full .go .t, .full .alert:hover .t { -webkit-line-clamp: unset; line-clamp: none; }
   .drop { display: grid; gap: 2px; margin-top: 2px; max-height: 45vh; overflow-y: auto; }
 </style>
