@@ -4,6 +4,8 @@
   import CombatPlayer from './CombatPlayer.svelte';
   import Icon from './Icon.svelte';
   import CombatTarget from './CombatTarget.svelte';
+  import FloatingWindow from './FloatingWindow.svelte';
+  import { readNumber, splitFraction, writeNumber, type Bounds, type Rect } from './floatingWindow';
 
   let { api, combat, onClose, onHail, onFlee }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void; onFlee: (ship: number) => void } = $props();
 
@@ -86,25 +88,72 @@
   onMount(() => {
     raf = requestAnimationFrame(track);
   });
+
+  // Floating window: left-docked by default, where the screen is mostly empty. The panels that step aside for it follow its real
+  // right edge (--combat-right) while it sits on the left; once the player drags it elsewhere they go back to their normal spots (data-combat-free).
+  const WIDTH = 372;
+  const defaultRect = (b: Bounds): Rect => ({ x: b.left, y: b.top, w: WIDTH, h: b.bottom - b.top });
+  const root = document.documentElement;
+  function layout(r: Rect) {
+    const docked = r.x <= 24;
+    root.toggleAttribute('data-combat-free', !docked);
+    if (docked) root.style.setProperty('--combat-right', `${r.x + r.w + 8}px`);
+    else root.style.removeProperty('--combat-right');
+  }
+  onDestroy(() => {
+    root.removeAttribute('data-combat-free');
+    root.style.removeProperty('--combat-right');
+  });
+
+  // Splitter between the ship view and the weapons list: the share of the body the view gets, remembered for the session.
+  const SPLIT_KEY = 'cc.window.combat.split';
+  const MIN_VIEW = 190;
+  const MIN_WEAPONS = 120;
+  let split = $state(readNumber(SPLIT_KEY, 6 / 11));
+  let bodyEl: HTMLDivElement | undefined = $state();
+  let splitting = false;
+  function splitDown(e: PointerEvent) {
+    if (e.button !== 0) return;
+    splitting = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+  function splitMove(e: PointerEvent) {
+    if (!splitting || !bodyEl) return;
+    const r = bodyEl.getBoundingClientRect();
+    split = splitFraction(e.clientY - r.top, r.height, MIN_VIEW, MIN_WEAPONS);
+  }
+  function splitUp() {
+    if (!splitting) return;
+    splitting = false;
+    writeNumber(SPLIT_KEY, split);
+  }
+  function splitKey(e: KeyboardEvent) {
+    if (!bodyEl || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    e.preventDefault();
+    const h = bodyEl.getBoundingClientRect().height;
+    split = splitFraction(split * h + (e.key === 'ArrowUp' ? -24 : 24), h, MIN_VIEW, MIN_WEAPONS);
+    writeNumber(SPLIT_KEY, split);
+  }
   onDestroy(() => {
     cancelAnimationFrame(raf);
     api.setCombatView(null);
   });
 </script>
 
-<section class="combat" class:expanded data-testid="combat-panel" aria-label="Combat">
-  <button class="handle" title={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}><i></i></button>
-  <header class="ph">
-    <span class="ico"><Icon name="target" size={18} /></span>
-    <span class="t">{enemy ? enemy.name : 'Combat'}</span>
+<FloatingWindow id="combat" title={enemy ? enemy.name : 'Combat'} icon="target" min={{ w: 300, h: 420 }} {defaultRect} {onClose} onLayout={layout}
+  closeLabel="Close combat panel" closeTestId="combat-close" testId="combat-panel" bg={false} class="combat{expanded ? ' expanded' : ''}">
+  {#snippet titleExtra()}
     {#if enemy}<span class="pillst {pill.tone}" data-testid="combat-state">{pill.text}</span>{/if}
+  {/snippet}
+  {#snippet actions()}
     <button class="tile" title="Frame: center the camera between the ships" aria-label="Frame" onclick={() => api.focusFight(enemy?.ship ?? null)}><Icon name="frame" size={18} /></button>
-    <button class="tile x" title="Close combat panel" aria-label="Close combat panel" data-testid="combat-close" onclick={onClose}><Icon name="close" size={16} /></button>
-  </header>
-
+  {/snippet}
+  <button class="handle" title={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}><i></i></button>
+  <div class="body" bind:this={bodyEl}>
   {#if enemy}
     {@const hullPct = Math.round(enemy.integrity * 100)}
-    <div class="top">
+    <div class="top" style="flex-grow:{split * 100}">
       <div class="enemy" data-testid="ship-meters">
         <div class="stats">
           <span class="st" title="Shield layers" aria-label="Shield {enemy.shield.layers} of {enemy.shield.max}"><Icon name="shield" size={16} /><b data-testid="shield-pips">{enemy.shield.layers} / {enemy.shield.max}</b></span>
@@ -122,26 +171,26 @@
     <p class="none">No hostile ships in range.</p>
   {/if}
 
-  {#if me}<CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} />{/if}
-</section>
+  {#if me}
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+    {#if enemy}<div class="split" role="separator" aria-orientation="horizontal" aria-label="Resize the ship view" tabindex="0" data-testid="combat-split" onpointerdown={splitDown} onpointermove={splitMove} onpointerup={splitUp} onpointercancel={splitUp} onkeydown={splitKey}><i></i></div>{/if}
+    <div class="low" style="flex-grow:{(1 - split) * 100}"><CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} /></div>
+  {/if}
+  </div>
+</FloatingWindow>
 
 <style>
-  /* On the left, where the screen is mostly empty: the right column (log, goals, jobs, alerts) and the tool dock stay clear. The left-side panels (.sel, .over, the build catalog) and the centred ones step right of it while it is open (data-combat, desktop). */
+  /* A floating window (FloatingWindow): left-docked by default, where the screen is mostly empty, so the right column (log, goals, jobs, alerts) and the tool dock stay clear. */
   /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
-  .combat {
-    position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
-    left: calc(8px + var(--sal)); top: calc(var(--hdr) + 8px + var(--sat)); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
-    border: 1px solid var(--line-hi); border-radius: 0;
-  }
   .handle { display: none; }
-  header.ph { margin: 0; padding: 0 0 0 10px; display: flex; align-items: center; gap: 8px; min-height: 32px; flex: none; }
-  header .ico { display: inline-flex; color: var(--cyan); }
-  header .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  header button.tile { width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; }
-  header button.tile:hover { background: var(--panel-3); }
   .pillst { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; white-space: nowrap; flex: none; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
   .pillst.red { color: #ff8a8a; background: #3a1216; } .pillst.amber { color: var(--amber); } .pillst.green { color: var(--green); } .pillst.dim { color: var(--dim); }
-  .top { flex: 6 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .body { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .top { flex: 1 1 0; min-height: 190px; display: flex; flex-direction: column; }
+  .low { flex: 1 1 0; min-height: 120px; display: flex; flex-direction: column; }
+  .split { flex: none; height: 9px; display: flex; align-items: center; justify-content: center; background: var(--panel-2); border-block: 1px solid var(--line); cursor: ns-resize; touch-action: none; }
+  .split i { width: 40px; height: 3px; background: var(--line-hi); }
+  .split:hover i, .split:focus-visible i { background: var(--cyan); }
   .enemy { background: var(--panel); padding: 8px 10px 0; display: grid; gap: 5px; }
   .stats { display: flex; align-items: center; gap: 14px; }
   .st { display: inline-flex; align-items: center; gap: 5px; color: var(--cyan); font-size: 13px; }
@@ -149,14 +198,16 @@
   .st em { font-style: normal; color: var(--dim); font-size: 12px; }
   .st.low b { color: var(--red); }
   .bar.hull { height: 6px; } .bar.hull.low > i { background: var(--red); }
-  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 150px; display: flex; }
+  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 100px; display: flex; }
   .view { flex: 1; min-height: 0; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
   .none { background: var(--panel); color: var(--dim); margin: 0; padding: 10px; }
   @media (max-width: 600px) {
-    .combat { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 62vh; border-width: 1px 0 0; transition: height 0.18s; }
-    .combat.expanded { height: calc(100vh - 12px - var(--sat)); }
+    /* Phone: a bottom sheet, not a floating window. */
+    :global(.fw.combat) { position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 62vh; border-width: 1px 0 0; transition: height 0.18s; }
+    :global(.fw.combat.expanded) { height: calc(100vh - 12px - var(--sat)); }
     .handle { display: flex; justify-content: center; align-items: center; height: 16px; min-height: 16px; width: 100%; padding: 0; border: 0; background: var(--panel-2); flex: none; }
     .handle i { width: 40px; height: 4px; background: var(--line-hi); }
+    .top { min-height: 0; } .low { min-height: 0; } .split { display: none; }
     .viewbox { min-height: 0; }
   }
 </style>

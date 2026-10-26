@@ -74,6 +74,6 @@
   .sel { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 300px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
   .sel.wide { width: 340px; }
   /* The combat panel takes the left edge (372px): the inspector sits right of it. */
-  @media (min-width: 601px) { :global(html[data-combat]) .sel { left: calc(388px + var(--sal)); } }
+  @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) .sel { left: calc(var(--combat-right, 388px) + var(--sal)); } }
   @media (max-width: 600px) { :global(html[data-combat]) .sel { display: none; } .sel, .sel.wide { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 52vh; } }
 </style>

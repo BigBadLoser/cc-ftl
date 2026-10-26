@@ -134,7 +134,7 @@
     .search:focus { outline: none; border-color: var(--amber); }
   .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: #ff9a9a; font-size: 12px; white-space: nowrap; }
   /* The combat panel (left, 372px) is open: the catalog starts to its right. */
-  @media (min-width: 601px) { :global(html[data-combat]) .cat { left: calc(388px + var(--sal)); } }
+  @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) .cat { left: calc(var(--combat-right, 388px) + var(--sal)); } }
   @media (max-width: 600px) {
     :global(html[data-combat]) .cat { display: none; }
     .cat { left: 0; right: calc(var(--tools-w, 0px) + 16px + var(--sar)); bottom: 0; border-width: 1px 1px 0 0; padding-bottom: var(--sab); }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isPinned, writeWindow } from './floatingWindow';
 import { closeOutside, isOutsideTarget, outsideTap, type ClosablePanel } from './outsideClick';
 
 const panel = (id: string, sticky: boolean, open = true): ClosablePanel & { open: boolean } => {
@@ -24,6 +25,26 @@ describe('closeOutside', () => {
     expect(closeOutside([jobs, stock, combat])).toEqual(['jobs']);
     expect(jobs.open).toBe(false);
     expect(combat.open).toBe(true);
+  });
+});
+
+describe('closeOutside with pinned windows', () => {
+  it('leaves a pinned panel open and closes it once unpinned', () => {
+    let pinned = true;
+    const jobs = { ...panel('jobs', false), pinned: () => pinned };
+    const stock = panel('stock', false);
+    expect(closeOutside([jobs, stock])).toEqual(['stock']);
+    expect(jobs.open).toBe(true);
+    pinned = false;
+    expect(closeOutside([jobs])).toEqual(['jobs']);
+  });
+  it('reads the pin from the window memory', () => {
+    const s = { m: new Map<string, string>(), getItem(k: string) { return this.m.get(k) ?? null; }, setItem(k: string, v: string) { this.m.set(k, v); } };
+    writeWindow('jobs', { rect: null, pinned: true }, () => s);
+    const jobs = { ...panel('jobs', false), pinned: () => isPinned('jobs', () => s) };
+    expect(closeOutside([jobs])).toEqual([]);
+    writeWindow('jobs', { rect: null, pinned: false }, () => s);
+    expect(closeOutside([jobs])).toEqual(['jobs']);
   });
 });
 

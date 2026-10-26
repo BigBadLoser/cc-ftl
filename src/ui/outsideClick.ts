@@ -2,6 +2,8 @@
 export interface ClosablePanel {
   id: string;
   sticky: boolean;
+  /** A pinned floating window stays open: neither the outside click nor Esc closes it. */
+  pinned?(): boolean;
   isOpen(): boolean;
   close(): void;
 }
@@ -24,11 +26,11 @@ export function isOutsideTarget(target: TargetLike | EventTarget | null): boolea
   return el.tagName === 'CANVAS' || el.tagName === 'BODY' || el.tagName === 'HTML';
 }
 
-/** Close every open, non-sticky panel; returns the ids closed. */
+/** Close every open panel that is neither sticky nor pinned; returns the ids closed. */
 export function closeOutside(panels: readonly ClosablePanel[]): string[] {
   const closed: string[] = [];
   for (const p of panels) {
-    if (p.sticky || !p.isOpen()) continue;
+    if (p.sticky || p.pinned?.() || !p.isOpen()) continue;
     p.close();
     closed.push(p.id);
   }
