@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ProductionC, StorageC, homeShip, newGame, placementError, shipGrid, spawnModule, storageAdd, totalStock, type Sim } from '../../sim';
+import { ModuleC, Struct, footprintTiles, ProductionC, StorageC, homeShip, newGame, placementError, shipGrid, spawnModule, storageAdd, totalStock, type Sim } from '../../sim';
 import { content } from '../index';
+
+/** True if the refinery would stand against a door tile (it could seal the room, and its access tile with it). */
+function blocksDoor(sim: Sim, ship: number, x: number, y: number, rot: number): boolean {
+  const g = shipGrid(sim, ship)!;
+  const def = content.modules['module.refinery']!;
+  return footprintTiles(def, x, y, rot).some((t) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => g.inBounds(t.x + dx!, t.y + dy!) && g.get('struct', t.x + dx!, t.y + dy!) === Struct.Door));
+}
 
 /** First spot (scanning from the bottom right) where the refinery fits on the player's ship. */
 function spot(sim: Sim, ship: number): { x: number; y: number; rot: number } {
   const g = shipGrid(sim, ship)!;
-  for (let y = g.y0 + g.height - 1; y >= g.y0; y--) for (let x = g.x0 + g.width - 1; x >= g.x0; x--) for (let rot = 0; rot < 4; rot++) if (!placementError(sim, ship, 'module.refinery', x, y, rot)) return { x, y, rot };
+  for (let y = g.y0 + g.height - 1; y >= g.y0; y--) for (let x = g.x0 + g.width - 1; x >= g.x0; x--) for (let rot = 0; rot < 4; rot++) if (!placementError(sim, ship, 'module.refinery', x, y, rot) && !blocksDoor(sim, ship, x, y, rot)) return { x, y, rot };
   throw new Error('no room for a refinery');
 }
 

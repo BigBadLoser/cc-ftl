@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   Rng, SECURITY_ROLE, STATION_MAX, STATION_SIZES, generateStation, planStation, stationCrew, structureParts,
-  type ItemDef, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize,
+  rotatedSize, type ItemDef, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize,
 } from '../sim';
 import { content } from './index';
 import { stations } from './stations';
@@ -21,6 +21,27 @@ function defence(id: Id, size: StationSize): number {
   const mods = [...plan.weapons, ...plan.shields, ...(plan.core ? [plan.core] : [])].flatMap((r) => r.mods);
   return mods.filter((m) => defs[m]?.weapon || defs[m]?.shieldGen || defs[m]?.pointDefense).length + plan.crew.filter((r) => r === SECURITY_ROLE).length;
 }
+
+describe('mining stations', () => {
+  it('put an ore bin flush against every refinery, stocked with ore', () => {
+    for (const [size, seed] of [['station', 3], ['station', 8], ['hub', 5], ['hub', 7]] as const) {
+      const g = gen('station.mining', size, seed);
+      const mods = g.template.modules ?? [];
+      const box = (m: (typeof mods)[number]): { x0: number; y0: number; x1: number; y1: number } => {
+        const [w, h] = rotatedSize(defs[m.def] as ModuleDef, m.rot ?? 0);
+        return { x0: m.x, y0: m.y, x1: m.x + w, y1: m.y + h };
+      };
+      const flush = (a: ReturnType<typeof box>, b: ReturnType<typeof box>): boolean =>
+        ((a.x1 === b.x0 || b.x1 === a.x0) && Math.min(a.y1, b.y1) > Math.max(a.y0, b.y0))
+        || ((a.y1 === b.y0 || b.y1 === a.y0) && Math.min(a.x1, b.x1) > Math.max(a.x0, b.x0));
+      const bins = mods.filter((m) => m.def.startsWith('module.storage_ore'));
+      const refineries = mods.filter((m) => m.def === 'module.refinery');
+      expect(refineries.length, `${size} ${seed}`).toBeGreaterThan(0);
+      for (const r of refineries) expect(bins.some((b) => flush(box(r), box(b))), `${size} ${seed} refinery ${r.x},${r.y}`).toBe(true);
+      expect(bins.some((b) => (b.stock ?? []).length > 0), `${size} ${seed} stocked`).toBe(true);
+    }
+  }, 60000);
+});
 
 describe('station generator', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {

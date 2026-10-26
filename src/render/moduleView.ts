@@ -1,4 +1,4 @@
-import { makeHalo } from './haloTex';
+import { haloTex, makeHalo } from './haloTex';
 import { Rectangle, Sprite, Texture, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
@@ -53,6 +53,8 @@ interface Part {
   /** Art-px rectangle the sprite covers. */
   rect: { x0: number; y0: number; x1: number; y1: number };
   key: number;
+  /** Index of the layer it was built from (animated layers swap their texture). */
+  li?: number;
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
@@ -155,6 +157,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const out: Part[] = [];
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
+      const from = out.length;
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (layer.at) {
         const k = key(layer.at.x, layer.at.y);
@@ -197,8 +200,29 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const flip = nw !== nh && m.rot % 2 === 1 && s.footprint[0] === nw && s.footprint[1] === nh;
       const k = key(m.x + w - 1, m.y + h - 1);
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
+      for (let j = from; j < out.length; j++) out[j]!.li = i;
     });
     return out;
+  }
+
+  /** Module art ids by asset prefix (the manifest is fixed, so this is read once per def), for "does the art have .unpowered / .active.f1". */
+  const artIds = new Map<string, Set<string>>();
+  const hasArt = (asset: string) => (id: string): boolean => {
+    let ids = artIds.get(asset);
+    if (!ids) artIds.set(asset, (ids = new Set(atlas.ids(asset))));
+    return ids.has(id);
+  };
+
+  /** Show the next frame of an animated layer on its existing parts: swap the textures, build nothing. */
+  function swapFrame(parts: Part[], li: number, s: StaticSprite): void {
+    for (const p of parts) {
+      if (p.li !== li || p.spr.texture === s.tex) continue;
+      p.spr.texture = s.tex;
+      if (p.glow && s.glow) {
+        p.glow.texture = s.glow;
+        if (p.halo) p.halo.texture = haloTex(s.glow);
+      }
+    }
   }
 
   /** True while the module's craft job made progress in the last moment. */
@@ -262,7 +286,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const raw = def.robotBay ? robotBayLayers(world, id, lm, def, now)
           : def.vehicleBay ? vehicleBayLayers(lm, def, bayAnim.stepOf(id, shuttleHome(world, id), now))
           : def.airlock?.layout ? airlockLayers(world, id, lm, def, { level, roofed, collar: collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) })
-          : moduleLayers(world, id, lm, def, active, true, host.livery?.());
+          : moduleLayers(world, id, lm, def, active, true, host.livery?.(), { off: !on && m.hp > 0, now, has: hasArt(def.asset) });
         const wreck = ruinLook(id, m, def, on, now);
         const withRuin = wreck.chain.length ? raw.map((l, i) => (i === 0 ? { ...l, chain: [...wreck.chain, ...l.chain] } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
@@ -287,13 +311,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         });
         if (!layers.length) continue;
         live.add(id);
-        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => l.art.s.tex.uid).join(',')}`;
+        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => (l.layer.anim ? `~${l.layer.anim}` : l.art.s.tex.uid)).join(',')}`;
         let e = mods.get(id);
         if (e && e.sig !== sig) {
           dropEntry(e);
           e = undefined;
         }
         if (!e) mods.set(id, (e = { sig, parts: build(lm, def, layers, roofed) }));
+        layers.forEach((l, i) => { if (l.layer.anim) swapFrame(e.parts, i, l.art.s); });
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let lsum = 0;
         for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
