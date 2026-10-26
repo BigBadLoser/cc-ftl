@@ -7,6 +7,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CrewC, DeadC, DraftedC, PathC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
+import { DRAFT_COLOR } from './draftColor';
 import { Z_PX } from './heights';
 import { ART_SCALE as S, iso } from './iso';
 import { arrowHeadPx, blockPx, dashedPath, ellipsePx, type Px } from './pixelShapes';
@@ -14,7 +15,7 @@ import { arrowHeadPx, blockPx, dashedPath, ellipsePx, type Px } from './pixelSha
 export type OrderKind = 'move' | 'attack' | 'station' | 'board';
 
 /** Marker colours. */
-const COLOR: Record<OrderKind, number> = { move: 0x22d3ee, attack: 0xff4d4d, station: 0xf0c030, board: 0x4cd964 };
+const COLOR: Record<OrderKind, number> = { move: DRAFT_COLOR, attack: 0xff4d4d, station: 0xf0c030, board: 0x4cd964 };
 /** How long a marker lasts (ms of the real clock: it is UI feedback, so it fades while the game is paused too). */
 export const MARKER_MS = 1100;
 
@@ -40,7 +41,6 @@ export function markerAlpha(ageMs: number): number {
   return 1 - k * k;
 }
 
-const CYAN = 0x22d3ee;
 
 /** Pixels of one colour and opacity; the overlay is drawn as a few batches of S x S squares. */
 type Batch = { color: number; alpha: number; pts: Px[] };
@@ -71,8 +71,8 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
     },
     update() {
       g.clear();
-      const path: Batch = { color: CYAN, alpha: 0.9, pts: [] };
-      const ends: Batch = { color: CYAN, alpha: 1, pts: [] };
+      const path: Batch = { color: DRAFT_COLOR, alpha: 0.9, pts: [] };
+      const ends: Batch = { color: DRAFT_COLOR, alpha: 1, pts: [] };
       // Paths: from where the crew member stands, through its remaining steps to the end of the order, as a dashed pixel line.
       for (const id of world.query(CrewC, DraftedC, PositionC, PathC)) {
         const d = world.get(id, DraftedC);
@@ -88,7 +88,7 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
       }
       flush([path, ends]);
       // Selected crew: a pixel ring on the floor and a little arrow over the head.
-      const ring: Batch = { color: CYAN, alpha: 1, pts: [] };
+      const ring: Batch = { color: DRAFT_COLOR, alpha: 1, pts: [] };
       for (const id of selected) {
         const pos = world.get(id, PositionC);
         if (!pos || world.has(id, DeadC)) continue;

@@ -1,3 +1,4 @@
+import { DRAFT_COLOR } from './draftColor';
 import { shipIdAtTile } from './regionRules';
 import { animNow } from './animClock';
 import { Container, Sprite, Texture } from 'pixi.js';
@@ -100,7 +101,7 @@ interface Slot {
 }
 
 const RED = 0xff3b3b;
-const CYAN = 0x22d3ee;
+const SELECTED = DRAFT_COLOR;
 const SMOOTH = 14;
 /** Seconds a crew member keeps the weapon up after the fight leaves them (no target in view). */
 const WEAPON_LINGER = 1.5;
@@ -368,7 +369,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         }
         const drafted = world.has(id, DraftedC) || crew.activity === 'drafted';
         s.ring.visible = drafted || selected.has(id);
-        s.ring.tint = selected.has(id) ? CYAN : RED;
+        s.ring.tint = selected.has(id) ? SELECTED : RED;
       }
     for (const [id, s] of slots) {
       if (seen.has(id)) continue;

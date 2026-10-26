@@ -16,6 +16,7 @@ import type { OrderId } from './app/orders';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
+import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
@@ -23,6 +24,10 @@ import { BodyC, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
+
+// The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
+document.documentElement.style.setProperty('--draft', DRAFT_CSS);
+document.documentElement.style.setProperty('--draft-fill', DRAFT_CSS_FILL);
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');

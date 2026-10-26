@@ -12,5 +12,5 @@
 {/if}
 
 <style>
-  .box { position: fixed; z-index: 5; pointer-events: none; box-sizing: border-box; border: 1px solid var(--cyan, #22d3ee); background: rgba(34, 211, 238, 0.12); }
+  .box { position: fixed; z-index: 5; pointer-events: none; box-sizing: border-box; border: 1px solid var(--draft); background: var(--draft-fill); }
 </style>
