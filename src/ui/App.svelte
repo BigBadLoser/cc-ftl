@@ -23,12 +23,14 @@
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
+  import JobsTracker from './JobsTracker.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
+  import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
 
   let { api }: { api: UiApi } = $props();
@@ -130,6 +132,23 @@
     return () => unsubs.forEach((u) => u());
   });
 
+  /**
+   * Panels the outside click knows about. A click on the world (or a modal's backdrop) closes every open one that is not `sticky`:
+   * combat and the build catalog (while in build mode) stay, as do the goals card, alerts, top bars and toolbar (never listed).
+   * The selection inspector is not here: the world tap itself selects or deselects, in the same click.
+   */
+  const panels: ClosablePanel[] = [
+    { id: 'overview', sticky: false, isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
+    { id: 'jobs', sticky: false, isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
+    { id: 'stock', sticky: false, isOpen: () => stockOpen, close: () => (stockOpen = false) },
+    { id: 'priorities', sticky: false, isOpen: () => priorities, close: () => (priorities = false) },
+    { id: 'station', sticky: false, isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
+    { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
+    { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
+    { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
+  ];
+  const outside = outsideTap(() => closeOutside(panels));
+
   function onKey(e: KeyboardEvent) {
     if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     if (e.key === ' ') {
@@ -172,7 +191,7 @@
   </span>
 {/snippet}
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas}></canvas>
 
@@ -236,13 +255,14 @@
 <ErrorOverlay {api} />
 <GameSession {api} />
 
-<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, then alerts, stack below as separate cards. -->
+<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, the accepted-jobs tracker, then alerts, stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>
   <div class="frame">
     <EventLog {api} />
     {#if !narrow}{@render time()}{/if}
   </div>
   <GoalsCard {api} />
+  <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
   <StrandedBanner {api} />
   <AlertList {api} />
 </div>
@@ -254,6 +274,14 @@
     display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px;
     /* The right padding keeps the header's content clear of the fixed top-right column (.rcol, 260px wide), so nothing slides under the clock. */
     padding: calc(8px + var(--sat)) calc(16px + var(--sar) + min(260px, 100vw - 110px)) 0 calc(8px + var(--sal));
+  }
+  /* Desktop: a third column, as wide as the top-right column, balances the nav strip so the crew bar sits centred on the screen
+     when it fits. Where it does not, the side columns keep their minimum and it centres in the free space between them. */
+  @media (min-width: 601px) {
+    header { grid-template-columns: minmax(auto, 1fr) minmax(0, auto) minmax(auto, 1fr); padding-right: calc(8px + var(--sar)); }
+    header::after { content: ''; grid-column: 3; grid-row: 1; width: calc(16px + var(--sar) + min(260px, 100vw - 110px)); justify-self: end; }
+    header > :global(.strip) { grid-row: 1; }
+    header > .mid { grid-row: 1; justify-self: center; }
   }
   header > :global(*) { pointer-events: auto; }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); pointer-events: none; z-index: 9; }
