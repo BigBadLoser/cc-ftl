@@ -12,6 +12,7 @@ import { dormancySystem } from './systems/dormancy';
 import { stationAlarmSystem } from './systems/stationAlarm';
 import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
+import { researchJobsSystem } from './systems/researchJobs';
 import { decideSystem } from './systems/decide';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
@@ -117,6 +118,8 @@ export const pipeline: readonly System[] = [
   // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
   haulCleanupSystem,
   craftJobsSystem,
+  // Research jobs next to the craft jobs: the active project is paid from stock, which must happen before supply claims it for builds.
+  researchJobsSystem,
   supplyJobsSystem,
   // Shuttle cargo hauls before the floor planner, so salvage on a prize goes to the shuttle, not nowhere.
   cargoJobsSystem,

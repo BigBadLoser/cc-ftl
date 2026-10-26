@@ -14,12 +14,20 @@ import type { Layers } from './layers';
 import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
 import { mulColor } from './lightTint';
+import { DAMAGED_BELOW } from './moduleArt';
 
 export { ROOF_H };
 const FIRE_TINT = 0xff9a60;
 
 /** Roof part ids with a stand-in for their `.active` variant (the others fall back to the plain id). */
 const FALLBACK_ACTIVE = new Set(['roof.ai_core']);
+
+/** Roof damage suffixes to try first for a part (`destroyed` at 0 hp; `damaged` / `damaged.flicker` once deployed under half hp). */
+export function roofWear(hp: number, maxHp: number, out: boolean, on: boolean): string[] {
+  if (hp <= 0) return ['destroyed'];
+  if (out && hp < maxHp * DAMAGED_BELOW) return on ? ['damaged'] : ['damaged.flicker', 'damaged'];
+  return [];
+}
 
 export interface RoofView {
   update(): void;
@@ -82,7 +90,10 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       const out = stage >= DEPLOY_FRAMES;
       // A non-square part has its own art for odd rotations (`<id>.r1.*`, anchored like the rotated module).
       const bases = def.footprint[0] !== def.footprint[1] && m.rot % 2 === 1 ? [`${def.roofAsset}.r1`, def.roofAsset] : [def.roofAsset];
-      const chain = bases.flatMap((b) => (!out ? [deployId(b, stage)] : on ? [`${b}.active`, b] : [b]));
+      // A wreck (0 hp) shows its jammed `.destroyed` roof at any stage; a deployed part under half hp its `.damaged` fault
+      // (dark `.damaged.flicker` while unpowered, like the body). Each only if the art has it: the chain falls through.
+      const wear = roofWear(m.hp, def.maxHp, out, on);
+      const chain = bases.flatMap((b) => [...wear.map((w) => `${b}.${w}`), ...(!out ? [deployId(b, stage)] : on ? [`${b}.active`, b] : [b])]);
       const key = !out ? deployId(def.roofAsset, stage) : on && FALLBACK_ACTIVE.has(def.roofAsset) ? `${def.roofAsset}.active` : def.roofAsset;
       const art = resolveArt(atlas, chain, key);
       if (!art) continue;
@@ -166,7 +177,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       let pk = '';
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
-        if (m && grid.inBounds(m.x, m.y) && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)};`;
+        if (m && grid.inBounds(m.x, m.y) && defs[m.def]?.roofAsset) pk += `${id}:${m.x},${m.y},${m.rot}:${m.powered && m.enabled && m.hp > 0 ? 1 : 0}:${defs[m.def]?.deploySec === undefined ? '' : deployStage(world, id)}:${roofWear(m.hp, defs[m.def]!.maxHp, true, true).join('+')};`;
       }
       if (pk !== partKey) {
         partKey = pk;

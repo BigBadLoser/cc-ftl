@@ -232,9 +232,10 @@ describe('emergency arming: unarmed crew fetch weapons from storage when boarder
 
   it('puts the weapon in a reachable locker when the nearest one is cut off', { timeout: 60000 }, () => {
     const { sim, volunteers, storages } = almostStandDown();
-    const v = volunteers[0] as number;
-    const at = sim.world.get(v, PositionC)!;
-    const dist = (s: number): number => { const m = sim.world.get(s, ModuleC)!; return Math.max(Math.abs(m.x - at.x), Math.abs(m.y - at.y)); };
+    // The volunteer farthest from any locker: the jam around the nearest one must not land on the volunteer's own tile.
+    const gap = (c: number, s: number): number => { const a = sim.world.get(c, PositionC)!, m = sim.world.get(s, ModuleC)!; return Math.max(Math.abs(m.x - a.x), Math.abs(m.y - a.y)); };
+    const v = [...volunteers].sort((a, b) => Math.min(...storages.map((s) => gap(b, s))) - Math.min(...storages.map((s) => gap(a, s))) || a - b)[0] as number;
+    const dist = (s: number): number => gap(v, s);
     const nearest = [...storages].sort((a, b) => dist(a) - dist(b) || a - b)[0] as number;
     walledOff(sim, nearest);
     const targets = new Set<number>();

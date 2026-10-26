@@ -9,7 +9,7 @@
   import ShuttlePanel from './ShuttlePanel.svelte';
   import TileInspector from './TileInspector.svelte';
 
-  let { api, onPriorities, onTrade, onStation }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void } = $props();
+  let { api, onPriorities, onTrade, onStation, onResearch }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void; onResearch: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
@@ -63,7 +63,7 @@
   {:else if mod && bays.some((b) => b.id === mod.id)}
     <ShuttlePanel {api} onBack={back} />
   {:else if mod}
-    <ModuleInspector {api} onBack={back} />
+    <ModuleInspector {api} onBack={back} {onResearch} />
   {:else if tile}
     <TileInspector {api} onBack={back} />
   {/if}

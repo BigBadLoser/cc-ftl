@@ -12,5 +12,5 @@ export const RECRUIT_LOG_MAX = 60;
 /** Roles for hire and what each is worth (about the sum of its skill levels; a medic counts as 3). */
 export const RECRUIT_ROLES: readonly { role: string; worth: number }[] = [
   { role: 'role.engineer', worth: 5 }, { role: 'role.gunner', worth: 3 }, { role: 'role.medic', worth: 3 },
-  { role: 'role.security', worth: 4 }, { role: 'role.pilot', worth: 3 },
+  { role: 'role.security', worth: 4 }, { role: 'role.pilot', worth: 3 }, { role: 'role.scientist', worth: 3 },
 ];
