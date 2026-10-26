@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiAlert, UiApi } from './api';
   import Icon, { type IconName } from './Icon.svelte';
+  import { splitAlerts } from './phoneHud';
 
   let { api }: { api: UiApi } = $props();
   let list = $state<UiAlert[]>([]);
@@ -17,7 +18,8 @@
     return () => { un(); mq.removeEventListener('change', onMq); };
   });
   $effect(() => { if (list.length < 2) open = false; });
-  const extra = $derived(list.length - 1);
+  const split = $derived(splitAlerts(list));
+  const extra = $derived(split.extra);
 
   const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost', 'creatures.aboard', 'ship.provoked', 'galaxy.encounter', 'galaxy.incomingHostile']);
   const good = new Set(['production.done', 'crew.rescued', 'ship.destroyed', 'trade']);
@@ -52,7 +54,7 @@
     </div>
     {#if open}
       <div class="drop" data-testid="alerts-list">
-        {#each list.slice(1) as a (a.id)}{@render row(a)}{/each}
+        {#each split.rest as a (a.id)}{@render row(a)}{/each}
       </div>
     {/if}
   </div>

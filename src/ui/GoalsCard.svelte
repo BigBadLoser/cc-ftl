@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiGoals } from './api';
   import Icon from './Icon.svelte';
+  import { readGoalsOpen, writeGoalsOpen } from './phoneHud';
 
   /**
    * The tutorial goal chain under the time controls: the act being played, its goals with a tick when met, and what the act
@@ -16,16 +17,8 @@
   let skipped = false;
   const KEY = 'cc.goalsCollapsed';
   /** Phone: the card is a one-line chip, collapsed by default; its state lasts for the session (sessionStorage). */
-  const PKEY = 'cc.goalsOpenPhone';
   let narrow = $state(false);
-  let openPhone = $state(readPhone());
-  function readPhone(): boolean {
-    try {
-      return sessionStorage.getItem(PKEY) === '1';
-    } catch {
-      return false;
-    }
-  }
+  let openPhone = $state(readGoalsOpen());
   let collapsedDesk = $state(read());
   const collapsed = $derived(narrow ? !openPhone : collapsedDesk);
 
@@ -39,11 +32,7 @@
   function toggle() {
     if (narrow) {
       openPhone = !openPhone;
-      try {
-        sessionStorage.setItem(PKEY, openPhone ? '1' : '0');
-      } catch {
-        /* not remembered */
-      }
+      writeGoalsOpen(openPhone);
       return;
     }
     collapsedDesk = !collapsedDesk;
