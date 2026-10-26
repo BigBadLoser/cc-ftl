@@ -1,4 +1,5 @@
 import { autoDetectRenderer, Container } from 'pixi.js';
+import { animNow } from './animClock';
 import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -165,7 +166,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let selShip = 0;
   let selectedCrew: number | null = null;
   let siteMarks: { blocked: ReadonlySet<number>; selected: number | null } = { blocked: new Set(), selected: null };
-  let lastFrame = performance.now();
+  let lastFrame = animNow();
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
   const W = createWorldStack();
@@ -338,7 +339,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       if (atlas.restoring) return;
       sync();
       art.update();
-      const now = performance.now();
+      const now = animNow();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
       W.setScale(cam.scale);
