@@ -73,6 +73,29 @@
     // A deal that just started clears the draft.
     if (deal) reset();
   });
+  // Refuel: one click buys fuel up to REFUEL_TARGET units aboard (or what the shelf holds) through the normal offer, and accepts it when it appears.
+  const REFUEL_TARGET = 24;
+  const FUEL = 'item.fuel';
+  const fuelLine = $derived(p?.station && p.info?.services.includes('Fuel') ? lineOf(FUEL) : undefined);
+  const refuel = $derived.by(() => {
+    if (!fuelLine || fuelLine.theirs <= 0) return null;
+    const n = Math.min(fuelLine.theirs, Math.max(0, REFUEL_TARGET - fuelLine.mine));
+    return { n, cost: n * fuelLine.sell };
+  });
+  let refuelling = $state(false);
+  function doRefuel() {
+    if (!refuel || refuel.n <= 0) return;
+    refuelling = true;
+    api.dispatch({ type: 'trade.offer', ship: id, give: [], get: [{ item: FUEL, count: refuel.n }], barter: false });
+  }
+  $effect(() => {
+    // The refuel offer has appeared: accept it. Anything else on the table is left alone.
+    const o = p?.offer;
+    if (refuelling && o) {
+      refuelling = false;
+      if (o.get.length === 1 && o.get[0]?.item === FUEL && o.give.length === 0) api.dispatch({ type: 'trade.accept', offer: o.id });
+    }
+  });
   const bal = (b: number, bt: boolean) => (bt || b === 0 ? 'Even trade, no credits' : b > 0 ? `You pay ${b} credits` : `They pay you ${-b} credits`);
 </script>
 
@@ -87,6 +110,15 @@
   <button data-testid="trade-rehail" onclick={() => api.dispatch({ type: 'trade.hail', ship: id })}>Hail again</button>
 {:else}
   <p class="greet" data-testid="trade-answered">"{p.name} here, go ahead." <small>Their purse: ₵ {p.wallet}{p.rep ? ` · standing ${p.rep > 0 ? '+' : ''}${p.rep}` : ''}</small></p>
+  {#if refuel}
+    <div class="refuel" data-testid="refuel">
+      <button class="go" data-testid="refuel-go" disabled={refuel.n <= 0 || refuel.cost > trade.credits || !!deal || !!p.offer || !!p.in.error}
+        title={refuel.n <= 0 ? 'Tanks are full enough' : refuel.cost > trade.credits ? 'Not enough credits' : p.in.error ? (REASONS[p.in.error] ?? p.in.error) : ''} onclick={doRefuel}>
+        {refuel.n > 0 ? `Refuel: ${refuel.n} fuel for ₵${refuel.cost}` : 'Fuel tanks full'}
+      </button>
+      <small>You hold {fuelLine?.mine ?? 0}. The shuttle brings it over.</small>
+    </div>
+  {/if}
   <div class="tabs">
     <button class:on={tab === 'mine'} onclick={() => (tab = 'mine')}>You give ({giveUnits})</button>
     <button class:on={tab === 'theirs'} onclick={() => (tab = 'theirs')}>You get ({getUnits})</button>
@@ -168,6 +200,9 @@
   .greet small { color: var(--dim); font-style: normal; margin-left: 6px; }
   .msg { color: var(--dim); margin: 8px 0; }
   .msg.refused { color: #ff9a9a; }
+  .refuel { display: grid; gap: 2px; margin-bottom: 8px; }
+  .refuel .go { background: #0e4a56; border-color: var(--cyan); min-height: 36px; }
+  .refuel small { color: var(--dim); font-size: 11px; }
   .tabs { display: none; gap: 6px; margin-bottom: 6px; }
   .tabs button { flex: 1; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

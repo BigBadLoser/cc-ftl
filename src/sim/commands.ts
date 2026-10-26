@@ -189,6 +189,8 @@ export type Command =
   | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' }
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
+  /** Stranded with no fuel on sale here: call a tug (galaxy/stranded.ts). It arrives after a few turns with emergency fuel. */
+  | { type: 'galaxy.distress' }
   /** Take a job offered at the player's node (galaxy/jobs.ts), by its offer key; give one up. */
   | { type: 'crew.hire'; key: string }
   | { type: 'jobs.accept'; key: string }

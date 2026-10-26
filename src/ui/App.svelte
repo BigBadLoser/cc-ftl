@@ -15,6 +15,7 @@
   import PriorityGrid from './PriorityGrid.svelte';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
+  import StrandedBanner from './StrandedBanner.svelte';
   import EventLog from './EventLog.svelte';
   import BuildModules from './BuildModules.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
@@ -234,6 +235,7 @@
     {#if !narrow}{@render time()}{/if}
   </div>
   <GoalsCard {api} />
+  <StrandedBanner {api} />
   <AlertList {api} />
 </div>
 

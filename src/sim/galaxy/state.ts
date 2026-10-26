@@ -12,7 +12,7 @@ export const START_NODE = 's.0.0.n0';
 export function newGalaxy(seed: number): GalaxyState {
   return {
     current: START_NODE, chunks: {}, discovered: {}, visited: {}, nodes: {}, rng: (seed ^ 0x6a1a7e5) >>> 0,
-    nextArrival: 0, nextId: 1, jumps: 0, turn: 0, turnClock: 0, fleets: [], encounters: [], event: null, lastResult: null, nextFleet: 1, ports: {}, markets: {}, news: [], nextNews: 1, days: 0, heat: { notoriety: 0, hunted: {} }, jobs: [], jobLog: [], recruitLog: [], nextJob: 1, travel: null, rev: 0,
+    nextArrival: 0, nextId: 1, jumps: 0, turn: 0, turnClock: 0, fleets: [], encounters: [], event: null, lastResult: null, nextFleet: 1, ports: {}, markets: {}, news: [], nextNews: 1, days: 0, heat: { notoriety: 0, hunted: {} }, jobs: [], jobLog: [], recruitLog: [], nextJob: 1, travel: null, distress: null, rev: 0,
   };
 }
 

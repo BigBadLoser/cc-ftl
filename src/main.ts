@@ -211,6 +211,7 @@ const api: UiApi = {
   stats: bridge.stats,
   jobs: bridge.jobs,
   goals: bridge.goals,
+  stranded: bridge.stranded,
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
