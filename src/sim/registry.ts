@@ -73,12 +73,14 @@ export interface ContentRegistry {
   ores?: Record<string, OreDef>;
   /** Research projects (content/research.ts) by id. Absent = nothing to research. */
   research?: Record<string, ResearchDef>;
+  /** The research tree's bands in order (ids are `ResearchDef.category`). */
+  researchBands?: { id: string; name: string }[];
 }
 
 /**
  * A research project (sim/research): crew work it at a research module until `work` is done, which unlocks the blueprints of `unlocks`
  * (module def ids, as buying them at a station does). `cost` is taken from the ship's stock when the project becomes the active one.
- * `requires`: blueprints that must be known before it can be queued (Mk III needs Mk II).
+ * `requires`: module ids that must be known, or unlocked by a project queued ahead of it, before it can be queued (Mk III needs Mk II); it only starts once they are known.
  */
 export interface ResearchDef {
   name: string;
@@ -88,6 +90,16 @@ export interface ResearchDef {
   work: number;
   unlocks: string[];
   requires?: string[];
+  /**
+   * Further prerequisites as OR groups: each inner list is "any one of these modules", and every group must hold. Not read yet; it is
+   * here so the data model has a place for "either of two weapon techs" without a rewrite.
+   */
+  requiresAny?: string[][];
+  /** The research tree band it sits in (content/research.ts researchBands). */
+  category: string;
+  /** Tree placement overrides: column (default: one right of the furthest prerequisite) and row within the band (default: stacked by the tree). */
+  col?: number;
+  row?: number;
 }
 
 /** Derelict creatures (content/creatures.ts). */

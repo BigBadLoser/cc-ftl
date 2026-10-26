@@ -177,20 +177,39 @@ export interface UiModule {
   suits: { stowed: number; max: number } | null;
 }
 
-/** One research project against the home ship's stock and queue. `pos`: its place in the queue (0 = first), else null. */
-export interface UiResearchProject {
+/** A stat line of a module in the research panel; `delta` is against the tier below ("+2", "-2 s"), `good` when that is an improvement. */
+export interface UiResearchStat {
+  label: string;
+  value: string;
+  delta: string | null;
+  good: boolean;
+}
+
+/**
+ * One node of the research tree: a module the ship starts with (a root, `project` false) or a project unlocking one. `parents` are node ids
+ * (prerequisites, drawn to its left). Status: known; open (every prerequisite known or queued: the only nodes that can be picked);
+ * queued / active (`pos` is its place in the queue); locked.
+ */
+export interface UiResearchNode {
   id: string;
   name: string;
-  /** active: paid and being worked; queued: waiting (the first in line waits for its materials); locked: a blueprint it needs is unknown; known: done. */
-  status: 'active' | 'queued' | 'open' | 'locked' | 'known';
+  band: string;
+  parents: string[];
+  project: boolean;
+  status: 'known' | 'open' | 'queued' | 'active' | 'locked';
   pos: number | null;
+  /** The module def the node is about (its art, footprint, stats). */
+  module: string;
+  /** "Power · 2x3". */
+  sub: string;
+  stats: UiResearchStat[];
   cost: (UiCost & { have: number })[];
   /** Work time at one worker with no science. */
   seconds: number;
   progress: number;
-  unlocks: string[];
-  /** Names of the blueprints still missing before it can be queued. */
-  needs: string[];
+  /** Placement overrides from the project (see `ResearchDef.col`). */
+  col?: number;
+  row?: number;
 }
 
 export interface UiResearch {
@@ -199,7 +218,8 @@ export interface UiResearch {
   /** Research modules that can work, and crew standing at them now. */
   labs: number;
   workers: number;
-  projects: UiResearchProject[];
+  bands: { id: string; name: string }[];
+  nodes: UiResearchNode[];
   /** Project ids in queue order (the first is the active one once paid). */
   queue: string[];
 }

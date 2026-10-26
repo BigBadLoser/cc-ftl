@@ -12,11 +12,11 @@ import type { ResearchDef } from '../sim';
 const DATA_CORE = 'item.parts';
 const RARE = 'item.rare_ore';
 
-interface Family { base: string; name: string; mk2: number; mk3: number }
+interface Family { base: string; name: string; band: string; mk2: number; mk3: number }
 const FAMILIES: Family[] = [
-  { base: 'module.reactor', name: 'Reactor', mk2: 2400, mk3: 4800 },
-  { base: 'module.shieldGen', name: 'Shield generator', mk2: 2400, mk3: 4800 },
-  { base: 'module.engine', name: 'Engine', mk2: 2400, mk3: 4800 },
+  { base: 'module.reactor', name: 'Reactor', band: 'power', mk2: 2400, mk3: 4800 },
+  { base: 'module.shieldGen', name: 'Shield gen', band: 'defence', mk2: 2400, mk3: 4800 },
+  { base: 'module.engine', name: 'Engine', band: 'propulsion', mk2: 2400, mk3: 4800 },
 ];
 
 function project(f: Family, n: 2 | 3): [string, ResearchDef] {
@@ -28,9 +28,17 @@ function project(f: Family, n: 2 | 3): [string, ResearchDef] {
     name: `${f.name} Mk ${n === 2 ? 'II' : 'III'}`,
     cost,
     work: n === 2 ? f.mk2 : f.mk3,
+    category: f.band,
     unlocks: [`${f.base}.mk${n}`],
-    ...(n === 3 ? { requires: [`${f.base}.mk2`] } : {}),
+    requires: [n === 2 ? f.base : `${f.base}.mk2`],
   }];
 }
+
+/** The tree's bands, top to bottom (ids are `ResearchDef.category`). */
+export const researchBands = [
+  { id: 'power', name: 'Power' },
+  { id: 'defence', name: 'Defence' },
+  { id: 'propulsion', name: 'Propulsion' },
+] as const;
 
 export const research: Record<string, ResearchDef> = Object.fromEntries(FAMILIES.flatMap((f) => [project(f, 2), project(f, 3)]));

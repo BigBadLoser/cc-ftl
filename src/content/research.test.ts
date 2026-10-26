@@ -19,7 +19,7 @@ describe('research content', () => {
     for (const fam of ['reactor', 'shieldGen', 'engine']) {
       const mk2 = content.research[`research.${fam}.mk2`];
       const mk3 = content.research[`research.${fam}.mk3`];
-      expect(mk2?.requires).toBeUndefined();
+      expect(mk2?.requires).toEqual([`module.${fam}`]);
       expect(mk3?.requires).toEqual([`module.${fam}.mk2`]);
       expect(mk3?.cost.length).toBeGreaterThan(mk2?.cost.length ?? 99);
     }

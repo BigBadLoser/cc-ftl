@@ -23,7 +23,7 @@
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
-  import ResearchPanel from './ResearchPanel.svelte';
+  import ResearchOverlay from './ResearchOverlay.svelte';
   import JobsTracker from './JobsTracker.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
@@ -144,7 +144,6 @@
    */
   const panels: ClosablePanel[] = [
     { id: 'overview', sticky: false, isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
-    { id: 'research', sticky: false, isOpen: () => researchOpen, close: () => (researchOpen = false) },
     { id: 'jobs', sticky: false, isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
     { id: 'stock', sticky: false, isOpen: () => stockOpen, close: () => (stockOpen = false) },
     { id: 'priorities', sticky: false, isOpen: () => priorities, close: () => (priorities = false) },
@@ -225,7 +224,7 @@
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
 {/if}
 {#if researchOpen}
-  <ResearchPanel {api} onClose={() => (researchOpen = false)} />
+  <ResearchOverlay {api} onClose={() => (researchOpen = false)} />
 {/if}
 {#if jobsOpen}
   <JobsPanel {api} onClose={() => (jobsOpen = false)} />

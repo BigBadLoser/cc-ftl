@@ -29,6 +29,16 @@ export function labsOf(sim: Sim, ship: number): number[] {
 /** A project is finished (nothing left to learn) once every blueprint it unlocks is known. */
 export const isDone = (sim: Sim, def: ResearchDef): boolean => def.unlocks.every((u) => isKnown(sim, u));
 
+/** Every module a project requires is known, or unlocked by one of the `ahead` projects (those queued before it). */
+export function requiresMet(sim: Sim, def: ResearchDef, ahead: readonly string[]): boolean {
+  return (def.requires ?? []).every((r) => isKnown(sim, r) || ahead.some((p) => projectOf(sim, p)?.unlocks.includes(r)));
+}
+
+/** The queue is valid when every project's requirements are known or unlocked by a project before it. */
+export function queueValid(sim: Sim, queue: readonly string[]): boolean {
+  return queue.every((id, i) => { const d = projectOf(sim, id); return !!d && requiresMet(sim, d, queue.slice(0, i)); });
+}
+
 /** Why a project cannot be queued on a ship right now, or null. */
 export function queueBlocker(sim: Sim, ship: number, project: string): string | null {
   const def = projectOf(sim, project);
@@ -36,7 +46,7 @@ export function queueBlocker(sim: Sim, ship: number, project: string): string | 
   if (sim.world.get(ship, ShipC)?.faction !== 'player') return 'badShip';
   if (sim.world.get(ship, ResearchC)?.queue.includes(project)) return 'queued';
   if (isDone(sim, def)) return 'alreadyKnown';
-  if (def.requires?.some((r) => !isKnown(sim, r))) return 'locked';
+  if (!requiresMet(sim, def, sim.world.get(ship, ResearchC)?.queue ?? [])) return 'locked';
   if (labsOf(sim, ship).length === 0) return 'noLab';
   return null;
 }
@@ -78,7 +88,7 @@ export function startHead(sim: Sim, ship: number, r: Research): boolean {
   if (r.paid) return true;
   const lab = labsOf(sim, ship)[0];
   const m = lab ? sim.world.get(lab, ModuleC) : undefined;
-  if (!m || !canPay(sim, ship, def)) return false;
+  if (!m || !requiresMet(sim, def, []) || !canPay(sim, ship, def)) return false;
   pay(sim, ship, def, m);
   r.paid = true;
   r.progress = 0;

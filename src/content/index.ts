@@ -4,7 +4,7 @@ import { items } from './items';
 import { crewNames } from './names';
 import { modules as baseModules } from './modules';
 import { tierModules } from './tiers';
-import { research } from './research';
+import { research, researchBands } from './research';
 import { recipes } from './recipes';
 import { roles } from './roles';
 import { weapons } from './weapons';
@@ -46,4 +46,5 @@ export const content = {
   creatures,
   ores,
   research,
+  researchBands: [...researchBands],
 } satisfies ContentRegistry;

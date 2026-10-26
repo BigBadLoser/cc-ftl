@@ -19,7 +19,7 @@ const tier = { tier: 2, minDanger: 3, price: 100 };
 const prio = (v: number): Priorities => ({
   firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
 });
-const project = (o: Partial<ResearchDef> = {}): ResearchDef => ({ name: 'P', cost: [{ item: 'chip', count: 4 }], work: 200, unlocks: ['a.mk2'], ...o });
+const project = (o: Partial<ResearchDef> = {}): ResearchDef => ({ name: 'P', category: 'x', cost: [{ item: 'chip', count: 4 }], work: 200, unlocks: ['a.mk2'], ...o });
 const content: ContentRegistry = {
   ships: {},
   roles: {
@@ -103,6 +103,39 @@ describe('research gating', () => {
     sim.enqueue({ type: 'research.queue', ship, project: 'r.a3' });
     expect(rejects(run(sim, 1))).toEqual([]);
     expect(queue(sim, ship)).toEqual(['r.a3']);
+  });
+});
+
+describe('chained research', () => {
+  it('queues Mk III straight behind a queued Mk II, but never starts it before Mk II is known', () => {
+    const { sim, ship } = setup({ work: 100, gems: 2, chips: 12 });
+    sim.enqueue({ type: 'research.queue', ship, project: 'r.a3' });
+    sim.enqueue({ type: 'research.queue', ship, project: 'r.a2' });
+    sim.enqueue({ type: 'research.queue', ship, project: 'r.a3' });
+    expect(rejects(run(sim, 1))).toEqual(['locked']);
+    expect(queue(sim, ship)).toEqual(['r.a2', 'r.a3']);
+    let startedEarly = false;
+    for (let i = 0; i < 700 && !isKnown(sim, 'a.mk3'); i++) {
+      run(sim, 1);
+      if (sim.world.get(ship, ResearchC)?.paid && queue(sim, ship)[0] === 'r.a3' && !isKnown(sim, 'a.mk2')) startedEarly = true;
+    }
+    expect(startedEarly).toBe(false);
+    expect(isKnown(sim, 'a.mk2')).toBe(true);
+    expect(isKnown(sim, 'a.mk3')).toBe(true);
+  });
+
+  it('refuses to move a project ahead of its prerequisite, and cancelling Mk II drops Mk III', () => {
+    const { sim, ship } = setup({ crew: [], chips: 0 });
+    for (const project of ['r.a2', 'r.a3', 'r.b2']) sim.enqueue({ type: 'research.queue', ship, project });
+    sim.enqueue({ type: 'research.move', ship, project: 'r.a3', to: 0 });
+    sim.enqueue({ type: 'research.move', ship, project: 'r.a2', to: 2 });
+    expect(rejects(run(sim, 1))).toEqual(['order', 'order']);
+    sim.enqueue({ type: 'research.move', ship, project: 'r.b2', to: 0 });
+    run(sim, 1);
+    expect(queue(sim, ship)).toEqual(['r.b2', 'r.a2', 'r.a3']);
+    sim.enqueue({ type: 'research.cancel', ship, project: 'r.a2' });
+    run(sim, 1);
+    expect(queue(sim, ship)).toEqual(['r.b2']);
   });
 });
 
