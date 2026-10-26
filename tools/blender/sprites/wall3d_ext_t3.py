@@ -33,6 +33,9 @@ SIDE_SEAM = 5                       # the corner tile's side faces: a seam down 
 SIDE_GAP = 5                        # (its top this many px under the lean's seam)
 SIDE_BRACKET = ((8, 18), (9, 14, (8, 14)))     # edge; a bracket: px over the bend (bottom, top); its stem, top
                                                 # bar's end, bottom bar (px from the tile's edge)
+SIDE_CLAMP = (4, 9, 4)              # the corner tile's side faces: a clamp over the upright seam, from / to this many
+                                    # px from the tile's edge, this many px up and down from the seam; a plate on up
+SIDE_PLATE = (2, 3)                 # from it to this many px from the face's chamfer edge, this many px under the bend
 CORNER_BLOCK = (5, 6, 2)            # a block over each seam down the front: px wide, px under the bend, px on over it
 
 
@@ -149,7 +152,7 @@ def _strip_plates(f, L, u0, left):
 def _corner_side(f, L, s0, s1):
     """The corner tile's side of the corner: the run's top panel, open to the chamfer, its side down to the lean's
     seam; a seam along the chamfer's edge from the floor up to the lean's seam (short of the chamfer's tip, as hull
-    46's)."""
+    46's); a clamp over the upright seam, a plate on up from it."""
     R, ln = PANEL_IN, LINE
     zt = L.px(L.zr, -2)
     f.line(s0, s0 + R, zt, L.px(zt, -1), YS[4], bevel=False)
@@ -167,23 +170,37 @@ def _corner_side(f, L, s0, s1):
     f.top_line(s0 + R, s1, 0.0, 0.75 * TOP_PX, YS[2])
     f.edge_line(0.0, L.zb, YS[1])
     f.edge_line(L.zb, L.l1, YS[3])
+    a, b, h = SIDE_CLAMP
+    gz = UPRIGHT_SEAM
+    e, top = SIDE_PLATE
+    for u0, u1, z0, z1 in ((s0 + px(a), s0 + px(b), L.px(gz, h), L.px(gz, -h)),
+                           (s0 + px(a), f.edge_u(0.0) - px(e), L.px(gz, -h - 1), L.px(L.zb, top))):
+        f.shade(u0, u1, z0, z1)
+        f.raised(u0, u1, z0, z1, -0.01, LINE, "face", cap=YS[1])     # (lit along its top)
 
 
 def _corner(f, L):
-    """The outer corner's front (its chamfer), on its upright part as hull 46's: a seam down it CORNER_SEAM px in
-    from each edge, a block under the bend over each, two clamps over the seam across it."""
+    """The outer corner's front (its chamfer), on its upright part as hull 46's: lit along each edge (beside the
+    faces' seams there), a seam down it CORNER_SEAM px in from each, a block under the bend over each, two clamps over
+    the seam across it (all shaded round their unseen faces)."""
     t = f.chamfer_t
     gz = UPRIGHT_SEAM
-    for e in (CORNER_SEAM, f.c * core.TILE_W - CORNER_SEAM - 1):
-        pf = f.on(0.0, L.zb, -0.01, 0.001)
-        f.on_chamfer(t(e), t(e + 1), pf, [YS[1]] * len(pf), YS[1])
-        f.on_chamfer(t(e + 1), t(e + 2), pf, [YS[4]] * len(pf), YS[4])      # (its lit edge)
+    W = f.c * core.TILE_W
+    sf = f.on(0.0, L.zb, -0.01, 0.001)
+    for e in (0, W - 0.5):                              # (half a px: faint)
+        f.on_chamfer(t(e), t(e + 0.5), sf, [YS[3]] * len(sf), YS[3])
+    for e in (CORNER_SEAM, W - CORNER_SEAM - 1):
+        f.on_chamfer(t(e), t(e + 1), sf, [YS[1]] * len(sf), YS[1])
         w, h, over = CORNER_BLOCK
+        t0, t1 = t(e + 0.5 - w / 2), t(e + 0.5 + w / 2)
+        f.shade_chamfer(t0, t1, L.px(L.zb, h), L.px(L.zb, -over))
         for z0, z1 in ((L.px(L.zb, h), L.zb), (L.zb, L.px(L.zb, -over))):     # (on over the bend onto the lean,
             pf = f.on(z0, z1, -0.01, LINE)                                      # in its own tone)
             cols = [YS[3] if c == YS[5] else c for c in f.sec.cols(pf, "plate")]
-            f.on_chamfer(t(e + 0.5 - w / 2), t(e + 0.5 + w / 2), pf, cols)
+            f.on_chamfer(t0, t1, pf, cols)
     a, b, h = CORNER_CLAMP
-    pf = f.on(L.px(gz, h), L.px(gz, -h), -0.01, LINE)
+    z0, z1 = L.px(gz, h), L.px(gz, -h)
+    pf = f.on(z0, z1, -0.01, LINE)
     for u0, u1 in ((0.5 - t(b), 0.5 - t(a)), (0.5 + t(a), 0.5 + t(b))):
+        f.shade_chamfer(u0, u1, z0, z1)
         f.on_chamfer(u0, u1, pf, f.sec.cols(pf, "plate"))

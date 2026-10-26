@@ -25,6 +25,7 @@ DEBUG = set(filter(None, os.environ.get("EXT_DEBUG", "").split(",")))   # detail
 DEBUG_COL = "dbgR"                                                      # DEBUG_COL, to check their shape and size
 LINE_W = 1.3                        # long painted lines' weight, in px (the sprites coverage anti-aliased,
                                     # env_build.AA: a line over a pixel wide keeps its rows joined along an edge)
+SHADE = 0.002                       # painted shade's face out from the front (over the seams' paint, 0.001)
 ROLES = {"face": 0, "plate": 1, "plate2": 2, "floor": -1}   # a part's tone, in steps over its face's; "dark" (a
                                                             # seam's floor, a recess's shadowed edge) three under
 
@@ -191,19 +192,34 @@ class Face:
         """Where the front meets the outer corner's chamfer at height z, along the face."""
         return self.b + self.sec.front(z, z)[0][0] - self.ch(z)
 
-    def edge_line(self, z0, z1, col):
-        """A painted band a px wide along the outer corner's chamfer edge on this face (each face its own)."""
+    def edge_line(self, z0, z1, col, inset=0, w=1.0):
+        """A painted band w px wide along the outer corner's chamfer edge on this face (each face its own), inset px
+        in from it (under a px: coverage anti-aliasing tones it)."""
         from .factions_relief import prism
         if self.ch:
             ch, pf = self.ch, self.on(z0, z1, -0.01, 0.001)
             cols, cap = self._cols([col] * len(pf), col, len(pf))
-            prism(self.k, self.ax, self.plane, self.b - LINE, self.b, pf, F, 3, cols, cap,
+            u1 = self.b - inset * LINE
+            prism(self.k, self.ax, self.plane, u1 - w * LINE, u1, pf, F, 3, cols, cap,
                   mitre=(lambda d, z: ch(z) - d, lambda d, z: d - ch(z)))
 
-    def raised(self, u0, u1, z0, z1, base, out, role="plate", col=None):
-        """A part on the front from `base` out to `out`, toned by role or all col."""
+    def raised(self, u0, u1, z0, z1, base, out, role="plate", col=None, cap=None):
+        """A part on the front from `base` out to `out`, toned by role or all col; its ends cap (by default col, or
+        the shell's tone for their facing: unlike on the two faces)."""
         pf = self.on(z0, z1, base, out)
-        self.part(u0, u1, pf, [col] * len(pf) if col else self.sec.cols(pf, role), col)
+        self.part(u0, u1, pf, [col] * len(pf) if col else self.sec.cols(pf, role), cap or col)
+
+    def shade(self, u0, u1, z0, z1, col=YS[1], under=2):
+        """Painted shade round a part a px proud over [u0, u1] x [z0, z1] on this face: a px beside its far (-u) end
+        and `under` px under it (the part hides half a px of that), where its unseen faces are (painted behind the
+        part, over the seams: it hides the rest)."""
+        pf = self.on(self.sec.z_at(z0, under), z1, -0.01, SHADE)
+        self.part(u0 - LINE, u1, pf, [col] * len(pf), col, end=False)
+
+    def shade_chamfer(self, t0, t1, z0, z1, col=YS[1], under=2):
+        """shade for a part over [t0, t1] of the outer corner's chamfer: a px beside both its ends (each side on)."""
+        pf, p = self.on(self.sec.z_at(z0, under), z1, -0.01, SHADE), self.chamfer_t(1)
+        self.on_chamfer(t0 - p, t1 + p, pf, [col] * len(pf), col)
 
     def chamfer_t(self, n):
         """How far across the outer corner's chamfer (0 the y face's edge, 1 the x face's) n art px are on screen,
