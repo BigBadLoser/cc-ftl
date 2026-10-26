@@ -213,6 +213,6 @@
 {/if}
 
 <style>
-  image, rect { pointer-events: none; }
+  image { pointer-events: none; }
   .neb { mix-blend-mode: screen; image-rendering: pixelated; }
 </style>
