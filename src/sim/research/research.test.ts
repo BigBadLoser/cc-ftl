@@ -162,6 +162,36 @@ describe('research queue', () => {
 });
 
 describe('research materials', () => {
+  it('does not start on materials a pending haul has already claimed', () => {
+    const { sim, ship, store } = setup({ chips: 6, crew: [] });
+    // A haul takes 3 chips from the storage for a build: only 3 are free, the project needs 4.
+    const other = spawnModule(sim, 'storage', 11, 1, 0);
+    const job = sim.world.createEntity();
+    sim.world.add(job, JobC, {
+      category: 'hauling', kind: 'haul', x: 9, y: 1, struct: 0, work: 1, progress: 0, reservedBy: 0,
+      haul: { item: 'chip', count: 3, phase: 'pickup', src: { kind: 'storage', id: store }, dst: { kind: 'storage', id: other } },
+    });
+    sim.enqueue({ type: 'research.queue', ship, project: 'r.a2' });
+    run(sim, 30);
+    expect(sim.world.get(ship, ResearchC)?.paid).toBe(false);
+    expect(storageCount(sim, store, 'chip')).toBe(6);
+    sim.world.destroyEntity(job);
+    run(sim, 11);
+    expect(sim.world.get(ship, ResearchC)?.paid).toBe(true);
+    expect(storageCount(sim, store, 'chip')).toBe(2);
+  });
+
+  it('cancelling a fully paid project refunds exactly what was paid', () => {
+    const { sim, ship, store } = setup({ chips: 4, crew: [] });
+    sim.enqueue({ type: 'research.queue', ship, project: 'r.a2' });
+    run(sim, 11);
+    expect(storageCount(sim, store, 'chip')).toBe(0);
+    sim.enqueue({ type: 'research.cancel', ship, project: 'r.a2' });
+    run(sim, 1);
+    const floor = sim.world.query(ItemStackC).reduce((n, id) => n + (sim.world.get(id, ItemStackC)?.count ?? 0), 0);
+    expect(floor).toBe(4);
+  });
+
   it('waits for the whole cost, then takes it from stock when the project starts', () => {
     const { sim, ship, store } = setup({ chips: 4, gems: 1, crew: [] });
     sim.story.blueprints.push('a.mk2');

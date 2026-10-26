@@ -2,7 +2,7 @@ import { ShipC } from '../combat/components';
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import { isKnown, learn } from '../modules/blueprints';
-import { nearestSource, reservations, sourcesOf } from '../items/stock';
+import { nearestSource, reservations, sourcesOf, type Reservations } from '../items/stock';
 import { spillItems, takeFromStack } from '../items/stacks';
 import { storageTake } from '../items/storage';
 import { shipIdOf } from '../regions';
@@ -51,26 +51,40 @@ export function queueBlocker(sim: Sim, ship: number, project: string): string | 
   return null;
 }
 
-/** Units of an item the ship holds (floor stacks and storage). */
-export function stockOn(sim: Sim, ship: number, item: string): number {
-  return sourcesOf(sim, ship, item, { out: new Map(), incoming: new Map() }).reduce((n, s) => n + s.avail, 0);
+/** Units of an item the ship holds that no pending haul has claimed (floor stacks and storage). */
+export function stockOn(sim: Sim, ship: number, item: string, res: Reservations = reservations(sim)): number {
+  return sourcesOf(sim, ship, item, res).reduce((n, s) => n + s.avail, 0);
 }
 
-export const canPay = (sim: Sim, ship: number, def: ResearchDef): boolean => def.cost.every((c) => stockOn(sim, ship, c.item) >= c.count);
+/** The whole cost is in unreserved stock, judged on one reservation snapshot (the one `pay` then takes from). */
+export function canPay(sim: Sim, ship: number, def: ResearchDef): boolean {
+  const res = reservations(sim);
+  return def.cost.every((c) => stockOn(sim, ship, c.item, res) >= c.count);
+}
 
-/** Take a project's materials from the ship's stock, nearest first. Call only after `canPay`. */
-function pay(sim: Sim, ship: number, def: ResearchDef, from: { x: number; y: number }): void {
-  const none = reservations(sim);
+/**
+ * Take a project's materials from the ship's unreserved stock, nearest first. All or nothing: if anything falls short (it should not after
+ * `canPay`), what was taken is put back and false is returned.
+ */
+function pay(sim: Sim, ship: number, def: ResearchDef, from: { x: number; y: number }): boolean {
+  const res = reservations(sim);
+  const taken: { item: string; count: number }[] = [];
+  let whole = true;
   for (const c of def.cost) {
     let left = c.count;
     while (left > 0) {
-      const src = nearestSource(sim, ship, c.item, from, none);
+      const src = nearestSource(sim, ship, c.item, from, res);
       if (!src) break;
       const n = Math.min(left, src.avail);
-      left -= src.ref.kind === 'floor' ? takeFromStack(sim, src.ref.id, n) : storageTake(sim, src.ref.id, c.item, n);
-      if (n <= 0) break;
+      const got = src.ref.kind === 'floor' ? takeFromStack(sim, src.ref.id, n) : storageTake(sim, src.ref.id, c.item, n);
+      if (got <= 0) break;
+      left -= got;
+      taken.push({ item: c.item, count: got });
     }
+    if (left > 0) whole = false;
   }
+  if (!whole) for (const t of taken) spillItems(sim, ship, from.x, from.y, t.item, t.count);
+  return whole;
 }
 
 /** Put the project's materials back on the floor next to a research module. */
@@ -89,7 +103,7 @@ export function startHead(sim: Sim, ship: number, r: Research): boolean {
   const lab = labsOf(sim, ship)[0];
   const m = lab ? sim.world.get(lab, ModuleC) : undefined;
   if (!m || !requiresMet(sim, def, []) || !canPay(sim, ship, def)) return false;
-  pay(sim, ship, def, m);
+  if (!pay(sim, ship, def, m)) return false;
   r.paid = true;
   r.progress = 0;
   return true;
