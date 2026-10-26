@@ -27,6 +27,7 @@
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
+  storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
   wallprops pieces on a wall run's face: pipes, cable tray, conduit, vents, panels, signs, a terminal (wallprops.py)
   hazards   looping hazards (.f0 .. .f3): sparking cables (wall and floor), a steam leak, an emergency beacon (hazards.py)
@@ -183,6 +184,9 @@ def jobs(name):
         from .items_kit import jobs as item_jobs
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
         return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+    if name == "storage_ore":
+        from . import tip_bin
+        return tip_bin.jobs(), True
     raise KeyError(name)
 
 
@@ -190,5 +194,5 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items", "storage_ore")
 ALL = RENDERED + ("sol", "damage_sol")

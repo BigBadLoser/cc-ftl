@@ -4647,6 +4647,10 @@
    "image": "sprites/portraits.png",
    "glow": "sprites/portraits.glow.png"
   },
+  "refinery": {
+   "image": "sprites/refinery.png",
+   "glow": "sprites/refinery.glow.png"
+  },
   "robot_bay": {
    "image": "sprites/robot_bay.png",
    "glow": "sprites/robot_bay.glow.png"
@@ -4672,6 +4676,10 @@
   "starmap": {
    "image": "sprites/starmap.png",
    "glow": "sprites/starmap.glow.png"
+  },
+  "storage_ore": {
+   "image": "sprites/storage_ore.png",
+   "glow": "sprites/storage_ore.glow.png"
   },
   "storage_set": {
    "image": "sprites/storage_set.png",
@@ -63989,6 +63997,578 @@
     2
    ]
   },
+  "module.refinery": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2017,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.active": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2177,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2017,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0.active": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2177,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0.active.f0": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2177,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0.active.f1": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2337,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0.active.f2": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2497,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0.active.f3": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2657,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ],
+   "glow": true
+  },
+  "module.refinery.r0.unpowered": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2817,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r1": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 961,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ],
+   "glow": true
+  },
+  "module.refinery.r1.active": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1137,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ],
+   "glow": true
+  },
+  "module.refinery.r1.active.f0": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1137,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ],
+   "glow": true
+  },
+  "module.refinery.r1.active.f1": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1313,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ],
+   "glow": true
+  },
+  "module.refinery.r1.active.f2": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1489,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ],
+   "glow": true
+  },
+  "module.refinery.r1.active.f3": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1665,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ],
+   "glow": true
+  },
+  "module.refinery.r1.unpowered": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1841,
+    "y": 1,
+    "w": 175,
+    "h": 123
+   },
+   "anchor": {
+    "x": 106,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r2": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r2.active": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 161,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r2.active.f0": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 161,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r2.active.f1": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 321,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r2.active.f2": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 481,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r2.active.f3": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 641,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r2.unpowered": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 801,
+    "y": 1,
+    "w": 159,
+    "h": 124
+   },
+   "anchor": {
+    "x": 57,
+    "y": 125
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
+  "module.refinery.r3": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2977,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r3.active": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 3153,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r3.active.f0": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 3153,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r3.active.f1": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 3329,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r3.active.f2": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 3505,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r3.active.f3": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 3681,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.r3.unpowered": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 3857,
+    "y": 1,
+    "w": 175,
+    "h": 117
+   },
+   "anchor": {
+    "x": 101,
+    "y": 118
+   },
+   "footprint": [
+    4,
+    3
+   ]
+  },
+  "module.refinery.unpowered": {
+   "kind": "static",
+   "sheet": "refinery",
+   "frame": {
+    "x": 2817,
+    "y": 1,
+    "w": 159,
+    "h": 117
+   },
+   "anchor": {
+    "x": 70,
+    "y": 124
+   },
+   "footprint": [
+    3,
+    4
+   ]
+  },
   "module.robot_bay.r0": {
    "kind": "static",
    "sheet": "robot_bay",
@@ -69931,6 +70511,1526 @@
    "footprint": [
     1,
     1
+   ],
+   "glow": true
+  },
+  "module.storage_ore": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2326,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2449,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2572,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2695,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2818,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2941,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3064,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3187,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r1.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 862,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r1.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 985,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r1.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1108,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r1.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1231,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r1.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1354,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r1.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1477,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r1.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1600,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r1.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1723,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r1.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1846,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r1.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1969,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r2.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2092,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r2.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2215,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r2.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2338,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r2.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2461,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r2.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2584,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r2.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2707,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r2.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2830,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r2.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2953,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r2.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3076,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r2.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3199,
+    "y": 248,
+    "w": 122,
+    "h": 104
+   },
+   "anchor": {
+    "x": 61,
+    "y": 89
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r3.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3310,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r3.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3433,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r3.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3556,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r3.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3679,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r3.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3802,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r3.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3925,
+    "y": 127,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r3.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.storage_ore.r3.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 124,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r3.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 247,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.r3.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 370,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 493,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 616,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 739,
+    "y": 248,
+    "w": 122,
+    "h": 109
+   },
+   "anchor": {
+    "x": 61,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 156,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 311,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 466,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 621,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 776,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 931,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1086,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r1.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3256,
+    "y": 1,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r1.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3411,
+    "y": 1,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r1.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3566,
+    "y": 1,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r1.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3721,
+    "y": 1,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r1.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3876,
+    "y": 1,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r1.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r1.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 156,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r1.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 311,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r1.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 466,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r1.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 621,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 61,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r2.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 776,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r2.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 931,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r2.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1086,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r2.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1241,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r2.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1396,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r2.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1551,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r2.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1706,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r2.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1861,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.storage_ore_large.r2.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2016,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r2.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2171,
+    "y": 127,
+    "w": 154,
+    "h": 120
+   },
+   "anchor": {
+    "x": 93,
+    "y": 105
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r3.empty": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1241,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r3.ice.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1396,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r3.ice.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1551,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r3.ice.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1706,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r3.iron.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 1861,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r3.iron.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2016,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r3.iron.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2171,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.storage_ore_large.r3.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2326,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r3.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2481,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.r3.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2636,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 61,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.rare.fill1": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2791,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.rare.fill2": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 2946,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.storage_ore_large.rare.full": {
+   "kind": "static",
+   "sheet": "storage_ore",
+   "frame": {
+    "x": 3101,
+    "y": 1,
+    "w": 154,
+    "h": 125
+   },
+   "anchor": {
+    "x": 93,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    2
    ],
    "glow": true
   },

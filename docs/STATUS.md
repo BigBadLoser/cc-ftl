@@ -6,6 +6,24 @@ Last updated: 2026-10-22 (asteroids on `asteroids`, merged with stations and gal
 **Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
 map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
 
+**Refinery art (`feat/refinery-art`):** the ore refinery has final Blender art (sheet `refinery`, 4 rotations, idle, `.unpowered`,
+4-frame `.active` loop). `module.refinery.access` is now [3, 3] (the operator tile beside the console). Modules with
+`.unpowered` or `.active.fN` art now show them generically (4 fps, texture swap). The refinery is exported by its own driver, not
+`npm run sprites` (see "Ore refinery" in ARCHITECTURE.md). Nothing old was removed: the manifest had no refinery entries (the
+module used the tinted-crate placeholder in `fallback.ts`, which stays as the fallback). Awaiting visual approval before `main`.
+
+**Ore bins (tip bins, same branch):** the Blender sources of PR #56's hydraulic tip bin (`tip_bin.py`, `tip_bin_wear.py`, shared
+`steelkit.py`, and `ore_cage.py` which the tip bin imports; the scrap cage `scrap.py` and its `storage_scrap` family were left out)
+render at native 1x as family `storage_ore` (`npm run sprites -- public/assets/1x storage_ore`, ~2 min; 82 sprites, sheet
+`storage_ore`). `module.storage_ore` (2x2, 24 slots) and `module.storage_ore_large` (3x2, 40) are
+ordinary storage in `furniture.ts`, buildable like the pallet. The bins take only ores: `ModuleDef.storageAccepts` becomes the storage's existing `filter` at spawn, and every path (hauling planner, stock
+seeding, deliveries, unload) already went through `storageSpace`/`storageAdd`, which honour it. The `ModuleDef.storageArt` map (item to art kind) only picks the sprite: `.empty`, else `.<iron|ice|rare>.<fill1|fill2|full>` by the
+ore filling the most slots and the share of slots in use (`storageState` in `render/moduleArt.ts`; 0.25 and 0.6). Station bins are seeded with one ore each, across all fill levels. Station industry rooms set up to two
+bins (a large one first where it fits, `with.big`) flush against each refinery, away from its access tile (`with` on a `count: 'spec'` step, `flank()` in `rooms/furnish.ts`; it
+runs after all planned modules are in, falls back to taking walkway floor if every tile stays reachable, and reserves each bin's own
+access tile). The scattered `module.storage` crates left the refinery floor; pallets stay. The mining industry room stocks ore.
+Scrap cage: add `scrap.py`, the `storage_scrap` family entry in `families.py` and render it (about 1x work, same pattern).
+
 ## Where things are
 
 **Crew portraits (branch `feat/crew-portraits`, PR open):** the crew bar cards show a face: a front-facing Blender render of the

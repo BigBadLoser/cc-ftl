@@ -34,6 +34,7 @@ export const goals = [
     goals: [
       { id: 'goal.blooded', title: 'Blooded', text: 'Destroy or capture a hostile ship.', check: { kind: 'stat', stat: 'kills' } },
       { id: 'goal.bounty', title: 'Bounty hunter', text: 'Complete a bounty job.', check: { kind: 'stat', stat: 'bountiesDone' } },
+      { id: 'goal.hire', title: 'New blood', text: 'Hire a crew member at a trading hub.', check: { kind: 'stat', stat: 'hired' } },
       { id: 'goal.leave_home', title: 'Out of the cradle', text: 'Reach a cluster beyond the one you started in.', check: { kind: 'otherCluster' } },
     ],
     reward: { credits: 250 },

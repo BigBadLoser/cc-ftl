@@ -65,6 +65,8 @@ export function createAlerts(sim: Sim): Alerts {
     return null;
   };
 
+  /** The recruit of a hiring run (a deal with `crew`), by deal id. */
+  const hireOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.crew?.[0];
   const traderName = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
   const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   /** Hostile ships and their crew raise no alerts of their own (a player crew member going down anywhere does). */
@@ -126,10 +128,17 @@ export function createAlerts(sim: Sim): Alerts {
       }
       case 'trade.hailAnswered': return { kind: 'trade', key: `th${e.ship}`, text: `${e.name} answers your hail`, at: null };
       case 'trade.hailRefused': return { kind: 'trade', key: `th${e.ship}`, text: `${e.name} will not talk to you`, at: null };
-      case 'trade.dealMade': return { kind: 'trade', key: `td${e.deal}`, text: `Deal made with ${traderName(e.ship)}`, at: null };
+      case 'trade.dealMade': {
+        const hire = hireOf(e.deal);
+        return { kind: 'trade', key: `td${e.deal}`, text: hire ? `${crewName(hire)} hired: your shuttle is on its way to pick them up` : `Deal made with ${traderName(e.ship)}`, at: null };
+      }
+      case 'crew.hired': return { kind: 'trade', key: `ch${e.crew}`, text: `${crewName(e.crew)} joins the crew`, at: crewAt(e.crew) };
       case 'trade.delivered': return { kind: 'trade', key: `td${e.deal}`, text: e.to === 'player' ? `Cargo from ${traderName(e.ship)} has arrived` : `Cargo delivered to ${traderName(e.ship)}`, at: null };
       case 'trade.settled': return { kind: 'trade', key: `td${e.deal}`, text: `Deal settled${e.credits ? `: ${e.credits > 0 ? '-' : '+'}${Math.abs(e.credits)} credits` : ''}`, at: null };
-      case 'trade.failed': return { kind: 'trade', key: `td${e.deal}`, text: `Deal with ${traderName(e.ship)} called off`, at: null };
+      case 'trade.failed': {
+        const hire = hireOf(e.deal);
+        return { kind: 'trade', key: `td${e.deal}`, text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${traderName(e.ship)} called off`, at: null };
+      }
       case 'station.alarm': return { kind: e.type, key: `sa${e.ship}`, text: `Alarm on ${shipName(e.ship)?.name ?? 'the station'}: ${e.reason}`, at: null };
       case 'galaxy.encounter': {
         const who = `${sim.content.galaxy?.factions[e.faction]?.name ?? e.faction} ${e.role}`;
