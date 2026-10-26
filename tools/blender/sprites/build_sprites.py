@@ -1,7 +1,7 @@
 """Entry point (npm run sprites):
   blender -b --factory-startup --python tools/blender/sprites/build_sprites.py -- [outdir] [what]
 
-`what` = all (default), crew, robots, or a comma list of families (families.py: env, walls, consoles, weapons, roof, sol).
+`what` = all (default), crew, portraits, robots, or a comma list of families (families.py: env, walls, consoles, weapons, roof, sol).
 `crew` is incremental (crew_build.py: render cache under .cache/sprites/crew); options --item S, --clip C, --force, --plan.
 Every other rendered family is cached too (sprite_cache.py, .cache/sprites/<family>): a job re-renders only when its key changed;
 --force ignores the cache, --plan reports hits and misses and renders nothing, --no-cache bypasses it.
@@ -65,7 +65,7 @@ def main():
         have = json.loads(mpath.read_text()).get("tile", {}).get("w")
         if have not in (None, core.TILE_W):
             sys.exit(f"{mpath} holds {have} px tiles but the pipeline renders {core.TILE_W} px: wrong outdir")
-    names = (["crew", "robots", "aliens"] + list(families.ALL)) if what == "all" else what.split(",")
+    names = (["crew", "robots", "aliens", "portraits"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
         m = pack.load_manifest(mpath, base())
         if name == "crew":
@@ -78,6 +78,11 @@ def main():
             from sprites import alien_render
             sheets, assets = alien_render.build(out)
             pack.merge(m, "aliens", sheets, assets)
+        elif name == "portraits":
+            # front-facing head-and-shoulders renders of every crew layer, human, robot and creature (portrait_render.py)
+            from sprites import portrait_render
+            sheets, assets = portrait_render.build(out)
+            pack.merge(m, "portraits", sheets, assets)
         elif name == "robots":
             # ROBOT_QUICK=1: preview frames only (see robot_render.build); not for commits
             from sprites import robot_render

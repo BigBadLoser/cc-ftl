@@ -32,6 +32,7 @@ import { createSectorFx } from './sectorFx';
 import { createAsteroidView } from './asteroidView';
 import { createMarkers } from './markers';
 import { createPodView } from './podView';
+import { createPortraits } from './portrait';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -73,6 +74,8 @@ export interface Renderer {
   /** Frame the given ships (by grid id) in the view: centered, at the largest zoom that fits them (at least 1). */
   frameShips(gridIds: readonly number[]): void;
   info(): RenderInfo;
+  /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
+  portrait(id: number): string | null;
   /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
   art(): AtlasStats & { rebuilds: number };
   /** Drag the view by a screen-space delta in CSS px. */
@@ -140,6 +143,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   canvas.addEventListener('webglcontextlost', () => atlas.contextLost());
   canvas.addEventListener('webglcontextrestored', () => void atlas.contextRestored());
   if (high) initHalos(gl);
+  const portraits = createPortraits(gl.extract, atlas, world, content.items);
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();
@@ -424,6 +428,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       for (const sc of scenes.values()) sprites += sc.sprites();
       return { sprites, zoom: cam.zoom };
     },
+    portrait: (id) => portraits.url(id),
     art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),
     zoomAt: (f, x, y) => cam.zoomAt(f, x, y),
