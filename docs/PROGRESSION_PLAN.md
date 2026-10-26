@@ -56,7 +56,8 @@ its blueprint is known.
    - Self-contained arcs on the existing event and story system. The first start after `goals.done`.
    - Arcs can share factions, characters and places.
 
-Later, not scheduled: building your own research station, full weapon tiers, and recoverable failure.
+Later, not scheduled: building your own research station, full weapon tiers, recoverable failure, and tier scaling in
+shipgen (generated ships fit Mk II and Mk III cores by depth and faction; see `docs/SHIPGEN.md`).
 
 ## Open questions, to settle at each phase
 

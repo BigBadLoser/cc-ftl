@@ -37,22 +37,53 @@ export function modulesOnGrid(sim: Sim, shipId: number): number[] {
   return sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipId) as number[];
 }
 
+/** True if the ship is gone as a target for the player: destroyed (wreck), captured (prize) or fled. */
+function targetGone(sim: Sim, shipId: number): boolean {
+  const ship = shipById(sim, shipId);
+  return !ship || ship.state === 'wreck' || !targetableShip(sim, shipId);
+}
+
+/** The module to switch to when `deadId` is destroyed: an intact one of the same kind, else a weapon, else any intact one; 0 (hull) if none. */
+export function nextModule(sim: Sim, shipId: number, deadId: number): number {
+  const intact = modulesOnGrid(sim, shipId).filter((i) => i !== deadId && (sim.world.get(i, ModuleC)?.hp ?? 0) > 0);
+  const def = sim.world.get(deadId, ModuleC)?.def;
+  const weaponOf = (i: number): boolean => !!sim.content.modules[sim.world.get(i, ModuleC)?.def ?? '']?.weapon;
+  return intact.find((i) => sim.world.get(i, ModuleC)?.def === def) ?? intact.find(weaponOf) ?? intact[0] ?? 0;
+}
+
 /**
- * The concrete target a weapon would shoot now: its own target, else the ship-wide one. A target module
- * that no longer exists, or "any" (module 0), is replaced by a random module of the target ship (preferring
- * intact ones) drawn from sim.rng. Null if there is no valid target ship.
+ * The concrete target a weapon would shoot now: its own target, else the ship-wide one. A target ship that is
+ * destroyed or captured clears the stored target. A target module that is destroyed is replaced (and the stored
+ * target updated) by the next sensible module of the same ship, see `nextModule`. A module that no longer
+ * exists, or "any" (module 0), is replaced by a random module of the target ship (preferring intact ones) drawn
+ * from sim.rng. Null if there is no valid target ship.
  */
 export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Target | null {
   const anti = weaponAntiVehicle(sim, weaponId);
-  const own = sim.world.get(weaponId, WeaponC)?.target;
-  let t = own && (anti || !own.vehicle) ? own : null; // a weapon's own target wins, but only anti-vehicle weapons may hold a shuttle
+  const weapon = sim.world.get(weaponId, WeaponC);
+  // A weapon's own target wins, but only anti-vehicle weapons may hold a shuttle; then the ship's shuttle target (anti-vehicle only), then its ship-wide one.
+  const own = weapon?.target && (anti || !weapon.target.vehicle) ? weapon.target : null;
+  let t = own;
   if (!t && anti && combat.vehicleTarget && targetableVehicle(sim, combat.vehicleTarget)) t = { ship: 0, moduleId: 0, vehicle: combat.vehicleTarget };
   t ??= combat.target && (anti || !combat.target.vehicle) ? combat.target : null;
+  const store = (v: Target | null): void => {
+    if (own && weapon) weapon.target = v;
+    else combat.target = v;
+  };
   if (t?.vehicle) return targetableVehicle(sim, t.vehicle) ? t : null;
   const shipId = t ? t.ship : 0;
-  if (!t || !targetableShip(sim, shipId)) return null;
+  if (!t) return null;
+  if (targetGone(sim, shipId)) {
+    store(null);
+    return null;
+  }
   const m = t.moduleId ? sim.world.get(t.moduleId, ModuleC) : undefined;
-  if (m && shipIdOf(sim, m) === shipId) return t;
+  if (m && shipIdOf(sim, m) === shipId) {
+    if (m.hp > 0) return t;
+    const next: Target = { ship: shipId, moduleId: nextModule(sim, shipId, t.moduleId) };
+    store(next);
+    return next;
+  }
   return { ship: t.ship, moduleId: randomModule(sim, shipId) };
 }
 

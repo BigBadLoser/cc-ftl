@@ -340,6 +340,8 @@ Same arranger, no sim changes. Files:
 - Liner and pod string are rare at depth 1 to 4; families could weight them by size.
 - Navy and drone donor shapes improve with the navy and drone passes.
 - About 10% of first attempts still fail fit-out (a gun or engine squeezed by a weld); reseeding covers it.
+- Tier scaling (after progression phase 1): fit Mk II and Mk III reactors, shields and engines by depth and faction.
+  Their bigger footprints (reactor 2x3 and 2x4, shield 2x4 and 2x5, engine 4x6 and 4x7) need room in the donor layouts.
 
 ### Render follow-ups (not started)
 
