@@ -217,7 +217,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
-  const orderFx = createOrderFx(world, SL.ui);
+  /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
+  const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
+    for (const [gid, sc] of scenes) {
+      const p = sc.crewPos(id);
+      if (!p) continue;
+      const o = iso(origin(gid).x, origin(gid).y);
+      return { x: p.x + o.x, y: p.y + o.y, h: p.h };
+    }
+    return null;
+  };
+  const orderFx = createOrderFx(world, SL.ui, crewSpritePos);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {

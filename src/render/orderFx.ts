@@ -8,7 +8,6 @@ import type { World } from '../sim/ecs';
 import { CrewC, DeadC, DraftedC, PathC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
 import { DRAFT_COLOR } from './draftColor';
-import { Z_PX } from './heights';
 import { ART_SCALE as S, iso } from './iso';
 import { arrowHeadPx, blockPx, dashedPath, ellipsePx, type Px } from './pixelShapes';
 
@@ -27,10 +26,10 @@ interface Marker {
 }
 
 export interface OrderFx {
+  /** The selected crew: a ring under each figure and an arrow over its head, at the sprite's own smoothed position. */
+  setSelected(ids: readonly number[]): void;
   /** Flash a marker on a sector tile (x, y are the tile, whose centre it marks, like the crew positions). */
   addMarker(x: number, y: number, kind?: OrderKind): void;
-  /** The selected crew: each gets a clear ring on the floor and a small arrow over the head. */
-  setSelected(ids: readonly number[]): void;
   update(): void;
   dispose(): void;
 }
@@ -48,7 +47,8 @@ type Batch = { color: number; alpha: number; pts: Px[] };
 /** Opacity in four hard steps (pixel art fades in steps, not smoothly). */
 const steps = (a: number): number => Math.max(0.25, Math.ceil(a * 4) / 4);
 
-export function createOrderFx(world: World, parent: Container): OrderFx {
+/** `spritePos`: where a crew member's feet are drawn now (the smoothed sprite), so a path starts under the figure, not at its sim tile. */
+export function createOrderFx(world: World, parent: Container, spritePos: (id: number) => (Px & { h: number }) | null): OrderFx {
   const g = new Graphics();
   parent.addChild(g);
   let markers: Marker[] = [];
@@ -63,11 +63,11 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
     }
   };
   return {
-    addMarker(x, y, kind = 'move') {
-      markers.push({ x, y, kind, born: performance.now() });
-    },
     setSelected(ids) {
       selected = ids;
+    },
+    addMarker(x, y, kind = 'move') {
+      markers.push({ x, y, kind, born: performance.now() });
     },
     update() {
       g.clear();
@@ -80,23 +80,22 @@ export function createOrderFx(world: World, parent: Container): OrderFx {
         const pos = world.get(id, PositionC);
         if (!d?.target || !walk || !pos || walk.steps.length === 0 || world.has(id, DeadC) || world.get(id, AllegianceC)?.faction !== 'player') continue;
         // One dash pattern for the whole line, counted from the target end so the dashes hold still while the walker moves.
-        const corners = [art(iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress)), ...walk.steps.map((st) => art(iso(st.x, st.y)))];
+        const feet = spritePos(id);
+        const corners = [art(feet ?? iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress)), ...walk.steps.map((st) => art(iso(st.x, st.y)))];
         // 2x2 art pixels thick, like the art's own pixel blocks
         for (const d of dashedPath(corners, 3, 2)) path.pts.push(d, { x: d.x + 1, y: d.y }, { x: d.x, y: d.y + 1 }, { x: d.x + 1, y: d.y + 1 });
         const end = art(iso(d.target.x, d.target.y));
         ends.pts.push(...blockPx(end.x - 2, end.y - 2, 5, 5));
       }
       flush([path, ends]);
-      // Selected crew: a pixel ring on the floor and a little arrow over the head.
+      // Selected crew: a pixel ring under the figure and an arrow over its head, taken from the sprite so they follow it at any zoom.
       const ring: Batch = { color: DRAFT_COLOR, alpha: 1, pts: [] };
       for (const id of selected) {
-        const pos = world.get(id, PositionC);
-        if (!pos || world.has(id, DeadC)) continue;
-        const c = iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress);
-        const f = art(c);
+        const at = spritePos(id);
+        if (!at || world.has(id, DeadC)) continue;
+        const f = art(at);
         ring.pts.push(...ellipsePx(f.x, f.y, 15, 7), ...ellipsePx(f.x, f.y, 14, 6));
-        const head = art({ x: c.x, y: c.y - 1.9 * Z_PX });
-        ring.pts.push(...arrowHeadPx(head.x, head.y - 2, 5));
+        ring.pts.push(...arrowHeadPx(f.x, f.y - Math.round((at.h * 0.74) / S) - 4, 5));
       }
       flush([ring]);
       // Markers: a pixel ring on the floor with an arrow dropping onto it, fading in steps.
