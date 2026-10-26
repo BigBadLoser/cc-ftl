@@ -106,6 +106,13 @@ export interface Offer {
  */
 export type DealPhase = 'dispatch' | 'load' | 'out' | 'dockStation' | 'stationWork' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
 
+/** One haul trip of a larger order: its share of the goods, priced when the order was accepted. */
+export interface Trip {
+  give: ItemQty[];
+  get: ItemQty[];
+  balance: number;
+}
+
 /** An accepted deal: escrow, reserved goods and the delivery task. */
 export interface Deal {
   id: number;
@@ -133,6 +140,12 @@ export interface Deal {
   via?: 'dock' | 'hover';
   /** Docking at a station: the station airlock (reserved by the dock order) and the bought goods staged in its storage. */
   dock?: { airlock: number; staged: { storage: number; item: string; count: number }[] };
+  /**
+   * An order bigger than one hold runs as several trips, one after another (settled trip by trip: each trip's credits and goods are held
+   * only while it runs). `n` of `of` is the trip now running (the deal's give/get/balance/held are that trip's) and `rest` the trips still to
+   * come. A deal called off or lost drops `rest`; trips already settled stay settled. `stopped` is why the order ended before the last trip.
+   */
+  trip?: { n: number; of: number; rest: Trip[]; stopped?: string };
   /** A hiring run: the recruits (crew entities of the station) the shuttle fetches. The escrow is their cost, paid when they arrive. */
   crew?: number[];
 }

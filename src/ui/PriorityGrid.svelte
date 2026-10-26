@@ -8,9 +8,9 @@
   onMount(() => api.crew.subscribe((v) => (crew = v)));
 
   const SHORT: Record<WorkCategory, string> = {
-    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', refining: 'Refine', crafting: 'Craft', cooking: 'Cook', patrol: 'Watch',
+    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', refining: 'Refine', crafting: 'Craft', research: 'Sci', cooking: 'Cook', patrol: 'Watch',
   };
-  const HELP: Partial<Record<WorkCategory, string>> = { refining: 'Refine: raw ore into materials (refinery)', crafting: 'Craft: materials into items (fabricator, workbench, galley)' };
+  const HELP: Partial<Record<WorkCategory, string>> = { refining: 'Refine: raw ore into materials (refinery)', crafting: 'Craft: materials into items (fabricator, workbench, galley)', research: 'Science: work the active research project (research module)' };
   /** Patrols are posted only by NPC ship directors (stations): no column for the player's crew. */
   const SHOWN = WORK_CATEGORIES.filter((c) => c !== 'patrol');
   /** 1 -> 2 -> 3 -> 4 -> off -> 1 */
@@ -55,6 +55,8 @@
 </section>
 
 <style>
+  /* The combat panel takes the left 380px while it is open: centre in the space right of it, and never wider than that space. */
+  @media (min-width: 601px) { :global(html[data-combat]) section { left: calc(50vw + 194px); max-width: calc(100vw - 396px); } }
   section { left: 50%; bottom: 16px; transform: translateX(-50%); width: min(640px, calc(100vw - 16px)); }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   h2 { margin: 0; font-size: 15px; color: var(--cyan); }

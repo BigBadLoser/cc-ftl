@@ -169,10 +169,59 @@ export interface UiModule {
   storage: boolean;
   /** Crafts recipes (has a production panel). */
   crafting: boolean;
+  /** A research module (the inspector opens the research panel). */
+  research: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
+}
+
+/** A stat line of a module in the research panel; `delta` is against the tier below ("+2", "-2 s"), `good` when that is an improvement. */
+export interface UiResearchStat {
+  label: string;
+  value: string;
+  delta: string | null;
+  good: boolean;
+}
+
+/**
+ * One node of the research tree: a module the ship starts with (a root, `project` false) or a project unlocking one. `parents` are node ids
+ * (prerequisites, drawn to its left). Status: known; open (every prerequisite known or queued: the only nodes that can be picked);
+ * queued / active (`pos` is its place in the queue); locked.
+ */
+export interface UiResearchNode {
+  id: string;
+  name: string;
+  band: string;
+  parents: string[];
+  project: boolean;
+  status: 'known' | 'open' | 'queued' | 'active' | 'locked';
+  pos: number | null;
+  /** The module def the node is about (its art, footprint, stats). */
+  module: string;
+  /** "Power · 2x3". */
+  sub: string;
+  stats: UiResearchStat[];
+  cost: (UiCost & { have: number })[];
+  /** Work time at one worker with no science. */
+  seconds: number;
+  progress: number;
+  /** Placement overrides from the project (see `ResearchDef.col`). */
+  col?: number;
+  row?: number;
+}
+
+export interface UiResearch {
+  /** The ship the commands take. */
+  ship: number;
+  /** Research modules that can work, and crew standing at them now. */
+  labs: number;
+  workers: number;
+  bands: { id: string; name: string }[];
+  nodes: UiResearchNode[];
+  /** Project ids in queue order (the first is the active one once paid). */
+  queue: string[];
 }
 
 export interface UiRobotBay {
@@ -663,10 +712,8 @@ export interface UiTradePartner {
   rep: number;
   lines: UiTradeLine[];
   /** How a delivery would go: who flies ('them' | 'you') or the reject code that stops it, for goods going out / coming in. */
-  out: { courier: string; error: string };
-  in: { courier: string; error: string };
-  /** Units a shuttle hold takes. */
-  holdCap: number;
+  out: { courier: string; error: string; cap: number };
+  in: { courier: string; error: string; cap: number };
   offer: UiTradeOffer | null;
   distance: number;
   /** People for hire aboard (stations only), and the reject code that would stop a hiring run now ('' if it can go). */
@@ -691,6 +738,8 @@ export interface UiTradeDeal {
   live: boolean;
   cancellable: boolean;
   flying: boolean;
+  /** A multi-trip order: the trip now running, how many there are, and the trips already settled ('' if none stopped early). */
+  trip: { n: number; of: number; stopped: string } | null;
 }
 
 export interface UiTrade {
@@ -876,6 +925,7 @@ export interface UiApi {
   stock: Subscribable<UiStock[]>;
   storages: Subscribable<UiStorage[]>;
   fabs: Subscribable<UiFab[]>;
+  research: Subscribable<UiResearch>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
   /** Module construction sites, and the selected one (a job id). */

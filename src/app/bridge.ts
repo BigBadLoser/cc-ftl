@@ -1,6 +1,6 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleDefs, buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
@@ -25,6 +25,7 @@ import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
 import { crateInfo } from './jobsSnapshot';
+import { buildResearch } from './researchSnapshot';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -83,6 +84,7 @@ export interface Bridge {
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
+  research: Readable<UiResearch>;
   combat: Readable<UiCombat>;
   ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
@@ -148,6 +150,8 @@ export function createBridge(sim: Sim): Bridge {
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
+  const research = createStore<UiResearch>(buildResearch(sim));
+  let lastResearch = '';
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
   const ftl = createStore<UiFtl | null>(null);
   let lastFtl = '';
@@ -272,6 +276,12 @@ export function createBridge(sim: Sim): Bridge {
         lastGoals = gk;
         goals.set(gl);
       }
+    }
+    const rs = buildResearch(sim);
+    const rk = JSON.stringify(rs);
+    if (rk !== lastResearch) {
+      lastResearch = rk;
+      research.set(rs);
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -410,6 +420,7 @@ export function createBridge(sim: Sim): Bridge {
     stock,
     storages,
     fabs,
+    research,
     combat,
     ftl,
     shuttles,

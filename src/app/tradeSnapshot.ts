@@ -1,5 +1,5 @@
 import {
-  CrewC, ForHireC, ShipC, TraderC, VehicleC, courierDef, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
+  CrewC, ForHireC, ShipC, TraderC, VehicleC, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
 } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
 import { isIncapacitated } from '../sim/crew/helpers';
@@ -24,10 +24,10 @@ const list = (sim: Sim, lines: readonly { item: string; count: number }[]): stri
   lines.map((l) => `${l.count} ${sim.content.items[l.item]?.name ?? l.item}`).join(', ');
 
 /** What stops a run in a direction, as a reject code, or '' if it can go. Probes with one unit of anything. */
-function probe(sim: Sim, ship: number, dir: 'out' | 'in'): { courier: string; error: string } {
+function probe(sim: Sim, ship: number, dir: 'out' | 'in'): { courier: string; error: string; cap: number } {
   const unit = [{ item: Object.keys(sim.content.items)[0] ?? '', count: 1 }];
   const plan = planCourier(sim, ship, dir === 'out' ? unit : [], dir === 'in' ? unit : []);
-  return 'error' in plan ? { courier: '', error: plan.error } : { courier: plan.courier, error: '' };
+  return 'error' in plan ? { courier: '', error: plan.error, cap: 0 } : { courier: plan.courier, error: '', cap: plan.cap };
 }
 
 /** The people for hire aboard a station: the role's skills strongest first, and whether the shuttle is already fetching them. */
@@ -84,8 +84,7 @@ export function buildTrade(sim: Sim): UiTrade {
       role: profile ? (sim.content.trade?.traders[profile]?.name ?? '') : '', trades: profile !== null,
       hail: !hail ? 'none' : hail.answered && answered ? 'answered' : 'refused', reason: hail && !answered ? (hail.reason || 'hostile') : '',
       wallet: trader?.credits ?? 0, rep: trader ? reputationWith(sim, id) : 0, lines,
-      out: answered ? probe(sim, id, 'out') : { courier: '', error: '' }, in: answered ? probe(sim, id, 'in') : { courier: '', error: '' },
-      holdCap: courierDef(sim)?.def.cargo ?? 0,
+      out: answered ? probe(sim, id, 'out') : { courier: '', error: '', cap: 0 }, in: answered ? probe(sim, id, 'in') : { courier: '', error: '', cap: 0 },
       offer: offer ? { id: offer.id, give: offer.give, get: offer.get, barter: offer.barter, balance: offer.balance } : null,
       recruits: trader?.station ? recruitsAt(sim, id) : [],
       hireError: trader?.station ? hireProbe(sim, id) : '',
@@ -95,8 +94,9 @@ export function buildTrade(sim: Sim): UiTrade {
   }
   partners.sort((a, b) => a.distance - b.distance || a.id - b.id);
   const deals: UiTradeDeal[] = sim.trade.deals.map((d) => ({
-    id: d.id, ship: d.ship, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader', phase: d.phase, status: d.phase === 'failed' ? `Called off: ${d.reason ?? ''}`
+    id: d.id, ship: d.ship, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader', phase: d.phase, status: d.phase === 'failed' ? `Called off${d.trip ? ` in trip ${d.trip.n} of ${d.trip.of}` : ''}: ${d.reason ?? ''}`
       : d.crew ? HIRE_PHASE[d.phase] ?? PHASE[d.phase] : d.phase === 'exchange' && d.via === 'hover' ? 'Swapping cargo from a hover (no station airlock free)' : PHASE[d.phase],
+    trip: d.trip ? { n: d.trip.n, of: d.trip.of, stopped: d.trip.stopped ?? '' } : null,
     courier: d.courier, give: list(sim, d.give), get: list(sim, d.get), balance: d.barter ? 0 : d.balance, barter: d.barter, vehicle: d.vehicle,
     live: d.phase !== 'done' && d.phase !== 'failed', cancellable: d.phase === 'dispatch' || d.phase === 'load' || (!!d.crew && (d.phase === 'out' || d.phase === 'dockStation' || d.phase === 'stationWork')),
     flying: d.vehicle !== 0 && sim.world.get(d.vehicle, VehicleC)?.state === 'flying',

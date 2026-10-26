@@ -153,13 +153,13 @@ describe('blueprints', () => {
     expect(rejected(sim, 'blueprint.buy')).toEqual(['noOffer']);
   });
 
-  it('a save round-trip at v54 keeps the known set', () => {
+  it('a save round-trip across saves keeps the known set', () => {
     const { sim, port } = atBlueprintStation('module.engine.mk3');
     sim.enqueue({ type: 'blueprint.buy', port, def: 'module.engine.mk3' });
     step(sim);
     expect(isBlueprintKnown(sim, 'module.engine.mk3')).toBe(true);
     const saved = serialize(sim);
-    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(54);
+    expect(JSON.parse(saved).version ?? SAVE_VERSION).toBe(SAVE_VERSION);
     const back = deserialize(saved, content);
     expect(isBlueprintKnown(back, 'module.engine.mk3')).toBe(true);
     expect(isBlueprintKnown(back, 'module.engine.mk2')).toBe(false);
@@ -179,7 +179,7 @@ describe('module tiers', () => {
     expect(reactors.map((d) => d.footprint)).toEqual([[2, 2], [2, 3], [2, 4]]);
     expect(reactors.map((d) => d.power)).toEqual([50, 100, 180]);
     const shields = ['module.shieldGen', 'module.shieldGen.mk2', 'module.shieldGen.mk3'].map((id) => m[id]!);
-    expect(shields.map((d) => d.footprint)).toEqual([[2, 3], [2, 4], [2, 5]]);
+    expect(shields.map((d) => d.footprint)).toEqual([[2, 2], [2, 3], [3, 3]]);
     expect(shields.map((d) => Math.floor(Math.abs(d.power) * d.shieldGen!.layersPerPower))).toEqual([2, 4, 7]);
     expect(shields.map((d) => d.shieldGen!.rechargeSec)).toEqual([10, 8, 6]);
     const engines = ['module.engine', 'module.engine.mk2', 'module.engine.mk3'].map((id) => m[id]!);
@@ -204,10 +204,10 @@ describe('module tiers', () => {
     const sim = newGame(7, content);
     const ship = playerShip(sim);
     step(sim, 100);
-    const before = shieldCapacity(sim, ship, true);
+    const before = shieldCapacity(sim, ship, false);
     swap(sim, 'module.shieldGen', 'module.shieldGen.mk3');
-    expect(shieldCapacity(sim, ship, true)).toBeGreaterThan(before);
-    expect(shieldCapacity(sim, ship, true)).toBe(7);
+    expect(shieldCapacity(sim, ship, false)).toBeGreaterThan(before);
+    expect(shieldCapacity(sim, ship, false)).toBe(7);
   });
 
   it('the stranded checks and the jump use the engine-discounted fuel: Mk III, a 4-fuel lane, 3 aboard is not stranded', () => {

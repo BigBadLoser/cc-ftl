@@ -41,10 +41,10 @@ export const raiderShip = {
     { def: 'module.light', x: 3, y: 2, rot: 0 },
     { def: 'module.light', x: 11, y: 7, rot: 0 },
     { def: 'module.light', x: 6, y: 7, rot: 0 },
-    // Weapon deck (south): two light weapons and the small shield generator. The door at (8, 8) stays clear.
+    // Weapon deck (south): two light weapons and the shield generator. The door at (8, 8) stays clear.
     { def: 'module.burstLaser', x: 12, y: 10, rot: 0 },
     { def: 'module.burstLaser', x: 9, y: 10, rot: 0 },
-    { def: 'module.shieldGenSmall', x: 6, y: 10, rot: 0 },
+    { def: 'module.shieldGen', x: 6, y: 10, rot: 0 },
     { def: 'module.light', x: 7, y: 13, rot: 0 },
     { def: 'module.light', x: 6, y: 13, rot: 0 },
     { def: 'module.light', x: 14, y: 13, rot: 0 },

@@ -218,6 +218,7 @@ const api: UiApi = {
   stock: bridge.stock,
   storages: bridge.storages,
   fabs: bridge.fabs,
+  research: bridge.research,
   selectedModule: controller.selectedModule,
   sites: bridge.sites,
   selectedSite: controller.selectedSite,

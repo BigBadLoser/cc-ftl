@@ -9,7 +9,7 @@
   import ShuttlePanel from './ShuttlePanel.svelte';
   import TileInspector from './TileInspector.svelte';
 
-  let { api, onPriorities, onTrade, onStation }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void } = $props();
+  let { api, onPriorities, onTrade, onStation, onResearch }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void; onResearch: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
@@ -67,7 +67,7 @@
   {:else if mod && bays.some((b) => b.id === mod.id)}
     <ShuttlePanel {api} onBack={back} />
   {:else if mod}
-    <ModuleInspector {api} onBack={back} />
+    <ModuleInspector {api} onBack={back} {onResearch} />
   {:else if tile}
     <TileInspector {api} onBack={back} />
   {/if}
@@ -77,5 +77,7 @@
 <style>
   .sel { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 300px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
   .sel.wide { width: 340px; }
+  /* The combat panel takes the left edge (372px): the inspector sits right of it. */
+  @media (min-width: 601px) { :global(html[data-combat]) .sel { left: calc(388px + var(--sal)); } }
   @media (max-width: 600px) { :global(html[data-combat]) .sel { display: none; } .sel, .sel.wide { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 52vh; } }
 </style>

@@ -71,6 +71,7 @@
 
 <style>
   .over { top: calc(var(--hdr) + var(--sat) + 4px); left: calc(8px + var(--sal)); width: 300px; }
+  @media (min-width: 601px) { :global(html[data-combat]) .over { left: calc(388px + var(--sal)); } }
   .close { position: absolute; top: 0; right: 0; width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; }
   .res { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .cell { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); font: inherit; text-align: left; }

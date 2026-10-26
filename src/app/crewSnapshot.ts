@@ -29,6 +29,7 @@ function jobLabel(sim: Sim, j: Job): string {
     case 'rescue': return 'Rescuing crew';
     case 'haul': return 'Hauling';
     case 'craft': return 'Crafting';
+    case 'research': return 'Researching';
     default: return j.kind;
   }
 }

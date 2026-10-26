@@ -1,4 +1,5 @@
 import { performCraft } from '../items/craft';
+import { performResearch } from '../research/work';
 import { performHaul } from '../items/haul';
 import { consumeDelivered, needsMaterials } from '../items/materials';
 import { evictStack, refundCost, structCostKey } from '../items/stacks';
@@ -32,6 +33,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
   switch (job.kind) {
     case 'haul': return performHaul(sim, crew, job);
     case 'craft': return performCraft(sim, job, speed);
+    case 'research': return performResearch(sim, crew, job, speed);
     case 'build':
     case 'deconstruct': return timed(job, speed, () => finishStruct(sim, job));
     case 'module': return timed(job, speed, () => finishModule(sim, job));

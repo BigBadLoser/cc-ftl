@@ -7,9 +7,9 @@ import { modules as base } from './modules';
  * the bigger tiers need a blueprint bought at a station (`ModuleDef.blueprint`).
  *
  * All the numbers are here, provisional, to tune in one place. A tier lists only what differs from Mk I.
- *  - `footprint`: grows per tier, always along its local y (the hull-edge engine grows inboard).
+ *  - `footprint`: grows per tier, along its local y (the hull-edge engine grows inboard); the shield generator is 2x2, 2x3, 3x3.
  *  - `minDanger` / `price`: the station danger tier a blueprint is sold from, and its base price (the sale price grows with danger).
- *  - `tint`: the placeholder outline colour (see `ModuleDef.tierArt`, render/tierArt.ts).
+ *  - `tint`: the placeholder outline colour (see `ModuleDef.tierArt`, render/tierArt.ts); unused by tiers with their own art (reactor, shield generator); only the engine tiers are placeholders now.
  */
 interface Tier {
   footprint: [number, number];
@@ -33,11 +33,11 @@ const REACTOR: Record<2 | 3, Tier & { heatPerSec: number }> = {
     cost: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 40 }, { item: 'item.polymer', count: 12 }] },
 };
 
-/** Shield generator: |power| x layersPerPower = about 2 / 4 / 7 layers, one back every 10 / 8 / 6 s. */
+/** Shield generator: |power| x layersPerPower = 2 / 4 / 7 layers (2x2 / 2x3 / 3x3), one back every 10 / 8 / 6 s. */
 const SHIELD: Record<2 | 3, Tier & { layersPerPower: number; rechargeSec: number }> = {
-  2: { footprint: [2, 4], power: -14, layersPerPower: 0.3, rechargeSec: 8, maxHp: 140, buildWork: 320, minDanger: 3, price: 700, tint: MK2_TINT,
+  2: { footprint: [2, 3], power: -11, layersPerPower: 0.37, rechargeSec: 8, maxHp: 130, buildWork: 320, minDanger: 3, price: 700, tint: MK2_TINT,
     cost: [{ item: 'item.metal', count: 22 }, { item: 'item.electronics', count: 24 }] },
-  3: { footprint: [2, 5], power: -22, layersPerPower: 0.32, rechargeSec: 6, maxHp: 190, buildWork: 460, minDanger: 6, price: 1700, tint: MK3_TINT,
+  3: { footprint: [3, 3], power: -18, layersPerPower: 0.4, rechargeSec: 6, maxHp: 180, buildWork: 460, minDanger: 6, price: 1700, tint: MK3_TINT,
     cost: [{ item: 'item.metal', count: 36 }, { item: 'item.electronics', count: 44 }, { item: 'item.polymer', count: 10 }] },
 };
 
@@ -51,25 +51,36 @@ const ENGINE: Record<2 | 3, Tier & { evasionPerPower: number; fuelFactor: number
 
 const NAME = { 2: 'Mk II', 3: 'Mk III' } as const;
 
-function tiered<T extends Tier>(id: keyof typeof base, tiers: Record<2 | 3, T>, extra: (t: T) => Partial<ModuleDef>): Record<string, ModuleDef> {
+/**
+ * `art` is true for a tier with sprites of its own: `extra` then names its asset, roof and deploy time. Otherwise the tier is a
+ * placeholder (`tierArt`: the Mk I's art, outlined), without the Mk I's roof part.
+ */
+function tiered<T extends Tier>(id: keyof typeof base, tiers: Record<2 | 3, T>, extra: (t: T, n: 2 | 3) => Partial<ModuleDef>, art = false): Record<string, ModuleDef> {
   const mk1 = base[id] as ModuleDef;
   const out: Record<string, ModuleDef> = {};
   for (const n of [2, 3] as const) {
     const t = tiers[n];
-    // The roof part (and its deploy animation) is the Mk I's footprint; the bigger tiers go without until they have art.
+    // A placeholder tier goes without the Mk I's roof part (its footprint) until it has art.
     const rest: ModuleDef = { ...mk1 };
-    delete rest.roofAsset;
-    delete rest.deploySec;
+    if (!art) {
+      delete rest.roofAsset;
+      delete rest.deploySec;
+    }
     out[`${id}.mk${n}`] = {
       ...rest, name: `${mk1.name.replace('Shield generator', 'Shield gen')} ${NAME[n]}`, footprint: t.footprint, power: t.power, maxHp: t.maxHp, buildWork: t.buildWork, cost: t.cost,
-      blueprint: { tier: n, minDanger: t.minDanger, price: t.price }, tierArt: { base: mk1.footprint, tint: t.tint }, ...extra(t),
+      blueprint: { tier: n, minDanger: t.minDanger, price: t.price }, ...(art ? {} : { tierArt: { base: mk1.footprint, tint: t.tint } }), ...extra(t, n),
     };
   }
   return out;
 }
 
 export const tierModules: Record<string, ModuleDef> = {
-  ...tiered('module.reactor', REACTOR, (t) => ({ heatPerSec: t.heatPerSec })),
-  ...tiered('module.shieldGen', SHIELD, (t) => ({ shieldGen: { layersPerPower: t.layersPerPower, rechargeSec: t.rechargeSec } })),
+  // Mk II (2x3) and Mk III (2x4) have their own sprites (`module.reactor_2x3`, `module.reactor_2x4`); the reactor has no roof part.
+  ...tiered('module.reactor', REACTOR, (t, n) => ({ asset: n === 2 ? 'module.reactor_2x3' : 'module.reactor_2x4', heatPerSec: t.heatPerSec }), true),
+  // Mk I is 2x2 (small art), Mk II 2x3 and Mk III 3x3, each with its own body and roof sprites and a deployable roof part.
+  ...tiered('module.shieldGen', SHIELD, (t, n) => {
+    const stem = n === 2 ? 'shield_gen' : 'shield_gen_3x3';
+    return { asset: `module.${stem}`, roofAsset: `roof.${stem}`, deploySec: 2, shieldGen: { layersPerPower: t.layersPerPower, rechargeSec: t.rechargeSec } };
+  }, true),
   ...tiered('module.engine', ENGINE, (t) => ({ engine: { evasionPerPower: t.evasionPerPower, fuelFactor: t.fuelFactor } })),
 };

@@ -25,6 +25,7 @@
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
+  import ResearchOverlay from './ResearchOverlay.svelte';
   import JobsTracker from './JobsTracker.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
@@ -41,6 +42,9 @@
   let debug = $state(false);
   let stockOpen = $state(false);
   let jobsOpen = $state(false);
+  let researchOpen = $state(false);
+  /** The home ship has a research module: the nav strip shows the research button. */
+  let hasLab = $state(false);
   let jobCount = $state(0);
   let priorities = $state(false);
   let toast = $state<string | null>(null);
@@ -105,6 +109,7 @@
       () => mq.removeEventListener('change', onMq),
       api.snapshot.subscribe((s) => (snap = s)),
       api.jobs.subscribe((j) => (jobCount = j.active.length)),
+      api.research.subscribe((r) => { hasLab = r.labs > 0; if (!hasLab) researchOpen = false; }),
       api.toast.subscribe((t) => (toast = t)),
       api.starmap.subscribe((m) => (star = m)),
       api.deploy.subscribe((d) => (deploy = d)),
@@ -160,7 +165,8 @@
     else if (e.key === '`') debug = !debug;
     else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
-      if (jobsOpen) jobsOpen = false;
+      if (researchOpen) researchOpen = false;
+      else if (jobsOpen) jobsOpen = false;
       else if (stockOpen) stockOpen = false;
       else if (overviewOpen) overviewOpen = false;
       else api.selectCrew(null);
@@ -205,6 +211,7 @@
     {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
+    {hasLab} {researchOpen} onResearch={() => (researchOpen = !researchOpen)}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
@@ -219,6 +226,9 @@
 
 {#if overviewOpen}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
+{/if}
+{#if researchOpen}
+  <ResearchOverlay {api} onClose={() => (researchOpen = false)} />
 {/if}
 {#if jobsOpen}
   <JobsPanel {api} onClose={() => (jobsOpen = false)} />
@@ -243,7 +253,7 @@
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
 {:else}
-  <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
+  <SelectionPanel {api} onResearch={() => (researchOpen = true)} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 
@@ -265,8 +275,10 @@
     <EventLog {api} />
     {#if !narrow}{@render time()}{/if}
   </div>
-  <GoalsCard {api} />
-  <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
+  <div class="cards">
+    <GoalsCard {api} />
+    <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
+  </div>
   <StrandedBanner {api} />
   <AlertList {api} />
 </div>
@@ -297,6 +309,8 @@
   .rcol { position: fixed; z-index: 4; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); width: min(260px, calc(100vw - 110px)); display: flex; flex-direction: column; gap: 4px; }
   /* An expanded alert (hover or tap) draws over the combat panel below it. */
   .rcol:has(:global(.alert:hover)), .rcol:has(:global(.alert:focus-within)) { z-index: 8; }
+  /* Goals and jobs stack as one group under the log. */
+  .cards { display: flex; flex-direction: column; gap: 4px; }
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }

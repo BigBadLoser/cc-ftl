@@ -16,6 +16,7 @@ import { galaxyHandlers } from './galaxy/handlers';
 import { ftlHandlers } from './ftl/handlers';
 import { itemHandlers } from './items/handlers';
 import { moduleHandlers } from './modules/handlers';
+import { researchHandlers } from './research/handlers';
 import { robotHandlers } from './robots/handlers';
 import { sectorHandlers } from './sector/handlers';
 import { storyHandlers } from './story/handlers';
@@ -40,6 +41,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...evaHandlers,
   ...vehicleHandlers,
   ...robotHandlers,
+  ...researchHandlers,
   ...storyHandlers,
   ...tradeHandlers,
   ...galaxyHandlers,
