@@ -1,7 +1,9 @@
 """T3, the exterior hull's base design (after Space Haven's hull 46): its layout, in art px from named anchors (the
-bend, the top, the seams), built on the section (wall3d_ext_geom). The armour is plain blocks (recesses cut by
+bend, the top, the seams), built on the section (wall3d_ext_geom). Its detail groups (EXT_DEBUG=name,..: drawn in
+debug red): seams, top_panel, lower_lean, armour, corner. The armour is plain blocks (recesses cut by
 splitting them only where a recess is); its seams and outlines are painted (a groove a px wide breaks up as the lean
 turns); its armour plates stand a px proud."""
+from . import core
 from . import wall3d as T
 from .wall3d_ext_geom import LINE, PAINT, YS, Face, Section
 
@@ -23,6 +25,10 @@ KEY_SEAM, KEY_Z = 6, (2, 9)         # the lower centre block's seam (px over the
 KEYS = [(0.5 - px(5), 0.5 - px(1)), (0.5 + px(1), 0.5 + px(5))]
 PANEL = (0.15, 0.75)                # the upright part's armour panels across the tile (the upper one 2 px wider each
 PANEL_GAP = 2                       # side), this many px from the seam; bolts 2 px in from their corners
+CORNER_SEAM = 6                     # the corner's front: seams down it this many px in from its edges (hull 46's)
+CORNER_CLAMP = (2, 5, 3)            # two clamps over the upright seam, from / to this many px either side of the
+                                    # middle, this many px up and down from the seam
+CORNER_BLOCK = (5, 6, 2)            # a block over each seam down the front: px wide, px under the bend, px on over it
 
 
 class Layout:
@@ -67,19 +73,26 @@ def build(k, ax, plane, a, b, ends, H):
         for z0, z1, cells in (L.rows() if whole else [(0.0, L.zb, None), (L.zb, H, None)]):    # (a part tile:
             for u0, u1, role, off in (cells or [(0.0, s1 - s0, "face", 0.0)]):                  # plain faces)
                 f.block(s0 + u0, s0 + u1, z0, z1, role, off)
-        _seams(f, L, s0, s1)
+        with f.tag("seams"):
+            _seams(f, L, s0, s1)
+            f.top_line(s0, s1, back + 2 * TOP_PX, back + 2.75 * TOP_PX, YS[2])  # the top's seam, along its back
         if whole:
-            _top_panel(f, L, s0, s1)
-            _lower_lean(f, L, s0, s1)
-            _upright_armour(f, L, s0, s1)
-        f.top_line(s0, s1, back + 2 * TOP_PX, back + 2.75 * TOP_PX, YS[2])  # the top's seam, along its back
+            for name, fn in (("top_panel", _top_panel), ("lower_lean", _lower_lean), ("armour", _upright_armour)):
+                with f.tag(name):
+                    fn(f, L, s0, s1)
+        elif f.ch and abs(s1 - b) < 1e-6:
+            with f.tag("corner"):
+                _corner_side(f, L, s0, s1)
+    if f.ch:
+        with f.tag("corner"):
+            _corner(f, L)
 
 
 def _seams(f, L, s0, s1):
     gz = UPRIGHT_SEAM
     f.line(s0, s1, gz, L.px(gz, -1), YS[1])
     f.line(s0, s1, L.px(gz, 1), gz, YS[4])
-    f.line(s0, s1, L.px(L.l1, 1), L.l1, YS[3])
+    f.line(s0, s1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)    # (the lean's lines stop at a corner's chamfer)
 
 
 def _top_panel(f, L, s0, s1):
@@ -119,3 +132,36 @@ def _upright_armour(f, L, s0, s1):
             for w0, w1 in ((L.px(z0, -2), L.px(z0, -3)), (L.px(z1, 3), L.px(z1, 2))):
                 f.raised(s0 + v0, s0 + v1, w0, w1, LINE - 0.01, LINE + PAINT, col=YS[4])
 
+
+
+def _corner_side(f, L, s0, s1):
+    """The corner tile's side of the corner: the run's top panel, open to the chamfer, its side down to the lean's
+    seam; a seam along the chamfer's edge from the floor up to the lean's seam (short of the chamfer's tip, as hull
+    46's)."""
+    R, ln = PANEL_IN, LINE
+    zt = L.px(L.zr, -2)
+    f.line(s0, s0 + R, zt, L.px(zt, -1), YS[4])
+    f.line(s0 + R, s0 + R + ln, L.l1, L.H, YS[3])
+    f.top_line(s0 + R, s0 + R + ln, 0.0, BACK, YS[2])
+    f.top_line(s0 + R, s1, 0.0, 0.75 * TOP_PX, YS[2])
+    f.edge_line(0.0, L.zb, YS[1])
+    f.edge_line(L.zb, L.l1, YS[3])
+
+
+def _corner(f, L):
+    """The outer corner's front (its chamfer), on its upright part as hull 46's: a seam down it CORNER_SEAM px in
+    from each edge, a block under the bend over each, two clamps over the seam across it."""
+    t = f.chamfer_t
+    gz = UPRIGHT_SEAM
+    for e in (CORNER_SEAM, f.c * core.TILE_W - CORNER_SEAM - 1):
+        pf = f.on(0.0, L.zb, -0.01, 0.001)
+        f.on_chamfer(t(e), t(e + 1), pf, [YS[1]] * len(pf), YS[1])
+        w, h, over = CORNER_BLOCK
+        for z0, z1 in ((L.px(L.zb, h), L.zb), (L.zb, L.px(L.zb, -over))):     # (on over the bend onto the lean,
+            pf = f.on(z0, z1, -0.01, LINE)                                      # in its own tone)
+            cols = [YS[3] if c == YS[5] else c for c in f.sec.cols(pf, "plate")]
+            f.on_chamfer(t(e + 0.5 - w / 2), t(e + 0.5 + w / 2), pf, cols)
+    a, b, h = CORNER_CLAMP
+    pf = f.on(L.px(gz, h), L.px(gz, -h), -0.01, LINE)
+    for u0, u1 in ((0.5 - t(b), 0.5 - t(a)), (0.5 + t(a), 0.5 + t(b))):
+        f.on_chamfer(u0, u1, pf, f.sec.cols(pf, "plate"))

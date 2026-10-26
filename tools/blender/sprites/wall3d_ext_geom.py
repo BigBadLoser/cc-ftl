@@ -4,6 +4,9 @@ corner round the corner's chamfer the same way (so nothing built on a face can s
 
 Units: u along the face and d out from the block's face in tiles (an art px along either is LINE), z in tiles of
 height; heights given in art px are measured on screen (Section.z_at)."""
+import os
+from contextlib import contextmanager
+
 from . import core
 from . import wall3d as T
 
@@ -17,6 +20,8 @@ LEAN_RISE = 0.8                     # hull 46 T3's front (measured off its end):
 F = "steel"
 YS = T.RAMPS[F][0]                  # the tones (both near faces alike: hull 46 mirrors its art, no shade side)
 TOP = YS[3]                         # the tops (the lean a step lighter, the upright part a step darker)
+DEBUG = set(filter(None, os.environ.get("EXT_DEBUG", "").split(",")))   # detail groups (Face.tag) drawn all in
+DEBUG_COL = "dbgR"                                                      # DEBUG_COL, to check their shape and size
 ROLES = {"face": 0, "plate": 1, "plate2": 2, "floor": -1}   # a part's tone, in steps over its face's; "dark" (a
                                                             # seam's floor, a recess's shadowed edge) three under
 
@@ -110,16 +115,33 @@ class Face:
     def __init__(self, k, ax, plane, a, b, ends, sec, chamfer=None):
         self.k, self.ax, self.plane, self.a, self.b, self.sec = k, ax, plane, a, b, sec
         self.mt = tuple(1.0 if e == "out" else 0.0 for e in ends)
-        self.ch = sec.chamfer(chamfer) if chamfer and ends[1] == "out" else None
+        self.c = chamfer if chamfer and ends[1] == "out" else 0.0
+        self.ch = sec.chamfer(chamfer) if self.c else None
+        self.dbg = False
 
-    def part(self, u0, u1, prof, cols=None, cap=None, fam=F, lvl=3):
+    @contextmanager
+    def tag(self, name):
+        """Build a named group of detail (drawn all in DEBUG_COL when it is in DEBUG)."""
+        was, self.dbg = self.dbg, self.dbg or name in DEBUG
+        try:
+            yield
+        finally:
+            self.dbg = was
+
+    def _cols(self, cols, cap, n):
+        return ([DEBUG_COL] * n, DEBUG_COL) if self.dbg else (cols, cap)
+
+    def part(self, u0, u1, prof, cols=None, cap=None, fam=F, lvl=3, wrap=True):
+        """A part over [u0, u1] with a (d, z) section; at an outer corner it stops at the chamfer and (wrap) runs on
+        round it."""
         from .factions_relief import corner_piece, prism
+        cols, cap = self._cols(cols, cap, len(prof))
         m0 = self.mt[0] if abs(u0 - self.a) < 1e-6 else 0.0
         end = abs(u1 - self.b) < 1e-6
         if end and self.ch:
             ch = self.ch
             prism(self.k, self.ax, self.plane, u0, u1, prof, fam, lvl, cols, cap, mitre=(m0, lambda d, z: d - ch(z)))
-            if self.ax == "y":
+            if wrap and self.ax == "y":
                 corner_piece(self.k, self.b, self.plane, ch, prof, fam, lvl, cols, cap)
         else:
             prism(self.k, self.ax, self.plane, u0, u1, prof, fam, lvl, cols, cap, mitre=(m0, self.mt[1] if end else 0))
@@ -129,20 +151,48 @@ class Face:
         pf = self.sec.sec(z0, z1, off)
         self.part(u0, u1, pf, self.sec.cols(pf, role))
 
-    def line(self, u0, u1, z0, z1, col):
-        """A painted band on the front (all but flush)."""
+    def on(self, z0, z1, base, out):
+        """The section of a part on the front from `base` out to `out` (from the front, < 0: in)."""
         fr = self.sec.front(z0, z1)
-        pf = [(d - 0.01, z) for d, z in fr] + [(d + 0.001, z) for d, z in fr[::-1]]
-        self.part(u0, u1, pf, [col] * len(pf), col)
+        return [(d + base, z) for d, z in fr] + [(d + out, z) for d, z in fr[::-1]]
+
+    def line(self, u0, u1, z0, z1, col, wrap=True):
+        """A painted band on the front (all but flush)."""
+        pf = self.on(z0, z1, -0.01, 0.001)
+        self.part(u0, u1, pf, [col] * len(pf), col, wrap=wrap)
+
+    def edge_line(self, z0, z1, col):
+        """A painted band a px wide along the outer corner's chamfer edge on this face (each face its own)."""
+        from .factions_relief import prism
+        if self.ch:
+            ch, pf = self.ch, self.on(z0, z1, -0.01, 0.001)
+            cols, cap = self._cols([col] * len(pf), col, len(pf))
+            prism(self.k, self.ax, self.plane, self.b - LINE, self.b, pf, F, 3, cols, cap,
+                  mitre=(lambda d, z: ch(z) - d, lambda d, z: d - ch(z)))
 
     def raised(self, u0, u1, z0, z1, base, out, role="plate", col=None):
-        """A part on the front from `base` out to `out` (from the front, < 0: in), toned by role or all col."""
-        fr = self.sec.front(z0, z1)
-        pf = [(d + base, z) for d, z in fr] + [(d + out, z) for d, z in fr[::-1]]
+        """A part on the front from `base` out to `out`, toned by role or all col."""
+        pf = self.on(z0, z1, base, out)
         self.part(u0, u1, pf, [col] * len(pf) if col else self.sec.cols(pf, role), col)
 
+    def chamfer_t(self, n):
+        """How far across the outer corner's chamfer (0 the y face's edge, 1 the x face's) n art px are on screen,
+        on its upright part (its full width)."""
+        return n / (core.TILE_W * self.c)
+
+    def on_chamfer(self, t0, t1, pf, cols, cap=None, fam=F, lvl=3):
+        """A part on the outer corner's chamfer over [t0, t1] of its width (built by the y face, once)."""
+        from .factions_relief import corner_piece
+        if self.ch and self.ax == "y":
+            cols, cap = self._cols(cols, cap, len(pf))
+            corner_piece(self.k, self.b, self.plane, self.ch, pf, fam, lvl, cols, cap, t=(t0, t1))
+
     def top_line(self, u0, u1, d0, d1, col):
-        """A painted band on the top over [u0, u1] x [d0, d1] (d from the block's face)."""
-        self.k.poly([T.P(self.ax, self.plane, u, self.sec.H + PAINT, d) for u, d in ((u0, d0), (u1, d0), (u1, d1),
-                                                                                    (u0, d1))],
-                    F, 3, core.Vector((0, 0, 1)), fixed=col)
+        """A painted band on the top over [u0, u1] x [d0, d1] (d from the block's face), mitred where it meets a
+        face's outer end (the top's corner is square: the other face's band meets it on the diagonal)."""
+        m0 = self.mt[0] if abs(u0 - self.a) < 1e-6 else 0.0
+        m1 = 1.0 if self.ch or self.mt[1] else 0.0
+        m1 = m1 if abs(u1 - self.b) < 1e-6 else 0.0
+        pts = ((u0 - d0 * m0, d0), (u1 + d0 * m1, d0), (u1 + d1 * m1, d1), (u0 - d1 * m0, d1))
+        self.k.poly([T.P(self.ax, self.plane, u, self.sec.H + PAINT, d) for u, d in pts],
+                    F, 3, core.Vector((0, 0, 1)), fixed=DEBUG_COL if self.dbg else col)

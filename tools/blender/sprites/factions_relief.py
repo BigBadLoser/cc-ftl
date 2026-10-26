@@ -735,15 +735,15 @@ class Recessed(FreeEnds, T.Shell):
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
 
 
-def corner_piece(k, X, Y, C, prof, fam, lvl, cols=None, cap=None):
+def corner_piece(k, X, Y, C, prof, fam, lvl, cols=None, cap=None, t=(0.0, 1.0)):
     """A face part's profile ((d, z): d out from the wall's line) carried round an outer corner chamfered C along each
     axis: each point runs from (X - C + d, Y + d) on the y face to (X + d, Y - C + d) on the x face. So every
     chamfer on the corner, at any depth, has the same width and the same two edges on screen (the joints run along
-    x = y, straight at the camera), and it meets the faces' parts (prism with mitre=True at u = X - C)."""
+    x = y, straight at the camera), and it meets the faces' parts (prism with mitre=True at u = X - C). t: only
+    that part of the chamfer's width (0 its y face's edge, 1 its x face's)."""
     n_, up = Vector((R2, R2, 0)), Vector((0, 0, 1))
     c = C if callable(C) else (lambda z: C)             # (C a callable: the chamfer by height)
-    J1 = [Vector((X - c(z) + d, Y + d, z)) for d, z in prof]
-    J2 = [Vector((X + d, Y - c(z) + d, z)) for d, z in prof]
+    J1, J2 = ([Vector((X - (1 - s) * c(z) + d, Y + d - s * c(z), z)) for d, z in prof] for s in t)
     m = len(prof)
     dc, zc = sum(q[0] for q in prof) / m, sum(q[1] for q in prof) / m
     for i in range(m):
