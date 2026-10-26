@@ -25,8 +25,8 @@
 
 <style>
   .veil { position: fixed; inset: 0; z-index: 25; background: rgba(4, 8, 14, 0.5); display: grid; place-items: center; padding: 12px; touch-action: none; }
-  .card { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 24px); overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 0; padding: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
-  header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .card { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; overflow: hidden; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 0; padding: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
+  header { flex: none; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .who { flex: 1; min-width: 0; }
   h2 { margin: 0; font-size: 18px; color: var(--cyan); }
   .who small { color: var(--dim); }
