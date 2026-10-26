@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, FUEL_ITEM, START_NODE, TraderC, burnFuel, cheapestHop, deserialize, distressBlocker, econOf, fuelOnSale, fuelStock, galaxyIndex, isStranded, newGame,
+  CombatC, FTL_CHARGE_SEC, ModuleC, StorageC, shipIdOf, spawnShip, storageAdd, FUEL_ITEM, START_NODE, TraderC, burnFuel, cheapestHop, deserialize, distressBlocker, econOf, fuelOnSale, fuelStock, galaxyIndex, isStranded, newGame,
   playerShip, portsAt, serialize, tugQuote, unitPrice, type Sim, type SimEvent,
 } from '../sim';
 import { reputationOf } from '../sim/story/state';
@@ -180,5 +180,37 @@ describe('stranded and the distress tug', () => {
     expect(fuelStock(a)).toBeGreaterThan(0);
     expect(serialize(b)).toEqual(serialize(a));
     expect(serialize(play())).toEqual(serialize(play()));
+  });
+});
+
+describe('review fixes', () => {
+  it('a seller that refuses to trade with the player does not count as fuel on sale', () => {
+    const sim = newGame(7, content);
+    run(sim, 5);
+    burnFuel(sim, fuelStock(sim));
+    expect(fuelOnSale(sim)).toBeGreaterThan(0);
+    // Standing with the traders so low that the station will not answer a hail.
+    sim.story.reputation['traders'] = -10;
+    expect(fuelOnSale(sim)).toBe(0);
+    expect(distressBlocker(sim)).toBe('');
+    sim.enqueue({ type: 'galaxy.distress' });
+    expect(run(sim, 1)).toContain('galaxy.distressSent');
+  });
+
+  it('the tug fills the flown ship, never another player ship, even when its storage is full', () => {
+    const sim = stranded();
+    dryDock(sim);
+    const flown = playerShip(sim);
+    const second = spawnShip(sim, content.ships['ship.starter'], { faction: 'player', x: 600, y: 600 });
+    const storeOf = (ship: number): number[] => sim.world.query(StorageC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship);
+    expect(storeOf(second).length).toBeGreaterThan(0);
+    const before = fuelStock(sim, second);
+    for (const id of storeOf(flown)) storageAdd(sim, id, 'item.scrap', 100000);
+    sim.enqueue({ type: 'galaxy.distress' });
+    run(sim, 1);
+    turns(sim, DISTRESS_TURNS);
+    run(sim, 1);
+    expect(fuelStock(sim, flown)).toBe(tugQuote(sim).fuel);
+    expect(fuelStock(sim, second)).toBe(before);
   });
 });

@@ -1,8 +1,10 @@
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
-import { giveItems } from '../story/effects';
+import { spillItems } from '../items/stacks';
+import { storageAdd } from '../items/storage';
+import { ModuleC } from '../modules/components';
 import { playerShip } from '../trade/player';
-import { FUEL_ITEM, fuelStock } from './fuel';
+import { FUEL_ITEM, fuelStock, storagesOf } from './fuel';
 import { econOf, stockAt, valueAt } from './market';
 import { portsAt } from './portIndex';
 import { galaxyIndex } from './state';
@@ -32,6 +34,24 @@ export function isStranded(sim: Sim): boolean {
   return need !== null && fuelStock(sim, playerShip(sim)) < need;
 }
 
+/** The hail rule (`hailVerdict`) for a market with no ship: faction relation + trader kind relation + the player's reputation must be at least 0, else it will not trade. */
+function wouldTrade(sim: Sim, t: { faction: string; profile: string }): boolean {
+  const cfg = sim.content.trade;
+  const fac = cfg?.factions[t.faction];
+  const score = (fac?.relation ?? 0) + (cfg?.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, fac.reputation) : 0);
+  return score >= 0;
+}
+
+/** Put fuel in the flown ship's own storage (what `fuelStock` and jumps read); what does not fit lands on the floor of that ship. Returns units that found no room. */
+function deliver(sim: Sim, ship: number, count: number): number {
+  let left = count;
+  const stores = storagesOf(sim, ship);
+  for (const id of stores) left -= storageAdd(sim, id, FUEL_ITEM, left);
+  const first = stores[0] === undefined ? undefined : sim.world.get(stores[0], ModuleC);
+  if (left > 0 && first) left = spillItems(sim, ship, first.x, first.y, FUEL_ITEM, left);
+  return left;
+}
+
 /**
  * Fuel the player could buy from a station in this node now: the shelf, capped by what their credits pay at the station's price (the market value plus the
  * trade spread; reputation shifts it a little). Civilian stations and mining outposts only: dens and depots may refuse a hail.
@@ -42,7 +62,7 @@ export function fuelOnSale(sim: Sim): number {
   for (const p of portsAt(sim, sim.galaxy.current)) {
     if (p.kind !== 'station' && p.kind !== 'outpost') continue;
     const e = econOf(sim, p);
-    if (!e) continue;
+    if (!e || !wouldTrade(sim, e.trader)) continue;
     const shelf = Math.floor(stockAt(sim, e, sim.galaxy.turn)[FUEL_ITEM] ?? 0);
     const unit = Math.max(1, Math.ceil(valueAt(sim, e, FUEL_ITEM, shelf) * spread));
     n += Math.min(shelf, Math.floor(Math.max(0, sim.trade.credits) / unit));
@@ -95,7 +115,7 @@ export function stepDistress(sim: Sim, turn: number): void {
   const q = tugQuote(sim);
   const paid = Math.min(Math.max(0, sim.trade.credits), q.total);
   sim.trade.credits -= paid;
-  const left = giveItems(sim, FUEL_ITEM, q.fuel);
+  const left = deliver(sim, playerShip(sim), q.fuel);
   const owed = paid < q.total;
   if (owed) sim.story.reputation['traders'] = reputationOf(sim.story, 'traders') - DISTRESS_UNPAID_REP;
   sim.events.emit({ type: 'galaxy.towArrived', fuel: q.fuel - left, paid, owed: q.total - paid });
