@@ -236,4 +236,5 @@ describe('sector refactor equivalence', () => {
   });
 });
 
-const EXPECTED = { combat: 'b32b3991', disaster: '04df4a60' };
+// Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
+const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };

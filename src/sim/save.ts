@@ -66,8 +66,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v52 (fuel economy): `GalaxyState.distress` (a pending call for a tug), `item.fuel` in the market goods.
  * v53 (playtest fixes): optional `Module.wrecked` (set at 0 hp, cleared past half hp; a patched wreck is not announced twice).
  * v54 (blueprints): `StoryState.blueprints` (the bought module blueprints), Mk II / III core module defs, research stations.
+ * v55 (shield tiers): `module.shieldGenSmall` removed (now `module.shieldGen`, 2x2); Mk II is 2x3, Mk III 3x3.
  */
-export const SAVE_VERSION = 54;
+export const SAVE_VERSION = 55;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
