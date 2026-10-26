@@ -79,7 +79,7 @@ describe('port markets', () => {
     expect(factorAt(e, 'item.ration', b * 3)).toBeLessThan(0.8);
     expect(factorAt(e, 'item.ration', b * 3)).toBeGreaterThanOrEqual(0.5);
     expect(factorAt(e, 'item.ration', 0)).toBeLessThanOrEqual(1.6);
-    expect(factorAt(e, 'item.fuel', 5)).toBe(1);
+    expect(factorAt(e, 'item.blade', 5)).toBe(1);
   });
 
   it('drifts back to its level slowly when nobody trades, and the stock stays within [0, cap]', () => {
