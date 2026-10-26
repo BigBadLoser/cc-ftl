@@ -10,6 +10,7 @@ import { discover } from './travel';
 import { leave, respond } from './respond';
 import { addNotoriety, clearNotoriety } from './heat';
 import { hireCrew } from './recruit';
+import { callForHelp } from './stranded';
 import { abandonJob, acceptJob, openCrate } from './jobs';
 
 type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety'>;
@@ -21,6 +22,7 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'galaxy.respond': (sim, cmd) => void respond(sim, cmd.encounter, cmd.choice),
   'galaxy.leaveEvent': (sim) => void leave(sim),
   'galaxy.clearNotoriety': (sim) => void clearNotoriety(sim),
+  'galaxy.distress': (sim) => void callForHelp(sim),
   'crew.hire': (sim, cmd) => hireCrew(sim, cmd.key),
   'jobs.accept': (sim, cmd) => void acceptJob(sim, cmd.key),
   'jobs.abandon': (sim, cmd) => void abandonJob(sim, cmd.id),

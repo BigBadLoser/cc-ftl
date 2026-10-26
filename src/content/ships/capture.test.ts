@@ -47,8 +47,9 @@ const arm = (sim: Sim, id: number, weapon = 'item.rifle'): void => {
   sim.world.add(id, DraftedC, { target: null });
 };
 /** Put the first `n` player crew aboard the raider, rifles drawn, the first one on the helm tile. */
-function boardingParty(sim: Sim, n = 2): number[] {
-  const party = crewOn(sim, 1).slice(0, n);
+function boardingParty(sim: Sim, n = 2, roles?: string[]): number[] {
+  const home = crewOn(sim, 1);
+  const party = roles ? roles.map((r) => home.find((c) => roleOf(sim, c) === r)!) : home.slice(0, n);
   const helm = helmTile(sim, 2);
   party.forEach((c, i) => {
     teleport(sim, c, 2, helm.x + (i === 0 ? 0 : 1), helm.y);
@@ -58,8 +59,8 @@ function boardingParty(sim: Sim, n = 2): number[] {
 }
 
 /** Raider crew all surrendered, party member 0 on the helm: the fast road to a capture. */
-function stage(sim: Sim, partySize = 2): { party: number[]; raiders: number[] } {
-  const party = boardingParty(sim, partySize);
+function stage(sim: Sim, partySize = 2, roles?: string[]): { party: number[]; raiders: number[] } {
+  const party = boardingParty(sim, partySize, roles);
   const raiders = crewOn(sim, 2).filter((c) => !party.includes(c));
   for (const c of raiders) sim.world.add(c, SurrenderedC, { tick: sim.tick });
   return { party, raiders };
@@ -103,7 +104,8 @@ describe('capturing a ship', () => {
 
   it('is not captured while an armed enemy is still up', () => {
     const sim = setup();
-    const { party, raiders } = stage(sim);
+    // Two fighters who cannot subdue the last raider within the run (a gunner would take it prisoner at once).
+    const { party, raiders } = stage(sim, 2, ['role.engineer', 'role.pilot']);
     for (const c of party) sim.world.get(c, HealthC)!.max = sim.world.get(c, HealthC)!.hp = 100000;
     const last = raiders[raiders.length - 1]!;
     sim.world.remove(last, SurrenderedC);

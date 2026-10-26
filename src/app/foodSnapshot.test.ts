@@ -11,10 +11,10 @@ describe('buildFood', () => {
     const sim = newGame(1, content);
     const f = food(sim);
     expect(f.units).toBe(12);
-    expect(f.eaters).toBe(5);
-    // 12 rations x 50 nutrition at 5 crew x 0.12 per second.
-    expect(f.hours).toBeCloseTo((12 * 50) / (5 * 0.12 * 3600), 1);
-    expect(f.perHour).toBeCloseTo((5 * 0.12 * 3600) / 50, 1);
+    expect(f.eaters).toBe(4);
+    // 12 rations x 50 nutrition at 4 crew x 0.12 per second.
+    expect(f.hours).toBeCloseTo((12 * 50) / (4 * 0.12 * 3600), 1);
+    expect(f.perHour).toBeCloseTo((4 * 0.12 * 3600) / 50, 1);
   });
 
   it('reports zero hours with no food, and no time without crew', () => {

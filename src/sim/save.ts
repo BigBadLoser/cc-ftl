@@ -63,6 +63,7 @@ import { newTrade, type TradeState } from './trade/types';
  * v50 (goal chain): `StoryState.goals` (act, goals done, skipped, home cluster), `stat.*` story flags.
  * v51 (crew for hire): `GalaxyState.recruitLog`, `ForHireC` on station crew who can be hired, `Deal.crew` (a hiring run fetches them by
  *     shuttle).
+ * v52 (fuel economy): `GalaxyState.distress` (a pending call for a tug), `item.fuel` in the market goods.
  */
 export const SAVE_VERSION = 52;
 
