@@ -17,8 +17,9 @@ export interface TargetLike {
  * Whether a pointer landing on `el` is outside every UI panel: the world canvas, the bare page, or a modal's backdrop
  * (`data-backdrop`). Anything else is UI chrome (panels, the top bars, the toolbar, the goals card, alerts) and never counts.
  */
-export function isOutsideTarget(el: TargetLike | null): boolean {
-  if (!el) return true;
+export function isOutsideTarget(target: TargetLike | EventTarget | null): boolean {
+  if (!target) return true;
+  const el = target as TargetLike;
   if (el.hasAttribute?.('data-backdrop')) return true;
   return el.tagName === 'CANVAS' || el.tagName === 'BODY' || el.tagName === 'HTML';
 }
@@ -44,7 +45,7 @@ const TAP_SLOP = 6;
 export function outsideTap(onOutside: () => void) {
   let down: { id: number; x: number; y: number; outside: boolean } | null = null;
   return {
-    onDown(e: { pointerId: number; clientX: number; clientY: number; button?: number; target: TargetLike | null }) {
+    onDown(e: { pointerId: number; clientX: number; clientY: number; button?: number; target: TargetLike | EventTarget | null }) {
       down = e.button && e.button !== 0 ? null : { id: e.pointerId, x: e.clientX, y: e.clientY, outside: isOutsideTarget(e.target) };
     },
     onUp(e: { pointerId: number; clientX: number; clientY: number }) {
