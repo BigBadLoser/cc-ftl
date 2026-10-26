@@ -18,11 +18,11 @@ export interface CourierPlan {
   cap: number;
 }
 
-/** The shuttle type a trader's own courier uses: the first cargo-carrying vehicle def (stable order). */
+/** The shuttle type a trader's own courier uses: the first cargo-carrying vehicle of class 'shuttle' (stable order). Pods are never couriers. */
 export function courierDef(sim: Sim): { id: string; def: VehicleDef } | null {
   for (const id of Object.keys(sim.content.vehicles ?? {}).sort()) {
     const def = sim.content.vehicles?.[id];
-    if (def && (def.cargo ?? 0) > 0) return { id, def };
+    if (def && def.class === 'shuttle' && (def.cargo ?? 0) > 0) return { id, def };
   }
   return null;
 }

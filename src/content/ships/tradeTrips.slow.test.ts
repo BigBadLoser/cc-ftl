@@ -4,6 +4,9 @@ import { MAX_TRIPS, planTrips } from '../../sim/trade/trips';
 import { shipIds, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 
+/** One shuttle hold: what a trip carries, for the trader's courier and the player's alike. */
+const HOLD = content.vehicles['vehicle.shuttle'].cargo;
+
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
   for (let i = 0; i < n; i++) {
@@ -15,7 +18,7 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 
-/** A started game with a hailed freighter (it sends its own shuttle: a hold of 24) holding plenty of metal; the first role match found over fixed seeds 1..79, no seed is picked for its outcome. */
+/** A started game with a hailed freighter (it sends its own shuttle: the shuttle's hold of 40) holding plenty of metal; the first role match found over fixed seeds 1..79, no seed is picked for its outcome. */
 function freighter(): { sim: Sim; ship: number } {
   for (let seed = 1; seed < 80; seed++) {
     const sim = newGame(1, content);
@@ -29,7 +32,7 @@ function freighter(): { sim: Sim; ship: number } {
     run(sim, 2);
     const t = sim.world.get(ship, TraderC)!;
     t.stock = t.stock.filter((s) => s.item !== 'item.metal');
-    t.stock.push({ item: 'item.metal', count: 200 });
+    t.stock.push({ item: 'item.metal', count: 1000 });
     sim.enqueue({ type: 'debug.setCredits', value: 100000 });
     run(sim, 1);
     return { sim, ship };
@@ -49,16 +52,17 @@ function buy(sim: Sim, ship: number, n: number): { deal: () => Deal; balance: nu
 }
 
 describe('orders bigger than one hold run as several trips', () => {
-  it('a 60-item order from a freighter runs as trips of 24, 24 and 12 and settles trip by trip', () => {
+  it('a 60-item order from a freighter runs as trips of 40 and 20 and settles trip by trip', () => {
     const { sim, ship } = freighter();
     const t = sim.world.get(ship, TraderC)!;
     const start = { credits: sim.trade.credits, theirs: t.credits, stock: metal(sim, ship), have: playerItems(sim, 'item.metal') };
     const { deal, balance } = buy(sim, ship, 60);
-    expect(deal().trip).toMatchObject({ n: 1, of: 3 });
-    expect(deal().get).toEqual([{ item: 'item.metal', count: 24 }]);
+    expect(HOLD).toBe(40);
+    expect(deal().trip).toMatchObject({ n: 1, of: 2 });
+    expect(deal().get).toEqual([{ item: 'item.metal', count: 40 }]);
     // Only the first trip is held: its credits are in escrow and its goods out of the trader's stock.
     expect(sim.trade.credits).toBe(start.credits - deal().held);
-    expect(metal(sim, ship)).toBe(start.stock - 24);
+    expect(metal(sim, ship)).toBe(start.stock - 40);
     const settled: number[] = [];
     const trips: number[] = [];
     for (let i = 0; i < 30000 && deal().phase !== 'done' && deal().phase !== 'failed'; i++) {
@@ -67,8 +71,8 @@ describe('orders bigger than one hold run as several trips', () => {
       if (trips[trips.length - 1] !== n) trips.push(n);
     }
     expect(deal().phase).toBe('done');
-    expect(trips).toEqual([1, 2, 3]);
-    expect(settled).toHaveLength(3);
+    expect(trips).toEqual([1, 2]);
+    expect(settled).toHaveLength(2);
     expect(settled.reduce((a, b) => a + b, 0)).toBe(balance); // the trips add up to the order the player was quoted
     run(sim, 600);
     expect(playerItems(sim, 'item.metal')).toBe(start.have + 60);
@@ -83,7 +87,7 @@ describe('orders bigger than one hold run as several trips', () => {
     const { sim, ship } = freighter();
     const t = sim.world.get(ship, TraderC)!;
     const start = { credits: sim.trade.credits, theirs: t.credits, stock: metal(sim, ship), have: playerItems(sim, 'item.metal') };
-    const { deal } = buy(sim, ship, 60);
+    const { deal } = buy(sim, ship, 90); // trips of 40, 40 and 10
     const first = deal().balance;
     // Run until trip 2 has been started (trip 1 settled), then shoot its courier down.
     for (let i = 0; i < 30000 && deal().trip?.n !== 2; i++) run(sim, 1);
@@ -99,9 +103,9 @@ describe('orders bigger than one hold run as several trips', () => {
     expect(deal().trip?.rest).toEqual([]);
     expect(sim.trade.credits).toBe(start.credits - first);
     expect(t.credits).toBe(start.theirs + first);
-    expect(metal(sim, ship)).toBe(start.stock - 48);
+    expect(metal(sim, ship)).toBe(start.stock - 80);
     run(sim, 600);
-    expect(playerItems(sim, 'item.metal')).toBe(start.have + 24);
+    expect(playerItems(sim, 'item.metal')).toBe(start.have + 40);
   });
 });
 
@@ -175,17 +179,17 @@ describe('orders on the player shuttle (hold of 40)', () => {
 describe('the cap of one trip', () => {
   it('splits by the hold and never puts more than a hold in a trip', () => {
     const { sim, ship } = freighter();
-    for (const n of [1, 24, 25, 48, 60, 24 * MAX_TRIPS]) {
-      const trips = planTrips(sim, ship, [], [{ item: 'item.metal', count: n }], 24)!;
-      expect(trips.length).toBe(Math.ceil(n / 24));
-      for (const tr of trips) expect(tr.get.reduce((a, l) => a + l.count, 0)).toBeLessThanOrEqual(24);
+    for (const n of [1, HOLD, HOLD + 1, 2 * HOLD, 60, HOLD * MAX_TRIPS]) {
+      const trips = planTrips(sim, ship, [], [{ item: 'item.metal', count: n }], HOLD)!;
+      expect(trips.length).toBe(Math.ceil(n / HOLD));
+      for (const tr of trips) expect(tr.get.reduce((a, l) => a + l.count, 0)).toBeLessThanOrEqual(HOLD);
       expect(trips.reduce((a, tr) => a + tr.get.reduce((x, l) => x + l.count, 0), 0)).toBe(n);
     }
   });
 
   it('refuses an order of more than the most trips', () => {
     const { sim, ship } = freighter();
-    sim.enqueue({ type: 'trade.offer', ship, give: [], get: [{ item: 'item.metal', count: 24 * MAX_TRIPS + 1 }] });
+    sim.enqueue({ type: 'trade.offer', ship, give: [], get: [{ item: 'item.metal', count: HOLD * MAX_TRIPS + 1 }] });
     const offered = ofType(run(sim, 2), 'trade.offered')[0]!;
     sim.enqueue({ type: 'trade.accept', offer: offered.offer });
     expect(ofType(run(sim, 2), 'command.rejected').map((e) => e.reason)).toEqual(['tooBig']);
