@@ -508,12 +508,14 @@ def snap(plane):
 
 def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, dress=None):
     """walls.block in relief. shell: a Shell class to build on instead of the look's; dress: the hull faces'
-    dressing instead of the look's (the exterior hull, wall3d_ext); a shell with no_skirt has no skirt plates."""
+    dressing instead of the look's (the exterior hull, wall3d_ext); a shell with no_skirt has no skirt plates, one with
+    no_cap no cap plates."""
     global END_TOPS, SHELL
     sp = SHELL = (shell or (STYLE or {}).get("shell", Shell))(mask, fam, level, 1 if deco == 1 else 0, corners)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     W.emit(k.m, sp)
-    cap(k, sp)
+    if not getattr(sp, "no_cap", False):
+        cap(k, sp)
     for ax, plane, a, b, top in faces(sp):
         e = 1e-3
         um = (a + b) / 2
