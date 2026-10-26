@@ -15,13 +15,17 @@
     /** Jobs held, shown on the tile. */
     jobCount: number;
     onJobs: () => void;
+    /** The ship has a research module: the research button shows. */
+    hasLab: boolean;
+    researchOpen: boolean;
+    onResearch: () => void;
     onMap: () => void;
     onOverview: () => void;
     onCrew: () => void;
     onStock: () => void;
     onCombat: () => void;
   };
-  let { mapOpen, mapLocked, onMap, overviewOpen, stockOpen, prioritiesOpen, hostile, combatOpen, jobsOpen, jobCount, onJobs, onOverview, onCrew, onStock, onCombat }: Props = $props();
+  let { mapOpen, mapLocked, onMap, overviewOpen, stockOpen, prioritiesOpen, hostile, combatOpen, jobsOpen, jobCount, onJobs, hasLab, researchOpen, onResearch, onOverview, onCrew, onStock, onCombat }: Props = $props();
 </script>
 
 <!-- Global screens: one framed strip of flush icon tiles, the starmap first. -->
@@ -31,6 +35,7 @@
   <button class="tile" class:on={prioritiesOpen} title="Crew priorities" aria-label="Crew" data-testid="crew-open" onclick={onCrew}><Icon name="person" size={22} /></button>
   <button class="tile" class:on={stockOpen} title="Ship stock" aria-label="Stock" data-testid="stock-open" onclick={onStock}><Icon name="stock" size={22} /></button>
  <button class="tile" class:on={jobsOpen} title="Jobs" aria-label="Jobs" data-testid="jobs-open" onclick={onJobs}><Icon name="list" size={22} />{#if jobCount}<b class="badge">{jobCount}</b>{/if}</button>
+  {#if hasLab}<button class="tile" class:on={researchOpen} title="Research" aria-label="Research" data-testid="research-open" onclick={onResearch}><Icon name="research" size={22} /></button>{/if}
   <button class="tile combat" class:on={combatOpen} class:hot={hostile} title={hostile ? 'Combat' : 'No enemies'} aria-label="Combat" aria-disabled={!hostile} data-testid="combat-open" onclick={onCombat}><Icon name="target" size={22} /></button>
 </div>
 

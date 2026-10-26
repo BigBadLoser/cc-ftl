@@ -169,10 +169,39 @@ export interface UiModule {
   storage: boolean;
   /** Crafts recipes (has a production panel). */
   crafting: boolean;
+  /** A research module (the inspector opens the research panel). */
+  research: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
+}
+
+/** One research project against the home ship's stock and queue. `pos`: its place in the queue (0 = first), else null. */
+export interface UiResearchProject {
+  id: string;
+  name: string;
+  /** active: paid and being worked; queued: waiting (the first in line waits for its materials); locked: a blueprint it needs is unknown; known: done. */
+  status: 'active' | 'queued' | 'open' | 'locked' | 'known';
+  pos: number | null;
+  cost: (UiCost & { have: number })[];
+  /** Work time at one worker with no science. */
+  seconds: number;
+  progress: number;
+  unlocks: string[];
+  /** Names of the blueprints still missing before it can be queued. */
+  needs: string[];
+}
+
+export interface UiResearch {
+  /** The ship the commands take. */
+  ship: number;
+  /** Research modules that can work, and crew standing at them now. */
+  labs: number;
+  workers: number;
+  projects: UiResearchProject[];
+  /** Project ids in queue order (the first is the active one once paid). */
+  queue: string[];
 }
 
 export interface UiRobotBay {
@@ -863,6 +892,7 @@ export interface UiApi {
   stock: Subscribable<UiStock[]>;
   storages: Subscribable<UiStorage[]>;
   fabs: Subscribable<UiFab[]>;
+  research: Subscribable<UiResearch>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
   /** Module construction sites, and the selected one (a job id). */

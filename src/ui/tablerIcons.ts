@@ -22,6 +22,7 @@ import t_dots from '@tabler/icons/outline/dots.svg?raw';
 import t_droplet from '@tabler/icons/outline/droplet.svg?raw';
 import t_eye from '@tabler/icons/outline/eye.svg?raw';
 import t_flag from '@tabler/icons/outline/flag.svg?raw';
+import t_flask_2 from '@tabler/icons/outline/flask-2.svg?raw';
 import t_flame from '@tabler/icons/outline/flame.svg?raw';
 import t_flare from '@tabler/icons/outline/flare.svg?raw';
 import t_focus_centered from '@tabler/icons/outline/focus-centered.svg?raw';
@@ -140,6 +141,7 @@ export const FILES = {
   fire: 'flame',
   pin: 'pin',
   lock: 'lock',
+  research: 'flask-2',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -165,6 +167,7 @@ const RAW: Record<string, string> = {
   'eye': t_eye,
   'flag': t_flag,
   'flame': t_flame,
+  'flask-2': t_flask_2,
   'flare': t_flare,
   'focus-centered': t_focus_centered,
   'gas-station': t_gas_station,

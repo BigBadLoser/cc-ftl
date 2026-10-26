@@ -4,7 +4,7 @@ import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -71,6 +71,23 @@ export interface ContentRegistry {
   creatures?: CreatureDefs;
   /** Ore kinds in asteroid rock (content/ores.ts) by id. Absent = asteroids carry no ore. */
   ores?: Record<string, OreDef>;
+  /** Research projects (content/research.ts) by id. Absent = nothing to research. */
+  research?: Record<string, ResearchDef>;
+}
+
+/**
+ * A research project (sim/research): crew work it at a research module until `work` is done, which unlocks the blueprints of `unlocks`
+ * (module def ids, as buying them at a station does). `cost` is taken from the ship's stock when the project becomes the active one.
+ * `requires`: blueprints that must be known before it can be queued (Mk III needs Mk II).
+ */
+export interface ResearchDef {
+  name: string;
+  description?: string;
+  cost: ItemQty[];
+  /** Ticks of work at workSpeed 1 and science 0. */
+  work: number;
+  unlocks: string[];
+  requires?: string[];
 }
 
 /** Derelict creatures (content/creatures.ts). */
@@ -377,6 +394,8 @@ export interface ModuleDef {
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
   workstation?: true;
+  /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
+  research?: true;
   /** Materials to build it; deconstructing refunds DECON_REFUND of them. */
   cost?: ItemQty[];
   /** Holds items: capacity in stacks. */

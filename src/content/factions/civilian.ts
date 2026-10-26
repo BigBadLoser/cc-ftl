@@ -54,7 +54,7 @@ export const civilian = {
   aiCore: true,
   crew: {
     required: ['role.pilot', 'role.engineer'],
-    pool: [{ value: 'role.engineer', weight: 2 }, { value: 'role.medic', weight: 1 }, { value: 'role.security', weight: 1 }],
+    pool: [{ value: 'role.engineer', weight: 2 }, { value: 'role.medic', weight: 1 }, { value: 'role.security', weight: 1 }, { value: 'role.scientist', weight: 1 }],
     species: ['species.human'],
   },
   doctrine: { targeting: 'random' },

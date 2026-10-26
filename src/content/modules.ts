@@ -87,6 +87,25 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
     workstation: true,
   },
+  // The research module: crew work the ship's active research project here (sim/research). No blueprint: known from the start.
+  // Placeholder art: the console sprite (docs/STATUS.md). Needs its own model in an art pack.
+  'module.research': {
+    name: 'Research module',
+    category: 'systems',
+    description: "Crew study the ship's active research project here, faster with science. A second one speeds the same project up.",
+    asset: 'module.console',
+    footprint: [1, 1],
+    solid: true,
+    access: [0, 1],
+    power: -4,
+    powerPriority: 4,
+    flammability: 0.3,
+    maxHp: 70,
+    buildWork: 120,
+    cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 6 }],
+    workstation: true,
+    research: true,
+  },
   // Crew work at the access tile (below, at rotation 0). Draws power; crafts recipes with this station.
   'module.fabricator': {
     name: 'Fabricator',
