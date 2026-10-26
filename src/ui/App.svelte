@@ -23,6 +23,7 @@
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
+  import JobsTracker from './JobsTracker.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
@@ -190,7 +191,7 @@
   </span>
 {/snippet}
 
-<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancel={() => outside.onCancel()} />
+<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas}></canvas>
 
@@ -214,6 +215,9 @@
 
 {#if overviewOpen}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
+{/if}
+{#if jobsOpen}
+  <JobsPanel {api} onClose={() => (jobsOpen = false)} />
 {/if}
 {#if stockOpen}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />
@@ -251,14 +255,14 @@
 <ErrorOverlay {api} />
 <GameSession {api} />
 
-<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, then alerts, stack below as separate cards. -->
+<!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, the accepted-jobs tracker, then alerts, stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>
   <div class="frame">
     <EventLog {api} />
     {#if !narrow}{@render time()}{/if}
   </div>
   <GoalsCard {api} />
-  {#if jobsOpen}<JobsPanel {api} onClose={() => (jobsOpen = false)} />{/if}
+  <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
   <StrandedBanner {api} />
   <AlertList {api} />
 </div>

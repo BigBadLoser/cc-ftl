@@ -24,3 +24,22 @@ export function writeGoalsOpen(open: boolean, store: () => Store = () => session
     /* not remembered */
   }
 }
+
+export const JOBS_PHONE_KEY = 'cc.jobsOpenPhone';
+
+/** Whether the phone jobs tracker was left expanded this session; collapsed when unset or storage is unavailable. */
+export function readJobsOpen(store: () => Store = () => sessionStorage): boolean {
+  try {
+    return store().getItem(JOBS_PHONE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function writeJobsOpen(open: boolean, store: () => Store = () => sessionStorage): void {
+  try {
+    store().setItem(JOBS_PHONE_KEY, open ? '1' : '0');
+  } catch {
+    /* not remembered */
+  }
+}

@@ -47,4 +47,25 @@ describe('outsideTap', () => {
     t.onUp({ pointerId: 1, clientX: 0, clientY: 0 });
     expect(count()).toBe(0);
   });
+  it('a pinch is never a tap, even when one finger stays down and the other lifts last', () => {
+    const { t, count } = mk();
+    const c = { tagName: 'CANVAS' };
+    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: c });
+    t.onDown({ pointerId: 2, clientX: 50, clientY: 50, target: c });
+    t.onUp({ pointerId: 2, clientX: 50, clientY: 50 });
+    t.onUp({ pointerId: 1, clientX: 10, clientY: 10 });
+    expect(count()).toBe(0);
+    // the next single tap works again
+    t.onDown({ pointerId: 3, clientX: 10, clientY: 10, target: c });
+    t.onUp({ pointerId: 3, clientX: 10, clientY: 10 });
+    expect(count()).toBe(1);
+  });
+  it('a cancelled pointer ends the gesture', () => {
+    const { t, count } = mk();
+    const c = { tagName: 'CANVAS' };
+    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: c });
+    t.onCancel({ pointerId: 1 });
+    t.onUp({ pointerId: 1, clientX: 10, clientY: 10 });
+    expect(count()).toBe(0);
+  });
 });

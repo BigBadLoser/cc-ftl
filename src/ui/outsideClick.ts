@@ -40,20 +40,38 @@ const TAP_SLOP = 6;
 /**
  * Pointer tracking for the outside click: a press that starts outside and is released nearly where it began (not a camera drag)
  * calls `onOutside`. The press still reaches the world, so one click closes the panels and selects what is under it.
- * Returns the two handlers to attach to the window.
+ * Like the canvas input, a second pointer joining (a pinch or two-finger pan) makes the whole gesture not a tap, until every pointer is up.
+ * Returns the handlers to attach to the window.
  */
 export function outsideTap(onOutside: () => void) {
+  const active = new Set<number>();
   let down: { id: number; x: number; y: number; outside: boolean } | null = null;
+  let multi = false;
+  const release = (id: number) => {
+    active.delete(id);
+    if (active.size === 0) multi = false;
+  };
   return {
     onDown(e: { pointerId: number; clientX: number; clientY: number; button?: number; target: TargetLike | EventTarget | null }) {
+      active.add(e.pointerId);
+      if (active.size > 1) {
+        multi = true;
+        down = null;
+        return;
+      }
       down = e.button && e.button !== 0 ? null : { id: e.pointerId, x: e.clientX, y: e.clientY, outside: isOutsideTarget(e.target) };
     },
     onUp(e: { pointerId: number; clientX: number; clientY: number }) {
       const d = down;
-      if (!d || d.id !== e.pointerId) return;
+      const tap = !multi && !!d && d.id === e.pointerId;
+      release(e.pointerId);
+      if (!tap || !d) return;
       down = null;
       if (d.outside && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= TAP_SLOP) onOutside();
     },
-    onCancel() { down = null; },
+    onCancel(e: { pointerId: number }) {
+      release(e.pointerId);
+      if (down?.id === e.pointerId) down = null;
+    },
   };
 }
