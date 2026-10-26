@@ -53,7 +53,6 @@
       clearTimeout(timer);
     };
   });
-  const left = $derived(goals ? goals.goals.filter((g) => !g.done).length : 0);
 </script>
 
 {#if finished}
@@ -67,8 +66,7 @@
       <button class="title" onclick={toggle} aria-expanded={!collapsed} data-testid="goals-toggle">
         <span class="act">Goals {goals.act}/{goals.acts}</span>
         {#if narrow && collapsed}<span class="sep">·</span>{/if}
-        <span class="name">{goals.title}</span>
-        {#if !narrow && collapsed}<span class="left">{left} left</span>{/if}
+        {#if narrow || !collapsed}<span class="name">{goals.title}</span>{/if}
         <Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
       </button>
       {#if !(narrow && collapsed)}<button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
@@ -103,7 +101,6 @@
   .title { flex: 1; display: flex; align-items: baseline; gap: 6px; min-height: 28px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .left { margin-left: auto; margin-right: 2px; color: var(--dim); font-size: 12px; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
   ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; }
   li { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; }
@@ -122,7 +119,6 @@
   /* Phone chip: one line, name ellipsised, chevron at the right. */
   .chip { padding: 0 8px; }
   .title :global(.icon) { margin-left: auto; align-self: center; color: var(--cyan); }
-  .left + :global(.icon) { margin-left: 0; }
   .chip .title { min-height: 32px; align-items: center; min-width: 0; }
   .chip .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sep { color: var(--dim); }
