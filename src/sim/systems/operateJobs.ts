@@ -1,5 +1,6 @@
-import { JobC } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
+import { AssignmentC, CrewC, DraftedC, JobC, PositionC, PrioritiesC } from '../crew/components';
+import { isIncapacitated, releaseAssignment } from '../crew/helpers';
+import { isOffDuty } from '../fight/relations';
 import { CombatC, IonC } from '../combat/components';
 
 import { ModuleC } from '../modules/components';
@@ -7,7 +8,9 @@ import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/ships';
+import { consoleSkill, skillOf } from '../combat/operators';
 import { chargeOrdered, seatHelms } from '../ftl/order';
+import { OPERATE_MAX_LEVEL } from '../tuning';
 
 /**
  * Opens one 'operate' job (category operating) per console while it is needed and drops it when it is not.
@@ -23,8 +26,14 @@ export function operateJobsSystem(sim: Sim): void {
     if (job?.kind !== 'operate') continue;
     if (consoleNeeded(sim, job.target ?? 0) && !open.has(job.target ?? 0)) {
       open.set(job.target ?? 0, jobId);
-      if (job.reservedBy) delete job.freeSince;
-      else job.freeSince ??= sim.tick;
+      if (job.reservedBy) {
+        delete job.freeSince;
+        yieldToOperator(sim, job.reservedBy);
+      }
+      else {
+        job.freeSince ??= sim.tick;
+        callOperator(sim, job);
+      }
       continue;
     }
     if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
@@ -59,3 +68,53 @@ function consoleNeeded(sim: Sim, id: number): boolean {
   return shipById(sim, shipIdOf(sim, m))?.state === 'active';
 }
 
+
+/**
+ * A relief (a crew member whose operating priority is low, standing in for an absent operator) hands the console back when other work they rank
+ * higher is waiting, or when a crew member who operates by choice (priority 1 or 2) has nothing to do: the skilled hand is back from their break.
+ */
+function yieldToOperator(sim: Sim, holder: number): void {
+  const prio = sim.world.get(holder, PrioritiesC);
+  if (!sim.sector.inCombat || !prio || prio.operating <= OPERATE_MAX_LEVEL) return;
+  // work they rank above operating (a fire, a downed crew member, a repair) calls a relief off the console
+  const ship = shipIdOf(sim, sim.world.get(holder, PositionC));
+  for (const id of sim.world.query(JobC)) {
+    const j = sim.world.get(id, JobC);
+    const level = j ? prio[j.category] : 0;
+    if (j && j.reservedBy === 0 && j.kind !== 'operate' && level >= 1 && level < prio.operating && shipIdOf(sim, j) === ship) return void releaseAssignment(sim, holder);
+  }
+  for (const id of sim.world.query(CrewC, PrioritiesC)) {
+    const level = sim.world.get(id, PrioritiesC)?.operating ?? 0;
+    if (level < 1 || level > OPERATE_MAX_LEVEL || sim.world.has(id, AssignmentC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    if (sim.world.get(id, CrewC)?.activity === 'sleeping') continue;
+    releaseAssignment(sim, holder);
+    return;
+  }
+}
+
+/**
+ * An empty console in a fight calls the crew member who operates by choice (operating priority 1 or 2, the best skill first) away from a
+ * chore they rank lower, so a gunner busy with repairs goes back to the weapons console instead of leaving it empty. The release only frees
+ * them: `decideSystem` then picks the best job, which is the console.
+ */
+function callOperator(sim: Sim, job: { target?: number }): void {
+  if (!sim.sector.inCombat) return;
+  const m = sim.world.get(job.target ?? 0, ModuleC);
+  const kind = m && sim.content.modules[m.def]?.console;
+  if (!kind) return;
+  let best = 0;
+  let bestSkill = -1;
+  for (const id of sim.world.query(CrewC, PrioritiesC, AssignmentC)) {
+    const prio = sim.world.get(id, PrioritiesC);
+    const busy = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
+    const level = prio?.operating ?? 0;
+    if (!prio || !busy || busy.kind === 'operate' || level < 1 || level > OPERATE_MAX_LEVEL) continue;
+    if ((prio[busy.category] ?? 0) <= level || sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    const skill = skillOf(sim, id, consoleSkill(kind));
+    if (skill > bestSkill) {
+      best = id;
+      bestSkill = skill;
+    }
+  }
+  if (best) releaseAssignment(sim, best);
+}

@@ -19,7 +19,7 @@ import { operateAffinity } from '../combat/operators';
 import { goToBay, wantsBay } from '../robots/bay';
 import { canTakeRobotJob, heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
-import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW, RELIEF_AFTER_SEC } from '../tuning';
+import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';
 import { TICK_HZ } from '../time';
 import { shipIdOf, shipGrid } from '../regions';
 import { strollTurn } from '../stations/life';
@@ -181,7 +181,8 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
       if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
-      const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0);
+      // a relief takes the console only when nothing else of their rank is waiting
+      const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0) + (job.kind === 'operate' && level > OPERATE_MAX_LEVEL ? RELIEF_PENALTY : 0);
       if (!best || score < best.score) best = { id: jobId, steps: plan.steps, score, thin: plan.thin };
     }
     if (best) {

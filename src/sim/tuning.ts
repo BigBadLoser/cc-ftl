@@ -179,6 +179,8 @@ export const IGNITE_INTENSITY = 90;
 export const OPERATE_MAX_LEVEL = 2;
 /** In a fight, a console nobody has held for this long is relieved by any idle crew (operating priority above OPERATE_MAX_LEVEL, but not disabled). */
 export const RELIEF_AFTER_SEC = 12;
+/** Path-score penalty on a relieved console (longer than any walk), so other work of the same rank comes first. */
+export const RELIEF_PENALTY = 1000;
 /** Operators keep manning their console until rest drops below this. */
 export const OPERATOR_EXHAUSTED_BELOW = 5;
 /**
