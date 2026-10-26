@@ -299,10 +299,10 @@ and risk is worth taking.
 - **Faction and territory gear:** some items are only available in certain faction territories or system types.
   Faction-specific gear only to an extent, without multiplying the art needed: reuse module art with variants or
   upgrades rather than a new model per faction.
-- **Research system (planned; to design):** the user wants one. Open questions:
-  - Where it happens: a research module on the ship, research stations in the galaxy, or both.
-  - What it consumes: data, samples, alien tissue, artifacts (the item art already exists for these).
-  - What it unlocks: module tiers, upgrades, implants, construction pods and drones.
+- **Research:** done at a **research module** on the player's ship; later the player may build their own research
+  station. Each research project has its own materials cost (data cores, samples, alien tissue, artifacts, components,
+  depending on the project) and takes time. Projects unlock blueprints: module tiers, upgrades, implants,
+  construction pods and drones. Build plan: `docs/PROGRESSION_PLAN.md`.
 
 ### Ship growth
 
