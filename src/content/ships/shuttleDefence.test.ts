@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, ModuleC, PositionC, VehicleC, newGame, type ModuleDef, type Sim, type SimEvent, type Vehicle } from '../../sim';
+import { CombatC, CrewC, ShipC, ModuleC, PositionC, VehicleC, newGame, type ModuleDef, type Sim, type SimEvent, type Vehicle } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { missileRaiderId, shuttleContent } from './shuttleFixture';
@@ -129,5 +129,19 @@ describe('shuttles and weapons', () => {
     expect(missiles.length).toBeGreaterThan(0);
     expect(missiles.some((e) => e.type === 'weapon.fired' && e.targetShip === 0)).toBe(true);
     expect(shuttle).toBeGreaterThan(0);
+  });
+});
+
+describe('shuttle targets after a capture', () => {
+  it("drops the automatic target when the shuttle's home ship is captured", () => {
+    const sim = setup(1);
+    disarm(sim, 2);
+    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }));
+    run(sim, 3);
+    const combat = sim.world.get(nth(sim, 1), CombatC)!;
+    expect(combat.vehicleTarget).toBe(shuttle);
+    sim.world.get(nth(sim, 2), ShipC)!.faction = 'player'; // what capturePrize does
+    run(sim, 3);
+    expect(combat.vehicleTarget).toBeUndefined();
   });
 });

@@ -1,5 +1,5 @@
 import { CombatC, ShipC, WeaponC, type Target } from '../combat/components';
-import { targetableShip, targetableVehicle } from '../combat/targets';
+import { hostileVehicle, targetableShip, targetableVehicle } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
@@ -12,9 +12,10 @@ import { shipIdOf } from '../regions';
 export function targetingSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
     const combat = sim.world.get(id, CombatC);
-    if (!combat) continue;
+    const faction = sim.world.get(id, ShipC)?.faction;
+    if (!combat || !faction) continue;
     combat.target = fix(sim, combat.target);
-    if (combat.vehicleTarget && !targetableVehicle(sim, combat.vehicleTarget)) delete combat.vehicleTarget;
+    if (combat.vehicleTarget && !hostileVehicle(sim, combat.vehicleTarget, faction)) delete combat.vehicleTarget;
   }
   for (const id of sim.world.query(WeaponC, ModuleC)) {
     const w = sim.world.get(id, WeaponC);

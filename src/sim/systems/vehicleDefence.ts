@@ -1,7 +1,7 @@
 import { BodyC } from '../body';
 import { CombatC, ShipC, type Faction } from '../combat/components';
 import { factionsHostile, isAiFaction } from '../combat/factions';
-import { targetableVehicle } from '../combat/targets';
+import { hostileVehicle } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -21,7 +21,7 @@ export function vehicleDefenceSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);
     if (!ship || !combat || isAiFaction(ship.faction) || ship.state !== 'active') continue;
-    if (combat.vehicleTarget && targetableVehicle(sim, combat.vehicleTarget)) continue;
+    if (combat.vehicleTarget && hostileVehicle(sim, combat.vehicleTarget, ship.faction)) continue;
     let best = 0;
     let bestDist = Infinity;
     for (const vid of sim.world.query(VehicleC)) {

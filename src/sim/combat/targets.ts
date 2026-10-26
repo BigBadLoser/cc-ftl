@@ -1,6 +1,7 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { WeaponC, type Combat, type Target } from './components';
+import { WeaponC, type Combat, type Faction, type Target } from './components';
+import { factionsHostile } from './factions';
 import { VehicleC } from '../vehicles/components';
 
 import { shipIdOf } from '../regions';
@@ -23,6 +24,12 @@ export function weaponAntiVehicle(sim: Sim, weaponId: number): boolean {
   const m = sim.world.get(weaponId, ModuleC);
   const w = m && sim.content.modules[m.def]?.weapon;
   return !!w && !!sim.content.weapons?.[w]?.antiVehicle;
+}
+
+/** True if a shuttle is targetable and its home ship's faction is at war with `faction` (a captured home ship makes it friendly). */
+export function hostileVehicle(sim: Sim, id: number, faction: Faction): boolean {
+  const v = sim.world.get(id, VehicleC);
+  return !!v && targetableVehicle(sim, id) && factionsHostile(faction, shipById(sim, v.homeShip)?.faction ?? 'neutral');
 }
 
 /** Module ids on a grid, ascending. */
