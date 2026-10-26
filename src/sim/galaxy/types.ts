@@ -349,6 +349,13 @@ export interface HeatState {
 }
 
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
+/** A call for a tug from a stranded ship: where, the turn it was sent and the turn the tug arrives. */
+export interface Distress {
+  node: string;
+  sent: number;
+  due: number;
+}
+
 export interface GalaxyState {
   current: string;
   /** Generated chunks by key. Saved as keys only and rebuilt from the seed on load. */
@@ -397,6 +404,8 @@ export interface GalaxyState {
   nextJob: number;
   /** The hyperspace trip in progress, or null. */
   travel: Travel | null;
+  /** A distress call waiting for its tug, or null (stranded.ts). */
+  distress: Distress | null;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }

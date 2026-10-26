@@ -34,6 +34,22 @@ export interface UiGoals {
   goals: { id: string; title: string; text: string; done: boolean }[];
 }
 
+/**
+ * The ship cannot pay for any jump (null while it can). `canCall`: no fuel on sale here, so a distress call is allowed; `blocker` otherwise says why not
+ * ('fuelOnSale': buy it at the station). `pending`: a tug is on its way, `turnsLeft` turns off. `fuel` / `unit` / `total` is the tug's offer.
+ */
+export interface UiStranded {
+  need: number;
+  have: number;
+  canCall: boolean;
+  blocker: string;
+  pending: { turnsLeft: number } | null;
+  fuel: number;
+  unit: number;
+  total: number;
+  credits: number;
+}
+
 /** A loose stack on a floor tile. */
 export interface UiStack {
   item: string;
@@ -799,6 +815,8 @@ export interface UiApi {
   jobs: Subscribable<UiJobs>;
   /** The tutorial goal chain (null when finished or skipped). */
   goals: Subscribable<UiGoals | null>;
+  /** Stranded without fuel (null when the ship can jump). */
+  stranded: Subscribable<UiStranded | null>;
   selectedSite: Subscribable<number | null>;
   selectSite(id: number | null): void;
   /** Another ship or station picked from the node strip; the selection panel drills into it. */
