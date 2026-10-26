@@ -1,4 +1,5 @@
 import type { Arranger } from './arranger';
+import { isContainerCell } from './containerCells';
 import type { TransitionStyle } from './types';
 
 /**
@@ -24,7 +25,12 @@ function addPlate(A: Arranger, cells: Cell[], label: string, donor?: string): nu
   return set.size;
 }
 
-const free = (A: Arranger, x: number, y: number): boolean => A.cell(x, y) === undefined && !A.reserved(x, y);
+/** Truss: beams and the containers clamped to them. Hull plating never touches it (trusses stay open frames). */
+const truss = (c: string | undefined): boolean => c === '=' || isContainerCell(c);
+const byTruss = (A: Arranger, x: number, y: number): boolean => truss(A.cell(x + 1, y)) || truss(A.cell(x - 1, y)) || truss(A.cell(x, y + 1)) || truss(A.cell(x, y - 1));
+
+/** Space that plating may cover: not kept open for a gun, airlock or exhaust, and not against a truss. */
+const free = (A: Arranger, x: number, y: number): boolean => A.cell(x, y) === undefined && !A.reserved(x, y) && !byTruss(A, x, y);
 
 /** Patch plates: gaps of at most `maxGap` tiles between two hull walls (seams between misaligned blocks). */
 export function plate(A: Arranger, maxGap: number, label = 'patch plates', donor = 'scrap'): number {
@@ -98,9 +104,9 @@ function enclosed(A: Arranger): Cell[][] {
 /** Enclosed space cells in all (scoring pressure against courtyards). */
 export const holes = (A: Arranger): number => enclosed(A).reduce((t, r) => t + r.length, 0);
 
-/** Plate over enclosed pockets of at most `max` cells (never one a gun or airlock must see out of). */
+/** Plate over enclosed pockets of at most `max` cells (never one a gun or airlock must see out of, or one in a truss). */
 export function fillHoles(A: Arranger, max: number): number {
-  return addPlate(A, enclosed(A).filter((r) => r.length <= max && !r.some((c) => A.reserved(c.x, c.y))).flat(), 'filled pocket');
+  return addPlate(A, enclosed(A).filter((r) => r.length <= max && r.every((c) => free(A, c.x, c.y))).flat(), 'filled pocket');
 }
 
 /**

@@ -98,9 +98,19 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
     }
     let n = 0;
     for (const top of [true, false]) {
+      let prev: { x: number; w: number; d: number } | null = null;
       for (const { x, box } of rows[2 * band + (top ? 0 : 1)] ?? []) {
         const [w, d] = box;
-        if (stampContainer(b, x, top ? y - d : y + T, w, d, `box${band}.${top ? 0 : 1}.${x}`)) n++;
+        if (!stampContainer(b, x, top ? y - d : y + T, w, d, `box${band}.${top ? 0 : 1}.${x}`)) continue;
+        n++;
+        // Cell guides: a strut from the spine out between neighbouring containers, so each box sits in a visible
+        // frame instead of floating off a spine its neighbours hide.
+        const g = prev ? x - (prev.x + prev.w) : 0;
+        if (prev && g >= 1 && g <= 2) {
+          const gd = Math.min(d, prev.d);
+          truss(b, prev.x + prev.w + Math.floor((g - 1) / 2), top ? y - gd : y + T, 1, gd, `guide${band}.${top ? 0 : 1}.${x}`);
+        }
+        prev = { x, w, d };
       }
     }
     if (n === 0) truss(b, 1, y - 1, 1, 1, 'stub');

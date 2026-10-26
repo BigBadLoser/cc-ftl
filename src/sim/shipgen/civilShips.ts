@@ -120,6 +120,7 @@ function crewBody(c: Ctx): { root: number; aft: number } | null {
 
 
 /** Container frame options drawn per ship: grid shape, rail count, stacking. */
+/** Freighters always hang their containers on an open truss (lane 1+): a single beam hides under the boxes in game. */
 const frameOpts = (c: Ctx, lane: number): Parameters<typeof containerFrame>[2] => {
   // The usual container: its short (door) end on the spine, 3x6 mostly, 2x4 now and then (the other size mixes in).
   const [cw, ch] = c.rng.pick([[3, 6], [3, 6], [2, 4]] as const);
@@ -149,7 +150,7 @@ export function freighter(c: Ctx): boolean {
     }
     const body = crewBody(c);
     if (!body) return no(c, 'crew body');
-    if (frameJoin(c, body.root, containerFrame(c.rng, crates * (pos === 'mid' ? 2 : 3), frameOpts(c, c.rng.int(0, 3))), 'w') === null) return no(c, 'frame');
+    if (frameJoin(c, body.root, containerFrame(c.rng, crates * (pos === 'mid' ? 2 : 3), frameOpts(c, Math.max(1, c.rng.int(0, 3)))), 'w') === null) return no(c, 'frame');
     let aft = body.aft;
     if (pos === 'mid') {
       const b2 = frameJoin(c, aft, containerFrame(c.rng, crates * 2, { ...frameOpts(c, c.rng.int(0, 3)), crawl: true }), 'e');
@@ -162,7 +163,7 @@ export function freighter(c: Ctx): boolean {
   if (!body) return no(c, 'crew body');
   if (!stern(c, body.aft)) return false;
   // The cargo mass: containers packed back to back, one or two bands.
-  const mass = containerFrame(c.rng, crates * 3, frameOpts(c, 0));
+  const mass = containerFrame(c.rng, crates * 3, frameOpts(c, 1));
   return (beside(c, body.aft, mass) !== null || no(c, 'cargo mass')) && arms(c, [body.root, body.aft], j.guns);
 }
 

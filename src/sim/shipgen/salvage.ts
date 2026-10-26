@@ -129,6 +129,8 @@ export function notch(b: Builder, rng: Rng, k: number, defs: Record<string, { fo
     if (slack(b, label, spec, defs) < k * k) continue;
     for (const [x, y] of cut) b.cv.put(x, y, '.');
     reseal(b, ring, true);
+    // A cut cell diagonal to a neighbouring room's floor was that room's hull corner: it stays wall, so no corner opens.
+    for (const [x, y] of cut) if ([-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => isFloor(b.cv.at(x + dx, y + dy)) || b.cv.at(x + dx, y + dy) === 'D'))) b.cv.put(x, y, '#');
     return true;
   }
   return false;
