@@ -144,6 +144,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     background: 0x07090d,
     preference: 'webgl',
     powerPreference: 'high-performance',
+    // The game picks in its own coordinates; pixi's event system would hit-test the whole scene tree on every pointer move.
+    eventFeatures: { move: false, globalMove: false, click: false, wheel: false },
   });
   // Sheets go to the GPU as they load and their decoded copy is dropped; if the context is lost they are decoded again.
   const atlas = await loadAtlas(undefined, { upload: (src) => gl.texture.initSource(src) });

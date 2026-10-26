@@ -137,6 +137,23 @@
 {#if routePts}
   <path d={pixelPolyline(routePts, g, { w: 2, dash: route?.blocker ? [4, 3] : undefined })} class="route" class:blocked={!!route?.blocker} />
 {/if}
+<!-- Fleets go under the nodes' structure icons: a fleet resting at a station sits where the orbiting station icon passes, and must not hide it. -->
+{#each marks as m (m.f.id)}
+  {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
+{/each}
+{#each marks as m (m.f.id)}
+  <g transform={`translate(${m.f.x + m.ox * px(54)} ${m.f.y + m.oy * px(54)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
+    <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
+    {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
+      <!-- The sprite takes no pointer events: this catches the hover for the fleet's tooltip. -->
+      <rect x={-fleetPx / 2} y={-fleetPx / 2} width={fleetPx} height={fleetPx} class="hit" />
+      <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
+    {:else}
+      <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
+    {/if}
+    {#if m.f.damaged}<rect x={-px(11)} y={-px(11)} width={px(22)} height={px(22)} class="adrift" />{/if}
+  </g>
+{/each}
 {#each map.nodes as n (n.id)}
   {@const dimmed = !!only && !only.has(n.id) && !n.current}
   {#if n.known}
@@ -180,22 +197,6 @@
     <path d={dia(n.x, n.y, 5)} class="unknown" class:dimmed /><path d={ring(n.x, n.y, 5)} class="unknown-ring" class:dimmed />
   {/if}
   {#if selected === n.id}<path d={ring(n.x, n.y, 17)} class="sel" />{/if}
-{/each}
-{#each marks as m (m.f.id)}
-  {#if m.f.tx !== null && m.f.ty !== null}<path d={pixelLine(m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] })} class="lane heading" style={`fill: ${toneColor(m.f.tone)}`} />{/if}
-{/each}
-{#each marks as m (m.f.id)}
-  <g transform={`translate(${m.f.x + m.ox * px(54)} ${m.f.y + m.oy * px(54)})`} class="fleet" class:hostile={m.f.hostile} data-testid="starmap-fleet">
-    <title>{m.f.faction} {m.f.role.toLowerCase()}, {m.f.ships} ship{m.f.ships > 1 ? 's' : ''}. {m.f.heading}.</title>
-    {#if art && art.frames[`starmap.fleet.${m.f.kind}.d0`]}
-      <!-- The sprite takes no pointer events: this catches the hover for the fleet's tooltip. -->
-      <rect x={-fleetPx / 2} y={-fleetPx / 2} width={fleetPx} height={fleetPx} class="hit" />
-      <StarmapSprite {art} id={`starmap.fleet.${m.f.kind}.d${dir(m.heading)}`} x={0} y={0} size={fleetPx} tint={toneTint(m.f.tone)} />
-    {:else}
-      <path d={pixelArrow(m.heading, g, 1.5)} style={`fill: ${toneColor(m.f.tone)}`} />
-    {/if}
-    {#if m.f.damaged}<rect x={-px(11)} y={-px(11)} width={px(22)} height={px(22)} class="adrift" />{/if}
-  </g>
 {/each}
 {#if ship}
   {@const ang = (Math.atan2(ship.ty - ship.fy, ship.tx - ship.fx) * 180) / Math.PI}
