@@ -1,9 +1,12 @@
 name: CI
 
-# Every run does lint, typecheck, the fast tests and the build. The slow tier (*.slow.test.ts) is expensive, so it
-# runs once per PR: on the run that adding the `full-ci` label starts (to run it again after later pushes, remove
-# and re-add the label). Pushes to main run the fast tier only; run the workflow by hand (workflow_dispatch) for a
-# full run on main. Markdown-only changes don't run CI.
+# CI minutes cost money, so tests run only where they can tell us something:
+# - PR pushes and pushes to main: lint, typecheck, build, and only the fast tests the change can affect (Vitest's
+#   import graph against the first parent: the base branch for a PR's merge commit, the previous main for a push).
+#   Vitest runs everything when package.json or the Vite config changes.
+# - Adding the `full-ci` label, or a manual run (workflow_dispatch): every test, slow tier (*.slow.test.ts) included.
+#   This is the once-per-PR full run; remove and re-add the label to run it again.
+# Markdown-only changes don't run CI.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
@@ -23,9 +26,11 @@ jobs:
     # adding some other label is no reason to run CI again
     if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -35,10 +40,11 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Test (fast tier)
-        run: npm run test:quick
-      - name: Test (slow tier)
-        if: github.event_name == 'workflow_dispatch' || (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
-        run: npm run test:slow
+      - name: Test (affected fast tests)
+        if: ${{ !(github.event_name == 'workflow_dispatch' || github.event.action == 'labeled') }}
+        run: npx vitest run --changed HEAD~1 --passWithNoTests --exclude 'src/**/*.slow.test.ts'
+      - name: Test (every test, slow tier included)
+        if: github.event_name == 'workflow_dispatch' || github.event.action == 'labeled'
+        run: npm test
       - name: Build
         run: npm run build
