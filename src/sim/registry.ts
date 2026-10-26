@@ -155,6 +155,8 @@ export interface WeaponDef {
   ammo?: string;
   /** Point defence may shoot it down. */
   interceptable?: boolean;
+  /** Can be aimed at (and hurts) shuttles. Weapons without it never fire at a shuttle. */
+  antiVehicle?: boolean;
   /**
    * Shield rule: a shot is blocked when layers > pierce (and `bypass` is off), removing `damage` layers.
    * `bypass` skips shields entirely.

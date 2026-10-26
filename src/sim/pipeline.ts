@@ -27,6 +27,7 @@ import { pointDefenceSystem } from './systems/pointDefence';
 import { projectileSystem } from './systems/projectiles';
 import { shieldSystem } from './systems/shields';
 import { shipStateSystem } from './systems/shipState';
+import { vehicleDefenceSystem } from './systems/vehicleDefence';
 import { targetingSystem } from './systems/targeting';
 import { weaponChargeSystem } from './systems/weaponCharge';
 import { fireSystem } from './systems/fire';
@@ -175,6 +176,8 @@ export const pipeline: readonly System[] = [
   enemyAiSystem,
   // The boarding doctrine issues vehicle commands (applied next tick).
   boardingAiSystem,
+  // The player's anti-vehicle weapons pick up a hostile shuttle coming for the ship (the AI does it by command above).
+  vehicleDefenceSystem,
   targetingSystem,
   // Charge, then fire: a weapon that reaches full charge fires the same tick.
   weaponChargeSystem,

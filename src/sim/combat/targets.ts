@@ -1,6 +1,7 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { WeaponC, type Combat, type Target } from './components';
+import { WeaponC, type Combat, type Faction, type Target } from './components';
+import { factionsHostile } from './factions';
 import { VehicleC } from '../vehicles/components';
 
 import { shipIdOf } from '../regions';
@@ -16,6 +17,19 @@ export function targetableShip(sim: Sim, shipId: number): boolean {
 export function targetableVehicle(sim: Sim, id: number): boolean {
   const v = sim.world.get(id, VehicleC);
   return !!v && v.state !== 'stowed';
+}
+
+/** True if the weapon module carries a weapon that may fire at shuttles. */
+export function weaponAntiVehicle(sim: Sim, weaponId: number): boolean {
+  const m = sim.world.get(weaponId, ModuleC);
+  const w = m && sim.content.modules[m.def]?.weapon;
+  return !!w && !!sim.content.weapons?.[w]?.antiVehicle;
+}
+
+/** True if a shuttle is targetable and its home ship's faction is at war with `faction` (a captured home ship makes it friendly). */
+export function hostileVehicle(sim: Sim, id: number, faction: Faction): boolean {
+  const v = sim.world.get(id, VehicleC);
+  return !!v && targetableVehicle(sim, id) && factionsHostile(faction, shipById(sim, v.homeShip)?.faction ?? 'neutral');
 }
 
 /** Module ids on a grid, ascending. */
@@ -45,9 +59,13 @@ export function nextModule(sim: Sim, shipId: number, deadId: number): number {
  * from sim.rng. Null if there is no valid target ship.
  */
 export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Target | null {
+  const anti = weaponAntiVehicle(sim, weaponId);
   const weapon = sim.world.get(weaponId, WeaponC);
-  const own = weapon?.target ?? null;
-  const t = own ?? combat.target;
+  // A weapon's own target wins, but only anti-vehicle weapons may hold a shuttle; then the ship's shuttle target (anti-vehicle only), then its ship-wide one.
+  const own = weapon?.target && (anti || !weapon.target.vehicle) ? weapon.target : null;
+  let t = own;
+  if (!t && anti && combat.vehicleTarget && targetableVehicle(sim, combat.vehicleTarget)) t = { ship: 0, moduleId: 0, vehicle: combat.vehicleTarget };
+  t ??= combat.target && (anti || !combat.target.vehicle) ? combat.target : null;
   const store = (v: Target | null): void => {
     if (own && weapon) weapon.target = v;
     else combat.target = v;

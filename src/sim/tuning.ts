@@ -193,6 +193,10 @@ export const VEHICLE_PD_INTERVAL = 10;
 /** Chance per roll, and hp taken on a hit. */
 export const VEHICLE_PD_CHANCE = 0.35;
 export const VEHICLE_PD_DAMAGE = 10;
+/** Point defence never takes a shuttle below this fraction of its max hp: it chips, only anti-vehicle weapons kill. */
+export const VEHICLE_PD_FLOOR = 0.3;
+/** Player anti-vehicle weapons engage a hostile shuttle in flight within this many tiles of the ship centre (or one heading for it at any range). */
+export const ANTI_VEHICLE_RANGE = 70;
 /** Boarding parties never leave the ship with fewer than this many crew aboard. */
 export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
