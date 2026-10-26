@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { KEY_ACCENT, KEY_CLOTH, swapPixel } from './starmapTint';
-import { bodyVariant, strHash } from './starmapArtIds';
-import type { UiStarArt } from './starmapApi';
+import { KEY_ACCENT, KEY_CLOTH, swapPixel } from './tint';
+import { bodyVariant, strHash } from './artIds';
+import type { UiStarArt } from '../../ui/starmapApi';
 
 const RED: [number, number, number] = [1, 0, 0];
 const BLUE: [number, number, number] = [0, 0, 1];

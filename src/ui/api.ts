@@ -1,4 +1,5 @@
 import type { UiDeploy, UiJumpWarnings, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
+import type { CreateStarmapGpu } from './starmapGpu';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -839,6 +840,8 @@ export interface UiApi {
   itemIcons: Subscribable<Record<string, UiIcon>>;
   /** The starmap's sprites, once loaded (null until then, or without the sheet: the map draws its code shapes). */
   starmapArt: Subscribable<UiStarArt | null>;
+  /** Make the starmap's GPU view (Pixi) inside an element: the map content is drawn by it, the screen keeps the camera and panels. */
+  createStarmapGpu: CreateStarmapGpu;
   stock: Subscribable<UiStock[]>;
   storages: Subscribable<UiStorage[]>;
   fabs: Subscribable<UiFab[]>;

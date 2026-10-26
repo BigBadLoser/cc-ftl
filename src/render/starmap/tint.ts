@@ -1,10 +1,9 @@
 /**
  * Owner tint for starmap icons. Stations, the den and fleets paint their livery in the crew key colours (`team.cloth`,
  * `team.accent`, five shade steps each); this swaps them for the owner's colour on the same shade ramp as the crew filter
- * (`render/assets/palette.ts`, a port of its `swapColor`), on a canvas cut of the icon's frame, cached as an image URL.
+ * (`render/assets/palette.ts`, a port of its `swapColor`), on a canvas cut of the icon's frame (art.ts), cached as a texture.
  */
-import type { UiStarArt } from './starmapApi';
-import { tokenRgb } from './starmapStyle';
+import { tokenRgb } from './palette';
 
 type Rgb = [number, number, number];
 
@@ -46,61 +45,6 @@ export function swapPixels(data: Uint8ClampedArray, keys: readonly Rgb[], repl: 
     data[i + 1] = Math.round(out[1] * 255);
     data[i + 2] = Math.round(out[2] * 255);
   }
-}
-
-const sheets = new Map<string, Promise<HTMLImageElement>>();
-const urls = new Map<string, string>();
-
-function loadSheet(src: string): Promise<HTMLImageElement> {
-  let p = sheets.get(src);
-  if (!p) {
-    const img = new Image();
-    img.src = src;
-    sheets.set(src, (p = img.decode().then(() => img)));
-  }
-  return p;
-}
-
-/** A frame of the colour sheet (or its glow twin) as its own image URL, the size of the frame: for SVG patterns, which cannot crop. */
-export async function frameUrl(art: UiStarArt, id: string, glow = false): Promise<string | null> {
-  const f = art.frames[id];
-  const src = glow ? art.glow : art.src;
-  if (!f || !src) return null;
-  const key = `${id}|${glow ? 'glow' : 'colour'}`;
-  const hit = urls.get(key);
-  if (hit) return hit;
-  const img = await loadSheet(src);
-  const c = document.createElement('canvas');
-  c.width = f.w;
-  c.height = f.h;
-  const ctx = c.getContext('2d');
-  if (!ctx) return null;
-  ctx.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
-  const url = c.toDataURL();
-  urls.set(key, url);
-  return url;
-}
-
-/** An icon's frame with its key colours swapped for `cloth` and `accent` (0..1 rgb), as an image URL the size of the frame. */
-export async function tintedFrame(art: UiStarArt, id: string, cloth: Rgb, accent: Rgb): Promise<string | null> {
-  const f = art.frames[id];
-  if (!f) return null;
-  const key = `${id}|${cloth.join(',')}|${accent.join(',')}`;
-  const hit = urls.get(key);
-  if (hit) return hit;
-  const img = await loadSheet(art.src);
-  const c = document.createElement('canvas');
-  c.width = f.w;
-  c.height = f.h;
-  const ctx = c.getContext('2d');
-  if (!ctx) return null;
-  ctx.drawImage(img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
-  const px = ctx.getImageData(0, 0, f.w, f.h);
-  swapPixels(px.data, [KEY_CLOTH, KEY_ACCENT], [cloth, accent]);
-  ctx.putImageData(px, 0, 0);
-  const url = c.toDataURL();
-  urls.set(key, url);
-  return url;
 }
 
 /** A tone's livery: the owner colour for the panels and a lighter one for the trim (0..1 rgb), from the theme tokens. */

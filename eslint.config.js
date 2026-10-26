@@ -87,6 +87,11 @@ export default tseslint.config(
     rules: noImports([], [...sveltePat, ...pat(['ui', 'app'])]),
   },
   {
+    // The starmap's Pixi view draws the UI's snapshot types (starmapApi.ts) and implements the UI's view interface (starmapGpu.ts): types only.
+    files: ['src/render/starmap/**/*.ts'],
+    rules: noImports([], [...sveltePat, ...pat(['app']), { group: ['**/ui/**', '!**/ui/starmapApi', '!**/ui/starmapGpu'], message: 'Forbidden import of ui here.' }]),
+  },
+  {
     // Panels use the UI kit, never the headless library underneath it (see "UI kit" in docs/ARCHITECTURE.md).
     files: ['src/ui/**/*.ts', 'src/ui/**/*.svelte'],
     rules: noImports([...pixiNames, ...bitsNames], [...pixiPat, ...bitsPat, ...pat(['render'])]),
