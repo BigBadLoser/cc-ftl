@@ -28,7 +28,12 @@
     // The active tab stays in view when the category or selection changes (the tab row scrolls on phones).
     void cat;
     void st.moduleDef;
-    tabsEl?.querySelector<HTMLElement>('.tab.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    const el = tabsEl;
+    const t = el?.querySelector<HTMLElement>('.tab.on');
+    if (!el || !t) return;
+    const m = 28; // margin so the tab (and a hint of its neighbour) sits fully in view
+    if (t.offsetLeft - m < el.scrollLeft) el.scrollLeft = Math.max(0, t.offsetLeft - m);
+    else if (t.offsetLeft + t.offsetWidth + m > el.scrollLeft + el.clientWidth) el.scrollLeft = t.offsetLeft + t.offsetWidth + m - el.clientWidth;
   });
 
   const have = (item: string) => stock.reduce((n, s) => (s.item === item ? n + s.floor + s.stored : n), 0);
@@ -103,7 +108,7 @@
   .cards { display: flex; gap: 6px; padding: 12px 8px 4px; overflow-x: auto; overflow-y: hidden; flex: 1; scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
   .none { margin: auto; color: #9a9a9a; }
   .nav { display: flex; align-items: center; height: 36px; padding: 0 8px; gap: 4px; }
-  .tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
+  .tabs { position: relative; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
   .tab { min-height: 28px; height: 28px; min-width: 0; padding: 0 10px; font: 600 13px var(--head-font); text-transform: uppercase; letter-spacing: 0.04em; color: var(--amber); background: transparent; border-color: transparent; white-space: nowrap; flex: none; }
   .tab i { font-style: normal; color: #5c5c5c; margin-left: 5px; font-size: 11px; }
   .tab:hover { border-color: #3a3a3a; }

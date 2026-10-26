@@ -36,9 +36,9 @@
   </span>
   {#if entry.locked}<span class="lockb" aria-label="Locked">🔒</span>{/if}
   <span class="nm">{entry.name}</span>
-  <span class="cost">
+  <span class="cost" class:many={entry.cost.length > 2}>
     {#each entry.cost as c (c.item)}
-      <span class="c" class:miss={missing.has(c.item)}><ItemIcon {api} item={c.item} size={16} />{c.count}</span>
+      <span class="c" class:miss={missing.has(c.item)}><ItemIcon {api} item={c.item} size={entry.cost.length > 2 ? 13 : 16} />{c.count}</span>
     {/each}
   </span>
 </button>
@@ -51,6 +51,7 @@
   img { max-width: 92px; max-height: 72px; image-rendering: pixelated; margin-bottom: 2px; }
   .nm { font: 600 12px/1.05 var(--head-font); text-transform: uppercase; letter-spacing: 0.03em; color: var(--amber); text-align: center; padding: 0 4px; }
   .cost { display: flex; gap: 3px; font-size: 11px; white-space: nowrap; color: #9a9a9a; }
+  .cost.many { gap: 2px; font-size: 10.5px; }
   .c { display: inline-flex; align-items: center; gap: 1px; }
   .c.miss { color: var(--red); font-weight: 700; }
   .card.short { border-color: #4a2420; }

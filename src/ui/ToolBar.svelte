@@ -32,17 +32,17 @@
   /* Bottom-right dock: build tools first, then view options and contextual panels. */
   .tools { position: fixed; z-index: 4; right: calc(8px + var(--sar)); bottom: calc(8px + var(--sab)); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
   :global(html[data-combat]) .tools { right: calc(388px + var(--sar)); }
-  .dock { display: flex; gap: 2px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
-  .dock { padding: 2px; background: var(--panel); border: 1px solid var(--line); max-width: calc(100vw - 16px); }
+  /* Two rows of four: the tools, then the view group (no divider; the divider is only for the phone column). */
+  .dock { display: grid; grid-template-columns: repeat(4, 32px); gap: 2px; pointer-events: auto; padding: 2px; background: var(--panel); border: 1px solid var(--line); max-width: calc(100vw - 16px); }
   .dock :global(button.tile) { width: 32px; height: 32px; background: var(--panel-2); }
   .dock :global(button.tile.on) { background: var(--panel-3); }
-  .sep { width: 1px; background: var(--line); margin: 2px 3px; }
+  .sep { display: none; }
   @media (max-width: 600px) {
     /* A narrow column on the right edge; the selection sheet leaves this strip free. */
     .tools { flex-direction: row-reverse; align-items: flex-start; top: calc(var(--hdr) + 6px + var(--sat)); bottom: auto; }
     :global(html[data-combat]) .tools { display: none; }
-    .dock { flex-direction: column; flex-wrap: nowrap; width: 38px; box-sizing: border-box; align-items: center; }
+    .dock { display: flex; flex-direction: column; flex-wrap: nowrap; width: 38px; box-sizing: border-box; align-items: center; }
     .dock :global(button.tile) { width: 34px; height: 34px; }
-    .sep { width: auto; height: 1px; align-self: stretch; margin: 3px 2px; }
+    .sep { display: block; width: auto; height: 1px; align-self: stretch; margin: 3px 2px; background: var(--line); }
   }
 </style>
