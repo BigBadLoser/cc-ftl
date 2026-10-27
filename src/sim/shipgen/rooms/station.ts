@@ -86,12 +86,10 @@ const lounge: Vignette = {
     ...chairs([1, 3], 0), ...chairs([1, 3], 1), ...chairs([-1, 5], 0),
   ],
 };
-/** An info kiosk: a console, a seat at it and a locker. */
-const kiosk: Vignette = { name: 'kiosk', mods: [{ mod: 'module.console', x: 0, y: 0 }, { mod: 'module.storage_locker', x: 1, y: 0 }, { mod: 'module.chair', x: 0, y: 1 }] };
-/** A research bench out on the deck: a station and a console side by side, seats in front. */
-const labBench: Vignette = {
-  name: 'lab bench', mods: [{ mod: 'module.research', x: 0, y: 0 }, { mod: 'module.console', x: 1, y: 0 }, ...chairs([0, 1], 1)],
-};
+/** An info kiosk: a console (crew stand at its front tile) and a locker beside it. */
+const kiosk: Vignette = { name: 'kiosk', mods: [{ mod: 'module.console', x: 0, y: 0 }, { mod: 'module.storage_locker', x: 1, y: 0 }] };
+/** A research bench out on the deck: a station and a console side by side, worked from the front. */
+const labBench: Vignette = { name: 'lab bench', mods: [{ mod: 'module.research', x: 0, y: 0 }, { mod: 'module.console', x: 1, y: 0 }] };
 /** A rack island: two racks back to back, a locker at the end. */
 const rackIsland: Vignette = {
   name: 'rack island', mods: [{ mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 0, y: -1, rot: 2 }, { mod: 'module.storage_locker', x: 2, y: 0 }],
@@ -99,20 +97,44 @@ const rackIsland: Vignette = {
 /** A briefing corner: a console and a row of seats facing it. */
 const briefing: Vignette = { name: 'briefing', mods: [{ mod: 'module.console', x: 0, y: 0 }, ...chairs([-1, 0, 1], 2), ...chairs([-1, 0, 1], 3)] };
 
+/** Landmarks, set at the middle of a big court (rooms/vignettes.ts). A bazaar: four stalls round a table. */
+const bazaar: Vignette = {
+  name: 'bazaar', mods: [
+    { mod: 'module.cargo_container', x: 0, y: 0 }, { mod: 'module.cargo_container', x: 6, y: 0 },
+    { mod: 'module.cargo_container', x: 0, y: 5, rot: 2 }, { mod: 'module.cargo_container', x: 6, y: 5, rot: 2 },
+    { mod: 'module.mess_table', x: 3, y: 3 }, ...chairs([3, 4], 2), ...chairs([3, 4], 4),
+  ],
+};
+/** A parade: three racks in a row, a briefing console with seats in front of it. */
+const parade: Vignette = {
+  name: 'parade', mods: [
+    { mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 3, y: 0 }, { mod: 'module.storage_rack', x: 6, y: 0 },
+    { mod: 'module.console', x: 4, y: 3 }, ...chairs([2, 3, 4, 5, 6], 5), ...chairs([2, 3, 4, 5, 6], 6),
+  ],
+};
+/** A lab cluster: two benches of research stations and consoles back to back, a locker at each end. */
+const labCluster: Vignette = {
+  name: 'lab cluster', mods: [
+    { mod: 'module.research', x: 0, y: 0 }, { mod: 'module.console', x: 1, y: 0 }, { mod: 'module.research', x: 2, y: 0 },
+    { mod: 'module.console', x: 0, y: -1, rot: 2 }, { mod: 'module.research', x: 1, y: -1, rot: 2 }, { mod: 'module.console', x: 2, y: -1, rot: 2 },
+    { mod: 'module.storage_locker', x: 4, y: 0 }, { mod: 'module.storage_locker', x: -2, y: -1, rot: 2 },
+  ],
+};
+
 /** Concourse (trading courtyards): market stalls and tables in groups round open floor, not a lattice of one table. */
 export const plaza = {
   fill: 0.12,
   arrangements: [
     {
       name: 'market', weight: 2, walkway: 'long',
-      vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk], gap: 8, upTo: 0.12 },
+      vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk], gap: 8, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.hydroponics', count: 4, wall: 'any' },
       ],
     },
     {
       name: 'food court', weight: 1,
-      vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk], gap: 7, upTo: 0.12 },
+      vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk], gap: 7, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.storage_locker', count: 4, wall: 'any' },
       ],
@@ -126,7 +148,7 @@ export const garden = {
   arrangements: [
     {
       name: 'garden', weight: 1,
-      vignettes: { pieces: [labBench, labBench, kiosk, lounge, bistro], gap: 9, upTo: 0.08 },
+      vignettes: { pieces: [labBench, labBench, kiosk, lounge, bistro], gap: 9, upTo: 0.08, centre: labCluster },
       steps: [
         { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
       ],
@@ -140,7 +162,7 @@ export const drill = {
   arrangements: [
     {
       name: 'drill hall', weight: 1,
-      vignettes: { pieces: [rackIsland, briefing], gap: 10, upTo: 0.04 },
+      vignettes: { pieces: [rackIsland, briefing], gap: 10, upTo: 0.04, centre: parade },
       steps: [
         { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },
         { mod: 'module.storage_locker', count: 6, wall: 'any', row: true },

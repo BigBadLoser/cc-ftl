@@ -53,12 +53,21 @@ export function placeVignettes(lay: Layout, rng: Rng, room: number, set: Vignett
   const centres: Tile[] = [];
   let covered = 0;
   let placed = 0;
-  // Candidate anchors in a shuffled order (seeded), each tried with a random piece and turn.
-  const spots = floor.map((i) => ({ x: i % lay.w, y: Math.floor(i / lay.w), k: rng.next() })).sort((a, b) => a.k - b.k);
+  // Candidate anchors in a shuffled order (seeded), each tried with a random piece and turn; a big room's centrepiece
+  // first, tried outward from the middle of the floor.
+  const spots = floor.map((i) => ({ x: i % lay.w, y: Math.floor(i / lay.w), k: rng.next(), v: undefined as Vignette | undefined })).sort((a, b) => a.k - b.k);
+  if (set.centre && floor.length >= (set.centreFloor ?? 300)) {
+    const mx = spots.reduce((t, s) => t + s.x, 0) / spots.length;
+    const my = spots.reduce((t, s) => t + s.y, 0) / spots.length;
+    const middle = [...spots].sort((a, b) => Math.hypot(a.x - mx, a.y - my) - Math.hypot(b.x - mx, b.y - my)).slice(0, 150);
+    spots.unshift(...middle.map((s) => ({ ...s, v: set.centre })));
+  }
+  let landmark = false;
   for (const s of spots) {
-    if (covered >= target) break;
-    if (centres.some((c) => Math.hypot(c.x - s.x, c.y - s.y) < set.gap)) continue;
-    const v = set.pieces[Math.floor(rng.next() * set.pieces.length)] as Vignette;
+    if (covered >= target && (landmark || !s.v)) break;
+    if (s.v && landmark) continue;
+    if (!s.v && centres.some((c) => Math.hypot(c.x - s.x, c.y - s.y) < set.gap)) continue;
+    const v = s.v ?? (set.pieces[Math.floor(rng.next() * set.pieces.length)] as Vignette);
     const draw = v.mods.reduce((t, m) => t + Math.max(0, -((lay.defs[m.mod] as ModuleDef | undefined)?.power ?? 0)), 0);
     if (draw > power.spare) continue;
     const k = Math.floor(rng.next() * 4);
@@ -80,6 +89,7 @@ export function placeVignettes(lay: Layout, rng: Rng, room: number, set: Vignett
       continue;
     }
     power.spare -= draw;
+    if (s.v) landmark = true;
     centres.push({ x: s.x, y: s.y });
     covered += tiles.length;
     placed++;

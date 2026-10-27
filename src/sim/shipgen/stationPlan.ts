@@ -82,6 +82,8 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   // Court bands add rooms the plan does not list (stationCourts.ts), each with its lamps and fittings; fit-out squeezes
   // in more reactors if this falls short.
   if (def.atrium?.band) demand *= 1.15;
+  // Garden decks' lab benches draw power (rooms/vignettes.ts); other courts' groups take what is spare.
+  if (def.atrium?.role === 'garden') demand += 30;
   plan.reactors = Math.max(1, Math.ceil(demand / (defs['module.reactor']?.power ?? 50)));
   return plan;
 }

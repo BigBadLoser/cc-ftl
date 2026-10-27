@@ -83,6 +83,9 @@ export interface VignetteSet {
   upTo: number;
   /** Rooms smaller than this get none. */
   minFloor?: number;
+  /** A landmark set at the middle of rooms of at least `centreFloor` tiles before the rest (the court's centrepiece). */
+  centre?: Vignette;
+  centreFloor?: number;
 }
 
 export interface RoomRecipe {
