@@ -9,7 +9,10 @@ const panel = (id: string, sticky: boolean, open = true): ClosablePanel & { open
 
 describe('isOutsideTarget', () => {
   it('counts the canvas, the page and a backdrop, not panels', () => {
-    expect(isOutsideTarget({ tagName: 'CANVAS' })).toBe(true);
+    expect(isOutsideTarget({ tagName: 'CANVAS', hasAttribute: (n) => n === 'data-world' })).toBe(true);
+    // The combat panel's ship view is a canvas too, but it is panel content.
+    expect(isOutsideTarget({ tagName: 'CANVAS', hasAttribute: () => false })).toBe(false);
+    expect(isOutsideTarget({ tagName: 'CANVAS' })).toBe(false);
     expect(isOutsideTarget({ tagName: 'BODY' })).toBe(true);
     expect(isOutsideTarget({ tagName: 'DIV', hasAttribute: (n) => n === 'data-backdrop' })).toBe(true);
     expect(isOutsideTarget({ tagName: 'DIV', hasAttribute: () => false })).toBe(false);
@@ -48,14 +51,24 @@ describe('closeOutside with pinned windows', () => {
   });
 });
 
+const world = { tagName: 'CANVAS', hasAttribute: (n: string) => n === 'data-world' };
+
 describe('outsideTap', () => {
+  it('does not count a tap on the combat ship view canvas as outside', () => {
+    let n = 0;
+    const t = outsideTap(() => n++);
+    const view = { tagName: 'CANVAS', hasAttribute: () => false };
+    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: view });
+    t.onUp({ pointerId: 1, clientX: 10, clientY: 10 });
+    expect(n).toBe(0);
+  });
   const mk = () => { let n = 0; return { t: outsideTap(() => n++), count: () => n }; };
   it('fires on an outside click, not on a drag or a click on a panel', () => {
     const { t, count } = mk();
-    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: { tagName: 'CANVAS' } });
+    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: world });
     t.onUp({ pointerId: 1, clientX: 12, clientY: 11 });
     expect(count()).toBe(1);
-    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: { tagName: 'CANVAS' } });
+    t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: world });
     t.onUp({ pointerId: 1, clientX: 90, clientY: 10 });
     expect(count()).toBe(1);
     t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: { tagName: 'DIV', hasAttribute: () => false } });
@@ -64,13 +77,13 @@ describe('outsideTap', () => {
   });
   it('ignores a right click', () => {
     const { t, count } = mk();
-    t.onDown({ pointerId: 1, clientX: 0, clientY: 0, button: 2, target: { tagName: 'CANVAS' } });
+    t.onDown({ pointerId: 1, clientX: 0, clientY: 0, button: 2, target: world });
     t.onUp({ pointerId: 1, clientX: 0, clientY: 0 });
     expect(count()).toBe(0);
   });
   it('a pinch is never a tap, even when one finger stays down and the other lifts last', () => {
     const { t, count } = mk();
-    const c = { tagName: 'CANVAS' };
+    const c = world;
     t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: c });
     t.onDown({ pointerId: 2, clientX: 50, clientY: 50, target: c });
     t.onUp({ pointerId: 2, clientX: 50, clientY: 50 });
@@ -83,7 +96,7 @@ describe('outsideTap', () => {
   });
   it('a cancelled pointer ends the gesture', () => {
     const { t, count } = mk();
-    const c = { tagName: 'CANVAS' };
+    const c = world;
     t.onDown({ pointerId: 1, clientX: 10, clientY: 10, target: c });
     t.onCancel({ pointerId: 1 });
     t.onUp({ pointerId: 1, clientX: 10, clientY: 10 });

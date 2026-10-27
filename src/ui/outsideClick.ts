@@ -16,14 +16,15 @@ export interface TargetLike {
 }
 
 /**
- * Whether a pointer landing on `el` is outside every UI panel: the world canvas, the bare page, or a modal's backdrop
+ * Whether a pointer landing on `el` is outside every UI panel: the world canvas (marked `data-world`), the bare page, or a modal's backdrop
  * (`data-backdrop`). Anything else is UI chrome (panels, the top bars, the toolbar, the goals card, alerts) and never counts.
  */
 export function isOutsideTarget(target: TargetLike | EventTarget | null): boolean {
   if (!target) return true;
   const el = target as TargetLike;
   if (el.hasAttribute?.('data-backdrop')) return true;
-  return el.tagName === 'CANVAS' || el.tagName === 'BODY' || el.tagName === 'HTML';
+  // Only the world canvas (`data-world`) is the world: other canvases, like the combat ship view, are panel content.
+  return !!el.hasAttribute?.('data-world') || el.tagName === 'BODY' || el.tagName === 'HTML';
 }
 
 /** Close every open panel that is neither sticky nor pinned; returns the ids closed. */

@@ -204,7 +204,7 @@
 
 <svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} data-world></canvas>
 <SelectBox {api} />
 <ContextMenu {api} />
 

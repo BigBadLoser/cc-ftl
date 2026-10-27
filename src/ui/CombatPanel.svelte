@@ -11,7 +11,6 @@
 
   let { api, combat, onClose, onHail, onFlee }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void; onFlee: (ship: number) => void } = $props();
 
-  let expanded = $state(false);
   let viewEl: HTMLCanvasElement | undefined = $state();
   /** The weapon chosen for aiming (0 = none: picks aim the whole ship's target). */
   let selWeapon = $state(0);
@@ -143,14 +142,13 @@
 </script>
 
 <FloatingWindow id="combat" title={enemy ? enemy.name : 'Combat'} icon="target" min={{ w: 300, h: 420 }} {defaultRect} {onClose} onLayout={layout}
-  closeLabel="Close combat panel" closeTestId="combat-close" testId="combat-panel" bg={false} avoidCombat={false} z={free ? 10 : 7} class="combat{expanded ? ' expanded' : ''}">
+  closeLabel="Close combat panel" closeTestId="combat-close" testId="combat-panel" bg={false} avoidCombat={false} z={free ? 10 : 7} class="combat">
   {#snippet titleExtra()}
     {#if enemy}<span class="pillst {pill.tone}" data-testid="combat-state">{pill.text}</span>{/if}
   {/snippet}
   {#snippet actions()}
     <button class="tile" title="Frame: center the camera between the ships" aria-label="Frame" onclick={() => api.focusFight(enemy?.ship ?? null)}><Icon name="frame" size={18} /></button>
   {/snippet}
-  <button class="handle" title={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} aria-label={expanded ? 'Collapse combat sheet' : 'Expand combat sheet'} onclick={() => (expanded = !expanded)}><i></i></button>
   <div class="body" bind:this={bodyEl}>
   {#if enemy}
     {@const hullPct = Math.round(enemy.integrity * 100)}
@@ -183,7 +181,6 @@
 <style>
   /* A floating window (FloatingWindow): left-docked by default, where the screen is mostly empty, so the right column (log, goals, jobs, alerts) and the tool dock stay clear. */
   /* .view is a canvas the renderer copies the enemy ship into each frame (opaque; the panel's other parts paint their own background). */
-  .handle { display: none; }
   .pillst { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; white-space: nowrap; flex: none; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
   .pillst.red { color: #ff8a8a; background: #3a1216; } .pillst.amber { color: var(--amber); } .pillst.green { color: var(--green); } .pillst.dim { color: var(--dim); }
   .body { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
@@ -203,13 +200,4 @@
     /* Absolute: the canvas's pixel size (set to the device px it covers) must not feed back into the layout. */
   .view { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); display: block; cursor: crosshair; background: #04070b; image-rendering: pixelated; outline: 1px solid var(--line); outline-offset: -1px; }
   .none { background: var(--panel); color: var(--dim); margin: 0; padding: 10px; }
-  @media (max-width: 600px) {
-    /* Phone: a bottom sheet, not a floating window. */
-    :global(.fw.combat) { position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: auto; max-width: none; height: 62vh; border-width: 1px 0 0; transition: height 0.18s; }
-    :global(.fw.combat.expanded) { height: calc(100vh - 12px - var(--sat)); }
-    .handle { display: flex; justify-content: center; align-items: center; height: 16px; min-height: 16px; width: 100%; padding: 0; border: 0; background: var(--panel-2); flex: none; }
-    .handle i { width: 40px; height: 4px; background: var(--line-hi); }
-    .top { min-height: 0; } .low { min-height: 0; } .split { display: none; }
-    .viewbox { min-height: 0; }
-  }
 </style>
