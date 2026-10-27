@@ -112,7 +112,8 @@ export interface Renderer {
   /** Sim events of the last frame, for combat fx. */
   onEvents(events: readonly SimEvent[]): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
-  setCombatView(view: { shipId: number; rect: CombatViewRect } | null): void;
+  /** Show a ship in the combat panel's view canvas (null hides it); see CombatPass.set. */
+  setCombatView(view: { shipId: number; canvas: HTMLCanvasElement } | null): void;
   /** Which target brackets the combat overlay draws. */
   setCombatMarks(marks: CombatMarks): void;
   /** Module (0 = the hull itself) under a canvas-relative position inside the combat overlay, or null if outside the ship. */
@@ -365,6 +366,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       pass.render(gl, stage);
       place(cam, null);
       gl.render({ container: stage });
+      pass.present(canvas);
       atlas.tick();
     },
     resize,

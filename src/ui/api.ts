@@ -960,8 +960,8 @@ export interface UiApi {
   selectAsteroid(id: number | null): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
-  /** Show a ship in the combat overlay rectangle (null hides it). */
-  setCombatView(view: { ship: number; rect: UiRect } | null): void;
+  /** Show a ship in the combat panel's view canvas (null hides it): the renderer draws into it every frame. */
+  setCombatView(view: { ship: number; canvas: HTMLCanvasElement } | null): void;
   /** Which target brackets the combat view draws over the enemy's modules (module ids; 0/absent = none). */
   setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import type { UiApi, UiCombat, UiShipCombat } from './api';
   import CombatPlayer from './CombatPlayer.svelte';
   import Icon from './Icon.svelte';
@@ -12,7 +12,7 @@
   let { api, combat, onClose, onHail, onFlee }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void; onFlee: (ship: number) => void } = $props();
 
   let expanded = $state(false);
-  let viewEl: HTMLDivElement | undefined = $state();
+  let viewEl: HTMLCanvasElement | undefined = $state();
   /** The weapon chosen for aiming (0 = none: picks aim the whole ship's target). */
   let selWeapon = $state(0);
 
@@ -71,24 +71,13 @@
     });
   });
 
-  // Tell the renderer where to draw the enemy ship: the transparent viewport element, followed every frame.
-  let raf = 0;
-  let last = '';
-  function track() {
-    raf = requestAnimationFrame(track);
-    if (!viewEl || !enemy) {
-      if (last) api.setCombatView(null);
-      last = '';
-      return;
-    }
-    const r = viewEl.getBoundingClientRect();
-    const key = `${enemy.ship}|${r.left}|${r.top}|${r.width}|${r.height}`;
-    if (key === last) return;
-    last = key;
-    api.setCombatView({ ship: enemy.ship, rect: { x: r.left, y: r.top, w: r.width, h: r.height } });
-  }
-  onMount(() => {
-    raf = requestAnimationFrame(track);
+  // The enemy ship is drawn into the view's own canvas by the renderer, every frame (it reads the canvas's place on the page
+  // itself, so dragging, resizing and the splitter need nothing here): opaque, stacked like any other part of the panel.
+  const viewShip = $derived(enemy?.ship ?? 0);
+  $effect(() => {
+    const el = viewEl;
+    const ship = viewShip;
+    api.setCombatView(el && ship ? { ship, canvas: el } : null);
   });
 
   // Floating window: left-docked by default, where the screen is mostly empty. The panels that step aside for it follow its real
@@ -145,7 +134,6 @@
     writeNumber(SPLIT_KEY, split);
   }
   onDestroy(() => {
-    cancelAnimationFrame(raf);
     api.setCombatView(null);
   });
 </script>
@@ -172,7 +160,7 @@
         <div class="bar hull" class:low={hullPct < 35}><i style="width:{hullPct}%"></i></div>
       </div>
       <div class="viewbox">
-        <div class="view" bind:this={viewEl} onclick={tap} onpointermove={move} onpointerleave={() => (hover = 0)} role="presentation" data-testid="combat-view"></div>
+        <canvas class="view" bind:this={viewEl} onclick={tap} onpointermove={move} onpointerleave={() => (hover = 0)} data-testid="combat-view"></canvas>
       </div>
       <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} />
     </div>
@@ -190,7 +178,7 @@
 
 <style>
   /* A floating window (FloatingWindow): left-docked by default, where the screen is mostly empty, so the right column (log, goals, jobs, alerts) and the tool dock stay clear. */
-  /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
+  /* .view is a canvas the renderer copies the enemy ship into each frame (opaque; the panel's other parts paint their own background). */
   .handle { display: none; }
   .pillst { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; white-space: nowrap; flex: none; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
   .pillst.red { color: #ff8a8a; background: #3a1216; } .pillst.amber { color: var(--amber); } .pillst.green { color: var(--green); } .pillst.dim { color: var(--dim); }
@@ -207,8 +195,9 @@
   .st em { font-style: normal; color: var(--dim); font-size: 12px; }
   .st.low b { color: var(--red); }
   .bar.hull { height: 6px; } .bar.hull.low > i { background: var(--red); }
-  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 100px; display: flex; }
-  .view { flex: 1; min-height: 0; cursor: crosshair; box-shadow: 0 0 0 8px var(--panel), inset 0 0 0 1px var(--line); }
+  .viewbox { position: relative; padding: 8px; flex: 1 1 auto; min-height: 100px; display: flex; background: var(--panel); }
+    /* Absolute: the canvas's pixel size (set to the device px it covers) must not feed back into the layout. */
+  .view { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); display: block; cursor: crosshair; background: #04070b; image-rendering: pixelated; outline: 1px solid var(--line); outline-offset: -1px; }
   .none { background: var(--panel); color: var(--dim); margin: 0; padding: 10px; }
   @media (max-width: 600px) {
     /* Phone: a bottom sheet, not a floating window. */
