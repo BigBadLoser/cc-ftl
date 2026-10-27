@@ -1033,7 +1033,7 @@ def wall_cage(context=False):
 
 
 def wall_twin(context=False):
-    """A twin-tube sconce: two short tubes of light clamped across a cream back plate, end caps, a small fan box."""
+    """A twin-tube sconce: two short tubes of light clamped across a cream back plate, steel end caps."""
     k = K("lc_w_twin", (1, 1), 0)
     if context:
         _wall(k.m)
@@ -1046,11 +1046,6 @@ def wall_twin(context=False):
     for u in (-0.12, 0.12):                                                            # clamps over both tubes
         k.box(u, WF + 0.1, 1.07, 0.06, 0.13, 0.33, "lvW2", top="lvW", bevel=0.01)
         k.box(u, WF + 0.12, 1.07, 0.065, 0.11, 0.02, "gmD")
-    k.box(0.38, WF + 0.06, 1.12, 0.12, 0.1, 0.16, "gm", top="steel", bevel=0.01)           # fan box beside it
-    k.box(0.38, WF + 0.112, 1.15, 0.08, 0.008, 0.08, "dark")
-    for a in (0.6, 2.17):
-        k.box(0.38, WF + 0.117, 1.185, 0.07, 0.006, 0.012, "steel", rx=0.0, rz=0.0)
-    k.box(0.38, WF + 0.112, 1.25, 0.03, 0.008, 0.02, "cyan")                                # indicator
     return k.build()
 
 
