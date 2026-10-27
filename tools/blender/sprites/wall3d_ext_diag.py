@@ -22,7 +22,13 @@ TOP_SEAM = (2 * TOP_PX, 2.75 * TOP_PX, YS[2])   # the run's seam along the top: 
                                     # corners, diagonals and caps)
 SLOPES = (0.0, 0.5, 1.0, 2.0, math.inf)   # the clean pixel-line slopes a ridge on the silhouette is trued to (within
 SNAP = math.radians(8)              # this): a near-45 degree line jogs a px where its stair-steps slip
-TILE = [(Vector((1, 0, 0)), 0.5), (Vector((-1, 0, 0)), 0.5), (Vector((0, 1, 0)), 0.5), (Vector((0, -1, 0)), 0.5)]
+WIDE = 1 / 8                        # tiles: the solid run on past the tile's edges for its colours (env_build "wide")
+
+
+def _tile(m=0.0):
+    """The tile's column (its sides this far out)."""
+    return [(Vector((1, 0, 0)), 0.5 + m), (Vector((-1, 0, 0)), 0.5 + m), (Vector((0, 1, 0)), 0.5 + m),
+            (Vector((0, -1, 0)), 0.5 + m)]
 UP = Vector((0, 0, 1))
 
 
@@ -101,7 +107,7 @@ def _front(f):
     return Vector((f[0][0], f[0][1], 0.0)), f[1] / 32, HO.deep(f[0])
 
 
-def _part(g, before, after, H):
+def _part(g, before, after, H, tile):
     """A convex run's parts [(ends, rest)], the cuts they share, its fronts (s, c, g) and its ridge cuts (_ridges):
     all its fronts' upright faces and leans (D in at the top) cut it, and a concave corner's other side where their
     depths meet (that cut shared). No back: the roof (flush with the hull's top) lies over the rest (roof()), so the
@@ -114,9 +120,9 @@ def _part(g, before, after, H):
     side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
     ridges = _ridges(fronts, H, k)
     if not ridges:
-        return [(TILE, faces + side)], side, fronts, ()
+        return [(tile, faces + side)], side, fronts, ()
     under, over = (UP, H - LEAN_RISE), (-UP, LEAN_RISE - H)              # (split at the bend, a crease all round:
-    return ([(TILE, faces + side + [under]), (TILE, faces + side + [over] + ridges)],    # the cuts only over it)
+    return ([(tile, faces + side + [under]), (tile, faces + side + [over] + ridges)],    # the cuts only over it)
             side + [under, over], fronts, ridges)
 
 
@@ -173,16 +179,16 @@ def _seam(rel, part, g, H):
                     rel.poly(pts, "steel", 3, m, fixed=col)
 
 
-def piece(key, H=None):
+def piece(key, H=None, margin=0.0):
     """The hull piece of a tile with this key (hull_outline.key). Toned by facing (tops TOP, the lean near white, the
     upright faces the upright part's tone); its ends on the tile's edges
     in the tones of the surfaces they meet (the next piece hides them, but anti-aliasing mixes them in along the join:
-    dark, they read as dotted seams)."""
+    dark, they read as dotted seams). `margin`: its sides that far out (WIDE: the solid its colours come from)."""
     H = W.hull_top() if H is None else H
     rel = T.Relief(f"ext_solid_{HO.name(key)}")
     for stretch in HO.parse(key):
         for g, before, after in HO.groups(stretch):
-            parts, shared, fronts, ridges = _part(g, before, after, H)
+            parts, shared, fronts, ridges = _part(g, before, after, H, _tile(margin))
             _emit(rel, parts, fronts, shared, {id(q): YS[5] for q in ridges})
             _seam(rel, parts[-1], g, H)
     return rel.build()
@@ -199,7 +205,7 @@ def roof(key, H=None):
         for g, before, after in HO.groups(stretch):
             side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
             blocks.append(side + [_lift(HO.at_least(f)) for f in g] + [_lift(HO.at_least(f, HO.back(f[0]))) for f in g])
-    faces = [f for cut in blocks for f in _solid(TILE + [(UP, H), (-UP, 0.0)] + cut)
+    faces = [f for cut in blocks for f in _solid(_tile() + [(UP, H), (-UP, 0.0)] + cut)
              if f[1].z > 0.85 and sum(((p - f[0][0]).cross(q - f[0][0])).length for p, q in zip(f[0], f[0][1:])) > 1e-6]
     for pts, m, _ in faces:                                             # (its top only: an overlay)
         rel.poly(pts, "steel", 3, m, fixed=TOP)

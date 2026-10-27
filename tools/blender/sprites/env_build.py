@@ -50,6 +50,11 @@ def render_ghost(objs, W, H):
     return mixed.astype(np.uint8), alpha
 
 
+def _show(objs, on):
+    for ob in objs:
+        ob.hide_render = not on
+
+
 def render_sprite(sid, kind, objs):
     if kind == "ghost":
         xs = core.extent_px(objs)
@@ -60,11 +65,23 @@ def render_sprite(sid, kind, objs):
         c, al = _pad1(c), np.pad(al, 1)
         z = np.zeros((H + 2, W + 2, 4), np.uint8)
         return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
-    xmin, xmax, ymin, ymax = core.extent_px(objs)
+    own, wide = objs if kind == "wide" else (objs, None)
+    xmin, xmax, ymin, ymax = core.extent_px(own)
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
-    rgb, a = core.render(W, H, "color")
-    c, op = post.downsample(rgb, a > 0.5, SS, 8, True, sid.startswith(AA))
+    if wide:                                            # ("wide": (own, wide): its px are own's, their colours wide's,
+        _show(wide, False)                              # the same solid run on past the tile's edges, so a px on an
+        _, a = core.render(W, H, "color")               # edge resolves as it does mid-surface)
+        _show(wide, True)
+        _show(own, False)
+        rgb, aw = core.render(W, H, "color")
+        _show(own, True)
+        _show(wide, False)
+        c, _ = post.downsample(rgb, aw > 0.5, SS, 8, True, sid.startswith(AA))
+        op = post.blocks(a > 0.5, SS).sum(-1) >= post.scaled(8, SS)
+    else:
+        rgb, a = core.render(W, H, "color")
+        c, op = post.downsample(rgb, a > 0.5, SS, 8, True, sid.startswith(AA))
     if core.SHADOWS.get("on"):                          # (a px in shadow: most of its samples)
         sh = op & (post.blocks(core.render_shadow(W, H), SS).mean(-1) >= SHADOW[0])
         if core.SHADOWS.get("band"):                    # (kept as a band along what casts it, toward the sun)
@@ -74,7 +91,7 @@ def render_sprite(sid, kind, objs):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
-    elif kind in ("block", "fx", "ghost"):
+    elif kind in ("block", "wide", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)
