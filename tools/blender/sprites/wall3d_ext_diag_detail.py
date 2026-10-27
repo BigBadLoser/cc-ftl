@@ -12,9 +12,9 @@ import math
 
 from mathutils import Vector
 
-from .wall3d_ext_geom import D, HILITE, LEAN_RISE, LINE, LINE_W, PAINT, YS
+from . import wall3d_ext_t3 as T3
+from .wall3d_ext_geom import D, HILITE, LEAN_RISE, LINE, LINE_W, PAINT, YS, Section
 from .wall3d_ext_t3 import UPRIGHT_SEAM
-from . import hull_outline as HO
 
 Z64 = 32 * math.sqrt(2) * math.cos(math.radians(30))     # px a unit of height at the art's tile (64 px across)
 UP = Vector((0, 0, 1))
@@ -41,7 +41,8 @@ BD2 = (32, (4, 5, 18), (3, 2), 4)   # between the steps (hull 46's BottomD2), px
                                     # so only between two steps, not at a diagonal's end), a strip a px proud down the
                                     # upright (px either side; from px under the bend to the foot), a clamp over the
                                     # seam on it (px wider each side)
-SIDE_SEAMS = (21, 33)               # the side diagonals (SideD1): seams along the lean at the near one's (px up it)
+SIDE_COL = 0.25                     # the px columns there start this far in from the bend (measured: both sides alike,
+                                    # so not the sprite's placement)
 
 
 def _slab(n, c, t):
@@ -148,14 +149,21 @@ def _rise(g):
 
 
 def side_diag(rel, solid, others, s, c, g, H):
-    """A side diagonal's detail (SideD1): seams along its lean, at the heights of the near diagonal's (its upright is
-    edge-on to the camera)."""
+    """A side diagonal's detail (SideD1): seams along its lean at the heights of the run's lean lines, so each carries
+    on into a run's where they meet at a hip: its seam, its faint line over the top panel (its upright is edge-on to
+    the camera). Its lean runs straight up the screen, so a seam is painted as the near diagonal's level ones, on whole
+    px columns out from the bend (its core's, or the faint one's lit px's, over the run line's middle)."""
     k, zb = D / LEAN_RISE, H - LEAN_RISE
     lean = (s + g * k * UP, c - g * D + g * k * H)
-    rise = _rise(HO.deep((1, 1)))                                       # (the near diagonal's)
-    for v in SIDE_SEAMS:
-        for _, _, _, v0, v1, col, layer in _seam(v, v, (0, 0)):
-            _paint(rel, solid, others + [(UP, zb + v1 / rise), (-UP, -(zb + v0 / rise))], *lean, col, layer)
+    across = 32 * g * k                                                 # (screen px across the lean a unit of height
+    L = T3.Layout(Section(H, T3.BACK))                                  # up it; the run's lean lines)
+    zt = L.px(L.zr, -2)
+    seams = ((L.px(L.l1, 1), L.l1, LEVEL_SEAM, slice(1, 4)), (zt, L.px(zt, -1), FAINT_SEAM, slice(1)))
+    for z0, z1, rows, keep in seams:                                    # (the two 2 px apart here: neither's soft px,
+        w = math.floor(across * ((z0 + z1) / 2 - zb) - SIDE_COL)       # so a px of lean between them)
+        for _, _, _, w0, w1, col, layer in _seam(w, w, (0, 0), rows=rows)[keep]:
+            w0, w1 = w0 + SIDE_COL, w1 + SIDE_COL
+            _paint(rel, solid, others + [(UP, zb + w1 / across), (-UP, -(zb + w0 / across))], *lean, col, layer)
 
 
 def run(rel, solid, others, s, c):
