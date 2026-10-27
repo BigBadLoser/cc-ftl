@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, PositionC, ShipC, footprintTiles, generateShip, newGame, openTilesOf, structureParts, type FactionDef, type ModuleDef } from '../../sim';
+import { footprintFromTiles, widthViolations } from '../../sim/footprint';
 import { shipGrid, shipIdOf } from '../../sim/regions';
 import { ruin } from '../../sim/shipgen/ruin';
 import type { RuinCause, RuinResult } from '../../sim/shipgen/ruinTypes';
@@ -66,6 +67,48 @@ describe('derelict ruin pass', () => {
       expect(structureParts(cells, w, r.template.rows.length), `${f} ${cause} ${lv} #${seed}`).toBe(1);
       expect(r.template.crew).toEqual([]);
     }
+  });
+
+  it('leaves a wreck no part of which is narrower than 3 tiles (the footprint width rule), however hard it is hit', () => {
+    const solidTiles = (r: RuinResult): { x: number; y: number }[] =>
+      r.template.rows.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '.' ? [] : [{ x, y }])));
+    for (const f of FACTIONS) {
+      for (const cause of CAUSES) {
+        for (const intensity of [0.3, 0.6, 0.95]) {
+          for (let seed = 1; seed <= 4; seed++) {
+            const r = ruined(f, seed * 11, intensity, cause);
+            const rows = r.template.rows;
+            const w = Math.max(...rows.map((x) => x.length));
+            const cells = rows.flatMap((row) => Array.from({ length: w }, (_, x) => row[x] ?? '.'));
+            expect(widthViolations(footprintFromTiles(solidTiles(r))), `${f} ${cause} ${intensity} #${seed}`).toEqual([]);
+            expect(structureParts(cells, w, rows.length), `${f} ${cause} ${intensity} #${seed}`).toBe(1);
+          }
+        }
+      }
+    }
+  });
+
+  it('trims the slivers a blast leaves off a ship that was not compliant to begin with, then keeps its largest piece', () => {
+    // A 5-wide hull with a 1-wide spine and a pod on a 2-wide neck: both stubs are under 3 tiles and go.
+    const rows = [
+      '.......####..',
+      '.......#__#..',
+      '.......#__#..',
+      '.......####..',
+      '........##...',
+      '........##...',
+      '#########....',
+      '#_______#....',
+      '#_______#....',
+      '#_______#....',
+      '#########....',
+      '........#####',
+    ];
+    const r = ruin({ name: 'thin', rows, modules: [] }, 3, { defs, intensity: 0.1, cause: 'decay' });
+    const tiles = r.template.rows.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '.' ? [] : [{ x, y }])));
+    expect(widthViolations(footprintFromTiles(tiles))).toEqual([]);
+    expect(tiles.length).toBeGreaterThan(0);
+    expect(r.template.rows[0]?.slice(7, 11)).toBe('....');
   });
 
   it('records hull and wall breaches only on the torn edge, bordering a standing wall', () => {

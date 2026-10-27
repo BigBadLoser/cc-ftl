@@ -169,7 +169,7 @@ export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o:
       if (c === link) {
         const t = b.place({ x: cx - 1, y: a.y + a.h - 1, w: 3, h: z.y - (a.y + a.h - 1) + 1 }, 'hall');
         if (!t || !b.door(a, t) || !b.door(t, z)) return null;
-      } else truss(b, cx, a.y + a.h, 1, z.y - (a.y + a.h), `brace${r}${c}`);
+      } else truss(b, cx - 1, a.y + a.h, 3, z.y - (a.y + a.h), `brace${r}${c}`); // 3 wide: footprint width rule
     }
   }
   // Airlocks: one on top of a top-row module, one under a bottom-row module.

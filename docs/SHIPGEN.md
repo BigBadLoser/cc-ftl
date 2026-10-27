@@ -444,3 +444,16 @@ Three views, in both the CLI sheets (`--views all`) and the phone page (View sel
   dotted by access kind; ports green when matched, red when not.
 
 Each ship shows its family, its section profile and its metrics.
+
+## Footprint width rule (#143)
+
+No part of a generated ship or station may be narrower than 3 tiles: the footprint (every non-space tile) must equal its
+3x3 opening (`src/sim/footprint.ts`). `validateTemplate` and `stationProblems` report `width: N tiles in parts narrower
+than 3`, and the attempt is reseeded like any other problem. What the arrangers do to meet it:
+- Drone beams are at least `MIN_BEAM` (3) thick; struts, rails and cross pieces too.
+- Container frames use a solid 3-wide spine and only the 3x6 container (the 2x4 box is 2 wide); pod strings likewise.
+  Truss bridges, rig booms, bow rigs, cage teeth and lattice braces are 3 wide.
+- `trimThin` (salvage.ts) takes off bare wall and beam stubs under 3 wide after a cut or notch, and again on every
+  finished layout (`finishLayout`). It never removes a wall that closes a floor or door in; such a layout is reseeded.
+- Ruins (`ruinStructure.ts`) open the wreck by a 3x3 square after each `keepLargest`, then keep the largest piece again.
+- Dug outposts are exempt (their outer wall is rock, not hull).

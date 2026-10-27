@@ -23,11 +23,11 @@ const bareBlock = (b: Builder, kind: string, label: string, ports: Parameters<ty
 const unit = (w: number, h: number): RoomSpec => ({ ...cargoSpec(w * Math.max(1, h - 1)), w, h });
 
 export interface FrameOpts {
-  /** Spine build: 0 a single beam, 1+ an open truss (two chords, ties between) the containers clamp to. */
+  /** Spine build (both solid 3-wide beams now; the width rule rules out an open truss): 0 a plain beam, 1+ a truss. */
   lane: number;
   /** Open columns of spine between neighbouring containers. */
   gap: number;
-  /** The usual container on this frame, short (door) end along the spine by length out from it: 2 x 4 or 3 x 6. */
+  /** The usual container on this frame, short (door) end along the spine by length out from it: 3 x 6 (the 2 x 4 box is under the 3-tile width rule). */
   cw: number;
   ch: number;
   /** Container bands: 1 or 2 spines, each with a row of containers on both faces. */
@@ -56,9 +56,10 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
   const b = localBuilder(rng);
   const bands = Math.max(1, Math.min(2, o.bands ?? 1));
   // Containers clamp by their short (door) end: 2 or 3 along the spine, 4 or 6 out from it.
-  const base: Box = o.cw === 2 ? [2, 4] : [3, 6];
-  const other: Box = base[0] === 2 ? [3, 6] : [2, 4];
-  const T = o.crawl || o.lane > 0 ? 3 : 1;
+  // Footprint width rule: a spine is 3 wide (solid) and a container no narrower than 3, so the 2 x 4 box is not used.
+  const base: Box = [3, 6];
+  const other: Box = base;
+  const T = 3;
   const k = Math.max(2 * bands, Math.min(24, Math.ceil(crates / ((base[0] * base[1]) / 4))));
   const perRow = Math.ceil(k / (2 * bands));
   // Long rows mix in the other size and leave the odd slot empty, so a spine never reads as one repeated box.
@@ -89,13 +90,7 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
     if (o.crawl) {
       const tube = b.place({ x: 0, y, w: L, h: 3 }, 'hall');
       if (tube && end) b.door(tube, end);
-    } else if (T === 1) truss(b, 0, y, L - 1, 1, `spine${band}`);
-    else {
-      truss(b, 0, y, L - 1, 1, `chordN${band}`);
-      truss(b, 0, y + 2, L - 1, 1, `chordS${band}`);
-      for (let x = 0; x < L - 1; x += 4) truss(b, x, y + 1, 1, 1, `tie${band}.${x}`);
-      truss(b, L - 2, y + 1, 1, 1, `tie${band}.end`);
-    }
+    } else truss(b, 0, y, L - 1, T, `spine${band}`);
     let n = 0;
     for (const top of [true, false]) {
       for (const { x, box } of rows[2 * band + (top ? 0 : 1)] ?? []) {
@@ -110,7 +105,7 @@ export function containerFrame(rng: Rng, crates: number, o: FrameOpts): Block {
     { id: 'n', side: 'n', x: L, y: oy, len: 1, access: 'human' }, { id: 's', side: 's', x: L, y: oy + H - 1, len: 1, access: 'human' },
   ];
   if (o.crawl) ports.push({ id: 'w', side: 'w', x: 0, y: spineY(0) + 1, len: 1, access: 'human' });
-  return bareBlock(b, 'cargo', `container frame ${bands} ${o.crawl ? 'crawl' : T === 1 ? 'beam' : 'truss'}`, ports);
+  return bareBlock(b, 'cargo', `container frame ${bands} ${o.crawl ? 'crawl' : o.lane > 0 ? 'truss' : 'beam'}`, ports);
 }
 
 /** A container footprint as laid on a horizontal spine: [along the spine (the short, door end), out from it]. */
@@ -143,7 +138,7 @@ export function oreCage(rng: Rng, crates: number, o: CageOpts, maxCols = 99): Bl
     const x = 1 + i * P;
     const hold = b.place({ x, y: oy + 2, w: o.hw + 2, h: o.hh + 2 }, 'cargo', unit(o.hw, o.hh));
     if (hold && rail) b.door(rail, hold);
-    if (i < cols - 1 && o.gap >= 3 && i % o.every === 0) truss(b, x + o.hw + 2 + Math.floor(o.gap / 2), oy + 3, 1, o.hh + 1 + o.tooth, `tooth${i}`);
+    if (i < cols - 1 && o.gap >= 3 && i % o.every === 0) truss(b, x + o.hw + 2 + Math.floor((o.gap - 3) / 2), oy + 3, 3, o.hh + 1 + o.tooth, `tooth${i}`);
   }
   return bareBlock(b, 'cargo', 'ore cage', [
     { id: 'n', side: 'n', x: 1, y: oy, len: W - 2, access: 'human' }, { id: 'e', side: 'e', x: W - 1, y: oy + 1, len: 1, access: 'human' },
@@ -158,11 +153,12 @@ export function trussBridge(rng: Rng, len: number, sp: number): Block {
   const b = localBuilder(rng);
   b.place({ x: 0, y: -2, w: len, h: 3 }, 'hall');
   if (sp > 0) {
-    truss(b, 1, -3 - sp, len - 2, 1, 'chord');
-    truss(b, 1, 1 + sp, len - 2, 1, 'chord');
+    // Chords and ties are 3 wide (the footprint width rule).
+    truss(b, 1, -5 - sp, len - 2, 3, 'chord');
+    truss(b, 1, 1 + sp, len - 2, 3, 'chord');
     // Ties at the ends only (the gap between stays open).
-    truss(b, 1, -2 - sp, 1, sp, 'tie');
-    truss(b, len - 2, 1, 1, sp, 'tie');
+    truss(b, 1, -2 - sp, 3, sp, 'tie');
+    truss(b, len - 4, 1, 3, sp, 'tie');
   }
   return bareBlock(b, 'beam', 'truss', [
     { id: 'w', side: 'w', x: 0, y: -1, len: 1, access: 'human' }, { id: 'e', side: 'e', x: len - 1, y: -1, len: 1, access: 'human' },
@@ -176,15 +172,16 @@ export function trussBridge(rng: Rng, len: number, sp: number): Block {
 export function boomRig(rng: Rng, out: number, len: number, spread: number, arms: number, reach: number): Block {
   const b = localBuilder(rng);
   const x0 = reach + 1;
-  truss(b, x0 + len, -out, 1, out, 'strut');
-  truss(b, x0, -out, len, 1, 'boom');
-  truss(b, reach, -out - spread, 1, 2 * spread + 1, 'cross');
+  // Every beam is 3 wide (the footprint width rule); the boom's rows are -out-2 .. -out, centred on -out-1.
+  truss(b, x0 + len - 1, -out - 2, 3, out + 2, 'strut');
+  truss(b, x0, -out - 2, len, 3, 'boom');
+  truss(b, reach, -out - 1 - spread, 3, 2 * spread + 1, 'cross');
   for (let i = 0; i < arms; i++) {
-    const y = -out - spread + Math.round((i * 2 * spread) / Math.max(1, arms - 1));
+    const y = -out - 2 - spread + Math.round((i * 2 * spread) / Math.max(1, arms - 1));
     // Every other arm is shorter at its tip, never at the root: it still meets the cross piece.
-    truss(b, i % 2 === 1 ? 2 : 0, y, reach - (i % 2 === 1 ? 2 : 0), 1, `arm${i}`);
+    truss(b, i % 2 === 1 ? 2 : 0, y, reach - (i % 2 === 1 ? 2 : 0), 3, `arm${i}`);
   }
-  return { ...blockFrom(b, 'beam', 'rig boom', 'external', [{ id: 's', side: 's', x: x0 + len, y: 0, len: 1, access: 'external' }]), bare: true };
+  return { ...blockFrom(b, 'beam', 'rig boom', 'external', [{ id: 's', side: 's', x: x0 + len - 1, y: 0, len: 3, access: 'external' }]), bare: true };
 }
 
 export type LinerShape = 'teardrop' | 'oval' | 'twin';
