@@ -146,6 +146,41 @@ could fix cramped rooms without new recipes.
   [shipwright](https://github.com/stewsters/shipwright)) use cell-based hull filling or force packing, and report the
   same pitfalls we hit (rooms escaping the hull, unreachable areas, walls on non-rectilinear shapes).
 
+## Making stations feel less generated
+
+Stations vary, but they read as generated: every room role is spread evenly, every space has the same weight, and
+everything was built at once. Ideas, best payoff first.
+
+1. **Zones before rooms.** Rooms currently go round-robin into free space. Real stations cluster functions: a
+   habitation ring (quarters, messes), logistics by the docks (stores), a secure core (bridge, core, armoury), an
+   industrial wing (reactors, workshops). This is the zoning-first step of the Subveillance devlog and of Merrell et al.
+   2010 (both above). For us: give each ring arc, satellite or spoke a district and order its room list by district,
+   with a few adjacency preferences (cargo near docks, armoury on the way from docks to bridge, quarters away from
+   airlocks).
+2. **A landmark and some set pieces.** Kate Compton's
+   ["10,000 bowls of oatmeal"](https://en.wikipedia.org/wiki/Procedural_generation) problem: outputs can all differ and
+   still feel the same; what players remember is a feature they can name. One landmark per station (the hangar deck on
+   military stations, a grand concourse, a greenhouse dome, a lab ring), the other courts modest. Plus a few
+   hand-authored set pieces stamped into generated layouts: a brig, a chapel, a bar with a stage, a customs checkpoint,
+   the commander's office. Cogmind lays prefabs and "encounters" onto generated maps
+   ([Kyzrati, Map prefabs in depth](https://www.moddb.com/news/map-prefabs-in-depth)); Spelunky picks from 8-16
+   hand-made templates per room type, with probabilistic tiles
+   ([Kazemi, Spelunky Generator Lessons](https://tinysubversions.com/spelunkyGen2/)).
+3. **History.** Each station is one perfect shape built in one go. Real ones grow: an original core, modules bolted on
+   later in another style, patched hull, a retrofitted wing (an ex-navy depot now trading). Generate in phases: the
+   original structure, then one or two later additions that ignore its symmetry, with their own wall style. A kind could
+   mix in a second doctrine (armouries turned into stores, a decommissioned gun bay). Pirate dens (welded modules) are
+   already the most characterful stations.
+4. **A corridor hierarchy.** All corridors are one width. A wide main concourse from the docks to the core, narrow
+   service passages and the odd crawlway would read as designed. Loops give boarding and patrols a second route
+   (cyclic generation, above).
+5. **Furnishing personality.** A per-station personality (rich or poor, tidy or cluttered, busy or half-empty, worn)
+   varies fill levels, recipe choices and wear, so cargo rooms on two stations differ. The fit improvement pass (above)
+   clears the cramped look.
+6. **Tie it to the mechanics.** [Emily Short](https://emshort.blog/2016/09/21/bowls-of-oatmeal-and-text-generation/):
+   generated content matters when it connects to mechanics. A dock checkpoint where security stands and the alarm
+   starts; armouries near the entrances so defenders arm on the way; hangar decks that launch boarding shuttles.
+
 ## Plan
 
 1. Courts: constrained growth on the band, rectangles first, L-growth last, room seeds sized from the plan, a court
@@ -153,3 +188,4 @@ could fix cramped rooms without new recipes.
 2. Audit: space syntax depth and integration; a two-routes metric for key rooms.
 3. Generation: score and repair before reseeding.
 4. Fit: an improvement pass after greedy placement.
+5. Stations: zoning (prototype next), then a landmark and set pieces per kind, then phased growth (history).
