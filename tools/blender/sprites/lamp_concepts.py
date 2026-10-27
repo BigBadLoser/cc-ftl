@@ -883,7 +883,7 @@ def short_cage():
     k.box(0, 0.252, 0.05, 0.3, 0.006, 0.04, "hazY")                                        # stencil stripe
     k.box(0.252, 0, 0.05, 0.006, 0.3, 0.04, "hazY")
     k.box(0, 0, 0.14, 0.3, 0.3, 0.05, "gmD", top="gm")                                     # lamp foot
-    k.box(0, 0, 0.19, 0.24, 0.24, 0.38, "arc", bevel=0.02)                                 # the light
+    k.box(0, 0, 0.19, 0.24, 0.24, 0.38, _g("arc"), bevel=0.02)                                 # the light
     k.box(0, 0, 0.57, 0.3, 0.3, 0.05, "gmD", top="gm")                                     # lamp head
     for su in (-1, 1):                                                                 # cage: corner posts
         for sv in (-1, 1):
@@ -980,7 +980,7 @@ def tall_twin():
     k.box(0, -0.1, 0.234, 0.1, 0.1, 1.28, "lvW2", top="lvW", bevel=0.015)                  # spine
     for u in (-0.1, 0.1):                                                              # the two tubes
         k.cyl(u, 0.04, 0.234, 0.07, 0.04, "steel", top="steelL", sides=12)
-        k.cyl(u, 0.04, 0.274, 0.055, 1.16, "arc", sides=12)
+        k.cyl(u, 0.04, 0.274, 0.055, 1.16, _g("arc"), sides=12)
         k.cyl(u, 0.04, 1.434, 0.07, 0.04, "steel", top="steelL", sides=12)
     for z in (0.5, 0.86, 1.22):                                                        # clamps
         k.box(0, -0.02, z, 0.4, 0.24, 0.07, "lvW2", top="lvW", bevel=0.015)
@@ -989,7 +989,7 @@ def tall_twin():
     k.cyl(0, -0.03, 1.604, 0.09, 0.015, "dark", sides=14)                                   # fan
     for a in (0.3, 1.87):
         k.box(0, -0.03, 1.619, 0.16, 0.025, 0.006, "steel", rz=a)
-    k.box(0.16, 0.12, 1.53, 0.04, 0.008, 0.04, "cyan")                                     # indicator
+    k.box(0.16, 0.12, 1.53, 0.04, 0.008, 0.04, _g("cyan"))                                     # indicator
     return k.build()
 
 
@@ -1040,7 +1040,7 @@ def wall_twin(context=False):
     k.box(0, WF + 0.02, 1.0, 0.66, 0.04, 0.4, "lvW2", top="lvW", bevel=0.015)              # back plate
     k.box(0, WF + 0.042, 1.04, 0.58, 0.008, 0.32, "gmD")                                   # recess
     for z in (1.1, 1.26):                                                              # the two tubes, along the wall
-        k.box(0, WF + 0.1, z, 0.5, 0.09, 0.09, "arc", bevel=0.035)
+        k.box(0, WF + 0.1, z, 0.5, 0.09, 0.09, _g("arc"), bevel=0.035)
         for su in (-1, 1):
             k.box(su * 0.27, WF + 0.1, z - 0.01, 0.05, 0.11, 0.11, "steel", top="steelL", bevel=0.01)   # end caps
     for u in (-0.12, 0.12):                                                            # clamps over both tubes
@@ -1088,7 +1088,7 @@ def floor_twin():
     k.box(0, 0, 0.014, 0.62, 0.5, 0.008, "lvW2", top="lvW")                                # cream frame
     for v in (-0.12, 0.12):
         k.box(0, v, 0.016, 0.52, 0.16, 0.008, "dark")                                      # trough
-        k.box(0, v, 0.018, 0.4, 0.07, 0.01, "cyan")                                        # the tube
+        k.box(0, v, 0.018, 0.4, 0.07, 0.01, _g("cyan"))                                        # the tube
         for su in (-1, 1):
             k.box(su * 0.22, v, 0.016, 0.05, 0.1, 0.014, "steel", top="steelL")             # end caps
     return k.build()
@@ -1124,3 +1124,31 @@ def floor_beacon():
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_twin, floor_well, floor_beacon)]
+
+
+# ---- v13: glow colour on the four picked pieces (cool as built, warm white, amber) -------------------------------
+
+TINT = {}
+
+
+def _g(name):
+    return TINT.get(name, name)
+
+
+def _tinted(fn, tint):
+    def build():
+        TINT.clear()
+        TINT.update(tint)
+        try:
+            return fn()
+        finally:
+            TINT.clear()
+    return build
+
+
+TINTS = {"warm": {"arc": "fxW", "cyan": "lampY"}, "amber": {"arc": "lampY", "cyan": "fxO"}}
+for _t, _map in TINTS.items():
+    SPRITES += [(f"concept.tall_twin.{_t}", (1, 1), "prop", _tinted(tall_twin, _map)),
+                (f"concept.short_cage.{_t}", (1, 1), "prop", _tinted(short_cage, _map)),
+                (f"concept.wall_twin.ctx.{_t}", (1, 1), "prop", _tinted(lambda: wall_twin(True), _map)),
+                (f"concept.floor_twin.{_t}", (1, 1), "prop", _tinted(floor_twin, _map))]
