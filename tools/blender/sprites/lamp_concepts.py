@@ -1380,7 +1380,7 @@ def floor_glass():
     s, d = 0.5, 0.1
     _shaft(k, s, s, 0.0, -d, WARM_WALL)
     k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
-    k.box(0, 0, -d, 0.46, 0.46, 0.02, "lampY", bevel=0.01)                                   # the lamp
+    k.box(0, 0, -d, 0.46, 0.46, 0.02, _g("lampY"), bevel=0.01)                                   # the lamp
     for su in (-1, 1):                                                                 # lamp clips in the corners
         for sv in (-1, 1):
             k.box(su * 0.2, sv * 0.2, -d + 0.02, 0.05, 0.05, 0.01, "steelD")
@@ -1401,7 +1401,7 @@ def floor_vent():
     hu, hv, d = 0.58, 0.42, 0.1
     _shaft(k, hu, hv, 0.0, -d, WARM_WALL)
     k.box(0, 0, -d - 0.02, hu + 0.04, hv + 0.04, 0.02, "steelD")
-    k.box(0, 0, -d, hu - 0.04, hv - 0.04, 0.02, "lampY")                                     # the light
+    k.box(0, 0, -d, hu - 0.04, hv - 0.04, 0.02, _g("lampY"))                                     # the light
     n = 5
     for i in range(n):                                                                 # angled blades
         v = -hv / 2 + (i + 0.5) * hv / n
@@ -1429,7 +1429,7 @@ def floor_rails():
             k.box(-hu / 2 - 0.01, vc, za, 0.02, hv, h, col)
             k.box(hu / 2 + 0.01, vc, za, 0.02, hv, h, col)
         k.box(0, vc, -d - 0.02, hu + 0.04, hv + 0.04, 0.02, "steelD")
-        k.box(0, vc, -d, hu - 0.04, hv - 0.04, 0.03, "lampY", bevel=0.012)                   # the light
+        k.box(0, vc, -d, hu - 0.04, hv - 0.04, 0.03, _g("lampY"), bevel=0.012)                   # the light
         for i in range(5):                                                             # rungs
             u = -hu / 2 + (i + 0.5) * hu / 5
             k.box(u, vc, 0.0, 2 * PX, hv + 0.02, 0.012, "steelD", top="steel")
@@ -1456,13 +1456,13 @@ def floor_wheel():
                         (r * math.cos(a1), r * math.sin(a1), zb), (r * math.cos(a0), r * math.sin(a0), zb)],
                     (-math.cos(mid), -math.sin(mid), 0), col)
     k.cyl(0, 0, -d - 0.02, r + 0.02, 0.02, "steelD", sides=n)
-    k.cyl(0, 0, -d, r - 0.02, 0.02, "lampY", sides=n)                                        # the light
+    k.cyl(0, 0, -d, r - 0.02, 0.02, _g("lampY"), sides=n)                                        # the light
     _ring(k, -0.004, 0.15, 0.014, 20, ("steel",), d=0.03)                                  # inner ring of the grate
     for a in range(8):                                                                 # spokes
         ang = a * math.pi / 4
         k.box(0.16 * math.cos(ang), 0.16 * math.sin(ang), -0.004, 0.25, 2 * PX, 0.016, "steelD", top="steel", rz=ang)
     k.cyl(0, 0, -0.004, 0.05, 0.02, "steel", top="steelL", sides=12)                       # hub
-    k.cyl(0, 0, 0.016, 0.02, 0.004, "lampY", sides=8)
+    k.cyl(0, 0, 0.016, 0.02, 0.004, _g("lampY"), sides=8)
     _ring(k, 0.0, r + 0.03, 0.016, 28, ("steel",), d=0.06)                                 # bolted ring
     for a in range(6):
         ang = a * math.tau / 6
@@ -1471,3 +1471,6 @@ def floor_wheel():
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_glass, floor_vent, floor_rails, floor_wheel)]
+
+SPRITES += [(f"concept.{fn.__name__}.warm", (1, 1), "prop", _tinted(fn, {"lampY": "fxW"}))
+            for fn in (floor_glass, floor_vent, floor_rails, floor_wheel)]
