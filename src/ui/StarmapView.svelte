@@ -11,7 +11,7 @@
   import StarmapNews from './StarmapNews.svelte';
   import { jumpCommand, toggleTake } from './starmapJump';
   import { toneColor } from './starmapStyle';
-  import { snapScale, type StarmapGlide, type StarmapGpu } from './starmapGpu';
+  import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
 
   /**
    * The starmap screen. `flee`: the player's ship id when it was opened from the combat panel to pick where to flee to (only the
@@ -35,6 +35,8 @@
   let cx = 0;
   let cy = 0;
   let s = 1;
+  /** The zoom target, unsnapped: zoom inputs add to it and `s` is its snapped value. */
+  let sTarget = 1;
   let gpu: StarmapGpu | null = null;
   let stage: HTMLDivElement;
   let selected = $state<string | null>(null);
@@ -151,7 +153,8 @@
       const e = 1 - (1 - t) ** 3;
       cx = from.cx + (x - from.cx) * e;
       cy = from.cy + (y - from.cy) * e;
-      s = snapScale(from.s * (to / from.s) ** e);
+      sTarget = from.s * (to / from.s) ** e;
+      s = snapScale(sTarget);
       setCam();
       if (t < 1) camRaf = requestAnimationFrame(step);
     };
@@ -289,7 +292,8 @@
   const MAX_S = 6;
   function zoomAt(px: number, py: number, f: number) {
     const before = toMap(px, py);
-    s = Math.min(MAX_S, Math.max(MIN_S, snapScale(s * f)));
+    sTarget = zoomTarget(sTarget, f, MIN_S, MAX_S);
+    s = Math.min(MAX_S, Math.max(MIN_S, snapScale(sTarget)));
     const after = toMap(px, py);
     cx += before.x - after.x;
     cy += before.y - after.y;
@@ -401,7 +405,7 @@
     e.preventDefault();
     cancelAnimationFrame(camRaf);
     const p = local(e);
-    zoomAt(p.x, p.y, e.deltaY < 0 ? 1.18 : 1 / 1.18);
+    zoomAt(p.x, p.y, wheelFactor(e.deltaY, e.deltaMode));
   }
   function key(e: KeyboardEvent) {
     if (e.key === 'Escape' && !locked) onClose();

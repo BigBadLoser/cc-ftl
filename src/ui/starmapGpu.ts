@@ -53,3 +53,15 @@ export type CreateStarmapGpu = (host: HTMLElement) => StarmapGpu;
 export const SCALE_STEPS = 16;
 /** Snap a map scale to the grid of sixteenths of an octave. */
 export const snapScale = (s: number): number => 2 ** (Math.round(Math.log2(s) * SCALE_STEPS) / SCALE_STEPS);
+
+/**
+ * The zoom target after a zoom input: every input (wheel, trackpad, pinch, buttons) multiplies this unsnapped scale and only the scale
+ * that is drawn is snapped, so many small steps add up to the same zoom as one big step instead of each being rounded away.
+ */
+export const zoomTarget = (target: number, factor: number, min: number, max: number): number => Math.min(max, Math.max(min, target * factor));
+
+/** A wheel event's zoom factor: the mouse wheel's notch (deltaY about 100) is one 1.18 step; a trackpad's small fractional deltas zoom proportionally. */
+export function wheelFactor(deltaY: number, deltaMode = 0): number {
+  const px = deltaMode === 1 ? deltaY * 33 : deltaMode === 2 ? deltaY * 400 : deltaY;
+  return Math.exp(-Math.max(-150, Math.min(150, px)) * (Math.log(1.18) / 100));
+}
