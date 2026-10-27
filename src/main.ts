@@ -8,6 +8,7 @@ import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
 import { loadStarmapArt } from './app/starmapArt';
+import { createStarmapGpu } from './render/starmap';
 import { createStore } from './app/store';
 import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
@@ -215,6 +216,7 @@ const api: UiApi = {
   structCosts: buildStructCosts(sim),
   itemIcons,
   starmapArt,
+  createStarmapGpu,
   stock: bridge.stock,
   storages: bridge.storages,
   fabs: bridge.fabs,

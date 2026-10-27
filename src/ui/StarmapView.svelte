@@ -4,19 +4,14 @@
   import type { UiEncounterChoice, UiJumpWarnings, UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
-  import StarmapNebula from './StarmapNebula.svelte';
   import InterdictModal from './InterdictModal.svelte';
   import StarmapDrawer from './StarmapDrawer.svelte';
   import StarmapStats from './StarmapStats.svelte';
-  import { fade } from 'svelte/transition';
   import StarmapInfo from './StarmapInfo.svelte';
   import StarmapNews from './StarmapNews.svelte';
-  import StarmapGalaxy from './StarmapGalaxy.svelte';
-  import StarmapCluster from './StarmapCluster.svelte';
-  import StarmapSector from './StarmapSector.svelte';
   import { jumpCommand, toggleTake } from './starmapJump';
-  import { frameUrl } from './starmapTint';
-  import { BODY_LOOK, toneColor } from './starmapStyle';
+  import { toneColor } from './starmapStyle';
+  import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
 
   /**
    * The starmap screen. `flee`: the player's ship id when it was opened from the combat panel to pick where to flee to (only the
@@ -27,25 +22,23 @@
   let map = $state<UiStarmap | null>(null);
   /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
   let art = $state<UiStarArt | null>(null);
-  /** The starfield backdrop tile (`starmap.backdrop`), repeated behind the map at two screen px per art px. */
-  let backdrop = $state<string | null>(null);
-  $effect(() => {
-    const a = art;
-    if (!a?.frames['starmap.backdrop']) return;
-    let live = true;
-    void frameUrl(a, 'starmap.backdrop').then((u) => live && (backdrop = u));
-    return () => (live = false);
-  });
   /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
   /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
   const locked = $derived(map?.state === 'hyperspace');
   const fleeing = $derived(flee !== null && map?.state !== 'hyperspace' && map?.state !== 'deploying');
   let w = $state(800);
   let h = $state(600);
-  /** View centre (map units) and scale (screen px per unit). */
-  let cx = $state(0);
-  let cy = $state(0);
-  let s = $state(1);
+  /**
+   * View centre (map units) and scale (screen px per unit). Plain numbers: the map is drawn by Pixi (`gpu`), and every change goes through
+   * `setCam`, which tells it and works out the zoom level. Nothing reactive is touched per frame.
+   */
+  let cx = 0;
+  let cy = 0;
+  let s = 1;
+  /** The zoom target, unsnapped: zoom inputs add to it and `s` is its snapped value. */
+  let sTarget = 1;
+  let gpu: StarmapGpu | null = null;
+  let stage: HTMLDivElement;
   let selected = $state<string | null>(null);
   /** A sector (level 2) or cluster (level 3) tapped on an outer level. */
   let picked = $state<{ kind: 'sector' | 'cluster'; id: string } | null>(null);
@@ -74,10 +67,19 @@
    * Semantic zoom by how much map fits across the shorter side: the sector (nodes), sectors as icons inside clusters,
    * then clusters as nodes.
    */
-  const span = $derived(Math.min(w, h) / s);
-  const level = $derived<1 | 2 | 3>(span < 2200 ? 1 : span < 11000 ? 2 : 3);
-  /** The visible map rectangle (for pinning labels inside the view). */
-  const view = $derived({ x0: cx - w / 2 / s, y0: cy - h / 2 / s, x1: cx + w / 2 / s, y1: cy + h / 2 / s });
+  let level = $state<1 | 2 | 3>(1);
+  /** Camera changed: pass it to the GPU view and take the semantic zoom level from it. */
+  function setCam() {
+    const span = Math.min(w, h) / s;
+    const l = span < 2200 ? 1 : span < 11000 ? 2 : 3;
+    if (l !== level) level = l;
+    gpu?.camera(cx, cy, s, w, h);
+  }
+  $effect(() => {
+    void w;
+    void h;
+    setCam();
+  });
   const LEVELS = [
     { n: 1, label: 'Sector', span: 0 }, { n: 2, label: 'Cluster', span: 5200 }, { n: 3, label: 'Galaxy', span: 12500 },
   ] as const;
@@ -151,7 +153,9 @@
       const e = 1 - (1 - t) ** 3;
       cx = from.cx + (x - from.cx) * e;
       cy = from.cy + (y - from.cy) * e;
-      s = from.s * (to / from.s) ** e;
+      sTarget = from.s * (to / from.s) ** e;
+      s = snapScale(sTarget);
+      setCam();
       if (t < 1) camRaf = requestAnimationFrame(step);
     };
     if (ms > 0) camRaf = requestAnimationFrame(step);
@@ -202,13 +206,17 @@
     });
     const unsubFtl = api.ftl.subscribe((f) => (ftl = f));
     const unsubArt = api.starmapArt.subscribe((a) => (art = a));
+    gpu = api.createStarmapGpu(stage);
+    setCam();
     // A wheel listener must not be passive to stop the page from scrolling.
-    svg.addEventListener('wheel', wheel, { passive: false });
+    stage.addEventListener('wheel', wheel, { passive: false });
     return () => {
       unsub();
       unsubFtl();
       unsubArt();
-      svg.removeEventListener('wheel', wheel);
+      stage.removeEventListener('wheel', wheel);
+      gpu?.destroy();
+      gpu = null;
     };
   });
 
@@ -218,7 +226,8 @@
    * GLIDE_MS, never overshooting, so fast sim turns queue up and play one after another.
    */
   const GLIDE_MS = 700;
-  let glide = $state<number | null>(null);
+  let glide: number | null = null;
+  let ship: StarmapGlide | null = null;
   let tripKey = '';
   let follow = false;
   let raf = 0;
@@ -240,12 +249,17 @@
       const g = glide ?? tr.at;
       glide = g < target ? Math.min(target, g + dt / GLIDE_MS) : target;
       onSlide?.(g < target);
+      ship = shipAt(glide);
+      gpu?.glide(ship);
       if (follow && level === 1 && ship) {
         cx += (ship.x - cx) * 0.12;
         cy += (ship.y - cy) * 0.12;
+        setCam();
       }
     } else if (glide !== null) {
       glide = null;
+      ship = null;
+      gpu?.glide(null);
       tripKey = '';
       onSlide?.(false);
     }
@@ -261,9 +275,9 @@
     onSlide?.(false);
   });
   /** The ship marker on the lane it is gliding along (ends of the lane for the heading). */
-  const ship = $derived.by(() => {
+  function shipAt(glide: number): StarmapGlide | null {
     const tr = map?.travel;
-    if (!tr || glide === null) return null;
+    if (!tr) return null;
     const i = Math.min(tr.route.length - 2, Math.max(0, Math.floor(glide)));
     const a = nodeById.get(tr.route[i] as string);
     const b = nodeById.get(tr.route[i + 1] as string);
@@ -271,17 +285,19 @@
     const t = Math.min(1, glide - i);
     const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
     return { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, fx: a.x, fy: a.y, tx: b.x, ty: b.y };
-  });
+  }
 
   const toMap = (px: number, py: number) => ({ x: cx + (px - w / 2) / s, y: cy + (py - h / 2) / s });
   const MIN_S = 0.015;
   const MAX_S = 6;
   function zoomAt(px: number, py: number, f: number) {
     const before = toMap(px, py);
-    s = Math.min(MAX_S, Math.max(MIN_S, s * f));
+    sTarget = zoomTarget(sTarget, f, MIN_S, MAX_S);
+    s = Math.min(MAX_S, Math.max(MIN_S, snapScale(sTarget)));
     const after = toMap(px, py);
     cx += before.x - after.x;
     cy += before.y - after.y;
+    setCam();
   }
 
   // Pointer handling: one finger pans, two pinch; a press that barely moves is a tap (selects the nearest node).
@@ -289,14 +305,13 @@
   const pointers = new Map<number, { x: number; y: number }>();
   let downAt: { x: number; y: number } | null = null;
   let moved = 0;
-  let svg: SVGSVGElement;
   const local = (e: PointerEvent | WheelEvent) => {
-    const r = svg.getBoundingClientRect();
+    const r = stage.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   function down(e: PointerEvent) {
     cancelAnimationFrame(camRaf);
-    svg.setPointerCapture(e.pointerId);
+    stage.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) {
       downAt = local(e);
@@ -310,6 +325,7 @@
     if (pointers.size === 1) {
       cx -= (p.x - prev.x) / s;
       cy -= (p.y - prev.y) / s;
+      setCam();
       moved += Math.hypot(p.x - prev.x, p.y - prev.y);
       dragging = moved >= 8;
     } else if (pointers.size === 2) {
@@ -380,13 +396,16 @@
     if (pointers.size || e.pointerType === 'touch') return;
     const p = local(e);
     cancelAnimationFrame(hoverRaf);
-    hoverRaf = requestAnimationFrame(() => (hover = hitAt(p)?.id ?? null));
+    hoverRaf = requestAnimationFrame(() => {
+      hover = hitAt(p)?.id ?? null;
+      stage.title = (level === 1 && gpu?.tip(p.x, p.y)) || '';
+    });
   }
   function wheel(e: WheelEvent) {
     e.preventDefault();
     cancelAnimationFrame(camRaf);
     const p = local(e);
-    zoomAt(p.x, p.y, e.deltaY < 0 ? 1.18 : 1 / 1.18);
+    zoomAt(p.x, p.y, wheelFactor(e.deltaY, e.deltaMode));
   }
   function key(e: KeyboardEvent) {
     if (e.key === 'Escape' && !locked) onClose();
@@ -423,7 +442,14 @@
   const toggle = (id: number) => (taking = toggleTake(taking, id));
   const drop = () => api.dispatch({ type: 'galaxy.drop' });
   const respond = (encounter: number, choice: UiEncounterChoice['choice']) => api.dispatch({ type: 'galaxy.respond', encounter, choice });
-  const px = (v: number) => v / s;
+  /** The GPU view's scene: the data and the screen state the levels colour themselves by. */
+  $effect(() => {
+    if (!map || !gpu) return;
+    gpu.scene({
+      map, art, level, current, selected, hover, picked: picked?.id ?? null, route, routePts, routeSectors, only,
+      inset: drawerOpen && w > 600 ? 340 : 0,
+    });
+  });
 </script>
 
 <svelte:window onkeydown={key} />
@@ -436,31 +462,9 @@
   <div class="statbar">
     {#if map}<StarmapStats {map} fuelBad={!!route && !route.fuelOk} chargeBad={!!route && !route.chargeOk} />{/if}
   </div>
-  <div class="view" bind:clientWidth={w} bind:clientHeight={h} style:background-image={backdrop ? `url(${backdrop})` : null}>
-    <svg bind:this={svg} width={w} height={h} role="application" aria-label="Starmap" class:drag={dragging} class:over={!!hover && !dragging}
-      onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onpointerleave={() => (hover = null)}>
-      {#if map}
-        <defs>
-          {#each Object.entries(BODY_LOOK) as [kind, look] (kind)}
-            <radialGradient id={`sm-glow-${kind}`}><stop offset="0" style={`stop-color: ${look.glow}; stop-opacity: 0.5`} /><stop offset="1" style={`stop-color: ${look.glow}; stop-opacity: 0`} /></radialGradient>
-          {/each}
-        </defs>
-        <g transform={`translate(${w / 2 - cx * s} ${h / 2 - cy * s}) scale(${s})`}>
-          {#if level < 3}<StarmapNebula tiles={map.nebula} {art} opacity={level === 1 ? 0.6 : 1} />{/if}
-          {#key level}
-            <g transition:fade={{ duration: 180 }}>
-              {#if level === 1}
-                <StarmapSector {map} {art} {px} {s} {view} {current} {route} {routePts} {selected} {hover} {only} {ship} inset={drawerOpen && w > 600 ? 340 : 0} />
-              {:else if level === 2}
-                <StarmapCluster {map} {art} {px} picked={picked?.id ?? null} {hover} {routePts} {routeSectors} />
-              {:else}
-                <StarmapGalaxy {map} {px} picked={picked?.id ?? null} {hover} />
-              {/if}
-            </g>
-          {/key}
-        </g>
-      {/if}
-    </svg>
+  <div class="view" bind:clientWidth={w} bind:clientHeight={h}>
+    <div bind:this={stage} class="stage" role="application" aria-label="Starmap" class:drag={dragging} class:over={!!hover && !dragging}
+      onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onpointerleave={() => (hover = null)}></div>
     <div class="levels" role="group" aria-label="Zoom level">
       {#each LEVELS as l (l.n)}
         <button class:on={level === l.n} onclick={() => setLevel(l.n)} data-testid={`starmap-level-${l.n}`} aria-pressed={level === l.n}>{l.label}</button>
@@ -502,10 +506,10 @@
   .head { flex: none; padding: 10px 10px 0; border-bottom: 1px solid var(--line-hi); background: var(--panel); }
   .head :global(.ph) { margin: -10px -10px 0; }
   .statbar { flex: none; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 34px; box-sizing: border-box; }
-  .view { position: relative; flex: 1; min-height: 0; overflow: hidden; background-size: 512px 512px; background-repeat: repeat; image-rendering: pixelated; }
-  svg { display: block; touch-action: none; cursor: default; }
-  svg.over { cursor: pointer; }
-  svg.drag { cursor: grab; }
+  .view { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+  .stage { position: absolute; inset: 0; touch-action: none; cursor: default; }
+  .stage.over { cursor: pointer; }
+  .stage.drag { cursor: grab; }
   .levels { position: absolute; left: 8px; top: 8px; display: flex; background: var(--panel); border: 1px solid var(--line-hi); }
   .levels button { border: 0; border-right: 1px solid var(--line); background: transparent; font: 600 14px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
   .levels button:last-child { border-right: 0; }

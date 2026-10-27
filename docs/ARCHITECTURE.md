@@ -627,8 +627,22 @@ palette.json    the single palette, read by Blender scripts and the game
   - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
     single frame for the shots, the old one-sprite flash.
 - **Starmap art (`starmap` family, sheet `starmap`; `sprites/starmap.py`, `starmap_kit.py`, `starmap_bodies.py`,
-  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`; not wired yet):** pipeline
-  sprites for the pictures the starmap draws in code today. Lanes, node pips, territory outlines and labels stay UI.
+  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`):** pipeline
+  sprites for the pictures the starmap shows, drawn by the Pixi starmap view (below). Lanes, node pips and territory outlines are
+  pixel cells drawn in code, and labels are Pixi text.
+  - **The Pixi view (`src/render/starmap/`, wired by `app`; the screen is `ui/StarmapView.svelte`).** The map is one canvas under the
+    panels. The screen keeps the camera (centre and scale as plain numbers, the scale snapped to sixteenths of an octave so the pixel
+    grid is rebuilt at few distinct scales), hit-testing, the panels and the level tabs, and tells the view what changed through the
+    `StarmapGpu` interface (`ui/starmapGpu.ts`: `scene`, `camera`, `glide`, `tip`). `ui` and `render` cannot import each other, so the
+    view's data types are the `ui/starmapApi.ts` snapshot types (an ESLint exception for `src/render/starmap` allows those two files,
+    types only). One world container carries pan and zoom (position on a whole device px). The renderer runs with `roundPixels` off and
+    each object opts in, so only the orbiting icons glide between pixels. A level (`level1/2/3.ts`) is rebuilt only when the map data or
+    the level changes; areas, outlines and lanes are *pieces* built when they come into view and again on a zoom step (a pan only moves
+    the camera); state changes (hover, selection, route) recolour pieces by tint and alpha instead of rebuilding. Frames are drawn on
+    demand: on a camera or scene change, at the display rate while orbits are on screen, at 30 fps for the pulse alone. Textures are
+    nearest-filtered sheet cuts (`art.ts`); owner-tinted icons are canvas colour swaps (a Pixi `tint` cannot map two key colours); the
+    nebula and the starfield backdrop are drawn inside the canvas so the nebula's screen blend meets the backdrop. Labels are pooled
+    Pixi `Text` at 1:1 device px.
   - Every sprite has a fixed square frame with the anchor at its centre, so the map places and scales it without knowing what
     was drawn. Sizes below are world px (what `compose.ts` hands out; the frames are half that in the file).
   - Bodies, `starmap.body.<kind>.v0..v2` and `starmap.body.<kind>` (= v0), kinds `star`, `red_dwarf`, `blue_giant`,
@@ -651,9 +665,10 @@ palette.json    the single palette, read by Blender scripts and the game
     three-quarter projection points that way. One model scale per ship for all its headings, the one that makes its
     longest heading (east or west) about 46 px, each heading centred in the frame; north and south views stay shorter,
     foreshortened like the ships.
-  - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size, like today's badges. Never draw them
-    smaller than their art: a shrunk sprite is smoothed (soft), even with `image-rendering: pixelated` (seen in Chromium),
-    while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a
+  - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size that steps with the map scale
+    (`kit.ts` `iconSize`): below scale 1.4 the frames are used halved (a 2x2 average, made once as its own texture), above it full
+    size, each at a whole number of device px per texel. Never draw a texture smaller than its art: a shrunk sprite is smoothed
+    (soft), while an enlarged one keeps hard edges. Draw each texel as a whole number k >= 1 of device px, nearest-neighbour, at a
     device-pixel-aligned position: for a target screen size T (about 24 px for structures, 20 for fleets) and the frame's
     file px F, k = max(1, round(T * devicePixelRatio / F)) and the drawn size is F * k / devicePixelRatio. On a 3x phone
     that is 32 px structures and 27 px fleets (k 2).
@@ -667,9 +682,11 @@ palette.json    the single palette, read by Blender scripts and the game
     membrane on the glow sheet) and `starmap.exit.rift` (a tear with a banded rim, a starry core and drifting shards), at the gateway where a gate or rift lane leaves the sector, in place
     of the thick or dashed lane end. Frame 96 px like the structures, same crisp rule.
   - Nebula field tiles (`sprites/starmap_fields.py`): `starmap.nebula.haze`, `.body`, `.core`, seamless 512 px tiles
-    (256 in the 1x file, anchor 0,0), glow only, for the field `StarmapNebula` paints in code today. Tile each across the
+    (256 in the 1x file, anchor 0,0), glow only, for the nebula field (`render/starmap/nebula.ts`). Tile each across the
     field (the sim's density tiles are 3000 map units) and show it where the density passes its step (about 0.15 haze,
-    0.45 body, 0.8 core: a mask per step, hard edged for the stepped look), added at the opacity the map wants.
+    0.45 body, 0.8 core: a mask per step, hard edged for the stepped look), added at the opacity the map wants. The three
+    steps are baked once into one canvas; the density is faded to nothing over the outer 12% of the square, so the contours close
+    up before the edge and panning past the generated field never shows a cut.
   - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
     over the map's background.
   - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,

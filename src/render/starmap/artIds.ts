@@ -1,5 +1,5 @@
 /** Which `starmap.*` sprite stands for a map thing: ids and variant picks (ARCHITECTURE.md, "Starmap art"). */
-import type { UiStarArt } from './starmapApi';
+import type { UiStarArt } from '../../ui/starmapApi';
 
 /** A small stable string hash (FNV-1a), for picking variants by id. */
 export function strHash(s: string): number {
