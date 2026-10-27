@@ -1,4 +1,4 @@
-import { Struct, shipGrid, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import { HullPlanC, ShipC, Struct, shipGrid, playerItems, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
 import type { UiHullPlan, UiYard, UiYardOrder, UiYardQuote, UiYardService } from '../ui/api';
 import { rejectionMessage } from './messages';
 
@@ -67,4 +67,22 @@ export function buildYard(sim: Sim, station: number): UiYard {
   const mine = sim.yard.orders.filter((o) => o.ship === playerShip(sim));
   const o = mine.find(isLiveOrder) ?? mine[mine.length - 1];
   return { plan: planOf(sim), quote: quoteOf(sim, station), order: o ? orderOf(sim, o) : null };
+}
+
+/**
+ * Everything `buildYard` depends on, as a cheap key: the sector's structure revision, the plan, the ship's rectangle, the credits and metal, the station
+ * and the order's progress. While it is unchanged the snapshot is too, so the bridge need not quote the plan again (a big plan costs a few ms).
+ */
+export function yardInputs(sim: Sim, station: number): string {
+  const ship = playerShip(sim);
+  const plan = ship ? sim.world.get(ship, HullPlanC) : undefined;
+  let h = 0;
+  for (const t of plan?.tiles ?? []) h = (h * 31 + t.x * 7919 + t.y) | 0;
+  const s = ship ? sim.world.get(ship, ShipC) : undefined;
+  const o = sim.yard.orders.at(-1);
+  return [
+    station, sim.sector.grid.revision('struct'), sim.sector.grid.revision('ship'), plan?.tiles.length ?? 0, h, s ? `${s.x},${s.y},${s.width},${s.height}` : '',
+    sim.trade.credits, playerItems(sim, 'item.metal'), Math.floor(sim.tick / 90), // (the tick bucket re-quotes now and then: standing, neighbours and the like change on their own)
+     o ? `${o.id}:${o.phase}:${o.stage}` : '', sim.galaxy.current,
+  ].join('|');
 }

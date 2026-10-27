@@ -101,19 +101,24 @@ function reach(sim: Sim, ship: number, tiles: readonly Tile[]): { connected: Til
 function enclosedFloor(sim: Sim, hull: readonly Tile[]): Tile[] {
   if (hull.length === 0) return [];
   const grid = sim.sector.grid;
-  const wall = new Set(hull.map((t) => key(t.x, t.y)));
   const box = boxOf(hull, 1);
-  // An open truss shuts nothing in; other structure, hull being built and other ships' tiles do.
-  const shut = (x: number, y: number): boolean => {
-    const k = grid.get('struct', x, y);
-    return wall.has(key(x, y)) || (k !== Struct.Space && k !== Struct.Beam) || (k === Struct.Space && grid.get('ship', x, y) !== 0);
-  };
-  const outside = new Set<string>();
-  const stack: Tile[] = [];
+  const at = (x: number, y: number): number => (y - box.y) * box.w + (x - box.x);
+  // 1 = shuts the floor in: a hull tile of this section, other structure (an open truss shuts nothing in), other ships' tiles
+  const shut = new Uint8Array(box.w * box.h);
+  for (const t of hull) shut[at(t.x, t.y)] = 1;
+  for (let y = box.y; y < box.y + box.h; y++) {
+    for (let x = box.x; x < box.x + box.w; x++) {
+      if (shut[at(x, y)]) continue;
+      const k = grid.get('struct', x, y);
+      if ((k !== Struct.Space && k !== Struct.Beam) || (k === Struct.Space && grid.get('ship', x, y) !== 0)) shut[at(x, y)] = 1;
+    }
+  }
+  const outside = new Uint8Array(box.w * box.h);
+  const stack: number[] = [];
   const push = (x: number, y: number): void => {
-    if (x < box.x || y < box.y || x >= box.x + box.w || y >= box.y + box.h || outside.has(key(x, y)) || shut(x, y)) return;
-    outside.add(key(x, y));
-    stack.push({ x, y });
+    if (x < box.x || y < box.y || x >= box.x + box.w || y >= box.y + box.h || outside[at(x, y)] || shut[at(x, y)]) return;
+    outside[at(x, y)] = 1;
+    stack.push(x, y);
   };
   for (let x = box.x; x < box.x + box.w; x++) {
     push(x, box.y);
@@ -124,12 +129,29 @@ function enclosedFloor(sim: Sim, hull: readonly Tile[]): Tile[] {
     push(box.x + box.w - 1, y);
   }
   while (stack.length) {
-    const c = stack.pop() as Tile;
-    for (const [dx, dy] of N4) push(c.x + dx, c.y + dy);
+    const y = stack.pop() as number;
+    const x = stack.pop() as number;
+    push(x + 1, y);
+    push(x - 1, y);
+    push(x, y + 1);
+    push(x, y - 1);
   }
   const out: Tile[] = [];
-  for (let y = box.y; y < box.y + box.h; y++) for (let x = box.x; x < box.x + box.w; x++) if (!shut(x, y) && !outside.has(key(x, y))) out.push({ x, y });
+  for (let y = box.y; y < box.y + box.h; y++) for (let x = box.x; x < box.x + box.w; x++) if (!shut[at(x, y)] && !outside[at(x, y)]) out.push({ x, y });
   return out;
+}
+
+/** The ship's size (interior area) once these hull tiles and this floor are built. */
+function areaWith(sim: Sim, ship: number, hull: readonly Tile[], floor: readonly Tile[]): number {
+  const grid = sim.sector.grid;
+  const own = shipRect(sim.world.get(ship, ShipC) as Ship);
+  const box = hull.length || floor.length ? union(own, boxOf([...hull, ...floor], 1)) : own;
+  // the box as a field of struct kinds: the ship's own tiles, with the section's hull and floor laid over them
+  const kinds = new Uint8Array(box.w * box.h);
+  for (let y = box.y; y < box.y + box.h; y++) for (let x = box.x; x < box.x + box.w; x++) if (shipAt(sim, x, y) === ship) kinds[(y - box.y) * box.w + (x - box.x)] = grid.get('struct', x, y);
+  for (const t of hull) kinds[(t.y - box.y) * box.w + (t.x - box.x)] = Struct.Wall;
+  for (const t of floor) kinds[(t.y - box.y) * box.w + (t.x - box.x)] = Struct.Floor;
+  return interiorArea((x, y) => (x < box.x || y < box.y || x >= box.x + box.w || y >= box.y + box.h ? Struct.Space : (kinds[(y - box.y) * box.w + (x - box.x)] as number)), box);
 }
 
 /** What a rim tile of a closed section is for this ship (see `Rim`). */
@@ -145,16 +167,6 @@ function rimOf(sim: Sim, ship: number): (x: number, y: number) => Rim {
   };
 }
 
-/** The ship's size (interior area) once these hull tiles and this floor are built. */
-function areaWith(sim: Sim, ship: number, hull: readonly Tile[], floor: readonly Tile[]): number {
-  const grid = sim.sector.grid;
-  const overlay = new Map<string, number>();
-  for (const t of hull) overlay.set(key(t.x, t.y), Struct.Wall);
-  for (const t of floor) overlay.set(key(t.x, t.y), Struct.Floor);
-  const own = shipRect(sim.world.get(ship, ShipC) as Ship);
-  const box = hull.length || floor.length ? union(own, boxOf([...hull, ...floor], 1)) : own;
-  return interiorArea((x, y) => overlay.get(key(x, y)) ?? (shipAt(sim, x, y) === ship ? grid.get('struct', x, y) : Struct.Space), box);
-}
 
 /** The plan as the build tools show it: what is planned, what can be built from the ship now, the floor it would enclose, and the hull count. */
 export interface HullView {

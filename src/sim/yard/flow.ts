@@ -38,8 +38,18 @@ function refundUnbuilt(sim: Sim, o: YardOrder): void {
   refund(sim, o, { credits: o.price.credits - built.credits, metal: o.price.metal - built.metal });
 }
 
+/**
+ * Give back the ship's own crew the order drafted to walk out of the new rooms while they were sealed (`ejected`). Every way an order ends calls it, so
+ * a cancel, a combat interruption or a sealing timeout never leaves anyone drafted. Safe to call twice.
+ */
+function releaseEjected(sim: Sim, o: YardOrder): void {
+  for (const id of o.ejected) if (sim.world.has(id, DraftedC)) sim.enqueue({ type: 'crew.draft', id, drafted: false });
+  o.ejected = [];
+}
+
 /** Close an order: the unbuilt part has been refunded, the built part is paid to the station (or refunded if the station is gone). */
 function close(sim: Sim, o: YardOrder, reason: string): void {
+  releaseEjected(sim, o);
   const built = builtTotal(sim, o);
   payStation(sim, o);
   refund(sim, o, o.held); // a station that is gone pays nothing: the player gets the rest back
@@ -54,6 +64,7 @@ function close(sim: Sim, o: YardOrder, reason: string): void {
 
 /** End an order on the spot: jobs dropped, crew and shuttle gone, money settled. For when the station, the ship or the node is lost. */
 export function endNow(sim: Sim, o: YardOrder, reason: string): void {
+  releaseEjected(sim, o);
   dropJobs(sim, o);
   refundUnbuilt(sim, o);
   close(sim, o, reason);
@@ -70,6 +81,7 @@ export function abortYards(sim: Sim, reason: string): void {
  */
 export function finishOrder(sim: Sim, o: YardOrder, reason: string): void {
   if (o.phase === 'recall' || o.phase === 'home' || !isLiveOrder(o)) return;
+  releaseEjected(sim, o);
   dropJobs(sim, o);
   refundUnbuilt(sim, o);
   if (reason) o.reason = reason;

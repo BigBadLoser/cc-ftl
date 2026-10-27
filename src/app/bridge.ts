@@ -14,7 +14,7 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
-import { buildYard } from './yardSnapshot';
+import { buildYard, yardInputs } from './yardSnapshot';
 import { buildStory } from './storySnapshot';
 import { warmOutlines } from './starmapClusters';
 import { warmNebula } from './starmapNebula';
@@ -336,8 +336,12 @@ export function createBridge(sim: Sim): Bridge {
     lastTrade = key;
     trade.set(snap);
   };
+  let yardInputsKey = '';
   const refreshYard = (force = false) => {
     if (!force && combatFrame % 3) return;
+    const inputs = yardInputs(sim, yardStation);
+    if (!force && inputs === yardInputsKey) return; // nothing the yard view depends on has changed: no need to quote the plan again
+    yardInputsKey = inputs;
     const snap = buildYard(sim, yardStation);
     const key = JSON.stringify(snap);
     if (key === lastYard) return;

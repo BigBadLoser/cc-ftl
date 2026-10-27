@@ -88,17 +88,43 @@ function closedRect(
   floor: readonly Tile[], cap: number, rank: (x: number, y: number) => number, edge: (x: number, y: number) => Rim, shut: (walls: readonly Tile[]) => Tile[],
 ): { walls: Tile[]; floor: Tile[] } | null {
   if (floor.length === 0) return null;
-  const inFloor = new Set(floor.map((t) => key(t.x, t.y)));
   const x0 = Math.min(...floor.map((t) => t.x)), x1 = Math.max(...floor.map((t) => t.x));
   const y0 = Math.min(...floor.map((t) => t.y)), y1 = Math.max(...floor.map((t) => t.y));
+  const W = x1 - x0 + 1, H = y1 - y0 + 1;
+  // Floor as a summed-area table: "is this whole block floor?" in O(1). The rim kinds are looked up once per tile (a little past the floor's box).
+  const sum = new Int32Array((W + 1) * (H + 1));
+  const isFloor = new Uint8Array(W * H);
+  for (const t of floor) isFloor[(t.y - y0) * W + (t.x - x0)] = 1;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) sum[(j + 1) * (W + 1) + i + 1] = (isFloor[j * W + i] as number) + (sum[j * (W + 1) + i + 1] as number) + (sum[(j + 1) * (W + 1) + i] as number) - (sum[j * (W + 1) + i] as number);
+  const blockIsFloor = (x: number, y: number, w: number, h: number): boolean => {
+    const i = x - x0, j = y - y0;
+    return (sum[(j + h) * (W + 1) + i + w] as number) - (sum[j * (W + 1) + i + w] as number) - (sum[(j + h) * (W + 1) + i] as number) + (sum[j * (W + 1) + i] as number) === w * h;
+  };
+  const rimKind = new Int8Array((W + 2) * (H + 2)).fill(-1);
+  const KINDS: Rim[] = ['wall', 'ship', 'no'];
+  const edgeAt = (x: number, y: number): Rim => {
+    const k = (y - y0 + 1) * (W + 2) + (x - x0 + 1);
+    let v = rimKind[k] as number;
+    if (v < 0) rimKind[k] = v = KINDS.indexOf(edge(x, y));
+    return KINDS[v] as Rim;
+  };
+  // Only sizes the cap can pay for: the rim (at best one whole side shared with the ship) and the floor together must fit. Biggest area first, so
+  // the search stops at the first size that has any candidate (a smaller block never beats it).
+  const sizes: { w: number; h: number }[] = [];
+  for (let w = 1; w <= W; w++) {
+    for (let h = 1; h <= H; h++) {
+      if (2 * (w + h) + 4 - (Math.max(w, h) + 2) + w * h <= cap) sizes.push({ w, h });
+    }
+  }
+  sizes.sort((a, b) => b.w * b.h - a.w * a.h);
   let best: { walls: Tile[]; area: number; near: number } | null = null;
-  for (let w = 1; w <= x1 - x0 + 1; w++) {
-    for (let h = 1; h <= y1 - y0 + 1; h++) {
-      for (let y = y0; y + h - 1 <= y1; y++) {
-        for (let x = x0; x + w - 1 <= x1; x++) {
-          const cand = rectSection(x, y, w, h, inFloor, edge, rank, cap);
-          if (cand && (!best || cand.area > best.area || (cand.area === best.area && (cand.walls.length < best.walls.length || (cand.walls.length === best.walls.length && cand.near < best.near))))) best = cand;
-        }
+  for (const { w, h } of sizes) {
+    if (best && w * h < best.area) break;
+    for (let y = y0; y + h - 1 <= y1; y++) {
+      for (let x = x0; x + w - 1 <= x1; x++) {
+        if (!blockIsFloor(x, y, w, h)) continue;
+        const cand = rectSection(x, y, w, h, edgeAt, rank, cap);
+        if (cand && (!best || cand.area > best.area || (cand.area === best.area && (cand.walls.length < best.walls.length || (cand.walls.length === best.walls.length && cand.near < best.near))))) best = cand;
       }
     }
   }
@@ -108,10 +134,8 @@ function closedRect(
 }
 
 function rectSection(
-  x: number, y: number, w: number, h: number, inFloor: ReadonlySet<string>, edge: (x: number, y: number) => Rim, rank: (x: number, y: number) => number, cap: number,
+  x: number, y: number, w: number, h: number, edge: (x: number, y: number) => Rim, rank: (x: number, y: number) => number, cap: number,
 ): { walls: Tile[]; area: number; near: number } | null {
-  if (2 * (w + h) + 4 - (w + 2) - 2 > cap) return null; // even with a whole side shared with the ship it cannot fit
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (!inFloor.has(key(x + i, y + j))) return null;
   const walls: Tile[] = [];
   let ship = 0;
   for (let j = -1; j <= h; j++) {

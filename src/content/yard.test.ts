@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
+  CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
   viewPlan, yardPrice, yardService,
 } from '../sim';
 import { giveItems } from '../sim/story/effects';
@@ -345,5 +345,41 @@ describe('trusses', () => {
     expect(shipGrid(sim, me)!.get('struct', tile.x, tile.y)).toBe(Struct.Space);
     expect(plannedTiles(sim, me)).toEqual([{ x: s.x + 9, y: s.y }]);
     expect(sim.world.get(me, HullPlanC)!.tiles).toEqual([{ x: s.x + 9, y: s.y }]);
+  });
+});
+
+describe('shipyard: cost of a big plan', () => {
+  it('quotes a very large plan in well under 50 ms (the Shipyard tab re-quotes while it is open)', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, -20, -20, 60, 40)); // 196 tiles of outline round 1700 floor
+    const times = [0, 1, 2].map(() => {
+      const t = performance.now();
+      const q = quoteYard(sim, station, me);
+      expect(q.walls.length + q.floor.length).toBeLessThanOrEqual(40);
+      return performance.now() - t;
+    });
+    expect(Math.min(...times)).toBeLessThan(50);
+    expect(Math.max(...times)).toBeLessThan(1000); // even the cold first quote (it was 2.5 s with the exhaustive rectangle search)
+  });
+});
+
+describe('shipyard: ending early', () => {
+  it('gives crew drafted to leave the new rooms back their freedom when the order is called off during sealing', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    run(sim, 1);
+    const order = sim.yard.orders[0]!;
+    // The state a sealing order leaves a player's crew member in: drafted to walk out of the patch, remembered in `ejected`.
+    const crew = sim.world.query(CrewC).find((c) => !sim.world.has(c, YardCrewC) && !sim.world.has(c, DraftedC))!;
+    sim.enqueue({ type: 'crew.draft', id: crew, drafted: true });
+    run(sim, 1);
+    expect(sim.world.has(crew, DraftedC)).toBe(true);
+    order.ejected.push(crew);
+    order.phase = 'seal';
+    sim.enqueue({ type: 'yard.cancel', order: order.id });
+    run(sim, 3);
+    expect(sim.world.has(crew, DraftedC)).toBe(false);
+    expect(order.ejected).toEqual([]);
   });
 });
