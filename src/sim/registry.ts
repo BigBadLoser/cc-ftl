@@ -459,7 +459,7 @@ export interface ModuleDef {
   shieldGen?: { layersPerPower: number; rechargeSec: number };
   /**
    * Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less).
-   * `hullCapacity`: how many hull tiles (walls and doors, see `hullTiles`) the engine can push through a jump; the ship's capacity is the sum over its engines
+   * `hullCapacity`: how many outer-profile hull tiles (see `hullTiles`) the engine can push through a jump; the ship's capacity is the sum over its engines
    * that still work, and a ship over it cannot make a normal jump (ftl/capacity.ts).
    */
   engine?: { evasionPerPower: number; fuelFactor?: number; hullCapacity?: number };

@@ -187,11 +187,13 @@ export type Command =
   | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[]; overcharge?: boolean }
   /** Cancel the charge order and any queued jump. */
   | { type: 'ftl.cancelCharge'; ship: number }
+  /** Set a player ship's planned outer hull (sector tiles of open space); replaces the plan, empty clears it. Free, any time, saved with the ship (yard/). */
+  | { type: 'hull.plan'; ship: number; tiles: { x: number; y: number }[] }
   /**
-   * Buy a hull expansion at a station of the player's node (yard/): `tiles` are the painted floor tiles, which must touch the hull. Pays into escrow and posts
-   * the floor and wall jobs; the station's shuttle brings the crew. Rejected with the plan's error, `busy`, `inCombat`, `noYardDock`, `cantAfford` or `noMetal`.
+   * Buy what a station's yard builds of the plan now (yard/): hull tiles up to its cap that touch the ship, and the floor they enclose. Pays into escrow and
+   * posts the jobs; the station's shuttle brings the crew. Rejected with the quote's error, `busy`, `inCombat`, `noYardDock`, `cantAfford` or `noMetal`.
    */
-  | { type: 'yard.order'; station: number; tiles: { x: number; y: number }[] }
+  | { type: 'yard.order'; station: number }
   /** Send the yard crew home: the unbuilt part is refunded at once. */
   | { type: 'yard.cancel'; order: number }
   /**

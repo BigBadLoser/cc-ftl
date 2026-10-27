@@ -14,6 +14,18 @@ export function yardGame(size: 'outpost' | 'station' | 'hub' = 'station', kind =
   return { sim, station, me: homeShip(sim) };
 }
 
+/** The border of a w x h rectangle at (x, y) in the player ship's own tiles: what the Hull plan tool puts down for a drag. */
+export function outline(sim: Sim, me: number, x: number, y: number, w: number, h: number): Tile[] {
+  return rect(sim, me, x, y, w, h).filter((t, i) => { const [cx, cy] = [i % w, Math.floor(i / w)]; return cx === 0 || cy === 0 || cx === w - 1 || cy === h - 1; });
+}
+
+/** Plan an outer hull for the player's ship (the command the build tool sends). */
+export function planHull(sim: Sim, me: number, tiles: Tile[]): void {
+  sim.enqueue({ type: 'hull.plan', ship: me, tiles });
+  sim.step();
+  sim.events.drain();
+}
+
 /** Painted tiles: a w x h rectangle at (x, y) in the player ship's own tiles (its top-left is 0, 0). */
 export function rect(sim: Sim, me: number, x: number, y: number, w: number, h: number): Tile[] {
   const s = sim.world.get(me, ShipC)!;

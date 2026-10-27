@@ -710,37 +710,44 @@ export interface UiStationInfo {
   yard: UiYardService | null;
 }
 
-/** What a station's shipyard offers. `price` is per painted tile now (the node's danger and the tier's multiplier included). */
+/** What a station's shipyard offers. `price` is per hull tile now (the node's danger and the tier's multiplier included). */
 export interface UiYardService {
   /** 'station' or 'hub'. */
   size: string;
-  /** Tiles one order may cover, and the overall ship maximum (tiles the ship may cover). */
+  /** Hull tiles one visit builds. */
   cap: number;
-  maxTiles: number;
   price: { credits: number; metal: number };
-  /** Tiles the player's ship covers now. */
-  area: number;
-  /** The ship's hull tiles against what its engines carry now. */
-  hull: { tiles: number; capacity: number };
+  /** The ship's outer hull profile against what its engines carry, and the overall ship maximum. */
+  hull: { tiles: number; capacity: number; max: number };
 }
 
-/** A hull expansion drawn on the map, checked and priced. */
-export interface UiYardPlan {
-  station: number;
+/** The ship's planned outer hull (the build tools' Hull plan), checked: what can be built from the ship, what floats, what is in the way, the floor it shuts in. */
+export interface UiHullPlan {
+  /** The ship the plan belongs to (the `ship` of `hull.plan`), 0 when there is none. */
+  ship: number;
   tiles: { x: number; y: number }[];
-  walls: { x: number; y: number }[];
-  bad: { x: number; y: number }[];
-  /** The sim's reason code the plan fails with, or null; `errorText` says it in a sentence. */
+  connected: { x: number; y: number }[];
+  loose: { x: number; y: number }[];
+  blocked: { x: number; y: number }[];
+  floor: { x: number; y: number }[];
+  /** Hull tiles now and with every reachable planned tile built, against the engines' capacity and the ship maximum. */
+  hull: { now: number; afterAll: number; capacity: number; max: number };
+}
+
+/** What a yard would build of the plan on this visit, and for how much. `error` is the sim's reason code, `errorText` the sentence. */
+export interface UiYardQuote {
+  station: number;
   error: string | null;
   errorText: string;
+  /** Hull tiles bought now, the floor they enclose, tiles planned in all, and tiles left for a later yard. */
+  buy: number;
+  floor: number;
+  planned: number;
+  rest: number;
   price: { credits: number; metal: number };
   afford: { credits: boolean; metal: boolean };
   cap: number;
-  maxTiles: number;
-  area: number;
-  areaAfter: number;
-  /** Hull tiles now and after, against what the engines carry ("Hull N / M"). */
-  hull: { before: number; after: number; capacity: number };
+  hull: { before: number; after: number; capacity: number; max: number };
 }
 
 /** The player's yard order: running, or just ended. `status` says what is happening. */
@@ -760,9 +767,10 @@ export interface UiYardOrder {
   walls: { x: number; y: number }[];
 }
 
-/** The shipyard planning view: what is painted for which station, its plan, and the order that is under way. */
+/** The hull plan, a yard's quote for it (for the station panel that is open: null otherwise) and the order under way. */
 export interface UiYard {
-  plan: UiYardPlan | null;
+  plan: UiHullPlan;
+  quote: UiYardQuote | null;
   order: UiYardOrder | null;
 }
 
@@ -894,9 +902,9 @@ export interface UiLegend {
   gradient: string[];
 }
 
-export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel' | 'yard';
+export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
 /** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid; 'mine' drags a rectangle over ore (the ore tiles in it go to the mining pods in `pods`, or every pod when empty). */
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine';
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine' | 'hull';
 /** A mining pod of the player's (VehicleC with a mining laser). */
 export interface UiPod {
   id: number;
@@ -943,8 +951,8 @@ export interface UiToolState {
   rot: number;
   /** The 'mine' tool: pod ids the painted ore is ordered to (empty = every pod). */
   pods?: number[];
-  /** The 'yard' tool: the station the hull is planned at, and whether a drag erases what was painted. */
-  yard?: { station: number; erase: boolean };
+  /** The 'hull' tool (the outer hull plan): whether a drag erases planned tiles instead of adding a rectangle's outline. */
+  hull?: { erase: boolean };
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';
@@ -1038,10 +1046,10 @@ export interface UiApi {
   ftl: Subscribable<UiFtl | null>;
   /** Credits, hailable ships and stations, and the running deliveries. */
   trade: Subscribable<UiTrade>;
-  /** The shipyard planning view (the painted hull and its plan) and the player's yard order. */
+  /** The hull plan, the quote of the station whose panel is open (see `watchYard`) and the player's yard order. */
   yard: Subscribable<UiYard>;
-  /** Forget the painted hull. */
-  clearYardPaint(): void;
+  /** Quote this station's yard in `yard` (0 stops). */
+  watchYard(station: number): void;
   shuttles: Subscribable<UiShuttles>;
   prizes: Subscribable<UiPrize[]>;
   /** Asteroids in the node and the player's mining pods. */

@@ -79,6 +79,8 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
     const before = grid.get('struct', job.x, job.y);
     if ((before === Struct.Rock || before === Struct.RockWall) && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
     else writeStruct(grid, job.x, job.y, next);
+    // a shipyard tile belongs to the ship even when it is finished before its neighbours (the owner layer is otherwise inherited from them)
+    if (job.yard && job.kind === 'build' && grid.get('ship', job.x, job.y) === 0) grid.set('ship', job.x, job.y, shipIdOf(sim, job));
     // built on an asteroid base: the new tile is the base's, not the asteroid's
     const ship = shipIdOf(sim, job);
     if (next !== Struct.Space && grid.get('ship', job.x, job.y) !== ship && sim.world.has(grid.get('ship', job.x, job.y), AsteroidC)) grid.set('ship', job.x, job.y, ship);

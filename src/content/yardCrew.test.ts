@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
+  AirlockC, CrewC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
 } from '../sim';
 import { content } from './index';
-import { rect, run, yardGame } from './yardFixture';
+import { outline, planHull, run, yardGame } from './yardFixture';
 
 describe('the yard crew', () => {
   it('a small order is built by the station crew in EVA, they fly home and the escrow settles', () => {
@@ -12,11 +12,11 @@ describe('the yard crew', () => {
     const wallet = trader.credits;
     const stock = trader.stock.find((s) => s.item === 'item.metal')?.count ?? 0;
     const suits = sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0);
-    const hull = hullLoad(sim, me).tiles;
     const credits = sim.trade.credits;
-    const tiles = rect(sim, me, 8, 0, 3, 1);
-    const price = yardPrice(sim, yardService(sim, station)!, tiles.length);
-    sim.enqueue({ type: 'yard.order', station, tiles });
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    const quoteHull = quoteYard(sim, station, me).hull.after;
+    const price = yardPrice(sim, yardService(sim, station)!, 10);
+    sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;
     const phases = new Set<string>();
@@ -32,13 +32,13 @@ describe('the yard crew', () => {
     const grid = shipGrid(sim, me)!;
     for (const t of order.floor) expect(grid.get('struct', t.x, t.y), `floor ${t.x},${t.y}`).toBe(Struct.Floor);
     for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(Struct.Wall);
-    expect(builtCount(sim, order)).toEqual({ floor: 3, walls: order.walls.length });
-    expect(totalTiles(order)).toBe(3 + order.walls.length);
+    expect(builtCount(sim, order)).toEqual({ floor: 2, walls: 10 });
+    expect(totalTiles(order)).toBe(12);
     // Nobody (the ship's own crew, who also build, included) is walled in.
     const keys = new Set(order.floor.map((t) => `${t.x},${t.y}`));
     expect(sim.world.query(CrewC, PositionC).filter((c) => keys.has(`${sim.world.get(c, PositionC)!.x},${sim.world.get(c, PositionC)!.y}`))).toEqual([]);
     // The new walls are hull tiles the engines have to carry, and the ship owns the new tiles.
-    expect(hullLoad(sim, me).tiles).toBe(hull + order.walls.length);
+    expect(hullLoad(sim, me).tiles).toBe(quoteHull);
     expect(sim.sector.grid.get('ship', order.floor[0]!.x, order.floor[0]!.y)).toBe(me);
     // The station is paid, the crew and the shuttle are gone, nobody kept a suit.
     expect(sim.trade.credits).toBe(credits - price.credits);
@@ -53,7 +53,8 @@ describe('the yard crew', () => {
 
   it('the order survives a save and load midway', () => {
     const { sim, station, me } = yardGame();
-    sim.enqueue({ type: 'yard.order', station, tiles: rect(sim, me, 8, 0, 3, 1) });
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
     run(sim, 300);
     const order = sim.yard.orders[0]!;
     expect(order.phase).toBe('work');
@@ -62,7 +63,7 @@ describe('the yard crew', () => {
     const o = back.yard.orders[0]!;
     run(back, 3000, () => !isLiveOrder(o));
     expect(o.phase).toBe('done');
-    expect(builtCount(back, o).floor).toBe(3);
+    expect(builtCount(back, o).floor).toBe(2);
     expect(back.world.get(me, ShipC)!.width).toBe(sim.world.get(me, ShipC)!.width);
   }, 120000);
 
@@ -71,12 +72,12 @@ describe('the yard crew', () => {
     const trader = sim.world.get(station, TraderC)!;
     const wallet = trader.credits;
     const credits = sim.trade.credits;
-    const tiles = rect(sim, me, 8, 0, 3, 1);
-    const price = yardPrice(sim, yardService(sim, station)!, tiles.length);
-    sim.enqueue({ type: 'yard.order', station, tiles });
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    const price = yardPrice(sim, yardService(sim, station)!, 10);
+    sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;
-    run(sim, 2000, () => builtCount(sim, order).floor + builtCount(sim, order).walls >= 3);
+    run(sim, 2000, () => builtCount(sim, order).floor + builtCount(sim, order).walls >= 4);
     const done = builtCount(sim, order).floor + builtCount(sim, order).walls;
     expect(done).toBeGreaterThan(0);
     expect(done).toBeLessThan(totalTiles(order));
@@ -101,7 +102,8 @@ describe('the yard crew', () => {
 
   it('the ships own crew can build the yard tiles too', () => {
     const { sim, station, me } = yardGame();
-    sim.enqueue({ type: 'yard.order', station, tiles: rect(sim, me, 8, 0, 3, 1) });
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
     run(sim, 120); // the shuttle has not docked yet
     const ours = sim.world.query(JobC).filter((j) => {
       const by = sim.world.get(j, JobC)!.reservedBy;

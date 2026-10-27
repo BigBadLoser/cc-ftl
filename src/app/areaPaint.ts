@@ -22,6 +22,7 @@ export interface AreaPaint {
   end(): boolean;
   cancel(): void;
   /** The rectangle being dragged (empty when none), for the preview. */
+  /** The tiles the drag would add (the outline) or take out (the rectangle). */
   dragging(): Tile[];
 }
 
@@ -34,7 +35,17 @@ export function rectTiles(a: Tile, b: Tile): Tile[] {
   return out;
 }
 
-export function createAreaPaint(initial: AreaMode = 'add'): AreaPaint {
+/** The tiles on the border of the rectangle with corners a and b (a one-tile-wide rectangle is all border). */
+export function outlineTiles(a: Tile, b: Tile): Tile[] {
+  const [x0, x1, y0, y1] = [Math.min(a.x, b.x), Math.max(a.x, b.x), Math.min(a.y, b.y), Math.max(a.y, b.y)];
+  return rectTiles(a, b).filter((t) => t.x === x0 || t.x === x1 || t.y === y0 || t.y === y1);
+}
+
+/**
+ * `shape` is what an add drag puts down: its whole rectangle ('fill', the default) or only the rectangle's border ('outline': the hull plan). An erase
+ * drag always takes out every painted tile inside the rectangle.
+ */
+export function createAreaPaint(initial: AreaMode = 'add', shape: 'fill' | 'outline' = 'fill'): AreaPaint {
   const set = new Map<string, Tile>();
   let mode = initial;
   let from: Tile | null = null;
@@ -58,7 +69,7 @@ export function createAreaPaint(initial: AreaMode = 'add'): AreaPaint {
     end() {
       if (!from || !to) return false;
       let changed = false;
-      for (const t of rectTiles(from, to)) {
+      for (const t of mode === 'add' && shape === 'outline' ? outlineTiles(from, to) : rectTiles(from, to)) {
         if (mode === 'add' && !set.has(key(t))) {
           set.set(key(t), t);
           changed = true;
@@ -70,6 +81,6 @@ export function createAreaPaint(initial: AreaMode = 'add'): AreaPaint {
     cancel() {
       from = to = null;
     },
-    dragging: () => (from && to ? rectTiles(from, to) : []),
+    dragging: () => (from && to ? (mode === 'add' && shape === 'outline' ? outlineTiles(from, to) : rectTiles(from, to)) : []),
   };
 }

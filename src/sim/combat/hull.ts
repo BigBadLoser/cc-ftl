@@ -19,19 +19,44 @@ export function hullSum(grid: Grid): number {
   return sum;
 }
 
+/** Structure kinds that make a ship's hull when they face open space: walls and doors, beams, finished rock walls. */
+export const isHullKind = (kind: number): boolean => kind === Struct.Wall || kind === Struct.Door || kind === Struct.Beam || kind === Struct.RockWall;
+
+/**
+ * The outer hull profile of a tile field: hull-kind tiles with open space (or the field's edge) on a side. `kindAt` reads a tile's struct kind;
+ * the box is the area to count in. Interior walls and doors, and floor, never count.
+ */
+export function outerProfile(kindAt: (x: number, y: number) => number, box: { x: number; y: number; w: number; h: number }): number {
+  const open = (x: number, y: number): boolean => x < box.x || y < box.y || x >= box.x + box.w || y >= box.y + box.h || kindAt(x, y) === Struct.Space;
+  let n = 0;
+  for (let y = box.y; y < box.y + box.h; y++) {
+    for (let x = box.x; x < box.x + box.w; x++) {
+      if (isHullKind(kindAt(x, y)) && (open(x - 1, y) || open(x + 1, y) || open(x, y - 1) || open(x, y + 1))) n++;
+    }
+  }
+  return n;
+}
+
+/** The outer profile of a ship template's rows ('#' wall, 'D' door, '=' beam face open space '.'): what an enemy's hull count is on the jobs screen. */
+export function templateHullTiles(rows: readonly string[]): number {
+  const w = Math.max(0, ...rows.map((r) => r.length));
+  const kinds: Record<string, number> = { '#': Struct.Wall, D: Struct.Door, '=': Struct.Beam, _: Struct.Floor };
+  return outerProfile((x, y) => kinds[rows[y]?.[x] ?? '.'] ?? Struct.Space, { x: 0, y: 0, w, h: rows.length });
+}
+
 const tileCounts = new WeakMap<Grid, { struct: number; n: number }>();
 
 /**
- * Hull tiles of a grid: its wall and door tiles. The one count the jobs screen compares in combat strength and the engine capacity
- * (ftl/capacity.ts) measures. Cached until its `struct` revision changes.
+ * Hull tiles of a grid: its outer hull profile (`outerProfile`), the one count the ship panel ("Hull N / M"), the engine capacity
+ * (ftl/capacity.ts), the yard's price and size cap, and the jobs screen's combat strength all use. Cached until the `struct` revision changes.
  */
 export function hullTiles(grid: Grid): number {
   const rev = grid.revision('struct');
   const hit = tileCounts.get(grid);
   if (hit && hit.struct === rev) return hit.n;
-  const struct = grid.load('struct');
-  let n = 0;
-  for (let i = 0; i < struct.length; i++) if (struct[i] === Struct.Wall || struct[i] === Struct.Door) n++;
+  const box = { x: grid.x0, y: grid.y0, w: grid.width, h: grid.height };
+  const struct = grid.load('struct', box);
+  const n = outerProfile((x, y) => struct[(y - box.y) * box.w + (x - box.x)] as number, box);
   tileCounts.set(grid, { struct: rev, n });
   return n;
 }

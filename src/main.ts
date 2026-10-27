@@ -238,7 +238,7 @@ const api: UiApi = {
   shuttles: bridge.shuttles,
   trade: bridge.trade,
   yard: bridge.yard,
-  clearYardPaint: controller.clearYardPaint,
+  watchYard: bridge.watchYard,
   prizes: bridge.prizes,
   mining: bridge.mining,
   selectedAsteroid: controller.selectedAsteroid,

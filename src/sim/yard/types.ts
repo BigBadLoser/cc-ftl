@@ -2,7 +2,7 @@ import { defineComponent } from '../ecs';
 
 type Tile = { x: number; y: number };
 
-/** One yard size tier ('station' or 'hub'): tiles it will build in one visit, and its price multiplier. */
+/** One yard size tier ('station' or 'hub'): hull tiles it will build in one visit, and its price multiplier. */
 export interface YardSizeDef {
   cap: number;
   price: number;
@@ -10,14 +10,14 @@ export interface YardSizeDef {
 
 /**
  * Shipyard content (`ContentRegistry.yard`): which stations offer hull expansion and what it costs. A station offers it when its generator kind
- * (`ShipC.gen.faction`) is in `kinds` and its size (`gen.role`) has a tier in `sizes`. Price per painted tile is `perTile` x the tier's `price`
+ * (`ShipC.gen.faction`) is in `kinds` and its size (`gen.role`) has a tier in `sizes`. Price per hull tile bought is `perTile` x the tier's `price`
  * x (1 + `dangerStep` x the node's danger).
  */
 export interface YardDef {
   kinds: readonly string[];
   sizes: Record<string, YardSizeDef>;
-  /** The overall ship maximum: tiles a ship may cover (every non-space tile, walls included) however many visits it takes. */
-  maxTiles: number;
+  /** The overall ship maximum in outer-profile hull tiles, however many visits it takes. */
+  maxHull: number;
   perTile: { credits: number; metal: number };
   dangerStep: number;
   /** The yard crew the station sends: a role id and how many (no more than the shuttle's suits). */
@@ -38,7 +38,7 @@ export interface YardMoney {
   metal: number;
 }
 
-/** A paid hull expansion. `floor` is the painted area, `walls` the ring the yard closes it with; both are built as ordinary construction jobs. */
+/** A paid hull expansion. `walls` are the planned outer-hull tiles bought, `floor` the floor they enclose; both are built as ordinary construction jobs. */
 export interface YardOrder {
   id: number;
   /** The station (ShipC entity) and the player's ship (ShipC entity). */
@@ -87,3 +87,9 @@ export interface YardCrew {
 export const YardCrewC = defineComponent<YardCrew>('yardCrew');
 
 export const isLiveOrder = (o: YardOrder): boolean => o.phase !== 'done' && o.phase !== 'failed';
+
+/** On a player ship: its planned outer hull (sector tiles), set by `hull.plan`. Planned tiles that have since been built are ignored. */
+export interface HullPlan {
+  tiles: Tile[];
+}
+export const HullPlanC = defineComponent<HullPlan>('hullPlan');

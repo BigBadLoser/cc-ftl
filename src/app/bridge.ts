@@ -90,9 +90,9 @@ export interface Bridge {
   ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
-  /** The shipyard planning view; `setYardPaint` gives it the station and the painted tiles (an empty set clears the plan). */
+  /** The hull plan, the quote of the watched station (the open station panel) and the yard order. */
   yard: Writable<UiYard>;
-  setYardPaint(station: number, tiles: readonly { x: number; y: number }[]): void;
+  watchYard(station: number): void;
   prizes: Readable<UiPrize[]>;
   mining: Readable<UiMining>;
   story: Readable<UiStory>;
@@ -162,8 +162,8 @@ export function createBridge(sim: Sim): Bridge {
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
-  const yard = createStore<UiYard>({ plan: null, order: null });
-  let yardPaint: { station: number; tiles: { x: number; y: number }[] } = { station: 0, tiles: [] };
+  const yard = createStore<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null });
+  let yardStation = 0;
   let lastYard = '';
   const prizes = createStore<UiPrize[]>([]);
   const mining = createStore<UiMining>({ asteroids: [], pods: [] });
@@ -338,7 +338,7 @@ export function createBridge(sim: Sim): Bridge {
   };
   const refreshYard = (force = false) => {
     if (!force && combatFrame % 3) return;
-    const snap = buildYard(sim, yardPaint.station, yardPaint.tiles);
+    const snap = buildYard(sim, yardStation);
     const key = JSON.stringify(snap);
     if (key === lastYard) return;
     lastYard = key;
@@ -482,8 +482,8 @@ export function createBridge(sim: Sim): Bridge {
       refreshInspect();
     },
     yard,
-    setYardPaint(station, tiles) {
-      yardPaint = { station, tiles: tiles.map((t) => ({ x: t.x, y: t.y })) };
+    watchYard(station) {
+      yardStation = station;
       refreshYard(true);
     },
     setHovered(t) {

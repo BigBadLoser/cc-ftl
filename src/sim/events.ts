@@ -179,6 +179,8 @@ export type SimEvent =
   /** An overcharged jump (ship over its engines' hull capacity) took its toll: engines hit, engines destroyed, engine-room fires lit (ftl/overcharge.ts). */
   | { type: 'ftl.overcharged'; ship: number; damaged: number; destroyed: number; fires: number }
   /** A shipyard order was paid (yard/), and ended: `built` of `total` tiles stand; `reason` is empty when all was built. */
+  /** A ship's hull plan was set (hull.plan): `tiles` still open. */
+  | { type: 'hull.planned'; ship: number; tiles: number }
   | { type: 'yard.ordered'; order: number; station: number; tiles: number }
   | { type: 'yard.ended'; order: number; reason: string; built: number; total: number }
   /** A hop of the trip ended at `to` (fuel of that hop and, for the first, the FTL charge paid on entry). */

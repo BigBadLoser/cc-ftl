@@ -42,4 +42,23 @@ describe('area painting', () => {
     p.clear();
     expect(p.tiles()).toEqual([]);
   });
+
+  it('an outline add puts down only the border, a thin drag is a line, and erase takes the whole rectangle', () => {
+    const p = createAreaPaint('add', 'outline');
+    p.begin({ x: 0, y: 0 });
+    p.drag({ x: 3, y: 2 });
+    expect(p.dragging()).toHaveLength(10);
+    p.end();
+    expect(p.tiles()).toHaveLength(10);
+    expect(p.tiles().some((t) => t.x === 1 && t.y === 1)).toBe(false);
+    p.begin({ x: 5, y: 0 });
+    p.drag({ x: 5, y: 3 });
+    p.end();
+    expect(p.tiles()).toHaveLength(14);
+    p.setMode('erase');
+    p.begin({ x: 0, y: 0 });
+    p.drag({ x: 3, y: 2 });
+    p.end();
+    expect(p.tiles()).toEqual([{ x: 5, y: 0 }, { x: 5, y: 1 }, { x: 5, y: 2 }, { x: 5, y: 3 }]);
+  });
 });

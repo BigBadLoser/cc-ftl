@@ -71,8 +71,9 @@ import { newYard, type YardState } from './yard/types';
  * v56 (research): `ResearchC` (a ship's research queue), the `research` work category, the science skill and role.scientist.
  * v57 (tile aim): optional `Target.tile` (a blind aim at one tile of the target ship, on `CombatC.target` and `WeaponC.target`).
  * v58 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
+ * v59: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
  */
-export const SAVE_VERSION = 58;
+export const SAVE_VERSION = 59;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

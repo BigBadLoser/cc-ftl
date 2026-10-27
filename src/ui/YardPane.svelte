@@ -1,48 +1,35 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiToolState, UiYard, UiYardService } from './api';
+  import type { UiApi, UiYard, UiYardService } from './api';
   import ItemIcon from './ItemIcon.svelte';
 
   /**
-   * A station's Shipyard tab: what the yard offers, the planning view (paint new hull against the ship on the map, add or erase, with the cost,
-   * the per-visit cap and the hull against the engines), and the running order with its progress and a Send them home button.
+   * A station's Shipyard tab: what the yard offers, its quote for the hull plan (the plan is drawn in the build tools' Hull plan, anywhere; here the
+   * yard prices what it can build on this visit and you buy it), and the running order with its progress and a Send them home button.
    */
   let { api, station, yard: svc, credits, metal }: { api: UiApi; station: number; yard: UiYardService; credits: number; metal: number } = $props();
-  let tool = $state<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
-  let view = $state<UiYard>({ plan: null, order: null });
+  let view = $state<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null });
   onMount(() => {
-    const u = [api.tool.subscribe((t) => (tool = t)), api.yard.subscribe((y) => (view = y))];
+    api.watchYard(station);
+    const u = api.yard.subscribe((y) => (view = y));
     return () => {
-      u.forEach((f) => f());
-      if (tool.tool === 'yard') leave(); // leaving the tab or the panel ends the planning view
+      u();
+      api.watchYard(0);
     };
   });
-  const planning = $derived(tool.tool === 'yard' && tool.yard?.station === station);
-  const plan = $derived(view.plan && view.plan.station === station ? view.plan : null);
+  const quote = $derived(view.quote && view.quote.station === station ? view.quote : null);
   const order = $derived(view.order && view.order.station === station ? view.order : null);
   const live = $derived(!!order?.live);
-  const over = $derived(!!plan && plan.hull.capacity > 0 && plan.hull.after > plan.hull.capacity);
-  const canOrder = $derived(!!plan && !plan.error && plan.afford.credits && plan.afford.metal && plan.tiles.length > 0);
-
-  function start() {
-    api.setTool({ tool: 'yard', yard: { station, erase: false } });
-  }
-  function leave() {
-    api.setTool({ tool: 'select' });
-    api.clearYardPaint();
-  }
-  const setErase = (erase: boolean) => api.setTool({ tool: 'yard', yard: { station, erase } });
-  function place() {
-    if (!plan || !canOrder) return;
-    api.dispatch({ type: 'yard.order', station, tiles: plan.tiles });
-    leave();
-  }
+  const planned = $derived(view.plan.tiles.length);
+  const over = $derived(!!quote && quote.hull.capacity > 0 && quote.hull.after > quote.hull.capacity);
+  const canBuy = $derived(!!quote && !quote.error && quote.afford.credits && quote.afford.metal && quote.buy > 0);
+  const buy = () => canBuy && api.dispatch({ type: 'yard.order', station });
 </script>
 
 <div class="yard" data-testid="yard-pane">
   <div class="offer">
     <b>{svc.size === 'hub' ? 'Hub shipyard' : 'Station shipyard'}</b>
-    <span>Builds up to <b>{svc.cap}</b> tiles a visit · from {svc.price.credits} ₵ and {svc.price.metal} metal a tile · ship limit {svc.maxTiles} tiles (yours: {svc.area})</span>
+    <span>Builds up to <b>{svc.cap}</b> hull tiles a visit · {svc.price.credits} ₵ and {svc.price.metal} metal a tile, floor inside included · ship limit {svc.hull.max} hull tiles</span>
   </div>
 
   {#if order}
@@ -57,35 +44,26 @@
   {/if}
 
   {#if !live}
-    {#if !planning}
-      <button class="go" data-testid="yard-plan" onclick={start}>Plan an expansion</button>
-      <p class="note">Paint new hull against the ship on the map. The yard builds the floor and the outer walls; you fit it out.</p>
-    {:else}
-      <div class="card" data-testid="yard-planning">
-        <div class="seg" role="group" aria-label="Paint mode">
-          <button class:on={!tool.yard?.erase} onclick={() => setErase(false)} data-testid="yard-add">Add</button>
-          <button class:on={!!tool.yard?.erase} onclick={() => setErase(true)} data-testid="yard-erase">Erase</button>
-          <button onclick={() => api.clearYardPaint()} data-testid="yard-clear">Clear</button>
-        </div>
-        <p class="note">Drag rectangles on the map, touching the hull.</p>
-        <div class="row"><span>Tiles</span><b data-testid="yard-tiles" class:bad={!!plan && plan.tiles.length > plan.cap}>{plan?.tiles.length ?? 0} / {svc.cap}</b></div>
+    <div class="card" data-testid="yard-quote">
+      {#if !planned}
+        <p class="note" data-testid="yard-noplan">No hull planned. Draw the outline with Build → Hull plan, any time, then buy it at a yard.</p>
+      {:else if quote}
+        <div class="row"><span>Planned</span><b data-testid="yard-planned">{quote.planned} hull tiles</b></div>
+        <div class="row"><span>This visit</span><b data-testid="yard-tiles" class:bad={quote.buy === 0}>{quote.buy} / {quote.cap} hull tiles{quote.floor ? ` + ${quote.floor} floor` : ''}</b></div>
         <div class="row"><span>Cost</span>
           <b data-testid="yard-cost">
-            <span class:bad={!!plan && !plan.afford.credits}>{plan?.price.credits ?? 0} ₵</span>
-            <span class="metal" class:bad={!!plan && !plan.afford.metal}><ItemIcon {api} item="item.metal" size={16} />{plan?.price.metal ?? 0}</span>
+            <span class:bad={!quote.afford.credits}>{quote.price.credits} ₵</span>
+            <span class="metal" class:bad={!quote.afford.metal}><ItemIcon {api} item="item.metal" size={16} />{quote.price.metal}</span>
           </b>
         </div>
         <div class="row"><span>You have</span><span>{credits} ₵ · {metal} metal</span></div>
-        <div class="row"><span>Ship size</span><span>{plan?.areaAfter ?? svc.area} / {svc.maxTiles}</span></div>
-        <div class="row" class:bad={over}><span>Hull</span><b data-testid="yard-hull">{plan && plan.tiles.length ? `${plan.hull.before} → ${plan.hull.after}` : svc.hull.tiles} / {plan?.hull.capacity ?? svc.hull.capacity}</b></div>
+        <div class="row" class:bad={over}><span>Hull</span><b data-testid="yard-hull">{quote.hull.before} → {quote.hull.after} / {quote.hull.capacity}</b></div>
         {#if over}<p class="warn" data-testid="yard-over">Over what the engines carry: jumping will need an overcharge.</p>{/if}
-        {#if plan?.error && plan.tiles.length}<p class="warn" data-testid="yard-error">{plan.errorText}.</p>{/if}
-        <div class="two">
-          <button onclick={leave} data-testid="yard-leave">Done</button>
-          <button class="go" disabled={!canOrder} onclick={place} data-testid="yard-order-go">Order</button>
-        </div>
-      </div>
-    {/if}
+        {#if quote.error}<p class="warn" data-testid="yard-error">{quote.errorText}.</p>{/if}
+        {#if quote.rest > 0 && !quote.error}<p class="note">{quote.rest} more stay planned for the next yard.</p>{/if}
+        <button class="go" disabled={!canBuy} onclick={buy} data-testid="yard-buy">Buy hull</button>
+      {/if}
+    </div>
   {/if}
 </div>
 
@@ -103,11 +81,6 @@
   .note { color: var(--dim); font-size: 12px; margin: 0; }
   .bar { height: 8px; background: var(--bg); border: 1px solid var(--line); }
   .bar i { display: block; height: 100%; background: var(--cyan); }
-  .seg { display: flex; gap: 4px; }
-  .seg button { flex: 1; min-height: 30px; }
-  .seg button.on { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
-  .two { display: flex; gap: 6px; }
-  .two button { flex: 1; }
   button { min-height: 32px; font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
   .go:disabled { opacity: 0.4; }

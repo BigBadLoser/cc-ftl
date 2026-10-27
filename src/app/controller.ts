@@ -26,8 +26,6 @@ const BODY_PX = 16;
 /** Tool + selection state and the translation of input gestures into commands. */
 export interface Controller {
   tool: Readable<UiToolState>;
-  /** Forget the hull painted in the shipyard planning view. */
-  clearYardPaint(): void;
   /** Why the module being placed is invalid at the cursor, with a screen position near it. */
   placeHint: Readable<{ x: number; y: number; text: string } | null>;
   selectedCrew: Readable<number | null>;
@@ -251,7 +249,6 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     toast,
     setTool,
-    clearYardPaint: paint.clearYard,
     selectCrew,
     focusCrew,
     attack,
@@ -266,6 +263,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     attach(renderer) {
       r = renderer;
+      bridge.yard.subscribe(() => paint.drawPlan()); // the hull plan's ghost tiles follow the plan and the yard order
       bridge.sites.subscribe(() => {
         pushSites();
         const id = siteSel.get();

@@ -1,63 +1,28 @@
-import { hullTiles } from '../combat/hull';
-import { ModuleC } from '../modules/components';
-import { AirlockC, airlockTiles } from '../modules/airlock';
-import { hullLoad } from '../ftl/capacity';
-import { asteroidParts, intersects, padded, regions, shipAt, shipIdOf, shipRect } from '../regions';
+import { hullTiles, outerProfile } from '../combat/hull';
 import { ShipC, type Ship } from '../combat/components';
-import { shipGrid } from '../regions';
 import type { Rect } from '../grid';
+import { hullLoad } from '../ftl/capacity';
+import { AirlockC, airlockTiles } from '../modules/airlock';
+import { ModuleC } from '../modules/components';
+import { asteroidParts, intersects, padded, regions, shipAt, shipGrid, shipIdOf, shipRect } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
-import { ASTEROID_GAP, REGION_PAD } from '../tuning';
 import { playerItems, playerShip } from '../trade/player';
+import { ASTEROID_GAP, REGION_PAD } from '../tuning';
 import { yardPrice, yardService, type YardService } from './rules';
-import type { YardMoney } from './types';
+import { HullPlanC, type YardMoney } from './types';
 
 type Tile = { x: number; y: number };
 
 /** Tiles of open margin the grown ship keeps between its frame and any other ship's frame. */
 const GROWTH_GAP = 3;
-
-/** Why a plan cannot be ordered; the first that applies. */
-export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'yardCap' | 'blocked' | 'notAdjacent' | 'shipMax' | 'crowded';
-
-/** A hull expansion drawn on the map, checked and priced (a pure read of the sim: nothing is paid or built). */
-export interface YardPlan {
-  service: YardService | null;
-  /** The painted tiles that can be built (floor) and the walls that close them. */
-  floor: Tile[];
-  walls: Tile[];
-  /** The wall of each patch the crew close last, and the open tile outside it (see `YardOrder.gaps`). */
-  gaps: { wall: Tile; stage: Tile }[];
-  /** Painted tiles that cannot be built, and why the plan fails. */
-  bad: Tile[];
-  error: YardError | null;
-  price: YardMoney;
-  /** Whether the player can pay it now (credits and metal in storage). */
-  afford: { credits: boolean; metal: boolean };
-  /** The yard's tiles per visit, the overall ship maximum, the tiles the ship covers now and would cover after. */
-  cap: number;
-  maxTiles: number;
-  area: number;
-  areaAfter: number;
-  /** Hull tiles now and after the walls are built, against what the engines carry. */
-  hull: { before: number; after: number; capacity: number };
-  /** The ship's rectangle once it has grown to hold the build (the margin of open space included). */
-  rect: Rect | null;
-}
+/** The most planned tiles a ship keeps (a plan is an outline: this is far more than any yard builds). */
+export const MAX_PLAN = 600;
 
 const key = (x: number, y: number): string => `${x},${y}`;
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-
-/** The tiles the ship covers now: every non-space tile of its rectangle. */
-export function shipArea(sim: Sim, ship: number): number {
-  const grid = shipGrid(sim, ship);
-  if (!grid?.has('struct')) return 0;
-  const struct = grid.load('struct');
-  let n = 0;
-  for (let i = 0; i < struct.length; i++) if (struct[i] !== Struct.Space) n++;
-  return n;
-}
+const N8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
+const byRow = (a: Tile, b: Tile): number => a.y - b.y || a.x - b.x;
 
 /** The open tiles in front of the ship's docking airlocks (a block around each collar): nothing is built where a shuttle docks. */
 function dockApproaches(sim: Sim, ship: number): Set<string> {
@@ -72,7 +37,6 @@ function dockApproaches(sim: Sim, ship: number): Set<string> {
   return out;
 }
 
-/** The bounding box of tiles, grown by `by`. */
 function boxOf(tiles: readonly Tile[], by: number): Rect {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const t of tiles) {
@@ -86,105 +50,205 @@ function union(a: Rect, b: Rect): Rect {
   return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
 }
 
+/** The ship's planned outer hull that is still open space (planned tiles that were built, or taken by something else, drop out), reading order. */
+export function plannedTiles(sim: Sim, ship: number): Tile[] {
+  const plan = sim.world.get(ship, HullPlanC);
+  const grid = sim.sector.grid;
+  const seen = new Set<string>();
+  return (plan?.tiles ?? []).filter((t) => grid.get('struct', t.x, t.y) === Struct.Space && grid.get('ship', t.x, t.y) === 0 && !seen.has(key(t.x, t.y)) && !!seen.add(key(t.x, t.y)))
+    .map((t) => ({ x: t.x, y: t.y })).sort(byRow);
+}
+
+/** The planned tiles that can be built from the ship (a chain of neighbours from its hull, in the order a crew would work out), the floating ones, and the ones in the way. */
+function reach(sim: Sim, ship: number, tiles: readonly Tile[]): { connected: Tile[]; loose: Tile[]; blocked: Tile[] } {
+  const clear = dockApproaches(sim, ship);
+  const grid = sim.sector.grid;
+  const set = new Map(tiles.map((t) => [key(t.x, t.y), t] as const));
+  const blocked = tiles.filter((t) => clear.has(key(t.x, t.y)));
+  const isHull = (x: number, y: number): boolean => grid.get('struct', x, y) !== Struct.Space && shipAt(sim, x, y) === ship;
+  const seen = new Set<string>();
+  const queue: Tile[] = [];
+  for (const t of tiles) {
+    if (!clear.has(key(t.x, t.y)) && N8.some(([dx, dy]) => isHull(t.x + dx, t.y + dy))) {
+      seen.add(key(t.x, t.y));
+      queue.push(t);
+    }
+  }
+  for (let i = 0; i < queue.length; i++) {
+    const c = queue[i] as Tile;
+    for (const [dx, dy] of N8) {
+      const k = key(c.x + dx, c.y + dy);
+      const n = set.get(k);
+      if (n && !seen.has(k) && !clear.has(k)) {
+        seen.add(k);
+        queue.push(n);
+      }
+    }
+  }
+  return { connected: queue, loose: tiles.filter((t) => !seen.has(key(t.x, t.y)) && !clear.has(key(t.x, t.y))), blocked };
+}
+
+/** Space tiles the hull tiles (with the ship's own structure) shut in: the floor the yard lays. */
+function enclosedFloor(sim: Sim, hull: readonly Tile[]): Tile[] {
+  if (hull.length === 0) return [];
+  const grid = sim.sector.grid;
+  const wall = new Set(hull.map((t) => key(t.x, t.y)));
+  const box = boxOf(hull, 1);
+  const shut = (x: number, y: number): boolean => wall.has(key(x, y)) || grid.get('struct', x, y) !== Struct.Space || grid.get('ship', x, y) !== 0;
+  const outside = new Set<string>();
+  const stack: Tile[] = [];
+  const push = (x: number, y: number): void => {
+    if (x < box.x || y < box.y || x >= box.x + box.w || y >= box.y + box.h || outside.has(key(x, y)) || shut(x, y)) return;
+    outside.add(key(x, y));
+    stack.push({ x, y });
+  };
+  for (let x = box.x; x < box.x + box.w; x++) {
+    push(x, box.y);
+    push(x, box.y + box.h - 1);
+  }
+  for (let y = box.y; y < box.y + box.h; y++) {
+    push(box.x, y);
+    push(box.x + box.w - 1, y);
+  }
+  while (stack.length) {
+    const c = stack.pop() as Tile;
+    for (const [dx, dy] of N4) push(c.x + dx, c.y + dy);
+  }
+  const out: Tile[] = [];
+  for (let y = box.y; y < box.y + box.h; y++) for (let x = box.x; x < box.x + box.w; x++) if (!shut(x, y) && !outside.has(key(x, y))) out.push({ x, y });
+  return out;
+}
+
+/** The outer-profile hull count the ship would have with these hull tiles and this floor built. */
+function profileWith(sim: Sim, ship: number, hull: readonly Tile[], floor: readonly Tile[]): number {
+  const grid = sim.sector.grid;
+  const overlay = new Map<string, number>();
+  for (const t of hull) overlay.set(key(t.x, t.y), Struct.Wall);
+  for (const t of floor) overlay.set(key(t.x, t.y), Struct.Floor);
+  const own = shipRect(sim.world.get(ship, ShipC) as Ship);
+  const box = hull.length || floor.length ? union(own, boxOf([...hull, ...floor], 1)) : own;
+  return outerProfile((x, y) => overlay.get(key(x, y)) ?? (shipAt(sim, x, y) === ship ? grid.get('struct', x, y) : Struct.Space), box);
+}
+
+/** The plan as the build tools show it: what is planned, what can be built from the ship now, the floor it would enclose, and the hull count. */
+export interface HullView {
+  tiles: Tile[];
+  connected: Tile[];
+  loose: Tile[];
+  blocked: Tile[];
+  floor: Tile[];
+  hull: { now: number; afterAll: number; capacity: number; max: number };
+}
+
+export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
+  const grid = ship ? shipGrid(sim, ship) : undefined;
+  const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
+  const tiles = ship ? plannedTiles(sim, ship) : [];
+  const { connected, loose, blocked } = ship ? reach(sim, ship, tiles) : { connected: [], loose: [], blocked: [] };
+  const floor = enclosedFloor(sim, connected);
+  return {
+    tiles, connected, loose, blocked, floor,
+    hull: { now: grid ? hullTiles(grid) : 0, afterAll: ship && connected.length ? profileWith(sim, ship, connected, floor) : load.tiles, capacity: load.capacity, max: sim.content.yard?.maxHull ?? 0 },
+  };
+}
+
+/** Why a quote cannot be bought; the first that applies. */
+export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'notAdjacent' | 'shipMax' | 'crowded';
+
+/** A yard's quote for the plan: the hull tiles it would build on this visit (up to its cap, nearest the ship first) and the floor they enclose. */
+export interface YardQuote {
+  service: YardService | null;
+  /** Hull tiles bought now, the floor they enclose, and the wall of each floor patch the crew close last (with the open tile beyond it). */
+  walls: Tile[];
+  floor: Tile[];
+  gaps: { wall: Tile; stage: Tile }[];
+  /** Tiles planned in all, and left for a later yard (over the cap, floating off the hull, or in the way). */
+  planned: number;
+  rest: number;
+  error: YardError | null;
+  price: YardMoney;
+  afford: { credits: boolean; metal: boolean };
+  /** The tiles one visit builds. */
+  cap: number;
+  /** The outer hull profile now and after this purchase, against the engines' capacity and the overall ship maximum. */
+  hull: { before: number; after: number; capacity: number; max: number };
+  /** The ship's rectangle once it has grown to hold the build. */
+  rect: Rect | null;
+}
+
 /** Whether a grown rectangle keeps clear of every other ship's frame and of the rock bodies. */
 function growthClear(sim: Sim, ship: number, rect: Rect): boolean {
-  const reach = padded(rect, REGION_PAD + GROWTH_GAP);
-  for (const r of regions(sim)) if (r.ship !== ship && intersects(reach, r.frame)) return false;
+  const reachBox = padded(rect, REGION_PAD + GROWTH_GAP);
+  for (const r of regions(sim)) if (r.ship !== ship && intersects(reachBox, r.frame)) return false;
   const rockReach = padded(rect, REGION_PAD + ASTEROID_GAP);
   return !asteroidParts(sim).some((p) => intersects(rockReach, p));
 }
 
-/**
- * Check and price a hull expansion at a station. `tiles` are the painted floor tiles. Each must be open space no other ship or rock owns; every connected
- * patch must touch the ship's hull (4-neighbour); the yard closes the patch with a wall on each open tile around it (8-neighbour). The count
- * must fit the yard's tier, the ship its overall maximum, and the grown ship must keep clear of its neighbours. The result also holds what the
- * engines make of the new hull (the walls count as hull tiles; the floor does not).
- */
-export function planYard(sim: Sim, station: number, tiles: readonly Tile[], ship = playerShip(sim)): YardPlan {
-  const service = yardService(sim, station);
-  const def = sim.content.yard;
-  const grid = ship ? shipGrid(sim, ship) : undefined;
-  const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
-  const seen = new Set<string>();
-  const floor = tiles.filter((t) => Number.isInteger(t.x) && Number.isInteger(t.y) && !seen.has(key(t.x, t.y)) && !!seen.add(key(t.x, t.y)))
-    .map((t) => ({ x: t.x, y: t.y })).sort((a, b) => a.y - b.y || a.x - b.x);
-  const price = service ? yardPrice(sim, service, floor.length) : { credits: 0, metal: 0 };
-  const area = ship ? shipArea(sim, ship) : 0;
-  const plan: YardPlan = {
-    service, floor, walls: [], gaps: [], bad: [], error: null, price,
-    afford: { credits: sim.trade.credits >= price.credits, metal: playerItems(sim, 'item.metal') >= price.metal },
-    cap: service?.tier.cap ?? 0, maxTiles: def?.maxTiles ?? 0, area, areaAfter: area,
-    hull: { before: load.tiles, after: load.tiles, capacity: load.capacity }, rect: null,
-  };
-  if (!service || !def) return { ...plan, error: 'noYard' };
-  if (!ship || !grid) return { ...plan, error: 'noShip' };
-  if (floor.length === 0) return { ...plan, error: 'noTiles' };
-
-  const sector = sim.sector.grid;
-  const ownRect = shipRect(sim.world.get(ship, ShipC) as Ship);
-  const inPlan = new Set(floor.map((t) => key(t.x, t.y)));
-  const keepClear = dockApproaches(sim, ship);
-  const isHull = (x: number, y: number): boolean => sector.get('struct', x, y) !== Struct.Space && shipAt(sim, x, y) === ship;
-  // Open space nobody owns.
-  const bad = new Set<string>();
-  for (const t of floor) if (sector.get('struct', t.x, t.y) !== Struct.Space || sector.get('ship', t.x, t.y) !== 0 || keepClear.has(key(t.x, t.y))) bad.add(key(t.x, t.y));
-  // Patches (4-connected) that touch the hull.
+/** The gap of each floor patch: a bought hull tile with the patch on one side and open space on the other, the first in reading order. */
+function gapsFor(sim: Sim, walls: readonly Tile[], floor: readonly Tile[], clear: ReadonlySet<string>): { wall: Tile; stage: Tile }[] {
+  const grid = sim.sector.grid;
+  const inFloor = new Set(floor.map((t) => key(t.x, t.y)));
+  const inWalls = new Set(walls.map((t) => key(t.x, t.y)));
   const patchOf = new Map<string, number>();
-  const touches: boolean[] = [];
+  let patches = 0;
   for (const t of floor) {
     if (patchOf.has(key(t.x, t.y))) continue;
-    const id = touches.length;
-    touches.push(false);
     const stack = [t];
-    patchOf.set(key(t.x, t.y), id);
+    patchOf.set(key(t.x, t.y), patches);
     while (stack.length) {
       const c = stack.pop() as Tile;
       for (const [dx, dy] of N4) {
-        const nx = c.x + dx, ny = c.y + dy;
-        if (isHull(nx, ny)) touches[id] = true;
-        if (inPlan.has(key(nx, ny)) && !patchOf.has(key(nx, ny))) {
-          patchOf.set(key(nx, ny), id);
-          stack.push({ x: nx, y: ny });
+        const k = key(c.x + dx, c.y + dy);
+        if (inFloor.has(k) && !patchOf.has(k)) {
+          patchOf.set(k, patches);
+          stack.push({ x: c.x + dx, y: c.y + dy });
         }
       }
     }
+    patches++;
   }
-  const loose = floor.filter((t) => !touches[patchOf.get(key(t.x, t.y)) as number]);
-  // The ring of walls: open space around the patches; anything else there that is not this ship's hull is in the way.
-  const wallSet = new Map<string, Tile>();
-  for (const t of floor) {
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        const x = t.x + dx, y = t.y + dy;
-        if ((!dx && !dy) || inPlan.has(key(x, y)) || wallSet.has(key(x, y))) continue;
-        if (keepClear.has(key(x, y))) bad.add(key(t.x, t.y));
-        else if (sector.get('struct', x, y) === Struct.Space && sector.get('ship', x, y) === 0) wallSet.set(key(x, y), { x, y });
-        else if (!isHull(x, y)) bad.add(key(t.x, t.y));
-      }
-    }
-  }
-  const walls = [...wallSet.values()].sort((a, b) => a.y - b.y || a.x - b.x);
-  // The gap of each patch: a wall with the patch's floor on one side and open space on the other, the first in reading order.
-  const gaps: { wall: Tile; stage: Tile }[] = [];
-  for (let patch = 0; patch < touches.length; patch++) {
+  const out: { wall: Tile; stage: Tile }[] = [];
+  for (let patch = 0; patch < patches; patch++) {
     for (const w of walls) {
       const side = N4.find(([dx, dy]) => patchOf.get(key(w.x + dx, w.y + dy)) === patch);
       const stage = side && { x: w.x - side[0], y: w.y - side[1] };
-      if (stage && sector.get('struct', stage.x, stage.y) === Struct.Space && !inPlan.has(key(stage.x, stage.y)) && !wallSet.has(key(stage.x, stage.y)) && !keepClear.has(key(stage.x, stage.y))) {
-        gaps.push({ wall: w, stage });
+      if (stage && grid.get('struct', stage.x, stage.y) === Struct.Space && !inFloor.has(key(stage.x, stage.y)) && !inWalls.has(key(stage.x, stage.y)) && !clear.has(key(stage.x, stage.y))) {
+        out.push({ wall: w, stage });
         break;
       }
     }
   }
-  const badTiles = floor.filter((t) => bad.has(key(t.x, t.y)));
-  const built = [...floor, ...walls];
-  const rect = union(ownRect, boxOf(built, 1));
-  const areaAfter = area + built.length;
-  const out: YardPlan = { ...plan, walls, gaps, bad: badTiles.length ? badTiles : loose, areaAfter, hull: { before: load.tiles, after: hullTiles(grid) + walls.length, capacity: load.capacity }, rect };
-  if (floor.length > service.tier.cap) return { ...out, error: 'yardCap' };
-  if (badTiles.length) return { ...out, error: 'blocked' };
-  if (loose.length) return { ...out, error: 'notAdjacent' };
-  if (areaAfter > def.maxTiles) return { ...out, error: 'shipMax' };
+  return out;
+}
+
+/**
+ * What a yard would build of the ship's plan now, and for how much. The plan is the outer hull only: the yard buys up to its cap of the planned tiles that
+ * can be reached from the ship (nearest first), lays the floor those tiles shut in, and prices by hull tile. The rest of the plan stays for the next yard.
+ */
+export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): YardQuote {
+  const service = yardService(sim, station);
+  const def = sim.content.yard;
+  const view = viewPlan(sim, ship);
+  const price = service ? yardPrice(sim, service, 0) : { credits: 0, metal: 0 };
+  const base: YardQuote = {
+    service, walls: [], floor: [], gaps: [], planned: view.tiles.length, rest: view.tiles.length, error: null, price,
+    afford: { credits: true, metal: true }, cap: service?.tier.cap ?? 0, hull: { before: view.hull.now, after: view.hull.now, capacity: view.hull.capacity, max: def?.maxHull ?? 0 }, rect: null,
+  };
+  if (!service || !def) return { ...base, error: 'noYard' };
+  if (!ship || !sim.world.get(ship, ShipC)) return { ...base, error: 'noShip' };
+  if (view.tiles.length === 0) return { ...base, error: 'noTiles' };
+  const walls = view.connected.slice(0, service.tier.cap);
+  if (walls.length === 0) return { ...base, error: 'notAdjacent' };
+  const floor = enclosedFloor(sim, walls);
+  const after = profileWith(sim, ship, walls, floor);
+  const cost = yardPrice(sim, service, walls.length);
+  const rect = union(shipRect(sim.world.get(ship, ShipC) as Ship), boxOf([...walls, ...floor], 1));
+  const out: YardQuote = {
+    ...base, walls, floor, gaps: gapsFor(sim, walls, floor, dockApproaches(sim, ship)), rest: view.tiles.length - walls.length, price: cost,
+    afford: { credits: sim.trade.credits >= cost.credits, metal: playerItems(sim, 'item.metal') >= cost.metal },
+    hull: { ...base.hull, after }, rect,
+  };
+  if (after > def.maxHull) return { ...out, error: 'shipMax' };
   if (!growthClear(sim, ship, rect)) return { ...out, error: 'crowded' };
   return out;
 }

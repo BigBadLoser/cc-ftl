@@ -25,10 +25,11 @@ playtest clarity are all on `main`). Treat the sections below as design notes, n
 
 ## In progress
 
-- **Progression phase 5 (branch `progression-5`, #125):** engine hull capacity with the overcharge jump, and the shipyard (station
-  contractors build hull in EVA). Stage A and B are in; waiting on screenshot approval. See "Engine capacity and the shipyard" in
-  [ARCHITECTURE.md](ARCHITECTURE.md). Note for review: Mk I capacity is 700 per engine only because generated one-engine liners reach ~625 hull tiles,
-  so the starter ship (164 tiles, 2 engines) has a lot of headroom.
+- **Progression phase 5 (branch `progression-5`, #125):** plan the outer hull in the build tools (Hull plan, any time, saved with the ship), buy it at a yard
+  (station panel quote, contractors build up to the visit cap in EVA, the rest stays planned). Hull is the outer-profile tile count everywhere (ship panel, engine
+  capacity, yard price and cap, jobs screen). Engine capacity is Mk I 70 / Mk II 105 / Mk III 150 per engine; the ship maximum is 300. Waiting on screenshot approval.
+  See "Engine capacity and the shipyard" in [ARCHITECTURE.md](ARCHITECTURE.md). **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough
+  engines (#129).
 
 ## Decisions (user)
 

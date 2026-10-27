@@ -1,5 +1,5 @@
-import { Struct, shipGrid, hullLoad, isLiveOrder, planYard, playerShip, shipArea, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
-import type { UiYard, UiYardOrder, UiYardPlan, UiYardService } from '../ui/api';
+import { Struct, shipGrid, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import type { UiHullPlan, UiYard, UiYardOrder, UiYardQuote, UiYardService } from '../ui/api';
 import { rejectionMessage } from './messages';
 
 type Tile = { x: number; y: number };
@@ -29,16 +29,22 @@ export function yardOf(sim: Sim, station: number): UiYardService | null {
   const ship = playerShip(sim);
   if (!svc || !def) return null;
   const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
-  return { size: svc.size, cap: svc.tier.cap, maxTiles: def.maxTiles, price: perTile(sim, svc), area: ship ? shipArea(sim, ship) : 0, hull: { tiles: load.tiles, capacity: load.capacity } };
+  return { size: svc.size, cap: svc.tier.cap, price: perTile(sim, svc), hull: { tiles: load.tiles, capacity: load.capacity, max: def.maxHull } };
 }
 
-/** The painted hull checked and priced; null when nothing is planned. */
-export function planOf(sim: Sim, station: number, tiles: readonly Tile[]): UiYardPlan | null {
+/** The ship's hull plan for the build tools and the ghost tiles. */
+export function planOf(sim: Sim): UiHullPlan {
+  const v = viewPlan(sim);
+  return { ship: playerShip(sim), tiles: v.tiles, connected: v.connected, loose: v.loose, blocked: v.blocked, floor: v.floor, hull: v.hull };
+}
+
+/** What the yard of `station` would build of the plan now. */
+export function quoteOf(sim: Sim, station: number): UiYardQuote | null {
   if (!station) return null;
-  const p = planYard(sim, station, tiles);
+  const q = quoteYard(sim, station);
   return {
-    station, tiles: p.floor, walls: p.walls, bad: p.bad, error: p.error, errorText: p.error ? rejectionMessage(p.error) : '', price: p.price, afford: p.afford,
-    cap: p.cap, maxTiles: p.maxTiles, area: p.area, areaAfter: p.areaAfter, hull: p.hull,
+    station, error: q.error, errorText: q.error ? rejectionMessage(q.error) : '', buy: q.walls.length, floor: q.floor.length, planned: q.planned, rest: q.rest,
+    price: q.price, afford: q.afford, cap: q.cap, hull: q.hull,
   };
 }
 
@@ -54,9 +60,9 @@ function orderOf(sim: Sim, o: YardOrder): UiYardOrder {
   };
 }
 
-/** The shipyard view: the plan for what is painted at `station`, and the player's live order (else the last one to end). */
-export function buildYard(sim: Sim, station: number, tiles: readonly Tile[]): UiYard {
+/** The shipyard view: the hull plan, the quote at `station` (the open station panel) and the player's live order (else the last one to end). */
+export function buildYard(sim: Sim, station: number): UiYard {
   const mine = sim.yard.orders.filter((o) => o.ship === playerShip(sim));
   const o = mine.find(isLiveOrder) ?? mine[mine.length - 1];
-  return { plan: tiles.length ? planOf(sim, station, tiles) : null, order: o ? orderOf(sim, o) : null };
+  return { plan: planOf(sim), quote: quoteOf(sim, station), order: o ? orderOf(sim, o) : null };
 }

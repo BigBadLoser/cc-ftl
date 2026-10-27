@@ -3,9 +3,13 @@ import { ModuleC } from '../modules/components';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 
-/** A ship's hull against what its engines can push. */
+/**
+ * A ship's hull against what its engines can push.
+ * TODO(#129): only the player's ship obeys engine capacity (`jump` is the player's). NPC ships should obey it too once shipgen gives big
+ * hulls enough engines; today a generated one-engine liner is far over any sensible per-engine number.
+ */
 export interface HullLoad {
-  /** Hull tiles: walls and doors (`hullTiles`, the count the jobs screen compares). */
+  /** Hull tiles: the outer hull profile (`hullTiles`, also the jobs screen's count). */
   tiles: number;
   /** The sum of `engine.hullCapacity` over the ship's engines that still work (hp above 0). */
   capacity: number;
