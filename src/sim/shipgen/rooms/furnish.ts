@@ -316,13 +316,14 @@ export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, i
   }
   const reserve: number[] = [];
   let placed = 0;
-  const base = lay.unreached();
   // Second pass: if the reserved walkway leaves no flush spot (a tight hall), a bin may take walkway floor, as long as
-  // every tile stays reachable.
+  // every tile stays reachable. The room's walkway marks are lifted for that pass only (and the reach baseline taken
+  // after lifting them, so lifting them is no licence to seal a tile).
   for (const relax of [false, true]) {
     if (placed >= n) break;
-    const keep = lay.keep.slice();
-    if (relax) for (const i of lay.roomTiles(room)) lay.keep[i] = 0;
+    const lifted = relax ? lay.roomTiles(room).map((i) => [i, lay.keep[i] as number] as const) : [];
+    for (const [i] of lifted) lay.keep[i] = 0;
+    const base = lay.unreached();
     const cands: { x: number; y: number; rot: number; v: number }[] = [];
     for (let rot = 0; rot < 4; rot++) {
       const [w, h] = rotatedSize(def, rot);
@@ -350,7 +351,8 @@ export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, i
       const a = accessTile(def, c.x, c.y, c.rot);
       if (a) reserve.push(a.y * lay.w + a.x);
     }
-    lay.keep.set(keep);
+    // Put the lifted marks back on top of what the placed bins protect.
+    for (const [i, k] of lifted) lay.keep[i] = (lay.keep[i] as number) + k;
     // Later furniture leaves each bin's working tile clear.
     for (const i of reserve.splice(0)) lay.keep[i] = (lay.keep[i] as number) + 1;
   }
