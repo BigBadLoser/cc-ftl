@@ -483,7 +483,7 @@
         {/if}
         <li class="lh">Territory</li>
         {#each seenFactions as f (f.id)}
-          <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier}>{f.tier}</em></li>
+          <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier} title="Your standing with them">{f.tier} {f.standing > 0 ? '+' : ''}{f.standing}</em></li>
         {/each}
       </ul>
     {/if}

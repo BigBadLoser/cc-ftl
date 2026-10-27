@@ -256,9 +256,9 @@ FTL's decision-making with physical consequences, in a shared sector.
 - **Factions:** the Concord Navy (government, holds the core where you start), the corporations (Meridian Combine: trade; Helix
   Biosystems: research; Vantor Heavy Industries: industry), the Free Traders (civilians, no territory), the Scrapper Clans (pirates) and
   the Rogue AI (drones; always hostile). The navy holds the start, corporations the middle band, pirates and the machines farther out.
-- **Standing** = base standing + reputation + a share of reputation with related factions. Reputation is kept per trade key (`traders`,
-  `corp`, `navy`, `pirates`, `drones`; the three corporations share `corp`), the same numbers trade prices and hailing use. Hostile
-  below -2, friendly from 3.
+- **Standing** = base standing + reputation + a share of reputation with related factions. Reputation is kept per faction (`navy`,
+  `meridian`, `helix`, `vantor`, `traders`, `pirates`, `drones`), the same numbers trade prices and hailing use (a station or ship
+  trades on its owner's standing). Hostile below -2, friendly from 3. Who is at war and who shares standing is a pairwise table.
 - **The starmap view** (not built on `main` yet) has three zoom levels: **sector** (nodes, routes, exits, bodies, nebula), **cluster**
   (sectors as patches, for planning a route) and **galaxy** (clusters joined by gates and rift lanes).
 
@@ -354,8 +354,7 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - The navy and civilians are hostile to all pirates, as now.
 
 **Standing**
-- Standing becomes per faction. The three corporations each get their own, and so does each pirate faction. Today the
-  corporations share `corp` and all pirates share `pirates`.
+- Standing is per faction (built, phase 2): each corporation has its own, and each pirate faction will.
 - One scale: hostile and attacking on sight when low; neutral, so you can dock and trade, in the middle; discounts and
   better stock when high.
 - Fighting a faction lowers your standing with it. Jobs against its rivals raise it.

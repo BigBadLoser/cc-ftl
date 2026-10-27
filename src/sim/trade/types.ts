@@ -72,6 +72,11 @@ export interface Trader {
   /** True for a station (an immobile ship): its trades run like any ship's, by shuttle. */
   station: boolean;
   /**
+   * The galaxy faction that owns this trader (a ship's fleet, a station's port): its standing sets the prices and the hail, its specialities the
+   * stock and some prices. Absent = the trade faction's own reputation key.
+   */
+  owner?: string;
+  /**
    * Set while a station stands in a node with a port (galaxy/marketLive.ts): the port whose market this trader is. Its `stock` is then the port's stock, and
    * `base` the port's baseline for the commodities (item, count; 0 allowed), against which prices rise with scarcity and fall with plenty (`stockFactor`).
    */
