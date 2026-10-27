@@ -1,6 +1,6 @@
 import { shipIdOf } from '../regions';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../crew/components';
-import { factionsHostile } from '../combat/factions';
+import { factionsHostile, rogueAlly } from '../combat/factions';
 
 import { InertC, StunC } from '../robots/components';
 import type { Sim } from '../sim';
@@ -15,12 +15,22 @@ import { YardCrewC } from '../yard/types';
  * is wanted by the station the other belongs to (an intruder, or invited crew who attacked: stations/alarm).
  */
 export function isHostile(sim: Sim, a: number, b: number): boolean {
-  if (factionsHostile(sim.world.get(a, AllegianceC)?.faction, sim.world.get(b, AllegianceC)?.faction)) return true;
+  if (factionsHostile(sim.world.get(a, AllegianceC)?.faction, sim.world.get(b, AllegianceC)?.faction) && !machineAllies(sim, a, b)) return true;
   const wanted = (x: number, y: number): boolean => {
     const w = sim.world.get(x, WantedC);
     return !!w && sim.world.get(y, StationCrewC)?.station === w.station;
   };
   return wanted(a, b) || wanted(b, a);
+}
+
+/** Is one of the two a rogue-side crew member and the other a zealot (a machine ally on the neutral side while the player is on good terms with them)? */
+function machineAllies(sim: Sim, a: number, b: number): boolean {
+  const side = (x: number): string | undefined => sim.world.get(x, AllegianceC)?.faction;
+  const zealot = (x: number): boolean => {
+    const pos = sim.world.get(x, PositionC);
+    return !!pos && rogueAlly(sim, shipIdOf(sim, pos));
+  };
+  return (side(a) === 'rogue' && zealot(b)) || (side(b) === 'rogue' && zealot(a));
 }
 
 /** Surrendered, downed, dead or an inert robot: out of the fight. Capture treats all of them as taken. */

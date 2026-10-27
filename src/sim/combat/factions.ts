@@ -22,3 +22,13 @@ export function neverSurrenders(sim: Sim, shipId: number): boolean {
   const gen = sim.world.get(shipId, ShipC)?.gen?.faction;
   return !!gen && !!sim.content.factions?.[gen]?.neverSurrender;
 }
+
+/**
+ * Is the ship a machine ally: not on the rogue side itself, but fielded by a galaxy faction that flies on it (the zealots)? Such a ship may sit on the
+ * neutral side while the player's standing with it is good, and the Rogue AI still never fights it, whatever that standing.
+ */
+export function rogueAlly(sim: Sim, shipId: number): boolean {
+  const ship = sim.world.get(shipId, ShipC);
+  const owner = ship?.gen?.owner;
+  return !!ship && ship.faction !== 'rogue' && !!owner && sim.content.galaxy?.factions[owner]?.combatFaction === 'rogue';
+}

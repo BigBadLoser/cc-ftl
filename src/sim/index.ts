@@ -72,7 +72,7 @@ export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
 export { foodOn } from './crew/eating';
 export { captureReady, isAiRun } from './capture/control';
 export { CoreRaiderC, CoreRaidC, coreObjective } from './capture/coreRaid';
-export { neverSurrenders } from './combat/factions';
+export { neverSurrenders, rogueAlly } from './combat/factions';
 export { crewSubdued } from './combat/subdued';
 export { encounterKind } from './galaxy/encounters';
 export { augmentedCrew } from './trade/augmentation';

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AllegianceC, CORE_RAID_HOLD_TICKS, DownedC, CoreRaidC, CoreRaiderC, CrewC, coreObjective, PositionC, ShipC, TerritoryField, augmentedCrew, captureReady, createCrew, crewSubdued,
+  AllegianceC, BoarderC, CORE_RAID_HOLD_TICKS, CombatC, DeadC, DownedC, isHostile, rogueAlly, CoreRaidC, CoreRaiderC, CrewC, coreObjective, PositionC, ShipC, TerritoryField, augmentedCrew, captureReady, createCrew, crewSubdued,
   encounterKind, hailVerdict, hasLiveCore, homeShip, newGame, neverSurrenders, nodeOf, shipIdOf, spillSources, stanceBetween, standing, tierOf,
   type Fleet, type GalaxyContent, type Sim,
 } from '../sim';
 import { EquipC } from '../sim/fight/components';
 import { ModuleC } from '../sim/modules/components';
+import { firstFoe } from '../sim/systems/enemyAi';
+import { spawnContact } from '../sim/galaxy/arrivals';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '.';
 
@@ -185,6 +187,66 @@ describe('zealots', () => {
     expect(hailVerdict(sim, id).answers).toBe(false);
     sim.story.reputation['zealots'] = 3;
     expect(hailVerdict(sim, id).answers).toBe(true);
+  });
+});
+
+describe('the machines and the zealots', () => {
+  it('stay allies at any standing: friendly zealots sit on the neutral side, and drones neither shoot them nor fight their crews', () => {
+    const sim = newGame(1, content);
+    sim.story.reputation['zealots'] = 3;
+    const contact = { id: 9001, faction: 'zealots', shipgen: 'faction.zealot', seed: 12, depth: 3, since: 0 };
+    expect(spawnContact(sim, sim.galaxy.current, contact)).toBe(true);
+    const zealot = (contact as { ship?: number }).ship as number;
+    expect(sim.world.get(zealot, ShipC)?.faction).toBe('neutral');
+    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed: 5, depth: 3, cx: 60, cy: 120 });
+    sim.step();
+    const drone = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)?.gen?.faction === 'faction.drones') as number;
+    // A debug spawn flies the generator's default side; put the drones (ship and crew) on the machines' side as a node contact would.
+    sim.world.get(drone, ShipC)!.faction = 'rogue';
+    for (const c of sim.world.query(CrewC)) if (shipIdOf(sim, sim.world.get(c, PositionC)) === drone) sim.world.get(c, AllegianceC)!.faction = 'rogue';
+    expect(rogueAlly(sim, zealot)).toBe(true);
+    expect(rogueAlly(sim, drone)).toBe(false);
+    const on = (ship: number): number => sim.world.query(CrewC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === ship) as number;
+    expect(isHostile(sim, on(drone), on(zealot))).toBe(false);
+    expect(isHostile(sim, on(zealot), on(drone))).toBe(false);
+    // With the player's ships out of play, the drones have no one to shoot: not the friendly zealots either.
+    for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)!.faction === 'player') sim.world.get(id, ShipC)!.state = 'wreck';
+    expect(firstFoe(sim, 'rogue')).toBe(0);
+  });
+});
+
+describe('raider boarding holds fire only while a party is out', () => {
+  function raiderSetup(): { sim: Sim; raider: number; party: number } {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.raider', seed: 7, depth: 3, cx: 130, cy: 70 });
+    sim.step();
+    const raider = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)?.gen?.faction === 'faction.raider') as number;
+    const party = sim.world.query(CrewC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === raider) as number;
+    return { sim, raider, party };
+  }
+
+  it('does not hold fire when the launch was dropped with the party still aboard', () => {
+    const { sim, raider, party } = raiderSetup();
+    const b = sim.world.get(raider, BoarderC)!;
+    expect(b.prefer).toBe(true);
+    Object.assign(b, { state: 'done', crew: [party] });
+    for (let i = 0; i < 60; i++) sim.step();
+    expect(sim.world.get(raider, CombatC)!.hold).toBe(false);
+  });
+
+  it('holds fire while the party stands on the target, and fires again when they are gone', () => {
+    const { sim, raider, party } = raiderSetup();
+    const b = sim.world.get(raider, BoarderC)!;
+    Object.assign(b, { state: 'landed', crew: [party] });
+    const me = sim.world.query(ModuleC).find((m) => shipIdOf(sim, sim.world.get(m, ModuleC)) === homeShip(sim)) as number;
+    const at = sim.world.get(me, ModuleC)!;
+    const pos = sim.world.get(party, PositionC)!;
+    Object.assign(pos, { x: at.x, y: at.y, toX: at.x, toY: at.y });
+    for (let i = 0; i < 60; i++) sim.step();
+    expect(sim.world.get(raider, CombatC)!.hold).toBe(true);
+    sim.world.add(party, DeadC, sim.world.get(party, DeadC) ?? ({ tick: sim.tick } as never));
+    for (let i = 0; i < 60; i++) sim.step();
+    expect(sim.world.get(raider, CombatC)!.hold).toBe(false);
   });
 });
 

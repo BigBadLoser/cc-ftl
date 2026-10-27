@@ -1,12 +1,13 @@
 
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
-import { factionsHostile, isAiFaction } from '../combat/factions';
+import { factionsHostile, isAiFaction, rogueAlly } from '../combat/factions';
 import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
-import { CrewC, DeadC } from '../crew/components';
+import { CrewC, DeadC, PositionC } from '../crew/components';
+import { shipIdOf } from '../regions';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { BoarderC, VehicleC } from '../vehicles/components';
+import { AboardC, BoarderC, VehicleC } from '../vehicles/components';
 import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 
 /**
@@ -27,7 +28,7 @@ export function enemyAiSystem(sim: Sim): void {
     }
     // A raider whose party is out holds fire: it wants the ship, not a wreck.
     const boarder = sim.world.get(id, BoarderC);
-    const sparing = !!boarder?.prefer && boarder.state !== 'idle' && boarder.crew.some((c) => sim.world.has(c, CrewC) && !sim.world.has(c, DeadC));
+    const sparing = !!boarder?.prefer && partyOut(sim, id, boarder.crew);
     if (combat.hold !== sparing) sim.enqueue({ type: 'combat.setHold', ship: id, hold: sparing });
     if (sparing) continue;
     if (combat.aiTimer > 0) {
@@ -58,11 +59,12 @@ function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
 }
 
 /** Ship id of the first ship still in play at war with `faction` (a player ship first), or 0. */
-function firstFoe(sim: Sim, faction: Ship['faction']): number {
+export function firstFoe(sim: Sim, faction: Ship['faction']): number {
   let other = 0;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
     if (!s || (s.state !== 'active' && s.state !== 'disabled') || !factionsHostile(faction, s.faction)) continue;
+    if (faction === 'rogue' && rogueAlly(sim, id)) continue; // the zealots, at any standing
     if (s.faction === 'player') return id;
     other ||= id;
   }
@@ -91,4 +93,13 @@ function pick(sim: Sim, combat: Combat, shipId: number): number {
     }
   }
   return randomModule(sim, shipId);
+}
+
+/** Is a boarding party actually away from its ship: a live member riding the shuttle or standing on another ship? A launch that was dropped leaves them home, so no hold. */
+function partyOut(sim: Sim, shipId: number, crew: readonly number[]): boolean {
+  return crew.some((c) => {
+    if (!sim.world.has(c, CrewC) || sim.world.has(c, DeadC)) return false;
+    const pos = sim.world.get(c, PositionC);
+    return pos ? shipIdOf(sim, pos) !== shipId : sim.world.has(c, AboardC);
+  });
 }
