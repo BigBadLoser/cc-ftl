@@ -1,4 +1,5 @@
-import { ItemStackC, StorageC } from '../items/components';
+import { AllegianceC, EquipC } from '../fight/components';
+import { CarryingC, ItemStackC, StorageC } from '../items/components';
 import { storageTake } from '../items/storage';
 import { takeFromStack } from '../items/stacks';
 import { repKey } from '../galaxy/standing';
@@ -40,8 +41,19 @@ export function contrabandAboard(sim: Sim): ItemQty[] {
       for (const st of (e.c['storage'] as PacketStacks)?.stacks ?? []) if (ids.includes(st.item)) add(st.item, st.count);
       const loose = e.c['itemStack'] as ItemQty | undefined;
       if (loose && ids.includes(loose.item)) add(loose.item, loose.count);
+      const wield = (e.c['equip'] as { weapon: string | null } | undefined)?.weapon;
+      if (wield && ids.includes(wield)) add(wield, 1);
+      const hauled = e.c['carrying'] as { item: string; count: number } | undefined;
+      if (hauled && ids.includes(hauled.item)) add(hauled.item, hauled.count);
     }
   } else {
+    for (const id of sim.world.query(AllegianceC)) {
+      if (sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
+      const wield = sim.world.get(id, EquipC)?.weapon;
+      if (wield && ids.includes(wield)) add(wield, 1);
+      const hauled = sim.world.get(id, CarryingC);
+      if (hauled && ids.includes(hauled.item)) add(hauled.item, hauled.count);
+    }
     const ships = playerShips(sim);
     for (const id of playerStorages(sim)) for (const st of sim.world.get(id, StorageC)?.stacks ?? []) if (ids.includes(st.item)) add(st.item, st.count);
     for (const id of sim.world.query(ItemStackC)) {
@@ -75,8 +87,19 @@ export function seizeContraband(sim: Sim): ItemQty[] {
     for (const e of packet.entities) {
       const st = (e.c['storage'] as PacketStacks)?.stacks;
       if (st) (e.c['storage'] as { stacks: ItemQty[] }).stacks = st.filter((s) => !ids.has(s.item));
+      const eq = e.c['equip'] as { weapon: string | null } | undefined;
+      if (eq?.weapon && ids.has(eq.weapon)) eq.weapon = null;
+      if (e.c['carrying'] && ids.has((e.c['carrying'] as { item: string }).item)) delete e.c['carrying'];
     }
     return taken;
+  }
+  // What crew wield or carry goes too.
+  for (const id of [...sim.world.query(AllegianceC)]) {
+    if (sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
+    const eq = sim.world.get(id, EquipC);
+    if (eq?.weapon && ids.has(eq.weapon)) eq.weapon = null;
+    const hauled = sim.world.get(id, CarryingC);
+    if (hauled && ids.has(hauled.item)) sim.world.remove(id, CarryingC);
   }
   for (const l of taken) {
     let left = l.count;

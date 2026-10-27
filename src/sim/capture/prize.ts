@@ -68,6 +68,8 @@ export function capturePrize(sim: Sim, entity: number): void {
   const ship = sim.world.get(entity, ShipC) as Ship;
   const from: Faction = ship.faction;
   ship.faction = 'player';
+  // A ship taken during a truce ban stays taken when the ban ends.
+  delete ship.banned;
   ship.state = 'prize';
   sim.world.remove(entity, CaptureProgressC);
   const hullValue = prizeValue(sim, entity);

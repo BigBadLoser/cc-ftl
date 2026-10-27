@@ -100,7 +100,8 @@ export function applyBan(sim: Sim, node: string): void {
     } else if (ban && s.faction === 'hostile') {
       wake(sim, id, 'aimed');
     }
-    if (!ban && s.banned !== undefined) {
+    if (!ban && s.banned !== undefined && s.faction !== 'hostile') delete s.banned;
+    else if (!ban && s.banned !== undefined) {
       turnCrew(sim, id, 'hostile', s.banned);
       s.faction = s.banned;
       delete s.banned;

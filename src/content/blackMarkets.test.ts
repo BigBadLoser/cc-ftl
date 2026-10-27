@@ -8,7 +8,8 @@ import { dockScan, scanPending } from '../sim/blackmarket/scan';
 import { syncRecruits } from '../sim/galaxy/recruit';
 import { PrizeC } from '../sim/combat/components';
 import { capturePrize } from '../sim/capture/prize';
-import { StorageC } from '../sim/items/components';
+import { CarryingC, StorageC } from '../sim/items/components';
+import { AllegianceC, EquipC } from '../sim/fight/components';
 import { spillItems } from '../sim/items/stacks';
 import { ModuleC } from '../sim/modules/components';
 import { playerStorages } from '../sim/story/world';
@@ -199,6 +200,22 @@ describe('scans', () => {
     expect(sim.galaxy.lastResult?.outcome).toBe('confiscated');
   });
 
+  it('an equipped disruptor and carried stolen goods are found and seized too', () => {
+    const { sim } = lawStation();
+    const crew = sim.world.query(CrewC).find((id) => sim.world.get(id, AllegianceC)?.faction === 'player')!;
+    if (sim.world.has(crew, EquipC)) sim.world.get(crew, EquipC)!.weapon = 'item.disruptor';
+    else sim.world.add(crew, EquipC, { weapon: 'item.disruptor' });
+    sim.world.add(crew, CarryingC, { item: STOLEN, count: 4 });
+    expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }, { item: 'item.disruptor', count: 1 }].sort((a, b) => (a.item < b.item ? -1 : 1)));
+    dockScan(sim, 'navy', 'Depot');
+    const e = sim.galaxy.encounters.find((x) => x.scan)!;
+    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
+    run(sim, 1);
+    expect(contrabandAboard(sim)).toEqual([]);
+    expect(sim.world.get(crew, EquipC)!.weapon).toBeNull();
+    expect(sim.world.has(crew, CarryingC)).toBe(false);
+  });
+
   it('a bribe keeps the goods and the standing; it is refused without the credits', () => {
     const { sim } = lawStation();
     giveItems(sim, STOLEN, 10);
@@ -257,6 +274,18 @@ describe('truce', () => {
     expect(sim.world.get(foe, ShipC)!.state).toBe('active');
     expect(sim.world.get(foe, CombatC)?.target ?? null).toBeNull();
     expect(sim.world.get(mine, ShipC)!.integrity).toBe(hp);
+  });
+
+  it('a ship captured during a ban stays the player\'s when the ban ends', () => {
+    const { sim, station } = market();
+    sim.enqueue({ type: 'combat.setTarget', ship: playerShip(sim), weaponId: null, targetShip: station, targetModuleId: 0 });
+    run(sim, 3);
+    expect(sim.world.get(station, ShipC)!.banned).toBe('neutral');
+    capturePrize(sim, station);
+    expect(sim.world.get(station, ShipC)!.banned).toBeUndefined();
+    sim.galaxy.turn = sim.galaxy.nodes[sim.sector.node]!.truce!.banUntil!;
+    run(sim, 3);
+    expect(sim.world.get(station, ShipC)!.faction).toBe('player');
   });
 
   it('firing on anyone there breaks it: a ban, every ship hostile, standing down with every pirate faction; it lapses after 30 turns', () => {
