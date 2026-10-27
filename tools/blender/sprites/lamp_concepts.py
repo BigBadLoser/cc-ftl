@@ -201,6 +201,71 @@ def floor_grate():
     return [m.build()]
 
 
+# ---- v4, after review in art pixels (1 px is about 0.028 tile along a grid axis) ------------------------------------
+PX = 0.028
+
+
+def pillar_v4():
+    """The light pillar: the core 2 px wider each side than v3, the four panels standing off it on brackets."""
+    m = core.Mesh("lc_pillar_v4")
+    m.box((0, 0, 0), (0.62, 0.62, 0.012), "steelD", top="gm", base=True)                    # well lip
+    m.box((0, 0, 0.004), (0.54, 0.54, 0.01), "navy", base=True)                             # recessed well
+    for a in (0.785, -0.785):                                                          # X-shaped feet
+        m.box((0, 0, 0.012), (0.64, 0.08, 0.04), "gmD", top="steel", base=True, rz=a)
+    for sx in (-1, 1):                                                                 # glow at the feet's ends
+        for sy in (-1, 1):
+            m.box((sx * 0.215, sy * 0.215, 0.052), (0.05, 0.05, 0.008), "cyan", base=True)
+    core_w = 0.16 + 4 * PX                                                             # 0.27: 2 px more each side
+    h = core_w / 2
+    m.box((0, 0, 0.05), (core_w, core_w, 0.66), "navy", top="gmD", base=True)             # the core
+    m.box((0, 0, 0.7), (core_w + 0.06, core_w + 0.06, 0.04), "steel", top="steelL", base=True, bevel=0.01)   # cap
+    off = h + 0.06                                                                     # panel centre, clear of the core
+    for ux, uy in ((1, 0), (-1, 0), (0, 1), (0, -1)):                                  # four panels standing off it
+        cx, cy = ux * off, uy * off
+        sz = lambda w, t, z: (t, w, z) if ux else (w, t, z)                            # noqa: E731  w along the face
+        m.box((cx, cy, 0.14), sz(0.28, 0.05, 0.5), "navy", top="gm", base=True)          # panel frame
+        m.box((cx + ux * 0.028, cy + uy * 0.028, 0.17), sz(0.22, 0.006, 0.44), "arc", base=True)   # the window
+        m.box((cx + ux * 0.032, cy + uy * 0.032, 0.17), sz(PX, 0.006, 0.44), "navy", base=True)   # mullions: 2 x 3 panes
+        for z in (0.31, 0.46):
+            m.box((cx + ux * 0.032, cy + uy * 0.032, z), sz(0.22, 0.006, PX), "navy", base=True)
+        for z in (0.2, 0.56):                                                          # brackets to the core
+            m.box((ux * (h + 0.012), uy * (h + 0.012), z), sz(0.06, 0.04, 0.04), "steelL", base=True)
+    return [m.build()]
+
+
+def wall_v4(context=True):
+    """The wall light: the v2 box (vertical front, two light bars) with its top sloping up a little to the wall."""
+    m = core.Mesh("lc_wall_v4")
+    if context:
+        _wall(m)
+    yb, yf, z0, z1 = -0.5, -0.28, 1.05, 1.41
+    prof = [(yb, z0), (yf, z0), (yf, z1 - 0.07), (yb, z1)]                              # top: 0.07 rise to the wall
+    _prism(m, -0.4, 0.4, prof, "lvW2", top="lvW")
+    m.box((0, yf + 0.005, 1.09), (0.7, 0.012, 0.24), "steelD", base=True)                  # front recess
+    for z in (1.11, 1.22):
+        m.box((0, yf + 0.011, z), (0.66, 0.014, 0.07), "arc", base=True)                   # two light bars
+    ang = math.atan2(0.07, yf - yb)                                                    # a slot of light on the slope
+    m.box((0, (yb + yf) / 2 + 0.02, z1 - 0.035 + 0.006), (0.56, 0.06, 0.006), "cyan", rx=-ang)
+    return [m.build()]
+
+
+def floor_v4():
+    """The floor light: a 5 x 5 grate of 1 px bars over a dark well, a small light in every cell, a slim lip."""
+    m = core.Mesh("lc_floor_v4")
+    m.box((0, 0, 0), (0.8, 0.8, 0.01), "steelD", top="steel", base=True)                   # slim lip
+    m.box((0, 0, 0.004), (0.72, 0.72, 0.008), "navy", base=True)                          # dark well
+    n, w = 5, 0.72
+    cell = w / n
+    for i in range(n):
+        for j in range(n):
+            m.box((-w / 2 + (i + 0.5) * cell, -w / 2 + (j + 0.5) * cell, 0.008), (0.06, 0.06, 0.006), "arc", base=True)
+    for k in range(n + 1):                                                             # 1 px grate bars both ways
+        o = -w / 2 + k * cell
+        m.box((o, 0, 0.012), (PX, w, 0.006), "gmD", base=True)
+        m.box((0, o, 0.012), (w, PX, 0.006), "gmD", base=True)
+    return [m.build()]
+
+
 SPRITES = [(f"concept.{n}", (1, 1), "prop", fn) for n, fn in (
     ("floor_panel", floor_panel), ("floor_disc", floor_disc), ("floor_strips", floor_strips),
     ("wall_bar", wall_bar), ("wall_cove", wall_cove), ("wall_sconce", wall_sconce),
@@ -208,3 +273,23 @@ SPRITES = [(f"concept.{n}", (1, 1), "prop", fn) for n, fn in (
 SPRITES.append(("concept.wall_box_bare", (1, 1), "prop", lambda: wall_box(context=False)))
 SPRITES += [("concept.pillar_v3", (1, 1), "prop", pillar_v3), ("concept.wall_slope", (1, 1), "prop", lambda: wall_slope(False)),
             ("concept.floor_grate", (1, 1), "prop", floor_grate)]
+def floor_v4b():
+    """v4 with the cells themselves lit pale blue (a grate over light): 5 x 5, 1 px bars, a brighter dot in each cell."""
+    m = core.Mesh("lc_floor_v4b")
+    m.box((0, 0, 0), (0.8, 0.8, 0.01), "steelD", top="steel", base=True)                   # slim lip
+    m.box((0, 0, 0.004), (0.72, 0.72, 0.008), "glassL", base=True)                        # pale lit well
+    n, w = 5, 0.72
+    cell = w / n
+    for i in range(n):
+        for j in range(n):
+            m.box((-w / 2 + (i + 0.5) * cell, -w / 2 + (j + 0.5) * cell, 0.008), (PX, PX, 0.006), "arc", base=True)
+    for k in range(n + 1):                                                             # 1 px grate bars both ways
+        o = -w / 2 + k * cell
+        m.box((o, 0, 0.012), (PX, w, 0.006), "navy", base=True)
+        m.box((0, o, 0.012), (w, PX, 0.006), "navy", base=True)
+    return [m.build()]
+
+
+SPRITES += [("concept.pillar_v4", (1, 1), "prop", pillar_v4), ("concept.wall_v4", (1, 1), "prop", lambda: wall_v4(False)),
+            ("concept.floor_v4", (1, 1), "prop", floor_v4)]
+SPRITES.append(("concept.floor_v4b", (1, 1), "prop", floor_v4b))
