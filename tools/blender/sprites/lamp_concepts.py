@@ -1088,7 +1088,7 @@ def floor_twin():
     k.box(0, 0, 0.014, 0.62, 0.5, 0.008, "lvW2", top="lvW")                                # cream frame
     for v in (-0.12, 0.12):
         k.box(0, v, 0.016, 0.52, 0.16, 0.008, "dark")                                      # trough
-        k.box(0, v, 0.018, 0.4, 0.07, 0.01, _g("cyan"))                                        # the tube
+        k.box(0, v, 0.018, 0.4, 0.07, 0.01, _g("arc"))                                         # the tube
         for su in (-1, 1):
             k.box(su * 0.22, v, 0.016, 0.05, 0.1, 0.014, "steel", top="steelL")             # end caps
     return k.build()
