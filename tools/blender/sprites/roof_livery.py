@@ -111,9 +111,10 @@ _dbl, _shaft = _band(4, 12, 14, 16), _band(0, 7, 7, 10)
 
 
 def _fang(i, j):
-    """The aft edge of a nose block cut into teeth pointing aft (raiders): P forward of a sawtooth, 4 teeth a tile."""
-    t = abs(j % 8 - 3.5) / 3.5
-    return "P" if i >= 4 + 22 * (1 - t) else None
+    """The aft edge of a nose block cut into fangs pointing aft (raiders): P forward of a sawtooth, 2 teeth a tile,
+    each nearly a tile long."""
+    t = abs(j % 16 - 7.5) / 7.5                       # 0 at a tooth's point, 1 between teeth
+    return "P" if i >= 2 + 28 * (1 - t) ** 1.4 else None
 
 
 CLAW_W, CLAW_H = 4, 3                                 # claw block, tiles (x along the ship, y across)
