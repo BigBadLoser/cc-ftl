@@ -115,8 +115,8 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
   velvet: { motifs: ['coat', 'pins', 'em.crest'], P: 0x4a1f2e, S: 0xc9a64a },
   jade: { motifs: ['coat', 'pins', 'em.crest'], P: 0x1d3b33, S: 0xc9a64a },
   sable: { motifs: ['coat', 'pins', 'emL.crest'], P: 0x1f2026, S: 0xc9a64a },
-  drab: { motifs: ['coat', 'aft', 'big', 'em.delta', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
-  khaki: { motifs: ['coat', 'aft', 'big', 'em.delta', 'sten'], P: 0x7a6e4f, S: 0x1e2018, T: 0x3d3a2c, remap: { aft: ['T', 'T'] } },
+  drab: { motifs: ['coat', 'aft', 'big', 'em.rank', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
+  khaki: { motifs: ['coat', 'aft', 'big', 'em.rank', 'sten'], P: 0x7a6e4f, S: 0x1e2018, T: 0x3d3a2c, remap: { aft: ['T', 'T'] } },
   combine: {
     motifs: ['coat', 'split', 'nose', 'big', 'em.meridian'], P: 0x2456a0, S: 0xe8b830, T: 0xe4e2da,
     remap: { coat: ['T', 'T'], nose: ['S', 'P'], big: ['T', 'P'] },
@@ -126,7 +126,7 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     remap: { stripe: ['S', 'T'], 'em.helix': ['P', 'S'], sten: ['S', 'S'] },
   },
   vantor: { motifs: ['coat', 'hazard', 'big', 'em.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'em.delta': ['S', 'P'] } },
-  brigade: { motifs: ['coat', 'aft', 'big', 'emL.delta', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
+  brigade: { motifs: ['coat', 'aft', 'big', 'emL.rank', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
   freight: {
     motifs: ['coat', 'split', 'nose', 'big', 'emL.meridian'], P: 0x2456a0, S: 0xe8b830, T: 0xe4e2da,
     remap: { coat: ['T', 'T'], nose: ['S', 'P'], big: ['T', 'P'] },
@@ -136,19 +136,30 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     remap: { stripe: ['S', 'T'], 'emL.helix': ['P', 'S'], sten: ['S', 'S'] },
   },
   foundry: { motifs: ['coat', 'hazard', 'big', 'emL.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'emL.delta': ['S', 'P'] } },
+  rustbucket: { motifs: ['coat', 'patch', 'sten'], P: 0x4a4740, S: 0xb59a3a, T: 0x7c4a2c, U: 0x6e3a33, remap: { patch: ['T', 'U'] } },
+  junker: {
+    motifs: ['coat', 'patch', 'aft', 'sten'], P: 0x4a5340, S: 0xb59a3a, T: 0x7c4a2c, U: 0x6a6a66,
+    remap: { patch: ['T', 'U'], aft: ['T', 'T'] },
+  },
+  lattice: {
+    motifs: ['coat', 'split', 'trace', 'em.dot'], P: 0x8a929c, S: 0x3fc4d4, T: 0x2a2f36,
+    remap: { split: ['T', 'S'], trace: ['S', 'S'], 'em.dot': ['T', 'S'] },
+  },
+  node: { motifs: ['coat', 'trace', 'emL.cross'], P: 0x2a2f36, S: 0x3fc4d4, T: 0x8a929c, remap: { trace: ['S', 'S'], 'emL.cross': ['P', 'S'] } },
   bazaar: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
   souk: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x33302a, S: 0x39e0d0, T: 0x6e5a3a, U: 0x5a3a5e, remap: { patch: ['T', 'U'] } },
   neon: { motifs: ['coat', 'patch', 'emL.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
 };
 export const SCHEME_NAMES = Object.keys(SCHEMES);
 
-/** roof_livery.CLASSIC: the original ten schemes, the navy, civilian, scrapper and drone liveries. */
+/** roof_livery.CLASSIC: the original ten schemes (an unknown livery picks from all of them). */
 const CLASSIC = ['crimson', 'ivory', 'tide', 'sovereign', 'orchid', 'hornet', 'glacier', 'verdant', 'ember', 'tricolour'] as const;
 /** roof_livery.LIVERIES: a faction art def's `livery` id -> the schemes its ships pick from by name. */
 export const LIVERIES: Readonly<Record<string, readonly string[]>> = {
-  'livery.navy': CLASSIC,
-  'livery.scrapper': CLASSIC,
-  'livery.drone': CLASSIC,
+  'livery.navy': ['sovereign', 'tricolour', 'glacier', 'ember'],
+  'livery.civilian': ['crimson', 'ivory', 'tide', 'orchid', 'hornet', 'verdant'],
+  'livery.scrapper': ['rustbucket', 'junker'],
+  'livery.drone': ['lattice', 'node'],
   'livery.raider': ['gash', 'scorch', 'reaver'],
   'livery.zealot': ['litany', 'relic', 'vigil'],
   'livery.cartel': ['velvet', 'jade', 'sable'],

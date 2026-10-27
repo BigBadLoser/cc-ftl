@@ -176,8 +176,8 @@ def main():
     y = 0
     for sc, r in rows:
         sheet.paste(Image.fromarray(r), (0, y))
-        owner = next((k for k, v in lv.LIVERIES.items() if sc in v and k not in ("livery.scrapper", "livery.drone")), "")
-        ImageDraw.Draw(sheet).text((10, y + 4), f"{sc}   ({owner.replace('livery.navy', 'classic: navy, civilian, scrapper, drone')})",
+        owner = next((k for k, v in lv.LIVERIES.items() if sc in v), "no livery")
+        ImageDraw.Draw(sheet).text((10, y + 4), f"{sc}   ({owner})",
                                    fill=(170, 210, 230), font=ImageFont.load_default(size=16))
         y += r.shape[0]
     if zoom > 1:

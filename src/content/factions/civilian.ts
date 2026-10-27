@@ -10,7 +10,7 @@ export const civilian = {
   name: 'Civilian',
   side: 'neutral',
   motif: 'motif.civilian',
-  art: { hull: 'hull.clean', wall: 'wall.clean', roof: 'roof.grid', livery: 'livery.navy', signature: ['module.storage', 'module.bed'] },
+  art: { hull: 'hull.clean', wall: 'wall.clean', roof: 'roof.grid', livery: 'livery.civilian', signature: ['module.storage', 'module.bed'] },
   architecture: {
     roles: [
       { id: 'freighter', weight: { base: 4, perDepth: 0, max: 4 }, archetypes: [{ value: 'salvage', weight: 1 }] },

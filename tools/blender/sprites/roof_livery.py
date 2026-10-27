@@ -189,6 +189,8 @@ def _emblem(kind, q, n=2):
         elif kind == "crest":                         # cartel crest: a heater shield, point aft, a chevron cut in it
             w = 13 if X >= -2 else 13 * (X + 16) / 14
             g = -16 <= X <= 14 and abs(Y) < w and not (abs(abs(Y) - (X + 3) * 0.75) < 1.8 and -3 <= X <= 10)
+        elif kind == "rank":                          # mercenary insignia: three stacked rank chevrons, apex to the bow
+            g = abs(Y) < 14 and any(0 <= X - (k * 8 - 9) + abs(Y) * 0.75 < 4.5 for k in range(3))
         elif kind == "helix":                         # Helix Biosystems: a double helix across the ship, with rungs
             a = 8.5 * math.sin(Y * 0.26)
             g = abs(Y) < 18 and (abs(X - a) < 2.3 or abs(X + a) < 2.3 or (abs(X) < abs(a) and abs((Y + 2) % 6 - 3) < 0.9))
@@ -215,8 +217,9 @@ MASKS = {
        for k in range(3)},
     **{f"reg.{c}": _digit(c) for c in DIGITS},
     **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond", "skull", "eye", "crest", "helix",
-                                                "meridian") for q in range(4)},
-    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye", "crest", "helix", "meridian", "delta", "diamond")
+                                                "meridian", "rank") for q in range(4)},
+    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye", "crest", "helix", "meridian", "delta", "diamond",
+                                                 "rank", "cross")
        for q in range(9)},                                                                       # large: 3 x 3 tiles
     "hazard": lambda i, j: "P" if (i + j) // 8 % 2 == 0 else "S",
     "full.S": lambda i, j: "S",
@@ -277,9 +280,9 @@ SCHEMES = {
     "velvet": dict(motifs=("coat", "pins", "em.crest"), P="#4a1f2e", S="#c9a64a"),
     "jade": dict(motifs=("coat", "pins", "em.crest"), P="#1d3b33", S="#c9a64a"),
     "sable": dict(motifs=("coat", "pins", "emL.crest"), P="#1f2026", S="#c9a64a"),
-    "drab": dict(motifs=("coat", "aft", "big", "em.delta", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
+    "drab": dict(motifs=("coat", "aft", "big", "em.rank", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
                  remap={"aft": ("T", "T")}),
-    "khaki": dict(motifs=("coat", "aft", "big", "em.delta", "sten"), P="#7a6e4f", S="#1e2018", T="#3d3a2c",
+    "khaki": dict(motifs=("coat", "aft", "big", "em.rank", "sten"), P="#7a6e4f", S="#1e2018", T="#3d3a2c",
                   remap={"aft": ("T", "T")}),
     "combine": dict(motifs=("coat", "split", "nose", "big", "em.meridian"), P="#2456a0", S="#e8b830", T="#e4e2da",
                     remap={"coat": ("T", "T"), "nose": ("S", "P"), "big": ("T", "P")}),
@@ -287,7 +290,7 @@ SCHEMES = {
                   remap={"stripe": ("S", "T"), "em.helix": ("P", "S"), "sten": ("S", "S")}),
     "vantor": dict(motifs=("coat", "hazard", "big", "em.delta"), P="#d6a424", S="#1e2018",
                    remap={"em.delta": ("S", "P")}),
-    "brigade": dict(motifs=("coat", "aft", "big", "emL.delta", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
+    "brigade": dict(motifs=("coat", "aft", "big", "emL.rank", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
                     remap={"aft": ("T", "T")}),
     "freight": dict(motifs=("coat", "split", "nose", "big", "emL.meridian"), P="#2456a0", S="#e8b830", T="#e4e2da",
                     remap={"coat": ("T", "T"), "nose": ("S", "P"), "big": ("T", "P")}),
@@ -295,6 +298,14 @@ SCHEMES = {
                    remap={"stripe": ("S", "T"), "emL.helix": ("P", "S"), "sten": ("S", "S")}),
     "foundry": dict(motifs=("coat", "hazard", "big", "emL.delta"), P="#d6a424", S="#1e2018",
                     remap={"emL.delta": ("S", "P")}),
+    "rustbucket": dict(motifs=("coat", "patch", "sten"), P="#4a4740", S="#b59a3a", T="#7c4a2c", U="#6e3a33",
+                       remap={"patch": ("T", "U")}),
+    "junker": dict(motifs=("coat", "patch", "aft", "sten"), P="#4a5340", S="#b59a3a", T="#7c4a2c", U="#6a6a66",
+                   remap={"patch": ("T", "U"), "aft": ("T", "T")}),
+    "lattice": dict(motifs=("coat", "split", "trace", "em.dot"), P="#8a929c", S="#3fc4d4", T="#2a2f36",
+                    remap={"split": ("T", "S"), "trace": ("S", "S"), "em.dot": ("T", "S")}),
+    "node": dict(motifs=("coat", "trace", "emL.cross"), P="#2a2f36", S="#3fc4d4", T="#8a929c",
+                 remap={"trace": ("S", "S"), "emL.cross": ("P", "S")}),
     "bazaar": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#2b2830", S="#ff3fa4", T="#8a4a2e", U="#3e6e6a",
                    remap={"patch": ("T", "U")}),
     "souk": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#33302a", S="#39e0d0", T="#6e5a3a", U="#5a3a5e",
@@ -304,10 +315,13 @@ SCHEMES = {
 }
 
 # A faction's livery (its art def's `livery` id) is the list of schemes its ships pick from by name (roofArt.liveryFor).
-# The navy, civilian, scrapper and drone liveries keep the original ten; an unknown id falls back to them.
+# The navy and civilian liveries split the original ten; an unknown id falls back to all ten.
 CLASSIC = ("crimson", "ivory", "tide", "sovereign", "orchid", "hornet", "glacier", "verdant", "ember", "tricolour")
 LIVERIES = {
-    "livery.navy": CLASSIC, "livery.scrapper": CLASSIC, "livery.drone": CLASSIC,
+    "livery.navy": ("sovereign", "tricolour", "glacier", "ember"),
+    "livery.civilian": ("crimson", "ivory", "tide", "orchid", "hornet", "verdant"),
+    "livery.scrapper": ("rustbucket", "junker"),
+    "livery.drone": ("lattice", "node"),
     "livery.raider": ("gash", "scorch", "reaver"),
     "livery.zealot": ("litany", "relic", "vigil"),
     "livery.cartel": ("velvet", "jade", "sable"),
