@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, type Sim, type SimEvent } from '../../sim';
+import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
@@ -205,6 +205,26 @@ describe('battle stations', () => {
     sim.enqueue({ type: 'crew.moveTo', id: pick, x: away.x, y: away.y });
     run(sim, 2);
     expect(operatorOf(sim, weapons)).toBe(0);
+  });
+
+  it.each(SEEDS)('an armed operator ordered to a console reaches it and stays while a boarder is in view (seed %i)', (seed) => {
+    const sim = newGame(seed, content);
+    run(sim, 5);
+    const weapons = consoleOf(sim, 1, 'weapons');
+    const pick = crewOn(sim, 1).find((c) => c)!;
+    sim.world.add(pick, EquipC, { weapon: 'item.rifle' });
+    draft(sim, [pick]);
+    const [boarder] = spawnCrew(sim, nth(sim, 1), ['role.security']);
+    sim.world.add(boarder!, AllegianceC, { faction: 'hostile' });
+    sim.world.add(boarder!, EquipC, { weapon: 'item.sidearm' });
+    sim.world.get(boarder!, HealthC)!.hp = 1e9;
+    sim.world.get(boarder!, HealthC)!.max = 1e9;
+    sim.enqueue({ type: 'crew.man', id: pick, module: weapons });
+    run(sim, 20 * 90, () => operatorOf(sim, weapons) === pick);
+    expect(operatorOf(sim, weapons)).toBe(pick);
+    run(sim, 20 * 15);
+    expect(operatorOf(sim, weapons)).toBe(pick);
+    expect(sim.world.has(pick, DraftedC)).toBe(true);
   });
 
   it('rejects an undrafted crew member, a non-console module and an enemy console', () => {
