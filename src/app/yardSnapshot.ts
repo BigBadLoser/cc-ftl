@@ -35,7 +35,9 @@ export function yardOf(sim: Sim, station: number): UiYardService | null {
 /** The ship's hull plan for the build tools and the ghost tiles. */
 export function planOf(sim: Sim): UiHullPlan {
   const v = viewPlan(sim);
-  return { ship: playerShip(sim), tiles: v.tiles, connected: v.connected, loose: v.loose, blocked: v.blocked, floor: v.floor, hull: v.hull };
+  const grid = sim.sector.grid;
+  const open = (t: Tile): boolean => grid.get('struct', t.x, t.y) === Struct.Space; // nothing is drawn over a truss
+  return { ship: playerShip(sim), tiles: v.tiles, connected: v.connected, loose: v.loose, blocked: v.blocked, floor: v.floor.filter(open), hull: v.hull };
 }
 
 /** What the yard of `station` would build of the plan now. */

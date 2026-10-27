@@ -73,7 +73,8 @@ function reach(sim: Sim, ship: number, tiles: readonly Tile[]): { connected: Til
   const grid = sim.sector.grid;
   const set = new Map(tiles.map((t) => [key(t.x, t.y), t] as const));
   const blocked = tiles.filter((t) => clear.has(key(t.x, t.y)));
-  const isHull = (x: number, y: number): boolean => grid.get('struct', x, y) !== Struct.Space && shipAt(sim, x, y) === ship && !set.has(key(x, y)); // planned trusses are plan tiles, not the ship they are built from
+  // the ship the yard builds from: real structure, not open trusses (planned ones are plan tiles; floor ones are scaffolding)
+  const isHull = (x: number, y: number): boolean => grid.get('struct', x, y) !== Struct.Space && grid.get('struct', x, y) !== Struct.Beam && shipAt(sim, x, y) === ship;
   const seen = new Set<string>();
   const queue: Tile[] = [];
   for (const t of tiles) {
@@ -165,7 +166,7 @@ export interface HullView {
   loose: Tile[];
   blocked: Tile[];
   floor: Tile[];
-  /** Every planned tile that can be reached from the ship, trussed or not (what a yard works from). */
+  /** Every planned tile that can be reached from the ship, trussed or not (what a yard works from). `floor` likewise includes floor that is already trussed. */
   reachable: Tile[];
   hull: { now: number; afterAll: number; capacity: number };
 }
@@ -253,7 +254,7 @@ function gapsFor(sim: Sim, walls: readonly Tile[], floor: readonly Tile[], clear
     for (const w of walls) {
       const side = N4.find(([dx, dy]) => patchOf.get(key(w.x + dx, w.y + dy)) === patch);
       const stage = side && { x: w.x - side[0], y: w.y - side[1] };
-      if (stage && grid.get('struct', stage.x, stage.y) === Struct.Space && !inFloor.has(key(stage.x, stage.y)) && !inWalls.has(key(stage.x, stage.y)) && !clear.has(key(stage.x, stage.y))) {
+      if (stage && (grid.get('struct', stage.x, stage.y) === Struct.Space || grid.get('struct', stage.x, stage.y) === Struct.Beam) && !inFloor.has(key(stage.x, stage.y)) && !inWalls.has(key(stage.x, stage.y)) && !clear.has(key(stage.x, stage.y))) {
         out.push({ wall: w, stage });
         break;
       }
@@ -282,11 +283,13 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   const own = shipRect(sim.world.get(ship, ShipC) as Ship);
   const rank = rowRanks(sim, ship, union(own, boxOf(view.reachable, 1)));
   const { walls, floor } = pickSection(view.reachable, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w));
+  // The planning pass trusses the whole footprint that is still open space: every reachable planned tile and all the floor the plan encloses (also the
+  // floor beyond this visit's section), so a ship left half built reads as scaffolding all the way. Open trusses are walkable on EVA, so the crew reach all of it.
   const gaps = gapsFor(sim, walls, floor, dockApproaches(sim, ship));
-  // The planning pass: every reachable planned tile that is still open space gets a truss, except the gap wall of each floor patch: that tile stays open
-  // so the crew can walk in and out until the patch is sealed (an open truss does not let anyone through).
-  const gapKeys = new Set(gaps.map((g) => key(g.wall.x, g.wall.y)));
-  const trusses = inRowOrder(view.connected.filter((t) => !gapKeys.has(key(t.x, t.y))), rank);
+  const isOpen = (t: Tile): boolean => sim.sector.grid.get('struct', t.x, t.y) === Struct.Space;
+  const footprint = new Map<string, Tile>();
+  for (const t of [...view.reachable, ...view.floor]) if (isOpen(t)) footprint.set(key(t.x, t.y), t);
+  const trusses = inRowOrder([...footprint.values()], rank);
   const after = areaWith(sim, ship, walls, floor);
   const fee = { credits: Math.ceil(trusses.length * def.trussFee), metal: 0 };
   const hull = yardPrice(sim, service, walls.length + floor.length);

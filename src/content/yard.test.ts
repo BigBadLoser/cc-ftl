@@ -116,11 +116,11 @@ describe('shipyard: the quote', () => {
     expect(q.error).toBeNull();
     expect(q.walls).toHaveLength(10);
     expect(q.floor).toHaveLength(2);
-    // The planning pass trusses every planned tile but the patch's gap wall, outside the cap, for 2 credits a tile; the hull is priced by tile built.
-    expect(q.trusses).toHaveLength(9);
-    expect(q.fee).toEqual({ credits: 18, metal: 0 });
+    // The planning pass trusses the whole footprint (the 10 outline tiles and the 2 floor tiles), outside the cap, for 2 credits a tile; the hull is priced by tile built.
+    expect(q.trusses).toHaveLength(12);
+    expect(q.fee).toEqual({ credits: 24, metal: 0 });
     const hull = yardPrice(sim, q.service!, 12);
-    expect(q.price).toEqual({ credits: hull.credits + 18, metal: hull.metal });
+    expect(q.price).toEqual({ credits: hull.credits + 24, metal: hull.metal });
     expect(q.gaps).toHaveLength(1);
     expect(q.hull.before).toBe(416);
     expect(q.hull.after).toBe(viewPlan(sim, me).hull.afterAll);
@@ -234,12 +234,12 @@ describe('shipyard: the order', () => {
     const wallet = trader.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     const hull = yardPrice(sim, yardService(sim, station)!, 12);
-    const price = { credits: hull.credits + 18, metal: hull.metal }; // plus the planning fee: 9 trusses at 2 credits
+    const price = { credits: hull.credits + 24, metal: hull.metal }; // plus the planning fee: 12 trusses at 2 credits
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
     const order = sim.yard.orders[0]!;
     expect(order.stage).toBe('truss');
-    expect(order.fee).toEqual({ credits: 18, metal: 0 });
+    expect(order.fee).toEqual({ credits: 24, metal: 0 });
     expect(sim.trade.credits).toBe(credits - price.credits);
     expect(metalOf(sim)).toBe(metal - price.metal);
     expect(order.held).toEqual(price);
@@ -271,9 +271,8 @@ describe('shipyard: the order', () => {
     expect(run(sim, 1)).toContain('yard.ordered');
     const order = sim.yard.orders[0]!;
     expect(order.walls.length + order.floor.length).toBeLessThanOrEqual(cap);
-    // The planning pass covers every reachable planned tile (less the gap walls), outside the cap.
-    expect(order.trusses.length).toBeGreaterThan(cap - 10);
-    expect(order.trusses.length + order.gaps.length).toBeLessThanOrEqual(all);
+    // The planning pass covers the whole footprint, outside the cap.
+    expect(order.trusses.length).toBeGreaterThanOrEqual(all); // the whole footprint: the outline and all the floor it encloses
     expect(plannedTiles(sim, me)).toHaveLength(all);
   });
 

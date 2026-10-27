@@ -35,7 +35,7 @@ describe('the yard crew', () => {
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     const quoteHull = quoteYard(sim, station, me).hull.after;
     const hull = yardPrice(sim, yardService(sim, station)!, 12);
-    const price = { credits: hull.credits + 18, metal: hull.metal }; // plus the planning fee: 9 trusses at 2 credits
+    const price = { credits: hull.credits + 24, metal: hull.metal }; // plus the planning fee: 12 trusses at 2 credits
     sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;
@@ -52,8 +52,8 @@ describe('the yard crew', () => {
     const grid = shipGrid(sim, me)!;
     for (const t of order.floor) expect(grid.get('struct', t.x, t.y), `floor ${t.x},${t.y}`).toBe(Struct.Floor);
     for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(Struct.Wall);
-    expect(builtCount(sim, order)).toEqual({ truss: 9, floor: 2, walls: 10 });
-    expect(totalTiles(order)).toBe(21);
+    expect(builtCount(sim, order)).toEqual({ truss: 12, floor: 2, walls: 10 });
+    expect(totalTiles(order)).toBe(24);
     // Nobody (the ship's own crew, who also build, included) is walled in.
     const keys = new Set(order.floor.map((t) => `${t.x},${t.y}`));
     expect(sim.world.query(CrewC, PositionC).filter((c) => keys.has(`${sim.world.get(c, PositionC)!.x},${sim.world.get(c, PositionC)!.y}`))).toEqual([]);
@@ -67,6 +67,7 @@ describe('the yard crew', () => {
     expect(order.held).toEqual({ credits: 0, metal: 0 });
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
     expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === station)).toHaveLength(0);
+    run(sim, 1200); // the ship's own crew, who also worked outside, come back in and hang their suits up
     expect(sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0)).toBe(suits);
     expect(sim.world.query(CrewC).filter((c) => sim.world.get(c, CrewC)!.role === 'role.engineer' && !sim.world.has(c, YardCrewC)).length).toBeGreaterThan(0);
   }, 120000);
@@ -99,7 +100,7 @@ describe('the yard crew', () => {
     const order = sim.yard.orders[0]!;
     run(sim, 6000, () => builtCount(sim, order).walls >= 2); // the truss pass is done and some hull stands
     const b = builtCount(sim, order);
-    expect(b.truss).toBe(9);
+    expect(b.truss).toBe(12);
     expect(b.floor + b.walls).toBeGreaterThan(0);
     expect(b.floor + b.walls).toBeLessThan(12);
     sim.enqueue({ type: 'yard.cancel', order: order.id });
@@ -107,7 +108,7 @@ describe('the yard crew', () => {
     // The unbuilt part is back with the player at once; the jobs are gone. The planning fee is earned for the trusses built, the hull price for the hull built.
     const built = builtCount(sim, order);
     const paid = {
-      credits: Math.floor((hull.credits * (built.floor + built.walls)) / 12) + Math.floor((18 * built.truss) / 9),
+      credits: Math.floor((hull.credits * (built.floor + built.walls)) / 12) + Math.floor((24 * built.truss) / 12),
       metal: Math.floor((hull.metal * (built.floor + built.walls)) / 12),
     };
     expect(sim.trade.credits).toBe(credits - paid.credits);

@@ -1811,11 +1811,11 @@ of open space. Interior walls and doors stay ordinary free builds. `viewPlan` re
 tiles with `Renderer.setAreas`, only while that tool or a station's Shipyard tab is open (plus the live order's unbuilt tiles at any time).
 
 **The shipyard** (`sim/yard/`). Trading and military stations of the station and hub tiers (`ContentRegistry.yard`, `content/yard.ts`, via `yardService`;
-the station must answer hails) sell the plan, in two passes. **Planning pass:** the contractors truss every reachable planned tile that has none, quickly (1 s a
-tile) and outside the visit cap, for a planning fee (`YardDef.trussFee`, 2 credits a tile, no metal; a tile that already has a truss is never charged again). A
-truss is a real `Struct.Beam` tile (existing beam art and rules: saved with the ship, owned by it, not walkable, crew reach it from the EVA ring, no integrity so
-combat leaves it alone, and the ship's size and engine capacity ignore it: `interiorArea` reads an open truss as open space). The gap wall of each floor patch is
-left untrussed so the crew can still walk in. A trussed tile stays part of the plan; deconstructing a truss with the normal tool removes it from the plan
+the station must answer hails) sell the plan, in two passes. **Planning pass:** the contractors truss the whole footprint that is still open space (every reachable planned tile and all the
+floor the plan encloses), quickly (1 s a tile) and outside the visit cap, for a planning fee (`YardDef.trussFee`, 2 credits a tile, no metal; a tile that already
+has a truss is never charged again). A truss is a real `Struct.Beam` tile (existing beam art and rules: saved with the ship, owned by it, not walkable on deck, no
+integrity so combat leaves it alone; a suited crew member walks along it, `isEvaWalkable`; the ship's size and engine capacity ignore it: `interiorArea` reads an
+open truss as open space). A planned tile stays part of the plan after it is trussed; deconstructing a truss with the normal tool removes it from the plan
 (`yard/trussPlan.ts`). **Hull pass:** `quoteYard(sim, station)` turns up to the tier's cap of tiles (walls and floor together) into hull, laid out in rows
 (`yard/rows.ts`: the distance in steps from the ship's own structure, trusses not counted; nearest rows first). When the cap cuts a room short it takes the rows
 up to a depth that fits plus a cross wall that shuts them in (so the ship left behind is closed and rectangular; the cross wall is paid as hull). If no cut
