@@ -1,53 +1,26 @@
-"""The exterior hull as solid primitives (after hull 46's BottomD / SideD / Top / TopD): the base T3's section (upright
-to the bend, leaning back to the top) run along each side of a tile that faces space, along its edge or its diagonal.
-A stair-stepped 45 degree outline reads as one slanted wall (consecutive steps' pieces meet on the tile corners the
-diagonal runs through), and the far side, seen from behind, as caps of the same solid. Each piece is the convex solid
-inside a set of flat cuts (the tile's column, and for each side the outline's upright face, the lean, the hull's back),
-so the shapes come straight from the run's own numbers."""
+"""The exterior hull as solid pieces, one per tile, from its key (hull_outline: the stretch of the ship's outline
+that reaches it): the base T3's section (upright to the bend, leaning back to the top, a seam along the top) run
+along every side of the outline, its straight runs and its 45 degree diagonals alike (after hull 46's BottomD / SideD /
+Top / TopD; the far side, seen from behind, as caps of the same solid). Along a convex stretch a tile's solid is all
+its fronts' at once (where two meet, a hip), at a concave corner either side's; each part the convex solid inside a set
+of flat cuts, so every shape (a join, an end step, an inner step behind a deep diagonal) comes from one rule."""
 import math
 from itertools import combinations
 
 from mathutils import Vector
 
-from . import core
+from . import hull_outline as HO
 from . import wall3d as T
 from . import walls as W
 from .wall3d_ext_geom import D, E, LEAN_RISE, PAINT, TOP, YS
 from .wall3d_ext_t3 import TOP_PX
 
-PIECES = {                          # each piece's sides facing space (x, y): along an edge, or the diagonal
-    "bd1": [(1, 1)],                # BottomD1: the near diagonal, facing the camera
-    "sd1": [(1, -1)],               # SideD1, SideD2: the ship's right and left diagonals
-    "sd2": [(-1, 1)],
-    "td1": [(-1, -1)],              # TopD1: the far diagonal (a cap: seen from behind)
-    "tx": [(0, -1)],                # the far runs (along x, along y) and the far corner (Top): caps
-    "ty": [(-1, 0)],
-    "tc": [(-1, 0), (0, -1)],
-    "t0": [],                       # a hull tile with no side on space (behind a concave corner): a plain cap
-}
-                                    # (".in" on a diagonal: the inner step behind two steps, the outline across its
-                                    # outer corner a tile further out)
+assert abs(HO.E - E) < 1e-9
 TOP_SEAM = (2 * TOP_PX, 2.75 * TOP_PX, YS[2])   # the run's seam along the top: this far in from the hull's back to
                                     # this, in this tone (in the same terms as the other depths: it runs on round
                                     # corners, diagonals and caps)
-
-
-
-
-def outline(s):
-    """Where a side's outline runs: s . p = this. A straight run's a cell short of the tile's edge; a diagonal's meets
-    it on the tile's edge."""
-    return E + 0.5 - 0.5 * (abs(s[0]) + abs(s[1]))
-
-
-def deep(s):
-    """A side's depths' scale (the lean's, the top's, the seam's; s . p per the run's depth): 1 along an edge; on a
-    diagonal, so its bands are as thick on screen across their edges as a run's (a run's edges slant at the tile's
-    angle, a camera-facing diagonal's run level and recede half as fast, a side diagonal's stand upright)."""
-    if abs(s[0]) + abs(s[1]) < 2:
-        return 1.0
-    cos = math.cos(math.atan2(core.TILE_H, core.TILE_W))
-    return 2 * cos if s[0] == s[1] else cos
+TILE = [(Vector((1, 0, 0)), 0.5), (Vector((-1, 0, 0)), 0.5), (Vector((0, 1, 0)), 0.5), (Vector((0, -1, 0)), 0.5)]
+UP = Vector((0, 0, 1))
 
 
 def _solid(planes):
@@ -73,11 +46,6 @@ def _solid(planes):
         on.sort(key=lambda p: math.atan2((p - mid).dot(v), (p - mid).dot(u)))
         faces.append((on, n.normalized(), i))
     return faces
-
-
-JOINS = {"bd1": [(0, 1), (1, 0)], "sd1": [(1, 0), (0, -1)], "sd2": [(0, 1), (-1, 0)], "td1": [(-1, 0), (0, -1)]}
-                                    # the straight runs each diagonal meets: a join piece ("<diag>.j<x><y>", the run's
-                                    # side) on the run's tile next to the diagonal's end step
 
 
 def _tone(m, fronts):
@@ -117,75 +85,72 @@ def _emit(rel, parts, fronts, skip):
                 rel.poly([mid, p, q], "steel", 3, m, fixed=across(p, q, i))
 
 
-def _seam(rel, part, s, c, g, H, up, clip=()):
-    """The run's seam along a side's back (TOP_SEAM, g times its depths), on the top of a part, clipped."""
+def _lift(h):
+    """A plan half-plane (a, b, c) as an upright cut."""
+    return (Vector((h[0], h[1], 0.0)), h[2])
+
+
+def _front(f):
+    """A front's (s, c, g) in tile units."""
+    return Vector((f[0][0], f[0][1], 0.0)), f[1] / 32, HO.deep(f[0])
+
+
+def _part(g, before, after, H):
+    """A convex run's part (ends, rest) and its fronts (s, c, g): all its fronts' upright faces and leans (D in at the
+    top) cut it, and a concave corner's other side where their depths meet (that cut shared). No back: the roof
+    (flush with the hull's top) lies over the rest (roof()), so the solid is never cut across a face seen (a cut
+    leaks through anti-aliasing as a dotted line)."""
+    k = D / LEAN_RISE
+    fronts = [_front(f) for f in g]
+    faces = [(UP, H), (-UP, 0.0)]
+    for s, c, w in fronts:
+        faces += [(s, c), (s + w * k * UP, c - w * D + w * k * H)]
+    side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
+    return (TILE, faces + side), side, fronts
+
+
+def _seam(rel, part, g, H):
+    """The run's seam (TOP_SEAM) on the part's top, where the nearest front's depth is in its band."""
     a, b, col = TOP_SEAM
-    band = [(s, c - g * (E + 0.5 - b)), (-s, g * (E + 0.5 - a) - c), (-up, -H), (up, H + PAINT)]
-    for pts, m, _ in _solid([q for q in part if abs(q[0].z) < 1e-9] + band + list(clip)):
-        if m.z > 0.85:
-            rel.poly(pts, "steel", 3, m, fixed=col)
+    lo, hi = HO.LIP - b, HO.LIP - a
+    for ends, rest in [part]:
+        cut = [q for q in ends + rest if abs(q[0].z) < 1e-9] + [(-UP, -H), (UP, H + PAINT)]
+        cut += [_lift(HO.at_least(f, lo)) for f in g]
+        for i, f in enumerate(g):
+            band = [_lift(tuple(-v for v in HO.at_least(f, hi)))] + [_lift(HO.at_least(h, hi)) for h in g[:i]]
+            for pts, m, _ in _solid(cut + band):
+                if m.z > 0.85:
+                    rel.poly(pts, "steel", 3, m, fixed=col)
 
 
-def piece(kind, H=None):
-    """The piece `kind` as a primitive: PIECES' (".in": a diagonal's inner step), or a join ("<diag>.j<x><y>": the
-    run's tile next to the diagonal's end step, its run's side (x, y), JOINS). The tile's column cut, for each side
-    facing space, by the outline's upright face, the lean (D in at the top) and the hull's back; its top the hull's.
-    Toned by facing (tops TOP, the lean near white, the upright faces the upright part's tone, the hull's back the
-    top's: the roof meets it); its ends on the tile's edges in the tones of the surfaces they meet (the next piece hides
-    them, but anti-aliasing mixes them in along the join: dark, they read as dotted seams).
-    An inner step's hull runs on over the front corners of the two tiles behind it (its slice along the diagonal its
-    own); a join is the run's piece and the diagonal's inner step at once: both sides' fronts cut it (meeting in a
-    hip), and its hull reaches back to the deeper of their backs, so the slope's top, the seam and the back turn
-    from the run's depth to the diagonal's on it. On a diagonal shallower than the run (a side one) that hip runs on
-    a little into the end step: "<diag>.k<x><y>" is that step, carrying the run's cut and seam."""
+def piece(key, H=None):
+    """The hull piece of a tile with this key (hull_outline.key). Toned by facing (tops TOP, the lean near white, the
+    upright faces the upright part's tone); its ends on the tile's edges
+    in the tones of the surfaces they meet (the next piece hides them, but anti-aliasing mixes them in along the join:
+    dark, they read as dotted seams)."""
     H = W.hull_top() if H is None else H
-    base, *mods = kind.split(".")
-    inner = mods == ["in"]
-    join = mods[0][1:] if mods and mods[0][0] in "jk" else None
-    step = bool(join) and mods[0][0] == "k"                             # (a step carrying the run's cut)
-    k, up = D / LEAN_RISE, Vector((0, 0, 1))
-    tile = [(Vector((1, 0, 0)), 0.5), (Vector((-1, 0, 0)), 0.5), (Vector((0, 1, 0)), 0.5), (Vector((0, -1, 0)), 0.5)]
-    sides = PIECES[base]
-    if join:
-        run = (int(join[0]) if join[0] != "m" else -1, int(join[1]) if join[1] != "m" else -1)
-        sides = [run] + sides
-    fronts = []
-    for sx, sy in sides:
-        g = deep((sx, sy))
-        diag = abs(sx) + abs(sy) == 2
-        fronts.append((Vector((sx, sy, 0.0)), outline((sx, sy)) + (1 if diag and (inner or join and not step) else 0),
-                       g))
-    faces = [(up, H), (-up, 0.0)]
-    for s, c, g in fronts:
-        faces += [(s, c), (s + g * k * up, c - g * D + g * k * H)]      # its upright face, its lean (g D in at top)
-    backs = [(-s, max(g, 1.0) * (E + 0.5) - c) for s, c, g in fronts]    # (the hull's back: never short of the
-                                                                        # run's, so a tile is never left open)
-    rel = T.Relief(f"ext_solid_{kind}")
-    if not (inner or join):
-        part = (tile, faces + backs)
-        _emit(rel, [part], fronts, ())
-        for s, c, g in fronts:
-            _seam(rel, tile + faces + backs, s, c, g, H, up, [(s, c - g * D)])
-        return rel.build()
-    sd, cd, gd = fronts[-1]                                             # (the diagonal: its slice behind)
-    t = Vector((sd.y, -sd.x, 0.0))
-    lateral = [(t, 1.0), (-t, 1.0)]
-    if inner:
-        ends = [(n, c) for n, c in tile if n.dot(sd) > 0] + lateral
-        part = (ends, faces + backs)
-        _emit(rel, [part], fronts, ())
-        _seam(rel, ends + faces + backs, sd, cd, gd, H, up, [(sd, cd - gd * D)])
-        return rel.build()
-    sr, cr, _ = fronts[0]
-    edge = (-sr, E + 0.5 - cr)                                          # (the run's back: the tile's edge)
-    beyond = (sr, cr - (E + 0.5))
-    tops = [(s, c - g * D) for s, c, g in fronts]
-    a_part = (tile, faces + [edge] + (backs[-1:] if step else []))     # (the run's tile, and the diagonal's hull
-    b_part = ([(n, c) for n, c in tile if abs(n.dot(sr)) < 1e-9] + lateral, faces + [beyond, backs[-1]])  # behind it
-    parts = [a_part, b_part] if gd > 1 and not step else [a_part]       # where that runs deeper)
-    _emit(rel, parts, fronts, [beyond])
-    a, b, _ = TOP_SEAM
-    for planes in (p[0] + p[1] for p in parts):
-        _seam(rel, planes + tops, sr, cr, 1, H, up, [(sd, cd - gd * (E + 0.5 - b))])
-        _seam(rel, planes + tops, sd, cd, gd, H, up, [(sr, cr - (E + 0.5 - b))])
+    rel = T.Relief(f"ext_solid_{HO.name(key)}")
+    for stretch in HO.parse(key):
+        for g, before, after in HO.groups(stretch):
+            part, shared, fronts = _part(g, before, after, H)
+            _emit(rel, [part], fronts, shared)
+            _seam(rel, part, g, H)
     return rel.build()
+
+
+def roof(key, H=None):
+    """A stand-in for the roof over the rest of the tile (flush with the hull's top, drawn over its piece: nothing
+    stands over the top to hide it): behind every back (hull_outline.back)."""
+    H = W.hull_top() if H is None else H
+    rel = T.Relief(f"roof_{HO.name(key)}")
+    blocks = [[]]
+    for stretch in HO.parse(key):
+        blocks = []
+        for g, before, after in HO.groups(stretch):
+            side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
+            blocks.append(side + [_lift(HO.at_least(f)) for f in g] + [_lift(HO.at_least(f, HO.back(f[0]))) for f in g])
+    faces = [f for cut in blocks for f in _solid(TILE + [(UP, H), (-UP, 0.0)] + cut)
+             if f[1].z > 0.85 and sum(((p - f[0][0]).cross(q - f[0][0])).length for p, q in zip(f[0], f[0][1:])) > 1e-6]
+    for pts, m, _ in faces:                                             # (its top only: an overlay)
+        rel.poly(pts, "steel", 3, m, fixed=TOP)
+    return rel.build() if faces else []                                 # (none: the hull covers the tile)
