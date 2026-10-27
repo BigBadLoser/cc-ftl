@@ -115,7 +115,7 @@
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 
 <section class="fw {cls}" class:floating class:bg class:pinned class:bare data-testid={testId} data-pinned={pinned} aria-label={title}
-  style="{style ? style + ';' : ''}--fw-z:{z}" bind:clientHeight={elH}
+  style="{style ? style + ';' : ''}--fw-z:{z};--fw-pin:{pinRight + 38}px" bind:clientHeight={elH}
   onpointerdown={bare ? bareDown : undefined} onpointermove={drag} onpointerup={end} onpointercancel={end} ondblclick={bare && floating ? (e) => { if ((e.target as HTMLElement).closest('.ph') && !(e.target as HTMLElement).closest('button')) reset(); } : undefined}>
   {#if !bare}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -160,6 +160,8 @@
   header :global(button.tile.pin.on), .barepin.on { background: var(--cyan); color: #04202c; }
   .barepin { position: absolute; top: 0; z-index: 3; }
   .fw.bare.floating :global(.ph button) { cursor: pointer; }
+  /* Keep the heading's text clear of the pin tile. */
+  .fw.bare.floating :global(.ph) { padding-right: var(--fw-pin); }
   /* Resize grips: 6px strips on the edges, 14px corners, above the content (and its scrollbar). */
   .grip { position: absolute; z-index: 5; touch-action: none; }
   .grip.n, .grip.s { left: 14px; right: 14px; height: 6px; cursor: ns-resize; }
