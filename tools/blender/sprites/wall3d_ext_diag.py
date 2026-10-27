@@ -12,6 +12,7 @@ from mathutils import Vector
 from . import core
 from . import hull_outline as HO
 from . import wall3d as T
+from . import wall3d_ext_diag_detail as DD
 from . import walls as W
 from .wall3d_ext_geom import D, E, LEAN_RISE, PAINT, TOP, YS
 from .wall3d_ext_t3 import TOP_PX
@@ -183,15 +184,54 @@ def piece(key, H=None, margin=0.0):
     """The hull piece of a tile with this key (hull_outline.key). Toned by facing (tops TOP, the lean near white, the
     upright faces the upright part's tone); its ends on the tile's edges
     in the tones of the surfaces they meet (the next piece hides them, but anti-aliasing mixes them in along the join:
-    dark, they read as dotted seams). `margin`: its sides that far out (WIDE: the solid its colours come from)."""
+    dark, they read as dotted seams). `margin`: its sides that far out (WIDE: the solid its colours come from). A near
+    straight run's share of it (a join's, a corner's: art()) is the run set's own art, clipped to it."""
     H = W.hull_top() if H is None else H
     rel = T.Relief(f"ext_solid_{HO.name(key)}")
+    art = []
     for stretch in HO.parse(key):
         for g, before, after in HO.groups(stretch):
             parts, shared, fronts, ridges = _part(g, before, after, H, _tile(margin))
-            _emit(rel, parts, fronts, shared, {id(q): YS[5] for q in ridges})
+            side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
+            runs = [i for i, (s2, _) in enumerate(g) if s2 in HO.NEAR] if len(g) > 1 or side else []
+            rest = parts[0][1]                                          # (its fronts' faces: 2 + 2 i, 3 + 2 i)
+            own = [q for i in runs for q in rest[2 + 2 * i:4 + 2 * i]]
+            _emit(rel, parts, fronts, shared + own, {id(q): YS[5] for q in ridges})
             _seam(rel, parts[-1], g, H)
-    return rel.build()
+            DD.detail(rel, _solid, fronts, g, side, _tile(margin), H, skip=runs)
+            for i in runs:                                              # (the run's art, cut by the rest's faces)
+                cut = [q for j in range(len(g)) if j != i for q in rest[2 + 2 * j:4 + 2 * j]] + side
+                art.append((g[i][0], cut))
+    objs = rel.build()
+    for s2, cut in art:
+        objs += _run_art(s2, cut)
+    return objs
+
+
+def uses_art(key):
+    """Whether a key's piece takes a near straight run's art (piece): one sharing a convex run with another side."""
+    return any(s in HO.NEAR for st in HO.parse(key) for g, b, a in HO.groups(st) if len(g) > 1 or b or a
+               for s, _ in g)
+
+
+def _run_art(s2, cut):
+    """The run set's plain straight run along a near side (wall3d_ext: o1 m10 / o2 m5), clipped to the cuts (n . p <=
+    c, tile units) in place."""
+    import bmesh
+    from .wall3d_ext import ext_block
+    objs = ext_block(*((10, 1) if s2 == (0, 1) else (5, 2)))
+    for ob in objs:
+        inv = ob.matrix_world.inverted()
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        for n, c in cut:
+            nw = core.G(n.x, n.y, n.z)
+            co = inv @ (nw * (c / n.length_squared))
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-6, plane_co=co,
+                                   plane_no=inv.to_3x3() @ nw, clear_outer=True)
+        bm.to_mesh(ob.data)
+        bm.free()
+    return objs
 
 
 def roof(key, H=None):

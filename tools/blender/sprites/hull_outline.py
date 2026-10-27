@@ -9,8 +9,6 @@ side's, split where their depths meet. A tile's key is the stretch of fronts who
 tile: its piece's name and all of its geometry."""
 import math
 
-from .scale import TILE_H, TILE_W
-
 INSET = 1                           # 32nds: the outline in from the mask's edge (wall3d_ext_geom.E = 0.5 - 1 / 32)
 E = 0.5 - INSET / 32
 LIP = E + 0.5                       # the hull's back this far behind a run's outline (d terms: the tile's back edge)
@@ -20,13 +18,11 @@ EPS = 1e-7
 
 
 def deep(s):
-    """A front's depths' scale (its lean's, top's, seam's: d per the run's depth): 1 along an edge; on a diagonal, so
-    its bands are as thick on screen across their edges as a run's (a run's edges slant at the tile's angle, a
-    camera-facing diagonal's run level and recede half as fast, a side diagonal's stand upright)."""
-    if abs(s[0]) + abs(s[1]) < 2:
-        return 1.0
-    cos = math.cos(math.atan2(TILE_H, TILE_W))
-    return 2 * cos if s[0] == s[1] else cos
+    """A front's depths' scale (its lean's, top's, seam's: d per the run's depth): 1 every way, in s . p terms, so
+    where a diagonal meets a run their depths meet on the tile's edge and neither reaches into the other's tiles (no
+    join pieces). A camera-facing diagonal reads shallower on screen than a run (it recedes straight away), a side
+    one deeper; deepening them to read alike put the crease between them across the tiles beside each join."""
+    return 1.0
 
 
 def back(s):
