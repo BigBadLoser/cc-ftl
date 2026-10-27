@@ -73,7 +73,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `civilShips.ts` | civil freighters, mining ships, crew bodies |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |
-| `scrapBlocks.ts` | the improvised pieces: patched reactor (fins, stub), strapped engine (nacelle, straps) |
+| `scrapBlocks.ts` | the improvised pieces: patched reactor (access stub, spare row), strapped engine (nacelle on a neck) |
 | `salvage.ts` | cuts at seams, corner damage, outline ports, `freeze` |
 | `fit.ts`, `layout.ts`, `validate.ts`, `metrics.ts` | module placement, the layout model, validation, metrics |
 | `topoNavy.ts`, `topoDrone.ts`, `topoParts.ts`, `topoSalvage.ts` | the older v2 topologies. Only factions without hull families use them; `topoNavy` still supplies `pickNose`, `pairUp` and `nose` |

@@ -337,7 +337,7 @@ Same arranger, no sim changes. Files:
 - No rotation by 90 degrees (gun and airlock faces are north / south only); flips only.
 - Navy and drone donor shapes improve with the navy and drone passes.
 - About 6% of first attempts still fail fit-out (no engine fits, a donor's reactor room one reactor short).
-- Enclosed space pockets beside trusses (pod strings, fins, struts) stay open on purpose; one rare 3-tile pocket
+- Enclosed space pockets beside trusses (pod strings, drone struts) stay open on purpose; one rare 3-tile pocket
   inside thick plating comes from wall thinning after the arrangement.
 - Tier scaling (after progression phase 1): fit Mk II and Mk III reactors, shields and engines by depth and faction.
   Their bigger footprints (reactor 2x3 and 2x4, shield 2x4 and 2x5, engine 4x6 and 4x7) need room in the donor layouts.
@@ -350,8 +350,8 @@ Same arranger, no sim changes. Files:
   factor (`DONORS`, light pieces above 1, bulky hulls below); open jobs prefer donors that carry several of them; small
   ships take at most one light extra (none at plan size under 0.6) and no spare salvage reactor; hulks come from the first (smallest) salvage family
   and keep a smaller piece. Raiders and gunrunners list the liner segment, so liners and pod strings appear at depth 1
-  to 4. Depth-1 fill about 693 tiles (was 833), depth 9 about 1300. Raiders and gunrunners aim at an aspect of 1.3 to
-  2.4 (was 1 to 2.2): tall heaps found no free spot in a crowded start node (a depth-0 raider 43x39 never spawned).
+  to 4. Depth-1 fill about 693 tiles (was 833), depth 9 about 1300. Raiders and gunrunners aim at an aspect of 1.5 to
+  2.6 (was 1 to 2.2): tall heaps found no free spot in a crowded start node (a depth-0 raider 43x39 never spawned).
 - **Island carriers.** The core and stores run forward of the hangar as a spine, the island stands on its flank (in the
   step down from the decks, not above them), and the hull decks run 8 to 14 tiles past the hangar so the well stays
   open aft. Depth-9 carrier aspect 2.84 (was 2.3).
@@ -360,8 +360,9 @@ Same arranger, no sim changes. Files:
 - **Prong crowding.** Only the upper prong's inner face carries pods, flush, in one row (`Carrier.inner`).
 - **Gun pods stay open.** A drone gun pod keeps its outward face clear (`outward` in `droneGrammars.ts`): lattice nodes
   used to bury pods, the gun never fit, and the empty sealed pod failed fit-out (the old "no airlock fits").
-- **Grey slabs.** `scrapBlocks.ts`: the patched reactor stands on a short access stub with radiator fins (bare truss)
-  on its outer wall and a spare row; strapped engines are nacelles on a narrow neck clamped by truss straps.
+- **Grey slabs.** `scrapBlocks.ts`: the patched reactor stands on a short off-centre access stub, with a spare row;
+  strapped engines are nacelles on a narrow neck. (Truss radiator fins and straps were tried and dropped: in game they
+  read as random struts, and the module art already says what the pieces are.)
 - **Blobs.** In heaps, from the third donor on, half the welds go through a short scrap tube first.
 - **Buried faces.** A scrapper composition fails (the next candidate is used) when its welds wall a gun, airlock or exhaust face into an enclosed
   pocket (`buried`); welds wrapping round an airlock used to leave it opening into sealed space.

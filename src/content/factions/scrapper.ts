@@ -34,7 +34,7 @@ export const scrapper = {
       id: 'raider', weight: { base: 4, perDepth: 0, max: 4 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'chain', weight: 1 }, { value: 'raft', weight: 1 }],
       anchors: [{ value: 'navyHulk', weight: 3 }, { value: 'habitat', weight: 2 }, { value: 'tug', weight: 1 }, { value: 'freighter', weight: 1 }, { value: 'station', weight: 1 }],
       donors: { navyHulk: 3, droneSection: 2, navyBattery: 1, habitat: 2, station: 1, liner: 1, freighter: 1, podString: 17, tug: 2, navyDrive: 1, navyBow: 1 },
-      aspect: [1.3, 2.4], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+      aspect: [1.5, 2.6], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
       // Haulers want holds: freighters, barges and pod strings, a liner for the crew.
@@ -48,7 +48,7 @@ export const scrapper = {
       id: 'gunrunner', weight: { base: 0, perDepth: 0.4, max: 3 }, bonus: { weapons: 1, heavyPct: 15 }, grammars: [{ value: 'heap', weight: 2 }, { value: 'raft', weight: 1 }],
       anchors: [{ value: 'navyHulk', weight: 2 }, { value: 'station', weight: 2 }, { value: 'freighter', weight: 1 }],
       donors: { navyBattery: 3, droneSection: 3, navyHulk: 2, station: 2, habitat: 1, liner: 1, freighter: 1, podString: 6, navyDrive: 2, tug: 1, navyBow: 1 },
-      aspect: [1.3, 2.4], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
+      aspect: [1.5, 2.6], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
   ],
   // Navy and drone donors are cut from those factions' own generators.
