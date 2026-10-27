@@ -1,5 +1,6 @@
 import type { Builder } from './builder';
-import { letterOf } from './canvas';
+import { letterOf, roleOfLetter } from './canvas';
+import { DISTRICT } from './stationKit';
 import type { Rng } from '../rng';
 import type { RoomRole } from './types';
 
@@ -74,6 +75,11 @@ function band(b: Builder, pocket: number[], kinds: readonly RoomRole[], packed: 
   // Roles the station plans rooms of (a band room is furnished like one of them, and sized like it).
   const planned = kinds.filter((r) => b.parts.some((p) => p.spec?.role === r));
   const roles = planned.length > 0 ? planned : kinds;
+  const roleByKey = new Map(b.parts.map((p) => [p.key, p.role]));
+  const roleAt = (k: number): RoomRole | undefined => {
+    const l = cv.labels[cv.labelAt(...xy(k))];
+    return l ? (roleByKey.get(l.chunk) ?? b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter)) : undefined;
+  };
   const specOf = (r: RoomRole) => b.parts.find((p) => p.spec?.role === r)?.spec;
   // Growth: a tile is free for room r if it is in the band, unclaimed, clear of the passages, and no other room's floor
   // touches it (eight neighbours), so neighbours keep one wall between them.
@@ -126,7 +132,15 @@ function band(b: Builder, pocket: number[], kinds: readonly RoomRole[], packed: 
   for (const seed of edge) {
     const r = rooms.length;
     if (!seedOk(seed) || !free(seed, r)) continue;
-    const role = roles[r % roles.length] as RoomRole;
+    // Zones carry inward: a band room takes the district of the nearest room outside the pocket (across its wall, or
+    // across the corridor beyond it) when one of the band roles belongs to that district.
+    const outward = N4.map(([dx, dy]) => dy * S + dx).filter((d) => !inP.has(seed + d));
+    const near = outward.flatMap((d) => {
+      for (let t = 2; t <= 8; t++) { const x = roleAt(seed + t * d); if (x !== undefined && x !== 'hall') return [x]; }
+      return [];
+    })[0];
+    const zoned = near === undefined ? undefined : roles.find((x) => DISTRICT[x] !== undefined && DISTRICT[x] === DISTRICT[near]);
+    const role = zoned ?? (roles[r % roles.length] as RoomRole);
     const long = Math.max(5, Math.min(9, specOf(role)?.w ?? 7));
     const [x, y] = xy(seed);
     const q: Rect = { x0: x, y0: y, x1: x, y1: y };

@@ -9,7 +9,7 @@ import { arcStation, concentricStation, wheelStation } from './stationRings';
 import { dockSpec, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
-import { cardinal, fullRooms, placeRoot, reactorRooms, roomsOf, split } from './stationKit';
+import { cardinal, fullRooms, placeRoot, reactorRooms, roomsOf, runs, split, zoned } from './stationKit';
 import { STATION_LAYOUTS } from './stationLayouts';
 import type { Rng } from '../rng';
 import type { StationGrammar } from './stationTypes';
@@ -43,12 +43,12 @@ const courtOf = (c: Ctx): Court => (b) => {
 function ringBlock(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, docks = 2, court: Court = (b) => b): Block | null {
   const spokes = shuffle(rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, rng.int(2, 4));
   const o = { extra: rng.int(0, 2), weight: [rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.6])], inner: true, east: true, docks };
-  return civil(court(ringStation(rng, hub, shuffle(rng, rooms), 0, reactors, spokes, o)), 'command', label);
+  return civil(court(ringStation(rng, hub, zoned(rng, rooms), 0, reactors, spokes, o)), 'command', label);
 }
 
 function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, holes?: number, docks = 2): Block | null {
   const o = { gx: rng.int(2, 5), gy: rng.int(2, 4), spread: rng.pick([0.8, 1.2, 1.8]), holes: holes ?? rng.pick([0, 0.15]), pad: rng.int(0, 1), docks };
-  return civil(latticeStation(rng, [first, ...shuffle(rng, [...rooms, ...reactorRooms(reactors)])], 0, o), 'command', label);
+  return civil(latticeStation(rng, [first, ...zoned(rng, [...rooms, ...reactorRooms(reactors)])], 0, o), 'command', label);
 }
 
 function ring(c: Ctx): boolean {
@@ -74,9 +74,10 @@ const HALLS = ['hall', 'plaza', 'garden', 'drill'] as const;
 function hubStation(c: Ctx): boolean {
   const { rooms: all, docks } = undocked(c);
   const coreRooms = all.filter((r) => r.role === 'core' || r.role === 'shields');
-  const rest = shuffle(c.rng, all.filter((r) => !coreRooms.includes(r)));
+  const rest = zoned(c.rng, all.filter((r) => !coreRooms.includes(r)));
   const k = c.rng.int(2, 4);
-  const groups = split(rest, k + 1);
+  // Satellites by district: the zoned list cut into runs, so each satellite (and the core) is mostly one district.
+  const groups = runs(rest, k + 1);
   // Reactors spread over the core and the satellites, so no ring run grows long on its reactor rooms alone.
   const share = Math.ceil(c.plan.reactors / (k + 1));
   let reactors = c.plan.reactors - share;

@@ -79,6 +79,9 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   // Power: enough reactors for every room's draw plus lamps (about 3 a room).
   let demand = 2 + allRooms(plan).length * 3;
   for (const r of allRooms(plan)) for (const m of r.mods) demand += Math.max(0, -(defs[m]?.power ?? 0));
+  // Court bands add rooms the plan does not list (stationCourts.ts), each with its lamps and fittings; fit-out squeezes
+  // in more reactors if this falls short.
+  if (def.atrium?.band) demand *= 1.15;
   plan.reactors = Math.max(1, Math.ceil(demand / (defs['module.reactor']?.power ?? 50)));
   return plan;
 }
