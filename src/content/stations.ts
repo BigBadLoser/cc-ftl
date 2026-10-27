@@ -22,27 +22,27 @@ type Shapes = Record<StationSize, Weighted<StationGrammar>[]>;
 const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 'research', Shapes> = {
   trading: {
     outpost: g(['stationWheel', 3], ['stationCross', 2], ['stationRing', 1], ['stationArc', 1]),
-    station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationCross', 2], ['stationRing', 1]),
+    station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationCross', 2], ['stationRing', 1], ['stationAnnex', 3]),
     hub: g(['stationConcentric', 3], ['stationHub', 3]),
   },
   mining: {
     outpost: g(['stationSpine', 3], ['stationCross', 2], ['stationArc', 1], ['stationTree', 1]),
-    station: g(['stationSpine', 3], ['stationCross', 2], ['stationLattice', 1], ['stationWheel', 1]),
+    station: g(['stationSpine', 3], ['stationCross', 2], ['stationLattice', 1], ['stationWheel', 1], ['stationAnnex', 2]),
     hub: g(['stationHub', 3], ['stationCross', 2], ['stationConcentric', 1]),
   },
   farming: {
     outpost: g(['stationWheel', 2], ['stationArc', 2], ['stationRing', 1], ['stationLattice', 1]),
-    station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationLattice', 1]),
+    station: g(['stationWheel', 3], ['stationConcentric', 2], ['stationLattice', 1], ['stationAnnex', 2]),
     hub: g(['stationConcentric', 3], ['stationHub', 2]),
   },
   military: {
     outpost: g(['stationCross', 2], ['stationSpine', 2], ['stationRing', 1]),
-    station: g(['stationSpine', 2], ['stationCross', 2], ['stationRing', 2], ['stationConcentric', 1]),
+    station: g(['stationSpine', 2], ['stationCross', 2], ['stationRing', 2], ['stationConcentric', 1], ['stationAnnex', 2]),
     hub: g(['stationHub', 2], ['stationConcentric', 2], ['stationCross', 1]),
   },
   research: {
     outpost: g(['stationRing', 3], ['stationArc', 2], ['stationLattice', 1]),
-    station: g(['stationRing', 3], ['stationConcentric', 2], ['stationLattice', 2], ['stationWheel', 1]),
+    station: g(['stationRing', 3], ['stationConcentric', 2], ['stationLattice', 2], ['stationWheel', 1], ['stationAnnex', 2]),
     hub: g(['stationConcentric', 3], ['stationHub', 2]),
   },
   pirate: {

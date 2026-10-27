@@ -121,6 +121,43 @@ function hubStation(c: Ctx): boolean {
   return true;
 }
 
+/**
+ * Annexed: a wheel or ring with a wing bolted on later, a lattice of modules on a short corridor (an industrial or
+ * habitation wing, the history a single-shape station lacks). The zoned room list is cut about two thirds in, so the
+ * wing carries one district and the core the rest, docks included.
+ */
+function annexed(c: Ctx): boolean {
+  const { rooms: all, docks } = undocked(c);
+  const keep = all.filter((r) => r.role === 'core' || r.role === 'shields');
+  const rest = zoned(c.rng, all.filter((r) => !keep.includes(r)));
+  const total = rest.reduce((t, r) => t + r.w * r.h, 0);
+  const wing: RoomSpec[] = [];
+  for (let a = 0; rest.length > 0 && a < total * 0.32;) { const r = rest.pop() as RoomSpec; wing.unshift(r); a += r.w * r.h; }
+  const head = wing.find((r) => r.role === 'support' || r.role === 'quarters' || r.role === 'cargo') ?? wing[0];
+  if (!head) return no(c, 'annex wing');
+  const wingReactors = Math.max(1, Math.round(c.plan.reactors * 0.3));
+  const coreRooms = [...keep, ...rest];
+  const core = c.rng.chance(0.5)
+    ? civil(courtOf(c)(wheelStation(c.rng, c.plan.command, [...coreRooms, ...reactorRooms(c.plan.reactors - wingReactors), ...Array.from({ length: docks }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 })), 'command', 'annexed wheel')
+    : ringBlock(c.rng, c.plan.command, coreRooms, c.plan.reactors - wingReactors, 'annexed ring', docks, courtOf(c));
+  if (!core) return no(c, 'annex core');
+  const r0 = c.A.placeRoot(core);
+  const annex = latticeBlock(c.rng, head, wing.filter((r) => r !== head), wingReactors, 'annex wing', 0, 0);
+  if (!annex) return no(c, 'annex wing');
+  const halls = { parent: HALLS, child: HALLS };
+  for (const side of shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[])) {
+    const spoke = hallBlock(c.rng, c.rng.int(3, 6), c.rng.int(1, 2), side === 'e' || side === 'w');
+    const s = c.A.attach(r0, spoke, { side, align: 'any', into: { parent: HALLS } });
+    if (s === null) continue;
+    if (c.A.attach(s, annex, { side, align: 'any', parentPort: side, into: halls }) !== null) {
+      c.parts.push(`annex ${side}`);
+      return true;
+    }
+    c.A.undoLast();
+  }
+  return no(c, 'annex attach');
+}
+
 /** Welded den: a small lattice core, its other rooms in welded-on clumps, scrappy loot pods hung off anything. */
 function welded(c: Ctx): boolean {
   const all = shuffle(c.rng, roomsOf(c));
@@ -204,5 +241,5 @@ const withCages = (run: (c: Ctx) => boolean) => (c: Ctx): boolean => run(c) && c
 export const STATION_GRAMMARS: Record<StationGrammar, (c: Ctx, f: FactionDef) => boolean> = {
   stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
   stationWheel: withCages(wheel), stationConcentric: withCages(concentric), stationArc: withCages(arc),
-  stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
+  stationAnnex: withCages(annexed), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
 };
