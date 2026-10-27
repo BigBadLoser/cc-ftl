@@ -69,12 +69,14 @@ export function lum(hex: number): number {
   return (0.299 * ((hex >> 16) & 255) + 0.587 * ((hex >> 8) & 255) + 0.114 * (hex & 255)) / 255;
 }
 
+type Channel = 'P' | 'S' | 'T' | 'U';
 interface Scheme {
   motifs: readonly string[];
   P: number;
   S: number;
   T?: number;
-  remap?: Readonly<Record<string, readonly ['P' | 'S' | 'T', 'P' | 'S' | 'T']>>;
+  U?: number;
+  remap?: Readonly<Record<string, readonly [Channel, Channel]>>;
 }
 /** roof_livery.SCHEMES. */
 export const SCHEMES: Readonly<Record<string, Scheme>> = {
@@ -110,6 +112,22 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     remap: { aft: ['T', 'T'], trace: ['S', 'S'], 'em.eye': ['T', 'S'] },
   },
   vigil: { motifs: ['coat', 'trace', 'emL.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'emL.eye': ['T', 'S'] } },
+  velvet: { motifs: ['coat', 'pins', 'em.crest'], P: 0x4a1f2e, S: 0xc9a64a },
+  jade: { motifs: ['coat', 'pins', 'em.crest'], P: 0x1d3b33, S: 0xc9a64a },
+  sable: { motifs: ['coat', 'pins', 'emL.crest'], P: 0x1f2026, S: 0xc9a64a },
+  drab: { motifs: ['coat', 'aft', 'big', 'em.delta', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
+  khaki: { motifs: ['coat', 'aft', 'big', 'em.delta', 'sten'], P: 0x7a6e4f, S: 0x1e2018, T: 0x3d3a2c, remap: { aft: ['T', 'T'] } },
+  combine: {
+    motifs: ['coat', 'split', 'nose', 'big', 'em.meridian'], P: 0x2456a0, S: 0xe8b830, T: 0xe4e2da,
+    remap: { coat: ['T', 'T'], nose: ['S', 'P'], big: ['T', 'P'] },
+  },
+  helix: {
+    motifs: ['coat', 'stripe', 'em.helix', 'sten'], P: 0xe6ebea, S: 0x2aa59a, T: 0x8fd3cb,
+    remap: { stripe: ['S', 'T'], 'em.helix': ['P', 'S'], sten: ['S', 'S'] },
+  },
+  vantor: { motifs: ['coat', 'hazard', 'big', 'em.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'em.delta': ['S', 'P'] } },
+  bazaar: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
+  souk: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x33302a, S: 0x39e0d0, T: 0x6e5a3a, U: 0x5a3a5e, remap: { patch: ['T', 'U'] } },
 };
 export const SCHEME_NAMES = Object.keys(SCHEMES);
 
@@ -122,6 +140,12 @@ export const LIVERIES: Readonly<Record<string, readonly string[]>> = {
   'livery.drone': CLASSIC,
   'livery.raider': ['gash', 'scorch', 'reaver'],
   'livery.zealot': ['litany', 'relic', 'vigil'],
+  'livery.cartel': ['velvet', 'jade', 'sable'],
+  'livery.merc': ['drab', 'khaki'],
+  'livery.meridian': ['combine'],
+  'livery.helix': ['helix'],
+  'livery.vantor': ['vantor'],
+  'livery.blackmarket': ['bazaar', 'souk'],
 };
 
 /** Paint colours (P and S channel) of a motif in a scheme. */
@@ -243,6 +267,14 @@ function planBowEast(width: number, height: number, solid: (x: number, y: number
     } else if (m === 'claw') {
       const x0 = xs + pyRound(0.25 * L);
       for (let q = 0; q < 12; q++) add(x0 + (q % 4), yc - 2 + Math.floor(q / 4), `claw.${q}`);
+    } else if (m === 'hazard') {
+      for (let y = 0; y < height; y++) for (const x of [xs, xs + 1, ...Array.from({ length: Math.max(0, width - xb + 1) }, (_, k) => xb - 1 + k)]) add(x, y, 'hazard');
+    } else if (m === 'patch') {
+      for (let y = 0; y < height; y++)
+        for (let x = 0; x < width; x++) {
+          const k = rhash(Math.floor((x + Math.floor(y / 2)) / 3), Math.floor(y / 2), seed, 17) % 5;
+          if (k < 2) add(x, y, k === 0 ? 'full.P' : 'full.S');
+        }
     } else if (m === 'trace') {
       for (let x = xs; x <= xb; x++) {
         add(x, yc - 1, 'trace.n');

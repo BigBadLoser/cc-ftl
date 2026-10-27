@@ -186,6 +186,15 @@ def _emblem(kind, q, n=2):
             eye = min((X + 1) ** 2 + (Y - s5) ** 2 for s5 in (-5.5, 5.5)) < 13
             g = ((X + 3) ** 2 + Y * Y < 125 or (3 <= X <= 13 and abs(Y) < 7 and not (X >= 9 and abs(Y) % 4 < 1.4))) \
                 and not eye and not (5 <= X < 8 and abs(Y) < 1.6)
+        elif kind == "crest":                         # cartel crest: a heater shield, point aft, a chevron cut in it
+            w = 13 if X >= -2 else 13 * (X + 16) / 14
+            g = -16 <= X <= 14 and abs(Y) < w and not (abs(abs(Y) - (X + 3) * 0.75) < 1.8 and -3 <= X <= 10)
+        elif kind == "helix":                         # Helix Biosystems: a double helix across the ship, with rungs
+            a = 8.5 * math.sin(Y * 0.26)
+            g = abs(Y) < 18 and (abs(X - a) < 2.3 or abs(X + a) < 2.3 or (abs(X) < abs(a) and abs((Y + 2) % 6 - 3) < 0.9))
+        elif kind == "meridian":                      # Meridian Combine: a globe, its equator and one meridian
+            e = (X / 7) ** 2 + (Y / 14) ** 2
+            g = 12 <= r < 16 or (r < 12 and (abs(e - 1) < 0.22 or abs(X) < 1.6))
         elif kind == "eye":                           # zealot machine eye: an almond lid round a round iris
             w = 15 * (1 - (X / 19) ** 2) if abs(X) < 19 else -1
             g = (w - 4 <= abs(Y) < w) or X * X + Y * Y < 42
@@ -205,9 +214,11 @@ MASKS = {
     **{f"aft.{k}": (lambda k: lambda i, j: "P" if any(a <= k * GN + i < b for a, b in AFT) else None)(k)
        for k in range(3)},
     **{f"reg.{c}": _digit(c) for c in DIGITS},
-    **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond", "skull", "eye")
-       for q in range(4)},
-    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye") for q in range(9)},   # large: 3 x 3 tiles
+    **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond", "skull", "eye", "crest", "helix",
+                                                "meridian") for q in range(4)},
+    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye", "crest") for q in range(9)},   # large: 3 x 3 tiles
+    "hazard": lambda i, j: "P" if (i + j) // 8 % 2 == 0 else "S",
+    "full.S": lambda i, j: "S",
     # v10
     "full.P": lambda i, j: "P",
     "half.n": lambda i, j: "P" if j < 26 else "S" if 27 <= j < 31 else None,
@@ -236,7 +247,7 @@ def mirrored(name):
     return lambda i, j: fn(GN - 1 - i, j)
 
 
-# scheme: motifs (painted in this order), colours P / S (/ T), and per-motif channel remaps for 3-colour schemes
+# scheme: motifs (painted in this order), colours P / S (/ T / U), and per-motif channel remaps for 3- and 4-colour schemes
 SCHEMES = {
     "crimson": dict(motifs=("stripe", "chev", "reg"), P="#b0443a", S="#e2ddd0"),
     "ivory": dict(motifs=("saddle", "pinp", "em.dot"), P="#dcd8cc", S="#25272d"),
@@ -262,6 +273,23 @@ SCHEMES = {
                   remap={"aft": ("T", "T"), "trace": ("S", "S"), "em.eye": ("T", "S")}),
     "vigil": dict(motifs=("coat", "trace", "emL.eye"), P="#d6cfbd", S="#3fc4d4", T="#2b3440",
                   remap={"trace": ("S", "S"), "emL.eye": ("T", "S")}),
+    "velvet": dict(motifs=("coat", "pins", "em.crest"), P="#4a1f2e", S="#c9a64a"),
+    "jade": dict(motifs=("coat", "pins", "em.crest"), P="#1d3b33", S="#c9a64a"),
+    "sable": dict(motifs=("coat", "pins", "emL.crest"), P="#1f2026", S="#c9a64a"),
+    "drab": dict(motifs=("coat", "aft", "big", "em.delta", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
+                 remap={"aft": ("T", "T")}),
+    "khaki": dict(motifs=("coat", "aft", "big", "em.delta", "sten"), P="#7a6e4f", S="#1e2018", T="#3d3a2c",
+                  remap={"aft": ("T", "T")}),
+    "combine": dict(motifs=("coat", "split", "nose", "big", "em.meridian"), P="#2456a0", S="#e8b830", T="#e4e2da",
+                    remap={"coat": ("T", "T"), "nose": ("S", "P"), "big": ("T", "P")}),
+    "helix": dict(motifs=("coat", "stripe", "em.helix", "sten"), P="#e6ebea", S="#2aa59a", T="#8fd3cb",
+                  remap={"stripe": ("S", "T"), "em.helix": ("P", "S"), "sten": ("S", "S")}),
+    "vantor": dict(motifs=("coat", "hazard", "big", "em.delta"), P="#d6a424", S="#1e2018",
+                   remap={"em.delta": ("S", "P")}),
+    "bazaar": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#2b2830", S="#ff3fa4", T="#8a4a2e", U="#3e6e6a",
+                   remap={"patch": ("T", "U")}),
+    "souk": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#33302a", S="#39e0d0", T="#6e5a3a", U="#5a3a5e",
+                 remap={"patch": ("T", "U")}),
 }
 
 # A faction's livery (its art def's `livery` id) is the list of schemes its ships pick from by name (roofArt.liveryFor).
@@ -271,6 +299,12 @@ LIVERIES = {
     "livery.navy": CLASSIC, "livery.scrapper": CLASSIC, "livery.drone": CLASSIC,
     "livery.raider": ("gash", "scorch", "reaver"),
     "livery.zealot": ("litany", "relic", "vigil"),
+    "livery.cartel": ("velvet", "jade", "sable"),
+    "livery.merc": ("drab", "khaki"),
+    "livery.meridian": ("combine",),
+    "livery.helix": ("helix",),
+    "livery.vantor": ("vantor",),
+    "livery.blackmarket": ("bazaar", "souk"),
 }
 
 
@@ -303,6 +337,16 @@ def plan(ship, scheme, seed=0, level=lambda x, y: 0):
             x0 = xs + round(0.25 * L)
             for q in range(CLAW_W * CLAW_H):
                 add(x0 + q % CLAW_W, yc - 2 + q // CLAW_W, f"claw.{q}")
+        elif m == "hazard":                           # hazard-striped bow (its last two columns on) and stern (two columns)
+            for y in range(H):
+                for x in list(range(xs, xs + 2)) + list(range(xb - 1, W)):
+                    add(x, y, "hazard")
+        elif m == "patch":                            # mismatched paint: whole 3 x 2-tile blocks painted over in P or S
+            for y in range(H):
+                for x in range(W):
+                    k = _h((x + y // 2) // 3, y // 2, seed, 17) % 5         # blocks stagger row to row
+                    if k < 2:
+                        add(x, y, "full.P" if k == 0 else "full.S")
         elif m == "trace":                            # circuit traces the length of the spine
             for x in range(xs, xb + 1):
                 add(x, yc - 1, "trace.n")

@@ -9,7 +9,8 @@ const MASKS = new Set(
     'full.P half.n dbl.n dbl.s shaft.n shaft.s bar arr.0.0 arr.0.1 arr.0.2 arr.0.3 arr.1.1 arr.1.2 big.0.0 big.0.1 big.1.0 big.1.1 ' +
     'big.2.0 big.2.1 big.3.0 big.3.1 big.4.0 big.4.1 big.5.0 big.5.1 big.6.0 big.6.1 big.7.0 big.7.1 big.8.0 big.8.1 big.9.0 big.9.1 ' +
     'sten.0 sten.1 em.skull.0 em.skull.1 em.skull.2 em.skull.3 em.eye.0 em.eye.1 em.eye.2 em.eye.3 fang claw.0 claw.1 claw.2 claw.3 claw.4 claw.5 claw.6 claw.7 claw.8 claw.9 claw.10 claw.11 trace.n ' +
-    'trace.s ' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map((q) => `emL.skull.${q} emL.eye.${q}`).join(' ')).split(' '),
+    'trace.s ' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map((q) => `emL.skull.${q} emL.eye.${q}`).join(' ') + ' ' +
+    'em.crest.0 em.crest.1 em.crest.2 em.crest.3 em.helix.0 em.helix.1 em.helix.2 em.helix.3 em.meridian.0 em.meridian.1 em.meridian.2 em.meridian.3 emL.crest.0 emL.crest.1 emL.crest.2 emL.crest.3 emL.crest.4 emL.crest.5 emL.crest.6 emL.crest.7 emL.crest.8 hazard full.S').split(' '),
 );
 const solid = (x: number, y: number) => x > 1 && x < 22 && y > 1 && y < 14;
 
@@ -28,6 +29,7 @@ describe('livery plan', () => {
       crimson: [43, 43], ivory: [64, 68], tide: [67, 67], sovereign: [47, 47], orchid: [73, 79], hornet: [66, 70],
       glacier: [132, 142], verdant: [58, 62], ember: [70, 70], tricolour: [148, 172],
       gash: [240, 292], scorch: [240, 292], reaver: [240, 297], litany: [240, 284], relic: [240, 320], vigil: [240, 289],
+      velvet: [240, 284], jade: [240, 284], sable: [240, 289], drab: [240, 288], khaki: [240, 288], combine: [240, 394], helix: [240, 286], vantor: [240, 298], bazaar: [240, 326], souk: [240, 326],
     };
     for (const sc of SCHEME_NAMES) {
       const p = liveryPlan(24, 16, solid, sc, 42, (m) => MASKS.has(m));
