@@ -53,6 +53,7 @@ export interface Controller {
   log: EventLog;
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
+  shapeAction(action: 'confirm' | 'cancel'): void;
   selectCrew(id: number | null, focus?: boolean): void;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
@@ -249,6 +250,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     toast,
     setTool,
+    shapeAction: paint.shapeAction,
     selectCrew,
     focusCrew,
     attack,

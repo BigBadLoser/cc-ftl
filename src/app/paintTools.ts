@@ -9,9 +9,10 @@ import type { InputHandlers, Tile } from './input';
 import { rejectionMessage } from './messages';
 import type { Writable } from './store';
 import { createHullPlanTool } from './hullPlanTool';
+import { createHullShapeTool } from './hullShapeTool';
 
 // dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
-const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'hull'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
+const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'hull' | 'shape'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
 
 export interface PaintDeps {
   tool: Writable<UiToolState>;
@@ -26,6 +27,8 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
   setTool(state: Partial<UiToolState>): void;
   /** Redraw the hull plan's ghost tiles (the plan or the yard order changed). */
   drawPlan(): void;
+  /** The Hull shape tool's Confirm / Cancel buttons. */
+  shapeAction(action: 'confirm' | 'cancel'): void;
   moduleMode(): boolean;
   rotate(back?: boolean): void;
   /** Right-click / Escape in a tool mode: drop the placement, then leave build mode. */
@@ -33,6 +36,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
 } {
   const { tool, placeHint, showToast, homeShipId } = deps;
   const hullPlan = createHullPlanTool(bridge, { tool, renderer: deps.renderer, ship: homeShipId });
+  const hullShape = createHullShapeTool(sim, { tool, renderer: deps.renderer, ship: homeShipId });
   let modPos: Tile | null = null;
   /** The renderer is drawing a placement ghost (so it must be cleared when the mode ends). */
   let ghostOn = false;
@@ -80,6 +84,11 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     return out;
   };
   const refreshPreview = () => {
+    if (hullShape.active()) {
+      deps.renderer()?.setHover(null);
+      placeHint.set(null);
+      return hullShape.draw();
+    }
     if (hullPlan.active()) {
       deps.renderer()?.setHover(null);
       deps.renderer()?.setPreview([]);
@@ -113,6 +122,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     // A module whose blueprint is not known cannot be picked for placement (the catalog shows it locked).
     const s = state.moduleDef && !isBlueprintKnown(sim, state.moduleDef) ? { ...state, moduleDef: tool.get().moduleDef } : state;
     tool.update((cur) => ({ ...cur, ...s }));
+    if (!hullShape.active() && hullShape.hasShape()) hullShape.act('cancel');
     hullPlan.draw();
     if (s.tool === 'select') modPos = null;
     paintStart = paintEnd = null;
@@ -176,6 +186,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
    */
   const back = () => {
     const t = tool.get();
+    if (hullShape.active() && hullShape.hasShape()) return hullShape.act('cancel');
     if (t.tool === 'build' && !(t.build === 'module' && t.moduleDef === null)) setTool({ build: 'module', moduleDef: null });
     else setTool({ tool: 'select' });
   };
@@ -183,6 +194,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
   return {
     setTool,
     drawPlan: () => hullPlan.draw(),
+    shapeAction: (action) => hullShape.act(action),
     moduleMode,
     rotate,
     back,
@@ -196,6 +208,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
         pickLift: () => (isMineTool() ? ROCK_MASS_Z : 0),
         onPaint(phase, t) {
           if (hullPlan.active()) return hullPlan.paint(phase, t);
+          if (hullShape.active()) return hullShape.paint(phase, t);
           if (moduleMode()) {
             if (phase === 'cancel') modPos = null;
             else {

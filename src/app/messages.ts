@@ -100,6 +100,7 @@ const REASONS: Record<string, string> = {
   offAsteroid: 'Drag over the asteroid: at least half the area has to be on rock',
   overlap: 'That overlaps another base',
   tooClose: 'Too close to another base or outpost',
+  narrowHull: 'No part of the ship can be narrower than 3 tiles',
   moduleHere: 'A module stands there: remove it first',
   notRock: 'That only works on asteroid rock',
   notJammed: 'That door is not jammed',

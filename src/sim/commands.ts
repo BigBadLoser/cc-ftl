@@ -9,6 +9,13 @@ export type Command =
   | { type: 'debug.setStruct'; ship: number; x: number; y: number; kind: number }
   | { type: 'job.build'; ship: number; x: number; y: number; struct: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
+  /**
+   * One drag stroke of hull: a build job (Floor) on every Space tile of `tiles` (tiles that already hold hull are skipped). The whole
+   * stroke is refused ('narrowHull') when it would leave a part of the ship narrower than 3 tiles, counting queued jobs as done.
+   */
+  | { type: 'job.buildArea'; ship: number; tiles: { x: number; y: number }[] }
+  /** One drag stroke of hull removal: a deconstruct-to-Space job on every Floor/Wall/Door/Beam tile of `tiles`. Same width rule as `job.buildArea`. */
+  | { type: 'job.clearArea'; ship: number; tiles: { x: number; y: number }[] }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }
   | { type: 'job.cancel'; ship: number; x: number; y: number }

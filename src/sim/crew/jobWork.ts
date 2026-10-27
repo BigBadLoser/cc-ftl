@@ -18,6 +18,7 @@ import { findFreeBed } from './beds';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
 import { shipIdOf, shipGrid } from '../regions';
+import { completionBreaksWidth } from './hullArea';
 import { finishDig } from '../rock/dig';
 import { bumpStat } from '../story/goals';
 import { playerShips } from '../story/world';
@@ -73,11 +74,17 @@ function timed(job: Job, speed: number, finish: () => WorkResult): WorkResult {
 }
 
 function finishStruct(sim: Sim, job: Job): WorkResult {
-  if (job.kind === 'build' && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
+  if ((job.kind === 'build' || (job.area && job.struct === Struct.Space)) && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
   const grid = shipGrid(sim, shipIdOf(sim, job));
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : job.struct === Struct.Space ? Struct.Space : Struct.Floor; // a truss comes down to open space
     const before = grid.get('struct', job.x, job.y);
+    // An area job (a drag stroke) is re-checked against the hull width rule: its partners may have been cancelled since the stroke
+    // was accepted. It fails rather than waits: the tile stays as it is and the materials spill, as for a spoiled module site.
+    if (job.area && (before === Struct.Space) !== (next === Struct.Space) && completionBreaksWidth(sim, shipIdOf(sim, job), job)) {
+      sim.events.emit({ type: 'command.rejected', command: job.kind === 'build' ? 'job.buildArea' : 'job.clearArea', reason: 'narrowHull' });
+      return 'done';
+    }
     if ((before === Struct.Rock || before === Struct.RockWall) && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
     else writeStruct(grid, job.x, job.y, next);
     // a shipyard tile belongs to the ship even when it is finished before its neighbours (the owner layer is otherwise inherited from them)

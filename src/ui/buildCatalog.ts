@@ -35,6 +35,7 @@ const TOOLS: { id: UiBuildKind; name: string; category: CategoryId; icon: IconNa
   { id: 'floor', name: 'Floor', category: 'structure', icon: 'floor', description: 'Drag out deck plating. Rooms need floor before they hold air.' },
   { id: 'door', name: 'Door', category: 'structure', icon: 'door', description: 'A door in a wall. Crew pass through, air does not while it is shut.' },
   { id: 'hull', name: 'Hull plan', category: 'structure', icon: 'wall', description: 'Drag a rectangle to plan the ship\'s outer hull, free and any time. A shipyard builds it; interior walls and doors are your own builds.' },
+  { id: 'shape', name: 'Hull shape', category: 'structure', icon: 'floor', description: 'Drag a rectangle of hull to add or remove, then pull its corner handles inward to cut 45° chamfers. No part of the ship may be narrower than 3 tiles.' },
   { id: 'dig', name: 'Dig rock', category: 'mining', icon: 'pick', description: 'Drag over asteroid rock to dig it out to floor.' },
   { id: 'level', name: 'Level rock', category: 'mining', icon: 'floor', description: 'Drag over rock to level it to ground.' },
   { id: 'finish', name: 'Finish rock', category: 'mining', icon: 'wall', description: 'Drag over rock to cut it into a finished rock wall.' },

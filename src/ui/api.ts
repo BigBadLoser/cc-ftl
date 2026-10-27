@@ -909,7 +909,7 @@ export interface UiLegend {
 
 export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
 /** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid; 'mine' drags a rectangle over ore (the ore tiles in it go to the mining pods in `pods`, or every pod when empty). */
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine' | 'hull';
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine' | 'hull' | 'shape';
 /** A mining pod of the player's (VehicleC with a mining laser). */
 export interface UiPod {
   id: number;
@@ -958,6 +958,11 @@ export interface UiToolState {
   pods?: number[];
   /** The 'hull' tool (the outer hull plan): whether a drag erases planned tiles instead of adding a rectangle's outline. */
   hull?: { erase: boolean };
+  /**
+   * The 'shape' tool (hull by rectangle and corner chamfers): `remove` takes hull down instead of adding it. The rest is the tool's own
+   * report for the bar: `state` 'red' is a preview that breaks the width rule, 'ok' can be confirmed, 'none' has nothing to confirm.
+   */
+  shape?: { remove: boolean; state?: 'none' | 'ok' | 'red'; tiles?: number; message?: string };
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';
@@ -1095,6 +1100,8 @@ export interface UiApi {
   /** Brief message (e.g. a rejected command), or null. */
   toast: Subscribable<string | null>;
   setTool(state: Partial<UiToolState>): void;
+  /** The Hull shape tool's Confirm (send the shape as one build or clear order) and Cancel (drop it). */
+  shapeAction(action: 'confirm' | 'cancel'): void;
   /** Portrait (PNG data URL, whole art px: show it pixelated) of a crew member, or null while their sheets load. */
   portrait(id: number): string | null;
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */

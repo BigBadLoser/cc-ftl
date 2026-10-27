@@ -6,6 +6,7 @@
   import { buildEntries, filterEntries, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
   import { createThumbs } from './buildThumbs';
   import HullPlanBar from './HullPlanBar.svelte';
+  import HullShapeBar from './HullShapeBar.svelte';
   import Icon from './Icon.svelte';
 
   let { api }: { api: UiApi } = $props();
@@ -111,6 +112,7 @@
   </div>
 
 {#if st.build === 'hull'}<HullPlanBar {api} />{/if}
+{#if st.build === 'shape'}<HullShapeBar {api} />{/if}
 {#if pop}
   <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} onvariant={showVariant}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
