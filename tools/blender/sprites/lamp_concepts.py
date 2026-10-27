@@ -995,3 +995,82 @@ def tall_twin():
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (
     short_bollard, short_cage, short_disc, tall_halo, tall_lantern, tall_twin)]
+
+
+# ---- v11: wall lights in the family of the two picked lamps (cage lamp, twin-tube mast) -------------------------
+# The stand-in wall's face is at v = -0.5; pieces stand out from it toward +v. The crew are 1.5 tall.
+
+WF = -0.5
+
+
+def _wplate(k, u, z, w, h, col="steelD", top="steel"):
+    """A mounting plate on the wall face, bottom at z, with a bolt at each corner."""
+    k.box(u, WF + 0.015, z, w, 0.03, h, col, top=top)
+    for su in (-1, 1):
+        for zz in (z + 0.03, z + h - 0.05):
+            k.box(u + su * (w / 2 - 0.035), WF + 0.033, zz, 0.025, 0.008, 0.025, "plate")
+
+
+def wall_cage(context=False):
+    """A bulkhead light: a glowing lens in a steel guard cage on a bolted plate, a conduit up the wall to the top."""
+    k = K("lc_w_cage", (1, 1), 0)
+    if context:
+        _wall(k.m)
+    _wplate(k, 0, 1.0, 0.5, 0.36)
+    k.box(0, WF + 0.06, 1.04, 0.36, 0.06, 0.28, "gmD", top="gm", bevel=0.01)              # lamp body
+    k.box(0, WF + 0.1, 1.07, 0.3, 0.02, 0.22, "arc", bevel=0.01)                           # the lens
+    for u in (-0.17, 0.0, 0.17):                                                       # cage bars across it
+        k.box(u, WF + 0.13, 1.04, 0.025, 0.025, 0.28, "steel", top="steelL")
+    k.box(0, WF + 0.13, 1.17, 0.36, 0.025, 0.025, "steel", top="steelL")                  # and one along it
+    for su in (-1, 1):
+        k.box(su * 0.18, WF + 0.085, 1.04, 0.022, 0.09, 0.022, "steel")                     # cage feet
+        k.box(su * 0.18, WF + 0.085, 1.298, 0.022, 0.09, 0.022, "steel")
+    k.box(0.16, WF + 0.03, 1.36, 0.06, 0.06, 0.49, "gm", top="steel")                       # conduit up the wall
+    k.box(0.16, WF + 0.03, 1.5, 0.08, 0.07, 0.03, "steelD")                                 # its clamp
+    k.box(-0.19, WF + 0.035, 0.96, 0.08, 0.008, 0.03, "hazY")                               # hazard tab
+    k.box(-0.11, WF + 0.035, 0.96, 0.04, 0.008, 0.03, "green")                              # status lamp
+    return k.build()
+
+
+def wall_twin(context=False):
+    """A twin-tube sconce: two short tubes of light clamped across a cream back plate, end caps, a small fan box."""
+    k = K("lc_w_twin", (1, 1), 0)
+    if context:
+        _wall(k.m)
+    k.box(0, WF + 0.02, 1.0, 0.66, 0.04, 0.4, "lvW2", top="lvW", bevel=0.015)              # back plate
+    k.box(0, WF + 0.042, 1.04, 0.58, 0.008, 0.32, "gmD")                                   # recess
+    for z in (1.1, 1.26):                                                              # the two tubes, along the wall
+        k.box(0, WF + 0.1, z, 0.5, 0.09, 0.09, "arc", bevel=0.035)
+        for su in (-1, 1):
+            k.box(su * 0.27, WF + 0.1, z - 0.01, 0.05, 0.11, 0.11, "steel", top="steelL", bevel=0.01)   # end caps
+    for u in (-0.12, 0.12):                                                            # clamps over both tubes
+        k.box(u, WF + 0.1, 1.07, 0.06, 0.13, 0.33, "lvW2", top="lvW", bevel=0.01)
+        k.box(u, WF + 0.12, 1.07, 0.065, 0.11, 0.02, "gmD")
+    k.box(0.38, WF + 0.06, 1.12, 0.12, 0.1, 0.16, "gm", top="steel", bevel=0.01)           # fan box beside it
+    k.box(0.38, WF + 0.112, 1.15, 0.08, 0.008, 0.08, "dark")
+    for a in (0.6, 2.17):
+        k.box(0.38, WF + 0.117, 1.185, 0.07, 0.006, 0.012, "steel", rx=0.0, rz=0.0)
+    k.box(0.38, WF + 0.112, 1.25, 0.03, 0.008, 0.02, "cyan")                                # indicator
+    return k.build()
+
+
+def wall_flood(context=False):
+    """A hooded floodlight on an arm: a lamp head reaching out from a wall bracket, tilted down, a cable loop."""
+    k = K("lc_w_flood", (1, 1), 0)
+    if context:
+        _wall(k.m)
+    _wplate(k, 0, 1.2, 0.24, 0.32)
+    k.box(0, WF + 0.1, 1.33, 0.07, 0.16, 0.07, "steel", top="steelL")                       # arm
+    k.box(0, WF + 0.06, 1.22, 0.05, 0.08, 0.12, "steelD")                                   # brace
+    k.box(0, WF + 0.26, 1.24, 0.4, 0.18, 0.24, "gm", top="steel", bevel=0.02, rx=0.2)       # lamp head
+    k.box(0, WF + 0.352, 1.27, 0.34, 0.01, 0.18, "arc", rx=0.2)                             # its face
+    for z in (1.31, 1.37):
+        k.box(0, WF + 0.362, z, 0.34, 0.016, 2 * PX, "gm", rx=0.2)
+    k.box(0, WF + 0.27, 1.47, 0.44, 0.24, 0.025, "steelD", top="steel", rx=0.2)             # visor
+    k.box(-0.08, WF + 0.03, 0.9, 0.035, 0.035, 0.3, "dark")                                  # cable loop down the wall
+    k.box(-0.08, WF + 0.03, 0.88, 0.1, 0.06, 0.04, "steelD", top="steel")                    # junction
+    k.box(0.12, WF + 0.035, 1.4, 0.03, 0.008, 0.03, "orange")                                # status lamp
+    return k.build()
+
+
+SPRITES += [(f"concept.{fn.__name__}.ctx", (1, 1), "prop", lambda fn=fn: fn(True)) for fn in (wall_cage, wall_twin, wall_flood)]
