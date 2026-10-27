@@ -1558,3 +1558,68 @@ def floor_well_b():
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_wheel_xl, floor_well_a, floor_well_b)]
+
+
+# ---- v18: the wheel as a true circle inside its tile; grate A as a whole floor tile ------------------------------
+
+def _annulus(k, z, r0, r1, col, top=None, h=0.016, n=64):
+    """A smooth flat ring from r0 to r1, h thick, standing on z: top face plus inner and outer walls."""
+    for i in range(n):
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        c0, s0, c1, s1 = math.cos(a0), math.sin(a0), math.cos(a1), math.sin(a1)
+        mid = (a0 + a1) / 2
+        SK.face(k, [(r0 * c0, r0 * s0, z + h), (r1 * c0, r1 * s0, z + h), (r1 * c1, r1 * s1, z + h), (r0 * c1, r0 * s1, z + h)],
+                (0, 0, 1), top or col)
+        SK.face(k, [(r1 * c0, r1 * s0, z), (r1 * c1, r1 * s1, z), (r1 * c1, r1 * s1, z + h), (r1 * c0, r1 * s0, z + h)],
+                (math.cos(mid), math.sin(mid), 0), col)
+        SK.face(k, [(r0 * c0, r0 * s0, z), (r0 * c1, r0 * s1, z), (r0 * c1, r0 * s1, z + h), (r0 * c0, r0 * s0, z + h)],
+                (-math.cos(mid), -math.sin(mid), 0), col)
+
+
+def floor_wheel_round():
+    """The wheel grate inside its tile with a margin: smooth rings (no facets), the outer edge at 0.43 of a tile."""
+    k = K("lc_f_wheel_round", (1, 1), 0)
+    r, d, n = 0.35, 0.1, 64
+    for i in range(n):
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        mid = (a0 + a1) / 2
+        for j, col in enumerate(WARM_WALL):
+            za, zb = -d * j / len(WARM_WALL), -d * (j + 1) / len(WARM_WALL)
+            SK.face(k, [(r * math.cos(a0), r * math.sin(a0), za), (r * math.cos(a1), r * math.sin(a1), za),
+                        (r * math.cos(a1), r * math.sin(a1), zb), (r * math.cos(a0), r * math.sin(a0), zb)],
+                    (-math.cos(mid), -math.sin(mid), 0), col)
+    k.cyl(0, 0, -d - 0.02, r + 0.02, 0.02, "steelD", sides=n)
+    k.cyl(0, 0, -d, r - 0.02, 0.02, "fxW", sides=n)                                        # the light
+    _annulus(k, -0.004, 0.11, 0.135, "steelD", top="steel", h=0.018)                       # grate rings
+    _annulus(k, -0.004, 0.23, 0.255, "steelD", top="steel", h=0.018)
+    for a in range(8):                                                                 # spokes
+        ang = a * math.pi / 4 + math.pi / 8
+        k.box(0.2 * math.cos(ang), 0.2 * math.sin(ang), -0.004, 0.3, 2.2 * PX, 0.018, "steelD", top="steel", rz=ang)
+    k.cyl(0, 0, -0.004, 0.065, 0.022, "steel", top="steelL", sides=32)                     # hub
+    k.cyl(0, 0, 0.018, 0.028, 0.004, "fxW", sides=24)
+    _annulus(k, 0.0, r, 0.43, "steelD", top="steel", h=0.018)                               # the ring round the mouth
+    for a in range(8):
+        ang = a * math.tau / 8
+        k.cyl(0.39 * math.cos(ang), 0.39 * math.sin(ang), 0.018, 0.016, 0.006, "plate", sides=8)
+    return [*k.build(), _holdout_round("lc_f_wheel_round_h", r, n)]
+
+
+def floor_tile_grate():
+    """Grate A as a whole floor tile: the lip is the tile's edge, a lit well under a 4 x 4 hatch grate fills the rest,
+    so a run of them makes a lit deck strip."""
+    k = K("lc_f_tile_grate", (1, 1), 0)
+    s, d, lip = 0.84, 0.1, 0.08
+    _shaft(k, s, s, 0.0, -d, WARM_WALL)
+    k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
+    k.box(0, 0, -d, s - 0.04, s - 0.04, 0.02, "fxW", bevel=0.01)                           # the light
+    for t in (-1, 1):                                                                  # the lip: the tile's own edge
+        k.box(0, t * (s / 2 + lip / 2), 0.0, 1.0, lip, 0.012, "steelD", top="gm")
+        k.box(t * (s / 2 + lip / 2), 0, 0.0, lip, s, 0.012, "steelD", top="gm")
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.cyl(su * 0.46, sv * 0.46, 0.012, 0.018, 0.006, "plate", sides=6)
+    _hatch_grate(k, s)
+    return [*k.build(), _holdout_sq("lc_f_tile_grate_h", s, s)]
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_wheel_round, floor_tile_grate)]
