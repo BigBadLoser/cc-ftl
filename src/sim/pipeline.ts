@@ -64,6 +64,7 @@ import { galaxySystem } from './systems/galaxy';
 import { storySystem } from './systems/story';
 import { recruitsSystem } from './systems/recruits';
 import { tradeSystem } from './systems/trade';
+import { yardSystem } from './yard/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
 
@@ -152,6 +153,8 @@ export const pipeline: readonly System[] = [
   containerDriftSystem,
   // Trade deliveries read this tick's arrivals and issue next tick's flight orders; crew then haul the cargo.
   tradeSystem,
+  // Shipyard orders: the station's shuttle brings its crew to build the paid-for hull (ordinary jobs, done next to the work system below).
+  yardSystem,
   // Base-logistics runs: shuttles carry cargo and crew between the home ship and claimed bases (ordinary vehicle commands, next tick).
   ferrySystem,
   // Transfer orders (queue) take free shuttles and pilots and start the runs above; they book trips the ferry flow just settled.

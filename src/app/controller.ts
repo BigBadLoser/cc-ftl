@@ -263,6 +263,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     attach(renderer) {
       r = renderer;
+      bridge.yard.subscribe(() => paint.drawPlan()); // the hull plan's ghost tiles follow the plan and the yard order
       bridge.sites.subscribe(() => {
         pushSites();
         const id = siteSel.get();

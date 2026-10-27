@@ -1193,13 +1193,23 @@ about is a flee and needs the drive charged (spent). `GalaxyState.lastResult` ke
 (factions with `traffic` at that danger, the owner weighted up) filtered to hostile ones. Rolls use the galaxy Rng. Contacts of wrecked, fled or
 captured ships are pruned each second. Danger 0 never rolls. `playerShipInfo` is the galaxy's `{id, ship}` helper; trade's `playerShip(sim)` is the id.
 
-**Factions and standings** (`standing.ts`, `src/content/galaxy.ts`). There is one faction table: the galaxy faction defs. Each names the
-generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `relations` and a **reputation key** (`reputation`),
-one of trade's keys: `traders`, `corp`, `navy`, `pirates`, `drones` (the three corporations share `corp`). Reputation stays in `sim.story.reputation`,
-the only store; trade's `reputationWith` and `hailVerdict` are the source of truth for prices and hailing and the galaxy only reads the same
-numbers: `standing = baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(relation x reputation[their key])`, tiers hostile below
-`HOSTILE_BELOW` (-2), friendly from `FRIENDLY_AT` (3), `alwaysHostile` overrides. `story.context.faction` is the territory owner's reputation key
-(so event `factions: ['corp']` matches any corporation's space).
+**Factions and standings** (`standing.ts`, `relations.ts`, `src/content/galaxy.ts`, `galaxyRelations.ts`). There is one faction table: the galaxy
+faction defs. Each names the generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `specialities` and a
+**reputation key** (`reputation`), one per faction (`navy`, `meridian`, `helix`, `vantor`, `traders`, `pirates`, `drones`; the test checks they are
+unique). Reputation stays in `sim.story.reputation`, the only store. Who is at war and who shares standing is the **pairwise relations table**
+(`GalaxyContent.relations`: `{ a, b, stance: 'war' | 'neutral' | 'allied', spill?: [into a, into b] }`, one row per pair; an unlisted pair is
+neutral; `alwaysHostile` factions are at war with all). `stanceBetween`, `atWar` and `spillSources` read it; phase 2b adds rows. Standing:
+`baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(spill x reputation[their key])`, tiers hostile below `HOSTILE_BELOW` (-2),
+friendly from `FRIENDLY_AT` (3). Trade reads the **owner**: `Trader.owner` (a galaxy faction id, set from the port by `bindTrader`/`Econ`, or from
+`Ship.gen.owner` for fleet ships) picks the reputation key for prices and hails (`repKeyOf`); a trader with no owner falls back to its trade faction's
+key. `story.context.faction` is the territory owner's reputation key (so event `factions: ['meridian']` matches Meridian space). Save v58.
+
+**Faction specialities** (`FactionSpecialityDef`). The station kind decides what a station sells; the owner faction weights it. `stock` is a tag ->
+weight on the count and odds of the trade profile's stock lines (`rollTrader`, same draws, so unweighted lines roll as before); `prices` multiplies
+what its stations sell an item or tag for (Meridian fuel x0.85, in `applyMods`); `blueprints` lists the module categories it always stocks (others at
+`OFF_SPECIALITY_STOCK` odds, a fixed roll per port and def); `gate` holds a category's tier back until standing with the owner reaches a number (the
+navy: Mk II defence from 0, Mk III from 3); `shipyard` is Vantor's hook for #125 and nothing reads it yet. The starmap node info and the station
+inspector show `app/stockHints.ts` (`portHints`, `nodeHints`).
 
 **Zoom levels** (view design, built on `starmap-macro-wip`, not ported). The map has three levels by zoom, each drawing from the same chunks:
 1. **Sector:** nodes, routes, hyperlane exits labelled with where they lead, central bodies, sector outlines, the nebula cloud channel, the plotted
@@ -1789,3 +1799,50 @@ shuttle docks at a station airlock (no hover fallback: `noDock`), the recruit wa
 and on docking the recruit steps out as player crew (allegiance switch, `crew.hired`, key into `recruitLog`) and the escrow is paid. Any failure
 (no shuttle, no dock, recruit dead, board timeout, cancel) refunds and puts the recruit back to station life. One live deal per station.
 UI: selecting a station opens `StationPanel` (tabs Trade, Jobs, Crew; `TradePane`, `JobCards`, `RecruitList`); recruits ride in `UiTradePartner`.
+
+
+## Engine capacity and the shipyard (progression phase 5)
+
+**Size = the area inside the outer hull.** `hullArea(grid)` (`combat/hull.ts`, `interiorArea`) counts every tile the outer hull profile encloses: interior
+walls, doors, modules and floor all count as area, the outer ring itself does not. It is the number behind the ship panel's "Size N / M", engine capacity,
+and the jobs screen. There is no overall ship maximum: engine capacity, summed over any number of engines, is the only size limit (add engines to grow). The quiet technical guards are the plan reach (`PLAN_REACH`, 40 tiles from the ship's rectangle), `MAX_PLAN` and the growth clearance from neighbouring ships and rocks (`crowded`), none of them a readout. The jobs screen (an enemy's is `templateHullArea(rows)`, the same rule on its template). The outer ring is
+`hullTiles(grid)` (`outerProfile`: hull-kind tiles facing open space or the grid edge). The yard prices and caps by tiles built, outline and floor together. The starter is 416 (ring 88).
+
+**Engine capacity** (`sim/ftl/capacity.ts`, `ftl/overcharge.ts`). `EngineDef.hullCapacity` is the size one engine carries (Mk I 330 in
+`content/modules.ts`, Mk II 495 and Mk III 700 in `content/tiers.ts`; the starter on two Mk I is 416 / 660, 63%). `hullLoad(sim, ship)` gives tiles, capacity
+(engines with hp above 0), `over` and `ratio`; a ship with no engine module has no limit. Over capacity, `jump` rejects with `overweight` (`galaxy.jump`
+and a queued `ftl.charge` with a route) unless the command carries `overcharge`; `combat.flee` always overcharges. Only the player's ship obeys it: NPC ships
+are exempt until shipgen gives big hulls enough engines (issue #129, TODO at `hullLoad` and in `jump`). An overcharged jump calls `applyOvercharge`
+before the ship is lifted: risk = overload (tiles over capacity / capacity) against `OVERCHARGE_FULL` (0.5), zero at capacity (nothing rolled). Each working
+engine rolls once for its fate (hit for 25-60% of max hp, or destroyed) and once for a fire in its room, on `sim.rng` in engine id order. Event
+`ftl.overcharged`. No fuel scaling by hull size. UI: "Size N / M" in the ship overview, and the starmap drawer's overweight line, warning and Overcharge button.
+
+**The hull plan** (`HullPlanC` on the player's ship, set by `hull.plan { ship, tiles }`; free, any time, saved). It is the planned outer hull only: tiles
+of open space. Interior walls and doors stay ordinary free builds. `viewPlan` reads it: the tiles a chain of neighbours can build from the ship
+(`connected`), floating ones (`loose`), ones in a shuttle's way (`blocked`), and the floor the connected hull shuts in (flood fill). The build tools'
+**Hull plan** tool (`app/hullPlanTool.ts`, `HullPlanBar`) paints it with `app/areaPaint.ts` (drag a rectangle's outline; erase takes tiles out) and draws ghost
+tiles with `Renderer.setAreas`, only while that tool or a station's Shipyard tab is open (plus the live order's unbuilt tiles at any time).
+
+**The shipyard** (`sim/yard/`). Trading and military stations of the station and hub tiers (`ContentRegistry.yard`, `content/yard.ts`, via `yardService`;
+the station must answer hails) sell the plan, in two passes. **Planning pass:** the contractors truss the whole footprint that is still open space (every reachable planned tile and all the
+floor the plan encloses), quickly (1 s a tile) and outside the visit cap, for a planning fee (`YardDef.trussFee`, 2 credits a tile, no metal; a tile that already
+has a truss is never charged again). A truss is a real `Struct.Beam` tile (existing beam art and rules: saved with the ship, owned by it, not walkable on deck, no
+integrity so combat leaves it alone; a suited crew member walks along it, `isEvaWalkable`; the ship's size and engine capacity ignore it: `interiorArea` reads an
+open truss as open space). A planned tile stays part of the plan after it is trussed; deconstructing a truss with the normal tool removes it from the plan
+(`yard/trussPlan.ts`). **Hull pass:** `quoteYard(sim, station)` turns up to the tier's cap of tiles (walls and floor together) into hull, laid out in rows
+(`yard/rows.ts`: the distance in steps from the ship's own structure, trusses not counted; nearest rows first). When the cap cuts a room short it takes the rows
+up to a depth that fits plus a cross wall that shuts them in (so the ship left behind is closed and rectangular; the cross wall is paid as hull). If no cut
+fits, it builds the largest closed rectangle of the plan's floor against the ship, with its own rim of new walls (`closedRect`), so every visit ends sealed with
+no floorless wall stubs. What the cap does not reach stays as truss (open scaffolding) and the next yard picks it up from there. Jobs go up in row order
+(`Job.yardRank`) and the crew work the nearest open row and the next (`YardOrder.rank`, `jobFits`); the hull jobs are posted when the planning pass is done
+(`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
+danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
+against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle with `YardDef.crew` contractors,
+neutral allegiance, `YardCrewC`, to a free player airlock), `fly`, `work` (the crew step out in the shuttle's suits and take the jobs through the normal crew AI;
+the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
+is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall`, `home`, `done`.
+Suits are the contractors' own and never run dry. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
+(`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
+(`abortYards`). Save v61. UI: the station panel's
+Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.

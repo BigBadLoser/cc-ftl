@@ -8,6 +8,7 @@ import { AllegianceC, EquipOrderC, FighterC, StowOrderC, SurrenderedC } from './
 import { shipById } from '../combat/ships';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
+import { YardCrewC } from '../yard/types';
 
 /**
  * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), or one
@@ -35,9 +36,10 @@ export function isCombatReady(sim: Sim, crew: number): boolean {
   return !hp || hp.hp > 0;
 }
 
-/** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are. */
+/** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */
 export function isInvader(sim: Sim, crew: number): boolean {
   if (sim.world.has(crew, AlienC)) return false; // creatures live where they hatched: they never board or take ships
+  if (sim.world.has(crew, YardCrewC)) return false; // the shipyard's contractors are invited aboard to build
   const faction = sim.world.get(crew, AllegianceC)?.faction;
   const pos = sim.world.get(crew, PositionC);
   const ship = pos && shipById(sim, shipIdOf(sim, pos));

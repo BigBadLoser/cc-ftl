@@ -1,4 +1,4 @@
-import { Struct, ModuleC, shipGrid, shipIdOf, shieldCapacity, playerShip, type Sim } from '../sim';
+import { ModuleC, hullArea, templateHullArea, shipIdOf, shieldCapacity, playerShip, shipGrid, type Sim } from '../sim';
 import { generateShip } from '../sim/shipgen/generate';
 import type { UiStrength, UiStrengthRead } from '../ui/api';
 
@@ -21,7 +21,7 @@ export function readStrength(theirs: UiStrength, mine: UiStrength | null): UiStr
   return r >= OUTMATCHED_AT ? 'outmatched' : r <= WEAKER_AT ? 'weaker' : 'even';
 }
 
-/** The player's ship as it is now: working guns, shield layers its generators give, hull plates (walls and doors) standing. */
+/** The player's ship as it is now: working guns, shield layers its generators give, size, the tiles its outer hull encloses (`hullArea`, also what engine capacity measures). */
 export function playerStrength(sim: Sim): UiStrength | null {
   const id = playerShip(sim);
   const grid = id ? shipGrid(sim, id) : null;
@@ -31,10 +31,7 @@ export function playerStrength(sim: Sim): UiStrength | null {
     const m = sim.world.get(mid, ModuleC);
     if (m && m.hp > 0 && sim.content.modules[m.def]?.weapon && shipIdOf(sim, m) === id) guns++;
   }
-  let hull = 0;
-  const struct = grid.load('struct');
-  for (let i = 0; i < struct.length; i++) if (struct[i] === Struct.Wall || struct[i] === Struct.Door) hull++;
-  return { guns, shields: shieldCapacity(sim, id, false), hull };
+  return { guns, shields: shieldCapacity(sim, id, false), hull: hullArea(grid) };
 }
 
 /**
@@ -58,7 +55,7 @@ export function targetStrength(sim: Sim, shipgen: string, seed: number, depth: n
         if (md?.weapon) guns++;
         if (md?.shieldGen) shields += Math.floor(Math.abs(md.power) * md.shieldGen.layersPerPower);
       }
-      const hull = gen.template.rows.reduce((n, row) => n + [...row].filter((c) => c === '#' || c === 'D').length, 0);
+      const hull = templateHullArea(gen.template.rows);
       out = { guns, shields, hull };
     } catch {
       out = null;

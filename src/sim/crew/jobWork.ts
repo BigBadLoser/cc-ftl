@@ -23,6 +23,7 @@ import { bumpStat } from '../story/goals';
 import { playerShips } from '../story/world';
 import { AsteroidC } from '../asteroids/components';
 import { spawnVehicle } from '../vehicles/lifecycle';
+import { dropPlanTile } from '../yard/trussPlan';
 
 /** 'done': the job is finished and removed. 'working': progressing. 'wait': ready but blocked. */
 export type WorkResult = 'done' | 'working' | 'wait';
@@ -75,13 +76,16 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
   if (job.kind === 'build' && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
   const grid = shipGrid(sim, shipIdOf(sim, job));
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
-    const next = job.kind === 'build' ? job.struct : Struct.Floor;
+    const next = job.kind === 'build' ? job.struct : job.struct === Struct.Space ? Struct.Space : Struct.Floor; // a truss comes down to open space
     const before = grid.get('struct', job.x, job.y);
     if ((before === Struct.Rock || before === Struct.RockWall) && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
     else writeStruct(grid, job.x, job.y, next);
+    // a shipyard tile belongs to the ship even when it is finished before its neighbours (the owner layer is otherwise inherited from them)
+    if (job.yard && job.kind === 'build' && grid.get('ship', job.x, job.y) === 0) grid.set('ship', job.x, job.y, shipIdOf(sim, job));
     // built on an asteroid base: the new tile is the base's, not the asteroid's
     const ship = shipIdOf(sim, job);
     if (next !== Struct.Space && grid.get('ship', job.x, job.y) !== ship && sim.world.has(grid.get('ship', job.x, job.y), AsteroidC)) grid.set('ship', job.x, job.y, ship);
+    if (job.kind === 'deconstruct' && before === Struct.Beam) dropPlanTile(sim, shipIdOf(sim, job), job.x, job.y); // the tile leaves the hull plan
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
       refundCost(sim, shipIdOf(sim, job), job.x, job.y, key ? sim.content.structCosts[key] : undefined);

@@ -1,7 +1,8 @@
 import type { Sim } from '../sim';
 import { unit } from './hash';
+import { atWarContent } from './relations';
 import {
-  ARMED, AVOID_CHANCE, AVOID_RATIO, CLASH_NOISE, DEPTH_POWER, HURT_WINNER, LOSS_DRAW, LOSS_DRIVEN, ROLE_POWER, SHIP_POWER, WAR_RELATION, WIN_ALL, WIN_DRIVE,
+  ARMED, AVOID_CHANCE, AVOID_RATIO, CLASH_NOISE, DEPTH_POWER, HURT_WINNER, LOSS_DRAW, LOSS_DRIVEN, ROLE_POWER, SHIP_POWER, WIN_ALL, WIN_DRIVE,
 } from './tuningWar';
 import type { Contact, Fleet } from './types';
 
@@ -19,16 +20,8 @@ export const shipPower = (c: Contact, role: Fleet['role']): number => SHIP_POWER
 /** A fleet's power: the sum over its ships, halved while it is stranded (hurt, adrift). */
 export const fleetPower = (f: Fleet): number => f.ships.reduce((n, c) => n + shipPower(c, f.role), 0) * (f.damaged ? 0.5 : 1);
 
-/** Do the two fleets' factions fight on sight? Either side's relation to the other sums to at most WAR_RELATION, or one is always hostile (the rogue AI). */
-export function atWar(sim: Sim, a: string, b: string): boolean {
-  if (a === b) return false;
-  const fs = sim.content.galaxy?.factions;
-  const fa = fs?.[a];
-  const fb = fs?.[b];
-  if (!fa || !fb) return false;
-  if (fa.alwaysHostile || fb.alwaysHostile) return true;
-  return (fa.relations?.[b] ?? 0) + (fb.relations?.[a] ?? 0) <= WAR_RELATION;
-}
+/** Do the two fleets' factions fight on sight? The relations table says war for the pair, or one is always hostile (the rogue AI). */
+export const atWar = (sim: Sim, a: string, b: string): boolean => !!sim.content.galaxy && atWarContent(sim.content.galaxy, a, b);
 
 /** Would these two fleets fight? At war, and at least one carries weapons (two haulers never do). */
 export const wouldFight = (sim: Sim, a: Fleet, b: Fleet): boolean =>

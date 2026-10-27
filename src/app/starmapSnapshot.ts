@@ -1,6 +1,6 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
-  fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
+  fleetName, hullLoad, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
@@ -9,6 +9,7 @@ import { buildHeat } from './heatSnapshot';
 import { toneOf } from './starmapTone';
 import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot';
 import { nebulaAround } from './starmapNebula';
+import { nodeHints } from './stockHints';
 import { buildClusters, sectorOutline } from './starmapClusters';
 
 
@@ -107,6 +108,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
       jobs: k ? jobsAt.get(n.id) ?? [] : [],
+      hints: k ? nodeHints(sim, n.id) : [],
     });
   }
   const sectors = [...index.sectors.values()].map((s) => {
@@ -158,6 +160,13 @@ const BLOCKERS: Record<string, string> = {
   noFuel: 'Not enough fuel for the first hop.',
 };
 
+/** The player's hull against its engines when it is over: what the route preview shows beside the Overcharge button. */
+function overweightOf(sim: Sim): UiStarRoute['overweight'] {
+  const ship = playerShip(sim);
+  const load = ship ? hullLoad(sim, ship) : null;
+  return load && load.over > 0 ? { tiles: load.tiles, capacity: load.capacity, risk: riskOf(load).risk } : null;
+}
+
 /** The route preview to a node: the hops with their fuel and days, the charge to enter hyperspace, and whether it can go. */
 export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
   const r = planStarRoute(sim.galaxy, sim.galaxy.current, to);
@@ -173,6 +182,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
     legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: legFuel[i] as number, time: e.time, kind: e.kind, gate: !!e.gate })),
     nextCharge: charge, fuelOk: status.fuel >= fuel, fuelShort: Math.max(0, fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
+    overweight: overweightOf(sim),
   };
 }
 

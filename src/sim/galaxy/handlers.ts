@@ -18,7 +18,7 @@ type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${s
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
-  'galaxy.jump': (sim, cmd) => void jump(sim, cmd.ship, cmd.route, cmd.withDocked),
+  'galaxy.jump': (sim, cmd) => void jump(sim, cmd.ship, cmd.route, cmd.withDocked, 'galaxy.jump', cmd.overcharge),
   'galaxy.drop': (sim) => void drop(sim),
   'galaxy.respond': (sim, cmd) => void respond(sim, cmd.encounter, cmd.choice),
   'galaxy.leaveEvent': (sim) => void leave(sim),

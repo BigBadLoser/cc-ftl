@@ -34,8 +34,8 @@ describe('mining paint tool', () => {
     const inRect = ore.filter((t) => t.x >= rect.x0 && t.x <= rect.x1 && t.y >= rect.y0 && t.y <= rect.y1);
 
     let preview: { x: number; y: number }[] = [];
-    const renderer = { setPreview: (t: { x: number; y: number }[]) => (preview = t), setHover: () => undefined, setSites: () => undefined } as unknown as Renderer;
-    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]) } as unknown as Bridge;
+    const renderer = { setAreas: () => undefined, setPreview: (t: { x: number; y: number }[]) => (preview = t), setHover: () => undefined, setSites: () => undefined } as unknown as Renderer;
+    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(sim, bridge);
     const h = c.attach(renderer);
     c.setTool({ tool: 'build', build: 'mine', pods: [pod] });
@@ -56,9 +56,9 @@ describe('mining paint tool', () => {
     const { sim, pod, asteroid } = setup();
     const a = sim.world.get(asteroid, AsteroidC)!;
     let toast: string | null = null;
-    const c = createController(sim, { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]) } as unknown as Bridge);
+    const c = createController(sim, { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge);
     c.toast.subscribe((m) => (toast = m));
-    const h = c.attach({ setPreview: () => undefined, setHover: () => undefined, setSites: () => undefined } as unknown as Renderer);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setHover: () => undefined, setSites: () => undefined } as unknown as Renderer);
     c.setTool({ tool: 'build', build: 'mine' });
     h.onPaint('start', { x: a.x - 20, y: a.y - 20 });
     h.onPaint('end', { x: a.x - 18, y: a.y - 18 });

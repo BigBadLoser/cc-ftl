@@ -9,8 +9,9 @@ import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
 import { findSuitSource, findSuitStow, isErrand, startErrand, type SuitSource } from '../eva/errands';
-import { planWalk } from '../eva/route';
+import { planSiteWalk } from '../eva/route';
 import { isSuited } from '../eva/suit';
+import { YardCrewC } from '../yard/types';
 import { isOffDuty } from '../fight/relations';
 import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
@@ -87,7 +88,7 @@ export function decideSystem(sim: Sim): void {
  */
 function routeToJob(sim: Sim, id: number, pos: Position, jobId: number, job: Job): boolean {
   const path = sim.world.get(id, PathC) as Path;
-  const plan = planWalk(sim, id, shipIdOf(sim, pos), origin(pos), jobGoal(job));
+  const plan = planSiteWalk(sim, id, shipIdOf(sim, pos), origin(pos), jobGoal(job));
   if (!plan) return false;
   if (plan.thin && !isErrand(job)) {
     const src = findSuitSource(sim, id, pos);
@@ -101,7 +102,7 @@ function routeToJob(sim: Sim, id: number, pos: Position, jobId: number, job: Job
 
 /** A suited crew member with nothing to do walks to an airlock and takes the suit off, so the suit is free for the next one. */
 function stowSuit(sim: Sim, id: number, pos: Position): boolean {
-  if (!isSuited(sim, id)) return false;
+  if (!isSuited(sim, id) || sim.world.has(id, YardCrewC)) return false; // the shipyard's contractors keep their suits on until the shuttle
   if (!isSettled(pos) || (sim.tick + id) % 20 !== 0) return true; // look for an airlock every second or so; meanwhile stand still
   const src = findSuitStow(sim, id, pos);
   if (!src) return false;
@@ -177,7 +178,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       if (!job || !cats.includes(job.category) || !jobFits(sim, crewId, pos, job)) continue;
       // Operating is a high-priority job, except in a fight: a console left empty a while is relieved by crew of a role that relieves stations, with nothing better to do (disabled, 0, stays off).
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL && !canRelieve(sim, crewId, job)) continue;
-      const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
+      const plan = planSiteWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
       if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
       // a relief takes the console only when nothing else of their rank is waiting

@@ -1,3 +1,6 @@
+import { hullLoad } from '../ftl/capacity';
+import { applyOvercharge } from '../ftl/overcharge';
+import { abortYards } from '../yard/flow';
 import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
@@ -61,7 +64,7 @@ export function routeBlocker(sim: Sim, edges: readonly EdgeData[] | null, ship?:
 }
 
 /** `galaxy.jump`: validate the route, pay the charge and the first hop, lift the ship out and enter hyperspace. */
-export function jump(sim: Sim, ship: number, route: readonly string[], withDocked?: number[], command = 'galaxy.jump'): boolean {
+export function jump(sim: Sim, ship: number, route: readonly string[], withDocked?: number[], command = 'galaxy.jump', overcharge = false): boolean {
   const g = sim.galaxy;
   const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command, reason }), false);
   if (!checkLeaving(sim, ship, reject)) return false;
@@ -72,9 +75,14 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const edges = routeEdges(sim, nodes);
   const blocked = routeBlocker(sim, edges, ship);
   if (blocked || !edges) return reject(blocked ?? 'noRoute');
+  // TODO(#129): NPC ships do not obey engine capacity yet. A ship heavier than its engines carry needs the overcharge (the player's flee takes it: staying is worse).
+  const overcharged = hullLoad(sim, ship).over > 0;
+  if (overcharged && !overcharge && command !== 'combat.flee') return reject('overweight');
   const first = edges[0] as EdgeData;
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
+  if (overcharged) applyOvercharge(sim, ship);
+  abortYards(sim, 'left');
   burnFuel(sim, jumpFuel(sim, first.fuel, ship), ship);
   settleLosses(sim);
   unbindMarkets(sim);

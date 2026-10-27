@@ -221,6 +221,8 @@ export const modules = {
     flammability: 0.4, maxHp: 80, buildWork: 200, weapon: 'weapon.incendiary', deploySec: 2,
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 6 }],
   },
+  // `hullCapacity`: tiles of ship size (interior area, see `hullArea`) one engine carries (Mk II and III in tiers.ts). The starter's area is 416 on two Mk I engines (660, 63%), so a
+  // couple of yard expansions need a second drive pair or a Mk II. Only the player's ship obeys it (see ftl/capacity.ts, #129).
   // 4 wide along the hull, 5 deep. At rotation 0 the north row (y = 0) replaces the hull wall (rotate clockwise for
   // east, south, west); the bell protrudes into space beyond it.
   'module.engine': {
@@ -228,7 +230,7 @@ export const modules = {
     category: 'systems',
     description: "Pushes the ship and adds evasion in a fight. Needs a pilot. Sits on the hull edge.",
     asset: 'module.engine', footprint: [4, 5], solid: true, power: -6, powerPriority: 3,
-    heatPerSec: 4, flammability: 0.2, maxHp: 160, buildWork: 320, engine: { evasionPerPower: 0.02 }, hullEdge: 'n',
+    heatPerSec: 4, flammability: 0.2, maxHp: 160, buildWork: 320, engine: { evasionPerPower: 0.02, hullCapacity: 330 }, hullEdge: 'n',
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
   // Docking airlock, 3 wide along the hull, hull row plus 3 inboard (footprint [3, 4], hullEdge 'n'; art: airlock family in

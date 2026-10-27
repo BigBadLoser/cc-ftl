@@ -1,12 +1,14 @@
 import type { GalaxyContent, GalaxyFactionDef, StructureDef } from '../sim';
 import { factionFleets, fleetContent } from './galaxyFleets';
 import { market } from './galaxyMarket';
+import { relations } from './galaxyRelations';
 
 /**
  * Galaxy factions: who holds space, how they feel about you and each other, and which ship generator styles
  * (content/factions, `faction.*`) build their ships. This is the one faction table: each def names the reputation key
- * (`sim.story.reputation`) it is tracked under, one of trade's keys (`traders corp navy pirates drones`, content/trade.ts), so the
- * corporations share 'corp'. Trade's `reputationWith` and `hailVerdict` stay the source of truth for prices and hailing.
+ * (`sim.story.reputation`) it is tracked under, one per faction (so the three corporations and any pirate faction each have their own
+ * standing). Who is at war with whom, and who shares standing, is the pairwise table in galaxyRelations.ts. `specialities` weight what the
+ * faction's stations stock (DESIGN.md "Faction specialities"). Trade's prices and hailing read the station's or ship's owner key.
  * Generator mapping: navy and the corporations fly navy (corporate) hulls, haulers and traders the civilian kit,
  * the scrapper clans are the pirates, the drones are the rogue AI.
  */
@@ -17,38 +19,43 @@ const factions = {
     territory: { weight: 2.2, danger: { max: 4 }, reach: 820 },
     stations: [{ value: 'structure.station_military', weight: 3 }, { value: 'structure.station_trade', weight: 1 }],
     baseStanding: 1,
+    // Weapons and shields; the best of them are for friends (Mk II from a neutral standing, Mk III from friendly).
+    specialities: { blueprints: ['defence'], stock: { weapon: 1.5, ammo: 1.5 }, gate: { defence: { 2: 0, 3: 3 } } },
     fleet: factionFleets.navy,
-    relations: { pirates: -0.6, rogue: -0.5, meridian: 0.3, helix: 0.2, vantor: 0.2 },
     traffic: { weight: 1, danger: { max: 5 } },
   },
   meridian: {
-    name: 'Meridian Combine', kind: 'corporation', reputation: 'corp',
+    name: 'Meridian Combine', kind: 'corporation', reputation: 'meridian',
     ships: [{ value: 'faction.navy', weight: 2 }, { value: 'faction.civilian', weight: 1 }],
     territory: { weight: 1.6, danger: { min: 1, max: 7 } },
     stations: [{ value: 'structure.station_trade', weight: 3 }, { value: 'structure.station_research', weight: 1 }],
     baseStanding: 0,
+    // Storage, cargo, vehicles and fuel, and fuel for less.
+    specialities: { blueprints: ['storage'], stock: { cargo: 1.5, vehicle: 1.5, fuel: 1.3 }, prices: { fuel: 0.85 } },
     fleet: factionFleets.meridian,
-    relations: { navy: 0.3, helix: -0.4, vantor: -0.2, pirates: -0.4 },
     traffic: { weight: 0.8, danger: { max: 7 } },
   },
   helix: {
-    name: 'Helix Biosystems', kind: 'corporation', reputation: 'corp',
+    name: 'Helix Biosystems', kind: 'corporation', reputation: 'helix',
     ships: [{ value: 'faction.navy', weight: 1 }, { value: 'faction.civilian', weight: 1 }],
     territory: { weight: 1.1, danger: { min: 2, max: 8 } },
     stations: [{ value: 'structure.station_research', weight: 3 }, { value: 'structure.station_trade', weight: 1 }],
     baseStanding: 0,
+    // Medical, life support and farming.
+    specialities: { blueprints: ['life'], stock: { food: 1.4, water: 1.3 } },
     fleet: factionFleets.helix,
-    relations: { meridian: -0.4, navy: 0.2, rogue: -0.3 },
     traffic: { weight: 0.5, danger: { min: 1 } },
   },
   vantor: {
-    name: 'Vantor Heavy Industries', kind: 'corporation', reputation: 'corp',
+    name: 'Vantor Heavy Industries', kind: 'corporation', reputation: 'vantor',
     ships: [{ value: 'faction.civilian', weight: 2 }, { value: 'faction.navy', weight: 1 }],
     territory: { weight: 1.2, danger: { min: 1, max: 9 } },
     stations: [{ value: 'structure.station_trade', weight: 2 }, { value: 'structure.station_military', weight: 1 }],
     baseStanding: 0,
+    // Power, engines and industry, and the best shipyards.
+    // TODO(#125): the shipyard service reads `shipyard` (bigger caps, cheaper per tile); the numbers are provisional.
+    specialities: { blueprints: ['power', 'systems', 'production'], stock: { refined: 1.4, components: 1.4 }, shipyard: { capMult: 1.5, tilePrice: 0.85 } },
     fleet: factionFleets.vantor,
-    relations: { meridian: -0.2, traders: 0.2, pirates: -0.3 },
     traffic: { weight: 0.6, danger: { min: 1 } },
   },
   traders: {
@@ -56,7 +63,6 @@ const factions = {
     ships: [{ value: 'faction.civilian', weight: 1 }],
     baseStanding: 2,
     fleet: factionFleets.traders,
-    relations: { pirates: -0.3, vantor: 0.2 },
     traffic: { weight: 2, danger: { max: 7 } },
   },
   pirates: {
@@ -66,7 +72,6 @@ const factions = {
     stations: [{ value: 'structure.station_trade', weight: 1 }],
     baseStanding: -5,
     fleet: factionFleets.pirates,
-    relations: { navy: -0.5, traders: -0.3 },
     traffic: { weight: 1.6, danger: { min: 1 } },
   },
   rogue: {
@@ -100,4 +105,4 @@ const names = {
   suffix: ['Reach', 'Expanse', 'Drift', 'Verge', 'Hollow', 'Spur', 'Gate', 'Shoals', 'March', 'Deep', 'Rim', 'Belt'],
 };
 
-export const galaxy = { factions, structures, names, fleet: fleetContent, market } satisfies GalaxyContent;
+export const galaxy = { factions, relations, structures, names, fleet: fleetContent, market } satisfies GalaxyContent;

@@ -120,6 +120,8 @@ export interface UiStarNode {
   reachable: boolean;
   /** The market of its trading port, when sensors reach it and it has one. */
   market?: UiStarMarket | null;
+  /** Notable stock at its ports ("Mk II shield gens"), for known nodes. */
+  hints?: string[];
   /** The player's held jobs that end here (discovered nodes only). */
   jobs?: UiNodeJob[];
 }
@@ -176,6 +178,7 @@ export interface UiStarFaction {
   name: string;
   tone: Tone;
   tier: 'hostile' | 'neutral' | 'friendly';
+  /** The player's standing with this faction alone (each corporation and each pirate faction has its own). */
   standing: number;
 }
 
@@ -349,6 +352,8 @@ export interface UiStarRoute {
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;
+  /** The hull is over what the engines carry: a normal jump is blocked, an overcharged one goes at a risk (`risk` 0..1). Null when it fits. */
+  overweight: { tiles: number; capacity: number; risk: number } | null;
 }
 
 /** What a jump would leave behind or cut loose (the confirm step lists it). Names only: the ids of docked vehicles go in `withDocked`. */

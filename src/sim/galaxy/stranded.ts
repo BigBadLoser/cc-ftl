@@ -4,6 +4,7 @@ import { spillItems } from '../items/stacks';
 import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { playerShip } from '../trade/player';
+import { repKeyOf } from '../trade/traders';
 import { FUEL_ITEM, fuelStock, jumpFuel, storagesOf } from './fuel';
 import { econOf, stockAt, valueAt } from './market';
 import { portsAt } from './portIndex';
@@ -35,10 +36,10 @@ export function isStranded(sim: Sim): boolean {
 }
 
 /** The hail rule (`hailVerdict`) for a market with no ship: faction relation + trader kind relation + the player's reputation must be at least 0, else it will not trade. */
-function wouldTrade(sim: Sim, t: { faction: string; profile: string }): boolean {
+function wouldTrade(sim: Sim, t: { faction: string; profile: string; owner?: string }): boolean {
   const cfg = sim.content.trade;
   const fac = cfg?.factions[t.faction];
-  const score = (fac?.relation ?? 0) + (cfg?.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, fac.reputation) : 0);
+  const score = (fac?.relation ?? 0) + (cfg?.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0);
   return score >= 0;
 }
 

@@ -237,6 +237,8 @@ const api: UiApi = {
   ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
+  yard: bridge.yard,
+  watchYard: bridge.watchYard,
   prizes: bridge.prizes,
   mining: bridge.mining,
   selectedAsteroid: controller.selectedAsteroid,

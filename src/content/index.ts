@@ -18,6 +18,7 @@ import { goals } from './goals';
 import { galaxy } from './galaxy';
 import { trade } from './trade';
 import { stations } from './stations';
+import { yard } from './yard';
 import { creatures } from './creatures';
 import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
@@ -42,6 +43,7 @@ export const content = {
   factions,
   galaxy,
   stations,
+  yard,
   trade,
   creatures,
   ores,

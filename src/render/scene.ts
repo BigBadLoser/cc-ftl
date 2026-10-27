@@ -34,7 +34,7 @@ import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createAsteroidView } from './asteroidView';
-import { createMarkers } from './markers';
+import { createMarkers, type AreaMarks } from './markers';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
@@ -73,6 +73,8 @@ export interface Renderer {
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
   setHover(tile: Tile | null): void;
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
+  /** Painted areas (the shipyard plan): groups of tiles drawn filled or outlined in a colour, in the sector layer. Empty clears. */
+  setAreas(groups: readonly AreaMarks[]): void;
   /** The module being placed, drawn see-through at the cursor (red when invalid) with its access tile; null hides it. */
   setModuleGhost(g: ModuleGhostSpec | null): void;
   /** Center the camera on a (fractional) tile position of the camera ship's grid. */
@@ -459,6 +461,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       // Drawn in the shared sector layer, not the reference ship's: a drag over a distant asteroid has that ship culled away.
       sectorMarks.setPreview(tiles, valid);
     },
+    setAreas: (groups) => sectorMarks.setAreas(groups),
     setModuleGhost: (g) => moduleGhost.set(g),
     focusTile(x, y) {
       const p = iso(x, y); // a sector tile
