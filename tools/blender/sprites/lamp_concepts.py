@@ -1623,3 +1623,6 @@ def floor_tile_grate():
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_wheel_round, floor_tile_grate)]
+
+# Flush floor pieces read better without the 1 px outline standing props get ("block" kind: same render, no outline).
+SPRITES += [(f"concept.{fn.__name__}.flat", (1, 1), "block", fn) for fn in (floor_wheel_round, floor_tile_grate)]
