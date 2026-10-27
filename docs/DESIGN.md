@@ -330,30 +330,81 @@ Each station type has its own reason to visit:
   materials cost.
 - Shields count as Defence. Mk I is on the starter ship, so Mk II/III being hard to get early is fine (open to revisit).
 
-### Pirate factions and the black market (user decisions, 2026-10-26; not built yet)
+### Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; not built yet)
 
 Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be conquerable.
 
-- **Several pirate factions**, each with its own territory, livery, ship doctrine and player standing, so fights against
-  different crews play differently:
-  - **Scrappers** (existing): junk ships, salvage, many weak guns, on the fringes.
-  - **Raider clan:** fast, light ships that favour boarding: they try to take your ship rather than wreck it.
-  - **Cartel / smugglers:** cargo-heavy ships with missiles and escorts; less aggressive, but they guard their routes.
-  - **Zealots** and **mercenaries:** also wanted (flavour and doctrine to design when built).
-- **Pirate factions fight each other** too, so rival fleets clash on the starmap and the player can play them off against
-  one another. This needs a real faction relations table, not just hostile or not, plus per-faction player standing.
-- **Black market:** a neutral pirate trading hub.
-  - **Where:** a few **named, unique** black markets, plus some stations in lawless space that offer black market
-    services (a smaller selection).
-  - **Truce:** at a black market's node nobody starts a fight, pirates of any faction and the player included.
-  - **Breaking the truce:** everyone there turns on you, and you are banned for a while. Banned means they fire on you on
-    sight; the game never stops you travelling there.
-  - **Services:** pirate weapon blueprints (the pirate source in the blueprint table), contraband and stolen goods, a
-    fence that buys anything (captured loot included) with no questions, shady crew for hire, and a job board with
-    pirate-on-pirate contracts.
-  - **Navy:** dislikes it; being seen there may cost navy standing.
-- **Art:** each faction's livery and the black market's look come through the pipeline later; placeholders reuse the
-  Scrapper motif at first.
+**Factions**
+- **Scrappers** (existing): junk ships, salvage, many weak guns, on the fringes.
+- **Raider clan:** fast, light ships that favour boarding. They try to take your ship rather than wreck it.
+- **Cartel / smugglers:** cargo-heavy ships with missiles and escorts. They are less aggressive, but they guard their routes.
+- **Zealots:** a machine-god cult, allied with the Rogue AI (they never fight drones). They board to "free" your AI core:
+  their boarders head for the AI core room, and if they hold it long enough the core is torn out and lost, and your robots
+  go inert. They never surrender, so a fight with them ends in a derelict, never prisoners. Their crews are augmented and
+  use fire weapons, and their territory lies next to the machines'. They will trade with you if your standing is high
+  enough or enough of your crew are heavily augmented. The augmentation rule reads implants, so it only matters once
+  implants land (phase 7).
+- **Mercenaries:** professionals in well-equipped, balanced ships. They are neutral by default and appear as hired
+  escorts and guns, for example "the cartel hired mercenaries to guard this route". Hiring them yourself comes later.
+
+**Relations**
+- Pirate factions are hostile to each other by default, except at black markets (the truce).
+- The cartel is neutral with the Scrappers (it buys their salvage) and at war with the raiders.
+- Mercenaries are neutral to all until hired.
+- The navy and civilians are hostile to all pirates, as now.
+
+**Standing**
+- Standing becomes per faction. The three corporations each get their own, and so does each pirate faction. Today the
+  corporations share `corp` and all pirates share `pirates`.
+- One scale: hostile and attacking on sight when low; neutral, so you can dock and trade, in the middle; discounts and
+  better stock when high.
+- Fighting a faction lowers your standing with it. Jobs against its rivals raise it.
+
+**Black markets**
+- **Three named markets per galaxy, each with its own speciality:**
+  - a cartel market (the main one: best fence, most contraband);
+  - a zealot machine bazaar (AI cores, robot parts, drone tech; zealot trade rules apply);
+  - a mercenary hiring hall (the best shady crew, and later hired escorts).
+- **Lesser services** at pirate-held and lawless stations: a smaller selection, no fence, worse prices.
+- **Truce:** nobody starts a fight at a black market's node. Firing on or boarding anyone there breaks it. A breach
+  means a ban: everyone there fires on you for 30 turns, and you take a standing hit with every pirate faction. The
+  game never stops you travelling there.
+- **Contraband:** an item tag for stolen job cargo, loot from captured ships and illegal weapons. It sells high at black
+  markets. Navy and corporation stations scan you when you dock, and their patrols sometimes hail and scan you. If they
+  find contraband, you either lose it and pay a fine with a standing hit, or pay a bribe. A shielded cargo module that
+  hides contraband is a later blueprint.
+- **Fence:** buys anything, contraband included, at about 50 to 60% of value, with no questions.
+- **Shady crew:** better skills and a higher one-time hire cost (crew take no wages). Drawback traits may come later.
+- **No navy-standing cost for visiting.** The risk comes from contraband scans instead.
+- **Art:** a placeholder from the pirate den layout. The real station layout belongs to the shipgen session; liveries
+  come later.
+
+### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
+
+- **End of a fight with every enemy crew member subdued:** you choose "let them go" or "take prisoners".
+  - Let them go: the ship becomes a derelict and the crew are gone.
+  - Take prisoners: the ship becomes a prize, and its surrendered crew stay put as prisoners until moved.
+  - Zealots never surrender, so they never offer this choice.
+- **Holding prisoners:** they go into **cryo pods** (`module.cryo_pod`, already in the game), not a brig. Frozen, they need no food and can't
+  escape. If a pod loses power, its prisoner thaws and turns hostile inside your ship. A shuttle or the boarding party
+  escorts prisoners over.
+- **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
+  and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
+  them over at a black market (credits, and cartel standing), or release them (standing with their faction).
+- **What to do with a prize:** strip it (your crew deconstruct its modules and take its cargo), sell the hull at a
+  shipyard or black market (`prizeValue`), or scuttle it. Keeping a prize as a second ship waits for a fleet system.
+
+### Faction specialities (phase 2 stock)
+
+Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction shifts what is more
+common there, and the starmap hints at notable stock.
+
+| Faction | Stocks more of | Note |
+|---|---|---|
+| Concord Navy | Weapons, shields | The best gear, gated by standing |
+| Vantor Heavy Industries | Reactors, engines, refineries, fabricators | The best shipyards: bigger caps, cheaper per tile |
+| Helix Biosystems | Medbay, life support, farming, later implants | |
+| Meridian Combine | Storage, cargo, vehicles, fuel | Cheaper fuel |
 
 ### Ship growth
 
@@ -362,7 +413,9 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - **Later:** build a construction pod or construction drones, and your crew can expand the hull anywhere.
 - **Size:** maybe no cap, or a cap set by the AI core or reactor tier and upgrades, so growing the ship is tied to
   progression.
-- **Cost of size:** a bigger ship burns more fuel per jump.
+- **Cost of size:** each engine supports a set number of hull tiles (more for Mk II and III). Over capacity, a jump is
+  blocked unless you overcharge the hyperdrive, which risks engine damage and fires. There is no fuel scaling by size (see
+  phase 5 in `docs/PROGRESSION_PLAN.md`).
 
 ### Money
 
