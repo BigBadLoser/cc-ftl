@@ -70,13 +70,15 @@ def render_sprite(sid, kind, objs):
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
     if wide:                                            # ("wide": (own, wide): its px are own's, their colours wide's,
-        _show(wide, False)                              # the same solid run on past the tile's edges, so a px on an
-        _, a = core.render(W, H, "color")               # edge resolves as it does mid-surface)
-        _show(wide, True)
-        _show(own, False)
+        extra = [o for o in wide if o not in own]       # the same solid run on past the tile's edges, so a px on an
+        only = [o for o in own if o not in wide]        # edge resolves as it does mid-surface; wide may take own in)
+        _show(extra, False)
+        _, a = core.render(W, H, "color")
+        _show(extra, True)
+        _show(only, False)
         rgb, aw = core.render(W, H, "color")
-        _show(own, True)
-        _show(wide, False)
+        _show(only, True)
+        _show(extra, False)
         c, _ = post.downsample(rgb, aw > 0.5, SS, 8, True, sid.startswith(AA))
         op = post.blocks(a > 0.5, SS).sum(-1) >= post.scaled(8, SS)
     else:

@@ -62,3 +62,25 @@ def ext_face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
 def ext_block(mask, o, variant=0):
     st = T.STYLE or {}
     return T.block(mask, "hull", variant, level="up", shell=ext_shell(o), dress=st.get("ext", ext_face))
+
+
+STRAIGHT = {(10, 1): (1, 0), (5, 2): (0, 1)}       # (mask, o) of the straight runs: the direction they run (tiles)
+
+
+def ext_run_wide(mask, o, variant=0):
+    """A straight run as a "wide" sprite (env_build): its px its own, their colours from it with a copy a tile either
+    way along the run (a straight run's neighbours are itself), so a px on the tile's edge resolves as it does
+    mid-run (alone, the top's edge comes out a tone off, seen where the next tile is lower: a diagonal's step)."""
+    from . import core
+    own = ext_block(mask, o, variant)
+    dx, dy = STRAIGHT[(mask, o)]
+    more = []
+    for k in (-1, 1):
+        for ob in own:
+            cp = ob.copy()
+            cp.data = ob.data.copy()
+            cp.location = ob.location + core.G(k * dx, k * dy, 0.0)
+            for col in ob.users_collection:
+                col.objects.link(cp)
+            more.append(cp)
+    return own, own + more

@@ -21,7 +21,10 @@ UP = Vector((0, 0, 1))
 CORE, DARK, LIT = YS[3], YS[1], YS[4]                    # a seam's core on the lean; on the upright part; a lit px
 WALL, FLOOR, SHADOW = "hsXM", "hsXS", "hsD"              # a recess's (T3-3's)
 
-BD1_SEAMS = (21, 26, 34)            # px up the lean: seams right across (the lowest the panel's top)
+BD1_SEAMS = (20, 26, 32)            # px up the lean: seams right across (the lowest the panel's top)
+LEVEL_SEAM = ("hsSeamSoft", CORE, "hsSeamMid", "hsSeamHi")    # a level seam on the lean, px rows down (as the run's
+                                    # slant ones come out of coverage anti-aliasing)
+FAINT_SEAM = (YS[4], "hsSeamSoft")  # the top one: the run's faint seam under its top panel (no dark core, no lit px)
 BD1_PANEL = (-17, 15)               # px across: seams down the panel's sides, from the bend to its top
 BD1_VENTS = ((-12, 5), (11, 6))     # two square vents sunk in the panel: their left edges; px up the lean, px square
 BD1_SLOTS = (-15, 6, 5, 2, 18, 3)   # five slots: the first's left edge, pitch, width; their lip px up the lean, px
@@ -29,7 +32,7 @@ BD1_SLOTS = (-15, 6, 5, 2, 18, 3)   # five slots: the first's left edge, pitch, 
 BD1_CLAMPS = ((-9, -3), (4, 10), 4)     # px across; px up and down from the seam (2 px proud: wall3d_ext_t3's)
 BD1_PLATE = ((-10, 9), 2)           # px across; up to this many px under the seam, from the foot (a px proud, lit bolts
                                     # 2 px in from its corners)
-SIDE_SEAMS = (21, 34)               # the side diagonals (SideD1): seams along the lean at the near one's (px up it)
+SIDE_SEAMS = (21, 33)               # the side diagonals (SideD1): seams along the lean at the near one's (px up it)
 
 
 def _slab(n, c, t):
@@ -37,14 +40,19 @@ def _slab(n, c, t):
     return [(n, c + t * n.length), (-n, -c)]
 
 
-def _seam(v0, v1, along, on="lean"):
+def _seam(v0, v1, along, on="lean", rows=LEVEL_SEAM):
     """A seam's marks over [v0, v1] (px up the lean or down the upright; along: (u0, u1) across, or a seam down the
-    face at u0 when u1 is None): its dark core (LINE_W thick), a lit px under it (on its +u side if down)."""
+    face at u0 when u1 is None): its dark core (LINE_W thick), a lit px under it (on its +u side if down). One across
+    the lean lies level on screen, where coverage anti-aliasing has nothing to soften: it is painted as a run's slant
+    seam comes out (LEVEL_SEAM: a soft px over the core, a half-lit one and a lit one under it), on whole px rows."""
     core, hi = (CORE, HILITE) if on == "lean" else (DARK, LIT)
     u0, u1 = along
     if u1 is None:
         return [(on, u0 + 1 - LINE_W, u0 + 1, v0, v1, core, 1), (on, u0 + 1, u0 + 2, v0, v1, hi, 1)]
-    return [(on, u0, u1, v0, v0 + LINE_W, core, 1), (on, u0, u1, v0 - 1, v0, hi, 1)]
+    if on == "lean":
+        return [(on, u0, u1, v0 + 1 - i - (rows is FAINT_SEAM), v0 + 2 - i - (rows is FAINT_SEAM), col, 1)
+                for i, col in enumerate(rows)]
+    return [(on, u0, u1, v0, v0 + 1, core, 1), (on, u0, u1, v0 - 1, v0, hi, 1)]
 
 
 def near(rel, solid, others, s, c, g, H):
@@ -57,11 +65,13 @@ def near(rel, solid, others, s, c, g, H):
     step = round((c * 32 + 1) / 32) % 2                                 # (rows behind the steps: their middles at u
     centres = [(2 * m - step) for m in (-1, 0, 1)]                      # = -rows, mod 2)
 
-    def z(on, v):                                                       # (px up the lean / down the upright)
-        return zb + v / rise if on == "lean" else zb - v / Z64
+    off = (c * 16 - zb * Z64) % 1                                       # (the bend's px row: px up the lean / down
+                                                                        # the upright counted from its top, so marks
+    def z(on, v):                                                       # land on whole px rows)
+        return zb + (v + off) / rise if on == "lean" else zb - (v - off) / Z64
     marks = []                                                          # (on, u0, u1, v0, v1, tone, layer)
     for v in BD1_SEAMS:
-        marks += _seam(v, v, (-32, 32))
+        marks += _seam(v, v, (-32, 32), rows=FAINT_SEAM if v == max(BD1_SEAMS) else LEVEL_SEAM)
     for u in BD1_PANEL:
         marks += _seam(0, BD1_SEAMS[0], (u, None))
     (a0, a1), (v, n) = BD1_VENTS

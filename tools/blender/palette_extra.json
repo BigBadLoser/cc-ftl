@@ -2146,5 +2146,14 @@
  },
  "hsW": {
   "hex": "#e2e9ee"
+ },
+ "hsSeamSoft": {
+  "hex": "#cdd2d7"
+ },
+ "hsSeamMid": {
+  "hex": "#bbc1cc"
+ },
+ "hsSeamHi": {
+  "hex": "#dce1e7"
  }
 }
