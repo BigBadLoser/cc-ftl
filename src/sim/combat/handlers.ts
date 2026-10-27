@@ -6,7 +6,8 @@ import { leave } from '../galaxy/respond';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
-import { placementGapError , shipIdOf } from '../regions';
+import { placementGapError, shipGrid, shipIdOf } from '../regions';
+import { Struct } from '../structure';
 import { shipById, spawnShip } from './ships';
 import { weaponAntiVehicle } from './targets';
 import { generateShip } from '../shipgen/generate';
@@ -83,7 +84,14 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
       if (cmd.targetModuleId !== 0 && !moduleOnGrid(sim, cmd.targetModuleId, cmd.targetShip)) return reject(sim, cmd.type, 'badTarget');
       const aimed = shipById(sim, cmd.targetShip);
       if (aimed?.outpost?.hidden) return reject(sim, cmd.type, 'badTarget'); // nobody knows it is there
-      target = { ship: cmd.targetShip, moduleId: cmd.targetModuleId };
+      const tile = cmd.targetTile;
+      if (tile) {
+        const grid = shipGrid(sim, cmd.targetShip);
+        if (cmd.targetModuleId !== 0 || !Number.isInteger(tile.x) || !Number.isInteger(tile.y) || !grid?.inBounds(tile.x, tile.y) || grid.get('struct', tile.x, tile.y) === Struct.Space) {
+          return reject(sim, cmd.type, 'badTarget');
+        }
+      }
+      target = { ship: cmd.targetShip, moduleId: cmd.targetModuleId, ...(tile ? { tile: { x: tile.x, y: tile.y } } : {}) };
     }
     if (cmd.weaponId === null) {
       combat.target = target;

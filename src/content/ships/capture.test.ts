@@ -117,7 +117,8 @@ describe('capturing a ship', () => {
   it('is not captured without bridge control', () => {
     const sim = setup();
     const { party } = stage(sim);
-    for (const c of party) teleport(sim, c, 2, 3, 12);
+    const helm = helmTile(sim, 2);
+    for (const c of party) teleport(sim, c, 2, helm.x + 3, helm.y); // aboard, but off the helm
     const out = run(sim, 300);
     expect(ship(sim, 2).state).toBe('active');
     expect(of(out, 'ship.captured')).toHaveLength(0);

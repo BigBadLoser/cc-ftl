@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import type { UiApi, UiCombat, UiShipCombat } from './api';
+  import { onDestroy, onMount } from 'svelte';
+  import type { UiAiming, UiApi, UiCombat, UiShipCombat } from './api';
   import CombatPlayer from './CombatPlayer.svelte';
   import Icon from './Icon.svelte';
   import CombatTarget from './CombatTarget.svelte';
@@ -15,6 +15,8 @@
   let viewEl: HTMLCanvasElement | undefined = $state();
   /** The weapon chosen for aiming (0 = none: picks aim the whole ship's target). */
   let selWeapon = $state(0);
+  /** "Target in view" armed: the next left-click on the enemy in the main view aims (a weapon id, null = every weapon). */
+  let aiming = $state<UiAiming | null>(null);
 
   const enemy = $derived<UiShipCombat | undefined>(combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0]);
   const me = $derived(combat.player);
@@ -79,6 +81,7 @@
     const ship = viewShip;
     api.setCombatView(el && ship ? { ship, canvas: el } : null);
   });
+  onMount(() => api.aiming.subscribe((a) => (aiming = a)));
 
   // Floating window: left-docked by default, where the screen is mostly empty. The panels that step aside for it follow its real
   // right edge (--combat-right) while it sits on the left; once the player drags it elsewhere they go back to their normal spots (data-combat-free).
@@ -134,6 +137,7 @@
     writeNumber(SPLIT_KEY, split);
   }
   onDestroy(() => {
+    api.setAiming(null);
     api.setCombatView(null);
   });
 </script>
@@ -162,7 +166,7 @@
       <div class="viewbox">
         <canvas class="view" bind:this={viewEl} onclick={tap} onpointermove={move} onpointerleave={() => (hover = 0)} data-testid="combat-view"></canvas>
       </div>
-      <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} />
+      <CombatTarget {enemy} shipModuleId={aimed} hasTarget={!!me?.target} onAim={(id) => aim(id, true)} shipTile={me?.target?.tile ?? null} aimingAll={aiming !== null && aiming.weapon === null} onInView={() => api.setAiming(aiming && aiming.weapon === null ? null : { weapon: null })} />
     </div>
   {:else}
     <p class="none">No hostile ships in range.</p>
@@ -171,7 +175,7 @@
   {#if me}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
     {#if enemy}<div class="split" role="separator" aria-orientation="horizontal" aria-label="Resize the ship view" tabindex="0" data-testid="combat-split" onpointerdown={splitDown} onpointermove={splitMove} onpointerup={splitUp} onpointercancel={splitUp} onkeydown={splitKey}><i></i></div>{/if}
-    <div class="low" style="flex-grow:{(1 - split) * 100}"><CombatPlayer {api} {me} {enemy} {selWeapon} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} /></div>
+    <div class="low" style="flex-grow:{(1 - split) * 100}"><CombatPlayer {api} {me} {enemy} {selWeapon} {aiming} onSelect={(id) => (selWeapon = id)} {onHail} {onFlee} /></div>
   {/if}
   </div>
 </FloatingWindow>

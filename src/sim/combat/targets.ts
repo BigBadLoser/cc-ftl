@@ -77,6 +77,7 @@ export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Targe
     store(null);
     return null;
   }
+  if (t.tile) return t; // a blind tile aim stays as set, whatever the modules do
   const m = t.moduleId ? sim.world.get(t.moduleId, ModuleC) : undefined;
   if (m && shipIdOf(sim, m) === shipId) {
     if (m.hp > 0) return t;

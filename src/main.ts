@@ -227,6 +227,8 @@ const api: UiApi = {
   prizes: bridge.prizes,
   mining: bridge.mining,
   selectedAsteroid: controller.selectedAsteroid,
+  aiming: controller.aiming.aiming,
+  setAiming: controller.aiming.set,
   selectAsteroid: controller.selectAsteroid,
   story: bridge.story,
   starmap: bridge.starmap,

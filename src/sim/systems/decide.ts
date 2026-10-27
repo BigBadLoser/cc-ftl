@@ -5,21 +5,22 @@ import {
   AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
   type Crew, type Job, type Path, type Position, type Priorities,
 } from '../crew/components';
+import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
 import { findSuitSource, findSuitStow, isErrand, startErrand, type SuitSource } from '../eva/errands';
 import { planWalk } from '../eva/route';
 import { isSuited } from '../eva/suit';
 import { isOffDuty } from '../fight/relations';
-import { needsMaterials } from '../items/materials';
 import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { operateAffinity } from '../combat/operators';
 import { goToBay, wantsBay } from '../robots/bay';
-import { canTakeRobotJob, heldForMend } from '../robots/jobs';
+import { heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
-import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW } from '../tuning';
+import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';
+import { TICK_HZ } from '../time';
 import { shipIdOf, shipGrid } from '../regions';
 import { strollTurn } from '../stations/life';
 
@@ -154,6 +155,14 @@ function fallAsleep(sim: Sim, id: number, crew: Crew): void {
   sim.events.emit({ type: 'crew.fellAsleep', crew: id });
 }
 
+/** True if an empty console may be relieved by crew whose operating priority is low: in a fight, left empty for RELIEF_AFTER_SEC, and one that matters unmanned (the shield console works at base strength without an operator). */
+function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
+  const role = sim.world.get(crewId, CrewC)?.role;
+  if (!role || !sim.content.roles[role]?.relievesStations || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
+  const m = sim.world.get(job.target ?? 0, ModuleC);
+  return !!m && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
+}
+
 /** Reserve the best job by priority level, then shortest path, then lowest id. */
 function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
   const prio = sim.world.get(crewId, PrioritiesC) as Priorities;
@@ -165,13 +174,14 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     let best: { id: number; steps: Tile[]; score: number; thin: boolean } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || shipIdOf(sim, job) !== shipIdOf(sim, pos) || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
-      if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL) continue;
-      if (!canTakeRobotJob(sim, crewId, job)) continue;
+      if (!job || !cats.includes(job.category) || !jobFits(sim, crewId, pos, job)) continue;
+      // Operating is a high-priority job, except in a fight: a console left empty a while is relieved by crew of a role that relieves stations, with nothing better to do (disabled, 0, stays off).
+      if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL && !canRelieve(sim, crewId, job)) continue;
       const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
       if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
-      const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0);
+      // a relief takes the console only when nothing else of their rank is waiting
+      const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0) + (job.kind === 'operate' && level > OPERATE_MAX_LEVEL ? RELIEF_PENALTY : 0);
       if (!best || score < best.score) best = { id: jobId, steps: plan.steps, score, thin: plan.thin };
     }
     if (best) {

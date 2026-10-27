@@ -8,7 +8,7 @@
  */
 
 type Data = Record<string, unknown>;
-type Target = { ship: number; moduleId: number; vehicle?: number } | null;
+type Target = { ship: number; moduleId: number; vehicle?: number; tile?: { x: number; y: number } } | null;
 
 /** Clear, in place, the references in one entity's components (as `World.detach` returns them) to ids `inSet` rejects. */
 export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {

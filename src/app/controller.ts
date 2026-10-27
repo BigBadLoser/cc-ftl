@@ -14,6 +14,7 @@ import { homeShip } from '../sim/index';
 import { foreignShipTarget } from './tapTarget';
 import { EggSacC } from '../sim/aliens/components';
 import { shipById } from '../sim/combat/ships';
+import { createAiming, type Aiming } from './aiming';
 
 // dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
@@ -33,6 +34,8 @@ export interface Controller {
   /** Asteroid picked by clicking its rock or from the node strip, or null. */
   selectedAsteroid: Readable<number | null>;
   selectAsteroid(id: number | null): void;
+  /** "Target in view": the armed aim and how to arm it. */
+  aiming: Aiming;
   alerts: Alerts;
   log: EventLog;
   toast: Readable<string | null>;
@@ -285,7 +288,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
    * Right-click / Escape in build mode: first drop the placement (the catalog stays open with nothing selected), then
    * leave build mode. 'module' with no def is the "nothing selected" state.
    */
+  const aiming = createAiming(sim, () => homeShip(sim), () => r?.setAimHover(null));
   const back = () => {
+    if (aiming.aiming.get()) return aiming.set(null);
     const t = tool.get();
     if (t.tool === 'build' && !(t.build === 'module' && t.moduleDef === null)) setTool({ build: 'module', moduleDef: null });
     else setTool({ tool: 'select' });
@@ -315,6 +320,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectShip,
     selectedAsteroid: astSel,
     selectAsteroid,
+    aiming,
     selectedCrew: crewSel,
     selectModule,
     selectedSite: siteSel,
@@ -346,6 +352,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       });
       return {
         onTap(sx, sy) {
+          if (aiming.tap(renderer, sx, sy)) return;
           const crewId = renderer.pickCrew(sx, sy);
           if (crewId !== null && sim.world.has(crewId, EggSacC)) return attack(crewId); // an egg sac: only ever a target
           if (crewId !== null) return isPlayerCrew(crewId) ? selectCrew(crewId) : crewSel.get() !== null && sim.world.has(crewSel.get() as number, DraftedC) ? attack(crewId) : selectCrew(crewId);
@@ -393,6 +400,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           bridge.setHovered(t && inShip(sim, homeShipId(), t.x, t.y) ? { ship: homeShipId(), ...t } : null);
           refreshPreview();
         },
+        onPointer: (sx, sy) => aiming.hover(renderer, sx, sy),
         paintMode: () => tool.get().tool !== 'select',
         pickLift: () => (isMineTool() ? ROCK_MASS_Z : 0),
         onPaint(phase, t) {
@@ -421,7 +429,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
             if (moduleMode()) rotate(shift);
             else toggleDraft();
           }
-          else if (tool.get().tool !== 'select') back();
+          else if (aiming.aiming.get() || tool.get().tool !== 'select') back();
           else selectTile(null);
         },
       };

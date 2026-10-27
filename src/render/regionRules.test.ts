@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
-import { ShipC, newGame } from '../sim';
+import { AllegianceC, CrewC, PositionC, ShipC, newGame } from '../sim';
 import { content } from '../content';
 import { crewHidden, wantsRoof } from './regionRules';
 
@@ -41,5 +41,35 @@ describe('wantsRoof', () => {
     const ship = sim.world.get(id, ShipC)!;
     expect(wantsRoof(sim.world, id, ship, true, true)).toBe(true);
     expect(wantsRoof(sim.world, id, ship, false, true)).toBe(false);
+  });
+
+  it('roofs every ship at war with the player, not only hostile ones, for the whole fight', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.rogueShipyard', x: 100, y: 50 });
+    sim.step();
+    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.faction === 'rogue') as number;
+    const ship = sim.world.get(id, ShipC)!;
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(true);
+    for (const state of ['active', 'disabled'] as const) {
+      ship.state = state;
+      expect(wantsRoof(sim.world, id, ship, true)).toBe(true);
+    }
+    ship.state = 'wreck';
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(false);
+  });
+
+  it('stays roofed while player crew float in its EVA ring, and lifts only for crew aboard', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.faction === 'hostile') as number;
+    const ship = sim.world.get(id, ShipC)!;
+    const crew = sim.world.query(CrewC, PositionC).find((c) => sim.world.get(c, AllegianceC)?.faction === 'player') as number;
+    const pos = sim.world.get(crew, PositionC)!;
+    pos.x = ship.x - 1;
+    pos.y = ship.y + 2;
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(true);
+    pos.x = ship.x + 2;
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(false);
   });
 });

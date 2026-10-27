@@ -491,6 +491,8 @@ export interface UiWeapon {
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */
   targetModuleId: number;
+  /** A blind tile aim (sector tile), or null. */
+  targetTile: { x: number; y: number } | null;
 }
 
 /** A console of the player's ship and who runs it. */
@@ -516,6 +518,9 @@ export interface UiShipCombat {
   /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
   name: string;
+  /** Sector tile of the ship's top-left corner (a tile aim is shown relative to it). */
+  x: number;
+  y: number;
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
   /** A dormant hostile (pirate den) not yet provoked: listed (it can be targeted) but it does not light the hostiles button. */
   dormant?: boolean;
@@ -529,7 +534,7 @@ export interface UiShipCombat {
   ftl: number;
   ftlMax: number;
   /** Ship-wide target, with a label. */
-  target: { ship: number; moduleId: number; label: string } | null;
+  target: { ship: number; moduleId: number; label: string; tile?: { x: number; y: number } } | null;
   modules: UiShipModule[];
 }
 
@@ -550,9 +555,14 @@ export interface UiFtl {
   pilot: string | null;
 }
 
+/** "Target in view" is armed: the next left-click on an enemy ship in the main view aims `weapon` (a weapon module id; null = every weapon). */
+export interface UiAiming {
+  weapon: number | null;
+}
+
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[] }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
@@ -966,6 +976,9 @@ export interface UiApi {
   setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
   pickCombat(x: number, y: number): { moduleId: number } | null;
+  /** The armed "Target in view" aim, or null. */
+  aiming: Subscribable<UiAiming | null>;
+  setAiming(a: UiAiming | null): void;
   /** Roof hostile ships (default) or show their interior. */
   setRoofEnemies(on: boolean): void;
   /** Show the player's ship with its roof on (view from outside). */
