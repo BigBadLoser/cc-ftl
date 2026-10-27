@@ -29,7 +29,7 @@
 <div class="yard" data-testid="yard-pane">
   <div class="offer">
     <b>{svc.size === 'hub' ? 'Hub shipyard' : 'Station shipyard'}</b>
-    <span>Builds up to <b>{svc.cap}</b> hull tiles a visit · {svc.price.credits} ₵ and {svc.price.metal} metal a tile, floor inside included · ship limit {svc.hull.max} hull tiles</span>
+    <span>Builds up to <b>{svc.cap}</b> hull tiles a visit · {svc.price.credits} ₵ and {svc.price.metal} metal a tile, floor inside included · ship size limit {svc.hull.max}</span>
   </div>
 
   {#if order}
@@ -57,7 +57,7 @@
           </b>
         </div>
         <div class="row"><span>You have</span><span>{credits} ₵ · {metal} metal</span></div>
-        <div class="row" class:bad={over}><span>Hull</span><b data-testid="yard-hull">{quote.hull.before} → {quote.hull.after} / {quote.hull.capacity}</b></div>
+        <div class="row" class:bad={over}><span>Size</span><b data-testid="yard-hull">{quote.hull.before} → {quote.hull.after} / {quote.hull.capacity}</b></div>
         {#if over}<p class="warn" data-testid="yard-over">Over what the engines carry: jumping will need an overcharge.</p>{/if}
         {#if quote.error}<p class="warn" data-testid="yard-error">{quote.errorText}.</p>{/if}
         {#if quote.rest > 0 && !quote.error}<p class="note">{quote.rest} more stay planned for the next yard.</p>{/if}

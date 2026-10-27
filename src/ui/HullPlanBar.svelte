@@ -23,7 +23,7 @@
   </div>
   {#if plan}
     <span class="s" data-testid="hull-plan-tiles">{plan.tiles.length} tiles planned</span>
-    <span class="s" class:bad={over} data-testid="hull-plan-hull">Hull {plan.hull.now}{plan.tiles.length ? ` → ${plan.hull.afterAll}` : ''} / {plan.hull.capacity}</span>
+    <span class="s" class:bad={over} data-testid="hull-plan-hull">Size {plan.hull.now}{plan.tiles.length ? ` → ${plan.hull.afterAll}` : ''} / {plan.hull.capacity}</span>
     {#if over}<span class="s bad" data-testid="hull-plan-over">Over what the engines carry</span>{/if}
     {#if plan.loose.length}<span class="s dim">{plan.loose.length} not touching the ship yet</span>{/if}
   {/if}

@@ -15,7 +15,7 @@ export interface HullPlanTool {
   active(): boolean;
   /** Drag lifecycle on the sector tile under the pointer: a rectangle's outline added, or the tiles in it erased. */
   paint(phase: 'start' | 'move' | 'end' | 'cancel', tile: Tile | null): void;
-  /** Redraw the ghost tiles: the plan (always, so it is seen from any tool), the drag and a yard order's unbuilt tiles. */
+  /** Redraw the ghost tiles: the plan (only with the Hull plan tool or a Shipyard tab open), the drag and a yard order's unbuilt tiles. */
   draw(): void;
 }
 
@@ -32,14 +32,18 @@ export function createHullPlanTool(bridge: Bridge, deps: { tool: Writable<UiTool
   function draw(): void {
     const r = deps.renderer();
     if (!r) return;
-    const { plan, order } = bridge.yard.get();
+    const { plan, order, quote } = bridge.yard.get();
     const dragging = active() ? area.dragging() : [];
     const loose = new Set(plan.loose.map((t) => `${t.x},${t.y}`));
+    // The plan is only drawn while it is being worked on: with the Hull plan tool open, or a shipyard's Shipyard tab (which has a quote) open.
+    const shown = active() || !!quote;
     r.setAreas([
-      { tiles: plan.floor, tint: CYAN },
-      { tiles: plan.connected, tint: AMBER, solid: true },
-      { tiles: plan.tiles.filter((t) => loose.has(`${t.x},${t.y}`)), tint: AMBER },
-      { tiles: plan.blocked, tint: RED, solid: true },
+      ...(shown ? [
+        { tiles: plan.floor, tint: CYAN },
+        { tiles: plan.connected, tint: AMBER, solid: true },
+        { tiles: plan.tiles.filter((t) => loose.has(`${t.x},${t.y}`)), tint: AMBER },
+        { tiles: plan.blocked, tint: RED, solid: true },
+      ] : []),
       ...(order?.live ? [{ tiles: order.floor, tint: CYAN, solid: true }, { tiles: order.walls, tint: WHITE, solid: true }] : []),
       { tiles: dragging, tint: area.mode() === 'erase' ? RED : WHITE },
     ]);

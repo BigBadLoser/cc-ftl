@@ -1,4 +1,4 @@
-import { hullTiles, outerProfile } from '../combat/hull';
+import { hullArea, interiorArea } from '../combat/hull';
 import { ShipC, type Ship } from '../combat/components';
 import type { Rect } from '../grid';
 import { hullLoad } from '../ftl/capacity';
@@ -10,6 +10,7 @@ import { Struct } from '../structure';
 import { playerItems, playerShip } from '../trade/player';
 import { ASTEROID_GAP, REGION_PAD } from '../tuning';
 import { yardPrice, yardService, type YardService } from './rules';
+import { pickSection, rowRanks, type Rim } from './rows';
 import { HullPlanC, type YardMoney } from './types';
 
 type Tile = { x: number; y: number };
@@ -119,15 +120,26 @@ function enclosedFloor(sim: Sim, hull: readonly Tile[]): Tile[] {
   return out;
 }
 
-/** The outer-profile hull count the ship would have with these hull tiles and this floor built. */
-function profileWith(sim: Sim, ship: number, hull: readonly Tile[], floor: readonly Tile[]): number {
+/** What a rim tile of a closed section is for this ship (see `Rim`). */
+function rimOf(sim: Sim, ship: number): (x: number, y: number) => Rim {
+  const grid = sim.sector.grid;
+  const clear = dockApproaches(sim, ship);
+  return (x, y) => {
+    if (clear.has(key(x, y))) return 'no';
+    if (grid.get('struct', x, y) === Struct.Space) return grid.get('ship', x, y) === 0 ? 'wall' : 'no';
+    return shipAt(sim, x, y) === ship ? 'ship' : 'no';
+  };
+}
+
+/** The ship's size (interior area) once these hull tiles and this floor are built. */
+function areaWith(sim: Sim, ship: number, hull: readonly Tile[], floor: readonly Tile[]): number {
   const grid = sim.sector.grid;
   const overlay = new Map<string, number>();
   for (const t of hull) overlay.set(key(t.x, t.y), Struct.Wall);
   for (const t of floor) overlay.set(key(t.x, t.y), Struct.Floor);
   const own = shipRect(sim.world.get(ship, ShipC) as Ship);
   const box = hull.length || floor.length ? union(own, boxOf([...hull, ...floor], 1)) : own;
-  return outerProfile((x, y) => overlay.get(key(x, y)) ?? (shipAt(sim, x, y) === ship ? grid.get('struct', x, y) : Struct.Space), box);
+  return interiorArea((x, y) => overlay.get(key(x, y)) ?? (shipAt(sim, x, y) === ship ? grid.get('struct', x, y) : Struct.Space), box);
 }
 
 /** The plan as the build tools show it: what is planned, what can be built from the ship now, the floor it would enclose, and the hull count. */
@@ -148,14 +160,17 @@ export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
   const floor = enclosedFloor(sim, connected);
   return {
     tiles, connected, loose, blocked, floor,
-    hull: { now: grid ? hullTiles(grid) : 0, afterAll: ship && connected.length ? profileWith(sim, ship, connected, floor) : load.tiles, capacity: load.capacity, max: sim.content.yard?.maxHull ?? 0 },
+    hull: { now: grid ? hullArea(grid) : 0, afterAll: ship && connected.length ? areaWith(sim, ship, connected, floor) : load.tiles, capacity: load.capacity, max: sim.content.yard?.maxSize ?? 0 },
   };
 }
 
 /** Why a quote cannot be bought; the first that applies. */
 export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'notAdjacent' | 'shipMax' | 'crowded';
 
-/** A yard's quote for the plan: the hull tiles it would build on this visit (up to its cap, nearest the ship first) and the floor they enclose. */
+/**
+ * A yard's quote for the plan: the hull tiles it would build on this visit (up to its cap, the rows nearest the ship first, shut off by a cross wall when
+ * the cap cuts the room short; see `pickSection`) and the floor they enclose. Both lists are in build order.
+ */
 export interface YardQuote {
   service: YardService | null;
   /** Hull tiles bought now, the floor they enclose, and the wall of each floor patch the crew close last (with the open tile beyond it). */
@@ -170,7 +185,7 @@ export interface YardQuote {
   afford: { credits: boolean; metal: boolean };
   /** The tiles one visit builds. */
   cap: number;
-  /** The outer hull profile now and after this purchase, against the engines' capacity and the overall ship maximum. */
+  /** The ship's size (interior area) now and after this purchase, against the engines' capacity and the overall ship maximum. */
   hull: { before: number; after: number; capacity: number; max: number };
   /** The ship's rectangle once it has grown to hold the build. */
   rect: Rect | null;
@@ -232,23 +247,25 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   const price = service ? yardPrice(sim, service, 0) : { credits: 0, metal: 0 };
   const base: YardQuote = {
     service, walls: [], floor: [], gaps: [], planned: view.tiles.length, rest: view.tiles.length, error: null, price,
-    afford: { credits: true, metal: true }, cap: service?.tier.cap ?? 0, hull: { before: view.hull.now, after: view.hull.now, capacity: view.hull.capacity, max: def?.maxHull ?? 0 }, rect: null,
+    afford: { credits: true, metal: true }, cap: service?.tier.cap ?? 0, hull: { before: view.hull.now, after: view.hull.now, capacity: view.hull.capacity, max: def?.maxSize ?? 0 }, rect: null,
   };
   if (!service || !def) return { ...base, error: 'noYard' };
   if (!ship || !sim.world.get(ship, ShipC)) return { ...base, error: 'noShip' };
   if (view.tiles.length === 0) return { ...base, error: 'noTiles' };
-  const walls = view.connected.slice(0, service.tier.cap);
-  if (walls.length === 0) return { ...base, error: 'notAdjacent' };
-  const floor = enclosedFloor(sim, walls);
-  const after = profileWith(sim, ship, walls, floor);
+  if (view.connected.length === 0) return { ...base, error: 'notAdjacent' };
+  const own = shipRect(sim.world.get(ship, ShipC) as Ship);
+  const rank = rowRanks(sim, ship, union(own, boxOf(view.connected, 1)));
+  const { walls, floor } = pickSection(view.connected, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w));
+  const after = areaWith(sim, ship, walls, floor);
   const cost = yardPrice(sim, service, walls.length);
-  const rect = union(shipRect(sim.world.get(ship, ShipC) as Ship), boxOf([...walls, ...floor], 1));
+  const planned = new Set(view.tiles.map((t) => key(t.x, t.y)));
+  const rect = union(own, boxOf([...walls, ...floor], 1));
   const out: YardQuote = {
-    ...base, walls, floor, gaps: gapsFor(sim, walls, floor, dockApproaches(sim, ship)), rest: view.tiles.length - walls.length, price: cost,
+    ...base, walls, floor, gaps: gapsFor(sim, walls, floor, dockApproaches(sim, ship)), rest: view.tiles.length - walls.filter((w) => planned.has(`${w.x},${w.y}`)).length, price: cost,
     afford: { credits: sim.trade.credits >= cost.credits, metal: playerItems(sim, 'item.metal') >= cost.metal },
     hull: { ...base.hull, after }, rect,
   };
-  if (after > def.maxHull) return { ...out, error: 'shipMax' };
+  if (after > def.maxSize) return { ...out, error: 'shipMax' };
   if (!growthClear(sim, ship, rect)) return { ...out, error: 'crowded' };
   return out;
 }

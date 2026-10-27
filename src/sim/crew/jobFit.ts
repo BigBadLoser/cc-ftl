@@ -13,6 +13,7 @@ import { isIncapacitated, jobGoal, origin } from './helpers';
 /** The checks every job pick makes before scoring: the crew member's ship, not their own target, funded, not an errand, and not barred to them. */
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
+  if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;
   return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job);
 }
 

@@ -43,12 +43,12 @@ const SHIELD: Record<2 | 3, Tier & { layersPerPower: number; rechargeSec: number
 
 /**
  * Engine: |power| x evasionPerPower = about 12% (Mk I) / 25% / 45% evasion; Mk II burns 15% and Mk III 30% less fuel per jump.
- * `hullCapacity`: hull tiles one engine can push (Mk I is 70 in modules.ts): 70 / 105 / 150.
+ * `hullCapacity`: tiles of ship size (interior area) one engine can push (Mk I is 330 in modules.ts): 330 / 495 / 700.
  */
 const ENGINE: Record<2 | 3, Tier & { evasionPerPower: number; fuelFactor: number; hullCapacity: number }> = {
-  2: { footprint: [4, 6], power: -10, evasionPerPower: 0.025, fuelFactor: 0.85, hullCapacity: 105, maxHp: 210, buildWork: 440, minDanger: 3, price: 800, tint: MK2_TINT,
+  2: { footprint: [4, 6], power: -10, evasionPerPower: 0.025, fuelFactor: 0.85, hullCapacity: 495, maxHp: 210, buildWork: 440, minDanger: 3, price: 800, tint: MK2_TINT,
     cost: [{ item: 'item.metal', count: 42 }, { item: 'item.electronics', count: 18 }] },
-  3: { footprint: [4, 7], power: -15, evasionPerPower: 0.03, fuelFactor: 0.7, hullCapacity: 150, maxHp: 270, buildWork: 600, minDanger: 6, price: 1900, tint: MK3_TINT,
+  3: { footprint: [4, 7], power: -15, evasionPerPower: 0.03, fuelFactor: 0.7, hullCapacity: 700, maxHp: 270, buildWork: 600, minDanger: 6, price: 1900, tint: MK3_TINT,
     cost: [{ item: 'item.metal', count: 66 }, { item: 'item.electronics', count: 32 }, { item: 'item.polymer', count: 14 }] },
 };
 

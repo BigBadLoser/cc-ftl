@@ -7,6 +7,7 @@ import { freeAirlock, playerShip } from '../trade/player';
 import { Struct } from '../structure';
 import { takeMetal } from './money';
 import { MAX_PLAN, plannedTiles, quoteYard } from './plan';
+import { inRowOrder, rowRanks } from './rows';
 import { finishOrder } from './flow';
 import { HullPlanC, isLiveOrder, type YardOrder } from './types';
 
@@ -71,12 +72,20 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
     sim.trade.credits -= quote.price.credits;
     const order: YardOrder = {
       id: sim.yard.nextId++, station: cmd.station, ship, floor: quote.floor, walls: quote.walls, gaps: quote.gaps, sealed: quote.gaps.length === 0, ejected: [], held: { ...quote.price },
-      price: { ...quote.price }, phase: 'launch', vehicle: 0, crew: [], airlock, timer: 0, stall: 0, built: 0, tick: sim.tick,
+      price: { ...quote.price }, rank: 0, phase: 'launch', vehicle: 0, crew: [], airlock, timer: 0, stall: 0, built: 0, tick: sim.tick,
     };
+    const rank = rowRanks(sim, ship, quote.rect);
     growShip(sim, ship, quote.rect);
     const gapKeys = new Set(quote.gaps.map((g) => `${g.wall.x},${g.wall.y}`));
-    for (const t of quote.floor) createJob(sim, 'build', ship, t.x, t.y, Struct.Floor, BUILD_TICKS[Struct.Floor] as number, true, { yard: order.id });
-    for (const t of quote.walls.filter((w) => !gapKeys.has(`${w.x},${w.y}`))) createJob(sim, 'build', ship, t.x, t.y, Struct.Wall, BUILD_TICKS[Struct.Wall] as number, true, { yard: order.id });
+    // Rows, nearest the ship first: floor and wall jobs go up in row order and the crew keep to it (`jobFits`, `Job.yardRank`).
+    const open = [
+      ...quote.floor.map((t) => ({ ...t, struct: Struct.Floor })),
+      ...quote.walls.filter((w) => !gapKeys.has(`${w.x},${w.y}`)).map((t) => ({ ...t, struct: Struct.Wall })),
+    ];
+    for (const t of inRowOrder(open, rank) as typeof open) {
+      createJob(sim, 'build', ship, t.x, t.y, t.struct, BUILD_TICKS[t.struct] as number, true, { yard: order.id, yardRank: rank(t.x, t.y) });
+    }
+    order.rank = Math.min(...open.map((t) => rank(t.x, t.y)));
     const bought = new Set(quote.walls.map((t) => `${t.x},${t.y}`));
     const left = plannedTiles(sim, ship).filter((t) => !bought.has(`${t.x},${t.y}`));
     if (left.length === 0) sim.world.remove(ship, HullPlanC);

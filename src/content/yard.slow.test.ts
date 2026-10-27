@@ -8,7 +8,7 @@ describe('shipyard: bigger jobs', () => {
   it('a hub yard builds two separate patches, one on each side, and nobody is walled in', () => {
     const { sim, station, me } = yardGame('hub', 'station.military');
     giveItems(sim, 'item.metal', 300);
-    planHull(sim, me, [...outline(sim, me, 8, -2, 6, 3), ...outline(sim, me, 5, 19, 5, 3), ...outline(sim, me, 24, -3, 4, 3)]);
+    planHull(sim, me, [...outline(sim, me, 8, -2, 6, 3), ...outline(sim, me, 5, 19, 5, 3), ...outline(sim, me, 24, -2, 4, 3)]);
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
     const order = sim.yard.orders[0]!;

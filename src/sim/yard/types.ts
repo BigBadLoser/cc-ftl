@@ -2,7 +2,7 @@ import { defineComponent } from '../ecs';
 
 type Tile = { x: number; y: number };
 
-/** One yard size tier ('station' or 'hub'): hull tiles it will build in one visit, and its price multiplier. */
+/** One yard size tier ('station' or 'hub'): hull tiles (outer ring) it will build in one visit, and its price multiplier. */
 export interface YardSizeDef {
   cap: number;
   price: number;
@@ -16,8 +16,8 @@ export interface YardSizeDef {
 export interface YardDef {
   kinds: readonly string[];
   sizes: Record<string, YardSizeDef>;
-  /** The overall ship maximum in outer-profile hull tiles, however many visits it takes. */
-  maxHull: number;
+  /** The overall ship maximum in size (interior area, `hullArea`), however many visits it takes. */
+  maxSize: number;
   perTile: { credits: number; metal: number };
   dangerStep: number;
   /** The yard crew the station sends: a role id and how many (no more than the shuttle's suits). */
@@ -58,6 +58,8 @@ export interface YardOrder {
   held: YardMoney;
   /** The price of the whole order (for the share maths and the readout). */
   price: YardMoney;
+  /** The nearest row with open work (`Job.yardRank`); the crew may work this row and the next. Kept up to date while at work. */
+  rank: number;
   phase: YardPhase;
   /** The yard shuttle, its crew (entities) and the player's airlock it docks at. */
   vehicle: number;

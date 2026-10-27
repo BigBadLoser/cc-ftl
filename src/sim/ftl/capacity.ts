@@ -1,4 +1,4 @@
-import { hullTiles } from '../combat/hull';
+import { hullArea } from '../combat/hull';
 import { ModuleC } from '../modules/components';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -9,7 +9,7 @@ import type { Sim } from '../sim';
  * hulls enough engines; today a generated one-engine liner is far over any sensible per-engine number.
  */
 export interface HullLoad {
-  /** Hull tiles: the outer hull profile (`hullTiles`, also the jobs screen's count). */
+  /** The ship's size: every tile its outer hull encloses (`hullArea`, also the jobs screen's count). */
   tiles: number;
   /** The sum of `engine.hullCapacity` over the ship's engines that still work (hp above 0). */
   capacity: number;
@@ -24,10 +24,10 @@ export interface HullLoad {
 /** The capacity of one engine module def (0 for anything else). */
 export const engineCapacityOf = (sim: Sim, def: string): number => sim.content.modules[def]?.engine?.hullCapacity ?? 0;
 
-/** Hull tiles of a ship against its engines' capacity. Destroyed engines (0 hp) carry nothing. */
+/** Size of a ship against its engines' capacity. Destroyed engines (0 hp) carry nothing. */
 export function hullLoad(sim: Sim, ship: number): HullLoad {
   const grid = shipGrid(sim, ship);
-  const tiles = grid?.has('struct') ? hullTiles(grid) : 0;
+  const tiles = grid?.has('struct') ? hullArea(grid) : 0;
   let capacity = 0;
   let engines = 0;
   for (const id of sim.world.query(ModuleC)) {

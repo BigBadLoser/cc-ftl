@@ -18,11 +18,13 @@ const neighbour = (sim: Sim): string => {
   return e.a === START_NODE ? e.b : e.a;
 };
 const enginesOf = (sim: Sim): number[] => sim.world.query(ModuleC).filter((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.engine);
-/** The starter's outer hull profile: 88 tiles (a 28 x 18 ring). */
-const STARTER_HULL = 88;
-/** A new game whose two engines carry `over` tiles (an even number) less than the starter's hull, so the ship is over capacity by exactly that. */
-function heavy(over: number): Sim {
-  const each = (STARTER_HULL - over) / 2;
+/** The starter's size: 416 tiles inside its outer hull (a 28 x 18 ring). */
+const STARTER_HULL = 416;
+/** An overload scaled from the 88-tile profile these cases were first tuned on (even, so two engines split it). */
+const over = (n: number): number => Math.round((n * STARTER_HULL) / 88 / 2) * 2;
+/** A new game whose two engines carry `over` tiles (an even number) less than the starter's size, so the ship is over capacity by exactly that. */
+function heavy(extra: number): Sim {
+  const each = (STARTER_HULL - extra) / 2;
   const engine = content.modules['module.engine']!;
   const weak = { ...content, modules: { ...content.modules, 'module.engine': { ...engine, engine: { ...engine.engine!, hullCapacity: each } } } } as typeof content;
   const sim = newGame(3, weak);
@@ -31,11 +33,11 @@ function heavy(over: number): Sim {
 }
 
 describe('engine hull capacity', () => {
-  it('the starter ship fits, and the readout is hull tiles against the engines', () => {
+  it('the starter ship fits, and the readout is size against the engines', () => {
     const sim = newGame(3, content);
     const load = hullLoad(sim, homeShip(sim));
     expect(load.engines).toBe(2);
-    expect(load.capacity).toBe(2 * 70);
+    expect(load.capacity).toBe(2 * 330);
     expect(load.tiles / load.capacity).toBeGreaterThan(0.6);
     expect(load.tiles / load.capacity).toBeLessThan(0.7);
     expect(load.tiles).toBe(STARTER_HULL);
@@ -52,7 +54,7 @@ describe('engine hull capacity', () => {
     const sim = newGame(3, content);
     const ship = homeShip(sim);
     sim.world.get(enginesOf(sim)[0]!, ModuleC)!.hp = 0;
-    expect(hullLoad(sim, ship).capacity).toBe(70);
+    expect(hullLoad(sim, ship).capacity).toBe(330);
   });
 });
 
@@ -68,7 +70,7 @@ describe('overcharge risk', () => {
   });
 
   it('rises with the overload', () => {
-    const risks = [2, 10, 20, 30].map((extra) => (() => { const sim = heavy(extra); return riskOf(hullLoad(sim, homeShip(sim))); })());
+    const risks = [2, 10, 20, 30].map(over).map((extra) => (() => { const sim = heavy(extra); return riskOf(hullLoad(sim, homeShip(sim))); })());
     for (let i = 1; i < risks.length; i++) {
       expect(risks[i]!.risk).toBeGreaterThan(risks[i - 1]!.risk);
       expect(risks[i]!.hit).toBeGreaterThanOrEqual(risks[i - 1]!.hit);
@@ -82,7 +84,7 @@ describe('overcharge risk', () => {
     const totals = { damaged: 0, destroyed: 0, fires: 0 };
     const results: string[] = [];
     for (let seed = 1; seed <= 30; seed++) {
-      const sim = heavy(30);
+      const sim = heavy(over(30));
       sim.rng.setState(seed * 977);
       const ship = homeShip(sim);
       const hp = enginesOf(sim).map((id) => sim.world.get(id, ModuleC)!.hp);
@@ -98,7 +100,7 @@ describe('overcharge risk', () => {
       for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) if (grid.get('fire', x, y) > 0) fire++;
       expect(fire).toBe(r.fires);
       results.push(JSON.stringify([r, after]));
-      const again = heavy(30);
+      const again = heavy(over(30));
       again.rng.setState(seed * 977);
       expect(JSON.stringify([applyOvercharge(again, ship), enginesOf(again).map((id) => again.world.get(id, ModuleC)!.hp)])).toBe(results[results.length - 1]);
     }
@@ -118,8 +120,8 @@ describe('overcharge risk', () => {
       }
       return n;
     };
-    expect(sum(6)).toBeLessThan(sum(20));
-    expect(sum(20)).toBeLessThan(sum(30));
+    expect(sum(over(6))).toBeLessThan(sum(over(20)));
+    expect(sum(over(20))).toBeLessThan(sum(over(30)));
   });
 });
 
@@ -139,7 +141,7 @@ describe('the jump rule', () => {
   });
 
   it('is blocked as overweight over capacity, and nothing is spent', () => {
-    const sim = ready(2);
+    const sim = ready(over(2));
     const fuel = JSON.stringify(sim.galaxy.travel);
     sim.enqueue({ type: 'galaxy.jump', ship: homeShip(sim), route: [neighbour(sim)] });
     expect(run(sim, 2)).toContain('rejected:galaxy.jump:overweight');
@@ -149,7 +151,7 @@ describe('the jump rule', () => {
   });
 
   it('overcharge jumps anyway and the toll is paid', () => {
-    const sim = ready(30);
+    const sim = ready(over(30));
     sim.enqueue({ type: 'galaxy.jump', ship: homeShip(sim), route: [neighbour(sim)], overcharge: true });
     const log = run(sim, 2);
     expect(log).not.toContain('rejected:galaxy.jump:overweight');
@@ -158,7 +160,7 @@ describe('the jump rule', () => {
   });
 
   it('a queued jump over capacity is refused up front unless it overcharges', () => {
-    const sim = heavy(30);
+    const sim = heavy(over(30));
     giveItems(sim, 'item.fuel', 50);
     sim.enqueue({ type: 'ftl.charge', ship: homeShip(sim), jump: [neighbour(sim)] });
     expect(run(sim, 1)).toContain('rejected:ftl.charge:overweight');

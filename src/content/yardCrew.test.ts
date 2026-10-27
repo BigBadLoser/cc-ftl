@@ -2,10 +2,30 @@ import { describe, expect, it } from 'vitest';
 import {
   AirlockC, CrewC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
 } from '../sim';
+import { jobFits } from '../sim/crew/jobFit';
 import { content } from './index';
 import { outline, planHull, run, yardGame } from './yardFixture';
 
 describe('the yard crew', () => {
+  it('works in rows: the nearest row first, and a row more than one ahead waits', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 8, -6, 6, 7));
+    sim.enqueue({ type: 'yard.order', station });
+    run(sim, 1);
+    const order = sim.yard.orders[0]!;
+    const jobs = sim.world.query(JobC).map((id) => sim.world.get(id, JobC)!).filter((j) => j.yard === order.id);
+    const ranks = jobs.map((j) => j.yardRank!);
+    expect(Math.max(...ranks)).toBeGreaterThan(Math.min(...ranks) + 1);
+    expect(order.rank).toBe(Math.min(...ranks));
+    const crew = sim.world.query(CrewC, PositionC)[0]!;
+    const at = sim.world.get(crew, PositionC)!;
+    const fits = (j: (typeof jobs)[number]) => jobFits(sim, crew, at, { ...j, yardOnly: undefined });
+    expect(fits(jobs.find((j) => j.yardRank === order.rank)!)).toBe(true);
+    expect(fits(jobs.find((j) => j.yardRank! > order.rank + 1)!)).toBe(false);
+    order.rank++;
+    expect(fits(jobs.find((j) => j.yardRank === order.rank + 1)!)).toBe(true);
+  });
+
   it('a small order is built by the station crew in EVA, they fly home and the escrow settles', () => {
     const { sim, station, me } = yardGame();
     const trader = sim.world.get(station, TraderC)!;

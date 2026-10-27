@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, deserialize, galaxyIndex, hullLoad, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
+  CombatC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, deserialize, galaxyIndex, hullLoad, hullTiles, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
   viewPlan, yardPrice, yardService,
 } from '../sim';
 import { giveItems } from '../sim/story/effects';
@@ -55,21 +55,23 @@ describe('shipyard: pricing', () => {
   });
 });
 
-describe('hull count: the outer profile only', () => {
-  it('interior walls and doors and the floor do not count, the outer ring does', () => {
+describe('ship size: the area inside the outer hull', () => {
+  it('interior walls, doors and floor count as area, the outer ring does not, and a wall added outside moves the ring out', () => {
     const { sim, me } = yardGame();
     const before = hullLoad(sim, me).tiles;
-    expect(before).toBe(88);
+    expect(before).toBe(416);
+    expect(hullTiles(shipGrid(sim, me)!)).toBe(88); // the ring itself: what the yard prices
     const s = sim.world.get(me, ShipC)!;
     // A wall and a door in the middle of a room, and a floor tile of the margin: no change.
     sim.enqueue({ type: 'debug.setStruct', ship: me, x: s.x + 12, y: s.y + 6, kind: Struct.Wall });
     sim.enqueue({ type: 'debug.setStruct', ship: me, x: s.x + 13, y: s.y + 6, kind: Struct.Door });
     sim.step();
     expect(hullLoad(sim, me).tiles).toBe(before);
-    // A wall in the open margin against the hull is outer, and the old wall behind it is not any more: the profile moves out, it does not double.
+    // A wall in the open margin against the hull is outer, and the old wall behind it is interior now: one tile more of area, the ring the same.
     sim.enqueue({ type: 'debug.setStruct', ship: me, x: s.x + 8, y: s.y, kind: Struct.Wall });
     sim.step();
-    expect(hullLoad(sim, me).tiles).toBe(before);
+    expect(hullLoad(sim, me).tiles).toBe(before + 1);
+    expect(hullTiles(shipGrid(sim, me)!)).toBe(88);
   });
 });
 
@@ -116,9 +118,9 @@ describe('shipyard: the quote', () => {
     expect(q.floor).toHaveLength(2);
     expect(q.price).toEqual(yardPrice(sim, q.service!, 10)); // the floor is free
     expect(q.gaps).toHaveLength(1);
-    expect(q.hull.before).toBe(88);
+    expect(q.hull.before).toBe(416);
     expect(q.hull.after).toBe(viewPlan(sim, me).hull.afterAll);
-    expect(q.hull.capacity).toBe(140);
+    expect(q.hull.capacity).toBe(660);
     expect(q.rect!.y).toBeLessThan(sim.world.get(me, ShipC)!.y);
     expect(q.rest).toBe(0);
   });
@@ -129,14 +131,63 @@ describe('shipyard: the quote', () => {
     planHull(sim, me, outline(sim, me, 4, -9, 14, 10)); // 44 tiles of border; the south side is the ship's north margin row
     const q = quoteYard(sim, station, me);
     expect(q.error).toBeNull();
-    expect(q.walls).toHaveLength(cap);
-    expect(q.rest).toBe(viewPlan(sim, me).tiles.length - cap);
+    expect(q.walls.length).toBeLessThanOrEqual(cap);
+    expect(q.walls.length).toBeGreaterThan(cap - 8);
+    const planned = new Set(viewPlan(sim, me).tiles.map((t) => `${t.x},${t.y}`));
+    expect(q.rest).toBe(planned.size - q.walls.filter((t) => planned.has(`${t.x},${t.y}`)).length);
     // The bought tiles are the ones nearest the ship: every one touches the ship or another bought tile.
     const s = sim.world.get(me, ShipC)!;
     expect(q.walls.some((t) => t.y >= s.y)).toBe(true);
     const hub = yardGame('hub');
     planHull(hub.sim, hub.me, outline(hub.sim, hub.me, 4, -9, 14, 10));
     expect(quoteYard(hub.sim, hub.station, hub.me).walls.length).toBeGreaterThan(cap);
+  });
+
+  it('a 24-tile buy moves the size meaningfully', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 6, -6, 7, 7)); // a 7 x 7 ring: 24 hull tiles round 25 floor
+    const q = quoteYard(sim, station, me);
+    expect(q.walls).toHaveLength(24);
+    expect(q.hull.before).toBe(416);
+    expect(q.hull.after).toBe(453);
+    expect(q.hull.after / q.hull.capacity).toBeGreaterThan(0.68);
+  });
+
+  it('when the cap cuts a room short it builds the rows nearest the ship, shut off by a cross wall, in row order', () => {
+    const { sim, station, me } = yardGame();
+    const s = sim.world.get(me, ShipC)!;
+    planHull(sim, me, outline(sim, me, 8, -9, 8, 10)); // 8 wide, 10 deep: 32 ring tiles, the cap is 24
+    const q = quoteYard(sim, station, me);
+    expect(q.error).toBeNull();
+    // The room is cut five rows out: a full cross wall shuts it, the far end (and the planned top wall) stays for the next yard.
+    const dy = q.walls.map((t) => t.y - s.y);
+    expect(Math.min(...dy)).toBe(-5);
+    expect(dy.filter((y) => y === -5)).toHaveLength(8);
+    expect(q.floor).toHaveLength(24);
+    expect(q.rest).toBe(14);
+    // Row order: the nearest row to the ship first, working outward.
+    for (let i = 1; i < dy.length; i++) expect(dy[i]!).toBeLessThanOrEqual(dy[i - 1]!);
+  });
+
+  it('a 14-wide room against the cap builds the largest closed rectangle, never floorless wall stubs', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 4, -9, 14, 10)); // 44 ring tiles, the cap is 24: no full-width cut fits
+    const q = quoteYard(sim, station, me);
+    expect(q.error).toBeNull();
+    expect(q.walls.length).toBeLessThanOrEqual(24);
+    expect(q.floor.length).toBeGreaterThan(20);
+    // Closed: every wall touches a floor tile or the ship, and every floor tile's four neighbours are floor, a bought wall or the ship's structure.
+    const grid = shipGrid(sim, me)!;
+    const walls = new Set(q.walls.map((t) => `${t.x},${t.y}`));
+    const floor = new Set(q.floor.map((t) => `${t.x},${t.y}`));
+    for (const t of q.floor) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const k = `${t.x + dx},${t.y + dy}`;
+        expect(floor.has(k) || walls.has(k) || grid.get('struct', t.x + dx, t.y + dy) !== Struct.Space, `open side at ${k}`).toBe(true);
+      }
+    }
+    const touches = (t: { x: number; y: number }) => ([-1, 0, 1] as const).some((dx) => ([-1, 0, 1] as const).some((dy) => floor.has(`${t.x + dx},${t.y + dy}`)));
+    for (const t of q.walls) expect(touches(t), `stub ${t.x},${t.y}`).toBe(true);
   });
 
   it('refuses a plan that does not touch the ship, and keeps the airlock approach clear', () => {
@@ -157,7 +208,7 @@ describe('shipyard: the quote', () => {
   it('counts the ship against the overall maximum, and keeps clear of a neighbouring ship', () => {
     const { sim, station, me } = yardGame();
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
-    const small = yardGame('station', 'station.trading', { ...content, yard: { ...content.yard, maxHull: 90 } });
+    const small = yardGame('station', 'station.trading', { ...content, yard: { ...content.yard, maxSize: 420 } });
     planHull(small.sim, small.me, outline(small.sim, small.me, 8, -2, 4, 3));
     expect(quoteYard(small.sim, small.station, small.me).error).toBe('shipMax');
     planHull(sim, me, outline(sim, me, 4, -9, 8, 10));
@@ -210,8 +261,12 @@ describe('shipyard: the order', () => {
     const all = viewPlan(sim, me).tiles.length;
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
-    expect(sim.yard.orders[0]!.walls).toHaveLength(cap);
-    expect(plannedTiles(sim, me)).toHaveLength(all - cap);
+    const bought = sim.yard.orders[0]!.walls;
+    expect(bought.length).toBeLessThanOrEqual(cap);
+    const was = new Set(bought.map((t) => `${t.x},${t.y}`));
+    expect(plannedTiles(sim, me).length).toBeGreaterThan(0);
+    expect(plannedTiles(sim, me).every((t) => !was.has(`${t.x},${t.y}`))).toBe(true);
+    expect(plannedTiles(sim, me).length).toBeLessThan(all);
   });
 
   it('refuses what you cannot pay for', () => {

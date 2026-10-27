@@ -391,7 +391,7 @@ export interface UiHeat {
  * A station job (sim galaxy/jobs.ts) as the board shows it: an offer (`id` null) or one the player holds. `where` is the delivery's destination or the
  * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's crate is aboard.
  */
-/** A ship's fighting strength as the job card shows it: working guns, shield layers, hull plates (walls and doors). */
+/** A ship's fighting strength as the job card shows it: working guns, shield layers, size (interior area). */
 export interface UiStrength {
   guns: number;
   shields: number;
@@ -434,7 +434,7 @@ export interface UiStats {
   heat: UiHeat;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
   o2: number | null;
-  /** Hull tiles (walls and doors) against what the working engines carry: the ship panel's "Hull N / M". */
+  /** Ship size (interior area) against what the working engines carry: the ship panel's "Size N / M" (interior area). */
   hull: { tiles: number; capacity: number };
 }
 
@@ -717,7 +717,7 @@ export interface UiYardService {
   /** Hull tiles one visit builds. */
   cap: number;
   price: { credits: number; metal: number };
-  /** The ship's outer hull profile against what its engines carry, and the overall ship maximum. */
+  /** The ship's size (interior area) against what its engines carry, and the overall ship maximum. */
   hull: { tiles: number; capacity: number; max: number };
 }
 

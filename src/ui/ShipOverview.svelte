@@ -46,7 +46,7 @@
   <div class="res" data-testid="stats">
     <Tooltip text="Power supply / demand"><span class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span></Tooltip>
     <Tooltip text="Average O₂ of rooms with crew (kPa)"><span class="cell" class:bad={o2Low} data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span></Tooltip>
-    <Tooltip text={heavy ? 'Hull tiles over what the engines carry: jumping needs an overcharge' : 'Hull tiles / what the engines carry'}><span class="cell wide" class:bad={heavy} data-testid="stat-hull"><span class="lab">Hull</span><b>{st.hull.tiles} / {st.hull.capacity}</b></span></Tooltip>
+    <Tooltip text={heavy ? 'Ship size over what the engines carry: jumping needs an overcharge' : 'Ship size (tiles inside the outer hull) / what the engines carry'}><span class="cell wide" class:bad={heavy} data-testid="stat-hull"><span class="lab">Size</span><b>{st.hull.tiles} / {st.hull.capacity}</b></span></Tooltip>
     <Tooltip text="Credits"><span class="cell" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span></Tooltip>
     {#if hasFuel}<Tooltip text="Fuel"><span class="cell" class:bad={fuel < 3} data-testid="stat-fuel"><Icon name="fuel" size={18} /><b>{fuel}</b></span></Tooltip>{/if}
     <button class="cell" class:on={stockOpen} aria-pressed={stockOpen} title="Ship stock" data-testid="stat-stock" onclick={onStock}><Icon name="stock" size={18} /><b>{total}</b></button>

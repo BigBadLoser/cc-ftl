@@ -9,7 +9,7 @@
   const turns = (j: UiJob): string => `${j.turnsLeft} turn${j.turnsLeft === 1 ? '' : 's'} left`;
   const VERDICT = { outmatched: 'Outmatched', even: 'Even match', weaker: 'Weaker than you' } as const;
   const ROWS: { key: keyof UiStrength; label: string }[] = [
-    { key: 'guns', label: 'Guns' }, { key: 'shields', label: 'Shields' }, { key: 'hull', label: 'Hull' },
+    { key: 'guns', label: 'Guns' }, { key: 'shields', label: 'Shields' }, { key: 'hull', label: 'Size' },
   ];
 </script>
 

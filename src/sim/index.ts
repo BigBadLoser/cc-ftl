@@ -36,7 +36,7 @@ export { activeOrder } from './items/production';
 export * from './combat/components';
 export { shipById, homeShip, stampShip, spawnShip, spawnCrew, shieldCapacity } from './combat/ships';
 export { BodyC, ALT, isAirborne, type Body } from './body';
-export { hullSum, hullTiles, outerProfile, templateHullTiles, isHullKind, damageStruct } from './combat/hull';
+export { hullSum, hullTiles, hullArea, outerProfile, interiorArea, templateHullTiles, templateHullArea, isHullKind, damageStruct } from './combat/hull';
 export { shieldRechargeSec } from './combat/ships';
 export { operatorOf } from './combat/operators';
 export { weaponsIdleReason } from './combat/idle';

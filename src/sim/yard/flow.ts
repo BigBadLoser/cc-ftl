@@ -1,6 +1,6 @@
 import { shipById } from '../combat/ships';
 import { BUILD_TICKS, createJob } from '../crew/handlers';
-import { CrewC, DraftedC, PositionC } from '../crew/components';
+import { CrewC, DraftedC, JobC, PositionC } from '../crew/components';
 import { isSettled } from '../crew/helpers';
 import { Struct } from '../structure';
 import { sendToEmbark } from '../vehicles/embark';
@@ -120,6 +120,8 @@ function step(sim: Sim, o: YardOrder): void {
         o.timer = 0;
         return;
       }
+      const rows = jobsOf(sim, o).map((id) => sim.world.get(id, JobC)?.yardRank ?? o.rank);
+      if (rows.length) o.rank = Math.min(...rows);
       if (built !== o.built) {
         o.built = built;
         o.stall = 0;
