@@ -4728,6 +4728,9 @@
   "workbench": {
    "image": "sprites/workbench.png",
    "glow": "sprites/workbench.glow.png"
+  },
+  "decor": {
+   "image": "sprites/decor.png"
   }
  },
  "assets": {
@@ -136860,6 +136863,456 @@
    "footprint": [
     2,
     4
+   ]
+  },
+  "module.bench": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 821,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 53,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 896,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 53,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 971,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 21,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bench.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1046,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 53,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1121,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 21,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.deck_hazard": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1196,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1259,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1322,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1385,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1448,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1511,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1568,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1625,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1682,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1739,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 606,
+    "y": 1,
+    "w": 42,
+    "h": 63
+   },
+   "anchor": {
+    "x": 21,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 649,
+    "y": 1,
+    "w": 42,
+    "h": 63
+   },
+   "anchor": {
+    "x": 21,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 778,
+    "y": 1,
+    "w": 42,
+    "h": 57
+   },
+   "anchor": {
+    "x": 21,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 692,
+    "y": 1,
+    "w": 42,
+    "h": 62
+   },
+   "anchor": {
+    "x": 21,
+    "y": 52
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 735,
+    "y": 1,
+    "w": 42,
+    "h": 58
+   },
+   "anchor": {
+    "x": 21,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter_large": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 122,
+    "y": 1,
+    "w": 120,
+    "h": 120
+   },
+   "anchor": {
+    "x": 60,
+    "y": 106
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 243,
+    "y": 1,
+    "w": 120,
+    "h": 120
+   },
+   "anchor": {
+    "x": 60,
+    "y": 106
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 485,
+    "y": 1,
+    "w": 120,
+    "h": 114
+   },
+   "anchor": {
+    "x": 60,
+    "y": 100
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 364,
+    "y": 1,
+    "w": 120,
+    "h": 117
+   },
+   "anchor": {
+    "x": 60,
+    "y": 103
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 120,
+    "h": 122
+   },
+   "anchor": {
+    "x": 60,
+    "y": 108
+   },
+   "footprint": [
+    2,
+    2
    ]
   }
  },

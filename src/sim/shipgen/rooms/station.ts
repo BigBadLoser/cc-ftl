@@ -97,18 +97,41 @@ const rackIsland: Vignette = {
 /** A briefing corner: a console and a row of seats facing it. */
 const briefing: Vignette = { name: 'briefing', mods: [{ mod: 'module.console', x: 0, y: 0 }, ...chairs([-1, 0, 1], 2), ...chairs([-1, 0, 1], 3)] };
 
+/** A grove: a tree bed with a bench on two sides and a potted shrub. */
+const grove: Vignette = {
+  name: 'grove', mods: [
+    { mod: 'module.planter_large', x: 0, y: 0 }, { mod: 'module.bench', x: 0, y: 3 }, { mod: 'module.bench', x: 0, y: -2 },
+    { mod: 'module.planter', x: 3, y: 1 },
+  ],
+};
+/** A bench between two potted shrubs. */
+const benchPots: Vignette = {
+  name: 'bench and pots', mods: [{ mod: 'module.planter', x: -1, y: 0 }, { mod: 'module.bench', x: 0, y: 0 }, { mod: 'module.planter', x: 2, y: 0 }],
+};
+/** An arboretum: four tree beds round a brass inlay, benches between the beds on two sides. */
+const arboretum: Vignette = {
+  name: 'arboretum', mods: [
+    { mod: 'module.planter_large', x: 0, y: 0 }, { mod: 'module.planter_large', x: 5, y: 0 },
+    { mod: 'module.planter_large', x: 0, y: 5 }, { mod: 'module.planter_large', x: 5, y: 5 },
+    { mod: 'module.bench', x: 2, y: 0 }, { mod: 'module.bench', x: 3, y: 6 }, { mod: 'module.deck_inlay', x: 3, y: 3 },
+    { mod: 'module.planter', x: 0, y: 3 }, { mod: 'module.planter', x: 6, y: 3 },
+  ],
+};
+
 /** Landmarks, set at the middle of a big court (rooms/vignettes.ts). A bazaar: four stalls round a table. */
 const bazaar: Vignette = {
   name: 'bazaar', mods: [
     { mod: 'module.cargo_container', x: 0, y: 0 }, { mod: 'module.cargo_container', x: 6, y: 0 },
     { mod: 'module.cargo_container', x: 0, y: 5, rot: 2 }, { mod: 'module.cargo_container', x: 6, y: 5, rot: 2 },
     { mod: 'module.mess_table', x: 3, y: 3 }, ...chairs([3, 4], 2), ...chairs([3, 4], 4),
+    { mod: 'module.planter', x: -2, y: 3 }, { mod: 'module.planter', x: 10, y: 3 }, { mod: 'module.deck_inlay', x: 4, y: 0 },
   ],
 };
 /** A parade: three racks in a row, a briefing console with seats in front of it. */
 const parade: Vignette = {
   name: 'parade', mods: [
     { mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 3, y: 0 }, { mod: 'module.storage_rack', x: 6, y: 0 },
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map((x) => ({ mod: 'module.deck_hazard', x, y: 2 })),
     { mod: 'module.console', x: 4, y: 3 }, ...chairs([2, 3, 4, 5, 6], 5), ...chairs([2, 3, 4, 5, 6], 6),
   ],
 };
@@ -127,14 +150,14 @@ export const plaza = {
   arrangements: [
     {
       name: 'market', weight: 2, walkway: 'long',
-      vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk], gap: 8, upTo: 0.12, centre: bazaar },
+      vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk, grove, benchPots], gap: 8, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.hydroponics', count: 4, wall: 'any' },
       ],
     },
     {
       name: 'food court', weight: 1,
-      vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk], gap: 7, upTo: 0.12, centre: bazaar },
+      vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk, grove, benchPots], gap: 7, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.storage_locker', count: 4, wall: 'any' },
       ],
@@ -142,13 +165,13 @@ export const plaza = {
   ],
 } as const satisfies RoomRecipe;
 
-/** Garden deck (research and farming courtyards): hydroponics beds in rows (not on stations), lab benches and lounges. */
+/** Garden deck (research courtyards): tree beds and groves round an arboretum, lab benches and lounges among them. */
 export const garden = {
   fill: 0.18,
   arrangements: [
     {
       name: 'garden', weight: 1,
-      vignettes: { pieces: [labBench, labBench, kiosk, lounge, bistro], gap: 9, upTo: 0.08, centre: labCluster },
+      vignettes: { pieces: [grove, grove, benchPots, labBench, labCluster, kiosk, lounge], gap: 8, upTo: 0.12, centre: arboretum },
       steps: [
         { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
       ],
@@ -181,6 +204,7 @@ export const hangarDeck = {
     {
       name: 'deck', weight: 1, steps: [
         { mod: 'module.vehicle_bay', count: 'spec', centre: 'xy', clear: 2, grid: [7, 8] },
+        { mod: 'module.deck_hazard', count: 10, near: 'module.vehicle_bay', row: true },
         { mod: 'module.storage_rack', count: 'fill', wall: 'long', row: true },
         { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
       ],
