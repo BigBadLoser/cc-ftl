@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiStock } from './api';
+  import FloatingWindow from './FloatingWindow.svelte';
+  import { centerTop } from './floatingWindow';
   import ItemIcon from './ItemIcon.svelte';
   import TransferSection from './TransferSection.svelte';
   import { Segmented } from './kit';
@@ -19,8 +21,8 @@
   const rows = $derived([...all.filter((r) => !r.it.food && r.s), ...all.filter((r) => !r.it.food && !r.s)]);
 </script>
 
-<aside class="sheet" class:tall={tab === 'transfers'} data-testid="stock-drawer">
-  <div class="top"><h2>Ship stock</h2><button aria-label="Close" onclick={onClose}>×</button></div>
+<!-- The transfers tab fills the height; the stock list is as tall as its rows. -->
+<FloatingWindow id="stock" title="Ship stock" icon="stock" min={{ w: 380, h: 200 }} defaultRect={(b) => centerTop(b, 640, tab === 'transfers' ? b.bottom - b.top : 0)} {onClose} testId="stock-drawer" closeTestId="stock-close" padded>
   <div class="tabs"><Segmented label="Stock view" testId="stock-tabs" value={tab} onChange={(v) => (tab = v as typeof tab)}
     options={[{ value: 'stock', label: 'Stock', testId: 'stock-tab' }, { value: 'transfers', label: queued ? `Transfers (${queued})` : 'Transfers', testId: 'transfers-tab' }]} /></div>
   {#if tab === 'transfers'}
@@ -46,15 +48,10 @@
     {/each}
   </ul>
   {/if}
-</aside>
+</FloatingWindow>
 
 <style>
-  aside { z-index: 6; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 4px); left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 16px)); display: flex; flex-direction: column; max-height: calc(100dvh - var(--hdr) - var(--sat) - 16px); overflow-y: auto; }
-  aside.tall { height: calc(100dvh - var(--hdr) - var(--sat) - 12px); overflow: hidden; }
   .tabs { margin-bottom: 8px; flex: none; }
-  .top { flex: none; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  h2 { margin: 0; font-size: 15px; color: var(--cyan); }
-  .top button { min-height: 34px; min-width: 34px; padding: 0; font-size: 18px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
   li, .head { display: grid; grid-template-columns: 1fr 52px 48px 52px 56px; align-items: center; text-align: right; gap: 4px; }
   .head { color: var(--dim); font-size: 11px; }
@@ -63,8 +60,4 @@
   li.out b { color: var(--red); }
   li.sec { display: block; text-align: left; color: var(--cyan); font-size: 12px; margin-top: 4px; }
   li > span:not(.nm) { color: var(--dim); }
-  @media (max-width: 600px) {
-    aside { top: calc(var(--hdr) + var(--sat)); bottom: auto; left: 0; right: 0; width: auto; transform: none; border-radius: 0; border-width: 1px 0; padding: 10px 12px calc(10px + var(--sab)); max-height: calc(100dvh - var(--hdr) - var(--sat)); }
-    aside.tall { height: calc(100dvh - var(--hdr) - var(--sat)); }
-  }
 </style>

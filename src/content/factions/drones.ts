@@ -41,7 +41,7 @@ export const drones = {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 2 }],
     heavy: [{ value: 'module.massDriver', weight: 1 }],
   },
-  shields: [{ value: 'module.shieldGenSmall', weight: 3 }, { value: 'module.shieldGen', weight: 1 }],
+  shields: [{ value: 'module.shieldGen', weight: 1 }],
   stock: [{ item: 'item.electronics', min: 1, max: 4 }],
   living: false,
   aiCore: true,

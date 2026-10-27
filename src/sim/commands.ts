@@ -27,14 +27,18 @@ export type Command =
   | { type: 'crew.draft'; id: number; drafted: boolean }
   /** Drafted crew attack this hostile crew member or egg sac (walking into range first) until it is subdued or burst. Cleared by crew.moveTo. */
   | { type: 'crew.attack'; id: number; target: number }
+  /** A drafted crew member walks to a console of their ship (a battle station: weapons, shields, helm) and operates it, replacing its operator. Cleared by a move, attack or embark order. */
+  | { type: 'crew.man'; id: number; module: number }
   /** Drafted crew shoot at the nearest visible hostile on their own (default on), or hold fire. */
   | { type: 'crew.setEngage'; id: number; engage: boolean }
   /** Fetch an `item` weapon from the nearest storage holding it and wield it (swapping the old one back). */
   | { type: 'crew.equip'; id: number; item: string }
   /** Drop the wielded weapon at the crew member's feet. */
   | { type: 'crew.unequip'; id: number }
-  /** Walk a drafted crew member to a tile (on `ship` if given; another ship is out of reach). */
+  /** Walk a drafted crew member to a tile (on `ship` if given, which must be the ship it stands on). */
   | { type: 'crew.moveTo'; id: number; x: number; y: number; ship?: number }
+  /** Walk a group of drafted crew to the free tiles nearest (x, y) of `ship` (default: the first one's ship): each takes its own tile. Members on another ship are left out. */
+  | { type: 'crew.moveGroup'; ids: number[]; x: number; y: number; ship?: number }
   /** Ask an airlock module to open its `to` side (it cycles when the open doorway is clear). */
   | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
   /** Give or take a crew member's EVA suit. */
@@ -126,8 +130,8 @@ export type Command =
    * an inert wreck: no crew, no AI, state 'wreck', neutral side. `intensity` 0..1 (default 0.5); `cause` default rolled.
    */
   | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
-  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked. */
-  | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number }
+  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked; `targetTile` (with targetModuleId 0) aims blind at one sector tile of the target ship, and the hits land near it. */
+  | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number; targetTile?: { x: number; y: number } }
   /** Hold fire: weapons charge but only fire on combat.fireVolley. */
   | { type: 'combat.setHold'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
@@ -195,6 +199,12 @@ export type Command =
   | { type: 'crew.hire'; key: string }
   /** Buy a module blueprint from a station of the player's node (galaxy/blueprintShop.ts): known at once, then buildable. */
   | { type: 'blueprint.buy'; port: string; def: string }
+  /** Queue a research project on a player ship (sim/research): it needs a research module, the project's `requires` known, and something left to unlock. */
+  | { type: 'research.queue'; ship: number; project: string }
+  /** Drop a project from the queue; an active one (materials already paid) is refunded and its progress lost. */
+  | { type: 'research.cancel'; ship: number; project: string }
+  /** Move a queued project to place `to` (0 = first). The active project (materials paid) keeps place 0. */
+  | { type: 'research.move'; ship: number; project: string; to: number }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */

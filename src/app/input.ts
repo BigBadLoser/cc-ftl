@@ -6,18 +6,25 @@ export interface Tile {
 }
 
 export interface InputHandlers {
-  /** Tap/click at canvas-relative px (not called while painting). */
-  onTap(screenX: number, screenY: number): void;
+  /** Tap/click at canvas-relative px (not called while painting or after a box drag). `shift`: the shift key was held. */
+  onTap(screenX: number, screenY: number, shift?: boolean): void;
+  /**
+   * Mouse left-drag in select mode draws a selection box instead of panning the view (middle-drag, the arrow keys and touch pan).
+   * `a` is where the drag began and `b` the pointer now, in canvas-relative px; `end` commits and `cancel` aborts.
+   */
+  onBox?(phase: 'start' | 'move' | 'end' | 'cancel', a: { x: number; y: number }, b: { x: number; y: number }, shift: boolean): void;
   /** True while a build/deconstruct/cancel tool is active: one-finger drag paints instead of panning. */
   paintMode(): boolean;
   /** Drag-paint lifecycle. `end` commits, `cancel` aborts (second finger, pointer cancel). */
   onPaint(phase: 'start' | 'move' | 'end' | 'cancel', tile: Tile | null): void;
-  /** Right-click: back out of the current tool. */
-  onBack(): void;
+  /** Right-click at canvas-relative px: back out of the current tool, or give an order to the selection. */
+  onContext(screenX: number, screenY: number, shift: boolean): void;
   /** Non-camera hotkeys: 'escape', 'r' (shift = the other way). */
   onKey(key: string, shift?: boolean): void;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
+  /** Mouse position in canvas px (the "Target in view" preview reads the ship tile under it). */
+  onPointer?(screenX: number, screenY: number): void;
   /** Height (tiles) above the ground that picked tiles are read at: the mining tool paints the tops of rock blocks. Default 0. */
   pickLift?(): number;
 }
@@ -36,7 +43,10 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   let dragging = false;
   let painting = false;
   let multi = false; // a second finger joined: never counts as a tap
+  let boxing = false; // a mouse left-drag past the threshold in select mode
+  let panDrag = false; // the middle button is held
   let pinchDist = 0;
+  let boxable = false; // this press may turn into a selection box
 
   const local = (e: { clientX: number; clientY: number }) => {
     const r = canvas.getBoundingClientRect();
@@ -49,17 +59,22 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
 
   const onDown = (e: PointerEvent) => {
     if (e.button === 2) {
-      h.onBack();
+      const p = local(e);
+      h.onContext(p.x, p.y, e.shiftKey);
       return;
     }
+    if (e.button === 1) e.preventDefault(); // no browser autoscroll
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) {
       downId = e.pointerId;
       start = local(e);
       dragging = false;
+      boxing = false;
+      panDrag = e.button === 1;
       multi = false;
       painting = e.button === 0 && h.paintMode();
+      boxable = e.button === 0 && e.pointerType === 'mouse' && !painting && !!h.onBox;
       if (painting) h.onPaint('start', renderer.pickSector(start.x, start.y, h.pickLift?.()));
     } else if (pointers.size === 2) {
       if (painting) {
@@ -75,7 +90,10 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const p = local(e);
     const prev = pointers.get(e.pointerId);
     if (!prev) {
-      if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
+      if (e.pointerType === 'mouse') {
+        h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
+        h.onPointer?.(p.x, p.y);
+      }
       return;
     }
     if (pointers.size >= 2) {
@@ -92,8 +110,15 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       h.onPaint('move', renderer.pickSector(p.x, p.y, h.pickLift?.()));
       return;
     }
-    if (!dragging && Math.hypot(p.x - start.x, p.y - start.y) >= DRAG_THRESHOLD) dragging = true;
-    if (dragging) renderer.pan(p.x - prev.x, p.y - prev.y);
+    if (!dragging && Math.hypot(p.x - start.x, p.y - start.y) >= DRAG_THRESHOLD) {
+      dragging = true;
+      if (boxable && !panDrag) {
+        boxing = true;
+        h.onBox?.('start', start, p, e.shiftKey);
+      }
+    }
+    if (boxing) h.onBox?.('move', start, p, e.shiftKey);
+    else if (dragging) renderer.pan(p.x - prev.x, p.y - prev.y);
     else if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
   };
 
@@ -101,13 +126,16 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const wasDown = pointers.delete(e.pointerId);
     if (!wasDown) return;
     if (pointers.size === 1) pinchDist = 0;
-    if (painting && e.pointerId === downId) {
+    if (boxing && e.pointerId === downId) {
+      boxing = false;
+      h.onBox?.(e.type === 'pointerup' ? 'end' : 'cancel', start, local(e), e.shiftKey);
+    } else if (painting && e.pointerId === downId) {
       painting = false;
       const p = local(e);
       h.onPaint(e.type === 'pointerup' ? 'end' : 'cancel', renderer.pickSector(p.x, p.y, h.pickLift?.()));
-    } else if (e.pointerId === downId && e.type === 'pointerup' && !dragging && !multi) {
+    } else if (e.pointerId === downId && e.type === 'pointerup' && !dragging && !multi && !panDrag) {
       const p = local(e);
-      h.onTap(p.x, p.y);
+      h.onTap(p.x, p.y, e.shiftKey);
     }
     if (pointers.size === 0) multi = false;
   };

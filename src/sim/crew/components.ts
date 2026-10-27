@@ -39,6 +39,8 @@ export const WORK_CATEGORIES = [
   'refining',
   /** Materials into items (fabricator, workbench, galley; a recipe's `category` can override). */
   'crafting',
+  /** Working the ship's active research project at a research module (sim/research). */
+  'research',
   'cooking',
   /** Walking a patrol (station guards; patrol jobs come from a ship's director, see stations/director). */
   'patrol',
@@ -110,6 +112,8 @@ export interface Job {
   progress: number;
   /** Crew entity that reserved it, or 0. */
   reservedBy: number;
+  /** For 'operate' jobs: the tick since which nobody holds it (absent while someone does). Crew with a low operating priority relieve it after RELIEF_AFTER_SEC. */
+  freeSince?: number;
   /** For 'module' jobs: the blueprint. */
   module?: { def: string; rot: number };
   /** For 'module' jobs: the rotated footprint [w, h] from (x, y); builders work from beside it, never on it. */
@@ -138,7 +142,7 @@ export interface Job {
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate'
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
   /** assemble: build a robot of `assemble.role` in the robot bay `target`. */

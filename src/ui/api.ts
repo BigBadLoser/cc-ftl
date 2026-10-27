@@ -170,10 +170,59 @@ export interface UiModule {
   storage: boolean;
   /** Crafts recipes (has a production panel). */
   crafting: boolean;
+  /** A research module (the inspector opens the research panel). */
+  research: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
+}
+
+/** A stat line of a module in the research panel; `delta` is against the tier below ("+2", "-2 s"), `good` when that is an improvement. */
+export interface UiResearchStat {
+  label: string;
+  value: string;
+  delta: string | null;
+  good: boolean;
+}
+
+/**
+ * One node of the research tree: a module the ship starts with (a root, `project` false) or a project unlocking one. `parents` are node ids
+ * (prerequisites, drawn to its left). Status: known; open (every prerequisite known or queued: the only nodes that can be picked);
+ * queued / active (`pos` is its place in the queue); locked.
+ */
+export interface UiResearchNode {
+  id: string;
+  name: string;
+  band: string;
+  parents: string[];
+  project: boolean;
+  status: 'known' | 'open' | 'queued' | 'active' | 'locked';
+  pos: number | null;
+  /** The module def the node is about (its art, footprint, stats). */
+  module: string;
+  /** "Power · 2x3". */
+  sub: string;
+  stats: UiResearchStat[];
+  cost: (UiCost & { have: number })[];
+  /** Work time at one worker with no science. */
+  seconds: number;
+  progress: number;
+  /** Placement overrides from the project (see `ResearchDef.col`). */
+  col?: number;
+  row?: number;
+}
+
+export interface UiResearch {
+  /** The ship the commands take. */
+  ship: number;
+  /** Research modules that can work, and crew standing at them now. */
+  labs: number;
+  workers: number;
+  bands: { id: string; name: string }[];
+  nodes: UiResearchNode[];
+  /** Project ids in queue order (the first is the active one once paid). */
+  queue: string[];
 }
 
 export interface UiRobotBay {
@@ -443,6 +492,8 @@ export interface UiWeapon {
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */
   targetModuleId: number;
+  /** A blind tile aim (sector tile), or null. */
+  targetTile: { x: number; y: number } | null;
 }
 
 /** A console of the player's ship and who runs it. */
@@ -468,6 +519,9 @@ export interface UiShipCombat {
   /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
   name: string;
+  /** Sector tile of the ship's top-left corner (a tile aim is shown relative to it). */
+  x: number;
+  y: number;
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
   /** A dormant hostile (pirate den) not yet provoked: listed (it can be targeted) but it does not light the hostiles button. */
   dormant?: boolean;
@@ -481,7 +535,7 @@ export interface UiShipCombat {
   ftl: number;
   ftlMax: number;
   /** Ship-wide target, with a label. */
-  target: { ship: number; moduleId: number; label: string } | null;
+  target: { ship: number; moduleId: number; label: string; tile?: { x: number; y: number } } | null;
   modules: UiShipModule[];
 }
 
@@ -502,9 +556,14 @@ export interface UiFtl {
   pilot: string | null;
 }
 
+/** "Target in view" is armed: the next left-click on an enemy ship in the main view aims `weapon` (a weapon module id; null = every weapon). */
+export interface UiAiming {
+  weapon: number | null;
+}
+
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[] }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
@@ -515,6 +574,8 @@ export interface UiShuttleCrew {
   name: string;
   role: string;
   boarding: number;
+  /** The ship (ShipC entity) the crew member stands on, 0 while aboard a vehicle. */
+  ship: number;
 }
 
 export interface UiShuttle {
@@ -547,6 +608,8 @@ export interface UiShuttle {
   bay: number;
   /** Crew can climb in or out here right now (stowed in the bay, or docked). */
   boardable: boolean;
+  /** The ship whose floor crew board from (the boarding tile's): the home ship's bay, or the ship it is docked at. 0 if not boardable. */
+  boardShip: number;
 }
 
 export interface UiShuttleAirlock {
@@ -660,10 +723,8 @@ export interface UiTradePartner {
   rep: number;
   lines: UiTradeLine[];
   /** How a delivery would go: who flies ('them' | 'you') or the reject code that stops it, for goods going out / coming in. */
-  out: { courier: string; error: string };
-  in: { courier: string; error: string };
-  /** Units a shuttle hold takes. */
-  holdCap: number;
+  out: { courier: string; error: string; cap: number };
+  in: { courier: string; error: string; cap: number };
   offer: UiTradeOffer | null;
   distance: number;
   /** People for hire aboard (stations only), and the reject code that would stop a hiring run now ('' if it can go). */
@@ -688,6 +749,8 @@ export interface UiTradeDeal {
   live: boolean;
   cancellable: boolean;
   flying: boolean;
+  /** A multi-trip order: the trip now running, how many there are, and the trips already settled ('' if none stopped early). */
+  trip: { n: number; of: number; stopped: string } | null;
 }
 
 export interface UiTrade {
@@ -846,10 +909,19 @@ export interface UiApi {
   hostiles: Subscribable<UiCrew[]>;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
-  /** Order drafted crew (the selected one, else all) to attack a hostile crew member. */
+  /** Order the selected drafted crew to attack a hostile crew member. */
   attack(target: number): void;
-  /** Selected crew id, or null (tile selection is reported through `inspect`). */
+  /** Selected crew id, or null (tile selection is reported through `inspect`). With several selected it is null: see `selectedGroup`. */
   selectedCrew: Subscribable<number | null>;
+  /** Every selected crew member (click, box, shift-add). */
+  selectedGroup: Subscribable<number[]>;
+  /** The player's shuttle picked in the world, or null. */
+  selectedShuttle: Subscribable<number | null>;
+  /** The selection box being dragged (canvas px), or null. */
+  selectBox: Subscribable<{ x0: number; y0: number; x1: number; y1: number } | null>;
+  /** The order menu open at a canvas position, or null; `pickContext` runs a choice (null closes). */
+  contextMenu: Subscribable<{ x: number; y: number; items: { id: string; label: string }[] } | null>;
+  pickContext(id: string | null): void;
   tool: Subscribable<UiToolState>;
   modules: Subscribable<UiModule[]>;
   moduleDefs: Subscribable<UiModuleDef[]>;
@@ -866,6 +938,7 @@ export interface UiApi {
   stock: Subscribable<UiStock[]>;
   storages: Subscribable<UiStorage[]>;
   fabs: Subscribable<UiFab[]>;
+  research: Subscribable<UiResearch>;
   selectedModule: Subscribable<number | null>;
   selectModule(id: number | null): void;
   /** Module construction sites, and the selected one (a job id). */
@@ -913,12 +986,15 @@ export interface UiApi {
   selectAsteroid(id: number | null): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
-  /** Show a ship in the combat overlay rectangle (null hides it). */
-  setCombatView(view: { ship: number; rect: UiRect } | null): void;
+  /** Show a ship in the combat panel's view canvas (null hides it): the renderer draws into it every frame. */
+  setCombatView(view: { ship: number; canvas: HTMLCanvasElement } | null): void;
   /** Which target brackets the combat view draws over the enemy's modules (module ids; 0/absent = none). */
   setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
   /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
   pickCombat(x: number, y: number): { moduleId: number } | null;
+  /** The armed "Target in view" aim, or null. */
+  aiming: Subscribable<UiAiming | null>;
+  setAiming(a: UiAiming | null): void;
   /** Roof hostile ships (default) or show their interior. */
   setRoofEnemies(on: boolean): void;
   /** Show the player's ship with its roof on (view from outside). */

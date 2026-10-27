@@ -10,6 +10,7 @@ import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
+import { createAimMarks, type AimHover } from './aimMarks';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
@@ -26,6 +27,7 @@ import { createContainerBodyView } from './containerBodyView';
 import { createFightFx } from './fightFx';
 import { crewMuzzle } from './crewMuzzle';
 import { createCrewMarks } from './crewMarks';
+import { createOrderFx, type OrderKind } from './orderFx';
 import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
 import { targetedModules, wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
@@ -106,17 +108,24 @@ export interface Renderer {
   /** Canvas-relative CSS px of a tile's centre on any ship. */
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
-  setSelectedCrew(id: number | null): void;
+  setSelectedCrew(ids: readonly number[]): void;
+  /** The shuttle (vehicle entity) under a canvas-relative position, or null. */
+  pickShuttle(screenX: number, screenY: number): number | null;
+  /** Flash an order marker on a sector tile (centre x, y). */
+  addOrderMarker(x: number, y: number, kind?: OrderKind): void;
   /** Drop every ship scene (the sector changed under them: a jump lifted the ships out); the next frame builds them again. */
   resetWorld(): void;
   /** Sim events of the last frame, for combat fx. */
   onEvents(events: readonly SimEvent[]): void;
   /** Show a ship in the combat overlay rectangle (null hides it). */
-  setCombatView(view: { shipId: number; rect: CombatViewRect } | null): void;
+  /** Show a ship in the combat panel's view canvas (null hides it); see CombatPass.set. */
+  setCombatView(view: { shipId: number; canvas: HTMLCanvasElement } | null): void;
   /** Which target brackets the combat overlay draws. */
   setCombatMarks(marks: CombatMarks): void;
   /** Module (0 = the hull itself) under a canvas-relative position inside the combat overlay, or null if outside the ship. */
   pickCombat(screenX: number, screenY: number): { moduleId: number } | null;
+  /** The enemy tile or module the pointer would aim at while "Target in view" is armed (null clears the preview). */
+  setAimHover(h: AimHover | null): void;
 }
 
 interface RendererContent {
@@ -166,7 +175,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let hover: Tile | null = null;
   let selection: Tile | readonly Tile[] | null = null;
   let selShip = 0;
-  let selectedCrew: number | null = null;
+  let selectedCrew: readonly number[] = [];
   let siteMarks: { blocked: ReadonlySet<number>; selected: number | null } = { blocked: new Set(), selected: null };
   let lastFrame = animNow();
 
@@ -211,7 +220,19 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
+  const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
+  /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
+  const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
+    for (const [gid, sc] of scenes) {
+      const p = sc.crewPos(id);
+      if (!p) continue;
+      const o = iso(origin(gid).x, origin(gid).y);
+      return { x: p.x + o.x, y: p.y + o.y, h: p.h };
+    }
+    return null;
+  };
+  const orderFx = createOrderFx(world, SL.ui, crewSpritePos);
   const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {
@@ -357,14 +378,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       pods.update(dt);
       shuttles.update(dt);
       boxes.update();
+      aimMarks.update();
       fightFx.update(dt);
       crewMarks.update();
+      orderFx.update();
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       art.settle();
       pass.render(gl, stage);
       place(cam, null);
       gl.render({ container: stage });
+      pass.present(canvas);
       atlas.tick();
     },
     resize,
@@ -452,6 +476,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return grid.inBounds(t.x, t.y) ? t : null;
     },
     pickCrew: (sx, sy) => pickCrewAcross(pickHost(), sx, sy),
+    pickShuttle(sx, sy) {
+      const a = cam.toArt(sx, sy);
+      return shuttles.pick(a.x, a.y);
+    },
+    addOrderMarker: (x, y, kind) => orderFx.addMarker(x, y, kind),
     pickTileAny: (sx, sy) => pickTileAcross(pickHost(), sx, sy),
     pickSector: (sx, sy, lift = 0) => {
       const a = cam.toArt(sx, sy);
@@ -474,9 +503,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       siteMarks = { blocked, selected };
       for (const sc of scenes.values()) sc.setSites(blocked, selected);
     },
-    setSelectedCrew(id) {
-      selectedCrew = id;
-      for (const sc of scenes.values()) sc.setSelectedCrew(id);
+    setSelectedCrew(ids) {
+      selectedCrew = ids;
+      orderFx.setSelected(ids);
+      for (const sc of scenes.values()) sc.setSelectedCrew(ids);
     },
     onEvents: (events) => {
       fx.onEvents(events);
@@ -485,6 +515,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setCombatView: (v) => pass.set(v),
     setCombatMarks: (m) => pass.setMarks(m),
     pickCombat: (sx, sy) => pass.pick(sx, sy),
+    setAimHover: (h) => aimMarks.setHover(h),
     dispose() {
       asteroids.dispose();
       pods.dispose();
@@ -493,6 +524,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       boxes.dispose();
       fightFx.dispose();
       crewMarks.dispose();
+      orderFx.dispose();
       fx.dispose();
       sectorParticles.dispose();
       pass.dispose();

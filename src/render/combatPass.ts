@@ -21,6 +21,19 @@ export interface CombatViewRect {
   h: number;
 }
 
+/**
+ * The view's rectangle in device px of the world canvas (whole px, at least 1x1), from its CSS rectangle and the canvas's
+ * device px per CSS px. The panel canvas is sized to it and the world canvas's pixels there are copied 1:1.
+ */
+export function viewDevicePx(rect: CombatViewRect, ratio: number): CombatViewRect {
+  return {
+    x: Math.round(rect.x * ratio),
+    y: Math.round(rect.y * ratio),
+    w: Math.max(1, Math.round(rect.w * ratio)),
+    h: Math.max(1, Math.round(rect.h * ratio)),
+  };
+}
+
 const PANEL_BG = 0x04070b;
 /** Bracket colours: neutral is the theme's --dim, the ship-wide target its --red, weapon overrides its --cyan. */
 const C_NEUTRAL = 0x7fa9c0;
@@ -67,13 +80,23 @@ export interface CombatPassHost {
 export interface CombatPass {
   /** The panel's sprite: add it to the stage above the world. */
   readonly sprite: Sprite;
-  set(view: { shipId: number; rect: CombatViewRect } | null): void;
+  /**
+   * Show a ship in the panel's view `canvas` (null hides it). The canvas's page rectangle is read at every render, so a
+   * dragged or resized panel never shows a stale frame.
+   */
+  set(view: { shipId: number; canvas: HTMLCanvasElement } | null): void;
   /** Which brackets to draw over the targetable modules of the shown ship. */
   setMarks(marks: CombatMarks): void;
   /** The region shown, or null. */
   target(): number | null;
   /** Render pass B (before the main pass). */
   render(gl: PixiRenderer, stage: Container): void;
+  /**
+   * After the main pass: copy the view's pixels from the world canvas into the panel's own canvas (1:1 device px, a GPU
+   * copy, same task as the render so the drawing buffer is still there). The panel then shows the ship opaquely, stacked
+   * with the DOM like any other element, whatever lies under it.
+   */
+  present(source: HTMLCanvasElement): void;
   /** Module (0 = the hull itself) under a canvas-relative position inside the panel, or null if outside the ship. */
   pick(sx: number, sy: number): { moduleId: number } | null;
   dispose(): void;
@@ -88,7 +111,8 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
   sprite.addChild(gfx);
   let marks: CombatMarks = { overrides: [], arming: false };
   let rt: RenderTexture | null = null;
-  let view: { shipId: number; rect: CombatViewRect } | null = null;
+  let view: { shipId: number; canvas: HTMLCanvasElement; rect: CombatViewRect } | null = null;
+  let ctx: CanvasRenderingContext2D | null = null;
   let geom: { x: number; y: number; w: number; h: number; lift: number } | null = null;
 
   function shown(): { ship: Ship; grid: Grid } | null {
@@ -129,7 +153,8 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
   return {
     sprite,
     set(v) {
-      view = v;
+      if (v?.canvas !== view?.canvas) ctx = null;
+      view = v ? { ...v, rect: { x: 0, y: 0, w: 0, h: 0 } } : null;
       if (!v) geom = null;
     },
     setMarks(m) {
@@ -143,11 +168,15 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
         sprite.visible = false;
         return;
       }
+      const box = view.canvas.getBoundingClientRect();
+      view.rect = { x: box.left, y: box.top, w: box.width, h: box.height };
+      if (!view.canvas.isConnected || box.width <= 0 || box.height <= 0) {
+        geom = null;
+        sprite.visible = false;
+        return;
+      }
       const k = h.ratio();
-      const x = Math.round(view.rect.x * k);
-      const y = Math.round(view.rect.y * k);
-      const w = Math.max(1, Math.round(view.rect.w * k));
-      const ht = Math.max(1, Math.round(view.rect.h * k));
+      const { x, y, w, h: ht } = viewDevicePx(view.rect, k);
       const lift = h.roofed(view.shipId) ? ROOF_H : 0;
       const { ship } = s;
       const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W;
@@ -170,6 +199,22 @@ export function createCombatPass(h: CombatPassHost): CombatPass {
       sprite.position.set(x, y);
       sprite.visible = true;
       drawBrackets(s.grid, lift);
+    },
+    present(source) {
+      const g = geom;
+      if (!g || !view) return;
+      const c = view.canvas;
+      if (c.width !== g.w || c.height !== g.h) {
+        c.width = g.w;
+        c.height = g.h;
+        ctx = null;
+      }
+      ctx ??= c.getContext('2d', { alpha: false });
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = '#04070b';
+      ctx.fillRect(0, 0, g.w, g.h); // the part of the view off the world canvas (a panel dragged past the edge)
+      ctx.drawImage(source, g.x, g.y, g.w, g.h, 0, 0, g.w, g.h);
     },
     pick(sx, sy) {
       const g = geom;

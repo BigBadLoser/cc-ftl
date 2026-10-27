@@ -53,9 +53,11 @@ export interface CrewViewHost {
 
 export interface CrewView {
   update(): void;
-  setSelectedCrew(id: number | null): void;
+  setSelectedCrew(ids: readonly number[]): void;
   /** Crew entity under an art-px point (the one whose feet are lowest on screen) and its feet's art y, or null. */
   pick(ax: number, ay: number): { id: number; y: number } | null;
+  /** Where a crew member's feet are drawn now (art px of this view's frame, smoothed like the sprite) and how tall the figure is, or null if not shown. */
+  spritePos(id: number): { x: number; y: number; h: number } | null;
   count(): number;
   dispose(): void;
 }
@@ -100,7 +102,6 @@ interface Slot {
 }
 
 const RED = 0xff3b3b;
-const CYAN = 0x22d3ee;
 const SMOOTH = 14;
 /** Seconds a crew member keeps the weapon up after the fight leaves them (no target in view). */
 const WEAPON_LINGER = 1.5;
@@ -114,7 +115,7 @@ const SEAT_DIR = [6, 0, 2, 4];
 export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost): CrewView {
   const slots = new Map<number, Slot>();
   const tex = diamondTextures();
-  let selected: number | null = null;
+  let selected: ReadonlySet<number> = new Set();
   let last = animNow();
 
   /** True if a grid has a ship (an EVA drift is drawn only while it does). */
@@ -367,8 +368,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.airFill.tint = blink ? 0xffffff : frac > 0.5 ? 0x22d3ee : frac > 0.25 ? 0xf0c030 : 0xff3b3b;
         }
         const drafted = world.has(id, DraftedC) || crew.activity === 'drafted';
-        s.ring.visible = drafted || id === selected;
-        s.ring.tint = id === selected ? CYAN : RED;
+        s.ring.visible = drafted && !selected.has(id); // a selected crew member gets the overlay's lime ring instead
+        s.ring.tint = RED;
       }
     for (const [id, s] of slots) {
       if (seen.has(id)) continue;
@@ -379,8 +380,12 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
 
   return {
     update,
-    setSelectedCrew(id) {
-      selected = id;
+    setSelectedCrew(ids) {
+      selected = new Set(ids);
+    },
+    spritePos(id) {
+      const s = slots.get(id);
+      return s && s.root.visible ? { x: s.root.x, y: s.root.y, h: s.height } : null;
     },
     pick(ax, ay) {
       let best: number | null = null;

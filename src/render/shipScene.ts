@@ -59,9 +59,11 @@ export interface ShipScene {
   setCutaway(mode: CutawayMode): void;
   /** Outline targetable modules (and the `targeted` module ids) with roof-height diamonds. */
   setMarks(show: boolean, targeted: ReadonlySet<number>): void;
-  setSelectedCrew(id: number | null): void;
+  setSelectedCrew(ids: readonly number[]): void;
   /** Crew under a region-local art point, with its feet's art y (the nearest to the viewer wins across regions). */
   pickCrew(ax: number, ay: number): { id: number; y: number } | null;
+  /** Where a crew member's feet are drawn in this scene's art frame (smoothed like the sprite), or null. */
+  crewPos(id: number): { x: number; y: number; h: number } | null;
   pickModule(ax: number, ay: number): number | null;
   /** Module construction sites that are stuck, and the selected one (job ids). */
   setSites(blocked: ReadonlySet<number>, selected: number | null): void;
@@ -181,7 +183,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       marksOn = show;
       targeted = t;
     },
-    setSelectedCrew: (id) => crewView.setSelectedCrew(id),
+    setSelectedCrew: (ids) => crewView.setSelectedCrew(ids),
+    crewPos: (id) => crewView.spritePos(id),
     pickCrew: (ax, ay) => {
       // Crew (aliens included) and live egg sacs (attack targets): the one nearest the viewer wins. Hidden when roofed.
       const c = crewView.pick(ax, ay);

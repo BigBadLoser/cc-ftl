@@ -184,6 +184,16 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     setMode(sim, id, f, 'idle');
     return;
   }
+  // A drafted crew member ordered to man a console stays at it: they may fire from the post when the foe is in reach, but the
+  // fight never takes the station away or sends them chasing (the order beats automatic engagement).
+  const asg = controlled ? sim.world.get(id, AssignmentC) : undefined;
+  if (asg && sim.world.get(asg.jobId, JobC)?.kind === 'operate') {
+    if (!isSettled(pos) || f.cooldown > 0) return;
+    const wd = wielded(sim, id).def;
+    const reach = wd.kind === 'ranged' ? dist(pos, target.pos) <= wd.range && sightLine(sim, grid, pos, target.pos).visible : Math.max(Math.abs(pos.x - target.pos.x), Math.abs(pos.y - target.pos.y)) <= 1;
+    if (reach) attack(sim, id, f, target.id, target.pos, pos, wielded(sim, id), dist(pos, target.pos), wd.kind === 'ranged' ? sightLine(sim, grid, pos, target.pos).cover : 'none');
+    return;
+  }
   setMode(sim, id, f, 'engage');
   f.target = target.id;
   const moveOrder = controlled && !!sim.world.get(id, DraftedC)?.target;

@@ -26,7 +26,7 @@ function gunShip(weapon: string, crew: string[], extra: Mod[] = [], faction?: 'h
 /** The raider with no crew: a passive target that still has power, shields and walls. */
 const dummy: ShipTemplate = { ...content.ships['ship.raider'], crew: [] };
 const dummyNoShield: ShipTemplate = {
-  ...dummy, modules: dummy.modules!.filter((m) => m.def !== 'module.shieldGenSmall'),
+  ...dummy, modules: dummy.modules!.filter((m) => m.def !== 'module.shieldGen'),
 };
 const withMissiles: Mod = { def: 'module.storage', x: 5, y: 6, rot: 2, stock: [{ item: 'item.missile', count: 20 }] };
 
@@ -142,16 +142,16 @@ describe('weapons', () => {
   it('burst laser strips shield layers, then shields recharge', () => {
     const sim = duel('module.burstLaser', dummy);
     aim(sim, 1, 2);
-    const events = run(sim, 700);
+    const events = run(sim, 1200);
     expect(ofType(events, 'projectile.shieldHit').length).toBeGreaterThanOrEqual(1);
     expect(combatOf(sim, 2).shield.layers).toBe(0);
-    // Recharge: one layer after rechargeSec (12 s) without further volleys (hold fire).
+    // Recharge: one layer after rechargeSec (10 s) without further volleys (hold fire).
     sim.enqueue({ type: 'combat.setHold', ship: nth(sim, 1), hold: true });
     run(sim, 2);
     const weapon = modulesOf(sim, 1, 'module.burstLaser')[0] as number;
     sim.world.get(weapon, WeaponC)!.charge = 0;
     sim.world.get(weapon, WeaponC)!.shotsLeft = 0;
-    run(sim, 20 * 13);
+    run(sim, 20 * 11);
     expect(combatOf(sim, 2).shield.layers).toBe(1);
   });
 
@@ -264,8 +264,8 @@ describe('evasion, point defence, shields', () => {
     const unpiloted = newGame(1, content);
     unpiloted.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     for (const id of unpiloted.world.query(CrewC)) {
-      const c = unpiloted.world.get(id, CrewC)!;
-      if (c.role === 'role.pilot') unpiloted.enqueue({ type: 'crew.setPriority', id, category: 'operating', value: 0 });
+      // nobody may fly it: crew with a low operating priority relieve an empty helm after a while
+      unpiloted.enqueue({ type: 'crew.setPriority', id, category: 'operating', value: 0 });
     }
     run(unpiloted, 400);
     expect(combatOf(unpiloted, 1).evasion).toBe(0);

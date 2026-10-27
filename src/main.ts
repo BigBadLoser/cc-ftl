@@ -13,9 +13,11 @@ import { createStore } from './app/store';
 import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
 import { attachInput } from './app/input';
+import type { OrderId } from './app/orders';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
+import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
@@ -23,6 +25,10 @@ import { BodyC, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
+
+// The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
+document.documentElement.style.setProperty('--draft', DRAFT_CSS);
+document.documentElement.style.setProperty('--draft-fill', DRAFT_CSS_FILL);
 
 const target = document.getElementById('app');
 if (!target) throw new Error('Missing #app element');
@@ -197,6 +203,11 @@ const api: UiApi = {
   focusCrew: controller.focusCrew,
   attack: controller.attack,
   selectedCrew: controller.selectedCrew,
+  selectedGroup: controller.selectedGroup,
+  selectedShuttle: controller.selectedShuttle,
+  selectBox: controller.selectBox,
+  contextMenu: controller.contextMenu,
+  pickContext: (id) => controller.pickContext(id as OrderId | null),
   modules: bridge.modules,
   moduleDefs: bridge.moduleDefs,
   placeHint: controller.placeHint,
@@ -209,6 +220,7 @@ const api: UiApi = {
   stock: bridge.stock,
   storages: bridge.storages,
   fabs: bridge.fabs,
+  research: bridge.research,
   selectedModule: controller.selectedModule,
   sites: bridge.sites,
   selectedSite: controller.selectedSite,
@@ -228,6 +240,8 @@ const api: UiApi = {
   prizes: bridge.prizes,
   mining: bridge.mining,
   selectedAsteroid: controller.selectedAsteroid,
+  aiming: controller.aiming.aiming,
+  setAiming: controller.aiming.set,
   selectAsteroid: controller.selectAsteroid,
   story: bridge.story,
   starmap: bridge.starmap,
@@ -244,7 +258,7 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
+  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, canvas: view.canvas }),
   setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),

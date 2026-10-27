@@ -22,6 +22,7 @@ import t_dots from '@tabler/icons/outline/dots.svg?raw';
 import t_droplet from '@tabler/icons/outline/droplet.svg?raw';
 import t_eye from '@tabler/icons/outline/eye.svg?raw';
 import t_flag from '@tabler/icons/outline/flag.svg?raw';
+import t_flask_2 from '@tabler/icons/outline/flask-2.svg?raw';
 import t_flame from '@tabler/icons/outline/flame.svg?raw';
 import t_flare from '@tabler/icons/outline/flare.svg?raw';
 import t_focus_centered from '@tabler/icons/outline/focus-centered.svg?raw';
@@ -40,6 +41,7 @@ import t_map from '@tabler/icons/outline/map.svg?raw';
 import t_mood_smile from '@tabler/icons/outline/mood-smile.svg?raw';
 import t_package from '@tabler/icons/outline/package.svg?raw';
 import t_pin from '@tabler/icons/outline/pin.svg?raw';
+import t_pinned_off from '@tabler/icons/outline/pinned-off.svg?raw';
 import t_plane_departure from '@tabler/icons/outline/plane-departure.svg?raw';
 import t_player_pause from '@tabler/icons/outline/player-pause.svg?raw';
 import t_player_play from '@tabler/icons/outline/player-play.svg?raw';
@@ -139,7 +141,9 @@ export const FILES = {
   clock: 'clock',
   fire: 'flame',
   pin: 'pin',
+  unpin: 'pinned-off',
   lock: 'lock',
+  research: 'flask-2',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -165,6 +169,7 @@ const RAW: Record<string, string> = {
   'eye': t_eye,
   'flag': t_flag,
   'flame': t_flame,
+  'flask-2': t_flask_2,
   'flare': t_flare,
   'focus-centered': t_focus_centered,
   'gas-station': t_gas_station,
@@ -182,6 +187,7 @@ const RAW: Record<string, string> = {
   'mood-smile': t_mood_smile,
   'package': t_package,
   'pin': t_pin,
+  'pinned-off': t_pinned_off,
   'plane-departure': t_plane_departure,
   'player-pause': t_player_pause,
   'player-play': t_player_play,

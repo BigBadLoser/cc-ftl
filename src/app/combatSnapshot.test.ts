@@ -30,4 +30,11 @@ describe('combat snapshot', () => {
     // ... and the panel lists the ship, so the player can aim at it.
     expect(c.enemies.map((e) => e.ship)).toContain(rogue);
   });
+
+  it('tells the panel why the player weapons are idle', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    expect(buildCombat(sim).player?.idle).toBeTypeOf('string');
+  });
 });

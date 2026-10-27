@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
+  import FloatingWindow from './FloatingWindow.svelte';
+  import { isPinned } from './floatingWindow';
   import GridPanel from './GridPanel.svelte';
   import AsteroidPanel from './AsteroidPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
@@ -9,7 +11,7 @@
   import ShuttlePanel from './ShuttlePanel.svelte';
   import TileInspector from './TileInspector.svelte';
 
-  let { api, onPriorities, onTrade, onStation }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void } = $props();
+  let { api, onPriorities, onTrade, onStation, onResearch }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void; onResearch: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
@@ -19,6 +21,7 @@
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
   let selAst = $state<number | null>(null);
+  let selShuttle = $state<number | null>(null);
   let sites = $state<UiSite[]>([]);
   let selSite = $state<number | null>(null);
 
@@ -33,6 +36,7 @@
       api.selectedModule.subscribe((v) => (selMod = v)),
       api.selectedShip.subscribe((v) => (selShip = v)),
       api.selectedAsteroid.subscribe((v) => (selAst = v)),
+      api.selectedShuttle.subscribe((v) => (selShuttle = v)),
       api.sites.subscribe((v) => (sites = v)),
       api.selectedSite.subscribe((v) => (selSite = v)),
     ];
@@ -47,13 +51,17 @@
   const tile = $derived(info?.selected ? info : null);
   const wide = $derived(!hasCrew && !!mod && (mod.crafting || !!mod.storage));
   /** The inspector exists only while something is selected; ship stats live behind the ship tab. */
-  const shown = $derived(selAst !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
+  /** A pinned inspector stays up (empty) when the selection clears. */
+  let pinned = $state(isPinned('inspector'));
+  const shown = $derived(selAst !== null || selShuttle !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
 </script>
 
-{#if shown}
-<aside class="sheet sel" class:wide data-testid="selection-panel">
+{#if shown || pinned}
+<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinRight={0} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
+  {:else if selShuttle !== null}
+    <ShuttlePanel {api} only={selShuttle} onBack={back} />
   {:else if selShip !== null}
     <GridPanel {api} ship={selShip} onBack={back} {onTrade} {onStation} />
   {:else if hasCrew}
@@ -63,15 +71,16 @@
   {:else if mod && bays.some((b) => b.id === mod.id)}
     <ShuttlePanel {api} onBack={back} />
   {:else if mod}
-    <ModuleInspector {api} onBack={back} />
+    <ModuleInspector {api} onBack={back} {onResearch} />
   {:else if tile}
     <TileInspector {api} onBack={back} />
+  {:else}
+    <div class="ph">Inspector</div>
+    <p class="empty">Nothing selected. Pick a crew member, module, tile or ship.</p>
   {/if}
-</aside>
+</FloatingWindow>
 {/if}
 
 <style>
-  .sel { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 300px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
-  .sel.wide { width: 340px; }
-  @media (max-width: 600px) { :global(html[data-combat]) .sel { display: none; } .sel, .sel.wide { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 52vh; } }
+  .empty { margin: 0; color: var(--dim); font-size: 13px; }
 </style>

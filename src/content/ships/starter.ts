@@ -54,7 +54,7 @@ export const starterShip = {
     { def: 'module.bed', x: 17, y: 3, rot: 3 },
     { def: 'module.light', x: 15, y: 2, rot: 0 },
     { def: 'module.light', x: 17, y: 7, rot: 0 },
-    // Shield room: generator (2x3) beside the north wall; the door at (11, 8) stays clear.
+    // Shield room: generator (2x2) beside the north wall; the door at (11, 8) stays clear.
     { def: 'module.shieldGen', x: 11, y: 2, rot: 0 },
     { def: 'module.light', x: 9, y: 2, rot: 0 },
     { def: 'module.light', x: 9, y: 7, rot: 0 },

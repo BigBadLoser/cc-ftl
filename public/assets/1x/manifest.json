@@ -4655,6 +4655,14 @@
    "image": "sprites/reactor.png",
    "glow": "sprites/reactor.glow.png"
   },
+  "reactor_2x3": {
+   "image": "sprites/reactor_2x3.png",
+   "glow": "sprites/reactor_2x3.glow.png"
+  },
+  "reactor_2x4": {
+   "image": "sprites/reactor_2x4.png",
+   "glow": "sprites/reactor_2x4.glow.png"
+  },
   "refinery": {
    "image": "sprites/refinery.png",
    "glow": "sprites/refinery.glow.png"
@@ -4673,9 +4681,13 @@
   "roof": {
    "image": "sprites/roof.png"
   },
-  "shields": {
-   "image": "sprites/shields.png",
-   "glow": "sprites/shields.glow.png"
+  "shield_body": {
+   "image": "sprites/shield_body.png",
+   "glow": "sprites/shield_body.glow.png"
+  },
+  "shield_roof": {
+   "image": "sprites/shield_roof.png",
+   "glow": "sprites/shield_roof.glow.png"
   },
   "shuttle": {
    "image": "sprites/shuttle.png",
@@ -67967,56 +67979,18 @@
     3
    ]
   },
-  "module.shield_gen.r0": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 553,
-    "y": 1,
-    "w": 137,
-    "h": 124
-   },
-   "anchor": {
-    "x": 53,
-    "y": 118
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "module.shield_gen.r0.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 691,
-    "y": 1,
-    "w": 137,
-    "h": 124
-   },
-   "anchor": {
-    "x": 53,
-    "y": 118
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
   "module.shield_gen.r0.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 3090,
-    "y": 193,
-    "w": 137,
-    "h": 124
+    "x": 3959,
+    "y": 1,
+    "w": 130,
+    "h": 125
    },
    "anchor": {
-    "x": 53,
-    "y": 118
+    "x": 49,
+    "y": 121
    },
    "footprint": [
     2,
@@ -68026,89 +68000,52 @@
   },
   "module.shield_gen.r0.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 3228,
-    "y": 193,
-    "w": 137,
-    "h": 124
+    "x": 1,
+    "y": 130,
+    "w": 130,
+    "h": 125
    },
    "anchor": {
-    "x": 53,
-    "y": 118
+    "x": 49,
+    "y": 121
    },
    "footprint": [
     2,
     3
-   ],
-   "glow": true
+   ]
   },
   "module.shield_gen.r0.destroyed": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 135,
-    "y": 357,
-    "w": 136,
-    "h": 114
+    "x": 132,
+    "y": 130,
+    "w": 130,
+    "h": 125
    },
    "anchor": {
-    "x": 52,
-    "y": 100
+    "x": 49,
+    "y": 121
    },
    "footprint": [
     2,
     3
-   ]
-  },
-  "module.shield_gen.r1": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1,
-    "y": 1,
-    "w": 137,
-    "h": 130
-   },
-   "anchor": {
-    "x": 85,
-    "y": 124
-   },
-   "footprint": [
-    3,
-    2
-   ]
-  },
-  "module.shield_gen.r1.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 139,
-    "y": 1,
-    "w": 137,
-    "h": 130
-   },
-   "anchor": {
-    "x": 85,
-    "y": 124
-   },
-   "footprint": [
-    3,
-    2
    ]
   },
   "module.shield_gen.r1.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1716,
-    "y": 193,
-    "w": 137,
-    "h": 130
+    "x": 1442,
+    "y": 130,
+    "w": 130,
+    "h": 119
    },
    "anchor": {
-    "x": 85,
-    "y": 124
+    "x": 81,
+    "y": 115
    },
    "footprint": [
     3,
@@ -68118,16 +68055,16 @@
   },
   "module.shield_gen.r1.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1854,
-    "y": 193,
-    "w": 137,
-    "h": 130
+    "x": 1573,
+    "y": 130,
+    "w": 130,
+    "h": 119
    },
    "anchor": {
-    "x": 85,
-    "y": 124
+    "x": 81,
+    "y": 115
    },
    "footprint": [
     3,
@@ -68136,70 +68073,34 @@
   },
   "module.shield_gen.r1.destroyed": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 797,
-    "y": 357,
-    "w": 136,
-    "h": 108
+    "x": 1704,
+    "y": 130,
+    "w": 130,
+    "h": 119
    },
    "anchor": {
-    "x": 84,
-    "y": 102
+    "x": 81,
+    "y": 115
    },
    "footprint": [
     3,
     2
    ]
   },
-  "module.shield_gen.r2": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 277,
-    "y": 1,
-    "w": 137,
-    "h": 130
-   },
-   "anchor": {
-    "x": 52,
-    "y": 124
-   },
-   "footprint": [
-    2,
-    3
-   ]
-  },
-  "module.shield_gen.r2.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 415,
-    "y": 1,
-    "w": 137,
-    "h": 130
-   },
-   "anchor": {
-    "x": 52,
-    "y": 124
-   },
-   "footprint": [
-    2,
-    3
-   ]
-  },
   "module.shield_gen.r2.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1992,
-    "y": 193,
-    "w": 137,
-    "h": 130
+    "x": 2228,
+    "y": 130,
+    "w": 130,
+    "h": 119
    },
    "anchor": {
-    "x": 52,
-    "y": 124
+    "x": 49,
+    "y": 115
    },
    "footprint": [
     2,
@@ -68209,91 +68110,52 @@
   },
   "module.shield_gen.r2.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 2130,
-    "y": 193,
-    "w": 137,
-    "h": 130
+    "x": 2359,
+    "y": 130,
+    "w": 130,
+    "h": 119
    },
    "anchor": {
-    "x": 52,
-    "y": 124
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "module.shield_gen.r2.destroyed": {
-   "kind": "static",
-   "sheet": "damage_sol",
-   "frame": {
-    "x": 3642,
-    "y": 193,
-    "w": 144,
-    "h": 123
-   },
-   "anchor": {
-    "x": 60,
-    "y": 117
+    "x": 49,
+    "y": 115
    },
    "footprint": [
     2,
     3
    ]
   },
-  "module.shield_gen.r3": {
+  "module.shield_gen.r2.destroyed": {
    "kind": "static",
-   "sheet": "shields",
+   "sheet": "shield_body",
    "frame": {
-    "x": 829,
-    "y": 1,
-    "w": 137,
-    "h": 124
+    "x": 2490,
+    "y": 130,
+    "w": 130,
+    "h": 119
    },
    "anchor": {
-    "x": 84,
-    "y": 118
+    "x": 49,
+    "y": 115
    },
    "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "module.shield_gen.r3.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 967,
-    "y": 1,
-    "w": 137,
-    "h": 124
-   },
-   "anchor": {
-    "x": 84,
-    "y": 118
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
+    2,
+    3
+   ]
   },
   "module.shield_gen.r3.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 3366,
-    "y": 193,
-    "w": 137,
-    "h": 124
+    "x": 656,
+    "y": 130,
+    "w": 130,
+    "h": 125
    },
    "anchor": {
-    "x": 84,
-    "y": 118
+    "x": 81,
+    "y": 121
    },
    "footprint": [
     3,
@@ -68303,91 +68165,52 @@
   },
   "module.shield_gen.r3.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 3504,
-    "y": 193,
-    "w": 137,
-    "h": 124
+    "x": 787,
+    "y": 130,
+    "w": 130,
+    "h": 125
    },
    "anchor": {
-    "x": 84,
-    "y": 118
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "module.shield_gen.r3.destroyed": {
-   "kind": "static",
-   "sheet": "damage_sol",
-   "frame": {
-    "x": 1623,
-    "y": 357,
-    "w": 148,
-    "h": 106
-   },
-   "anchor": {
-    "x": 90,
-    "y": 100
+    "x": 81,
+    "y": 121
    },
    "footprint": [
     3,
     2
    ]
   },
-  "module.shield_gen_small.r0": {
+  "module.shield_gen.r3.destroyed": {
    "kind": "static",
-   "sheet": "shields",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1485,
-    "y": 1,
-    "w": 94,
-    "h": 107
+    "x": 918,
+    "y": 130,
+    "w": 130,
+    "h": 125
    },
    "anchor": {
-    "x": 47,
-    "y": 104
+    "x": 81,
+    "y": 121
    },
    "footprint": [
-    2,
+    3,
     2
-   ],
-   "glow": true
-  },
-  "module.shield_gen_small.r0.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1580,
-    "y": 1,
-    "w": 94,
-    "h": 107
-   },
-   "anchor": {
-    "x": 47,
-    "y": 104
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
+   ]
   },
   "module.shield_gen_small.r0.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 272,
-    "y": 357,
+    "x": 1,
+    "y": 256,
     "w": 94,
-    "h": 114
+    "h": 107
    },
    "anchor": {
     "x": 47,
-    "y": 111
+    "y": 104
    },
    "footprint": [
     2,
@@ -68397,90 +68220,52 @@
   },
   "module.shield_gen_small.r0.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 367,
-    "y": 357,
-    "w": 94,
-    "h": 114
-   },
-   "anchor": {
-    "x": 47,
-    "y": 111
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "module.shield_gen_small.r0.destroyed": {
-   "kind": "static",
-   "sheet": "damage_sol",
-   "frame": {
-    "x": 2515,
-    "y": 357,
-    "w": 98,
-    "h": 80
-   },
-   "anchor": {
-    "x": 51,
-    "y": 77
-   },
-   "footprint": [
-    2,
-    2
-   ]
-  },
-  "module.shield_gen_small.r1": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1105,
-    "y": 1,
-    "w": 94,
-    "h": 108
-   },
-   "anchor": {
-    "x": 47,
-    "y": 105
-   },
-   "footprint": [
-    2,
-    2
-   ]
-  },
-  "module.shield_gen_small.r1.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1200,
-    "y": 1,
-    "w": 94,
-    "h": 108
-   },
-   "anchor": {
-    "x": 47,
-    "y": 105
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "module.shield_gen_small.r1.damaged": {
-   "kind": "static",
-   "sheet": "damage_sol",
-   "frame": {
-    "x": 934,
-    "y": 357,
+    "x": 96,
+    "y": 256,
     "w": 94,
     "h": 107
    },
    "anchor": {
     "x": 47,
     "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r0.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 191,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r1.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2942,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
    },
    "footprint": [
     2,
@@ -68490,47 +68275,28 @@
   },
   "module.shield_gen_small.r1.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1029,
-    "y": 357,
+    "x": 3037,
+    "y": 130,
     "w": 94,
-    "h": 107
+    "h": 108
    },
    "anchor": {
     "x": 47,
-    "y": 104
+    "y": 105
    },
    "footprint": [
     2,
     2
-   ],
-   "glow": true
+   ]
   },
   "module.shield_gen_small.r1.destroyed": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 2321,
-    "y": 357,
-    "w": 95,
-    "h": 90
-   },
-   "anchor": {
-    "x": 47,
-    "y": 77
-   },
-   "footprint": [
-    2,
-    2
-   ]
-  },
-  "module.shield_gen_small.r2": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1295,
-    "y": 1,
+    "x": 3132,
+    "y": 130,
     "w": 94,
     "h": 108
    },
@@ -68542,38 +68308,19 @@
     2,
     2
    ]
-  },
-  "module.shield_gen_small.r2.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1390,
-    "y": 1,
-    "w": 94,
-    "h": 108
-   },
-   "anchor": {
-    "x": 47,
-    "y": 105
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
   },
   "module.shield_gen_small.r2.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1124,
-    "y": 357,
+    "x": 3512,
+    "y": 130,
     "w": 94,
-    "h": 107
+    "h": 108
    },
    "anchor": {
     "x": 47,
-    "y": 104
+    "y": 105
    },
    "footprint": [
     2,
@@ -68583,16 +68330,16 @@
   },
   "module.shield_gen_small.r2.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1219,
-    "y": 357,
+    "x": 3607,
+    "y": 130,
     "w": 94,
-    "h": 107
+    "h": 108
    },
    "anchor": {
     "x": 47,
-    "y": 104
+    "y": 105
    },
    "footprint": [
     2,
@@ -68601,66 +68348,28 @@
   },
   "module.shield_gen_small.r2.destroyed": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 2614,
-    "y": 357,
-    "w": 100,
-    "h": 80
+    "x": 3702,
+    "y": 130,
+    "w": 94,
+    "h": 108
    },
    "anchor": {
-    "x": 53,
-    "y": 77
+    "x": 47,
+    "y": 105
    },
    "footprint": [
     2,
     2
    ]
   },
-  "module.shield_gen_small.r3": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1675,
-    "y": 1,
-    "w": 94,
-    "h": 107
-   },
-   "anchor": {
-    "x": 47,
-    "y": 104
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "module.shield_gen_small.r3.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1770,
-    "y": 1,
-    "w": 94,
-    "h": 107
-   },
-   "anchor": {
-    "x": 47,
-    "y": 104
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
   "module.shield_gen_small.r3.damaged": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1314,
-    "y": 357,
+    "x": 571,
+    "y": 256,
     "w": 94,
     "h": 107
    },
@@ -68676,10 +68385,10 @@
   },
   "module.shield_gen_small.r3.damaged.flicker": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1409,
-    "y": 357,
+    "x": 666,
+    "y": 256,
     "w": 94,
     "h": 107
    },
@@ -68694,16 +68403,16 @@
   },
   "module.shield_gen_small.r3.destroyed": {
    "kind": "static",
-   "sheet": "damage_sol",
+   "sheet": "shield_body",
    "frame": {
-    "x": 1894,
-    "y": 357,
-    "w": 96,
-    "h": 103
+    "x": 761,
+    "y": 256,
+    "w": 94,
+    "h": 107
    },
    "anchor": {
-    "x": 49,
-    "y": 95
+    "x": 47,
+    "y": 104
    },
    "footprint": [
     2,
@@ -105964,462 +105673,6 @@
     1
    ]
   },
-  "roof.shield_gen": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2107,
-    "y": 1,
-    "w": 120,
-    "h": 76
-   },
-   "anchor": {
-    "x": 44,
-    "y": 150
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2228,
-    "y": 1,
-    "w": 120,
-    "h": 76
-   },
-   "anchor": {
-    "x": 44,
-    "y": 150
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.deploy.f0": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3415,
-    "y": 1,
-    "w": 120,
-    "h": 61
-   },
-   "anchor": {
-    "x": 44,
-    "y": 135
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.deploy.f1": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3536,
-    "y": 1,
-    "w": 120,
-    "h": 61
-   },
-   "anchor": {
-    "x": 44,
-    "y": 135
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.deploy.f2": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3088,
-    "y": 1,
-    "w": 120,
-    "h": 68
-   },
-   "anchor": {
-    "x": 44,
-    "y": 142
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.deploy.f3": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1865,
-    "y": 1,
-    "w": 120,
-    "h": 77
-   },
-   "anchor": {
-    "x": 44,
-    "y": 151
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.deploy.f4": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2349,
-    "y": 1,
-    "w": 120,
-    "h": 76
-   },
-   "anchor": {
-    "x": 44,
-    "y": 150
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2470,
-    "y": 1,
-    "w": 120,
-    "h": 76
-   },
-   "anchor": {
-    "x": 76,
-    "y": 150
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2591,
-    "y": 1,
-    "w": 120,
-    "h": 76
-   },
-   "anchor": {
-    "x": 76,
-    "y": 150
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.deploy.f0": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3657,
-    "y": 1,
-    "w": 120,
-    "h": 61
-   },
-   "anchor": {
-    "x": 76,
-    "y": 135
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.deploy.f1": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3778,
-    "y": 1,
-    "w": 120,
-    "h": 61
-   },
-   "anchor": {
-    "x": 76,
-    "y": 135
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.deploy.f2": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3209,
-    "y": 1,
-    "w": 120,
-    "h": 68
-   },
-   "anchor": {
-    "x": 76,
-    "y": 142
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.deploy.f3": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1986,
-    "y": 1,
-    "w": 120,
-    "h": 77
-   },
-   "anchor": {
-    "x": 76,
-    "y": 151
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.deploy.f4": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2712,
-    "y": 1,
-    "w": 120,
-    "h": 76
-   },
-   "anchor": {
-    "x": 76,
-    "y": 150
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.r1.stowed": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3899,
-    "y": 1,
-    "w": 120,
-    "h": 61
-   },
-   "anchor": {
-    "x": 76,
-    "y": 135
-   },
-   "footprint": [
-    3,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen.stowed": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 1,
-    "y": 132,
-    "w": 120,
-    "h": 61
-   },
-   "anchor": {
-    "x": 44,
-    "y": 135
-   },
-   "footprint": [
-    2,
-    3
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2833,
-    "y": 1,
-    "w": 84,
-    "h": 71
-   },
-   "anchor": {
-    "x": 42,
-    "y": 146
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.active": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 2918,
-    "y": 1,
-    "w": 84,
-    "h": 71
-   },
-   "anchor": {
-    "x": 42,
-    "y": 146
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.deploy.f0": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 207,
-    "y": 132,
-    "w": 84,
-    "h": 43
-   },
-   "anchor": {
-    "x": 42,
-    "y": 118
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.deploy.f1": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 292,
-    "y": 132,
-    "w": 84,
-    "h": 43
-   },
-   "anchor": {
-    "x": 42,
-    "y": 118
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.deploy.f2": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 122,
-    "y": 132,
-    "w": 84,
-    "h": 49
-   },
-   "anchor": {
-    "x": 42,
-    "y": 124
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.deploy.f3": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3330,
-    "y": 1,
-    "w": 84,
-    "h": 64
-   },
-   "anchor": {
-    "x": 42,
-    "y": 139
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.deploy.f4": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 3003,
-    "y": 1,
-    "w": 84,
-    "h": 71
-   },
-   "anchor": {
-    "x": 42,
-    "y": 146
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
-  "roof.shield_gen_small.stowed": {
-   "kind": "static",
-   "sheet": "shields",
-   "frame": {
-    "x": 377,
-    "y": 132,
-    "w": 84,
-    "h": 43
-   },
-   "anchor": {
-    "x": 42,
-    "y": 118
-   },
-   "footprint": [
-    2,
-    2
-   ],
-   "glow": true
-  },
   "starmap.backdrop": {
    "kind": "static",
    "sheet": "starmap",
@@ -131625,6 +130878,5988 @@
    "footprint": [
     2,
     2
+   ]
+  },
+  "module.shield_gen": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3697,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3828,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3959,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 132,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3697,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r0": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3697,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r0.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3828,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r0.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3697,
+    "y": 1,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r0.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 263,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen.r1": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1180,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 81,
+    "y": 115
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.shield_gen.r1.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1311,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 81,
+    "y": 115
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r1.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1180,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 81,
+    "y": 115
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.shield_gen.r1.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1835,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 81,
+    "y": 115
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.shield_gen.r2": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1966,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 49,
+    "y": 115
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen.r2.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2097,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 49,
+    "y": 115
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r2.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1966,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 49,
+    "y": 115
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen.r2.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2621,
+    "y": 130,
+    "w": 130,
+    "h": 119
+   },
+   "anchor": {
+    "x": 49,
+    "y": 115
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen.r3": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 394,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 81,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r3.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 525,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 81,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r3.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 394,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 81,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen.r3.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1049,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 81,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.shield_gen.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 263,
+    "y": 130,
+    "w": 130,
+    "h": 125
+   },
+   "anchor": {
+    "x": 49,
+    "y": 121
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.shield_gen_3x3": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 155,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 309,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 463,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 617,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r0": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r0.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 155,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r0.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 309,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 463,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r0.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 617,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r0.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r0.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 771,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r1": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 925,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r1.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1079,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r1.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1233,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1387,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r1.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1541,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r1.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 925,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r1.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1695,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r2": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1849,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r2.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2003,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r2.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2157,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2311,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r2.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2465,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r2.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1849,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r2.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2619,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r3": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2773,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r3.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2927,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r3.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3081,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3235,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r3.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3389,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.r3.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2773,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.shield_gen_3x3.r3.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3543,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 82,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_3x3.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 771,
+    "y": 1,
+    "w": 153,
+    "h": 128
+   },
+   "anchor": {
+    "x": 71,
+    "y": 129
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.shield_gen_small": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3892,
+    "y": 130,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3987,
+    "y": 130,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.damaged": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 1,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 96,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.destroyed": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 191,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3892,
+    "y": 130,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r0": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3892,
+    "y": 130,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r0.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3987,
+    "y": 130,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r0.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3892,
+    "y": 130,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r0.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 286,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r1": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2752,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r1.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2847,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r1.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 2752,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r1.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3227,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r2": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3322,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r2.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3417,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r2.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3322,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r2.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 3797,
+    "y": 130,
+    "w": 94,
+    "h": 108
+   },
+   "anchor": {
+    "x": 47,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.r3": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 381,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r3.active": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 476,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r3.idle": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 381,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.shield_gen_small.r3.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 856,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.shield_gen_small.unpowered": {
+   "kind": "static",
+   "sheet": "shield_body",
+   "frame": {
+    "x": 286,
+    "y": 256,
+    "w": 94,
+    "h": 107
+   },
+   "anchor": {
+    "x": 47,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2087,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2210,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2333,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2456,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2579,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2702,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2825,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2948,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2087,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2210,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2333,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r0.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2456,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2579,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2702,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2825,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r0.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2948,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r0.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3071,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3194,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r1.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3317,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r1.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3440,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3563,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r1.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3686,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r1.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3809,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r1.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3932,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r1.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r1.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3194,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r1.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3194,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r1.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 124,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r1.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 247,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 370,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r2.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 493,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r2.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 616,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 739,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r2.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 862,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r2.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 985,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r2.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1108,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r2.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1231,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r2.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 370,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r2.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 370,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r2.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1354,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "roof.shield_gen.r2.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1477,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1600,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1723,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1846,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1969,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r3.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2092,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2215,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2338,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2461,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1600,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1600,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.r3.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2584,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "roof.shield_gen.r3.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2707,
+    "y": 179,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 77,
+    "y": 155
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3071,
+    "y": 90,
+    "w": 122,
+    "h": 82
+   },
+   "anchor": {
+    "x": 45,
+    "y": 155
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 152,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 303,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 454,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 605,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 756,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 907,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1058,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1209,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 152,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 303,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 454,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r0.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 605,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 756,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 907,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1058,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r0.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1209,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r0.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1360,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1511,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r1.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1662,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r1.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1813,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1964,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r1.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2115,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r1.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2266,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r1.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2417,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r1.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2568,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r1.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1511,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r1.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1511,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r1.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2719,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r1.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2870,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3021,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r2.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3172,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r2.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3323,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3474,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r2.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3625,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r2.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3776,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r2.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3927,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r2.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r2.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3021,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r2.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3021,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r2.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 152,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r2.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 303,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 454,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 605,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 756,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 907,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r3.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1058,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1209,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1360,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1511,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 454,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 454,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.r3.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1662,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "roof.shield_gen_3x3.r3.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1813,
+    "y": 90,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_3x3.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1360,
+    "y": 1,
+    "w": 150,
+    "h": 88
+   },
+   "anchor": {
+    "x": 75,
+    "y": 163
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2830,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2917,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3004,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3091,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3178,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3265,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3352,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3439,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2830,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2830,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3526,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2830,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2917,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3004,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3091,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r0.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3178,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3265,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3352,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3439,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2830,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2830,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r0.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3526,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r0.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3613,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3700,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3787,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3874,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3961,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r1.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 88,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 175,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 262,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3700,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3700,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r1.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 349,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r1.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 436,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 523,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 610,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 697,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 784,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r2.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 871,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 958,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1045,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1132,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 523,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 523,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r2.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1219,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r2.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1306,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1393,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.active": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1480,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.damaged": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1567,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1654,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r3.deploy.f0": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1741,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.deploy.f1": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1828,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.deploy.f2": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1915,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.deploy.f3": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2002,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.deploy.f4": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1393,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.deployed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 1393,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.r3.destroyed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2089,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "roof.shield_gen_small.r3.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 2176,
+    "y": 262,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "roof.shield_gen_small.stowed": {
+   "kind": "static",
+   "sheet": "shield_roof",
+   "frame": {
+    "x": 3613,
+    "y": 179,
+    "w": 86,
+    "h": 53
+   },
+   "anchor": {
+    "x": 43,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.active": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 146,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 291,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 436,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r0": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r0.active": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r0.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 146,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 291,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r0.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 436,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r0.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 581,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r1": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 726,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r1.active": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 726,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r1.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 871,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1016,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.reactor_2x3.r1.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1161,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.reactor_2x3.r1.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1306,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.reactor_2x3.r2": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1451,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r2.active": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1451,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r2.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1596,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1741,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r2.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 1886,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r2.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2031,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x3.r3": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2176,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r3.active": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2176,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r3.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2321,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x3.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2466,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.reactor_2x3.r3.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2611,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.reactor_2x3.r3.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 2756,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 88,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.reactor_2x3.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x3",
+   "frame": {
+    "x": 581,
+    "y": 1,
+    "w": 144,
+    "h": 120
+   },
+   "anchor": {
+    "x": 56,
+    "y": 114
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.reactor_2x4": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.active": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 180,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 359,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 538,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r0": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r0.active": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r0.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 180,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 359,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r0.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 538,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r0.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 717,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r1": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 2686,
+    "y": 1,
+    "w": 178,
+    "h": 128
+   },
+   "anchor": {
+    "x": 122,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r1.active": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 2686,
+    "y": 1,
+    "w": 178,
+    "h": 128
+   },
+   "anchor": {
+    "x": 122,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r1.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 2865,
+    "y": 1,
+    "w": 178,
+    "h": 128
+   },
+   "anchor": {
+    "x": 122,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 3044,
+    "y": 1,
+    "w": 178,
+    "h": 128
+   },
+   "anchor": {
+    "x": 122,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "module.reactor_2x4.r1.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 3223,
+    "y": 1,
+    "w": 178,
+    "h": 128
+   },
+   "anchor": {
+    "x": 122,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "module.reactor_2x4.r1.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 3402,
+    "y": 1,
+    "w": 178,
+    "h": 128
+   },
+   "anchor": {
+    "x": 122,
+    "y": 122
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "module.reactor_2x4.r2": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1791,
+    "y": 1,
+    "w": 178,
+    "h": 133
+   },
+   "anchor": {
+    "x": 56,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r2.active": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1791,
+    "y": 1,
+    "w": 178,
+    "h": 133
+   },
+   "anchor": {
+    "x": 56,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r2.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1970,
+    "y": 1,
+    "w": 178,
+    "h": 133
+   },
+   "anchor": {
+    "x": 56,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    4
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 2149,
+    "y": 1,
+    "w": 178,
+    "h": 133
+   },
+   "anchor": {
+    "x": 56,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r2.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 2328,
+    "y": 1,
+    "w": 178,
+    "h": 133
+   },
+   "anchor": {
+    "x": 56,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r2.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 2507,
+    "y": 1,
+    "w": 178,
+    "h": 133
+   },
+   "anchor": {
+    "x": 56,
+    "y": 127
+   },
+   "footprint": [
+    2,
+    4
+   ]
+  },
+  "module.reactor_2x4.r3": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 896,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 120,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r3.active": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 896,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 120,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r3.damaged": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1075,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 120,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    2
+   ],
+   "glow": true
+  },
+  "module.reactor_2x4.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1254,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 120,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "module.reactor_2x4.r3.destroyed": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1433,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 120,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "module.reactor_2x4.r3.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 1612,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 120,
+    "y": 130
+   },
+   "footprint": [
+    4,
+    2
+   ]
+  },
+  "module.reactor_2x4.unpowered": {
+   "kind": "static",
+   "sheet": "reactor_2x4",
+   "frame": {
+    "x": 717,
+    "y": 1,
+    "w": 178,
+    "h": 138
+   },
+   "anchor": {
+    "x": 58,
+    "y": 130
+   },
+   "footprint": [
+    2,
+    4
    ]
   }
  },

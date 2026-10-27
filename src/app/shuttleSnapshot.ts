@@ -1,4 +1,4 @@
-import { FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
 import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
@@ -65,7 +65,7 @@ function regionList(sim: Sim, home: number): UiShuttles['regions'] {
 
 function crewRef(sim: Sim, id: number): UiShuttleCrew | null {
   const c = id ? sim.world.get(id, CrewC) : undefined;
-  return c ? { id, name: c.name, role: sim.content.roles[c.role]?.name ?? c.role, boarding: sim.world.get(id, EmbarkOrderC)?.vehicle ?? 0 } : null;
+  return c ? { id, name: c.name, role: sim.content.roles[c.role]?.name ?? c.role, boarding: sim.world.get(id, EmbarkOrderC)?.vehicle ?? 0, ship: sim.world.has(id, PositionC) ? shipIdOf(sim, sim.world.get(id, PositionC)) : 0 } : null;
 }
 
 function shipName(sim: Sim, shipId: number): string {
@@ -96,6 +96,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
       destination: v.destination, dockShip: dockM ? shipName(sim, shipIdOf(sim, dockM)) : null, bay: v.bay,
       boardable: boardingTile(sim, v.id) !== null,
+      boardShip: boardingTile(sim, v.id)?.shipId ?? 0,
       trade: tradeRun(sim, v.id),
       ferry: ferryRun(sim, v.id),
       ferryFree: ferryFree(sim, v.id),
@@ -106,9 +107,10 @@ export function buildShuttles(sim: Sim): UiShuttles {
   }
   const roster: UiShuttleCrew[] = [];
   for (const id of sim.world.query(CrewC)) {
-    if (sim.world.has(id, DeadC) || sim.world.has(id, AboardC)) continue;
+    if (sim.world.has(id, DeadC) || sim.world.has(id, AboardC) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
     const pos = sim.world.get(id, PositionC);
-    if (shipIdOf(sim, pos) !== PLAYER) continue;
+    // Crew on the home ship, or on the ship one of the player's shuttles is docked at (a boarding party that can climb back in).
+    if (shipIdOf(sim, pos) !== PLAYER && !shuttles.some((s) => s.boardShip === shipIdOf(sim, pos))) continue;
     const ref = crewRef(sim, id);
     if (ref) roster.push(ref);
   }

@@ -1,6 +1,8 @@
 <script lang="ts">
   import GameSession from './GameSession.svelte';
   import GoalsCard from './GoalsCard.svelte';
+  import ContextMenu from './ContextMenu.svelte';
+  import SelectBox from './SelectBox.svelte';
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
@@ -23,6 +25,7 @@
   import NodeStrip from './NodeStrip.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
+  import ResearchOverlay from './ResearchOverlay.svelte';
   import JobsTracker from './JobsTracker.svelte';
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
@@ -30,6 +33,7 @@
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
+  import { isPinned } from './floatingWindow';
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
 
@@ -39,6 +43,9 @@
   let debug = $state(false);
   let stockOpen = $state(false);
   let jobsOpen = $state(false);
+  let researchOpen = $state(false);
+  /** The home ship has a research module: the nav strip shows the research button. */
+  let hasLab = $state(false);
   let jobCount = $state(0);
   let priorities = $state(false);
   let toast = $state<string | null>(null);
@@ -103,6 +110,7 @@
       () => mq.removeEventListener('change', onMq),
       api.snapshot.subscribe((s) => (snap = s)),
       api.jobs.subscribe((j) => (jobCount = j.active.length)),
+      api.research.subscribe((r) => { hasLab = r.labs > 0; if (!hasLab) researchOpen = false; }),
       api.toast.subscribe((t) => (toast = t)),
       api.starmap.subscribe((m) => (star = m)),
       api.deploy.subscribe((d) => (deploy = d)),
@@ -135,14 +143,15 @@
   /**
    * Panels the outside click knows about. A click on the world (or a modal's backdrop) closes every open one that is not `sticky`:
    * combat and the build catalog (while in build mode) stay, as do the goals card, alerts, top bars and toolbar (never listed).
-   * The selection inspector is not here: the world tap itself selects or deselects, in the same click.
+   * A pinned window (floatingWindow.ts) stays open too. The selection inspector is not here: the world tap itself selects or deselects, in the same click;
+   * a pinned inspector just stays up, empty, when the selection clears.
    */
   const panels: ClosablePanel[] = [
-    { id: 'overview', sticky: false, isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
-    { id: 'jobs', sticky: false, isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
-    { id: 'stock', sticky: false, isOpen: () => stockOpen, close: () => (stockOpen = false) },
-    { id: 'priorities', sticky: false, isOpen: () => priorities, close: () => (priorities = false) },
-    { id: 'station', sticky: false, isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
+    { id: 'overview', sticky: false, pinned: () => isPinned('overview'), isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
+    { id: 'jobs', sticky: false, pinned: () => isPinned('jobs'), isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
+    { id: 'stock', sticky: false, pinned: () => isPinned('stock'), isOpen: () => stockOpen, close: () => (stockOpen = false) },
+    { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
+    { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
     { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
     { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
@@ -158,9 +167,11 @@
     else if (e.key === '`') debug = !debug;
     else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
-      if (jobsOpen) jobsOpen = false;
-      else if (stockOpen) stockOpen = false;
-      else if (overviewOpen) overviewOpen = false;
+      // A pinned window ignores Esc.
+      if (researchOpen) researchOpen = false;
+      else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
+      else if (stockOpen && !isPinned('stock')) stockOpen = false;
+      else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
       else api.selectCrew(null);
     }
   }
@@ -193,7 +204,9 @@
 
 <svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
-<canvas bind:this={canvas}></canvas>
+<canvas bind:this={canvas} data-world></canvas>
+<SelectBox {api} />
+<ContextMenu {api} />
 
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
@@ -201,6 +214,7 @@
     {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
+    {hasLab} {researchOpen} onResearch={() => (researchOpen = !researchOpen)}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
@@ -215,6 +229,9 @@
 
 {#if overviewOpen}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
+{/if}
+{#if researchOpen}
+  <ResearchOverlay {api} onClose={() => (researchOpen = false)} />
 {/if}
 {#if jobsOpen}
   <JobsPanel {api} onClose={() => (jobsOpen = false)} />
@@ -239,7 +256,7 @@
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
 {:else}
-  <SelectionPanel {api} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
+  <SelectionPanel {api} onResearch={() => (researchOpen = true)} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 
@@ -261,8 +278,10 @@
     <EventLog {api} />
     {#if !narrow}{@render time()}{/if}
   </div>
-  <GoalsCard {api} />
-  <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
+  <div class="cards">
+    <GoalsCard {api} />
+    <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
+  </div>
   <StrandedBanner {api} />
   <AlertList {api} />
 </div>
@@ -293,6 +312,8 @@
   .rcol { position: fixed; z-index: 4; top: calc(var(--sat) + 8px); right: calc(8px + var(--sar)); width: min(260px, calc(100vw - 110px)); display: flex; flex-direction: column; gap: 4px; }
   /* An expanded alert (hover or tap) draws over the combat panel below it. */
   .rcol:has(:global(.alert:hover)), .rcol:has(:global(.alert:focus-within)) { z-index: 8; }
+  /* Goals and jobs stack as one group under the log. */
+  .cards { display: flex; flex-direction: column; gap: 4px; }
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }
