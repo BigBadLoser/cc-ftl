@@ -52,11 +52,11 @@ const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 
   },
 };
 
-interface TierNums { cages?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
+interface TierNums { cages?: Per; bays?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
 function tiers(n: TierNums): Record<StationSize, StationTier> {
   const one = (s: StationSize): StationTier => ({
     crew: Math.round(CREW[s] * n.crew), guns: n.guns[s], heavyPct: n.heavyPct, shields: n.shields[s], pointDefense: n.pd[s],
-    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}),
+    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}), ...(n.bays ? { bays: n.bays[s] } : {}),
   });
   return { outpost: one('outpost'), station: one('station'), hub: one('hub') };
 }
@@ -135,9 +135,9 @@ export const stations = {
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
-    tiers: tiers({ crew: 1.2, guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
+    tiers: tiers({ crew: 1.2, bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
     rooms: [armoury(per(1, 2, 4), 6)],
-    atrium: { role: 'drill', chance: 0.6, band: ['armoury', 'cargo', 'support'] },
+    atrium: { role: 'drill', chance: 0.6, band: ['armoury', 'cargo', 'support'], packed: true, deck: true },
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.
   'station.pirate': {

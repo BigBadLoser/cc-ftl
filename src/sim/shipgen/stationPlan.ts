@@ -70,8 +70,10 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   for (let i = 2; i < t.docks; i++) support.push(dockSpec());
   const cargo: RoomSpec[] = [];
   for (let left = t.crates; left > 0; left -= 6) cargo.push(cargoSpec(Math.min(6, left)));
+  // Shuttle bays, as on boarding ships (a court may take them over as the hangar deck: stationCourts.ts).
+  const hangars: RoomSpec[] = Array.from({ length: t.bays ?? 0 }, () => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
   const plan: ShipPlan = {
-    role, command, weapons: [...weapons, ...pdRooms], shields, engines: 0, reactors: 1, core, pd: [], quarters, cargo, hangars: [], support, crew,
+    role, command, weapons: [...weapons, ...pdRooms], shields, engines: 0, reactors: 1, core, pd: [], quarters, cargo, hangars, support, crew,
     size: size === 'hub' ? 3 : size === 'station' ? 2 : 1,
   };
   // Power: enough reactors for every room's draw plus lamps (about 3 a room).

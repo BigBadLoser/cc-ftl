@@ -186,10 +186,10 @@ export interface WheelOpts {
 
 const isDock = (r: RoomSpec): boolean => r.role === 'dock';
 /**
- * System rooms keep rectangles (gun bays, shield generators, the core and reactors need square floor) and stand beyond
- * the band with the docks, facing open space (gun bays need it).
+ * System rooms keep rectangles (gun bays, shield generators, the core, reactors and shuttle bays need square floor) and
+ * stand beyond the band with the docks, facing open space (gun bays need it).
  */
-const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'bridge'];
+const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'bridge', 'hangar'];
 const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role);
 /**
  * Rim rooms beyond a band: docks first, near the top and bottom of the ring (airlocks face north or south), then the

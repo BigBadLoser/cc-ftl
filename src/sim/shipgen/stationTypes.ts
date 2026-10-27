@@ -40,6 +40,8 @@ export interface StationTier {
   grammars: readonly Weighted<StationGrammar>[];
   /** Ore cages (rows of ore holds on a rail) hung off the structure: mining stations. */
   cages?: number;
+  /** Shuttle bays (hangars), for boarding parties and patrols. */
+  bays?: number;
 }
 
 export interface StationDef {
@@ -60,9 +62,11 @@ export interface StationDef {
   rooms: readonly StationRoomDef[];
   /**
    * Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. Big
-   * ones are lined with a band of `band` rooms (in turn round the court), leaving a smaller court in the middle.
+   * ones are lined with a band of `band` rooms (in turn round the court), leaving a smaller court in the middle;
+   * `packed` bands run unbroken along each wall. A `deck` court may become the hangar deck, taking over the planned
+   * shuttle bays.
    */
-  atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number; band: readonly RoomRole[] };
+  atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number; band: readonly RoomRole[]; packed?: boolean; deck?: boolean };
 }
 
 /** Largest template a station may have (tiles per side): a hub is much bigger than any ship but stays one region. */

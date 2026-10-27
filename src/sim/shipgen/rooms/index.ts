@@ -4,7 +4,7 @@ import { engineering } from './engineering';
 import { mess } from './mess';
 import { quarters } from './quarters';
 import { storage } from './storage';
-import { armoury, drill, farm, garden, industry, plaza } from './station';
+import { armoury, drill, farm, garden, hangarDeck, industry, plaza } from './station';
 import { dock, engines, hangar, shields, weapons } from './systems';
 import type { RoomRecipe } from './types';
 
@@ -32,9 +32,11 @@ function without(recipe: RoomRecipe, banned: readonly string[]): RoomRecipe {
 }
 
 /** Room recipes for stations (immobile hulls): the ship recipes without the station-banned modules. */
-export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = Object.fromEntries(
-  Object.entries(RECIPES).map(([role, r]) => [role, without(r as RoomRecipe, STATION_BANNED)]),
-);
+export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
+  ...Object.fromEntries(Object.entries(RECIPES).map(([role, r]) => [role, without(r as RoomRecipe, STATION_BANNED)])),
+  // Station hangars are hangar decks: shuttle bays out on the floor, not against a wall.
+  hangar: hangarDeck,
+};
 
 export { pruneDoors } from './doors';
 export { drawRoom, furnish, reserveWalkway, placeStep, specStep, roomFill, type RoomDraw } from './furnish';

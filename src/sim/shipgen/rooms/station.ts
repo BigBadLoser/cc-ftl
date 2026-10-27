@@ -102,3 +102,20 @@ export const drill = {
     },
   ],
 } as const satisfies RoomRecipe;
+
+/**
+ * Station hangar decks (and station hangars): the shuttle bays out on the open floor, toward the middle and spaced on a
+ * lattice so crew can walk round each pit; racks and lockers along the walls.
+ */
+export const hangarDeck = {
+  fill: 0.2,
+  arrangements: [
+    {
+      name: 'deck', weight: 1, steps: [
+        { mod: 'module.vehicle_bay', count: 'spec', centre: 'xy', clear: 2, grid: [7, 8] },
+        { mod: 'module.storage_rack', count: 'fill', wall: 'long', row: true },
+        { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
+      ],
+    },
+  ],
+} as const satisfies RoomRecipe;
