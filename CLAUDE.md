@@ -34,9 +34,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - Soft limit of about 400 lines per file. No test or demo code in `src/`. Tests sit next to their source
   as `*.test.ts`.
 - Polish follows gameplay.
-- Final game art comes from the Blender sprite pipeline, as sheets listed in the asset manifest. See
-  "Asset pipeline" in `docs/ARCHITECTURE.md`. Procedural drawing is fine for debug views, overlays and
-  temporary placeholders while art is pending. Don't regress to a game drawn in code.
+- Game art comes from the Blender sprite pipeline by default, as sheets listed in the asset manifest. See
+  "Asset pipeline" in `docs/ARCHITECTURE.md`. Shaders and effects on that art (tints, masks, blends,
+  lighting) are fine. Drawing in code is allowed where it is clearly the better tool, but it is never the
+  default, and debug views, overlays and placeholders while art is pending use it freely. Don't regress to a
+  game drawn in code.
 
 ## Workflow
 

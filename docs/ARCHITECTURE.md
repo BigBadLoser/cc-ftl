@@ -136,10 +136,12 @@ field systems read.
 - Nearest-neighbour scaling, integer zoom steps only, and the camera snapped to whole pixels.
 - Each art pixel maps to a whole number of device pixels.
 
-**Assets come from the pipeline (see Asset pipeline).** The renderer only draws sprite sheets listed
-in `public/assets/manifest.json`. Final game content is never drawn procedurally. The exceptions are
-debug and overlay visuals (selection frames, overlays, blueprints) and temporary placeholders while art
-is pending. Each placeholder is replaced by pipeline art once that art exists.
+**Assets come from the pipeline (see Asset pipeline).** By default the renderer draws game content from
+sprite sheets listed in `public/assets/manifest.json`. Shaders and effects may work on that art (tints,
+masks, blends, lighting, such as damage revealing a tile's stripped sprite). Content may be drawn in code
+where that is clearly the better tool, but sprites come first. Debug and overlay visuals (selection
+frames, overlays, blueprints) and temporary placeholders while art is pending are drawn in code freely.
+Each placeholder is replaced by pipeline art once that art exists.
 
 **Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
 anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
