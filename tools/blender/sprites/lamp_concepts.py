@@ -734,3 +734,112 @@ def pillar_flood():
 SPRITES += [("concept.pillar_lumen", (1, 1), "prop", pillar_lumen),
             ("concept.pillar_capsule", (1, 1), "prop", pillar_capsule),
             ("concept.pillar_flood", (1, 1), "prop", pillar_flood)]
+
+
+# ---- v9: sized against the crew (1.5 tiles tall) -----------------------------------------------------------------
+
+def dummy():
+    """A flat grey stand-in for a crew member, 1.5 tiles tall, for scale on review boards."""
+    k = K("lc_dummy", (1, 1), 0)
+    for u in (-0.08, 0.08):
+        k.box(u, 0, 0.0, 0.12, 0.14, 0.72, "blueGrey")                                     # legs
+    k.box(0, 0, 0.72, 0.36, 0.2, 0.52, "blueGrey", bevel=0.03)                             # torso
+    for u in (-0.23, 0.23):
+        k.box(u, 0, 0.74, 0.09, 0.11, 0.48, "blueGrey")                                    # arms
+    k.cyl(0, 0, 1.26, 0.1, 0.24, "blueGrey", sides=10)                                     # head
+    return k.build()
+
+
+def pillar_floodtower():
+    """The flood cart at crew scale: a yellow base on outrigger feet, a mast to about head height and a bit, a bank
+    of four lamps on a yoke, a cable reel, a handle, a beacon."""
+    k = K("lc_p_floodtower", (1, 1), 0)
+    for a in (0.785, -0.785):                                                          # outriggers
+        k.box(0, 0, 0.0, 0.92, 0.08, 0.06, "steelD", top="steel", rz=a)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * 0.31, sv * 0.31, 0.0, 0.12, 0.12, 0.04, "hazY", top="ochM")          # outrigger pads
+    k.box(0, 0, 0.04, 0.62, 0.54, 0.4, "hazY", top="ochM", bevel=0.03)                     # body
+    k.box(0, 0, 0.04, 0.64, 0.56, 0.06, "gmD")                                             # bumper
+    k.box(0, 0, 0.38, 0.64, 0.56, 0.03, "gmD")                                             # top rail
+    for i in range(5):                                                                 # front vents
+        k.box(-0.2 + i * 0.08, 0.272, 0.15, 0.05, 0.008, 0.16, "dark")
+    k.box(0.2, 0.272, 0.2, 0.1, 0.008, 0.1, "lvW")                                         # rating plate
+    k.box(0.32, 0.12, 0.14, 0.008, 0.08, 0.16, "dark")                                     # side socket
+    k.box(0.322, 0.12, 0.24, 0.008, 0.04, 0.03, "green")
+    k.cyl(-0.18, -0.12, 0.41, 0.12, 0.12, "gm", top="steel", sides=14)                     # cable reel on top
+    k.cyl(-0.18, -0.12, 0.45, 0.13, 0.04, "dark", sides=14)
+    k.box(0, 0.0, 0.41, 0.12, 0.12, 0.08, "steelD", top="steel")                           # mast collar
+    k.box(0, 0.0, 0.41, 0.07, 0.07, 1.12, "steel", top="steelL")                           # mast
+    k.box(0, 0.0, 0.85, 0.09, 0.09, 0.04, "steelD")                                        # telescoping joint
+    k.box(0, 0.0, 1.5, 0.66, 0.08, 0.06, "steelD", top="steel")                            # yoke
+    for u in (-0.17, 0.17):                                                            # four lamps, 2 x 2, tilted down
+        for z in (1.32, 1.56):
+            k.box(u, 0.06, z, 0.3, 0.16, 0.22, "gm", top="steel", bevel=0.015, rx=0.45)
+            k.box(u, 0.15, z + 0.03, 0.25, 0.01, 0.16, "arc", rx=0.45)
+            k.box(u, 0.156, z + 0.1, 0.25, 0.012, PX, "gm", rx=0.45)
+    k.cyl(0.0, 0.0, 1.78, 0.04, 0.06, "orange", sides=8)                                   # beacon
+    return k.build()
+
+
+def pillar_pylon():
+    """A wayfinding pylon: a tall cream pylon with a glowing crown, a lit sign panel with an arrow, a deck number."""
+    k = K("lc_p_pylon", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.42, 0.32, 0.12, "gm", top="steel", bevel=0.015)                   # plinth
+    k.box(0, 0, 0.134, 0.36, 0.26, 1.06, "lvW2", top="lvW", bevel=0.02, taper=0.9)         # tapering pylon
+    k.box(0, 0.0, 0.134, 0.37, 0.27, 0.04, "navy")                                         # foot band
+    k.box(0.0, 0.124, 0.5, 0.26, 0.012, 0.42, "navy")                                      # sign panel recess
+    k.box(0.0, 0.13, 0.52, 0.22, 0.008, 0.38, "dark")
+    # the arrow: a shaft and a head, lit cyan
+    k.box(0.0, 0.135, 0.56, 0.05, 0.008, 0.2, "cyan")
+    k.box(-0.04, 0.135, 0.72, 0.1, 0.008, 0.04, "cyan", rz=0.0)
+    k.box(0.0, 0.136, 0.74, 0.16, 0.008, 0.04, "cyan")
+    k.box(0.0, 0.136, 0.78, 0.08, 0.008, 0.04, "cyan")
+    k.box(0.0, 0.124, 0.98, 0.3, 0.012, 0.05, "orange")                                     # deck stripe
+    k.box(-0.06, 0.132, 0.36, 0.1, 0.008, 0.08, "lvW")                                     # deck number plate
+    k.box(-0.06, 0.137, 0.38, 0.02, 0.006, 0.04, "navy")
+    k.box(-0.03, 0.137, 0.38, 0.02, 0.006, 0.04, "navy")
+    k.box(0, 0, 1.19, 0.34, 0.24, 0.24, "arc", bevel=0.01)                                 # glowing crown
+    for i in range(3):                                                                 # crown mullions
+        k.box(-0.1 + i * 0.1, 0.0, 1.19, PX, 0.25, 0.24, "gmD")
+    k.box(0, 0, 1.43, 0.4, 0.3, 0.05, "lvW2", top="lvW", bevel=0.02)                       # cap
+    k.cyl(0.12, -0.06, 1.48, 0.012, 0.14, "steelL", sides=6)                               # antenna
+    k.cyl(0.12, -0.06, 1.62, 0.02, 0.02, "red", sides=6)
+    return k.build()
+
+
+def pillar_plasma():
+    """A plasma lamp: a magenta coil glowing in a four-post cage over a finned base, a pressure dial, a feed pipe
+    elbowing out of the deck."""
+    k = K("lc_p_plasma", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.5, 0.5, 0.22, "gm", top="steel", bevel=0.025)                     # base
+    for i in range(5):                                                                 # cooling fins on two faces
+        k.box(0.255, -0.16 + i * 0.08, 0.04, 0.03, 0.03, 0.16, "steelL")
+        k.box(-0.16 + i * 0.08, 0.255, 0.04, 0.03, 0.03, 0.16, "steelL")
+    k.box(0.12, 0.26, 0.24, 0.12, 0.03, 0.12, "steelD")                                    # pressure dial housing
+    k.box(0.12, 0.275, 0.25, 0.09, 0.008, 0.09, "lvW")
+    k.box(0.14, 0.28, 0.28, 0.05, 0.006, 0.015, "red", rx=0.0)
+    k.box(0, 0, 0.234, 0.36, 0.36, 0.05, "steelD", top="steel")                            # lower ring
+    k.cyl(0, 0, 0.284, 0.1, 0.82, "magenta", sides=12)                                     # the plasma column
+    for j in range(4):                                                                 # coil bands round it
+        k.cyl(0, 0, 0.36 + j * 0.18, 0.11, 2 * PX, "steelD", top="steel", sides=12)
+    k.cyl(0, 0, 0.284, 0.12, 0.04, "steelD", top="steel", sides=12)                        # emitter collars
+    k.cyl(0, 0, 1.064, 0.12, 0.04, "steelD", top="steel", sides=12)
+    for su in (-1, 1):                                                                 # four-post cage
+        for sv in (-1, 1):
+            k.box(su * 0.15, sv * 0.15, 0.284, 0.04, 0.04, 0.82, "lvW2", top="lvW")
+    k.box(0, 0, 1.1, 0.4, 0.4, 0.07, "gm", top="steel", bevel=0.02)                        # top ring
+    k.box(0, 0, 1.17, 0.22, 0.22, 0.06, "steelD", top="gmD", taper=0.7)                     # vent cap
+    k.cyl(0, 0, 1.23, 0.04, 0.03, "magenta", sides=8)
+    k.box(-0.22, -0.3, 0.0, 0.08, 0.2, 0.08, "steelD", top="steel")                        # feed pipe out of the deck
+    k.box(-0.22, -0.2, 0.0, 0.08, 0.08, 0.18, "steelD", top="steel")
+    k.box(-0.22, -0.2, 0.08, 0.1, 0.1, 0.03, "hazY")
+    return k.build()
+
+
+SPRITES += [("concept.dummy", (1, 1), "prop", dummy),
+            ("concept.pillar_floodtower", (1, 1), "prop", pillar_floodtower),
+            ("concept.pillar_pylon", (1, 1), "prop", pillar_pylon),
+            ("concept.pillar_plasma", (1, 1), "prop", pillar_plasma)]
