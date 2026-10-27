@@ -32,7 +32,7 @@
         <small>{encounter.faction} {encounter.role.toLowerCase()}</small>
       </div>
       <div class="facts">
-        <span class="chip" class:warn={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming'} title="Fleet strength">{encounter.threat}</span>
+        {#if !scan}<span class="chip" class:warn={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming'} title="Fleet strength">{encounter.threat}</span>{/if}
         <span class="dim">{encounter.how}{scan ? '.' : '. Your ship is halted in hyperspace.'}</span>
       </div>
       {#if scan}

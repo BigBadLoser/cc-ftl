@@ -22,7 +22,7 @@ function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
   return choicesOf(e).map((choice) => {
     const base = { choice, label: LABEL[choice], detail: '', enabled: true, why: null as string | null };
     if (choice === 'evade') return { ...base, detail: `${Math.round(evadeOdds(sim, e) * 100)}%` };
-    if (choice === 'surrender' && e.scan) return { ...base, detail: `lose goods, ${e.scan.fine} cr fine, standing down` };
+    if (choice === 'surrender' && e.scan) return { ...base, detail: `lose goods, ${e.scan.fine} cr fine, standing lost` };
     if (choice === 'bribe' && e.scan) {
       const short = sim.trade.credits < e.scan.bribe;
       return { ...base, detail: `${e.scan.bribe} cr`, enabled: !short, why: short ? `Need ${e.scan.bribe} credits` : null };
