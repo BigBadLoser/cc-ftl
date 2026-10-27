@@ -13,6 +13,7 @@ import { StorageC } from '../items/components';
 import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { EquipC } from '../fight/components';
+import { footprintTiles, openTilesOf } from '../modules/footprint';
 
 /** Tiles of open space kept between a new station and whatever is already in the node (beyond the placement minimum). */
 const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
@@ -74,7 +75,15 @@ const POST_ROLES: readonly string[] = ['armoury', 'dock', 'plaza', 'garden', 'dr
  */
 function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): void {
   const toSector = (i: number): { x: number; y: number } => ({ x: x + (i % gen.width), y: y + Math.floor(i / gen.width) });
-  const floor = (i: number): boolean => gen.template.rows[Math.floor(i / gen.width)]?.[i % gen.width] === '_';
+  // Floor someone can stand on: not under a solid module (a dock's middle is its airlock, a bridge's its consoles).
+  const blocked = new Set<number>();
+  for (const m of gen.template.modules ?? []) {
+    const def = sim.content.modules[m.def];
+    if (!def?.solid) continue;
+    const open = openTilesOf(def, m.x, m.y, m.rot);
+    for (const t of footprintTiles(def, m.x, m.y, m.rot)) if (!open.some((o) => o.x === t.x && o.y === t.y)) blocked.add(t.y * gen.width + t.x);
+  }
+  const floor = (i: number): boolean => gen.template.rows[Math.floor(i / gen.width)]?.[i % gen.width] === '_' && !blocked.has(i);
   const centre = (tiles: number[]): number => {
     const ft = tiles.filter(floor);
     const cx = ft.reduce((t, i) => t + (i % gen.width), 0) / Math.max(1, ft.length);
