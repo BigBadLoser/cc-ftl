@@ -5,6 +5,7 @@ import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
 import type { Atlas } from "./assets/loader";
 import { depthKey, iso } from "./iso";
+import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import type { Layers } from "./layers";
 import {
   artKind,
@@ -16,6 +17,8 @@ import {
 
 export interface JobViewHost {
   target(): { grid: Grid } | null;
+  /** Beam look of this ship (by faction); default civil. */
+  beamLook?(): BeamLook;
 }
 
 export interface JobView {
@@ -26,7 +29,10 @@ export interface JobView {
 const BUILD = 0x22d3ee;
 const DECON = 0xff3b3b;
 
-/** Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). */
+/**
+ * Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). A shipyard tile
+ * (`Job.yard`) whose crew have started on it shows as an open truss (the Beam art) until it is finished: render-side only, no sim state.
+ */
 export function createJobView(
   world: World,
   atlas: Atlas,
@@ -94,8 +100,29 @@ export function createJobView(
           const k = p === Struct.Wall || p === Struct.Door || p === Struct.RockWall ? p : grid.get("struct", x0 + x, y0 + y);
           return k === Struct.RockWall ? k : artKind(k); // a rock wall stays one (never hull), see tiles.ts
         };
+        // Shipyard tiles being worked on (progress started): drawn as truss, and neighbouring ones join up.
+        const truss = new Set<number>();
+        for (const j of jobs)
+          if (j.kind === "build" && j.yard !== undefined && j.progress > 0) truss.add((j.y - y0) * grid.width + (j.x - x0));
+        const beamAt = (x: number, y: number): number =>
+          truss.has(y * grid.width + x) ? Struct.Beam : kindAt(x, y);
         for (const j of jobs) {
           const build = j.kind === "build";
+          if (build && j.yard !== undefined && j.progress > 0) {
+            const bx = j.x - x0, by = j.y - y0;
+            beamIds(beamAt, bx, by, host.beamLook?.() ?? DEFAULT_BEAM_LOOK).forEach((id, i) => {
+              const a = atlas.stat(id);
+              if (!a) return;
+              const spr = sprite();
+              const p = iso(bx, by);
+              spr.texture = a.tex;
+              spr.position.set(Math.round(p.x - a.ax), Math.round(p.y - a.ay));
+              spr.tint = 0xffffff;
+              spr.alpha = 1;
+              spr.zIndex = depthKey(bx, by) + 0.02 + i * 0.001;
+            });
+            continue;
+          }
           const kind = artKind(build ? j.struct : grid.get("struct", j.x, j.y));
           const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
           const tint = build ? BUILD : DECON;

@@ -1,4 +1,4 @@
-import { Struct, shipGrid, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import { JobC, Struct, shipGrid, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
 import type { UiHullPlan, UiYard, UiYardOrder, UiYardQuote, UiYardService } from '../ui/api';
 import { rejectionMessage } from './messages';
 
@@ -52,7 +52,13 @@ function orderOf(sim: Sim, o: YardOrder): UiYardOrder {
   const b = builtCount(sim, o);
   const live = isLiveOrder(o);
   const grid = shipGrid(sim, o.ship);
-  const open = (t: Tile): boolean => !!grid && grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Space;
+  // Tiles the crew have started on are drawn as truss by the renderer (jobView), so they leave the ghost overlay.
+  const started = new Set<string>();
+  if (live) for (const id of sim.world.query(JobC)) {
+    const j = sim.world.get(id, JobC);
+    if (j && j.yard === o.id && j.progress > 0) started.add(`${j.x},${j.y}`);
+  }
+  const open = (t: Tile): boolean => !!grid && grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Space && !started.has(`${t.x},${t.y}`);
   return {
     id: o.id, station: o.station, live, phase: o.phase, built: b.floor + b.walls, total: totalTiles(o), price: o.price,
     status: live ? PHASE[o.phase] : o.reason ? ENDED[o.reason] ?? o.reason : 'Done', reason: o.reason ? ENDED[o.reason] ?? o.reason : '',
