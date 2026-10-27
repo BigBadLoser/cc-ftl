@@ -116,10 +116,29 @@ def _fang(i, j):
     return "P" if i >= 4 + 22 * (1 - t) else None
 
 
-def _rake(n):
-    def f(i, j):                                      # claw slashes: one 45-degree band a tile, leaning aft away from
-        d = (GN - 1 - j) if n else j                  # the spine so the two sides meet in a forward V; at 45 degrees
-        return "P" if (i + d) % GN < 8 else None      # the band runs on unbroken into the next row out
+CLAW_W, CLAW_H = 4, 3                                 # claw block, tiles (x along the ship, y across)
+CLAWS = ((-21, 0.86), (0, 1.0), (21, 0.8))            # three gashes: offset across the swipe (cells), relative length
+
+
+def _claw(q):
+    """Tile q of the raiders' claw swipe: three parallel gashes torn diagonally across the spine, each a curved sliver
+    that tapers to a point at both ends, with a ragged edge."""
+    def f(i, j):
+        X = (q % CLAW_W) * GN + i + 0.5 - CLAW_W * GN / 2
+        Y = (q // CLAW_W) * GN + j + 0.5 - CLAW_H * GN / 2
+        ux, uy = 0.62, 0.785                              # swipe direction (from aft-port to fore-starboard)
+        nx, ny = -uy, ux
+        along, across = X * ux + Y * uy, X * nx + Y * ny
+        for off, ln in CLAWS:
+            half = 54 * ln
+            t = (along + half) / (2 * half)
+            if not 0 < t < 1:
+                continue
+            bow = 7 * math.sin(math.pi * t)               # the gash curves a little
+            w = 9 * math.sin(math.pi * t) ** 0.8 + 1.5 * math.sin(along * 0.9 + off)   # tapered, ragged
+            if abs(across - off - bow) < w / 2:
+                return "P"
+        return None
     return f
 
 
@@ -192,7 +211,8 @@ MASKS = {
     **{f"big.{c}.{k}": _big(c, k) for c in DIGITS for k in range(2)},
     **{f"sten.{k}": _stencil(t) for k, t in enumerate(STENCIL)},
     # v13 faction motifs
-    "fang": _fang, "rake.n": _rake(True), "rake.s": _rake(False), "trace.n": _trace(True), "trace.s": _trace(False),
+    "fang": _fang, "trace.n": _trace(True), "trace.s": _trace(False),
+    **{f"claw.{q}": _claw(q) for q in range(CLAW_W * CLAW_H)},
 }
 
 MASKS = {k: f for k, f in MASKS.items() if any(f(i, j) for i in range(GN) for j in range(GN))}   # drop empty ones
@@ -224,12 +244,12 @@ SCHEMES = {
     "tricolour": dict(motifs=("split", "dbl", "em.star", "big", "sten"), P="#24324f", S="#e2ddd0", T="#b0443a",
                       remap={"dbl": ("T", "S"), "em.star": ("T", "S"), "big": ("T", "S")}),
     # v13 faction schemes: a coat over the whole roof carries the faction colour, its motifs the rest
-    "gash": dict(motifs=("coat", "rake", "fangs", "em.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
-                 remap={"rake": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
-    "scorch": dict(motifs=("coat", "rake", "fangs", "em.skull"), P="#33302c", S="#e07a26", T="#e2dccb",
-                   remap={"rake": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
-    "reaver": dict(motifs=("coat", "rake", "fangs", "emL.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
-                   remap={"rake": ("S", "S"), "fangs": ("S", "S"), "emL.skull": ("P", "T")}),
+    "gash": dict(motifs=("coat", "claw", "fangs", "em.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
+                 remap={"claw": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
+    "scorch": dict(motifs=("coat", "claw", "fangs", "em.skull"), P="#33302c", S="#e07a26", T="#e2dccb",
+                   remap={"claw": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
+    "reaver": dict(motifs=("coat", "claw", "fangs", "emL.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
+                   remap={"claw": ("S", "S"), "fangs": ("S", "S"), "emL.skull": ("P", "T")}),
     "litany": dict(motifs=("coat", "trace", "em.eye"), P="#d6cfbd", S="#3fc4d4", T="#2b3440",
                    remap={"trace": ("S", "S"), "em.eye": ("T", "S")}),
     "relic": dict(motifs=("coat", "aft", "trace", "em.eye"), P="#c9ccd1", S="#5fd6c0", T="#3a2f4a",
@@ -273,13 +293,10 @@ def plan(ship, scheme, seed=0, level=lambda x, y: 0):
                 add(xb - 2, y, "fang")
                 for x in range(xb - 1, W):
                     add(x, y, "full.P")
-        elif m == "rake":                             # claw slashes over the four spine rows, a quarter of the way aft
+        elif m == "claw":                             # the claw swipe over the spine, a quarter of the way from the stern
             x0 = xs + round(0.25 * L)
-            for x in range(x0, x0 + 4):
-                for y in (yc - 2, yc - 1):
-                    add(x, y, "rake.n")
-                for y in (yc, yc + 1):
-                    add(x, y, "rake.s")
+            for q in range(CLAW_W * CLAW_H):
+                add(x0 + q % CLAW_W, yc - 2 + q // CLAW_W, f"claw.{q}")
         elif m == "trace":                            # circuit traces the length of the spine
             for x in range(xs, xb + 1):
                 add(x, yc - 1, "trace.n")

@@ -93,16 +93,16 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
   },
   // v13 faction schemes: a coat over the whole roof carries the faction colour, its motifs the rest
   gash: {
-    motifs: ['coat', 'rake', 'fangs', 'em.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
-    remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
+    motifs: ['coat', 'claw', 'fangs', 'em.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
+    remap: { claw: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
   },
   scorch: {
-    motifs: ['coat', 'rake', 'fangs', 'em.skull'], P: 0x33302c, S: 0xe07a26, T: 0xe2dccb,
-    remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
+    motifs: ['coat', 'claw', 'fangs', 'em.skull'], P: 0x33302c, S: 0xe07a26, T: 0xe2dccb,
+    remap: { claw: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
   },
   reaver: {
-    motifs: ['coat', 'rake', 'fangs', 'emL.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
-    remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'emL.skull': ['P', 'T'] },
+    motifs: ['coat', 'claw', 'fangs', 'emL.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
+    remap: { claw: ['S', 'S'], fangs: ['S', 'S'], 'emL.skull': ['P', 'T'] },
   },
   litany: { motifs: ['coat', 'trace', 'em.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'em.eye': ['T', 'S'] } },
   relic: {
@@ -237,12 +237,9 @@ function planBowEast(width: number, height: number, solid: (x: number, y: number
         add(xb - 2, y, 'fang');
         for (let x = xb - 1; x < width; x++) add(x, y, 'full.P');
       }
-    } else if (m === 'rake') {
+    } else if (m === 'claw') {
       const x0 = xs + pyRound(0.25 * L);
-      for (let x = x0; x < x0 + 4; x++) {
-        for (const y of [yc - 2, yc - 1]) add(x, y, 'rake.n');
-        for (const y of [yc, yc + 1]) add(x, y, 'rake.s');
-      }
+      for (let q = 0; q < 12; q++) add(x0 + (q % 4), yc - 2 + Math.floor(q / 4), `claw.${q}`);
     } else if (m === 'trace') {
       for (let x = xs; x <= xb; x++) {
         add(x, yc - 1, 'trace.n');
