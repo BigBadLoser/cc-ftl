@@ -126,8 +126,19 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     remap: { stripe: ['S', 'T'], 'em.helix': ['P', 'S'], sten: ['S', 'S'] },
   },
   vantor: { motifs: ['coat', 'hazard', 'big', 'em.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'em.delta': ['S', 'P'] } },
+  brigade: { motifs: ['coat', 'aft', 'big', 'emL.delta', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
+  freight: {
+    motifs: ['coat', 'split', 'nose', 'big', 'emL.meridian'], P: 0x2456a0, S: 0xe8b830, T: 0xe4e2da,
+    remap: { coat: ['T', 'T'], nose: ['S', 'P'], big: ['T', 'P'] },
+  },
+  clinic: {
+    motifs: ['coat', 'stripe', 'emL.helix', 'sten'], P: 0xe6ebea, S: 0x2aa59a, T: 0x8fd3cb,
+    remap: { stripe: ['S', 'T'], 'emL.helix': ['P', 'S'], sten: ['S', 'S'] },
+  },
+  foundry: { motifs: ['coat', 'hazard', 'big', 'emL.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'emL.delta': ['S', 'P'] } },
   bazaar: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
   souk: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x33302a, S: 0x39e0d0, T: 0x6e5a3a, U: 0x5a3a5e, remap: { patch: ['T', 'U'] } },
+  neon: { motifs: ['coat', 'patch', 'emL.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
 };
 export const SCHEME_NAMES = Object.keys(SCHEMES);
 
@@ -141,11 +152,11 @@ export const LIVERIES: Readonly<Record<string, readonly string[]>> = {
   'livery.raider': ['gash', 'scorch', 'reaver'],
   'livery.zealot': ['litany', 'relic', 'vigil'],
   'livery.cartel': ['velvet', 'jade', 'sable'],
-  'livery.merc': ['drab', 'khaki'],
-  'livery.meridian': ['combine'],
-  'livery.helix': ['helix'],
-  'livery.vantor': ['vantor'],
-  'livery.blackmarket': ['bazaar', 'souk'],
+  'livery.merc': ['drab', 'khaki', 'brigade'],
+  'livery.meridian': ['combine', 'freight'],
+  'livery.helix': ['helix', 'clinic'],
+  'livery.vantor': ['vantor', 'foundry'],
+  'livery.blackmarket': ['bazaar', 'souk', 'neon'],
 };
 
 /** Paint colours (P and S channel) of a motif in a scheme. */

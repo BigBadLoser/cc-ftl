@@ -216,7 +216,8 @@ MASKS = {
     **{f"reg.{c}": _digit(c) for c in DIGITS},
     **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond", "skull", "eye", "crest", "helix",
                                                 "meridian") for q in range(4)},
-    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye", "crest") for q in range(9)},   # large: 3 x 3 tiles
+    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye", "crest", "helix", "meridian", "delta", "diamond")
+       for q in range(9)},                                                                       # large: 3 x 3 tiles
     "hazard": lambda i, j: "P" if (i + j) // 8 % 2 == 0 else "S",
     "full.S": lambda i, j: "S",
     # v10
@@ -286,9 +287,19 @@ SCHEMES = {
                   remap={"stripe": ("S", "T"), "em.helix": ("P", "S"), "sten": ("S", "S")}),
     "vantor": dict(motifs=("coat", "hazard", "big", "em.delta"), P="#d6a424", S="#1e2018",
                    remap={"em.delta": ("S", "P")}),
+    "brigade": dict(motifs=("coat", "aft", "big", "emL.delta", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
+                    remap={"aft": ("T", "T")}),
+    "freight": dict(motifs=("coat", "split", "nose", "big", "emL.meridian"), P="#2456a0", S="#e8b830", T="#e4e2da",
+                    remap={"coat": ("T", "T"), "nose": ("S", "P"), "big": ("T", "P")}),
+    "clinic": dict(motifs=("coat", "stripe", "emL.helix", "sten"), P="#e6ebea", S="#2aa59a", T="#8fd3cb",
+                   remap={"stripe": ("S", "T"), "emL.helix": ("P", "S"), "sten": ("S", "S")}),
+    "foundry": dict(motifs=("coat", "hazard", "big", "emL.delta"), P="#d6a424", S="#1e2018",
+                    remap={"emL.delta": ("S", "P")}),
     "bazaar": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#2b2830", S="#ff3fa4", T="#8a4a2e", U="#3e6e6a",
                    remap={"patch": ("T", "U")}),
     "souk": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#33302a", S="#39e0d0", T="#6e5a3a", U="#5a3a5e",
+                 remap={"patch": ("T", "U")}),
+    "neon": dict(motifs=("coat", "patch", "emL.diamond", "sten"), P="#2b2830", S="#ff3fa4", T="#8a4a2e", U="#3e6e6a",
                  remap={"patch": ("T", "U")}),
 }
 
@@ -300,11 +311,11 @@ LIVERIES = {
     "livery.raider": ("gash", "scorch", "reaver"),
     "livery.zealot": ("litany", "relic", "vigil"),
     "livery.cartel": ("velvet", "jade", "sable"),
-    "livery.merc": ("drab", "khaki"),
-    "livery.meridian": ("combine",),
-    "livery.helix": ("helix",),
-    "livery.vantor": ("vantor",),
-    "livery.blackmarket": ("bazaar", "souk"),
+    "livery.merc": ("drab", "khaki", "brigade"),
+    "livery.meridian": ("combine", "freight"),
+    "livery.helix": ("helix", "clinic"),
+    "livery.vantor": ("vantor", "foundry"),
+    "livery.blackmarket": ("bazaar", "souk", "neon"),
 }
 
 
