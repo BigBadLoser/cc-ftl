@@ -5,19 +5,19 @@ import {
   AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
   type Crew, type Job, type Path, type Position, type Priorities,
 } from '../crew/components';
+import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
 import { findSuitSource, findSuitStow, isErrand, startErrand, type SuitSource } from '../eva/errands';
 import { planWalk } from '../eva/route';
 import { isSuited } from '../eva/suit';
 import { isOffDuty } from '../fight/relations';
-import { needsMaterials } from '../items/materials';
 import { dropCarried } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { operateAffinity } from '../combat/operators';
 import { goToBay, wantsBay } from '../robots/bay';
-import { canTakeRobotJob, heldForMend } from '../robots/jobs';
+import { heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, OPERATOR_EXHAUSTED_BELOW, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';
 import { TICK_HZ } from '../time';
@@ -160,7 +160,7 @@ function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   const role = sim.world.get(crewId, CrewC)?.role;
   if (!role || !sim.content.roles[role]?.relievesStations || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
   const m = sim.world.get(job.target ?? 0, ModuleC);
-  return !!m && sim.content.modules[m.def]?.console !== 'shields';
+  return !!m && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
 }
 
 /** Reserve the best job by priority level, then shortest path, then lowest id. */
@@ -174,10 +174,9 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
     let best: { id: number; steps: Tile[]; score: number; thin: boolean } | null = null;
     for (const jobId of jobs) {
       const job = sim.world.get(jobId, JobC);
-      if (!job || shipIdOf(sim, job) !== shipIdOf(sim, pos) || !cats.includes(job.category) || job.target === crewId || needsMaterials(job) || isErrand(job)) continue;
+      if (!job || !cats.includes(job.category) || !jobFits(sim, crewId, pos, job)) continue;
       // Operating is a high-priority job, except in a fight: a console left empty a while is relieved by crew of a role that relieves stations, with nothing better to do (disabled, 0, stays off).
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL && !canRelieve(sim, crewId, job)) continue;
-      if (!canTakeRobotJob(sim, crewId, job)) continue;
       const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
       if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;

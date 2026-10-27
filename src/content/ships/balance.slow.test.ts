@@ -76,15 +76,13 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
   const seeds = [1, 2, 6];
 
   it('a manned ship beats the raider, taking some damage but losing no one', () => {
-    const results = seeds.map((s) => fight(s, 'manned', 16));
+    const results = seeds.map((s) => fight(s, 'manned', 8));
     for (const r of results) {
       expect(r.winner).toBe('player');
       expect(r.seconds).toBeGreaterThan(60); // not a walkover
-      // Seed 1 is an attrition brawl: any change to crew behaviour (station relief, calling the operator back) moves it between 400 and 900 s,
-      // so the cap is 16 minutes (was 8); seeds 2 and 6 end in about two. Was 6 before: the gunner now arms and leaves the console for boarders, which shifts the chaotic timeline
-      expect(r.seconds).toBeLessThan(16 * 60);
+      expect(r.seconds).toBeLessThan(8 * 60); // was 6: the gunner now arms and leaves the console for boarders, which shifts the chaotic timeline
       expect(r.minIntegrity).toBeLessThan(0.975); // some damage (was 0.96 before the 2 s roof-part deploy delay)
-      expect(r.minIntegrity).toBeGreaterThan(0.5); // was 0.6: the seed 1 brawl bottoms out at 0.56
+      expect(r.minIntegrity).toBeGreaterThan(0.6);
       expect(r.deadAt4).toBe(0);
       expect(r.downAt4).toBeLessThanOrEqual(2);
     }

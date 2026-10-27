@@ -1,3 +1,4 @@
+import type { Job } from '../crew/components';
 import { AssignmentC, CrewC, DraftedC, JobC, PositionC, PrioritiesC } from '../crew/components';
 import { isIncapacitated, releaseAssignment } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
@@ -8,6 +9,7 @@ import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/ships';
+import { freeOperatorFor, jobTakeable } from '../crew/jobFit';
 import { consoleSkill, skillOf } from '../combat/operators';
 import { chargeOrdered, seatHelms } from '../ftl/order';
 import { OPERATE_MAX_LEVEL } from '../tuning';
@@ -27,8 +29,9 @@ export function operateJobsSystem(sim: Sim): void {
     if (consoleNeeded(sim, job.target ?? 0) && !open.has(job.target ?? 0)) {
       open.set(job.target ?? 0, jobId);
       if (job.reservedBy) {
-        delete job.freeSince;
-        yieldToOperator(sim, job.reservedBy);
+        // a relief's hold leaves `freeSince` as it was, so a relief that yields (and nobody takes the console) is not made to wait again
+        if (!isRelief(sim, job.reservedBy)) delete job.freeSince;
+        else yieldToOperator(sim, job.reservedBy);
       }
       else {
         job.freeSince ??= sim.tick;
@@ -75,21 +78,23 @@ function consoleNeeded(sim: Sim, id: number): boolean {
  */
 function yieldToOperator(sim: Sim, holder: number): void {
   const prio = sim.world.get(holder, PrioritiesC);
-  if (!sim.sector.inCombat || !prio || prio.operating <= OPERATE_MAX_LEVEL) return;
-  // work they rank above operating (a fire, a downed crew member, a repair) calls a relief off the console
-  const ship = shipIdOf(sim, sim.world.get(holder, PositionC));
+  const pos = sim.world.get(holder, PositionC);
+  if (!sim.sector.inCombat || !prio || !pos) return;
+  const ship = shipIdOf(sim, pos);
+  // work they rank above operating (a fire, a downed crew member, a repair) calls a relief off the console, if they can take it
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
     const level = j ? prio[j.category] : 0;
-    if (j && j.reservedBy === 0 && j.kind !== 'operate' && level >= 1 && level < prio.operating && shipIdOf(sim, j) === ship) return void releaseAssignment(sim, holder);
+    if (j && j.reservedBy === 0 && j.kind !== 'operate' && level >= 1 && level < prio.operating && jobTakeable(sim, holder, pos, j)) return void releaseAssignment(sim, holder);
   }
-  for (const id of sim.world.query(CrewC, PrioritiesC)) {
-    const level = sim.world.get(id, PrioritiesC)?.operating ?? 0;
-    if (level < 1 || level > OPERATE_MAX_LEVEL || sim.world.has(id, AssignmentC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
-    if (sim.world.get(id, CrewC)?.activity === 'sleeping') continue;
-    releaseAssignment(sim, holder);
-    return;
-  }
+  // an operator by choice of this ship with nothing to do takes the console back
+  const job = sim.world.get(sim.world.get(holder, AssignmentC)?.jobId ?? 0, JobC);
+  if (job && freeOperatorFor(sim, ship, job)) releaseAssignment(sim, holder);
+}
+
+/** True for a crew member whose operating priority is below the operators' (a stand-in, not an operator by choice). */
+function isRelief(sim: Sim, crew: number): boolean {
+  return (sim.world.get(crew, PrioritiesC)?.operating ?? 0) > OPERATE_MAX_LEVEL;
 }
 
 /**
@@ -97,18 +102,22 @@ function yieldToOperator(sim: Sim, holder: number): void {
  * chore they rank lower, so a gunner busy with repairs goes back to the weapons console instead of leaving it empty. The release only frees
  * them: `decideSystem` then picks the best job, which is the console.
  */
-function callOperator(sim: Sim, job: { target?: number }): void {
+function callOperator(sim: Sim, job: Job): void {
   if (!sim.sector.inCombat) return;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   const kind = m && sim.content.modules[m.def]?.console;
   if (!kind) return;
   let best = 0;
   let bestSkill = -1;
-  for (const id of sim.world.query(CrewC, PrioritiesC, AssignmentC)) {
+  const ship = shipIdOf(sim, m);
+  for (const id of sim.world.query(CrewC, PrioritiesC, AssignmentC, PositionC)) {
     const prio = sim.world.get(id, PrioritiesC);
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== ship) continue; // only this ship's crew
     const busy = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
     const level = prio?.operating ?? 0;
     if (!prio || !busy || busy.kind === 'operate' || level < 1 || level > OPERATE_MAX_LEVEL) continue;
+    const at = sim.world.get(id, PositionC);
+    if (!at || !jobTakeable(sim, id, at, job)) continue; // they must be able to reach the console
     if ((prio[busy.category] ?? 0) <= level || sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
     const skill = skillOf(sim, id, consoleSkill(kind));
     if (skill > bestSkill) {

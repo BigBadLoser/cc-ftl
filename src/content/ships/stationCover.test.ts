@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, PathC, newGame, operatorOf, type Sim } from '../../sim';
+import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, newGame, operatorOf, placementError, type Sim } from '../../sim';
+import { operateJobsSystem } from '../../sim/systems/operateJobs';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { releaseAssignment } from '../../sim/crew/helpers';
@@ -17,8 +18,11 @@ const crewOf = (sim: Sim, role: string): number => sim.world.query(CrewC).find((
 const weaponsConsole = (sim: Sim): number =>
   sim.world.query(ModuleC).find((i) => sim.content.modules[sim.world.get(i, ModuleC)!.def]?.console === 'weapons' && shipIdOf(sim, sim.world.get(i, ModuleC)!) === shipIds(sim)[0]) as number;
 const jobOf = (sim: Sim, crew: number) => { const a = sim.world.get(crew, AssignmentC); return a ? sim.world.get(a.jobId, JobC) : undefined; };
+/** Set a priority of the player's crew of a role (the enemy's crew keep theirs). */
 const priority = (sim: Sim, role: string, category: string, value: number): void => {
-  for (const id of sim.world.query(CrewC)) if (sim.world.get(id, CrewC)!.role === role) sim.enqueue({ type: 'crew.setPriority', id, category: category as never, value });
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    if (sim.world.get(id, CrewC)!.role === role && shipIdOf(sim, sim.world.get(id, PositionC)!) === shipIds(sim)[0]) sim.enqueue({ type: 'crew.setPriority', id, category: category as never, value });
+  }
 };
 /** Break the first non-console module of the player's ship halfway: an open repair job appears. */
 function breakSomething(sim: Sim): void {
@@ -83,5 +87,78 @@ describe('a relief at a console', () => {
     run(sim, 60);
     expect(jobOf(sim, engineer)?.kind).toBe('repair'); // repair is the engineer's first priority, operating its third
     expect(operatorOf(sim, console)).not.toBe(engineer);
+  });
+});
+
+describe('covering a console with two ships in the fight', () => {
+  /** A crewed hostile with no console at all and only a gunner: nothing of his own ship calls him, so only our consoles could. */
+  const lone = {
+    ...content.ships['ship.raider'], crew: ['role.gunner'],
+    modules: content.ships['ship.raider'].modules!.filter((m) => !['module.weaponsConsole', 'module.helm', 'module.shieldConsole'].includes(m.def)),
+  };
+  function twoShips(): Sim {
+    const sim = newGame(1, { ...content, ships: { ...content.ships, 'ship.lone': lone } });
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.lone', x: 20, y: 90 });
+    for (let i = 0; i < 5; i++) sim.step();
+    return sim;
+  }
+  const enemyGunner = (sim: Sim): number =>
+    sim.world.query(CrewC).find((c) => sim.world.get(c, CrewC)!.role === 'role.gunner' && shipIdOf(sim, sim.world.get(c, PositionC)!) === shipIds(sim)[1]) as number;
+
+  it("does not call the enemy's gunner off his chore for our empty console", () => {
+    const sim = twoShips();
+    const gunner = enemyGunner(sim);
+    for (const role of ['role.gunner', 'role.pilot', 'role.engineer', 'role.medic']) priority(sim, role, 'operating', 0);
+    run(sim, 2);
+    for (const c of sim.world.query(CrewC)) if (shipIdOf(sim, sim.world.get(c, PositionC)!) === shipIds(sim)[0]) releaseAssignment(sim, c);
+    // his own ship has a repair job he is busy with
+    const enemyModule = sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)!) === shipIds(sim)[1] && (sim.content.modules[sim.world.get(i, ModuleC)!.def]?.maxHp ?? 0) > 20) as number;
+    sim.world.get(enemyModule, ModuleC)!.hp = 5;
+    run(sim, 100, () => jobOf(sim, gunner)?.kind === 'repair'); // with no console of his own to man, he takes the repair at once
+    expect(jobOf(sim, gunner)?.kind).toBe('repair');
+    const ours = sim.world.query(JobC).find((j) => sim.world.get(j, JobC)!.kind === 'operate' && sim.world.get(j, JobC)!.reservedBy === 0);
+    expect(ours).toBeDefined(); // our weapons console stands empty
+    operateJobsSystem(sim);
+    expect(jobOf(sim, gunner)?.kind).toBe('repair');
+  });
+
+  it("does not let the enemy's idle gunner evict our relief", () => {
+    const sim = twoShips();
+    const [engineer, console] = [crewOf(sim, 'role.engineer'), weaponsConsole(sim)];
+    priority(sim, 'role.gunner', 'operating', 0);
+    priority(sim, 'role.medic', 'operating', 0);
+    const gunner = enemyGunner(sim);
+    releaseAssignment(sim, gunner);
+    run(sim, 1500, () => operatorOf(sim, console) === engineer);
+    expect(operatorOf(sim, console)).toBe(engineer);
+    run(sim, 100);
+    expect(operatorOf(sim, console)).toBe(engineer);
+  });
+});
+
+describe('a relief and work it cannot take', () => {
+  it('stays at the console while the only waiting work is a blueprint with no materials', () => {
+    const sim = setup();
+    const [engineer, console] = [crewOf(sim, 'role.engineer'), weaponsConsole(sim)];
+    priority(sim, 'role.gunner', 'operating', 0);
+    priority(sim, 'role.medic', 'operating', 0);
+    for (const role of ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic']) priority(sim, role, 'hauling', 0); // nobody fetches the materials
+    run(sim, 1500, () => operatorOf(sim, console) === engineer);
+    expect(operatorOf(sim, console)).toBe(engineer);
+    const me = shipIds(sim)[0] as number;
+    const def = Object.keys(sim.content.modules).find((d) => (sim.content.modules[d]?.cost ?? []).length > 0 && !sim.content.modules[d]?.console) as string;
+    let placed = false;
+    for (let y = 0; y < 40 && !placed; y++) {
+      for (let x = 0; x < 60 && !placed; x++) {
+        if (placementError(sim, me, def, 20 + x, 50 + y, 0)) continue;
+        sim.enqueue({ type: 'job.buildModule', ship: me, x: 20 + x, y: 50 + y, def, rot: 0 });
+        placed = true;
+      }
+    }
+    expect(placed).toBe(true);
+    run(sim, 5);
+    expect(sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.kind === 'module')).toBe(true);
+    run(sim, 100);
+    expect(operatorOf(sim, console)).toBe(engineer);
   });
 });
