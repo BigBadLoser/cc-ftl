@@ -1152,3 +1152,65 @@ for _t, _map in TINTS.items():
                 (f"concept.short_cage.{_t}", (1, 1), "prop", _tinted(short_cage, _map)),
                 (f"concept.wall_twin.ctx.{_t}", (1, 1), "prop", _tinted(lambda: wall_twin(True), _map)),
                 (f"concept.floor_twin.{_t}", (1, 1), "prop", _tinted(floor_twin, _map))]
+
+
+# ---- v14: floor lights, second round, in the warm glow (main fxW, accent lampY) ---------------------------------
+
+def floor_kerb():
+    """A kerb step light: a low cream housing along the back of the tile, a slot of light in its face throwing light
+    across the floor, bolted end caps."""
+    k = K("lc_f_kerb", (1, 1), 0)
+    k.box(0, -0.3, 0.0, 0.8, 0.26, 0.012, "steelD", top="gm")                              # footing plate
+    k.box(0, -0.31, 0.012, 0.66, 0.2, 0.1, "lvW2", top="lvW", bevel=0.02)                  # housing
+    k.box(0, -0.204, 0.03, 0.58, 0.014, 0.055, "dark")                                     # slot hood
+    k.box(0, -0.196, 0.038, 0.54, 0.01, 0.04, "fxW")                                       # the light
+    for su in (-1, 1):
+        k.box(su * 0.35, -0.31, 0.012, 0.06, 0.22, 0.11, "steel", top="steelL", bevel=0.01)   # end caps
+        k.cyl(su * 0.35, -0.31, 0.122, 0.018, 0.008, "plate", sides=6)
+    k.box(0.22, -0.31, 0.112, 0.06, 0.03, 0.006, "lampY")                                  # warm indicator on top
+    return k.build()
+
+
+def floor_prisms():
+    """Deck prisms: a 3 x 3 cluster of thick glass blocks set in a steel grid, lit from below, some warmer than others."""
+    k = K("lc_f_prisms", (1, 1), 0)
+    _floor_frame(k)
+    k.box(0, 0, 0.012, 0.64, 0.64, 0.012, "steelD", top="gmD")                             # grid
+    warm = {(0, 0), (1, 2), (2, 1)}
+    for i in range(3):
+        for j in range(3):
+            u, v = -0.2 + i * 0.2, -0.2 + j * 0.2
+            k.box(u, v, 0.016, 0.13, 0.13, 0.014, "lampY" if (i, j) in warm else "fxW", bevel=0.02)
+    return k.build()
+
+
+def floor_hatch():
+    """A hatch light: a round steel lid with four dog clamps and a handle, warm light leaking out round its rim."""
+    k = K("lc_f_hatch", (1, 1), 0)
+    _floor_frame(k)
+    k.cyl(0, 0, 0.012, 0.33, 0.008, "steelD", sides=24)                                    # seat ring
+    k.cyl(0, 0, 0.016, 0.3, 0.008, "fxW", sides=24)                                        # light round the rim
+    k.cyl(0, 0, 0.018, 0.255, 0.016, "steel", top="steelL", sides=24)                      # the lid
+    for v in (-0.08, 0.08):                                                            # two stiffening ribs
+        k.box(0, v, 0.034, 0.4, 0.035, 0.008, "steelD")
+    for a in range(4):                                                                 # dog clamps
+        ang = a * math.pi / 2 + math.pi / 4
+        k.box(0.29 * math.cos(ang), 0.29 * math.sin(ang), 0.012, 0.07, 0.05, 0.03, "gm", top="steel", rz=ang)
+    k.box(0, 0, 0.042, 0.12, 0.03, 0.02, "dark", top="gmD")                                 # handle
+    k.box(0.12, 0.12, 0.034, 0.05, 0.05, 0.005, "hazY", rz=math.pi / 4)                    # hazard tab on the lid
+    return k.build()
+
+
+def floor_studs():
+    """Runway studs: three domed studs in steel collars along the tile, warm tops, a cable channel joining them."""
+    k = K("lc_f_studs", (1, 1), 0)
+    k.box(0, 0, 0.0, 0.84, 0.12, 0.01, "dark", top="gmD")                                  # cable channel
+    for u in (-0.27, 0.0, 0.27):
+        k.cyl(u, 0, 0.0, 0.11, 0.02, "steelD", top="steel", sides=16)                       # collar
+        k.cyl(u, 0, 0.02, 0.075, 0.03, "steel", top="steelL", sides=16)
+        k.cyl(u, 0, 0.05, 0.06, 0.03, "fxW", sides=14, rtop=0.035)                          # warm dome
+        k.cyl(u, 0, 0.05, 0.065, 0.008, "lampY", sides=14)                                  # gold ring under it
+    return k.build()
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_kerb, floor_prisms, floor_hatch, floor_studs)]
