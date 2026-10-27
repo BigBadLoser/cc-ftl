@@ -293,3 +293,140 @@ def floor_v4b():
 SPRITES += [("concept.pillar_v4", (1, 1), "prop", pillar_v4), ("concept.wall_v4", (1, 1), "prop", lambda: wall_v4(False)),
             ("concept.floor_v4", (1, 1), "prop", floor_v4)]
 SPRITES.append(("concept.floor_v4b", (1, 1), "prop", floor_v4b))
+
+
+# ---- v5, own designs: three pillars, three wall lights, three floor lights -------------------------------------------
+
+def _well(m, r=0.6):
+    m.box((0, 0, 0), (r, r, 0.012), "steelD", top="gm", base=True)                          # base plate
+    m.box((0, 0, 0.012), (r - 0.08, r - 0.08, 0.02), "gmD", top="navy", base=True)          # plinth
+
+
+def pillar_beacon():
+    """A tapered column, a tall light slit on each face, a glowing band under a flat cap."""
+    m = core.Mesh("lc_p_beacon")
+    _well(m, 0.5)
+    m.box((0, 0, 0.03), (0.3, 0.3, 0.6), "navy", top="gmD", base=True, taper=0.8)          # tapered column
+    for ux, uy in ((1, 0), (-1, 0), (0, 1), (0, -1)):                                  # a slit on each face
+        d = 0.138
+        m.box((ux * d, uy * d, 0.12), (0.012, 0.07, 0.4) if ux else (0.07, 0.012, 0.4), "arc", base=True)
+    m.box((0, 0, 0.63), (0.27, 0.27, 0.05), "cyan", base=True)                              # glowing band
+    m.box((0, 0, 0.68), (0.34, 0.34, 0.04), "steel", top="steelL", base=True, bevel=0.01)   # cap
+    return [m.build()]
+
+
+def pillar_rods():
+    """A dark core with four glowing rods at its corners, held top and bottom by a thin square cage."""
+    m = core.Mesh("lc_p_rods")
+    _well(m, 0.52)
+    m.box((0, 0, 0.03), (0.2, 0.2, 0.66), "navy", top="gmD", base=True)                    # core
+    for z in (0.06, 0.66):                                                             # cage rings
+        m.box((0, 0, z), (0.36, 0.36, 0.04), "steel", top="steelL", base=True)
+        m.box((0, 0, z), (0.28, 0.28, 0.045), "navy", base=True)                           # (hollow look)
+    for sx in (-1, 1):                                                                 # corner rods
+        for sy in (-1, 1):
+            m.box((sx * 0.15, sy * 0.15, 0.1), (0.05, 0.05, 0.56), "arc", base=True)
+    m.box((0, 0, 0.7), (0.22, 0.22, 0.03), "gmD", top="cyan", base=True)                   # lit top disc
+    return [m.build()]
+
+
+def pillar_bands():
+    """A dark core ringed by three bands of light between steel collars, on a wide foot."""
+    m = core.Mesh("lc_p_bands")
+    _well(m, 0.56)
+    m.box((0, 0, 0.03), (0.4, 0.4, 0.06), "gm", top="steel", base=True, bevel=0.01)        # foot
+    m.box((0, 0, 0.09), (0.24, 0.24, 0.6), "navy", base=True)                              # core
+    for k in range(3):                                                                 # light bands and collars
+        z = 0.14 + k * 0.17
+        m.box((0, 0, z), (0.28, 0.28, 0.08), "arc", base=True)
+        m.box((0, 0, z + 0.08), (0.3, 0.3, 0.04), "steelD", top="steel", base=True)
+    m.box((0, 0, 0.69), (0.3, 0.3, 0.03), "steel", top="steelL", base=True)                 # top
+    return [m.build()]
+
+
+def wall_capsule(context=False):
+    """A glowing tube lying along the wall in a two-arm cradle."""
+    m = core.Mesh("lc_w_capsule")
+    if context:
+        _wall(m)
+    m.box((0, -0.47, 1.08), (0.7, 0.06, 0.22), "gmD", top="gm", base=True)                # back plate
+    for x in (-0.3, 0.3):                                                              # cradle arms
+        m.box((x, -0.38, 1.1), (0.06, 0.16, 0.16), "steel", top="steelL", base=True)
+    for k in range(6):                                                                 # the tube, as a faceted prism
+        a = k * math.pi / 3
+        y, z = -0.36 + 0.06 * math.cos(a), 1.19 + 0.06 * math.sin(a)
+        m.box((0, y, z - 0.03), (0.6, 0.06, 0.06), "arc", base=True, rx=a)
+    for x in (-0.33, 0.33):                                                            # end caps
+        m.box((x, -0.36, 1.12), (0.04, 0.14, 0.14), "gm", top="steel", base=True)
+    return [m.build()]
+
+
+def wall_louvre(context=False):
+    """A box with louvres on its front, angled down, light spilling between them; a slight slope on top."""
+    m = core.Mesh("lc_w_louvre")
+    if context:
+        _wall(m)
+    yb, yf, z0, z1 = -0.5, -0.3, 1.02, 1.38
+    _prism(m, -0.38, 0.38, [(yb, z0), (yf, z0), (yf, z1 - 0.06), (yb, z1)], "gm", top="steel")
+    m.box((0, yf + 0.006, z0 + 0.04), (0.68, 0.01, 0.26), "arc", base=True)               # the light behind
+    for k in range(3):                                                                 # three thin louvres, tipped down
+        m.box((0, yf + 0.03, z0 + 0.1 + k * 0.08), (0.7, 0.05, 0.01), "steelL", rx=-0.35)
+    return [m.build()]
+
+
+def wall_panel(context=False):
+    """A slim upright panel: a vertical light strip down its face, a small status light, a bevelled top."""
+    m = core.Mesh("lc_w_panel")
+    if context:
+        _wall(m)
+    yb, yf = -0.5, -0.38
+    _prism(m, -0.14, 0.14, [(yb, 0.75), (yf, 0.75), (yf, 1.45), (yb, 1.5)], "lvW2", top="lvW")
+    m.box((0, yf + 0.004, 0.82), (0.07, 0.01, 0.56), "arc", base=True)                     # light strip
+    m.box((0.08, yf + 0.004, 1.4), (0.03, 0.01, 0.03), "cyan", base=True)                  # status light
+    m.box((0, yf + 0.004, 0.77), (0.22, 0.012, 0.025), "steelD", base=True)                # foot trim
+    return [m.build()]
+
+
+def floor_ring():
+    """A recessed ring of light round a dark centre plate."""
+    m = core.Mesh("lc_f_ring")
+    m.box((0, 0, 0), (0.74, 0.74, 0.01), "steelD", top="gm", base=True)
+    m.cyl((0, 0, 0.01), 0.3, 0.006, "steelD", sides=24)
+    m.cyl((0, 0, 0.012), 0.26, 0.006, "arc", sides=24)                                     # the ring
+    m.cyl((0, 0, 0.016), 0.2, 0.006, "navy", top="gmD", sides=24)                          # dark centre
+    m.cyl((0, 0, 0.022), 0.04, 0.004, "cyan", sides=8)                                     # pin light
+    return [m.build()]
+
+
+def floor_chevron():
+    """A wayfinding plate: a glowing chevron on a dark plate, pointing along the tile's diagonal."""
+    m = core.Mesh("lc_f_chevron")
+    m.box((0, 0, 0), (0.74, 0.74, 0.01), "steelD", top="navy", base=True)
+    th = -math.pi / 4                                                                  # along the tile's diagonal:
+    rot = lambda x, y: (x * math.cos(th) - y * math.sin(th), x * math.sin(th) + y * math.cos(th))   # noqa: E731
+    tip = rot(0.17, 0.0)                                                               # it reads as an arrow on screen
+    for side in (-1, 1):                                                               # the chevron's two arms
+        x0, y0 = rot(-0.1, side * 0.2)
+        L = math.hypot(tip[0] - x0, tip[1] - y0)
+        a = math.atan2(tip[1] - y0, tip[0] - x0)
+        m.box(((x0 + tip[0]) / 2, (y0 + tip[1]) / 2, 0.01), (L + 0.05, 0.07, 0.008), "arc", base=True, rz=a)
+    for side in (-1, 1):
+        m.box((-0.3, side * 0.3, 0.01), (0.05, 0.05, 0.006), "cyan", base=True)            # corner pins
+    return [m.build()]
+
+
+def floor_studs():
+    """A plain deck plate edged with a fine light line, a glowing stud at each corner."""
+    m = core.Mesh("lc_f_studs")
+    m.box((0, 0, 0), (0.78, 0.78, 0.01), "steelD", top="gm", base=True)
+    m.box((0, 0, 0.01), (0.66, 0.66, 0.004), "arc", base=True)                             # fine light line
+    m.box((0, 0, 0.012), (0.62, 0.62, 0.004), "gmD", base=True)                            # plate inside it
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            m.cyl((sx * 0.3, sy * 0.3, 0.014), 0.04, 0.012, "cyan", sides=8)               # corner studs
+    return [m.build()]
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (
+    pillar_beacon, pillar_rods, pillar_bands, wall_capsule, wall_louvre, wall_panel, floor_ring, floor_chevron, floor_studs)]
+SPRITES += [(f"concept.{fn.__name__}.ctx", (1, 1), "prop", lambda fn=fn: fn(True)) for fn in (wall_capsule, wall_louvre, wall_panel)]
