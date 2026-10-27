@@ -6,6 +6,7 @@
  */
 import { ImageSource, Rectangle, Texture } from 'pixi.js';
 import type { UiStarArt } from '../../ui/starmapApi';
+import { keepOnGpu } from '../assets/loader';
 import { KEY_ACCENT, KEY_CLOTH, swapPixels } from './tint';
 
 type Rgb = [number, number, number];
@@ -26,7 +27,10 @@ async function loadImage(src: string): Promise<{ img: HTMLImageElement; source: 
   const img = new Image();
   img.src = src;
   await img.decode();
-  return { img, source: new ImageSource({ resource: img, scaleMode: 'nearest', autoGenerateMipmaps: false }) };
+  const source = new ImageSource({ resource: img, scaleMode: 'nearest', autoGenerateMipmaps: false });
+  // The view owns its sheets for as long as it lives: Pixi's texture GC must not unload them (same rule as the atlas, issue #102).
+  keepOnGpu(source);
+  return { img, source };
 }
 
 /** Load the sheets of `art`; resolves once both are decoded. */
