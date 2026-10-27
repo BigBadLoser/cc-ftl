@@ -70,13 +70,13 @@ export const factionFleets = {
     groups: { pirate: raiders([{ value: 2, weight: 7 }, { value: 3, weight: 1 }, { value: 4, weight: 2 }], [{ value: 'small', weight: 6 }, { value: 'medium', weight: 1 }]) },
     names: { first: pirateFirst, second: pirateSecond },
   },
-  // Raiders: packs of fast small ships. Cartel: one or two cargo-heavy mediums, often with a hired mercenary escort. Zealots: small cult cells. Mercenaries: balanced, a little bigger.
+  // Raiders: pairs of fast small ships (the Scrappers' usual one or two, more often small). Cartel: one or two cargo-heavy mediums, often with a hired mercenary escort. Zealots: small cult cells. Mercenaries: balanced, a little bigger.
   raiders: {
-    groups: { pirate: raiders([{ value: 2, weight: 5 }, { value: 4, weight: 3 }, { value: 6, weight: 1 }], [{ value: 'small', weight: 7 }, { value: 'medium', weight: 1 }], 3) },
+    groups: { pirate: raiders([{ value: 2, weight: 7 }, { value: 4, weight: 3 }], [{ value: 'small', weight: 7 }, { value: 'medium', weight: 1 }]) },
     names: { first: raiderFirst, second: raiderSecond },
   },
   cartel: {
-    groups: { pirate: { ...raiders([{ value: 3, weight: 4 }, { value: 6, weight: 1 }], [{ value: 'medium', weight: 1 }]), escort: { faction: 'mercenaries', chance: 0.5 } } },
+    groups: { pirate: { ...raiders([{ value: 3, weight: 6 }, { value: 6, weight: 1 }], [{ value: 'medium', weight: 1 }]), escort: { faction: 'mercenaries', chance: 0.4 } } },
     names: { first: cartelFirst, second: cartelSecond },
   },
   zealots: {

@@ -53,8 +53,7 @@ export class TerritoryField {
    * The faction a (non-home) seed claims, in stages so that adding the pirate factions never moves the other powers' map:
    * 1. the first draw, from the factions that claim seeds outright (not `shares` or `near` ones), or open space;
    * 2. a seed won by a faction that others `share` is re-drawn among it and them (the pirate space is shared out among the pirate factions);
-   * 3. a seed that is open space or a pirate's, beside a seed whose first draw is a `near` faction's (the machines'), becomes the `near` faction's (the
-   *    zealots') with chance `territory.weight`.
+   * 3. a few seeds that are open space or a pirate's, beside the machines', become the `near` faction's (the zealots'): see `designated`.
    */
   private draw(tx: number, ty: number, danger: number): string | null {
     const first = this.first(tx, ty, danger);
@@ -69,8 +68,7 @@ export class TerritoryField {
     }
     if (faction !== null && this.factions[faction]?.kind !== 'pirates') return faction;
     for (const [id, f] of Object.entries(this.factions)) {
-      const near = f.territory?.near;
-      if (near && inDanger(f.territory?.danger, danger) && unit(this.seed, tx, ty, 16) < f.territory!.weight && this.beside(tx, ty, near)) return id;
+      if (f.territory?.near && inDanger(f.territory.danger, danger) && this.designated(tx, ty, id)) return id;
     }
     return faction;
   }
@@ -86,17 +84,46 @@ export class TerritoryField {
     return (pool.find((p) => (roll -= p.weight) < 0) ?? pool[pool.length - 1])?.id ?? null;
   }
 
-  /** Does a neighbouring cell's first draw claim its seed for `faction`? */
-  private beside(tx: number, ty: number, faction: string): boolean {
+  /** Is the first draw of cell (tx, ty) open space or the host's (a seed a `near` faction may take)? */
+  private takeable(tx: number, ty: number, host: string | null): boolean {
+    if (tx === 0 && ty === 0) return false;
+    const x = (tx - 0.5 + unit(this.seed, tx, ty, 11)) * CELL;
+    const y = (ty - 0.5 + unit(this.seed, tx, ty, 12)) * CELL;
+    const first = this.first(tx, ty, dangerAt(x, y));
+    return first === null || first === host;
+  }
+
+  /**
+   * Is (tx, ty) one of the cells `faction` (a `near` faction) holds? Each seed whose first draw is the `near` faction's neighbour (the machines') gives
+   * its faction cells with chance `territory.weight` (hashed on that seed), and then only the `territory.max` takeable neighbouring cells with the lowest
+   * hash: a few small pockets beside the machines, never a belt.
+   */
+  private designated(tx: number, ty: number, faction: string): boolean {
+    const def = this.factions[faction]?.territory;
+    const near = def?.near;
+    if (!def || !near) return false;
+    const host = Object.keys(this.factions).find((id) => this.factions[id]?.kind === 'pirates' && !this.factions[id]?.territory?.shares && !this.factions[id]?.territory?.near) ?? null;
+    if (!this.takeable(tx, ty, host)) return false;
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
-        if (dx === 0 && dy === 0) continue;
-        const nx = tx + dx;
-        const ny = ty + dy;
-        if (nx === 0 && ny === 0) continue; // the home seed is never the machines'
-        const x = (nx - 0.5 + unit(this.seed, nx, ny, 11)) * CELL;
-        const y = (ny - 0.5 + unit(this.seed, nx, ny, 12)) * CELL;
-        if (this.first(nx, ny, dangerAt(x, y)) === faction) return true;
+        const mx = tx + dx;
+        const my = ty + dy;
+        if ((dx === 0 && dy === 0) || (mx === 0 && my === 0)) continue;
+        const x = (mx - 0.5 + unit(this.seed, mx, my, 11)) * CELL;
+        const y = (my - 0.5 + unit(this.seed, mx, my, 12)) * CELL;
+        if (this.first(mx, my, dangerAt(x, y)) !== near || unit(this.seed, mx, my, 16) >= def.weight) continue;
+        // The takeable cells around that machine seed, lowest hash first.
+        const around: { tx: number; ty: number; h: number }[] = [];
+        for (let ey = -1; ey <= 1; ey++) {
+          for (let ex = -1; ex <= 1; ex++) {
+            const cx = mx + ex;
+            const cy = my + ey;
+            if ((ex === 0 && ey === 0) || !this.takeable(cx, cy, host)) continue;
+            around.push({ tx: cx, ty: cy, h: unit(this.seed, cx, cy, 17) });
+          }
+        }
+        around.sort((p, q) => p.h - q.h || p.tx - q.tx || p.ty - q.ty);
+        if (around.slice(0, def.max ?? 1).some((c) => c.tx === tx && c.ty === ty)) return true;
       }
     }
     return false;

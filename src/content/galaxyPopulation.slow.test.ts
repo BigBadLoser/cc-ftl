@@ -25,9 +25,10 @@ describe('the population over many seeds', () => {
     let ships = 0;
     let classed = 0;
     const cost = galaxy.fleet.sizeCost;
-    // The first four seeds from 31 whose near map holds pirate space at all (a den): the pirate factions share the Scrappers' space, so a fixed list of seeds may hold none.
+    // The fixed seeds 31 to 50. A seed whose near map holds no pirate fleet says nothing about pirates, so it is skipped; at least MIN_PIRATE_WORLDS must qualify.
+    const MIN_PIRATE_WORLDS = 4;
     let withDens = 0;
-    for (let seed = 31; withDens < 4 && seed < 120; seed++) {
+    for (let seed = 31; seed <= 50; seed++) {
       const sim = world(seed, 2);
       if (!sim.galaxy.fleets.some((f) => f.role === 'pirate')) continue;
       withDens++;
@@ -49,6 +50,7 @@ describe('the population over many seeds', () => {
         }
       }
     }
+    expect(withDens).toBeGreaterThanOrEqual(MIN_PIRATE_WORLDS);
     expect([...kinds].sort()).toEqual(['den', 'depot', 'nest', 'outpost', 'station']);
     // Pirates lean strongly to one ship; two small ones now and then.
     expect(pirates[0]).toBeGreaterThan((pirates[1] ?? 0) * 2);

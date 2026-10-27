@@ -87,8 +87,12 @@ export interface GalaxyFactionDef {
      * space): a seed that faction wins is re-drawn among it and its sharers, by `weight`.
      */
     shares?: string;
-    /** It takes an open or pirate seed next to a seed of this faction (the zealots, beside the machines) with chance `weight` (0..1). Neither this nor `shares` moves a government's or corporation's map. */
+    /**
+     * It takes open or pirate seeds next to a seed of this faction (the zealots, beside the machines): each such seed gives it cells with chance `weight` (0..1),
+     * at most `max` (default 1) neighbouring cells. Neither this nor `shares` moves a government's or corporation's map.
+     */
     near?: string;
+    max?: number;
   };
   /** Station kinds (StructureDef ids) it builds in its own sectors, weighted. */
   stations?: readonly Weighted[];

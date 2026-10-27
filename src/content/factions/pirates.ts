@@ -86,7 +86,7 @@ export const cartel = {
 export const mercenary = {
   ...base,
   name: 'Mercenary',
-  art: { ...scrapper.art, livery: 'livery.mercenary' },
+  art: { ...scrapper.art, livery: 'livery.merc' },
   architecture: architecture([{ ...role('raider'), weight: { base: 3, perDepth: 0, max: 3 } }, { ...role('gunrunner'), weight: { base: 1, perDepth: 0.3, max: 3 } }]),
   hullFamilies: [{ ...family('raider'), weight: { base: 3, perDepth: 0, max: 3 } }, { ...family('gunrunner'), weight: { base: 1, perDepth: 0.3, max: 3 } }],
   weapons: { light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }], heavy: [{ value: 'module.massDriver', weight: 2 }, { value: 'module.missileLauncher', weight: 1 }] },
