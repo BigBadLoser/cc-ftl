@@ -1601,7 +1601,8 @@ def floor_wheel_round():
     for a in range(8):
         ang = a * math.tau / 8
         k.cyl(0.39 * math.cos(ang), 0.39 * math.sin(ang), 0.018, 0.016, 0.006, "plate", sides=8)
-    return [*k.build(), _holdout_round("lc_f_wheel_round_h", r, n)]
+    k.m.dz = -0.022                                                                    # top level with the deck
+    return [*k.build(), _holdout_round("lc_f_wheel_round_h", 0.43, n)]
 
 
 def floor_tile_grate():
@@ -1619,7 +1620,8 @@ def floor_tile_grate():
         for sv in (-1, 1):
             k.cyl(su * 0.46, sv * 0.46, 0.012, 0.018, 0.006, "plate", sides=6)
     _hatch_grate(k, s)
-    return [*k.build(), _holdout_sq("lc_f_tile_grate_h", s, s)]
+    k.m.dz = -0.016                                                                    # top level with the deck: it IS the tile
+    return [*k.build(), _holdout_sq("lc_f_tile_grate_h", 1.0, 1.0)]
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_wheel_round, floor_tile_grate)]
