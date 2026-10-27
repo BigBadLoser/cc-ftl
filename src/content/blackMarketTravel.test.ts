@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, TraderC, contrabandAboard, galaxyIndex, newGame, passingMeets, playerShip, portsAt, storageAdd, type Sim,
+  CombatC, FTL_CHARGE_SEC, ShipC, truceHolds, START_NODE, TraderC, contrabandAboard, galaxyIndex, newGame, passingMeets, playerShip, portsAt, storageAdd, type Sim,
 } from '../sim';
 import type { Fleet } from '../sim/galaxy/types';
 import { ensureChunk, nodeState } from '../sim/galaxy/state';
 import { placementGapError } from '../sim/regions';
+import { isMarket } from '../sim/galaxy/populateSpawn';
 import { giveItems } from '../sim/story/effects';
 import { playerStorages } from '../sim/story/world';
 import { reputationOf } from '../sim/story/state';
@@ -90,24 +91,44 @@ describe('lesser services on the galaxy', () => {
     deployAt(sim);
   }
 
-  it('a pirate den carries the lesser set (no fence, no truce); a plain trade station of a corporation does not', () => {
-    const sim = newGame(11, content);
-    step(sim, 2);
-    for (let cy = -4; cy <= 4; cy++) for (let cx = -4; cx <= 4; cx++) ensureChunk(sim, cx, cy);
-    const nodes = [...galaxyIndex(sim.galaxy).nodes.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
-    const den = nodes.find((n) => portsAt(sim, n.id).some((p) => p.kind === 'den'));
-    const plain = nodes.find((n) => portsAt(sim, n.id).some((p) => p.kind === 'station' && (content.galaxy.factions as Record<string, { kind: string }>)[p.owner]!.kind !== 'pirates') && !portsAt(sim, n.id).some((p) => p.kind === 'den'));
-    expect(den && plain).toBeTruthy();
-    visit(sim, den!.id);
-    const denPort = portsAt(sim, den!.id).find((p) => p.kind === 'den')!;
-    const t = sim.world.query(TraderC).map((id) => sim.world.get(id, TraderC)!).find((x) => x.port === denPort.id)!;
-    expect(t.services).toEqual(['bm.lesser']);
-    expect(t.fence).toBeUndefined();
-    expect(t.stock.some((l) => l.item === 'item.stolen_goods' || l.item === 'item.looted_goods')).toBe(true);
-    expect(sim.galaxy.nodes[den!.id]?.truce).toBeUndefined();
-    visit(sim, plain!.id);
-    const plainPort = portsAt(sim, plain!.id).find((p) => p.kind === 'station')!;
-    const pt = sim.world.query(TraderC).map((id) => sim.world.get(id, TraderC)!).find((x) => x.port === plainPort.id);
-    expect(pt?.services).toBeUndefined();
+  it('about a quarter of pirate dens are markets, by a seeded roll; a market has the truce and a plain den stays hostile', () => {
+    let markets = 0;
+    let plain = 0;
+    for (const seed of [11, 12, 13, 14]) {
+      const sim = newGame(seed, content);
+      step(sim, 2);
+      for (let cy = -4; cy <= 4; cy++) for (let cx = -4; cx <= 4; cx++) ensureChunk(sim, cx, cy);
+      const nodes = [...galaxyIndex(sim.galaxy).nodes.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+      for (const n of nodes) {
+        const den = portsAt(sim, n.id).find((p) => p.kind === 'den');
+        if (!den || markets + plain >= 14) continue;
+        visit(sim, n.id);
+        const t = sim.world.query(TraderC).map((id) => ({ id, t: sim.world.get(id, TraderC)! })).find((x) => x.t.port === den.id);
+        if (!t) continue;
+        if (t.t.services) {
+          markets++;
+          expect(t.t.services).toEqual(['bm.lesser']);
+          expect(t.t.fence).toBeUndefined();
+          expect(sim.galaxy.nodes[n.id]?.truce).toBeDefined();
+          expect(truceHolds(sim)).toBe(true);
+        } else {
+          plain++;
+          expect(sim.galaxy.nodes[n.id]?.truce).toBeUndefined();
+          expect(sim.world.get(t.id, ShipC)!.faction).toBe('hostile');
+        }
+      }
+    }
+    expect(markets).toBeGreaterThan(0);
+    expect(plain).toBeGreaterThan(markets);
+    expect(markets / (markets + plain)).toBeLessThan(0.5);
+  });
+
+  it('the roll is deterministic', () => {
+    const run = () => {
+      const sim = newGame(11, content);
+      step(sim, 2);
+      return [3, 9, 27, 81].map((n) => isMarket(sim, n));
+    };
+    expect(run()).toEqual(run());
   });
 });

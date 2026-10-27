@@ -1,5 +1,6 @@
+import { ShipC } from '../combat/components';
 import { attachServices } from '../blackmarket/attach';
-import { LAWLESS_DANGER } from '../blackmarket/tuning';
+import { LAWLESS_DANGER, LESSER_SHARE } from '../blackmarket/tuning';
 import { generateAsteroid } from '../asteroids/gen';
 import { placedParts, stampAsteroid } from '../asteroids/place';
 import { spawnDerelict } from '../combat/derelict';
@@ -48,6 +49,11 @@ export function growSector(sim: Sim, x: number, y: number, w: number, h: number)
   sim.sector.height = Math.max(sim.sector.height, y + h + 8);
 }
 
+/** Only a share of pirate-held and lawless stations are markets (LESSER_SHARE): a seeded roll per station, the rest stay hostile dens. */
+export function isMarket(sim: Sim, ship: number): boolean {
+  return unit(sim.seed, strHash(String(sim.sector.node)), sim.world.get(ship, ShipC)?.gen?.seed ?? ship, 0xb1ac) < LESSER_SHARE;
+}
+
 /**
  * The lesser black-market services (content `bm.lesser`) go to pirate-held stations (a den, or any port of a pirate faction) and to stations no faction holds in
  * lawless space (danger from LAWLESS_DANGER). The three named markets are not placed here: they are attached by the galaxy once they are spawned.
@@ -55,7 +61,7 @@ export function growSector(sim: Sim, x: number, y: number, w: number, h: number)
 export function attachLesser(sim: Sim, ship: number, port: Port | undefined): void {
   const pirate = !!port && sim.content.galaxy?.factions[port.owner]?.kind === 'pirates';
   const lawless = !port && (nodeOf(sim, sim.galaxy.current)?.danger ?? 0) >= LAWLESS_DANGER;
-  if (pirate || lawless) attachServices(sim, ship, 'bm.lesser');
+  if ((pirate || lawless) && isMarket(sim, ship)) attachServices(sim, ship, 'bm.lesser');
 }
 
 /** A station for a structure, bound to its port's market. Returns the ship id, or null. */

@@ -1850,8 +1850,8 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
 
 - **Service sets.** A set (`bm.lesser`, and the named `bm.cartel`, `bm.zealot`, `bm.mercenary`) is attached to any station with `attachServices(sim, station, setId)`
   (`attach.ts`): it records the set on `Trader.services`, rolls the fence rate (`Trader.fence`), adds the set's stock lines to the shelf, takes the owner faction if the
-  galaxy has one by that string id, and sets the node's truce flag when the set has a truce. The lesser set is attached at populate time to pirate-held stations and to
-  unowned stations in lawless space (`attachLesser`, `galaxy/populateSpawn.ts`). The named sets are not spawned by the galaxy yet. The station keeps its own trade profile and
+  galaxy has one by that string id, and sets the node's truce flag when the set has a truce. The lesser set is attached at populate time to a seeded 25% (LESSER_SHARE) of pirate-held stations and of
+  unowned stations in lawless space (`attachLesser`, `galaxy/populateSpawn.ts`); the rest stay hostile dens. Every set has a truce. The named sets are not spawned by the galaxy yet. The station keeps its own trade profile and
   port market; `galaxy/marketLive.ts` leaves the service shelves alone when it binds, steps and unbinds a market.
 - **Contraband** is the `contraband` item tag (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`). Sources: a delivery crate broken open or abandoned spills stolen
   goods instead of the delivery (`galaxy/jobs.ts`); a captured ship's hold gets looted goods (`capture/prize.ts`, LOOT_*); the disruptor is sold only at black markets.

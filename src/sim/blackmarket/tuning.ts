@@ -27,3 +27,5 @@ export const LOOT_MIN = 2;
 export const LOOT_MAX = 12;
 /** Danger tier from which an unowned station in a trade sector counts as lawless (pirate-held stations always do). */
 export const LAWLESS_DANGER = 7;
+/** Share of pirate-held and lawless stations that are black markets (a seeded roll per station); the others attack on sight. */
+export const LESSER_SHARE = 0.25;

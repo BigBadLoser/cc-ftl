@@ -44,14 +44,14 @@ const giveItems = (sim: Sim, item: string, n: number): void => {
 };
 
 describe('black-market services', () => {
-  it('attaches any set to a station: stock, owner fallback, and a truce only for the sets that have one', () => {
+  it('attaches any set to a station: stock, owner fallback, and a truce for every set', () => {
     const { sim, station } = withStation();
     expect(attachServices(sim, station, 'bm.nope')).toBe(false);
     expect(attachServices(sim, station, 'bm.lesser')).toBe(true);
     const t = sim.world.get(station, TraderC)!;
     expect(t.services).toEqual(['bm.lesser']);
     expect(t.fence).toBeUndefined();
-    expect(truceHolds(sim)).toBe(false);
+    expect(truceHolds(sim)).toBe(true);
     expect(attachServices(sim, station, 'bm.lesser')).toBe(true);
     expect(t.services).toEqual(['bm.lesser']);
     // The cartel is a string id with no faction yet: the owner is left as it was. It sets the truce and brings a fence.

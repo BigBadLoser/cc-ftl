@@ -2,7 +2,7 @@ import type { BlackMarketDef } from '../sim';
 
 /**
  * Black-market service sets (DESIGN.md "Black markets"). A set is attached to a station (`attachServices`), whatever it was built as. The lesser set is
- * wired to pirate-held and lawless stations; the other three are the named markets (cartel, zealot machine bazaar, mercenary hiring hall): ready to attach
+ * wired to a quarter of pirate-held and lawless stations (every set has a truce); the other three are the named markets (cartel, zealot machine bazaar, mercenary hiring hall): ready to attach
  * (and tested on a test station) but the galaxy does not spawn them yet. Prices are provisional: `sell`/`buy` multiply the station's own, `contrabandBuy` is
  * the share of base value paid for contraband (a legitimate trader pays nothing), the fence pays 50 to 60% of base value for anything. Crew take no wages.
  * Owners are string ids of the pirate factions of phase 2b; with no such faction in the galaxy yet the owner is left as the station had it.
@@ -11,7 +11,7 @@ const SHADY_ROLES = ['role.gunner', 'role.security', 'role.pilot', 'role.enginee
 
 export const blackMarkets = {
   'bm.lesser': {
-    name: 'Back-room dealer', tier: 'lesser', sell: 1.15, buy: 0.9, contrabandBuy: 0.7, truce: false,
+    name: 'Back-room dealer', tier: 'lesser', sell: 1.15, buy: 0.9, contrabandBuy: 0.7, truce: true,
     stock: [
       { item: 'item.stolen_goods', min: 2, max: 8, chance: 0.7 }, { item: 'item.looted_goods', min: 2, max: 6, chance: 0.5 }, { item: 'item.disruptor', min: 1, max: 2, chance: 0.35 },
     ],
