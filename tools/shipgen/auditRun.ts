@@ -13,10 +13,17 @@ export function auditSheet(specs: string[], from: number, count: number, depth: 
     const examples: string[] = [];
     let rooms = 0;
     let attempts = 0;
+    let courts = 0;
+    let floor = 0;
     for (let s = from; s < from + count; s++) {
       const g = gen(spec, s, depth);
       rooms += g.rooms.filter((r) => r.role !== 'hall').length;
       attempts += g.attempts;
+      for (const r of g.rooms) {
+        if (r.role === 'hall') continue;
+        floor += r.tiles.length;
+        if (r.role === 'plaza' || r.role === 'garden' || r.role === 'drill') courts += r.tiles.length;
+      }
       const a = audit(g);
       for (const k of Object.keys(tally) as (keyof Audit)[]) {
         tally[k] += a[k].length;
@@ -25,7 +32,7 @@ export function auditSheet(specs: string[], from: number, count: number, depth: 
       }
     }
     const cols = (Object.keys(tally) as (keyof Audit)[]).map((k) => `${k} ${tally[k]} (${ships[k]} of ${count})`).join(' | ');
-    lines.push(`${spec} d${depth}: rooms ${rooms}, attempts ${(attempts / count).toFixed(1)} | ${cols}`, ...examples);
+    lines.push(`${spec} d${depth}: rooms ${rooms}, attempts ${(attempts / count).toFixed(1)}, courts ${Math.round((100 * courts) / Math.max(1, floor))}% | ${cols}`, ...examples);
   }
   return lines.join('\n');
 }

@@ -36,7 +36,7 @@ type Court = (b: Builder | null) => Builder | null;
 /** The kind's courtyard rule for one block: enclosed centres become an open room (seeded per block, for variety). */
 const courtOf = (c: Ctx): Court => (b) => {
   const a = c.fam.atrium;
-  if (b && a && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
+  if (b && a && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role, a.band) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
   return b;
 };
 

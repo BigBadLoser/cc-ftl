@@ -151,7 +151,7 @@ export interface HullFamilyDef {
   /** Stations: ore cages hung off the structure (mining stations). */
   cages?: number;
   /** Stations: enclosed centres become open rooms of this role, with this chance per station. */
-  atrium?: { role: RoomRole; chance: number };
+  atrium?: { role: RoomRole; chance: number; band: readonly RoomRole[] };
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 

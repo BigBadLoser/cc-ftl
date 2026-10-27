@@ -1,5 +1,5 @@
 import type { Faction } from '../combat/components';
-import type { TransitionStyle, Weighted } from './types';
+import type { RoomRole, TransitionStyle, Weighted } from './types';
 
 /**
  * Station templates (`stationGen.ts`): immobile structures built by the shipgen arranger from the civil station
@@ -58,8 +58,11 @@ export interface StationDef {
   transition: TransitionStyle;
   tiers: Readonly<Record<StationSize, StationTier>>;
   rooms: readonly StationRoomDef[];
-  /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
-  atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
+  /**
+   * Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. Big
+   * ones are lined with a band of `band` rooms (in turn round the court), leaving a smaller court in the middle.
+   */
+  atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number; band: readonly RoomRole[] };
 }
 
 /** Largest template a station may have (tiles per side): a hub is much bigger than any ship but stays one region. */

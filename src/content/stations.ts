@@ -87,7 +87,7 @@ export const stations = {
     stock: [{ item: 'item.metal', min: 2, max: 8 }, { item: 'item.electronics', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }, { item: 'item.ration', min: 0, max: 4 }],
     tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8), shapes: SHAPES.trading }),
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
-    atrium: { role: 'plaza', chance: 0.8 },
+    atrium: { role: 'plaza', chance: 0.8, band: ['cargo', 'support', 'cargo'] },
   },
   // Research: consoles and fabricator benches round a quiet ring, stores of parts and electronics; lightly armed, calm space.
   'station.research': {
@@ -101,7 +101,7 @@ export const stations = {
       room('cargo', n(3, 'module.storage'), 7, 4, per(1, 1, 2), [{ item: 'item.electronics', min: 6, max: 20 }, { item: 'item.parts', min: 2, max: 8 }]),
       armoury(per(1, 1, 1), 3),
     ],
-    atrium: { role: 'garden', chance: 0.5 },
+    atrium: { role: 'garden', chance: 0.5, band: ['industry', 'support'] },
   },
   // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
   'station.mining': {
@@ -114,7 +114,7 @@ export const stations = {
       room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 3), [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.iron_ore', min: 6, max: 20 }, { item: 'item.rare_ore', min: 0, max: 5 }]),
       armoury(per(1, 1, 1)),
     ],
-    atrium: { role: 'plaza', chance: 0.4 },
+    atrium: { role: 'plaza', chance: 0.4, band: ['industry', 'cargo', 'support'] },
   },
   // Farming: extra crew quarters and messes round a plaza, ration stores; lightly guarded. (No hydroponics beds on stations.)
   'station.farming': {
@@ -126,7 +126,7 @@ export const stations = {
       room('support', ['module.lifeSupport'], 6, 3, per(2, 4, 8)),
       armoury(per(1, 1, 1)),
     ],
-    atrium: { role: 'plaza', chance: 0.85 },
+    atrium: { role: 'plaza', chance: 0.85, band: ['support', 'quarters', 'support'] },
   },
   // Military depot: heavy guns, shield generators, armouries and barracks, few docks.
   'station.military': {
@@ -137,7 +137,7 @@ export const stations = {
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({ crew: 1.2, guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
     rooms: [armoury(per(1, 2, 4), 6)],
-    atrium: { role: 'drill', chance: 0.6 },
+    atrium: { role: 'drill', chance: 0.6, band: ['armoury', 'cargo', 'support'] },
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.
   'station.pirate': {
