@@ -29,7 +29,7 @@ export function yardOf(sim: Sim, station: number): UiYardService | null {
   const ship = playerShip(sim);
   if (!svc || !def) return null;
   const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
-  return { size: svc.size, cap: svc.tier.cap, price: perTile(sim, svc), hull: { tiles: load.tiles, capacity: load.capacity, max: def.maxSize } };
+  return { size: svc.size, cap: svc.tier.cap, price: perTile(sim, svc), hull: { tiles: load.tiles, capacity: load.capacity } };
 }
 
 /** The ship's hull plan for the build tools and the ghost tiles. */

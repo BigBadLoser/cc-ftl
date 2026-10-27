@@ -82,7 +82,6 @@ const REASONS: Record<string, string> = {
   noYard: 'This station has no shipyard',
   noTiles: 'Paint some hull first',
   yardCap: 'The yard builds fewer tiles than that in one visit',
-  shipMax: 'That would make the ship bigger than any yard can build',
   blocked: 'Part of that area is not open space',
   notAdjacent: 'New hull has to touch the ship',
   crowded: 'Too close to another ship or rock',

@@ -207,12 +207,11 @@ describe('shipyard: the quote', () => {
     expect(quoteYard(sim, station, me).error).toBeNull();
   });
 
-  it('counts the ship against the overall maximum, and keeps clear of a neighbouring ship', () => {
+  it('has no ship maximum (engine capacity is the only size limit), and keeps clear of a neighbouring ship', () => {
     const { sim, station, me } = yardGame();
+    expect('maxSize' in content.yard).toBe(false);
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
-    const small = yardGame('station', 'station.trading', { ...content, yard: { ...content.yard, maxSize: 420 } });
-    planHull(small.sim, small.me, outline(small.sim, small.me, 8, -2, 4, 3));
-    expect(quoteYard(small.sim, small.station, small.me).error).toBe('shipMax');
+    expect(quoteYard(sim, station, me).error).toBeNull(); // even though it leaves the ship over its engines' capacity
     planHull(sim, me, outline(sim, me, 4, -9, 8, 10));
     const s = sim.world.get(me, ShipC)!;
     const st = sim.world.get(station, ShipC)!;

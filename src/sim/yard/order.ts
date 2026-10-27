@@ -54,7 +54,7 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
   },
   /**
    * `yard.order`: buy what a station's yard builds of the plan now (`quoteYard`): the hull tiles up to its cap that can be reached from the ship, and the
-   * floor they enclose. Rejected with the quote's error (`noYard`, `noTiles`, `notAdjacent`, `shipMax`, `crowded`), `busy` (an order is running), `inCombat`,
+   * floor they enclose. Rejected with the quote's error (`noYard`, `noTiles`, `notAdjacent`, `crowded`), `busy` (an order is running), `inCombat`,
    * `noYardDock` (the shuttle needs a free airlock), `cantAfford` or `noMetal`. Pays into escrow, grows the ship's rectangle and posts the floor and wall jobs;
    * the bought tiles leave the plan and the station sends its shuttle.
    */

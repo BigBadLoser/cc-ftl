@@ -16,8 +16,6 @@ export interface YardSizeDef {
 export interface YardDef {
   kinds: readonly string[];
   sizes: Record<string, YardSizeDef>;
-  /** The overall ship maximum in size (interior area, `hullArea`), however many visits it takes. */
-  maxSize: number;
   perTile: { credits: number; metal: number };
   dangerStep: number;
   /** The yard crew the station sends: a role id and how many (no more than the shuttle's suits). */

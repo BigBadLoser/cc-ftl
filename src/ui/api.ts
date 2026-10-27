@@ -717,8 +717,8 @@ export interface UiYardService {
   /** Hull tiles one visit builds. */
   cap: number;
   price: { credits: number; metal: number };
-  /** The ship's size (interior area) against what its engines carry, and the overall ship maximum. */
-  hull: { tiles: number; capacity: number; max: number };
+  /** The ship's size (interior area) against what its engines carry. */
+  hull: { tiles: number; capacity: number };
 }
 
 /** The ship's planned outer hull (the build tools' Hull plan), checked: what can be built from the ship, what floats, what is in the way, the floor it shuts in. */
@@ -730,8 +730,8 @@ export interface UiHullPlan {
   loose: { x: number; y: number }[];
   blocked: { x: number; y: number }[];
   floor: { x: number; y: number }[];
-  /** Hull tiles now and with every reachable planned tile built, against the engines' capacity and the ship maximum. */
-  hull: { now: number; afterAll: number; capacity: number; max: number };
+  /** Hull tiles now and with every reachable planned tile built, against the engines' capacity. */
+  hull: { now: number; afterAll: number; capacity: number };
 }
 
 /** What a yard would build of the plan on this visit, and for how much. `error` is the sim's reason code, `errorText` the sentence. */
@@ -747,7 +747,7 @@ export interface UiYardQuote {
   price: { credits: number; metal: number };
   afford: { credits: boolean; metal: boolean };
   cap: number;
-  hull: { before: number; after: number; capacity: number; max: number };
+  hull: { before: number; after: number; capacity: number };
 }
 
 /** The player's yard order: running, or just ended. `status` says what is happening. */

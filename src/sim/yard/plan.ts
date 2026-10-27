@@ -149,7 +149,7 @@ export interface HullView {
   loose: Tile[];
   blocked: Tile[];
   floor: Tile[];
-  hull: { now: number; afterAll: number; capacity: number; max: number };
+  hull: { now: number; afterAll: number; capacity: number };
 }
 
 export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
@@ -160,12 +160,12 @@ export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
   const floor = enclosedFloor(sim, connected);
   return {
     tiles, connected, loose, blocked, floor,
-    hull: { now: grid ? hullArea(grid) : 0, afterAll: ship && connected.length ? areaWith(sim, ship, connected, floor) : load.tiles, capacity: load.capacity, max: sim.content.yard?.maxSize ?? 0 },
+    hull: { now: grid ? hullArea(grid) : 0, afterAll: ship && connected.length ? areaWith(sim, ship, connected, floor) : load.tiles, capacity: load.capacity },
   };
 }
 
 /** Why a quote cannot be bought; the first that applies. */
-export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'notAdjacent' | 'shipMax' | 'crowded';
+export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'notAdjacent' | 'crowded';
 
 /**
  * A yard's quote for the plan: the hull tiles it would build on this visit (up to its cap, the rows nearest the ship first, shut off by a cross wall when
@@ -186,7 +186,7 @@ export interface YardQuote {
   /** The tiles one visit builds. */
   cap: number;
   /** The ship's size (interior area) now and after this purchase, against the engines' capacity and the overall ship maximum. */
-  hull: { before: number; after: number; capacity: number; max: number };
+  hull: { before: number; after: number; capacity: number };
   /** The ship's rectangle once it has grown to hold the build. */
   rect: Rect | null;
 }
@@ -247,7 +247,7 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   const price = service ? yardPrice(sim, service, 0) : { credits: 0, metal: 0 };
   const base: YardQuote = {
     service, walls: [], floor: [], gaps: [], planned: view.tiles.length, rest: view.tiles.length, error: null, price,
-    afford: { credits: true, metal: true }, cap: service?.tier.cap ?? 0, hull: { before: view.hull.now, after: view.hull.now, capacity: view.hull.capacity, max: def?.maxSize ?? 0 }, rect: null,
+    afford: { credits: true, metal: true }, cap: service?.tier.cap ?? 0, hull: { before: view.hull.now, after: view.hull.now, capacity: view.hull.capacity }, rect: null,
   };
   if (!service || !def) return { ...base, error: 'noYard' };
   if (!ship || !sim.world.get(ship, ShipC)) return { ...base, error: 'noShip' };
@@ -265,7 +265,6 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
     afford: { credits: sim.trade.credits >= cost.credits, metal: playerItems(sim, 'item.metal') >= cost.metal },
     hull: { ...base.hull, after }, rect,
   };
-  if (after > def.maxSize) return { ...out, error: 'shipMax' };
   if (!growthClear(sim, ship, rect)) return { ...out, error: 'crowded' };
   return out;
 }
