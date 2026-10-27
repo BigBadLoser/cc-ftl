@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, nodeOf, type Port, type Sim } from '../sim';
+import { ShipC, galaxyIndex, hailVerdict, newGame, nodeOf, type Port, type Sim } from '../sim';
+import { placementGapError } from '../sim/regions';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '../content';
 import { buildStarmap } from './starmapSnapshot';
+import { buildTrade } from './tradeSnapshot';
 import { nodeHints, portHints } from './stockHints';
 
 /** A game with the whole revealed galaxy at the deepest danger tier, and its ports. */
@@ -51,5 +53,45 @@ describe('stock hints', () => {
     const fresh = buildStarmap(newGame(1, content));
     const unknown = fresh.nodes.find((n) => !n.known)!;
     expect(unknown.hints).toEqual([]);
+  });
+});
+
+/** Fly to a navy depot of a deep node (after `rep` navy reputation) and return the trade partner that is the depot. */
+function atNavyDepot(rep: number): { sim: Sim; partner: ReturnType<typeof buildTrade>['partners'][number] | undefined } {
+  const { sim, ports } = deep(1);
+  const depot = ports.find((p) => p.owner === 'navy' && p.kind === 'depot')!;
+  expect(depot).toBeDefined();
+  sim.story.reputation['navy'] = rep;
+  sim.enqueue({ type: 'debug.galaxyTeleport', node: depot.node });
+  sim.step();
+  const pk = sim.sector.packet!;
+  for (let x = 0; x + pk.w <= sim.sector.width; x += 4) {
+    let done = false;
+    for (let y = 2; y + pk.h <= sim.sector.height && !done; y += 4) {
+      if (placementGapError(sim, { x, y, w: pk.w, h: pk.h })) continue;
+      sim.enqueue({ type: 'sector.deploy', x, y });
+      sim.step();
+      done = true;
+    }
+    if (done) break;
+  }
+  for (let i = 0; i < 25; i++) sim.step();
+  return { sim, partner: buildTrade(sim).partners.find((p) => p.station && p.info?.owner?.name === 'Concord Navy') };
+}
+
+describe('navy depots', () => {
+  it('are stations you can trade with at the navy\'s default standing, and show their stock', () => {
+    const { sim, partner } = atNavyDepot(0);
+    expect(partner).toBeDefined();
+    expect(sim.world.get(partner!.id, ShipC)?.faction).toBe('neutral');
+    expect(hailVerdict(sim, partner!.id).answers).toBe(true);
+    expect(partner!.info?.hints).toContain('Mk II shield gens');
+  });
+
+  it('stay hostile once the navy is hostile to you', () => {
+    const { sim, partner } = atNavyDepot(-10);
+    expect(partner).toBeDefined();
+    expect(sim.world.get(partner!.id, ShipC)?.faction).toBe('hostile');
+    expect(hailVerdict(sim, partner!.id).answers).toBe(false);
   });
 });
