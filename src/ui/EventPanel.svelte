@@ -35,8 +35,8 @@
 </aside>
 
 <style>
-  /* With the combat panel open (left, 372px) the card centres in the space between it and the right column (260px). */
-  @media (min-width: 601px) { :global(:root[data-combat]) .card { left: max(calc(50vw + 56px), 558px); } }
+  /* With the combat panel open (left, 420px) the card centres in the space between it and the right column (260px). */
+  @media (min-width: 601px) { :global(:root[data-combat]:not([data-combat-free])) .card { left: max(calc(50vw + 56px), calc(var(--combat-right, 436px) + 170px)); } }
   .card { display: grid; gap: 6px; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 8px); left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 16px)); z-index: 6; }
   .who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
   .who i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }

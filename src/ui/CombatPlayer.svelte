@@ -70,7 +70,6 @@
       <button class="big go" disabled={!ready} title={volleyTitle} aria-label="Fire volley" data-testid="combat-volley" onclick={volley}><Icon name="volley" size={20} />Fire Volley</button>
     </div>
     {#if me.idle}<div class="why" data-testid="combat-idle">{me.idle}</div>{/if}
-    {#if !ready && !me.hold}<div class="hint" data-testid="combat-volley-hint">Hold fire to charge a volley</div>{/if}
     <div class="sec">
       {#if enemy}<button class="tile sm q" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /><span class="cap">Hail</span></button>{/if}
       <span class="ftl" class:full={canFlee} title="FTL charge: a jump needs its charge, short ones less than a full drive">
@@ -119,7 +118,6 @@
   button.big { height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 16px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
   button.big.go:not(:disabled) { background: #0e6a80; border-color: var(--cyan); color: #fff; }
   .why { font: 600 12px/1.2 var(--head-font); letter-spacing: 0.04em; color: var(--amber); }
-  .hint { font-size: 11px; color: var(--dim); }
   .sec { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; opacity: 0.8; }
   button.tile.q { width: auto; min-width: 0; min-height: 0; height: 26px; flex-direction: row; gap: 4px; padding: 0 6px; background: transparent; }
   button.tile.q .cap { font-size: 10px; }
@@ -131,5 +129,5 @@
   .consoles { display: inline-flex; flex-wrap: wrap; gap: 4px; }
   .cs { padding: 1px 6px; border: 1px solid var(--line); color: var(--dim); } .cs.warn { border-color: var(--amber); color: var(--amber); }
   .dim { color: var(--dim); margin: 0; font-size: 12px; }
-  @media (max-width: 600px) { :global(.combat:not(.expanded)) :is(.hint, .consoles) { display: none; } footer { padding-bottom: calc(8px + var(--sab)); } }
+  @media (max-width: 600px) { :global(.combat:not(.expanded)) .consoles { display: none; } footer { padding-bottom: calc(8px + var(--sab)); } }
 </style>

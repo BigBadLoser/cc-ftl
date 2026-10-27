@@ -256,7 +256,7 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, rect: view.rect }),
+  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, canvas: view.canvas }),
   setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
   pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),

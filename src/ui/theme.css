@@ -46,3 +46,5 @@ button.tile.on { color: #fff; }
 @media (max-width: 600px) {
   .sheet { left: 0; right: 0; bottom: 0; border-width: 1px 0 0; padding: 10px 14px calc(10px + var(--sab)); max-height: 60vh; overflow-y: auto; }
 }
+/* While a floating window is dragged or resized, one cursor everywhere (see dragCursor.ts). */
+html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
