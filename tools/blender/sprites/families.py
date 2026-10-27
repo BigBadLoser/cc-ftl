@@ -185,6 +185,9 @@ def jobs(name):
         from .items_kit import jobs as item_jobs
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
         return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+    if name == "lamp_concepts":
+        from . import lamp_concepts
+        return lamp_concepts.SPRITES, True
     if name == "decor":
         from . import decor
         return decor.SPRITES, True
