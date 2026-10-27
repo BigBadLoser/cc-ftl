@@ -1069,3 +1069,58 @@ def wall_flood(context=False):
 
 
 SPRITES += [(f"concept.{fn.__name__}.ctx", (1, 1), "prop", lambda fn=fn: fn(True)) for fn in (wall_cage, wall_twin, wall_flood)]
+
+
+# ---- v12: floor lights in the family (flush, 1x1, walkable) -------------------------------------------------------
+
+def _floor_frame(k, s=0.82, col="steelD", top="gm"):
+    """A flush deck plate with a bolt in each corner."""
+    k.box(0, 0, 0.0, s, s, 0.014, col, top=top, bevel=0.005)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.cyl(su * (s / 2 - 0.05), sv * (s / 2 - 0.05), 0.014, 0.022, 0.008, "plate", sides=6)
+
+
+def floor_twin():
+    """Twin troughs: two tubes of light sunk in the deck under a cream frame, steel end caps."""
+    k = K("lc_f_twin", (1, 1), 0)
+    _floor_frame(k)
+    k.box(0, 0, 0.014, 0.62, 0.5, 0.008, "lvW2", top="lvW")                                # cream frame
+    for v in (-0.12, 0.12):
+        k.box(0, v, 0.016, 0.52, 0.16, 0.008, "dark")                                      # trough
+        k.box(0, v, 0.018, 0.4, 0.07, 0.01, "cyan")                                        # the tube
+        for su in (-1, 1):
+            k.box(su * 0.22, v, 0.016, 0.05, 0.1, 0.014, "steel", top="steelL")             # end caps
+    return k.build()
+
+
+def floor_well():
+    """A grate well: a glowing well under a fine 5 x 5 grate, a bolted frame, yellow corner tabs."""
+    k = K("lc_f_well", (1, 1), 0)
+    _floor_frame(k)
+    k.box(0, 0, 0.012, 0.52, 0.52, 0.004, "steel", top="steelL")                          # grate rim
+    k.box(0, 0, 0.014, 0.46, 0.46, 0.004, "cyan")                                          # the glow
+    for i in range(1, 5):                                                              # grate: 1 px bars, 5 x 5 cells
+        t = -0.23 + i * 0.092
+        k.box(t, 0, 0.018, 1.4 * PX, 0.46, 0.004, "dark")
+        k.box(0, t, 0.018, 0.46, 1.4 * PX, 0.004, "dark")
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * 0.3, sv * 0.3, 0.014, 0.06, 0.06, 0.006, "hazY")                     # corner tabs
+    return k.build()
+
+
+def floor_beacon():
+    """A deck beacon: a round lens in a cream bezel, four cyan runway dashes pointing out along the deck."""
+    k = K("lc_f_beacon", (1, 1), 0)
+    _floor_frame(k)
+    k.cyl(0, 0, 0.014, 0.17, 0.01, "lvW2", top="lvW", sides=20)                            # bezel
+    k.cyl(0, 0, 0.024, 0.12, 0.006, "arc", sides=20)                                       # lens
+    k.cyl(0, 0, 0.03, 0.04, 0.004, "cyan", sides=10)
+    for a in range(4):                                                                 # runway dashes outward
+        ang = a * math.pi / 2
+        k.box(0.28 * math.cos(ang), 0.28 * math.sin(ang), 0.014, 0.12, 0.05, 0.004, "cyan", rz=ang)
+    return k.build()
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_twin, floor_well, floor_beacon)]
