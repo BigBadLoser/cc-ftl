@@ -138,6 +138,8 @@ interface RendererContent {
   ores?: Readonly<Record<string, { code: number; color: number; amount: readonly [number, number] }>>;
   /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
   vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
+  /** Generated factions by id: a ship's roof livery comes from its generating faction's `art.livery`. */
+  factions?: Readonly<Record<string, { art: { livery: string } }>>;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
@@ -259,9 +261,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     cam.fitZoom(Math.min(cam.w / spanW, cam.h / spanH));
   }
 
-  /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
-  const bowParam = new URLSearchParams(window.location.search).get('bow');
-  const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
+  /**
+   * A ship's roof livery, from its generating faction's art def. Debug URL parameters: `?bow=east|west` forces the end the
+   * bow motifs take, `?livery=<livery id>` gives every ship that livery (screenshots of liveries no faction uses yet).
+   */
+  const params = new URLSearchParams(window.location.search);
+  const bowParam = params.get('bow');
+  const liveryParam = params.get('livery');
+  const shipLivery = (s: Ship) => ({
+    ...liveryFor(s.faction, s.name, liveryParam ?? (s.gen ? content.factions?.[s.gen.faction]?.art.livery : undefined)),
+    ...(bowParam ? { bowWest: bowParam === 'west' } : {}),
+  });
   // a hidden outpost stays under its rock roof whatever the roof toggle says
   const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 

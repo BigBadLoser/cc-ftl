@@ -91,8 +91,33 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     motifs: ['split', 'dbl', 'em.star', 'big', 'sten'], P: 0x24324f, S: 0xe2ddd0, T: 0xb0443a,
     remap: { dbl: ['T', 'S'], 'em.star': ['T', 'S'], big: ['T', 'S'] },
   },
+  // v13 faction schemes: a coat over the whole roof carries the faction colour, its motifs the rest
+  gash: {
+    motifs: ['coat', 'rake', 'fangs', 'em.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
+    remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
+  },
+  scorch: {
+    motifs: ['coat', 'rake', 'fangs', 'em.skull'], P: 0x33302c, S: 0xe07a26, T: 0xe2dccb,
+    remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
+  },
+  litany: { motifs: ['coat', 'trace', 'em.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'em.eye': ['T', 'S'] } },
+  relic: {
+    motifs: ['coat', 'aft', 'trace', 'em.eye'], P: 0xc9ccd1, S: 0x5fd6c0, T: 0x3a2f4a,
+    remap: { aft: ['T', 'T'], trace: ['S', 'S'], 'em.eye': ['T', 'S'] },
+  },
 };
 export const SCHEME_NAMES = Object.keys(SCHEMES);
+
+/** roof_livery.CLASSIC: the original ten schemes, the navy, civilian, scrapper and drone liveries. */
+const CLASSIC = ['crimson', 'ivory', 'tide', 'sovereign', 'orchid', 'hornet', 'glacier', 'verdant', 'ember', 'tricolour'] as const;
+/** roof_livery.LIVERIES: a faction art def's `livery` id -> the schemes its ships pick from by name. */
+export const LIVERIES: Readonly<Record<string, readonly string[]>> = {
+  'livery.navy': CLASSIC,
+  'livery.scrapper': CLASSIC,
+  'livery.drone': CLASSIC,
+  'livery.raider': ['gash', 'scorch'],
+  'livery.zealot': ['litany', 'relic'],
+};
 
 /** Paint colours (P and S channel) of a motif in a scheme. */
 export function motifColours(scheme: string, motif: string): [number, number] {
@@ -108,10 +133,15 @@ function strHash(s: string): number {
   return h;
 }
 
-/** Deterministic livery of a ship from its faction and name: scheme, registry seed and which end the bow motifs take. */
-export function liveryFor(faction: string, name: string): { scheme: string; seed: number; bowWest: boolean } {
+/**
+ * Deterministic livery of a ship from its faction and name: scheme, registry seed and which end the bow motifs take.
+ * `livery` (the generating faction's art def `livery` id) picks the scheme list; an unknown or missing id takes the
+ * classic ten.
+ */
+export function liveryFor(faction: string, name: string, livery?: string): { scheme: string; seed: number; bowWest: boolean } {
   const h = strHash(`${faction}:${name}`);
-  return { scheme: SCHEME_NAMES[h % SCHEME_NAMES.length] as string, seed: h % 1000, bowWest: ((h >>> 11) & 1) === 1 };
+  const list = (livery && LIVERIES[livery]) || CLASSIC;
+  return { scheme: list[h % list.length] as string, seed: h % 1000, bowWest: ((h >>> 11) & 1) === 1 };
 }
 
 /** Text masks (registry digits, stencils): never mirrored, so they stay readable; only their placement mirrors. */
@@ -195,7 +225,25 @@ function planBowEast(width: number, height: number, solid: (x: number, y: number
       list.push({ mask: k, motif: m });
       out.set(key, list);
     };
-    if (m === 'aft') {
+    if (m === 'coat') {
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) add(x, y, 'full.P');
+    } else if (m === 'fangs') {
+      for (let y = 0; y < height; y++) {
+        add(xb - 2, y, 'fang');
+        for (let x = xb - 1; x < width; x++) add(x, y, 'full.P');
+      }
+    } else if (m === 'rake') {
+      const x0 = xs + pyRound(0.25 * L);
+      for (let x = x0; x < x0 + 4; x++) {
+        for (const y of [yc - 2, yc - 1]) add(x, y, 'rake.n');
+        for (const y of [yc, yc + 1]) add(x, y, 'rake.s');
+      }
+    } else if (m === 'trace') {
+      for (let x = xs; x <= xb; x++) {
+        add(x, yc - 1, 'trace.n');
+        add(x, yc, 'trace.s');
+      }
+    } else if (m === 'aft') {
       for (let k = 0; k < 3; k++) for (let y = 0; y < height; y++) add(xs + k, y, `aft.${k}`);
     } else if (m === 'bars') {
       for (let k = 0; k < 3; k++) for (let y = 0; y < height; y++) add(xs + k, y, 'bar');
