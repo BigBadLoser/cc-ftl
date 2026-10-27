@@ -65,12 +65,8 @@ export function storeRoom(rng: Rng, n: number): Block {
   return blockFrom(b, 'cargo', 'store', 'robot', sides(spec.w + 2, 4, 'robot'));
 }
 
-/** Narrowest a beam may be: the footprint width rule (no part of a hull under 3 tiles wide). */
-export const MIN_BEAM = 3;
-
-/** A solid beam (truss) `len` long and `thick` wide (at least MIN_BEAM); mounts ride on its long sides, its ends join structure. */
+/** A solid beam (truss) `len` long and `thick` wide; mounts ride on its long sides, its ends join structure. */
 export function beam(rng: Rng, len: number, thick: number, horiz: boolean): Block {
-  thick = Math.max(MIN_BEAM, thick);
   const b = localBuilder(rng);
   const w = horiz ? len : thick;
   const h = horiz ? thick : len;

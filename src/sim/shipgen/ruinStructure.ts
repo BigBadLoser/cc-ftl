@@ -138,10 +138,10 @@ function settle(c: RuinCtx): void {
   keepLargest(c);
 }
 
-/** Replace the structure with its morphological opening by a 3x3 square: every tile of a part narrower than 3 goes to space. */
+/** Open the hull (every tile but struts, `=`) by a 3x3 square: each hull tile of a part narrower than 3 goes to space. Beams may stay thin. */
 function openWidth(c: RuinCtx): void {
   const tiles: { x: number; y: number }[] = [];
-  for (let i = 0; i < c.cells.length; i++) if (c.cells[i] !== '.') tiles.push({ x: i % c.width, y: Math.floor(i / c.width) });
+  for (let i = 0; i < c.cells.length; i++) if (c.cells[i] !== '.' && c.cells[i] !== '=') tiles.push({ x: i % c.width, y: Math.floor(i / c.width) });
   const f = footprintFromTiles(tiles);
   const open = openingOf(f);
   for (let i = 0; i < f.data.length; i++) {

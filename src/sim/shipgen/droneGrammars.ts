@@ -1,5 +1,5 @@
 import { mirrorBlock, type Block, type Side } from './arranger';
-import { MIN_BEAM, beam, coreRoom, crawl, podSpecs, sealedPod, storeRoom } from './droneBlocks';
+import { beam, coreRoom, crawl, podSpecs, sealedPod, storeRoom } from './droneBlocks';
 import { dockBlock } from './navyBlocks';
 import { no, type Ctx } from './navyKit';
 import type { RoomSpec } from './plan';
@@ -181,7 +181,6 @@ function byVariant(c: Ctx, set: [Topology, number][]): Topology {
 }
 
 function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number, standoff = 2): { carriers: Carrier[]; tips: number[] } | null {
-  thick = Math.max(MIN_BEAM, thick);
   const sep = c.rng.int(4, 7);
   const out: Carrier[] = [];
   const tips: number[] = [];
@@ -320,7 +319,7 @@ function spoke(c: Ctx): boolean {
   // The ring's stub reaches past the ring's aft end (stores and the airlock sit outside it, the drive behind).
   const stubLen = topo === 'ring' ? Math.max(3 * c.plan.cargo.length, sd + Math.ceil(ringRun / 2) + 5) : collarStub;
   // The collar stops just short of the stub's end: the drive beam goes on behind it.
-  const f = frame(c, core, topo, topo === 'ring' ? ringRun : stubLen - 2, c.rng.int(MIN_BEAM, MIN_BEAM + 1), sd);
+  const f = frame(c, core, topo, topo === 'ring' ? ringRun : stubLen - 2, c.rng.int(1, 2), sd);
   if (!f || !load(c, f.carriers, all, p)) return no(c, 'picket frame');
   // A short crawl stub aft for the stores and the airlock; the drive behind it.
   const stub = c.A.attach(core, crawl(c.rng, stubLen, true), { side: 'e', doors: 1 });
@@ -337,7 +336,7 @@ function truss(c: Ctx): boolean {
   if (!dock(c, [core])) return false;
   const guns = mounts.filter((m) => m.role === 'weapons');
   const other = [...mounts.filter((m) => m.role !== 'weapons'), ...reactors];
-  const thick = MIN_BEAM + (c.rng.chance(0.3) ? 1 : 0);
+  const thick = c.rng.int(1, 2);
   const head = rollProfile(() => c.rng.next(), 0, c.rng.int(1, 4), [0.15, 0.6]);
   const topo = byVariant(c, [['single', 2], ['fork', 2], ['twin', 2], ['h', 1]]);
   const forked = topo === 'fork' || topo === 'twin' || topo === 'h';

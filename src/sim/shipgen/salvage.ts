@@ -136,7 +136,7 @@ export function notch(b: Builder, rng: Rng, k: number, defs: Record<string, { fo
 }
 
 /**
- * Footprint width rule: cuts and corner damage leave bare wall (or beam) stubs under 3 tiles wide. Take those tiles off,
+ * Footprint width rule: cuts and corner damage leave bare wall stubs under 3 tiles wide (beams are exempt). Take those tiles off,
  * never one that walls a floor or a door in (that stays, and the template then fails validation and is reseeded).
  * Repeats, since taking a stub off can leave its neighbour thin.
  */
@@ -144,10 +144,10 @@ export function trimThin(b: Builder): void {
   for (let pass = 0; pass < 8; pass++) {
     const { rows, ox, oy } = b.cv.crop();
     const tiles: { x: number; y: number }[] = [];
-    rows.forEach((r, y) => [...r].forEach((c, x) => { if (c !== '.') tiles.push({ x: x + ox, y: y + oy }); }));
+    rows.forEach((r, y) => [...r].forEach((c, x) => { if (c !== '.' && c !== '=' && !isContainerCell(c)) tiles.push({ x: x + ox, y: y + oy }); }));
     const bad = widthViolations(footprintFromTiles(tiles)).filter(({ x, y }) => {
       const c = b.cv.at(x, y);
-      if (c !== '#' && c !== '=') return false;
+      if (c !== '#') return false;
       return ![[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => { const n = b.cv.at(x + (dx as number), y + (dy as number)); return n === '_' || n === 'D'; });
     });
     if (bad.length === 0) return;

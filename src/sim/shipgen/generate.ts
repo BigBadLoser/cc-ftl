@@ -267,7 +267,7 @@ export function finishLayout(
     rank: (i) => (labels[i] && roleOfLabel(labels[i] as { chunk: string; letter: string }) === 'hall' ? 1 : 0),
     axis2: b.axis2,
   });
-  // Footprint width rule: bare wall and beam stubs under 3 tiles wide that the arrangers leave are taken off.
+  // Footprint width rule: bare wall stubs under 3 tiles wide that the arrangers and the wall thinning leave are taken off.
   trimThin(b);
   b.cv.fixDoors();
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();

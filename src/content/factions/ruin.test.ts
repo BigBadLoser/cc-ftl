@@ -71,7 +71,7 @@ describe('derelict ruin pass', () => {
 
   it('leaves a wreck no part of which is narrower than 3 tiles (the footprint width rule), however hard it is hit', () => {
     const solidTiles = (r: RuinResult): { x: number; y: number }[] =>
-      r.template.rows.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '.' ? [] : [{ x, y }])));
+      r.template.rows.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '.' || ch === '=' ? [] : [{ x, y }])));
     for (const f of FACTIONS) {
       for (const cause of CAUSES) {
         for (const intensity of [0.3, 0.6, 0.95]) {
@@ -89,7 +89,7 @@ describe('derelict ruin pass', () => {
   });
 
   it('trims the slivers a blast leaves off a ship that was not compliant to begin with, then keeps its largest piece', () => {
-    // A 5-wide hull with a 1-wide spine and a pod on a 2-wide neck: both stubs are under 3 tiles and go.
+    // A hull with a pod on a 2-wide neck: the neck is under 3 tiles and goes, with the pod (the smaller piece). A 1-wide strut under the hull is exempt.
     const rows = [
       '.......####..',
       '.......#__#..',
@@ -102,13 +102,15 @@ describe('derelict ruin pass', () => {
       '#_______#....',
       '#_______#....',
       '#########....',
-      '........#####',
+      '.....====....',
     ];
     const r = ruin({ name: 'thin', rows, modules: [] }, 3, { defs, intensity: 0.1, cause: 'decay' });
-    const tiles = r.template.rows.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '.' ? [] : [{ x, y }])));
+    const tiles = r.template.rows.flatMap((row, y) => [...row].flatMap((ch, x) => (ch === '.' || ch === '=' ? [] : [{ x, y }])));
     expect(widthViolations(footprintFromTiles(tiles))).toEqual([]);
     expect(tiles.length).toBeGreaterThan(0);
     expect(r.template.rows[0]?.slice(7, 11)).toBe('....');
+    // A thin strut is exempt from the rule and stays.
+    expect(r.template.rows[11]).toBe('.....====....');
   });
 
   it('records hull and wall breaches only on the torn edge, bordering a standing wall', () => {

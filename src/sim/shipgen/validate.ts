@@ -124,12 +124,15 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   return problems;
 }
 
-/** The footprint width rule on template cells (`.` is space): a problem naming the tiles narrower than 3, or null. */
+/**
+ * The footprint width rule on template cells (`.` is space): a problem naming the hull tiles narrower than 3, or null.
+ * Struts (Beam tiles: `=`, which also holds container cells) are exempt: only hull (wall, floor, door) counts.
+ */
 export function widthProblem(cells: string[], w: number, h: number): string | null {
   const tiles: { x: number; y: number }[] = [];
-  for (let i = 0; i < w * h; i++) if (cells[i] !== undefined && cells[i] !== '.') tiles.push({ x: i % w, y: Math.floor(i / w) });
+  for (let i = 0; i < w * h; i++) if (cells[i] !== undefined && cells[i] !== '.' && cells[i] !== '=') tiles.push({ x: i % w, y: Math.floor(i / w) });
   const bad = widthViolations(footprintFromTiles(tiles));
-  return bad.length === 0 ? null : `width: ${bad.length} tiles in parts narrower than 3 (first at ${bad[0]!.x},${bad[0]!.y})`;
+  return bad.length === 0 ? null : `width: ${bad.length} hull tiles in parts narrower than 3 (first at ${bad[0]!.x},${bad[0]!.y})`;
 }
 
 /** Count 4-connected components of non-space cells (`.` is space). */

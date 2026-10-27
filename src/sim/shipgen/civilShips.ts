@@ -24,14 +24,13 @@ function bowRig(c: Ctx, root: number): boolean {
   const L = Math.max(...lens);
   const b = localBuilder(c.rng);
   const top = -1 - spread;
-  // Cross piece and arms are 3 thick (the footprint width rule).
-  truss(b, L, top, 3, 2 * spread + 1, 'cross');
+  truss(b, L, top, 1, 2 * spread + 1, 'cross');
   lens.forEach((len, i) => {
-    const t = 3;
+    const t = c.rng.int(1, 2);
     const y = Math.min(top + 2 * spread + 1 - t, top + Math.round((i * (2 * spread + 1 - t)) / Math.max(1, n - 1)));
     truss(b, L - len, y, len, t, `arm${i}`);
   });
-  const blk = { ...blockFrom(b, 'beam', 'mining rig', 'external', [{ id: 'e', side: 'e', x: L + 3, y: top, len: 2 * spread + 1, access: 'external' }]), bare: true };
+  const blk = { ...blockFrom(b, 'beam', 'mining rig', 'external', [{ id: 'e', side: 'e', x: L + 1, y: top, len: 2 * spread + 1, access: 'external' }]), bare: true };
   if (c.A.attach(root, blk, { side: 'w', align: 'mid', doors: 0, kind: 'beam' }) === null) return no(c, 'rig');
   c.parts.push(`bow rig ${n}x${reach} ${splay}`);
   return true;
@@ -43,11 +42,10 @@ function midRig(c: Ctx, host: number): boolean {
   const reach = c.rng.int(5, 10);
   const rake = c.rng.chance(0.35) ? c.rng.int(2, 4) : 0;
   const b = localBuilder(c.rng);
-  // 3 wide beams (the footprint width rule): the arm's rows are -out-2 .. -out.
-  truss(b, reach - 1, -out - 2, 3, out + 2, 'strut');
-  truss(b, 0, -out - 2, reach + 2, 3, 'arm');
-  if (rake > 0) truss(b, reach + 2, -out - 2, rake, 3, 'rake');
-  const blk = { ...blockFrom(b, 'beam', 'mining rig', 'external', [{ id: 's', side: 's', x: reach - 1, y: 0, len: 3, access: 'external' }]), bare: true };
+  truss(b, reach, -out, 1, out, 'strut');
+  truss(b, 0, -out, reach, 1, 'arm');
+  if (rake > 0) truss(b, reach + 1, -out, rake, 1, 'rake');
+  const blk = { ...blockFrom(b, 'beam', 'mining rig', 'external', [{ id: 's', side: 's', x: reach, y: 0, len: 1, access: 'external' }]), bare: true };
   for (const [side, r] of [['n', blk], ['s', mirrorBlock(blk)]] as const) {
     if (c.A.attach(host, r, { side, align: 'mid', doors: 0, kind: 'beam' }) === null) return no(c, 'mid rig');
   }
@@ -123,8 +121,8 @@ function crewBody(c: Ctx): { root: number; aft: number } | null {
 
 /** Container frame options drawn per ship: grid shape, rail count, stacking. */
 const frameOpts = (c: Ctx, lane: number): Parameters<typeof containerFrame>[2] => {
-  // The usual container: its short (door) end on the spine, always 3x6: the 2x4 box is under the 3-tile width rule.
-  const [cw, ch] = [3, 6] as const;
+  // The usual container: its short (door) end on the spine, 3x6 mostly, 2x4 now and then (the other size mixes in).
+  const [cw, ch] = c.rng.pick([[3, 6], [3, 6], [2, 4]] as const);
   return frameOptsOf(c, lane, cw, ch);
 };
 const frameOptsOf = (c: Ctx, lane: number, cw: number, ch: number): Parameters<typeof containerFrame>[2] => ({
@@ -220,7 +218,7 @@ export function mining(c: Ctx): boolean {
     return arms(c, [root, aft], j.guns);
   }
   // Boom: the rig on a long boom off the free flank, reaching past the bow.
-  const spread = c.rng.int(3, 5);
+  const spread = c.rng.int(2, 5);
   const len = c.rng.int(10, 18);
   const armsN = c.rng.int(2, 3);
   const reach = c.rng.int(4, 8);
