@@ -169,6 +169,38 @@ def _aa(mode, blk, n, S):
     return out
 
 
+def _name_rgb(name):
+    """A palette name's colour as the sprite's palette has it (the nearest entry)."""
+    h = (PAL.get(name) or EXTRA[name])["hex"].lstrip("#")
+    return PALETTE[quantize(np.array([[int(h[i:i + 2], 16) for i in (0, 2, 4)]], float))[0]]
+
+
+def band(mask, opaque, toward, w):
+    """mask's px with an opaque px outside it at most w px away toward `toward` (an image direction (dx, dy), unit):
+    a cast shadow kept as an even band along what casts it."""
+    h, wd = mask.shape
+    lit, keep = opaque & ~mask, np.zeros_like(mask)
+    for t in range(1, w + 1):
+        dx, dy = int(round(toward[0] * t)), int(round(toward[1] * t))
+        at = np.zeros_like(mask)
+        at[max(0, -dy):h - max(0, dy), max(0, -dx):wd - max(0, dx)] = \
+            lit[max(0, dy):h - max(0, -dy), max(0, dx):wd - max(0, -dx)]
+        keep |= mask & at
+    return keep
+
+
+def shade(rgb, mask, k, ramp=(), steps=1):
+    """rgb (h, w, 3) palette colours, those under mask darkened (a cast shadow): a tone of ramp (palette names, dark to
+    light) steps down it, any other by k to the nearest palette tone."""
+    out = rgb.copy()
+    out[mask] = PALETTE[quantize(rgb[mask].astype(float) * k)]
+    tones = [_name_rgb(n) for n in ramp]
+    for i, t in enumerate(tones):
+        at = mask & (rgb == t).all(-1)
+        out[at] = tones[max(0, i - steps)]
+    return out
+
+
 def downsample(rgb, alpha, S, thresh, quant, aa=False):
     """rgb (H*S,W*S,3) 0..255, alpha bool, aa coverage anti-aliasing (_aa). Returns (rgb (h,w,3) uint8, opaque bool
     (h,w))."""

@@ -10,6 +10,8 @@ from . import core, post, sprite_cache
 from . import geom_digest as gd
 
 SS = core.SS
+SHADOW = (0.5, 0.75)                    # a builder's shadows (core.SHADOWS): a px shaded with this much of it in
+                                        # shadow, darkened by this (to the nearest palette tone)
 AA = ("tile.hull.ext.",)              # sprites coverage anti-aliased (post.downsample aa): their painted seams
 
 
@@ -63,6 +65,12 @@ def render_sprite(sid, kind, objs):
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
     rgb, a = core.render(W, H, "color")
     c, op = post.downsample(rgb, a > 0.5, SS, 8, True, sid.startswith(AA))
+    if core.SHADOWS.get("on"):                          # (a px in shadow: most of its samples)
+        sh = op & (post.blocks(core.render_shadow(W, H), SS).mean(-1) >= SHADOW[0])
+        if core.SHADOWS.get("band"):                    # (kept as a band along what casts it, toward the sun)
+            x, y = core.screen_xy(Vector(core.SHADOWS.get("L", core.SHADOW_L)))
+            sh = post.band(sh, op, (x / math.hypot(x, y), -y / math.hypot(x, y)), core.SHADOWS["band"])
+        c = post.shade(c, sh, SHADOW[1], core.SHADOWS.get("ramp", ()), core.SHADOWS.get("steps", 1))
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
@@ -153,7 +161,8 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
         post.select(pal)
         objs = fn()
         if family:
-            key = sprite_cache.digest(glob, sid, fp, kind, pal, gd.scene_digest(), gd.objects_digest(objs))
+            key = sprite_cache.digest(glob, sid, fp, kind, pal, gd.scene_digest(), gd.objects_digest(objs),
+                                      repr(core.SHADOWS))
             path, got = cached(sid, key)
             if got is not None:
                 items += got

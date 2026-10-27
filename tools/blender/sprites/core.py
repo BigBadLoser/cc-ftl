@@ -68,7 +68,11 @@ def _material(kind, alpha=None, rim=0.0):
         n = nt.nodes.new("ShaderNodeVertexColor")
         n.layer_name = name
         return n.outputs["Color"]
-    if kind == "color":
+    if kind == "shade":                                 # (plain white diffuse: render_shadow)
+        d = nt.nodes.new("ShaderNodeBsdfDiffuse")
+        d.inputs["Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+        nt.links.new(d.outputs[0], out.inputs["Surface"])
+    elif kind == "color":
         d = nt.nodes.new("ShaderNodeBsdfDiffuse")
         nt.links.new(attr("Col"), d.inputs["Color"])
         e = nt.nodes.new("ShaderNodeEmission")
@@ -167,7 +171,15 @@ def set_attr(me, name, per_face_rgb):
     me.color_attributes[name].data.foreach_set("color", arr.ravel())
 
 
+SHADOWS = {}            # the builder's request for the sprite being built: {"on": True} shades what the sun's
+                        # shadows fall on (render_shadow, post.shade), "L": that sun's direction (towards it,
+                        # Blender space; else SHADOW_L), "ramp" and "steps": the tones it steps down (post.shade),
+                        # "band": px kept along what casts it (post.band; else all of it); cleared with the scene
+SHADOW_L = Vector((0.25, -0.5, 0.8)).normalized()   # the key light's
+
+
 def clear_scene_meshes():
+    SHADOWS.clear()
     for ob in [o for o in bpy.data.objects if o.type in ("MESH", "ARMATURE", "EMPTY")]:
         bpy.data.objects.remove(ob, do_unlink=True)
     for me in list(bpy.data.meshes):
@@ -276,7 +288,7 @@ class Mesh:
 def _set_pass(which):
     sun = _state["sun"]
     sun.hide_render = which == "glow"
-    kind = "color" if which == "color" else "glow"
+    kind = which if which in ("color", "shade") else "glow"
     for ob in bpy.data.objects:
         if ob.type == "MESH" and ob.data.materials:
             a = ob.get("alpha")
@@ -286,6 +298,31 @@ def _set_pass(which):
             ob.data.materials[0] = _mats[key]
     bg = _state["world"].node_tree.nodes["Background"]
     bg.inputs["Strength"].default_value = 1.0 if which == "color" else 0.0
+
+
+def render_shadow(W, H):
+    """How much of the sun the shadows take off each sample (H*SS, W*SS), 0..1: the scene rendered (as render) in
+    plain white diffuse lit by a hard-edged sun from SHADOWS["L"] (or SHADOW_L), with its shadows and without (faces
+    turned from it: 0); objects flagged "noshadow" cast none."""
+    sun = _state["sun"]
+    ld, rot = sun.data, sun.rotation_euler.copy()
+    L = Vector(SHADOWS.get("L", SHADOW_L)).normalized()
+    sun.rotation_euler = Vector((0, 0, -1)).rotation_difference(-L).to_euler()
+    angle, ld.angle = ld.angle, 0.0
+    quiet = [ob for ob in bpy.data.objects if ob.get("noshadow")]     # (parts casting no shadow)
+    for ob in quiet:
+        ob.visible_shadow = False
+    try:
+        ld.use_shadow = True
+        a, _ = render(W, H, "shade")
+        ld.use_shadow = False
+        b, _ = render(W, H, "shade")
+    finally:
+        ld.use_shadow, ld.angle, sun.rotation_euler = False, angle, rot
+        for ob in quiet:
+            ob.visible_shadow = True
+    a, b = a.mean(-1), b.mean(-1)
+    return np.where(b > 1.0, np.clip(1.0 - a / np.maximum(b, 1e-6), 0.0, 1.0), 0.0)
 
 
 def _glows():

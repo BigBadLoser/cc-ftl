@@ -56,6 +56,8 @@ class Relief:
         self.m = core.Mesh(name, flat=True)
         self.top = top                        # polygons flat at this height are a cut: the cut colour
         self.side = None                      # the axis of the face being dressed (see tone)
+        self.no_shadow = False                # (set: polygons go to self.ns, a mesh casting no shadow in the
+        self.ns = None                        # shadow pass, core.render_shadow)
 
     def poly(self, pts, fam, lvl, out, fixed=None):
         n = (pts[1] - pts[0]).cross(pts[2] - pts[0])
@@ -67,7 +69,18 @@ class Relief:
         flat = all(abs(p.z - pts[0].z) < 1e-6 for p in pts)
         col = CUT if self.top is not None and flat and abs(pts[0].z - self.top) < 1e-6 else tone(fam, lvl, n, self.side)
         col = fixed or col                    # a fixed palette name (a torn section's skins and core)
-        self.m.poly([core.G(*p) for p in pts], col, flip=n.dot((pts[1] - pts[0]).cross(pts[2] - pts[0])) < 0)
+        if self.no_shadow and self.ns is None:
+            self.ns = core.Mesh(self.m.name + "_ns", flat=True)
+        m = self.ns if self.no_shadow else self.m
+        m.poly([core.G(*p) for p in pts], col, flip=n.dot((pts[1] - pts[0]).cross(pts[2] - pts[0])) < 0)
+
+    def build(self):
+        """Its objects: the mesh, and the one casting no shadow if any (flagged "noshadow")."""
+        obs = [self.m.build()]
+        if self.ns is not None:
+            obs.append(self.ns.build())
+            obs[-1]["noshadow"] = True
+        return obs
 
 
 def P(ax, plane, u, z, d):
@@ -538,7 +551,7 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
             (dress or st.get("hull", hull_face))(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
         else:
             st.get("wall", wall_face)(k, ax, plane, a, b, ends, sp.zs, top, full)
-    return [k.m.build()]
+    return k.build()
 
 
 def end_face(fam, side, level="up", corners=0):
