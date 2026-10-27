@@ -25,8 +25,12 @@ describe('the population over many seeds', () => {
     let ships = 0;
     let classed = 0;
     const cost = galaxy.fleet.sizeCost;
-    for (const seed of [31, 32, 33, 34]) {
+    // The first four seeds from 31 whose near map holds pirate space at all (a den): the pirate factions share the Scrappers' space, so a fixed list of seeds may hold none.
+    let withDens = 0;
+    for (let seed = 31; withDens < 4 && seed < 120; seed++) {
       const sim = world(seed, 2);
+      if (!sim.galaxy.fleets.some((f) => f.role === 'pirate')) continue;
+      withDens++;
       for (const f of sim.galaxy.fleets) {
         const port = portOf(sim, f.home)!;
         kinds.add(port.kind);
