@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, JobC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
+  AirlockC, CrewC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
 } from '../sim';
 import { content } from './index';
 import { rect, run, yardGame } from './yardFixture';
@@ -34,6 +34,9 @@ describe('the yard crew', () => {
     for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(Struct.Wall);
     expect(builtCount(sim, order)).toEqual({ floor: 3, walls: order.walls.length });
     expect(totalTiles(order)).toBe(3 + order.walls.length);
+    // Nobody (the ship's own crew, who also build, included) is walled in.
+    const keys = new Set(order.floor.map((t) => `${t.x},${t.y}`));
+    expect(sim.world.query(CrewC, PositionC).filter((c) => keys.has(`${sim.world.get(c, PositionC)!.x},${sim.world.get(c, PositionC)!.y}`))).toEqual([]);
     // The new walls are hull tiles the engines have to carry, and the ship owns the new tiles.
     expect(hullLoad(sim, me).tiles).toBe(hull + order.walls.length);
     expect(sim.sector.grid.get('ship', order.floor[0]!.x, order.floor[0]!.y)).toBe(me);

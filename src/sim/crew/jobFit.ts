@@ -1,3 +1,4 @@
+import { YardCrewC } from '../yard/types';
 import { isErrand, findSuitSource } from '../eva/errands';
 import { planSiteWalk } from '../eva/route';
 import { needsMaterials } from '../items/materials';
@@ -11,6 +12,7 @@ import { isIncapacitated, jobGoal, origin } from './helpers';
 
 /** The checks every job pick makes before scoring: the crew member's ship, not their own target, funded, not an errand, and not barred to them. */
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
+  if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
   return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job);
 }
 

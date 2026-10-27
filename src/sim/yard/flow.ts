@@ -1,6 +1,6 @@
 import { shipById } from '../combat/ships';
 import { BUILD_TICKS, createJob } from '../crew/handlers';
-import { DraftedC, PositionC } from '../crew/components';
+import { CrewC, DraftedC, PositionC } from '../crew/components';
 import { isSettled } from '../crew/helpers';
 import { Struct } from '../structure';
 import { sendToEmbark } from '../vehicles/embark';
@@ -130,25 +130,34 @@ function step(sim: Sim, o: YardOrder): void {
       topUpAir(sim, o);
       if (!o.crew.some((id) => alive(sim, id))) return endNow(sim, o, 'crew lost');
       if (sim.sector.inCombat) return finishOrder(sim, o, 'combat');
-      // Everyone walks out to the open tile beyond a gap and waits there, so the closing wall is built from outside.
-      const waiting = o.crew.filter((id) => {
+      // Everyone walks out to the open tile beyond a gap and waits there, so the closing wall is built from outside: the yard's crew, and any of the
+      // ship's own crew who are in the new rooms (they are taken off their work for it and given it back after).
+      const floor = new Set(o.floor.map((t) => `${t.x},${t.y}`));
+      const outsiders = sim.world.query(CrewC, PositionC).filter((id) => {
+        const at = sim.world.get(id, PositionC) as { x: number; y: number };
+        return !o.crew.includes(id) && alive(sim, id) && floor.has(`${at.x},${at.y}`);
+      });
+      const waiting = [...o.crew.filter((id) => {
         const at = sim.world.get(id, PositionC);
         return alive(sim, id) && !!at && !(isSettled(at) && o.gaps.some((g) => g.stage.x === at.x && g.stage.y === at.y));
-      });
+      }), ...outsiders];
       if (waiting.length > 0) {
         if (o.timer > SEAL_SEC * TICK_HZ) return finishOrder(sim, o, 'stalled');
         if (o.timer % REPEAT === 1) {
           for (const id of waiting) {
             const at = sim.world.get(id, PositionC) as { x: number; y: number };
             const gap = nearestGap(o, at);
-            if (!sim.world.has(id, DraftedC)) sim.enqueue({ type: 'crew.draft', id, drafted: true });
-            else if (gap) sim.enqueue({ type: 'crew.moveTo', id, x: gap.stage.x, y: gap.stage.y, ship: o.ship });
+            if (!sim.world.has(id, DraftedC)) {
+              if (!o.crew.includes(id)) o.ejected.push(id);
+              sim.enqueue({ type: 'crew.draft', id, drafted: true });
+            } else if (gap) sim.enqueue({ type: 'crew.moveTo', id, x: gap.stage.x, y: gap.stage.y, ship: o.ship });
           }
         }
         return;
       }
-      for (const g of o.gaps) createJob(sim, 'build', o.ship, g.wall.x, g.wall.y, Struct.Wall, BUILD_TICKS[Struct.Wall] as number, true, { yard: o.id });
-      for (const id of o.crew) if (sim.world.has(id, DraftedC)) sim.enqueue({ type: 'crew.draft', id, drafted: false });
+      for (const g of o.gaps) createJob(sim, 'build', o.ship, g.wall.x, g.wall.y, Struct.Wall, BUILD_TICKS[Struct.Wall] as number, true, { yard: o.id, yardOnly: true });
+      for (const id of [...o.crew, ...o.ejected]) if (sim.world.has(id, DraftedC)) sim.enqueue({ type: 'crew.draft', id, drafted: false });
+      o.ejected = [];
       o.sealed = true;
       o.phase = 'work';
       o.timer = 0;

@@ -755,6 +755,9 @@ export interface UiYardOrder {
   price: { credits: number; metal: number };
   /** Why it ended early, in words, or ''. */
   reason: string;
+  /** The floor and wall tiles still to build (empty once the order has ended), for the overlay. */
+  floor: { x: number; y: number }[];
+  walls: { x: number; y: number }[];
 }
 
 /** The shipyard planning view: what is painted for which station, its plan, and the order that is under way. */

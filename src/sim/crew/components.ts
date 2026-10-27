@@ -140,6 +140,8 @@ export interface Job {
   errandFor?: number;
   /** For a shipyard order's build jobs: the order (`YardOrder.id`) that paid for them (yard/). */
   yard?: number;
+  /** The yard's closing wall: only the yard's own crew take it (anyone else might wall themselves in). */
+  yardOnly?: true;
 }
 export const JobC = defineComponent<Job>('job');
 

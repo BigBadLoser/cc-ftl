@@ -40,7 +40,11 @@ export function createYardTool(bridge: Bridge, deps: { tool: Writable<UiToolStat
   function draw(): void {
     const r = deps.renderer();
     if (!r) return;
-    if (!active()) return r.setAreas([]);
+    if (!active()) {
+      // A running order keeps its unbuilt tiles drawn, so the work can be followed.
+      const o = bridge.yard.get().order;
+      return r.setAreas(o?.live ? [{ tiles: o.floor, tint: CYAN }, { tiles: o.walls, tint: AMBER }] : []);
+    }
     const plan = bridge.yard.get().plan;
     const painted = area.tiles();
     const key = (t: Tile) => `${t.x},${t.y}`;

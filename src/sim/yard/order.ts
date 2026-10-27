@@ -47,7 +47,7 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
     if (!plan.afford.metal || !takeMetal(sim, ship, plan.price.metal)) return reject(sim, cmd.type, 'noMetal');
     sim.trade.credits -= plan.price.credits;
     const order: YardOrder = {
-      id: sim.yard.nextId++, station: cmd.station, ship, floor: plan.floor, walls: plan.walls, gaps: plan.gaps, sealed: plan.gaps.length === 0, held: { ...plan.price }, price: { ...plan.price },
+      id: sim.yard.nextId++, station: cmd.station, ship, floor: plan.floor, walls: plan.walls, gaps: plan.gaps, sealed: plan.gaps.length === 0, ejected: [], held: { ...plan.price }, price: { ...plan.price },
       phase: 'launch', vehicle: 0, crew: [], airlock, timer: 0, stall: 0, built: 0, tick: sim.tick,
     };
     growShip(sim, ship, plan.rect);

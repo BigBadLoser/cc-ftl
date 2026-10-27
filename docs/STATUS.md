@@ -23,6 +23,13 @@ playtest clarity are all on `main`). Treat the sections below as design notes, n
 - **#121 floating windows.**
 - **#124 PixiJS starmap.**
 
+## In progress
+
+- **Progression phase 5 (branch `progression-5`, #125):** engine hull capacity with the overcharge jump, and the shipyard (station
+  contractors build hull in EVA). Stage A and B are in; waiting on screenshot approval. See "Engine capacity and the shipyard" in
+  [ARCHITECTURE.md](ARCHITECTURE.md). Note for review: Mk I capacity is 700 per engine only because generated one-engine liners reach ~625 hull tiles,
+  so the starter ship (164 tiles, 2 engines) has a lot of headroom.
+
 ## Decisions (user)
 
 - Desktop only; no phone layout work.

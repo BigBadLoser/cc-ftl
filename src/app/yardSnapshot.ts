@@ -1,4 +1,4 @@
-import { hullLoad, isLiveOrder, planYard, playerShip, shipArea, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import { Struct, shipGrid, hullLoad, isLiveOrder, planYard, playerShip, shipArea, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
 import type { UiYard, UiYardOrder, UiYardPlan, UiYardService } from '../ui/api';
 import { rejectionMessage } from './messages';
 
@@ -16,6 +16,12 @@ const ENDED: Record<string, string> = {
   'crew lost': 'The yard crew was lost', lost: 'The shuttle was lost', noShuttle: 'The station had no shuttle to send',
 };
 
+/** What one painted tile costs here (the price of ten, over ten, so a fraction of a metal shows). */
+function perTile(sim: Sim, svc: NonNullable<ReturnType<typeof yardService>>): { credits: number; metal: number } {
+  const ten = yardPrice(sim, svc, 10);
+  return { credits: ten.credits / 10, metal: ten.metal / 10 };
+}
+
 /** The yard a station runs, as the station panel shows it, or null when it has none. */
 export function yardOf(sim: Sim, station: number): UiYardService | null {
   const svc = yardService(sim, station);
@@ -23,7 +29,7 @@ export function yardOf(sim: Sim, station: number): UiYardService | null {
   const ship = playerShip(sim);
   if (!svc || !def) return null;
   const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
-  return { size: svc.size, cap: svc.tier.cap, maxTiles: def.maxTiles, price: yardPrice(sim, svc, 1), area: ship ? shipArea(sim, ship) : 0, hull: { tiles: load.tiles, capacity: load.capacity } };
+  return { size: svc.size, cap: svc.tier.cap, maxTiles: def.maxTiles, price: perTile(sim, svc), area: ship ? shipArea(sim, ship) : 0, hull: { tiles: load.tiles, capacity: load.capacity } };
 }
 
 /** The painted hull checked and priced; null when nothing is planned. */
@@ -39,9 +45,12 @@ export function planOf(sim: Sim, station: number, tiles: readonly Tile[]): UiYar
 function orderOf(sim: Sim, o: YardOrder): UiYardOrder {
   const b = builtCount(sim, o);
   const live = isLiveOrder(o);
+  const grid = shipGrid(sim, o.ship);
+  const open = (t: Tile): boolean => !!grid && grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Space;
   return {
     id: o.id, station: o.station, live, phase: o.phase, built: b.floor + b.walls, total: totalTiles(o), price: o.price,
     status: live ? PHASE[o.phase] : o.reason ? ENDED[o.reason] ?? o.reason : 'Done', reason: o.reason ? ENDED[o.reason] ?? o.reason : '',
+    floor: live ? o.floor.filter(open) : [], walls: live ? o.walls.filter(open) : [],
   };
 }
 

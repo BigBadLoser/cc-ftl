@@ -52,6 +52,8 @@ export interface YardOrder {
    */
   gaps: { wall: Tile; stage: Tile }[];
   sealed: boolean;
+  /** The ship's own crew drafted to walk out of the new rooms before they were closed (given back their work after). */
+  ejected: number[];
   /** Escrow still held: all of the price at first; the unbuilt share goes back at the end, the built share to the station. */
   held: YardMoney;
   /** The price of the whole order (for the share maths and the readout). */
