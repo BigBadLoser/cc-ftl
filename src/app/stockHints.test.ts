@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, galaxyIndex, hailVerdict, newGame, nodeOf, type Port, type Sim } from '../sim';
+import { AllegianceC, CrewC, PositionC, ShipC, galaxyIndex, hailVerdict, isHostile, isInvader, newGame, nodeOf, shipIdOf, type Port, type Sim } from '../sim';
 import { placementGapError } from '../sim/regions';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '../content';
@@ -86,6 +86,15 @@ describe('navy depots', () => {
     expect(sim.world.get(partner!.id, ShipC)?.faction).toBe('neutral');
     expect(hailVerdict(sim, partner!.id).answers).toBe(true);
     expect(partner!.info?.hints).toContain('Mk II shield gens');
+    // Its crew are the station's own: not invaders (an invader is off duty, so docked trades that need station crew to haul would stall) and not hostile to us.
+    const crew = sim.world.query(CrewC).filter((c) => { const p = sim.world.get(c, PositionC); return !!p && shipIdOf(sim, p) === partner!.id; });
+    expect(crew.length).toBeGreaterThan(0);
+    const mine = sim.world.query(CrewC).find((c) => sim.world.get(c, AllegianceC)?.faction === 'player')!;
+    for (const c of crew) {
+      expect(sim.world.get(c, AllegianceC)?.faction).toBe('neutral');
+      expect(isInvader(sim, c)).toBe(false);
+      expect(isHostile(sim, c, mine)).toBe(false);
+    }
   });
 
   it('stay hostile once the navy is hostile to you', () => {

@@ -1,4 +1,3 @@
-import { ShipC } from '../combat/components';
 import { generateAsteroid } from '../asteroids/gen';
 import { placedParts, stampAsteroid } from '../asteroids/place';
 import { spawnDerelict } from '../combat/derelict';
@@ -48,15 +47,11 @@ export function growSector(sim: Sim, x: number, y: number, w: number, h: number)
 
 /** A station for a structure, bound to its port's market. Returns the ship id, or null. */
 export function populateStation(sim: Sim, port: Port | undefined, kind: string, size: StationSize, seed: number, at: Place): number | null {
-  const r = spawnStation(sim, kind, size, seed, at);
-  if (typeof r === 'string') return null;
   // A navy depot is hostile only to someone the navy is hostile to: at a standing that is not hostile it is a station you can dock at and trade with
-  // (it sells the defence blueprints). Pirate dens and the other hostile kinds stay hostile (dormant until provoked).
-  const ship = sim.world.get(r, ShipC);
-  if (ship && port?.kind === 'depot' && ship.faction === 'hostile' && !isHostileFaction(sim, port.owner)) {
-    ship.faction = 'neutral';
-    delete ship.dormant;
-  }
+  // (it sells the defence blueprints), crew and all. Pirate dens and the other hostile kinds stay hostile (dormant until provoked).
+  const calm = port?.kind === 'depot' && !isHostileFaction(sim, port.owner);
+  const r = spawnStation(sim, kind, size, seed, at, undefined, calm ? 'neutral' : undefined);
+  if (typeof r === 'string') return null;
   if (port) bindStation(sim, r, port);
   return r;
 }

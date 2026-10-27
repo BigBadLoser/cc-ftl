@@ -1,4 +1,4 @@
-import { ShipC } from '../combat/components';
+import { ShipC, type Faction } from '../combat/components';
 import { shipById, spawnShip } from '../combat/ships';
 import { placeAt, placementGapError, regions, shipIdOf, type Place } from '../regions';
 import { generateStation } from '../shipgen/stationGen';
@@ -22,9 +22,9 @@ const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
  * crew (NPC crew and security, of the kind's side) and a trader (wallet and stock from its trader kind). With no position it
  * goes east of everything already in the node, vertically centred; the node grows to fit a hub (nodes are sparse grids, the
  * size only bounds placement and the camera). Hostile kinds (pirate dens) start dormant: no combat until provoked.
- * Returns the ship id, or a reason it could not be placed.
+ * `side` overrides the kind's side (default: the kind's). Returns the ship id, or a reason it could not be placed.
  */
-export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: Place, name?: string): number | string {
+export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: Place, name?: string, side?: Faction): number | string {
   const def = sim.content.stations?.[kind];
   if (!def) return 'badKind';
   const gen = generateStation(def, kind, size, seed >>> 0, sim.content.modules);
@@ -42,10 +42,12 @@ export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: nu
   sim.sector.width = Math.max(sim.sector.width, x + gen.width + 8);
   sim.sector.height = Math.max(sim.sector.height, y + gen.height + 8);
   const template = name ? { ...gen.template, name } : gen.template;
-  const id = spawnShip(sim, template, { faction: def.side, x, y, rest: 100 });
+  // `side` overrides the kind's side before the crew spawn (the crew take the ship's allegiance): a navy depot of a friendly owner is neutral.
+  const sideOf = side ?? def.side;
+  const id = spawnShip(sim, template, { faction: sideOf, x, y, rest: 100 });
   const ship = shipById(sim, id);
   if (!ship) return 'noShip';
-  if (def.side === 'hostile') ship.dormant = ship.integrity;
+  if (sideOf === 'hostile') ship.dormant = ship.integrity;
   outfitStation(sim, id, kind, size, seed, gen, x, y);
   return id;
 }
