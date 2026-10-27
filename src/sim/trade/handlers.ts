@@ -1,3 +1,4 @@
+import { dockScan, scanPending } from '../blackmarket/scan';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
 import { planCourier } from './courier';
@@ -26,8 +27,11 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     sim.trade.hails.push({ ship: cmd.ship, answered: v.answers, reason: v.reason, tick: sim.tick });
     if (!v.answers) sim.trade.offers = sim.trade.offers.filter((o) => o.ship !== cmd.ship);
     sim.events.emit(v.answers ? { type: 'trade.hailAnswered', ship: cmd.ship, name: trader.name } : { type: 'trade.hailRefused', ship: cmd.ship, name: trader.name, reason: v.reason });
+    // A navy or corporation station scans a visitor as they open trade with it.
+    if (v.answers && trader.station) dockScan(sim, trader.owner, trader.name);
   },
   'trade.offer': (sim, cmd) => {
+    if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
     const c = checkOffer(sim, cmd.ship, cmd.give, cmd.get, cmd.barter === true);
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
     if (liveDealWith(sim, cmd.ship)) return reject(sim, cmd.type, 'dealOpen');
@@ -37,6 +41,7 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     sim.events.emit({ type: 'trade.offered', offer: offer.id, ship: cmd.ship, balance: offer.balance });
   },
   'trade.accept': (sim, cmd) => {
+    if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
     const offer = sim.trade.offers.find((o) => o.id === cmd.offer);
     if (!offer) return reject(sim, cmd.type, 'noOffer');
     if (liveDealWith(sim, offer.ship)) return reject(sim, cmd.type, 'dealOpen');

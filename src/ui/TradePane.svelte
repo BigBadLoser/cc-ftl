@@ -46,6 +46,7 @@
   const refusal: Record<string, string> = {
     hostile: 'They have no interest in talking to you.', weaponsHot: 'Their guns are on you: they will not talk.',
     silent: 'No answer. Nobody is aboard to hear.', noTrade: 'They have nothing to trade.',
+    rule: 'They do not deal with outsiders. Earn their standing first.',
   };
   const courierNote = $derived(
     !route ? '' : route.error ? (REASONS[route.error] ?? route.error)
@@ -122,6 +123,13 @@
   <button data-testid="trade-rehail" onclick={() => api.dispatch({ type: 'trade.hail', ship: id })}>Hail again</button>
 {:else}
   <p class="greet" data-testid="trade-answered">"{p.name} here, go ahead." <small>Their purse: ₵ {p.wallet}{p.rep ? ` · standing ${p.rep > 0 ? '+' : ''}${p.rep}` : ''}</small></p>
+  {#if p.market}
+    <div class="market" class:bad={p.market.banned} data-testid="black-market">
+      <b>{p.market.names.join(' · ')}</b>
+      <span data-testid="market-contraband">Contraband bought at {Math.round(p.market.contrabandRate * 100)}% of its value.{p.market.fence !== null ? ` The fence takes anything at ${Math.round(p.market.fence * 100)}%, no questions.` : ''}</span>
+      {#if p.market.truce}<span data-testid="market-truce">{p.market.banned ? 'Truce broken: everyone here fires on you until the ban ends.' : 'Truce: nobody starts a fight here. Firing on or boarding anyone breaks it.'}</span>{/if}
+    </div>
+  {/if}
   {#if refuel}
     <div class="refuel" data-testid="refuel">
       <button class="go" data-testid="refuel-go" disabled={refuel.n <= 0 || refuel.cost > trade.credits || !!deal || !!p.offer || !!p.in.error}
@@ -141,7 +149,7 @@
       {#each lines.filter((l) => l.mine > 0) as l (l.item)}
         <div class="row" class:set={(give[l.item] ?? 0) > 0}>
           <ItemIcon {api} item={l.item} size={26} />
-          <span class="nm">{l.name}<small>{l.mine} held</small></span>
+          <span class="nm">{l.name}<small>{l.mine} held{l.contraband ? ' · contraband' : ''}</small></span>
           <span class="pr">₵{l.buy}</span>
           <span class="step">
             <button aria-label="Fewer {l.name}" disabled={!!p.offer || (give[l.item] ?? 0) === 0} onclick={() => bump('give', l, -1)}>−</button>
@@ -158,7 +166,7 @@
       {#each lines.filter((l) => l.theirs > 0) as l (l.item)}
         <div class="row" class:set={(get[l.item] ?? 0) > 0}>
           <ItemIcon {api} item={l.item} size={26} />
-          <span class="nm">{l.name}<small>{l.theirs} in stock{l.surplus ? ' · surplus' : ''}</small></span>
+          <span class="nm">{l.name}<small>{l.theirs} in stock{l.surplus ? ' · surplus' : ''}{l.contraband ? ' · contraband' : ''}</small></span>
           <span class="pr">₵{l.sell}</span>
           <span class="step">
             <button aria-label="Fewer {l.name}" disabled={!!p.offer || (get[l.item] ?? 0) === 0} onclick={() => bump('get', l, -1)}>−</button>
@@ -216,6 +224,11 @@
   .greet small { color: var(--dim); font-style: normal; margin-left: 6px; }
   .msg { color: var(--dim); margin: 8px 0; }
   .msg.refused { color: #ff9a9a; }
+  .market { display: grid; gap: 2px; margin-bottom: 8px; padding: 6px 8px; background: var(--bg); border: 1px solid var(--amber); font-size: 12px; }
+  .market b { color: var(--amber); font-size: 13px; }
+  .market span { color: var(--dim); }
+  .market.bad { border-color: var(--red); }
+  .market.bad span:last-child { color: #ff9a9a; }
   .refuel { display: grid; gap: 2px; margin-bottom: 8px; }
   .refuel .go { background: #0e4a56; border-color: var(--cyan); min-height: 36px; }
   .refuel small { color: var(--dim); font-size: 11px; }

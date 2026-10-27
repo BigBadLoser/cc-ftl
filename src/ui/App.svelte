@@ -30,6 +30,7 @@
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
+  import InterdictModal from './InterdictModal.svelte';
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
@@ -67,6 +68,8 @@
     else if (star?.state === 'hyperspace') mapOpen = true; // in hyperspace the map is the view
   });
   const mapLocked = $derived(star?.state === 'hyperspace');
+  /** A scan that found contraband aboard waits for the player's answer: shown over the game when the map is not open. */
+  const scanning = $derived(star?.encounters.find((e) => !!e.contraband) ?? null);
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
@@ -267,6 +270,7 @@
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
 {#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
+{#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
+import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, isContraband, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
 import { content } from './index';
 import { shipIdOf } from '../sim/regions';
 import { shipIds } from '../sim/regions';
@@ -76,7 +76,12 @@ describe('pricing', () => {
           sim.story.reputation[content.trade.factions[faction as keyof typeof content.trade.factions].reputation] = rep;
           for (const [item] of traded) {
             const sell = unitPrice(sim, station, item, 'sell')!;
-            const buy = unitPrice(sim, station, item, 'buy')!;
+            const buy = unitPrice(sim, station, item, 'buy');
+            // Only a black market buys contraband; a plain trader does not buy it at all.
+            if (buy === null) {
+              expect(isContraband(sim, item), `${profile} ${faction} ${item}`).toBe(true);
+              continue;
+            }
             expect(buy, `${profile} ${faction} rep ${rep} ${item}`).toBeLessThanOrEqual(sell);
             expect(buy).toBeGreaterThanOrEqual(1);
           }

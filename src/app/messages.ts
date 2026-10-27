@@ -63,6 +63,8 @@ const REASONS: Record<string, string> = {
   noPrice: 'They will not trade in that',
   theyLack: 'They do not have that much',
   noItems: 'You do not have that much in storage',
+  contraband: 'They will not touch contraband: only a black market takes it',
+  scanPending: 'A scan is waiting for your answer',
   unbalanced: 'A barter has to be even: add more from your side',
   noFunds: 'Not enough credits',
   theyBroke: 'They cannot afford to pay that',

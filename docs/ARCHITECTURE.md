@@ -1843,3 +1843,25 @@ Suits are the contractors' own and never run dry. The unbuilt share of the price
 (`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
 (`abortYards`). Save v61. UI: the station panel's
 Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.
+
+## Black markets, contraband, scans and the truce (progression phase 2b slice 2), `src/sim/blackmarket/`
+
+Design: DESIGN.md "Pirate factions and the black market". Content: `content/blackMarkets.ts` (`ContentRegistry.blackMarkets`, `BlackMarketDef`).
+
+- **Service sets.** A set (`bm.lesser`, and the named `bm.cartel`, `bm.zealot`, `bm.mercenary`) is attached to any station with `attachServices(sim, station, setId)`
+  (`attach.ts`): it records the set on `Trader.services`, rolls the fence rate (`Trader.fence`), adds the set's stock lines to the shelf, takes the owner faction if the
+  galaxy has one by that string id, and sets the node's truce flag when the set has a truce. The lesser set is attached at populate time to pirate-held stations and to
+  unowned stations in lawless space (`attachLesser`, `galaxy/populateSpawn.ts`). The named sets are not spawned by the galaxy yet. The station keeps its own trade profile and
+  port market; `galaxy/marketLive.ts` leaves the service shelves alone when it binds, steps and unbinds a market.
+- **Contraband** is the `contraband` item tag (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`). Sources: a delivery crate broken open or abandoned spills stolen
+  goods instead of the delivery (`galaxy/jobs.ts`); a captured ship's hold gets looted goods (`capture/prize.ts`, LOOT_*); the disruptor is sold only at black markets.
+  A legitimate trader does not buy contraband (`unitPrice` is null, `checkOffer` says `contraband`); a black market pays `contrabandBuy` of the base value; the fence (cartel
+  only) pays its 50-60% for anything.
+- **Scans** (`scan.ts`). A navy or corporation station scans the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node), and a patrol that crosses
+  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (value, fine, bribe) and waits for
+  `galaxy.respond` with `surrender` (goods taken, fine paid, standing down) or `bribe`; trade offers are refused meanwhile (`scanPending`). The UI reuses `InterdictModal`.
+- **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
+  there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
+  every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.
+- **Shady crew** (`galaxy/recruit.ts`, `shadyRecruits`). Sets with `shadyCrew` post extra candidates (`ForHire.shady`) with extra skill levels (`SkillXpC`) for a higher
+  one-time fee. No wages exist for anyone.

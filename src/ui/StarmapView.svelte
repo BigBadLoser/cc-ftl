@@ -134,7 +134,7 @@
   const unread = $derived(newsOpen ? 0 : (map?.news.filter((n) => n.id > newsSeen).length ?? 0));
   $effect(() => { if (newsOpen) newsSeen = newestNews; });
   const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
-  const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict') ?? null);
+  const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict' || !!e.contraband) ?? null);
   const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 

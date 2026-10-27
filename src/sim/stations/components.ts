@@ -47,5 +47,7 @@ export interface ForHire {
   key: string;
   cost: number;
   station: number;
+  /** A black market's shady crew: the extra skill levels they carry (galaxy/recruit.ts). */
+  shady?: number;
 }
 export const ForHireC = defineComponent<ForHire>('forHire');

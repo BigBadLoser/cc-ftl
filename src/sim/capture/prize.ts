@@ -1,5 +1,10 @@
 import { CaptureProgressC, CombatC, PrizeC, ShipC, WeaponC, type Faction, type Ship } from '../combat/components';
 import { hullSum } from '../combat/hull';
+import { LOOT_GOODS } from '../blackmarket/services';
+import { LOOT_MAX, LOOT_MIN, LOOT_PER_VALUE } from '../blackmarket/tuning';
+import { StorageC } from '../items/components';
+import { spillItems } from '../items/stacks';
+import { storageAdd } from '../items/storage';
 
 import { wreckShip } from '../combat/wreck';
 import { CrewC, DeadC, DownedC, DraftedC, PathC, PositionC, type Crew } from '../crew/components';
@@ -42,6 +47,22 @@ function imprison(sim: Sim, crew: number, ship: number): void {
   sim.events.emit({ type: 'crew.imprisoned', crew, ship });
 }
 
+/**
+ * Loot taken from a captured ship is contraband: the prize's hold gets looted goods worth a share of its hull value (LOOT_PER_VALUE of hull value a
+ * unit, LOOT_MIN to LOOT_MAX), put in its first storage module with room, for the crew to strip. Nothing is added to a ship with no storage.
+ */
+function stockLoot(sim: Sim, entity: number, hullValue: number): void {
+  if (!sim.content.items[LOOT_GOODS]) return;
+  let left = Math.min(LOOT_MAX, Math.max(LOOT_MIN, Math.round(hullValue / LOOT_PER_VALUE)));
+  for (const id of [...sim.world.query(StorageC, ModuleC)].sort((a, b) => a - b)) {
+    if (left <= 0) break;
+    if (shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) left -= storageAdd(sim, id, LOOT_GOODS, left);
+  }
+  // No hold with room: the loot lies on the deck beside a module.
+  const at = left > 0 ? [...sim.world.query(ModuleC)].sort((a, b) => a - b).map((id) => sim.world.get(id, ModuleC)).find((m) => m && shipIdOf(sim, m) === entity) : undefined;
+  if (at) spillItems(sim, entity, at.x, at.y, LOOT_GOODS, left);
+}
+
 /** Flip a ship to the player as an inactive prize: weapons dead, AI off, its subdued crew become prisoners. */
 export function capturePrize(sim: Sim, entity: number): void {
   const ship = sim.world.get(entity, ShipC) as Ship;
@@ -49,7 +70,9 @@ export function capturePrize(sim: Sim, entity: number): void {
   ship.faction = 'player';
   ship.state = 'prize';
   sim.world.remove(entity, CaptureProgressC);
-  sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from, hullValue: prizeValue(sim, entity) });
+  const hullValue = prizeValue(sim, entity);
+  sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from, hullValue });
+  stockLoot(sim, entity, hullValue);
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
     if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });

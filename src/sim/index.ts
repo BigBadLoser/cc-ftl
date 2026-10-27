@@ -77,6 +77,11 @@ export { unitPrice, linesValue, quote, reputationWith, type Quote, type PriceSid
 export { hailVerdict, ensureTrader, isSurplus, profileFor, rollTrader, tradeFactionOf, type HailVerdict } from './trade/traders';
 export { spawnStation, outfitStation } from './stations/spawn';
 export { ForHireC } from './stations/components';
+export type { BlackMarketDef } from './blackmarket/defs';
+export { attachServices } from './blackmarket/attach';
+export { isContraband, contrabandItems, setsOf, serviceItems, contrabandRate, CONTRABAND_TAG } from './blackmarket/services';
+export { truceHolds, banned as truceBanned, setTruce, breachTruce, pirateKeys } from './blackmarket/truce';
+export { contrabandAboard, contrabandValue, scanPending, scanPrices, enforces } from './blackmarket/scan';
 export { checkOffer, cleanLines, unitsOf, type OfferCheck } from './trade/offers';
 export { planCourier, courierDef, type CourierPlan } from './trade/courier';
 export { playerShip, playerItems } from './trade/player';
