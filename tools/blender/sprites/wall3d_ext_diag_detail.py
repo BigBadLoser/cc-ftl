@@ -19,7 +19,7 @@ from . import hull_outline as HO
 Z64 = 32 * math.sqrt(2) * math.cos(math.radians(30))     # px a unit of height at the art's tile (64 px across)
 UP = Vector((0, 0, 1))
 CORE, DARK, LIT = YS[3], YS[1], YS[4]                    # a seam's core on the lean; on the upright part; a lit px
-WALL, FLOOR, SHADOW = "hsXM", "hsXS", "hsD"              # a recess's (T3-3's)
+WALL, FLOOR = "hsXM", "hsXS"                             # a recess's (T3-3's)
 
 BD1_SEAMS = (20, 26, 32)            # px up the lean: seams right across (the lowest the panel's top)
 LEVEL_SEAM = ("hsSeamSoft", CORE, "hsSeamMid", "hsSeamHi")    # a level seam on the lean, px rows down (as the run's
@@ -27,11 +27,20 @@ LEVEL_SEAM = ("hsSeamSoft", CORE, "hsSeamMid", "hsSeamHi")    # a level seam on 
 FAINT_SEAM = (YS[4], "hsSeamSoft")  # the top one: the run's faint seam under its top panel (no dark core, no lit px)
 BD1_PANEL = (-17, 15)               # px across: seams down the panel's sides, from the bend to its top
 BD1_VENTS = ((-12, 5), (11, 6))     # two square vents sunk in the panel: their left edges; px up the lean, px square
-BD1_SLOTS = (-15, 6, 5, 2, 18, 3)   # five slots: the first's left edge, pitch, width; their lip px up the lean, px
-                                    # down the upright, their shadow px down from their top
+BD1_SLOTS = (-15, 6, 5, 18)         # five slots cut down into the upper panel's top: the first's left edge, pitch,
+                                    # width; px down from the bend (shaded as T3-3's recess: a step under the hull's
+                                    # face, its left wall seen; no shadow at their top, the lean slopes away there)
 BD1_CLAMPS = ((-9, -3), (4, 10), 4)     # px across; px up and down from the seam (2 px proud: wall3d_ext_t3's)
-BD1_PLATE = ((-10, 9), 2)           # px across; up to this many px under the seam, from the foot (a px proud, lit bolts
+BD1_UPPER = ((-18, 17), 2)          # px across; a panel a px proud over the seam (as the run's upper armour), from this
+                                    # many px under the bend to as many over the seam: the slots sunk in it
+BD1_PLATE = ((-16, 15), 2)          # px across (the upper panel 2 px narrower each side, as the run's); up to this many
+                                    # px under the seam, from the foot (a px proud, lit bolts
                                     # 2 px in from its corners)
+BD2 = (32, (4, 5, 18), (3, 2), 4)   # between the steps (hull 46's BottomD2), px from a step's middle: a narrow panel
+                                    # sunk in the lean (px either side; px up the lean: all in the inner step's tile,
+                                    # so only between two steps, not at a diagonal's end), a strip a px proud down the
+                                    # upright (px either side; from px under the bend to the foot), a clamp over the
+                                    # seam on it (px wider each side)
 SIDE_SEAMS = (21, 33)               # the side diagonals (SideD1): seams along the lean at the near one's (px up it)
 
 
@@ -76,44 +85,53 @@ def near(rel, solid, others, s, c, g, H):
         marks += _seam(0, BD1_SEAMS[0], (u, None))
     (a0, a1), (v, n) = BD1_VENTS
     for a in (a0, a1):                                                  # (sunk: its top and left edges dark, its
-        marks += [("lean", a, a + n, v + n - 1, v + n, CORE, 1), ("lean", a, a + 1, v, v + n, CORE, 1),   # bottom
+        marks += [("lean", a, a + n, v + n - 1, v + n, CORE, 1), ("lean", a, a + 1, v, v + n, CORE, 1),   # bottom,
                   ("lean", a + 1, a + n, v, v + 1, HILITE, 1), ("lean", a + n - 1, a + n, v + 1, v + n, HILITE, 1)]
-    x0, pitch, w, lip, down, sh = BD1_SLOTS                             # (and right edges lit)
-    for i in range(5):
-        a = x0 + i * pitch
-        marks += [("lean", a, a + w, 0, lip, CORE, 1), ("up", a, a + w, 0, down, FLOOR, 1),
-                  ("up", a, a + 1, 0, down, WALL, 2), ("up", a + w - 1, a + w, 0, down, DARK, 2),
-                  ("up", a + 1, a + w - 1, 0, sh, SHADOW, 2)]
+    m0, (lw, lv0, lv1), (sw, sv), cw = BD2                              # (between the steps: a narrow panel sunk
+    if step:                                                            # (in the lean, as the vents)
+        marks += [("lean", m0 - lw, m0 + lw, lv1 - 1, lv1, CORE, 1), ("lean", m0 - lw, m0 - lw + 1, lv0, lv1, CORE, 1),
+                  ("lean", m0 - lw + 1, m0 + lw, lv0, lv0 + 1, HILITE, 1),
+                  ("lean", m0 + lw - 1, m0 + lw, lv0 + 1, lv1, HILITE, 1)]
+    marks = [m + (0,) for m in marks]                                   # right lit; + px out: on a raised face)
     gz = (zb - UPRIGHT_SEAM) * Z64                                      # (the run's seam, px down the upright)
-    marks += [("up", -32, 32, gz - 1, gz, DARK, 1), ("up", -32, 32, gz, gz + 1, LIT, 1)]
-    raised = []                                                         # (u0, u1, v0, v1, px proud)
+    marks += [("up", -32, 32, gz - 1, gz, DARK, 1, 0), ("up", -32, 32, gz, gz + 1, LIT, 1, 0)]
+    (ua, ub), ug = BD1_UPPER
     (pa, pb), gap = BD1_PLATE
-    raised.append((pa, pb, gz + gap, zb * Z64, 1))
     *clamps, ch = BD1_CLAMPS
-    raised += [(a, b, gz - ch, gz + ch, 2) for a, b in clamps]
-    for a, b, v0, v1, _ in raised:                                      # (shaded round its unseen faces: a px
-        marks += [("up", a - 1, a, v0, v1, DARK, 2), ("up", a - 1, b, v1, v1 + 2, DARK, 2)]  # beside, 2 under)
+    x0, pitch, w, down = BD1_SLOTS                                      # (the upper panel: its lower part, and bars
+    cuts = [ua] + [x for i in range(5) for x in (x0 + i * pitch, x0 + i * pitch + w)] + [ub]   # between the slots)
+    raised = [(ua, ub, down, gz - ug, 1, "low"), (pa, pb, gz + gap, zb * Z64, 1, "all")]  # (u0, u1, v0, v1, px proud,
+    raised += [(a, b, gz - ch, gz + ch, 2, "") for a, b in clamps]                     # bolts: all, its lower ones)
+    bars = [(a, b, ug, down, 1, "") for a, b in zip(cuts[::2], cuts[1::2])]
+    raised += bars[:1]                                                  # (the first the panel's edge: shaded so)
+    raised += [(m0 - sw, m0 + sw, sv, zb * Z64, 1, ""),                 # (the strip between the steps, a clamp
+               (m0 - sw - 1, m0 + sw + 1, gz - cw, gz + cw, 2, "")]     # over the seam on it)
+    for a, b, v0, v1, out, _ in raised:                                 # (shaded round its unseen faces: a px
+        for base in range(out):                                         # beside, 2 under; a clamp's on the panels
+            marks += [("up", a - 1, a, v0, v1, DARK, 2, base), ("up", a - 1, b, v1, v1 + 2, DARK, 2, base)]  # too)
+    for a in (x0 + i * pitch for i in range(5)):                       # (their floor and left wall; the bars
+        marks += [("up", a, a + w, ug, down, FLOOR, 1, 0), ("up", a, a + 1, ug, down, WALL, 2, 0)]   # unshaded)
+    raised += bars[1:]
     for cu in centres:
         def box(u0, u1, v0, v1, on):
             za, zc = sorted((z(on, v0), z(on, v1)))
             return [(t, cu + u1 / 32), (-t, -(cu + u0 / 32)), (UP, zc), (-UP, -za)]
-        for on, u0, u1, v0, v1, col, layer in marks:
-            n, cc = (s, c) if on == "up" else lean
+        for on, u0, u1, v0, v1, col, layer, out in marks:
+            n, cc = (s, c + out * LINE * s.length) if on == "up" else lean
             _paint(rel, solid, others + box(u0, u1, v0, v1, on), n, cc, col, layer)
-        for a, b, v0, v1, out in raised:
+        for a, b, v0, v1, out, bolts in raised:
             _raised(rel, solid, others + box(a, b, v0, v1, "up"), s, c, out * LINE)
-            if out == 1:                                                # (the plate's bolts)
-                for u in (a + 2, b - 3):
-                    for v in (v0 + 2, v1 - 3):
-                        _paint(rel, solid, others + box(u, u + 1, v, v + 1, "up"), s, c + LINE * s.length, LIT, 1)
+            for u in ((a + 2, b - 3) if bolts else ()):                 # (2 px in from its corners: the upper
+                for v in (v0 + 2, v1 - 3)[bolts == "low":]:              # panel's lower ones, clear of the slots)
+                    _paint(rel, solid, others + box(u, u + 1, v, v + 1, "up"), s, c + LINE * s.length, LIT, 1)
 
 
 def _raised(rel, solid, cuts, n, c, out):
-    """A part `out` proud of the face n . p = c inside the cuts: its front the upright part's tone, lit along its
-    top, its sides shaded."""
+    """A part `out` proud of the face n . p = c inside the cuts: its front the run set's armour tone (a step over
+    the upright part's: wall3d_ext_geom's "plate"), lit along its top, its sides shaded."""
     m0 = n.normalized()
     for pts, m, _ in solid(cuts + [(n, c + out * n.length), (-n, -c + 0.002)]):
-        rel.poly(pts, "steel", 3, m, fixed=YS[2] if (m - m0).length < 1e-6 else LIT if m.z > 0.85 else DARK)
+        rel.poly(pts, "steel", 3, m, fixed=YS[3] if (m - m0).length < 1e-6 else LIT if m.z > 0.85 else DARK)
 
 
 def _paint(rel, solid, cuts, n, c, col, layer):
