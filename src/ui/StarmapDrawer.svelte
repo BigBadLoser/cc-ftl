@@ -88,6 +88,7 @@
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
         {#each node.jobs ?? [] as j, i (i)}<div class="row job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job">{j.label}</div>{/each}
+        {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" title="Notable stock here"><span class="dim">Stock</span>{#each node.hints as h (h)}<span class="chip">{h}</span>{/each}</div>{/if}
         {#if node.market}
           <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce">
             <span class="dim">Market</span>

@@ -43,6 +43,7 @@ function bindTrader(sim: Sim, t: Trader, e: Econ): void {
   const g = sim.galaxy;
   const full = advance(e, g.markets[e.id] ?? { turn: 0, stock: {} }, g.turn);
   t.port = e.id;
+  t.owner = e.trader.owner;
   t.profile = e.profile;
   t.base = baseLines(e);
   t.stock = Object.entries(full).filter(([, v]) => Math.round(v) > 0).map(([item, v]) => ({ item, count: Math.round(v) })).sort((a, b) => (a.item < b.item ? -1 : 1));

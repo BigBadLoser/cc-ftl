@@ -70,10 +70,12 @@ import { newYard, type YardState } from './yard/types';
  * v55 (shield tiers): `module.shieldGenSmall` removed (now `module.shieldGen`, 2x2); Mk II is 2x3, Mk III 3x3.
  * v56 (research): `ResearchC` (a ship's research queue), the `research` work category, the science skill and role.scientist.
  * v57 (tile aim): optional `Target.tile` (a blind aim at one tile of the target ship, on `CombatC.target` and `WeaponC.target`).
- * v58 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
- * v59: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
+ * v58 (per-faction standing): reputation keys `meridian`, `helix`, `vantor` replace the shared `corp`; optional `Trader.owner` and `Ship.gen.owner` (the galaxy faction a trader or fleet ship belongs to).
+ * v59 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
+ * v60: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
+ * v62: the yard and per-faction standing together (the shipyard branch numbered v58 to v61 before standing took v58; this is the merged line).
  */
-export const SAVE_VERSION = 61;
+export const SAVE_VERSION = 62;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

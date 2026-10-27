@@ -92,7 +92,7 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
   if (ship) {
-    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction };
     if (c.name) ship.name = c.name;
     if (c.bounty !== undefined) ship.bounty = c.bounty;
   }

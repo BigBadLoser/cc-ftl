@@ -57,12 +57,15 @@ describe('galaxy content', () => {
     for (const [id, f] of Object.entries(g.factions)) {
       for (const s of f.ships) expect(content.factions[s.value as keyof typeof content.factions], `${id} ${s.value}`).toBeDefined();
       for (const s of 'stations' in f ? f.stations : []) expect(g.structures[s.value as keyof typeof g.structures], s.value).toBeDefined();
-      for (const r of Object.keys('relations' in f ? f.relations : {})) expect(g.factions[r as keyof typeof g.factions], r).toBeDefined();
     }
     for (const s of Object.values(g.structures)) for (const item of s.resources) expect(content.items[item as keyof typeof content.items], item).toBeDefined();
-    // One faction table: every galaxy faction names a reputation key trade also uses.
-    const tradeKeys = new Set(Object.values(content.trade.factions).map((f) => f.reputation));
-    for (const [id, f] of Object.entries(g.factions)) expect(tradeKeys.has(f.reputation), `${id} ${f.reputation}`).toBe(true);
+    // One faction table: every faction has a reputation key of its own, so each standing moves independently.
+    const keys = Object.values(g.factions).map((f) => f.reputation);
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const r of g.relations) {
+      expect(g.factions[r.a as keyof typeof g.factions], r.a).toBeDefined();
+      expect(g.factions[r.b as keyof typeof g.factions], r.b).toBeDefined();
+    }
     expect(Object.values(g.factions).filter((f) => f.kind === 'corporation').length).toBeGreaterThanOrEqual(2);
   });
 

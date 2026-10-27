@@ -120,6 +120,8 @@ export interface UiStarNode {
   reachable: boolean;
   /** The market of its trading port, when sensors reach it and it has one. */
   market?: UiStarMarket | null;
+  /** Notable stock at its ports ("Mk II shield gens"), for known nodes. */
+  hints?: string[];
   /** The player's held jobs that end here (discovered nodes only). */
   jobs?: UiNodeJob[];
 }
@@ -176,6 +178,7 @@ export interface UiStarFaction {
   name: string;
   tone: Tone;
   tier: 'hostile' | 'neutral' | 'friendly';
+  /** The player's standing with this faction alone (each corporation and each pirate faction has its own). */
   standing: number;
 }
 

@@ -13,7 +13,7 @@ export { isDeployed } from './modules/deploy';
 export { isKnown as isBlueprintKnown, blueprintVenue } from './modules/blueprints';
 export { ResearchC, type Research } from './research/components';
 export { labsOf, projectOf, stockOn, queueBlocker, isDone as isResearchDone } from './research/research';
-export { portBlueprints, type BlueprintOffer } from './galaxy/blueprintShop';
+export { portBlueprints, gatedBlueprints, OFF_SPECIALITY_STOCK, type BlueprintOffer } from './galaxy/blueprintShop';
 export { footprintTiles, accessTile, rotatedSize, openTilesOf, hullRow, hullSide, hullOutward, inFootprint } from './modules/footprint';
 export { spawnModule, removeModule, placementError } from './modules/spawn';
 export { isTileWalkable } from './modules/walk';
@@ -105,8 +105,9 @@ export { isHiddenOutpost, discoverOutpost } from './outposts/state';
 export { isDormant, wake, type WakeReason } from './combat/dormant';
 export { DISCOVER_RANGE } from './systems/outposts';
 export * from './galaxy/types';
+export { stanceBetween, spillSources } from './galaxy/relations';
 export type {
-  GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
+  FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
