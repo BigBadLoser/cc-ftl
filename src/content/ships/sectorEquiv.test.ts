@@ -45,6 +45,12 @@ function legacyWorld(sim: Sim): unknown {
     void cruiseEvasion;
     return [id, rest];
   });
+  // `freeSince` on operate jobs came with station relief: not part of the legacy shape.
+  stores.job = (stores.job ?? []).map(([id, raw]) => {
+    const { freeSince, ...rest } = raw as Record<string, unknown>;
+    void freeSince;
+    return [id, rest];
+  });
   // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
   stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
     const rest = { ...(raw as Record<string, unknown>) };
@@ -161,17 +167,19 @@ function run(sim: Sim, n: number, log: string[]): void {
 
 /**
  * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world), the starter had two engineers, the medic had no medicine skill (it speeds up bed healing), and the gunner fetched no gun. Everything else is the live content,
+ * the recorded world), the starter had two engineers, the medic had no medicine skill (it speeds up bed healing), and the gunner fetched no gun, and no role relieved an empty console. Everything else is the live content,
  * so the recorded hashes still pin the refactor.
  */
-const medic: RoleDef = { ...content.roles['role.medic'] };
+const noRelief: Record<string, RoleDef> = Object.fromEntries(Object.entries(content.roles).map(([id, r]) => [id, { ...(r as RoleDef) }]));
+for (const r of Object.values(noRelief)) delete r.relievesStations;
+const medic: RoleDef = noRelief['role.medic'] as RoleDef;
 delete medic.skills;
 // ...and the gunner took no gun from the crate on its own (the combat-onboarding playerLoadout).
-const gunner: RoleDef = { ...content.roles['role.gunner'] };
+const gunner: RoleDef = noRelief['role.gunner'] as RoleDef;
 delete gunner.playerLoadout;
 const legacy: typeof content = {
   ...content,
-  roles: { ...content.roles, 'role.medic': medic, 'role.gunner': gunner } as typeof content.roles,
+  roles: noRelief as typeof content.roles,
   ships: {
     ...content.ships,
     'ship.starter': {

@@ -264,8 +264,8 @@ describe('evasion, point defence, shields', () => {
     const unpiloted = newGame(1, content);
     unpiloted.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     for (const id of unpiloted.world.query(CrewC)) {
-      const c = unpiloted.world.get(id, CrewC)!;
-      if (c.role === 'role.pilot') unpiloted.enqueue({ type: 'crew.setPriority', id, category: 'operating', value: 0 });
+      // nobody may fly it: crew with a low operating priority relieve an empty helm after a while
+      unpiloted.enqueue({ type: 'crew.setPriority', id, category: 'operating', value: 0 });
     }
     run(unpiloted, 400);
     expect(combatOf(unpiloted, 1).evasion).toBe(0);

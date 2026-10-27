@@ -39,6 +39,7 @@ export { BodyC, ALT, isAirborne, type Body } from './body';
 export { hullSum, damageStruct } from './combat/hull';
 export { shieldRechargeSec } from './combat/ships';
 export { operatorOf } from './combat/operators';
+export { weaponsIdleReason } from './combat/idle';
 export { ammoCount } from './combat/ammo';
 export { aimDirection, turretPosition } from './combat/geometry';
 export * from './modules/airlock';
