@@ -127,3 +127,4 @@ SPRITES = [(f"concept.{n}", (1, 1), "prop", fn) for n, fn in (
     ("floor_panel", floor_panel), ("floor_disc", floor_disc), ("floor_strips", floor_strips),
     ("wall_bar", wall_bar), ("wall_cove", wall_cove), ("wall_sconce", wall_sconce),
     ("pillar", pillar), ("wall_box", wall_box), ("floor_grille", floor_grille))]
+SPRITES.append(("concept.wall_box_bare", (1, 1), "prop", lambda: wall_box(context=False)))
