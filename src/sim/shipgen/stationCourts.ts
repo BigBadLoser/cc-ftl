@@ -11,13 +11,18 @@ import type { RoomRole } from './types';
  */
 /** Pockets of at least this many tiles get a band of rooms round their inside edge. */
 const BAND_MIN = 200;
+/** Band rooms are at most this many tiles deep (from the pocket's wall), and at least MIN_SIDE on each side. */
+const BAND_DEPTH = 4;
+const MIN_SIDE = 3;
 
 /**
- * Line the inside edge of a big pocket with rooms. Tiles 0-3 deep (from the pocket's walls) are the band, depth 4 its
- * inner wall, the rest the court. The band is cut by angle round the pocket's middle into rooms of about 24 tiles with a
- * single wall between neighbours; up to four slices that touch a corridor stay open as passages from that corridor into
- * the court. Each room doors onto the corridor it touches, else onto the court. Returns the court's tiles (canvas
- * indices), passages included; the band is stamped here.
+ * Line the inside edge of a big pocket with rooms, by constrained growth (Lopes et al. 2010; docs/LAYOUT_RESEARCH.md).
+ * Walking the pocket's edge, each free edge tile seeds a room that grows as a rectangle, one side at a time, up to
+ * BAND_DEPTH deep and the length of the station's own room of that role; rooms keep a one-tile wall between them. Up to
+ * four straight passages, three tiles wide, run in from the corridors and stay open, so the court left in the middle
+ * opens onto the corridors. Curves get only the rectangles that fit; the rest of the edge stays court. Each room doors
+ * onto the corridor it touches, else onto the court. Returns the court's tiles (canvas indices), passages included;
+ * the band is stamped here.
  */
 function band(b: Builder, pocket: number[], kinds: readonly RoomRole[], halls: Set<number>, key: string): number[] {
   const cv = b.cv;
@@ -26,33 +31,23 @@ function band(b: Builder, pocket: number[], kinds: readonly RoomRole[], halls: S
   const inP = new Set(pocket);
   const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
   const nb = (k: number): number[] => N4.map(([dx, dy]) => k + dy * S + dx);
+  const nb8 = (k: number): number[] => [-S - 1, -S, -S + 1, -1, 1, S - 1, S, S + 1].map((d) => k + d);
+  const xy = (k: number): [number, number] => [(k % S) - off, Math.floor(k / S) - off];
   // Depth from the pocket's edge.
   const depth = new Map<number, number>();
-  const queue = pocket.filter((k) => nb(k).some((j) => !inP.has(j)));
+  const edge = pocket.filter((k) => nb(k).some((j) => !inP.has(j)));
+  const queue = [...edge];
   for (const k of queue) depth.set(k, 0);
   for (let i = 0; i < queue.length; i++) {
     const k = queue[i] as number;
     for (const j of nb(k)) if (inP.has(j) && !depth.has(j)) { depth.set(j, (depth.get(k) as number) + 1); queue.push(j); }
   }
-  const inner = pocket.filter((k) => (depth.get(k) as number) > 4);
-  if (inner.length < 40) return pocket;
-  const xy = (k: number): [number, number] => [(k % S) - off, Math.floor(k / S) - off];
+  if (pocket.filter((k) => (depth.get(k) as number) > BAND_DEPTH).length < 40) return pocket;
   const cx = pocket.reduce((t, k) => t + xy(k)[0], 0) / pocket.length;
   const cy = pocket.reduce((t, k) => t + xy(k)[1], 0) / pocket.length;
   const ang = (k: number): number => Math.atan2(xy(k)[1] - cy, xy(k)[0] - cx);
-  const ring = pocket.filter((k) => (depth.get(k) as number) <= 4).sort((p, q) => ang(p) - ang(q));
-  // Slices by angle, about 24 floor tiles each.
-  const slice = new Map<number, number>();
-  let id = 0;
-  let size = 0;
-  for (const k of ring) {
-    if (size >= 30 && (depth.get(k) as number) === 0) { id++; size = 0; }
-    slice.set(k, id);
-    size++;
-  }
-  const count = id + 1;
-  if (count < 3) return pocket;
-  // A slice's tile with a wall next to it and a corridor straight across (a door spot onto that corridor).
+  edge.sort((p, q) => ang(p) - ang(q));
+  // A tile with a wall next to it and a corridor straight across: the wall tile (a door spot onto that corridor).
   const hallSpot = (k: number): number | null => {
     for (const [dx, dy] of N4) {
       const w = k + dy * S + dx;
@@ -61,96 +56,122 @@ function band(b: Builder, pocket: number[], kinds: readonly RoomRole[], halls: S
     }
     return null;
   };
-  // Passages: up to four slices on a corridor, spread round the court.
-  // A passage slice touches a corridor and reaches the court (a slice in a narrow corner may not).
-  const reachesCourt = (k: number): boolean => depth.get(k) === 4 && nb(k).some((j) => (depth.get(j) ?? 0) > 4);
-  const onHall = Array.from({ length: count }, (_, i) =>
-    ring.some((k) => slice.get(k) === i && hallSpot(k) !== null) && ring.some((k) => slice.get(k) === i && reachesCourt(k)));
-  const candidates = onHall.flatMap((h, i) => (h ? [i] : []));
-  const want = Math.min(4, candidates.length);
-  const passage = new Set(Array.from({ length: want }, (_, i) => candidates[Math.floor(((i + 0.5) * candidates.length) / want)] as number));
-  // Walls: the band's inner edge (except in passages) and one line between neighbouring slices.
-  const prev = (i: number): number => (i + count - 1) % count;
-  const wall = new Set<number>();
-  for (const k of ring) {
-    const i = slice.get(k) as number;
-    if (!passage.has(i) && (depth.get(k) as number) === 4) wall.add(k);
-    if (passage.has(i) && passage.has(prev(i))) continue;
-    if (nb(k).some((j) => slice.get(j) === prev(i))) wall.add(k);
+  // Passages: up to four straight strips, three wide, from a corridor wall in past the band, spread round the pocket.
+  const onHall = edge.filter((k) => hallSpot(k) !== null);
+  const reserved = new Set<number>();
+  const want = Math.min(4, onHall.length);
+  for (let i = 0; i < want; i++) {
+    const k = onHall[Math.floor(((i + 0.5) * onHall.length) / want)] as number;
+    const d = (hallSpot(k) as number) - k;
+    const side = Math.abs(d) === 1 ? S : 1;
+    for (let t = 0; t <= BAND_DEPTH + 1; t++) for (let s = -1; s <= 1; s++) if (inP.has(k - t * d + s * side)) reserved.add(k - t * d + s * side);
   }
-  // Connected floor pieces of a tile set, largest first.
-  const pieces = (ks: Iterable<number>): number[][] => {
-    const set = new Set(ks);
-    const seen = new Set<number>();
-    const out: number[][] = [];
-    for (const k of set) {
-      if (seen.has(k)) continue;
-      const comp = [k];
-      seen.add(k);
-      for (let q = 0; q < comp.length; q++) for (const j of nb(comp[q] as number)) if (set.has(j) && !seen.has(j)) { seen.add(j); comp.push(j); }
-      out.push(comp);
-    }
-    return out.sort((p, q) => q.length - p.length);
-  };
-  // The court: the inner tiles and the passages, in one piece (a slice wall can cut a corner of a passage off).
-  const [court = [], ...cut] = pieces([...inner, ...ring.filter((k) => passage.has(slice.get(k) as number) && !wall.has(k))]);
-  // No corridor to door the court onto (a pocket ringed by rooms): leave it a plain court.
-  if (!court.some((k) => hallSpot(k) !== null)) return pocket;
-  const courtSet = new Set(court);
-  // Roles the station plans rooms of (a band room is furnished like one of them).
+  // Roles the station plans rooms of (a band room is furnished like one of them, and sized like it).
   const planned = kinds.filter((r) => b.parts.some((p) => p.spec?.role === r));
   const roles = planned.length > 0 ? planned : kinds;
-  // Rooms: each slice's largest piece of floor. Scraps (and pieces too small for a room) join the room beside them
-  // through the wall between, or else become wall; a lone slab of wall would be handed to the corridor by wall thinning.
-  const floors: number[][] = [];
-  const bits: number[][] = [];
-  for (let i = 0; i < count; i++) {
-    if (passage.has(i)) continue;
-    const [best = [], ...scraps] = pieces(ring.filter((k) => slice.get(k) === i && !wall.has(k)));
-    bits.push(...scraps);
-    if (best.length >= 6) floors.push(best); else bits.push(best);
-  }
-  // Passage pieces a slice wall cut off from the court are band rooms too.
-  for (const c of cut) if (c.length >= 6) floors.push(c); else bits.push(c);
+  const specOf = (r: RoomRole) => b.parts.find((p) => p.spec?.role === r)?.spec;
+  // Growth: a tile is free for room r if it is in the band, unclaimed, clear of the passages, and no other room's floor
+  // touches it (eight neighbours), so neighbours keep one wall between them.
   const owner = new Map<number, number>();
-  floors.forEach((f, r) => { for (const k of f) owner.set(k, r); });
-  for (const bit of bits) {
-    const mineBit = new Set(bit);
-    // Walls between the bit and exactly one room, touching nothing else open (the court, a passage, another room).
-    const joins = new Map<number, number[]>();
-    for (const k of bit) {
-      for (const j of nb(k)) {
-        if (!wall.has(j)) continue;
-        const rs = new Set(nb(j).flatMap((a) => (owner.has(a) ? [owner.get(a) as number] : [])));
-        const open = nb(j).some((a) => !mineBit.has(a) && !owner.has(a) && !wall.has(a) && cv.at(...xy(a)) !== '#');
-        if (rs.size !== 1 || open) continue;
-        const r = [...rs][0] as number;
-        joins.set(r, [...(joins.get(r) ?? []), j]);
+  const free = (k: number, r: number): boolean =>
+    inP.has(k) && !owner.has(k) && !reserved.has(k) && (depth.get(k) as number) < BAND_DEPTH &&
+    nb8(k).every((j) => !reserved.has(j) && (owner.get(j) ?? r) === r);
+  const rooms: { floor: number[]; role: RoomRole }[] = [];
+  for (const seed of edge) {
+    const r = rooms.length;
+    if (!free(seed, r)) continue;
+    const role = roles[r % roles.length] as RoomRole;
+    const long = Math.max(5, Math.min(9, specOf(role)?.w ?? 7));
+    let [x0, y0] = xy(seed);
+    let [x1, y1] = [x0, y0];
+    const at = (x: number, y: number): number => (y + off) * S + x + off;
+    const strip = (side: number): number[] => {
+      const out: number[] = [];
+      if (side === 0) for (let y = y0; y <= y1; y++) out.push(at(x1 + 1, y));
+      if (side === 1) for (let y = y0; y <= y1; y++) out.push(at(x0 - 1, y));
+      if (side === 2) for (let x = x0; x <= x1; x++) out.push(at(x, y1 + 1));
+      if (side === 3) for (let x = x0; x <= x1; x++) out.push(at(x, y0 - 1));
+      return out;
+    };
+    owner.set(seed, r);
+    for (let grew = true; grew;) {
+      grew = false;
+      for (let side = 0; side < 4; side++) {
+        const w = x1 - x0 + 1 + (side < 2 ? 1 : 0);
+        const h = y1 - y0 + 1 + (side >= 2 ? 1 : 0);
+        if (Math.max(w, h) > long || Math.min(w, h) > BAND_DEPTH) continue;
+        const add = strip(side);
+        if (!add.every((k) => free(k, r))) continue;
+        for (const k of add) owner.set(k, r);
+        if (side === 0) x1++; else if (side === 1) x0--; else if (side === 2) y1++; else y0--;
+        grew = true;
       }
     }
-    const [r, via] = [...joins.entries()].sort((p, q) => q[1].length - p[1].length)[0] ?? [];
-    if (r === undefined || !via) { for (const k of bit) wall.add(k); continue; }
-    for (const k of [...bit, ...via]) { wall.delete(k); owner.set(k, r); (floors[r] as number[]).push(k); }
+    const floor = [...owner.entries()].filter(([, o]) => o === r).map(([k]) => k);
+    if (Math.min(x1 - x0, y1 - y0) + 1 < MIN_SIDE) { for (const k of floor) owner.delete(k); continue; }
+    rooms.push({ floor, role });
   }
-  // Each room doors onto the corridor it touches, else onto the court; one with nowhere for a door becomes wall. A
-  // door's two side tiles must be wall (or this room): a door tile touching a third room's floor on a stair-step reads as
-  // that room's door too, and door pruning may close it.
-  const rooms: { floor: number[]; role: RoomRole; door: number }[] = [];
-  for (const best of floors) {
-    const mine = new Set(best);
+  // The rest of the pocket: tiles touching a room are its walls, everything else is court (one piece; slivers wall).
+  const walls = pocket.filter((k) => !owner.has(k) && nb8(k).some((j) => owner.has(j)));
+  const wall = new Set(walls);
+  const open = pocket.filter((k) => !owner.has(k) && !wall.has(k));
+  const pieces: number[][] = [];
+  const seen = new Set<number>();
+  const openSet = new Set(open);
+  for (const k of open) {
+    if (seen.has(k)) continue;
+    const comp = [k];
+    seen.add(k);
+    for (let q = 0; q < comp.length; q++) for (const j of nb(comp[q] as number)) if (openSet.has(j) && !seen.has(j)) { seen.add(j); comp.push(j); }
+    pieces.push(comp);
+  }
+  pieces.sort((p, q) => q.length - p.length);
+  const [court = [], ...slivers] = pieces;
+  // L-growth (the method's second phase): a sliver cut off from the court joins the room beside it, through the wall
+  // tiles that touch only that room and the sliver; one with no such room becomes wall.
+  const roomOf = (k: number): number | undefined => owner.get(k);
+  for (const sliver of slivers) {
+    const mineS = new Set(sliver);
+    const joins = new Map<number, Set<number>>();
+    for (const k of sliver) {
+      for (const j of nb(k)) {
+        if (!wall.has(j)) continue;
+        const rs = new Set(nb8(j).flatMap((a) => { const o = roomOf(a); return o === undefined ? [] : [o]; }));
+        const other = nb8(j).some((a) => !mineS.has(a) && !owner.has(a) && !wall.has(a) && inP.has(a));
+        if (rs.size !== 1 || other) continue;
+        const r = [...rs][0] as number;
+        // It must join the two edge to edge, not only at a corner.
+        if (!nb(j).some((a) => owner.get(a) === r)) continue;
+        (joins.get(r) ?? joins.set(r, new Set()).get(r)!).add(j);
+      }
+    }
+    const [r, via] = [...joins.entries()].sort((p, q) => q[1].size - p[1].size)[0] ?? [];
+    if (r === undefined || !via) { for (const k of sliver) wall.add(k); continue; }
+    for (const k of [...sliver, ...via]) { wall.delete(k); owner.set(k, r); (rooms[r] as { floor: number[] }).floor.push(k); }
+  }
+  // No corridor to door the court onto: leave the pocket a plain court.
+  if (rooms.length < 3 || !court.some((k) => hallSpot(k) !== null)) return pocket;
+  const courtSet = new Set(court);
+  // Doors: onto the corridor the room touches, else onto the court, mid-side. A door's two side tiles must be wall or
+  // this room (a door touching a third room's floor reads as its door too, and door pruning may close it).
+  const doors: number[] = [];
+  const kept: { floor: number[]; role: RoomRole }[] = [];
+  for (const room of rooms) {
+    const mine = new Set(room.floor);
     const flush = (w: number, k: number): boolean => {
       const along = Math.abs(w - k) === 1 ? S : 1;
       return [w - along, w + along].every((j) => mine.has(j) || wall.has(j) || cv.at(...xy(j)) === '#');
     };
-    const toHall = best.flatMap((k) => { const w = hallSpot(k); return w !== null && flush(w, k) ? [w] : []; });
-    const toCourt = best.flatMap((k) => N4.flatMap(([dx, dy]) => {
+    const toHall = room.floor.flatMap((k) => { const w = hallSpot(k); return w !== null && flush(w, k) ? [w] : []; });
+    const toCourt = room.floor.flatMap((k) => N4.flatMap(([dx, dy]) => {
       const w = k + dy * S + dx;
       return wall.has(w) && courtSet.has(k + 2 * (dy * S + dx)) && flush(w, k) ? [w] : [];
     }));
     const spots = toHall.length > 0 ? toHall : toCourt;
     const door = spots[spots.length >> 1];
-    if (door === undefined) { for (const k of best) wall.add(k); continue; }
-    rooms.push({ floor: best, role: roles[rooms.length % roles.length] as RoomRole, door });
+    if (door === undefined) { for (const k of room.floor) wall.add(k); continue; }
+    doors.push(door);
+    kept.push(room);
   }
   const stampSet = (ks: number[], c: string, k2: string): boolean => {
     if (ks.length === 0) return true;
@@ -162,12 +183,12 @@ function band(b: Builder, pocket: number[], kinds: readonly RoomRole[], halls: S
     return cv.stamp(rows.map((r) => r.join('')), bx, by, k2);
   };
   if (!stampSet([...wall], '#', `${key}:band walls`)) return pocket;
-  rooms.forEach((r, i) => {
+  kept.forEach((r, i) => {
     const letter = letterOf(r.role);
     stampSet(r.floor, letter, `${key}:band${i}`);
-    cv.setDoor(...xy(r.door));
+    cv.setDoor(...xy(doors[i] as number));
     // Furnished like the station's own room of that role (one of each of its modules, the same stock).
-    const like = b.parts.find((p) => p.spec?.role === r.role)?.spec;
+    const like = specOf(r.role);
     if (like) b.chunkSpecs.set(`${key}:band${i}:${letter}`, { ...like, mods: [...new Set(like.mods)] });
   });
   return court;
