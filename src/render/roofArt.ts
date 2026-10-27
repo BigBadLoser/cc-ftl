@@ -100,11 +100,16 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     motifs: ['coat', 'rake', 'fangs', 'em.skull'], P: 0x33302c, S: 0xe07a26, T: 0xe2dccb,
     remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
   },
+  reaver: {
+    motifs: ['coat', 'rake', 'fangs', 'emL.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
+    remap: { rake: ['S', 'S'], fangs: ['S', 'S'], 'emL.skull': ['P', 'T'] },
+  },
   litany: { motifs: ['coat', 'trace', 'em.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'em.eye': ['T', 'S'] } },
   relic: {
     motifs: ['coat', 'aft', 'trace', 'em.eye'], P: 0xc9ccd1, S: 0x5fd6c0, T: 0x3a2f4a,
     remap: { aft: ['T', 'T'], trace: ['S', 'S'], 'em.eye': ['T', 'S'] },
   },
+  vigil: { motifs: ['coat', 'trace', 'emL.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'emL.eye': ['T', 'S'] } },
 };
 export const SCHEME_NAMES = Object.keys(SCHEMES);
 
@@ -115,8 +120,8 @@ export const LIVERIES: Readonly<Record<string, readonly string[]>> = {
   'livery.navy': CLASSIC,
   'livery.scrapper': CLASSIC,
   'livery.drone': CLASSIC,
-  'livery.raider': ['gash', 'scorch'],
-  'livery.zealot': ['litany', 'relic'],
+  'livery.raider': ['gash', 'scorch', 'reaver'],
+  'livery.zealot': ['litany', 'relic', 'vigil'],
 };
 
 /** Paint colours (P and S channel) of a motif in a scheme. */
@@ -280,6 +285,11 @@ function planBowEast(width: number, height: number, solid: (x: number, y: number
         add(x, yc, 'shaft.s');
       }
       for (let qx = 0; qx < 2; qx++) for (let qy = 0; qy < 4; qy++) add(xh + qx, yc - 2 + qy, `arr.${qx}.${qy}`);
+    } else if (m.startsWith('emL.')) {
+      const x0 = xs + pyRound(0.62 * L);
+      const block = (xe: number) => [0, 1, 2, 3, 4, 5, 6, 7, 8].map((q) => [xe - 1 + (q % 3), yc - 2 + Math.floor(q / 3)] as const);
+      const d = [0, -1, 1, -2, 2, -3, 3].find((dd) => block(x0 + dd).every(([x, y]) => S(x, y)));
+      block(x0 + (d ?? 0)).forEach(([x, y], q) => add(x, y, `${m}.${q}`));
     } else if (m.startsWith('em.')) {
       const ye = yc - 2;
       const x0 = xs + pyRound(0.62 * L);

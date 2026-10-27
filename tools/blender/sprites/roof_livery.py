@@ -1,6 +1,6 @@
 """Roof livery system (v8 study, pure Python, no bpy): painted motifs as tile masks, recoloured per scheme.
 
-Cost model (91 masks): every motif is a set of 1x1-tile masks (MASKS, 32x32 cells) in two key channels, P (primary,
+Cost model (109 masks): every motif is a set of 1x1-tile masks (MASKS, 32x32 cells) in two key channels, P (primary,
 key colour mkP #ff0000) and S (secondary, mkS #00ff00). They are rendered once as overlay sprites
 (roofs.livery_mask) at the plating height. At runtime a scheme only picks the masks per tile (plan) and its colours;
 one mask set (len(MASKS)) serves every scheme and faction. A 3-colour scheme remaps a motif's P / S channels.
@@ -137,9 +137,13 @@ def _trace(n):
     return f
 
 
-def _emblem(kind, q):
+def _emblem(kind, q, n=2):
+    """Emblem tile q of an n x n block: the design is drawn for 2 x 2 tiles and scaled by n / 2."""
+    k = n / 2
+
     def f(i, j):
-        X, Y = (q % 2) * GN + i + 0.5 - GN, (q // 2) * GN + j + 0.5 - GN
+        X = ((q % n) * GN + i + 0.5 - n * GN / 2) / k
+        Y = ((q // n) * GN + j + 0.5 - n * GN / 2) / k
         r = (X * X + Y * Y) ** 0.5
         if r >= 27:
             return None
@@ -178,6 +182,7 @@ MASKS = {
     **{f"reg.{c}": _digit(c) for c in DIGITS},
     **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond", "skull", "eye")
        for q in range(4)},
+    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye") for q in range(9)},   # large: 3 x 3 tiles
     # v10
     "full.P": lambda i, j: "P",
     "half.n": lambda i, j: "P" if j < 26 else "S" if 27 <= j < 31 else None,
@@ -223,10 +228,14 @@ SCHEMES = {
                  remap={"rake": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
     "scorch": dict(motifs=("coat", "rake", "fangs", "em.skull"), P="#33302c", S="#e07a26", T="#e2dccb",
                    remap={"rake": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
+    "reaver": dict(motifs=("coat", "rake", "fangs", "emL.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
+                   remap={"rake": ("S", "S"), "fangs": ("S", "S"), "emL.skull": ("P", "T")}),
     "litany": dict(motifs=("coat", "trace", "em.eye"), P="#d6cfbd", S="#3fc4d4", T="#2b3440",
                    remap={"trace": ("S", "S"), "em.eye": ("T", "S")}),
     "relic": dict(motifs=("coat", "aft", "trace", "em.eye"), P="#c9ccd1", S="#5fd6c0", T="#3a2f4a",
                   remap={"aft": ("T", "T"), "trace": ("S", "S"), "em.eye": ("T", "S")}),
+    "vigil": dict(motifs=("coat", "trace", "emL.eye"), P="#d6cfbd", S="#3fc4d4", T="#2b3440",
+                  remap={"trace": ("S", "S"), "emL.eye": ("T", "S")}),
 }
 
 # A faction's livery (its art def's `livery` id) is the list of schemes its ships pick from by name (roofArt.liveryFor).
@@ -234,8 +243,8 @@ SCHEMES = {
 CLASSIC = ("crimson", "ivory", "tide", "sovereign", "orchid", "hornet", "glacier", "verdant", "ember", "tricolour")
 LIVERIES = {
     "livery.navy": CLASSIC, "livery.scrapper": CLASSIC, "livery.drone": CLASSIC,
-    "livery.raider": ("gash", "scorch"),
-    "livery.zealot": ("litany", "relic"),
+    "livery.raider": ("gash", "scorch", "reaver"),
+    "livery.zealot": ("litany", "relic", "vigil"),
 }
 
 
@@ -316,6 +325,12 @@ def plan(ship, scheme, seed=0, level=lambda x, y: 0):
             for qx in range(2):
                 for qy in range(4):
                     add(xh + qx, yc - 2 + qy, f"arr.{qx}.{qy}")
+        elif m.startswith("emL."):                    # large emblem: 3 x 3 tiles over the spine at 0.62 L
+            x0 = xs + round(0.62 * L)
+            block = lambda xe: [(xe - 1 + q % 3, yc - 2 + q // 3) for q in range(9)]  # noqa: E731
+            xe = next((x0 + d for d in (0, -1, 1, -2, 2, -3, 3) if all(solid(*t) for t in block(x0 + d))), x0)
+            for q, (x, y) in enumerate(block(xe)):
+                add(x, y, f"{m}.{q}")
         elif m.startswith("em."):
             ye, x0 = yc - 2, xs + round(0.62 * L)       # nearest spot to 0.62 L whose 2x2 tiles share one level
             quad = lambda xe: [(xe - 1 + q % 2, ye - 1 + q // 2) for q in range(4)]  # noqa: E731
