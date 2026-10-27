@@ -1353,3 +1353,121 @@ def floor_terrace():
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_well2, floor_trench, floor_bowl, floor_terrace)]
+
+
+# ---- v16: sunk floor lights with covered openings (walkable: grates, glass, slats, rungs) -----------------------
+
+def _holdout_bands(name, hu, bands):
+    """A holdout sheet at floor level with rectangular holes hu wide, one per (v0, v1) band, bands sorted by v."""
+    k = K(name, (1, 1), 0)
+    R = 1.2
+    edges = [-R] + [x for b in bands for x in b] + [R]
+    for i in range(0, len(edges), 2):                                                  # full-width strips between holes
+        v0, v1 = edges[i], edges[i + 1]
+        if v1 > v0:
+            k.box(0, (v0 + v1) / 2, 0.0, 2 * R, v1 - v0, 0.001, "dark")
+    for v0, v1 in bands:                                                               # either side of each hole
+        k.box((hu / 2 + R) / 2, (v0 + v1) / 2, 0.0, R - hu / 2, v1 - v0, 0.001, "dark")
+        k.box(-(hu / 2 + R) / 2, (v0 + v1) / 2, 0.0, R - hu / 2, v1 - v0, 0.001, "dark")
+    ob = k.build()[0]
+    ob.is_holdout = True
+    return ob
+
+
+def floor_glass():
+    """A glass-topped well: a shallow lit shaft under a flush glass pane, glints across the glass, a bolted frame."""
+    k = K("lc_f_glass", (1, 1), 0)
+    s, d = 0.5, 0.1
+    _shaft(k, s, s, 0.0, -d, WARM_WALL)
+    k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
+    k.box(0, 0, -d, 0.46, 0.46, 0.02, "lampY", bevel=0.01)                                   # the lamp
+    for su in (-1, 1):                                                                 # lamp clips in the corners
+        for sv in (-1, 1):
+            k.box(su * 0.2, sv * 0.2, -d + 0.02, 0.05, 0.05, 0.01, "steelD")
+    _rim(k, s, s, w=0.06, h=0.016)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.cyl(su * 0.28, sv * 0.28, 0.016, 0.018, 0.006, "plate", sides=6)
+    k.box(0, 0, 0.0, 2 * PX, s, 0.012, "steelD", top="steel")                              # mullions: four panes
+    k.box(0, 0, 0.0, s, 2 * PX, 0.012, "steelD", top="steel")
+    for su in (-1, 1):                                                                 # a glint in each far pane
+        k.box(su * 0.12 - 0.02, -0.17, 0.003, 0.12, 0.025, 0.003, "fxW")
+    return [*k.build(), _holdout_sq("lc_f_glass_h", s, s)]
+
+
+def floor_vent():
+    """A slatted vent light: angled blades across a shallow lit recess, the light glowing up between them."""
+    k = K("lc_f_vent", (1, 1), 0)
+    hu, hv, d = 0.58, 0.42, 0.1
+    _shaft(k, hu, hv, 0.0, -d, WARM_WALL)
+    k.box(0, 0, -d - 0.02, hu + 0.04, hv + 0.04, 0.02, "steelD")
+    k.box(0, 0, -d, hu - 0.04, hv - 0.04, 0.02, "lampY")                                     # the light
+    n = 5
+    for i in range(n):                                                                 # angled blades
+        v = -hv / 2 + (i + 0.5) * hv / n
+        k.box(0, v, -0.02, hu, 0.05, 0.016, "steelD", top="steel", rx=0.35)
+    for u in (-hu / 2 + 0.02, 0.0, hu / 2 - 0.02):                                       # blade carriers
+        k.box(u, 0, -0.04, 0.025, hv, 0.04, "steelD")
+    _rim(k, hu, hv, w=0.05, h=0.016)
+    k.box(hu / 2 - 0.02, hv / 2 + 0.025, 0.016, 0.06, 0.02, 0.004, "hazY")                 # hazard tick on the rim
+    return [*k.build(), _holdout_sq("lc_f_vent_h", hu, hv)]
+
+
+def floor_rails():
+    """Rail lights: two narrow lit slots side by side, steel rungs across each, a bolted strip between them."""
+    k = K("lc_f_rails", (1, 1), 0)
+    hu, hv, d, gap = 0.74, 0.15, 0.05, 0.12
+    bands = []
+    for sv in (-1, 1):
+        vc = sv * (gap / 2 + hv / 2)
+        bands.append((vc - hv / 2, vc + hv / 2))
+        for col_i, col in enumerate(WARM_WALL):                                        # shaft walls, offset to vc
+            za = -d * (col_i + 1) / len(WARM_WALL)
+            h = d / len(WARM_WALL)
+            k.box(0, vc - hv / 2 - 0.01, za, hu + 0.04, 0.02, h, col)
+            k.box(0, vc + hv / 2 + 0.01, za, hu + 0.04, 0.02, h, col)
+            k.box(-hu / 2 - 0.01, vc, za, 0.02, hv, h, col)
+            k.box(hu / 2 + 0.01, vc, za, 0.02, hv, h, col)
+        k.box(0, vc, -d - 0.02, hu + 0.04, hv + 0.04, 0.02, "steelD")
+        k.box(0, vc, -d, hu - 0.04, hv - 0.04, 0.03, "lampY", bevel=0.012)                   # the light
+        for i in range(5):                                                             # rungs
+            u = -hu / 2 + (i + 0.5) * hu / 5
+            k.box(u, vc, 0.0, 2 * PX, hv + 0.02, 0.012, "steelD", top="steel")
+        k.box(0, vc - hv / 2 - 0.015, 0.0, hu + 0.06, 0.03, 0.014, "steel", top="steelL")   # lips
+        k.box(0, vc + hv / 2 + 0.015, 0.0, hu + 0.06, 0.03, 0.014, "steel", top="steelL")
+        for su in (-1, 1):
+            k.box(su * (hu / 2 + 0.02), vc, 0.0, 0.04, hv, 0.014, "steel", top="steelL")
+    for u in (-0.25, 0.0, 0.25):                                                       # bolts on the middle strip
+        k.cyl(u, 0, 0.0, 0.018, 0.008, "plate", sides=6)
+    bands.sort()
+    return [*k.build(), _holdout_bands("lc_f_rails_h", hu, bands)]
+
+
+def floor_wheel():
+    """A wheel-grate well: a round lit shaft under a spoked grate with a hub, a bolted ring round it."""
+    k = K("lc_f_wheel", (1, 1), 0)
+    r, d, n = 0.28, 0.1, 24
+    for i in range(n):                                                                 # the round shaft wall, banded
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        mid = (a0 + a1) / 2
+        for j, col in enumerate(WARM_WALL):
+            za, zb = -d * j / len(WARM_WALL), -d * (j + 1) / len(WARM_WALL)
+            SK.face(k, [(r * math.cos(a0), r * math.sin(a0), za), (r * math.cos(a1), r * math.sin(a1), za),
+                        (r * math.cos(a1), r * math.sin(a1), zb), (r * math.cos(a0), r * math.sin(a0), zb)],
+                    (-math.cos(mid), -math.sin(mid), 0), col)
+    k.cyl(0, 0, -d - 0.02, r + 0.02, 0.02, "steelD", sides=n)
+    k.cyl(0, 0, -d, r - 0.02, 0.02, "lampY", sides=n)                                        # the light
+    _ring(k, -0.004, 0.15, 0.014, 20, ("steel",), d=0.03)                                  # inner ring of the grate
+    for a in range(8):                                                                 # spokes
+        ang = a * math.pi / 4
+        k.box(0.16 * math.cos(ang), 0.16 * math.sin(ang), -0.004, 0.25, 2 * PX, 0.016, "steelD", top="steel", rz=ang)
+    k.cyl(0, 0, -0.004, 0.05, 0.02, "steel", top="steelL", sides=12)                       # hub
+    k.cyl(0, 0, 0.016, 0.02, 0.004, "lampY", sides=8)
+    _ring(k, 0.0, r + 0.03, 0.016, 28, ("steel",), d=0.06)                                 # bolted ring
+    for a in range(6):
+        ang = a * math.tau / 6
+        k.cyl((r + 0.03) * math.cos(ang), (r + 0.03) * math.sin(ang), 0.016, 0.016, 0.006, "plate", sides=6)
+    return [*k.build(), _holdout_round("lc_f_wheel_h", r)]
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_glass, floor_vent, floor_rails, floor_wheel)]
