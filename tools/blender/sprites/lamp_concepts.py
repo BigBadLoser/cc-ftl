@@ -843,3 +843,155 @@ SPRITES += [("concept.dummy", (1, 1), "prop", dummy),
             ("concept.pillar_floodtower", (1, 1), "prop", pillar_floodtower),
             ("concept.pillar_pylon", (1, 1), "prop", pillar_pylon),
             ("concept.pillar_plasma", (1, 1), "prop", pillar_plasma)]
+
+
+# ---- v10: default-lamp candidates, three short (chest height) and three tall (head height and up) ---------------
+
+def _ring(k, z, r, h, n, cols, w=None, d=0.008):
+    """n small boxes round a circle of radius r at height z, tangent to it, coloured in turn from `cols`."""
+    w = w or 2 * math.pi * r / n * 0.9
+    for i in range(n):
+        a = i * math.tau / n
+        k.box(r * math.cos(a), r * math.sin(a), z, w, d, h, cols[i % len(cols)], rz=a + math.pi / 2)
+
+
+def short_bollard():
+    """A bollard: a cream drum on a hazard-ringed foot, a lantern band of light behind mullions, a service hatch."""
+    k = K("lc_s_bollard", (1, 1), 0)
+    _socket(k)
+    k.cyl(0, 0, 0.014, 0.25, 0.08, "gmD", top="gm", sides=16)                             # foot
+    _ring(k, 0.03, 0.252, 0.05, 16, ("hazY", "hazK"))
+    k.cyl(0, 0, 0.094, 0.2, 0.58, "lvW2", top="lvW", sides=16)                            # drum
+    k.cyl(0, 0, 0.3, 0.203, PX, "steelD", sides=16)                                        # seam
+    k.box(0.142, 0.142, 0.15, 0.12, 0.012, 0.14, "steelD", rz=3 * math.pi / 4)             # service hatch
+    k.box(0.147, 0.147, 0.17, 0.08, 0.008, 0.1, "gm", rz=3 * math.pi / 4)
+    k.box(0.147, 0.147, 0.34, 0.03, 0.01, 0.03, "green", rz=3 * math.pi / 4)               # status lamp
+    k.cyl(0, 0, 0.674, 0.17, 0.16, "arc", sides=16)                                        # lantern band
+    _ring(k, 0.674, 0.175, 0.16, 8, ("gmD",), w=0.06, d=0.04)                              # mullions
+    k.cyl(0, 0, 0.834, 0.23, 0.06, "gm", top="steel", sides=16, rtop=0.19)                # cap
+    k.cyl(0, 0, 0.894, 0.1, 0.03, "gmD", top="steelD", sides=12)
+    return k.build()
+
+
+def short_cage():
+    """A cage lamp: a glowing block in a steel guard cage with a carry handle, on a bumpered plinth."""
+    k = K("lc_s_cage", (1, 1), 0)
+    k.box(0, 0, 0.0, 0.5, 0.5, 0.14, "gm", top="steel", bevel=0.02)                        # plinth
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * 0.23, sv * 0.23, 0.0, 0.09, 0.09, 0.16, "dark", top="gmD", bevel=0.015)   # rubber bumpers
+    k.box(0, 0.252, 0.05, 0.3, 0.006, 0.04, "hazY")                                        # stencil stripe
+    k.box(0.252, 0, 0.05, 0.006, 0.3, 0.04, "hazY")
+    k.box(0, 0, 0.14, 0.3, 0.3, 0.05, "gmD", top="gm")                                     # lamp foot
+    k.box(0, 0, 0.19, 0.24, 0.24, 0.38, "arc", bevel=0.02)                                 # the light
+    k.box(0, 0, 0.57, 0.3, 0.3, 0.05, "gmD", top="gm")                                     # lamp head
+    for su in (-1, 1):                                                                 # cage: corner posts
+        for sv in (-1, 1):
+            k.box(su * 0.18, sv * 0.18, 0.14, 0.03, 0.03, 0.52, "steel", top="steelL")
+    for su, sv in ((1, 0), (-1, 0), (0, 1), (0, -1)):                                  # mid bars
+        k.box(su * 0.18, sv * 0.18, 0.14, 0.025, 0.025, 0.52, "steel", top="steelL")
+    for z in (0.3, 0.45):                                                              # hoops
+        for su, sv in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            k.box(su * 0.18, sv * 0.18, z, 0.03 if su else 0.38, 0.38 if su else 0.03, 0.025, "steel")
+    k.box(0, 0, 0.66, 0.4, 0.4, 0.04, "steelD", top="steel")                               # cage top
+    for su in (-1, 1):                                                                 # carry handle
+        k.box(su * 0.12, 0, 0.7, 0.03, 0.04, 0.1, "steelD")
+    k.box(0, 0, 0.8, 0.27, 0.05, 0.04, "dark", top="gmD")
+    _cable(k, -0.25, -0.1, -0.5, -0.1)
+    return k.build()
+
+
+def short_disc():
+    """A downlight: a slim post under a wide cream disc, a lit rim glowing round the disc's underside."""
+    k = K("lc_s_disc", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.32, 0.32, 0.1, "gm", top="steel", bevel=0.02, taper=0.8)          # base
+    k.cyl(0, 0, 0.114, 0.08, 0.6, "lvW2", top="lvW", sides=12)                            # post
+    for z in (0.2, 0.62):
+        k.cyl(0, 0, z, 0.085, 0.03, "gmD", sides=12)                                       # bands
+    k.box(0.06, 0.06, 0.32, 0.02, 0.02, 0.2, "cyan")                                       # indicator strip
+    k.cyl(0, 0, 0.7, 0.31, 0.025, "cyan", sides=20)                                        # lit rim under the disc
+    k.cyl(0, 0, 0.725, 0.31, 0.06, "lvW2", top="lvW", sides=20, rtop=0.27)               # the disc
+    k.cyl(0, 0, 0.785, 0.12, 0.03, "gm", top="steel", sides=12)                            # vent boss
+    for a in (0.0, math.pi / 2):
+        k.box(0, 0, 0.815, 0.2, PX, 0.004, "dark", rz=a)
+    return k.build()
+
+
+def tall_halo():
+    """A halo spire: a tapering cream mast, a dark upper shaft with light strips, a ring of light floating on struts."""
+    k = K("lc_t_halo", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.44, 0.44, 0.14, "gm", top="steel", bevel=0.02, taper=0.85)        # base
+    k.box(0, 0, 0.154, 0.24, 0.24, 0.62, "lvW2", top="lvW", bevel=0.02, taper=0.8)         # lower shaft
+    k.box(0, 0, 0.774, 0.22, 0.22, 0.05, "gmD", top="gm")                                  # collar
+    k.box(0, 0, 0.824, 0.15, 0.15, 0.72, "navy", top="gmD")                                # upper shaft
+    k.box(0.076, 0.0, 0.86, 0.008, 0.05, 0.62, "arc")                                      # light strips
+    k.box(0.0, 0.076, 0.86, 0.05, 0.008, 0.62, "arc")
+    k.box(0.08, 0.08, 0.86, 0.015, 0.015, 0.62, "cyan")
+    for a in (0.0, math.tau / 3, 2 * math.tau / 3):                                    # struts out to the halo
+        k.box(0.14 * math.cos(a + 0.785), 0.14 * math.sin(a + 0.785), 1.5, 0.26, 0.03, 0.025, "steelD", rz=a + 0.785)
+    _ring(k, 1.52, 0.28, 0.05, 20, ("arc",), d=0.04)                                      # the halo
+    _ring(k, 1.505, 0.28, 0.015, 20, ("steelD",), d=0.05)                                  # its underside
+    k.box(0, 0, 1.544, 0.18, 0.18, 0.05, "lvW2", top="lvW", bevel=0.015)                   # cap
+    k.cyl(0, 0, 1.594, 0.015, 0.16, "steelL", sides=6)                                     # finial
+    k.cyl(0, 0, 1.754, 0.025, 0.025, "red", sides=6)
+    return k.build()
+
+
+def tall_lantern():
+    """The lumen column grown to head height: three stacked louvred windows between cream collars, corner posts,
+    a cyan seam, a service box, a domed emitter."""
+    k = K("lc_t_lantern", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.54, 0.54, 0.03, "gmD")
+    k.box(0, 0, 0.044, 0.52, 0.52, 0.16, "lvW2", top="lvW", bevel=0.03, taper=0.78)        # tapering base
+    k.box(0, 0, 0.204, 0.3, 0.3, 1.32, "navy", top="gmD")                                  # the core
+    for i, z in enumerate((0.25, 0.69, 1.13)):
+        for f, (su, sv) in (("u", (1, 0)), ("v", (0, 1))):
+            _louvred(k, su * 0.13, sv * 0.13, z, 0.24, 0.36, f, "gmD", n=2)
+    for z in (0.65, 1.09):                                                             # cream collars
+        k.box(0, 0, z, 0.36, 0.36, 0.04, "lvW2", top="lvW")
+    for su in (-1, 1):                                                                 # corner posts
+        for sv in (-1, 1):
+            k.box(su * 0.15, sv * 0.15, 0.204, 0.075, 0.075, 1.32, "lvW2", top="lvW", bevel=0.012)
+    k.box(0.19, 0.19, 0.24, 0.012, 0.012, 1.24, "cyan")                                   # cyan seam
+    k.box(0, 0, 1.524, 0.42, 0.42, 0.08, "lvW2", top="lvW", bevel=0.035, taper=0.82)       # cap
+    k.cyl(0, 0, 1.604, 0.1, 0.02, "gmD", sides=12)
+    k.cyl(0, 0, 1.624, 0.08, 0.05, "arc", sides=12, rtop=0.04)                            # domed emitter
+    k.box(-0.08, 0.27, 0.06, 0.18, 0.1, 0.16, "gm", top="steel", bevel=0.01)               # service box
+    for i in range(3):
+        k.box(-0.13 + i * 0.05, 0.322, 0.16, 0.03, 0.008, 0.03, "orange")
+    _cable(k, -0.17, 0.3, -0.5, 0.3)
+    return k.build()
+
+
+def tall_twin():
+    """A twin-tube mast: two tubes of light clamped to a cream spine, a base with a little status screen, a fan
+    housing on top."""
+    k = K("lc_t_twin", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.5, 0.42, 0.22, "gm", top="steel", bevel=0.025)                    # base
+    k.box(0.05, 0.212, 0.08, 0.2, 0.01, 0.1, "dark")                                       # status screen
+    for i, (h, c) in enumerate(((0.04, "green"), (0.07, "green"), (0.03, "green"), (0.06, "orange"))):
+        k.box(-0.02 + i * 0.045, 0.218, 0.095, 0.03, 0.006, h, c)
+    for i in range(3):                                                                 # side vents
+        k.box(0.252, -0.1 + i * 0.08, 0.08, 0.008, 0.05, 0.1, "dark")
+    k.box(0, -0.1, 0.234, 0.1, 0.1, 1.28, "lvW2", top="lvW", bevel=0.015)                  # spine
+    for u in (-0.1, 0.1):                                                              # the two tubes
+        k.cyl(u, 0.04, 0.234, 0.07, 0.04, "steel", top="steelL", sides=12)
+        k.cyl(u, 0.04, 0.274, 0.055, 1.16, "arc", sides=12)
+        k.cyl(u, 0.04, 1.434, 0.07, 0.04, "steel", top="steelL", sides=12)
+    for z in (0.5, 0.86, 1.22):                                                        # clamps
+        k.box(0, -0.02, z, 0.4, 0.24, 0.07, "lvW2", top="lvW", bevel=0.015)
+        k.box(0, -0.02, z + 0.025, 0.405, 0.245, 0.02, "gmD")
+    k.box(0, -0.03, 1.474, 0.4, 0.3, 0.13, "lvW2", top="lvW", bevel=0.025)                 # fan housing
+    k.cyl(0, -0.03, 1.604, 0.09, 0.015, "dark", sides=14)                                   # fan
+    for a in (0.3, 1.87):
+        k.box(0, -0.03, 1.619, 0.16, 0.025, 0.006, "steel", rz=a)
+    k.box(0.16, 0.12, 1.53, 0.04, 0.008, 0.04, "cyan")                                     # indicator
+    return k.build()
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (
+    short_bollard, short_cage, short_disc, tall_halo, tall_lantern, tall_twin)]
