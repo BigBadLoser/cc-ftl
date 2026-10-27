@@ -4,6 +4,7 @@ import type { ModuleDef } from '../../registry';
 import type { Layout, PlacedModule } from '../layout';
 import { pickWeighted } from '../plan';
 import type { Arrangement, Dir, RoomRecipe, Step, Wall } from './types';
+import { placeVignettes } from './vignettes';
 
 /** One room's draw from its recipe: the arrangement, the mirror and the module chosen for each step. */
 export interface RoomDraw {
@@ -371,6 +372,7 @@ export function furnish(
   lay: Layout, rng: Rng, room: number, d: RoomDraw, rotsOf: (id: string) => readonly number[], power: { spare: number },
 ): void {
   keepDoorApproach(lay, room);
+  if (d.arr.vignettes) placeVignettes(lay, rng, room, d.arr.vignettes, power);
   d.arr.steps.forEach((s, si) => {
     if (s.count === 'spec') {
       // The planned modules are all in: set each one's flush companions (ore bins beside a refinery).

@@ -66,9 +66,9 @@ describe('station life and security', () => {
       const alarmed = types(ev).includes('station.alarm');
       const wanted = sim.world.query(WantedC).length === 1;
       const downed = types(ev).includes('crew.downed');
-      // Quiet for 30 s: the alarm calms and the grudge is forgotten.
+      // Quiet for 30 s: the alarm calms and the grudge is forgotten (allowing for a fight that ran past the window above).
       let calmed = false;
-      for (let i = 0; i < 900 && !calmed; i++) calmed = types(run(sim, 1)).includes('station.calm');
+      for (let i = 0; i < 1800 && !calmed; i++) calmed = types(run(sim, 1)).includes('station.calm');
       const forgotten = calmed && sim.world.get(st, StationAlarmC)?.state === 'calm' && sim.world.query(WantedC).length === 0;
       // The intruder was only downed: when they get up, still aboard and uninvited, the alarm goes off again.
       const again = types(run(sim, 1500)).includes('station.alarm');

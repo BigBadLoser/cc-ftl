@@ -2,6 +2,7 @@ import type { Rng } from '../rng';
 import { footprintTiles, rotatedSize } from '../modules/footprint';
 import type { ModuleDef } from '../registry';
 import type { Layout, PlacedModule } from './layout';
+import type { RoomRole } from './types';
 
 /** Rotations the generator uses per module: the ones the hand-made templates use (and the art covers). */
 export function rotsOf(defId: string, def: ModuleDef): number[] {
@@ -114,6 +115,9 @@ export function lightRoom(lay: Layout, rng: Rng, room: number): void {
   }
 }
 
+/** Station courts: their lamps follow the furniture groups (`lightOpen`). */
+const COURTS: readonly RoomRole[] = ['plaza', 'garden', 'drill'];
+
 /** Rooms this big (courtyards: plazas, gardens, drill halls) are lit by `lightOpen`, with no lamp cap. */
 export const BIG_ROOM = 120;
 /** Lamp grid pitch in big rooms, and the reach every floor tile is kept within (inside the module's radius of 7). */
@@ -156,10 +160,21 @@ function lightOpen(lay: Layout, room: number, tiles: number[]): void {
   const put = (i: number): void => { lay.push({ def: 'module.light', x: i % W, y: Math.floor(i / W), rot: 0 }); mark(i); };
   let x0 = W, y0 = lay.h, x1 = 0, y1 = 0;
   for (const t of tiles) { const x = t % W, y = (t - x) / W; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  // Courts: a lamp beside each furniture group first (a lamp by every stall and table), so the lamps follow the floor
+  // plan; then a staggered grid (alternate rows shifted half a pitch) lights the open floor between.
+  const court = COURTS.includes(lay.roles[room] as RoomRole);
+  if (court) {
+    for (const m of lay.modules) {
+      if (m.def === 'module.light' || m.def === 'module.chair' || lay.roomOf[m.y * W + m.x] !== room || lit[m.y * W + m.x]) continue;
+      const i = near(m.x, m.y, 3);
+      if (i >= 0) put(i);
+    }
+  }
   // The grid, centred on the room's box so the margins match.
   const ox = x0 + (((x1 - x0) % GRID) >> 1), oy = y0 + (((y1 - y0) % GRID) >> 1);
   for (let gy = oy; gy <= y1; gy += GRID) {
-    for (let gx = ox; gx <= x1; gx += GRID) {
+    const shift = court && ((gy - oy) / GRID) % 2 === 1 ? GRID >> 1 : 0;
+    for (let gx = ox + shift; gx <= x1; gx += GRID) {
       if (lit[gy * W + gx] && lay.roomOf[gy * W + gx] === room) continue;
       const i = near(gx, gy, 2);
       if (i >= 0 && !lit[i]) put(i);

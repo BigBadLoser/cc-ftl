@@ -1,4 +1,4 @@
-import type { RoomRecipe } from './types';
+import type { RoomRecipe, Vignette } from './types';
 
 /**
  * Station rooms. Farms: rows of hydroponics beds with walkways between them. Industry: refineries on the walls, ore
@@ -55,47 +55,93 @@ export const armoury = {
   ],
 } as const satisfies RoomRecipe;
 
-/** Concourse (trading courtyards): stalls (pallets and lockers) and benches (tables with chairs) in open space. */
+// Court vignettes (rooms/vignettes.ts): laid out at rotation 0 (a mess table runs east-west, fronts face south).
+const chairs = (xs: readonly number[], y: number) => xs.map((x) => ({ mod: 'module.chair', x, y }));
+/** A table for four. */
+const bistro: Vignette = { name: 'bistro', mods: [{ mod: 'module.mess_table', x: 0, y: 0 }, ...chairs([0, 1], -1), ...chairs([0, 1], 1)] };
+/** Two tables end to end, a long bench of eight. */
+const longTable: Vignette = {
+  name: 'long table', mods: [{ mod: 'module.mess_table', x: 0, y: 0 }, { mod: 'module.mess_table', x: 2, y: 0 }, ...chairs([0, 1, 2, 3], -1), ...chairs([0, 1, 2, 3], 1)],
+};
+/** A food stand: a galley counter with two tables in front of it. */
+const foodStand: Vignette = {
+  name: 'food stand', mods: [
+    { mod: 'module.galley', x: 1, y: 0 },
+    { mod: 'module.mess_table', x: -1, y: 2 }, ...chairs([-1, 0], 3),
+    { mod: 'module.mess_table', x: 3, y: 2 }, ...chairs([3, 4], 3),
+  ],
+};
+/** A market stall: a container (opened from the south) with pallets beside it and a locker. */
+const stall: Vignette = {
+  name: 'stall', mods: [{ mod: 'module.cargo_container', x: 0, y: 0 }, { mod: 'module.storage_pallet', x: 4, y: 0 }, { mod: 'module.storage_locker', x: -2, y: 1 }],
+};
+/** A pallet stall: two pallets and a crate. */
+const pallets: Vignette = {
+  name: 'pallets', mods: [{ mod: 'module.storage_pallet', x: 0, y: 0 }, { mod: 'module.storage_pallet', x: 3, y: 0 }, { mod: 'module.storage', x: 6, y: 1 }],
+};
+/** A lounge: two tables end-on with seats down both sides. */
+const lounge: Vignette = {
+  name: 'lounge', mods: [
+    { mod: 'module.mess_table', x: 0, y: 0, rot: 1 }, { mod: 'module.mess_table', x: 4, y: 0, rot: 1 },
+    ...chairs([1, 3], 0), ...chairs([1, 3], 1), ...chairs([-1, 5], 0),
+  ],
+};
+/** An info kiosk: a console, a seat at it and a locker. */
+const kiosk: Vignette = { name: 'kiosk', mods: [{ mod: 'module.console', x: 0, y: 0 }, { mod: 'module.storage_locker', x: 1, y: 0 }, { mod: 'module.chair', x: 0, y: 1 }] };
+/** A research bench out on the deck: a station and a console side by side, seats in front. */
+const labBench: Vignette = {
+  name: 'lab bench', mods: [{ mod: 'module.research', x: 0, y: 0 }, { mod: 'module.console', x: 1, y: 0 }, ...chairs([0, 1], 1)],
+};
+/** A rack island: two racks back to back, a locker at the end. */
+const rackIsland: Vignette = {
+  name: 'rack island', mods: [{ mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 0, y: -1, rot: 2 }, { mod: 'module.storage_locker', x: 2, y: 0 }],
+};
+/** A briefing corner: a console and a row of seats facing it. */
+const briefing: Vignette = { name: 'briefing', mods: [{ mod: 'module.console', x: 0, y: 0 }, ...chairs([-1, 0, 1], 2), ...chairs([-1, 0, 1], 3)] };
+
+/** Concourse (trading courtyards): market stalls and tables in groups round open floor, not a lattice of one table. */
 export const plaza = {
   fill: 0.12,
   arrangements: [
     {
-      // Stall rows: containers and pallets in pairs along aisles, benches between the rows.
-      name: 'market', weight: 2, walkway: 'long', steps: [
-        { mod: 'module.cargo_container', count: 'fill', upTo: 0.1, clear: 1, grid: [7, 5], rots: [0], with: { mod: 'module.storage_pallet', n: 2 } },
-        { mod: 'module.mess_table', count: 'fill', upTo: 0.14, clear: 1, grid: [7, 5], rots: [0], with: { mod: 'module.chair', n: 4 } },
+      name: 'market', weight: 2, walkway: 'long',
+      vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk], gap: 8, upTo: 0.12 },
+      steps: [
         { mod: 'module.hydroponics', count: 4, wall: 'any' },
       ],
     },
     {
-      name: 'food court', weight: 1, steps: [
-        { mod: 'module.galley', count: 2, wall: 'any' },
-        { mod: 'module.mess_table', count: 'fill', upTo: 0.12, clear: 2, grid: [6, 5], rots: [0], with: { mod: 'module.chair', n: 4 } },
+      name: 'food court', weight: 1,
+      vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk], gap: 7, upTo: 0.12 },
+      steps: [
         { mod: 'module.storage_locker', count: 4, wall: 'any' },
       ],
     },
   ],
 } as const satisfies RoomRecipe;
 
-/** Garden deck (farming courtyards): hydroponics beds in rows, a few benches. */
+/** Garden deck (research and farming courtyards): hydroponics beds in rows (not on stations), lab benches and lounges. */
 export const garden = {
   fill: 0.18,
   arrangements: [
     {
-      name: 'garden', weight: 1, steps: [
+      name: 'garden', weight: 1,
+      vignettes: { pieces: [labBench, labBench, kiosk, lounge, bistro], gap: 9, upTo: 0.08 },
+      steps: [
         { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
-        { mod: 'module.mess_table', count: 3, clear: 1, rots: [0], with: { mod: 'module.chair', n: 2 } },
       ],
     },
   ],
 } as const satisfies RoomRecipe;
 
-/** Drill hall (military courtyards): open floor, racks and lockers on the walls. */
+/** Drill hall (military courtyards): open floor, racks and lockers on the walls, a few rack islands and briefing corners. */
 export const drill = {
   fill: 0.06,
   arrangements: [
     {
-      name: 'drill hall', weight: 1, steps: [
+      name: 'drill hall', weight: 1,
+      vignettes: { pieces: [rackIsland, briefing], gap: 10, upTo: 0.04 },
+      steps: [
         { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },
         { mod: 'module.storage_locker', count: 6, wall: 'any', row: true },
       ],

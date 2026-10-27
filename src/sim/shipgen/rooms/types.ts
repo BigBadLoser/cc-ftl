@@ -64,7 +64,25 @@ export interface Arrangement {
    * joined by the shortest floor path to every door and every protected tile (airlock insides, unloader stands).
    */
   walkway?: 'long' | 'cross';
+  /** Hand-made furniture groups set into the open floor first (rooms/vignettes.ts). */
+  vignettes?: VignetteSet;
   steps: readonly Step[];
+}
+
+/** A hand-made group of modules, laid out at rotation 0 round its origin (chairs turn to face their table). */
+export interface Vignette {
+  name: string;
+  mods: readonly { mod: string; x: number; y: number; rot?: number }[];
+}
+
+export interface VignetteSet {
+  pieces: readonly Vignette[];
+  /** Least distance in tiles between two pieces' anchors. */
+  gap: number;
+  /** Share of the room's floor the pieces fill before they stop. */
+  upTo: number;
+  /** Rooms smaller than this get none. */
+  minFloor?: number;
 }
 
 export interface RoomRecipe {
