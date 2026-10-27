@@ -638,3 +638,99 @@ def pillar_civic():
 
 SPRITES += [("concept.pillar_industrial", (1, 1), "prop", pillar_industrial),
             ("concept.pillar_civic", (1, 1), "prop", pillar_civic)]
+
+
+# ---- v8: stronger silhouettes and invented detail, after the wider house set (ai core, cryo pod, reactor, shield) --
+
+def _cable(k, u0, v0, u1, v1):
+    """A floor cable from (u0, v0) to (u1, v1), along u then v, with a clamp at the bend."""
+    k.box((u0 + u1) / 2, v0, 0.0, abs(u1 - u0) + 0.06, 0.06, 0.03, "dark", top="gmD")
+    k.box(u1, (v0 + v1) / 2, 0.0, 0.06, abs(v1 - v0) + 0.06, 0.03, "dark", top="gmD")
+    k.box(u1, v0, 0.0, 0.1, 0.1, 0.045, "steelD", top="steel")
+
+
+def pillar_lumen():
+    """A lantern column: a cream base tapering in like the AI core, cream corner posts caging a dark louvred core, a
+    cyan seam up the front corner, a service box with three amber lamps, a domed emitter on a rounded cap."""
+    k = K("lc_p_lumen", (1, 1), 0)
+    _socket(k)
+    k.box(0, 0, 0.014, 0.54, 0.54, 0.03, "gmD")                                            # dark foot band
+    k.box(0, 0, 0.044, 0.52, 0.52, 0.14, "lvW2", top="lvW", bevel=0.03, taper=0.78)        # tapering base
+    k.box(0, 0, 0.184, 0.3, 0.3, 0.58, "navy", top="gmD")                                  # the core
+    for f, (su, sv) in (("u", (1, 0)), ("v", (0, 1))):
+        _louvred(k, su * 0.13, sv * 0.13, 0.22, 0.24, 0.5, f, "gmD")
+    for su in (-1, 1):                                                                 # cream corner posts
+        for sv in (-1, 1):
+            k.box(su * 0.15, sv * 0.15, 0.184, 0.075, 0.075, 0.58, "lvW2", top="lvW", bevel=0.012)
+    k.box(0.19, 0.19, 0.22, 0.012, 0.012, 0.5, "cyan")                                    # cyan seam up the front corner
+    k.box(0, 0, 0.764, 0.4, 0.4, 0.08, "lvW2", top="lvW", bevel=0.035, taper=0.82)         # rounded cap
+    k.cyl(0, 0, 0.844, 0.1, 0.02, "gmD", sides=12)
+    k.cyl(0, 0, 0.864, 0.08, 0.05, "arc", sides=12, rtop=0.04)                            # domed emitter
+    k.box(-0.08, 0.27, 0.06, 0.18, 0.1, 0.16, "gm", top="steel", bevel=0.01)               # service box on the base
+    for i in range(3):
+        k.box(-0.13 + i * 0.05, 0.322, 0.16, 0.03, 0.008, 0.03, "orange")                   # three amber lamps
+    k.box(-0.08, 0.322, 0.085, 0.12, 0.008, 0.04, "dark")                                  # vent slot
+    _cable(k, -0.17, 0.3, -0.5, 0.3)
+    return k.build()
+
+
+def pillar_capsule():
+    """A capsule lamp: a ribbed tube of light between a heavy round base (hazard ring) and a round cap, held by two
+    spines with cyan seams like the cryo pod, a red beacon on top."""
+    k = K("lc_p_capsule", (1, 1), 0)
+    _socket(k)
+    k.cyl(0, 0, 0.014, 0.28, 0.1, "gm", top="steel", sides=16)                            # heavy base
+    for i in range(16):                                                                # hazard ring round it
+        a = i * math.tau / 16
+        k.box(0.283 * math.cos(a), 0.283 * math.sin(a), 0.03, 0.11, 0.008, 0.06, "hazY" if i % 2 else "hazK",
+              rz=a + math.pi / 2)
+    k.cyl(0, 0, 0.114, 0.21, 0.06, "lvW2", top="lvW", sides=16)                           # collar
+    k.cyl(0, 0, 0.174, 0.14, 0.52, "arc", sides=14)                                        # the light tube
+    for j in range(3):                                                                 # steel bands round it
+        k.cyl(0, 0, 0.27 + j * 0.14, 0.15, 2 * PX, "steelD", top="steel", sides=14)
+    k.cyl(0, 0, 0.174, 0.145, 0.05, "cyan", sides=14)                                      # cyan glow at its foot
+    for a in (0.0, math.pi / 2):                                                       # two spines, front right and left
+        u, v = 0.19 * math.cos(a + math.pi / 4 - math.pi / 4), 0.19 * math.sin(a)
+        u, v = (0.19, 0.0) if a == 0 else (0.0, 0.19)
+        su, sv = (0.06, 0.1) if a == 0 else (0.1, 0.06)
+        k.box(u, v, 0.174, su, sv, 0.52, "lvW2", top="lvW", bevel=0.012)
+        k.box(u + (0.032 if a == 0 else 0), v + (0.032 if a else 0), 0.2, *((0.006, 0.02) if a == 0 else (0.02, 0.006)),
+              0.46, "cyan")
+    for a in (math.pi, 3 * math.pi / 2):                                               # back spines
+        k.box(0.19 * math.cos(a), 0.19 * math.sin(a), 0.174, 0.08, 0.08, 0.52, "lvW2", top="lvW")
+    k.cyl(0, 0, 0.694, 0.22, 0.07, "lvW2", top="lvW", sides=16)                           # cap
+    k.cyl(0, 0, 0.764, 0.15, 0.04, "gm", top="steel", sides=12, rtop=0.12)
+    k.cyl(0.0, 0.0, 0.804, 0.035, 0.05, "red", sides=8)                                    # beacon
+    _cable(k, 0.0, -0.28, -0.5, -0.28)
+    return k.build()
+
+
+def pillar_flood():
+    """A flood cart: a yellow work-light cart for hangars and docks, two lamp heads tilted down on a mast, a handle,
+    a cable reel, stubby wheels."""
+    k = K("lc_p_flood", (1, 1), 0)
+    for su in (-1, 1):                                                                 # stubby wheels
+        for sv in (-1, 1):
+            k.box(su * 0.26, sv * 0.2, 0.0, 0.08, 0.12, 0.1, "dark", top="gmD", bevel=0.02)
+    k.box(0, 0, 0.06, 0.56, 0.5, 0.26, "hazY", top="ochM", bevel=0.025)                    # yellow body
+    k.box(0, 0, 0.06, 0.58, 0.52, 0.05, "gmD")                                             # bumper
+    for i in range(4):                                                                 # vents on the front
+        k.box(-0.15 + i * 0.1, 0.252, 0.14, 0.06, 0.008, 0.1, "dark")
+    k.box(0.18, 0.252, 0.17, 0.08, 0.008, 0.08, "lvW")                                     # rating plate
+    k.cyl(-0.29, 0.0, 0.12, 0.1, 0.12, "gm", top="steel", sides=12)                        # cable reel on the side
+    k.cyl(-0.29, 0.0, 0.16, 0.11, 0.03, "dark", sides=12)
+    k.box(0, -0.2, 0.32, 0.44, 0.04, 0.18, "steelD", top="steel")                          # push handle
+    k.box(0, -0.2, 0.48, 0.48, 0.06, 0.04, "dark")
+    k.box(0, 0.0, 0.32, 0.07, 0.07, 0.42, "steel", top="steelL")                           # mast
+    k.box(0, 0.0, 0.7, 0.5, 0.06, 0.05, "steelD", top="steel")                             # yoke
+    for u in (-0.14, 0.14):                                                            # two lamp heads, tilted down
+        k.box(u, 0.05, 0.6, 0.24, 0.18, 0.2, "gm", top="steel", bevel=0.015, rx=0.5)
+        k.box(u, 0.15, 0.625, 0.2, 0.01, 0.15, "arc", rx=0.5)
+        k.box(u, 0.155, 0.69, 0.2, 0.012, PX, "gm", rx=0.5)
+    k.cyl(0.2, 0.15, 0.32, 0.03, 0.04, "green", sides=8)                                   # power lamp
+    return k.build()
+
+
+SPRITES += [("concept.pillar_lumen", (1, 1), "prop", pillar_lumen),
+            ("concept.pillar_capsule", (1, 1), "prop", pillar_capsule),
+            ("concept.pillar_flood", (1, 1), "prop", pillar_flood)]
