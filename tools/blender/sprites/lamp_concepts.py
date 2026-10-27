@@ -551,3 +551,90 @@ SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (
 SPRITES += [("concept.wall_wedge.ctx", (1, 1), "prop", lambda: wall_wedge(True)),
             ("concept.wall_pods.ctx", (1, 1), "prop", lambda: wall_pods(True)),
             ("concept.wall_wash.ctx", (1, 1), "prop", lambda: _wall_wash(True))]
+
+
+# ---- v7: one piece in depth, detailed like the house modules (battery, consoles) --------------------------------
+
+from .modkit import K  # noqa: E402
+
+
+def _socket(k):
+    """A floor socket: a steel lip, a dark well, four corner bolts, a feed cable out to the tile edge."""
+    k.box(0, 0, 0.0, 0.74, 0.74, 0.014, "steelD", top="gm", bevel=0.006)
+    k.box(0, 0, 0.004, 0.64, 0.64, 0.012, "dark")
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.cyl(su * 0.31, sv * 0.31, 0.014, 0.024, 0.012, "plate", sides=6)
+    k.box(-0.42, -0.12, 0.0, 0.2, 0.07, 0.035, "dark", top="gmD")                           # feed cable
+    k.box(-0.33, -0.12, 0.0, 0.06, 0.1, 0.05, "steelD", top="steel")                          # its clamp
+
+
+def _louvred(k, u, v, z, w, h, face, frame, n=3):
+    """A lamp window on a side face (face 'u' or 'v', facing +): a frame, a dark recess, n lit slats with 2 px gaps."""
+    sz = (lambda a, t, c: (t, a, c)) if face == "u" else (lambda a, t, c: (a, t, c))         # noqa: E731
+    du, dv = (1, 0) if face == "u" else (0, 1)
+    k.box(u, v, z, *sz(w, 0.05, h), frame, top="steelL", bevel=0.008)                         # frame
+    k.box(u + du * 0.026, v + dv * 0.026, z + 0.03, *sz(w - 0.06, 0.006, h - 0.06), "navy")   # dark recess
+    gap = 2 * PX
+    sh = (h - 0.06 - (n + 1) * gap) / n
+    for i in range(n):                                                                 # lit slats
+        zz = z + 0.03 + gap + i * (sh + gap)
+        k.box(u + du * 0.03, v + dv * 0.03, zz, *sz(w - 0.06 - 2 * PX, 0.008, sh), "cyan" if i == 0 else "arc")
+
+
+def _pillar_body(k, shell, shellTop, trim, core_col):
+    core_w = 0.27
+    h = core_w / 2
+    k.box(0, 0, 0.014, 0.5, 0.5, 0.1, shell, top=shellTop, bevel=0.02)                      # plinth
+    k.box(0, 0, 0.114, 0.38, 0.38, 0.08, "gm", top="gmD", bevel=0.01)                      # lower housing
+    for i in range(3):                                                                 # vent slots on two faces
+        k.box(0.191, -0.08 + i * 0.08, 0.13, 0.008, 0.05, 0.045, "dark")
+        k.box(-0.08 + i * 0.08, 0.191, 0.13, 0.05, 0.008, 0.045, "dark")
+    k.box(0, 0, 0.19, core_w, core_w, 0.6, core_col, top="gmD")                            # the core
+    for z in (0.34, 0.56):                                                             # panel seams on the core
+        k.box(0, 0, z, core_w + 0.008, core_w + 0.008, 0.012, "gmD")
+    off = h + 0.03
+    for f, (su, sv) in (("u", (1, 0)), ("v", (0, 1))):                                 # the two camera-side panels
+        _louvred(k, su * off, sv * off, 0.24, 0.3, 0.48, f, trim)
+    for su, sv in ((-1, 0), (0, -1)):                                                  # back panels (frames only)
+        k.box(su * off, sv * off, 0.24, *((0.05, 0.3, 0.48) if su else (0.3, 0.05, 0.48)), trim, top="steelL")
+    for su in (-1, 1):                                                                 # corner brackets top and bottom
+        for sv in (-1, 1):
+            for z in (0.2, 0.7):
+                k.box(su * (h + 0.005), sv * (h + 0.005), z, 0.05, 0.05, 0.06, "steelD", top="steel")
+    k.box(0, 0, 0.79, 0.4, 0.4, 0.05, shell, top=shellTop, bevel=0.015)                     # cap
+    k.box(0, 0, 0.84, 0.26, 0.26, 0.03, "gm", top="gmD")                                   # vent block
+    for i in range(4):                                                                 # vent grille on top
+        k.box(0, -0.09 + i * 0.06, 0.87, 0.2, PX, 0.004, "dark")
+
+
+def pillar_industrial():
+    """Industrial finish: gunmetal shell, hazard edging, a status lamp, an ID plate, a short antenna."""
+    k = K("lc_p_ind", (1, 1), 0)
+    _socket(k)
+    _pillar_body(k, "steel", "steelL", "steel", "navy")
+    for i in range(5):                                                                 # hazard band on the plinth
+        k.box(-0.18 + i * 0.09, 0.256, 0.035, 0.045, 0.006, 0.06, "hazY")
+        k.box(0.256, -0.18 + i * 0.09, 0.035, 0.006, 0.045, 0.06, "hazY")
+    k.box(0.252, 0.0, 0.03, 0.006, 0.44, 0.07, "hazK")
+    k.box(0.0, 0.252, 0.03, 0.44, 0.006, 0.07, "hazK")
+    k.box(0.16, 0.2, 0.84, 0.05, 0.05, 0.04, "green")                                      # status lamp
+    k.cyl(-0.15, -0.15, 0.84, 0.012, 0.16, "steelL", sides=6)                              # antenna
+    k.cyl(-0.15, -0.15, 1.0, 0.022, 0.02, "red", sides=6)                                  # its tip
+    k.box(-0.11, 0.196, 0.13, 0.08, 0.008, 0.05, "lvW")                                    # ID plate
+    return k.build()
+
+
+def pillar_civic():
+    """Civic finish: a cream shell with rounded edges, a cyan trim line and a lit crown, no clutter."""
+    k = K("lc_p_civ", (1, 1), 0)
+    _socket(k)
+    _pillar_body(k, "lvW2", "lvW", "lvW2", "gmD")
+    k.box(0, 0, 0.09, 0.505, 0.505, 0.014, "cyan")                                         # trim line round the plinth
+    k.box(0, 0, 0.83, 0.405, 0.405, 0.008, "cyan")                                         # and round the cap
+    k.box(0, 0, 0.87, 0.12, 0.12, 0.03, "arc", bevel=0.01)                                 # lit crown
+    return k.build()
+
+
+SPRITES += [("concept.pillar_industrial", (1, 1), "prop", pillar_industrial),
+            ("concept.pillar_civic", (1, 1), "prop", pillar_civic)]
