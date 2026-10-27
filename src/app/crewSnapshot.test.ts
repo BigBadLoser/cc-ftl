@@ -28,6 +28,9 @@ describe('buildCrewLists', () => {
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     run(sim, 5);
     expect(buildCrewLists(sim).hostiles).toHaveLength(0);
+    // The one being inspected is listed even where none of the player's crew stand (a click on it must always open the inspector).
+    const foe = sim.world.query(CrewC).find((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === shipIds(sim)[1])!;
+    expect(buildCrewLists(sim, foe).hostiles.map((h) => h.id)).toEqual([foe]);
     const id = sim.world.query(CrewC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === shipIds(sim)[0] as number)!;
     const pos = sim.world.get(id, PositionC)!;
     const raider = shipGrid(sim, shipIds(sim)[1] as number)!;

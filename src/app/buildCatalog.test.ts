@@ -118,7 +118,7 @@ describe('placement tool state', () => {
 
   it.each(['escape', 'back'])('%s drops the placement first, then leaves build mode', (how) => {
     const { c, h } = setup();
-    const press = () => (how === 'escape' ? h.onKey('escape') : h.onBack());
+    const press = () => (how === 'escape' ? h.onKey('escape') : h.onContext(0, 0, false));
     c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.fabricator' });
     press();
     expect(toolOf(c)).toMatchObject({ tool: 'build', build: 'module', moduleDef: null });

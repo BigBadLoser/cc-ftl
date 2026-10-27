@@ -101,7 +101,7 @@
         </div>
       {/if}
       <div class="btns one"><button class:on={c.fight?.engage ?? true} data-testid="engage" onclick={() => api.dispatch({ type: 'crew.setEngage', id: c.id, engage: !(c.fight?.engage ?? true) })}>Fire at will: {(c.fight?.engage ?? true) ? 'on' : 'off'}</button></div>
-      <p class="hint">Tap a tile to move (any ship; crossing open space needs a suit), tap a hostile to attack.</p>
+      <p class="hint">Right-click a tile to move, a hostile to attack, a console to man it, the shuttle to board. Drag a box to select several.</p>
     {/if}
     {/if}
   </div>

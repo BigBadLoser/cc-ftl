@@ -27,14 +27,18 @@ export type Command =
   | { type: 'crew.draft'; id: number; drafted: boolean }
   /** Drafted crew attack this hostile crew member or egg sac (walking into range first) until it is subdued or burst. Cleared by crew.moveTo. */
   | { type: 'crew.attack'; id: number; target: number }
+  /** A drafted crew member walks to a console of their ship (a battle station: weapons, shields, helm) and operates it, replacing its operator. Cleared by a move, attack or embark order. */
+  | { type: 'crew.man'; id: number; module: number }
   /** Drafted crew shoot at the nearest visible hostile on their own (default on), or hold fire. */
   | { type: 'crew.setEngage'; id: number; engage: boolean }
   /** Fetch an `item` weapon from the nearest storage holding it and wield it (swapping the old one back). */
   | { type: 'crew.equip'; id: number; item: string }
   /** Drop the wielded weapon at the crew member's feet. */
   | { type: 'crew.unequip'; id: number }
-  /** Walk a drafted crew member to a tile (on `ship` if given; another ship is out of reach). */
+  /** Walk a drafted crew member to a tile (on `ship` if given, which must be the ship it stands on). */
   | { type: 'crew.moveTo'; id: number; x: number; y: number; ship?: number }
+  /** Walk a group of drafted crew to the free tiles nearest (x, y) of `ship` (default: the first one's ship): each takes its own tile. Members on another ship are left out. */
+  | { type: 'crew.moveGroup'; ids: number[]; x: number; y: number; ship?: number }
   /** Ask an airlock module to open its `to` side (it cycles when the open doorway is clear). */
   | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
   /** Give or take a crew member's EVA suit. */

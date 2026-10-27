@@ -5,7 +5,7 @@
   import PodList from './PodList.svelte';
   import type { UiMining } from './api';
 
-  let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
+  let { api, onBack, only = null }: { api: UiApi; onBack: () => void; only?: number | null } = $props();
   let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
   onMount(() => {
@@ -19,14 +19,15 @@
         : s.destination === 'hover' ? 'Flying to hover' : s.hoverShip ? `Hovering beside ${s.hoverShip}` : s.destination === 'dock' ? 'Flying to dock' : s.destination === 'bay' ? 'Returning to bay' : 'Hovering';
   const seatsLeft = (s: UiShuttles['shuttles'][number]) => s.capacity + 1 - (s.pilot ? 1 : 0) - s.passengers.length;
   const embark = (crew: number, vehicle: number) => api.dispatch({ type: 'vehicle.embark', crew, vehicle });
-  const free = (s: UiShuttles['shuttles'][number]) => data.roster.filter((c) => !c.boarding || c.boarding === s.id);
+  // Crew who can walk to the boarding tile: those on the ship it is on (the home ship, or the one it is docked at).
+  const free = (s: UiShuttles['shuttles'][number]) => data.roster.filter((c) => c.ship === s.boardShip && (!c.boarding || c.boarding === s.id));
   const walking = (s: UiShuttles['shuttles'][number]) => data.roster.filter((c) => c.boarding === s.id);
 </script>
 
 <div data-testid="shuttle-panel" aria-label="Shuttles">
-  <PanelHead icon="shuttle" title="Shuttles" {onBack} />
+  <PanelHead icon="shuttle" title={only === null ? 'Shuttles' : 'Shuttle'} {onBack} />
 
-  {#each data.shuttles as s (s.id)}
+  {#each data.shuttles.filter((x) => only === null || x.id === only) as s (s.id)}
     {@const left = seatsLeft(s)}
     <section data-testid="shuttle-{s.id}">
       <h3>

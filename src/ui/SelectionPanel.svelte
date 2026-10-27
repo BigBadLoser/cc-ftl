@@ -21,6 +21,7 @@
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
   let selAst = $state<number | null>(null);
+  let selShuttle = $state<number | null>(null);
   let sites = $state<UiSite[]>([]);
   let selSite = $state<number | null>(null);
 
@@ -35,6 +36,7 @@
       api.selectedModule.subscribe((v) => (selMod = v)),
       api.selectedShip.subscribe((v) => (selShip = v)),
       api.selectedAsteroid.subscribe((v) => (selAst = v)),
+      api.selectedShuttle.subscribe((v) => (selShuttle = v)),
       api.sites.subscribe((v) => (sites = v)),
       api.selectedSite.subscribe((v) => (selSite = v)),
     ];
@@ -51,13 +53,15 @@
   /** The inspector exists only while something is selected; ship stats live behind the ship tab. */
   /** A pinned inspector stays up (empty) when the selection clears. */
   let pinned = $state(isPinned('inspector'));
-  const shown = $derived(selAst !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
+  const shown = $derived(selAst !== null || selShuttle !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
 </script>
 
 {#if shown || pinned}
 <FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinRight={0} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
+  {:else if selShuttle !== null}
+    <ShuttlePanel {api} only={selShuttle} onBack={back} />
   {:else if selShip !== null}
     <GridPanel {api} ship={selShip} onBack={back} {onTrade} {onStation} />
   {:else if hasCrew}
