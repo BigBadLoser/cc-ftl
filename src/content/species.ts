@@ -43,6 +43,19 @@ export const species = {
     hunger: { decayPerSec: 0.12 },
     mood: true,
   },
+  // Zealot crews: human, machine-touched (tougher) and fearless, so they never surrender. Real implants arrive with phase 7; until then this body stands in for them.
+  'species.augmented': {
+    name: 'Augmented human',
+    moveSpeed: 2.5,
+    workSpeed: 1,
+    restDecay: 0.6,
+    carryCapacity: 40,
+    maxHp: 130,
+    armor: 0.1,
+    hunger: { decayPerSec: 0.12 },
+    mood: true,
+    fearless: true,
+  },
   // Robot crew (the rogue AI faction; player-built in robot bays). Variants are roles (role.robot_*).
   'species.robot': robot,
   // Security chassis: armoured and heavier, slower; wrecks yield more parts.

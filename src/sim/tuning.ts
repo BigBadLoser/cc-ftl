@@ -206,6 +206,11 @@ export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
 
+/** Zealot core raid (capture/coreRaid.ts): ticks raiders must hold an AI core undisturbed to tear it out, how close they stand, and how close a defender must be to stop them. */
+export const CORE_RAID_HOLD_TICKS = 40 * 20;
+export const CORE_RAID_RADIUS = 2.5;
+export const CORE_RAID_DEFENDER_RADIUS = 5;
+
 // --- Crew combat ---
 /** Crew notice hostiles this far away (tiles) when they have line of sight. */
 export const COMBAT_SIGHT = 16;

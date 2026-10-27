@@ -116,6 +116,8 @@ export interface Contact {
   size?: ShipSize;
   /** A bounty target (jobs.ts): the id of the job it is wanted by; its ship carries it too (`Ship.bounty`). */
   bounty?: number;
+  /** A hired escort (roster.ts `FleetGroupDef.escort`): the faction that pays it. It flies on that faction's side in a fight; `faction` stays its own. */
+  hired?: string;
 }
 
 export interface NodeState {

@@ -3,9 +3,10 @@ import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { factionsHostile, isAiFaction } from '../combat/factions';
 import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
+import { CrewC, DeadC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { VehicleC } from '../vehicles/components';
+import { BoarderC, VehicleC } from '../vehicles/components';
 import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 
 /**
@@ -24,7 +25,11 @@ export function enemyAiSystem(sim: Sim): void {
       sim.enqueue({ type: 'combat.flee', ship: id });
       continue;
     }
-    if (combat.hold) sim.enqueue({ type: 'combat.setHold', ship: id, hold: false });
+    // A raider whose party is out holds fire: it wants the ship, not a wreck.
+    const boarder = sim.world.get(id, BoarderC);
+    const sparing = !!boarder?.prefer && boarder.state !== 'idle' && boarder.crew.some((c) => sim.world.has(c, CrewC) && !sim.world.has(c, DeadC));
+    if (combat.hold !== sparing) sim.enqueue({ type: 'combat.setHold', ship: id, hold: sparing });
+    if (sparing) continue;
     if (combat.aiTimer > 0) {
       combat.aiTimer--;
       continue;

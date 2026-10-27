@@ -25,3 +25,13 @@ export const pirateSecond = ['Jackal', 'Saint', 'Widow', 'Crow', 'Tithe', 'Maw',
 /** Rogue AI: "Unit Reap 31". */
 export const droneFirst = ['Cull', 'Reap', 'Null', 'Hush', 'Void', 'Rend', 'Grind', 'Sift', 'Echo', 'Wane'] as const;
 export const droneSecond = ['7', '12', '19', '23', '31', '44', '58', '63', '77', '90'] as const;
+
+// Raider clans: quick and predatory. Cartel: ledgers and cargo. Zealots: liturgy. Mercenaries: contracts and calibres.
+export const raiderFirst = ['Swift', 'Gale', 'Barb', 'Fleet', 'Thorn', 'Slip', 'Hook', 'Dart', 'Snare', 'Whip', 'Lash', 'Tern'] as const;
+export const raiderSecond = ['Gull', 'Shrike', 'Kestrel', 'Skiff', 'Wolf', 'Talon', 'Pike', 'Rake', 'Hawk', 'Eel', 'Stoat', 'Wasp'] as const;
+export const cartelFirst = ['Velvet', 'Quiet', 'Golden', 'Open', 'Silk', 'Marked', 'Brass', 'Tithe', 'Slow', 'Deep', 'Cutout', 'Ledger'] as const;
+export const cartelSecond = ['Account', 'Courier', 'Consignment', 'Favour', 'Margin', 'Understanding', 'Parcel', 'Debt', 'Commission', 'Shipment', 'Retainer', 'Arrangement'] as const;
+export const zealotFirst = ['Blessed', 'Ascendant', 'Pure', 'Radiant', 'Unbound', 'Awakened', 'Sworn', 'Anointed', 'Exalted', 'Faithful'] as const;
+export const zealotSecond = ['Circuit', 'Liturgy', 'Psalm', 'Signal', 'Covenant', 'Litany', 'Choir', 'Ordinal', 'Vigil', 'Mantra'] as const;
+export const mercFirst = ['Steady', 'Contract', 'Brevet', 'Standing', 'Paid', 'Hired', 'Clause', 'Salt', 'Ironside', 'Retained'] as const;
+export const mercSecond = ['Lance', 'Company', 'Guard', 'Spear', 'Banner', 'Vanguard', 'Charter', 'Picket', 'Bastion', 'Warden'] as const;

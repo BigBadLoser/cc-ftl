@@ -1,3 +1,4 @@
+import { CoreRaiderC, besideBox, coreObjective } from '../capture/coreRaid';
 import { releaseBedClaim } from '../crew/beds';
 import { AssignmentC, CarriedC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
 import { clearPath, facingOf, isSettled, origin, releaseAssignment } from '../crew/helpers';
@@ -74,7 +75,7 @@ function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void 
 }
 
 /** Walk to `goal` (adjacent to it if `adjacent`), replanning when idle on the way or when the goal moved. */
-function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: number; y: number }, adjacent: boolean): void {
+function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: number; y: number; w?: number; h?: number }, adjacent: boolean): void {
   const path = sim.world.get(id, PathC) as Path;
   const moved = !f.goal || f.goal.x !== goal.x || f.goal.y !== goal.y;
   const idle = path.steps.length === 0 && isSettled(pos);
@@ -126,8 +127,15 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
-      const goal = consoleObjective(sim, shipIdOf(sim, pos), pos);
-      if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
+      const shipId = shipIdOf(sim, pos);
+      // Zealot raiders go for the AI core when the ship has one; otherwise they board like anyone else.
+      const core = sim.world.has(id, CoreRaiderC) ? coreObjective(sim, shipId, pos) : null;
+      if (core) {
+        if (!besideBox(pos, core)) walkTo(sim, id, f, pos, core, true);
+      } else {
+        const goal = consoleObjective(sim, shipId, pos);
+        if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
+      }
     }
     return;
   }

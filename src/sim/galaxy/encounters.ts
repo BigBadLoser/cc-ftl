@@ -26,9 +26,18 @@ import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
 export function encounterKind(sim: Sim, f: Fleet): EncounterKind {
   const hostile = isHostileFaction(sim, f.faction);
   if (f.damaged) return hostile ? 'hail' : 'distress';
-  if ((f.role === 'pirate' || f.role === 'raider' || f.hunt) && hostile) return 'interdict';
+  if ((f.role === 'pirate' || f.role === 'raider' || f.hunt) && hostile) {
+    // A route guard (the cartel) holds up travellers on its own routes only; elsewhere it passes like a trader, unless it was sent to hunt you.
+    if (!f.hunt && offRoute(sim, f)) return 'hail';
+    return 'interdict';
+  }
   if (f.role === 'patrol') return 'scan';
   return 'hail';
+}
+
+/** Is the fleet a route guard outside its own faction's space? */
+export function offRoute(sim: Sim, f: Fleet): boolean {
+  return !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes && nodeOf(sim, f.node)?.faction !== f.faction;
 }
 
 const PASSING_SALT = 0x9a55;

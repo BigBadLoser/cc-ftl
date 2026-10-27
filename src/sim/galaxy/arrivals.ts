@@ -88,7 +88,9 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   const spot = freeSpot(sim, gen.width, gen.height);
   if (!spot) return false;
   memo.delete(key);
-  const side = isHostileFaction(sim, c.faction) ? sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile' : 'neutral';
+  // A hired escort fights for whoever pays it.
+  const payer = c.hired ?? c.faction;
+  const side = isHostileFaction(sim, payer) ? sim.content.galaxy?.factions[payer]?.combatFaction ?? 'hostile' : 'neutral';
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
   if (ship) {

@@ -9,11 +9,12 @@ import { playerShips, playerStorages } from '../story/world';
 import { playerShip } from '../trade/player';
 import { addNotoriety, tallyLosses } from './heat';
 import { offersHere } from './jobOffers';
+import { atWarContent } from './relations';
 import { repKey } from './standing';
 import { nodeState } from './state';
 import { planStarRoute } from './route';
 import { ShipC } from '../combat/components';
-import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS } from './tuningJobs';
+import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS, RIVAL_REPUTATION } from './tuningJobs';
 import type { StationJob } from './types';
 
 /**
@@ -66,6 +67,15 @@ function standing(sim: Sim, faction: string, delta: number): void {
   sim.story.reputation[key] = reputationOf(sim.story, key) + delta;
 }
 
+/** Pirate factions at war with `target` (other than `issuer`) think better of the player: they took a rival down. */
+function rivalsPleased(sim: Sim, target: string, issuer: string): void {
+  const content = sim.content.galaxy;
+  if (!content) return;
+  for (const id of Object.keys(content.factions).sort()) {
+    if (id !== target && id !== issuer && content.factions[id]?.kind === 'pirates' && atWarContent(content, id, target)) standing(sim, id, RIVAL_REPUTATION);
+  }
+}
+
 function remember(sim: Sim, key: string): void {
   const log = sim.galaxy.jobLog;
   log.push(key);
@@ -116,6 +126,8 @@ function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandone
     bumpStat(sim, 'jobsDone');
     if (job.kind === 'bounty') bumpStat(sim, 'bountiesDone');
     standing(sim, job.issuer, JOB_REPUTATION);
+    // A bounty on one pirate faction pleases the pirate factions at war with it (never the issuer twice).
+    if (job.kind === 'bounty' && job.targetFaction) rivalsPleased(sim, job.targetFaction, job.issuer);
   } else {
     standing(sim, job.issuer, -JOB_FAIL_REPUTATION);
     if (job.kind === 'delivery') addNotoriety(sim, BREACH_NOTORIETY, job.issuer);
