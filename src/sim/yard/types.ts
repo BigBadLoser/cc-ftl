@@ -2,7 +2,7 @@ import { defineComponent } from '../ecs';
 
 type Tile = { x: number; y: number };
 
-/** One yard size tier ('station' or 'hub'): hull tiles (outer ring) it will build in one visit, and its price multiplier. */
+/** One yard size tier ('station' or 'hub'): tiles (outline and floor) it will build in one visit, and its price multiplier. */
 export interface YardSizeDef {
   cap: number;
   price: number;
@@ -10,7 +10,7 @@ export interface YardSizeDef {
 
 /**
  * Shipyard content (`ContentRegistry.yard`): which stations offer hull expansion and what it costs. A station offers it when its generator kind
- * (`ShipC.gen.faction`) is in `kinds` and its size (`gen.role`) has a tier in `sizes`. Price per hull tile bought is `perTile` x the tier's `price`
+ * (`ShipC.gen.faction`) is in `kinds` and its size (`gen.role`) has a tier in `sizes`. Price per tile built (outline and floor) is `perTile` x the tier's `price`
  * x (1 + `dangerStep` x the node's danger).
  */
 export interface YardDef {

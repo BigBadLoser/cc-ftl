@@ -35,7 +35,7 @@ describe('the yard crew', () => {
     const credits = sim.trade.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     const quoteHull = quoteYard(sim, station, me).hull.after;
-    const price = yardPrice(sim, yardService(sim, station)!, 10);
+    const price = yardPrice(sim, yardService(sim, station)!, 12);
     sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;
@@ -93,7 +93,7 @@ describe('the yard crew', () => {
     const wallet = trader.credits;
     const credits = sim.trade.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
-    const price = yardPrice(sim, yardService(sim, station)!, 10);
+    const price = yardPrice(sim, yardService(sim, station)!, 12);
     sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;

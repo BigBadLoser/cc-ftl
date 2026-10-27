@@ -29,7 +29,7 @@
 <div class="yard" data-testid="yard-pane">
   <div class="offer">
     <b>{svc.size === 'hub' ? 'Hub shipyard' : 'Station shipyard'}</b>
-    <span>Builds up to <b>{svc.cap}</b> hull tiles a visit · {svc.price.credits} ₵ and {svc.price.metal} metal a tile, floor inside included · ship size limit {svc.hull.max}</span>
+    <span>Builds up to <b>{svc.cap}</b> tiles a visit · {svc.price.credits} ₵ and {svc.price.metal} metal a tile · ship size limit {svc.hull.max}</span>
   </div>
 
   {#if order}
@@ -48,8 +48,8 @@
       {#if !planned}
         <p class="note" data-testid="yard-noplan">No hull planned. Draw the outline with Build → Hull plan, any time, then buy it at a yard.</p>
       {:else if quote}
-        <div class="row"><span>Planned</span><b data-testid="yard-planned">{quote.planned} hull tiles</b></div>
-        <div class="row"><span>This visit</span><b data-testid="yard-tiles" class:bad={quote.buy === 0}>{quote.buy} / {quote.cap} hull tiles{quote.floor ? ` + ${quote.floor} floor` : ''}</b></div>
+        <div class="row"><span>Planned</span><b data-testid="yard-planned">{quote.planned} outline tiles</b></div>
+        <div class="row"><span>This visit</span><b data-testid="yard-tiles" class:bad={quote.buy === 0}>{quote.buy} / {quote.cap} tiles{quote.floor ? ` (${quote.buy - quote.floor} outline + ${quote.floor} floor)` : ''}</b></div>
         <div class="row"><span>Cost</span>
           <b data-testid="yard-cost">
             <span class:bad={!quote.afford.credits}>{quote.price.credits} ₵</span>

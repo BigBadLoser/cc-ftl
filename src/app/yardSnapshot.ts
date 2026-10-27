@@ -43,7 +43,7 @@ export function quoteOf(sim: Sim, station: number): UiYardQuote | null {
   if (!station) return null;
   const q = quoteYard(sim, station);
   return {
-    station, error: q.error, errorText: q.error ? rejectionMessage(q.error) : '', buy: q.walls.length, floor: q.floor.length, planned: q.planned, rest: q.rest,
+    station, error: q.error, errorText: q.error ? rejectionMessage(q.error) : '', buy: q.walls.length + q.floor.length, floor: q.floor.length, planned: q.planned, rest: q.rest,
     price: q.price, afford: q.afford, cap: q.cap, hull: q.hull,
   };
 }

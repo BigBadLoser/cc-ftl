@@ -257,7 +257,7 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   const rank = rowRanks(sim, ship, union(own, boxOf(view.connected, 1)));
   const { walls, floor } = pickSection(view.connected, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w));
   const after = areaWith(sim, ship, walls, floor);
-  const cost = yardPrice(sim, service, walls.length);
+  const cost = yardPrice(sim, service, walls.length + floor.length);
   const planned = new Set(view.tiles.map((t) => key(t.x, t.y)));
   const rect = union(own, boxOf([...walls, ...floor], 1));
   const out: YardQuote = {

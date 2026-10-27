@@ -27,7 +27,7 @@ playtest clarity are all on `main`). Treat the sections below as design notes, n
 
 - **Progression phase 5 (branch `progression-5`, #125):** plan the outer hull in the build tools (Hull plan, any time, saved with the ship), buy it at a yard
   (station panel quote, contractors build up to the visit cap in EVA, the rest stays planned). Size (interior area inside the outer hull) is the readout everywhere (ship panel, engine
-  capacity, jobs screen, ship maximum); the yard prices and caps by outer-ring hull tiles. Engine capacity is Mk I 330 / Mk II 495 / Mk III 700 per engine (starter 416 / 660); the ship maximum is 1400. Contractors build in rows, nearest first. The plan's ghost tiles show only in the Hull plan tool or a Shipyard tab. Waiting on screenshot approval.
+  capacity, jobs screen, ship maximum); the yard prices and caps by tiles built, outline plus floor (station cap 40, hub 100, 10 credits and 0.75 metal a tile). Engine capacity is Mk I 330 / Mk II 495 / Mk III 700 per engine (starter 416 / 660); the ship maximum is 1400. Contractors build in rows, nearest first. The plan's ghost tiles show only in the Hull plan tool or a Shipyard tab. Waiting on screenshot approval.
   See "Engine capacity and the shipyard" in [ARCHITECTURE.md](ARCHITECTURE.md). **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough
   engines (#129).
 

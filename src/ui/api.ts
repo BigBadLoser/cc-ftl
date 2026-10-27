@@ -710,7 +710,7 @@ export interface UiStationInfo {
   yard: UiYardService | null;
 }
 
-/** What a station's shipyard offers. `price` is per hull tile now (the node's danger and the tier's multiplier included). */
+/** What a station's shipyard offers. `price` is per tile now (the node's danger and the tier's multiplier included). */
 export interface UiYardService {
   /** 'station' or 'hub'. */
   size: string;
@@ -739,7 +739,7 @@ export interface UiYardQuote {
   station: number;
   error: string | null;
   errorText: string;
-  /** Hull tiles bought now, the floor they enclose, tiles planned in all, and tiles left for a later yard. */
+  /** Tiles bought now (outline plus floor), the floor they enclose, tiles planned in all, and tiles left for a later yard. */
   buy: number;
   floor: number;
   planned: number;

@@ -47,7 +47,7 @@ export const inRowOrder = (tiles: readonly Tile[], rank: (x: number, y: number) 
   [...tiles].sort((a, b) => rank(a.x, a.y) - rank(b.x, b.y) || a.y - b.y || a.x - b.x);
 
 /**
- * What one visit builds of the reachable plan. When all of it fits the cap, all of it. Otherwise the part nearest the ship: every planned tile up to
+ * What one visit builds of the reachable plan; the cap counts every tile built, walls and floor. When all of it fits the cap, all of it. Otherwise the part nearest the ship: every planned tile up to
  * some row, plus a cross wall (tiles of the plan's own floor, one row) that shuts that part in, so the ship left behind is closed and rectangular
  * rather than two spurs. The deepest such cut that fits the cap wins; if none does, the largest closed rectangle of the floor against the ship with its own rim
  * (`closedRect`).
@@ -58,16 +58,17 @@ export function pickSection(
   shut: (walls: readonly Tile[]) => Tile[],
 ): { walls: Tile[]; floor: Tile[] } {
   const ordered = inRowOrder(connected, rank);
-  if (ordered.length <= cap) return { walls: ordered, floor: shut(ordered) };
+  const whole = shut(ordered);
+  if (ordered.length + whole.length <= cap) return { walls: ordered, floor: whole };
   const top = Math.max(0, ...fullFloor.map((t) => rank(t.x, t.y)));
   const planned = new Set(connected.map((t) => key(t.x, t.y)));
   for (let k = top; k >= 1; k--) {
     const cross = fullFloor.filter((t) => rank(t.x, t.y) === k && !planned.has(key(t.x, t.y)));
     const near = ordered.filter((t) => rank(t.x, t.y) <= k);
-    if (cross.length === 0 || near.length + cross.length > cap) continue;
+    if (cross.length === 0 || near.length + cross.length >= cap) continue;
     const walls = inRowOrder([...near, ...cross], rank);
     const floor = shut(walls);
-    if (floor.length > 0) return { walls, floor };
+    if (floor.length > 0 && walls.length + floor.length <= cap) return { walls, floor };
   }
   return closedRect(fullFloor, cap, rank, edge, shut) ?? (() => {
     const walls = ordered.slice(0, cap); // an open outline shuts nothing in: nothing to seal, so just the nearest tiles
@@ -122,6 +123,7 @@ function rectSection(
       if (walls.length > cap) return null;
     }
   }
+  if (walls.length + w * h > cap) return null; // the visit cap counts every tile built, floor included
   if (ship === 0 && !walls.some((t) => rank(t.x, t.y) <= 1)) return null; // not against the ship: it would float
   let near = 0;
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) near += rank(x + i, y + j);

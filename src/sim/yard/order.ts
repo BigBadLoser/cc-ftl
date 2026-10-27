@@ -91,7 +91,7 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
     if (left.length === 0) sim.world.remove(ship, HullPlanC);
     else (sim.world.get(ship, HullPlanC) as { tiles: unknown }).tiles = left;
     sim.yard.orders.push(order);
-    sim.events.emit({ type: 'yard.ordered', order: order.id, station: cmd.station, tiles: quote.walls.length });
+    sim.events.emit({ type: 'yard.ordered', order: order.id, station: cmd.station, tiles: quote.walls.length + quote.floor.length });
   },
   /** `yard.cancel`: send the yard crew home. The unbuilt part is refunded at once; what was built stays and is paid for. */
   'yard.cancel': (sim, cmd) => {
