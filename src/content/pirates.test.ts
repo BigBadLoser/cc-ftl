@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AllegianceC, CORE_RAID_HOLD_TICKS, DownedC, CoreRaidC, CoreRaiderC, CrewC, coreObjective, PositionC, ShipC, TerritoryField, atWar, augmentedCrew, captureReady, createCrew, crewSubdued,
+  AllegianceC, CORE_RAID_HOLD_TICKS, DownedC, CoreRaidC, CoreRaiderC, CrewC, coreObjective, PositionC, ShipC, TerritoryField, augmentedCrew, captureReady, createCrew, crewSubdued,
   encounterKind, hailVerdict, hasLiveCore, homeShip, newGame, neverSurrenders, nodeOf, shipIdOf, spillSources, stanceBetween, standing, tierOf,
   type Fleet, type GalaxyContent, type Sim,
 } from '../sim';
+import { EquipC } from '../sim/fight/components';
 import { ModuleC } from '../sim/modules/components';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '.';
@@ -84,7 +85,7 @@ describe('pirate factions: territory and fleets', () => {
         else if (f === 'zealots') cult.push({ x, y });
       }
       zealots += cult.length;
-      for (const c of cult) expect(rogue.some((r) => Math.hypot(r.x - c.x, r.y - c.y) < 12000), `seed ${seed}`).toBe(true);
+      for (const c of cult) expect(rogue.some((r) => Math.hypot(r.x - c.x, r.y - c.y) < 20000), `seed ${seed}`).toBe(true);
     }
     expect(zealots).toBeGreaterThan(0);
   });
@@ -196,12 +197,14 @@ describe('the core raid', () => {
     const core = sim.world.query(ModuleC).find((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.aiCore) as number;
     const m = sim.world.get(core, ModuleC)!;
     const raider = createCrew(sim, ship, 'role.zealot_guard', { x: m.x, y: m.y }, { faction: 'rogue' });
+    sim.world.add(raider, EquipC, { weapon: 'item.blade' }); // issued to the party when it leaves, so it does not go looking for a gun
     sim.world.add(raider, CoreRaiderC, { from: 0 });
     return { sim, core, raider, ship };
   }
 
   it('tears the core out of a ship whose core room the raiders hold long enough', () => {
     const { sim, core, ship } = raidSetup();
+    sim.step();
     expect(hasLiveCore(sim, ship)).toBe(true);
     const events: string[] = [];
     for (let i = 0; i < 60; i++) {

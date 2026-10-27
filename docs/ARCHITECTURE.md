@@ -1843,3 +1843,11 @@ Suits are the contractors' own and never run dry. The unbuilt share of the price
 (`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
 (`abortYards`). Save v61. UI: the station panel's
 Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.
+
+### Pirate factions (phase 2b slice 1)
+
+- Galaxy factions `pirates` (Scrappers), `raiders`, `cartel`, `zealots`, `mercenaries`, each with its own reputation key and generator style (`content/factions/pirates.ts`, scrapper hulls, told apart by loadout, budget, crew and doctrine; `livery.<id>` hooks await #127). Every pirate pair has a row in `galaxyRelations.ts`; an `allied` row beats `alwaysHostile` (zealots and the Rogue AI). Zealots fly on the rogue combat side so drones never shoot them.
+- Territory: `territory.shares` (raiders, cartel, mercenaries share the Scrappers' seeds) and `territory.near` (zealots take open or pirate seeds beside the machines'); neither moves any other power's map.
+- Cartel: `guardsRoutes` (interdicts only in its own space, hunts only there) and `FleetGroupDef.escort` (hired mercenary ships, `Contact.hired`, fly on the employer's side).
+- Raiders: `boarding.prefer` (the ship holds fire while its party is out). Zealots: `boarding.coreRaid`, `capture/coreRaid.ts` (the party walks to the AI core; held for CORE_RAID_HOLD_TICKS undefended, the core module is removed and robots go inert), `FactionDef.neverSurrender` (no prize; the fight ends in a derelict).
+- Standing: kills lower the victim faction's key (heat.ts); relation spill warms its rivals; a done bounty also pleases pirate factions at war with its target (jobs.ts `RIVAL_REPUTATION`). Trade: zealots answer a hail only at high standing; `trade/augmentation.ts` is a stub (always 0) until implants (phase 7).

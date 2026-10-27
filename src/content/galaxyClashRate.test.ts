@@ -94,7 +94,8 @@ describe('off-screen clash rate', () => {
   }, 60000);
 
   it('a long run keeps the population: 1500 turns near a den lose no more than a fifth of the ships', () => {
-    const sim = world(34, true);
+    // The first crowded seed by the same rule as above (the pirate factions moved the old pinned seed's den out of a crowded corner), not one picked for its rate.
+    const sim = world(SEEDS[0]!, true);
     const start = sim.galaxy.fleets.reduce((n, f) => n + f.ships.length, 0);
     const r = run(sim, 1500);
     const end = sim.galaxy.fleets.reduce((n, f) => n + f.ships.length, 0);
