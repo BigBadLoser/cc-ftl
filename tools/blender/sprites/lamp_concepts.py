@@ -1214,3 +1214,142 @@ def floor_studs():
 
 
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_kerb, floor_prisms, floor_hatch, floor_studs)]
+
+
+# ---- v15: floor lights that go INTO the floor -------------------------------------------------------------------
+# Geometry below z = 0 would draw over the floor in front of the tile, so each piece carries a holdout surface at floor
+# level with the opening cut out of it: only what shows through the opening survives (as the crew layers do).
+
+from . import steelkit as SK  # noqa: E402
+
+
+def _holdout_sq(name, hu, hv):
+    """A holdout sheet at floor level, 2.4 tiles across, with a rectangular hole hu x hv in the middle."""
+    k = K(name, (1, 1), 0)
+    R = 1.2
+    k.box(0, (hv / 2 + R) / 2, 0.0, 2 * R, R - hv / 2, 0.001, "dark")
+    k.box(0, -(hv / 2 + R) / 2, 0.0, 2 * R, R - hv / 2, 0.001, "dark")
+    k.box((hu / 2 + R) / 2, 0, 0.0, R - hu / 2, hv, 0.001, "dark")
+    k.box(-(hu / 2 + R) / 2, 0, 0.0, R - hu / 2, hv, 0.001, "dark")
+    ob = k.build()[0]
+    ob.is_holdout = True
+    return ob
+
+
+def _holdout_round(name, r, n=24):
+    """A holdout sheet at floor level with a round hole of radius r."""
+    k = K(name, (1, 1), 0)
+    R = 1.4
+    for i in range(n):
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        SK.face(k, [(r * math.cos(a0), r * math.sin(a0), 0.001), (R * math.cos(a0), R * math.sin(a0), 0.001),
+                    (R * math.cos(a1), R * math.sin(a1), 0.001), (r * math.cos(a1), r * math.sin(a1), 0.001)],
+                (0, 0, 1), "dark")
+    ob = k.build()[0]
+    ob.is_holdout = True
+    return ob
+
+
+def _shaft(k, hu, hv, z0, z1, bands):
+    """The four walls of a rectangular shaft from z0 down to z1, in horizontal colour bands from the top down (lit
+    warmer near the light at the bottom)."""
+    n = len(bands)
+    for i, col in enumerate(bands):
+        za, zb = z0 + (z1 - z0) * (i + 1) / n, z0 + (z1 - z0) * i / n
+        h = zb - za
+        k.box(0, -hv / 2 - 0.01, za, hu + 0.04, 0.02, h, col)
+        k.box(0, hv / 2 + 0.01, za, hu + 0.04, 0.02, h, col)
+        k.box(-hu / 2 - 0.01, 0, za, 0.02, hv, h, col)
+        k.box(hu / 2 + 0.01, 0, za, 0.02, hv, h, col)
+
+
+def _rim(k, hu, hv, w=0.05, h=0.014):
+    """A steel lip round an opening."""
+    k.box(0, -hv / 2 - w / 2, 0.0, hu + 2 * w, w, h, "steel", top="steelL")
+    k.box(0, hv / 2 + w / 2, 0.0, hu + 2 * w, w, h, "steel", top="steelL")
+    k.box(-hu / 2 - w / 2, 0, 0.0, w, hv, h, "steel", top="steelL")
+    k.box(hu / 2 + w / 2, 0, 0.0, w, hv, h, "steel", top="steelL")
+
+
+WARM_WALL = ("gmD", "rustD", "ochD", "ochM")                                             # top (dark) to bottom (lit warm)
+
+
+def floor_well2():
+    """A grated well: a square shaft a fifth of a tile deep, a warm lamp at the bottom lighting its walls, a 5 x 5
+    grate over the opening, a bolted lip."""
+    k = K("lc_f_well2", (1, 1), 0)
+    s, d = 0.52, 0.12
+    _shaft(k, s, s, 0.0, -d, WARM_WALL)
+    k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")                             # shaft floor
+    k.box(0, 0, -d, 0.48, 0.48, 0.02, "fxW", bevel=0.01)                                   # the lamp
+    k.box(0, 0, -d + 0.02, 0.1, 0.1, 0.006, "lampY")
+    _rim(k, s, s)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.cyl(su * 0.275, sv * 0.275, 0.014, 0.018, 0.006, "plate", sides=6)
+    for i in range(1, 5):                                                              # the grate
+        t = -s / 2 + i * s / 5
+        k.box(t, 0, 0.0, 1.4 * PX, s, 0.012, "steelD", top="steel")
+        k.box(0, t, 0.0, s, 1.4 * PX, 0.012, "steelD", top="steel")
+    return [*k.build(), _holdout_sq("lc_f_well2_h", s, s)]
+
+
+def floor_trench():
+    """A light trench: a narrow slot across the tile, a warm tube lying at the bottom on two brackets, its walls lit."""
+    k = K("lc_f_trench", (1, 1), 0)
+    hu, hv, d = 0.74, 0.24, 0.1
+    _shaft(k, hu, hv, 0.0, -d, WARM_WALL)
+    k.box(0, 0, -d - 0.02, hu + 0.04, hv + 0.04, 0.02, "steelD")
+    for u in (-0.24, 0.24):
+        k.box(u, 0, -d, 0.04, hv, 0.03, "steelD", top="steel")                             # brackets
+    k.box(0, 0, -d + 0.02, hu - 0.06, 0.11, 0.05, "fxW", bevel=0.025)                      # the tube
+    _rim(k, hu, hv, w=0.04)
+    for u in (-0.12, 0.12):                                                            # two clips over the slot
+        k.box(u, 0, 0.0, 0.035, hv + 0.08, 0.016, "steelD", top="steel")
+    return [*k.build(), _holdout_sq("lc_f_trench_h", hu, hv)]
+
+
+def floor_bowl():
+    """A lens bowl: a round recess sloping down to a warm lens, a steel ring round its mouth."""
+    k = K("lc_f_bowl", (1, 1), 0)
+    r0, r1, d, n = 0.14, 0.28, 0.1, 24
+    for i in range(n):                                                                 # the sloping inner wall, in two bands
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        for (ra, za), (rb, zb), col in (((r1, 0.0), ((r0 + r1) / 2, -d / 2), "rustD"), (((r0 + r1) / 2, -d / 2), (r0, -d), "ochM")):
+            ca, sa, cb, sb = math.cos(a0), math.sin(a0), math.cos(a1), math.sin(a1)
+            mid = (a0 + a1) / 2
+            SK.face(k, [(ra * ca, ra * sa, za), (ra * cb, ra * sb, za), (rb * cb, rb * sb, zb), (rb * ca, rb * sa, zb)],
+                    (-math.cos(mid), -math.sin(mid), 0.6), col)
+    k.cyl(0, 0, -d - 0.01, r0 + 0.01, 0.012, "fxW", sides=n)                                # the lens
+    k.cyl(0, 0, -d + 0.002, 0.045, 0.004, "lampY", sides=12)
+    _ring(k, 0.0, r1 + 0.025, 0.014, 24, ("steel",), d=0.05)                                # steel ring round the mouth
+    for a in range(4):
+        ang = a * math.pi / 2 + math.pi / 4
+        k.cyl((r1 + 0.03) * math.cos(ang), (r1 + 0.03) * math.sin(ang), 0.014, 0.016, 0.006, "plate", sides=6)
+    return [*k.build(), _holdout_round("lc_f_bowl_h", r1)]
+
+
+def floor_terrace():
+    """A terraced pit: three square steps down to a warm light panel, each ledge a shade lighter than the one above."""
+    k = K("lc_f_terrace", (1, 1), 0)
+    sizes, step = (0.62, 0.48, 0.34), 0.05
+    cols = ("gm", "ochD", "ochM")
+    for i, s in enumerate(sizes):
+        z = -i * step
+        _shaft(k, s, s, z, z - step, (("gmD", "rustD", "ochD")[i],))
+        nxt = sizes[i + 1] if i + 1 < len(sizes) else None
+        if nxt:                                                                        # the ledge round the next opening
+            w = (s - nxt) / 2
+            k.box(0, -(nxt / 2 + w / 2), z - step - 0.01, s, w, 0.01, cols[i], top=cols[i])
+            k.box(0, nxt / 2 + w / 2, z - step - 0.01, s, w, 0.01, cols[i], top=cols[i])
+            k.box(-(nxt / 2 + w / 2), 0, z - step - 0.01, w, nxt, 0.01, cols[i], top=cols[i])
+            k.box(nxt / 2 + w / 2, 0, z - step - 0.01, w, nxt, 0.01, cols[i], top=cols[i])
+    zb = -len(sizes) * step
+    k.box(0, 0, zb - 0.01, sizes[-1], sizes[-1], 0.01, "fxW")                              # light panel at the bottom
+    for t in (-0.06, 0.06):
+        k.box(t, 0, zb, PX, sizes[-1], 0.004, "lampY")
+    _rim(k, sizes[0], sizes[0], w=0.04)
+    return [*k.build(), _holdout_sq("lc_f_terrace_h", sizes[0], sizes[0])]
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_well2, floor_trench, floor_bowl, floor_terrace)]
