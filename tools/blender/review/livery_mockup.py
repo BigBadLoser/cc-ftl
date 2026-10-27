@@ -3,7 +3,8 @@ recoloured by the livery shader's model (roof_livery docstring; src/render/liver
 
     python3 tools/blender/review/livery_mockup.py <assets dir> <out.png> [scheme,scheme,...] [--zoom N]
 
-Ships are plain outlines (no hull walls or edge lips), bow at +x, so the sheet shows the paint and nothing else."""
+Ships are plain outlines (no hull walls or edge lips), bow west (-x, screen upper left) as most ships in the game face, so the
+sheet shows the paint and nothing else. The bow-west plan is the mirrored plan as roofArt.ts mirrorPlan builds it."""
 import json
 import sys
 from pathlib import Path
@@ -18,7 +19,7 @@ from sprites import roof_livery as lv  # noqa: E402
 PATCH, INSET = (2, 1, 0, 1), (1, 2, 2, 0)                     # roof_variants / roofArt.ts
 FAM_LUM = {"o": (0.299 * 0xb4 + 0.587 * 0x8a + 0.114 * 0x38) / 255, "b": (0.299 * 0x4a + 0.587 * 0x67 + 0.114 * 0x88) / 255}
 
-SHIPS = {
+SHIPS = {  # bow at +x as drawn here; ship_image paints them bow west
     "corvette": ["....##############......",
                  "..##################....",
                  "######################..",
@@ -80,10 +81,33 @@ class Atlas:
         return self.img[sh][f["y"]:f["y"] + f["h"], f["x"]:f["x"] + f["w"]], a["anchor"]
 
 
+def plan_bow_west(atlas, outline, scheme, seed=42):
+    """roofArt.mirrorPlan: the plan of the x-mirrored outline mapped back, direction masks swapped for their mirrored
+    sprites (<mask>.m), each text run keeping its reading order."""
+    W = len(outline[0])
+    src = lv.plan([row[::-1] for row in outline], scheme, seed)
+    out, text = {}, {}
+    for (xp, y), paints in src.items():
+        lst = []
+        for mask, motif in paints:
+            is_text = mask.startswith(lv.TEXT)
+            name = mask if is_text or atlas.get(f"roof.lv.{mask}.m") is None else f"{mask}.m"
+            entry = [name, motif]
+            if is_text:
+                text.setdefault((motif, y), []).append((xp, mask, entry))
+            lst.append(entry)
+        out[(W - 1 - xp, y)] = lst
+    for group in text.values():
+        masks = [m for _, m, _ in sorted(group, key=lambda g: g[0])]
+        for (_, _, entry), m in zip(sorted(group, key=lambda g: -g[0]), masks):
+            entry[0] = m
+    return {k: [tuple(e) for e in v] for k, v in out.items()}
+
+
 def ship_image(atlas, outline, scheme):
     H, W = len(outline), len(outline[0])
     sc = lv.SCHEMES[scheme]
-    plan = lv.plan(outline, scheme, seed=42)
+    plan = plan_bow_west(atlas, outline, scheme)
     pad, lift = 40, 140                                              # roof sprites sit about 100 px above their anchor
     cw, chh = (W + H) * 32 + 2 * pad, (W + H) * 16 + 2 * pad + lift
     cv = np.zeros((chh, cw, 3))

@@ -149,8 +149,11 @@ export function liveryFor(faction: string, name: string, livery?: string): { sch
   return { scheme: list[h % list.length] as string, seed: h % 1000, bowWest: ((h >>> 11) & 1) === 1 };
 }
 
-/** Text masks (registry digits, stencils): never mirrored, so they stay readable; only their placement mirrors. */
-const isText = (mask: string): boolean => mask.startsWith('reg.') || mask.startsWith('big.') || mask.startsWith('sten.');
+/**
+ * Text masks (registry digits, stencils) and the claw swipe: never mirrored, so text stays readable and the swipe keeps its
+ * angle; only their placement mirrors (roof_livery.TEXT).
+ */
+const isText = (mask: string): boolean => ['reg.', 'big.', 'sten.', 'claw.'].some((p) => mask.startsWith(p));
 
 /** Python's round(): halves go to the even neighbour. */
 function pyRound(v: number): number {

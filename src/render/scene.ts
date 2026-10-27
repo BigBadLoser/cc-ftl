@@ -6,6 +6,7 @@ import type { SimEvent } from '../sim/events';
 import type { Grid } from '../sim/grid';
 import type { SectorGrid } from '../sim/sectorGrid';
 import { shipGridOf } from '../sim/shipGrid';
+import { ModuleC } from '../sim/modules/components';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
@@ -268,15 +269,29 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const params = new URLSearchParams(window.location.search);
   const bowParam = params.get('bow');
   const liveryParam = params.get('livery');
-  const shipLivery = (s: Ship) => ({
+  const shipLivery = (s: Ship, grid: Grid) => ({
     ...liveryFor(s.faction, s.name, liveryParam ?? (s.gen ? content.factions?.[s.gen.faction]?.art.livery : undefined)),
-    ...(bowParam ? { bowWest: bowParam === 'west' } : {}),
+    bowWest: bowParam ? bowParam === 'west' : bowWestOf(grid),
   });
+  /** The bow motifs go to the end away from the engines (their mean column); a ship without engines faces west. */
+  function bowWestOf(grid: Grid): boolean {
+    let sum = 0;
+    let n = 0;
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+      for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+        const m = world.get(grid.get('module', x, y), ModuleC);
+        if (m && content.modules[m.def]?.engine) {
+          sum += x;
+          n++;
+        }
+      }
+    return n === 0 || sum / n >= grid.x0 + grid.width / 2;
+  }
   // a hidden outpost stays under its rock roof whatever the roof toggle says
   const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s, grid), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);

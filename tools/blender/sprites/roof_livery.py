@@ -119,6 +119,9 @@ def _fang(i, j):
 
 CLAW_W, CLAW_H = 4, 3                                 # claw block, tiles (x along the ship, y across)
 CLAWS = ((-21, 0.86), (0, 1.0), (21, 0.8))            # three gashes: offset across the swipe (cells), relative length
+# paint chips flung beside the gashes (along, across, radius): they also put paint in every tile of the block, so its
+# rows mirror as whole runs (TEXT)
+CHIPS = ((10, -42, 3.2), (-4, -36, 2.2), (24, -37, 2.2), (-10, 42, 3.2), (4, 36, 2.2), (-24, 37, 2.2))
 
 
 def _claw(q):
@@ -130,6 +133,8 @@ def _claw(q):
         ux, uy = 0.62, 0.785                              # swipe direction (from aft-port to fore-starboard)
         nx, ny = -uy, ux
         along, across = X * ux + Y * uy, X * nx + Y * ny
+        if any((along - a) ** 2 + (across - c) ** 2 < r * r for a, c, r in CHIPS):
+            return "P"
         for off, ln in CLAWS:
             half = 54 * ln
             t = (along + half) / (2 * half)
@@ -221,7 +226,7 @@ MASKS = {k: f for k, f in MASKS.items() if any(f(i, j) for i in range(GN) for j 
 # Bow at either end: a ship whose bow is at -x takes the plan of its x-mirror, with every direction-dependent mask
 # mirrored (i -> GN - 1 - i, sprites roof.lv.<mask>.m) and text (registry digits, stencils) kept readable: only its
 # placement mirrors (src/render/roofArt.ts liveryPlan, bowWest).
-TEXT = ("reg.", "big.", "sten.")
+TEXT = ("reg.", "big.", "sten.", "claw.")          # text, and the claw swipe, which reads the same either way
 MIRROR = [k for k, f in MASKS.items()
           if not k.startswith(TEXT) and any(f(i, j) != f(GN - 1 - i, j) for i in range(GN) for j in range(GN))]
 
