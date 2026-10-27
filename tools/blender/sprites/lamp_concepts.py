@@ -430,3 +430,124 @@ def floor_studs():
 SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (
     pillar_beacon, pillar_rods, pillar_bands, wall_capsule, wall_louvre, wall_panel, floor_ring, floor_chevron, floor_studs)]
 SPRITES += [(f"concept.{fn.__name__}.ctx", (1, 1), "prop", lambda fn=fn: fn(True)) for fn in (wall_capsule, wall_louvre, wall_panel)]
+
+
+# ---- v6, a second set of own designs ----------------------------------------------------------------------------
+
+def pillar_hex():
+    """A hexagonal lantern: glowing faces, dark ribs on its edges, a hex cap and foot."""
+    m = core.Mesh("lc_p_hex")
+    _well(m, 0.5)
+    m.cyl((0, 0, 0.03), 0.2, 0.06, "gm", top="steel", sides=6)                              # foot
+    m.cyl((0, 0, 0.09), 0.16, 0.5, "arc", sides=6)                                         # glowing body
+    for k in range(6):                                                                 # dark ribs on its edges
+        a = k * math.pi / 3 + math.pi / 6
+        m.box((0.165 * math.cos(a), 0.165 * math.sin(a), 0.09), (0.035, 0.035, 0.5), "navy", base=True, rz=a)
+    m.cyl((0, 0, 0.59), 0.2, 0.05, "steel", top="steelL", sides=6)                         # cap
+    m.cyl((0, 0, 0.64), 0.1, 0.03, "gmD", top="cyan", sides=6)                              # lit finial
+    return [m.build()]
+
+
+def pillar_split():
+    """A split column: four dark quarter-blocks with a cross-shaped slot of light between them, a steel cap."""
+    m = core.Mesh("lc_p_split")
+    _well(m, 0.52)
+    m.box((0, 0, 0.03), (0.3, 0.3, 0.62), "arc", base=True)                                # the light inside
+    for sx in (-1, 1):                                                                 # four quarter-blocks
+        for sy in (-1, 1):
+            m.box((sx * 0.085, sy * 0.085, 0.03), (0.14, 0.14, 0.62), "navy", top="gmD", base=True)
+    m.box((0, 0, 0.65), (0.36, 0.36, 0.04), "steel", top="steelL", base=True, bevel=0.01)   # cap
+    m.box((0, 0, 0.03), (0.36, 0.36, 0.05), "steelD", top="steel", base=True)               # foot ring
+    return [m.build()]
+
+
+def pillar_core():
+    """An energy core: a glowing block held up by four slim prongs on a square plinth."""
+    m = core.Mesh("lc_p_core")
+    _well(m, 0.54)
+    m.box((0, 0, 0.03), (0.36, 0.36, 0.14), "gm", top="steel", base=True, bevel=0.015)      # plinth
+    m.box((0, 0, 0.17), (0.2, 0.2, 0.03), "cyan", base=True)                               # a lit ring on the plinth
+    for sx in (-1, 1):                                                                 # four slim prongs
+        for sy in (-1, 1):
+            m.box((sx * 0.15, sy * 0.15, 0.17), (0.03, 0.03, 0.42), "steelD", top="steelL", base=True)
+    m.box((0, 0, 0.26), (0.24, 0.24, 0.26), "arc", base=True, bevel=0.03)                   # the glowing core
+    m.box((0, 0, 0.59), (0.36, 0.36, 0.03), "steel", top="steelL", base=True)               # top frame
+    return [m.build()]
+
+
+def wall_wedge(context=False):
+    """A downlight wedge: a triangular sconce, wide at the top, its underside glowing onto the wall below."""
+    m = core.Mesh("lc_w_wedge")
+    if context:
+        _wall(m)
+    yb = -0.5
+    _prism(m, -0.26, 0.26, [(yb, 1.32), (yb + 0.24, 1.5), (yb, 1.5)], "steelL", top="plate")  # the wedge
+    m.box((0, yb + 0.12, 1.4), (0.46, 0.01, 0.02), "arc", base=True)                       # lit lip along its edge
+    for i, w in enumerate((0.34, 0.24, 0.14)):                                         # light fanning down the wall
+        m.box((0, yb + 0.01, 1.22 - i * 0.12), (w, 0.01, 0.025), "cyan", base=True)
+    return [m.build()]
+
+
+def wall_pods(context=False):
+    """Twin pods: two small square lamps on a short rail, each with a glowing face."""
+    m = core.Mesh("lc_w_pods")
+    if context:
+        _wall(m)
+    m.box((0, -0.47, 1.18), (0.66, 0.06, 0.06), "gmD", top="gm", base=True)                # rail
+    for x in (-0.18, 0.18):
+        m.box((x, -0.38, 1.1), (0.2, 0.14, 0.2), "steel", top="steelL", base=True, bevel=0.02)
+        m.box((x, -0.305, 1.13), (0.14, 0.01, 0.14), "arc", base=True)                     # glowing face
+    return [m.build()]
+
+
+def wall_wash():
+    """A ceiling wash: a long thin strip high on the wall, light spilling up and down from it."""
+    return _wall_wash(False)
+
+
+def _wall_wash(context):
+    m = core.Mesh(f"lc_w_wash{int(context)}")
+    if context:
+        _wall(m)
+    m.box((0, -0.45, 1.62), (0.9, 0.1, 0.08), "gm", top="steel", base=True)                # strip housing
+    m.box((0, -0.395, 1.6), (0.86, 0.01, 0.05), "arc", base=True)                          # its light
+    m.box((0, -0.49, 1.7), (0.86, 0.01, 0.1), "cyan", base=True)                           # glow on the wall above
+    return [m.build()]
+
+
+def floor_slot():
+    """A lane slot: one bar of light across the tile, edge to edge, so a row of them reads as a lit lane."""
+    m = core.Mesh("lc_f_slot")
+    m.box((0, 0, 0), (1.0, 0.24, 0.01), "steelD", top="gmD", base=True)                     # channel
+    m.box((0, 0, 0.01), (0.96, 0.08, 0.006), "arc", base=True)                             # the bar
+    return [m.build()]
+
+
+def floor_quad():
+    """Four small round lenses on a dark plate."""
+    m = core.Mesh("lc_f_quad")
+    m.box((0, 0, 0), (0.6, 0.6, 0.01), "steelD", top="gmD", base=True)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            m.cyl((sx * 0.14, sy * 0.14, 0.01), 0.08, 0.006, "steel", sides=12)
+            m.cyl((sx * 0.14, sy * 0.14, 0.012), 0.055, 0.006, "arc", sides=12)
+    return [m.build()]
+
+
+def floor_diamond():
+    """A lit diamond outline turned 45 degrees in the tile (square on screen), a dark plate round it."""
+    m = core.Mesh("lc_f_diamond")
+    m.box((0, 0, 0), (0.7, 0.7, 0.01), "steelD", top="gmD", base=True)
+    for k in range(4):                                                                 # four sides of the diamond
+        a = k * math.pi / 2
+        cx, cy = 0.17 * math.cos(a + math.pi / 4), 0.17 * math.sin(a + math.pi / 4)
+        m.box((cx, cy, 0.01), (0.36, 0.05, 0.006), "arc", base=True, rz=a + 3 * math.pi / 4)
+    m.cyl((0, 0, 0.01), 0.04, 0.006, "cyan", sides=8)                                       # centre pin
+    return [m.build()]
+
+
+SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (
+    pillar_hex, pillar_split, pillar_core, floor_slot, floor_quad, floor_diamond)]
+SPRITES += [("concept.wall_wedge.ctx", (1, 1), "prop", lambda: wall_wedge(True)),
+            ("concept.wall_pods.ctx", (1, 1), "prop", lambda: wall_pods(True)),
+            ("concept.wall_wash.ctx", (1, 1), "prop", lambda: _wall_wash(True))]
