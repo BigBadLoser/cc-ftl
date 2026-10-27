@@ -1613,13 +1613,19 @@ def floor_tile_grate():
     _shaft(k, s, s, 0.0, -d, WARM_WALL)
     k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
     k.box(0, 0, -d, s - 0.04, s - 0.04, 0.02, "fxW", bevel=0.01)                           # the light
-    for t in (-1, 1):                                                                  # the lip: the tile's own edge
-        k.box(0, t * (s / 2 + lip / 2), 0.0, 1.0, lip, 0.012, "steelD", top="gm")
-        k.box(t * (s / 2 + lip / 2), 0, 0.0, lip, s, 0.012, "steelD", top="gm")
+    for t in (-1, 1):                                                                  # the lip: the tile's own edge, in the
+        k.box(0, t * (s / 2 + lip / 2), 0.0, 1.0, lip, 0.012, "steelD", top="steel")      # deck's own steel
+        k.box(t * (s / 2 + lip / 2), 0, 0.0, lip, s, 0.012, "steelD", top="steel")
+    for su in (-1, 1):                                                                 # the deck's corner marks (clipped to
+        for sv in (-1, 1):                                                             # the tile by the holdout)
+            k.box(su * 0.5, sv * 0.5, 0.0, 0.13, 0.13, 0.0125, "steelD", top="steelD", rz=math.pi / 4)
     for su in (-1, 1):
         for sv in (-1, 1):
             k.cyl(su * 0.46, sv * 0.46, 0.012, 0.018, 0.006, "plate", sides=6)
     _hatch_grate(k, s)
+    for t in (0, 1):                                                                   # the deck's seam on the far edges, as
+        sz = (0.031, 1.0, 0.0125) if t == 0 else (1.0, 0.031, 0.0125)                  # every floor tile draws its own
+        k.box(-0.4845 if t == 0 else 0, 0 if t == 0 else -0.4845, 0.0, *sz, "steelD", top="steelD")
     k.m.dz = -0.016                                                                    # top level with the deck: it IS the tile
     return [*k.build(), _holdout_sq("lc_f_tile_grate_h", 1.0, 1.0)]
 
