@@ -176,6 +176,13 @@ export type SimEvent =
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
   | { type: 'galaxy.chunk'; key: string }
   | { type: 'galaxy.hyperspace'; ship: number; route: string[]; charge: number }
+  /** An overcharged jump (ship over its engines' hull capacity) took its toll: engines hit, engines destroyed, engine-room fires lit (ftl/overcharge.ts). */
+  | { type: 'ftl.overcharged'; ship: number; damaged: number; destroyed: number; fires: number }
+  /** A shipyard order was paid (yard/), and ended: `built` of `total` tiles stand; `reason` is empty when all was built. */
+  /** A ship's hull plan was set (hull.plan): `tiles` still open. */
+  | { type: 'hull.planned'; ship: number; tiles: number }
+  | { type: 'yard.ordered'; order: number; station: number; tiles: number }
+  | { type: 'yard.ended'; order: number; reason: string; built: number; total: number }
   /** A hop of the trip ended at `to` (fuel of that hop and, for the first, the FTL charge paid on entry). */
   | { type: 'galaxy.jumped'; from: string; to: string; edge: string; fuel: number; charge: number }
   /** A starmap turn began (a hop was entered, or `cause: 'time'` for a game-time turn); see galaxy/turn.ts. */

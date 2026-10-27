@@ -22,6 +22,7 @@ import { sectorHandlers } from './sector/handlers';
 import { storyHandlers } from './story/handlers';
 import { tradeHandlers } from './trade/handlers';
 import { vehicleHandlers } from './vehicles/handlers';
+import { yardHandlers } from './yard/order';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct, writeStruct } from './structure';
 import type { Sim } from './sim';
@@ -46,6 +47,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...tradeHandlers,
   ...galaxyHandlers,
   ...ftlHandlers,
+  ...yardHandlers,
   ...sectorHandlers,
   ...asteroidHandlers,
   ...miningHandlers,

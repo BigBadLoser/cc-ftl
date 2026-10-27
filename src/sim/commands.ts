@@ -178,14 +178,24 @@ export type Command =
    * ship (with its stowed and docked own vehicles and the crew aboard) lifts into a packet and the rest of the sector is archived.
    * `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others are cut loose). Crew or shuttles away
    * stay in the archive (the UI confirms first, see `jumpWarnings`). Nothing is paid or moved if it is rejected.
+   * A ship over its engines' hull capacity is rejected with `overweight` unless `overcharge` is set: it then jumps at a risk that grows with the overload (ftl/overcharge.ts).
    */
-  | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
+  | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[]; overcharge?: boolean }
   /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
   | { type: 'galaxy.drop' }
   /** Charge the drive: post the helm job (the best free pilot, else any crew, walks over and sits). With `jump`, fly that route (without the current node) once charged. */
-  | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[] }
+  | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[]; overcharge?: boolean }
   /** Cancel the charge order and any queued jump. */
   | { type: 'ftl.cancelCharge'; ship: number }
+  /** Set a player ship's planned outer hull (sector tiles of open space); replaces the plan, empty clears it. Free, any time, saved with the ship (yard/). */
+  | { type: 'hull.plan'; ship: number; tiles: { x: number; y: number }[] }
+  /**
+   * Buy what a station's yard builds of the plan now (yard/): hull tiles up to its cap that touch the ship, and the floor they enclose. Pays into escrow and
+   * posts the jobs; the station's shuttle brings the crew. Rejected with the quote's error, `busy`, `inCombat`, `noYardDock`, `cantAfford` or `noMetal`.
+   */
+  | { type: 'yard.order'; station: number }
+  /** Send the yard crew home: the unbuilt part is refunded at once. */
+  | { type: 'yard.cancel'; order: number }
   /**
    * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
    * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.

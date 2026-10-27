@@ -5,6 +5,7 @@ import { portRecruits } from '../sim/galaxy/recruit';
 import type { UiBlueprint, UiStationInfo } from '../ui/api';
 import { marketAt } from './marketSnapshot';
 import { portHints } from './stockHints';
+import { yardOf } from './yardSnapshot';
 
 /** Plain names of the structure services worth telling a player about. */
 const SERVICE: Record<string, string> = { trade: 'Trade', fuel: 'Fuel', repair: 'Repair', blueprints: 'Blueprints' };
@@ -69,5 +70,6 @@ export function stationInfo(sim: Sim, station: number, portId: string | undefine
     hints: port ? portHints(sim, port) : [],
     docks: h?.docks ?? 0, guns: h?.guns ?? 0, shields: sim.world.get(station, CombatC)?.shield.max ?? 0,
     alarm: alarm?.state === 'alarm' ? alarm.reason || 'alarm' : null,
+    yard: yardOf(sim, station),
   };
 }

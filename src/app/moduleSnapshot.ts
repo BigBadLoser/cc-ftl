@@ -1,4 +1,4 @@
-import { CrewC, DeadC, blueprintVenue, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
+import { CrewC, DeadC, blueprintVenue, hullLoad, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
 import { buildRobotBay } from './robotSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
@@ -107,5 +107,6 @@ export function buildStats(sim: Sim): UiStats {
     }
     if (rooms.size) o2 = sum / rooms.size;
   }
-  return { supply, demand, food: buildFood(sim, buildStock(sim)), heat: buildHeat(sim), o2 };
+  const load = hullLoad(sim, GRID);
+  return { supply, demand, food: buildFood(sim, buildStock(sim)), heat: buildHeat(sim), o2, hull: { tiles: load.tiles, capacity: load.capacity } };
 }

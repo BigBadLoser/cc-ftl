@@ -51,3 +51,14 @@ export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goa
   const steps = findPath(sim, shipId, from, goal);
   return steps && { steps, thin: true };
 }
+
+/**
+ * `planWalk` for a work site: a site only the hull ring reaches (building out on the hull, the shipyard's tiles) is still on offer to a crew member
+ * who breathes, as an EVA job: the plan is `thin`, so the caller sends them for a suit first. Sites inside the ship are planned as before.
+ */
+export function planSiteWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal): WalkPlan | null {
+  const plan = planWalk(sim, crew, shipId, from, goal);
+  if (plan || hasSuitAir(sim, crew) || !needsAir(sim, crew)) return plan;
+  const steps = findPath(sim, shipId, from, goal, { suited: true });
+  return steps && { steps, thin: true };
+}

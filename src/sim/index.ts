@@ -36,7 +36,7 @@ export { activeOrder } from './items/production';
 export * from './combat/components';
 export { shipById, homeShip, stampShip, spawnShip, spawnCrew, shieldCapacity } from './combat/ships';
 export { BodyC, ALT, isAirborne, type Body } from './body';
-export { hullSum, damageStruct } from './combat/hull';
+export { hullSum, hullTiles, hullArea, outerProfile, interiorArea, templateHullTiles, templateHullArea, isHullKind, damageStruct } from './combat/hull';
 export { shieldRechargeSec } from './combat/ships';
 export { operatorOf } from './combat/operators';
 export { weaponsIdleReason } from './combat/idle';
@@ -112,6 +112,8 @@ export type {
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';
+export { hullLoad, engineCapacityOf, type HullLoad } from './ftl/capacity';
+export { applyOvercharge, riskOf, OVERCHARGE_FULL, type OverchargeRisk, type OverchargeResult } from './ftl/overcharge';
 export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } from './ftl/status';
 export { cheapestHop, distressBlocker, fuelOnSale, isStranded, tugQuote, type TugQuote } from './galaxy/stranded';
 export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge, jumpFuel, engineFuelFactor } from './galaxy/fuel';
@@ -141,3 +143,9 @@ export { evadeOdds, bribeCost, fleetStrength, playerHelm, evadeOddsFor } from '.
 export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
 export { playerStock } from './story/world';
 export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';
+export { quoteYard, viewPlan, plannedTiles, type YardQuote, type HullView, type YardError } from './yard/plan';
+export { yardService, yardPrice, type YardService } from './yard/rules';
+export { liveOrderOf } from './yard/order';
+export { abortYards, YARD_HISTORY } from './yard/flow';
+export { builtCount, totalTiles } from './yard/progress';
+export { YardCrewC, HullPlanC, isLiveOrder, type YardDef, type YardOrder, type YardPhase, type YardState, type YardSizeDef, type YardMoney } from './yard/types';

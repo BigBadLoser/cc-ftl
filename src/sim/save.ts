@@ -8,6 +8,7 @@ import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
 import { loadGalaxy, saveGalaxy, type GalaxySave } from './galaxy/state';
 import { newTrade, type TradeState } from './trade/types';
+import { newYard, type YardState } from './yard/types';
 
 /**
  * Current save format version. Bump it whenever the shape changes. Saves are not migrated (user decision, 2026-10-19:
@@ -70,8 +71,11 @@ import { newTrade, type TradeState } from './trade/types';
  * v56 (research): `ResearchC` (a ship's research queue), the `research` work category, the science skill and role.scientist.
  * v57 (tile aim): optional `Target.tile` (a blind aim at one tile of the target ship, on `CombatC.target` and `WeaponC.target`).
  * v58 (per-faction standing): reputation keys `meridian`, `helix`, `vantor` replace the shared `corp`; optional `Trader.owner` and `Ship.gen.owner` (the galaxy faction a trader or fleet ship belongs to).
+ * v59 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
+ * v60: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
+ * v62: the yard and per-faction standing together (the shipyard branch numbered v58 to v61 before standing took v58; this is the merged line).
  */
-export const SAVE_VERSION = 58;
+export const SAVE_VERSION = 62;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -85,6 +89,8 @@ export interface SaveData {
   story?: StoryState;
   /** Trade state. Optional like `story`: older saves load with an empty one. */
   trade?: TradeState;
+  /** Shipyard orders. Optional like `trade`. */
+  yard?: YardState;
   /** Starmap state, chunks as keys (see galaxy/state.ts). */
   galaxy: GalaxySave;
   pending: QueuedCommand[];
@@ -103,6 +109,7 @@ export function serialize(sim: Sim): string {
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
     trade: sim.trade,
+    yard: sim.yard,
     galaxy: saveGalaxy(sim.galaxy),
     pending: [...sim.commands.getPending()],
     archives: sim.archives,
@@ -127,6 +134,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
+  sim.yard = { ...newYard(), ...data.yard };
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;

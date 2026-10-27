@@ -26,7 +26,10 @@ export interface JobView {
 const BUILD = 0x22d3ee;
 const DECON = 0xff3b3b;
 
-/** Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). */
+/**
+ * Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). A shipyard tile
+ * (`Job.yard`) whose crew have started on it shows as an open truss (the Beam art) until it is finished: render-side only, no sim state.
+ */
 export function createJobView(
   world: World,
   atlas: Atlas,

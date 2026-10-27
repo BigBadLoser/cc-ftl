@@ -132,7 +132,7 @@ export interface Combat {
    * A standing order to charge the drive (`ftl.charge`): the helm is manned outside combat too while it stands. `jump` is a route (without the
    * current node) to fly the moment the charge covers it. Absent or null: no order.
    */
-  ftlOrder?: { jump: string[] | null; withDocked?: number[] } | null;
+  ftlOrder?: { jump: string[] | null; withDocked?: number[]; overcharge?: true } | null;
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;

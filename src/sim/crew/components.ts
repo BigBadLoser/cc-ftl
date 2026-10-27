@@ -138,6 +138,12 @@ export interface Job {
   resume?: number;
   /** For suitUp / suitOff: the crew member this personal errand belongs to (nobody else may take it). */
   errandFor?: number;
+  /** For a shipyard order's build jobs: the order (`YardOrder.id`) that paid for them (yard/). */
+  yard?: number;
+  /** The job's row out from the ship (`YardOrder.rank`): the yard's crew work the nearest open row and the one after it. */
+  yardRank?: number;
+  /** The yard's closing wall: only the yard's own crew take it (anyone else might wall themselves in). */
+  yardOnly?: true;
 }
 export const JobC = defineComponent<Job>('job');
 

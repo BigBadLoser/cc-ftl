@@ -92,5 +92,5 @@ export function settleOrder(sim: Sim, ship: number): void {
   }
   if (combat.ftl + 1e-9 < routeCharge(edges)) return;
   combat.ftlOrder = null;
-  jump(sim, ship, order.jump, order.withDocked, 'ftl.charge');
+  jump(sim, ship, order.jump, order.withDocked, 'ftl.charge', order.overcharge);
 }

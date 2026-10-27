@@ -16,6 +16,15 @@ export interface Markers {
   setHover(t: Tile | null): void;
   /** `valid` false tints the preview red (blocked placement). */
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
+  /** Painted areas: each group's tiles filled and outlined in its colour (the shipyard plan, later the construction pod's). Empty clears. */
+  setAreas(groups: readonly AreaMarks[]): void;
+}
+
+/** One group of painted tiles: `tint` is an 0xRRGGBB colour; `solid` fills the diamond, otherwise only its outline shows. */
+export interface AreaMarks {
+  tiles: readonly Tile[];
+  tint: number;
+  solid?: boolean;
 }
 
 export function createMarkers(parent: Container): Markers {
@@ -37,6 +46,18 @@ export function createMarkers(parent: Container): Markers {
     }
   };
   const hover = make(0.45);
+  const fills: Sprite[] = [];
+  const outlines: Sprite[] = [];
+  const area = (pool: Sprite[], n: number, texture: typeof tex, alpha: number): Sprite => {
+    if (pool.length <= n) {
+      const s = new Sprite(texture);
+      s.anchor.set(0.5);
+      s.alpha = alpha;
+      parent.addChild(s);
+      pool.push(s);
+    }
+    return pool[n] as Sprite;
+  };
   const sel: Sprite[] = [];
   const pool: Sprite[] = [];
   return {
@@ -46,6 +67,27 @@ export function createMarkers(parent: Container): Markers {
       sel.forEach((s, i) => put(s, tiles[i] ?? null));
     },
     setHover: (t) => put(hover, t),
+    setAreas(groups) {
+      let f = 0;
+      let o = 0;
+      for (const g of groups) {
+        for (const t of g.tiles) {
+          const p = iso(t.x, t.y);
+          if (g.solid) {
+            const s = area(fills, f++, diamondTextures().fill, 0.3);
+            s.tint = g.tint;
+            s.position.set(p.x, p.y);
+            s.visible = true;
+          }
+          const s = area(outlines, o++, tex, 0.9);
+          s.tint = g.tint;
+          s.position.set(p.x, p.y);
+          s.visible = true;
+        }
+      }
+      for (let i = f; i < fills.length; i++) (fills[i] as Sprite).visible = false;
+      for (let i = o; i < outlines.length; i++) (outlines[i] as Sprite).visible = false;
+    },
     setPreview(tiles, valid = true) {
       while (pool.length < tiles.length) pool.push(make(0.75));
       pool.forEach((s, i) => {

@@ -130,12 +130,13 @@ export function isWalkable(kind: number): boolean {
 }
 
 /**
- * True if a suited crew member (and nobody else) can stand on this tile: the exterior surface of the same grid, today the
- * ring of Space tiles touching the hull (8-neighbour) that the pack's thrusters let them drift along. Beams (`Struct.Beam`)
- * join here when they land. Every walk rule (pathfinder, movement, move orders) asks for it when the walker wears a suit.
+ * True if a suited crew member (and nobody else) can stand on this tile: the exterior surface of the same grid, the
+ * ring of Space tiles touching anything solid (8-neighbour) that the pack's thrusters let them drift along, and any open truss (`Struct.Beam`). Every walk rule (pathfinder, movement, move orders) asks for it when the walker wears a suit.
  */
 export function isEvaWalkable(grid: GridLike, x: number, y: number): boolean {
-  if (!grid.inBounds(x, y) || grid.get('struct', x, y) !== Struct.Space) return false;
+  if (!grid.inBounds(x, y)) return false;
+  if (grid.get('struct', x, y) === Struct.Beam) return true; // an open truss is scaffolding a suited crew member walks along
+  if (grid.get('struct', x, y) !== Struct.Space) return false;
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
       if ((dx || dy) && grid.inBounds(x + dx, y + dy) && grid.get('struct', x + dx, y + dy) !== Struct.Space) return true;
