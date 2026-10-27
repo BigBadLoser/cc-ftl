@@ -84,6 +84,12 @@ function doorSpots(b: Builder, r: Rect, label: number | ((L: number) => boolean)
   return out;
 }
 
+/** The room role of a canvas label (the part its chunk was stamped as), or undefined. */
+function roleAt(b: Builder, L: number): string | undefined {
+  const chunk = b.cv.labels[L]?.chunk;
+  return chunk === undefined ? undefined : b.parts.find((p) => p.key === chunk)?.role;
+}
+
 /** The middle of a list of door spots. */
 const mid = <T>(xs: T[]): T => xs[(xs.length - 1) >> 1] as T;
 
@@ -93,9 +99,11 @@ const mid = <T>(xs: T[]): T => xs[(xs.length - 1) >> 1] as T;
  * door onto the corridor. Returns the rooms that found no place.
  */
 function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs: [number, number][], side: 1 | -1, reach = 0, avoid?: Set<number>): RoomSpec[] {
-  // With `reach`, rooms stand beyond a band of rooms and door onto any of them (never onto a dock: its airlock needs
-  // the dock's side walls).
-  const doorTo = reach > 0 ? (L: number): boolean => L >= 0 && !avoid?.has(L) : label;
+  // With `reach`, rooms stand beyond a band of rooms and door onto one of them: never onto a dock (its airlock needs
+  // the dock's side walls), and onto crew quarters only when nothing else is in reach (nobody should walk through a
+  // bunk room to reach a gun or a reactor).
+  const any = (L: number): boolean => L >= 0 && !avoid?.has(L);
+  const doorTos = reach > 0 ? [(L: number): boolean => any(L) && roleAt(b, L) !== 'quarters', any] : [label];
   const total = arcs.reduce((t, [a, z]) => t + (z - a), 0);
   const len = rooms.reduce((t, r) => t + r.w + 2, 0);
   const left: RoomSpec[] = [];
@@ -114,7 +122,8 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
     const ny = Math.sin(a);
     const flat = Math.abs(ny) >= Math.abs(nx);
     let done = false;
-    for (const rot of [flat, !flat]) {
+    for (const doorTo of doorTos) for (const rot of [flat, !flat]) {
+      if (done) break;
       const W = (rot ? r.w : r.h) + 2;
       const H = (rot ? r.h : r.w) + 2;
       for (let d = (side > 0 ? R - 1 : R + 1) + side * reach; !done && Math.abs(d - R) < 2 + reach + Math.max(W, H); d += side * 0.5) {
@@ -193,7 +202,9 @@ function rim(b: Builder, R: number, label: number, sys: RoomSpec[], docks: RoomS
     ? ns.map(([a, z]): [number, number] => [Math.max(a, (arcs[0] as [number, number])[0]), Math.min(z, (arcs[0] as [number, number])[1])]).filter(([a, z]) => z > a)
     : ns;
   const left = fitAlong(b, R, label, docks, within.length > 0 ? within : arcs, 1, reach);
-  return fitAlong(b, R, label, [...sys, ...left], arcs, 1, reach).length === 0;
+  // Rooms that need no hull face go inboard first, doored straight onto the corridor (reached without crossing a room).
+  const inboard = fitAlong(b, R, label, sys.filter((r) => r.role !== 'weapons'), arcs, -1);
+  return fitAlong(b, R, label, [...sys.filter((r) => r.role === 'weapons'), ...inboard, ...left], arcs, 1, reach).length === 0;
 }
 
 /** Wheel: one round ring, its rooms a band of segments outboard, docks beyond them, the hub at the centre on spokes. */
@@ -242,11 +253,12 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   if (!banks) return false;
   if (!bandArcs(b, R, ring, band, depth, arcsBetween(banks.splits))) return false;
   const rim = without([[0, TAU]], banks.keep);
-  const left = fitAlong(b, R, ring, sys, rim, 1, depth + 1, banks.labels);
-  // Crowded rims: guns get a second pass on their own (fresh spots between the first ones); rooms that need no hull
-  // (reactors, shields, the core) go inboard of the corridor instead, facing the centre.
-  const guns = fitAlong(b, R, ring, left.filter((r) => r.role === 'weapons'), rim, 1, depth + 1, banks.labels);
-  return guns.length === 0 && fitAlong(b, R, ring, left.filter((r) => r.role !== 'weapons'), QUARTERS, -1).length === 0;
+  // Rooms that need no hull face (reactors, shields, the core) go inboard of the corridor first, doored straight onto
+  // it: on the rim they could only door onto a band room, so crew would walk through quarters or a mess to reach them.
+  const inboard = fitAlong(b, R, ring, sys.filter((r) => r.role !== 'weapons'), QUARTERS, -1);
+  const left = fitAlong(b, R, ring, [...sys.filter((r) => r.role === 'weapons'), ...inboard], rim, 1, depth + 1, banks.labels);
+  // Crowded rims: guns get a second pass on their own (fresh spots between the first ones).
+  return fitAlong(b, R, ring, left, rim, 1, depth + 1, banks.labels).length === 0;
 }
 
 /**

@@ -70,6 +70,8 @@ export interface AttachOpts {
   xMin?: number;
   /** The child's east wall may not lie east of this column (keeps a body beside a hull clear of its drive's end). */
   xMax?: number;
+  /** Doors only onto rooms of these roles, on the parent's side and / or the child's (a spoke joins corridors). */
+  into?: { parent?: readonly RoomRole[]; child?: readonly RoomRole[] };
 }
 
 const key = (x: number, y: number): number => (y + 4096) * 8192 + (x + 4096);
@@ -199,7 +201,7 @@ export class Arranger {
           const Y = horiz ? wy - cp.y : wy + d - cp.y + (o.shift ?? 0);
           if (o.xMin !== undefined && X + west(child) < o.xMin) continue;
           if (o.xMax !== undefined && X + east - 1 > o.xMax) continue;
-          const tiles = this.sharedOpenings(P, pp, child, cp, X, Y);
+          const tiles = this.sharedOpenings(P, pp, child, cp, X, Y, o.into);
           if (tiles.length === 0 && o.doors !== 0) continue;
           const t = (d - lo) / Math.max(1, hi - lo);
           const pref = o.align === 'start' ? -t : o.align === 'end' ? t : o.align === 'mid' || !o.align ? -Math.abs(t - 0.5) : this.rand();
@@ -211,7 +213,7 @@ export class Arranger {
   }
 
   /** Tiles on the shared wall where floor lies on both sides (door candidates), given the child at (X, Y). */
-  private sharedOpenings(P: Placed, pp: BlockPort, child: Block, cp: BlockPort, X: number, Y: number): { x: number; y: number }[] {
+  private sharedOpenings(P: Placed, pp: BlockPort, child: Block, cp: BlockPort, X: number, Y: number, into?: AttachOpts['into']): { x: number; y: number }[] {
     const out: { x: number; y: number }[] = [];
     const horiz = pp.side === 'n' || pp.side === 's';
     const inP = pp.side === 'n' ? [0, 1] : pp.side === 's' ? [0, -1] : pp.side === 'e' ? [-1, 0] : [1, 0];
@@ -222,7 +224,10 @@ export class Arranger {
       if (ci < 0 || ci >= cp.len) continue;
       const pin = this.at(x + (inP[0] as number), y + (inP[1] as number));
       const cin = child.rows[y - Y - (inP[1] as number)]?.[x - X - (inP[0] as number)];
-      if (isFloor(pin) && isFloor(cin)) out.push({ x, y });
+      if (!isFloor(pin) || !isFloor(cin)) continue;
+      if (into?.parent && !into.parent.includes(P.block.legend.get(pin as string)?.role as RoomRole)) continue;
+      if (into?.child && !into.child.includes(child.legend.get(cin as string)?.role as RoomRole)) continue;
+      out.push({ x, y });
     }
     return out;
   }

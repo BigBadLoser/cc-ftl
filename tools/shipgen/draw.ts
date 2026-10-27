@@ -7,8 +7,9 @@ import {
   accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
+import { audit } from './audit';
 
-export type View = 'detail' | 'silhouette' | 'assembly' | 'structure';
+export type View = 'detail' | 'silhouette' | 'assembly' | 'structure' | 'interior';
 
 type RGB = [number, number, number];
 
@@ -205,6 +206,32 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
 }
 
 /**
+ * Interior view: the detail view plus each room's role at its middle and the room-layout audit's flags outlined: red
+ * for a key room reached only through quarters, orange for a room reached only through another room, magenta for a room
+ * with no door (drone pods are sealed on purpose).
+ */
+export function drawInterior(r: Raster, g: GenResult, ox: number, oy: number, s: number): void {
+  drawShip(r, g, ox, oy, s);
+  const a = audit(g);
+  const flag = new Map<number, RGB>();
+  const ids = (xs: string[]): number[] => xs.map((n) => Number(n.split('#')[1]));
+  for (const id of ids(a.behind)) flag.set(id, [255, 150, 40]);
+  for (const id of ids(a.viaQuarters)) flag.set(id, [255, 50, 50]);
+  for (const id of ids(a.sealed)) flag.set(id, [235, 70, 200]);
+  for (const room of g.rooms) {
+    if (room.role === 'hall' || room.tiles.length === 0) continue;
+    const xs = room.tiles.map((i) => i % g.width);
+    const ys = room.tiles.map((i) => Math.floor(i / g.width));
+    const x0 = Math.min(...xs); const y0 = Math.min(...ys);
+    const x1 = Math.max(...xs); const y1 = Math.max(...ys);
+    const c = flag.get(room.id);
+    if (c) r.frame(ox + x0 * s, oy + y0 * s, (x1 - x0 + 1) * s, (y1 - y0 + 1) * s, c, 2);
+    const label = room.role.slice(0, Math.max(2, Math.floor(((x1 - x0 + 1) * s) / 4)));
+    r.text(label, ox + x0 * s + 2, oy + Math.round(((y0 + y1) / 2) * s), c ?? [255, 255, 255]);
+  }
+}
+
+/**
  * A sealed container: a solid tinted box over its footprint (orange when stocked, grey when empty), ribbed across its
  * length, a dark shell edge, and a yellow clamp bar on the side that grips the frame.
  */
@@ -377,7 +404,7 @@ export function contactSheet(
     const m = g.metrics;
     const ms = m ? ` C${m.compactness.toFixed(2)} O${m.occupancy.toFixed(2)} R${m.corridorRatio.toFixed(2)} N${m.narrowLinks.toFixed(2)}` : '';
     r.text(`${g.topology}${ms}`, ox, oy + 7 * ts, [150, 170, 200], ts);
-    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
+    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : view === 'interior' ? drawInterior : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
   return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, `interior dups by role: ${idup.byRole}`, ...errors, ...text].join('\n') };

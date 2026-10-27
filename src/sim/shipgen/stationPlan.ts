@@ -36,8 +36,8 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   for (let i = 0; i < light.length; i += 2) weapons.push(weaponSpec(defs, light.slice(i, i + 2)));
   const shields: RoomSpec[] = Array.from({ length: t.shields }, () => {
     const g = pickWeighted(rng, def.shields);
-    const tall = (defs[g]?.footprint[1] ?? 2) > 2;
-    return { role: 'shields' as const, mods: [g], w: tall ? 4 : 3, h: tall ? 4 : 3 };
+    // 4x4 whatever the tier: room for a Mk III generator (3x3) and the walkway to it, so stations can be upgraded.
+    return { role: 'shields' as const, mods: [g], w: 4, h: 4 };
   });
   const consoles = ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 ? ['module.shieldConsole'] : [])];
   const command: RoomSpec = { role: 'bridge', mods: consoles, w: size === 'hub' ? 9 : 7, h: size === 'outpost' ? 4 : 5 };

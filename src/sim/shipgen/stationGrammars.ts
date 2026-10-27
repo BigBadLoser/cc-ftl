@@ -67,6 +67,8 @@ function lattice(c: Ctx): boolean {
 }
 
 const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
+/** Rooms a spoke may open into: corridors and open courts. */
+const HALLS = ['hall', 'plaza', 'garden', 'drill'] as const;
 
 /** Hub: the core ring (control, AI core, shields, reactors) and satellites on spokes, one per side. */
 function hubStation(c: Ctx): boolean {
@@ -105,9 +107,12 @@ function hubStation(c: Ctx): boolean {
     const width = c.rng.int(1, 2);
     for (let len = c.rng.int(4, 8); id === null && len <= 24; len += 6) {
       const spoke = hallBlock(c.rng, len, width, side === 'e' || side === 'w');
-      const s = c.A.attach(r0, spoke, { side, align: 'mid' }) ?? c.A.attach(r0, spoke, { side, align: 'any' });
+      // The spoke joins corridor to corridor: entering a satellite through a room would put the whole satellite behind
+      // it (an armoury, or crew quarters).
+      const halls = { parent: HALLS, child: HALLS };
+      const s = c.A.attach(r0, spoke, { side, align: 'mid', into: { parent: HALLS } }) ?? c.A.attach(r0, spoke, { side, align: 'any', into: { parent: HALLS } });
       if (s === null) return no(c, `spoke ${side}`);
-      id = c.A.attach(s, sat, { side, align: 'mid', parentPort: side, doors: 2 }) ?? c.A.attach(s, sat, { side, align: 'any', parentPort: side });
+      id = c.A.attach(s, sat, { side, align: 'mid', parentPort: side, doors: 2, into: halls }) ?? c.A.attach(s, sat, { side, align: 'any', parentPort: side, into: halls });
       if (id === null) c.A.undoLast();
     }
     if (id === null) return no(c, `satellite ${side} (from ${OPP[side]})`);

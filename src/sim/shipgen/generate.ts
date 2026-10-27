@@ -255,7 +255,9 @@ export function finishLayout(
   const roleOfLabel = (l: { chunk: string; letter: string }): RoomRole => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo';
   const partByKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   // One wall between parts: slabs become floor, spare hull layers and double partitions go (thinWalls.ts).
-  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar'];
+  // Rooms that never grow: docks, engines and bays keep their fit, shield rooms their square floor (a folded wall stub
+  // would leave a bump the generator grid cannot use; the wall folds into the neighbour instead).
+  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar', 'shields'];
   const thin = thinWalls(b.cv, {
     canGrow: (i) => {
       const l = labels[i];
