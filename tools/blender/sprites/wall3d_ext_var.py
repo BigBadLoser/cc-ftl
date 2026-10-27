@@ -6,6 +6,7 @@ from mathutils import Euler, Vector
 
 from . import core
 from . import wall3d as T
+from . import wall3d_ext_t32 as T32
 from .wall3d_ext_geom import LINE, PAINT, SHADE, YS, D, TOP, Face, Section
 
 SLOT = 7 / 32                       # T3-1: the slot cut into the top's front edge (this deep: its back wall), from
@@ -63,14 +64,7 @@ BAY_LINES = (8, 5, 5, 7, 6, 5)      # T3-1: panel lines on the bay's side (px, h
                                     # it; this many over that another this tall, back over the corner this many onto
                                     # the back wall
 BAY_LINE = YS[1]                    # their tone (as the floor outline's on its front)
-SIDE = 6 / 32                       # T3-2: the base's lean this far in from each tile edge, T3-3's box between
-ROUND, DROP = 0.14, 1 / 32          # T3-3: its box's top edge rounded this much, its top this far under the top's
-
-
-def _arc(H, r, n=6):
-    """A front rolled back onto the top through a quarter circle of radius r."""
-    q = [math.pi / 2 * i / n for i in range(n + 1)]
-    return [(D - r + r * math.cos(t), H - r + r * math.sin(t)) for t in q]
+DROP = 1 / 32                       # T3-3: its box's top this far under the top's
 
 
 def build(k, ax, plane, a, b, ends, H, t):
@@ -81,23 +75,18 @@ def build(k, ax, plane, a, b, ends, H, t):
         return [TOP if abs(p[1] - q[1]) < 1e-9 and p[1] > 1.0 else c for p, q, c in zip(prof, prof[1:] + prof[:1],
                                                                                        cols)]
     f = Face(k, ax, plane, a, b, ends, s)
-    base = [(0.0, 0.0), (D, 0.0)] + s.lean() + [(0.0, H)]
-
-    def box(q):                                         # T3-3's box: the base filled out upright, its edge rounded
-        return [(0.0, 0.0), (D, 0.0)] + [(d, z - q) for d, z in _arc(H, ROUND)] + \
-            (s.lean(H - q) if q else []) + [(0.0, H)]   # (q: its top that far under the top's)
-    if t == 3:
-        f.part(a, b, box(DROP), tone(box(DROP)))
-    elif t == 2:
-        for s0, s1 in T.spans(a, b):
-            f.part(s0, s0 + SIDE, base, tone(base))
-            f.part(s0 + SIDE, s1 - SIDE, box(0.0), tone(box(0.0)))                         # (flush)
-            f.part(s1 - SIDE, s1, base, tone(base))
-    elif t == 1:
-        S = SLOT + OCT_D
-        su, so, sz = OCT_SUN                            # (its recesses read by their shadows: the sun in the
+    if t == 3:                                          # (a box: the base filled out upright, its edge rounded, its
+        box = [(0.0, 0.0), (D, 0.0)] + [(d, z - DROP) for d, z in T32.arc(H, T32.ROUND)] + \
+            s.lean(H - DROP) + [(0.0, H)]               # top DROP under the top's)
+        f.part(a, b, box, tone(box))
+    elif t in (1, 2):                                   # (their recesses read by their shadows: the sun in the
+        su, so, sz = OCT_SUN                            # face's terms)
         core.SHADOWS.update(on=True, L=tuple(core.G(*T.P(ax, 0.0, su, sz, so))), ramp=SHADE_RAMP, steps=SHADE_STEPS,
                             band=SHADE_BAND)
+    if t == 2:
+        T32.build(f, s, a, b, H, tone)
+    elif t == 1:
+        S = SLOT + OCT_D
         for s0, s1 in T.spans(a, b):                    # the top's front, built back out round the slot
             zs = H - SLOT_CH - (sum(OCTAGON[1:]) + 2) / core.ZPX               # (under the octagon: the recess's)
             zc = H - SLOT_CH
