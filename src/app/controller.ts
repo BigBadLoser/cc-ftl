@@ -17,6 +17,7 @@ import { draftedOf, moduleUnder, planOrders, type OrderPlan } from './crewOrders
 import { boxSelection, clickSelection, idsInRect, normRect, type Rect } from './selection';
 import { needsMenu, type OrderChoice, type OrderId } from './orders';
 import { shipById } from '../sim/combat/ships';
+import { createAiming, type Aiming } from './aiming';
 
 const TOAST_MS = 2500;
 /** Screen px from a crew member's feet to the middle of the body, for the selection box. */
@@ -46,6 +47,8 @@ export interface Controller {
   /** Asteroid picked by clicking its rock or from the node strip, or null. */
   selectedAsteroid: Readable<number | null>;
   selectAsteroid(id: number | null): void;
+  /** "Target in view": the armed aim and how to arm it. */
+  aiming: Aiming;
   alerts: Alerts;
   log: EventLog;
   toast: Readable<string | null>;
@@ -183,7 +186,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     r?.setSelection(null); // the site draws its own outline, on the floor under everything
   };
   const paint = createPaintTools(sim, bridge, { tool, placeHint, renderer: () => r, showToast, homeShipId });
-  const { setTool, back } = paint;
+  const { setTool } = paint;
+  /** "Target in view" (a weapon armed from the main view): its left-click aim, cancelled by right-click or Esc before anything else. */
+  const aiming = createAiming(sim, () => homeShip(sim), () => r?.setAimHover(null));
+  const back = () => {
+    if (aiming.aiming.get()) return aiming.set(null);
+    paint.back();
+  };
   /** R: draft the selected crew, or stand them all down when every one is already drafted. */
   const toggleDraft = () => {
     const ids = group.get().filter(isPlayerCrew);
@@ -219,6 +228,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectShip,
     selectedAsteroid: astSel,
     selectAsteroid,
+    aiming,
     selectedCrew: crewSel,
     selectedGroup: group,
     selectedShuttle: shuttleSel,
@@ -260,6 +270,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       });
       return {
         onTap(sx, sy, shift = false) {
+          if (aiming.tap(renderer, sx, sy)) return;
           if (menu.get()) {
             menu.set(null); // a click away from the menu only closes it
             plan = null;
@@ -319,7 +330,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
             menu.set(null);
             plan = null;
           }
-          if (tool.get().tool !== 'select') return back();
+          if (aiming.aiming.get() || tool.get().tool !== 'select') return back();
           const ids = group.get();
           if (!ids.length) return;
           if (!draftedOf(sim, ids).length) return showToast(rejectionMessage('notDrafted'));
@@ -331,6 +342,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           menu.set({ x: sx, y: sy, items: p.choices });
         },
         onHover: paint.onHover,
+        onPointer: (sx, sy) => aiming.hover(renderer, sx, sy),
         paintMode: paint.paintMode,
         pickLift: paint.pickLift,
         onPaint: paint.onPaint,
@@ -342,7 +354,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
             if (paint.moduleMode()) paint.rotate(shift);
             else toggleDraft();
           }
-          else if (tool.get().tool !== 'select') back();
+          else if (aiming.aiming.get() || tool.get().tool !== 'select') back();
           else selectTile(null);
         },
       };

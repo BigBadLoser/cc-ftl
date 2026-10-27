@@ -23,6 +23,8 @@ export interface InputHandlers {
   onKey(key: string, shift?: boolean): void;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
+  /** Mouse position in canvas px (the "Target in view" preview reads the ship tile under it). */
+  onPointer?(screenX: number, screenY: number): void;
   /** Height (tiles) above the ground that picked tiles are read at: the mining tool paints the tops of rock blocks. Default 0. */
   pickLift?(): number;
 }
@@ -88,7 +90,10 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const p = local(e);
     const prev = pointers.get(e.pointerId);
     if (!prev) {
-      if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
+      if (e.pointerType === 'mouse') {
+        h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
+        h.onPointer?.(p.x, p.y);
+      }
       return;
     }
     if (pointers.size >= 2) {

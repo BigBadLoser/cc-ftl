@@ -178,6 +178,8 @@ FTL's decision-making with physical consequences, in a shared sector.
 - **Consoles, not manned weapons:**
   - The **weapons console** operator runs all weapons; their skill affects charge and accuracy. With
     no operator, weapons don't fire.
+  - **Relief:** a weapons or helm console left empty for 12 s in a fight (its operator went to eat or sleep) is taken by idle crew of a role
+    that relieves stations (engineers, medics, worker and repair bots), whatever their operating priority; priority 0 still opts out.
   - The **shield console** works unmanned at base strength; an operator speeds up recharge.
   - The **helm** pilot gives evasion and charges the FTL drive to flee. With no pilot, there is no
     evasion and no escape.
@@ -198,14 +200,20 @@ FTL's decision-making with physical consequences, in a shared sector.
 - **Roofed view (later):** enemy ships render with a roof (top hull) over their rooms, which hides
   the interior. Modules that should be visible from outside (weapons, shield generators, engines and
   similar) show a unique roof tile above them instead of the generic one, so they can still be
-  identified and targeted.
+  identified and targeted. Enemy roofs can't be hidden without a scanning upgrade (planned research).
+- **Aiming from the main view:** while a fight is on, the combat panel's "Target in view" button (per weapon, and for all weapons) arms a
+  left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A roof-visible
+  module (weapons, shields, engines, AI core) is aimed at as that module; any other roof tile is a **blind tile aim**, and shots land near it
+  with the usual spread. A bracket marks the aimed tile or module in the main view.
 - **Hits** land on tiles near the aim point (spread by accuracy). Walls lose integrity and breach,
   modules lose HP, and crew get hurt. M3's systems take it from there: venting, fire, power loss,
   darkness.
 - **Enemies run the same sim:** their own crew, power, fires and repairs, plus an AI doctrine for
   targeting, power and retreat.
 - **Endings:**
-  - **Destroy:** the wreck persists as a lootable derelict grid.
+  - **Destroy:** the wreck persists as a lootable derelict grid. A hostile ship whose whole crew is subdued (surrendered or downed) or dead is
+    given up as a derelict too, unless the player's crew are aboard going for a capture (rogue AI ships are excluded: their fabricators replace
+    robots).
   - **Flee:** charge the FTL drive.
   - **Capture:** via boarding, in M5.
   - **Negotiate:** via events, in M6.

@@ -106,6 +106,8 @@ export interface Target {
   moduleId: number;
   /** Set (with ship 0, moduleId 0) when the target is a shuttle in flight or docked. */
   vehicle?: number;
+  /** Set (with moduleId 0) for a blind aim at one tile (sector tile coordinates) of the ship: shots land near it, spread by accuracy. */
+  tile?: { x: number; y: number };
 }
 
 export type Doctrine = 'weapons' | 'shields' | 'random';

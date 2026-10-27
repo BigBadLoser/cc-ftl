@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent } from '../../sim';
+import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
@@ -225,6 +225,21 @@ describe('battle stations', () => {
     run(sim, 20 * 15);
     expect(operatorOf(sim, weapons)).toBe(pick);
     expect(sim.world.has(pick, DraftedC)).toBe(true);
+  });
+
+  it.each(SEEDS)('station relief never displaces a drafted operator who was ordered to the console (seed %i)', (seed) => {
+    const sim = setup(seed);
+    const weapons = consoleOf(sim, 1, 'weapons');
+    run(sim, 20 * 30);
+    // Someone who ranks operating low (a relief by priority), drafted and ordered to the console, with the operators by choice free.
+    const pick = crewOn(sim, 1).find((c) => operatorOf(sim, weapons) !== c && sim.world.get(c, CrewC)!.role !== 'role.gunner')!;
+    sim.world.get(pick, PrioritiesC)!.operating = 4;
+    draft(sim, [pick]);
+    sim.enqueue({ type: 'crew.man', id: pick, module: weapons });
+    run(sim, 20 * 90, () => operatorOf(sim, weapons) === pick);
+    expect(operatorOf(sim, weapons)).toBe(pick);
+    run(sim, 20 * 40);
+    expect(operatorOf(sim, weapons)).toBe(pick);
   });
 
   it('rejects an undrafted crew member, a non-console module and an enemy console', () => {

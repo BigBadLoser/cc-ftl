@@ -116,6 +116,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       cargo: (vehicle: number, item: string, n: number) => cargoAdd(sim, vehicle, item, n),
       /** Spawn a whole ship from a content template at sector (x, y) (staging a neutral target for shuttle EVA shots); returns its grid id. */
       ship: (template: string, faction: Faction, x: number, y: number) => spawnShip(sim, sim.content.ships[template] as never, { faction, x, y }),
+      /** Make every crew member aboard a ship (the player's own excluded) surrender: the "enemy given up" shot. */
+      surrenderCrew: (shipId: number) => { for (const id of sim.world.query(CrewC, PositionC)) if (shipIdOf(sim, sim.world.get(id, PositionC) as never) === shipId && sim.world.get(id, AllegianceC)?.faction !== 'player' && !sim.world.has(id, SurrenderedC)) sim.world.add(id, SurrenderedC, { tick: sim.tick }); },
       /** Put a vehicle (e.g. 'vehicle.mining_pod') in an empty bay module; returns its id (the mining shots). */
       vehicle: (def: string, bay: number) => spawnVehicle(sim, def, bay),
       /** Set the progress of every module construction site to a share of its work (the ghost shots). */

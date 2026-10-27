@@ -130,8 +130,8 @@ export type Command =
    * an inert wreck: no crew, no AI, state 'wreck', neutral side. `intensity` 0..1 (default 0.5); `cause` default rolled.
    */
   | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
-  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked. */
-  | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number }
+  /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked; `targetTile` (with targetModuleId 0) aims blind at one sector tile of the target ship, and the hits land near it. */
+  | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number; targetTile?: { x: number; y: number } }
   /** Hold fire: weapons charge but only fire on combat.fireVolley. */
   | { type: 'combat.setHold'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
