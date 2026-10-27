@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { WORK_CATEGORIES, type WorkCategory } from '../sim';
   import type { UiApi, UiCrew } from './api';
+  import FloatingWindow from './FloatingWindow.svelte';
+  import { centerTop } from './floatingWindow';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
@@ -19,11 +21,7 @@
     api.dispatch({ type: 'crew.setPriority', id: c.id, category: cat, value: next(c.priorities[cat]) });
 </script>
 
-<section class="sheet" data-testid="priority-grid">
-  <header>
-    <h2>Priorities</h2>
-    <button aria-label="Close" onclick={onClose}>Close</button>
-  </header>
+<FloatingWindow id="priorities" title="Priorities" icon="person" min={{ w: 360, h: 200 }} defaultRect={(b) => ({ ...centerTop(b, 640), anchor: 'bottom' })} {onClose} testId="priority-grid" closeTestId="priority-close" padded>
   <div class="scroll">
     <table>
       <thead>
@@ -52,14 +50,9 @@
     </table>
   </div>
   <p class="hint">Tap to cycle 1 (highest) to 4, then off. Dotted cells differ from the role default.</p>
-</section>
+</FloatingWindow>
 
 <style>
-  /* The combat panel takes the left 380px while it is open: centre in the space right of it, and never wider than that space. */
-  @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) section { left: calc((100vw + var(--combat-right, 388px)) / 2); max-width: calc(100vw - var(--combat-right, 388px) - 8px); } }
-  section { left: 50%; bottom: 16px; transform: translateX(-50%); width: min(640px, calc(100vw - 16px)); }
-  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  h2 { margin: 0; font-size: 15px; color: var(--cyan); }
   .scroll { overflow-x: auto; }
   table { border-collapse: separate; border-spacing: 2px; }
   th { font-size: 11px; font-weight: normal; color: var(--dim); padding: 0 2px; }
@@ -69,5 +62,4 @@
   .cell.changed { border: 1px dotted var(--cyan); box-shadow: inset 0 0 0 1px #0e4a56; }
   .reset { font-size: 11px; padding: 0 8px; white-space: nowrap; }
   .hint { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
-  @media (max-width: 600px) { section { left: 0; width: auto; bottom: 0; transform: none; } }
 </style>

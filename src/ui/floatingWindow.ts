@@ -4,6 +4,8 @@
  */
 export interface Rect { x: number; y: number; w: number; h: number }
 export interface Size { w: number; h: number }
+/** Where a window sits until the player moves it. `h: 0` means as tall as its content (up to the screen); with `anchor: 'bottom'` such a window hangs from the bottom of the bounds instead of `y`. */
+export type DefaultRect = Rect & { anchor?: 'bottom' };
 /** Edges a resize handle moves: `n`/`s` for the top/bottom edge, `e`/`w` for the right/left one; corners combine two. */
 export type Edge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 export const EDGES: readonly Edge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
@@ -45,6 +47,12 @@ export function splitFraction(offset: number, total: number, minTop: number, min
   if (total <= 0) return 0.5;
   const top = clamp(offset, minTop, total - minBottom);
   return clamp(top / total, 0.05, 0.95);
+}
+
+/** A default spot centred horizontally in the bounds, `top` px below their top edge (`h: 0` = as tall as its content). */
+export function centerTop(b: Bounds, w: number, h = 0, top = 0): DefaultRect {
+  const ww = Math.min(w, b.right - b.left);
+  return { x: (b.left + b.right - ww) / 2, y: b.top + top, w: ww, h };
 }
 
 /** What a window remembers for the browser session: where the player put it (null = still at its default spot) and whether it is pinned. */

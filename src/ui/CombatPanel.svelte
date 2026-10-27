@@ -5,6 +5,8 @@
   import Icon from './Icon.svelte';
   import CombatTarget from './CombatTarget.svelte';
   import FloatingWindow from './FloatingWindow.svelte';
+  import { combatRight } from './combatDock';
+  import { setDragCursor } from './dragCursor';
   import { readNumber, splitFraction, writeNumber, type Bounds, type Rect } from './floatingWindow';
 
   let { api, combat, onClose, onHail, onFlee }: { api: UiApi; combat: UiCombat; onClose: () => void; onHail: (ship: number) => void; onFlee: (ship: number) => void } = $props();
@@ -94,13 +96,18 @@
   const WIDTH = 372;
   const defaultRect = (b: Bounds): Rect => ({ x: b.left, y: b.top, w: WIDTH, h: b.bottom - b.top });
   const root = document.documentElement;
+  /** Undocked, the panel draws above every other panel, card and toast (not above the modals and overlays). */
+  let free = $state(false);
   function layout(r: Rect) {
     const docked = r.x <= 24;
+    free = !docked;
+    combatRight.set(docked ? r.x + r.w + 8 : 0);
     root.toggleAttribute('data-combat-free', !docked);
     if (docked) root.style.setProperty('--combat-right', `${r.x + r.w + 8}px`);
     else root.style.removeProperty('--combat-right');
   }
   onDestroy(() => {
+    combatRight.set(0);
     root.removeAttribute('data-combat-free');
     root.style.removeProperty('--combat-right');
   });
@@ -115,6 +122,7 @@
   function splitDown(e: PointerEvent) {
     if (e.button !== 0) return;
     splitting = true;
+    setDragCursor('row-resize');
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     e.preventDefault();
   }
@@ -126,6 +134,7 @@
   function splitUp() {
     if (!splitting) return;
     splitting = false;
+    setDragCursor(null);
     writeNumber(SPLIT_KEY, split);
   }
   function splitKey(e: KeyboardEvent) {
@@ -142,7 +151,7 @@
 </script>
 
 <FloatingWindow id="combat" title={enemy ? enemy.name : 'Combat'} icon="target" min={{ w: 300, h: 420 }} {defaultRect} {onClose} onLayout={layout}
-  closeLabel="Close combat panel" closeTestId="combat-close" testId="combat-panel" bg={false} class="combat{expanded ? ' expanded' : ''}">
+  closeLabel="Close combat panel" closeTestId="combat-close" testId="combat-panel" bg={false} avoidCombat={false} z={free ? 10 : 7} class="combat{expanded ? ' expanded' : ''}">
   {#snippet titleExtra()}
     {#if enemy}<span class="pillst {pill.tone}" data-testid="combat-state">{pill.text}</span>{/if}
   {/snippet}
@@ -188,7 +197,7 @@
   .body { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
   .top { flex: 1 1 0; min-height: 190px; display: flex; flex-direction: column; }
   .low { flex: 1 1 0; min-height: 120px; display: flex; flex-direction: column; }
-  .split { flex: none; height: 9px; display: flex; align-items: center; justify-content: center; background: var(--panel-2); border-block: 1px solid var(--line); cursor: ns-resize; touch-action: none; }
+  .split { flex: none; height: 9px; display: flex; align-items: center; justify-content: center; background: var(--panel-2); border-block: 1px solid var(--line); cursor: row-resize; touch-action: none; }
   .split i { width: 40px; height: 3px; background: var(--line-hi); }
   .split:hover i, .split:focus-visible i { background: var(--cyan); }
   .enemy { background: var(--panel); padding: 8px 10px 0; display: grid; gap: 5px; }

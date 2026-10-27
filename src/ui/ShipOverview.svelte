@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCombat, UiCrew, UiFtl, UiModule, UiStats, UiStock } from './api';
+  import FloatingWindow from './FloatingWindow.svelte';
   import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
@@ -38,7 +39,7 @@
   const off = $derived(mods.filter((m) => !m.enabled || m.hp <= 0 || (!m.powered && m.power < 0)));
 </script>
 
-<aside class="sheet over" data-testid="ship-overview">
+<FloatingWindow id="overview" title="Ship overview" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: b.top, w: 300, h: 0 })} {onClose} testId="ship-overview" bare pinRight={32} padded>
   <PanelHead icon="hull" title="Ship overview" />
   <button class="tile close" title="Close" aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
   <div class="res" data-testid="stats">
@@ -67,11 +68,9 @@
   {/if}
   {#if ftl}<div class="drive"><FtlCharge {ftl} testid="overview-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: ftl!.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: ftl!.ship })} /></div>{/if}
   {#if combat.player}<div class="meters"><ShipMeters ship={combat.player} compact /></div>{/if}
-</aside>
+</FloatingWindow>
 
 <style>
-  .over { top: calc(var(--hdr) + var(--sat) + 4px); left: calc(8px + var(--sal)); width: 300px; }
-  @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) .over { left: calc(var(--combat-right, 388px) + var(--sal)); } }
   .close { position: absolute; top: 0; right: 0; width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; }
   .res { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .cell { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); font: inherit; text-align: left; }
@@ -87,5 +86,4 @@
   .heat .pay:disabled { color: var(--dim); cursor: default; }
   .drive { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
   .meters { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
-  @media (max-width: 600px) { :global(html[data-combat]) .over { display: none; } .over { bottom: auto; left: 8px; right: calc(46px + var(--sar)); width: auto; border-width: 1px; padding: 10px; } }
 </style>

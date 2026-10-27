@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampRect, isPinned, moveRect, readNumber, readWindow, resizeRect, splitFraction, windowKey, writeNumber, writeWindow, type Bounds } from './floatingWindow';
+import { centerTop, clampRect, isPinned, moveRect, readNumber, readWindow, resizeRect, splitFraction, windowKey, writeNumber, writeWindow, type Bounds } from './floatingWindow';
 
 const B: Bounds = { left: 8, top: 100, right: 1592, bottom: 892 };
 const MIN = { w: 300, h: 200 };
@@ -54,6 +54,14 @@ describe('resizeRect', () => {
   it('does not grow past the bounds', () => {
     expect(resizeRect(s, 'se', 5000, 5000, B, MIN)).toEqual({ x: 100, y: 200, w: 1492, h: 692 });
     expect(resizeRect(s, 'nw', -5000, -5000, B, MIN)).toEqual({ x: 8, y: 100, w: 492, h: 500 });
+  });
+});
+
+describe('centerTop', () => {
+  it('centres in the bounds below their top, and shrinks to fit', () => {
+    expect(centerTop(B, 560)).toEqual({ x: 520, y: 100, w: 560, h: 0 });
+    expect(centerTop({ ...B, left: 388 }, 560, 300, 4)).toEqual({ x: 710, y: 104, w: 560, h: 300 });
+    expect(centerTop({ left: 0, top: 0, right: 300, bottom: 100 }, 560).w).toBe(300);
   });
 });
 

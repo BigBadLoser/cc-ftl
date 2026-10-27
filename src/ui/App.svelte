@@ -31,6 +31,7 @@
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
+  import { isPinned } from './floatingWindow';
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
 
@@ -140,14 +141,15 @@
   /**
    * Panels the outside click knows about. A click on the world (or a modal's backdrop) closes every open one that is not `sticky`:
    * combat and the build catalog (while in build mode) stay, as do the goals card, alerts, top bars and toolbar (never listed).
-   * The selection inspector is not here: the world tap itself selects or deselects, in the same click.
+   * A pinned window (floatingWindow.ts) stays open too. The selection inspector is not here: the world tap itself selects or deselects, in the same click;
+   * a pinned inspector just stays up, empty, when the selection clears.
    */
   const panels: ClosablePanel[] = [
-    { id: 'overview', sticky: false, isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
-    { id: 'jobs', sticky: false, isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
-    { id: 'stock', sticky: false, isOpen: () => stockOpen, close: () => (stockOpen = false) },
-    { id: 'priorities', sticky: false, isOpen: () => priorities, close: () => (priorities = false) },
-    { id: 'station', sticky: false, isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
+    { id: 'overview', sticky: false, pinned: () => isPinned('overview'), isOpen: () => overviewOpen, close: () => (overviewOpen = false) },
+    { id: 'jobs', sticky: false, pinned: () => isPinned('jobs'), isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
+    { id: 'stock', sticky: false, pinned: () => isPinned('stock'), isOpen: () => stockOpen, close: () => (stockOpen = false) },
+    { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
+    { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
     { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
     { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
@@ -163,10 +165,11 @@
     else if (e.key === '`') debug = !debug;
     else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
+      // A pinned window ignores Esc.
       if (researchOpen) researchOpen = false;
-      else if (jobsOpen) jobsOpen = false;
-      else if (stockOpen) stockOpen = false;
-      else if (overviewOpen) overviewOpen = false;
+      else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
+      else if (stockOpen && !isPinned('stock')) stockOpen = false;
+      else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
       else api.selectCrew(null);
     }
   }

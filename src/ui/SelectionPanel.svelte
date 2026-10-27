@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
+  import FloatingWindow from './FloatingWindow.svelte';
+  import { isPinned } from './floatingWindow';
   import GridPanel from './GridPanel.svelte';
   import AsteroidPanel from './AsteroidPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
@@ -47,11 +49,13 @@
   const tile = $derived(info?.selected ? info : null);
   const wide = $derived(!hasCrew && !!mod && (mod.crafting || !!mod.storage));
   /** The inspector exists only while something is selected; ship stats live behind the ship tab. */
+  /** A pinned inspector stays up (empty) when the selection clears. */
+  let pinned = $state(isPinned('inspector'));
   const shown = $derived(selAst !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
 </script>
 
-{#if shown}
-<aside class="sheet sel" class:wide data-testid="selection-panel">
+{#if shown || pinned}
+<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinRight={0} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
   {:else if selShip !== null}
@@ -66,14 +70,13 @@
     <ModuleInspector {api} onBack={back} {onResearch} />
   {:else if tile}
     <TileInspector {api} onBack={back} />
+  {:else}
+    <div class="ph">Inspector</div>
+    <p class="empty">Nothing selected. Pick a crew member, module, tile or ship.</p>
   {/if}
-</aside>
+</FloatingWindow>
 {/if}
 
 <style>
-  .sel { left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab)); width: 300px; max-height: calc(100vh - var(--hdr) - 24px); overflow-y: auto; }
-  .sel.wide { width: 340px; }
-  /* The combat panel takes the left edge (372px): the inspector sits right of it. */
-  @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) .sel { left: calc(var(--combat-right, 388px) + var(--sal)); } }
-  @media (max-width: 600px) { :global(html[data-combat]) .sel { display: none; } .sel, .sel.wide { width: auto; left: 0; right: calc(46px + var(--sar)); bottom: 0; max-height: 52vh; } }
+  .empty { margin: 0; color: var(--dim); font-size: 13px; }
 </style>
