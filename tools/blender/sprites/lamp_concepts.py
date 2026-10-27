@@ -1522,20 +1522,20 @@ def _grate_well(name, s, grate):
     return [*k.build(), _holdout_sq(name + "_h", s, s)]
 
 
-def _hatch_grate(k, s, dz=0.0):
-    """A 4 x 4 grate with a thick border, a hinge along the back edge and a lift notch at the front; dz lowers it."""
+def _hatch_grate(k, s):
+    """A 4 x 4 grate with a thick border, a hinge along the back edge and a lift notch at the front."""
     b = 0.035
     for t in (-1, 1):                                                                  # border
-        k.box(0, t * (s / 2 - b / 2), -0.004 + dz, s, b, 0.02, "steelD", top="steel")
-        k.box(t * (s / 2 - b / 2), 0, -0.004 + dz, b, s, 0.02, "steelD", top="steel")
+        k.box(0, t * (s / 2 - b / 2), -0.004, s, b, 0.02, "steelD", top="steel")
+        k.box(t * (s / 2 - b / 2), 0, -0.004, b, s, 0.02, "steelD", top="steel")
     for i in range(1, 4):                                                              # bars, 4 x 4 cells
         t = -s / 2 + i * s / 4
-        k.box(t, 0, -0.004 + dz, 2 * PX, s, 0.018, "steelD", top="steel")
-        k.box(0, t, -0.004 + dz, s, 2 * PX, 0.018, "steelD", top="steel")
+        k.box(t, 0, -0.004, 2 * PX, s, 0.018, "steelD", top="steel")
+        k.box(0, t, -0.004, s, 2 * PX, 0.018, "steelD", top="steel")
     for u in (-s / 4, s / 4):                                                          # hinge knuckles on the back edge
         k.box(u, -s / 2 - 0.01, 0.0, 0.1, 0.04, 0.03, "steel", top="steelL", bevel=0.01)
-    k.box(0, s / 2 - 0.02, 0.0 + dz, 0.1, 0.03, 0.02, "dark")                                   # lift notch at the front
-    k.box(0, s / 2 + 0.03, 0.02, 0.08, 0.025, 0.004, "hazY")                                    # and its hazard tick
+    k.box(0, s / 2 - 0.02, 0.0, 0.1, 0.03, 0.02, "dark")                                   # lift notch at the front
+    k.box(0, s / 2 + 0.03, 0.02, 0.08, 0.025, 0.004, "hazY")                               # and its hazard tick
 
 
 def _bar_grate(k, s):
@@ -1618,7 +1618,7 @@ def floor_tile_grate():
     for su in (-1, 1):
         for sv in (-1, 1):
             k.cyl(su * 0.46, sv * 0.46, 0.012, 0.018, 0.006, "plate", sides=6)
-    _hatch_grate(k, s, dz=-PX)                                                         # sits a pixel below the lip
+    _hatch_grate(k, s)
     return [*k.build(), _holdout_sq("lc_f_tile_grate_h", s, s)]
 
 
