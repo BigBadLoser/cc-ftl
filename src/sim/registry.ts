@@ -31,6 +31,7 @@ import type { EventDef, GoalActDef } from './story/defs';
 import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
+import type { YardDef } from './yard/types';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -75,6 +76,8 @@ export interface ContentRegistry {
   research?: Record<string, ResearchDef>;
   /** The research tree's bands in order (ids are `ResearchDef.category`). */
   researchBands?: { id: string; name: string }[];
+  /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
+  yard?: YardDef;
 }
 
 /**
@@ -454,8 +457,12 @@ export interface ModuleDef {
   weapon?: string;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };
-  /** Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less). */
-  engine?: { evasionPerPower: number; fuelFactor?: number };
+  /**
+   * Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less).
+   * `hullCapacity`: how many hull tiles (walls and doors, see `hullTiles`) the engine can push through a jump; the ship's capacity is the sum over its engines
+   * that still work, and a ship over it cannot make a normal jump (ftl/capacity.ts).
+   */
+  engine?: { evasionPerPower: number; fuelFactor?: number; hullCapacity?: number };
   /**
    * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a
    * basic blueprint every game starts with. Stations sell the blueprint from danger tier `minDanger` up, for `price` credits scaled by

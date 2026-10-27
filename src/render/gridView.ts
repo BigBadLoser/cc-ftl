@@ -309,6 +309,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     setSelection: (t) => markers.setSelection(t === null ? null : Array.isArray(t) ? t.map(loc) : loc(t as { x: number; y: number })),
     setHover: (t) => markers.setHover(t && loc(t)),
     setPreview: (tiles, valid) => markers.setPreview(tiles.map(loc), valid),
+    setAreas: (groups) => markers.setAreas(groups.map((g) => ({ ...g, tiles: g.tiles.map(loc) }))),
     grid,
     tintAt,
     tintKey: () => `${grid.revision("light")}|${grid.revision("o2")}|${pulseNow()}`,

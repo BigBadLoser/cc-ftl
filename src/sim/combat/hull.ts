@@ -19,6 +19,23 @@ export function hullSum(grid: Grid): number {
   return sum;
 }
 
+const tileCounts = new WeakMap<Grid, { struct: number; n: number }>();
+
+/**
+ * Hull tiles of a grid: its wall and door tiles. The one count the jobs screen compares in combat strength and the engine capacity
+ * (ftl/capacity.ts) measures. Cached until its `struct` revision changes.
+ */
+export function hullTiles(grid: Grid): number {
+  const rev = grid.revision('struct');
+  const hit = tileCounts.get(grid);
+  if (hit && hit.struct === rev) return hit.n;
+  const struct = grid.load('struct');
+  let n = 0;
+  for (let i = 0; i < struct.length; i++) if (struct[i] === Struct.Wall || struct[i] === Struct.Door) n++;
+  tileCounts.set(grid, { struct: rev, n });
+  return n;
+}
+
 /** Reduce a wall/door tile's integrity. At 0 it breaches: Space if it borders space, else open Floor. Returns true on breach. */
 export function damageStruct(grid: Grid, x: number, y: number, amount: number): boolean {
   const kind = grid.get('struct', x, y);

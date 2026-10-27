@@ -349,6 +349,8 @@ export interface UiStarRoute {
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;
+  /** The hull is over what the engines carry: a normal jump is blocked, an overcharged one goes at a risk (`risk` 0..1). Null when it fits. */
+  overweight: { tiles: number; capacity: number; risk: number } | null;
 }
 
 /** What a jump would leave behind or cut loose (the confirm step lists it). Names only: the ids of docked vehicles go in `withDocked`. */

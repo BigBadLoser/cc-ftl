@@ -53,6 +53,7 @@
   /** The FTL drive and its order, and whether the open confirm step is for "Jump when charged". */
   let ftl = $state<UiFtl | null>(null);
   let queueing = false;
+  let overcharging = false;
 
   const nodeById = $derived(new Map((map?.nodes ?? []).map((n) => [n.id, n])));
   const sectorById = $derived(new Map((map?.sectors ?? []).map((x) => [x.id, x])));
@@ -107,8 +108,8 @@
           sec.id === map.currentSector ? 'You are here' : route ? `Route: ${route.hops} jump${route.hops > 1 ? 's' : ''} · ${route.fuel} fuel · ${route.time} d` : 'No known route yet',
         ],
         zoom: () => focusSector(sec.id),
-        action: route && !route.blocker ? { label: fleeing ? 'Flee' : route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: () => go() } : null,
-        warn: route?.blocker ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
+        action: route && !route.blocker && !route.overweight ? { label: fleeing ? 'Flee' : route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: () => go() } : null,
+        warn: route?.blocker ?? (route?.overweight ? `Overweight: hull ${route.overweight.tiles} / ${route.overweight.capacity}.` : null) ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
       };
     }
     const reg = map.clusters.find((r) => r.id === picked!.id);
@@ -382,7 +383,7 @@
       picked = hit ? { kind: 'sector', id: hit.id } : null;
       selected = picked ? routeInto(picked.id) : null;
     } else if (level === 3) picked = hit ? { kind: 'cluster', id: hit.id } : null;
-    else if (hit && hit.id === selected && route && !route.blocker && map?.state === 'active') go();
+    else if (hit && hit.id === selected && route && !route.blocker && !route.overweight && map?.state === 'active') go();
     else {
       selected = hit?.id ?? null;
       confirming = null;
@@ -415,9 +416,12 @@
    * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). Flee goes at once as a one-hop trip;
    * a jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
    */
-  function go(queue = false) {
+  function go(queue = false, overcharge = false) {
     if (!route || !map || map.state !== 'active') return;
     if (queue ? route.chargeOk || fleeing : route.blocker) return;
+    // A hull over what the engines carry only goes by the Overcharge button (a flee takes the risk itself).
+    if (route.overweight && !overcharge && !fleeing) return;
+    overcharging = overcharge;
     queueing = queue;
     if (fleeing) {
       api.dispatch({ type: 'combat.flee', ship: flee as number, to: route.path[1] });
@@ -433,8 +437,10 @@
   function fly() {
     if (!route || !map) return;
     const jump = jumpCommand(map.ship, route.path, taking);
-    api.dispatch(queueing ? { type: 'ftl.charge', ship: map.ship, jump: jump.route, ...(jump.withDocked ? { withDocked: jump.withDocked } : {}) } : jump);
+    const oc = overcharging ? { overcharge: true } : {};
+    api.dispatch(queueing ? { type: 'ftl.charge', ship: map.ship, jump: jump.route, ...(jump.withDocked ? { withDocked: jump.withDocked } : {}), ...oc } : { ...jump, ...oc });
     queueing = false;
+    overcharging = false;
     confirming = null;
     taking = [];
     selected = null;
@@ -492,7 +498,7 @@
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
         factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
-        {ftl} onGo={() => go()} onQueue={() => go(true)} onCharge={() => map && api.dispatch({ type: 'ftl.charge', ship: map.ship })} onCancelCharge={() => map && api.dispatch({ type: 'ftl.cancelCharge', ship: map.ship })} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
+        {ftl} onGo={() => go()} onQueue={() => go(true)} onOvercharge={() => go(!!route && !route.chargeOk, true)} onCharge={() => map && api.dispatch({ type: 'ftl.charge', ship: map.ship })} onCancelCharge={() => map && api.dispatch({ type: 'ftl.cancelCharge', ship: map.ship })} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
   {/if}
   </div>
   {#if pickedInfo && level === 3}

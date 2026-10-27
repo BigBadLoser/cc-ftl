@@ -151,7 +151,7 @@
     { id: 'jobs', sticky: false, pinned: () => isPinned('jobs'), isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
     { id: 'stock', sticky: false, pinned: () => isPinned('stock'), isOpen: () => stockOpen, close: () => (stockOpen = false) },
     { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
-    { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
+    { id: 'station', get sticky() { return tool.tool === 'yard'; }, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
     { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
     { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },

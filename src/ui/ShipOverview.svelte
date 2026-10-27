@@ -9,7 +9,7 @@
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
-  let st = $state<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
+  let st = $state<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   let stock = $state<UiStock[]>([]);
   let credits = $state(0);
   let crew = $state<UiCrew[]>([]);
@@ -35,6 +35,7 @@
   const foodLevel = $derived(st.food.units === 0 && st.food.eaters > 0 ? 'out' : st.food.hours !== null && st.food.hours < 0.25 ? 'out' : st.food.hours !== null && st.food.hours < 1 ? 'low' : 'ok');
   const foodTime = $derived(st.food.hours === null ? '–' : st.food.hours >= 1 ? `~${st.food.hours.toFixed(1)} h` : `~${Math.max(1, Math.round(st.food.hours * 60))} min`);
   const short = $derived(st.demand > st.supply);
+  const heavy = $derived(st.hull.capacity > 0 && st.hull.tiles > st.hull.capacity);
   const o2Low = $derived(st.o2 !== null && st.o2 < 16);
   const off = $derived(mods.filter((m) => !m.enabled || m.hp <= 0 || (!m.powered && m.power < 0)));
 </script>
@@ -45,6 +46,7 @@
   <div class="res" data-testid="stats">
     <Tooltip text="Power supply / demand"><span class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span></Tooltip>
     <Tooltip text="Average O₂ of rooms with crew (kPa)"><span class="cell" class:bad={o2Low} data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span></Tooltip>
+    <Tooltip text={heavy ? 'Hull tiles over what the engines carry: jumping needs an overcharge' : 'Hull tiles / what the engines carry'}><span class="cell wide" class:bad={heavy} data-testid="stat-hull"><span class="lab">Hull</span><b>{st.hull.tiles} / {st.hull.capacity}</b></span></Tooltip>
     <Tooltip text="Credits"><span class="cell" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span></Tooltip>
     {#if hasFuel}<Tooltip text="Fuel"><span class="cell" class:bad={fuel < 3} data-testid="stat-fuel"><Icon name="fuel" size={18} /><b>{fuel}</b></span></Tooltip>{/if}
     <button class="cell" class:on={stockOpen} aria-pressed={stockOpen} title="Ship stock" data-testid="stat-stock" onclick={onStock}><Icon name="stock" size={18} /><b>{total}</b></button>
@@ -76,6 +78,7 @@
   .cell { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); font: inherit; text-align: left; }
   .cell b { color: var(--text); font-weight: 600; }
   button.cell { cursor: pointer; } button.cell.on { border-color: var(--cyan); background: var(--panel-3); }
+  .cell .lab { color: var(--dim); } .cell.wide b { white-space: nowrap; }
   .cell.bad { border-color: var(--red); color: var(--red); }
   .food { display: grid; gap: 2px; margin-top: 4px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 13px; }
   .food b { color: var(--text); font-weight: 600; }

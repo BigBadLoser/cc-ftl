@@ -1,6 +1,6 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleDefs, buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
@@ -14,6 +14,7 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
+import { buildYard } from './yardSnapshot';
 import { buildStory } from './storySnapshot';
 import { warmOutlines } from './starmapClusters';
 import { warmNebula } from './starmapNebula';
@@ -89,6 +90,9 @@ export interface Bridge {
   ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
+  /** The shipyard planning view; `setYardPaint` gives it the station and the painted tiles (an empty set clears the plan). */
+  yard: Writable<UiYard>;
+  setYardPaint(station: number, tiles: readonly { x: number; y: number }[]): void;
   prizes: Readable<UiPrize[]>;
   mining: Readable<UiMining>;
   story: Readable<UiStory>;
@@ -146,7 +150,7 @@ export function createBridge(sim: Sim): Bridge {
   let lastGoals = '';
   let lastJobsKey = '';
   let lastSites = '[]';
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
@@ -158,6 +162,9 @@ export function createBridge(sim: Sim): Bridge {
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
+  const yard = createStore<UiYard>({ plan: null, order: null });
+  let yardPaint: { station: number; tiles: { x: number; y: number }[] } = { station: 0, tiles: [] };
+  let lastYard = '';
   const prizes = createStore<UiPrize[]>([]);
   const mining = createStore<UiMining>({ asteroids: [], pods: [] });
   let lastMining = '';
@@ -329,6 +336,14 @@ export function createBridge(sim: Sim): Bridge {
     lastTrade = key;
     trade.set(snap);
   };
+  const refreshYard = (force = false) => {
+    if (!force && combatFrame % 3) return;
+    const snap = buildYard(sim, yardPaint.station, yardPaint.tiles);
+    const key = JSON.stringify(snap);
+    if (key === lastYard) return;
+    lastYard = key;
+    yard.set(snap);
+  };
   const refreshMining = () => {
     if (combatFrame % 6) return;
     const snap = buildMining(sim);
@@ -466,6 +481,11 @@ export function createBridge(sim: Sim): Bridge {
       selected = t;
       refreshInspect();
     },
+    yard,
+    setYardPaint(station, tiles) {
+      yardPaint = { station, tiles: tiles.map((t) => ({ x: t.x, y: t.y })) };
+      refreshYard(true);
+    },
     setHovered(t) {
       hovered = t;
       refreshInspect();
@@ -488,6 +508,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshShip();
       refreshShuttles();
       refreshTrade();
+      refreshYard();
       refreshPrizes();
       refreshMining();
       refreshCombat();

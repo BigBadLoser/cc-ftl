@@ -14,7 +14,7 @@ import { wake } from '../combat/dormant';
 import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
 import {
-  CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew, type Position,
+  CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew, type Job, type Position,
 } from './components';
 import { releaseBedClaim } from './beds';
 import { clearPath, findJobAt, isIncapacitated, origin, releaseAssignment } from './helpers';
@@ -29,7 +29,7 @@ type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { typ
 
 const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, Struct.Ground, Struct.RockWall];
 /** Work needed (ticks at workSpeed 1): walls take 3 s, floors and doors 2 s. */
-const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ };
+export const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ };
 const DECONSTRUCT_TICKS = 2 * TICK_HZ;
 /** Forcing a jammed door: 6 s at workSpeed 1 (skill and suits scale it through the worker's speed). */
 const FORCE_DOOR_TICKS = 6 * TICK_HZ;
@@ -38,14 +38,17 @@ function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
 }
 
-function createJob(sim: Sim, kind: 'build' | 'deconstruct' | 'forceDoor', shipId: number, x: number, y: number, struct: number, work: number, free = false): void {
+/** Post a construction job on a tile. `free`: no materials to deliver (digging, or paid for up front, as the shipyard's are); `extra` is merged into the job. Returns the job entity. */
+export function createJob(sim: Sim, kind: 'build' | 'deconstruct' | 'forceDoor', shipId: number, x: number, y: number, struct: number, work: number, free = false, extra: Partial<Job> = {}): number {
   const id = sim.world.createEntity();
   const key = kind === 'build' && !free ? structCostKey(struct) : undefined;
   const needs = needsFrom(key ? sim.content.structCosts[key] : undefined);
   sim.world.add(id, JobC, {
     category: 'construction', kind, x, y, struct, work, progress: 0, reservedBy: 0,
     ...(needs ? { needs, delivered: [] } : {}),
+    ...extra,
   });
+  return id;
 }
 
 /** Shared validation: tile exists on a ship grid and has no job yet. Returns the current struct or -1. */
@@ -81,7 +84,8 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
       // digging (Floor), levelling (Ground) or finishing (RockWall) rock: slow, free
       const r = rockBuild(shipGrid(sim, cmd.ship) as GridLike, cmd.x, cmd.y, cmd.struct);
       if ('error' in r) return reject(sim, cmd.type, r.error);
-      return createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, r.work, true);
+      createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, r.work, true);
+      return;
     }
     if (cmd.struct === Struct.Ground || cmd.struct === Struct.RockWall) return reject(sim, cmd.type, 'notRock');
     createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);

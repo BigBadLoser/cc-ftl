@@ -434,6 +434,8 @@ export interface UiStats {
   heat: UiHeat;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
   o2: number | null;
+  /** Hull tiles (walls and doors) against what the working engines carry: the ship panel's "Hull N / M". */
+  hull: { tiles: number; capacity: number };
 }
 
 /** One option of an open decision. `reasons` explain why it is greyed out; `odds` is the skill check, if any. */
@@ -704,6 +706,61 @@ export interface UiStationInfo {
   shields: number;
   /** Why the alarm is up, or null while calm. */
   alarm: string | null;
+  /** The shipyard this station runs (hull expansion), or null. */
+  yard: UiYardService | null;
+}
+
+/** What a station's shipyard offers. `price` is per painted tile now (the node's danger and the tier's multiplier included). */
+export interface UiYardService {
+  /** 'station' or 'hub'. */
+  size: string;
+  /** Tiles one order may cover, and the overall ship maximum (tiles the ship may cover). */
+  cap: number;
+  maxTiles: number;
+  price: { credits: number; metal: number };
+  /** Tiles the player's ship covers now. */
+  area: number;
+  /** The ship's hull tiles against what its engines carry now. */
+  hull: { tiles: number; capacity: number };
+}
+
+/** A hull expansion drawn on the map, checked and priced. */
+export interface UiYardPlan {
+  station: number;
+  tiles: { x: number; y: number }[];
+  walls: { x: number; y: number }[];
+  bad: { x: number; y: number }[];
+  /** The sim's reason code the plan fails with, or null; `errorText` says it in a sentence. */
+  error: string | null;
+  errorText: string;
+  price: { credits: number; metal: number };
+  afford: { credits: boolean; metal: boolean };
+  cap: number;
+  maxTiles: number;
+  area: number;
+  areaAfter: number;
+  /** Hull tiles now and after, against what the engines carry ("Hull N / M"). */
+  hull: { before: number; after: number; capacity: number };
+}
+
+/** The player's yard order: running, or just ended. `status` says what is happening. */
+export interface UiYardOrder {
+  id: number;
+  station: number;
+  live: boolean;
+  phase: string;
+  status: string;
+  built: number;
+  total: number;
+  price: { credits: number; metal: number };
+  /** Why it ended early, in words, or ''. */
+  reason: string;
+}
+
+/** The shipyard planning view: what is painted for which station, its plan, and the order that is under way. */
+export interface UiYard {
+  plan: UiYardPlan | null;
+  order: UiYardOrder | null;
 }
 
 export interface UiTradePartner {
@@ -834,7 +891,7 @@ export interface UiLegend {
   gradient: string[];
 }
 
-export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
+export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel' | 'yard';
 /** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid; 'mine' drags a rectangle over ore (the ore tiles in it go to the mining pods in `pods`, or every pod when empty). */
 export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine';
 /** A mining pod of the player's (VehicleC with a mining laser). */
@@ -883,6 +940,8 @@ export interface UiToolState {
   rot: number;
   /** The 'mine' tool: pod ids the painted ore is ordered to (empty = every pod). */
   pods?: number[];
+  /** The 'yard' tool: the station the hull is planned at, and whether a drag erases what was painted. */
+  yard?: { station: number; erase: boolean };
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';
@@ -976,6 +1035,10 @@ export interface UiApi {
   ftl: Subscribable<UiFtl | null>;
   /** Credits, hailable ships and stations, and the running deliveries. */
   trade: Subscribable<UiTrade>;
+  /** The shipyard planning view (the painted hull and its plan) and the player's yard order. */
+  yard: Subscribable<UiYard>;
+  /** Forget the painted hull. */
+  clearYardPaint(): void;
   shuttles: Subscribable<UiShuttles>;
   prizes: Subscribable<UiPrize[]>;
   /** Asteroids in the node and the player's mining pods. */

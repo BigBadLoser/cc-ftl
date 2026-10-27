@@ -138,6 +138,8 @@ export interface Job {
   resume?: number;
   /** For suitUp / suitOff: the crew member this personal errand belongs to (nobody else may take it). */
   errandFor?: number;
+  /** For a shipyard order's build jobs: the order (`YardOrder.id`) that paid for them (yard/). */
+  yard?: number;
 }
 export const JobC = defineComponent<Job>('job');
 

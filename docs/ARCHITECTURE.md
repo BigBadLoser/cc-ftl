@@ -1786,3 +1786,35 @@ shuttle docks at a station airlock (no hover fallback: `noDock`), the recruit wa
 and on docking the recruit steps out as player crew (allegiance switch, `crew.hired`, key into `recruitLog`) and the escrow is paid. Any failure
 (no shuttle, no dock, recruit dead, board timeout, cancel) refunds and puts the recruit back to station life. One live deal per station.
 UI: selecting a station opens `StationPanel` (tabs Trade, Jobs, Crew; `TradePane`, `JobCards`, `RecruitList`); recruits ride in `UiTradePartner`.
+
+
+## Engine capacity and the shipyard (progression phase 5)
+
+**Engine capacity** (`sim/ftl/capacity.ts`, `ftl/overcharge.ts`). `EngineDef.hullCapacity` is the hull tiles one engine can push through a jump
+(Mk I 700 in `content/modules.ts`, Mk II 980 and Mk III 1400 in `content/tiers.ts`). The count is `hullTiles(grid)` (wall and door tiles, cached on
+the `struct` revision, `combat/hull.ts`), the same count the jobs screen compares in combat strength. `hullLoad(sim, ship)` gives tiles, capacity
+(engines with hp above 0), `over` and `ratio`; a ship with no engine module has no limit. Over capacity, `jump` rejects with `overweight` (the
+`galaxy.jump` command and a queued `ftl.charge` with a route) unless the command carries `overcharge`; the player's `combat.flee` always overcharges.
+An overcharged jump calls `applyOvercharge` before the ship is lifted: risk = overload (tiles over capacity / capacity) against `OVERCHARGE_FULL`
+(0.5), zero at capacity and nothing is rolled then. Each working engine rolls once for its fate (hit for 25-60% of max hp, or destroyed outright)
+and once for a fire in its room (floor tiles in and around its footprint), all on `sim.rng` in engine id order. Event `ftl.overcharged`.
+No fuel scaling by hull size. UI: "Hull N / M" in the ship overview, the starmap drawer's Overweight line, warning and Overcharge button
+(`UiStarRoute.overweight`). The Mk I number is set by the biggest generated hulls (one-engine liners of up to ~625 tiles):
+`content/factions/engineCapacity*.test.ts` stamps every faction's ships (and the starter) into a sim and checks each fits.
+
+**Shipyard** (`sim/yard/`). Trading and military stations of the station and hub tiers (`ContentRegistry.yard`, `content/yard.ts`, read through
+`yardService`; also needs a station that answers hails) sell hull. `planYard(sim, station, tiles)` checks a painted floor area against the
+player's ship (open space nobody owns, every patch touching the hull 4-neighbour, the airlock approach clear, the tier's per-visit cap, the overall
+ship maximum in non-space tiles, the grown rectangle clear of other ships) and prices it (credits and metal per painted tile, times the tier's
+multiplier, times 1 + `dangerStep` x node danger). The yard closes each patch with a ring of walls (8-neighbour) and leaves one wall per patch
+(the *gap*) for last. `yard.order` pays into escrow (`YardOrder.held`; metal comes out of storage), grows the `ShipC` rectangle (the grid view
+follows it) and posts free construction jobs (`Job.yard`) for the floor and walls. `yardSystem` (`yard/flow.ts`, after the trade system) then
+runs the order: `launch` (a courier-type shuttle with `YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`, flies to a free player
+airlock), `fly`, `work` (the crew step out in the shuttle's own suits and pick the jobs through the normal crew AI; the player's crew take them
+too, fetching a suit at an airlock: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (once everything else stands the crew walk
+out through the gaps and wait outside; then the gaps are posted, so nobody walls themselves in), `recall` (the crew embark again), `home` (the
+shuttle undocks, hovers at the station and is removed) and `done`. Suits are the contractors' own and never run dry; nothing is left in the
+player's airlocks. The unbuilt share of the price is refunded when work ends early (`yard.cancel`, combat, a stall, no dock) and the built
+share paid to the station when the shuttle is home; leaving the node (`jump`) ends the order on the spot (`abortYards`). Save v58 (`sim.yard`).
+UI: the station panel's Shipyard tab (`YardPane`) and the `yard` tool (`app/yardTool.ts`): rectangle painting with add and erase through the
+reusable `app/areaPaint.ts`, drawn by `Renderer.setAreas` (floor, walls and blocked tiles), the plan from `bridge.yard`.

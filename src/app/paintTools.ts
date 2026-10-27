@@ -8,6 +8,7 @@ import type { Bridge } from './bridge';
 import type { InputHandlers, Tile } from './input';
 import { rejectionMessage } from './messages';
 import type { Writable } from './store';
+import { createYardTool } from './yardTool';
 
 // dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
 const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
@@ -23,12 +24,15 @@ export interface PaintDeps {
 /** The build, deconstruct, cancel, mine and module-placement tools: previews while hovering and dragging, and the commands they send on release. */
 export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pick<InputHandlers, 'onHover' | 'paintMode' | 'pickLift' | 'onPaint'> & {
   setTool(state: Partial<UiToolState>): void;
+  /** Forget the painted shipyard hull. */
+  clearYard(): void;
   moduleMode(): boolean;
   rotate(back?: boolean): void;
   /** Right-click / Escape in a tool mode: drop the placement, then leave build mode. */
   back(): void;
 } {
   const { tool, placeHint, showToast, homeShipId } = deps;
+  const yard = createYardTool(bridge, { tool, renderer: deps.renderer });
   let modPos: Tile | null = null;
   /** The renderer is drawing a placement ghost (so it must be cleared when the mode ends). */
   let ghostOn = false;
@@ -76,6 +80,12 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     return out;
   };
   const refreshPreview = () => {
+    if (yard.active()) {
+      deps.renderer()?.setHover(null);
+      deps.renderer()?.setPreview([]);
+      placeHint.set(null);
+      return yard.draw();
+    }
     const active = tool.get().tool !== 'select';
     deps.renderer()?.setHover(active ? null : hover);
     if (moduleMode()) {
@@ -103,6 +113,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     // A module whose blueprint is not known cannot be picked for placement (the catalog shows it locked).
     const s = state.moduleDef && !isBlueprintKnown(sim, state.moduleDef) ? { ...state, moduleDef: tool.get().moduleDef } : state;
     tool.update((cur) => ({ ...cur, ...s }));
+    yard.sync();
     if (s.tool === 'select') modPos = null;
     paintStart = paintEnd = null;
     refreshPreview();
@@ -171,6 +182,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
 
   return {
     setTool,
+    clearYard: () => yard.clear(),
     moduleMode,
     rotate,
     back,
@@ -183,6 +195,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
         paintMode: () => tool.get().tool !== 'select',
         pickLift: () => (isMineTool() ? ROCK_MASS_Z : 0),
         onPaint(phase, t) {
+          if (yard.active()) return yard.paint(phase, t);
           if (moduleMode()) {
             if (phase === 'cancel') modPos = null;
             else {

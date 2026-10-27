@@ -13,6 +13,7 @@ import { advanceTravel } from './galaxy/hyperspace';
 import { newGalaxy, START_NODE } from './galaxy/state';
 import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
+import { newYard, type YardState } from './yard/types';
 import { TICK_HZ } from './time';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
@@ -35,6 +36,8 @@ export class Sim {
   sector: Sector = { grid: newSectorGrid(), width: SECTOR_WIDTH, height: SECTOR_HEIGHT, inCombat: false, node: START_NODE, state: 'active' };
   /** Sectors the player left, frozen (see sector/archive.ts). Every one is kept (user decision, 2026-10-21). */
   archives: SectorArchive[] = [];
+  /** Shipyard hull-expansion orders (yard/). */
+  yard: YardState = newYard();
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */

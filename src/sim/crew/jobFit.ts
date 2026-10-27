@@ -1,5 +1,5 @@
 import { isErrand, findSuitSource } from '../eva/errands';
-import { planWalk } from '../eva/route';
+import { planSiteWalk } from '../eva/route';
 import { needsMaterials } from '../items/materials';
 import { canTakeRobotJob } from '../robots/jobs';
 import { shipIdOf } from '../regions';
@@ -17,7 +17,7 @@ export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): bool
 /** True if `crewId` could actually take the job now: it fits, they can walk to it, and a suit can be had when the way is thin air. */
 export function jobTakeable(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
   if (!jobFits(sim, crewId, pos, job)) return false;
-  const plan = planWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
+  const plan = planSiteWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
   return !!plan && (!plan.thin || !!findSuitSource(sim, crewId, pos));
 }
 
