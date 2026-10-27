@@ -9,6 +9,7 @@ from itertools import combinations
 
 from mathutils import Vector
 
+from . import core
 from . import hull_outline as HO
 from . import wall3d as T
 from . import walls as W
@@ -19,6 +20,8 @@ assert abs(HO.E - E) < 1e-9
 TOP_SEAM = (2 * TOP_PX, 2.75 * TOP_PX, YS[2])   # the run's seam along the top: this far in from the hull's back to
                                     # this, in this tone (in the same terms as the other depths: it runs on round
                                     # corners, diagonals and caps)
+SLOPES = (0.0, 0.5, 1.0, 2.0, math.inf)   # the clean pixel-line slopes a ridge on the silhouette is trued to (within
+SNAP = math.radians(8)              # this): a near-45 degree line jogs a px where its stair-steps slip
 TILE = [(Vector((1, 0, 0)), 0.5), (Vector((-1, 0, 0)), 0.5), (Vector((0, 1, 0)), 0.5), (Vector((0, -1, 0)), 0.5)]
 UP = Vector((0, 0, 1))
 
@@ -60,25 +63,28 @@ def _tone(m, fronts):
     return TOP
 
 
-def _emit(rel, parts, fronts, skip):
+def _emit(rel, parts, fronts, skip, tones=None):
     """Each part (ends: the planes its ends on tile edges lie on, rest: its other planes) as one solid, its faces
     toned by facing; its ends in a fan from their middle, each wedge in the tone of the face across its edge (the next
     piece hides an end, but anti-aliasing mixes it in along the join: so it reads as the surface it meets). Faces on
-    a plane in `skip` (shared by two parts) left out."""
+    a plane in `skip` (shared by two parts) left out, on one in `tones` (by id) in its tone."""
     for ends, rest in parts:
         planes = ends + rest
         faces = _solid(planes)
 
+        def tone(m, i):
+            return (tones or {}).get(id(planes[i])) or _tone(m, fronts)
+
         def across(p, q, j):                                            # (the face sharing the edge p q)
             for pts, m, i in faces:
                 if i != j and any((p - r).length < 1e-6 for r in pts) and any((q - r).length < 1e-6 for r in pts):
-                    return YS[2] if i < len(ends) else _tone(m, fronts)
+                    return YS[2] if i < len(ends) else tone(m, i)
             return YS[2]
         for pts, m, i in faces:
             if any(planes[i] is q for q in skip):
                 continue
             if i >= len(ends):
-                rel.poly(pts, "steel", 3, m, fixed=_tone(m, fronts))
+                rel.poly(pts, "steel", 3, m, fixed=tone(m, i))
                 continue
             mid = sum(pts, Vector()) / len(pts)
             for p, q in zip(pts, pts[1:] + pts[:1]):
@@ -96,17 +102,61 @@ def _front(f):
 
 
 def _part(g, before, after, H):
-    """A convex run's part (ends, rest) and its fronts (s, c, g): all its fronts' upright faces and leans (D in at the
-    top) cut it, and a concave corner's other side where their depths meet (that cut shared). No back: the roof
-    (flush with the hull's top) lies over the rest (roof()), so the solid is never cut across a face seen (a cut
-    leaks through anti-aliasing as a dotted line)."""
+    """A convex run's parts [(ends, rest)], the cuts they share, its fronts (s, c, g) and its ridge cuts (_ridges):
+    all its fronts' upright faces and leans (D in at the top) cut it, and a concave corner's other side where their
+    depths meet (that cut shared). No back: the roof (flush with the hull's top) lies over the rest (roof()), so the
+    solid is never cut across a face seen (a cut leaks through anti-aliasing as a dotted line)."""
     k = D / LEAN_RISE
     fronts = [_front(f) for f in g]
     faces = [(UP, H), (-UP, 0.0)]
     for s, c, w in fronts:
         faces += [(s, c), (s + w * k * UP, c - w * D + w * k * H)]
     side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
-    return (TILE, faces + side), side, fronts
+    ridges = _ridges(fronts, H, k)
+    if not ridges:
+        return [(TILE, faces + side)], side, fronts, ()
+    under, over = (UP, H - LEAN_RISE), (-UP, LEAN_RISE - H)              # (split at the bend, a crease all round:
+    return ([(TILE, faces + side + [under]), (TILE, faces + side + [over] + ridges)],    # the cuts only over it)
+            side + [under, over], fronts, ridges)
+
+
+def _screen(d):
+    """A direction's on-screen px (x right, y up)."""
+    return Vector(((d.x - d.y) * core.TILE_W / 2, -(d.x + d.y) * core.TILE_H / 2 + d.z * core.ZPX))
+
+
+def _ridges(fronts, H, k):
+    """Cuts truing the ridges on the silhouette: where two sides' leans meet at a convex corner, one facing the camera
+    and one away, their ridge is the solid's outline on screen; a cut along the view through the bend's corner, at the
+    nearest clean slope (SLOPES) that takes the sliver beyond the whole ridge, makes that outline a clean px line
+    (edge-on, it shows no face; the part under the bend, uncut, meets it at that corner)."""
+    view = Vector((1.0, 1.0, core.TILE_H / core.ZPX))                    # (the direction that projects to a point)
+    zb, out = H - LEAN_RISE, []
+    for (sa, ca, ga), (sb, cb, gb) in zip(fronts, fronts[1:]):
+        lit = [(s + w * k * UP).dot(view) > 0 for s, w in ((sa, ga), (sb, gb))]
+        det = sa.x * sb.y - sa.y * sb.x
+        if lit[0] == lit[1] or abs(det) < 1e-9:
+            continue
+
+        def meet(a, b, z):
+            return Vector(((a * sb.y - b * sa.y) / det, (sa.x * b - sb.x * a) / det, z))
+        p0, p1 = meet(ca, cb, zb), meet(ca - ga * D, cb - gb * D, H)    # (the ridge: the bend's corner to the top's)
+        d = _screen(p1 - p0)
+        ang = math.atan2(abs(d.y), abs(d.x))
+        inside = (p0 + p1) / 2 - (sa / sa.length + sb / sb.length) * 0.25
+        for want in sorted(SLOPES, key=lambda m: abs(math.atan(m) - ang)):
+            a = math.atan(want)
+            if abs(a - ang) > SNAP or abs(a - ang) < 1e-4:
+                break
+            t = Vector((math.copysign(math.cos(a), d.x), math.copysign(math.sin(a), d.y)))
+            u = Vector((t.x / (core.TILE_W / 2) - t.y / (core.TILE_H / 2),
+                        -t.x / (core.TILE_W / 2) - t.y / (core.TILE_H / 2), 0.0)) / 2     # (level, drawn along t)
+            n = u.cross(view).normalized()
+            n = n if n.dot(inside - p0) < 0 else -n
+            if n.dot(p1 - p0) >= -1e-9:                                 # (through the bend's corner, where the part
+                out.append((n, n.dot(p0)))                              # under the bend meets it; the whole ridge
+                break                                                   # on the cut side)
+    return out
 
 
 def _seam(rel, part, g, H):
@@ -132,9 +182,9 @@ def piece(key, H=None):
     rel = T.Relief(f"ext_solid_{HO.name(key)}")
     for stretch in HO.parse(key):
         for g, before, after in HO.groups(stretch):
-            part, shared, fronts = _part(g, before, after, H)
-            _emit(rel, [part], fronts, shared)
-            _seam(rel, part, g, H)
+            parts, shared, fronts, ridges = _part(g, before, after, H)
+            _emit(rel, parts, fronts, shared, {id(q): YS[5] for q in ridges})
+            _seam(rel, parts[-1], g, H)
     return rel.build()
 
 
