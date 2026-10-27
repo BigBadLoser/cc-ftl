@@ -1,5 +1,6 @@
 """Scratch concepts for the lamp redesign (a review family, not in RENDERED, so `npm run sprites` skips it): floor lights
-sconces for context. Grid frame, origin = tile centre at floor level; the back wall runs along x at y = -0.5."""
+and wall sconces, a stand-in wall behind the sconces for context. Grid frame, origin = tile centre at floor level; the
+back wall runs along x at y = -0.5."""
 from . import core
 
 
