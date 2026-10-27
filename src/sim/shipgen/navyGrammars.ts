@@ -118,23 +118,39 @@ function carrierIsland(c: Ctx): boolean {
   if (!hb) return no(c, 'hangar');
   const root = c.A.placeRoot(hb);
   c.parts.push('hangar');
+  // The core and stores run forward of the hangar as a spine (carriers are long: a bow ahead of the flight deck), the bow
+  // battery at its head.
+  let head = root;
+  const spine: number[] = [];
+  for (const sp of bands('core', [...j.core, ...j.stores], c.fam.sectionRooms)) {
+    const blk = section(c, sp);
+    const id = blk ? c.A.attach(head, blk, { side: 'w' }) : null;
+    if (id === null) return no(c, 'fore spine');
+    c.parts.push('core');
+    spine.push(id);
+    head = id;
+  }
   const [bowGuns, ...more] = bands('battery', j.guns, 2);
   const bow = bowGuns ? section(c, bowGuns) : null;
-  if (bow && c.A.attach(root, bow, { side: 'w' }) === null) return no(c, 'bow');
-  // Crew, core, stores and the remaining guns in hull decks along the hangar: they give it real volume.
-  const decks = deckPair(c, root, root, 'hull', [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: spanOf(c, [root]).xMin });
+  if (bow && c.A.attach(head, bow, { side: 'w' }) === null) return no(c, 'bow');
+  // Crew and the remaining guns in hull decks along the hangar: they give it real volume, and run on past it, so the
+  // hangar well opens aft between them.
+  const hangar = spanOf(c, [root]);
+  const decks = deckPair(c, root, root, 'hull', [...j.crew, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: hangar.xMin, span: hangar.span + c.rng.int(8, 14) });
   if (!decks) return no(c, 'hull decks');
   // Drives at the aft ends of both hull decks, pushed outboard: the hangar well behind the hangar stays open aft.
   if (!twinDrives(c, decks, pick(c, c.fam.propulsion), 'start')) return false;
-  // The island: the command room grafted straight onto one hull deck's outer wall, off-centre (no stalk).
+  // The island: the command room grafted straight onto the flank of the spine ahead of the hangar, so it stands in
+  // the step down from the hull decks rather than above them (no stalk); on a hull deck when there is no spine.
   const ib = localBuilder(c.rng);
   const cmd = c.plan.command;
   ib.place({ x: 0, y: 0, w: cmd.w + 2, h: cmd.h + 2 }, 'bridge', cmd);
   const island = blockFrom(ib, 'command', 'island', 'human', [{ id: 's', side: 's', x: 1, y: cmd.h + 1, len: cmd.w, access: 'human' }]);
   const side = c.rng.chance(0.5) ? 'n' : 's';
   const isl = side === 'n' ? island : mirrorBlock(island);
-  const host = side === 'n' ? decks[0] : decks[1];
-  if (c.A.attach(host, isl, { side, align: pick(c, ['mid', 'end', 'any'] as const), doors: 1 }) === null) return no(c, 'island');
+  const align = pick(c, ['mid', 'end', 'any'] as const);
+  const onSpine = spine.some((id) => c.A.attach(id, isl, { side, align, doors: 1 }) !== null);
+  if (!onSpine && c.A.attach(side === 'n' ? decks[0] : decks[1], isl, { side, align, doors: 1 }) === null) return no(c, 'island');
   c.parts.push(`island ${side}`);
   return true;
 }

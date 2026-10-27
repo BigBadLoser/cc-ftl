@@ -1,11 +1,12 @@
 import { mirrorBlock, mirrorX, type Block, type Side } from './arranger';
 import { hallBlock } from './blocks';
-import { plate } from './hullFill';
+import { buried, plate } from './hullFill';
 import { storeRoom } from './droneBlocks';
-import { dockBlock, podBlock } from './navyBlocks';
+import { dockBlock } from './navyBlocks';
+import { strappedEngine } from './scrapBlocks';
 import { no, type Ctx } from './navyKit';
 import { pickWeighted, shuffle } from './plan';
-import { DONORS, leftovers, poolOf, clonePool, restorePool, type Need, type Pool } from './scrapDonors';
+import { DONORS, leftovers, poolOf, clonePool, restorePool, smallness, type Need, type Pool } from './scrapDonors';
 import type { DonorKind, FactionDef, ScrapGrammar } from './types';
 
 /**
@@ -21,21 +22,34 @@ import type { DonorKind, FactionDef, ScrapGrammar } from './types';
 const OPP: Record<Side, Side> = { n: 's', s: 'n', e: 'w', w: 'e' };
 const NEEDS: Need[] = ['command', 'hangar', 'crew', 'guns', 'crates', 'drive'];
 
-/** Donors for this ship: the anchor, one per job nobody carries yet, then extras the role likes. */
+/**
+ * Donors for this ship: the anchor, one per job nobody carries yet, then extras the role likes. Small ships lean on
+ * light donors and on donors that carry several of the open jobs at once, and take fewer extras, so they need fewer
+ * and smaller pieces.
+ */
 function choose(c: Ctx): DonorKind[] {
   const w = c.fam.donors ?? {};
   const kinds = Object.keys(w) as DonorKind[];
-  const anchor = c.fam.anchors && c.fam.anchors.length > 0 ? pickWeighted(c.rng, c.fam.anchors) : 'freighter';
+  const s = smallness(c.plan);
+  const light = (k: DonorKind): number => DONORS[k].small ** s;
+  const anchors = c.fam.anchors?.map((a) => ({ value: a.value, weight: a.weight * light(a.value) }));
+  const anchor = anchors && anchors.length > 0 ? pickWeighted(c.rng, anchors) : 'freighter';
   const out: DonorKind[] = [anchor];
+  const open = (need: Need): boolean => !(need === 'hangar' && c.plan.hangars.length === 0) && !out.some((k) => DONORS[k].serves.includes(need));
   for (const need of NEEDS) {
-    if (need === 'hangar' && c.plan.hangars.length === 0) continue;
-    if (out.some((k) => DONORS[k].serves.includes(need))) continue;
+    if (!open(need)) continue;
     const opts = kinds.filter((k) => DONORS[k].serves.includes(need) && (w[k] ?? 0) > 0);
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+    const carry = (k: DonorKind): number => 1 + s * (DONORS[k].serves.filter(open).length - 1);
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * light(k) * carry(k) }))));
   }
-  for (let n = c.rng.int(0, 1 + Math.floor(c.plan.size / 2)); n > 0; n--) {
-    const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k));
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+  // Small ships take at most one extra, and only a light one (pod string, liner segment, drone guns); the very
+  // smallest (plan size under 0.6) none.
+  const n0 = c.rng.int(0, 1 + Math.floor(c.plan.size / 2));
+  const tiny = s > 0.5;
+  for (let n = s > 0.8 ? 0 : tiny ? Math.min(1, n0) : Math.floor(n0 * (1 - s)); n > 0; n--) {
+    const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k)
+      && (!tiny || (DONORS[k].small > 1 && !DONORS[k].serves.includes('command'))));
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * light(k) }))));
   }
   return out;
 }
@@ -63,10 +77,10 @@ function variants(c: Ctx, b: Block): Block[] {
   return shuffle(c.rng, v);
 }
 
-/** Weld `child` onto one of `hosts` (in order) on one of `sides`: flush first, then through a short scrap tube. */
-function weld(c: Ctx, hosts: number[], child: Block, sides: Side[], align: 'any' | 'start' | 'end' = 'any'): number | null {
+/** Weld `child` onto one of `hosts` (in order) on one of `sides`: flush first, then through a short scrap tube (or tube first). */
+function weld(c: Ctx, hosts: number[], child: Block, sides: Side[], align: 'any' | 'start' | 'end' = 'any', tubeFirst = false): number | null {
   const vs = variants(c, child);
-  for (const tube of [false, true]) {
+  for (const tube of tubeFirst ? [true, false] : [false, true]) {
     for (const h of hosts) {
       for (const side of sides) {
         for (const v of vs) {
@@ -94,7 +108,7 @@ const hostsOf = (c: Ctx): number[] => c.A.placed.map((_, i) => i).filter((i) => 
 /** Strap the extra engines on as pods, bolt on crates and airlocks, plate the seams. */
 function improvise(c: Ctx, p: Pool): boolean {
   for (; p.engines > 0; p.engines--) {
-    const pod = { ...podBlock(c.rng, 1), donor: 'scrap', label: 'scrap: strapped engine' };
+    const pod = { ...strappedEngine(c.rng), donor: 'scrap', label: 'scrap: strapped engine' };
     if (weld(c, shuffle(c.rng, hostsOf(c)), pod, ['n', 's']) === null) return no(c, 'strapped engine');
     c.parts.push('strapped engine');
   }
@@ -104,7 +118,8 @@ function improvise(c: Ctx, p: Pool): boolean {
   }
   for (; p.docks > 0; p.docks--) weld(c, shuffle(c.rng, hostsOf(c)), { ...dockBlock(c.rng), donor: 'scrap', label: 'scrap: airlock' }, ['n', 's']);
   if (plate(c.A, 2) > 0) c.parts.push('plates');
-  return true;
+  // Welds wrapping round a gun or airlock can wall its kept-open face into a sealed pocket: no use, try another.
+  return !buried(c.A) || no(c, 'buried face');
 }
 
 /** Compose: build the donors, place the anchor, weld the rest on as the grammar says. */
@@ -124,7 +139,8 @@ function compose(c: Ctx, f: FactionDef, mode: ScrapGrammar): boolean {
     let id: number | null = null;
     if (mode === 'raft' && i === 0) id = weld(c, [0], b, shuffle(c.rng, ['n', 's'] as Side[]), c.rng.pick(['start', 'end'] as const));
     else if (mode === 'chain') id = weld(c, [last, ...all.filter((h) => h !== last)], b, [...shuffle(c.rng, ['e', 'w'] as Side[]), 'n', 's']);
-    id ??= weld(c, all, b, sides);
+    // Big heaps would merge into one blob: from the third donor on, half of them hang off a short scrap tube.
+    id ??= weld(c, all, b, sides, 'any', mode === 'heap' && i >= 2 && c.rng.chance(0.5));
     if (id === null) return no(c, `weld ${b.label}`);
     last = id;
     c.parts.push(b.label);

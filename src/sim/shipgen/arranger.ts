@@ -122,7 +122,7 @@ export class Arranger {
   private readonly rays: { x: number; y0: number; y1: number }[] = [];
   private readonly open = new Set<number>();
   private readonly doorTiles: { x: number; y: number }[] = [];
-  private readonly history: { parent: number; port: string }[] = [];
+  private readonly history: { parent: number; port: string; doors: number }[] = [];
 
   constructor(readonly rand: () => number, readonly axis2 = 0) {}
 
@@ -263,11 +263,11 @@ export class Arranger {
   private commit(parent: number, child: Block, c: { X: number; Y: number; pp: BlockPort; cp: BlockPort; tiles: { x: number; y: number }[] }, o: AttachOpts): number {
     const id = this.place(child, c.X, c.Y);
     if (!c.pp.multi) (this.placed[parent] as Placed).used.add(c.pp.id);
-    this.history.push({ parent, port: c.pp.multi ? '' : c.pp.id });
     if (!c.cp.multi) (this.placed[id] as Placed).used.add(c.cp.id);
     const n = Math.min(o.doors ?? 2, c.tiles.length);
     const mid = Math.floor((c.tiles.length - n) / 2);
     const doors = c.tiles.slice(mid, mid + n);
+    this.history.push({ parent, port: c.pp.multi ? '' : c.pp.id, doors: doors.length });
     this.doorTiles.push(...doors);
     for (const t of doors) this.occ.set(key(t.x, t.y), 'D');
     this.joins.push({ kind: o.kind ?? 'frame', a: parent, b: id, tiles: doors.length > 0 ? doors : this.contact(c.pp, this.placed[parent] as Placed) });
@@ -291,9 +291,11 @@ export class Arranger {
     const h = this.history.pop();
     if (!last) return;
     if (h) this.placed[h.parent]?.used.delete(h.port);
-    if (j) {
-      this.doorTiles.splice(this.doorTiles.length - j.tiles.length, j.tiles.length);
-      this.ports.splice(this.ports.length - 2 * j.tiles.length, 2 * j.tiles.length);
+    // Only the doors the join opened (a door-less graft or beam records its contact tiles instead).
+    const d = h?.doors ?? 0;
+    if (j && d > 0) {
+      this.doorTiles.splice(this.doorTiles.length - d, d);
+      this.ports.splice(this.ports.length - 2 * d, 2 * d);
     }
     const keep = [...this.placed];
     this.occ.clear();

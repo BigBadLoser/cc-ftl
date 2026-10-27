@@ -52,7 +52,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `plan.ts` | budget → ShipPlan and RoomSpecs, `weaponSpec`, `cargoSpec`, `pickWeighted`, `shuffle` |
 | `generate.ts` | the attempt/reseed loop, fit-out, template, metrics |
 | `arranger.ts` | the 2D arranger: Block, ports, attach, attachMirrored, `mirrorBlock`, `mirrorX`, `cell` / `reserved` / `box` |
-| `hullFill.ts` | after-arrangement plating: `taper`, `plate`, `holes`, `fillHoles` |
+| `hullFill.ts` | after-arrangement plating: `slots`, `taper`, `plate`, `holes`, `fillHoles`, `buried`; never against a truss |
 | `blocks.ts` | `blockFrom` (freeze a local Builder into a Block), `localBuilder`, `hallBlock` |
 | `builder.ts`, `canvas.ts` | the tile drawing surface: rooms, strips, doors, stamping, crop |
 | `profile.ts` | `Profile`, `depthAt`, `rollProfile`: one outline curve per run |
@@ -73,6 +73,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `civilShips.ts` | civil freighters, mining ships, crew bodies |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |
+| `scrapBlocks.ts` | the improvised pieces: patched reactor (access stub, spare row), strapped engine (nacelle on a neck) |
 | `salvage.ts` | cuts at seams, corner damage, outline ports, `freeze` |
 | `fit.ts`, `layout.ts`, `validate.ts`, `metrics.ts` | module placement, the layout model, validation, metrics |
 | `topoNavy.ts`, `topoDrone.ts`, `topoParts.ts`, `topoSalvage.ts` | the older v2 topologies. Only factions without hull families use them; `topoNavy` still supplies `pickNose`, `pairUp` and `nose` |
@@ -151,45 +152,24 @@ the structure and silhouette sheets.
 
 ## Backlog (in priority order)
 
-1. **Navy drive-bank notch.**
-   - Symptom: a one-tile vertical slot between the last spine section and the drive bank (and between twin hulls
-     and their drives).
-   - Cause: the taper stops at exhaust rays or doesn't find the step (`hullFill.ts` `taper`; the drive attached in
-     `navyKit.ts` `propulsion`).
-   - Done: no slot on the depth-9 silhouettes, and engines still validate.
-2. **Scrapper size scaling.**
-   - Symptom: depth-1 scrappers are almost as big as depth-9 ones.
-   - Cause: every job gets a donor and donors have minimum sizes (`scrapGrammars.ts` `choose`, `scrapDonors.ts`).
-   - Done: depth-1 sheets visibly smaller, while the at-least-three-donor-kinds test still holds.
-3. **Navy carrier length.**
-   - Symptom: carriers come out at about 2.3 against a 2.8–3.6 target.
-   - Cause: the central hangar block and two deck layers (`navyGrammars.ts` `carrierIsland`, `flightDeck`).
-   - Done: carrier aspect about 2.8 on 12 depth-9 seeds.
-4. **Drone swarm mixed grammar.**
-   - Symptom: some lattices grow a straight line of nodes (half comb).
-   - Cause: links prefer growing east (`droneGrammars.ts` `cluster`).
-   - Done: no swarm with three or more nodes in a straight line on the depth-9 structure sheets.
-5. **Drone prong crowding.**
-   - Symptom: inner-face pods on fork and twin prongs clump against the stem.
-   - Cause: `frame` prongs give inner faces when `sep >= 6`, and the sockets fall back to direct placement
-     (`socketed`).
-   - Done: pods stay ordered on the prongs (staggered at most).
-6. **Scrapper grey slabs.**
-   - Symptom: patched reactors and strapped engines read as plain slabs.
-   - Cause: `civilBlocks.ts` `reactorRoom`, and `podBlock` used for strapped engines.
-   - Done: those pieces have a recognisable shape.
-7. **Scrapper blobs.**
-   - Symptom: heaps of four or more donors merge into one blob.
-   - Cause: welding onto any host on any face (`scrapGrammars.ts` `compose`).
-   - Done: donors are still distinguishable on the structure sheet.
-8. **Taper plating draws as solid grey walls** in the detail view.
-   - This is a tools concern (`tools/shipgen/draw.ts`), not sim. Optionally draw `plate` blocks as a lighter
-     armour tone.
-9. **Smaller weak spots:**
+Pass 1 (branch `claude/new-session-j9t92o`) fixed the old items 1 to 7 (drive-bank notch, scrapper size, carrier
+length, swarm lines, prong crowding, grey slabs, blobs), the liner and pod-string weights, buried airlock faces and
+the freighter playtest bugs; see SHIPGEN.md, "Shipgen pass 1". What is left:
+
+1. **Tier scaling** (after progression phase 1 is on `main`): fit Mk II and Mk III reactors, shields and engines by
+   depth. Footprints: reactor 2x3 and 2x4, shield 2x4 and 2x5, engine 4x6 and 4x7. The patched reactor already has
+   a spare row.
+2. **Scrapper size, second step.** Depth-1 scrappers are about half the depth-9 size. The habitat ring (10-wide
+   minimum, about 200 tiles) is the bulky crew donor; a compact one for small plans would shrink them further.
+3. **Island carrier bow.** Blunt (a bow battery, no nose).
+4. **Taper plating draws as solid grey walls** in the detail view (tools only, `tools/shipgen/draw.ts`).
+5. **Smaller weak spots:**
    - Battleships still bulge slightly at the turret pairs.
    - Within-grammar variety in the navy is low.
    - Ring pickets have long struts on the outer staggered row.
-   - About 10% of first scrapper attempts fail fit-out; reseeding covers it.
+   - About 6% of first scrapper attempts fail fit-out (no engine fits, a donor reactor room one reactor short); swarm
+     and civilian first-attempt losses are mostly "weapons do not fit" and "no aiCore fits".
+   - A rare enclosed pocket inside thick plating comes from wall thinning after the arrangement.
 
 ## Acceptance for any change
 
@@ -210,6 +190,5 @@ The civilian generator is being built in parallel on the same branch.
 - **Shared files that need small, additive, merge-friendly edits:**
   - `arranger.ts`, `blocks.ts`, `hullFill.ts`, `profile.ts`, `navyLayouts.ts` (the GRAMMARS table);
   - `types.ts` (union additions, such as a civil grammar id);
-  - `scrapBlocks.ts` (the civil donor builders: the civilian work may move them into shared civil block files
-    and re-export them, so scrapper donors keep working).
+  - `civilBlocks.ts` (the civil builders, also scrapper donors; the improvised scrapper pieces are in `scrapBlocks.ts`).
 - In shared files, add rather than rewrite, and keep exports stable.

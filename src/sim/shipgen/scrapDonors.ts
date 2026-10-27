@@ -5,7 +5,8 @@ import type { Ctx } from './navyKit';
 import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors } from './salvage';
-import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
+import { barge, freighter, habitat, liner, podString, station, tug } from './civilBlocks';
+import { reactorRoom } from './scrapBlocks';
 import { pickNose } from './topoNavy';
 import type { DonorKind, FactionDef } from './types';
 
@@ -40,8 +41,8 @@ export function poolOf(plan: ShipPlan): Pool {
     command: plan.command, commandBy: null, guns: plan.weapons.flatMap((w) => w.mods), core: [...plan.shields, ...(plan.core ? [plan.core] : [])],
     quarters: [...plan.quarters], support: [...plan.support], docks: 2, crates: plan.cargo.reduce((t, c) => t + c.mods.length, 0),
     hangars: [...plan.hangars], engines: plan.engines,
-    // Salvage runs hot: derelict rooms and spare airlocks draw power the plan never counted.
-    reactors: plan.reactors + 1, share: {},
+    // Salvage runs hot: derelict rooms and spare airlocks draw power the plan never counted (small ships carry few).
+    reactors: plan.reactors + (smallness(plan) > 0.5 ? 0 : 1), share: {},
   };
 }
 
@@ -98,7 +99,9 @@ function generated(c: Ctx, src: FactionDef['salvage'], who: 'navy' | 'drone', su
   const s = src?.[who];
   const fams = (s?.faction.hullFamilies ?? []).filter((h) => s?.families.includes(h.id));
   if (!s || fams.length === 0) return null;
-  const fam = pickWeighted(c.rng, fams.map((h) => ({ value: h, weight: 1 })));
+  // Small ships take their hulks from the first (smallest) family listed more often.
+  const lean = smallness(c.plan);
+  const fam = pickWeighted(c.rng, fams.map((h, i) => ({ value: h, weight: i === 0 ? 1 + 3 * lean : 1 })));
   // One candidate: a donor is cut and welded anyway, its proportions do not matter.
   const r = arrangeHull(c.rng, s.faction, fam, sub, c.defs, 1);
   return typeof r === 'string' ? null : { b: r.b, A: r.A };
@@ -150,7 +153,9 @@ const navyHulk: Build = (c, f, p) => {
   p.engines -= engines;
   p.reactors -= reactors;
   // Fore halves keep the bridge, aft halves the drive.
-  if (cutSeam(g.b, c.rng, cmd ? 'w' : c.rng.chance(0.5) ? 'w' : 'e', 0.4, 0.2)) c.parts.push('cut');
+  // Small ships keep a smaller piece of it.
+  const lean = smallness(c.plan);
+  if (cutSeam(g.b, c.rng, cmd ? 'w' : c.rng.chance(0.5) ? 'w' : 'e', 0.4 - 0.15 * lean, 0.2 + 0.3 * lean)) c.parts.push('cut');
   settle(p, g.b, { specs: [...(cmd ? [cmd] : []), ...quarters], guns, crates: 0, engines, reactors });
   return freeze(g.b, 'hulk', 'hull section', 'navy', 'human', g.A);
 };
@@ -191,19 +196,23 @@ const takeCrates = (p: Pool, t: { crates: number }, min: number): number => {
 };
 const docks = (p: Pool, n: number): RoomSpec[] => { const k = Math.min(n, p.docks); p.docks -= k; return Array.from({ length: k }, dockSpec); };
 
-export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
-  navyBow: { serves: ['command'], build: navyBow },
-  navyDrive: { serves: ['drive'], build: navyDrive },
-  navyBattery: { serves: ['guns'], build: navyBattery },
-  navyHulk: { serves: ['guns', 'command', 'drive'], build: navyHulk },
-  droneSection: { serves: ['guns'], build: droneSection },
-  freighter: { serves: ['crates', 'hangar'], build: civil('civil', 'freighter', 0.3, (c, p, t) => {
+/**
+ * Every donor kind: the jobs it can carry, how it is built, and `small`, a weight factor for small ships (light
+ * pieces above 1, bulky hulls below; it fades out as the plan's size grows, see `smallness`).
+ */
+export const DONORS: Record<DonorKind, { serves: Need[]; build: Build; small: number }> = {
+  navyBow: { serves: ['command'], small: 1, build: navyBow },
+  navyDrive: { serves: ['drive'], small: 1.5, build: navyDrive },
+  navyBattery: { serves: ['guns'], small: 1, build: navyBattery },
+  navyHulk: { serves: ['guns', 'command', 'drive'], small: 1.5, build: navyHulk },
+  droneSection: { serves: ['guns'], small: 1.5, build: droneSection },
+  freighter: { serves: ['crates', 'hangar'], small: 0.5, build: civil('civil', 'freighter', 0.3, (c, p, t) => {
     const north = p.hangars.splice(0);
     const south = p.core.splice(0, 2);
     t.specs.push(...north, ...south);
     return freighter(c.rng, north, takeCrates(p, t, 4), south);
   }) },
-  habitat: { serves: ['crew', 'command'], build: civil('civil', 'habitat ring', 0.25, (c, p, t) => {
+  habitat: { serves: ['crew', 'command'], small: 0.4, build: civil('civil', 'habitat ring', 0.25, (c, p, t) => {
     const cmd = takeCmd(p, 'habitat', t);
     const crew = [...part(p, 'crew', p.quarters), ...p.support.splice(0, 1)];
     const hub = crew.find((r) => r.role === 'support') ?? crew[0] ?? cmd[0];
@@ -213,7 +222,7 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     const dk = docks(p, 2);
     return habitat(c.rng, hub, [...rest.filter((_, i) => i % 2 === 0), ...dk.slice(0, 1)], [...rest.filter((_, i) => i % 2 === 1), ...dk.slice(1)]);
   }) },
-  liner: { serves: ['crew'], build: civil('civil', 'liner segment', 0.5, (c, p, t) => {
+  liner: { serves: ['crew'], small: 3, build: civil('civil', 'liner segment', 0.5, (c, p, t) => {
     const q = part(p, 'crew', p.quarters);
     if (q.length === 0) return null;
     const sup = p.support.splice(0, 1);
@@ -223,14 +232,14 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     t.specs.push(...q, ...sup);
     return liner(c.rng, q.reduce((n, r) => n + r.mods.filter((m) => m === 'module.bed').length, 0), lounge);
   }) },
-  station: { serves: ['crew', 'command'], build: civil('civil', 'station module', 0.3, (c, p, t) => {
+  station: { serves: ['crew', 'command'], small: 0.5, build: civil('civil', 'station module', 0.3, (c, p, t) => {
     const rooms = [...takeCmd(p, 'station', t), ...p.support.splice(0, 1), ...p.core.splice(0, 1), ...p.quarters.splice(0, 1)].slice(0, 4);
     t.specs.push(...rooms.filter((r) => !t.specs.includes(r)));
     return rooms.length >= 2 ? station(c.rng, rooms) : null;
   }) },
-  barge: { serves: ['crates'], build: civil('mining', 'ore barge', 0.4, (c, p, t) => barge(c.rng, takeCrates(p, t, 6))) },
-  podString: { serves: ['crates'], build: civil('civil', 'cargo pods', 0.2, (c, p, t) => podString(c.rng, takeCrates(p, t, 4), true)) },
-  tug: { serves: ['drive'], build: civil('mining', 'tug', 0, (c, p, t) => {
+  barge: { serves: ['crates'], small: 0.4, build: civil('mining', 'ore barge', 0.4, (c, p, t) => barge(c.rng, takeCrates(p, t, 6))) },
+  podString: { serves: ['crates'], small: 1.5, build: civil('civil', 'cargo pods', 0.2, (c, p, t) => podString(c.rng, takeCrates(p, t, 4), true)) },
+  tug: { serves: ['drive'], small: 2, build: civil('mining', 'tug', 0, (c, p, t) => {
     t.engines = Math.min(1, p.engines);
     t.reactors = Math.max(1, Math.min(2, p.reactors));
     p.engines -= t.engines;
@@ -238,6 +247,9 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     return tug(c.rng, cargoSpec(2), t.reactors);
   }) },
 };
+
+/** How small the ship is for donor choice: 1 at plan size 0, fading to 0 at size 3 and above. */
+export const smallness = (plan: ShipPlan): number => Math.max(0, Math.min(1, 1 - plan.size / 3));
 
 /** Whatever no donor carried, patched in: a bow for the bridge, a gun band, a habitat, a reactor room. */
 export function leftovers(c: Ctx, f: FactionDef, p: Pool): Block[] {
