@@ -26,7 +26,9 @@ export function operateJobsSystem(sim: Sim): void {
   for (const jobId of [...sim.world.query(JobC)]) {
     const job = sim.world.get(jobId, JobC);
     if (job?.kind !== 'operate') continue;
-    if (consoleNeeded(sim, job.target ?? 0) && !open.has(job.target ?? 0)) {
+    // A console a drafted crew member was ordered to man stays open until they are released, fight or no fight.
+    const ordered = !!job.reservedBy && sim.world.has(job.reservedBy, DraftedC) && stationUsable(sim, job.target ?? 0);
+    if ((ordered || consoleNeeded(sim, job.target ?? 0)) && !open.has(job.target ?? 0)) {
       open.set(job.target ?? 0, jobId);
       if (job.reservedBy) {
         // a relief's hold leaves `freeSince` as it was, so a relief that yields (and nobody takes the console) is not made to wait again
@@ -61,6 +63,12 @@ export function operateJobsSystem(sim: Sim): void {
   seatHelms(sim, fresh);
 }
 
+/** A console that exists, is intact and is on a ship still in play. */
+function stationUsable(sim: Sim, id: number): boolean {
+  const m = sim.world.get(id, ModuleC);
+  return !!m && !!sim.content.modules[m.def]?.console && m.hp > 0 && shipById(sim, shipIdOf(sim, m))?.state === 'active';
+}
+
 function consoleNeeded(sim: Sim, id: number): boolean {
   const m = sim.world.get(id, ModuleC);
   const console = m && sim.content.modules[m.def]?.console;
@@ -92,8 +100,9 @@ function yieldToOperator(sim: Sim, holder: number): void {
   if (job && freeOperatorFor(sim, ship, job)) releaseAssignment(sim, holder);
 }
 
-/** True for a crew member whose operating priority is below the operators' (a stand-in, not an operator by choice). */
+/** True for an undrafted crew member whose operating priority is below the operators' (a stand-in, not an operator by choice). */
 function isRelief(sim: Sim, crew: number): boolean {
+  if (sim.world.has(crew, DraftedC)) return false; // a drafted crew member was ordered to the console: no relief rule moves them
   return (sim.world.get(crew, PrioritiesC)?.operating ?? 0) > OPERATE_MAX_LEVEL;
 }
 

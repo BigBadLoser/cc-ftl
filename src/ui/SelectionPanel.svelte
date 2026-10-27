@@ -19,6 +19,7 @@
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
   let selAst = $state<number | null>(null);
+  let selShuttle = $state<number | null>(null);
   let sites = $state<UiSite[]>([]);
   let selSite = $state<number | null>(null);
 
@@ -33,6 +34,7 @@
       api.selectedModule.subscribe((v) => (selMod = v)),
       api.selectedShip.subscribe((v) => (selShip = v)),
       api.selectedAsteroid.subscribe((v) => (selAst = v)),
+      api.selectedShuttle.subscribe((v) => (selShuttle = v)),
       api.sites.subscribe((v) => (sites = v)),
       api.selectedSite.subscribe((v) => (selSite = v)),
     ];
@@ -47,13 +49,15 @@
   const tile = $derived(info?.selected ? info : null);
   const wide = $derived(!hasCrew && !!mod && (mod.crafting || !!mod.storage));
   /** The inspector exists only while something is selected; ship stats live behind the ship tab. */
-  const shown = $derived(selAst !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
+  const shown = $derived(selAst !== null || selShuttle !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
 </script>
 
 {#if shown}
 <aside class="sheet sel" class:wide data-testid="selection-panel">
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
+  {:else if selShuttle !== null}
+    <ShuttlePanel {api} only={selShuttle} onBack={back} />
   {:else if selShip !== null}
     <GridPanel {api} ship={selShip} onBack={back} {onTrade} {onStation} />
   {:else if hasCrew}

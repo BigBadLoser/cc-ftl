@@ -196,8 +196,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
   };
 }
 
-/** Plain-data lists for the UI: all of the player's crew wherever they are, and the hostile crew on the grids they stand on. Reads the sim only. */
-export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] } {
+/** Plain-data lists for the UI: all of the player's crew wherever they are, and the hostile crew on the grids they stand on (plus the one being inspected, `watch`). Reads the sim only. */
+export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: UiCrew[]; hostiles: UiCrew[] } {
   const ctx = makeCtx(sim);
   const crew: UiCrew[] = [];
   const hostiles: UiCrew[] = [];
@@ -214,7 +214,8 @@ export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] }
   }
   for (const id of enemies) {
     const g = shipIdOf(sim, sim.world.get(id, PositionC));
-    if (!g || !occupied.has(g) || sim.world.has(id, DeadC)) continue;
+    if ((!g || !occupied.has(g)) && id !== watch) continue;
+    if (sim.world.has(id, DeadC)) continue;
     const c = card(sim, ctx, id, 'enemy');
     if (c) hostiles.push(c);
   }
