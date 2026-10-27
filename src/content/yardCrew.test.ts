@@ -30,17 +30,17 @@ describe('the yard crew', () => {
     const { sim, station, me } = yardGame();
     const trader = sim.world.get(station, TraderC)!;
     const wallet = trader.credits;
-    const stock = trader.stock.find((s) => s.item === 'item.metal')?.count ?? 0;
     const suits = sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0);
     const credits = sim.trade.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     const quoteHull = quoteYard(sim, station, me).hull.after;
-    const price = yardPrice(sim, yardService(sim, station)!, 12);
+    const hull = yardPrice(sim, yardService(sim, station)!, 12);
+    const price = { credits: hull.credits + 18, metal: hull.metal }; // plus the planning fee: 9 trusses at 2 credits
     sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;
     const phases = new Set<string>();
-    const log = run(sim, 3000, () => {
+    const log = run(sim, 7000, () => {
       phases.add(order.phase);
       return !isLiveOrder(order);
     });
@@ -52,8 +52,8 @@ describe('the yard crew', () => {
     const grid = shipGrid(sim, me)!;
     for (const t of order.floor) expect(grid.get('struct', t.x, t.y), `floor ${t.x},${t.y}`).toBe(Struct.Floor);
     for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(Struct.Wall);
-    expect(builtCount(sim, order)).toEqual({ floor: 2, walls: 10 });
-    expect(totalTiles(order)).toBe(12);
+    expect(builtCount(sim, order)).toEqual({ truss: 9, floor: 2, walls: 10 });
+    expect(totalTiles(order)).toBe(21);
     // Nobody (the ship's own crew, who also build, included) is walled in.
     const keys = new Set(order.floor.map((t) => `${t.x},${t.y}`));
     expect(sim.world.query(CrewC, PositionC).filter((c) => keys.has(`${sim.world.get(c, PositionC)!.x},${sim.world.get(c, PositionC)!.y}`))).toEqual([]);
@@ -63,7 +63,7 @@ describe('the yard crew', () => {
     // The station is paid, the crew and the shuttle are gone, nobody kept a suit.
     expect(sim.trade.credits).toBe(credits - price.credits);
     expect(trader.credits).toBe(wallet + price.credits);
-    expect(trader.stock.find((s) => s.item === 'item.metal')?.count ?? 0).toBe(stock + price.metal);
+    // (the station's own metal stock moves with its trade over a run this long, so only the escrow is checked for metal)
     expect(order.held).toEqual({ credits: 0, metal: 0 });
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
     expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === station)).toHaveLength(0);
@@ -81,7 +81,7 @@ describe('the yard crew', () => {
     const back = deserialize(serialize(sim), content);
     expect(back.yard.orders[0]).toEqual(order);
     const o = back.yard.orders[0]!;
-    run(back, 3000, () => !isLiveOrder(o));
+    run(back, 7000, () => !isLiveOrder(o));
     expect(o.phase).toBe('done');
     expect(builtCount(back, o).floor).toBe(2);
     expect(back.world.get(me, ShipC)!.width).toBe(sim.world.get(me, ShipC)!.width);
@@ -93,31 +93,36 @@ describe('the yard crew', () => {
     const wallet = trader.credits;
     const credits = sim.trade.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
-    const price = yardPrice(sim, yardService(sim, station)!, 12);
+    const hull = yardPrice(sim, yardService(sim, station)!, 12);
     sim.enqueue({ type: 'yard.order', station });
     run(sim, 1);
     const order = sim.yard.orders[0]!;
-    run(sim, 2000, () => builtCount(sim, order).floor + builtCount(sim, order).walls >= 4);
-    const done = builtCount(sim, order).floor + builtCount(sim, order).walls;
-    expect(done).toBeGreaterThan(0);
-    expect(done).toBeLessThan(totalTiles(order));
+    run(sim, 6000, () => builtCount(sim, order).walls >= 2); // the truss pass is done and some hull stands
+    const b = builtCount(sim, order);
+    expect(b.truss).toBe(9);
+    expect(b.floor + b.walls).toBeGreaterThan(0);
+    expect(b.floor + b.walls).toBeLessThan(12);
     sim.enqueue({ type: 'yard.cancel', order: order.id });
     run(sim, 1);
-    // The unbuilt part is back with the player at once; the jobs are gone.
-    const built = builtCount(sim, order).floor + builtCount(sim, order).walls;
-    const paid = { credits: Math.floor((price.credits * built) / totalTiles(order)), metal: Math.floor((price.metal * built) / totalTiles(order)) };
+    // The unbuilt part is back with the player at once; the jobs are gone. The planning fee is earned for the trusses built, the hull price for the hull built.
+    const built = builtCount(sim, order);
+    const paid = {
+      credits: Math.floor((hull.credits * (built.floor + built.walls)) / 12) + Math.floor((18 * built.truss) / 9),
+      metal: Math.floor((hull.metal * (built.floor + built.walls)) / 12),
+    };
     expect(sim.trade.credits).toBe(credits - paid.credits);
     expect(order.held.credits).toBe(paid.credits);
+    expect(order.held.metal).toBe(paid.metal);
     expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.yard === order.id)).toHaveLength(0);
     // The crew walk back to the shuttle and fly home; then the built part is paid to the station.
-    run(sim, 3000, () => !isLiveOrder(order));
+    run(sim, 4000, () => !isLiveOrder(order));
     expect(order.phase).toBe('done');
     expect(order.reason).toBe('called off');
     expect(trader.credits).toBe(wallet + paid.credits);
     expect(sim.trade.credits).toBe(credits - paid.credits);
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
     // What was built stays.
-    expect(builtCount(sim, order).floor + builtCount(sim, order).walls).toBe(built);
+    expect(builtCount(sim, order)).toEqual(built);
   }, 120000);
 
   it('the ships own crew can build the yard tiles too', () => {
@@ -131,6 +136,6 @@ describe('the yard crew', () => {
     });
     expect(ours.length).toBeGreaterThan(0);
     run(sim, 700);
-    expect(builtCount(sim, sim.yard.orders[0]!).floor).toBeGreaterThan(0);
+    expect(builtCount(sim, sim.yard.orders[0]!).truss).toBeGreaterThan(0);
   }, 120000);
 });

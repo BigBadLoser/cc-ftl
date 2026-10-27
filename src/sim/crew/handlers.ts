@@ -28,8 +28,8 @@ export type CrewCommandType = Exclude<
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, Struct.Ground, Struct.RockWall];
-/** Work needed (ticks at workSpeed 1): walls take 3 s, floors and doors 2 s. */
-export const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ };
+/** Work needed (ticks at workSpeed 1): walls take 3 s, floors and doors 2 s, a truss (the shipyard's, `yard/`) 1 s. */
+export const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ, [Struct.Beam]: TICK_HZ };
 const DECONSTRUCT_TICKS = 2 * TICK_HZ;
 /** Forcing a jammed door: 6 s at workSpeed 1 (skill and suits scale it through the worker's speed). */
 const FORCE_DOOR_TICKS = 6 * TICK_HZ;
@@ -94,8 +94,8 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
     provokeIfOutpost(sim, cmd.ship);
-    if (current !== Struct.Wall && current !== Struct.Door) return reject(sim, cmd.type, 'nothingToDeconstruct');
-    createJob(sim, 'deconstruct', cmd.ship, cmd.x, cmd.y, Struct.Floor, DECONSTRUCT_TICKS);
+    if (current !== Struct.Wall && current !== Struct.Door && current !== Struct.Beam) return reject(sim, cmd.type, 'nothingToDeconstruct');
+    createJob(sim, 'deconstruct', cmd.ship, cmd.x, cmd.y, current === Struct.Beam ? Struct.Space : Struct.Floor, DECONSTRUCT_TICKS);
   },
   'job.forceDoor': (sim, cmd) => {
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);

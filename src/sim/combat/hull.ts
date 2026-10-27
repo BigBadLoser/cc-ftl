@@ -40,8 +40,11 @@ export function outerProfile(kindAt: (x: number, y: number) => number, box: { x:
 /**
  * The size of a tile field: every tile the outer hull profile encloses (the ring itself is not interior). Interior walls, doors, modules and
  * floor all count as area. A tile is interior when open space cannot reach it from outside the box and it is not an outer-profile hull tile.
+ * Open trusses (`Struct.Beam`) count as open space: they add no area and enclose none.
  */
-export function interiorArea(kindAt: (x: number, y: number) => number, box: { x: number; y: number; w: number; h: number }): number {
+export function interiorArea(rawKindAt: (x: number, y: number) => number, box: { x: number; y: number; w: number; h: number }): number {
+  // An open truss (Beam) is scaffolding, not hull: for the ship's size it is open space (no area of its own, and it shuts nothing in).
+  const kindAt = (x: number, y: number): number => (rawKindAt(x, y) === Struct.Beam ? Struct.Space : rawKindAt(x, y));
   const key = (x: number, y: number): number => (y - box.y) * box.w + (x - box.x);
   const outside = new Uint8Array(box.w * box.h);
   const stack: number[] = [];

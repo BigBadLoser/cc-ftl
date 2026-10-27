@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, deserialize, galaxyIndex, hullLoad, hullTiles, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
+  CombatC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
   viewPlan, yardPrice, yardService,
 } from '../sim';
 import { giveItems } from '../sim/story/effects';
@@ -116,7 +116,11 @@ describe('shipyard: the quote', () => {
     expect(q.error).toBeNull();
     expect(q.walls).toHaveLength(10);
     expect(q.floor).toHaveLength(2);
-    expect(q.price).toEqual(yardPrice(sim, q.service!, 12)); // outline and floor alike
+    // The planning pass trusses every planned tile but the patch's gap wall, outside the cap, for 2 credits a tile; the hull is priced by tile built.
+    expect(q.trusses).toHaveLength(9);
+    expect(q.fee).toEqual({ credits: 18, metal: 0 });
+    const hull = yardPrice(sim, q.service!, 12);
+    expect(q.price).toEqual({ credits: hull.credits + 18, metal: hull.metal });
     expect(q.gaps).toHaveLength(1);
     expect(q.hull.before).toBe(416);
     expect(q.hull.after).toBe(viewPlan(sim, me).hull.afterAll);
@@ -222,22 +226,25 @@ describe('shipyard: the quote', () => {
 });
 
 describe('shipyard: the order', () => {
-  it('pays credits and metal into escrow, posts the jobs and takes the bought tiles out of the plan; called off before anyone lands, all comes back', () => {
+  it('pays credits, metal and the planning fee into escrow and posts the truss jobs; called off before anyone lands, all comes back', () => {
     const { sim, station, me } = yardGame();
     const credits = sim.trade.credits;
     const metal = metalOf(sim);
     const trader = sim.world.get(station, TraderC)!;
     const wallet = trader.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
-    const price = yardPrice(sim, yardService(sim, station)!, 12);
+    const hull = yardPrice(sim, yardService(sim, station)!, 12);
+    const price = { credits: hull.credits + 18, metal: hull.metal }; // plus the planning fee: 9 trusses at 2 credits
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
     const order = sim.yard.orders[0]!;
+    expect(order.stage).toBe('truss');
+    expect(order.fee).toEqual({ credits: 18, metal: 0 });
     expect(sim.trade.credits).toBe(credits - price.credits);
     expect(metalOf(sim)).toBe(metal - price.metal);
     expect(order.held).toEqual(price);
     expect(trader.credits).toBe(wallet); // held, not paid
-    expect(sim.world.has(me, HullPlanC)).toBe(false); // everything planned was bought
+    expect(plannedTiles(sim, me)).toHaveLength(10); // the plan stays until the trusses have been turned into hull
     expect(order.walls).toHaveLength(10);
     expect(order.floor).toHaveLength(2);
     expect(shipGrid(sim, me)!.inBounds(order.walls[0]!.x, order.walls[0]!.y - 1)).toBe(true);
@@ -254,7 +261,7 @@ describe('shipyard: the order', () => {
     expect(sim.yard.orders[0]!.held).toEqual({ credits: 0, metal: 0 });
   });
 
-  it('a partial buy leaves the rest planned for the next yard', () => {
+  it('a partial buy trusses the whole plan but plans only the cap of hull; the rest stays planned', () => {
     const { sim, station, me } = yardGame();
     giveItems(sim, 'item.metal', 100);
     const cap = yardService(sim, station)!.tier.cap;
@@ -262,12 +269,12 @@ describe('shipyard: the order', () => {
     const all = viewPlan(sim, me).tiles.length;
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
-    const bought = sim.yard.orders[0]!.walls;
-    expect(bought.length + sim.yard.orders[0]!.floor.length).toBeLessThanOrEqual(cap);
-    const was = new Set(bought.map((t) => `${t.x},${t.y}`));
-    expect(plannedTiles(sim, me).length).toBeGreaterThan(0);
-    expect(plannedTiles(sim, me).every((t) => !was.has(`${t.x},${t.y}`))).toBe(true);
-    expect(plannedTiles(sim, me).length).toBeLessThan(all);
+    const order = sim.yard.orders[0]!;
+    expect(order.walls.length + order.floor.length).toBeLessThanOrEqual(cap);
+    // The planning pass covers every reachable planned tile (less the gap walls), outside the cap.
+    expect(order.trusses.length).toBeGreaterThan(cap - 10);
+    expect(order.trusses.length + order.gaps.length).toBeLessThanOrEqual(all);
+    expect(plannedTiles(sim, me)).toHaveLength(all);
   });
 
   it('refuses what you cannot pay for', () => {
@@ -302,5 +309,42 @@ describe('shipyard: the order', () => {
     expect(o).toMatchObject({ phase: 'failed', reason: 'left', crew: [], vehicle: 0 });
     expect(sim.trade.credits).toBe(credits);
     expect(o.held).toEqual({ credits: 0, metal: 0 });
+  });
+});
+
+describe('trusses', () => {
+  it('add nothing to the ship size or its engine capacity, and shut nothing in', () => {
+    const box = { x: 0, y: 0, w: 12, h: 12 };
+    const ring = (x0: number, y0: number, x1: number, y1: number, kind: number) => (x: number, y: number): boolean =>
+      x >= x0 && x <= x1 && y >= y0 && y <= y1 && (x === x0 || x === x1 || y === y0 || y === y1) && kind > 0;
+    // A closed ring of open trusses in empty space: no area, and the space inside it is not "enclosed".
+    const trussRing = ring(1, 1, 10, 10, Struct.Beam);
+    expect(interiorArea((x, y) => (trussRing(x, y) ? Struct.Beam : Struct.Space), box)).toBe(0);
+    // A hull ring (8 x 8, area 36 inside it) wrapped in a truss ring: the size is the hull's alone.
+    const wall = ring(2, 2, 9, 9, Struct.Wall);
+    const wrapped = (x: number, y: number): number => (wall(x, y) ? Struct.Wall : trussRing(x, y) ? Struct.Beam : (x > 2 && x < 9 && y > 2 && y < 9 ? Struct.Floor : Struct.Space));
+    const bare = (x: number, y: number): number => (wall(x, y) ? Struct.Wall : x > 2 && x < 9 && y > 2 && y < 9 ? Struct.Floor : Struct.Space);
+    expect(interiorArea(wrapped, box)).toBe(36);
+    expect(interiorArea(wrapped, box)).toBe(interiorArea(bare, box));
+    // And a ship with trusses laid beside it counts the same for the engines.
+    const { sim, me } = yardGame();
+    expect(hullLoad(sim, me).tiles).toBe(416);
+  });
+
+  it('are still part of the plan, and taking one down with the normal deconstruct job removes that tile from the plan', () => {
+    const { sim, me } = yardGame();
+    const s = sim.world.get(me, ShipC)!;
+    const tile = { x: s.x + 8, y: s.y }; // open margin against the hull
+    planHull(sim, me, [tile, { x: s.x + 9, y: s.y }]);
+    sim.enqueue({ type: 'debug.setStruct', ship: me, x: tile.x, y: tile.y, kind: Struct.Beam });
+    sim.step();
+    expect(plannedTiles(sim, me)).toHaveLength(2); // the trussed tile is still planned
+    expect(viewPlan(sim, me).trussed).toEqual([tile]);
+    expect(viewPlan(sim, me).connected).toEqual([{ x: s.x + 9, y: s.y }]); // nothing is drawn over a truss
+    sim.enqueue({ type: 'job.deconstruct', ship: me, x: tile.x, y: tile.y });
+    run(sim, 1500, () => shipGrid(sim, me)!.get('struct', tile.x, tile.y) === Struct.Space);
+    expect(shipGrid(sim, me)!.get('struct', tile.x, tile.y)).toBe(Struct.Space);
+    expect(plannedTiles(sim, me)).toEqual([{ x: s.x + 9, y: s.y }]);
+    expect(sim.world.get(me, HullPlanC)!.tiles).toEqual([{ x: s.x + 9, y: s.y }]);
   });
 });

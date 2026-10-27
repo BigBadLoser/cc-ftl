@@ -1,13 +1,12 @@
 import { ShipC, type Ship } from '../combat/components';
-import { BUILD_TICKS, createJob } from '../crew/handlers';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
 
 import { freeAirlock, playerShip } from '../trade/player';
 import { Struct } from '../structure';
 import { takeMetal } from './money';
-import { MAX_PLAN, plannedTiles, quoteYard } from './plan';
-import { inRowOrder, rowRanks } from './rows';
+import { MAX_PLAN, quoteYard } from './plan';
+import { postHullJobs, postTrussJobs } from './jobs';
 import { finishOrder } from './flow';
 import { HullPlanC, isLiveOrder, type YardOrder } from './types';
 
@@ -37,7 +36,7 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
   /**
    * `hull.plan`: set the plan for a player ship's outer hull: the tiles (sector tiles of open space) the ship should one day have as hull. Replaces
    * the plan; an empty list clears it. Free, at any time, and kept with the ship. Rejected: `badGrid` (not a player ship), `badValue`
-   * (not whole tiles, too many, or too far from the ship). Tiles that are not open space are dropped.
+   * (not whole tiles, too many, or too far from the ship). Tiles that are not open space or the ship's own truss are dropped.
    */
   'hull.plan': (sim, cmd) => {
     const s = sim.world.get(cmd.ship, ShipC);
@@ -46,7 +45,12 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
     if (cmd.tiles.length > MAX_PLAN || cmd.tiles.some((t) => !Number.isInteger(t.x) || !Number.isInteger(t.y) || t.x < near.x || t.y < near.y || t.x >= near.x + near.w || t.y >= near.y + near.h)) {
       return reject(sim, cmd.type, 'badValue');
     }
-    const tiles = cmd.tiles.filter((t) => sim.sector.grid.get('struct', t.x, t.y) === Struct.Space).map((t) => ({ x: t.x, y: t.y }));
+    // open space, or the ship's own open truss (a replan keeps the trusses a yard has laid)
+    const open = (t: { x: number; y: number }): boolean => {
+      const k = sim.sector.grid.get('struct', t.x, t.y);
+      return k === Struct.Space || (k === Struct.Beam && sim.sector.grid.get('ship', t.x, t.y) === cmd.ship);
+    };
+    const tiles = cmd.tiles.filter(open).map((t) => ({ x: t.x, y: t.y }));
     if (tiles.length === 0) sim.world.remove(cmd.ship, HullPlanC);
     else if (sim.world.has(cmd.ship, HullPlanC)) (sim.world.get(cmd.ship, HullPlanC) as { tiles: unknown }).tiles = tiles;
     else sim.world.add(cmd.ship, HullPlanC, { tiles });
@@ -55,8 +59,8 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
   /**
    * `yard.order`: buy what a station's yard builds of the plan now (`quoteYard`): the hull tiles up to its cap that can be reached from the ship, and the
    * floor they enclose. Rejected with the quote's error (`noYard`, `noTiles`, `notAdjacent`, `crowded`), `busy` (an order is running), `inCombat`,
-   * `noYardDock` (the shuttle needs a free airlock), `cantAfford` or `noMetal`. Pays into escrow, grows the ship's rectangle and posts the floor and wall jobs;
-   * the bought tiles leave the plan and the station sends its shuttle.
+   * `noYardDock` (the shuttle needs a free airlock), `cantAfford` or `noMetal`. Pays into escrow (the planning fee included), grows the ship's rectangle and posts the
+   * planning pass (trusses on every reachable planned tile); the station sends its shuttle, and the crew turn trusses into hull and floor when it is done.
    */
   'yard.order': (sim, cmd) => {
     const ship = playerShip(sim);
@@ -71,27 +75,16 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
     if (!quote.afford.metal || !takeMetal(sim, ship, quote.price.metal)) return reject(sim, cmd.type, 'noMetal');
     sim.trade.credits -= quote.price.credits;
     const order: YardOrder = {
-      id: sim.yard.nextId++, station: cmd.station, ship, floor: quote.floor, walls: quote.walls, gaps: quote.gaps, sealed: quote.gaps.length === 0, ejected: [], held: { ...quote.price },
+      id: sim.yard.nextId++, station: cmd.station, ship, floor: quote.floor, walls: quote.walls, trusses: quote.trusses, fee: { ...quote.fee }, stage: 'truss', gaps: quote.gaps, sealed: quote.gaps.length === 0, ejected: [], held: { ...quote.price },
       price: { ...quote.price }, rank: 0, phase: 'launch', vehicle: 0, crew: [], airlock, timer: 0, stall: 0, built: 0, tick: sim.tick,
     };
-    const rank = rowRanks(sim, ship, quote.rect);
     growShip(sim, ship, quote.rect);
-    const gapKeys = new Set(quote.gaps.map((g) => `${g.wall.x},${g.wall.y}`));
-    // Rows, nearest the ship first: floor and wall jobs go up in row order and the crew keep to it (`jobFits`, `Job.yardRank`).
-    const open = [
-      ...quote.floor.map((t) => ({ ...t, struct: Struct.Floor })),
-      ...quote.walls.filter((w) => !gapKeys.has(`${w.x},${w.y}`)).map((t) => ({ ...t, struct: Struct.Wall })),
-    ];
-    for (const t of inRowOrder(open, rank) as typeof open) {
-      createJob(sim, 'build', ship, t.x, t.y, t.struct, BUILD_TICKS[t.struct] as number, true, { yard: order.id, yardRank: rank(t.x, t.y) });
-    }
-    order.rank = Math.min(...open.map((t) => rank(t.x, t.y)));
-    const bought = new Set(quote.walls.map((t) => `${t.x},${t.y}`));
-    const left = plannedTiles(sim, ship).filter((t) => !bought.has(`${t.x},${t.y}`));
-    if (left.length === 0) sim.world.remove(ship, HullPlanC);
-    else (sim.world.get(ship, HullPlanC) as { tiles: unknown }).tiles = left;
+    // Two passes (see `YardOrder`): the planning pass trusses every reachable planned tile now; the hull jobs go up when it is done (`flow.ts`), or at
+    // once when every planned tile already has its truss.
+    if (order.trusses.length > 0) postTrussJobs(sim, order);
+    else postHullJobs(sim, order);
     sim.yard.orders.push(order);
-    sim.events.emit({ type: 'yard.ordered', order: order.id, station: cmd.station, tiles: quote.walls.length + quote.floor.length });
+    sim.events.emit({ type: 'yard.ordered', order: order.id, station: cmd.station, tiles: quote.trusses.length + quote.walls.length + quote.floor.length });
   },
   /** `yard.cancel`: send the yard crew home. The unbuilt part is refunded at once; what was built stays and is paid for. */
   'yard.cancel': (sim, cmd) => {

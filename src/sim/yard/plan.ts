@@ -10,7 +10,7 @@ import { Struct } from '../structure';
 import { playerItems, playerShip } from '../trade/player';
 import { ASTEROID_GAP, REGION_PAD } from '../tuning';
 import { yardPrice, yardService, type YardService } from './rules';
-import { pickSection, rowRanks, type Rim } from './rows';
+import { inRowOrder, pickSection, rowRanks, type Rim } from './rows';
 import { HullPlanC, type YardMoney } from './types';
 
 type Tile = { x: number; y: number };
@@ -51,12 +51,19 @@ function union(a: Rect, b: Rect): Rect {
   return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
 }
 
-/** The ship's planned outer hull that is still open space (planned tiles that were built, or taken by something else, drop out), reading order. */
+/**
+ * The ship's planned outer hull still to be built (planned tiles that were built into hull, or taken by something else, drop out), reading order. A tile
+ * is still planned while it is open space or the ship's own open truss (`Struct.Beam`, laid by a yard's planning pass).
+ */
 export function plannedTiles(sim: Sim, ship: number): Tile[] {
   const plan = sim.world.get(ship, HullPlanC);
   const grid = sim.sector.grid;
   const seen = new Set<string>();
-  return (plan?.tiles ?? []).filter((t) => grid.get('struct', t.x, t.y) === Struct.Space && grid.get('ship', t.x, t.y) === 0 && !seen.has(key(t.x, t.y)) && !!seen.add(key(t.x, t.y)))
+  const open = (t: Tile): boolean => {
+    const k = grid.get('struct', t.x, t.y);
+    return (k === Struct.Space && grid.get('ship', t.x, t.y) === 0) || (k === Struct.Beam && grid.get('ship', t.x, t.y) === ship);
+  };
+  return (plan?.tiles ?? []).filter((t) => open(t) && !seen.has(key(t.x, t.y)) && !!seen.add(key(t.x, t.y)))
     .map((t) => ({ x: t.x, y: t.y })).sort(byRow);
 }
 
@@ -66,7 +73,7 @@ function reach(sim: Sim, ship: number, tiles: readonly Tile[]): { connected: Til
   const grid = sim.sector.grid;
   const set = new Map(tiles.map((t) => [key(t.x, t.y), t] as const));
   const blocked = tiles.filter((t) => clear.has(key(t.x, t.y)));
-  const isHull = (x: number, y: number): boolean => grid.get('struct', x, y) !== Struct.Space && shipAt(sim, x, y) === ship;
+  const isHull = (x: number, y: number): boolean => grid.get('struct', x, y) !== Struct.Space && shipAt(sim, x, y) === ship && !set.has(key(x, y)); // planned trusses are plan tiles, not the ship they are built from
   const seen = new Set<string>();
   const queue: Tile[] = [];
   for (const t of tiles) {
@@ -95,7 +102,11 @@ function enclosedFloor(sim: Sim, hull: readonly Tile[]): Tile[] {
   const grid = sim.sector.grid;
   const wall = new Set(hull.map((t) => key(t.x, t.y)));
   const box = boxOf(hull, 1);
-  const shut = (x: number, y: number): boolean => wall.has(key(x, y)) || grid.get('struct', x, y) !== Struct.Space || grid.get('ship', x, y) !== 0;
+  // An open truss shuts nothing in; other structure, hull being built and other ships' tiles do.
+  const shut = (x: number, y: number): boolean => {
+    const k = grid.get('struct', x, y);
+    return wall.has(key(x, y)) || (k !== Struct.Space && k !== Struct.Beam) || (k === Struct.Space && grid.get('ship', x, y) !== 0);
+  };
   const outside = new Set<string>();
   const stack: Tile[] = [];
   const push = (x: number, y: number): void => {
@@ -126,7 +137,9 @@ function rimOf(sim: Sim, ship: number): (x: number, y: number) => Rim {
   const clear = dockApproaches(sim, ship);
   return (x, y) => {
     if (clear.has(key(x, y))) return 'no';
-    if (grid.get('struct', x, y) === Struct.Space) return grid.get('ship', x, y) === 0 ? 'wall' : 'no';
+    const k = grid.get('struct', x, y);
+    if (k === Struct.Space) return grid.get('ship', x, y) === 0 ? 'wall' : 'no';
+    if (k === Struct.Beam) return shipAt(sim, x, y) === ship ? 'wall' : 'no'; // the ship's own truss turns into wall
     return shipAt(sim, x, y) === ship ? 'ship' : 'no';
   };
 }
@@ -144,11 +157,16 @@ function areaWith(sim: Sim, ship: number, hull: readonly Tile[], floor: readonly
 
 /** The plan as the build tools show it: what is planned, what can be built from the ship now, the floor it would enclose, and the hull count. */
 export interface HullView {
+  /** Every planned tile still to be built into hull (open space or the ship's own truss). */
   tiles: Tile[];
+  /** The planned tiles that already have a truss. The rest of the lists are the open-space tiles only: nothing is drawn over a truss. */
+  trussed: Tile[];
   connected: Tile[];
   loose: Tile[];
   blocked: Tile[];
   floor: Tile[];
+  /** Every planned tile that can be reached from the ship, trussed or not (what a yard works from). */
+  reachable: Tile[];
   hull: { now: number; afterAll: number; capacity: number };
 }
 
@@ -156,10 +174,13 @@ export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
   const grid = ship ? shipGrid(sim, ship) : undefined;
   const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
   const tiles = ship ? plannedTiles(sim, ship) : [];
-  const { connected, loose, blocked } = ship ? reach(sim, ship, tiles) : { connected: [], loose: [], blocked: [] };
+  const reachable = ship ? reach(sim, ship, tiles) : { connected: [], loose: [], blocked: [] };
+  const isOpen = (t: Tile): boolean => sim.sector.grid.get('struct', t.x, t.y) === Struct.Space;
+  const connected = reachable.connected;
   const floor = enclosedFloor(sim, connected);
   return {
-    tiles, connected, loose, blocked, floor,
+    tiles, trussed: tiles.filter((t) => !isOpen(t)), reachable: connected,
+    connected: connected.filter(isOpen), loose: reachable.loose.filter(isOpen), blocked: reachable.blocked.filter(isOpen), floor,
     hull: { now: grid ? hullArea(grid) : 0, afterAll: ship && connected.length ? areaWith(sim, ship, connected, floor) : load.tiles, capacity: load.capacity },
   };
 }
@@ -168,19 +189,24 @@ export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
 export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'notAdjacent' | 'crowded';
 
 /**
- * A yard's quote for the plan: the hull tiles it would build on this visit (up to its cap, the rows nearest the ship first, shut off by a cross wall when
- * the cap cuts the room short; see `pickSection`) and the floor they enclose. Both lists are in build order.
+ * A yard's quote for the plan. First pass: a truss on every reachable planned tile that has none (the planning fee, outside the cap). Second pass: the tiles it
+ * would turn into hull on this visit (up to its cap, the rows nearest the ship first, shut off by a cross wall when the cap cuts the room short; see
+ * `pickSection`) and the floor they enclose. The lists are in build order.
  */
 export interface YardQuote {
   service: YardService | null;
-  /** Hull tiles bought now, the floor they enclose, and the wall of each floor patch the crew close last (with the open tile beyond it). */
+  /** The tiles that become wall now (planned tiles, trussed by now, and any closing wall the plan does not cover), the floor they enclose, and the wall of each floor patch the crew close last (with the open tile beyond it). */
   walls: Tile[];
   floor: Tile[];
+  /** The planning pass: open-space tiles the contractors truss first (every reachable planned tile without a truss, outside the cap), and its fee (credits, included in `price`). */
+  trusses: Tile[];
+  fee: YardMoney;
   gaps: { wall: Tile; stage: Tile }[];
   /** Tiles planned in all, and left for a later yard (over the cap, floating off the hull, or in the way). */
   planned: number;
   rest: number;
   error: YardError | null;
+  /** The whole price: hull (per tile built, floor included) plus the planning fee. */
   price: YardMoney;
   afford: { credits: boolean; metal: boolean };
   /** The tiles one visit builds. */
@@ -246,22 +272,29 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   const view = viewPlan(sim, ship);
   const price = service ? yardPrice(sim, service, 0) : { credits: 0, metal: 0 };
   const base: YardQuote = {
-    service, walls: [], floor: [], gaps: [], planned: view.tiles.length, rest: view.tiles.length, error: null, price,
+    service, walls: [], floor: [], trusses: [], fee: { credits: 0, metal: 0 }, gaps: [], planned: view.tiles.length, rest: view.tiles.length, error: null, price,
     afford: { credits: true, metal: true }, cap: service?.tier.cap ?? 0, hull: { before: view.hull.now, after: view.hull.now, capacity: view.hull.capacity }, rect: null,
   };
   if (!service || !def) return { ...base, error: 'noYard' };
   if (!ship || !sim.world.get(ship, ShipC)) return { ...base, error: 'noShip' };
   if (view.tiles.length === 0) return { ...base, error: 'noTiles' };
-  if (view.connected.length === 0) return { ...base, error: 'notAdjacent' };
+  if (view.reachable.length === 0) return { ...base, error: 'notAdjacent' };
   const own = shipRect(sim.world.get(ship, ShipC) as Ship);
-  const rank = rowRanks(sim, ship, union(own, boxOf(view.connected, 1)));
-  const { walls, floor } = pickSection(view.connected, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w));
+  const rank = rowRanks(sim, ship, union(own, boxOf(view.reachable, 1)));
+  const { walls, floor } = pickSection(view.reachable, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w));
+  const gaps = gapsFor(sim, walls, floor, dockApproaches(sim, ship));
+  // The planning pass: every reachable planned tile that is still open space gets a truss, except the gap wall of each floor patch: that tile stays open
+  // so the crew can walk in and out until the patch is sealed (an open truss does not let anyone through).
+  const gapKeys = new Set(gaps.map((g) => key(g.wall.x, g.wall.y)));
+  const trusses = inRowOrder(view.connected.filter((t) => !gapKeys.has(key(t.x, t.y))), rank);
   const after = areaWith(sim, ship, walls, floor);
-  const cost = yardPrice(sim, service, walls.length + floor.length);
+  const fee = { credits: Math.ceil(trusses.length * def.trussFee), metal: 0 };
+  const hull = yardPrice(sim, service, walls.length + floor.length);
+  const cost = { credits: hull.credits + fee.credits, metal: hull.metal };
   const planned = new Set(view.tiles.map((t) => key(t.x, t.y)));
-  const rect = union(own, boxOf([...walls, ...floor], 1));
+  const rect = union(own, boxOf([...view.reachable, ...walls, ...floor], 1));
   const out: YardQuote = {
-    ...base, walls, floor, gaps: gapsFor(sim, walls, floor, dockApproaches(sim, ship)), rest: view.tiles.length - walls.filter((w) => planned.has(`${w.x},${w.y}`)).length, price: cost,
+    ...base, walls, floor, trusses, fee, gaps, rest: view.tiles.length - walls.filter((w) => planned.has(`${w.x},${w.y}`)).length, price: cost,
     afford: { credits: sim.trade.credits >= cost.credits, metal: playerItems(sim, 'item.metal') >= cost.metal },
     hull: { ...base.hull, after }, rect,
   };

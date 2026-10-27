@@ -1811,17 +1811,25 @@ of open space. Interior walls and doors stay ordinary free builds. `viewPlan` re
 tiles with `Renderer.setAreas`, only while that tool or a station's Shipyard tab is open (plus the live order's unbuilt tiles at any time).
 
 **The shipyard** (`sim/yard/`). Trading and military stations of the station and hub tiers (`ContentRegistry.yard`, `content/yard.ts`, via `yardService`;
-the station must answer hails) sell the plan. `quoteYard(sim, station)` buys up to the tier's cap of the connected plan tiles, laid out in rows (`yard/rows.ts`: the distance in steps from the ship's own structure; the nearest rows
-first). When the cap cuts a room short it takes the rows up to a depth that fits plus a cross wall that shuts them in (so the ship left behind is closed and
-rectangular, not two spurs; the cross wall is paid as hull). If no cut fits, it builds the largest closed rectangle of the plan's floor against the ship, with its
-own rim of new walls (`closedRect`), so every visit ends sealed with no floorless wall stubs. Floor and wall jobs go up in row order (`Job.yardRank`) and the crew work the nearest open row and
-the next (`YardOrder.rank`, `jobFits`). A yard tile the crew have started on (job `progress` above 0) is drawn as the existing open truss (`Struct.Beam` art) by `render/jobView.ts` until it is finished: render-side from the job, no sim state, no pathing change; the app leaves started tiles out of the order's ghost overlay. It lays the floor they enclose, prices by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4), and reports the size
-after against capacity, and that the grown ship stays clear of its neighbours. `yard.order { station }` pays into escrow (metal from
-storage), grows the `ShipC` rectangle, posts free build jobs (`Job.yard`), takes the bought tiles out of the plan (the rest stays planned for the next yard) and
-the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle with `YardDef.crew` contractors,
+the station must answer hails) sell the plan, in two passes. **Planning pass:** the contractors truss every reachable planned tile that has none, quickly (1 s a
+tile) and outside the visit cap, for a planning fee (`YardDef.trussFee`, 2 credits a tile, no metal; a tile that already has a truss is never charged again). A
+truss is a real `Struct.Beam` tile (existing beam art and rules: saved with the ship, owned by it, not walkable, crew reach it from the EVA ring, no integrity so
+combat leaves it alone, and the ship's size and engine capacity ignore it: `interiorArea` reads an open truss as open space). The gap wall of each floor patch is
+left untrussed so the crew can still walk in. A trussed tile stays part of the plan; deconstructing a truss with the normal tool removes it from the plan
+(`yard/trussPlan.ts`). **Hull pass:** `quoteYard(sim, station)` turns up to the tier's cap of tiles (walls and floor together) into hull, laid out in rows
+(`yard/rows.ts`: the distance in steps from the ship's own structure, trusses not counted; nearest rows first). When the cap cuts a room short it takes the rows
+up to a depth that fits plus a cross wall that shuts them in (so the ship left behind is closed and rectangular; the cross wall is paid as hull). If no cut
+fits, it builds the largest closed rectangle of the plan's floor against the ship, with its own rim of new walls (`closedRect`), so every visit ends sealed with
+no floorless wall stubs. What the cap does not reach stays as truss (open scaffolding) and the next yard picks it up from there. Jobs go up in row order
+(`Job.yardRank`) and the crew work the nearest open row and the next (`YardOrder.rank`, `jobFits`); the hull jobs are posted when the planning pass is done
+(`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
+danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
+against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle with `YardDef.crew` contractors,
 neutral allegiance, `YardCrewC`, to a free player airlock), `fly`, `work` (the crew step out in the shuttle's suits and take the jobs through the normal crew AI;
 the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
 is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall`, `home`, `done`.
-Suits are the contractors' own and never run dry. The unbuilt share of the price is refunded when work ends early (`yard.cancel`, combat, a stall, no dock), the
-built share paid to the station when the shuttle is home; leaving the node ends the order on the spot (`abortYards`). Save v60. UI: the station panel's
+Suits are the contractors' own and never run dry. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
+(`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
+(`abortYards`). Save v61. UI: the station panel's
 Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.

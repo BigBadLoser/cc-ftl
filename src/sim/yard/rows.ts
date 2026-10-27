@@ -18,7 +18,8 @@ export function rowRanks(sim: Sim, ship: number, box: Rect): (x: number, y: numb
   let queue: number[] = [];
   for (let y = box.y; y < box.y + box.h; y++) {
     for (let x = box.x; x < box.x + box.w; x++) {
-      if (sim.sector.grid.get('struct', x, y) !== Struct.Space && shipAt(sim, x, y) === ship) {
+      const k = sim.sector.grid.get('struct', x, y);
+      if (k !== Struct.Space && k !== Struct.Beam && shipAt(sim, x, y) === ship) { // open trusses are scaffolding, not the ship the rows count from
         rank[at(x, y)] = 0;
         queue.push(x, y);
       }
@@ -43,7 +44,7 @@ export function rowRanks(sim: Sim, ship: number, box: Rect): (x: number, y: numb
 }
 
 /** Tiles in build order: nearest row first, then reading order. */
-export const inRowOrder = (tiles: readonly Tile[], rank: (x: number, y: number) => number): Tile[] =>
+export const inRowOrder = <T extends Tile>(tiles: readonly T[], rank: (x: number, y: number) => number): T[] =>
   [...tiles].sort((a, b) => rank(a.x, a.y) - rank(b.x, b.y) || a.y - b.y || a.x - b.x);
 
 /**

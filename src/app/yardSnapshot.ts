@@ -1,4 +1,4 @@
-import { JobC, Struct, shipGrid, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import { Struct, shipGrid, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
 import type { UiHullPlan, UiYard, UiYardOrder, UiYardQuote, UiYardService } from '../ui/api';
 import { rejectionMessage } from './messages';
 
@@ -43,7 +43,7 @@ export function quoteOf(sim: Sim, station: number): UiYardQuote | null {
   if (!station) return null;
   const q = quoteYard(sim, station);
   return {
-    station, error: q.error, errorText: q.error ? rejectionMessage(q.error) : '', buy: q.walls.length + q.floor.length, floor: q.floor.length, planned: q.planned, rest: q.rest,
+    station, error: q.error, errorText: q.error ? rejectionMessage(q.error) : '', buy: q.walls.length + q.floor.length, floor: q.floor.length, truss: q.trusses.length, fee: q.fee.credits, planned: q.planned, rest: q.rest,
     price: q.price, afford: q.afford, cap: q.cap, hull: q.hull,
   };
 }
@@ -52,15 +52,9 @@ function orderOf(sim: Sim, o: YardOrder): UiYardOrder {
   const b = builtCount(sim, o);
   const live = isLiveOrder(o);
   const grid = shipGrid(sim, o.ship);
-  // Tiles the crew have started on are drawn as truss by the renderer (jobView), so they leave the ghost overlay.
-  const started = new Set<string>();
-  if (live) for (const id of sim.world.query(JobC)) {
-    const j = sim.world.get(id, JobC);
-    if (j && j.yard === o.id && j.progress > 0) started.add(`${j.x},${j.y}`);
-  }
-  const open = (t: Tile): boolean => !!grid && grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Space && !started.has(`${t.x},${t.y}`);
+  const open = (t: Tile): boolean => !!grid && grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Space; // nothing is ghosted over a truss
   return {
-    id: o.id, station: o.station, live, phase: o.phase, built: b.floor + b.walls, total: totalTiles(o), price: o.price,
+    id: o.id, station: o.station, live, phase: o.phase, built: b.truss + b.floor + b.walls, total: totalTiles(o), price: o.price,
     status: live ? PHASE[o.phase] : o.reason ? ENDED[o.reason] ?? o.reason : 'Done', reason: o.reason ? ENDED[o.reason] ?? o.reason : '',
     floor: live ? o.floor.filter(open) : [], walls: live ? o.walls.filter(open) : [],
   };

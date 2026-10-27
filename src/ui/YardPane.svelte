@@ -49,7 +49,8 @@
         <p class="note" data-testid="yard-noplan">No hull planned. Draw the outline with Build → Hull plan, any time, then buy it at a yard.</p>
       {:else if quote}
         <div class="row"><span>Planned</span><b data-testid="yard-planned">{quote.planned} outline tiles</b></div>
-        <div class="row"><span>This visit</span><b data-testid="yard-tiles" class:bad={quote.buy === 0}>{quote.buy} / {quote.cap} tiles{quote.floor ? ` (${quote.buy - quote.floor} outline + ${quote.floor} floor)` : ''}</b></div>
+        {#if quote.truss > 0}<div class="row"><span>Planning fee</span><b data-testid="yard-fee" class:bad={!quote.afford.credits}>{quote.fee} ₵ <span class="sub">({quote.truss} tiles trussed first, outside the cap)</span></b></div>{/if}
+        <div class="row"><span>This visit</span><b data-testid="yard-tiles" class:bad={quote.buy === 0}>{quote.buy} / {quote.cap} tiles into hull{quote.floor ? ` (${quote.buy - quote.floor} outline + ${quote.floor} floor)` : ''}</b></div>
         <div class="row"><span>Cost</span>
           <b data-testid="yard-cost">
             <span class:bad={!quote.afford.credits}>{quote.price.credits} ₵</span>
@@ -85,4 +86,5 @@
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
   .go:disabled { opacity: 0.4; }
   .stop { border-color: var(--red); color: var(--red); }
+  .sub { color: var(--dim); font-weight: 400; font-size: 11px; }
 </style>

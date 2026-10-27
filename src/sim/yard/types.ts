@@ -17,6 +17,8 @@ export interface YardDef {
   kinds: readonly string[];
   sizes: Record<string, YardSizeDef>;
   perTile: { credits: number; metal: number };
+  /** The planning fee: credits per tile the contractors truss (no metal). Tiles that already have a truss are not charged again. */
+  trussFee: number;
   dangerStep: number;
   /** The yard crew the station sends: a role id and how many (no more than the shuttle's suits). */
   crew: { role: string; count: number };
@@ -36,7 +38,11 @@ export interface YardMoney {
   metal: number;
 }
 
-/** A paid hull expansion. `walls` are the planned outer-hull tiles bought, `floor` the floor they enclose; both are built as ordinary construction jobs. */
+/**
+ * A paid hull expansion in two passes. First the contractors put an open truss (`Struct.Beam`) on every reachable planned tile that has none (`trusses`,
+ * the quick planning pass, outside the visit cap, for `fee`). Then they turn trusses into hull: `walls` are the tiles that become wall, `floor` the floor
+ * they enclose, nearest rows first up to the cap (`stage` 'hull'). Both passes are ordinary construction jobs.
+ */
 export interface YardOrder {
   id: number;
   /** The station (ShipC entity) and the player's ship (ShipC entity). */
@@ -44,6 +50,11 @@ export interface YardOrder {
   ship: number;
   floor: Tile[];
   walls: Tile[];
+  /** The tiles the truss pass builds this visit, and what it costs (credits; part of `price`). */
+  trusses: Tile[];
+  fee: YardMoney;
+  /** 'truss': the planning pass is running; 'hull': trusses are being turned into hull. */
+  stage: 'truss' | 'hull';
   /**
    * One wall of each painted patch is left for last: `wall` is closed once the crew are out, by way of `stage`, the open tile beyond it. Without
    * that the crew would wall themselves in. `sealed`: those walls have been posted.
@@ -54,7 +65,7 @@ export interface YardOrder {
   ejected: number[];
   /** Escrow still held: all of the price at first; the unbuilt share goes back at the end, the built share to the station. */
   held: YardMoney;
-  /** The price of the whole order (for the share maths and the readout). */
+  /** The price of the whole order, planning fee included (for the share maths and the readout). */
   price: YardMoney;
   /** The nearest row with open work (`Job.yardRank`); the crew may work this row and the next. Kept up to date while at work. */
   rank: number;

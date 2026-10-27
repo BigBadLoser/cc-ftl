@@ -739,9 +739,12 @@ export interface UiYardQuote {
   station: number;
   error: string | null;
   errorText: string;
-  /** Tiles bought now (outline plus floor), the floor they enclose, tiles planned in all, and tiles left for a later yard. */
+  /** Tiles turned into hull now (outline plus floor), the floor they enclose, tiles planned in all, and tiles left for a later yard. */
   buy: number;
   floor: number;
+  /** Tiles the quick planning pass trusses (outside the cap), and its fee in credits (part of `price`). */
+  truss: number;
+  fee: number;
   planned: number;
   rest: number;
   price: { credits: number; metal: number };

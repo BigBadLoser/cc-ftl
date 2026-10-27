@@ -11,7 +11,8 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { alive, dismiss, landCrew, launchShuttle, stowSuit, topUpAir } from './crew';
 import { payStation, refund } from './money';
-import { builtCount, dropJobs, jobsOf, shareOf, totalTiles } from './progress';
+import { builtCount, dropJobs, earned, jobsOf, totalTiles } from './progress';
+import { postHullJobs } from './jobs';
 import { isLiveOrder, type YardOrder } from './types';
 
 /** Ticks between repeats of an order the crew or shuttle has not obeyed yet. */
@@ -28,12 +29,12 @@ export const YARD_HISTORY = 6;
 /** Number of tiles standing now. */
 const builtTotal = (sim: Sim, o: YardOrder): number => {
   const b = builtCount(sim, o);
-  return b.floor + b.walls;
+  return b.truss + b.floor + b.walls;
 };
 
 /** The unbuilt share of the price goes back to the player now; what is left in escrow is the built share. */
 function refundUnbuilt(sim: Sim, o: YardOrder): void {
-  const built = shareOf(o, builtTotal(sim, o));
+  const built = earned(sim, o);
   refund(sim, o, { credits: o.price.credits - built.credits, metal: o.price.metal - built.metal });
 }
 
@@ -113,6 +114,7 @@ function step(sim: Sim, o: YardOrder): void {
       topUpAir(sim, o);
       if (!o.crew.some((id) => alive(sim, id))) return endNow(sim, o, 'crew lost');
       if (sim.sector.inCombat) return finishOrder(sim, o, 'combat');
+      if (o.stage === 'truss' && jobsOf(sim, o).length === 0) postHullJobs(sim, o); // the planning pass is done: turn trusses into hull
       const built = builtTotal(sim, o);
       if (built >= totalTiles(o)) return finishOrder(sim, o, '');
       if (!o.sealed && jobsOf(sim, o).length === 0) {
