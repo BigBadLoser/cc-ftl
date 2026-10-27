@@ -82,7 +82,7 @@
 
   // Floating window: left-docked by default, where the screen is mostly empty. The panels that step aside for it follow its real
   // right edge (--combat-right) while it sits on the left; once the player drags it elsewhere they go back to their normal spots (data-combat-free).
-  const WIDTH = 372;
+  const WIDTH = 420;
   const defaultRect = (b: Bounds): Rect => ({ x: b.left, y: b.top, w: WIDTH, h: b.bottom - b.top });
   const root = document.documentElement;
   /** Undocked, the panel draws above every other panel, card and toast (not above the modals and overlays). */

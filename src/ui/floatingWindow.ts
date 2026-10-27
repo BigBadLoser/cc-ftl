@@ -11,7 +11,11 @@ export type Edge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 export const EDGES: readonly Edge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
 /** The room a window may use: the viewport inset by `top` (below the top bars) and a margin on the other sides. */
-export interface Bounds { left: number; top: number; right: number; bottom: number }
+export interface Bounds {
+  left: number; top: number; right: number; bottom: number;
+  /** Default spots only: where the top-right column starts, so centred windows do not default under it when the screen is narrow. */
+  clearRight?: number;
+}
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), Math.max(lo, hi));
 
@@ -52,7 +56,8 @@ export function splitFraction(offset: number, total: number, minTop: number, min
 /** A default spot centred horizontally in the bounds, `top` px below their top edge (`h: 0` = as tall as its content). */
 export function centerTop(b: Bounds, w: number, h = 0, top = 0): DefaultRect {
   const ww = Math.min(w, b.right - b.left);
-  return { x: (b.left + b.right - ww) / 2, y: b.top + top, w: ww, h };
+  const x = Math.max(b.left, Math.min((b.left + b.right - ww) / 2, (b.clearRight ?? b.right) - ww));
+  return { x, y: b.top + top, w: ww, h };
 }
 
 /** What a window remembers for the browser session: where the player put it (null = still at its default spot) and whether it is pinned. */

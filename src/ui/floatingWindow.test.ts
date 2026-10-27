@@ -61,6 +61,8 @@ describe('centerTop', () => {
   it('centres in the bounds below their top, and shrinks to fit', () => {
     expect(centerTop(B, 560)).toEqual({ x: 520, y: 100, w: 560, h: 0 });
     expect(centerTop({ ...B, left: 388 }, 560, 300, 4)).toEqual({ x: 710, y: 104, w: 560, h: 300 });
+    expect(centerTop({ ...B, clearRight: 1000 }, 560)).toEqual({ x: 440, y: 100, w: 560, h: 0 });
+    expect(centerTop({ ...B, left: 436, clearRight: 900 }, 560).x).toBe(436);
     expect(centerTop({ left: 0, top: 0, right: 300, bottom: 100 }, 560).w).toBe(300);
   });
 });

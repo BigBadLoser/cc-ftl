@@ -33,6 +33,8 @@
   } = $props();
 
   const MARGIN = 8;
+  /** The top-right column (log, goals, jobs, alerts) is 260px wide plus its gutter. */
+  const RIGHT_COLUMN = 268;
   let vw = $state(typeof window === 'undefined' ? 1280 : window.innerWidth);
   let vh = $state(typeof window === 'undefined' ? 800 : window.innerHeight);
   const floating = $derived(vw > 600);
@@ -46,7 +48,10 @@
     return { left: MARGIN, top: hdr() + MARGIN, right: vw - MARGIN, bottom: vh - MARGIN };
   });
   /** Bounds for the default spot only: right of the combat panel while it is docked. */
-  const defBounds = $derived<Bounds>(avoidCombat && $combatRight > 0 && $combatRight < bounds.right - min.w ? { ...bounds, left: Math.max(bounds.left, $combatRight) } : bounds);
+  const defBounds = $derived<Bounds>({
+    ...(avoidCombat && $combatRight > 0 && $combatRight < bounds.right - min.w ? { ...bounds, left: Math.max(bounds.left, $combatRight) } : bounds),
+    clearRight: bounds.right - RIGHT_COLUMN,
+  });
 
   // A window's id never changes.
   // svelte-ignore state_referenced_locally
