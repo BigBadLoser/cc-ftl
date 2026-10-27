@@ -5,7 +5,8 @@ import math
 
 from . import core
 from . import wall3d as T
-from .wall3d_ext_geom import LINE, PAINT, YS, D
+from . import wall3d_ext_t3 as T3
+from .wall3d_ext_geom import LINE, PAINT, YS, D, Section
 
 SIDE = 6 / 32                       # the base's lean this far in from each tile edge, the box between
 ROUND = 0.14                        # T3-3's box's top edge rounded this much (T3-2's a px less)
@@ -17,9 +18,8 @@ T2_DOOR_SHADE = (5, "hsD", "hsXD")  # a shadow this many px down the doors from 
                                     # along the cutout's top on the front
 T2_SIDE = "hsD"                     # the box's outer side's tone
 T2_HANDLE = (1, 5, 6)               # a handle on each: px wide, tall, over the door's foot (painted)
-T2_SEAMS = (17, 46, 2)              # px under the box's front's top: where the recess starts (its lip's top edge lit,
-                                    # a seam on down its middle); a seam across it and on across the strips, this many
-                                    # px lower on them
+T2_SEAMS = (17, 46)                 # px under the box's front's top: where the recess starts (its lip's top edge lit,
+                                    # a seam on down its middle); a seam across it (the strips carry the run's seam)
 T2_FOOT = (2, 3, 1)                 # the box's foot this many px under the floor, a flange round it this many px wider
                                     # either side up to this many over the vent's top (an upside down T)
 T2_RAILS = (2, 2, 1)                # the box's sides left as rails this many px wide, all between them recessed from
@@ -31,9 +31,10 @@ T2_TOP = (6, 4, "hsXS")             # the box's top plate ends this many px behi
                                     # the top this many px in from its back edge (where T3-1's runs)
 T2_SEAM_COLS = (YS[1], YS[4])       # the seams' dark core, the lit px under it
 T2_VENT = (3, 10, 3, 3)             # a vent near the box's foot: slots, px long, the lowest px over the foot, px apart
-T2_LEAN = (4, 7, (5, 7), (5, 3, 12))  # the right lean strip's marks, px: a seam across it under its top; this far under
-                                    # that an open box from its outer edge, this many in and down; a plate a px proud
-                                    # this far over its foot (the bend), against the box, this wide and tall
+T2_LEAN = ((5, 7), (5, 3, 12))     # the right lean strip's marks, px: on the run's lean lines (its faint seam by the
+                                    # tile's edge, its lean seam the box's top, as the run draws them) an open box from
+                                    # its outer edge this many in and down; a plate a px proud this far over its foot
+                                    # (the bend), against the box, this wide and tall
 
 
 def arc(H, r, n=6, d=D):
@@ -44,10 +45,10 @@ def arc(H, r, n=6, d=D):
 
 def build(f, s, a, b, H, tone):
     """T3-2 over [a, b] of the face f (section s; tone: a section's tones, its flat tops the top's)."""
-    base = [(0.0, 0.0), (D, 0.0)] + s.lean() + [(0.0, H)]
     for s0, s1 in T.spans(a, b):
-        f.part(s0, s0 + SIDE, base, tone(base))
-        f.part(s1 - SIDE, s1, base, tone(base))
+        for v0, v1 in ((s0, s0 + SIDE + LINE), (s1 - SIDE - LINE, s1)):    # (the strips as the run's armour: their
+            for z0, z1 in ((0.0, s.zb), (s.zb, H)):                         # ends on the tile's edges in their
+                f.block(v0, v1, z0, z1)                                     # front's tone; a px into the box)
         _box(f, s0 + SIDE, s1 - SIDE, H, tone)
         _strips(f, s, s0, s1, H)
         dt = -0.5 - f.plane + T2_TOP[1] * LINE                          # (the tile's back edge at -0.5)
@@ -135,24 +136,24 @@ def _box(f, u0, u1, H, tone):
 
 
 def _strips(f, s, s0, s1, H):
-    """The lean strips' marks: the box's lower seam on across them; on the right one a seam across it, an open box from
-    its outer edge and a plate low on it against the box (T2_LEAN); on the left one a notch level with the upper seam
-    (painted, as the run's lines)."""
-    dark, lit = T2_SEAM_COLS
+    """The lean strips' marks: the run's upright seam on across them; on the right one a seam across it, an open box
+    from its outer edge and a plate low on it against the box (T2_LEAN); on the left one a notch level with the upper
+    seam (painted, as the run's lines)."""
+    dark = T2_SEAM_COLS[0]
     zt = H + T2_OUT / core.ZPX - ROUND
-    z = zt - (T2_SEAMS[1] + T2_SEAMS[2]) / core.ZPX                     # (the lower seam, on the upright part)
+    gz = T3.UPRIGHT_SEAM                                                # (the run's upright seam, as it draws it)
     for v0, v1 in ((s0, s0 + SIDE), (s1 - SIDE, s1)):
-        d = s.front(z - 2 / core.ZPX, z)[0][0]
-        for z0, z1, col in ((z - 1 / core.ZPX, z, dark), (z - 2 / core.ZPX, z - 1 / core.ZPX, lit)):
-            f.part(v0, v1, [(d, z0), (d + PAINT, z0), (d + PAINT, z1), (d, z1)], [col] * 4, col, end=False)
-    seam, gap, (bx, by), (up, pw, ph) = T2_LEAN
-    z = s.z_at(H, seam)
-    f.line(s1 - SIDE, s1, s.z_at(z, 1), z, dark, end=False)
-    zt0 = s.z_at(z, gap)                                                # (the box: its top, its foot, its inner side)
+        f.line(v0, v1, gz, s.z_at(gz, -1), YS[1], end=False, bevel=False)
+        f.line(v0, v1, s.z_at(gz, 1), gz, YS[4], end=False, bevel=False)
+    (bx, by), (up, pw, ph) = T2_LEAN
+    L = T3.Layout(Section(H, T3.BACK))                                  # (the run's lean lines)
+    z = L.px(L.zr, -2)
+    f.line(s1 - SIDE, s1, z, L.px(z, -1), YS[4], end=False, bevel=False)
+    zt0 = L.l1                                                          # (the box: its top, its foot, its inner side)
     zb0 = s.z_at(zt0, by)
-    f.line(s1 - bx * LINE, s1, s.z_at(zt0, 1), zt0, dark, end=False, bevel=False)
-    f.line(s1 - bx * LINE, s1, zb0, s.z_at(zb0, -1), dark, end=False, bevel=False)
-    f.line(s1 - bx * LINE, s1 - (bx - 1) * LINE, zb0, zt0, dark, end=False, bevel=False)
+    f.line(s1 - bx * LINE, s1, s.z_at(zt0, 1), zt0, YS[3], end=False, bevel=False)
+    f.line(s1 - bx * LINE, s1, zb0, s.z_at(zb0, -1), YS[3], end=False, bevel=False)
+    f.line(s1 - bx * LINE, s1 - (bx - 1) * LINE, zb0, zt0, YS[3], end=False, bevel=False)
     v0, z0 = s1 - SIDE, s.z_at(s.zb, -up)                               # (the plate, shaded as the run's strip
     z1 = s.z_at(z0, -ph)                                                # plates)
     f.shade(v0, v0 + pw * LINE, z0, z1, YS[2], side=1.3)
