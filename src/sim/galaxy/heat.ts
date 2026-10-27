@@ -27,8 +27,7 @@ export const isWanted = (sim: Sim): boolean => sim.galaxy.heat.notoriety >= WANT
 export const isLaw = (sim: Sim, faction: string): boolean => LAW_KINDS.includes(sim.content.galaxy?.factions[faction]?.kind ?? '');
 
 /**
- * Reputation the player has lost with a faction through what they did (negative reputation; a base standing is not a grudge). Factions sharing a
- * reputation key share their grudge.
+ * Reputation the player has lost with a faction through what they did (negative reputation; a base standing is not a grudge). Each faction keeps its own.
  */
 export const grudgeOf = (sim: Sim, faction: string): number => Math.max(0, -reputationOf(sim.story, repKey(sim, faction)));
 

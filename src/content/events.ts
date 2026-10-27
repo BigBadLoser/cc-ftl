@@ -2,8 +2,8 @@ import type { EventDef } from '../sim';
 
 /**
  * Starter events (see "Events" in docs/ARCHITECTURE.md). Faction ids are free strings matched against the story
- * context: the reputation key of the territory the player is in ('corp' for any corporation's space, 'navy', 'pirates', ...) or null
- * for open space. Reputation is per that key (see trade's faction table and content/galaxy.ts, where each galaxy faction names its key).
+ * context: the reputation key of the territory the player is in ('meridian', 'helix' and 'vantor' for each corporation's space, 'navy', 'pirates', ...) or null
+ * for open space. Reputation is per that key (content/galaxy.ts, where each galaxy faction names its own key).
  * Physical outcomes (`physical` effects) are recorded only until the sector layer can realise them.
  */
 export const events = {
@@ -114,12 +114,12 @@ export const events = {
     text: 'A corporate patrol cutter hails you. "Transit tariff applies in Meridian space. Cargo manifest, captain."',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 8 }],
-    factions: ['corp'],
+    factions: ['meridian'],
     cooldownSec: 600,
     choices: [
-      { id: 'pay', label: 'Pay the tariff', cost: [{ item: 'item.scrap', count: 15 }], outcome: { text: 'The cutter logs you as compliant.', effects: [{ type: 'reputation', faction: 'corp', delta: 1 }] } },
-      { id: 'vip', label: 'Show your clearance', requires: [{ kind: 'reputation', faction: 'corp', min: 3 }], outcome: { text: '"Carry on, captain."', effects: [{ type: 'reputation', faction: 'corp', delta: 1 }] } },
-      { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'corp', delta: -2 }, { type: 'items', item: 'item.scrap', count: -10 }] } },
+      { id: 'pay', label: 'Pay the tariff', cost: [{ item: 'item.scrap', count: 15 }], outcome: { text: 'The cutter logs you as compliant.', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
+      { id: 'vip', label: 'Show your clearance', requires: [{ kind: 'reputation', faction: 'meridian', min: 3 }], outcome: { text: '"Carry on, captain."', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
+      { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.scrap', count: -10 }] } },
     ],
   },
   /** Module requirement; heal effect. */

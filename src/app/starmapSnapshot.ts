@@ -9,6 +9,7 @@ import { buildHeat } from './heatSnapshot';
 import { toneOf } from './starmapTone';
 import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot';
 import { nebulaAround } from './starmapNebula';
+import { nodeHints } from './stockHints';
 import { buildClusters, sectorOutline } from './starmapClusters';
 
 
@@ -107,6 +108,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
       jobs: k ? jobsAt.get(n.id) ?? [] : [],
+      hints: k ? nodeHints(sim, n.id) : [],
     });
   }
   const sectors = [...index.sectors.values()].map((s) => {

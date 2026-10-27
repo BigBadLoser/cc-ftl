@@ -1190,13 +1190,23 @@ about is a flee and needs the drive charged (spent). `GalaxyState.lastResult` ke
 (factions with `traffic` at that danger, the owner weighted up) filtered to hostile ones. Rolls use the galaxy Rng. Contacts of wrecked, fled or
 captured ships are pruned each second. Danger 0 never rolls. `playerShipInfo` is the galaxy's `{id, ship}` helper; trade's `playerShip(sim)` is the id.
 
-**Factions and standings** (`standing.ts`, `src/content/galaxy.ts`). There is one faction table: the galaxy faction defs. Each names the
-generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `relations` and a **reputation key** (`reputation`),
-one of trade's keys: `traders`, `corp`, `navy`, `pirates`, `drones` (the three corporations share `corp`). Reputation stays in `sim.story.reputation`,
-the only store; trade's `reputationWith` and `hailVerdict` are the source of truth for prices and hailing and the galaxy only reads the same
-numbers: `standing = baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(relation x reputation[their key])`, tiers hostile below
-`HOSTILE_BELOW` (-2), friendly from `FRIENDLY_AT` (3), `alwaysHostile` overrides. `story.context.faction` is the territory owner's reputation key
-(so event `factions: ['corp']` matches any corporation's space).
+**Factions and standings** (`standing.ts`, `relations.ts`, `src/content/galaxy.ts`, `galaxyRelations.ts`). There is one faction table: the galaxy
+faction defs. Each names the generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `specialities` and a
+**reputation key** (`reputation`), one per faction (`navy`, `meridian`, `helix`, `vantor`, `traders`, `pirates`, `drones`; the test checks they are
+unique). Reputation stays in `sim.story.reputation`, the only store. Who is at war and who shares standing is the **pairwise relations table**
+(`GalaxyContent.relations`: `{ a, b, stance: 'war' | 'neutral' | 'allied', spill?: [into a, into b] }`, one row per pair; an unlisted pair is
+neutral; `alwaysHostile` factions are at war with all). `stanceBetween`, `atWar` and `spillSources` read it; phase 2b adds rows. Standing:
+`baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(spill x reputation[their key])`, tiers hostile below `HOSTILE_BELOW` (-2),
+friendly from `FRIENDLY_AT` (3). Trade reads the **owner**: `Trader.owner` (a galaxy faction id, set from the port by `bindTrader`/`Econ`, or from
+`Ship.gen.owner` for fleet ships) picks the reputation key for prices and hails (`repKeyOf`); a trader with no owner falls back to its trade faction's
+key. `story.context.faction` is the territory owner's reputation key (so event `factions: ['meridian']` matches Meridian space). Save v58.
+
+**Faction specialities** (`FactionSpecialityDef`). The station kind decides what a station sells; the owner faction weights it. `stock` is a tag ->
+weight on the count and odds of the trade profile's stock lines (`rollTrader`, same draws, so unweighted lines roll as before); `prices` multiplies
+what its stations sell an item or tag for (Meridian fuel x0.85, in `applyMods`); `blueprints` lists the module categories it always stocks (others at
+`OFF_SPECIALITY_STOCK` odds, a fixed roll per port and def); `gate` holds a category's tier back until standing with the owner reaches a number (the
+navy: Mk II defence from 0, Mk III from 3); `shipyard` is Vantor's hook for #125 and nothing reads it yet. The starmap node info and the station
+inspector show `app/stockHints.ts` (`portHints`, `nodeHints`).
 
 **Zoom levels** (view design, built on `starmap-macro-wip`, not ported). The map has three levels by zoom, each drawing from the same chunks:
 1. **Sector:** nodes, routes, hyperlane exits labelled with where they lead, central bodies, sector outlines, the nebula cloud channel, the plotted

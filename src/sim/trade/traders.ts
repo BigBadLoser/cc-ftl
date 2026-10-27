@@ -20,6 +20,15 @@ export function tradeFactionOf(ship: Ship): string {
   return ship.gen?.faction ?? `side.${ship.faction}`;
 }
 
+/**
+ * The `sim.story.reputation` key a trader's prices and hail read: its owner's own key (every galaxy faction has one), else the key of its
+ * trade faction (ships and stations with no owner: debug spawns, plain-template raiders).
+ */
+export function repKeyOf(sim: Sim, t: { faction: string; owner?: string }): string | undefined {
+  const own = t.owner ? sim.content.galaxy?.factions[t.owner]?.reputation : undefined;
+  return own ?? sim.content.trade?.factions[t.faction]?.reputation;
+}
+
 /** The profile id that fits a ship best: faction + role, then faction, then side; null if the content has none. */
 export function profileFor(sim: Sim, ship: Ship): string | null {
   const traders = sim.content.trade?.traders ?? {};
@@ -37,7 +46,6 @@ export function profileFor(sim: Sim, ship: Ship): string | null {
   return best;
 }
 
-/** Roll a trader's wallet and stock from the world seed and an identity number. Pure: same inputs, same trader. */
 /** True when a trader sells this item as surplus (its kind's surplus rule covers it). */
 export function isSurplus(sim: Sim, profile: string, item: string): boolean {
   const sp = sim.content.trade?.traders[profile]?.surplus;
@@ -45,13 +53,25 @@ export function isSurplus(sim: Sim, profile: string, item: string): boolean {
   return !!sp && !!it && it.tags.includes(sp.tag) && (it.tier ?? 99) <= sp.maxTier;
 }
 
-export function rollTrader(sim: Sim, profile: string, faction: string, name: string, identity: number, station: boolean): Trader {
+/** The weight an owner faction puts on an item's stock lines: the product of its `specialities.stock` weights over the item's tags (1 = none). */
+export function stockWeight(sim: Sim, owner: string | undefined, item: string): number {
+  const w = owner ? sim.content.galaxy?.factions[owner]?.specialities?.stock : undefined;
+  return w ? (sim.content.items[item]?.tags ?? []).reduce((m, tag) => m * (w[tag] ?? 1), 1) : 1;
+}
+
+/**
+ * Roll a trader's wallet and stock from the world seed and an identity number. Pure: same inputs, same trader. The owner faction weights the stock
+ * (`stockWeight`: a favoured good is stocked in bigger counts and more often) without changing what the draws are, so a trader with no owner,
+ * or with no speciality in a line, rolls exactly as before.
+ */
+export function rollTrader(sim: Sim, profile: string, faction: string, name: string, identity: number, station: boolean, owner?: string): Trader {
   const def = sim.content.trade?.traders[profile];
   const rng = new Rng(mix(sim.seed, identity, profile.length, profile.charCodeAt(profile.length - 1)));
   const stock = [];
   for (const line of def?.stock ?? []) {
-    if (line.chance !== undefined && !rng.chance(line.chance)) continue;
-    const count = rng.int(line.min, line.max);
+    const w = stockWeight(sim, owner, line.item);
+    if (line.chance !== undefined && !rng.chance(Math.min(1, line.chance * w))) continue;
+    const count = Math.round(rng.int(line.min, line.max) * w);
     if (count > 0 && sim.content.items[line.item]) stock.push({ item: line.item, count });
   }
   const sp = def?.surplus;
@@ -63,7 +83,7 @@ export function rollTrader(sim: Sim, profile: string, faction: string, name: str
     }
   }
   const [lo, hi] = def?.credits ?? [0, 0];
-  return { profile, faction, name, credits: rng.int(lo, hi), stock, station };
+  return { profile, faction, name, credits: rng.int(lo, hi), stock, station, ...(owner ? { owner } : {}) };
 }
 
 /** The trader record of an entity, creating it on first use for a ship. Null if the entity is not a trade partner. */
@@ -74,7 +94,7 @@ export function ensureTrader(sim: Sim, id: number): Trader | null {
   if (!ship || ship.faction === 'player') return null;
   const profile = profileFor(sim, ship);
   if (!profile) return null;
-  const t = rollTrader(sim, profile, tradeFactionOf(ship), ship.name, ship.gen?.seed ?? id, ship.immobile === true);
+  const t = rollTrader(sim, profile, tradeFactionOf(ship), ship.name, ship.gen?.seed ?? id, ship.immobile === true, ship.gen?.owner);
   sim.world.add(id, TraderC, t);
   return t;
 }
@@ -98,7 +118,7 @@ export function hailVerdict(sim: Sim, id: number): HailVerdict {
   if (!cfg || !t) return { answers: false, reason: 'noTrade', score: 0 };
   if (ship && ship.state !== 'active' && ship.state !== 'disabled') return { answers: false, reason: 'silent', score: 0 };
   const fac: TradeFactionDef | undefined = cfg.factions[t.faction];
-  const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, fac.reputation) : 0);
+  const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0);
   if (ship && aimingAtPlayer(sim, id)) return { answers: false, reason: 'weaponsHot', score };
   return { answers: score >= 0, reason: score >= 0 ? '' : 'hostile', score };
 }

@@ -69,8 +69,9 @@ import { newTrade, type TradeState } from './trade/types';
  * v55 (shield tiers): `module.shieldGenSmall` removed (now `module.shieldGen`, 2x2); Mk II is 2x3, Mk III 3x3.
  * v56 (research): `ResearchC` (a ship's research queue), the `research` work category, the science skill and role.scientist.
  * v57 (tile aim): optional `Target.tile` (a blind aim at one tile of the target ship, on `CombatC.target` and `WeaponC.target`).
+ * v58 (per-faction standing): reputation keys `meridian`, `helix`, `vantor` replace the shared `corp`; optional `Trader.owner` and `Ship.gen.owner` (the galaxy faction a trader or fleet ship belongs to).
  */
-export const SAVE_VERSION = 57;
+export const SAVE_VERSION = 58;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

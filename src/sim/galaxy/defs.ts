@@ -22,14 +22,53 @@ export interface DangerRange {
 }
 
 /**
+ * What an owner faction does to the stock of its stations, within what the station kind allows (the kind decides what is sold, the owner what
+ * is more common). Absent = no speciality: everything the kind allows, at the base odds.
+ */
+export interface FactionSpecialityDef {
+  /** Module categories whose blueprints it always stocks; the others it stocks at `OFF_SPECIALITY_STOCK` odds (galaxy/blueprintShop.ts). */
+  blueprints?: readonly string[];
+  /** Item tag -> weight on the count and chance of its trade stock lines (1 = unchanged). Never adds items the trader kind does not list. */
+  stock?: Readonly<Record<string, number>>;
+  /** Item tag or id -> multiplier on what its stations sell it for (0.85 = 15% cheaper). */
+  prices?: Readonly<Record<string, number>>;
+  /**
+   * Its best blueprints are gated by standing: category -> `{ tier: least standing }`. A blueprint of that category and tier needs at least that
+   * much standing with this faction; a tier with no entry is free.
+   */
+  gate?: Readonly<Record<string, Readonly<Record<number, number>>>>;
+  /**
+   * TODO(#125): shipyard modifier (Vantor's bigger caps and cheaper-per-tile hull work). Read by the shipyard service once it lands; nothing reads
+   * it yet. `capMult` scales the tiles a visit adds, `tilePrice` the credits and metal per tile.
+   */
+  shipyard?: { capMult?: number; tilePrice?: number };
+}
+
+/** How two factions stand to each other: at war they fight on sight; allied is reserved for the pirate factions of phase 2b. */
+export type Stance = 'war' | 'neutral' | 'allied';
+
+/**
+ * One pair of factions in the relations table (`GalaxyContent.relations`): their stance, and how far each one's reputation with the player
+ * spills over into the other's standing (`spill: [into a, into b]`, each -1..1, scaled by STANDING_SPILLOVER). A pair with no entry is neutral
+ * and shares nothing.
+ */
+export interface FactionRelationDef {
+  a: string;
+  b: string;
+  stance: Stance;
+  /** [weight of b's reputation in a's standing, weight of a's reputation in b's standing]. */
+  spill?: readonly [number, number];
+}
+
+/**
  * A faction as standing and territory see it. The galaxy faction table is the one table: each def carries the reputation key
- * it is tracked under (`sim.story.reputation`, the key trade's `TradeFactionDef.reputation` uses too). Several factions may
- * share a key (the corporations share 'corp'): reputation is per key, standing is per faction.
+ * it is tracked under (`sim.story.reputation`). Every faction has its own key, so each standing moves on its own; relations between
+ * factions live in the pairwise table (`GalaxyContent.relations`).
  */
 export interface GalaxyFactionDef {
   name: string;
   kind: 'government' | 'corporation' | 'pirates' | 'rogue' | 'civilian';
-  /** Key into `sim.story.reputation`: 'traders' | 'corp' | 'navy' | 'pirates' | 'drones' (trade's keys). */
+  /** Key into `sim.story.reputation`, one per faction (the player's reputation with it). */
   reputation: string;
   /** Generator factions (`content.factions` ids) its ships are built by, weighted. */
   ships: readonly Weighted[];
@@ -46,8 +85,8 @@ export interface GalaxyFactionDef {
   baseStanding: number;
   /** Always hostile whatever the reputation (the rogue AI). */
   alwaysHostile?: true;
-  /** -1..1 per other faction id: reputation with them spills over into this one, scaled by STANDING_SPILLOVER. */
-  relations?: Record<string, number>;
+  /** What it stocks more of at its stations, what it sells cheaper, what its best gear is gated by. */
+  specialities?: FactionSpecialityDef;
   /** Weight as a ship turning up in a node, by danger tier (owners of the territory get TERRITORY_TRAFFIC on top). */
   traffic?: { weight: number; danger?: DangerRange };
   /** The start node's territory belongs to it. */
@@ -144,6 +183,8 @@ export interface MarketContent {
 export interface GalaxyContent {
   /** By faction id (also the reputation key). */
   factions: Record<string, GalaxyFactionDef>;
+  /** Who is at war with whom, and who shares standing with whom: one entry per pair (relations.ts reads it). */
+  relations: readonly FactionRelationDef[];
   /** By StructureDef id (`structure.*`). */
   structures: Record<string, StructureDef>;
   /** Name parts for sectors: a prefix plus a suffix ("Kessa Reach"). Nodes add a Greek letter. */

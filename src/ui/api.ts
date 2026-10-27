@@ -697,6 +697,8 @@ export interface UiStationInfo {
   /** The port id `blueprint.buy` takes (empty without a port). */
   blueprintPort: string;
   market: UiStarMarket | null;
+  /** Notable stock in a few words ("Mk II shield gens", "Cheap fuel"). */
+  hints: string[];
   /** Working airlocks to dock at. */
   docks: number;
   guns: number;

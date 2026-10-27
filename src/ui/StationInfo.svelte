@@ -19,6 +19,9 @@
   {#if offers.length}
     <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<span class="chip">{#if o.n}<em>{o.n}</em>{/if}{o.label}</span>{/each}</span></span>
   {/if}
+  {#if info.hints.length}
+    <span class="cell wide" title="Notable stock"><Icon name="list" size={18} /><b data-testid="si-hints">{info.hints.join(' · ')}</b></span>
+  {/if}
   {#if info.market && (info.market.cheap.length || info.market.dear.length)}
     <span class="cell wide" title="Goods that are cheap or wanted here now"><Icon name="trade" size={18} /><b data-testid="si-market">{#if info.market.cheap.length}Cheap: {info.market.cheap.join(', ')}{/if}{#if info.market.cheap.length && info.market.dear.length} · {/if}{#if info.market.dear.length}Wanted: {info.market.dear.join(', ')}{/if}</b></span>
   {/if}
