@@ -126,10 +126,11 @@
 </section>
 
 <style>
+  /* On the left, where the screen is mostly empty: the right column (log, goals, jobs, alerts) and the tool dock stay clear. The left-side panels (.sel, .over, the build catalog) and the centred ones step right of it while it is open (data-combat, desktop). */
   /* The page canvas shows through .view (the enemy ship is drawn there), so every other part paints its own background. */
   .combat {
     position: fixed; z-index: 7; display: flex; flex-direction: column; overflow: hidden;
-    right: calc(8px + var(--sar)); top: calc(var(--hdr) + 8px + var(--sat)); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
+    left: calc(8px + var(--sal)); top: calc(var(--hdr) + 8px + var(--sat)); bottom: calc(8px + var(--sab)); width: 372px; max-width: calc(100vw - 16px);
     border: 1px solid var(--line-hi); border-radius: 0;
   }
   .handle { display: none; }

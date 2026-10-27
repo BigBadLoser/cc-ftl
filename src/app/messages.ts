@@ -70,7 +70,7 @@ const REASONS: Record<string, string> = {
   noOffer: 'That offer is gone',
   noDeal: 'No such deal',
   inTransit: 'The shuttle has already left',
-  tooBig: 'Too much for one shuttle hold',
+  tooBig: 'Too many trips for one order',
   noCourier: 'No shuttle to carry the goods: fit one in a bay',
   noHelm: 'The ship has no helm',
   helmOffline: 'The helm has no power',
