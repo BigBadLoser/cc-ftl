@@ -11,7 +11,7 @@ import { audit } from './audit';
 
 export type View = 'detail' | 'silhouette' | 'assembly' | 'structure' | 'interior';
 
-type RGB = [number, number, number];
+export type RGB = [number, number, number];
 
 export class Raster {
   readonly data: Uint8ClampedArray;
@@ -50,14 +50,14 @@ const GLYPHS: Record<string, string> = Object.fromEntries(Object.entries({
   '#': '101111101111101', ' ': '000000000000000', ',': '000000000010100', '(': '010100100100010', ')': '010001001001010', '?': '110001010000010', '=': '000111000111000', '+': '000010111010000',
 }));
 
-const ROLE_TINT: Record<RoomRole, RGB> = {
+export const ROLE_TINT: Record<RoomRole, RGB> = {
   bridge: [52, 92, 140], engine: [120, 70, 40], reactor: [120, 110, 40], weapons: [120, 50, 70], shields: [40, 110, 120],
   cargo: [88, 80, 60], quarters: [70, 100, 60], core: [100, 60, 130], hangar: [70, 70, 90], hall: [58, 60, 66],
   dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40], plaza: [110, 96, 70], garden: [70, 130, 70], drill: [90, 80, 90],
 };
 
 /** Short labels and colours per module. */
-const MOD: Record<string, { label: string; c: RGB }> = {
+export const MOD: Record<string, { label: string; c: RGB }> = {
   'module.engine': { label: 'ENG', c: [255, 120, 40] }, 'module.reactor': { label: 'R', c: [240, 220, 60] },
   'module.helm': { label: 'HLM', c: [90, 170, 255] }, 'module.weaponsConsole': { label: 'WC', c: [90, 170, 255] },
   'module.shieldConsole': { label: 'SC', c: [90, 170, 255] }, 'module.burstLaser': { label: 'BL', c: [255, 70, 140] },
