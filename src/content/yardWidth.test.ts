@@ -203,4 +203,26 @@ describe('hull plan brushes: connection, erase and cut', () => {
     expect(kept.has(key({ x: s.x + 6, y: y - 2 }))).toBe(false); // cut off
     expect(r.removed.every((t) => t.y < y)).toBe(true);
   });
+
+  it('a cut only removes what it disconnects: a plan piece that was already detached stays, and a line off the plan does nothing', () => {
+    const { sim, me } = yardGame();
+    send(sim, me, outline(sim, me, 4, top(6), 6, 6)); // connected 6 x 6 against the hull
+    const s = sim.world.get(me, ShipC)!;
+    // a detached 3 x 3 slipped into the plan (an older save): it was never connected to the ship
+    const plan = sim.world.get(me, HullPlanC)!;
+    const detached = outline(sim, me, 20, top(3) - 8, 3, 3);
+    plan.tiles = [...plan.tiles, ...detached];
+    const before = planFootprint(sim, plannedTiles(sim, me)).map(key);
+    const away = Array.from({ length: 6 }, (_, i) => ({ x: s.x + 5 + i, y: s.y - 30 })); // does not meet the plan
+    const off = cutPlan(sim, me, away);
+    expect(off.unchanged).toBe(true);
+    expect(off.removed).toEqual([]);
+    const through = Array.from({ length: 8 }, (_, i) => ({ x: s.x + 2 + i, y: s.y + top(6) + 3 })); // across the connected block only
+    const r = cutPlan(sim, me, through);
+    const kept = new Set(r.footprint.map(key));
+    for (const t of detached) expect(kept.has(key(t)), `detached ${t.x},${t.y}`).toBe(true);
+    expect(before.length).toBeGreaterThan(0);
+    expect(r.removed.length).toBeGreaterThan(0);
+    expect(r.removed.every((t) => t.y < s.y + top(6) + 3)).toBe(true); // only the cut-off part of the connected block
+  });
 });

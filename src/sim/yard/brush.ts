@@ -70,39 +70,50 @@ export function brushPlan(sim: Sim, ship: number, mode: 'add' | 'erase', tiles: 
 }
 
 /**
- * Cut the plan along a line: the line's planned tiles stay and become the new edge; whatever of the plan stays connected to the ship's hull (4-neighbour
- * chains, not through the line) is kept, and planned tiles cut off from the hull are removed. A line over nothing planned, or one that cuts nothing
- * off, changes nothing. A line with several pieces on the ship's side keeps each that touches the hull. Only the plan is cut, never hull.
+ * Cut the plan along a line: the line's planned tiles stay and become the new edge. Only what the cut disconnects goes: tiles that were joined to the
+ * ship's hull (4-neighbour chains) before the cut and are cut off from it by the line are removed. Plan pieces that were already detached before the
+ * cut stay as they are, and a line that does not meet the plan changes nothing. Several pieces on the ship's side each stay if they still touch the hull.
+ * Only the plan is cut, never hull.
  */
 export function cutPlan(sim: Sim, ship: number, line: readonly Tile[]): BrushResult {
   const current = plannedTiles(sim, ship);
   const before = planFootprint(sim, current);
   const cut = new Set(line.map(key));
-  const rest = new Map(before.filter((t) => !cut.has(key(t))).map((t) => [key(t), t] as const));
-  const kept = new Map<string, Tile>();
-  const queue: Tile[] = [];
-  for (const t of rest.values()) {
-    if (N4.some(([dx, dy]) => isShipHull(sim, ship, { x: t.x + dx, y: t.y + dy }))) {
-      kept.set(key(t), t);
-      queue.push(t);
-    }
-  }
-  for (let i = 0; i < queue.length; i++) {
-    const c = queue[i] as Tile;
-    for (const [dx, dy] of N4) {
-      const k = `${c.x + dx},${c.y + dy}`;
-      const n = rest.get(k);
-      if (n && !kept.has(k)) {
-        kept.set(k, n);
-        queue.push(n);
+  const all = new Map(before.map((t) => [key(t), t] as const));
+  /** Plan tiles joined to the hull by 4-neighbour chains of plan tiles, not stepping on `blocked`. */
+  const joined = (blocked: ReadonlySet<string>): Map<string, Tile> => {
+    const seen = new Map<string, Tile>();
+    const queue: Tile[] = [];
+    for (const t of all.values()) {
+      if (blocked.has(key(t))) continue;
+      if (N4.some(([dx, dy]) => isShipHull(sim, ship, { x: t.x + dx, y: t.y + dy }))) {
+        seen.set(key(t), t);
+        queue.push(t);
       }
     }
-  }
-  // the line's own planned tiles stay when they touch what is kept (or the hull): they are the new edge
+    for (let i = 0; i < queue.length; i++) {
+      const c = queue[i] as Tile;
+      for (const [dx, dy] of N4) {
+        const k = `${c.x + dx},${c.y + dy}`;
+        const n = all.get(k);
+        if (n && !seen.has(k) && !blocked.has(k)) {
+          seen.set(k, n);
+          queue.push(n);
+        }
+      }
+    }
+    return seen;
+  };
+  const connectedBefore = joined(new Set());
+  const kept = joined(cut);
+  const next = new Map<string, Tile>();
   for (const t of before) {
-    if (cut.has(key(t)) && N4.some(([dx, dy]) => kept.has(`${t.x + dx},${t.y + dy}`) || isShipHull(sim, ship, { x: t.x + dx, y: t.y + dy }))) kept.set(key(t), t);
+    const k = key(t);
+    // a tile goes only when it was connected to the ship before the cut and the cut (not the line's own tile) severs it
+    const severed = connectedBefore.has(k) && !kept.has(k) && !cut.has(k);
+    if (!severed) next.set(k, t);
   }
-  return settle(sim, ship, current, before, kept);
+  return settle(sim, ship, current, before, next);
 }
 
 /**
