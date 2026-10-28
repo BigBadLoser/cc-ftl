@@ -7,13 +7,13 @@ import type { WeaponDef } from '../sim';
 export const weapons = {
   // Three light shots: each strips one shield layer, or chips hull and modules when there are none.
   'weapon.burstLaser': {
-    name: 'Burst laser', projectileAsset: 'fx.laser_bolt', shots: 3, shotDelaySec: 0.3, chargeSec: 8, speed: 30, spread: 1,
+    name: 'Burst laser', projectileAsset: 'fx.laser_bolt', shots: 3, shotDelaySec: 0.3, chargeSec: 5, speed: 30, spread: 1,
     shield: { damage: 1, pierce: 0 },
-    effects: [{ type: 'hullDamage', amount: 24 }, { type: 'moduleDamage', amount: 22 }, { type: 'crewDamage', amount: 8, radius: 1 }],
+    effects: [{ type: 'hullDamage', amount: 24 }, { type: 'moduleDamage', amount: 22 }, { type: 'crewDamage', amount: 5, radius: 1 }],
   },
   // One slug that passes a single shield layer and punches through the wall (breach).
   'weapon.massDriver': {
-    name: 'Mass driver', projectileAsset: 'fx.mass_slug', shots: 1, shotDelaySec: 0, chargeSec: 12, speed: 18, spread: 0.8,
+    name: 'Mass driver', projectileAsset: 'fx.mass_slug', shots: 1, shotDelaySec: 0, chargeSec: 8, speed: 18, spread: 0.8,
     shield: { damage: 1, pierce: 1 },
     effects: [
       { type: 'hullDamage', amount: 300, radius: 1, falloff: 0.7 },
@@ -22,7 +22,7 @@ export const weapons = {
   },
   // Ignores shields, uses crafted ammo, slow enough for point defence to catch.
   'weapon.missile': {
-    name: 'Missile', projectileAsset: 'fx.missile', shots: 1, shotDelaySec: 0, chargeSec: 10, speed: 12, spread: 0.6,
+    name: 'Missile', projectileAsset: 'fx.missile', shots: 1, shotDelaySec: 0, chargeSec: 7, speed: 12, spread: 0.6,
     ammo: 'item.missile', interceptable: true, antiVehicle: true, shield: { damage: 0, pierce: 0, bypass: true },
     effects: [
       { type: 'hullDamage', amount: 90, radius: 1, falloff: 0.5 },

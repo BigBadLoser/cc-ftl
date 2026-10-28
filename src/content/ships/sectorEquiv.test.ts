@@ -247,4 +247,5 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };
+// Repinned for the charge-time rebalance (#168): the burst laser (5 s from 8), mass driver (8 s from 12) and missile (7 s from 10) charge faster and the laser's crew damage is 5 (from 8), so the starter-vs-raider run's volleys land at other ticks.
+const EXPECTED = { combat: '6ed5b590', disaster: 'fa40fdbe' };

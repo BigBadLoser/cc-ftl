@@ -105,7 +105,7 @@ describe('combat start and consoles', () => {
     const [laser] = modulesOf(sim, 1, 'module.burstLaser') as [number];
     expect(sim.world.get(laser, WeaponC)!.charge).toBe(1);
     sim.enqueue({ type: 'combat.fireVolley', ship: nth(sim, 1) });
-    expect(ofType(run(sim, 40), 'weapon.fired')).toHaveLength(3);
+    expect(ofType(run(sim, 25), 'weapon.fired')).toHaveLength(3); // 40 ticks at the old 8 s laser charge, the same share of the 5 s charge
     expect(sim.world.get(laser, WeaponC)!.charge).toBeLessThan(0.4);
   });
 });
