@@ -58,7 +58,12 @@ for (const id of [...chosen].sort()) {
   try {
     // Only a manifest-defined frame is used. Keep alpha, trim empty borders,
     // and preserve the pixel-art look with nearest-neighbour resampling.
-    await sharp(input).extract({ left: x, top: y, width: w, height: h })
+    // Force the crop to complete before trimming. Sharp may reorder a single
+    // extract/trim pipeline against the uncropped sheet dimensions.
+    const cropped = await sharp(input)
+      .extract({ left: x, top: y, width: w, height: h })
+      .png().toBuffer();
+    await sharp(cropped)
       .trim({ background: '#00000000', threshold: 5 })
       .resize(384, 240, { fit: 'contain', background: '#00000000', kernel: 'nearest' })
       .png({ compressionLevel: 9 }).toFile(output);
