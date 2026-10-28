@@ -57,34 +57,18 @@ jobs:
             if curl -fsS -o /dev/null http://127.0.0.1:8765/cc-ftl/wiki/; then break; fi
             sleep 1
           done
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/modules.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/reactor.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/reactor/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/weapons.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/weapons/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/mass-driver.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/weapons/mass-driver/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/vehicles.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/vehicles/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/shuttle.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/vehicles/shuttle/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/recipes.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/recipes/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/refine-iron.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/recipes/refine-iron/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/factions.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/factions/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/navy.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/factions/navy/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/research.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/research/
+          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/modules.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/
+          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/reactor.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/reactor/
+          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/airlock.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/airlock/
+          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/engine-mk2.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/engine-mk2/
+          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/freight-container.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/cargo-container/
+          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/mass-driver.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/weapons/mass-driver/
           test -s wiki-preview/modules.png
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/engine-mk2.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/engine-mk2/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/airlock.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/airlock/
-          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/freight-container.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/cargo-container/
-          test -s wiki-preview/engine-mk2.png
-          test -s wiki-preview/airlock.png
-          test -s wiki-preview/freight-container.png
           test -s wiki-preview/reactor.png
-          test -s wiki-preview/weapons.png
+          test -s wiki-preview/airlock.png
+          test -s wiki-preview/engine-mk2.png
+          test -s wiki-preview/freight-container.png
           test -s wiki-preview/mass-driver.png
-          test -s wiki-preview/vehicles.png
-          test -s wiki-preview/shuttle.png
-          test -s wiki-preview/recipes.png
-          test -s wiki-preview/refine-iron.png
-          test -s wiki-preview/factions.png
-          test -s wiki-preview/navy.png
-          test -s wiki-preview/research.png
       - uses: actions/upload-artifact@v4
         if: success()
         with:
