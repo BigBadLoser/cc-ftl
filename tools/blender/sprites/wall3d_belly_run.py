@@ -71,6 +71,9 @@ def _look1(f, s, back):
         u0, u1 = U(a, b)
         f.shade(u0, u1, Z(v1), Z(v1 - 2), XS, under=3, side=0.0)     # (under it only: the plate hides half)
         f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
+        for u in (u1, u0 - 2 * LINE):                           # (a soft seam down each side of it to the lip: a px
+            f.line(u, u + LINE, s.z_at(foot, -LOOK1["lip"][0]), Z(v0), XS, end=False, bevel=False)   # clear of its
+                                                                # -u end, which hides the px by it)
     with f.tag("lip"):                                          # (lit along its top by its facing)
         h, e, x = LOOK1["lip"]
         f.raised(-0.5, 0.5, foot, s.z_at(foot, -h), -0.01, LINE, "face", cap=YS[2])
