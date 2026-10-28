@@ -88,7 +88,8 @@ export interface Renderer {
   /** Center the camera on a sector position (tiles). */
   focusSector(x: number, y: number): void;
   /** Frame the given ships (by grid id) in the view: centered, at the largest zoom that fits them (at least 1). */
-  frameShips(gridIds: readonly number[]): void;
+  /** Fit the ships in view; `inset` (CSS px) keeps them clear of HUD bands along the top and bottom edge. */
+  frameShips(gridIds: readonly number[], inset?: { top: number; bottom: number }): void;
   info(): RenderInfo;
   /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
   portrait(id: number): string | null;
@@ -459,7 +460,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const p = sectorArt(x, y);
       cam.centerOn(p.x, p.y);
     },
-    frameShips(ids) {
+    frameShips(ids, inset) {
       const r = shipOf(refId);
       if (!r) return;
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -472,8 +473,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         }
       }
       if (x0 === Infinity) return;
+      const dpr = window.devicePixelRatio || 1;
+      const top = (inset?.top ?? 0) * dpr, bottom = (inset?.bottom ?? 0) * dpr;
       cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2);
-      cam.fitZoom(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), cam.h / (y1 - y0 + 64 * ART_SCALE)));
+      cam.fitZoom(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), (cam.h - top - bottom) / (y1 - y0 + 64 * ART_SCALE)));
+      if (top || bottom) cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2 - (top - bottom) / 2 / cam.zoom);
     },
     info: () => {
       let sprites = sectorParticles.count();

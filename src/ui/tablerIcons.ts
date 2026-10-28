@@ -69,6 +69,8 @@ import t_wall from '@tabler/icons/outline/wall.svg?raw';
 import t_x from '@tabler/icons/outline/x.svg?raw';
 import t_zoom_in from '@tabler/icons/outline/zoom-in.svg?raw';
 import t_zoom_out from '@tabler/icons/outline/zoom-out.svg?raw';
+import t_wind from '@tabler/icons/outline/wind.svg?raw';
+import t_steering_wheel from '@tabler/icons/outline/steering-wheel.svg?raw';
 import t_zzz from '@tabler/icons/outline/zzz.svg?raw';
 
 /** The drawing inside Tabler's <svg> (24-unit grid, stroke from the component): the outer tag and the empty bounding path are dropped. */
@@ -146,6 +148,8 @@ export const FILES = {
   unpin: 'pinned-off',
   lock: 'lock',
   research: 'flask-2',
+  wind: 'wind',
+  helm: 'steering-wheel',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -217,6 +221,8 @@ const RAW: Record<string, string> = {
   'x': t_x,
   'zoom-in': t_zoom_in,
   'zoom-out': t_zoom_out,
+  'wind': t_wind,
+  'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
 };
 

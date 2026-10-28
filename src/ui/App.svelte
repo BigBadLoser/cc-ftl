@@ -7,7 +7,7 @@
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
-  import CombatPanel from './CombatPanel.svelte';
+  import CombatHud from './combat/CombatHud.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
   import TradeWindow from './TradeWindow.svelte';
@@ -103,6 +103,8 @@
     if (stationOpen !== null && (selShip !== stationOpen || !stations.includes(stationOpen))) stationOpen = null;
   });
 
+  /** The combat view (#186) replaces the colony panels while a fight is on. The old CombatPanel stays in the tree but is not rendered. */
+  const fightHud = $derived(combat.inCombat);
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */
   let roofOn = $state(false);
@@ -236,7 +238,7 @@
 
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
-  <NavStrip
+  {#if !fightHud}<NavStrip
     {mapOpen} {mapLocked} onMap={() => { focusNode = null; mapOpen = !mapOpen; }}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
@@ -245,24 +247,24 @@
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
     onCombat={() => { if (combat.inCombat) { combatOpen = !combatOpen; if (phone()) priorities = false; } }}
-  />
+  />{/if}
   <span class="mid">
-    <CrewBar {api} />
-    <NodeStrip {api} selected={selShip} />
+    <CrewBar {api} compact={fightHud} />
+    {#if !fightHud}<NodeStrip {api} selected={selShip} />{/if}
   </span>
   {#if narrow}{@render time()}{/if}
 </header>
 
-{#if overviewOpen}
+{#if overviewOpen && !fightHud}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
 {/if}
-{#if researchOpen}
+{#if researchOpen && !fightHud}
   <ResearchOverlay {api} onClose={() => (researchOpen = false)} />
 {/if}
-{#if jobsOpen}
+{#if jobsOpen && !fightHud}
   <JobsPanel {api} onClose={() => (jobsOpen = false)} />
 {/if}
-{#if stockOpen}
+{#if stockOpen && !fightHud}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />
 {/if}
 {#if reporting}
@@ -271,16 +273,16 @@
 {#if debug && snap}
   <DebugPanel {api} {snap} />
 {/if}
-{#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => api.dispatch({ type: 'combat.flee', ship })} onHail={(ship) => { tradeWith = ship; }} />
-{/if}
-<ToolBar {api}>
+{#if fightHud}<CombatHud {api} {combat} />{/if}
+{#if !fightHud}<ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
     <button class="tile" class:on={roofOn} aria-pressed={roofOn} title="Roof: {roofOn ? 'on (outside view)' : 'off'}" aria-label="Roof" data-testid="toggle-roof" onclick={toggleRoof}><Icon name="roof" size={18} /></button>
     <OverlayPicker {api} />
     <button class="tile" class:on={reporting} title="Report a bug" aria-label="Report a bug" data-testid="report-bug" onclick={openReport}><Icon name="debug" size={18} /></button>
-</ToolBar>
-{#if priorities}
+</ToolBar>{/if}
+{#if fightHud}
+  <!-- the colony inspector and build tools give way to the combat HUD -->
+{:else if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
@@ -309,8 +311,8 @@
     {#if !narrow}{@render time()}{/if}
   </div>
   <div class="cards">
-    <GoalsCard {api} />
-    <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
+    {#if !fightHud}<GoalsCard {api} />
+    <JobsTracker {api} onOpen={() => (jobsOpen = true)} />{/if}
   </div>
   <StrandedBanner {api} />
   <AlertList {api} onNode={openNode} />

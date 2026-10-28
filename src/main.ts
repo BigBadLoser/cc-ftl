@@ -111,7 +111,10 @@ window.addEventListener('pagehide', save);
 
 /** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
 function focusFight(ship: number | null): void {
-  renderer?.frameShips(ship === null ? [1] : [1, ship]);
+  const inCombat = sim.sector.inCombat;
+  const me = homeShip(sim);
+  // In the combat view the enemy card (top) and the ship strip (bottom) cover the edges: keep the ships clear of them.
+  renderer?.frameShips(ship === null ? [me] : [me, ship], inCombat ? { top: 40, bottom: 170 } : undefined);
 }
 
 /**
