@@ -41,8 +41,13 @@ def build(s2, look=1):
     plane = E - D - T3.BACK
     f = Face(k, ax, plane, -0.5, 0.5, ("cont", "cont"), sec)
     foot = sec.under[0]
-    for z0, z1 in ((sec.zmin, foot), (foot, sec.H)):            # (the armour: not across its foot)
-        f.block(-0.5, 0.5, z0, z1)
+    top = [(foot, sec.H, 0.0)]                                  # (the armour: not across its foot; look 3's band
+    if look == 3:                                               # under the cut set in)
+        from .wall3d_belly_look3 import LOOK3
+        zr = _uz(sec)[1](LOOK3["frame"][1])
+        top = [(foot, zr, 0.0), (zr, sec.H, LINE)]
+    for z0, z1, off in [(sec.zmin, foot, 0.0)] + top:
+        f.block(-0.5, 0.5, z0, z1, off=off)
     back = -0.5 - plane                                         # (the tile's inner edge, d from the block's face)
     prof = [(back, sec.zmin), (0.0, sec.zmin), (0.0, sec.H), (back, sec.H)]
     FR.prism(k, ax, plane, -0.5, 0.5, prof, "steel", 3, [BOTTOM, None, T.CUT, INNER], YS[1])
@@ -91,7 +96,7 @@ def _look1(f, s, back):
         for (a, b), n, w in (((0, e), 0.5, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 2)):   # (its
             z0 = s.z_at(foot, n)                                                 # edge on the slope under it, along
             f.line(*U(a, b), s.z_at(z0, w), z0, CREASE, bevel=False)            # its outline: a px showing past it)
-        f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)    # (and on down the slope's +u end, from its foot)
+        f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)    # (on down the slope's +u end, from the foot)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
@@ -122,7 +127,8 @@ def art(f, planes, wide=False, look=1):
     side is no cut (the front is set in from it; what stands proud of the face may pass it)."""
     s2, c = f
     planes = [q for q in planes if (q[0].x, q[0].y, q[0].z) != (s2[0], s2[1], 0)]   # (not its own tile side: what
-    off = (c - 15) / 32                                         # stands proud of the face runs past it)                                         # (the run set's outline is c 15)
+    off = (c - 15) / 32                                         # stands proud of the face runs past it; the run
+                                                                # set's outline is c 15)
     objs = build(s2, look)
     along = (1, 0) if s2 == (0, 1) else (0, 1)
     if wide:
