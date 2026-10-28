@@ -6,7 +6,7 @@ import { ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { WeaponDef } from '../sim/registry';
 import { ROOF_H } from './heights';
-import { armLength, footprintQuad, isoBracketSegments, padQuad, type Seg } from './targetBrackets';
+import { footprintQuad, padQuad, type Seg } from './targetBrackets';
 
 const C_THREAT = 0xff5a5a;
 const C_OUTLINE = 0x05080d;
@@ -97,11 +97,11 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
         const r = t.radius;
         const quad = footprintQuad(t.x - r, t.y - r, t.w + 2 * r, t.h + 2 * r, { x: 0, y: 0 }, lift, project, 0);
         const pulse = t.flying ? 1 : 0.7 + 0.3 * Math.sin(now / (60 + 240 * t.left));
-        const segs = turned ? turnedSegments(padQuad(quad, extra)) : isoBracketSegments(padQuad(quad, extra));
+        const segs = turned ? turnedSegments(padQuad(quad, extra)) : cornerSegments(padQuad(quad, extra));
         for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
-        gfx.stroke({ width: px(6), color: C_OUTLINE, alpha: 0.85, cap: 'square' });
+        gfx.stroke({ width: px(8), color: C_OUTLINE, alpha: 0.85, cap: 'square' });
         for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
-        gfx.stroke({ width: px(3), color: C_THREAT, alpha: pulse, cap: 'square' });
+        gfx.stroke({ width: px(6), color: C_THREAT, alpha: pulse, cap: 'square' });
         // Countdown ring on the aim area: a squashed (iso) circle whose lit arc shrinks to nothing as the shot comes.
         const c = footprintQuad(t.x, t.y, t.w, t.h, { x: 0, y: 0 }, lift, project, 0);
         const cx = px((c.left.x + c.right.x) / 2);
@@ -130,22 +130,25 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
 type Pt = { x: number; y: number };
 type Quad4 = { top: Pt; right: Pt; bottom: Pt; left: Pt };
 
-/**
- * The iso bracket turned 90 degrees about the footprint's centre: its corners sit at the midpoints of the first mark's sides, and its arms
- * (the same length as the first mark's) run along the diamond joining those midpoints.
- */
+/** Arm length as a share of the side it runs along: the arms are sized in world space, so they scale with zoom like the ring. */
+const ARM_SHARE = 0.28;
+
+function armsAt(p: Pt, a: Pt, b: Pt, out: Seg[], k: number): void {
+  for (const o of [a, b]) {
+    out.push({ x1: p.x, y1: p.y, x2: p.x + (o.x - p.x) * k, y2: p.y + (o.y - p.y) * k });
+  }
+}
+
+/** Corner brackets of the iso footprint: at each vertex, two arms along the edges that meet there, each ARM_SHARE of the edge. */
+function cornerSegments(q: Quad4, k = ARM_SHARE): Seg[] {
+  const v = [q.top, q.right, q.bottom, q.left] as const;
+  const out: Seg[] = [];
+  for (let i = 0; i < 4; i++) armsAt(v[i] as Pt, v[(i + 1) % 4] as Pt, v[(i + 3) % 4] as Pt, out, k);
+  return out;
+}
+
+/** The same bracket turned 90 degrees about the footprint's centre: its corners sit at the midpoints of the first mark's sides. */
 function turnedSegments(q: Quad4): Seg[] {
   const mid = (a: Pt, b: Pt): Pt => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-  const v = [mid(q.top, q.right), mid(q.right, q.bottom), mid(q.bottom, q.left), mid(q.left, q.top)] as const;
-  const arm = armLength(Math.hypot(q.right.x - q.top.x, q.right.y - q.top.y));
-  const out: Seg[] = [];
-  for (let i = 0; i < 4; i++) {
-    const p = v[i] as Pt;
-    for (const o of [v[(i + 1) % 4], v[(i + 3) % 4]] as Pt[]) {
-      const len = Math.hypot(o.x - p.x, o.y - p.y) || 1;
-      const k = Math.min(arm, len / 2) / len;
-      out.push({ x1: p.x, y1: p.y, x2: p.x + (o.x - p.x) * k, y2: p.y + (o.y - p.y) * k });
-    }
-  }
-  return out;
+  return cornerSegments({ top: mid(q.left, q.top), right: mid(q.top, q.right), bottom: mid(q.right, q.bottom), left: mid(q.bottom, q.left) }, ARM_SHARE * Math.SQRT2); // its sides are 1/sqrt2 as long: same arm length as the first mark
 }
