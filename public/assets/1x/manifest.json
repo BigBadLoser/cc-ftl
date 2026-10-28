@@ -4731,6 +4731,10 @@
   },
   "decor": {
    "image": "sprites/decor.png"
+  },
+  "lights": {
+   "image": "sprites/lights.png",
+   "glow": "sprites/lights.glow.png"
   }
  },
  "assets": {
@@ -137313,6 +137317,1210 @@
    "footprint": [
     2,
     2
+   ]
+  },
+  "module.light_cage": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1339,
+    "y": 1,
+    "w": 36,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1376,
+    "y": 1,
+    "w": 36,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1670,
+    "y": 1,
+    "w": 37,
+    "h": 44
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1708,
+    "y": 1,
+    "w": 36,
+    "h": 44
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1890,
+    "y": 1,
+    "w": 53,
+    "h": 38
+   },
+   "anchor": {
+    "x": 29,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r0.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1413,
+    "y": 1,
+    "w": 36,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r1": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1450,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r1.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1057,
+    "y": 1,
+    "w": 42,
+    "h": 56
+   },
+   "anchor": {
+    "x": 18,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1100,
+    "y": 1,
+    "w": 42,
+    "h": 56
+   },
+   "anchor": {
+    "x": 18,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r1.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1799,
+    "y": 1,
+    "w": 43,
+    "h": 43
+   },
+   "anchor": {
+    "x": 18,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r1.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1493,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r2": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1265,
+    "y": 1,
+    "w": 36,
+    "h": 48
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r2.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1143,
+    "y": 1,
+    "w": 36,
+    "h": 56
+   },
+   "anchor": {
+    "x": 18,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1180,
+    "y": 1,
+    "w": 36,
+    "h": 55
+   },
+   "anchor": {
+    "x": 18,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r2.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1843,
+    "y": 1,
+    "w": 46,
+    "h": 39
+   },
+   "anchor": {
+    "x": 26,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r2.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1302,
+    "y": 1,
+    "w": 36,
+    "h": 48
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r3": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1536,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 24,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r3.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1217,
+    "y": 1,
+    "w": 47,
+    "h": 50
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1579,
+    "y": 1,
+    "w": 47,
+    "h": 45
+   },
+   "anchor": {
+    "x": 24,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r3.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1745,
+    "y": 1,
+    "w": 53,
+    "h": 44
+   },
+   "anchor": {
+    "x": 30,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r3.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1627,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 24,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2451,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.broken": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3076,
+    "y": 1,
+    "w": 61,
+    "h": 27
+   },
+   "anchor": {
+    "x": 31,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.off": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2508,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r0": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2565,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r0.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1944,
+    "y": 1,
+    "w": 56,
+    "h": 37
+   },
+   "anchor": {
+    "x": 28,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2001,
+    "y": 1,
+    "w": 56,
+    "h": 37
+   },
+   "anchor": {
+    "x": 28,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r0.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2058,
+    "y": 1,
+    "w": 54,
+    "h": 34
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r0.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2622,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r1": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2679,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r1.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2113,
+    "y": 1,
+    "w": 54,
+    "h": 34
+   },
+   "anchor": {
+    "x": 28,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2736,
+    "y": 1,
+    "w": 54,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r1.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2338,
+    "y": 1,
+    "w": 55,
+    "h": 32
+   },
+   "anchor": {
+    "x": 28,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r1.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2791,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r2": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2848,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r2.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3138,
+    "y": 1,
+    "w": 56,
+    "h": 27
+   },
+   "anchor": {
+    "x": 28,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3195,
+    "y": 1,
+    "w": 56,
+    "h": 27
+   },
+   "anchor": {
+    "x": 28,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r2.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2225,
+    "y": 1,
+    "w": 55,
+    "h": 33
+   },
+   "anchor": {
+    "x": 28,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r2.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2905,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r3": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2962,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r3.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2168,
+    "y": 1,
+    "w": 56,
+    "h": 34
+   },
+   "anchor": {
+    "x": 28,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2281,
+    "y": 1,
+    "w": 56,
+    "h": 33
+   },
+   "anchor": {
+    "x": 28,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r3.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2394,
+    "y": 1,
+    "w": 56,
+    "h": 31
+   },
+   "anchor": {
+    "x": 28,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r3.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3019,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 197,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 246,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 50,
+    "y": 1,
+    "w": 48,
+    "h": 88
+   },
+   "anchor": {
+    "x": 24,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 99,
+    "y": 1,
+    "w": 48,
+    "h": 88
+   },
+   "anchor": {
+    "x": 24,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 891,
+    "y": 1,
+    "w": 61,
+    "h": 76
+   },
+   "anchor": {
+    "x": 37,
+    "y": 61
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r0.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 295,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r1": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 442,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r1.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 491,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 540,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r1.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1003,
+    "y": 1,
+    "w": 53,
+    "h": 66
+   },
+   "anchor": {
+    "x": 28,
+    "y": 49
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r1.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 589,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r2": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 638,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r2.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 736,
+    "y": 1,
+    "w": 48,
+    "h": 79
+   },
+   "anchor": {
+    "x": 24,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 785,
+    "y": 1,
+    "w": 48,
+    "h": 79
+   },
+   "anchor": {
+    "x": 24,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r2.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 834,
+    "y": 1,
+    "w": 56,
+    "h": 78
+   },
+   "anchor": {
+    "x": 24,
+    "y": 61
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r2.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 687,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r3": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 344,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r3.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 48,
+    "h": 89
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 148,
+    "y": 1,
+    "w": 48,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 75
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r3.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 953,
+    "y": 1,
+    "w": 49,
+    "h": 71
+   },
+   "anchor": {
+    "x": 24,
+    "y": 57
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r3.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 393,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
    ]
   }
  },
