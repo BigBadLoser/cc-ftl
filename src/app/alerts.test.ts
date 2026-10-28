@@ -35,7 +35,7 @@ describe('alerts', () => {
     alerts.onEvents([{ type: 'crew.downed', crew }]);
     const list = current(alerts);
     expect(list.map((a) => a.kind)).toEqual(['crew.downed']);
-    expect(list[0]?.text).toContain('is down');
+    expect(list[0]?.text).toContain('Down: ');
   });
 
   describe('arrival warnings', () => {
@@ -63,7 +63,7 @@ describe('alerts', () => {
       let list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]?.kind).toBe('galaxy.incomingHostile');
-      expect(list[0]?.text).toBe('Rust Jackal drops from hyperspace in 2 turns');
+      expect(list[0]?.text).toBe('Arriving: Rust Jackal, 2 turns');
       const id = list[0]?.id;
       pirate.node = a;
       pirate.route = [START_NODE];
@@ -72,7 +72,7 @@ describe('alerts', () => {
       list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]).toMatchObject({ id, kind: 'galaxy.incomingHostile' });
-      expect(list[0]?.text).toMatch(/in 1 turn$/);
+      expect(list[0]?.text).toMatch(/, 1 turn$/);
       pirate.node = START_NODE;
       pirate.route = [];
       sim.galaxy.rev++;
