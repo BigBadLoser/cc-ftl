@@ -5,7 +5,12 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const kinds = ['modules', 'items', 'weapons', 'vehicles', 'recipes', 'factions', 'research'] as const;
 type Kind = typeof kinds[number];
-type CatalogEntry = { id: string; slug: string; name: string; image: string | null };
+type CatalogEntry = {
+  id: string; slug: string; name: string; image: string | null;
+  station?: string; stationSlug?: string;
+  inputs?: Array<{ slug: string; name: string; count: number }>;
+  outputs?: Array<{ slug: string; name: string; count: number }>;
+};
 const data = JSON.parse(await readFile(join(root, 'src/data/generated/reference-catalog.json'), 'utf8')) as Record<Kind, CatalogEntry[]>;
 const staticRoot = join(root, 'static');
 let links = 0, images = 0, pages = 0;
@@ -45,10 +50,17 @@ for (const kind of kinds) {
       images++;
     }
     if (kind === 'recipes') {
-      const station = (entry as CatalogEntry & {station?: string}).station;
+      const station = entry.station;
       if (!station) throw Error('Recipe has no production station: ' + entry.id);
       const stationRoute = data.modules.find(module => module.id === station);
       if (!stationRoute) throw Error('Unknown recipe station: ' + entry.id + ' -> ' + station);
+      if (entry.stationSlug !== stationRoute.slug) throw Error('Incorrect station slug: ' + entry.id);
+      for (const material of [...(entry.inputs ?? []), ...(entry.outputs ?? [])]) {
+        if (!Number.isFinite(material.count) || material.count <= 0) throw Error('Invalid recipe quantity: ' + entry.id);
+        if (!data.items.some(item => item.slug === material.slug && item.name === material.name))
+          throw Error('Broken recipe material reference: ' + entry.id + ' -> ' + material.slug);
+      }
+      if (!entry.inputs || !entry.outputs) throw Error('Missing structured recipe materials: ' + entry.id);
       const stationPage = await readFile(join(root, 'src/routes/reference/modules', stationRoute.slug, '+page.md'), 'utf8');
       if (!stationPage.includes('<ModuleRecipes station="' + station + '" />'))
         throw Error('Production station is missing recipe cards: ' + station);

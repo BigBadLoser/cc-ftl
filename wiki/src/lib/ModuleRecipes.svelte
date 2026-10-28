@@ -1,10 +1,11 @@
 <script lang="ts">
   import generated from '../data/generated/reference-catalog.json';
   import RecipeCard from './RecipeCard.svelte';
+  import type { CatalogEntry } from './reference-types';
 
   let { station }: { station: string } = $props();
   const recipes = $derived(
-    [...generated.recipes]
+    [...(generated.recipes as CatalogEntry[])]
       .filter((recipe) => recipe.station === station)
       .sort((a, b) => a.name.localeCompare(b.name))
   );

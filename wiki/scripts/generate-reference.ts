@@ -101,17 +101,19 @@ async function writeEntry(kind: Kind, id: string, lines: string[]): Promise<void
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, '+page.md'), page(named(kind, id), [...lines, '', '[Back to ' + kind + '](../)']), 'utf8');
 }
+type CatalogMaterial = { slug: string; name: string; count: number };
 type CatalogEntry = {
   id: string; slug: string; name: string; subtitle: string; category?: string;
-  image: string | null; facts: Array<[string, string]>; inputs?: string; outputs?: string; station?: string;
+  image: string | null; facts: Array<[string, string]>;
+  inputs?: CatalogMaterial[]; outputs?: CatalogMaterial[]; station?: string; stationSlug?: string;
 };
 const catalog: Record<Kind, CatalogEntry[]> = {
   modules: [], items: [], weapons: [], vehicles: [], recipes: [], factions: [], research: [],
 };
-function entry(kind: Kind, id: string, subtitle: string, facts: Array<[string, string]>, image?: string, category?: string, inputs?: string, outputs?: string, station?: string): void {
+function entry(kind: Kind, id: string, subtitle: string, facts: Array<[string, string]>, image?: string, category?: string, inputs?: CatalogMaterial[], outputs?: CatalogMaterial[], station?: string): void {
   const def = registries[kind][id];
   if (!def) throw Error('Catalog entry not found: ' + kind + ' ' + id);
-  catalog[kind].push({ id, slug: slug(kind, id), name: def.name, subtitle, category, image: image ?? null, facts, inputs, outputs, station });
+  catalog[kind].push({ id, slug: slug(kind, id), name: def.name, subtitle, category, image: image ?? null, facts, inputs, outputs, station, ...(station ? { stationSlug: slug('modules', station) } : {}) });
 }
 async function writeIndex(kind: Kind, title: string, intro: string): Promise<void> {
   const content = [
@@ -127,6 +129,9 @@ async function saveJson(name: string, data: unknown): Promise<void> {
 }
 function materialLabel(list: Material[]): string {
   return list.map(m => m.count + '× ' + named('items', m.item)).join(' + ');
+}
+function catalogMaterials(list: Material[]): CatalogMaterial[] {
+  return list.map(m => ({ slug: slug('items', m.item), name: named('items', m.item), count: m.count }));
 }
 
 await mkdir(generated, { recursive: true });
@@ -242,7 +247,7 @@ await writeIndex('vehicles', 'Vehicles', 'Shuttles and other craft. Speed values
 
 // Production recipes.
 for (const [id, def] of Object.entries(recipes).sort()) {
-  entry('recipes', id, 'Produced at ' + named('modules', def.station), [['Work', String(def.work)], ['Station', named('modules', def.station)]], previews[def.station]?.url, def.category ?? 'crafting', materialLabel(def.inputs), materialLabel(def.outputs), def.station);
+  entry('recipes', id, 'Produced at ' + named('modules', def.station), [['Work', String(def.work)], ['Station', named('modules', def.station)]], previews[def.station]?.url, def.category ?? 'crafting', catalogMaterials(def.inputs), catalogMaterials(def.outputs), def.station);
   await writeEntry('recipes', id, [
     '**Production station:** ' + link('modules', def.station, 'recipes'), '',
     '**Inputs**', '', ...bulletsOfMaterials(def.inputs, 'recipes'), '',

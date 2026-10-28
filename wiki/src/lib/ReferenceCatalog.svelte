@@ -2,13 +2,9 @@
   import { resolve } from '$app/paths';
   import generated from '../data/generated/reference-catalog.json';
   import RecipeCard from './RecipeCard.svelte';
+  import type { Kind, CatalogEntry } from './reference-types';
 
-  type Kind = 'modules' | 'items' | 'weapons' | 'vehicles' | 'recipes' | 'factions' | 'research';
-  type CatalogItem = {
-    id: string; slug: string; name: string; subtitle: string; category?: string;
-    image: string | null; facts: Array<[string, string]>; inputs?: string; outputs?: string;
-  };
-  const catalog = generated as unknown as Record<Kind, CatalogItem[]>;
+  const catalog = generated as unknown as Record<Kind, CatalogEntry[]>;
   let { kind }: { kind: Kind } = $props();
 
   const paths: Record<Kind, string> = {

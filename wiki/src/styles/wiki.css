@@ -469,8 +469,24 @@
 }
 .wiki-recipe-flow > div { min-width: 0; display: grid; gap: .2rem; }
 .wiki-recipe-flow small { color: var(--wiki-subtle); font-size: .7rem; }
-.wiki-recipe-flow div > span { font-size: .8rem; line-height: 1.4; }
 .wiki-recipe-arrow { color: #5899cd; font-weight: bold; }
+.wiki-recipe-card a { color: var(--wiki-card-color); text-decoration: none; }
+.wiki-recipe-card a:hover { color: #5899cd; text-decoration: underline; }
+.wiki-recipe-card a:focus-visible { outline: 2px solid #5899cd; outline-offset: 2px; }
+.wiki-recipe-card .wiki-reference-subtitle a,
+.wiki-recipe-card .wiki-recipe-materials a { color: #5899cd; }
+:root.dark .wiki-recipe-card .wiki-reference-subtitle a,
+:root.dark .wiki-recipe-card .wiki-recipe-materials a { color: #9acff6; }
+.wiki-recipe-materials {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: .25rem;
+}
+.wiki-recipe-materials li { display: flex; align-items: baseline; gap: .35rem; min-width: 0; font-size: .8rem; line-height: 1.4; }
+.wiki-recipe-materials a { overflow-wrap: anywhere; }
+.wiki-recipe-quantity { flex: none; color: var(--wiki-subtle); font-variant-numeric: tabular-nums; }
 @media (max-width: 1100px) {
   .wiki-reference-grid.wiki-reference-with-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
