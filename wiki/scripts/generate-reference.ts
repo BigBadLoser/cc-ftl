@@ -103,15 +103,15 @@ async function writeEntry(kind: Kind, id: string, lines: string[]): Promise<void
 }
 type CatalogEntry = {
   id: string; slug: string; name: string; subtitle: string; category?: string;
-  image: string | null; facts: Array<[string, string]>; inputs?: string; outputs?: string;
+  image: string | null; facts: Array<[string, string]>; inputs?: string; outputs?: string; station?: string;
 };
 const catalog: Record<Kind, CatalogEntry[]> = {
   modules: [], items: [], weapons: [], vehicles: [], recipes: [], factions: [], research: [],
 };
-function entry(kind: Kind, id: string, subtitle: string, facts: Array<[string, string]>, image?: string, category?: string, inputs?: string, outputs?: string): void {
+function entry(kind: Kind, id: string, subtitle: string, facts: Array<[string, string]>, image?: string, category?: string, inputs?: string, outputs?: string, station?: string): void {
   const def = registries[kind][id];
   if (!def) throw Error('Catalog entry not found: ' + kind + ' ' + id);
-  catalog[kind].push({ id, slug: slug(kind, id), name: def.name, subtitle, category, image: image ?? null, facts, inputs, outputs });
+  catalog[kind].push({ id, slug: slug(kind, id), name: def.name, subtitle, category, image: image ?? null, facts, inputs, outputs, station });
 }
 async function writeIndex(kind: Kind, title: string, intro: string): Promise<void> {
   const content = [
@@ -152,7 +152,13 @@ for (const [id, def] of Object.entries(modules).sort()) {
   if (def.cost?.length) lines.push('', '## Construction materials', '', ...bulletsOfMaterials(def.cost, 'modules'));
   if (def.weapon) lines.push('', '## Weapon', '', link('weapons', def.weapon, 'modules'));
   const stations = Object.entries(recipes).filter(([, recipe]) => recipe.station === id);
-  if (stations.length) lines.push('', '## Production recipes', '', ...stations.map(([rid]) => '- ' + link('recipes', rid, 'modules')));
+  if (stations.length) lines.push(
+    '', '## Production recipes', '',
+    '<script lang="ts">',
+    "  import ModuleRecipes from '$lib/ModuleRecipes.svelte'",
+    '</script>', '',
+    '<ModuleRecipes station="' + html(id) + '" />', ''
+  );
   const unlocks = Object.entries(research).filter(([, project]) => (project.unlocks ?? []).includes(id));
   if (unlocks.length) lines.push('', '## Research', '', ...unlocks.map(([rid]) => '- Unlocked by ' + link('research', rid, 'modules')));
   await writeEntry('modules', id, lines);
@@ -236,7 +242,7 @@ await writeIndex('vehicles', 'Vehicles', 'Shuttles and other craft. Speed values
 
 // Production recipes.
 for (const [id, def] of Object.entries(recipes).sort()) {
-  entry('recipes', id, 'Produced at ' + named('modules', def.station), [['Work', String(def.work)], ['Station', named('modules', def.station)]], previews[def.station]?.url, def.category ?? 'crafting', materialLabel(def.inputs), materialLabel(def.outputs));
+  entry('recipes', id, 'Produced at ' + named('modules', def.station), [['Work', String(def.work)], ['Station', named('modules', def.station)]], previews[def.station]?.url, def.category ?? 'crafting', materialLabel(def.inputs), materialLabel(def.outputs), def.station);
   await writeEntry('recipes', id, [
     '**Production station:** ' + link('modules', def.station, 'recipes'), '',
     '**Inputs**', '', ...bulletsOfMaterials(def.inputs, 'recipes'), '',

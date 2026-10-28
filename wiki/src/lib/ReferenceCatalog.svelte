@@ -1,6 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import generated from '../data/generated/reference-catalog.json';
+  import RecipeCard from './RecipeCard.svelte';
 
   type Kind = 'modules' | 'items' | 'weapons' | 'vehicles' | 'recipes' | 'factions' | 'research';
   type CatalogItem = {
@@ -51,30 +52,27 @@
 <div class:wiki-recipe-grid={kind === 'recipes'} class="wiki-reference-grid"
   class:wiki-reference-with-art={showArtwork}>
   {#each visible as item (item.id)}
-    <a class="wiki-reference-card" href={paths[kind] + item.slug + '/'}>
-      {#if showArtwork && item.image}
-        <div class="wiki-reference-art">
-          <img src={item.image} loading="lazy" width="300" height="190" alt="" />
-        </div>
-      {/if}
-      <div class="wiki-reference-info">
-        <strong class="wiki-reference-title">{item.name}</strong>
-        <span class="wiki-reference-subtitle">{item.subtitle}</span>
-        {#if kind === 'recipes' && item.inputs && item.outputs}
-          <div class="wiki-recipe-flow" aria-label="Recipe">
-            <div><small>Inputs</small><span>{item.inputs}</span></div>
-            <span class="wiki-recipe-arrow" aria-hidden="true">→</span>
-            <div><small>Outputs</small><span>{item.outputs}</span></div>
+    {#if kind === 'recipes'}
+      <RecipeCard recipe={item} />
+    {:else}
+      <a class="wiki-reference-card" href={paths[kind] + item.slug + '/'}>
+        {#if showArtwork && item.image}
+          <div class="wiki-reference-art">
+            <img src={item.image} loading="lazy" width="300" height="190" alt="" />
           </div>
         {/if}
-        {#if item.facts.length}
-          <dl class="wiki-reference-facts">
-            {#each item.facts as [name,value] (name)}
-              <div><dt>{name}</dt><dd>{value}</dd></div>
-            {/each}
-          </dl>
-        {/if}
-      </div>
-    </a>
+        <div class="wiki-reference-info">
+          <strong class="wiki-reference-title">{item.name}</strong>
+          <span class="wiki-reference-subtitle">{item.subtitle}</span>
+          {#if item.facts.length}
+            <dl class="wiki-reference-facts">
+              {#each item.facts as [name,value] (name)}
+                <div><dt>{name}</dt><dd>{value}</dd></div>
+              {/each}
+            </dl>
+          {/if}
+        </div>
+      </a>
+    {/if}
   {/each}
 </div>

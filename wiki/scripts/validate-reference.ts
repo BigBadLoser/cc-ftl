@@ -44,6 +44,15 @@ for (const kind of kinds) {
       if (!inside(location, staticRoot) || !await exists(location)) throw Error('Missing catalog image: ' + entry.image);
       images++;
     }
+    if (kind === 'recipes') {
+      const station = (entry as CatalogEntry & {station?: string}).station;
+      if (!station) throw Error('Recipe has no production station: ' + entry.id);
+      const stationRoute = data.modules.find(module => module.id === station);
+      if (!stationRoute) throw Error('Unknown recipe station: ' + entry.id + ' -> ' + station);
+      const stationPage = await readFile(join(root, 'src/routes/reference/modules', stationRoute.slug, '+page.md'), 'utf8');
+      if (!stationPage.includes('<ModuleRecipes station="' + station + '" />'))
+        throw Error('Production station is missing recipe cards: ' + station);
+    }
   }
   // Catch routes left over from an older generator version.
   const entries = (await readdir(join(root, 'src/routes/reference', kind), { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name);
