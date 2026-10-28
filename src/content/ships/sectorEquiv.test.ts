@@ -45,6 +45,12 @@ function legacyWorld(sim: Sim): unknown {
     void cruiseEvasion;
     return [id, rest];
   });
+  // The telegraph's `commit` on weapons came with the incoming-fire marker (#180): not part of the legacy shape.
+  stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
+    const { commit, ...rest } = raw as Record<string, unknown>;
+    void commit;
+    return [id, rest];
+  });
   // `freeSince` on operate jobs came with station relief: not part of the legacy shape.
   stores.job = (stores.job ?? []).map(([id, raw]) => {
     const { freeSince, ...rest } = raw as Record<string, unknown>;

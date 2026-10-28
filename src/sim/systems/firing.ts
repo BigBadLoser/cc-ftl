@@ -1,10 +1,12 @@
 import { BodyC } from '../body';
-import { consumeAmmo } from '../combat/ammo';
+import { ammoCount, consumeAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
 import { aimDirection, turretPosition } from '../combat/geometry';
-import { operatorSkill } from '../combat/operators';
+import { mannedConsole, operatorSkill } from '../combat/operators';
 
 import { resolveTarget } from '../combat/targets';
+import { updateCommit } from '../combat/commit';
+import { isAiFaction } from '../combat/factions';
 import { ModuleC } from '../modules/components';
 import { VehicleC } from '../vehicles/components';
 import type { WeaponDef } from '../registry';
@@ -33,16 +35,22 @@ export function firingSystem(sim: Sim): void {
     if (!m || !w || !def || !ship || !combat) continue;
     const ready = ship.state === 'active' && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
     if (w.shotsLeft > 0) {
+      w.commit = null;
       if (!ready) w.shotsLeft = 0;
       else if (sim.tick >= w.nextShotTick) launchNext(sim, id, w, weaponId as string, def, shipIdOf(sim, m));
       continue;
     }
-    if (!ready || w.charge < 1 || (combat.hold && !combat.volley)) continue;
-    const target = resolveTarget(sim, id, combat);
+    const held = combat.hold && !combat.volley;
+    // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
+    const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && (!def.ammo || ammoCount(sim, shipId, def.ammo) > 0)));
+    const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;
+    if (!ready || w.charge < 1 || held) continue;
+    const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
     w.charge = 0;
     w.shotsLeft = def.shots;
     w.volleyTarget = target;
+    w.commit = null;
     launchNext(sim, id, w, weaponId as string, def, shipIdOf(sim, m));
   }
   for (const id of sim.world.query(CombatC)) {

@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { UiAiming, UiApi, UiCombat, UiShipCombat } from './api';
   import CombatPlayer from './CombatPlayer.svelte';
+  import EnemyCharges from './EnemyCharges.svelte';
   import Icon from './Icon.svelte';
   import CombatTarget from './CombatTarget.svelte';
   import FloatingWindow from './FloatingWindow.svelte';
@@ -160,6 +161,7 @@
           <span class="st" title="Chance an incoming shot misses"><Icon name="evasion" size={16} /><b>{Math.round(enemy.evasion * 100)}%</b><em>Evade</em></span>
         </div>
         <div class="bar hull" class:low={hullPct < 35}><i style="width:{hullPct}%"></i></div>
+        <EnemyCharges weapons={enemy.charges ?? []} />
       </div>
       <div class="viewbox">
         <canvas class="view" bind:this={viewEl} onclick={tap} onpointermove={move} onpointerleave={() => (hover = 0)} data-testid="combat-view"></canvas>
