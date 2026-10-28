@@ -6,6 +6,7 @@ from . import wall3d_ext_t3 as T3
 from .wall3d_ext_geom import LINE, PAINT, YS
 
 SHADOW = "hbSlope"                   # (the plate's shade on the face by its lit end: a step under the seams' tone)
+GSHADE = "hbShade"                   # (the grille's shade along its top and -u side: darker still)
 
 LOOK3 = {                            # art px: u from the face's +u end (centred on its 32), v down from the cut
     "grille": ((8, 24), (19, 29)),   # the grille's footprint (the plate round it): u, v
@@ -82,8 +83,8 @@ def look3(f, s, back, U, Z, cols):
             f.part(*U(u0, u1), pf, [col] * 4, col, end=False)
         for p in range(ga, gb, 2):                                  # (soft gaps between the slats)
             floor(p, p + 1, sv0, sv1, XS)
-        floor(ga, gb, sv0, sv0 + 1, SEAM)
-        floor(gb - 1, gb, sv0, sv1, SEAM)
+        floor(ga, gb, sv0, sv0 + 1, GSHADE)
+        floor(gb - 1, gb, sv0, sv1, GSHADE)
     with f.tag("slope"):                                            # (the face's and the plate's edge on the
         x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
         for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pb), x + 0.5, 3.5), ((pb, 32), 0.5, 2)):
