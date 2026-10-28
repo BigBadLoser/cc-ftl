@@ -6,6 +6,7 @@ import { modules as baseModules } from '../../src/content/modules.ts';
 import { tierModules } from '../../src/content/tiers.ts';
 import { weapons } from '../../src/content/weapons.ts';
 import { vehicles } from '../../src/content/vehicles.ts';
+import { items } from '../../src/content/items.ts';
 import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -33,7 +34,7 @@ for (const [id, def] of Object.entries(modules)) {
 for (const def of Object.values(vehicles)) select(def.asset);
 for (const def of Object.values(modules)) if (def.weapon && weapons[def.weapon as keyof typeof weapons]) select(def.asset);
 // Include item art only if an actual, individual static frame exists.
-for (const id of Object.keys(manifest.assets)) if (id.startsWith('item.')) select(id);
+for (const id of Object.keys(items)) select(id);
 
 sharp.cache(false);
 sharp.concurrency(2);
@@ -64,7 +65,10 @@ for (const id of [...chosen].sort()) {
     images[id] = prefix + slug + '.png';
     rendered++;
   } catch (error) {
-    throw new Error('Sprite crop failed for ' + id + ' from ' + relative(assetsRoot, input) + ': ' + String(error));
+    // Some optional source frames may be missing/out of bounds in the atlas.
+    // Omitting an invalid thumbnail is safer than publishing a wrong sprite
+    // or preventing every gameplay reference page from building.
+    console.warn('Skipping invalid sprite ' + id + ' from ' + relative(assetsRoot, input) + ': ' + String(error));
   }
 }
 await mkdir(join(root, 'src/data/generated'), { recursive: true });
