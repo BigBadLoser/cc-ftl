@@ -9,7 +9,7 @@ SHADOW = "hbSlope"                   # (the plate's shade on the face by its lit
 
 LOOK3 = {                            # art px: u from the face's +u end (centred on its 32), v down from the cut
     "grille": ((8, 24), (19, 29)),   # the grille's footprint (the plate round it): u, v
-    "slats": (21, 27),               # its slats and soft gaps, v (a shade along its top and its -u side)
+    "slats": (21, 29),               # its slats and soft gaps, v (a shade along its top and its -u side)
     "plate": (3, 2),                 # its plate: the grille and this much more every way, this many px proud
     "inset": (2, 1),                 # the plate's recess (the grille on its floor): its border, its depth
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
@@ -74,8 +74,11 @@ def look3(f, s, back, U, Z, cols):
         (ga, gb), _ = LOOK3["grille"]
         sv0, sv1 = LOOK3["slats"]
 
-        def floor(u0, u1, v0, v1, col):                             # (painted on the plate's recess's floor)
-            pf = [(fi - 0.01, Z(v1)), (fi + PAINT, Z(v1)), (fi + PAINT, Z(v0)), (fi - 0.01, Z(v0))]
+        sh = (k - bd) % 2 / 2                                       # (set out an odd px the floor sits half a px
+
+        def floor(u0, u1, v0, v1, col):                             # lower on screen: its paint shifts back to
+            z0, z1 = Z(v1 - sh), Z(v0 - sh)                         # whole px, not split over two)
+            pf = [(fi - 0.01, z0), (fi + PAINT, z0), (fi + PAINT, z1), (fi - 0.01, z1)]
             f.part(*U(u0, u1), pf, [col] * 4, col, end=False)
         for p in range(ga, gb, 2):                                  # (soft gaps between the slats)
             floor(p, p + 1, sv0, sv1, XS)
