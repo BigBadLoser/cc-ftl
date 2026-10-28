@@ -15,6 +15,7 @@ import { TICK_HZ } from '../../src/sim/time.ts';
 import { modules as baseModules } from '../../src/content/modules.ts';
 import { tierModules } from '../../src/content/tiers.ts';
 import { layersOf } from '../../src/render/layerPick.ts';
+import { layerKey } from '../../src/render/moduleArt.ts';
 import { steady } from '../../src/render/vehicleBayArt.ts';
 import { previewGeometry } from '../../src/ui/buildCatalog.ts';
 import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts';
@@ -35,7 +36,7 @@ sharp.cache(false);
 sharp.concurrency(2);
 await mkdir(dest, { recursive: true });
 
-type Layer = { left: number; top: number; w: number; h: number; png: string };
+type Layer = { left: number; top: number; w: number; h: number; png: string; z: number };
 const iso = (x: number, y: number) => ({ x: (x - y) * HW, y: (x + y) * HH });
 const enc = (s: string) => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const number = (n: number) => Number(n.toFixed(3));
@@ -79,7 +80,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     world.destroyEntity(entity);
   }
   const layers: Layer[] = [];
-  for (const layer of picked) {
+  for (const [index, layer] of picked.entries()) {
     if (layer.optional) continue;
     const match = firstStatic(layer.chain);
     if (!match) continue;
@@ -92,7 +93,12 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
         top:center.y - asset.anchor.y*mult,
         w:asset.frame.w*mult,
         h:asset.frame.h*mult,
-        png:await rawFrame(match.id,asset)
+        png:await rawFrame(match.id,asset),
+        // The world renderer sorts airlock housing, unloaders, hull and
+        // exterior collar by their *tile depth*, not the layer array order.
+        // Flat walk marks sort below equipment; the collar gets its own
+        // exterior bias. Use precisely the game's layerKey() calculation.
+        z:layerKey(layerDef,m,layer,index,false,tile.x+tile.y-(layerDef.solid?0.05:0.5))
       });
     } catch (e) {
       console.warn('Preview layer omitted for '+id+': '+String(e));
@@ -107,7 +113,8 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
         layers.push({
           left:center.x-match.asset.anchor.x*mult,top:center.y-match.asset.anchor.y*mult,
           w:match.asset.frame.w*mult,h:match.asset.frame.h*mult,
-          png:await rawFrame(match.id,match.asset)
+          png:await rawFrame(match.id,match.asset),
+          z:w+h-2+0.93
         });
       } catch (e) { console.warn('Turret preview omitted '+id+': '+String(e)); }
     }
@@ -124,7 +131,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
   const access=def.access?{x:def.access[0],y:def.access[1]}:null;
   const g=previewGeometry(w,h,access,thumb,box);
   const polygon=(points:string,cls:string)=>'<polygon class="'+cls+'" points="'+points+'"/>';
-  const svgLayers=g.sprite && bounds ? layers.map(l=>{
+  const svgLayers=g.sprite && bounds ? [...layers].sort((a,b)=>a.z-b.z).map(l=>{
     const scale=g.sprite!.width/thumb!.w;
     const x=g.sprite!.left+(l.left-bounds.minX)*scale;
     const y=g.sprite!.top+(l.top-bounds.minY)*scale;

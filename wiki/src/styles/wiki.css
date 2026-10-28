@@ -293,3 +293,58 @@
     justify-self: center;
   }
 }
+
+
+/* Reference pages use the space between the navigation and page outline.
+ * Keep a comfortable text measure on explanations, but let catalog grids grow. */
+@media (min-width: 950px) {
+  .theme-default--page-layout .content {
+    width: min(960px, calc(100vw - min(25vw, 288px) - 46px));
+    max-width: 960px;
+    margin-left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) + 24px);
+    margin-right: 22px;
+  }
+  body:has(.toc) .theme-default--page-layout .content {
+    width: min(850px, calc(100vw - min(25vw, 288px) - 220px));
+  }
+  .wiki-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 88px;
+    left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) - 16px);
+    z-index: 1002;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--wiki-card-border);
+    border-radius: 0.4rem;
+    background: var(--wiki-card-bg);
+    color: var(--wiki-card-color);
+    cursor: pointer;
+    transition: left .18s ease, background-color .18s ease;
+  }
+  .wiki-sidebar-toggle:hover { background: var(--wiki-input-bg); }
+  .wiki-sidebar-toggle:focus-visible { outline: 2px solid #5899cd; outline-offset: 2px; }
+  .wiki-sidebar-toggle svg { width: 16px; height: 16px; }
+  html.wiki-sidebar-hidden .theme-default-sidebar {
+    transform: translateX(-100%) !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  html.wiki-sidebar-hidden .wiki-sidebar-toggle { left: 18px; }
+  html.wiki-sidebar-hidden .theme-default--page-layout .content {
+    width: min(1120px, calc(100vw - 60px));
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  html.wiki-sidebar-hidden body:has(.toc) .theme-default--page-layout .content {
+    width: min(990px, calc(100vw - 260px));
+  }
+  html.wiki-sidebar-hidden .header-inner.has-sidebar { padding-left: 1rem; }
+}
+/* SveltePress already provides its own mobile navigation drawer. */
+@media (max-width: 949px) {
+  .wiki-sidebar-toggle { display: none; }
+}
