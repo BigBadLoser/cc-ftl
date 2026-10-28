@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ModuleC, ProjectileC, ShipC, WeaponC, newGame, type Sim, type SimEvent } from '../../sim';
-import { commitCharge } from '../../sim/combat/commit';
+import { cutLeaving } from '../../sim/sector/refs';
+import { commitCharge, commitValid } from '../../sim/combat/commit';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 
@@ -84,5 +85,29 @@ describe('incoming-fire telegraph', () => {
     sim.step();
     expect(committed()).toEqual([]);
     expect(sim.world.get(enemy, ShipC)).toBeDefined();
+  });
+
+  it('drops a commit when its target ship is no longer a valid target (fled, captured)', { timeout: 120000 }, () => {
+    for (const state of ['fled', 'prize'] as const) {
+      const { sim, player, enemy } = fight();
+      const ws = enemyWeapons(sim, enemy);
+      until(sim, () => ws.some((id) => !!sim.world.get(id, WeaponC)?.commit));
+      const c = sim.world.get(ws.find((id) => sim.world.get(id, WeaponC)?.commit) as number, WeaponC)!.commit!;
+      expect(commitValid(sim, c)).toBe(true);
+      sim.world.get(player, ShipC)!.state = state;
+      expect(commitValid(sim, c)).toBe(false); // another opponent may keep the fight going, so the commit itself must refuse the ship
+      sim.step();
+      expect(ws.filter((id) => sim.world.get(id, WeaponC)!.commit)).toEqual([]);
+    }
+  });
+
+  it('clears a commit at a ship that leaves the node (archive cut), but keeps one on a ship that stays', () => {
+    const commit = { target: { ship: 7, moduleId: 3 }, x: 1, y: 2, w: 1, h: 1, from: 0.5 };
+    const gone = { weapon: { target: null, volleyTarget: null, shotsLeft: 0, commit: { ...commit } } };
+    cutLeaving(gone, (id) => id !== 7);
+    expect(gone.weapon.commit).toBeNull();
+    const stays = { weapon: { target: null, volleyTarget: null, shotsLeft: 0, commit: { ...commit } } };
+    cutLeaving(stays, () => true);
+    expect(stays.weapon.commit).not.toBeNull();
   });
 });

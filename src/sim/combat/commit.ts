@@ -4,6 +4,8 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { COMMIT_MAX_FRACTION, COMMIT_WINDOW_SEC } from '../tuning';
 import { WeaponC, type Commit, type Target } from './components';
+import { shipById } from './ships';
+import { targetableShip } from './targets';
 
 /** Charge level (0..1) at which a weapon with `chargeSec` commits its aim: the last COMMIT_WINDOW_SEC, but at most COMMIT_MAX_FRACTION of the charge. */
 export function commitCharge(chargeSec: number): number {
@@ -21,8 +23,9 @@ export function aimRectOf(sim: Sim, t: Target): { x: number; y: number; w: numbe
   return { x: m.x, y: m.y, w, h };
 }
 
-/** True if a stored commit can still be honoured: its target ship exists and its module (if any) is still intact on it. */
+/** True if a stored commit can still be honoured: its target ship is still a valid target (not fled, captured, a wreck or gone: the test `resolveTarget` applies) and its module (if any) is still intact on it. */
 export function commitValid(sim: Sim, c: Commit): boolean {
+  if (!targetableShip(sim, c.target.ship) || shipById(sim, c.target.ship)?.state === 'wreck') return false;
   if (c.target.tile || !c.target.moduleId) return true;
   const m = sim.world.get(c.target.moduleId, ModuleC);
   return !!m && m.hp > 0 && shipIdOf(sim, m) === c.target.ship;
