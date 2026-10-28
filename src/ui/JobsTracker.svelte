@@ -10,7 +10,7 @@
    * A row opens the Jobs window. Desktop only: no phone variant.
    */
   let { api, onOpen }: { api: UiApi; onOpen: () => void } = $props();
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
   let collapsed = $state(readCollapsed('jobs'));
   function toggle() {
     collapsed = !collapsed;

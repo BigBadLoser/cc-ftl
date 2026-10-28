@@ -159,6 +159,11 @@ export interface Deal {
   trip?: { n: number; of: number; rest: Trip[]; stopped?: string };
   /** A hiring run: the recruits (crew entities of the station) the shuttle fetches. The escrow is their cost, paid when they arrive. */
   crew?: number[];
+  /**
+   * A delivery handover (galaxy/handover.ts): the station's shuttle comes to the player's airlock for the crate of job `job`. No goods and no escrow; the
+   * deal's `ship` is the station. `retryAt` is the tick after which a called-off run may be tried again.
+   */
+  handover?: { job: number; retryAt?: number };
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */

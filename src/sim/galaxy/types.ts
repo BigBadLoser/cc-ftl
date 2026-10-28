@@ -333,14 +333,19 @@ export interface EncounterResult {
 /**
  * A station job the player took (jobs.ts). `key` is the offer it came from (jobOffers.ts); `issuer` the galaxy faction that pays; `from` the port.
  * A delivery carries `count` of `item` to `to` (a node). A bounty is for one ship named `target` of `targetFaction` (generator `shipgen`, `seed`, `depth`),
- * placed at node `node` (one the player has not entered yet) when the job is taken.
+ * placed at node `node` (one the player has not entered yet) when the job is taken. A survey is for entering node `node`, which has `feature`.
+ * A finished bounty or survey becomes a claim (`GalaxyState.claims`, `done` true): paid by `jobs.handIn` at a port of the issuing station class.
  */
+export type StationJobKind = 'delivery' | 'bounty' | 'survey';
+
 export interface StationJob {
   id: number;
   key: string;
-  kind: 'delivery' | 'bounty';
+  kind: StationJobKind;
   issuer: string;
   from: string;
+  /** The issuing port's `stationClass` (ports.ts): a finished bounty or survey is handed in at a port of this class owned by `issuer`. */
+  station?: string;
   reward: number;
   /** The turn it must be done by. */
   due: number;
@@ -352,7 +357,14 @@ export interface StationJob {
   shipgen?: string;
   seed?: number;
   depth?: number;
+  /** A bounty's node (its target waits there) or a survey's node (entering it completes the survey). */
   node?: string;
+  /** A survey's feature, what the node has to survey: a body kind ('nebula', 'black_hole', 'blue_giant') or 'asteroids'. */
+  feature?: string;
+  /** A delivery: the station shuttle has taken the crate (trade/handover.ts); the next `tendJobs` pays it. */
+  collected?: boolean;
+  /** A delivery: handover runs called off so far (the crate is handed across by hand after a few). */
+  handoverTries?: number;
 }
 
 /** The player's notoriety and who last sent hunters after them (heat.ts, hunters.ts). */
@@ -412,6 +424,8 @@ export interface GalaxyState {
   heat: HeatState;
   /** Jobs the player holds (jobs.ts), and the offer keys already taken or finished (newest last). */
   jobs: StationJob[];
+  /** Finished bounties and surveys not yet handed in (jobs.ts): they never expire and are not shown as tasks. */
+  claims: StationJob[];
   jobLog: string[];
   /** Crew-for-hire keys already hired (recruit.ts), newest last. */
   recruitLog: string[];

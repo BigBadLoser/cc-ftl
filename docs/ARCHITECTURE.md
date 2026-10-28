@@ -1898,3 +1898,18 @@ world grid (`render/worldGrid.ts`, Pixi `pixelLine`) is drawn, and with Hull pla
 0/45/90 brush later is one more source of tile lists.
 
 **Debug start:** `?scenario=hullplan` spawns a trading hub (visit cap 100) beside the ship, 100000 credits and 500 metal (`debug.giveItems`), and opens Hull plan.
+
+## Station jobs by station type (issue #178)
+
+Offers (`galaxy/jobOffers.ts`) are still a pure function of (seed, port, window, slot). The port's station type (`Port.station`, from `StructureDef.station`; `stationClass(port)` in `ports.ts`, 'den' for a pirate den) decides the kind:
+trade stations post deliveries only, military stations and depots bounties only, research stations **surveys** only, dens the old half-and-half mix. Tuning is in `tuningJobs.ts`.
+
+- **Bounty and survey completion** (`jobs.ts` `tendJobs`): the kill (or entering a survey's node) moves the job from `galaxy.jobs` to `galaxy.claims` and emits `job.completed`. A claim never expires, is not a task (no tracker or HUD entry) and does not
+  count against `MAX_JOBS`. Command `jobs.handIn {id}` pays it (normal credit path, standing, stats, `job.handedIn`) at a port of the issuing station class (`StationJob.station`) owned by the issuing faction, at the player's node.
+  A survey's target is a node with a feature: a sector body of kind nebula, black hole or blue giant, or an asteroid field (`featureOf`). A scanner module requirement is a later follow-up.
+- **Delivery handover** (`galaxy/handover.ts`): arriving with the crate aboard asks the station for its shuttle. It runs as a `Deal` with `Deal.handover` set (no goods, no escrow; the trade courier is spawned, flies to a working player airlock and docks).
+  Crew haul the crate from the deck into its hold (an ordinary floor-to-vehicle haul through the airlock's unloaders; the hold is sealed `outbound` so it is not unloaded again). When the shuttle has it, `StationJob.collected` is set and `tendJobs`
+  pays (`job.handedOver`, `via: 'shuttle'`); the shuttle leaves like any courier. Fallbacks: combat holds the shuttle back (the crate stays, the job's clock runs, it is tried again when calm); a run that cannot dock or load is called off and retried after
+  `HANDOVER_RETRY_SEC`; no station ship, no shuttle model, no working airlock, or `MAX_TRIES` failed runs hand the crate across by hand at once (`via: 'instant'`). A live handover blocks jumping like any live deal.
+- Debug: `?scenario=handover|bounty|survey` (`debug.jobScenario`, `galaxy/jobsDebug.ts`).
+- Save v65: `GalaxyState.claims`, `StationJob.station/feature/collected/handoverTries`, `Deal.handover`.

@@ -13,6 +13,7 @@ import { storagesHolding } from './player';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
 import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
+import { stepHandover } from '../galaxy/handover';
 import { boardRecruits, landRecruits, lostRecruit } from './recruitLand';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
@@ -35,6 +36,7 @@ export function advanceDeals(sim: Sim): void {
 
 function step(sim: Sim, d: Deal): void {
   d.timer++;
+  if (d.handover) return stepHandover(sim, d);
   if (d.courier === 'them' && d.phase === 'dispatch') {
     d.vehicle = spawnCourier(sim, d);
     if (!d.vehicle) return failDeal(sim, d, 'noCourier');
