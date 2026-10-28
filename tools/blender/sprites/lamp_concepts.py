@@ -1664,3 +1664,34 @@ def floor_inset_grate():
 
 
 SPRITES.append(("concept.floor_inset_grate.flat", (1, 1), "block", floor_inset_grate))
+
+
+def floor_wheel_framed():
+    """The wheel with the framed grate's choices: a light grey frame ring, no bolts, its outer edge 0.45 of a tile
+    (the grate's margin), level with the deck."""
+    k = K("lc_f_wheel_framed", (1, 1), 0)
+    outer, lip, d, n = 0.45, 0.07, 0.1, 64
+    r = outer - lip
+    for i in range(n):
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        mid = (a0 + a1) / 2
+        for j, col in enumerate(WARM_WALL):
+            za, zb = -d * j / len(WARM_WALL), -d * (j + 1) / len(WARM_WALL)
+            SK.face(k, [(r * math.cos(a0), r * math.sin(a0), za), (r * math.cos(a1), r * math.sin(a1), za),
+                        (r * math.cos(a1), r * math.sin(a1), zb), (r * math.cos(a0), r * math.sin(a0), zb)],
+                    (-math.cos(mid), -math.sin(mid), 0), col)
+    k.cyl(0, 0, -d - 0.02, r + 0.02, 0.02, "steelD", sides=n)
+    k.cyl(0, 0, -d, r - 0.02, 0.02, "fxW", sides=n)                                        # the light
+    _annulus(k, -0.004, 0.11, 0.135, "steelD", top="steel", h=0.018)                       # grate rings
+    _annulus(k, -0.004, 0.23, 0.255, "steelD", top="steel", h=0.018)
+    for a in range(8):                                                                 # spokes
+        ang = a * math.pi / 4 + math.pi / 8
+        k.box((r / 2 + 0.03) * math.cos(ang), (r / 2 + 0.03) * math.sin(ang), -0.004, r - 0.06, 2.2 * PX, 0.018,
+              "steelD", top="steel", rz=ang)
+    k.cyl(0, 0, -0.004, 0.065, 0.022, "steel", top="steelL", sides=32)                     # hub
+    _annulus(k, 0.0, r, outer, "steelD", top="gm", h=0.012)                                 # the frame ring
+    k.m.dz = -0.016                                                                    # top level with the deck
+    return [*k.build(), _holdout_round("lc_f_wheel_framed_h", outer, n)]
+
+
+SPRITES.append(("concept.floor_wheel_framed.flat", (1, 1), "block", floor_wheel_framed))
