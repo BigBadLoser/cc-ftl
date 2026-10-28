@@ -141,7 +141,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
       console.warn('Preview layer omitted for '+id+': '+String(e));
     }
   }
-  if (def.container && layers.length === 0) {
+  if ((def.container || id === 'module.cargo_container') && layers.length === 0) {
     layers.push(await gameContainerFallback(w,h));
     fallbacks++;
   }
@@ -214,7 +214,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     +'</svg>';
   const name=slug(id)+'.png';
   await sharp(Buffer.from(svg)).resize(600,400,{kernel:'nearest'}).png({compressionLevel:9}).toFile(join(dest,name));
-  result[id]={url:urlPrefix+name,art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt,gameFallback:!!def.container && layers.length>0};
+  result[id]={url:urlPrefix+name,art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt,gameFallback:(!!def.container || id === 'module.cargo_container') && layers.length>0};
   if(layers.length){withArt++;if(layers.length>1)multi++;totalLayers+=layers.length;}else {blank++;console.warn('No atlas artwork for module '+id+' ('+def.name+')');}
 }
 await mkdir(join(root,'src/data/generated'),{recursive:true});

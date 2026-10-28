@@ -139,7 +139,7 @@ for (const [id, def] of Object.entries(modules).sort()) {
   moduleCatalog.push({ id, slug: slug('modules', id), name: def.name, category: def.category ?? 'other', footprint: def.footprint, power: def.power, image: img ?? null, artAvailable: !!previews[id]?.art });
   entry('modules', id, def.footprint.join(' × ') + ' tiles', [['Power', String(def.power)]], img, def.category);
   const lines = [
-    img ? '<figure class="wiki-placement-figure"><img src="' + html(img) + '" alt="Isometric placement preview of ' + html(def.name) + ', ' + def.footprint.join(' by ') + ' tiles" loading="lazy" width="600" height="400" /><figcaption>' + def.footprint.join(' × ') + ' tile footprint' + (!previews[id]?.art ? ' · Artwork pending' : previews[id]?.gameFallback ? ' · Uses the in-game fallback art' : previews[id]?.placeholder ? ' · Base-tier art used as a placeholder' : '') + '</figcaption></figure>' : '', '',
+    img ? '<figure class="wiki-placement-figure"><img src="' + html(img) + '" alt="Isometric placement preview of ' + html(def.name) + ', ' + def.footprint.join(' by ') + ' tiles" loading="lazy" width="600" height="400" /><figcaption>' + def.footprint.join(' × ') + ' tile footprint' + (!previews[id]?.art ? ' · Artwork pending' : previews[id]?.gameFallback ? ' · Procedural container art (atlas asset unavailable)' : previews[id]?.placeholder ? ' · Base-tier art used as a placeholder' : '') + '</figcaption></figure>' : '', '',
     def.description ? text(def.description) : 'Ship equipment.', '',
     '## Statistics', '', ...stats([
       ['Category', def.category ?? 'other'],
