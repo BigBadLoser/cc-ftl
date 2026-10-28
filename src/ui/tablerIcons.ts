@@ -7,6 +7,7 @@ import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_broadcast from '@tabler/icons/outline/broadcast.svg?raw';
 import t_bug from '@tabler/icons/outline/bug.svg?raw';
+import t_download from '@tabler/icons/outline/download.svg?raw';
 import t_check from '@tabler/icons/outline/check.svg?raw';
 import t_checklist from '@tabler/icons/outline/checklist.svg?raw';
 import t_chevron_down from '@tabler/icons/outline/chevron-down.svg?raw';
@@ -99,6 +100,7 @@ export const FILES = {
   roof: 'eye',
   overlay: 'stack',
   debug: 'bug',
+  download: 'download',
   pause: 'player-pause',
   play: 'player-play',
   fast: 'player-track-next',
@@ -153,6 +155,7 @@ const RAW: Record<string, string> = {
   'bolt': t_bolt,
   'broadcast': t_broadcast,
   'bug': t_bug,
+  'download': t_download,
   'check': t_check,
   'checklist': t_checklist,
   'chevron-down': t_chevron_down,

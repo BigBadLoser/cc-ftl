@@ -13,6 +13,7 @@
   import TradeWindow from './TradeWindow.svelte';
   import StationPanel from './StationPanel.svelte';
   import DebugPanel from './DebugPanel.svelte';
+  import BugReport from './BugReport.svelte';
   import SelectionPanel from './SelectionPanel.svelte';
   import CrewBar from './CrewBar.svelte';
   import PriorityGrid from './PriorityGrid.svelte';
@@ -42,6 +43,21 @@
 
   let canvas: HTMLCanvasElement;
   let debug = $state(false);
+  let reporting = $state(false);
+  /** The speed to restore when the bug report closes (null: it was already paused). */
+  let speedBeforeReport: 1 | 2 | 3 | null = null;
+  function openReport() {
+    if (reporting) return;
+    const s = snap?.speed ?? 0;
+    speedBeforeReport = s === 0 ? null : s;
+    api.setSpeed(0);
+    reporting = true;
+  }
+  function closeReport() {
+    reporting = false;
+    if (speedBeforeReport !== null) api.setSpeed(speedBeforeReport);
+    speedBeforeReport = null;
+  }
   let stockOpen = $state(false);
   let jobsOpen = $state(false);
   let researchOpen = $state(false);
@@ -163,6 +179,7 @@
 
   function onKey(e: KeyboardEvent) {
     if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (reporting && e.key !== '`') return; // the bug report keeps the game paused and handles its own keys
     if (e.key === ' ') {
       e.preventDefault();
       api.togglePause();
@@ -242,6 +259,9 @@
 {#if stockOpen}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />
 {/if}
+{#if reporting}
+  <BugReport {api} onClose={closeReport} />
+{/if}
 {#if debug && snap}
   <DebugPanel {api} {snap} />
 {/if}
@@ -252,7 +272,7 @@
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
     <button class="tile" class:on={roofOn} aria-pressed={roofOn} title="Roof: {roofOn ? 'on (outside view)' : 'off'}" aria-label="Roof" data-testid="toggle-roof" onclick={toggleRoof}><Icon name="roof" size={18} /></button>
     <OverlayPicker {api} />
-    <button class="tile" class:on={debug} title="Debug" aria-label="Debug" onclick={() => (debug = !debug)}><Icon name="debug" size={18} /></button>
+    <button class="tile" class:on={reporting} title="Report a bug" aria-label="Report a bug" data-testid="report-bug" onclick={openReport}><Icon name="debug" size={18} /></button>
 </ToolBar>
 {#if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
