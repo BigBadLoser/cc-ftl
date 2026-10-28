@@ -6,7 +6,7 @@ from .wall3d_ext_geom import LINE, PAINT, YS
 
 LOOK3 = {                            # art px: u from the face's +u end (centred on its 32), v down from the cut
     "grille": ((8, 24), (19, 29)),   # the grille's slats and soft gaps: u, v
-    "plate": 2,                      # its plate (a px proud): the grille and this much more every way
+    "plate": 3,                      # its plate (a px proud): the grille and this much more every way
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
 }                                    # each side
 
@@ -36,9 +36,14 @@ def look3(f, s, back, U, Z, cols):
         f.line(*U(0, 1), foot, Z(1), EDGE, end=False, bevel=False)
         f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])
     (pa, pb, pv0, pv1), _ = _rects()
-    with f.tag("grille"):                                           # (the plate: lit along its top by its facing)
-        f.raised(*U(pa, pb), max(foot, Z(pv1)), Z(pv0), -0.01, LINE, "face", cap=YS[2])
-        fr = s.front(foot, foot)[0][0] + LINE
+    with f.tag("grille"):                                           # (the plate: its top and its +u end, where it
+        d = s.front(foot, foot)[0][0]                               # meets the face, in the soft shade)
+        fr = d + LINE
+        zb, zt = max(foot, Z(pv1)), Z(pv0)
+        pp = [(d - 0.01, zb), (fr, zb), (fr, zt), (d - 0.01, zt)]
+        pc = s.cols(pp, "face")
+        pc[2] = XS
+        f.part(*U(pa, pb), pp, pc, XS, end=False)
         (ga, gb), (gv0, gv1) = LOOK3["grille"]
         for p in range(ga, gb, 2):                                  # (soft gaps between the slats, on its front)
             pf = [(fr - 0.01, Z(gv1)), (fr + PAINT, Z(gv1)), (fr + PAINT, Z(gv0)), (fr - 0.01, Z(gv0))]
