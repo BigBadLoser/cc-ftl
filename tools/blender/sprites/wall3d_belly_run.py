@@ -16,7 +16,7 @@ RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes
 INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
 XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam and shade, the slope's
                                                      # seams (navy: the lip's edge on it too), its rim
-EDGE = "hsXL"                                        # (a face's edge: a step over its tone)
+EDGE = "hbEdge"                                      # (a face's edge: a faint light over its tone)
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 10),        # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (7, 16)),                # the centre plate, a px proud, lit along its top, a px of shade under
@@ -69,7 +69,7 @@ def _look1(f, s, back):
     with f.tag("panel"):
         (a, b), (v0, v1) = LOOK1["panel"]
         u0, u1 = U(a, b)
-        f.shade(u0, u1, Z(v1), Z(v1 - 2), XS, side=0.0)              # (under it only: the plate hides half)
+        f.shade(u0, u1, Z(v1), Z(v1 - 2), XS, under=3, side=0.0)     # (under it only: the plate hides half)
         f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
     with f.tag("lip"):                                          # (lit along its top by its facing)
         h, e, x = LOOK1["lip"]
