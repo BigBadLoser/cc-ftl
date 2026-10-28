@@ -3,7 +3,7 @@ import type { FactionRelationDef, GalaxyContent, GalaxyFactionDef, Stance } from
 /**
  * The faction relations table, read through one lookup. `GalaxyContent.relations` lists a pair once; this indexes both directions (and caches
  * per content object). A faction is never at war with itself; a pair with no entry is neutral and shares no standing. `alwaysHostile`
- * factions (the rogue AI) are at war with everyone whatever the table says.
+ * factions (the rogue AI) are at war with everyone whatever the table says, unless the table lists the pair as allied.
  */
 interface Pair {
   stance: Stance;
@@ -33,8 +33,11 @@ export function stanceBetween(content: GalaxyContent, a: string, b: string): Sta
   const fa: GalaxyFactionDef | undefined = content.factions[a];
   const fb: GalaxyFactionDef | undefined = content.factions[b];
   if (!fa || !fb) return 'neutral';
+  const listed = pairs(content.relations).get(key(a, b))?.stance;
+  // An explicit alliance beats `alwaysHostile` (the zealots serve the machines).
+  if (listed === 'allied') return 'allied';
   if (fa.alwaysHostile || fb.alwaysHostile) return 'war';
-  return pairs(content.relations).get(key(a, b))?.stance ?? 'neutral';
+  return listed ?? 'neutral';
 }
 
 /** Do the two fight on sight? */

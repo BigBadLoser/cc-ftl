@@ -6,7 +6,7 @@ const NO_WORK = { firefighting: 0, medical: 0, operating: 0, repair: 0, construc
 /** Crew who are not gunners grab one of these from storage when boarders are aboard (best first), and put it back afterwards. */
 const EMERGENCY_ARMS = ['item.rifle', 'item.sidearm', 'item.blade'];
 
-export const roles = {
+const baseRoles = {
   'role.engineer': {
     name: 'Engineer',
     priorities: { firefighting: 2, medical: 4, operating: 3, repair: 1, construction: 1, hauling: 3, refining: 2, crafting: 2, research: 3, cooking: 4, patrol: 0 },
@@ -78,4 +78,15 @@ export const roles = {
   'role.alien_hunter': { name: 'Hunter', species: 'species.alien_hunter', priorities: NO_WORK, skills: { melee: 2 } },
   'role.alien_brute': { name: 'Brute', species: 'species.alien_brute', priorities: NO_WORK, skills: { melee: 2 } },
   'role.alien_spitter': { name: 'Spitter', species: 'species.alien_spitter', priorities: NO_WORK, skills: { gunnery: 2 } },
+} satisfies Record<string, RoleDef>;
+
+/** The zealots' crews: the usual trades in the machine-touched body (`species.augmented`, fearless). Real implants arrive with phase 7. */
+const augmented = (name: string, role: RoleDef): RoleDef => ({ ...role, name, species: 'species.augmented' });
+
+export const roles = {
+  ...baseRoles,
+  'role.zealot_pilot': augmented('Zealot pilot', baseRoles['role.pilot']),
+  'role.zealot_gunner': augmented('Zealot gunner', baseRoles['role.gunner']),
+  'role.zealot_guard': augmented('Zealot guard', baseRoles['role.security']),
+  'role.zealot_engineer': augmented('Zealot engineer', baseRoles['role.engineer']),
 } satisfies Record<string, RoleDef>;

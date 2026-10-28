@@ -7,12 +7,14 @@ import { isDormant } from './dormant';
 import type { Ship } from './components';
 
 /**
- * True when an enemy ship has nothing left to fight with: it is a hostile ship (not a rogue AI one, whose fabricators replace lost robots, nor a dormant den or an outpost) that
+ * True when an enemy ship has nothing left to fight with: it is a hostile ship (not a machine-crewed rogue AI one, whose fabricators replace lost robots, nor a dormant den or an outpost) that
  * had crew, every one of them is subdued (surrendered, downed or inert) or dead, and no player crew stand aboard (boarders going for a capture
  * must be left to take the ship; see capture/control). Such a ship is given up: it becomes a derelict.
  */
 export function crewSubdued(sim: Sim, shipId: number, ship: Ship): boolean {
-  if (ship.faction !== 'hostile' || ship.outpost || isDormant(ship)) return false;
+  // A rogue-side ship counts too when it is crewed by the living (the zealots, allied to the machines): nothing replaces its dead.
+  const crewed = ship.faction === 'hostile' || (ship.faction === 'rogue' && !!ship.gen && !!sim.content.factions?.[ship.gen.faction]?.living);
+  if (!crewed || ship.outpost || isDormant(ship)) return false;
   let crew = 0;
   for (const id of sim.world.query(CrewC, PositionC)) {
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== shipId) continue;

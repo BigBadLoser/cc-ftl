@@ -8,8 +8,8 @@ import { strHash } from '../galaxy/hash';
 /**
  * Attach a black-market service set to a station (an entity with a trader, or a ship that can have one). The station keeps its own trade profile
  * and port market; the set adds to it: its stock lines on the shelf, its price mods and contraband buying (pricing.ts), the fence when it has one,
- * shady crew (galaxy/recruit.ts) and the node's truce flag when the set has a truce. If the set names an owner faction that exists, the station is
- * that faction's (so its standing sets the prices and the hail); otherwise the owner is left as it was. Idempotent for a set already attached.
+ * shady crew (galaxy/recruit.ts) and the node's truce flag when the set has a truce. The set's owner faction becomes the station's (so its standing sets the prices
+ * and the hail), and its trade faction, if it names one, replaces the station's. Idempotent for a set already attached.
  * Returns false for an unknown set or an entity that cannot trade.
  */
 export function attachServices(sim: Sim, station: number, setId: string): boolean {
@@ -22,7 +22,8 @@ export function attachServices(sim: Sim, station: number, setId: string): boolea
   const id = stationIdentity(sim.world.get(station, ShipC)?.gen?.seed, station);
   const fence = rollFence(sim, def, id);
   if (fence !== undefined) t.fence = Math.max(t.fence ?? 0, fence);
-  if (def.owner && sim.content.galaxy?.factions[def.owner]) t.owner = def.owner;
+  if (def.owner) t.owner = def.owner;
+  if (def.tradeFaction) t.faction = def.tradeFaction;
   for (const l of rollServiceStock(sim, def, id, strHash(setId))) {
     const line = t.stock.find((s) => s.item === l.item);
     if (line) line.count = Math.max(line.count, l.count);

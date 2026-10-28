@@ -133,6 +133,8 @@ export function spawnShip(
       party: template.boarding.party, afterTicks: Math.round(template.boarding.afterSec * TICK_HZ),
       losingBelow: template.boarding.losingBelow, state: 'idle', timer: 0, vehicle: 0, crew: [],
       ...(template.boarding.weapon ? { weapon: template.boarding.weapon } : {}),
+      ...(template.boarding.prefer ? { prefer: true as const } : {}),
+      ...(template.boarding.coreRaid ? { coreRaid: true as const } : {}),
     });
   }
   spawnCrew(sim, ship, template.crew ?? [], opts.rest);

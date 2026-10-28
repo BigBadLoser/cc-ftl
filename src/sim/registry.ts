@@ -24,7 +24,15 @@ export interface ShipTemplate {
    * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
    * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
    */
-  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
+  boarding?: {
+    party: number; afterSec: number; losingBelow: number;
+    /** Hand weapon (item id) issued to the party when it leaves. */
+    weapon?: string;
+    /** Raiders: once the party is on its way the ship stops shooting, so the prize is not wrecked under it. */
+    prefer?: true;
+    /** Zealots: the party heads for the player's AI core (capture/coreRaid.ts) and tears it out if it holds it. */
+    coreRaid?: true;
+  };
 }
 
 import type { EventDef, GoalActDef } from './story/defs';

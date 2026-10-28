@@ -194,6 +194,8 @@ export interface FactionDef {
   living: boolean;
   /** Has an AI core (needed for point defence). */
   aiCore: boolean;
+  /** Its crews never surrender and its ships are never taken as prizes: a fight with them ends in a derelict (the zealots). */
+  neverSurrender?: true;
   crew: { required: readonly string[]; pool: readonly Weighted<string>[]; species: readonly string[] };
   doctrine: { targeting: NonNullable<ShipTemplate['doctrine']>; boarding?: NonNullable<ShipTemplate['boarding']> };
   budget: ShipBudget;

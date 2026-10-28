@@ -46,7 +46,6 @@
   const refusal: Record<string, string> = {
     hostile: 'They have no interest in talking to you.', weaponsHot: 'Their guns are on you: they will not talk.',
     silent: 'No answer. Nobody is aboard to hear.', noTrade: 'They have nothing to trade.',
-    rule: 'They do not deal with outsiders. Earn their standing first.',
   };
   const courierNote = $derived(
     !route ? '' : route.error ? (REASONS[route.error] ?? route.error)

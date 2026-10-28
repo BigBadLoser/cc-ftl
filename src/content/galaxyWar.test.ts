@@ -3,6 +3,7 @@ import {
   ShipC, clash, deserialize, econOf, galaxyIndex, newGame, newsFeed, portOf, portsAt, reportNews, resolveMeetings, serialize, stockAt,
   type Sim,
 } from '../sim';
+import { atWar } from '../sim/galaxy/clash';
 import { encounterKind } from '../sim/galaxy/encounters';
 import { nodesWithin, syncFleets } from '../sim/galaxy/fleets';
 import { ensureChunk, nodeState } from '../sim/galaxy/state';
@@ -63,8 +64,11 @@ interface Scene { sim: Sim; node: string; patrol: Fleet; pirate: Fleet; trader: 
 function scene(parked = true): Scene {
   for (let seed = 3; seed < 60; seed++) {
     const sim = farWorld(seed);
-    const pirate = byRole(sim, 'pirate');
-    const patrol = sim.galaxy.fleets.find((f) => f.role === 'patrol' && f.ships.length > 0 && f.faction !== pirate?.faction);
+    // A pirate fleet with a patrol at war with it (the mercenaries are neutral to all, and the cartel to the corporations): the scene is about a fight.
+    const pirates = sim.galaxy.fleets.filter((f) => f.role === 'pirate' && f.ships.length > 0);
+    const foes = (pirate: Fleet): Fleet | undefined => sim.galaxy.fleets.find((f) => f.role === 'patrol' && f.ships.length > 0 && atWar(sim, f.faction, pirate.faction));
+    const pirate = pirates.find((f) => foes(f));
+    const patrol = pirate && foes(pirate);
     const trader = byRole(sim, 'trader');
     if (!pirate || !patrol || !trader) continue;
     const den = pirate.home.slice(0, pirate.home.indexOf('#'));

@@ -45,7 +45,7 @@ const giveItems = (sim: Sim, item: string, n: number): void => {
 };
 
 describe('black-market services', () => {
-  it('attaches any set to a station: stock, owner fallback, and a truce for every set', () => {
+  it('attaches any set to a station: stock, and a truce for every set', () => {
     const { sim, station } = withStation();
     expect(attachServices(sim, station, 'bm.nope')).toBe(false);
     expect(attachServices(sim, station, 'bm.lesser')).toBe(true);
@@ -55,9 +55,9 @@ describe('black-market services', () => {
     expect(truceHolds(sim)).toBe(true);
     expect(attachServices(sim, station, 'bm.lesser')).toBe(true);
     expect(t.services).toEqual(['bm.lesser']);
-    // The cartel is a string id with no faction yet: the owner is left as it was. It sets the truce and brings a fence.
+    // The cartel owns the station and brings a fence.
     expect(attachServices(sim, station, 'bm.cartel')).toBe(true);
-    expect(t.owner).toBeUndefined();
+    expect(t.owner).toBe('cartel');
     expect(t.fence).toBeGreaterThanOrEqual(0.5);
     expect(t.fence).toBeLessThanOrEqual(0.6);
     expect(truceHolds(sim)).toBe(true);
@@ -99,16 +99,16 @@ describe('black-market services', () => {
     expect(again.sim.world.get(again.station, TraderC)!.fence).toBe(fence);
   });
 
-  it('the zealot bazaar stocks machine goods and only trades with standing (the augmentation rule is a stub)', () => {
+  it('the zealot bazaar stocks machine goods and trades under the zealot rule (standing 3, the augmentation bonus is a stub)', () => {
     const { sim, station } = withStation();
     attachServices(sim, station, 'bm.zealot');
     const stock = sim.world.get(station, TraderC)!.stock.map((l) => l.item);
     expect(stock).toEqual(expect.arrayContaining(['item.ai_core', 'item.robot_parts', 'item.drone_tech']));
     sim.enqueue({ type: 'trade.hail', ship: station });
     run(sim, 1);
-    expect(sim.trade.hails.find((h) => h.ship === station)).toMatchObject({ answered: false, reason: 'rule' });
-    // The cult's reputation key falls back to the station kind's own (traders); raise it past the threshold.
-    sim.story.reputation['traders'] = (sim.story.reputation['traders'] ?? 0) + 3;
+    expect(sim.trade.hails.find((h) => h.ship === station)).toMatchObject({ answered: false, reason: 'hostile' });
+    // The bazaar trades under the zealots' own trade rule: three standing with them opens it.
+    sim.story.reputation['zealots'] = 3;
     sim.enqueue({ type: 'trade.hail', ship: station });
     run(sim, 1);
     expect(sim.trade.hails.find((h) => h.ship === station)?.answered).toBe(true);
@@ -291,7 +291,7 @@ describe('truce', () => {
   it('firing on anyone there breaks it: a ban, every ship hostile, standing down with every pirate faction; it lapses after 30 turns', () => {
     const { sim, station } = market();
     const keys = pirateKeys(sim);
-    expect(keys.length).toBeGreaterThan(0);
+    expect(keys).toEqual(expect.arrayContaining(['pirates', 'raiders', 'cartel', 'zealots', 'mercenaries']));
     const before = keys.map((k) => reputationOf(sim.story, k));
     sim.enqueue({ type: 'combat.setTarget', ship: playerShip(sim), weaponId: null, targetShip: station, targetModuleId: 0 });
     const log = run(sim, 3);

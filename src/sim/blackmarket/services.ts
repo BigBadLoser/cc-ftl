@@ -59,9 +59,6 @@ export function rollFence(sim: Sim, def: BlackMarketDef, identity: number): numb
   return Math.round((def.fence.min + (def.fence.max - def.fence.min) * u) * 1000) / 1000;
 }
 
-/** Does this trader's hail follow the zealot rule (a machine-cult market)? */
-export const zealotRule = (sim: Sim, t: Pick<Trader, 'services'>): boolean => setsOf(sim, t).some((d) => d.rule === 'zealot');
-
 /** The stock lines of a set as a station rolls them: counts and chances from the seed, a pure function of (seed, identity, set). */
 export function rollServiceStock(sim: Sim, def: BlackMarketDef, identity: number, salt: number): ItemQty[] {
   const out: ItemQty[] = [];

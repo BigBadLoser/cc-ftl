@@ -9,7 +9,7 @@ export interface BlackMarketDef {
   name: string;
   /** 'lesser' sets are wired to existing stations; 'named' ones are the three specialist markets. */
   tier: 'lesser' | 'named';
-  /** Galaxy faction that owns a station carrying the set (string id; ignored when the galaxy has no such faction yet). */
+  /** Galaxy faction that owns a station carrying the set . */
   owner?: string;
   /** Price multipliers of the whole service, and per item tag (multiplied in for every tag the item has). */
   sell?: number;
@@ -29,8 +29,8 @@ export interface BlackMarketDef {
   shadyCrew?: { slots: number; roles: readonly string[]; bonus: number; costMult: number; extra: number };
   /** Sets the node's truce flag (blackmarket/truce.ts). */
   truce: boolean;
-  /** 'zealot': the hail rule of the machine cult (blackmarket/rules.ts). */
-  rule?: 'zealot';
+  /** Trade faction (`TradeDef.factions` id) the station trades under when the set is attached: its hail relation and price tilts apply (the zealot bazaar: `faction.zealot`, with its augmentation rule). */
+  tradeFaction?: string;
 }
 
 /** Plain stock lines. */

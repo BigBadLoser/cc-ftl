@@ -29,6 +29,8 @@ export const BOUNTY_TURNS_BASE = 12;
 export const BOUNTY_TURNS_PER_HOP = 3;
 export const JOB_REPUTATION = 1;
 export const JOB_FAIL_REPUTATION = 1;
+/** A bounty on a pirate faction's ship also pleases each pirate faction at war with it. */
+export const RIVAL_REPUTATION = 0.5;
 export const BREACH_NOTORIETY = 3;
 /** Finished and accepted offer keys remembered (so an offer is not taken twice); the oldest are forgotten. */
 export const JOB_LOG_MAX = 64;

@@ -128,6 +128,8 @@ export type SimEvent =
   /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
   | { type: 'robot.stunned'; crew: number; until: number }
   | { type: 'robot.inert'; crew: number }
+  /** Zealot raiders held a ship's AI core long enough: it was torn out and lost (its robots go inert). */
+  | { type: 'core.torn'; ship: number }
   /** A held hack lent the robot to `faction` (or it went back to its own side). */
   | { type: 'robot.flipped'; crew: number; faction: Faction }
   /** A robot bay finished assembling a robot (its home bay). */

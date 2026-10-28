@@ -5,7 +5,7 @@ import type { BlackMarketDef } from '../sim';
  * wired to a quarter of pirate-held and lawless stations (every set has a truce); the other three are the named markets (cartel, zealot machine bazaar, mercenary hiring hall): ready to attach
  * (and tested on a test station) but the galaxy does not spawn them yet. Prices are provisional: `sell`/`buy` multiply the station's own, `contrabandBuy` is
  * the share of base value paid for contraband (a legitimate trader pays nothing), the fence pays 50 to 60% of base value for anything. Crew take no wages.
- * Owners are string ids of the pirate factions of phase 2b; with no such faction in the galaxy yet the owner is left as the station had it.
+ * The owners are the pirate factions of phase 2b; the zealot bazaar trades under `faction.zealot` (its prices and its hail rule, trade/augmentation.ts).
  */
 const SHADY_ROLES = ['role.gunner', 'role.security', 'role.pilot', 'role.engineer', 'role.medic'] as const;
 
@@ -25,7 +25,7 @@ export const blackMarkets = {
     ],
   },
   'bm.zealot': {
-    name: 'Machine bazaar', tier: 'named', owner: 'zealots', sell: 1.2, buy: 0.95, contrabandBuy: 0.65, truce: true, rule: 'zealot',
+    name: 'Machine bazaar', tier: 'named', owner: 'zealots', contrabandBuy: 0.65, truce: true, tradeFaction: 'faction.zealot',
     stock: [
       { item: 'item.ai_core', min: 1, max: 3 }, { item: 'item.robot_parts', min: 6, max: 18 }, { item: 'item.drone_tech', min: 2, max: 6 }, { item: 'item.stolen_goods', min: 1, max: 4, chance: 0.4 },
     ],
