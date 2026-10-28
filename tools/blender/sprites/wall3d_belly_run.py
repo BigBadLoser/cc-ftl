@@ -17,6 +17,7 @@ INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and 
 XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam and shade, the slope's
                                                      # seams (navy: the lip's edge on it too), its rim
 EDGE = "hbEdge"                                      # (a face's edge: a faint light over its tone)
+SEAM = "hbSeam"                                      # (the lip's seams: between the soft tone and navy)
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 10),        # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (7, 16)),                # the centre plate, a px proud, lit along its top, a px of shade under
@@ -80,7 +81,7 @@ def _look1(f, s, back):
         top, fr = s.z_at(foot, -h), d + LINE                            # (the middle's ends: a soft seam down its
         side = [(fr - 0.01, zb), (fr + PAINT, zb), (fr + PAINT, top), (fr - 0.01, top)]   # face, the lip's height)
         for a in (e + 2, 28 - e):                                       # (2 px wide, 2 px in from the middle's ends)
-            f.part(*U(a, a + 2), side, [XS] * 4, XS, end=False)
+            f.part(*U(a, a + 2), side, [SEAM] * 4, SEAM, end=False)
         for (a, b), n, w in (((0, e), 0.5, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 2)):   # (its
             z0 = s.z_at(foot, n)                                                 # edge on the slope under it, along
             f.line(*U(a, b), s.z_at(z0, w), z0, CREASE, bevel=False)            # its outline: a px showing past it)
