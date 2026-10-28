@@ -8,7 +8,7 @@
     subtitle: string;
     inputs?: string;
     outputs?: string;
-    facts: Array<[string, string]>;
+    facts: string[][];
   };
   let { recipe }: { recipe: Recipe } = $props();
 </script>
