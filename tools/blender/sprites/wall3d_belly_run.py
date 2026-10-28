@@ -1,0 +1,107 @@
+"""The belly's straight runs (the cutaway hull, wall3d_belly), built as the exterior's are (wall3d_ext, wall3d_ext_t3):
+the armour on wall3d_ext_geom's Section (its belly option: cut at the rim, upright, then the slope under the ship) and
+Face, set out in front of the hull's own block as the exterior's (T3's BACK in), the block running back to the tile's
+inner edge; dressed as hull 46's D3 look 1 with Face's helpers (painted seams and outlines with their lit bevel, the
+top's seam), in art px from the face's +u end (hull 46's D3 measured from its left, mirrored, as T3's clamps).
+Rendered as the exterior's runs: coverage anti-aliased (env_build.AA) and "wide"."""
+import bmesh
+
+from . import core
+from . import factions_relief as FR
+from . import wall3d as T
+from . import wall3d_ext_t3 as T3
+from .wall3d_ext_geom import D, E, LINE, YS, Face, Section
+
+RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes (wall3d: the face's normal)
+INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
+LOOK1 = {                            # D3 look 1, art px: u from the face's +u end, v down from the cut
+    "side_seam": ((0, 8), (27, 32), 13),        # a seam across each side plate (lit under it, its bevel)
+    "panel": ((8, 27), (10, 28)),               # the centre panel's outline (painted, as T3's top panel): lit top
+    "panel_line": 16,                           # and bottom, dark sides; a dark line across it (lit under it)
+}
+
+
+def section():
+    from .wall3d_belly import ARMOUR, SLOPE, ZG
+    return Section(ZG, T3.BACK, under=(ZG - ARMOUR, SLOPE[0], SLOPE[1]))
+
+
+def build(s2):
+    """The run along a near front s2 ((0, 1) or (1, 0)) of a tile whose outline is the run set's (c 15), whole."""
+    ax, sec = RUNS[s2], section()
+    k = T.Relief(f"belly_run_{ax}")
+    plane = E - D - T3.BACK
+    f = Face(k, ax, plane, -0.5, 0.5, ("cont", "cont"), sec)
+    foot = sec.under[0]
+    for z0, z1 in ((sec.zmin, foot), (foot, sec.H)):            # (the armour: not across its foot)
+        f.block(-0.5, 0.5, z0, z1)
+    back = -0.5 - plane                                         # (the tile's inner edge, d from the block's face)
+    prof = [(back, sec.zmin), (0.0, sec.zmin), (0.0, sec.H), (back, sec.H)]
+    FR.prism(k, ax, plane, -0.5, 0.5, prof, "steel", 3, [BOTTOM, None, T.CUT, INNER], YS[1])
+    _look1(f, sec, back)
+    return k.build()
+
+
+def _look1(f, s, back):
+    """D3 look 1 over the tile: the lit lip under the cut and at the foot, a seam across each side plate, the centre
+    panel's outline (lit top and bottom, dark sides, a seam across it), the top's seam along the back."""
+    def U(a, b):                                    # (px from the +u end -> u0, u1)
+        return 0.5 - T3.px(b), 0.5 - T3.px(a)
+
+    def Z(v):                                       # (px down from the cut -> height)
+        return s.z_at(s.H, v)
+    ln, foot = LINE, s.under[0]
+    with f.tag("lips"):
+        f.line(-0.5, 0.5, Z(1), s.H, YS[4], bevel=False)
+        f.line(-0.5, 0.5, foot, s.z_at(foot, -1), YS[4], bevel=False)
+    with f.tag("seams"):
+        *sides, v = LOOK1["side_seam"]
+        for a, b in sides:
+            f.line(*U(a, b), Z(v + 1), Z(v), YS[1])
+        f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])    # (T3's, along the back)
+    with f.tag("panel"):
+        (a, b), (v0, v1) = LOOK1["panel"]
+        u0, u1 = U(a, b)
+        for v in (v0, v1 - 1):                                  # (its top and bottom, lit)
+            f.line(u0, u1, Z(v + 1), Z(v), YS[4], bevel=False)
+        for u in (u0, u1 - ln):                                 # (its sides: slant on screen, no lit edge)
+            f.line(u, u + ln, Z(v1 - 1), Z(v0 + 1), YS[1], end=False, bevel=False)
+        v = LOOK1["panel_line"]
+        f.line(u0 + ln, u1 - ln, Z(v + 1), Z(v), YS[1], end=False)
+
+
+def cut(objs, planes):
+    """Objects cut to half-spaces (n . p <= c, tile units: the side past each plane cleared), in place."""
+    for ob in objs:
+        inv = ob.matrix_world.inverted()
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        for n, c in planes:
+            nw = core.G(n.x, n.y, n.z)
+            co = inv @ (nw * (c / n.length_squared))
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-6, plane_co=co,
+                                   plane_no=inv.to_3x3() @ nw, clear_outer=True)
+        bm.to_mesh(ob.data)
+        bm.free()
+    return objs
+
+
+def art(f, planes, wide=False):
+    """A near run's art for a front f ((s, c), c in 32nds, tile-local) cut to planes; wide: with a copy a tile either
+    way along the run (its colours run on past the tile's edges, env_build "wide")."""
+    s2, c = f
+    off = (c - 15) / 32                                         # (the run set's outline is c 15)
+    objs = build(s2)
+    along = (1, 0) if s2 == (0, 1) else (0, 1)
+    if wide:
+        for kk in (-1, 1):
+            for ob in list(objs):
+                cp = ob.copy()
+                cp.data = ob.data.copy()
+                cp.location = ob.location + core.G(kk * along[0], kk * along[1], 0.0)
+                for col in ob.users_collection:
+                    col.objects.link(cp)
+                objs.append(cp)
+    for ob in objs:
+        ob.location = ob.location + core.G(s2[0] * off, s2[1] * off, 0.0)
+    return cut(objs, planes)

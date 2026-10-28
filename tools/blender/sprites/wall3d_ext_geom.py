@@ -33,11 +33,13 @@ ROLES = {"face": 0, "plate": 1, "plate2": 2, "floor": -1}   # a part's tone, in 
 class Section:
     """A design's section through the armour, d out from the block's face; `back`: the block's face that much
     further in than the armour's own (the armour builds the top's front back out over it), `upright_in`: the upright
-    part set that far in under the lean's foot."""
+    part set that far in under the lean's foot. `under` (foot, r, h): the belly's section (wall3d_belly): the hull cut
+    at H (no lean; the top the cut's tone), upright down to `foot`, then a slope r in and h down under the ship."""
 
-    def __init__(self, H, back=0.0, upright_in=0.0):
-        self.H, self.back, self.upright_in = H, back, upright_in
-        self.zb = H - LEAN_RISE                     # the bend: upright under it, leaning over it
+    def __init__(self, H, back=0.0, upright_in=0.0, under=None):
+        self.H, self.back, self.upright_in, self.under = H, back, upright_in, under
+        self.zb = H - LEAN_RISE if under is None else H     # the bend: upright under it, leaning over it
+        self.zmin = 0.0 if under is None else under[0] - under[2]   # (the section's foot)
 
     def lean_d(self, z):
         """How far the lean stands out of the armour's own face at height z (D at the bend, 0 at the top)."""
@@ -49,7 +51,11 @@ class Section:
         return [(self.lean_d(z), z), (0.0, self.H)]
 
     def front(self, z0, z1, off=0.0):
-        """The front between heights z0 and z1 (not across the bend) as (d, z) points, off in."""
+        """The front between heights z0 and z1 (not across the bend, nor a belly's foot) as (d, z) points, off in."""
+        if self.under:
+            foot, r, h = self.under
+            f = D + self.back - self.upright_in - off
+            return [(f - r * max(0.0, foot - z) / h, z) for z in (z0, z1)]
         if z0 < self.zb - 1e-6:
             f = D + self.back - self.upright_in - off
             return [(f, z0), (f, z1)]
@@ -67,7 +73,7 @@ class Section:
         """The height whose front is n art px under the front at z on screen (n < 0: over), by bisection (the front
         is monotonic on screen)."""
         y = self.sy(z) + n
-        lo, hi = (0.0, z) if n > 0 else (z, self.H)
+        lo, hi = (self.zmin, z) if n > 0 else (z, self.H)
         for _ in range(48):
             m = (lo + hi) / 2
             if self.sy(m) > y:                          # (under it on screen: higher)
@@ -100,12 +106,16 @@ class Section:
             pd, pz = pd / h, pz / h
             face = 2 if (z0 + z1) / 2 < self.zb else 5                  # upright / lean
             if pz > 0.85:
-                if z0 >= self.H - T.LIP - 1e-6:
+                if self.under and z0 >= self.H - 1e-6:
+                    out.append(T.CUT)                                   # (a belly's top: the cut)
+                elif z0 >= self.H - T.LIP - 1e-6:
                     out.append(TOP if role == "face" else YS[2])
                 else:
                     out.append(YS[4 if z0 < self.zb else 5])
             elif pd < 0.3:
                 out.append(None)
+            elif self.under and pz < -0.3:
+                out.append(YS[1])                                       # (a belly's slope, under the ship)
             else:
                 out.append(YS[max(1, face - 3) if role == "dark" else min(5, face + ROLES[role])])
         return out

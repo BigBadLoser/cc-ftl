@@ -22,8 +22,7 @@ from mathutils import Vector
 from . import hull_outline as HO
 from . import wall3d as T
 from . import walls as W
-from . import wall3d_belly_detail as BD
-from .wall3d_ext_diag import UP, _lift, _solid, _tile
+from .wall3d_ext_diag import UP, WIDE, _lift, _seam, _solid, _tile
 from .wall3d_ext_geom import YS
 from .wall3d_ext_t3 import CORNER_C
 
@@ -68,22 +67,28 @@ def _chamfer(g):
     return out
 
 
-def _parts(key, far):
-    """The key's parts: [(front, planes, its fronts' count, [(plane, neighbour front)])], each the hull nearest its
-    front; planes: the tile's sides (4), top, bottom, back, the fronts' outer faces, their slopes, the splits."""
+def _parts(key, far, margin=0.0):
+    """The key's parts: [(front, planes, its fronts' count, [(plane, neighbour front)], cuts)], each the hull nearest
+    its front; planes: the tile's sides (4, `margin` out), top, bottom, back, the fronts' outer faces, their slopes,
+    the splits; cuts: what bounds it but its own front (a near run's art cut to it: the tile's sides, the other fronts'
+    faces and slopes, the splits)."""
     out = []
     for stretch in HO.parse(key):
         for g, before, after in HO.groups(stretch):
             g = _chamfer(g)
             side = [(_lift(HO.nearer(o, f)), o) for o, f in ((before, g[0]), (after, g[-1])) if o]
             outer = [(Vector((s[0], s[1], 0.0)), c / 32) for s, c in g]
-            arcs = [q for (s, c), (v, cc) in zip(g, outer) if near(s) for q in _slope(v, cc)]
-            for f in g:
+            slopes = [_slope(v, cc) if near(s) else [] for (s, c), (v, cc) in zip(g, outer)]
+            arcs = [q for qs in slopes for q in qs]
+            for i, f in enumerate(g):
                 lo, hi = span(f[0], far)
                 a, b, c = HO.at_least(f, HO.back(f[0]))
                 split = [(_lift(HO.nearer(f, h)), h) for h in g if h is not f]
-                planes = _tile() + [(UP, hi), (-UP, -lo), (Vector((-a, -b, 0.0)), -c)] + outer + arcs
-                out.append((f, planes + [q for q, _ in split + side], len(g), split + side))
+                tile = _tile(margin)
+                planes = tile + [(UP, hi), (-UP, -lo), (Vector((-a, -b, 0.0)), -c)] + outer + arcs
+                cuts = tile + [q for j in range(len(g)) if j != i for q in [outer[j]] + slopes[j]]
+                out.append((f, planes + [q for q, _ in split + side], len(g), split + side,
+                            cuts + [q for q, _ in split + side]))
     return out
 
 
@@ -108,15 +113,21 @@ def _tone(m, i, n, s):
 LAYERS = {"under": (UP, 0.0), "over": (-UP, 0.0)}   # (a layer's cut: under the deck, over it)
 
 
-def piece(key, far=ZG, layer="over"):
-    """A layer (LAYERS) of the belly piece of a tile with this key: its parts, each face toned by facing; a face
-    shared with a neighbour part drawn only where it rises over or hangs under that part (else it is inside the
-    hull)."""
-    rel = T.Relief(f"belly_{layer}_{HO.name(key)}")
-    for f, planes, n, shared in _parts(key, far):
+def piece(key, far=ZG, layer="over", margin=0.0):
+    """A layer (LAYERS) of the belly piece of a tile with this key: a near run's part the run's own art (wall3d_belly
+    _run, as the exterior's pieces take the run set's), cut to it; each other part a solid, its faces toned by facing
+    (a face shared with a neighbour part drawn only where it rises over or hangs under that part, else it is inside
+    the hull), the top's seam on its cut (the exterior's). `margin`: its sides that far out (WIDE: the solid its
+    colours come from, env_build "wide")."""
+    from . import wall3d_belly_run as BR
+    rel, art = T.Relief(f"belly_{layer}_{HO.name(key)}"), []
+    for f, planes, n, shared, cuts in _parts(key, far, margin):
         lo, hi = span(f[0], far)
         if (-lo if layer == "under" else hi) <= 0.0:
             continue                                    # (none of it in this layer)
+        if f[0] in BR.RUNS:
+            art += BR.art(f, cuts + [LAYERS[layer]], wide=margin > 0)
+            continue
         planes = planes + [LAYERS[layer]]
         own = {id(q[0]): h for q, h in shared}
         for pts, m, i in _solid(planes):
@@ -131,8 +142,12 @@ def piece(key, far=ZG, layer="over"):
                 for p2, m2, j in _solid(planes + [cut]):
                     if j == i:
                         rel.poly(p2, "steel", 3, m2, fixed=END)
-        if near(f[0]):
-            BD.run(rel, f, planes, ZG)                  # (a near run's dress, clipped to this part)
         if layer == "over":
-            BD.cap(rel, f, planes, span(f[0], far)[1])  # (the cut's seam)
-    return rel.build() if rel.m.f else []               # (none: a far side has nothing under the deck)
+            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1])
+    return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
+
+
+def wide(key, far=ZG, layer="over"):
+    """A piece as env_build's "wide" kind: (its own, the same run on past the tile's edges); none if it is empty."""
+    own = piece(key, far, layer)
+    return (own, piece(key, far, layer, WIDE)) if own else []
