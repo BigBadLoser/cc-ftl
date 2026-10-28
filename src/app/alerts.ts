@@ -143,10 +143,12 @@ export function createAlerts(sim: Sim): Alerts {
       case 'galaxy.encounter': {
         const who = `${sim.content.galaxy?.factions[e.faction]?.name ?? e.faction} ${e.role}`;
         const text = e.kind === 'interdict' ? `Interdicted by a ${who}: dropped out of hyperspace` : e.kind === 'hail' ? `A ${who} hails you in passing`
-          : e.kind === 'scan' ? `A ${who} scans you in passing` : `Distress call from a ${who}`;
+          : e.kind === 'scan' ? (e.fleet === 0 ? `${sim.content.galaxy?.factions[e.faction]?.name ?? e.faction} scans you as you open trade: contraband found` : `A ${who} scans you in passing`) : `Distress call from a ${who}`;
         return { kind: e.type, key: `ge${e.id}`, text, at: null };
       }
       case 'galaxy.evadeRoll': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: e.success ? `Evaded: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%` : `Evade failed: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%`, at: null };
+      case 'scan.settled': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: e.outcome === 'bribed' ? `Paid a ${e.cost} credit bribe: the scan found nothing` : `Contraband confiscated and a ${e.cost} credit fine paid`, at: null };
+      case 'truce.breached': return { kind: 'galaxy.encounter', key: `tb${e.node}`, text: 'Truce broken: everyone here is hostile to you for 30 turns', at: null };
       case 'galaxy.bribed': return { kind: 'galaxy.encounter', key: `ge${e.id}`, text: `Paid ${e.cost} credits to pass`, at: null };
       case 'galaxy.eventEntered': return { kind: 'galaxy.encounter', key: `gv${e.id}`, text: e.kind === 'fight' ? 'Dropped into deep space: fight' : 'Dropped into deep space to help', at: null };
       case 'ship.fled': return { kind: e.type, key: `sf${e.ship}`, text: `${shipName(e.ship)?.name ?? 'Ship'} jumped away`, at: null };

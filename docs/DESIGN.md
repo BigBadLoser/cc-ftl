@@ -330,7 +330,7 @@ Each station type has its own reason to visit:
   materials cost.
 - Shields count as Defence. Mk I is on the starter ship, so Mk II/III being hard to get early is fine (open to revisit).
 
-### Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions are built (phase 2b slice 1, #135), the black market is not)
+### Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)
 
 Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be conquerable.
 

@@ -1,4 +1,5 @@
 
+import { truceHolds } from '../blackmarket/truce';
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { factionsHostile, isAiFaction, rogueAlly } from '../combat/factions';
@@ -18,6 +19,8 @@ import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
  * by the anti-vehicle weapons only (the others keep their ship target). The AI only issues commands, like the player does.
  */
 export function enemyAiSystem(sim: Sim): void {
+  // Nobody starts a fight at a black market's node while its truce holds.
+  if (truceHolds(sim)) return;
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);

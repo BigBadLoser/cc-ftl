@@ -199,6 +199,9 @@ export type SimEvent =
   | { type: 'galaxy.distressSent'; node: string; due: number }
   | { type: 'galaxy.towArrived'; fuel: number; paid: number; owed: number }
   | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
+  | { type: 'scan.found'; id: number; faction: string; value: number }
+  | { type: 'scan.settled'; id: number; faction: string; outcome: 'confiscated' | 'bribed'; cost: number }
+  | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }

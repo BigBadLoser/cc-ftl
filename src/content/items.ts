@@ -31,4 +31,15 @@ export const items = {
   // Ion pistol: weak, but every hit stuns ion-vulnerable targets (robots).
   'item.ion_pistol': { name: 'Ion pistol', tags: ['weapon', 'ranged'], stackSize: 5, price: 70, tier: 2, hand: { kind: 'ranged', damage: 4, range: 8, cooldownSec: 1.4, accuracy: 0.7, ion: true, art: { id: 'ion_pistol', family: '1h' } } },
   'item.blade': { name: 'Blade', tags: ['weapon', 'melee'], stackSize: 5, price: 30, tier: 1, hand: { kind: 'melee', damage: 20, range: 1, cooldownSec: 1.2, accuracy: 0.8, art: { id: 'blade', family: '1m' } } },
+  // --- Contraband (black markets, DESIGN.md): the `contraband` tag. Legitimate traders refuse it; navy and corporation scans confiscate it. ---
+  // A delivery crate broken open (a breach of contract) spills these instead of the goods it held.
+  'item.stolen_goods': { name: 'Stolen goods', tags: ['contraband', 'stolen'], stackSize: 50, price: 14 },
+  // Taken off a captured ship.
+  'item.looted_goods': { name: 'Looted goods', tags: ['contraband', 'loot'], stackSize: 50, price: 18 },
+  // An illegal hand weapon: strong and unlicensed. Sold only at black markets.
+  'item.disruptor': { name: 'Disruptor', tags: ['weapon', 'ranged', 'contraband'], stackSize: 5, price: 160, tier: 3, hand: { kind: 'ranged', damage: 22, range: 12, cooldownSec: 1.3, accuracy: 0.72, art: { id: 'rifle', family: '2h' } } },
+  // The zealot machine bazaar's wares.
+  'item.ai_core': { name: 'AI core', tags: ['machine'], stackSize: 5, price: 420 },
+  'item.robot_parts': { name: 'Robot parts', tags: ['machine', 'components'], stackSize: 50, price: 30 },
+  'item.drone_tech': { name: 'Drone tech', tags: ['machine', 'components'], stackSize: 10, price: 140 },
 } satisfies Record<string, ItemDef>;

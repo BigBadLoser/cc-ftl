@@ -1,3 +1,4 @@
+import { serviceItems } from '../blackmarket/services';
 import type { Sim } from '../sim';
 import { TraderC, type Trader } from '../trade/types';
 import { advance, baseLines, econOf, toState, type Econ } from './market';
@@ -11,6 +12,7 @@ import type { Port } from './ports';
  * player and by NPC traders both change it and prices follow; each turn it moves the same way a frozen market would (`stepLiveMarkets`, rounded with a hashed
  * dither so slow rates still show); on leaving, what differs from the baseline is written back to `GalaxyState.markets` (`unbindMarkets`). A trader is bound
  * exactly while `Trader.port` is set. Nothing here runs for nodes without ports, and stations that are no port's are left alone.
+ * The shelves a black-market service adds (`serviceItems`) are not the port's economy: binding, stepping and unbinding leave them as the station has them.
  */
 
 /** Unbound station traders of the sector, ascending id. */
@@ -42,11 +44,19 @@ export function bindMarkets(sim: Sim): void {
 function bindTrader(sim: Sim, t: Trader, e: Econ): void {
   const g = sim.galaxy;
   const full = advance(e, g.markets[e.id] ?? { turn: 0, stock: {} }, g.turn);
+  const own = serviceLines(sim, t).filter((l) => !e.items.includes(l.item));
   t.port = e.id;
   t.owner = e.trader.owner;
   t.profile = e.profile;
   t.base = baseLines(e);
-  t.stock = Object.entries(full).filter(([, v]) => Math.round(v) > 0).map(([item, v]) => ({ item, count: Math.round(v) })).sort((a, b) => (a.item < b.item ? -1 : 1));
+  t.stock = Object.entries(full).filter(([item, v]) => Math.round(v) > 0 && !own.some((l) => l.item === item)).map(([item, v]) => ({ item, count: Math.round(v) }))
+    .concat(own).sort((a, b) => (a.item < b.item ? -1 : 1));
+}
+
+/** The service shelves of a trader: the lines of items its black-market sets stock that the port does not trade. */
+function serviceLines(sim: Sim, t: Trader): { item: string; count: number }[] {
+  const items = serviceItems(sim, t);
+  return items.size ? t.stock.filter((l) => items.has(l.item)).map((l) => ({ ...l })) : [];
 }
 
 /** Bind a station that was made for a port (population.ts) to that port's market; false when the port has no market or the station no trader. */
@@ -66,7 +76,7 @@ export function unbindMarkets(sim: Sim): void {
     if (!t.port) continue;
     const e = ownEcon(sim, t.port);
     if (e) {
-      g.markets[e.id] = toState(e, shelves(e, t), g.turn);
+      g.markets[e.id] = toState(e, shelves(sim, e, t), g.turn);
     }
     delete t.port;
     delete t.base;
@@ -74,10 +84,11 @@ export function unbindMarkets(sim: Sim): void {
 }
 
 /** Every shelf of the market as the live trader has it (an item it holds none of is 0, not its baseline). */
-function shelves(e: Econ, t: Trader): Record<string, number> {
+function shelves(sim: Sim, e: Econ, t: Trader): Record<string, number> {
   const out: Record<string, number> = {};
+  const own = serviceItems(sim, t);
   for (const item of e.items) out[item] = 0;
-  for (const l of t.stock) out[l.item] = l.count;
+  for (const l of t.stock) if (!own.has(l.item) || e.items.includes(l.item)) out[l.item] = l.count;
   return out;
 }
 
@@ -95,11 +106,13 @@ export function stepLiveMarkets(sim: Sim, turn: number): void {
     if (!t.port) continue;
     const e = ownEcon(sim, t.port);
     if (!e) continue;
-    const next = advance(e, { turn: turn - 1, stock: shelves(e, t) }, turn);
+    const next = advance(e, { turn: turn - 1, stock: shelves(sim, e, t) }, turn);
     const ph = strHash(e.id);
+    const own = serviceLines(sim, t).filter((l) => !e.items.includes(l.item));
     t.stock = Object.entries(next)
       .map(([item, v]) => ({ item, count: Math.floor(v + unit(sim.seed, ph, strHash(item), turn, 74)) }))
-      .filter((l) => l.count > 0)
+      .filter((l) => l.count > 0 && !own.some((o) => o.item === l.item))
+      .concat(own)
       .sort((a, b) => (a.item < b.item ? -1 : 1));
   }
 }

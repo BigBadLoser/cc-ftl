@@ -650,6 +650,22 @@ export interface UiTradeLine {
   buy: number;
   /** Sold as surplus (older, middle-grade gear: a military depot's). */
   surplus?: boolean;
+  /** Contraband: only a black market takes it, and navy and corporation scans confiscate it. */
+  contraband?: boolean;
+}
+
+/** A station's black-market services (sim blackmarket/): shown at the top of its trade window. */
+export interface UiMarketServices {
+  /** The set names ("Back-room dealer"), the share of value it pays for contraband (0.7 = 70%) and the fence rate when it has a fence (else null). */
+  names: string[];
+  contrabandRate: number;
+  fence: number | null;
+  /** Nobody starts a fight at its node, until someone breaks the truce. */
+  truce: boolean;
+  /** The truce is broken and the player is banned here. */
+  banned: boolean;
+  /** It has shady crew for hire. */
+  shadyCrew: boolean;
 }
 
 export interface UiTradeOffer {
@@ -670,6 +686,8 @@ export interface UiRecruit {
   skills: string[];
   cost: number;
   coming: boolean;
+  /** A black market's shady crew: the extra levels (already in `skills`) over the role's own. */
+  shady?: number;
 }
 
 /** A module blueprint a station sells (sim galaxy/blueprintShop.ts). */
@@ -805,6 +823,8 @@ export interface UiTradePartner {
   hireError: string;
   /** Stations only. */
   info?: UiStationInfo;
+  /** Black-market services the station carries, or absent. */
+  market?: UiMarketServices;
 }
 
 export interface UiTradeDeal {

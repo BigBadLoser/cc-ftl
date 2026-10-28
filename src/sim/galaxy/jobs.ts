@@ -1,3 +1,4 @@
+import { STOLEN_GOODS } from '../blackmarket/services';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { bumpStat } from '../story/goals';
@@ -50,14 +51,15 @@ function loadCrate(sim: Sim, jobId: number): boolean {
   return !!at && spillItems(sim, ship, at.x, at.y, CRATE, 1, jobId) === 0;
 }
 
-/** Hand a crate over (`open` false: it leaves the ship) or break it open (its goods spill out where it stood: kept). */
+/** Hand a crate over (`open` false: it leaves the ship) or break it open (its goods spill out where it stood as stolen goods). */
 function unloadCrate(sim: Sim, job: StationJob, open: boolean): void {
   const id = crateOf(sim, job.id);
   if (id === undefined) return;
   const { x, y } = sim.world.get(id, ItemStackC)!;
   const ship = shipIdAt(sim, x, y);
   takeFromStack(sim, id, 1);
-  if (open && job.item && job.count) spillItems(sim, ship, x, y, job.item, job.count);
+  // A crate broken open is a breach of contract: what spills is stolen goods (contraband), not the delivery.
+  if (open && job.item && job.count) spillItems(sim, ship, x, y, sim.content.items[STOLEN_GOODS] ? STOLEN_GOODS : job.item, job.count);
 }
 
 const reject = (sim: Sim, command: string, reason: string): false => (sim.events.emit({ type: 'command.rejected', command, reason }), false);

@@ -19,6 +19,7 @@ import { galaxy } from './galaxy';
 import { trade } from './trade';
 import { stations } from './stations';
 import { yard } from './yard';
+import { blackMarkets } from './blackMarkets';
 import { creatures } from './creatures';
 import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
@@ -44,6 +45,7 @@ export const content = {
   galaxy,
   stations,
   yard,
+  blackMarkets,
   trade,
   creatures,
   ores,

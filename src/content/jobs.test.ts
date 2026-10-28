@@ -82,7 +82,7 @@ describe('station jobs', () => {
     expect(crateAboard(sim, id)).toBe(false);
   });
 
-  it('a delivery not made in time costs reputation and notoriety; the crate is broken open and its goods kept', () => {
+  it('a delivery not made in time costs reputation and notoriety; the crate is broken open and its goods spill as stolen goods', () => {
     const sim = atBoard();
     const offer = offersHere(sim).find((o) => o.kind === 'delivery')!;
     const before = playerStock(sim, offer.item!);
@@ -91,12 +91,13 @@ describe('station jobs', () => {
     expireJobs(sim, job.due + 1);
     expect(sim.galaxy.jobs).toHaveLength(0);
     expect(playerStock(sim, CRATE)).toBe(0);
-    expect(playerStock(sim, offer.item!)).toBe(before + offer.count!);
+    expect(playerStock(sim, offer.item!)).toBe(before);
+    expect(playerStock(sim, 'item.stolen_goods')).toBe(offer.count!);
     expect(rep(sim, job.issuer)).toBe(-1);
     expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
   });
 
-  it('breaking a crate open on deck fails the delivery and spills its goods, kept', () => {
+  it('breaking a crate open on deck fails the delivery and spills its goods as stolen goods', () => {
     const sim = atBoard();
     const offer = offersHere(sim).find((o) => o.kind === 'delivery')!;
     const before = playerStock(sim, offer.item!);
@@ -106,7 +107,8 @@ describe('station jobs', () => {
     sim.step();
     expect(sim.galaxy.jobs).toHaveLength(0);
     expect(playerStock(sim, CRATE)).toBe(0);
-    expect(playerStock(sim, offer.item!)).toBe(before + offer.count!);
+    expect(playerStock(sim, offer.item!)).toBe(before);
+    expect(playerStock(sim, 'item.stolen_goods')).toBe(offer.count!);
     expect(rep(sim, job.issuer)).toBe(-1);
     expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
     sim.enqueue({ type: 'jobs.openCrate', id: job.id });

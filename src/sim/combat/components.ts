@@ -96,6 +96,8 @@ export interface Ship {
    * through `wake` (combat/dormant.ts), which removes the field.
    */
   dormant?: number;
+  /** The faction this ship had before a truce breach made it hostile to the player (blackmarket/truce.ts); restored when the ban ends. */
+  banned?: Faction;
 }
 export const ShipC = defineComponent<Ship>('ship');
 

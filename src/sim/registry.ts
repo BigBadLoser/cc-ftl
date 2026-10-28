@@ -40,6 +40,7 @@ import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
+import type { BlackMarketDef } from './blackmarket/defs';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -86,6 +87,8 @@ export interface ContentRegistry {
   researchBands?: { id: string; name: string }[];
   /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
   yard?: YardDef;
+  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */
+  blackMarkets?: Record<string, BlackMarketDef>;
 }
 
 /**

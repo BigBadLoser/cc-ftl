@@ -1,6 +1,7 @@
 import { ShipC } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import type { Sim } from '../sim';
+import { truceHolds } from '../blackmarket/truce';
 import { isDormant } from '../combat/dormant';
 
 /**
@@ -17,7 +18,7 @@ export function combatStateSystem(sim: Sim): void {
     if (ship.faction === 'player') player = true;
     else if (factionsHostile(ship.faction, 'player')) hostile = true;
   }
-  const engaged = player && hostile;
+  const engaged = player && hostile && !truceHolds(sim);
   if (engaged === sim.sector.inCombat) return;
   sim.sector.inCombat = engaged;
   sim.events.emit({ type: engaged ? 'combat.started' : 'combat.ended' });

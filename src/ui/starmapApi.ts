@@ -253,7 +253,7 @@ export interface UiStarmap {
 
 /** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
 export interface UiEncounterChoice {
-  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
   label: string;
   detail: string;
   enabled: boolean;
@@ -278,6 +278,8 @@ export interface UiEncounter {
   how: string;
   node: string;
   choices: UiEncounterChoice[];
+  /** A scan that found contraband aboard: what was found (a line of text) and what it is worth; the choices are surrender / bribe. */
+  contraband?: { found: string; value: number; fine: number; bribe: number };
 }
 
 /** How the last encounter ended, as a line with a tone. */

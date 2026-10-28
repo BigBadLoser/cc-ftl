@@ -102,7 +102,7 @@ export function ensureTrader(sim: Sim, id: number): Trader | null {
 
 export interface HailVerdict {
   answers: boolean;
-  /** '' when it answers, else 'silent' (wreck, fled), 'noTrade' (nothing to trade with), 'weaponsHot' or 'hostile'. */
+  /** '' when it answers, else 'silent' (wreck, fled), 'noTrade' (nothing to trade with), 'weaponsHot', 'hostile'. */
   reason: string;
   /** relation + reputation (+ trader kind): >= 0 answers. */
   score: number;
