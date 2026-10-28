@@ -1873,3 +1873,28 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
 - Cartel: `guardsRoutes` (interdicts only in its own space, hunts only there) and `FleetGroupDef.escort` (hired mercenary ships, `Contact.hired`, fly on the employer's side).
 - Raiders: `boarding.prefer` (the ship holds fire while its party is out). Zealots: `boarding.coreRaid`, `capture/coreRaid.ts` (the party walks to the AI core; held for CORE_RAID_HOLD_TICKS undefended, the core module is removed and robots go inert), `FactionDef.neverSurrender` (no prize; the fight ends in a derelict).
 - Standing: kills lower the victim faction's key (heat.ts); relation spill warms its rivals; a done bounty also pleases pirate factions at war with its target (jobs.ts `RIVAL_REPUTATION`). Trade: zealots answer a hail only at high standing; `trade/augmentation.ts` is a stub (always 0) until implants (phase 7).
+
+## Hull width rule and the hull plan brushes (#143)
+
+**The rule.** No part of a ship may be narrower than 3 tiles. The footprint (every `struct` tile except Space and `Struct.Beam`: struts and the yard's scaffolding
+trusses are exempt) must equal its morphological opening by a 3x3 square (erode, then dilate). Straight edges and 45 degree staircases survive it, 1-2 wide
+spines and stubs do not (a 1-step corner notch passes too). `sim/footprint.ts` is the pure helper (`footprintFromGrid`, `footprintFromTiles`, `openingOf`,
+`widthViolations(footprint, change?)`, flat byte masks, about 0.2 ms on 120x80). Generated ships, stations and wrecks obey it (shipgen validators reseed an
+attempt that breaks it, ruins open by a 3x3 square; see `docs/SHIPGEN.md`).
+
+**The plan is judged as ship hull plus the planned footprint** (the outline plus the floor it shuts in, `yard/width.ts`), and only violations the plan ADDS count
+(`changeViolations`), so an old thin template can still be planned on elsewhere. `hull.plan` rejects `narrowHull`; `quoteYard` returns `narrowHull` for a
+plan that has violations, and `narrowCut` if no cut the visit cap pays for stays wide (`pickSection` and `closedRect` take a `wide` predicate). I could not make the
+cut leave a narrow strip (strips flush against the hull count as supported), so the guard is defensive; `content/yardWidth.test.ts` searches 60 random plans.
+
+**Brushes** (`app/hullPlanTool.ts`, geometry in `app/hullBrush.ts`, the plan logic in `sim/yard/brush.ts`). A brush produces a tile list; `brushPlan(sim, ship,
+'add'|'erase', tiles)` and `cutPlan(sim, ship, line)` return the new outline, the footprint, the tiles removed and the new violations, and the tool sends `hull.plan`
+on release (no confirm). Rectangle: drag, shown at its real size, red under 3x3 (`minSize`), must touch the ship or the connected plan (`touchesShip`, else
+`mustTouch`), preview shows the merged hull ring (amber) and floor (cyan). Erase: outline plus only the planned tiles it removes; real hull is never in the plan, so it
+is never touched. Line cut: a straight line snapped to `LINE_SLOPES` (0, 45, 90 degrees; adding 0.5 or 1/3 allows 1:2 or 1:3 staircases, runs of at least 2); planned
+tiles cut off from the hull are dropped, the line's tiles become the edge; a line that cuts nothing is a no-op. Mirror reflects every stroke across the ship's long axis.
+A stroke that adds a narrow part shows red and does not apply. With no drag the brush shows a 1x1 ghost under the cursor. While the build tools are open a thin
+world grid (`render/worldGrid.ts`, Pixi `pixelLine`) is drawn, and with Hull plan open the Build menu folds down to its category row until hovered. A freehand
+0/45/90 brush later is one more source of tile lists.
+
+**Debug start:** `?scenario=hullplan` spawns a trading hub (visit cap 100) beside the ship, 100000 credits and 500 metal (`debug.giveItems`), and opens Hull plan.

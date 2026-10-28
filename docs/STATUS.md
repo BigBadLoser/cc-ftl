@@ -25,6 +25,11 @@ playtest clarity are all on `main`). Treat the sections below as design notes, n
 
 ## In progress
 
+- **Hull width rule and hull plan brushes (branch `build/footprint-width`, #143):** no part of a ship narrower than 3 tiles (3x3 opening, struts exempt); generated
+  ships, stations and wrecks obey it; the Hull plan tool gets rectangle (min 3x3, must touch the ship), erase and line-cut brushes with mirror, a world grid, a cursor
+  ghost and a collapsing Build menu; `hull.plan` and the yard quote refuse a narrow plan. Playtest with `?scenario=hullplan`. No save change (stays v64). See "Hull width rule
+  and the hull plan brushes" in [ARCHITECTURE.md](ARCHITECTURE.md). Open: the line cut's slope set is one list (`LINE_SLOPES`) pending the user's call on 1:2 and 1:3.
+
 - **Progression phase 5 (branch `progression-5`, #125):** plan the outer hull in the build tools (Hull plan, any time, saved with the ship), buy it at a yard
   (station panel quote, contractors build up to the visit cap in EVA, the rest stays planned). Size (interior area inside the outer hull) is the readout everywhere (ship panel, engine
   capacity, jobs screen); the yard prices and caps by tiles built, outline plus floor (station cap 40, hub 100, 10 credits and 0.75 metal a tile). Engine capacity is Mk I 330 / Mk II 495 / Mk III 700 per engine (starter 416 / 660); There is no ship maximum: engine capacity (summed over any number of engines) is the only size limit. Yards truss the whole plan first (real `Struct.Beam` tiles, 2 credits a tile planning fee, outside the cap), then turn trusses into hull row by row up to the cap; leftovers stay as scaffolding for the next yard. The plan's ghost tiles show only in the Hull plan tool or a Shipyard tab. Waiting on screenshot approval.
