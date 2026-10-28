@@ -67,7 +67,7 @@ describe('notoriety', () => {
     const sim = newGame(3, content);
     sim.enqueue({ type: 'debug.galaxyReveal', radius: 3 });
     sim.step();
-    const den = [...galaxyIndex(sim.galaxy).nodes.keys()].flatMap((n) => portsAt(sim, n)).find((p) => p.kind === 'den' && p.owner === 'pirates');
+    const den = [...galaxyIndex(sim.galaxy).nodes.keys()].flatMap((n) => portsAt(sim, n)).find((p) => p.kind === 'den' && content.galaxy.factions[p.owner as keyof typeof content.galaxy.factions]?.kind === 'pirates');
     expect(den).toBeDefined();
     if (!den) return;
     const before = new Set(sim.world.query(ShipC));
@@ -81,7 +81,7 @@ describe('notoriety', () => {
     wreckShip(sim, st);
     tallyLosses(sim);
     expect(sim.galaxy.heat.notoriety).toBe(0);
-    expect(grudgeOf(sim, 'pirates')).toBe(1);
+    expect(grudgeOf(sim, den.owner)).toBe(1);
   });
 
   it('does not count a ship the player was not shooting at', () => {

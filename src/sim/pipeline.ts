@@ -58,6 +58,7 @@ import { ferrySystem } from './ferry/flow';
 import { logisticsSystem } from './logistics/system';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
+import { coreRaidSystem } from './capture/coreRaid';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { galaxySystem } from './systems/galaxy';
@@ -196,6 +197,8 @@ export const pipeline: readonly System[] = [
   impactSystem,
   // Ship state: it reads the damage done this tick.
   shipStateSystem,
+  // Zealot raiders holding an AI core count towards tearing it out (before capture reads who still stands).
+  coreRaidSystem,
   // Capture last: it reads this tick's crew states (downed, surrendered, positions) and may end combat for the next.
   captureSystem,
   // Starmap after ship state (contacts of wrecked or fled ships are dropped) and before events: an arrival spawns its

@@ -12,6 +12,7 @@ import { AboardC, VehicleC } from '../vehicles/components';
 import { CoreLinkC } from '../robots/components';
 import { aiCores, isCoreLive } from '../robots/core';
 import { shipIdOf } from '../regions';
+import { neverSurrenders } from '../combat/factions';
 import { shipById } from '../combat/ships';
 import { ShipC } from '../combat/components';
 
@@ -52,6 +53,7 @@ export function isAiRun(sim: Sim, shipId: number): boolean {
 
 /** True when the ship is ready to be taken: crew all subdued and, for an AI-run ship, no live AI core. */
 export function captureReady(sim: Sim, shipId: number): boolean {
+  if (neverSurrenders(sim, shipId)) return false;
   if (!allSubdued(sim, shipId)) return false;
   return !isAiRun(sim, shipId) || !aiCores(sim, shipId).some((id) => isCoreLive(sim, id));
 }
