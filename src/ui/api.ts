@@ -960,8 +960,8 @@ export interface UiToolState {
   pods?: number[];
   /** The 'hull' tool (the outer hull plan's brushes). */
   hull?: {
-    /** The brush's shape: a rectangle (dragged out, at least 3x3) or a 45 degree staircase stamped along the drag (legs of at least 2). */
-    brush: 'rect' | 'diag';
+    /** The brush: a rectangle (dragged out, at least 3x3) or a straight line (0, 45 or 90 degrees) that cuts the plan. */
+    brush: 'rect' | 'line';
     /** Take planned tiles out instead of putting them in. */
     erase: boolean;
     /** Mirror every stroke across the ship's long axis. */

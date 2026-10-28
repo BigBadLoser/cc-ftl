@@ -83,11 +83,14 @@
   };
   const press = (e: Entry, el: HTMLElement) => { clearTimeout(closeT); pinned = false; pop = { entry: e, rect: el.getBoundingClientRect() }; };
   const dismiss = () => { pinned = false; pop = null; };
+  // With the Hull plan open the menu folds down to its category row (the plan is drawn over the view); it unfolds under the pointer.
+  let over = $state(false);
+  const collapsed = $derived(st.build === 'hull' && !over && !pop);
 </script>
 
 <svelte:window onpointerdown={(e) => { if (pop && !(e.target as Element).closest?.('[data-testid="build-popover"], .card')) dismiss(); }} />
 
-<div class="cat" data-testid="build-catalog">
+<div class="cat" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}
@@ -120,7 +123,8 @@
 <style>
   /* Same bottom gutter as the toolbar; it ends a gap before the toolbar's left edge (--tools-w, set by ToolBar) and centres in the room left. */
   .cat { position: fixed; z-index: 5; left: calc(8px + var(--sal)); right: calc(var(--tools-w, 0px) + 16px + var(--sar)); max-width: 1180px; margin-inline: auto; box-sizing: border-box; bottom: calc(8px + var(--sab)); background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); }
-  .strip { display: flex; height: 150px; border-bottom: 1px solid #242424; }
+  .strip { display: flex; height: 150px; border-bottom: 1px solid #242424; overflow: hidden; transition: height 0.18s ease, border-color 0.18s ease; }
+  .cat.collapsed .strip { height: 0; border-bottom-color: transparent; }
   .cards { display: flex; gap: 6px; padding: 12px 8px 4px; overflow-x: auto; overflow-y: hidden; flex: 1; scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
   .none { margin: auto; color: #9a9a9a; }
   .nav { display: flex; align-items: center; height: 36px; padding: 0 8px; gap: 4px; }

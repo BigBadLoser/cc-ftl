@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dragRect, mirrorTiles, rectTiles, stairSize, stairTiles, withMirror } from './hullBrush';
+import { dragRect, lineTiles, mirrorTiles, rectTiles, withMirror } from './hullBrush';
 
 describe('hull brushes', () => {
   it('a drag never makes a rectangle thinner than 3 x 3: it snaps up, towards the drag', () => {
@@ -10,15 +10,22 @@ describe('hull brushes', () => {
     expect(rectTiles(dragRect({ x: 0, y: 0 }, { x: 3, y: 2 }))).toHaveLength(12);
   });
 
-  it('a staircase has legs of at least 2 and points the way the drag goes', () => {
-    expect(stairSize({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe(2);
-    expect(stairTiles({ x: 0, y: 0 }, { x: 0, y: 0 })).toEqual([{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }]);
-    expect(stairSize({ x: 0, y: 0 }, { x: 3, y: 1 })).toBe(4);
-    const down = stairTiles({ x: 10, y: 10 }, { x: 8, y: 12 }); // towards negative x, positive y
-    expect(down).toHaveLength(6);
-    expect(down).toContainEqual({ x: 8, y: 10 });
-    expect(down).toContainEqual({ x: 10, y: 12 });
-    expect(down).not.toContainEqual({ x: 8, y: 12 }); // the far corner is cut by the diagonal
+  it('a line snaps to 0, 45 or 90 degrees, and a diagonal has at least 2 steps', () => {
+    expect(lineTiles({ x: 5, y: 5 }, { x: 9, y: 6 })).toEqual([0, 1, 2, 3, 4].map((i) => ({ x: 5 + i, y: 5 }))); // nearly flat: horizontal
+    expect(lineTiles({ x: 5, y: 5 }, { x: 4, y: 8 })).toEqual([0, 1, 2, 3].map((i) => ({ x: 5, y: 5 + i }))); // nearly vertical
+    expect(lineTiles({ x: 5, y: 5 }, { x: 8, y: 8 })).toEqual([0, 1, 2, 3].map((i) => ({ x: 5 + i, y: 5 + i })));
+    expect(lineTiles({ x: 5, y: 5 }, { x: 3, y: 7 })).toEqual([0, 1, 2].map((i) => ({ x: 5 - i, y: 5 + i }))); // up-left to down-left
+    expect(lineTiles({ x: 5, y: 5 }, { x: 6, y: 6 })).toHaveLength(3); // a diagonal drag of one step is stretched to 2
+  });
+
+  it('the allowed slopes are one list: a 1:2 staircase has runs of 2 and snaps by angle', () => {
+    const slopes = [0, 0.5, 1, Infinity];
+    const l = lineTiles({ x: 0, y: 0 }, { x: 8, y: 3 }, slopes);
+    expect(l.map((t) => t.y)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
+    expect(l.map((t) => t.x)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(lineTiles({ x: 0, y: 0 }, { x: 6, y: 6 }, slopes)).toHaveLength(7); // still the 45 degree line
+    expect(lineTiles({ x: 0, y: 0 }, { x: 3, y: 8 }, [0, 2, Infinity]).map((t) => t.x)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]); // steep 2:1, runs of 2 along y
+    expect(lineTiles({ x: 0, y: 0 }, { x: 8, y: 3 })).toHaveLength(9); // the default set has no 1:2: it stays flat
   });
 
   it('mirrors across the ship\'s long axis', () => {

@@ -7,8 +7,6 @@ import type { Tile } from './input';
 
 /** A drag's rectangle never has a side under this many tiles: the 3-wide rule starts at the brush. */
 export const MIN_SIDE = 3;
-/** A staircase brush has at least this many tiles on each leg (a one-tile cut reads as a broken corner in the hull art). */
-export const MIN_LEG = 2;
 
 const sign = (n: number): 1 | -1 => (n < 0 ? -1 : 1);
 
@@ -32,20 +30,45 @@ export function rectTiles(r: BrushRect): Tile[] {
   return out;
 }
 
-/** Legs of the staircase a drag from `a` to `b` stamps: the longer side of the drag, at least 2. */
-export function stairSize(a: Tile, b: Tile): number {
-  return Math.max(MIN_LEG, Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) + 1);
-}
+/** A 45 degree line has at least this many steps (the hull art turns a staircase into a diagonal from 2 steps). */
+export const MIN_DIAG_STEPS = 2;
 
 /**
- * The 45 degree staircase of a drag: a right triangle with its square corner on `a`, both legs `stairSize` tiles, pointing the way the drag goes (so
- * a drag inward from a rectangle's corner cuts that corner, and the same drag in add mode fills a notch).
+ * The slopes a line can take, as |rise| / |run|: 0 is flat, 1 is 45 degrees, Infinity is straight up. This one list is the whole angle rule: a drag snaps to the nearest
+ * of these, so allowing 1:2 or 1:3 staircases later means adding 0.5 or 1 / 3 here. A slope under 1 must be at most 1/2 (its staircase runs are at least 2 tiles
+ * long), and one over 1 at least 2, the same seen from the other axis.
  */
-export function stairTiles(a: Tile, b: Tile): Tile[] {
-  const n = stairSize(a, b);
-  const sx = sign(b.x - a.x), sy = sign(b.y - a.y);
+export const LINE_SLOPES: readonly number[] = [0, 1, Infinity];
+
+/**
+ * The straight line of a drag from `a` to `b`, snapped to the nearest of `slopes` by angle, as long as the drag: both end tiles are in it. A shallow
+ * line is drawn run by run (a slope of 1/2 steps down every second tile), cut short so its last run is whole; a 45 degree line has at least `MIN_DIAG_STEPS` steps.
+ */
+export function lineTiles(a: Tile, b: Tile, slopes: readonly number[] = LINE_SLOPES): Tile[] {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  const sx = sign(dx), sy = sign(dy);
+  const drag = Math.atan2(ay, ax);
+  const angle = (s: number): number => (s === Infinity ? Math.PI / 2 : Math.atan(s));
+  const slope = [...slopes].sort((p, q) => Math.abs(angle(p) - drag) - Math.abs(angle(q) - drag))[0] ?? 0;
+  const steep = slope > 1; // run along y instead of x
+  const t = slope === Infinity ? Infinity : steep ? 1 / slope : slope; // minor tiles per major tile, at most 1
+  const major = steep || slope === Infinity ? ay : ax;
   const out: Tile[] = [];
-  for (let i = 0; i < n; i++) for (let j = 0; i + j < n; j++) out.push({ x: a.x + i * sx, y: a.y + j * sy });
+  const put = (i: number, j: number): void => void out.push(steep || slope === Infinity ? { x: a.x + j * sx, y: a.y + i * sy } : { x: a.x + i * sx, y: a.y + j * sy });
+  if (slope === Infinity) {
+    for (let i = 0; i <= ay; i++) put(i, 0);
+    return out;
+  }
+  if (t === 0) for (let i = 0; i <= major; i++) put(i, 0);
+  else if (t === 1) {
+    const n = Math.max(MIN_DIAG_STEPS, Math.round((ax + ay) / 2));
+    for (let i = 0; i <= n; i++) put(i, i);
+  } else {
+    const run = Math.max(2, Math.round(1 / t));
+    const count = Math.max(2 * run, Math.floor((major + 1) / run) * run);
+    for (let i = 0; i < count; i++) put(i, Math.floor(i * t + 1e-9));
+  }
   return out;
 }
 

@@ -1,8 +1,8 @@
-import { ShipC, brushPlan, type BrushResult, type Sim } from '../sim';
+import { ShipC, brushPlan, cutPlan, touchesShip, type BrushResult, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
-import { dragRect, rectTiles, stairSize, stairTiles, withMirror } from './hullBrush';
+import { dragRect, lineTiles, mirrorTiles, rectTiles, withMirror } from './hullBrush';
 import type { Tile } from './input';
 import { rejectionMessage } from './messages';
 import type { Writable } from './store';
@@ -15,26 +15,31 @@ const ORANGE = 0xffa030;
 
 type Brush = NonNullable<UiToolState['hull']>;
 export const DEFAULT_BRUSH: Brush = { brush: 'rect', erase: false, mirror: false };
+type Area = { tiles: Tile[]; tint: number; solid?: boolean };
 
 export interface HullPlanTool {
   /** The Hull plan build tool is the current tool. */
   active(): boolean;
   /** Drag lifecycle on the sector tile under the pointer: a brush stroke that joins the plan (or leaves it) when released. */
   paint(phase: 'start' | 'move' | 'end' | 'cancel', tile: Tile | null): void;
+  /** The tile under the mouse (null when it is off the grid): with no drag, the brush shows where a stroke would start. */
+  setHover(tile: Tile | null): void;
   /** Redraw the ghost tiles: the plan (only with the Hull plan tool or a Shipyard tab open), the stroke being dragged and a yard order's unbuilt tiles. */
   draw(): void;
 }
 
 /**
  * The hull planner of the build tools: brushes that edit the ship's planned outer hull. The rectangle brush drags out a block (at least 3 x 3, so a
- * thinner shape cannot be drawn), the diagonal brush stamps a 45 degree staircase along the drag, and either one adds to the plan or erases from it
- * (erase only takes planned tiles out: real hull stays). Mirror repeats every stroke across the ship's long axis. A stroke joins the plan on release
- * (no confirm) unless it would leave part of the ship narrower than 3 tiles: that shows red while it is dragged and does not apply. The plan lives
- * in the sim (`hull.plan`, saved with the ship); brushes only produce tile lists, which `brushPlan` judges and turns into the new outline.
+ * thinner shape cannot be drawn) that has to touch the ship or the connected plan; erase takes planned tiles out of the plan (real hull is never in
+ * the plan, so it stays); the line brush cuts the plan along a straight 0, 45 or 90 degree line. Mirror repeats every stroke across the ship's long
+ * axis. A stroke joins the plan on release (no confirm) unless it would leave part of the ship narrower than 3 tiles, or (rectangles) float free of the
+ * ship: that shows red while it is dragged and does not apply. With no drag the brush's first footprint shows under the cursor. The plan lives in the sim
+ * (`hull.plan`, saved with the ship); brushes only produce tile lists, which `brushPlan` and `cutPlan` judge and turn into the new outline.
  */
 export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writable<UiToolState>; placeHint: Writable<{ x: number; y: number; text: string } | null>; renderer(): Renderer | undefined; ship(): number }): HullPlanTool {
   let from: Tile | null = null;
   let to: Tile | null = null;
+  let hover: Tile | null = null;
   const state = () => deps.tool.get();
   const brush = (): Brush => ({ ...DEFAULT_BRUSH, ...state().hull });
   const active = () => state().tool === 'build' && state().build === 'hull';
@@ -42,24 +47,39 @@ export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writa
     if ((state().hull?.note ?? '') !== note) deps.tool.update((t) => ({ ...t, hull: { ...DEFAULT_BRUSH, ...t.hull, note } }));
   };
 
-  /** The tiles of the stroke being dragged, the text to read next to the pointer, and the plan after it. */
-  function stroke(): { tiles: Tile[]; label: string; result: BrushResult } | null {
-    if (!from || !to) return null;
-    const b = brush();
+  /** The stroke being dragged, or (with no drag) the one a click at the cursor would start: its tiles, the text for the pointer, and the plan after it. */
+  function stroke(): { tiles: Tile[]; label: string; result: BrushResult & { reason: string | null }; end: Tile } | null {
+    const a = from ?? hover;
+    const b = from ? to ?? from : hover;
+    if (!a || !b) return null;
+    const b0 = brush();
     const ship = sim.world.get(deps.ship(), ShipC);
-    let tiles: Tile[];
-    let label: string;
-    if (b.brush === 'rect') {
-      const r = dragRect(from, to);
-      tiles = rectTiles(r);
-      label = `${r.w} × ${r.h}`;
-    } else {
-      tiles = stairTiles(from, to);
-      const n = stairSize(from, to);
-      label = `${n}-step diagonal`;
+    const mirror = (t: Tile[]): Tile[] => (b0.mirror && ship ? withMirror(t, ship) : t);
+    if (b0.brush === 'line') {
+      const line = lineTiles(a, b);
+      const tiles = mirror(line);
+      const result = cutPlan(sim, deps.ship(), tiles);
+      return { tiles, label: `${line.length} tiles`, result: { ...result, reason: result.error }, end: b };
     }
-    if (b.mirror && ship) tiles = withMirror(tiles, ship);
-    return { tiles, label, result: brushPlan(sim, deps.ship(), b.erase ? 'erase' : 'add', tiles) };
+    const r = dragRect(a, b);
+    const part = rectTiles(r);
+    const tiles = mirror(part);
+    if (b0.erase) {
+      const result = brushPlan(sim, deps.ship(), 'erase', tiles);
+      return { tiles, label: `${r.w} × ${r.h}`, result: { ...result, reason: result.error }, end: b };
+    }
+    const result = brushPlan(sim, deps.ship(), 'add', tiles);
+    const parts = b0.mirror && ship ? [part, mirrorTiles(part, ship)] : [part];
+    // every piece of the stroke has to touch the ship (or the plan connected to it): a rectangle floating free of it is refused
+    const floats = parts.some((p) => !touchesShip(sim, deps.ship(), p));
+    return { tiles, label: `${r.w} × ${r.h}`, result: { ...result, reason: floats ? 'mustTouch' : result.error }, end: b };
+  }
+
+  /** The stroke as ghost tiles: red (its offending tiles stronger) when it will not apply; otherwise an outline, with the planned tiles it takes out tinted. */
+  function strokeAreas(tiles: Tile[], result: BrushResult & { reason: string | null }): Area[] {
+    if (result.reason) return [{ tiles, tint: RED, solid: true }, { tiles: result.bad, tint: RED, solid: true }, { tiles: result.bad, tint: RED, solid: true }];
+    const erasing = brush().erase || brush().brush === 'line';
+    return [{ tiles, tint: erasing ? ORANGE : WHITE }, ...(result.removed.length ? [{ tiles: result.removed, tint: ORANGE, solid: true }] : [])];
   }
 
   function draw(): void {
@@ -81,26 +101,31 @@ export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writa
       // a plan with a part narrower than 3: the whole plan red, the offending tiles stronger (drawn twice over)
       ...(redPlan ? [{ tiles: [...plan.tiles, ...plan.floor], tint: RED, solid: true }, { tiles: plan.bad, tint: RED, solid: true }, { tiles: plan.bad, tint: RED, solid: true }] : []),
       ...(order?.live ? [{ tiles: order.floor, tint: CYAN, solid: true }, { tiles: order.walls, tint: WHITE, solid: true }] : []),
-      ...(s ? strokeAreas(s.tiles, s.result, brush().erase) : []),
+      ...(s ? strokeAreas(s.tiles, s.result) : []),
     ]);
-    const rr = deps.renderer();
-    const at = s && to && rr ? rr.screenOf(deps.ship(), to.x, to.y) : null;
-    deps.placeHint.set(s && at ? { x: at.x, y: at.y, text: s.result.error ? `${s.label}: ${rejectionMessage(s.result.error)}` : s.label } : null);
-    setNote(s?.result.error ? rejectionMessage(s.result.error) : '');
+    const dragging = from !== null;
+    const at = s && dragging && r ? r.screenOf(deps.ship(), s.end.x, s.end.y) : null;
+    deps.placeHint.set(s && dragging && at ? { x: at.x, y: at.y, text: s.result.reason ? `${s.label}: ${rejectionMessage(s.result.reason)}` : s.label } : null);
+    if (dragging) setNote(s?.result.reason ? rejectionMessage(s.result.reason) : '');
   }
 
   return {
     active,
+    setHover(tile) {
+      hover = tile;
+    },
     paint(phase, tile) {
       if (!active()) return;
-      if (phase === 'start' && tile) from = to = tile;
-      else if (phase === 'cancel') from = to = null;
+      if (phase === 'start' && tile) {
+        from = to = tile;
+        setNote('');
+      } else if (phase === 'cancel') from = to = null;
       else if (phase === 'move' && tile && from) to = tile;
       else if (phase === 'end') {
         if (tile && from) to = tile;
         const s = stroke();
-        if (s && !s.result.error && !s.result.unchanged) bridge.dispatch({ type: 'hull.plan', ship: deps.ship(), tiles: s.result.outline });
-        const kept = s?.result.error ? rejectionMessage(s.result.error) : '';
+        if (s && from && !s.result.reason && !s.result.unchanged) bridge.dispatch({ type: 'hull.plan', ship: deps.ship(), tiles: s.result.outline });
+        const kept = s && from && s.result.reason ? rejectionMessage(s.result.reason) : '';
         from = to = null;
         deps.placeHint.set(null);
         draw();
@@ -110,10 +135,4 @@ export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writa
     },
     draw,
   };
-}
-
-/** The stroke as ghost tiles: what it would add (white) or take out (orange), or red with its offending tiles stronger when it would break the rule. */
-function strokeAreas(tiles: Tile[], result: BrushResult, erase: boolean): { tiles: Tile[]; tint: number; solid?: boolean }[] {
-  if (result.error) return [{ tiles, tint: RED, solid: true }, { tiles: result.bad, tint: RED, solid: true }, { tiles: result.bad, tint: RED, solid: true }];
-  return [{ tiles, tint: erase ? ORANGE : WHITE, solid: erase }];
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HullPlanC, ShipC, brushPlan, plannedTiles, planViolations, quoteYard } from '../sim';
+import { HullPlanC, ShipC, brushPlan, cutPlan, plannedTiles, planViolations, quoteYard, touchesShip } from '../sim';
 import { newViolations, hullFootprint } from '../sim/yard/width';
 import { outline, planHull, rect, run, yardGame } from './yardFixture';
 
@@ -126,5 +126,58 @@ describe('yard partial builds on brush-made plans', () => {
       expect(newViolations(hull, [...q.walls, ...q.floor]), `trial ${trial}`).toEqual([]);
     }
     expect(quoted).toBeGreaterThan(10);
+  });
+});
+
+describe('hull plan brushes: connection, erase and cut', () => {
+  const key = (t: { x: number; y: number }): string => `${t.x},${t.y}`;
+  const send = (sim: Parameters<typeof planHull>[0], me: number, tiles: { x: number; y: number }[]): void => planHull(sim, me, tiles);
+
+  it('a rectangle has to touch the ship or the connected plan', () => {
+    const { sim, me } = yardGame();
+    expect(touchesShip(sim, me, rect(sim, me, 4, top(3), 3, 3))).toBe(true); // against the hull's top edge
+    expect(touchesShip(sim, me, rect(sim, me, 4, top(3) - 6, 3, 3))).toBe(false); // floating in space
+    send(sim, me, outline(sim, me, 4, top(4), 4, 4));
+    expect(touchesShip(sim, me, rect(sim, me, 4, top(4) - 3, 3, 3))).toBe(true); // against the planned block, which is connected
+    expect(touchesShip(sim, me, rect(sim, me, 20, top(4) - 3, 3, 3))).toBe(false);
+  });
+
+  it('erase only ever takes planned tiles: a stroke over the hull leaves the hull alone', () => {
+    const { sim, me } = yardGame();
+    send(sim, me, outline(sim, me, 4, top(6), 6, 6));
+    const before = plannedTiles(sim, me).length;
+    const s = sim.world.get(me, ShipC)!;
+    const r = brushPlan(sim, me, 'erase', rect(sim, me, 3, top(6) + 3, 8, 12)); // half over the plan, half over the ship
+    const grid = sim.sector.grid;
+    for (const t of [...r.outline, ...r.footprint, ...r.removed]) expect(grid.get('struct', t.x, t.y), `${t.x},${t.y}`).toBe(0); // open space only
+    expect(r.removed.length).toBeGreaterThan(0);
+    expect(r.outline.length).toBeLessThan(before + 1);
+    expect(grid.get('struct', s.x + 5, s.y + 5)).not.toBe(0);
+  });
+
+  it('a line cuts off what is not connected to the ship, and keeps the line as the new edge', () => {
+    const { sim, me } = yardGame();
+    send(sim, me, outline(sim, me, 4, top(9), 8, 9)); // 8 wide, 9 deep, touching the hull
+    const s = sim.world.get(me, ShipC)!;
+    const row = (dy: number): { x: number; y: number }[] => Array.from({ length: 12 }, (_, i) => ({ x: s.x + 2 + i, y: s.y + dy }));
+    const r = cutPlan(sim, me, row(top(9) + 3)); // across the block, 3 rows from its far end
+    expect(r.error).toBe(null);
+    expect(r.unchanged).toBe(false);
+    expect(r.removed).toHaveLength(8 * 3); // the three rows beyond the line
+    const kept = new Set(r.footprint.map(key));
+    expect(kept.has(key({ x: s.x + 5, y: s.y + top(9) + 3 }))).toBe(true); // the line's own tiles stay
+    expect(kept.has(key({ x: s.x + 5, y: s.y + top(9) + 2 }))).toBe(false);
+    send(sim, me, r.outline);
+    expect(planViolations(sim, me, plannedTiles(sim, me))).toEqual([]);
+  });
+
+  it('a line that cuts nothing off, or lies off the plan, changes nothing', () => {
+    const { sim, me } = yardGame();
+    send(sim, me, outline(sim, me, 4, top(6), 8, 6));
+    const s = sim.world.get(me, ShipC)!;
+    const along = Array.from({ length: 6 }, (_, i) => ({ x: s.x + 8, y: s.y + top(6) + i })); // a vertical line: both halves still touch the hull
+    expect(cutPlan(sim, me, along).unchanged).toBe(true);
+    const away = Array.from({ length: 6 }, (_, i) => ({ x: s.x + 30 + i, y: s.y - 20 }));
+    expect(cutPlan(sim, me, away).unchanged).toBe(true);
   });
 });

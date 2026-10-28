@@ -80,7 +80,9 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     return out;
   };
   const refreshPreview = () => {
+    deps.renderer()?.setWorldGrid(tool.get().tool === 'build'); // the world grid shows while the build tools are open
     if (hullPlan.active()) {
+      hullPlan.setHover(hover);
       deps.renderer()?.setHover(null);
       deps.renderer()?.setPreview([]);
       placeHint.set(null);

@@ -20,11 +20,11 @@
   <b class="t">Hull plan</b>
   <div class="seg" role="group" aria-label="Brush">
     <button class:on={hull.brush === 'rect'} onclick={() => set({ brush: 'rect' })} title="Drag a rectangle (at least 3 × 3)" data-testid="hull-rect">Rectangle</button>
-    <button class:on={hull.brush === 'diag'} onclick={() => set({ brush: 'diag' })} title="Drag a 45° staircase (legs of 2 or more) from its corner" data-testid="hull-diag">Diagonal</button>
+    <button class:on={hull.brush === 'line'} onclick={() => set({ brush: 'line' })} title="Drag a straight line (0, 45 or 90°): what it cuts off from the ship is dropped, and the line becomes the edge" data-testid="hull-line">Line cut</button>
   </div>
   <div class="seg" role="group" aria-label="Plan mode">
-    <button class:on={!hull.erase} onclick={() => set({ erase: false })} data-testid="hull-add">Add</button>
-    <button class:on={hull.erase} onclick={() => set({ erase: true })} title="Takes planned tiles out; real hull stays" data-testid="hull-erase">Erase</button>
+    <button class:on={!hull.erase && hull.brush === 'rect'} disabled={hull.brush === 'line'} onclick={() => set({ erase: false })} data-testid="hull-add">Add</button>
+    <button class:on={hull.erase && hull.brush === 'rect'} disabled={hull.brush === 'line'} onclick={() => set({ erase: true })} title="Takes planned tiles out; real hull stays" data-testid="hull-erase">Erase</button>
   </div>
   <div class="seg" role="group" aria-label="Mirror">
     <button class:on={hull.mirror} onclick={() => set({ mirror: !hull.mirror })} title="Repeat every stroke on the other side of the ship's long axis" aria-pressed={hull.mirror} data-testid="hull-mirror">Mirror</button>
@@ -41,10 +41,10 @@
 </div>
 
 <style>
-  .planbar { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 196px); display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); font-size: 13px; color: #c8c8c8; }
+  .planbar { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 52px); display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); font-size: 13px; color: #c8c8c8; }
   .t { white-space: nowrap; color: var(--amber); font: 600 13px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .seg { display: flex; gap: 3px; }
-  .seg button { min-height: 26px; height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
+  .seg button { flex: none; white-space: nowrap; min-height: 26px; height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
   .seg button.on { border-color: var(--amber); background: var(--amber); color: #1a1204; }
   .seg button:disabled { opacity: 0.4; }
   .s { white-space: nowrap; }
