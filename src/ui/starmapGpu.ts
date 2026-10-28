@@ -19,8 +19,6 @@ export interface StarmapGpuScene {
   /** The plotted route as "x,y x,y ..." points. */
   routePts: string;
   routeSectors: ReadonlySet<string>;
-  /** Flee-target mode: only these nodes can be picked, the rest are dimmed. */
-  only: ReadonlySet<string> | null;
   /** Screen px at the right edge that the side drawer covers. */
   inset: number;
 }

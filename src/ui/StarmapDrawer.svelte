@@ -12,11 +12,9 @@
   import type { UiEncounterChoice, UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
   import { dangerColor, toneColor } from './starmapStyle';
 
-  let { map, node, sector, cluster, factions, route, nodes, fleeing = false, warnings = null, taking, ftl = null, onGo, onQueue, onOvercharge, onCharge, onCancelCharge, onConfirm, onCancel, onToggle, onDrop, onClear, onRespond }: {
+  let { map, node, sector, cluster, factions, route, nodes, warnings = null, taking, ftl = null, onGo, onQueue, onOvercharge, onCharge, onCancelCharge, onConfirm, onCancel, onToggle, onDrop, onClear, onRespond }: {
     map: UiStarmap; node: UiStarNode | null; sector: UiStarSector | null; cluster: UiStarCluster | null; factions: UiStarFaction[];
     route: UiStarRoute | null; nodes: Map<string, UiStarNode>;
-    /** Flee-target mode: the button flees (a one-hop trip away from the fight) instead of jumping. */
-    fleeing?: boolean;
     /** The confirm step: what the jump would leave behind (null = not confirming) and which docked shuttles come along. */
     warnings?: UiJumpWarnings | null; taking: Set<number>;
     /** The FTL drive and its order; Charge FTL / Cancel; "Jump when charged" queues the plotted route behind the charge. */
@@ -36,7 +34,7 @@
   const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
   const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : travel.phase === 'story' ? 'Signal received' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
   const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
-  const label = $derived(fleeing ? 'Flee here' : route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
+  const label = $derived(route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
     : travel?.phase === 'arrived' ? 'You have reached the end of the route.'
@@ -148,18 +146,18 @@
           {/each}
           <div class="two">
             <button onclick={onCancel}>Cancel</button>
-            <button class="go" onclick={onConfirm} data-testid="starmap-confirm-go"><Icon name={fleeing ? 'evasion' : 'fast'} size={18} />Confirm</button>
+            <button class="go" onclick={onConfirm} data-testid="starmap-confirm-go"><Icon name="fast" size={18} />Confirm</button>
           </div>
         </section>
       {:else}
-        <button class="go" disabled={!!route.blocker || (!!route.overweight && !fleeing)} onclick={onGo} data-testid="starmap-jump"><Icon name={fleeing ? 'evasion' : 'fast'} size={18} />{label}</button>
-        {#if route.blocker}<p class="note dim">{route.blocker}</p>{:else if !route.overweight || fleeing}<p class="note dim">Tap the node again to go.</p>{/if}
-        {#if route.overweight && !fleeing}
+        <button class="go" disabled={!!route.blocker || !!route.overweight} onclick={onGo} data-testid="starmap-jump"><Icon name="fast" size={18} />{label}</button>
+        {#if route.blocker}<p class="note dim">{route.blocker}</p>{:else if !route.overweight}<p class="note dim">Tap the node again to go.</p>{/if}
+        {#if route.overweight}
           <p class="note warn" data-testid="starmap-overweight">Overweight: hull {route.overweight.tiles} / {route.overweight.capacity}. The engines can't jump this much hull.</p>
           <button class="overcharge" disabled={!!route.blocker && route.chargeOk} onclick={onOvercharge} data-testid="starmap-overcharge"><Icon name="bolt" size={18} />Overcharge{route.chargeOk ? '' : ' when charged'}</button>
           <p class="note warn" data-testid="starmap-overcharge-risk">Risks engine damage, a lost engine and fires in the engine room.</p>
         {/if}
-        {#if !route.chargeOk && !fleeing && !ftl?.queued && !route.overweight}
+        {#if !route.chargeOk && !ftl?.queued && !route.overweight}
           <button class="queue" disabled={!!ftl?.blocker} onclick={onQueue} data-testid="starmap-queue"><Icon name="bolt" size={18} />Jump when charged</button>
         {/if}
         <FtlCharge {ftl} testid="starmap-ftl" {onCharge} onCancel={onCancelCharge} />

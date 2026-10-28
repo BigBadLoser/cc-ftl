@@ -1,7 +1,8 @@
 import {
-  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC, type Sim, type Target,
+  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
+  galaxyIndex, jumpFuel, nodeOf, routeBlocker, type Sim, type Target,
 } from '../sim';
-import type { UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
+import type { UiCombat, UiFleeNode, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
 import { shipIdOf } from '../sim/regions';
 import { factionsHostile } from '../sim/combat/factions';
 import { homeShip } from '../sim/index';
@@ -76,7 +77,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           });
         }
       }
-      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid) };
+      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid), flee: fleeNodes(sim, playerGrid) };
     } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.
@@ -87,6 +88,25 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
   // A ship in hyperspace or waiting to deploy is not in any fight, whatever is archived or placed in the empty sector.
   if (sim.sector.state !== 'active') return { inCombat: false, player: null, enemies: [] };
   return { inCombat: sim.sector.inCombat, player, enemies };
+}
+
+/** The nodes one jump away, cheapest fuel first, with what a flee to each needs; null in an event grid (fleeing just leaves it). */
+function fleeNodes(sim: Sim, ship: number): UiFleeNode[] | null {
+  if (sim.galaxy.event) return null;
+  const here = nodeOf(sim, sim.galaxy.current);
+  const out: UiFleeNode[] = [];
+  for (const e of galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current) ?? []) {
+    const id = e.a === sim.galaxy.current ? e.b : e.a;
+    const n = nodeOf(sim, id);
+    if (!n) continue;
+    const known = sim.galaxy.discovered[id] !== undefined;
+    const block = routeBlocker(sim, [e], ship);
+    out.push({
+      id, name: known ? n.name : 'Uncharted', known, danger: known ? n.danger : 0, dx: n.x - (here?.x ?? n.x), dy: n.y - (here?.y ?? n.y),
+      fuel: round(jumpFuel(sim, e.fuel, ship), 1), charge: e.charge, blocker: block === 'notCharged' || block === 'noFuel' ? block : null,
+    });
+  }
+  return out.sort((a, b) => a.fuel - b.fuel || a.charge - b.charge || (a.id < b.id ? -1 : 1));
 }
 
 function dist(sim: Sim, me: { x: number; y: number }, ship: number): number {

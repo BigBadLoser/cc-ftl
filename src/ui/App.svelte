@@ -73,8 +73,6 @@
   let wasInCombat = false;
   let overviewOpen = $state(false);
   let mapOpen = $state(false);
-  /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
-  let fleeShip = $state<number | null>(null);
   let sliding = $state(false);
   /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
   let star = $state<UiStarmap | null>(null);
@@ -185,7 +183,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
-    else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
+    else if (e.key === 'm') { if (!mapLocked) { mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
       // A pinned window ignores Esc.
       if (researchOpen) researchOpen = false;
@@ -231,7 +229,7 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
-    {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
+    {mapOpen} {mapLocked} onMap={() => (mapOpen = !mapOpen)}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
     {hasLab} {researchOpen} onResearch={() => (researchOpen = !researchOpen)}
@@ -266,7 +264,7 @@
   <DebugPanel {api} {snap} />
 {/if}
 {#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => { if (star?.event) api.dispatch({ type: 'combat.flee', ship }); else { fleeShip = ship; mapOpen = true; } }} onHail={(ship) => { tradeWith = ship; }} />
+  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => api.dispatch({ type: 'combat.flee', ship })} onHail={(ship) => { tradeWith = ship; }} />
 {/if}
 <ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
@@ -291,7 +289,7 @@
 {/if}
 {#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
 {#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
-{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
+{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 <GameSession {api} />

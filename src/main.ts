@@ -23,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, SAVE_VERSION, serialize, ShipC } from './sim';
+import { BodyC, SAVE_VERSION, galaxyIndex, nodeOf, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
@@ -198,7 +198,28 @@ const stationFlag = params.get('station');
  * tool open with the Rectangle brush, and the game running at normal speed. The plan starts empty; the station's Shipyard tab is one click away.
  */
 const scenario = params.get('scenario');
+/**
+ * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat panel (and its flee control).
+ * `&charged` also fills the FTL drive.
+ */
 function startScenario(): void {
+  if (scenario === 'fight') {
+    // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
+    const g = sim.galaxy;
+    const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
+      .find((id) => !nodeOf(sim, id)?.structures.length) ?? g.current;
+    const at = homeShipC();
+    if (next !== g.current) bridge.dispatch({ type: 'debug.galaxyTeleport', node: next });
+    setTimeout(() => {
+      if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
+      setTimeout(() => {
+        spawnRaider();
+        if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
+      }, 400);
+    }, 400);
+    loop.setSpeed(1);
+    return;
+  }
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
