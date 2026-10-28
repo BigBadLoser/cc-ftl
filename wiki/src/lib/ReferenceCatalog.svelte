@@ -2,7 +2,12 @@
   import { resolve } from '$app/paths';
   import generated from '../data/generated/reference-catalog.json';
 
-  type Kind = keyof typeof generated;
+  type Kind = 'modules' | 'items' | 'weapons' | 'vehicles' | 'recipes' | 'factions' | 'research';
+  type CatalogItem = {
+    id: string; slug: string; name: string; subtitle: string; category?: string;
+    image: string | null; facts: Array<[string, string]>; inputs?: string; outputs?: string;
+  };
+  const catalog = generated as unknown as Record<Kind, CatalogItem[]>;
   let { kind }: { kind: Kind } = $props();
 
   const paths: Record<Kind, string> = {
@@ -14,7 +19,7 @@
     factions: resolve('reference/factions/'),
     research: resolve('reference/research/'),
   };
-  const entries = $derived([...generated[kind]].sort((a, b) => a.name.localeCompare(b.name)));
+  const entries = $derived([...catalog[kind]].sort((a, b) => a.name.localeCompare(b.name)));
   let selectedCategory = $state('All');
   const categories = $derived(
     ['All', ...new Set(entries.map((entry) => entry.category).filter((v): v is string => Boolean(v)))].sort(
