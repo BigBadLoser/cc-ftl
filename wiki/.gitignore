@@ -10,3 +10,4 @@ src/routes/reference/vehicles/*/
 src/routes/reference/recipes/*/
 src/routes/reference/factions/*/
 src/routes/reference/research/*/
+static/generated/previews/

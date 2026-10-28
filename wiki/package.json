@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run generate && vite dev",
-    "generate": "tsx scripts/extract-sprites.ts && tsx scripts/generate-reference.ts",
+    "generate": "tsx scripts/extract-sprites.ts && tsx scripts/render-module-previews.ts && tsx scripts/generate-reference.ts",
     "build": "npm run generate && vite build",
     "check": "npm run generate && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },

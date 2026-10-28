@@ -41,6 +41,8 @@ jobs:
           test -f wiki/dist/reference/factions/index.html
           test -f wiki/dist/reference/research/index.html
           test -f wiki/dist/reference/modules/reactor/index.html
+          test -s wiki/dist/generated/previews/module-reactor.png
+          test -s wiki/dist/generated/previews/module-engine-mk2.png
       - name: Render actual wiki screenshots
         run: |
           set -euo pipefail

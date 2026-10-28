@@ -259,3 +259,28 @@
   .wiki-module-info { padding: 0.65rem; }
   .wiki-category-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* The documentation hero uses the same grid/footprint geometry as the game's
+ * construction preview, pre-rendered for GitHub Pages without hydration. */
+.wiki-placement-figure {
+  margin: 1.15rem 0 1.5rem;
+  width: min(100%, 600px);
+  border-radius: 0.6rem;
+  border: 1px solid var(--wiki-card-border);
+  overflow: hidden;
+  background: #070b11;
+}
+.wiki-placement-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+.wiki-placement-figure figcaption {
+  padding: 0.65rem 0.9rem;
+  font-size: 0.83rem;
+  color: #a3b4c8;
+  border-top: 1px solid #283548;
+}
+.wiki-module-art { background: #070b11; }
+.wiki-module-art img { max-width: none; width: 100%; object-fit: cover; }

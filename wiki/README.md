@@ -37,3 +37,5 @@ coverage; add verified game screenshots and guides. Keep market-dependent
 values separate from fixed item base values.
 
 Reference generation includes sprite crops from `../public/assets/1x/manifest.json` and the source PNG sheets. Generated transparent thumbnails are written under `static/generated/sprites/` with nearest-neighbor scaling. Entries without suitable static sprites omit the image; they never borrow an unrelated illustration.
+
+`render-module-previews.ts` generates fixed 600×400 placement views using the same `previewGeometry()` as the game's construction UI; the sprite layer chains come from the game's `layersOf()` selector and atlas. Missing artwork remains visibly marked instead of substituting fabricated art. The previews are static for fast GitHub Pages delivery and are used for catalog cards and module details.
