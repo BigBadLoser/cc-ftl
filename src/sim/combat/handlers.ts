@@ -12,8 +12,9 @@ import { shipById, spawnShip } from './ships';
 import { weaponAntiVehicle } from './targets';
 import { generateShip } from '../shipgen/generate';
 import { spawnDerelict } from './derelict';
+import { applyEffects } from './effects';
 
-type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy' | 'debug.spawnGenerated' | 'debug.spawnDerelict'>;
+type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy' | 'debug.spawnGenerated' | 'debug.spawnDerelict' | 'debug.bombard'>;
 type Handler<T extends CombatCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -26,6 +27,19 @@ function moduleOnGrid(sim: Sim, id: number, shipId: number): boolean {
 }
 
 export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
+  'debug.bombard': (sim, cmd) => {
+    const grid = shipGrid(sim, cmd.ship);
+    const def = sim.content.weapons?.[cmd.weapon];
+    if (!grid || !def) return reject(sim, cmd.type, !grid ? 'badShip' : 'badWeapon');
+    if (!Number.isInteger(cmd.shots) || cmd.shots < 1 || cmd.shots > 200) return reject(sim, cmd.type, 'badValue');
+    const tiles: { x: number; y: number }[] = [];
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+      for (let x = grid.x0; x < grid.x0 + grid.width; x++) if (grid.get('struct', x, y) !== Struct.Space) tiles.push({ x, y });
+    for (let i = 0; i < cmd.shots && tiles.length; i++) {
+      const t = sim.rng.pick(tiles);
+      applyEffects(sim, { shipId: cmd.ship, x: t.x, y: t.y, projectile: -1 - i, weapon: cmd.weapon }, def.effects);
+    }
+  },
   'debug.spawnEnemy': (sim, cmd) => {
     const template = sim.content.ships[cmd.template];
     if (!template) return reject(sim, cmd.type, 'badTemplate');

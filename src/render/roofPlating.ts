@@ -1,6 +1,6 @@
 import { Sprite, type Container } from 'pixi.js';
 import { resolveArt } from './assets/fallback';
-import type { Atlas } from './assets/loader';
+import type { Atlas, StaticSprite } from './assets/loader';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { createLiveryMesh } from './livery';
@@ -30,8 +30,21 @@ const grey = (k: number): number => {
   return (v << 16) | (v << 8) | v;
 };
 
+/** The plating's shading tint at tile (x, y) of a W x H region (the battle damage over it takes the same). */
+export const roofTint = (x: number, y: number, W: number, H: number): number => grey(roofGradient(x, y, W, H));
+
 /** True when the manifest has the production roof plating (the roof family). */
 export const hasRoofArt = (atlas: Atlas): boolean => !!atlas.stat('roof.c0b.00');
+
+/** The plating's base sprite of roof tile (x, y) (its module-rule plate, cut where the hull is), with its colour family. */
+export function roofBase(atlas: Atlas, kindAt: KindAt, x: number, y: number): { base: StaticSprite; col: 'o' | 'b'; cut: RoofCut } | undefined {
+  const { id, col } = roofTile(x, y);
+  const cut = roofCut(kindAt, x, y);
+  const sfx = cutSuffix(cut);
+  const plain = id.replace(/\.(inset|patch)$/, '');
+  const base = atlas.stat(id + sfx) ?? atlas.stat(plain + sfx) ?? atlas.stat(id) ?? atlas.stat(plain);
+  return base && { base, col, cut };
+}
 
 /** Livery masks per roof tile (`x,y` -> masks); empty without the roof family or a livery. */
 export type RoofPlan = ReadonlyMap<string, readonly { mask: string; motif: string }[]>;
@@ -62,7 +75,6 @@ export interface TileRect {
  */
 export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: Atlas, L: Layers, livery: Livery | null, plan: RoofPlan, skip: (x: number, y: number) => boolean, rect: TileRect = { x0: 0, y0: 0, x1: W, y1: H }): RoofPiece[] {
   const roofed = (x: number, y: number): boolean => roofCovers(kindAt, x, y);
-  const cutOf = (x: number, y: number): RoofCut => roofCut(kindAt, x, y);
   const real = hasRoofArt(atlas);
   const out: RoofPiece[] = [];
   const place = <T extends Container>(o: T, z: number): T => {
@@ -95,11 +107,9 @@ export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: At
         out.push({ objs, tinted, idx, tint: art.tint });
         continue;
       }
-      const { id, col } = roofTile(x, y);
-      const cut = cutOf(x, y);
-      const sfx = cutSuffix(cut);
-      const base = atlas.stat(id + sfx) ?? atlas.stat(id.replace(/\.(inset|patch)$/, '') + sfx) ?? atlas.stat(id) ?? atlas.stat(id.replace(/\.(inset|patch)$/, ''));
-      if (!base) continue;
+      const found = roofBase(atlas, kindAt, x, y);
+      if (!found) continue;
+      const { base, col, cut } = found;
       const sprite = (s: typeof base, dz: number): Sprite => {
         const o = new Sprite(s.tex);
         o.position.set(Math.round(p.x - s.ax), Math.round(p.y - s.ay));
@@ -119,7 +129,7 @@ export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: At
         const e = atlas.stat(`roof.edge.${side}.${col}${clip}`) ?? atlas.stat(`roof.edge.${side}.${col}`);
         if (e) objs.push(sprite(e, 0.908));
       }
-      out.push({ objs, tinted: objs, idx, tint: grey(roofGradient(x, y, W, H)) });
+      out.push({ objs, tinted: objs, idx, tint: roofTint(x, y, W, H) });
     }
   return out;
 }

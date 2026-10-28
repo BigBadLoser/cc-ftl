@@ -2,6 +2,7 @@ import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
 import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 import { dropHalo } from '../haloTex';
 import { buildMask, keepMask } from './alphaMask';
+import { PIXEL_SHEETS, keepPixels, readPixels } from './sheetPixels';
 import { composeManifest } from './compose';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
@@ -174,6 +175,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     const img = a.kind === 'static' && /^(module|vehicle|container|prop)\./.test(id) ? manifest.sheets[a.sheet]?.image : undefined;
     if (img) pickable.add(img);
   }
+  /** Sheet images that keep their RGBA for CPU composing (sheetPixels.ts). */
+  const pixelImages = new Set([...PIXEL_SHEETS].map((n) => manifest.sheets[n]?.image).filter((i): i is string => !!i));
   const loadTex = async (path: string, keyed = false, mask = false): Promise<Texture> => {
     const resolution = resOf.get(path) ?? 1;
     // 1x sheets are always nearest: each art pixel must stay a hard 2x2 block (smoothing is for 2x art shrunk below zoom 1).
@@ -186,6 +189,10 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     if (mask && hooks) {
       const m = buildMask(t.source.resource, t.source.pixelWidth, t.source.pixelHeight);
       if (m) keepMask(t.source, m);
+    }
+    if (pixelImages.has(path) && hooks) {
+      const px = readPixels(t.source.resource, t.source.pixelWidth, t.source.pixelHeight);
+      if (px) keepPixels(t.source, px);
     }
     toGpu(t.source);
     return t;

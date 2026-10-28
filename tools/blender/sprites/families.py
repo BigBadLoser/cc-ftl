@@ -6,7 +6,8 @@
   struct    structural beams (truss tiles by connection mask, caps, hull flanges), one set per faction look
   weapons   roof turrets (8 aims, charged, stowed, deploy frames) and their floor bays, 4 rotations
   airlock   the airlock: outer bulkhead + door, inner door, chamber walls per view level, cycle lights, docking collar
-  roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
+  roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py), the
+            structure under the plating that battle damage shows (roof_struct.py)
   vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
   shuttle   the flying shuttle: 8 fly headings and 4 docked poses (vehicle_bay.py craft_jobs)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
@@ -156,8 +157,8 @@ def jobs(name):
         from . import derelict_more
         return derelict_more.SPRITES, True
     if name == "roof":
-        from . import roofs, roof_cuts
-        return roofs.SPRITES + roof_cuts.SPRITES, True
+        from . import roofs, roof_cuts, roof_struct
+        return roofs.SPRITES + roof_cuts.SPRITES + roof_struct.SPRITES, True
     if name == "rock":
         from . import rock
         return rock.jobs(), True

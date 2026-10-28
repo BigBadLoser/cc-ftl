@@ -75,6 +75,8 @@
     <button disabled={!tile} data-testid="dbg-robot-bay" onclick={() => tile && api.dispatch({ type: 'debug.spawnModule', ship: tile.ship, x: tile.x, y: tile.y, def: 'module.robotBay', rot: 0 })}>Robot bay on tile</button>
     <button disabled={!tile} data-testid="dbg-parts" onclick={() => tile && api.dispatch({ type: 'debug.spawnItems', ship: tile.ship, x: tile.x, y: tile.y, item: 'item.parts', count: 40 })}>40 parts on tile</button>
     <button data-testid="dbg-drain" onclick={() => api.dispatch({ type: 'debug.setCharge', value: 12 })}>Drain robot batteries</button>
+    <button data-testid="dbg-bombard" disabled={!foes[0]} onclick={() => api.dispatch({ type: 'debug.bombard', ship: foes[0]?.ship ?? 0, weapon: 'weapon.missile', shots: 6 })}>Bombard ship 2 (6 missiles)</button>
+    <button data-testid="dbg-bombard-laser" disabled={!foes[0]} onclick={() => api.dispatch({ type: 'debug.bombard', ship: foes[0]?.ship ?? 0, weapon: 'weapon.burstLaser', shots: 12 })}>Pepper ship 2 (12 lasers)</button>
     <button data-testid="dbg-capture" onclick={() => api.dispatch({ type: 'debug.capture', ship: foes[0]?.ship ?? 0 })}>Capture ship 2 (raider)</button>
     <button onclick={spawnShipyard}>Spawn rogue AI shipyard</button>
     <button onclick={repro}>Copy repro</button>

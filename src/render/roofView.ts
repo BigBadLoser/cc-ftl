@@ -15,6 +15,7 @@ import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
 import { mulColor } from './lightTint';
 import { DAMAGED_BELOW } from './moduleArt';
+import { createRoofDamage } from './roofDamage/view';
 
 export { ROOF_H };
 const FIRE_TINT = 0xff9a60;
@@ -55,7 +56,7 @@ interface PartSprite {
  * (`ModuleDef.roofAsset`, `.active` while powered, deploy frames) on top, so they can be told apart and targeted.
  * On a cutaway ship (not roofed) the generic roof is hidden and the parts stay as ghosts (faint, with a light outline).
  * The plating is one view per sector chunk (step 5b), rebuilt when the chunk's struct block, its module tiles or its
- * share of the livery plan change; tiles on fire glow.
+ * share of the livery plan change; tiles on fire glow. Battle damage is painted over the plating (roofDamage/view.ts).
  */
 export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, livery: Livery | null = null): RoofView {
   const tiles = regionTiles(grid);
@@ -71,6 +72,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   let visible = true;
   let partKey = '';
   let partSprites: PartSprite[] = [];
+  const damage = createRoofDamage(grid, tiles, atlas, L, world);
 
   function clearParts(): void {
     for (const p of partSprites) p.spr.destroy();
@@ -124,6 +126,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   function clear(): void {
     clearParts();
     chunks.clear();
+    damage.dispose();
   }
 
   function replan(): void {
@@ -184,6 +187,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
         rebuildParts();
       }
       for (const p of partSprites) setGhostZoom(p.ghost, L.scale);
+      if (visible) damage.update();
       const fr = grid.revision('fire');
       if (fr !== fireRev) {
         fireRev = fr;
@@ -195,6 +199,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       partKey = ''; // stowed parts appear on roofed ships only: rebuild
       for (const p of partSprites) p.spr.filters = v ? [] : [p.ghost];
       for (const c of chunks.views()) for (const p of c.pieces) for (const o of p.objs) o.visible = v;
+      damage.setVisible(v);
     },
     dispose: clear,
   };

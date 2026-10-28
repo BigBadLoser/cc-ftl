@@ -129,6 +129,8 @@ export type Command =
    * Like debug.spawnGenerated, then run the derelict ruin pass (shipgen/ruin.ts) over it with `seed` and spawn the result as
    * an inert wreck: no crew, no AI, state 'wreck', neutral side. `intensity` 0..1 (default 0.5); `cause` default rolled.
    */
+  /** Debug: land `shots` impacts of `weapon` on random tiles of a ship (no flight, shields or evasion): battle damage to look at. */
+  | { type: 'debug.bombard'; ship: number; weapon: string; shots: number }
   | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
   /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked; `targetTile` (with targetModuleId 0) aims blind at one sector tile of the target ship, and the hits land near it. */
   | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number; targetTile?: { x: number; y: number } }
