@@ -43,7 +43,17 @@ def look3(f, s, back, U, Z, cols):
         pp = [(d - 0.01, zb), (fr, zb), (fr, zt), (d - 0.01, zt)]
         pc = s.cols(pp, "face")
         pc[2] = XS
-        f.part(*U(pa, pb), pp, pc, XS, end=False)
+        f.part(*U(pa, pb), pp, pc, SEAM, end=False)
+        top = [(fr - 0.01, Z(pv0 + 1)), (fr + PAINT, Z(pv0 + 1)), (fr + PAINT, zt), (fr - 0.01, zt)]
+        f.part(*U(pa, pb), top, [YS[4]] * 4, YS[4], end=False)     # (a lit px along its front's top: its edge)
+        f.line(*U(pb + 1, pb + 2), zb, zt, SEAM, end=False, bevel=False)    # (its shade on the face by its -u end)
+    with f.tag("recess"):                                           # (shade inside the recess under the cut and
+        _, (ra, rb, _, rv) = _rects()                               # down its +u side, the light from over its +u)
+        rf = s.front(s.H, s.H)[0][0] - LINE
+        for (ua, ub), z0, z1 in (((ra, rb), Z(1), s.H), ((ra, ra + 1), Z(rv), s.H)):
+            sh = [(rf - 0.01, z0), (rf + PAINT, z0), (rf + PAINT, z1), (rf - 0.01, z1)]
+            f.part(*U(ua, ub), sh, [SEAM] * 4, SEAM, end=False)
+    with f.tag("grille"):
         (ga, gb), (gv0, gv1) = LOOK3["grille"]
         for p in range(ga, gb, 2):                                  # (soft gaps between the slats, on its front)
             pf = [(fr - 0.01, Z(gv1)), (fr + PAINT, Z(gv1)), (fr + PAINT, Z(gv0)), (fr - 0.01, Z(gv0))]
