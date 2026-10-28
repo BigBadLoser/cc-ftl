@@ -117,12 +117,12 @@ def _tone(m, i, n, s):
 LAYERS = {"under": (UP, 0.0), "over": (-UP, 0.0)}   # (a layer's cut: under the deck, over it)
 
 
-def piece(key, far=ZG, layer="over", margin=0.0):
+def piece(key, far=ZG, layer="over", margin=0.0, look=1):
     """A layer (LAYERS) of the belly piece of a tile with this key: a near run's part the run's own art (wall3d_belly
     _run, as the exterior's pieces take the run set's), cut to it; each other part a solid, its faces toned by facing
     (a face shared with a neighbour part drawn only where it rises over or hangs under that part, else it is inside
     the hull), the top's seam on its cut (the exterior's). `margin`: its sides that far out (WIDE: the solid its
-    colours come from, env_build "wide")."""
+    colours come from, env_build "wide"); look: its runs' (wall3d_belly_run.build)."""
     from . import wall3d_belly_run as BR
     rel, art = T.Relief(f"belly_{layer}_{HO.name(key)}"), []
     for f, planes, n, shared, cuts in _parts(key, far, margin):
@@ -130,7 +130,7 @@ def piece(key, far=ZG, layer="over", margin=0.0):
         if (-lo if layer == "under" else hi) <= 0.0:
             continue                                    # (none of it in this layer)
         if f[0] in BR.RUNS:
-            art += BR.art(f, cuts + [LAYERS[layer]], wide=margin > 0)
+            art += BR.art(f, cuts + [LAYERS[layer]], wide=margin > 0, look=look)
             continue
         planes = planes + [LAYERS[layer]]
         own = {id(q[0]): h for q, h in shared}
@@ -151,7 +151,7 @@ def piece(key, far=ZG, layer="over", margin=0.0):
     return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
 
 
-def wide(key, far=ZG, layer="over"):
+def wide(key, far=ZG, layer="over", look=1):
     """A piece as env_build's "wide" kind: (its own, the same run on past the tile's edges); none if it is empty."""
-    own = piece(key, far, layer)
-    return (own, piece(key, far, layer, WIDE)) if own else []
+    own = piece(key, far, layer, look=look)
+    return (own, piece(key, far, layer, WIDE, look)) if own else []

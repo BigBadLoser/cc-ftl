@@ -33,8 +33,9 @@ def section():
     return Section(ZG, T3.BACK, under=(ZG - ARMOUR, SLOPE[0], SLOPE[1]))
 
 
-def build(s2):
-    """The run along a near front s2 ((0, 1) or (1, 0)) of a tile whose outline is the run set's (c 15), whole."""
+def build(s2, look=1):
+    """The run along a near front s2 ((0, 1) or (1, 0)) of a tile whose outline is the run set's (c 15), whole, in
+    one of hull 46's D3 looks (1, or 3: wall3d_belly_look3)."""
     ax, sec = RUNS[s2], section()
     k = T.Relief(f"belly_run_{ax}")
     plane = E - D - T3.BACK
@@ -45,19 +46,24 @@ def build(s2):
     back = -0.5 - plane                                         # (the tile's inner edge, d from the block's face)
     prof = [(back, sec.zmin), (0.0, sec.zmin), (0.0, sec.H), (back, sec.H)]
     FR.prism(k, ax, plane, -0.5, 0.5, prof, "steel", 3, [BOTTOM, None, T.CUT, INNER], YS[1])
-    _look1(f, sec, back)
+    if look == 3:
+        from .wall3d_belly_look3 import look3
+        look3(f, sec, back, *_uz(sec), (XS, CREASE, RIM, EDGE, SEAM))
+    else:
+        _look1(f, sec, back)
     return k.build()
+
+
+def _uz(s):
+    """Art px to the face's u (px from its +u end -> u0, u1) and height (px down from the cut)."""
+    return (lambda a, b: (0.5 - T3.px(b), 0.5 - T3.px(a))), (lambda v: s.z_at(s.H, v))
 
 
 def _look1(f, s, back):
     """D3 look 1 over the tile: the lit lip under the cut, the top's seams along its front and back, a seam across each
     side plate, the centre plate a px proud (lit along its top, a px of shade under it), the slope's
     rim, the lip on the face's foot (its shade on the slope under it), two seams down the slope and one across it."""
-    def U(a, b):                                    # (px from the +u end -> u0, u1)
-        return 0.5 - T3.px(b), 0.5 - T3.px(a)
-
-    def Z(v):                                       # (px down from the cut -> height)
-        return s.z_at(s.H, v)
+    U, Z = _uz(s)
     foot = s.under[0]
     with f.tag("lips"):
         f.line(-0.5, 0.5, Z(1), s.H, YS[4], bevel=False)
@@ -110,14 +116,14 @@ def cut(objs, planes):
     return objs
 
 
-def art(f, planes, wide=False):
+def art(f, planes, wide=False, look=1):
     """A near run's art for a front f ((s, c), c in 32nds, tile-local) cut to planes; wide: with a copy a tile either
     way along the run (its colours run on past the tile's edges, env_build "wide"). The tile's side on its front's
     side is no cut (the front is set in from it; what stands proud of the face may pass it)."""
     s2, c = f
     planes = [q for q in planes if (q[0].x, q[0].y, q[0].z) != (s2[0], s2[1], 0)]   # (not its own tile side: what
     off = (c - 15) / 32                                         # stands proud of the face runs past it)                                         # (the run set's outline is c 15)
-    objs = build(s2)
+    objs = build(s2, look)
     along = (1, 0) if s2 == (0, 1) else (0, 1)
     if wide:
         for kk in (-1, 1):
