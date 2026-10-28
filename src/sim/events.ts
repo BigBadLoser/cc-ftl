@@ -94,6 +94,11 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
+  /** A ship's heat hit the maximum: lockout (no weapons, no shields) until it cools. */
+  | { type: 'combat.overheated'; ship: number }
+  /** A ship started venting heat (shields down, weapons held). */
+  | { type: 'combat.vented'; ship: number }
+  | { type: 'combat.overcharged'; ship: number; system: 'weapons' | 'shields' | 'engines' }
   /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
   | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' | 'dug' | 'breach' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */

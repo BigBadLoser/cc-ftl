@@ -20,6 +20,8 @@ import { draftedSystem } from './systems/drafted';
 import { crewCombatSystem } from './systems/crewCombat';
 import { equipSystem } from './systems/equip';
 import { enemyAiSystem } from './systems/enemyAi';
+import { heatSystem } from './systems/heat';
+import { heatAiSystem } from './systems/heatAi';
 import { firingSystem } from './systems/firing';
 import { helmSystem } from './systems/helm';
 import { impactSystem } from './systems/impacts';
@@ -180,10 +182,14 @@ export const pipeline: readonly System[] = [
   // Roof parts fold out or away on this tick's combat state and power, before anything checks them.
   deploySystem,
   // Shields and helm settle this tick's layers, evasion and FTL charge before shots resolve.
+  // Heat before shields: a vent or an overheat started this tick holds the shields down.
+  heatSystem,
   shieldSystem,
   helmSystem,
   // The enemy AI issues commands (applied next tick), then targets are validated.
   enemyAiSystem,
+  // Heat management by command (the AI's vents and overcharges, the player ship's automatic vent), applied next tick.
+  heatAiSystem,
   // The boarding doctrine issues vehicle commands (applied next tick).
   boardingAiSystem,
   // The player's anti-vehicle weapons pick up a hostile shuttle coming for the ship (the AI does it by command above).

@@ -5,6 +5,8 @@ import { aimDirection, turretPosition } from '../combat/geometry';
 import { mannedConsole, operatorSkill } from '../combat/operators';
 
 import { resolveTarget } from '../combat/targets';
+import { addHeat, fireBlocked } from '../combat/heat';
+import { AUTO_FIRE_CEILING, HEAT_MAX } from '../combat/heatTuning';
 import { updateCommit } from '../combat/commit';
 import { isAiFaction } from '../combat/factions';
 import { ModuleC } from '../modules/components';
@@ -33,7 +35,7 @@ export function firingSystem(sim: Sim): void {
     const ship = shipById(sim, shipId);
     const combat = ship && sim.world.get(shipId, CombatC);
     if (!m || !w || !def || !ship || !combat) continue;
-    const ready = ship.state === 'active' && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
+    const ready = ship.state === 'active' && !fireBlocked(combat) && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
     if (w.shotsLeft > 0) {
       w.commit = null;
       if (!ready) w.shotsLeft = 0;
@@ -47,6 +49,9 @@ export function firingSystem(sim: Sim): void {
     if (!ready || w.charge < 1 || held) continue;
     const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
+    // Auto heat control (the AI always, the player's ship by default): a volley that would overheat the ship waits for a vent.
+    if ((isAiFaction(ship.faction) || combat.heat.auto) && combat.heat.value + def.heat > HEAT_MAX * AUTO_FIRE_CEILING) continue;
+    addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
     w.volleyTarget = target;

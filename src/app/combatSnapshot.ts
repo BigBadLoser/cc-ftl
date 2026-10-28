@@ -1,8 +1,11 @@
 import {
   CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
-  type Sim, type Target,
+  type Combat, type Sim, type Target,
 } from '../sim';
 import type { UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
+import { HEAT_MAX } from '../sim/combat/heatTuning';
+import { shieldsDown } from '../sim/combat/heat';
+import { TICK_HZ } from '../sim/time';
 import { shipIdOf } from '../sim/regions';
 import { factionsHostile } from '../sim/combat/factions';
 import { commitCharge } from '../sim/combat/commit';
@@ -47,6 +50,16 @@ function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
   return out;
 }
 
+function heatOf(c: Combat): UiShipCombat['heat'] {
+  const sec = (ticks: number): number => round(ticks / TICK_HZ, 1);
+  const oc = (o: { left: number; cooldown: number }) => ({ left: sec(o.left), cooldown: sec(o.cooldown) });
+  const h = c.heat;
+  return {
+    value: round(h.value, 1), max: HEAT_MAX, lockout: sec(h.lockout), venting: sec(h.vent), cooling: shieldsDown(c) || h.vent > 0, auto: h.auto,
+    overcharge: { weapons: oc(h.overcharge.weapons), shields: oc(h.overcharge.shields), engines: oc(h.overcharge.engines) },
+  };
+}
+
 function snapOf(sim: Sim, id: number): UiShipCombat | null {
   const ship = sim.world.get(id, ShipC);
   const c = sim.world.get(id, CombatC);
@@ -56,6 +69,7 @@ function snapOf(sim: Sim, id: number): UiShipCombat | null {
   return {
     ship: id, name: ship.name, x: ship.x, y: ship.y, state: ship.state, integrity: round(ship.integrity),
     shield: { layers: c.shield.layers, max: c.shield.max, progress: Number.isFinite(need) ? round(Math.min(1, c.shield.timer / need)) : 0 },
+    heat: heatOf(c),
     evasion: round(c.evasion), hold: c.hold, ftl: round(c.ftl, 1), ftlMax: FTL_CHARGE_SEC,
     target: t ? { ship: t.ship, moduleId: t.moduleId, label: label(sim, t) ?? '', ...(t.tile ? { tile: t.tile } : {}) } : null,
     modules: modulesOf(sim, id),
