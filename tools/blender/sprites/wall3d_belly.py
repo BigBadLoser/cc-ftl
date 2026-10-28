@@ -23,7 +23,7 @@ from . import hull_outline as HO
 from . import wall3d as T
 from . import walls as W
 from .wall3d_ext_diag import UP, WIDE, _lift, _seam, _solid, _tile
-from .wall3d_ext_geom import YS
+from .wall3d_ext_geom import BELLY_SLOPE, YS
 from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
@@ -32,7 +32,7 @@ SLOPE = (0.375, 0.587)              # 64 px tiles; its D3 draws 31, but the two 
                                     # front) and down under the ship: a px column shows 11 px of it on a run (39.2 h
                                     # - 32 r), its end at the tile's side a 12 px taper (32 r), 14 px on a facet facing
                                     # the camera (39.2 h - 16 r sqrt 2), as hull 46 D3's and Bottom's
-SLOPE_TONE = YS[1]
+SLOPE_TONE = BELLY_SLOPE
 OUTER = YS[2]                       # the outer faces (both near faces alike, as the exterior's)
 END = YS[1]                         # a part's end where it shows past its neighbour
 INNER = ("nvF1", "nvF3")            # the hull's inside, facing +y / +x (the machinery, later)

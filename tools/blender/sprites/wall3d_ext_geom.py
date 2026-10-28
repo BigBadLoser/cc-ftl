@@ -19,6 +19,7 @@ LEAN_RISE = 0.8                     # hull 46 T3's front (measured off its end):
                                     # edge D in (its measured roll onto the top made a second angle at a corner)
 F = "steel"
 YS = T.RAMPS[F][0]                  # the tones (both near faces alike: hull 46 mirrors its art, no shade side)
+BELLY_SLOPE = "hbSlope"               # a belly's slope under the ship (hull 46 belly's navy)
 HILITE = "hsW"                      # a seam's lit edge on the lean (a step over its near-white)
 TOP = YS[3]                         # the tops (the lean a step lighter, the upright part a step darker)
 DEBUG = set(filter(None, os.environ.get("EXT_DEBUG", "").split(",")))   # detail groups (Face.tag) drawn all in
@@ -115,7 +116,7 @@ class Section:
             elif pd < 0.3:
                 out.append(None)
             elif self.under and pz < -0.3:
-                out.append(YS[1])                                       # (a belly's slope, under the ship)
+                out.append(BELLY_SLOPE)                                 # (a belly's slope, under the ship)
             else:
                 out.append(YS[max(1, face - 3) if role == "dark" else min(5, face + ROLES[role])])
         return out

@@ -2155,5 +2155,17 @@
  },
  "hsSeamHi": {
   "hex": "#dce1e7"
+ },
+ "hbSoft": {
+  "hex": "#5c7585"
+ },
+ "hbSlope": {
+  "hex": "#42566a"
+ },
+ "hbCrease": {
+  "hex": "#283751"
+ },
+ "hbRim": {
+  "hex": "#131a2c"
  }
 }
