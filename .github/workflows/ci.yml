@@ -12,10 +12,10 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths-ignore: ['**/*.md', 'wiki/**', '.github/workflows/wiki-ci.yml', '.github/workflows/pages.yml']
+    paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
   push:
     branches: [main]
-    paths-ignore: ['**/*.md', 'wiki/**', '.github/workflows/wiki-ci.yml', '.github/workflows/pages.yml']
+    paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
   schedule:
     - cron: '17 6 * * *'
   workflow_dispatch:
@@ -55,7 +55,7 @@ jobs:
           [[ -n "$changed" ]] || exit 0
           while IFS= read -r file; do
             case "$file" in
-              wiki/*|.github/workflows/wiki-ci.yml) ;;
+              wiki/*|wiki-preview/*|.github/workflows/wiki-ci.yml|.github/workflows/wiki-preview.yml) ;;
               *) echo "Game-relevant change: $file"; exit 0 ;;
             esac
           done <<< "$changed"

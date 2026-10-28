@@ -35,7 +35,9 @@ try {
   await toggle.click();
   await page.waitForFunction(() => document.documentElement.classList.contains('wiki-sidebar-hidden'));
   const collapsed = await page.locator('.content').first().boundingBox();
-  if (collapsed && expanded && collapsed.width <= expanded.width + 10) throw Error('Sidebar collapse failed to expand content');
+  console.log('Content bounds: expanded=' + JSON.stringify(expanded) + ', collapsed=' + JSON.stringify(collapsed));
+  if (collapsed && expanded && (collapsed.width <= expanded.width + 100 || collapsed.x >= expanded.x - 60))
+    throw Error('Sidebar collapse failed to substantially expand and reposition content');
   await shot('fabricator-collapsed', true);
   await toggle.click();
   await page.waitForFunction(() => !document.documentElement.classList.contains('wiki-sidebar-hidden'));
