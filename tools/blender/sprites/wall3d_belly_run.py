@@ -15,7 +15,7 @@ from .wall3d_ext_geom import D, E, LINE, PAINT, YS, Face, Section
 RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes (wall3d: the face's normal)
 INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
 XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam and shade, the slope's
-SHADOW = "hbSlopeD"                                  # seams (navy), its rim, a shade on it
+                                                     # seams (navy: the lip's edge on it too), its rim
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 9),         # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (8, 15)),                # the centre plate, a px proud, lit along its top, a px of shade under
@@ -76,9 +76,10 @@ def _look1(f, s, back):
         d, zb = s.front(foot, foot)[0][0], foot - x * (s.H - Z(1))     # (straight down, over the slope)
         prof = [(d - 0.01, zb), (d + LINE, zb), (d + LINE, foot), (d - 0.01, foot)]
         f.part(*U(e, 32 - e), prof, s.cols(prof, "face"), YS[2])
-        for (a, b), n in (((0, e), 0), ((e, 32 - e), x), ((32 - e, 32), 0)):     # (its shade on the slope under it,
-            z0 = s.z_at(foot, n)                                                 # following its outline: 2 px, it
-            f.line(*U(a, b), s.z_at(z0, 2), z0, SHADOW, bevel=False)            # hides half a px)
+        for (a, b), n in (((0, e), 0), ((e, 32 - e), x + 1), ((32 - e, 32), 0)):  # (its edge on the slope under
+            z0 = s.z_at(foot, n)                                                 # it, following its outline: 2 px,
+            f.line(*U(a, b), s.z_at(z0, 2), z0, CREASE, bevel=False)            # it hides some; a px more under
+                                                                                 # the part hanging past the foot)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
