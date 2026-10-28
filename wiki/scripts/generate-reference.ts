@@ -14,7 +14,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const generated = join(root, 'src/data/generated');
 const routes = join(root, 'src/routes/reference');
 const sprites = JSON.parse(await readFile(join(generated, 'sprites.json'), 'utf8')) as Record<string, string>;
-const previews = JSON.parse(await readFile(join(generated, 'previews.json'), 'utf8')) as Record<string, {url:string;art:boolean;layers:number;placeholder:boolean}>;
+const previews = JSON.parse(await readFile(join(generated, 'previews.json'), 'utf8')) as Record<string, {url:string;art:boolean;layers:number;placeholder:boolean;gameFallback?:boolean}>;
 
 // Data only: never import the runtime simulation, renderer or UI.
 type Material = { item: string; count: number };
@@ -139,7 +139,7 @@ for (const [id, def] of Object.entries(modules).sort()) {
   moduleCatalog.push({ id, slug: slug('modules', id), name: def.name, category: def.category ?? 'other', footprint: def.footprint, power: def.power, image: img ?? null, artAvailable: !!previews[id]?.art });
   entry('modules', id, def.footprint.join(' × ') + ' tiles', [['Power', String(def.power)]], img, def.category);
   const lines = [
-    img ? '<figure class="wiki-placement-figure"><img src="' + html(img) + '" alt="Isometric placement preview of ' + html(def.name) + ', ' + def.footprint.join(' by ') + ' tiles" loading="lazy" width="600" height="400" /><figcaption>' + def.footprint.join(' × ') + ' tile footprint' + (!previews[id]?.art ? ' · Artwork pending' : previews[id]?.placeholder ? ' · Base-tier art used as a placeholder' : '') + '</figcaption></figure>' : '', '',
+    img ? '<figure class="wiki-placement-figure"><img src="' + html(img) + '" alt="Isometric placement preview of ' + html(def.name) + ', ' + def.footprint.join(' by ') + ' tiles" loading="lazy" width="600" height="400" /><figcaption>' + def.footprint.join(' × ') + ' tile footprint' + (!previews[id]?.art ? ' · Artwork pending' : previews[id]?.gameFallback ? ' · Uses the in-game fallback art' : previews[id]?.placeholder ? ' · Base-tier art used as a placeholder' : '') + '</figcaption></figure>' : '', '',
     def.description ? text(def.description) : 'Ship equipment.', '',
     '## Statistics', '', ...stats([
       ['Category', def.category ?? 'other'],
