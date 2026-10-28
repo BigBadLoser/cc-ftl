@@ -57,7 +57,7 @@ function html(value: unknown): string {
   return String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 function page(title: string, lines: string[]): string {
-  return ['---', 'title: ' + JSON.stringify(title), 'sidebar: false', '---', '', ...lines, ''].join('\n');
+  return ['---', 'title: ' + JSON.stringify(title), '---', '', ...lines, ''].join('\n');
 }
 function image(url: string | undefined, name: string): string {
   if (!url) return '';
@@ -101,16 +101,32 @@ async function writeEntry(kind: Kind, id: string, lines: string[]): Promise<void
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, '+page.md'), page(named(kind, id), [...lines, '', '[Back to ' + kind + '](../)']), 'utf8');
 }
-async function writeIndex(kind: Kind, title: string, intro: string, rows: string[]): Promise<void> {
-  const content = ['---', 'title: ' + JSON.stringify(title), '---', '', intro, '', ...rows, ''].join('\n');
+type CatalogEntry = {
+  id: string; slug: string; name: string; subtitle: string; category?: string;
+  image: string | null; facts: Array<[string, string]>; inputs?: string; outputs?: string;
+};
+const catalog: Record<Kind, CatalogEntry[]> = {
+  modules: [], items: [], weapons: [], vehicles: [], recipes: [], factions: [], research: [],
+};
+function entry(kind: Kind, id: string, subtitle: string, facts: Array<[string, string]>, image?: string, category?: string, inputs?: string, outputs?: string): void {
+  const def = registries[kind][id];
+  if (!def) throw Error('Catalog entry not found: ' + kind + ' ' + id);
+  catalog[kind].push({ id, slug: slug(kind, id), name: def.name, subtitle, category, image: image ?? null, facts, inputs, outputs });
+}
+async function writeIndex(kind: Kind, title: string, intro: string): Promise<void> {
+  const content = [
+    '---', 'title: ' + JSON.stringify(title), '---', '', intro, '',
+    '<script lang="ts">',
+    "  import ReferenceCatalog from '../../../lib/ReferenceCatalog.svelte'",
+    '</script>', '', '<ReferenceCatalog kind="' + kind + '" />', '',
+  ].join('\\n');
   await writeFile(join(routes, kind, '+page.md'), content, 'utf8');
 }
 async function saveJson(name: string, data: unknown): Promise<void> {
-  await writeFile(join(generated, name + '.json'), JSON.stringify(data, null, 2) + '\n');
+  await writeFile(join(generated, name + '.json'), JSON.stringify(data, null, 2) + '\\n');
 }
-function listIndex(kind: Kind): string[] {
-  return Object.entries(registries[kind]).sort((a,b) => a[1].name.localeCompare(b[1].name))
-    .map(([id, value]) => '- [' + text(value.name) + '](./' + slug(kind, id) + '/)');
+function materialLabel(list: Material[]): string {
+  return list.map(m => m.count + '× ' + named('items', m.item)).join(' + ');
 }
 
 await mkdir(generated, { recursive: true });
@@ -121,6 +137,7 @@ const moduleCatalog = [];
 for (const [id, def] of Object.entries(modules).sort()) {
   const img = previews[id]?.url;
   moduleCatalog.push({ id, slug: slug('modules', id), name: def.name, category: def.category ?? 'other', footprint: def.footprint, power: def.power, image: img ?? null, artAvailable: !!previews[id]?.art });
+  entry('modules', id, def.footprint.join(' × ') + ' tiles', [['Power', String(def.power)]], img, def.category);
   const lines = [
     img ? '<figure class="wiki-placement-figure"><img src="' + html(img) + '" alt="Isometric placement preview of ' + html(def.name) + ', ' + def.footprint.join(' by ') + ' tiles" loading="lazy" width="600" height="400" /><figcaption>' + def.footprint.join(' × ') + ' tile footprint' + (!previews[id]?.art ? ' · Artwork pending' : previews[id]?.placeholder ? ' · Base-tier art used as a placeholder' : '') + '</figcaption></figure>' : '', '',
     def.description ? text(def.description) : 'Ship equipment.', '',
@@ -134,15 +151,35 @@ for (const [id, def] of Object.entries(modules).sort()) {
   ];
   if (def.cost?.length) lines.push('', '## Construction materials', '', ...bulletsOfMaterials(def.cost, 'modules'));
   if (def.weapon) lines.push('', '## Weapon', '', link('weapons', def.weapon, 'modules'));
+  const stations = Object.entries(recipes).filter(([, recipe]) => recipe.station === id);
+  if (stations.length) lines.push('', '## Production recipes', '', ...stations.map(([rid]) => '- ' + link('recipes', rid, 'modules')));
+  const unlocks = Object.entries(research).filter(([, project]) => (project.unlocks ?? []).includes(id));
+  if (unlocks.length) lines.push('', '## Research', '', ...unlocks.map(([rid]) => '- Unlocked by ' + link('research', rid, 'modules')));
   await writeEntry('modules', id, lines);
 }
 await saveJson('modules', moduleCatalog);
+
+function relatedToItem(id: string): string[] {
+  const lines: string[] = [];
+  const builders = Object.entries(modules).filter(([, def]) => def.cost?.some(x => x.item === id));
+  const consumers = Object.entries(recipes).filter(([, def]) => def.inputs.some(x => x.item === id));
+  const producers = Object.entries(recipes).filter(([, def]) => def.outputs.some(x => x.item === id));
+  const ammunition = Object.entries(weapons).filter(([, def]) => def.ammo === id);
+  const researchCosts = Object.entries(research).filter(([, def]) => def.cost.some(x => x.item === id));
+  if (builders.length) lines.push('', '## Used to build', '', ...builders.map(([mid]) => '- ' + link('modules', mid, 'items')));
+  if (consumers.length) lines.push('', '## Consumed by', '', ...consumers.map(([rid]) => '- ' + link('recipes', rid, 'items')));
+  if (producers.length) lines.push('', '## Produced by', '', ...producers.map(([rid]) => '- ' + link('recipes', rid, 'items')));
+  if (ammunition.length) lines.push('', '## Ammunition for', '', ...ammunition.map(([wid]) => '- ' + link('weapons', wid, 'items')));
+  if (researchCosts.length) lines.push('', '## Used in research', '', ...researchCosts.map(([rid]) => '- ' + link('research', rid, 'items')));
+  return lines;
+}
 
 // Items are not assigned imaginary artwork. Only use actual item static sprites.
 const itemCatalog = [];
 for (const [id, def] of Object.entries(items).sort()) {
   const img = sprites[id];
   itemCatalog.push({ id, slug: slug('items', id), name: def.name, tags: def.tags ?? [], stackSize: def.stackSize, price: def.price ?? null, image: img ?? null });
+  entry('items', id, (def.tags ?? []).join(' · ') || 'Resource', [['Stack limit', String(def.stackSize)], ['Base value', def.price === undefined ? '—' : String(def.price)]], img, def.tags?.[0]);
   await writeEntry('items', id, [
     image(img, def.name), '',
     def.description ? text(def.description) : '', '',
@@ -151,10 +188,11 @@ for (const [id, def] of Object.entries(items).sort()) {
       ['Base value', def.price === undefined ? 'Not priced' : def.price + ' credits'],
     ]),
     '', 'Base values are not guaranteed market prices.',
+    ...relatedToItem(id),
   ]);
 }
 await saveJson('items', itemCatalog);
-await writeIndex('items', 'Items and resources', 'Item limits, tags, and base values. Prices at individual stations may differ.', listIndex('items'));
+await writeIndex('items', 'Items and resources', 'Item limits, tags, and base values. Prices at individual stations may differ.');
 
 // Ship-mounted weapons, not crew hand weapons (those are defined as items).
 for (const [id, def] of Object.entries(weapons).sort()) {
@@ -162,7 +200,9 @@ for (const [id, def] of Object.entries(weapons).sort()) {
     const detail = [effect.amount !== undefined ? String(effect.amount) : '', effect.layers !== undefined ? effect.layers + ' layers' : '', effect.seconds !== undefined ? effect.seconds + ' seconds' : '', effect.radius !== undefined ? 'radius ' + effect.radius : ''].filter(Boolean).join(', ');
     return '| ' + text(effect.type.replace(/([a-z])([A-Z])/g, '$1 $2')) + ' | ' + text(detail || '—') + ' |';
   });
-  const img = assetForWeapon(id);
+  const related = Object.entries(modules).filter(([, m]) => m.weapon === id);
+  const img = related[0] ? previews[related[0][0]]?.url : assetForWeapon(id);
+  entry('weapons', id, def.ammo ? 'Uses ' + named('items', def.ammo) : 'Ship-mounted weapon', [['Charge', def.chargeSec + ' s'], ['Volley', String(def.shots)], ['Shield pierce', String(def.shield.pierce)]], img);
   await writeEntry('weapons', id, [
     image(img, def.name),
     'Ship-mounted weapon. Charge time assumes gunnery skill 0; power draw belongs to the installed weapon module.', '',
@@ -174,12 +214,14 @@ for (const [id, def] of Object.entries(weapons).sort()) {
     ]), '',
     ...(def.ammo ? ['**Ammunition:** ' + link('items', def.ammo, 'weapons'), ''] : []),
     '## On-hit effects', '', '| Effect | Value |', '|---|---|', ...effectRows,
+    '', '## Installed in', '', ...(related.length ? related.map(([mid]) => '- ' + link('modules', mid, 'weapons')) : ['No installed module is listed.']),
   ]);
 }
-await writeIndex('weapons', 'Ship weapons', 'Weapon statistics are base values. Power draw and construction costs belong to the corresponding ship modules.', listIndex('weapons'));
+await writeIndex('weapons', 'Ship weapons', 'Base weapon statistics. Power draw and construction costs are listed on the mounting module.');
 
 // Vehicles.
 for (const [id, def] of Object.entries(vehicles).sort()) {
+  entry('vehicles', id, def.class === 'pod' ? 'Mining craft' : 'Shuttle', [['HP', String(def.maxHp)], ['Cargo', String(def.cargo)], ['Speed', String(def.speed)]], def.asset ? sprites[def.asset] : undefined, def.class);
   await writeEntry('vehicles', id, [
     image(def.asset ? sprites[def.asset] : undefined, def.name), '',
     ...stats([
@@ -190,10 +232,11 @@ for (const [id, def] of Object.entries(vehicles).sort()) {
     ]),
   ]);
 }
-await writeIndex('vehicles', 'Vehicles', 'Shuttles and other craft. Speed values describe the base vehicle before crew skill modifiers.', listIndex('vehicles'));
+await writeIndex('vehicles', 'Vehicles', 'Shuttles and other craft. Speed values describe base performance before crew skill modifiers.');
 
 // Production recipes.
 for (const [id, def] of Object.entries(recipes).sort()) {
+  entry('recipes', id, 'Produced at ' + named('modules', def.station), [['Work', String(def.work)], ['Station', named('modules', def.station)]], previews[def.station]?.url, def.category ?? 'crafting', materialLabel(def.inputs), materialLabel(def.outputs));
   await writeEntry('recipes', id, [
     '**Production station:** ' + link('modules', def.station, 'recipes'), '',
     '**Inputs**', '', ...bulletsOfMaterials(def.inputs, 'recipes'), '',
@@ -202,22 +245,25 @@ for (const [id, def] of Object.entries(recipes).sort()) {
     '', 'Actual completion time depends on the worker and station.',
   ]);
 }
-await writeIndex('recipes', 'Production recipes', 'Inputs, outputs, production stations, and work requirements.', listIndex('recipes'));
+await writeIndex('recipes', 'Production recipes', 'See what each workstation consumes and produces, and compare production requirements.');
 
 // Factions: expose names and signature gear, not procedural weights,
 // ship-generation configurations, or encounter probabilities.
 for (const [id, def] of Object.entries(factions).sort()) {
   const signature = def.art?.signature ?? [];
+  entry('factions', id, signature.length ? signature.map(x => named('modules', x)).join(' · ') : 'Galaxy faction', [['Signature modules', String(signature.length)]], undefined);
   await writeEntry('factions', id, [
     'Known faction in the galaxy.', '',
     '## Characteristic equipment', '',
     ...(signature.length ? signature.map(module => '- ' + link('modules', module, 'factions')) : ['No signature equipment is listed.']),
   ]);
 }
-await writeIndex('factions', 'Factions', 'Known factions and their characteristic equipment. Internal ship-generation rules are intentionally excluded.', listIndex('factions'));
+await writeIndex('factions', 'Factions', 'Factions encountered across the galaxy. Procedural encounter probabilities are not included.');
 
 // Research projects.
 for (const [id, def] of Object.entries(research).sort()) {
+  const unlocked = (def.unlocks ?? []).map(mid => named('modules', mid)).join(', ');
+  entry('research', id, unlocked ? 'Unlocks ' + unlocked : 'Research project', [['Work', String(def.work)], ['Materials', materialLabel(def.cost)]], def.unlocks?.[0] ? previews[def.unlocks[0]]?.url : undefined, def.category);
   await writeEntry('research', id, [
     ...stats([['Category', def.category ?? 'general'], ['Research work', def.work + ' ticks']]), '',
     '## Required materials', '', ...bulletsOfMaterials(def.cost, 'research'), '',
@@ -225,6 +271,7 @@ for (const [id, def] of Object.entries(research).sort()) {
     '## Unlocks', '', ...(def.unlocks?.length ? def.unlocks.map(m => '- ' + link('modules', m, 'research')) : ['None']),
   ]);
 }
-await writeIndex('research', 'Research', 'Project costs, prerequisites, and equipment unlocks.', listIndex('research'));
+await writeIndex('research', 'Research', 'Project costs, prerequisites, and unlocked equipment.');
+await saveJson('reference-catalog', catalog);
 
 console.log('Generated reference pages: ' + Object.entries(seenSlugs).map(([kind, entries]) => kind + '=' + entries.size).join(', '));
