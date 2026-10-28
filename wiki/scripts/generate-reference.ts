@@ -19,7 +19,11 @@ const itemRoutes = join(root, 'src/routes/reference/items');
 
 function slugOf(id: string, prefix: string): string {
   // Most IDs use module./item., but a few legacy module IDs (e.g. container.2x4) do not.
-  const slug = (id.startsWith(prefix) ? id.slice(prefix.length) : id).replaceAll('.', '-');
+  const slug = (id.startsWith(prefix) ? id.slice(prefix.length) : id)
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   if (!/^[a-z0-9-]+$/.test(slug)) throw Error('Unsafe reference slug: ' + id);
   return slug;
 }
