@@ -74,8 +74,10 @@ import { newYard, type YardState } from './yard/types';
  * v59 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
  * v60: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
  * v62: the yard and per-faction standing together (the shipyard branch numbered v58 to v61 before standing took v58; this is the merged line).
+ * v63 (pirate factions): new galaxy factions (`raiders`, `cartel`, `zealots`, `mercenaries`) with their own reputation keys, `Contact.hired`, `CoreRaiderC` / `CoreRaidC`, boarder flags `prefer` / `coreRaid`.
+ * v64 (black markets): optional `Trader.services` / `Trader.fence`, `NodeState.truce` / `scanned`, `Encounter.scan`, `Ship.banned`, `ForHire.shady` (and `SkillXpC` on shady crew), contraband items (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`, the zealot machine goods).
  */
-export const SAVE_VERSION = 62;
+export const SAVE_VERSION = 64;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

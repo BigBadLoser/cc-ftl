@@ -1,4 +1,5 @@
 
+import { markRaiders } from '../capture/coreRaid';
 import { ShipC } from '../combat/components';
 import { isAiFaction } from '../combat/factions';
 import { DeadC, PositionC } from '../crew/components';
@@ -104,6 +105,7 @@ function start(sim: Sim, shipId: number, b: Boarder, weapon?: string): void {
     return;
   }
   b.crew = able.slice(-n);
+  if (b.coreRaid) markRaiders(sim, b.crew, shipId);
   b.vehicle = vehicle;
   b.timer = 0;
   b.state = 'loading';

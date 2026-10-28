@@ -31,6 +31,11 @@ playtest clarity are all on `main`). Treat the sections below as design notes, n
   See "Engine capacity and the shipyard" in [ARCHITECTURE.md](ARCHITECTURE.md). **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough
   engines (#129).
 
+- **Progression phase 2b slice 2 (branch `progression-2b-market`, #136):** contraband, navy/corporation scans (surrender or bribe), the cartel fence, black-market
+  service sets (lesser wired to pirate-held and lawless stations; cartel, zealot and mercenary sets ready to attach but not spawned), shady crew and the node truce.
+  Save v63. See "Black markets" in [ARCHITECTURE.md](ARCHITECTURE.md). Waiting on screenshot approval of the scan prompt and the trade screens. Deferred: spawning the named markets
+  (station generation belongs to the shipgen session), pirate dens as conquerable stations, shady-crew drawback traits.
+
 ## Decisions (user)
 
 - Desktop only; no phone layout work.

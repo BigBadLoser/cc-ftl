@@ -116,6 +116,8 @@ export interface Contact {
   size?: ShipSize;
   /** A bounty target (jobs.ts): the id of the job it is wanted by; its ship carries it too (`Ship.bounty`). */
   bounty?: number;
+  /** A hired escort (roster.ts `FleetGroupDef.escort`): the faction that pays it. It flies on that faction's side in a fight; `faction` stays its own. */
+  hired?: string;
 }
 
 export interface NodeState {
@@ -131,6 +133,13 @@ export interface NodeState {
   populated?: true;
   /** Ships destroyed here while the player was elsewhere, waiting to be found as wrecks at the next drop (wrecks.ts). */
   wrecks?: WreckSeed[];
+  /**
+   * Set by a black-market service with a truce (blackmarket/truce.ts): nobody starts a fight at this node. `banUntil` is the turn a breach's ban
+   * lasts to (everyone there fires on the player until then; the truce is off meanwhile). Absent = no truce here.
+   */
+  truce?: { banUntil?: number };
+  /** The turn a navy or corporation station last scanned the player here (blackmarket/scan.ts). */
+  scanned?: number;
 }
 
 /** A destroyed NPC ship's hull: the generator key of the ship it was (so the wreck is that ship, ruined) and when and under what name it fell. */
@@ -281,10 +290,15 @@ export interface Encounter {
   node: string;
   turn: number;
   expires: number;
+  /**
+   * A scan that found contraband aboard (blackmarket/scan.ts): `value` is what the goods are worth at base prices, and the player chooses to
+   * 'surrender' them (and pay `fine`, with a standing hit) or 'bribe' (`bribe` credits). Such a scan waits for an answer; it does not expire.
+   */
+  scan?: { value: number; fine: number; bribe: number };
 }
 
-/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge. */
-export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge, a scan that found contraband surrender / bribe. */
+export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
 
 /**
  * A deep-space pocket (node id `event:<encounter id>`, never in the galaxy index, never archived) the player's packet was deployed into

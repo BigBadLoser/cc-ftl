@@ -15,7 +15,7 @@
     {#each partner.recruits as r (r.key)}
       {@const poor = r.cost > credits}
       <li data-testid="recruit" class:coming={r.coming}>
-        <div class="t"><b>{r.name}</b><span class="pay">{r.cost} cr</span></div>
+        <div class="t"><b>{r.name}{#if r.shady}<span class="shady" data-testid="recruit-shady" title="Shady crew: better skills, one-time fee, no wages">shady +{r.shady}</span>{/if}</b><span class="pay">{r.cost} cr</span></div>
         <div class="d">{r.species} {r.role}{r.skills.length ? ` · ${r.skills.join(', ')}` : ''}</div>
         {#if r.coming}
           <div class="way" data-testid="recruit-coming">On the way: {deal?.status ?? 'shuttle fetching them'}</div>
@@ -38,6 +38,7 @@
   li.coming { border-color: var(--cyan); }
   .t { display: flex; justify-content: space-between; gap: 8px; }
   .t b { color: var(--text); font-weight: 600; }
+  .shady { margin-left: 6px; padding: 0 5px; border: 1px solid var(--amber); color: var(--amber); font-size: 11px; font-weight: 600; text-transform: uppercase; }
   .pay { color: #ffd77a; font-weight: 600; white-space: nowrap; }
   .d { color: var(--dim); font-size: 12px; }
   .warn { color: var(--red); font-size: 12px; }

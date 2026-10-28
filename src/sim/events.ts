@@ -128,6 +128,8 @@ export type SimEvent =
   /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
   | { type: 'robot.stunned'; crew: number; until: number }
   | { type: 'robot.inert'; crew: number }
+  /** Zealot raiders held a ship's AI core long enough: it was torn out and lost (its robots go inert). */
+  | { type: 'core.torn'; ship: number }
   /** A held hack lent the robot to `faction` (or it went back to its own side). */
   | { type: 'robot.flipped'; crew: number; faction: Faction }
   /** A robot bay finished assembling a robot (its home bay). */
@@ -197,6 +199,9 @@ export type SimEvent =
   | { type: 'galaxy.distressSent'; node: string; due: number }
   | { type: 'galaxy.towArrived'; fuel: number; paid: number; owed: number }
   | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
+  | { type: 'scan.found'; id: number; faction: string; value: number }
+  | { type: 'scan.settled'; id: number; faction: string; outcome: 'confiscated' | 'bribed'; cost: number }
+  | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }

@@ -121,10 +121,26 @@ export function makeFleet(
     if (c) ships.push(c);
   });
   if (!ships.length) return null;
+  if (!want) hireEscort(sim, group, pick.faction, role, depth, key, used, ships);
   return {
     id: sim.galaxy.nextFleet++, faction: pick.faction, role, ships, home: port.id, node: port.node, from: port.node, moved: -1, route: [], dest: port.node,
     dwell: 0, legs: 0, synced: turn,
   };
+}
+
+/**
+ * The cartel hires mercenaries to guard its fleets: with the group's escort chance, one more ship of the escort faction joins (a small or medium hull
+ * from its own table). It keeps its own faction (name, standing, trade) and flies on its employer's side (`Contact.hired`). Rolls are hashes of the fleet key.
+ */
+function hireEscort(sim: Sim, group: FleetGroupDef, employer: string, role: FleetRole, depth: number, key: readonly number[], used: Set<string>, ships: Contact[]): void {
+  const esc = group.escort;
+  const hired = esc ? sim.content.galaxy?.factions[esc.faction] : undefined;
+  if (!esc || !hired?.fleet || unit(sim.seed, ...key, 90) >= esc.chance) return;
+  const table = tableFor(sim, hired, role, depth);
+  const want: ShipSize = unit(sim.seed, ...key, 91) < 0.6 ? 'small' : 'medium';
+  const size = [want, ...SIZES].find((z) => table[z].length > 0);
+  const c = size ? makeShip(sim, hired, esc.faction, table, size, depth, [...key, 99], used) : null;
+  if (c) ships.push({ ...c, hired: employer });
 }
 
 /**

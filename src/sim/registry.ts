@@ -24,7 +24,15 @@ export interface ShipTemplate {
    * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
    * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
    */
-  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
+  boarding?: {
+    party: number; afterSec: number; losingBelow: number;
+    /** Hand weapon (item id) issued to the party when it leaves. */
+    weapon?: string;
+    /** Raiders: once the party is on its way the ship stops shooting, so the prize is not wrecked under it. */
+    prefer?: true;
+    /** Zealots: the party heads for the player's AI core (capture/coreRaid.ts) and tears it out if it holds it. */
+    coreRaid?: true;
+  };
 }
 
 import type { EventDef, GoalActDef } from './story/defs';
@@ -32,6 +40,7 @@ import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
+import type { BlackMarketDef } from './blackmarket/defs';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -78,6 +87,8 @@ export interface ContentRegistry {
   researchBands?: { id: string; name: string }[];
   /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
   yard?: YardDef;
+  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */
+  blackMarkets?: Record<string, BlackMarketDef>;
 }
 
 /**

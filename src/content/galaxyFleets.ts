@@ -1,5 +1,8 @@
 import type { FactionFleetDef, FleetContent, FleetGroupDef } from '../sim';
-import { corpNames, droneFirst, droneSecond, navyNames, pirateFirst, pirateSecond, traderFirst, traderSecond } from './shipNames';
+import {
+  cartelFirst, cartelSecond, corpNames, droneFirst, droneSecond, mercFirst, mercSecond, navyNames, pirateFirst, pirateSecond, raiderFirst, raiderSecond, traderFirst, traderSecond,
+  zealotFirst, zealotSecond,
+} from './shipNames';
 
 /**
  * Fleets of the galaxy factions (the living world, docs/STATUS.md). Where ships come from:
@@ -24,6 +27,11 @@ const fleet: FleetContent = {
     'faction.scrapper': {
       raider: { size: 'small', roles: ['pirate'] }, hauler: { size: 'medium', roles: ['pirate'] }, gunrunner: { size: 'medium', roles: ['pirate'] },
     },
+    // The new pirate factions fly the scrapper hull families (the raiders and mercenaries small and medium, the cartel and zealots as noted), told apart by loadout.
+    'faction.raider': { raider: { size: 'small', roles: ['pirate'] }, gunrunner: { size: 'medium', roles: ['pirate'] } },
+    'faction.cartel': { hauler: { size: 'medium', roles: ['pirate'] }, gunrunner: { size: 'medium', roles: ['pirate'] } },
+    'faction.zealot': { raider: { size: 'small', roles: ['pirate'] }, gunrunner: { size: 'medium', roles: ['pirate'] } },
+    'faction.mercenary': { raider: { size: 'small', roles: ['pirate'] }, gunrunner: { size: 'medium', roles: ['pirate'] } },
     'faction.drones': {
       picket: { size: 'small', roles: ['raider'] }, lancer: { size: 'medium', roles: ['raider'] }, swarm: { size: 'heavy', roles: ['raider'] },
     },
@@ -44,7 +52,7 @@ const patrol = (weight: number, budget: FleetGroupDef['budget']): FleetGroupDef 
   weight, budget, maxShips: 2, sizes: [{ value: 'small', weight: 3 }, { value: 'medium', weight: 2 }, { value: 'heavy', weight: 2 }],
 });
 
-const raiders = (budget: FleetGroupDef['budget'], sizes: FleetGroupDef['sizes']): FleetGroupDef => ({ weight: 1, maxShips: 2, budget, sizes });
+const raiders = (budget: FleetGroupDef['budget'], sizes: FleetGroupDef['sizes'], maxShips = 2): FleetGroupDef => ({ weight: 1, maxShips, budget, sizes });
 
 const corp = (prefix: string): FactionFleetDef => ({
   groups: { trader: traders(5), miner: miners(1), patrol: patrol(1, [{ value: 2, weight: 2 }, { value: 4, weight: 1 }]) },
@@ -61,6 +69,23 @@ export const factionFleets = {
   pirates: {
     groups: { pirate: raiders([{ value: 2, weight: 7 }, { value: 3, weight: 1 }, { value: 4, weight: 2 }], [{ value: 'small', weight: 6 }, { value: 'medium', weight: 1 }]) },
     names: { first: pirateFirst, second: pirateSecond },
+  },
+  // Raiders: pairs of fast small ships (the Scrappers' usual one or two, more often small). Cartel: one or two cargo-heavy mediums, often with a hired mercenary escort. Zealots: small cult cells. Mercenaries: balanced, a little bigger.
+  raiders: {
+    groups: { pirate: raiders([{ value: 2, weight: 7 }, { value: 4, weight: 3 }], [{ value: 'small', weight: 7 }, { value: 'medium', weight: 1 }]) },
+    names: { first: raiderFirst, second: raiderSecond },
+  },
+  cartel: {
+    groups: { pirate: { ...raiders([{ value: 3, weight: 6 }, { value: 6, weight: 1 }], [{ value: 'medium', weight: 1 }]), escort: { faction: 'mercenaries', chance: 0.4 } } },
+    names: { first: cartelFirst, second: cartelSecond },
+  },
+  zealots: {
+    groups: { pirate: raiders([{ value: 2, weight: 5 }, { value: 4, weight: 2 }, { value: 3, weight: 1 }], [{ value: 'small', weight: 4 }, { value: 'medium', weight: 2 }]) },
+    names: { prefix: 'Choir', first: zealotFirst, second: zealotSecond },
+  },
+  mercenaries: {
+    groups: { pirate: raiders([{ value: 2, weight: 4 }, { value: 3, weight: 3 }, { value: 4, weight: 2 }], [{ value: 'small', weight: 3 }, { value: 'medium', weight: 2 }]) },
+    names: { first: mercFirst, second: mercSecond },
   },
   rogue: {
     groups: { raider: raiders([{ value: 2, weight: 6 }, { value: 4, weight: 2 }], [{ value: 'small', weight: 4 }, { value: 'medium', weight: 2 }, { value: 'heavy', weight: 1 }]) },

@@ -10,6 +10,10 @@ const LOOK_OF: Record<string, BeamLook> = {
   'faction.drones': 'drone',
   'faction.civilian': 'civil',
   'faction.scrapper': 'scrap',
+  'faction.raider': 'scrap',
+  'faction.cartel': 'scrap',
+  'faction.zealot': 'scrap',
+  'faction.mercenary': 'scrap',
 };
 export const DEFAULT_BEAM_LOOK: BeamLook = 'civil';
 

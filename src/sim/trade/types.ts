@@ -32,6 +32,8 @@ export interface TradeFactionDef {
   reputation: string;
   /** Base attitude: >= 0 talks to strangers, < 0 needs reputation first. */
   relation: number;
+  /** Added to the hail score for each heavily augmented crew member of the player (trade/augmentation.ts; the zealots). */
+  augmentBonus?: number;
   /** Price multipliers of the whole faction (default 1). */
   sell?: number;
   buy?: number;
@@ -82,6 +84,10 @@ export interface Trader {
    */
   port?: string;
   base?: ItemQty[];
+  /** Black-market service sets this station carries (`ContentRegistry.blackMarkets` ids; blackmarket/services.ts). */
+  services?: string[];
+  /** The fence's rate (its share of an item's value) when a set gives the station a fence. */
+  fence?: number;
 }
 export const TraderC = defineComponent<Trader>('trader');
 

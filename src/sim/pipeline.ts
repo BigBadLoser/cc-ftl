@@ -58,6 +58,7 @@ import { ferrySystem } from './ferry/flow';
 import { logisticsSystem } from './logistics/system';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
+import { coreRaidSystem } from './capture/coreRaid';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { galaxySystem } from './systems/galaxy';
@@ -67,6 +68,7 @@ import { tradeSystem } from './systems/trade';
 import { yardSystem } from './yard/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
+import { truceSystem } from './systems/truce';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
 export type System = (sim: Sim) => void;
@@ -166,6 +168,8 @@ export const pipeline: readonly System[] = [
   // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
   // decides whether consoles are needed next tick).
   dormancySystem,
+  // Black-market truce: a breach (the player firing on or boarding anyone at a truce node) bans them; everyone turns hostile while it lasts.
+  truceSystem,
   // Station alarms: intruders, attacks and hazards make the station's people hostile to the culprits (fight code acts on it).
   stationAlarmSystem,
   // NPC ship directors post jobs for their crew (patrols; withdrawn on alarm) into the shared job system.
@@ -196,6 +200,8 @@ export const pipeline: readonly System[] = [
   impactSystem,
   // Ship state: it reads the damage done this tick.
   shipStateSystem,
+  // Zealot raiders holding an AI core count towards tearing it out (before capture reads who still stands).
+  coreRaidSystem,
   // Capture last: it reads this tick's crew states (downed, surrendered, positions) and may end combat for the next.
   captureSystem,
   // Starmap after ship state (contacts of wrecked or fled ships are dropped) and before events: an arrival spawns its

@@ -10,7 +10,7 @@ import { relations } from './galaxyRelations';
  * standing). Who is at war with whom, and who shares standing, is the pairwise table in galaxyRelations.ts. `specialities` weight what the
  * faction's stations stock (DESIGN.md "Faction specialities"). Trade's prices and hailing read the station's or ship's owner key.
  * Generator mapping: navy and the corporations fly navy (corporate) hulls, haulers and traders the civilian kit,
- * the scrapper clans are the pirates, the drones are the rogue AI.
+ * the scrapper clans and the raider, cartel, zealot and mercenary factions are the pirates (each with its own generator style), the drones are the rogue AI.
  */
 const factions = {
   navy: {
@@ -73,6 +73,46 @@ const factions = {
     baseStanding: -5,
     fleet: factionFleets.pirates,
     traffic: { weight: 1.6, danger: { min: 1 } },
+  },
+  // --- Phase 2b pirate factions (DESIGN.md "Pirate factions and the black market"). Their dens use the pirate den placeholder (station generation is the shipgen
+  // session's); their ships are the scrapper hulls told apart by loadout (content/factions/pirates.ts). Numbers are provisional. ---
+  raiders: {
+    name: 'Raider Clans', kind: 'pirates', reputation: 'raiders',
+    ships: [{ value: 'faction.raider', weight: 1 }],
+    territory: { weight: 0.7, danger: { min: 3 }, reach: 620, shares: 'pirates' },
+    stations: [{ value: 'structure.station_trade', weight: 1 }],
+    baseStanding: -5,
+    fleet: factionFleets.raiders,
+    traffic: { weight: 1.2, danger: { min: 2 } },
+  },
+  cartel: {
+    name: 'The Cartel', kind: 'pirates', reputation: 'cartel', guardsRoutes: true,
+    ships: [{ value: 'faction.cartel', weight: 1 }],
+    territory: { weight: 0.7, danger: { min: 3 }, reach: 700, shares: 'pirates' },
+    stations: [{ value: 'structure.station_trade', weight: 1 }],
+    // Just under the hostile line (HOSTILE_BELOW): one favour makes them neutral.
+    baseStanding: -2.5,
+    fleet: factionFleets.cartel,
+    traffic: { weight: 0.8, danger: { min: 1 } },
+  },
+  zealots: {
+    name: 'Zealots of the Signal', kind: 'pirates', reputation: 'zealots', combatFaction: 'rogue',
+    ships: [{ value: 'faction.zealot', weight: 1 }],
+    // Niche: their space only grows beside the machines'. A fifth of machine seeds give them one neighbouring cell (a chance, not a weight).
+    territory: { weight: 0.2, danger: { min: 4 }, reach: 560, near: 'rogue', max: 1 },
+    stations: [{ value: 'structure.station_trade', weight: 1 }],
+    baseStanding: -4,
+    fleet: factionFleets.zealots,
+    traffic: { weight: 0.3, danger: { min: 4 } },
+  },
+  mercenaries: {
+    name: 'Free Lances', kind: 'pirates', reputation: 'mercenaries',
+    ships: [{ value: 'faction.mercenary', weight: 1 }],
+    territory: { weight: 0.15, danger: { min: 3 }, reach: 520, shares: 'pirates' },
+    stations: [{ value: 'structure.station_trade', weight: 1 }],
+    baseStanding: 0,
+    fleet: factionFleets.mercenaries,
+    traffic: { weight: 0.5, danger: { min: 2 } },
   },
   rogue: {
     name: 'Rogue AI', kind: 'rogue', reputation: 'drones', combatFaction: 'rogue', alwaysHostile: true,

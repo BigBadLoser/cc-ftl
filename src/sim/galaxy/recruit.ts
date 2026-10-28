@@ -1,4 +1,6 @@
+import { setsOf, stationIdentity } from '../blackmarket/services';
 import type { Sim } from '../sim';
+import { SkillXpC, XP_PER_LEVEL } from '../story/components';
 import { spawnNamedCrew } from '../combat/ships';
 import { isIncapacitated, releaseAssignment } from '../crew/helpers';
 import { releaseBedClaim } from '../crew/beds';
@@ -12,7 +14,7 @@ import { TraderC, type Deal } from '../trade/types';
 import { hash32, strHash, unit } from './hash';
 import { portsAt } from './portIndex';
 import type { Port } from './ports';
-import { tierOf } from './standing';
+import { isHostileFaction, tierOf } from './standing';
 import { nodeOf } from './state';
 import { RECRUIT_BASE, RECRUIT_JITTER, RECRUIT_LOG_MAX, RECRUIT_PER_WORTH, RECRUIT_ROLES, RECRUIT_SLOTS, RECRUIT_TURNS } from './tuningRecruit';
 
@@ -30,6 +32,8 @@ export interface Recruit {
   role: string;
   species: string;
   cost: number;
+  /** A shady crew candidate (a black market's): the extra levels it has in every skill of its role. */
+  shady?: number;
 }
 
 const SALT = 0x4e17;
@@ -64,6 +68,41 @@ export function portRecruits(sim: Sim, port: Port): Recruit[] {
   return out;
 }
 
+/**
+ * The shady candidates of a station with black-market services: each set with shady crew posts `slots` of them per window, from its `roles`, with
+ * `bonus` extra levels in every skill of the role, for `costMult` x the usual price + `extra`. A pure function like the port's candidates. Crew take no wages.
+ */
+export function shadyRecruits(sim: Sim, station: number, port: Port | undefined): Recruit[] {
+  const t = sim.world.get(station, TraderC);
+  if (!t?.services?.length || (t.owner && isHostileFaction(sim, t.owner))) return [];
+  const g = sim.galaxy;
+  const window = Math.floor(g.turn / RECRUIT_TURNS);
+  const id = port?.id ?? `s${stationIdentity(sim.world.get(station, ShipC)?.gen?.seed, station)}`;
+  const names = sim.content.crewNames;
+  const out: Recruit[] = [];
+  for (const [i, def] of setsOf(sim, t).entries()) {
+    const shady = def.shadyCrew;
+    if (!shady) continue;
+    for (let slot = 0; slot < shady.slots; slot++) {
+      const key = `shady|${id}|${i}|${window}|${slot}`;
+      if (g.recruitLog.includes(key)) continue;
+      const h = (salt: number): number => unit(sim.seed, strHash(id), window, slot, SALT ^ 0x5ad, salt);
+      const roleId = shady.roles.filter((r) => sim.content.roles[r])[Math.floor(h(1) * shady.roles.length)];
+      const role = roleId ? sim.content.roles[roleId] : undefined;
+      const species = sim.content.species[role?.species ?? 'species.human'];
+      if (!roleId || !species || !names.length) continue;
+      const worth = RECRUIT_ROLES.find((r) => r.role === roleId)?.worth ?? 3;
+      const usual = RECRUIT_BASE + RECRUIT_PER_WORTH * worth + Math.floor(h(3) * (RECRUIT_JITTER + 1));
+      out.push({
+        key, role: roleId, species: role?.species ?? 'species.human', shady: shady.bonus,
+        name: species.designation ? `${species.designation}-${String(hash32(sim.seed, strHash(key), 1) % 1000).padStart(3, '0')}` : names[Math.floor(h(2) * names.length)] as string,
+        cost: Math.round(usual * shady.costMult + shady.extra),
+      });
+    }
+  }
+  return out;
+}
+
 /** The candidates of every port at the player's node (derived; the people aboard the stations are `ForHireC` entities). */
 export const recruitsHere = (sim: Sim): Recruit[] => portsAt(sim, sim.galaxy.current).flatMap((p) => portRecruits(sim, p));
 
@@ -89,11 +128,13 @@ export function syncRecruits(sim: Sim): void {
   const g = sim.galaxy;
   if (!sim.content.galaxy || sim.sector.state !== 'active' || g.event || sim.sector.node !== g.current) return;
   const ports = portsAt(sim, g.current);
-  if (!ports.length) return;
-  const stations = new Map<number, Port>();
+  if (!ports.length && !sim.world.query(TraderC).some((id) => sim.world.get(id, TraderC)?.services?.length)) return;
+  const stations = new Map<number, Port | undefined>();
   for (const id of sim.world.query(TraderC)) {
-    const port = ports.find((p) => p.id === sim.world.get(id, TraderC)?.port);
-    if (port && sim.world.get(id, ShipC)?.immobile) stations.set(id, port);
+    const t = sim.world.get(id, TraderC);
+    const port = ports.find((p) => p.id === t?.port);
+    // A station with a port posts the port's candidates; one with black-market services also posts its shady crew, port or not.
+    if ((port || t?.services?.length) && sim.world.get(id, ShipC)?.immobile) stations.set(id, port);
   }
   // A candidate who died is no longer for hire (the body stays), and the slot stays empty for the rest of its window.
   for (const id of sim.world.query(ForHireC)) {
@@ -103,7 +144,7 @@ export function syncRecruits(sim: Sim): void {
     logRecruit(sim, fh.key);
   }
   const here = new Map<number, Recruit[]>();
-  for (const [id, port] of stations) here.set(id, portRecruits(sim, port));
+  for (const [id, port] of stations) here.set(id, [...(port ? portRecruits(sim, port) : []), ...shadyRecruits(sim, id, port)]);
   for (const id of sim.world.query(ForHireC)) {
     const fh = sim.world.get(id, ForHireC);
     if (!fh || fetching(sim, id)) continue;
@@ -118,7 +159,13 @@ export function syncRecruits(sim: Sim): void {
       const crew = spawnNamedCrew(sim, station, r.role, sim.content.species[r.species]?.designation ? undefined : r.name);
       if (!crew) continue;
       sim.world.add(crew, StationCrewC, { station });
-      sim.world.add(crew, ForHireC, { key: r.key, cost: r.cost, station });
+      sim.world.add(crew, ForHireC, { key: r.key, cost: r.cost, station, ...(r.shady ? { shady: r.shady } : {}) });
+      if (r.shady) {
+        // Better skills: extra levels in every skill the role has, through the xp the stat resolver reads.
+        const xp: Record<string, number> = {};
+        for (const skill of Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = r.shady * XP_PER_LEVEL;
+        sim.world.add(crew, SkillXpC, { xp });
+      }
     }
   }
 }
