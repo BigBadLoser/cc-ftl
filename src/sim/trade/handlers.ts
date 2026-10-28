@@ -5,12 +5,13 @@ import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
 import { peakFunding, planTrips } from './trips';
 import { ensureTrader, hailVerdict } from './traders';
+import { giveItems } from '../story/effects';
 import { spawnStation } from '../stations/spawn';
 import { unwindStation } from './stationDock';
 import { VehicleC } from '../vehicles/components';
 import { TraderC } from './types';
 
-type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits'>;
+type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits' | 'debug.giveItems'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -91,5 +92,9 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
   'debug.setCredits': (sim, cmd) => {
     if (!Number.isFinite(cmd.value)) return reject(sim, cmd.type, 'badValue');
     sim.trade.credits = Math.max(0, Math.round(cmd.value));
+  },
+  'debug.giveItems': (sim, cmd) => {
+    if (!sim.content.items[cmd.item] || !Number.isFinite(cmd.count) || cmd.count <= 0) return reject(sim, cmd.type, 'badValue');
+    giveItems(sim, cmd.item, Math.round(cmd.count));
   },
 };

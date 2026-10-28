@@ -250,6 +250,8 @@ export type Command =
   | { type: 'debug.spawnStation'; kind?: string; size?: 'outpost' | 'station' | 'hub'; seed?: number; x?: number; y?: number; profile?: string; name?: string }
   /** Set the player's credits. */
   | { type: 'debug.setCredits'; value: number }
+  /** Put `count` of an item into the player's storage (as a reward would). */
+  | { type: 'debug.giveItems'; item: string; count: number }
   | { type: 'debug.spawnItems'; ship: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */

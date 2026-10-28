@@ -177,18 +177,31 @@ function homeShipC() {
  * Debug: generate a station (`kind` 'station.trading'..., `size` outpost | station | hub) east of everything in the node
  * and frame it with the player's ship. `?station=trading:hub` spawns one at start.
  */
-function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub'): void {
+function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frameStation = true): void {
   const before = new Set(sim.world.query(ShipC));
   bridge.dispatch({ type: 'debug.spawnStation', kind, size, seed: (Math.random() * 0x7fffffff) >>> 0 });
   // The command runs on the next tick: frame the new station once it exists.
   const frame = (tries: number): void => {
     const id = sim.world.query(ShipC).find((i) => !before.has(i) && sim.world.get(i, ShipC)?.immobile);
-    if (id) renderer?.frameShips([homeShip(sim), id]);
+    if (id) renderer?.frameShips(frameStation ? [homeShip(sim), id] : [homeShip(sim)]);
     else if (tries > 0) setTimeout(() => frame(tries - 1), 100);
   };
   frame(30);
 }
 const stationFlag = params.get('station');
+/**
+ * `?scenario=hullplan`: playtest the hull plan brushes. A trading hub (visit cap 100) beside the ship, plenty of credits and metal, the Hull plan
+ * tool open with the Rectangle brush, and the game running at normal speed. The plan starts empty; the station's Shipyard tab is one click away.
+ */
+const scenario = params.get('scenario');
+function startScenario(): void {
+  if (scenario !== 'hullplan') return;
+  spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
+  bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
+  bridge.dispatch({ type: 'debug.giveItems', item: 'item.metal', count: 500 });
+  controller.setTool({ tool: 'build', build: 'hull', hull: { brush: 'rect', erase: false, mirror: false } });
+  loop.setSpeed(1);
+}
 
 const api: UiApi = {
   snapshot: bridge.snapshot,
@@ -303,6 +316,7 @@ const api: UiApi = {
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());
         loop.start();
+        startScenario();
         if (stationFlag) {
           const [k, s] = stationFlag.split(':');
           spawnStation(`station.${(k ?? 'trading').replace(/^station\./, '')}`, (s === 'station' || s === 'hub' ? s : 'outpost'));
