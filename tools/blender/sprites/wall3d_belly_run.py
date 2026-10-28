@@ -71,9 +71,6 @@ def _look1(f, s, back):
         u0, u1 = U(a, b)
         f.shade(u0, u1, Z(v1), Z(v1 - 2), XS, under=3, side=0.0)     # (under it only: the plate hides half)
         f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
-        for u in (u1, u0 - 2 * LINE):                           # (a soft seam down each side of it to the lip: a px
-            f.line(u, u + LINE, s.z_at(foot, -LOOK1["lip"][0]), Z(v0), XS, end=False, bevel=False)   # clear of its
-                                                                # -u end, which hides the px by it)
     with f.tag("lip"):                                          # (lit along its top by its facing)
         h, e, x = LOOK1["lip"]
         f.raised(-0.5, 0.5, foot, s.z_at(foot, -h), -0.01, LINE, "face", cap=YS[2])
@@ -82,8 +79,8 @@ def _look1(f, s, back):
         f.part(*U(e, 32 - e), prof, s.cols(prof, "face"), YS[2])
         top, fr = s.z_at(foot, -h), d + LINE                            # (the middle's ends: a soft seam down its
         side = [(fr - 0.01, zb), (fr + PAINT, zb), (fr + PAINT, top), (fr - 0.01, top)]   # face, the lip's height)
-        for a in (e, 31 - e):
-            f.part(*U(a, a + 1), side, [XS] * 4, XS, end=False)
+        for a in (e + 2, 28 - e):                                       # (2 px wide, 2 px in from the middle's ends)
+            f.part(*U(a, a + 2), side, [XS] * 4, XS, end=False)
         for (a, b), n, w in (((0, e), 0.5, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 2)):   # (its
             z0 = s.z_at(foot, n)                                                 # edge on the slope under it, along
             f.line(*U(a, b), s.z_at(z0, w), z0, CREASE, bevel=False)            # its outline: a px showing past it)
