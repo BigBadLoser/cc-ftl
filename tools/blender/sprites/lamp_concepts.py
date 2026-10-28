@@ -1643,3 +1643,24 @@ SPRITES += [(f"concept.{fn.__name__}", (1, 1), "prop", fn) for fn in (floor_whee
 
 # Flush floor pieces read better without the 1 px outline standing props get ("block" kind: same render, no outline).
 SPRITES += [(f"concept.{fn.__name__}.flat", (1, 1), "block", fn) for fn in (floor_wheel_round, floor_tile_grate)]
+
+
+def floor_inset_grate():
+    """The whole-tile grate's light grey frame (v19) set in from the tile footprint: a framed lit well under a plain
+    4 x 4 grate, its frame about a pixel and a half inside the tile's edges so the floor tile (seams and all) shows
+    round it; level with the deck."""
+    k = K("lc_f_inset_grate", (1, 1), 0)
+    outer, lip, d = 0.9, 0.07, 0.1
+    s = outer - 2 * lip
+    _shaft(k, s, s, 0.0, -d, WARM_WALL)
+    k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
+    k.box(0, 0, -d, s - 0.04, s - 0.04, 0.02, "fxW", bevel=0.01)                           # the light
+    for t in (-1, 1):                                                                  # the frame
+        k.box(0, t * (s / 2 + lip / 2), 0.0, outer, lip, 0.012, "steelD", top="gm")
+        k.box(t * (s / 2 + lip / 2), 0, 0.0, lip, s, 0.012, "steelD", top="gm")
+    _plain_grate(k, s)
+    k.m.dz = -0.016                                                                    # top level with the deck
+    return [*k.build(), _holdout_sq("lc_f_inset_grate_h", outer, outer)]
+
+
+SPRITES.append(("concept.floor_inset_grate.flat", (1, 1), "block", floor_inset_grate))
