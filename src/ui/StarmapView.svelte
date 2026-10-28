@@ -440,7 +440,7 @@
 
 <div class="starmap" data-testid="starmap" data-mode="browse">
   <div class="head">
-    <PanelHead icon="map" title="Starmap" sub={adrift ? 'Adrift in hyperspace' : locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+    <PanelHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
       onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
   </div>
   <div class="statbar">
