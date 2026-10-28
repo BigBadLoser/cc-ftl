@@ -13,6 +13,8 @@ export interface RoomDraw {
   arr: Arrangement;
   mirror: boolean;
   picks: string[];
+  /** The arrangement's plan laid the room out (rooms/plans.ts): its steps are skipped. */
+  planned?: boolean;
 }
 
 export function drawRoom(rng: Rng, recipe: RoomRecipe): RoomDraw {
@@ -311,6 +313,7 @@ function skip(lay: Layout, room: number, s: Step, id: string): boolean {
 export function furnish(
   lay: Layout, rng: Rng, room: number, d: RoomDraw, rotsOf: (id: string) => readonly number[], power: { spare: number },
 ): void {
+  if (d.planned) return; // laid out whole (rooms/plans.ts), door approaches kept then
   keepDoorApproach(lay, room);
   if (d.arr.vignettes) placeVignettes(lay, rng, room, d.arr.vignettes, power);
   d.arr.steps.forEach((s, si) => {

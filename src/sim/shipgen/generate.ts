@@ -6,7 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planDorm, type RoomDraw } from './rooms';
 import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -95,9 +95,19 @@ function fitOut(
   const planned = new Map<string, number>();
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
+  // Rooms whose arrangement has a plan are laid out whole first (rooms/plans.ts), their planned modules with it; a plan
+  // that does not fit leaves the room to its steps.
+  specs.forEach((spec, room) => {
+    const d = spec ? drawOf(room) : null;
+    if (!spec || !d?.arr.plan) return;
+    keepDoorApproach(lay, room);
+    const n = (id: string): number => spec.mods.filter((m) => m === id).length;
+    d.planned = planDorm(lay, rng, room, n('module.bed'), { lifeSupport: n('module.lifeSupport'), desk: !!d.arr.plan.desk });
+  });
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     const d = drawOf(j.room);
+    if (d?.planned) { placed[j.def] = (placed[j.def] ?? 0) + 1; continue; }
     const si = d ? specStep(d, j.def) : -1;
     const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
     const k = `${j.room} ${j.def}`;

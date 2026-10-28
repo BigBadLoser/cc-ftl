@@ -1,9 +1,23 @@
 import type { RoomRecipe } from './types';
 
-/** Crew quarters: beds in rows along the walls, a locker a bed, life support at an end. */
+/** Crew quarters: mostly dorms laid out whole (rooms/plans.ts), beds in rows with a locker each; else beds along the walls, life support at an end. */
 export const quarters = {
   fill: 0.55,
   arrangements: [
+    {
+      name: 'dorm', weight: 6, plan: { kind: 'dorm' }, steps: [
+        { mod: 'module.lifeSupport', count: 'spec', wall: 'end' },
+        { mod: 'module.bed', count: 'spec', wall: 'long', row: true, rots: [0] },
+        { mod: 'module.storage_locker', count: 'fill', per: 'module.bed', wall: 'long', near: 'module.bed', row: true },
+      ],
+    },
+    {
+      name: 'dorm with desk', weight: 3, plan: { kind: 'dorm', desk: true }, steps: [
+        { mod: 'module.lifeSupport', count: 'spec', wall: 'end' },
+        { mod: 'module.bed', count: 'spec', wall: 'long', row: true, rots: [0] },
+        { mod: 'module.storage_locker', count: 'fill', per: 'module.bed', wall: 'long', near: 'module.bed', row: true },
+      ],
+    },
     {
       name: 'bunks', weight: 2, steps: [
         { mod: 'module.lifeSupport', count: 'spec', wall: 'end' },

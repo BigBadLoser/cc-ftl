@@ -41,6 +41,7 @@ export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
 };
 
 export { pruneDoors } from './doors';
-export { drawRoom, furnish, reserveWalkway, placeStep, specStep, roomFill, type RoomDraw } from './furnish';
+export { planDorm } from './plans';
+export { drawRoom, furnish, keepDoorApproach, reserveWalkway, placeStep, specStep, roomFill, type RoomDraw } from './furnish';
 export { claimCompanion, withCompanions } from './companions';
 export type { RoomRecipe, Arrangement, Step } from './types';
