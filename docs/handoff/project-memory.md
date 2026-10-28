@@ -1,5 +1,65 @@
 # Starter project memory (add these entries in Project settings > Memory, or ask a thread to remember them)
 
+## What we're making
+- **The game:** Space Haven *with depth*. A persistent, isometric ship-colony game in the browser, with FTL's tactical combat,
+  weapon variety, crew species and encounters.
+- **The four pillars:**
+  1. **Depth from systems interacting.** Fire eats O2, breaches vent rooms, EMP blinds cyber-eyes, darkness slows crew. These
+     come from shared state, not scripts.
+  2. **One ship you get attached to.** There are no runs: you keep building, refitting and crewing the same ship.
+  3. **Readable.** Every important state is visible. If the player can't see why something happened, that's a bug.
+  4. **Builds matter.** Layout, modules and weapons, and crew (species and implants) make distinct play styles, and refits
+     change them without restarting.
+- **Setting:** gritty industrial with a cyberpunk edge: corporations, salvager clans, augmentation cults, militaries. Neon is
+  both mood and information:
+  - cyan: power;
+  - orange: heat;
+  - magenta: data;
+  - red: emergency.
+- **Structure:**
+  - **Sandbox:** a persistent sandbox with normal saves, in an endless procedural galaxy.
+  - **Danger tiers:** danger rises as you push outward. Pressure comes from choosing to go deeper for better loot, tech and
+    species, never from a chasing fleet.
+  - **Pacing:** real time with pause, one deck per ship.
+  - **Long-term goals:** faction wars that move territory, story arcs that unlock with depth, and end-tier threats.
+- **Combat:** FTL decisions with physical consequences. There is no maneuvering, and distance only sets projectile travel time.
+  - Consoles, not manned weapons: weapons, helm and shields. The AI core runs point defence.
+  - Hits breach walls, burn modules and hurt crew, and the ship's systems take it from there.
+  - Endings: destroy, flee, capture by boarding, or negotiate. A fight lasts roughly 1 to 3 minutes.
+- **Events:** events are data. They have requirements and visible odds, their outcomes are physical, and persistent flags let
+  stories return. Story events happen in transit only.
+- **Art:** pre-rendered from Blender into 2:1 isometric pixel art (64x32 tiles). Clean toon shading with neon in a glow layer.
+  Crew sprites are composited from layers driven by sim state. Art never blocks gameplay.
+
+## The plan (`docs/PROGRESSION_PLAN.md`)
+- **Progression:** blueprints gate everything. You buy them at stations by type, salvage them, or research them. Tiers are
+  module defs that reuse the base art with a variant.
+- **Phase order:**
+  1. Blueprints and tiers: done.
+  2. Research (phase 3): done.
+  3. Shipyard and hull growth (phase 5): done, now with the hull plan brushes and the 3-wide rule.
+  4. Faction stock and the pirate factions and black markets (phases 2 and 2b): done. The named markets wait on station
+     generation.
+  5. **Next: upgrade slots,** weapons first (phase 4). An example is a nuclear warhead in the missile launcher.
+  6. Then construction pods and drones, so your crew can grow the hull anywhere (phase 6).
+  7. Then implant tiers (phase 7).
+  8. Then story missions: self-contained arcs after the tutorial goal chain (phase 8).
+- **Current focus (2026-10-28): a gap-closing pass** before more content. The game has plenty of content and systems, but how it
+  feels to play needs work, and there are holes to fill. An agent play audit of the first hour and the user's own playtest
+  notes feed a ranked gap list, turned into issues by theme:
+  - onboarding and goals;
+  - feedback;
+  - core loop and pacing;
+  - economy;
+  - missing loops (loss, crew, long term);
+  - QoL.
+- **Open design questions:**
+  - mood and breakdown severity;
+  - a recoverable failure mode (escape pods, salvaging back);
+  - lore specifics.
+
+## Systems and decisions
+
 - **World model:**
   - One big grid per node. Ships, stations, derelicts and asteroids are regions of it, tagged by owner (ship id).
   - Ships never move inside a node and never dock with each other. Distance only changes projectile travel time.
