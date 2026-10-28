@@ -1,0 +1,63 @@
+name: Wiki visual preview
+
+# Separate from routine wiki CI. A change to the capture script requests one
+# preview on this feature branch; later previews can be explicitly dispatched.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/sveltepress-gameplay-wiki
+    paths:
+      - wiki/scripts/capture-previews.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build wiki and install browser driver
+        run: |
+          npm --prefix wiki install --no-audit --no-fund
+          npm --prefix wiki run build
+          npm --prefix wiki install --no-save --no-audit --no-fund playwright-core@1.56.1
+      - name: Capture actual pages
+        run: |
+          set -euo pipefail
+          chrome="$(command -v google-chrome || command -v chromium || true)"
+          if [ -z "$chrome" ]; then echo "Chrome/Chromium unavailable" >&2; exit 1; fi
+          mkdir -p .preview-root/cc-ftl/wiki
+          cp -a wiki/dist/. .preview-root/cc-ftl/wiki/
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory .preview-root >/tmp/wiki-preview-http.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS -o /dev/null http://127.0.0.1:8765/cc-ftl/wiki/; then break; fi
+            sleep 1
+          done
+          CHROME_BIN="$chrome" node wiki/scripts/capture-previews.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cc-ftl-wiki-visual-preview
+          path: wiki-preview/*.png
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish full-resolution screenshots to feature branch
+        if: success() && github.ref_name == 'feat/sveltepress-gameplay-wiki'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add wiki-preview/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: refresh actual wiki browser screenshots [skip ci]"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
