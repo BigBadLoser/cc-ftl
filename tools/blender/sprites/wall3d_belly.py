@@ -28,10 +28,11 @@ from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
 ARMOUR = 0.77                       # tiles: the near armour's upright drop under the cut (hull 46 D3's: 31 px at 64
-SLOPE = (0.375, 0.587)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its
-                                    # front) and down under the ship: a px column shows 11 px of it on a run (39.2 h
-                                    # - 32 r), its end at the tile's side a 12 px taper (32 r), 14 px on a facet facing
-                                    # the camera (39.2 h - 16 r sqrt 2), as hull 46 D3's and Bottom's
+SLOPE = (0.375, 0.638)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its
+                                    # front) and down under the ship: a px column shows 13 px of it on a run (39.2 h
+                                    # - 32 r: hull 46 D3's 11 and 2 more, as the lip hangs over its top), its end at
+                                    # the tile's side a 12 px taper (32 r), 16 px on a facet facing the camera (39.2 h
+                                    # - 16 r sqrt 2)
 SLOPE_TONE = BELLY_SLOPE
 OUTER = YS[2]                       # the outer faces (both near faces alike, as the exterior's)
 END = YS[1]                         # a part's end where it shows past its neighbour

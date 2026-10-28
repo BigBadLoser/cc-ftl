@@ -19,7 +19,7 @@ SHADOW = "hbSlopeD"                                  # seams (navy), its rim, a 
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 9),         # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (8, 15)),                # the centre plate, a px proud, lit along its top, a px of shade under
-    "lip": (4, 3, 3),                           # a plate the face's width on its foot, this tall and a px proud;
+    "lip": (4, 5, 1),                           # a plate the face's width on its foot, this tall and a px proud;
                                                 # its middle (px in from each end) on down past the foot this far
     "slope_seam": ((7, 8), (24, 25)),           # seams down the slope, a px in from the plate's sides; one across it
     "slope_line": 5,                            # (px under its middle)
