@@ -298,13 +298,13 @@
 /* Reference pages use the space between the navigation and page outline.
  * Keep a comfortable text measure on explanations, but let catalog grids grow. */
 @media (min-width: 950px) {
-  .theme-default--page-layout .content {
+  .theme-default--page-layout.theme-default--page-layout .content {
     width: min(960px, calc(100vw - min(25vw, 288px) - 46px));
     max-width: 960px;
     margin-left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) + 24px);
     margin-right: 22px;
   }
-  body:has(.toc) .theme-default--page-layout .content {
+  body:has(.toc) .theme-default--page-layout.theme-default--page-layout .content {
     width: min(850px, calc(100vw - min(25vw, 288px) - 220px));
   }
   .wiki-sidebar-toggle {
