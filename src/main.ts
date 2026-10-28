@@ -12,6 +12,8 @@ import { createStarmapGpu } from './render/starmap';
 import { createStore } from './app/store';
 import { overlayLegend, overlayList } from './app/overlayLegend';
 import { createErrorLog } from './app/errors';
+import { installConsoleRing } from './app/consoleRing';
+import { buildContext, buildIssueUrl, type ReportInfo } from './app/bugReport';
 import { attachInput } from './app/input';
 import type { OrderId } from './app/orders';
 import { createLoop } from './app/loop';
@@ -21,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, ShipC } from './sim';
+import { BodyC, SAVE_VERSION, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
@@ -35,6 +37,8 @@ if (!target) throw new Error('Missing #app element');
 
 
 const errorLog = createErrorLog();
+const consoleRing = installConsoleRing();
+let gameCanvas: HTMLCanvasElement | undefined;
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
 const start = startGame(new URLSearchParams(location.search).get('seed'));
 const sim = start.sim;
@@ -203,6 +207,25 @@ function startScenario(): void {
   loop.setSpeed(1);
 }
 
+/** The WebGL driver's renderer string, if the browser exposes it; pixi's canvas already owns a webgl context, so asking again returns it. */
+function gpuName(): string | null {
+  try {
+    const gl = (gameCanvas?.getContext('webgl2') ?? gameCanvas?.getContext('webgl')) as WebGLRenderingContext | null | undefined;
+    const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+    return gl && ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : null;
+  } catch {
+    return null;
+  }
+}
+
+function reportInfo(): ReportInfo {
+  return {
+    commit: __COMMIT__, url: location.href, seed: sim.seed, turn: sim.galaxy.turn, node: sim.galaxy.current, saveVersion: SAVE_VERSION,
+    userAgent: navigator.userAgent, viewport: { w: innerWidth, h: innerHeight }, dpr: devicePixelRatio, gpu: gpuName(),
+    errors: consoleRing.get().map((e) => ({ message: e.message, stack: e.stack })),
+  };
+}
+
 const api: UiApi = {
   snapshot: bridge.snapshot,
   session,
@@ -296,6 +319,17 @@ const api: UiApi = {
   togglePause: bridge.togglePause,
   clearErrors: errorLog.clear,
   buildRepro: () => buildRepro(sim, errorLog.get()),
+  bugReport: {
+    context: () => buildContext(reportInfo()),
+    issue: (draft) => buildIssueUrl(draft, reportInfo()),
+    saveJson: () => serialize(sim),
+    // A webgl canvas only keeps its pixels until the frame is presented: draw one now and read it in the same task.
+    screenshot: () => new Promise((resolve) => {
+      if (!gameCanvas) return resolve(null);
+      renderer?.render(1);
+      gameCanvas.toBlob(resolve, 'image/png');
+    }),
+  },
   throwTestError: () => {
     setTimeout(() => {
       throw new Error('Test error from debug panel');
@@ -306,6 +340,7 @@ const api: UiApi = {
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
   attachCanvas(canvas) {
+    gameCanvas = canvas;
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;

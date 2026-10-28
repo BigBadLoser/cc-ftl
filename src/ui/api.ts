@@ -1141,6 +1141,13 @@ export interface UiApi {
   togglePause(): void;
   clearErrors(): void;
   buildRepro(): string;
+  /** The in-game bug report: the context shown in the dialog, the pre-filled GitHub issue link, and the save and screenshot files. */
+  bugReport: {
+    context(): string;
+    issue(draft: { title: string; what: string; expected: string }): { url: string; trimmed: boolean };
+    saveJson(): string;
+    screenshot(): Promise<Blob | null>;
+  };
   /** Called once with the game canvas so the app layer can attach the renderer. */
   attachCanvas(canvas: HTMLCanvasElement): void;
   throwTestError(): void;
