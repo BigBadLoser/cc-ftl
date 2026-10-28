@@ -12,6 +12,9 @@ import type { ShipRoleDef } from './types';
 
 export const SECURITY_ROLE = 'role.security';
 
+/** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
+const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
+
 /** Crew roles: security share by kind (at least one), the rest from the kind's pool after its required roles. */
 export function stationCrew(rng: Rng, def: StationDef, size: StationSize): string[] {
   const n = def.tiers[size].crew;
@@ -22,7 +25,7 @@ export function stationCrew(rng: Rng, def: StationDef, size: StationSize): strin
   return crew;
 }
 
-export function planStation(rng: Rng, def: StationDef, size: StationSize, role: ShipRoleDef, defs: Record<string, ModuleDef>): ShipPlan {
+export function planStation(rng: Rng, def: StationDef, size: StationSize, role: ShipRoleDef, defs: Record<string, ModuleDef>, extraReactors = 0): ShipPlan {
   const t = def.tiers[size];
   const big = (id: string): boolean => (defs[id]?.footprint[0] ?? 2) > 2;
   const guns: string[] = [];
@@ -76,14 +79,20 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
     role, command, weapons: [...weapons, ...pdRooms], shields, engines: 0, reactors: 1, core, pd: [], quarters, cargo, hangars, support, crew,
     size: size === 'hub' ? 3 : size === 'station' ? 2 : 1,
   };
-  // Power: enough reactors for every room's draw plus lamps (about 3 a room).
-  let demand = 2 + allRooms(plan).length * 3;
+  // Power: enough reactors for every room's draw plus lamps (about 3 a room, a quarter each, and a margin).
+  let demand = 2 + allRooms(plan).length * 1;
   for (const r of allRooms(plan)) for (const m of r.mods) demand += Math.max(0, -(defs[m]?.power ?? 0));
   // Court bands add rooms the plan does not list (stationCourts.ts), each with its lamps and fittings; fit-out squeezes
   // in more reactors if this falls short.
   if (def.atrium?.band) demand *= 1.15;
   // Garden decks' lab benches draw power (rooms/vignettes.ts); other courts' groups take what is spare.
   if (def.atrium?.role === 'garden') demand += 30;
-  plan.reactors = Math.max(1, Math.ceil(demand / (defs['module.reactor']?.power ?? 50)));
+  // The reactor tier: the smallest the size allows that powers the station from one room of two, else the largest.
+  const tiers = REACTOR_TIERS.slice(0, size === 'hub' ? 3 : size === 'station' ? 2 : 1).filter((id) => defs[id]);
+  const out = (id: string): number => defs[id]?.power ?? 50;
+  const id = tiers.find((t) => Math.ceil(demand / out(t)) <= 2) ?? tiers[tiers.length - 1] ?? 'module.reactor';
+  const fp = defs[id]?.footprint ?? [2, 2];
+  plan.reactor = { mod: id, fp: [fp[0], fp[1]] };
+  plan.reactors = Math.max(1, Math.ceil(demand / out(id)) + extraReactors);
   return plan;
 }

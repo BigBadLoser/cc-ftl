@@ -6,8 +6,8 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
-import { Layout } from './layout';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, companionFits, type RoomDraw } from './rooms';
+import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -103,8 +103,25 @@ function fitOut(
     const k = `${j.room} ${j.def}`;
     if (share !== undefined && (done.get(k) ?? 0) >= Math.max(1, Math.ceil((planned.get(k) ?? 0) * share))) { wanted[j.def] = (wanted[j.def] ?? 1) - 1; continue; }
     done.set(k, (done.get(k) ?? 0) + 1);
-    const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
+    const place = (): PlacedModule | null => (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
       ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
+    let pm = place();
+    // A host that needs flush companions (a refinery's ore bins) goes where one fits (tried, then taken back: furnishing
+    // sets them once every host is in): a spot with no room for one is given up and the next best tried (marked
+    // keep-clear meanwhile), up to six spots; if every spot went, the host goes back to its best one without them.
+    const w = d && si >= 0 ? d.arr.steps[si]?.with : undefined;
+    if (pm && w) {
+      const banned: number[] = [];
+      for (let t = 0; t < 6 && pm && !companionFits(lay, rng, j.room, pm, w); t++) {
+        lay.pop();
+        const i = pm.y * lay.w + pm.x;
+        banned.push(i);
+        lay.keep[i] = (lay.keep[i] as number) + 1;
+        pm = place();
+      }
+      for (const i of banned) lay.keep[i] = (lay.keep[i] as number) - 1;
+      if (!pm) pm = place();
+    }
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
@@ -134,14 +151,12 @@ function fitOut(
   const lampPower = -((defs[LAMP] as ModuleDef | undefined)?.power ?? 0);
   // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
   const margin = recipeRooms.length * lampPower;
-  // Short of power after lighting: squeeze extra reactors into engineering or stores.
-  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' || r === 'support' ? i : -1)).filter((i) => i >= 0);
-  // Station courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort.
-  const courts = roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
+  // Short of power after lighting: a spare reactor in the reactor or engine rooms, if one fits there. Never in living
+  // rooms, stores or courts: a station still short designates another reactor room on its next attempt (stationGen).
+  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' ? i : -1)).filter((i) => i >= 0);
   const reactor = defs['module.reactor'];
-  // Stations with court bands have many more rooms (and lamps) than the plan: a few more tries per court.
-  for (let k = 0; k < (courts.length > 0 ? 3 + 2 * courts.length : 3) && supply < demand + margin && reactor; k++) {
-    if (!(k < 3 && placeOne(lay, rng, 'module.reactor', spare)) && !(courts.length > 0 && placeOne(lay, rng, 'module.reactor', [...courts, ...spare]))) break;
+  for (let k = 0; k < 3 && supply < demand + margin && reactor; k++) {
+    if (!placeOne(lay, rng, 'module.reactor', spare)) break;
     supply += reactor.power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };

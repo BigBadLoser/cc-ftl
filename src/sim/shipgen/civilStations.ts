@@ -1,7 +1,7 @@
 import { localBuilder } from './blocks';
 import type { Builder, Part, Rect, Side } from './builder';
 import { truss } from './civilFrames';
-import { dockSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
+import { dockSpec, engineSpec, MK1_REACTOR, reactorSpec, type Reactor, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
 
 /**
@@ -35,6 +35,8 @@ export interface RingOpts {
   docks?: number;
   /** Deal rooms to the east run too (after the reactors): a fuller, smaller ring (stations). */
   east?: boolean;
+  /** The reactor its east-run reactor rooms hold (Mk I by default). */
+  reactor?: Reactor;
 }
 
 /** Ring station: a square corridor ring round an empty centre, rooms outboard, the hub joined by spokes. */
@@ -44,7 +46,8 @@ export function ringStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], engines:
   for (let i = 0; i < (o.docks ?? 2); i++) (i % 2 === 0 ? top : bot).push(dockSpec());
   const east: RoomSpec[] = [];
   for (let i = 0; i < engines; i++) east.push(engineSpec(1, 'w'));
-  for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k)), w: 3, h: 2 * Math.min(2, k) + 1 });
+  const rx = o.reactor ?? MK1_REACTOR;
+  for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k), rx), w: rx.fp[0] + 1, h: rx.fp[1] * Math.min(2, k) + 1 });
   // East-side rooms stand outboard like the west ones: turned so their long side runs along the ring.
   for (const r of est ?? []) east.push(r.w > r.h ? { ...r, w: r.h, h: r.w } : r);
   const along = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.h + 1, 1);

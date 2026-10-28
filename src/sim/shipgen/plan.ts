@@ -57,6 +57,8 @@ export interface ShipPlan {
   shields: RoomSpec[];
   engines: number;
   reactors: number;
+  /** The reactor module and its footprint (stations pick a tier; ships build the Mk I). */
+  reactor?: Reactor;
   /** Navy-style AI core room (with point defence); drones keep the core in the command room and pods for PD. */
   core: RoomSpec | null;
   pd: RoomSpec[];
@@ -81,7 +83,12 @@ export function weaponSpec(defs: Record<string, ModuleDef>, mods: string[]): Roo
   return { role: 'weapons', mods, w: s * 2 + 1, h: s + 1 };
 }
 
-export const reactorSpec = (k: number): RoomSpec => ({ role: 'reactor', mods: Array<string>(k).fill('module.reactor'), w: 2 * k + 1, h: 3 });
+/** A reactor module and its footprint. */
+export interface Reactor { mod: string; fp: readonly [number, number] }
+export const MK1_REACTOR: Reactor = { mod: 'module.reactor', fp: [2, 2] };
+/** Reactor room for k reactors side by side, a walkway row in front. */
+export const reactorSpec = (k: number, r: Reactor = MK1_REACTOR): RoomSpec =>
+  ({ role: 'reactor', mods: Array<string>(k).fill(r.mod), w: r.fp[0] * k + 1, h: r.fp[1] + 1 });
 
 /** Engine room for k engines stacked along the east hull. `door` is the wall crew enter by. */
 export const engineSpec = (k: number, door: 'w' | 'ns'): RoomSpec => ({

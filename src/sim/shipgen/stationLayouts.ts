@@ -4,7 +4,7 @@ import { civil, shuffle } from './civilKit';
 import { dockBlock } from './navyBlocks';
 import { no, type Ctx } from './navyKit';
 import type { RoomSpec } from './plan';
-import { fullRooms, placeRoot, roomsOf, reactorRooms } from './stationKit';
+import { fullRooms, placeRoot, reactorOf, roomsOf, reactorRooms } from './stationKit';
 import { crossStation, spineStation } from './stationShapes';
 
 /**
@@ -26,7 +26,7 @@ function cross(c: Ctx): boolean {
 
 /** Tree: a quad core, then branches (quads or towers of two to four rooms) on whatever grew last, mostly. */
 function tree(c: Ctx): boolean {
-  const all = shuffle(c.rng, [...roomsOf(c).filter((r) => r.role !== 'dock'), ...reactorRooms(c.plan.reactors)]);
+  const all = shuffle(c.rng, [...roomsOf(c).filter((r) => r.role !== 'dock'), ...reactorRooms(c.plan.reactors, reactorOf(c.plan))]);
   const docks = 2 + roomsOf(c).filter((r) => r.role === 'dock').length;
   const root = civil(station(c.rng, [c.plan.command, ...all.splice(0, 3)]), 'command', 'tree core');
   if (!root) return no(c, 'tree core');

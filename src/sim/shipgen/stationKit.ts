@@ -2,7 +2,7 @@ import type { Block, Side } from './arranger';
 import { shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
 import type { Rng } from '../rng';
-import { allRooms, dockSpec, type RoomSpec } from './plan';
+import { allRooms, dockSpec, MK1_REACTOR, type Reactor, type RoomSpec, type ShipPlan } from './plan';
 import type { RoomRole } from './types';
 
 /** Shared helpers of the station grammars (`stationGrammars.ts`, `stationLayouts.ts`). */
@@ -10,11 +10,17 @@ import type { RoomRole } from './types';
 /** Every room except the control room (which the ring hub or the first lattice module takes). */
 export const roomsOf = (c: Ctx): RoomSpec[] => allRooms(c.plan).filter((r) => r !== c.plan.command);
 /** Reactor rooms for a lattice (rings put them on their east run). */
-export function reactorRooms(k0: number): RoomSpec[] {
+export function reactorRooms(k0: number, r: Reactor = MK1_REACTOR): RoomSpec[] {
   const out: RoomSpec[] = [];
-  for (let k = k0; k > 0; k -= 2) out.push({ role: 'reactor', mods: Array<string>(Math.min(2, k)).fill('module.reactor'), w: 2 * Math.min(2, k) + 2, h: 4 });
+  for (let k = k0; k > 0; k -= 2) {
+    const m = Math.min(2, k);
+    out.push({ role: 'reactor', mods: Array<string>(m).fill(r.mod), w: r.fp[0] * m + 2, h: r.fp[1] + 2 });
+  }
   return out;
 }
+
+/** The plan's reactor (Mk I unless the station plan chose a tier). */
+export const reactorOf = (p: ShipPlan): Reactor => p.reactor ?? MK1_REACTOR;
 
 /** Split rooms into `k` groups of similar floor area (largest first, each to the smallest group). */
 export function split(rooms: RoomSpec[], k: number): RoomSpec[][] {
@@ -64,7 +70,7 @@ export function runs(rooms: RoomSpec[], k: number): RoomSpec[][] {
 }
 
 /** Rooms for builders that bring no docks of their own: the plan's rooms, its reactors and the two standard docks. */
-export const fullRooms = (c: Ctx): RoomSpec[] => zoned(c.rng, [...roomsOf(c), ...reactorRooms(c.plan.reactors), dockSpec(), dockSpec()]);
+export const fullRooms = (c: Ctx): RoomSpec[] => zoned(c.rng, [...roomsOf(c), ...reactorRooms(c.plan.reactors, reactorOf(c.plan)), dockSpec(), dockSpec()]);
 
 export const placeRoot = (c: Ctx, b: Block | null, why: string): boolean => {
   if (!b) return no(c, why);

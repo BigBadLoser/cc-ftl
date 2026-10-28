@@ -6,10 +6,10 @@ import { latticeStation, ringStation } from './civilStations';
 import type { Builder } from './builder';
 import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
-import { dockSpec, type RoomSpec } from './plan';
+import { dockSpec, MK1_REACTOR, type Reactor, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
-import { cardinal, fullRooms, placeRoot, reactorRooms, roomsOf, runs, split, zoned } from './stationKit';
+import { cardinal, fullRooms, placeRoot, reactorOf, reactorRooms, roomsOf, runs, split, zoned } from './stationKit';
 import { STATION_LAYOUTS } from './stationLayouts';
 import type { Rng } from '../rng';
 import type { StationGrammar } from './stationTypes';
@@ -40,27 +40,27 @@ const courtOf = (c: Ctx): Court => (b) => {
   return b;
 };
 
-function ringBlock(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, docks = 2, court: Court = (b) => b): Block | null {
+function ringBlock(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, docks = 2, court: Court = (b) => b, reactor: Reactor = MK1_REACTOR): Block | null {
   const spokes = shuffle(rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, rng.int(2, 4));
-  const o = { extra: rng.int(0, 2), weight: [rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.6])], inner: true, east: true, docks };
+  const o = { extra: rng.int(0, 2), weight: [rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.3]), rng.pick([0.8, 1, 1.6])], inner: true, east: true, docks, reactor };
   return civil(court(ringStation(rng, hub, zoned(rng, rooms), 0, reactors, spokes, o)), 'command', label);
 }
 
-function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, holes?: number, docks = 2): Block | null {
+function latticeBlock(rng: Rng, first: RoomSpec, rooms: RoomSpec[], reactors: number, label: string, holes?: number, docks = 2, reactor: Reactor = MK1_REACTOR): Block | null {
   const o = { gx: rng.int(2, 5), gy: rng.int(2, 4), spread: rng.pick([0.8, 1.2, 1.8]), holes: holes ?? rng.pick([0, 0.15]), pad: rng.int(0, 1), docks };
-  return civil(latticeStation(rng, [first, ...zoned(rng, [...rooms, ...reactorRooms(reactors)])], 0, o), 'command', label);
+  return civil(latticeStation(rng, [first, ...zoned(rng, [...rooms, ...reactorRooms(reactors, reactor)])], 0, o), 'command', label);
 }
 
 function ring(c: Ctx): boolean {
   const { rooms, docks } = undocked(c);
-  const b = ringBlock(c.rng, c.plan.command, rooms, c.plan.reactors, 'ring station', docks, courtOf(c));
+  const b = ringBlock(c.rng, c.plan.command, rooms, c.plan.reactors, 'ring station', docks, courtOf(c), reactorOf(c.plan));
   if (!b) return no(c, 'ring');
   c.A.placeRoot(b);
   return true;
 }
 
 function lattice(c: Ctx): boolean {
-  const b = latticeBlock(c.rng, c.plan.command, roomsOf(c), c.plan.reactors, 'lattice station');
+  const b = latticeBlock(c.rng, c.plan.command, roomsOf(c), c.plan.reactors, 'lattice station', undefined, 2, reactorOf(c.plan));
   if (!b) return no(c, 'lattice');
   c.A.placeRoot(b);
   return true;
@@ -83,10 +83,10 @@ function hubStation(c: Ctx): boolean {
   let reactors = c.plan.reactors - share;
   // The core is a square ring or a round wheel; satellites are rings, wheels or lattices.
   const wheelOf = (hub: RoomSpec, rs: RoomSpec[], rx: number, dk: number, label: string): Block | null =>
-    civil(courtOf(c)(wheelStation(c.rng, hub, [...rs, ...reactorRooms(rx), ...Array.from({ length: dk }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 })), 'command', label);
+    civil(courtOf(c)(wheelStation(c.rng, hub, [...rs, ...reactorRooms(rx, reactorOf(c.plan)), ...Array.from({ length: dk }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 })), 'command', label);
   const root = c.rng.chance(0.5)
     ? wheelOf(c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, docks, 'hub core wheel')
-    : ringBlock(c.rng, c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, 'hub core ring', docks, courtOf(c));
+    : ringBlock(c.rng, c.plan.command, [...coreRooms, ...(groups[0] ?? [])], share, 'hub core ring', docks, courtOf(c), reactorOf(c.plan));
   if (!root) return no(c, 'core ring');
   const r0 = c.A.placeRoot(root);
   const sides = shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, k);
@@ -101,7 +101,7 @@ function hubStation(c: Ctx): boolean {
     reactors -= rx;
     const pick = c.rng.int(0, 2);
     const sat = pick === 0 ? wheelOf(head, body, rx, docks <= 2 ? 0 : 2, 'satellite wheel')
-      : pick === 1 || docks <= 2 ? ringBlock(c.rng, head, body, rx, 'satellite ring', docks <= 2 ? 0 : 2, courtOf(c)) : latticeBlock(c.rng, head, body, rx, 'satellite lattice');
+      : pick === 1 || docks <= 2 ? ringBlock(c.rng, head, body, rx, 'satellite ring', docks <= 2 ? 0 : 2, courtOf(c), reactorOf(c.plan)) : latticeBlock(c.rng, head, body, rx, 'satellite lattice', undefined, 2, reactorOf(c.plan));
     if (!sat) return no(c, 'satellite');
     // A longer spoke when the satellite would clash with what is already there.
     let id: number | null = null;
@@ -138,11 +138,11 @@ function annexed(c: Ctx): boolean {
   const wingReactors = Math.max(1, Math.round(c.plan.reactors * 0.3));
   const coreRooms = [...keep, ...rest];
   const core = c.rng.chance(0.5)
-    ? civil(courtOf(c)(wheelStation(c.rng, c.plan.command, [...coreRooms, ...reactorRooms(c.plan.reactors - wingReactors), ...Array.from({ length: docks }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 })), 'command', 'annexed wheel')
-    : ringBlock(c.rng, c.plan.command, coreRooms, c.plan.reactors - wingReactors, 'annexed ring', docks, courtOf(c));
+    ? civil(courtOf(c)(wheelStation(c.rng, c.plan.command, [...coreRooms, ...reactorRooms(c.plan.reactors - wingReactors, reactorOf(c.plan)), ...Array.from({ length: docks }, () => dockSpec())], { spokes: cardinal(c, 2), extra: 0, centre: 0 })), 'command', 'annexed wheel')
+    : ringBlock(c.rng, c.plan.command, coreRooms, c.plan.reactors - wingReactors, 'annexed ring', docks, courtOf(c), reactorOf(c.plan));
   if (!core) return no(c, 'annex core');
   const r0 = c.A.placeRoot(core);
-  const annex = latticeBlock(c.rng, head, wing.filter((r) => r !== head), wingReactors, 'annex wing', 0, 0);
+  const annex = latticeBlock(c.rng, head, wing.filter((r) => r !== head), wingReactors, 'annex wing', 0, 0, reactorOf(c.plan));
   if (!annex) return no(c, 'annex wing');
   const halls = { parent: HALLS, child: HALLS };
   for (const side of shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[])) {
@@ -163,7 +163,7 @@ function welded(c: Ctx): boolean {
   const all = shuffle(c.rng, roomsOf(c));
   const k = c.rng.int(1, 3);
   const groups = split(all, k + 1);
-  const root = latticeBlock(c.rng, c.plan.command, groups[0] ?? [], c.plan.reactors, 'den core', 0.3);
+  const root = latticeBlock(c.rng, c.plan.command, groups[0] ?? [], c.plan.reactors, 'den core', 0.3, 2, reactorOf(c.plan));
   if (!root) return no(c, 'den core');
   const ids = [c.A.placeRoot(root)];
   for (let i = 1; i <= k; i++) {
