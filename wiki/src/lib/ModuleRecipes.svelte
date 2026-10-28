@@ -13,7 +13,7 @@
 {#if recipes.length}
   <div class="wiki-reference-grid wiki-recipe-grid">
     {#each recipes as recipe (recipe.id)}
-      <RecipeCard recipe={recipe} />
+      <RecipeCard recipe={recipe} showStation={false} />
     {/each}
   </div>
 {/if}

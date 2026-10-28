@@ -10,13 +10,14 @@
     outputs?: string;
     facts: string[][];
   };
-  let { recipe }: { recipe: Recipe } = $props();
+  let { recipe, showStation = true }: { recipe: Recipe; showStation?: boolean } = $props();
+  const facts = $derived(showStation ? recipe.facts : recipe.facts.filter(([name]) => name !== 'Station'));
 </script>
 
 <a class="wiki-reference-card" href={resolve('reference/recipes/') + recipe.slug + '/'}>
   <div class="wiki-reference-info">
     <strong class="wiki-reference-title">{recipe.name}</strong>
-    <span class="wiki-reference-subtitle">{recipe.subtitle}</span>
+    {#if showStation}<span class="wiki-reference-subtitle">{recipe.subtitle}</span>{/if}
     {#if recipe.inputs && recipe.outputs}
       <div class="wiki-recipe-flow" aria-label="Recipe">
         <div><small>Inputs</small><span>{recipe.inputs}</span></div>
@@ -24,9 +25,9 @@
         <div><small>Outputs</small><span>{recipe.outputs}</span></div>
       </div>
     {/if}
-    {#if recipe.facts.length}
+    {#if facts.length}
       <dl class="wiki-reference-facts">
-        {#each recipe.facts as [name, value] (name)}
+        {#each facts as [name, value] (name)}
           <div><dt>{name}</dt><dd>{value}</dd></div>
         {/each}
       </dl>
