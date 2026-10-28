@@ -119,11 +119,11 @@ async function writeIndex(kind: Kind, title: string, intro: string): Promise<voi
     '<script lang="ts">',
     "  import ReferenceCatalog from '../../../lib/ReferenceCatalog.svelte'",
     '</script>', '', '<ReferenceCatalog kind="' + kind + '" />', '',
-  ].join('\\n');
+  ].join('\n');
   await writeFile(join(routes, kind, '+page.md'), content, 'utf8');
 }
 async function saveJson(name: string, data: unknown): Promise<void> {
-  await writeFile(join(generated, name + '.json'), JSON.stringify(data, null, 2) + '\\n');
+  await writeFile(join(generated, name + '.json'), JSON.stringify(data, null, 2) + '\n');
 }
 function materialLabel(list: Material[]): string {
   return list.map(m => m.count + '× ' + named('items', m.item)).join(' + ');
