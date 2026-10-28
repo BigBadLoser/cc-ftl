@@ -22,7 +22,7 @@ LOOK1 = {                            # D3 look 1, art px: u from the face's +u e
     "lip": (4, 5, 1),                           # a plate the face's width on its foot, this tall and a px proud;
                                                 # its middle (px in from each end) on down past the foot this far
     "slope_seam": ((7, 8), (24, 25)),           # seams down the slope, a px in from the plate's sides; one across it
-    "slope_line": 5,                            # (px under its middle)
+    "slope_line": 2,                            # (px under its middle)
 }
 
 
