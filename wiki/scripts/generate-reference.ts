@@ -155,7 +155,7 @@ for (const [id, def] of Object.entries(modules).sort()) {
   if (stations.length) lines.push(
     '', '## Production recipes', '',
     '<script lang="ts">',
-    "  import ModuleRecipes from '$lib/ModuleRecipes.svelte'",
+    "  import ModuleRecipes from '#lib/ModuleRecipes.svelte'",
     '</script>', '',
     '<ModuleRecipes station="' + html(id) + '" />', ''
   );
