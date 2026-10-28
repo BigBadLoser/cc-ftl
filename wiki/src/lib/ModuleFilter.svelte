@@ -33,16 +33,28 @@
   {/each}
 </div>
 <p class="wiki-category-summary" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'module' : 'modules'}</p>
-<ul class="wiki-ref-list">
+<ul class="wiki-module-grid">
   {#each filtered as module (module.id)}
-    <li class="wiki-ref-entry">
-      {#if module.image}
-        <img class="wiki-ref-thumb" src={module.image} alt="" loading="lazy" width="78" height="60" />
-      {/if}
-      <div>
-        <a href={resolve('reference/modules/') + module.slug + '/'}>{module.name}</a>
-        <small>{module.category} · {module.footprint[0]}×{module.footprint[1]} tiles · {module.power > 0 ? '+' : ''}{module.power} power</small>
-      </div>
+    <li class="wiki-module-card">
+      <a href={resolve('reference/modules/') + module.slug + '/'}>
+        <div class="wiki-module-art">
+          {#if module.image}
+            <img src={module.image} alt="" loading="lazy" width="240" height="150" />
+          {:else}
+            <div class="wiki-module-art-missing" aria-hidden="true">
+              <svg viewBox="0 0 92 60" width="92" height="60" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M46 8 82 29 46 50 10 29Z" stroke-dasharray="4 4"/>
+                <path d="M46 8v42M10 29h72" opacity=".3"/>
+              </svg>
+              <small>Artwork pending</small>
+            </div>
+          {/if}
+        </div>
+        <div class="wiki-module-info">
+          <strong>{module.name}</strong>
+          <span>{module.footprint[0]} × {module.footprint[1]} tiles</span>
+        </div>
+      </a>
     </li>
   {/each}
 </ul>
