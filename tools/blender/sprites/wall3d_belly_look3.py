@@ -8,7 +8,8 @@ from .wall3d_ext_geom import LINE, PAINT, YS
 SHADOW = "hbSlope"                   # (the plate's shade on the face by its lit end: a step under the seams' tone)
 
 LOOK3 = {                            # art px: u from the face's +u end (centred on its 32), v down from the cut
-    "grille": ((8, 24), (19, 29)),   # the grille's slats and soft gaps: u, v
+    "grille": ((8, 24), (19, 29)),   # the grille's footprint (the plate round it): u, v
+    "slats": (21, 27),               # its slats and soft gaps, v (a shade along its top and its -u side)
     "plate": (3, 2),                 # its plate: the grille and this much more every way, this many px proud
     "inset": (2, 1),                 # the plate's recess (the grille on its floor): its border, its depth
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
@@ -70,10 +71,16 @@ def look3(f, s, back, U, Z, cols):
             sh = [(rf - 0.01, z0), (rf + PAINT, z0), (rf + PAINT, z1), (rf - 0.01, z1)]
             f.part(*U(ua, ub), sh, [SEAM] * 4, SEAM, end=False)
     with f.tag("grille"):
-        (ga, gb), (gv0, gv1) = LOOK3["grille"]
-        for p in range(ga, gb, 2):                                  # (soft gaps between the slats, on its floor)
-            pf = [(fi - 0.01, Z(gv1)), (fi + PAINT, Z(gv1)), (fi + PAINT, Z(gv0)), (fi - 0.01, Z(gv0))]
-            f.part(*U(p, p + 1), pf, [XS] * 4, XS, end=False)
+        (ga, gb), _ = LOOK3["grille"]
+        sv0, sv1 = LOOK3["slats"]
+
+        def floor(u0, u1, v0, v1, col):                             # (painted on the plate's recess's floor)
+            pf = [(fi - 0.01, Z(v1)), (fi + PAINT, Z(v1)), (fi + PAINT, Z(v0)), (fi - 0.01, Z(v0))]
+            f.part(*U(u0, u1), pf, [col] * 4, col, end=False)
+        for p in range(ga, gb, 2):                                  # (soft gaps between the slats)
+            floor(p, p + 1, sv0, sv1, XS)
+        floor(ga, gb, sv0, sv0 + 1, SEAM)
+        floor(gb - 1, gb, sv0, sv1, SEAM)
     with f.tag("slope"):                                            # (the face's and the plate's edge on the
         x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
         for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pb), x + 0.5, 3.5), ((pb, 32), 0.5, 2)):
