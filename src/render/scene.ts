@@ -35,6 +35,7 @@ import { createSectorFx } from './sectorFx';
 import { createAsteroidView } from './asteroidView';
 import { createMarkers, type AreaMarks } from './markers';
 import { createWorldGrid } from './worldGrid';
+import { createCutLine } from './cutLine';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
@@ -77,6 +78,8 @@ export interface Renderer {
   setAreas(groups: readonly AreaMarks[]): void;
   /** The world tile grid (thin lines over the whole node), shown while the build tools are open. */
   setWorldGrid(on: boolean): void;
+  /** The line brush's cut: bold polylines through tile centres (empty clears). */
+  setCutLine(segments: readonly (readonly Tile[])[], color?: number): void;
   /** The module being placed, drawn see-through at the cursor (red when invalid) with its access tile; null hides it. */
   setModuleGhost(g: ModuleGhostSpec | null): void;
   /** Center the camera on a (fractional) tile position of the camera ship's grid. */
@@ -226,6 +229,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
   const worldGrid = createWorldGrid(SL.ui);
+  const cutLine = createCutLine(SL.ui);
   const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
@@ -441,6 +445,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sectorMarks.setPreview(tiles, valid);
     },
     setAreas: (groups) => sectorMarks.setAreas(groups),
+    setCutLine: (segments, color = 0xff3df0) => cutLine.set(segments, color),
     setWorldGrid: (on) => worldGrid.set(on, sector?.width ?? 0, sector?.height ?? 0),
     setModuleGhost: (g) => moduleGhost.set(g),
     focusTile(x, y) {

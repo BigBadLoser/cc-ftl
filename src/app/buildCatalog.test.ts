@@ -79,7 +79,7 @@ describe('placement tool state', () => {
   const setup = () => {
     const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(newGame(1, content), bridge);
-    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined } as unknown as Renderer);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined } as unknown as Renderer);
     return { c, h };
   };
 

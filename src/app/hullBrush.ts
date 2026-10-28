@@ -17,10 +17,13 @@ export interface BrushRect {
   h: number;
 }
 
-/** The dragged rectangle from `a` to `b`: it keeps `a` as its anchor corner and grows towards `b`, up to at least 3 x 3 (the drag snaps up). */
-export function dragRect(a: Tile, b: Tile): BrushRect {
-  const w = Math.max(MIN_SIDE, Math.abs(b.x - a.x) + 1);
-  const h = Math.max(MIN_SIDE, Math.abs(b.y - a.y) + 1);
+/**
+ * The dragged rectangle from `a` to `b`: it keeps `a` as its anchor corner and grows towards `b`. `min` is the smallest side it may have (the drag snaps up to
+ * it); the build tool passes 1 and shows a rectangle under 3 x 3 red instead, so the size the player sees is the size they dragged.
+ */
+export function dragRect(a: Tile, b: Tile, min = MIN_SIDE): BrushRect {
+  const w = Math.max(min, Math.abs(b.x - a.x) + 1);
+  const h = Math.max(min, Math.abs(b.y - a.y) + 1);
   return { x: sign(b.x - a.x) > 0 ? a.x : a.x - w + 1, y: sign(b.y - a.y) > 0 ? a.y : a.y - h + 1, w, h };
 }
 
