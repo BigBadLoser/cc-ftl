@@ -1647,10 +1647,10 @@ SPRITES += [(f"concept.{fn.__name__}.flat", (1, 1), "block", fn) for fn in (floo
 
 def floor_inset_grate():
     """The whole-tile grate's light grey frame (v19) set in from the tile footprint: a framed lit well under a plain
-    4 x 4 grate, its frame about a pixel and a half inside the tile's edges so the floor tile (seams and all) shows
+    4 x 4 grate, its frame about three and a half pixels inside the tile's edges so the floor tile (seams and all) shows
     round it; level with the deck."""
     k = K("lc_f_inset_grate", (1, 1), 0)
-    outer, lip, d = 0.9, 0.07, 0.1
+    outer, lip, d = 0.9 - 4 * PX, 0.07, 0.1                                           # 2 px further in each side
     s = outer - 2 * lip
     _shaft(k, s, s, 0.0, -d, WARM_WALL)
     k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
