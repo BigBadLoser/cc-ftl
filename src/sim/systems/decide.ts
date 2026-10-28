@@ -5,7 +5,7 @@ import {
   AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
   type Crew, type Job, type Path, type Position, type Priorities,
 } from '../crew/components';
-import { freeOperatorFor, jobFits } from '../crew/jobFit';
+import { freeOperatorFor, jobFits, jobTakeable } from '../crew/jobFit';
 import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
 import { findSuitSource, findSuitStow, isErrand, startErrand, type SuitSource } from '../eva/errands';
@@ -30,6 +30,8 @@ const SLEEP_BELOW = 20;
 /** Per-tick chance that an idle crew member wanders (about once per 10 s). */
 const WANDER_CHANCE = 0.005;
 const WANDER_RADIUS = 3;
+/** How often (ticks) a busy crew member looks for an emergency that outranks their job. */
+const EMERGENCY_CHECK_TICKS = 10;
 
 /** Autonomous decisions for non-drafted crew: hold for a mender, go recharge (robots), sleep, keep/repath a job, pick a job, or idle. */
 export function decideSystem(sim: Sim): void {
@@ -72,9 +74,13 @@ export function decideSystem(sim: Sim): void {
         releaseAssignment(sim, id);
         continue;
       }
-      const path = sim.world.get(id, PathC);
-      if (path && path.steps.length === 0 && !atJob(origin(pos), job) && !routeToJob(sim, id, pos, assignment.jobId, job)) releaseAssignment(sim, id);
-      continue;
+      // An emergency (fire, downed crew member, hull hole) the crew member ranks above their job calls them off it.
+      if ((sim.tick + id) % EMERGENCY_CHECK_TICKS === 0 && !isCarrying(sim, id) && emergencyWaiting(sim, id, pos, job)) releaseAssignment(sim, id);
+      else {
+        const path = sim.world.get(id, PathC);
+        if (path && path.steps.length === 0 && !atJob(origin(pos), job) && !routeToJob(sim, id, pos, assignment.jobId, job)) releaseAssignment(sim, id);
+        continue;
+      }
     }
 
     dropCarried(sim, id); // a load left over from a lost haul job
@@ -164,10 +170,45 @@ function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   return !!m && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
 }
 
-/** A priority-repair module's repair job beats any walking distance; a later order goes first. */
+/** Score bonuses (tiles of walking) that put repair jobs in order: a manual priority repair beats combat triage, which beats the rest. */
+const MANUAL_REPAIR_BONUS = 100000;
+const FIGHT_REPAIR_BONUS = 20000;
+const SUPPORT_REPAIR_BONUS = 10000;
+
+/**
+ * A priority-repair module's repair job beats any walking distance; a later order goes first. In combat the rest are triaged by what
+ * the fight needs: weapons (and their console), reactors, shield generators and consoles and the helm come first, engines and life
+ * support next, then everything else (lights, beds, storage) by distance as usual. Outside combat nothing changes.
+ */
 function repairUrgency(sim: Sim, job: Job): number {
-  const first = job.kind === 'repair' ? sim.world.get(job.target ?? 0, ModuleC)?.repairFirst : 0;
-  return first ? 100000 + first : 0;
+  if (job.kind !== 'repair') return 0;
+  const m = sim.world.get(job.target ?? 0, ModuleC);
+  if (!m) return 0;
+  if (m.repairFirst) return MANUAL_REPAIR_BONUS + m.repairFirst;
+  if (!sim.sector.inCombat) return 0;
+  const def = sim.content.modules[m.def];
+  if (!def) return 0;
+  if (def.console || def.weapon || def.shieldGen || def.power > 0) return FIGHT_REPAIR_BONUS;
+  return def.engine || def.o2PerSec ? SUPPORT_REPAIR_BONUS : 0;
+}
+
+/** Jobs a crew member drops what they are doing for: a fire, a downed crew member, a hole in the hull. */
+const isEmergency = (job: Job): boolean => job.kind === 'extinguish' || job.kind === 'rescue' || (job.kind === 'build' && job.category === 'firefighting');
+/** What an emergency never interrupts: a console, a rescue, a suit errand, or another emergency. */
+const HOLDS = ['operate', 'rescue', 'suitUp', 'suitOff', 'extinguish'];
+
+/** True when a free emergency job the crew member ranks higher than their current job is waiting and reachable (checked every few ticks). */
+function emergencyWaiting(sim: Sim, crewId: number, pos: Position, current: Job): boolean {
+  if (HOLDS.includes(current.kind) || isErrand(current) || (current.kind === 'build' && current.category === 'firefighting')) return false;
+  const prio = sim.world.get(crewId, PrioritiesC) as Priorities;
+  const held = prio[current.category] || 5; // off counts as the lowest
+  for (const id of sim.world.query(JobC)) {
+    const j = sim.world.get(id, JobC) as Job;
+    if (j.reservedBy !== 0 || !isEmergency(j)) continue;
+    const level = prio[j.category];
+    if (level >= 1 && level < held && jobTakeable(sim, crewId, pos, j)) return true;
+  }
+  return false;
 }
 
 /** Reserve the best job by priority level, then shortest path, then lowest id. */

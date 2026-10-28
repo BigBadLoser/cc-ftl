@@ -20,7 +20,7 @@ const content: ContentRegistry = {
   ships: {},
   roles: {},
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
-  modules: { crate: mod({ maxHp: 60 }), helm: mod({ console: 'helm' }) },
+  modules: { crate: mod({ maxHp: 60 }), helm: mod({ console: 'helm' }), gun: mod({ console: 'weapons' }), lamp: mod({ maxHp: 30 }) },
   crewNames: [],
   items: {},
   recipes: {},
@@ -146,5 +146,60 @@ describe('priority repair', () => {
     sim.enqueue({ type: 'module.priorityRepair', id: m, on: false });
     run(sim, 1);
     expect(sim.world.get(m, ModuleC)!.repairFirst).toBeUndefined();
+  });
+});
+
+describe('combat repair triage', () => {
+  /** A weapons console wrecked at the far end and a damaged lamp right beside the crew member. */
+  function setup(): { sim: Sim; gun: number; lamp: number; c: number } {
+    const sim = make([{ def: 'gun', x: 8, y: 4 }, { def: 'lamp', x: 3, y: 2 }]);
+    const [gun, lamp] = sim.world.query(ModuleC) as number[];
+    sim.world.get(gun as number, ModuleC)!.hp = 0;
+    sim.world.get(lamp as number, ModuleC)!.hp = 5;
+    return { sim, gun: gun as number, lamp: lamp as number, c: crew(sim, 3, 3, dc({ repair: 1 })) };
+  }
+
+  it('in combat a destroyed weapons console is repaired before a damaged lamp that is closer', () => {
+    const { sim, gun, c } = setup();
+    run(sim, 4, true);
+    expect(jobOf(sim, c)?.target).toBe(gun);
+  });
+
+  it('outside combat the old order holds: the closer lamp first', () => {
+    const { sim, lamp, c } = setup();
+    run(sim, 4);
+    expect(jobOf(sim, c)?.target).toBe(lamp);
+  });
+
+  it('a manual priority repair beats the combat triage', () => {
+    const { sim, lamp, c } = setup();
+    sim.enqueue({ type: 'module.priorityRepair', id: lamp, on: true });
+    run(sim, 4, true);
+    expect(jobOf(sim, c)?.target).toBe(lamp);
+  });
+});
+
+describe('emergencies call busy crew off lower-ranked jobs', () => {
+  it('a fire pulls a crew member off a repair they rank below damage control', () => {
+    const sim = make([{ def: 'crate', x: 8, y: 4 }]);
+    const m = sim.world.query(ModuleC)[0] as number;
+    sim.world.get(m, ModuleC)!.hp = 1;
+    const c = crew(sim, 7, 3, dc({ repair: 2 }));
+    run(sim, 4);
+    expect(jobOf(sim, c)?.kind).toBe('repair');
+    sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
+    run(sim, 40);
+    expect(jobOf(sim, c)?.kind).toBe('extinguish');
+  });
+
+  it('but not a job they rank the same or higher', () => {
+    const sim = make([{ def: 'crate', x: 8, y: 4 }]);
+    const m = sim.world.query(ModuleC)[0] as number;
+    sim.world.get(m, ModuleC)!.hp = 1;
+    const c = crew(sim, 7, 3, dc({ repair: 1 }));
+    run(sim, 4);
+    sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
+    run(sim, 40);
+    expect(jobOf(sim, c)?.kind).toBe('repair');
   });
 });
