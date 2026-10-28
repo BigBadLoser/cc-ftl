@@ -30,6 +30,7 @@ try {
   if (await cards.count() < 1) throw Error('Fabricator has no recipe cards');
   if (await cards.locator('a[href*="/reference/items/"]').count() < 2) throw Error('Recipe materials are missing item links');
   if (await cards.locator('.wiki-recipe-materials img').count() < 2) throw Error('Recipe item sprite icons are missing');
+  if (await cards.locator('a[title="Shuttle"] img').count() !== 1) throw Error('Crafted shuttle must reuse its actual vehicle sprite');
   const expanded = await page.locator('.content').first().boundingBox();
   await shot('fabricator-open', true);
   const toggle = page.locator('.wiki-sidebar-toggle');

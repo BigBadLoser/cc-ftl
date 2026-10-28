@@ -44,8 +44,14 @@ for (const def of Object.values(vehicles)) {
 }
 for (const def of Object.values(modules)) if (def.weapon && weapons[def.weapon as keyof typeof weapons]) select(def.asset);
 // The game's inventory uses a medium stack, then small, then held sprite.
-for (const id of Object.keys(items)) {
+for (const [id, def] of Object.entries(items)) {
   selectVariant(id, [id + '.m', id + '.s', id + '.held'], true);
+  // A fabricated vehicle may have no separate inventory icon. Its item
+  // definition explicitly references the vehicle, so use its genuine art.
+  const vehicleId = (def as { vehicle?: string }).vehicle;
+  if (!chosen.has(id) && vehicleId) {
+    selectVariant(id, [vehicleId + '.fly.d0', vehicleId + '.fly.d2', vehicleId + '.parked.r0'], true);
+  }
 }
 
 sharp.cache(false);

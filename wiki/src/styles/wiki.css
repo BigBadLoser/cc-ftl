@@ -563,3 +563,6 @@
 @media (max-width: 650px) {
   .wiki-reference-item-card .wiki-reference-art { width: 72px; min-width: 72px; }
 }
+
+/* Grid rows track the tallest recipe, but short cards should not inherit its empty height. */
+.wiki-recipe-grid { align-items: start; }
