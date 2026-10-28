@@ -4,7 +4,7 @@ cc-ftl: a persistent isometric ship-colony game in the browser (Space Haven buil
 `bigbadloser/cc-ftl`. Every thread reads `CLAUDE.md`, `docs/HANDOFF.md` and `docs/STATUS.md` first.
 
 How the user works:
-- **Desktop-first game.** The user sometimes tests on a phone via `main` at https://cc-ftl.bigbadloser.workers.dev.
+- **Desktop-first game.** The user sometimes tests on a phone via `main` at https://bigbadloser.github.io/cc-ftl/ (published by hand).
   Branch previews are unreliable, so finished, verified work goes to `main`.
 - **Visual changes need the user's approval of screenshots (default and zoomed) before merging to main.** Verify with
   headless screenshots yourself first, and look at them. Never claim something is fixed without zooming in on it.
