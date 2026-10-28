@@ -13,8 +13,8 @@
   import { toneColor } from './starmapStyle';
   import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
 
-  /** The starmap screen. (Fleeing a fight is the combat panel's flee control, not this map.) */
-  let { api, onClose, onSlide }: { api: UiApi; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
+  /** The starmap screen. `focusNode`: a node to centre on when it opens. (Fleeing a fight is the combat panel's flee control, not this map.) */
+  let { api, focusNode = null, onClose, onSlide }: { api: UiApi; focusNode?: string | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
   /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
@@ -183,7 +183,12 @@
       map = m;
       if (!placed && m.nodes.length) {
         placed = true;
-        queueMicrotask(() => focusSector(m.currentSector, true));
+        queueMicrotask(() => {
+          const n = focusNode ? m.nodes.find((x) => x.id === focusNode) : undefined;
+          const sec = n ? sectorById.get(n.sector) : undefined;
+          if (n && sec) flyTo(n.x, n.y, (Math.min(w, h) * 0.62) / (2 * sec.r + 60), 0); // a log entry or alert about a node: open on it
+          else focusSector(m.currentSector, true);
+        });
       }
       if (moved && selected === m.current) selected = null;
     });

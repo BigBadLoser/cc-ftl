@@ -220,10 +220,14 @@ export type Command =
   | { type: 'research.move'; ship: number; project: string; to: number }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
+  /** Collect a finished bounty or survey (a claim) at a station of the issuing type and faction at the player's node. */
+  | { type: 'jobs.handIn'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */
   | { type: 'jobs.openCrate'; id: number }
   /** Debug: set the player's notoriety (galaxy/heat.ts). */
   | { type: 'debug.notoriety'; value: number }
+  /** Debug: set up station jobs for playtesting (galaxy/jobsDebug.ts). */
+  | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */
   | { type: 'galaxy.leaveEvent' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */

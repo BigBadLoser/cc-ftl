@@ -35,7 +35,7 @@ describe('alerts', () => {
     alerts.onEvents([{ type: 'crew.downed', crew }]);
     const list = current(alerts);
     expect(list.map((a) => a.kind)).toEqual(['crew.downed']);
-    expect(list[0]?.text).toContain('is down');
+    expect(list[0]?.text).toContain('Down: ');
   });
 
   describe('arrival warnings', () => {
@@ -63,7 +63,7 @@ describe('alerts', () => {
       let list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]?.kind).toBe('galaxy.incomingHostile');
-      expect(list[0]?.text).toBe('Rust Jackal drops from hyperspace in 2 turns');
+      expect(list[0]?.text).toBe('Arriving: Rust Jackal, 2 turns');
       const id = list[0]?.id;
       pirate.node = a;
       pirate.route = [START_NODE];
@@ -72,7 +72,7 @@ describe('alerts', () => {
       list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]).toMatchObject({ id, kind: 'galaxy.incomingHostile' });
-      expect(list[0]?.text).toMatch(/in 1 turn$/);
+      expect(list[0]?.text).toMatch(/, 1 turn$/);
       pirate.node = START_NODE;
       pirate.route = [];
       sim.galaxy.rev++;
@@ -80,13 +80,18 @@ describe('alerts', () => {
       expect(current(alerts)).toEqual([]);
     });
 
-    it('a friendly fleet is a plain warning, a change of course clears it, and a dismissed warning stays dismissed for that trip', () => {
+    it('a friendly fleet raises no alert; a hostile one dismissed stays dismissed for that trip', () => {
       const { sim, a, b, add } = setup();
       const alerts = createAlerts(sim);
-      const trader = add('traders', 'trader', a, [START_NODE]);
+      add('traders', 'trader', a, [START_NODE]);
       sim.galaxy.rev++;
       alerts.syncIncoming();
-      expect(current(alerts).map((x) => x.kind)).toEqual(['galaxy.incoming']);
+      expect(current(alerts)).toEqual([]);
+      const trader = add('pirates', 'pirate', a, [START_NODE]);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts).map((x) => x.kind)).toEqual(['galaxy.incomingHostile']);
+      expect(current(alerts)[0]?.subject).toEqual({ kind: 'node', id: START_NODE });
       alerts.dismiss(current(alerts)[0]!.id);
       sim.galaxy.rev++;
       alerts.syncIncoming();

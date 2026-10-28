@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, WeaponC, newGame, shipIdOf } from '../sim';
+import { ModuleC, WeaponC, galaxyIndex, newGame, shipIdOf } from '../sim';
+import { portsAt } from '../sim/galaxy/portIndex';
+import { stationClass } from '../sim/galaxy/ports';
 import { spawnContact } from '../sim/galaxy/arrivals';
-import { offersHere } from '../sim/galaxy/jobOffers';
+import { offersHere, portOffers } from '../sim/galaxy/jobOffers';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { buildJobs } from './jobsSnapshot';
@@ -16,7 +18,7 @@ describe('buildJobs', () => {
     expect(board.offers.length).toBeGreaterThan(0);
     const o = board.offers[0]!;
     expect(o.id).toBeNull();
-    expect(o.title).toMatch(/^(Deliver a sealed crate \(\d+ .+\)|Destroy the .+)$/);
+    expect(o.title).toMatch(/^(Deliver a sealed crate \(\d+ .+\)|Destroy the .+|Survey .+)$/);
     expect(o.hops).toBeGreaterThan(0);
     sim.enqueue({ type: 'jobs.accept', key: o.key });
     sim.step();
@@ -32,6 +34,16 @@ describe('buildJobs target strength', () => {
     for (let seed = 1; seed <= 12 && checked < 2; seed++) {
       const sim = newGame(seed, content);
       ensureAround(sim, sim.galaxy.current);
+      // Bounties are posted at military stations and depots: go to the first one (the start station is a trade station).
+      const node = [...galaxyIndex(sim.galaxy).nodes.keys()].sort().find((n) => portsAt(sim, n).some((p) => stationClass(p) === 'military' && portOffers(sim, p).length > 0));
+      if (!node) continue;
+      sim.enqueue({ type: 'debug.galaxyTeleport', node });
+      sim.step();
+      for (const [x, y] of [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const) {
+        if (sim.sector.state === 'active') break;
+        sim.enqueue({ type: 'sector.deploy', x, y });
+        sim.step();
+      }
       const board = buildJobs(sim);
       expect(board.mine?.guns).toBeGreaterThan(0);
       for (const o of board.offers) {
@@ -51,6 +63,25 @@ describe('buildJobs target strength', () => {
       }
     }
     expect(checked).toBeGreaterThan(0);
+  });
+});
+
+describe('buildJobs hand-in', () => {
+  it('lists a finished bounty only where its issuer\'s military station takes it in, and not as a held job', () => {
+    const sim = newGame(3, content);
+    ensureAround(sim, sim.galaxy.current);
+    expect(buildJobs(sim).handIn).toEqual([]);
+    sim.enqueue({ type: 'debug.jobScenario', name: 'bounty' });
+    sim.step();
+    for (const [x, y] of [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const) {
+      if (sim.sector.state === 'active') break;
+      sim.enqueue({ type: 'sector.deploy', x, y });
+      sim.step();
+    }
+    const here = buildJobs(sim);
+    expect(here.active).toEqual([]);
+    expect(here.handIn.map((c) => [c.kind, c.reward, c.here])).toEqual([['bounty', 400, true]]);
+    expect(buildStarmap(sim).nodes.every((n) => !n.jobs?.length)).toBe(true);
   });
 });
 

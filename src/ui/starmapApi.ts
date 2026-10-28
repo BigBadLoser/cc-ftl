@@ -91,8 +91,8 @@ export interface UiStarMarket {
 
 /** A held station job that ends at a node: a delivery's destination or a bounty's target. */
 export interface UiNodeJob {
-  kind: 'delivery' | 'bounty';
-  /** "Deliver a sealed crate (12 Ration)" or "Bounty: Bone Saint". */
+  kind: 'delivery' | 'bounty' | 'survey';
+  /** "Deliver a sealed crate (12 Ration)", "Bounty: Bone Saint" or "Survey: nebula". */
   label: string;
 }
 

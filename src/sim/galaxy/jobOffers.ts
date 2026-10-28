@@ -6,10 +6,11 @@ import { shipNameFor } from './names';
 import { usedNames } from './roster';
 import { pickWeighted } from './sector';
 import { portsAt } from './portIndex';
-import type { Port } from './ports';
+import { stationClass, type Port } from './ports';
 import { tierOf } from './standing';
-import { nodeOf } from './state';
+import { galaxyIndex, nodeOf } from './state';
 import {
+  SURVEY_BASE, SURVEY_FEATURES, SURVEY_FEATURE_BONUS, SURVEY_HOPS, SURVEY_PER_DANGER, SURVEY_PER_HOP, SURVEY_TURNS_BASE, SURVEY_TURNS_PER_HOP,
   BOUNTY_BASE, BOUNTY_HOPS, BOUNTY_PER_DANGER, BOUNTY_PER_HOP, BOUNTY_TURNS_BASE, BOUNTY_TURNS_PER_HOP, DELIVERY_BASE, DELIVERY_COUNT, DELIVERY_HOPS, DELIVERY_ITEMS, DELIVERY_PER_DANGER,
   DELIVERY_PER_HOP, DELIVERY_TURNS_BASE, DELIVERY_TURNS_PER_HOP, OFFERS_PER_PORT, OFFER_TURNS,
 } from './tuningJobs';
@@ -19,6 +20,8 @@ import type { StationJob } from './types';
  * StationJob offers (see tuningJobs.ts). Nothing is stored: the offers of a port are drawn from hashes of (seed, port, OFFER_TURNS window, slot), against the world as it is
  * (which stations are in reach, which enemy fleets are about), so the same offer keeps its key while it stands. Taken and finished keys are in `GalaxyState.jobLog`.
  */
+
+type SurveyFeature = (typeof SURVEY_FEATURES)[number];
 
 /** An offer as the board shows it: a job not yet taken (no id). */
 export type JobOffer = Omit<StationJob, 'id'>;
@@ -84,23 +87,62 @@ function bounty(sim: Sim, port: Port, key: string, h: (salt: number) => number, 
   };
 }
 
-/** The offers of one port now: none from a faction hostile to the player. Each slot is a bounty half the time (when one can be placed), else a delivery. */
+/** What a node offers a survey, or null: the body at the centre of its sector (nebula, black hole, blue giant), else an asteroid field among its structures. */
+export function featureOf(sim: Sim, node: string): (typeof SURVEY_FEATURES)[number] | null {
+  const n = nodeOf(sim, node);
+  if (!n) return null;
+  const body = galaxyIndex(sim.galaxy).sectors.get(n.sector)?.body?.kind;
+  const bodyFeature = SURVEY_FEATURES.find((f) => f === body && f !== 'asteroids');
+  if (bodyFeature) return bodyFeature;
+  return n.structures.some((s) => sim.content.galaxy?.structures[s.def]?.kind === 'asteroids') ? 'asteroids' : null;
+}
+
+/** A survey: enter a node SURVEY_HOPS away that has a feature. One survey per node at a time. */
+function survey(sim: Sim, port: Port, key: string, h: (salt: number) => number, turn: number): JobOffer | null {
+  const taken = new Set(sim.galaxy.jobs.flatMap((j) => (j.kind === 'survey' && j.node ? [j.node] : [])));
+  const nodes: { node: string; hops: number; feature: string }[] = [];
+  for (const [node, hops] of nodesWithin(sim, port.node, SURVEY_HOPS.max)) {
+    const feature = featureOf(sim, node);
+    if (hops >= SURVEY_HOPS.min && feature && !taken.has(node)) nodes.push({ node, hops, feature });
+  }
+  if (!nodes.length) return null;
+  nodes.sort((a, b) => (a.node < b.node ? -1 : 1));
+  const at = nodes[Math.floor(h(10) * nodes.length)] as { node: string; hops: number; feature: SurveyFeature };
+  const danger = nodeOf(sim, at.node)?.danger ?? 0;
+  return {
+    key, kind: 'survey', issuer: port.owner, from: port.id, node: at.node, feature: at.feature,
+    reward: Math.round(SURVEY_BASE + SURVEY_PER_HOP * at.hops + SURVEY_PER_DANGER * danger + SURVEY_FEATURE_BONUS[at.feature]), due: turn + SURVEY_TURNS_BASE + SURVEY_TURNS_PER_HOP * at.hops,
+  };
+}
+
+/**
+ * The offers of one port now: none from a faction hostile to the player. The station type decides the kind (issue #178): trade stations offer deliveries,
+ * military stations and depots bounties, research stations surveys; a den rolls a bounty or a delivery, half each. A slot that cannot be filled stays empty.
+ */
 export function portOffers(sim: Sim, port: Port): JobOffer[] {
   if (!PORT_KINDS.has(port.kind) || isHostileTo(sim, port.owner)) return [];
   const g = sim.galaxy;
   const window = Math.floor(g.turn / OFFER_TURNS);
+  const class_ = stationClass(port);
   const placed = new Set(g.jobs.flatMap((j) => (j.kind === 'bounty' && j.node ? [j.node] : [])));
+  const surveyed = new Set<string>();
   const out: JobOffer[] = [];
   for (let slot = 0; slot < OFFERS_PER_PORT; slot++) {
     const key = `${port.id}|${window}|${slot}`;
     if (g.jobLog.includes(key)) continue;
     const h = (salt: number): number => unit(sim.seed, strHash(port.id), window, slot, SALT, salt);
-    const b = h(1) < 0.5 ? bounty(sim, port, key, h, g.turn) : null;
-    // One bounty per node at a time.
-    const o = b && !placed.has(b.node as string) ? b : delivery(sim, port, key, h, g.turn);
+    let o: JobOffer | null = null;
+    if (class_ === 'military') o = bounty(sim, port, key, h, g.turn);
+    else if (class_ === 'research') o = survey(sim, port, key, h, g.turn);
+    else if (class_ === 'den' && h(1) < 0.5) o = bounty(sim, port, key, h, g.turn);
+    else o = delivery(sim, port, key, h, g.turn);
+    // One bounty per node at a time (and one survey, among the slots of this port).
+    if (o?.kind === 'bounty' && placed.has(o.node as string)) o = class_ === 'den' ? delivery(sim, port, key, h, g.turn) : null;
+    if (o?.kind === 'survey' && surveyed.has(o.node as string)) o = null;
     if (!o) continue;
     if (o.kind === 'bounty') placed.add(o.node as string);
-    out.push(o);
+    if (o.kind === 'survey') surveyed.add(o.node as string);
+    out.push({ ...o, ...(class_ ? { station: class_ } : {}) });
   }
   return out;
 }

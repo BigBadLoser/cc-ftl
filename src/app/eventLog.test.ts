@@ -1,71 +1,124 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { newGame, type SimEvent } from '../sim';
+import { CombatC, CrewC, DeadC, ModuleC, ShipC, homeShip, newGame, type SimEvent } from '../sim';
+import { shipIdOf } from '../sim/regions';
 import { createAlerts } from './alerts';
 import { createEventLog } from './eventLog';
+import type { UiLogEntry } from '../ui/api';
 
-/** Wired the way the controller does it. */
 function setup() {
   const sim = newGame(3, content);
   const alerts = createAlerts(sim);
   const log = createEventLog(sim);
-  alerts.onRaised(log.defer);
-  alerts.onCleared((a, _t, replaced) => log.release(a.id, replaced));
   const feed = (...events: SimEvent[]) => {
     alerts.onEvents(events);
-    log.onEvents(events, alerts.covers);
+    log.onEvents(events);
   };
-  let current: { text: string; tone: string; kind: string }[] = [];
+  let current: UiLogEntry[] = [];
   log.list.subscribe((l) => (current = l));
   return { sim, alerts, log, feed, list: () => current };
 }
 
-describe('event log and alerts', () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
+describe('ship log and alerts', () => {
+  it('logs events that raise an alert too, and keeps them when the alert goes', () => {
+    const t = setup();
+    t.feed({ type: 'fire.started', ship: homeShip(t.sim), room: 1, x: 5, y: 6 });
+    expect(t.alerts.get(1)).toBeDefined();
+    expect(t.list()).toMatchObject([{ kind: 'fire', subject: { kind: 'tile', x: 5, y: 6 } }]);
+    t.alerts.dismiss(1);
+    expect(t.list()).toHaveLength(1);
+  });
 
-  it('holds a covered event until its alert clears', () => {
+  it('logs log-only events without raising an alert', () => {
     const t = setup();
     t.feed({ type: 'trade.hailAnswered', ship: 9, name: 'Mira' });
-    expect(t.list()).toHaveLength(0);
-    vi.advanceTimersByTime(46000);
     expect(t.list().map((e) => e.text)).toEqual(['Mira answered the hail']);
+    let n = -1;
+    t.alerts.list.subscribe((l) => (n = l.length));
+    expect(n).toBe(0);
   });
 
-  it('logs the oldest alert when a full queue pushes it out', () => {
+  it('highlights a credit gain with its amount, whatever the event', () => {
     const t = setup();
-    for (let ship = 1; ship <= 7; ship++) t.feed({ type: 'trade.hailAnswered', ship, name: `Ship${ship}` });
-    expect(t.list().map((e) => e.text)).toEqual(['Ship1 answered the hail']);
+    t.sim.trade.credits += 450;
+    t.feed({ type: 'story.effect', text: 'A reward' } as SimEvent);
+    expect(t.list()[0]).toMatchObject({ kind: 'payout', amount: 450, tone: 'good' });
+    t.sim.trade.credits -= 100; // a spend is not a payout
+    t.log.sync();
+    expect(t.list()[0]?.amount).toBe(450);
   });
 
-  it('keeps a story notice in the log, with its title, after the alert is dismissed', () => {
+  it('catches credits that arrive without any event', () => {
     const t = setup();
-    t.feed({ type: 'story.started', event: 'event.notice_comet', mode: 'notice', notice: 0 });
-    const alert = t.alerts.list;
-    let id = 0;
-    alert.subscribe((l) => (id = l[0]?.id ?? 0));
-    expect(id).toBeGreaterThan(0);
-    expect(t.list()).toHaveLength(0);
-    t.alerts.dismiss(id);
-    expect(t.list()).toMatchObject([{ kind: 'story', tone: 'info', text: content.events?.['event.notice_comet']?.title }]);
+    t.sim.trade.credits += 30;
+    t.log.sync();
+    expect(t.list()[0]).toMatchObject({ kind: 'payout', amount: 30 });
   });
 
-  it('keeps the tone of deferred trade entries', () => {
+  it('names the trader that paid the player', () => {
     const t = setup();
-    t.feed({ type: 'trade.hailRefused', ship: 1, name: 'Ann', reason: 'hostile' });
-    t.feed({ type: 'trade.failed', deal: 4, ship: 2, reason: 'x' });
-    t.feed({ type: 'trade.dealMade', deal: 5, ship: 2, courier: 'them', balance: 0 });
-    t.feed({ type: 'trade.delivered', deal: 6, ship: 2, to: 'player' });
-    t.feed({ type: 'trade.settled', deal: 7, ship: 2, credits: 5 });
-    vi.advanceTimersByTime(46000);
-    expect(t.list().map((e) => e.tone).sort()).toEqual(['good', 'good', 'good', 'warn', 'warn']);
-  });
-
-  it('does not log a replaced alert twice', () => {
-    const t = setup();
-    t.feed({ type: 'trade.hailAnswered', ship: 1, name: 'Ann' });
-    t.feed({ type: 'trade.hailAnswered', ship: 1, name: 'Ann' });
-    vi.advanceTimersByTime(46000);
+    t.sim.trade.credits += 80;
+    t.feed({ type: 'trade.settled', deal: 1, ship: 2, credits: -80 });
     expect(t.list()).toHaveLength(1);
+    expect(t.list()[0]).toMatchObject({ kind: 'payout', amount: 80 });
+  });
+
+  it('names a job payout after the job, in one entry', () => {
+    const t = setup();
+    t.sim.trade.credits += 240;
+    t.feed({ type: 'job.handedOver', id: 1, issuer: 'faction.navy', reward: 240, via: 'own' } as SimEvent);
+    expect(t.list()).toHaveLength(1);
+    expect(t.list()[0]).toMatchObject({ kind: 'payout', amount: 240, text: 'Crate dropped at the station' });
+    t.sim.trade.credits += 400;
+    t.feed({ type: 'job.handedIn', id: 2, kind: 'bounty', issuer: 'faction.navy', reward: 400, port: 'p' } as SimEvent);
+    expect(t.list()[0]?.text).toMatch(/^Bounty handed in to /);
+  });
+
+  it('combat alert jumps to the enemy ship and clears when combat ends', () => {
+    const t = setup();
+    const enemy = t.sim.world.query(ShipC).find((id) => id !== homeShip(t.sim) && t.sim.world.has(id, CombatC));
+    if (enemy !== undefined) t.sim.world.get(enemy, ShipC)!.faction = 'hostile';
+    t.sim.sector.inCombat = true;
+    t.feed({ type: 'combat.started' });
+    const a = t.alerts.get(1);
+    expect(a?.kind).toBe('combat.started');
+    if (enemy !== undefined) expect(a?.subject).toEqual({ kind: 'ship', id: enemy });
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeDefined();
+    t.sim.sector.inCombat = false;
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeUndefined();
+  });
+});
+
+describe('alerts clear against the sim state', () => {
+  it('creatures-aboard clears when the hatched creatures are dead (corpses keep CrewC)', () => {
+    const t = setup();
+    const crew = t.sim.world.query(CrewC)[0] as number;
+    t.feed({ type: 'eggsac.hatched', sac: 0, ship: homeShip(t.sim), x: 1, y: 1, aliens: [crew] });
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeDefined();
+    t.sim.world.add(crew, DeadC, { tick: 0 } as never);
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeUndefined();
+  });
+
+  it('power shortage stays while a consumer is unpowered, and clears when all are powered', () => {
+    const t = setup();
+    const ship = homeShip(t.sim);
+    const consumer = t.sim.world.query(ModuleC).find((id) => {
+      const m = t.sim.world.get(id, ModuleC)!;
+      return (t.sim.content.modules[m.def]?.power ?? 0) < 0 && shipIdOf(t.sim, m) === ship;
+    }) as number;
+    const m = t.sim.world.get(consumer, ModuleC)!;
+    m.enabled = true;
+    m.hp = 10;
+    m.powered = false;
+    t.feed({ type: 'power.shortage', ship, supply: 10, demand: 20 });
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeDefined();
+    for (const id of t.sim.world.query(ModuleC)) t.sim.world.get(id, ModuleC)!.powered = true; // the power system's verdict: everyone has power
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeUndefined();
   });
 });

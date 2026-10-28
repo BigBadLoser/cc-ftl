@@ -1,4 +1,4 @@
-import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { ItemStackC } from '../sim/items/components';
@@ -34,6 +34,12 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     }),
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
+    /** Trade and handover deals: phase, shuttle state and position, airlock. */
+    deals: () => sim.trade.deals.map((d) => {
+      const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
+      const b = d.vehicle ? sim.world.get(d.vehicle, BodyC) : undefined;
+      return { id: d.id, phase: d.phase, reason: d.reason ?? null, handover: d.handover?.job ?? null, airlock: d.airlock, vehicle: d.vehicle, state: v?.state ?? null, cargo: v?.cargo ?? null, x: b?.x ?? null, y: b?.y ?? null };
+    }),
     /** Loose floor stacks: item, count, tile and ship (a delivery crate carries its job id). */
     stacks: () => sim.world.query(ItemStackC).flatMap((id) => {
       const s = sim.world.get(id, ItemStackC);
