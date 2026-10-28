@@ -13,6 +13,7 @@ INSET = 1                           # 32nds: the outline in from the mask's edge
 E = 0.5 - INSET / 32
 LIP = E + 0.5                       # the hull's back this far behind a run's outline (d terms: the tile's back edge)
 REACH = 3.0                         # tiles: the fronts this near a tile are tried
+STEPS = 2                           # 1: a lone step (an outer corner, an inner one a tile on) runs as a diagonal too
 NEAR = {(1, 0), (0, 1)}             # the sides facing the camera: their runs and corners are the run set's (wall3d_ext)
 EPS = 1e-7
 
@@ -68,10 +69,11 @@ def _fronts(loop):
         j = i
         while j < m - 1 and turn[j] * (1 if (j - i) % 2 == 0 else -1) > 0:
             j += 1
-        if (j - i) % 2 == 0:                                            # (end on an outer corner)
-            j -= 1
+        step = STEPS == 1 and turn[i] > 0 and (j - i == 2 or (j - i == 1 and turn[i - 1] < 0))   # (a lone step: an
+        if (j - i) % 2 == 0:                                            # outer corner with an inner one a tile before or
+            j -= 1                                                      # after it) (end on an outer corner)
         (x, y), a = loop[i]
-        if j - i >= 3:                                                  # (two outer corners or more: a diagonal
+        if j - i >= 3 or step:                                          # (two outer corners or more: a diagonal
             b = loop[i + 1][1]                                          # through the steps' side corners)
             s = (a[0] + b[0], a[1] + b[1])
             f, i = (s, 32 * (s[0] * x + s[1] * y) + 32 * E - 16), j + 1
