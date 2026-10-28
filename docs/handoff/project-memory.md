@@ -18,10 +18,24 @@
   - You trade with stations and with ships in the same node by hailing them.
   - Goods are delivered by shuttle to the airlock unloaders.
 - **Factions:**
-  - Corporations (Meridian, Helix, Vantor) and the Concord Navy (government), with more to come.
-  - Also Free Traders, the Scrapper Clans (pirates) and the Rogue AI (drones).
-  - Standing comes from reputation.
-- **Dropped:** teleporters and prisoners.
+  - Corporations (Meridian, Helix, Vantor) and the Concord Navy (government).
+  - Also Free Traders and the Rogue AI (drones).
+  - Five pirate factions:
+    - the Scrappers (the main one, junk ships);
+    - the raider clan, light ships that prefer boarding;
+    - the cartel, which guards its routes and hires mercenary escorts;
+    - the zealots, a niche machine-god cult allied with the drones that goes for your AI core and never surrenders;
+    - the mercenaries, neutral by default.
+  - Standing is per faction. A pairwise relations table spills standing between factions.
+- **Black markets:**
+  - Lesser markets sit at about 25% of pirate-held and lawless stations, and every market has a truce at its node.
+  - Pirate stations without a market attack on sight.
+  - Contraband is caught by navy and corporation scans: surrender it with a fine, or pay a bribe. The scan prompt is
+    temporary until navy inspectors board in person (#138).
+  - Only the cartel has a fence.
+  - Three named markets wait on station generation.
+- **Dropped:** teleporters.
+- **Prisoners** go in the existing cryo pods (#116, planned). Wrecks still kill everyone aboard.
 - **Hunger and events** are good enough for now. They grow with content.
 - **UI direction:**
   - Desktop first, with cohesion as the priority.
@@ -30,3 +44,18 @@
   - Assembly-driven, with a shared arranger and modular, tunable grammars.
   - Every ship must be one connected structure.
   - Scrappers are salvage built from donors joined by struts: lengthwise ties and diagonal or dogleg corner struts.
+  - **The 3-wide rule:** no part of a ship's hull may be narrower than 3 tiles. The hull must equal its 3x3
+    morphological opening. Struts and trusses (`Struct.Beam`) are exempt. Generators, stations and wrecks all obey it,
+    because the hull art's sprite catalogue depends on it.
+- **Hull and the shipyard:**
+  - "Hull" means the ship's whole footprint, every tile.
+  - Ship size is the area inside the outer hull, and engine capacity limits it. Any number of engines can be fitted,
+    and there is no ship size cap.
+  - NPC ships ignore engine capacity for now (#129).
+  - You plan hull growth in Build > Hull plan with brushes: a rectangle of at least 3x3 that must touch the ship, erase,
+    a line cut, and mirror. A yard then builds the plan.
+  - Yard builds put scaffolding trusses on the whole plan first, for a planning fee. They then turn trusses into hull
+    nearest-rows-first, up to the visit cap, sealing each section. Leftover trusses stay as visible scaffolding.
+- **Combat:** walls and doors have 255 integrity, and a breach opens to space. The mass driver breaches a wall in one
+  hit. A combat damage shader for walls is in the art thread. Most shots hit under the roof today, so making shots
+  strike the outer hull first is an open question.
