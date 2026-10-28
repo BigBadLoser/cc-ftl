@@ -62,13 +62,14 @@
   .cap { font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
   /* Five full rows, then it scrolls. */
   ul { list-style: none; margin: 0; padding: 0; max-height: 110px; overflow-y: auto; touch-action: pan-y; }
-  li { height: 22px; box-sizing: border-box; font-size: 12px; border-left: 3px solid var(--line-hi); white-space: nowrap; }
+  li { height: 22px; box-sizing: border-box; font-size: 12px; --tone: var(--line-hi); box-shadow: inset 3px 0 0 var(--tone); white-space: nowrap; }
   .row { display: flex; align-items: center; gap: 6px; box-sizing: border-box; width: 100%; height: 22px; min-height: 0; margin: 0; padding: 0 8px 0 6px; border: 0; background: transparent; font: inherit; line-height: 1; text-align: left; color: inherit; cursor: pointer; }
   .row > * { line-height: 1; }
   .row:disabled { cursor: default; opacity: 1; }
   .row:not(:disabled):hover { background: #0d2233; }
   li + li { border-top: 1px solid #0d2233; }
-  li.good { border-left-color: var(--green); } li.warn { border-left-color: var(--amber); } li.bad { border-left-color: var(--red); }
+  /* The tone strip is an inset shadow, so the divider above each row runs the full width, over its top. */
+  li.good { --tone: var(--green); } li.warn { --tone: var(--amber); } li.bad { --tone: var(--red); }
   .ic { display: inline-flex; color: var(--cyan); } .good .ic { color: var(--green); } .warn .ic { color: var(--amber); } .bad .ic { color: var(--red); }
   .tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
   li:not(:first-child) .tx { color: var(--dim); }
@@ -77,7 +78,7 @@
   /* A credit gain: the row glows for a couple of seconds, then settles. */
   li.pulse { animation: payout 2.4s ease-out 1; }
   li.pulse .amt { animation: amt 2.4s ease-out 1; }
-  @keyframes payout { 0%, 25% { background: color-mix(in srgb, var(--green) 38%, transparent); box-shadow: 0 0 12px var(--green), inset 0 0 8px color-mix(in srgb, var(--green) 50%, transparent); } 100% { background: transparent; box-shadow: none; } }
+  @keyframes payout { 0%, 25% { background: color-mix(in srgb, var(--green) 38%, transparent); box-shadow: inset 3px 0 0 var(--tone), 0 0 12px var(--green), inset 0 0 8px color-mix(in srgb, var(--green) 50%, transparent); } 100% { background: transparent; box-shadow: inset 3px 0 0 var(--tone); } }
   @keyframes amt { 0%, 25% { transform: scale(1.25); text-shadow: 0 0 8px var(--green); } 100% { transform: scale(1); text-shadow: none; } }
   .tk { color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.05em; }
 </style>
