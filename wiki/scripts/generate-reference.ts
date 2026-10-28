@@ -57,7 +57,7 @@ async function main(): Promise<void> {
     const category = def.category ?? 'other';
     moduleCatalog.push({ id, slug, name: def.name, category, footprint: def.footprint, power: def.power });
     const lines = [
-      frontmatter(def.name), '# ' + markdown(def.name), '',
+      frontmatter(def.name),
       def.description ? markdown(def.description) : 'Ship equipment.', '',
       '## Statistics', '',
       '| Attribute | Value |', '|---|---:|',
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
     itemCatalog.push({ id, slug, name: def.name, tags: def.tags ?? [], stackSize: def.stackSize, price: def.price ?? null });
     itemRows.push('- [' + markdown(def.name) + '](./' + slug + '/) — ' + (def.tags ?? []).join(', '));
     const lines = [
-      frontmatter(def.name), '# ' + markdown(def.name), '',
+      frontmatter(def.name),
       def.description ? markdown(def.description) : '',
       '| Attribute | Value |', '|---|---:|',
       '| Stack limit | ' + def.stackSize + ' |',
@@ -105,7 +105,7 @@ async function main(): Promise<void> {
   // Rebuild the human-readable index from game data. This is a deterministic generated file.
   const itemIndex = [
     '---', 'title: Items and resources', 'order: 3', '---', '',
-    '# Items and resources', '',
+    
     'The following item entries are generated from CC-FTL definitions. Base values are not guaranteed station prices.', '',
     ...itemRows, ''
   ].join('\n');

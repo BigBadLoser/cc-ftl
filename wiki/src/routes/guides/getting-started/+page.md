@@ -3,7 +3,6 @@ title: Getting started
 order: 1
 ---
 
-# Getting started
 
 CC-FTL is a persistent isometric spaceship-colony game. You direct crew, install modules, manage resources, explore the galaxy, and fight or negotiate with other ships.
 

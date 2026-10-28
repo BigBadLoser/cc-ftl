@@ -1,5 +1,6 @@
 ---
 title: CC-FTL Gameplay Wiki
+heroImage: false
 tagline: Ship systems, survival, strategy, and equipment for CC-FTL.
 actions:
   - label: Start here

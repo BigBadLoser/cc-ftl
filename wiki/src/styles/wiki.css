@@ -1,7 +1,25 @@
-/* Only customize branding and our own interactive reference UI.
-   Keep SveltePress's built-in navigation, search, and accessibility components. */
+/* The default SveltePress layout is retained, with CC-FTL reference styling. */
 :root {
-  color-scheme: dark;
+  --wiki-input-bg: #ffffff;
+  --wiki-input-color: #172337;
+  --wiki-input-border: #cbd5e1;
+  --wiki-card-bg: #f4f7fb;
+  --wiki-card-color: #1c2941;
+  --wiki-card-border: #cfd9e6;
+  --wiki-subtle: #52637a;
+}
+:root.dark {
+  --wiki-input-bg: #172337;
+  --wiki-input-color: #e8f1fb;
+  --wiki-input-border: #42546b;
+  --wiki-card-bg: #18253b;
+  --wiki-card-color: #edf3fb;
+  --wiki-card-border: #394b63;
+  --wiki-subtle: #b0c2d7;
+}
+.home-page .intro {
+  grid-column: 1 / -1;
+  max-width: 920px;
 }
 .wiki-ref-controls {
   display: flex;
@@ -13,9 +31,9 @@
 .wiki-ref-controls select {
   min-width: 10rem;
   padding: 0.55rem 0.7rem;
-  color: inherit;
-  background: #172337;
-  border: 1px solid #42546b;
+  color: var(--wiki-input-color);
+  background: var(--wiki-input-bg);
+  border: 1px solid var(--wiki-input-border);
   border-radius: 0.35rem;
 }
 .wiki-ref-controls input:focus-visible,
@@ -24,6 +42,13 @@
   outline-offset: 2px;
 }
 .wiki-ref-list { list-style: none; padding: 0; display: grid; gap: 0.5rem; }
-.wiki-ref-list li { border: 1px solid #344358; border-radius: 0.4rem; padding: 0.6rem 0.8rem; background: #152033; }
-.wiki-ref-list a { font-weight: 600; }
-.wiki-ref-list small { display: block; opacity: 0.78; margin-top: 0.15rem; }
+.wiki-ref-list li {
+  border: 1px solid var(--wiki-card-border);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--wiki-card-bg);
+  color: var(--wiki-card-color);
+}
+.wiki-ref-list li a { font-weight: 600; color: #2970ae; }
+:root.dark .wiki-ref-list li a { color: #9acff6; }
+.wiki-ref-list li small { display: block; color: var(--wiki-subtle); margin-top: 0.15rem; }

@@ -3,7 +3,6 @@ title: Reference database
 order: 1
 ---
 
-# Reference database
 
 These pages are generated from game content definitions when the wiki builds. They are updated automatically alongside the playable game.
 

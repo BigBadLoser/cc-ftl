@@ -3,7 +3,6 @@ title: Power and reactors
 order: 1
 ---
 
-# Power and reactors
 
 Modules can produce or consume electrical power. A **positive** power value on a module definition represents generation; a **negative** value represents consumption.
 

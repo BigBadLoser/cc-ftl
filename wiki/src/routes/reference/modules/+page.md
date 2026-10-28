@@ -3,7 +3,6 @@ title: Ship modules
 order: 2
 ---
 
-# Ship modules
 
 Module entries are generated directly from CC-FTL's module registry. Use the filter to narrow the list by name or category.
 
