@@ -1,12 +1,16 @@
 """The belly run's D3 look 3 (wall3d_belly_run, hull 46's D3 variant 3): a grille on its own plate, 2 px proud of the
-face, and over it a recess a px deep running up to the cut, on the run's shared dress (the top's seam, the face's
-edge, the slope's rim and end)."""
+face, the grille on the floor of the plate's own recess (a px deep, in a 2 px border), and over the plate a recess a
+px deep running up to the cut, on the run's shared dress (the top's seam, the face's edge, the slope's rim and
+end)."""
 from . import wall3d_ext_t3 as T3
 from .wall3d_ext_geom import LINE, PAINT, YS
+
+SHADOW = "hbSlope"                   # (the plate's shade on the face by its lit end: a step under the seams' tone)
 
 LOOK3 = {                            # art px: u from the face's +u end (centred on its 32), v down from the cut
     "grille": ((8, 24), (19, 29)),   # the grille's slats and soft gaps: u, v
     "plate": (3, 2),                 # its plate: the grille and this much more every way, this many px proud
+    "inset": (2, 1),                 # the plate's recess (the grille on its floor): its border, its depth
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
 }                                    # each side
 
@@ -36,19 +40,29 @@ def look3(f, s, back, U, Z, cols):
         f.line(*U(0, 1), foot, Z(1), EDGE, end=False, bevel=False)
         f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])
     (pa, pb, pv0, pv1), _ = _rects()
-    with f.tag("grille"):                                           # (the plate: its top and its +u end, where it
-        d = s.front(foot, foot)[0][0]                               # meets the face, in the soft shade)
-        fr = d + LOOK3["plate"][1] * LINE
+    with f.tag("grille"):                                           # (the plate: its top in the soft shade; a
+        k, (b, bd) = LOOK3["plate"][1], LOOK3["inset"]              # border b px wide round a recess bd px deep)
+        d = s.front(foot, foot)[0][0]
+        fr, fi = d + k * LINE, d + (k - bd) * LINE                  # (its front and its recess's floor)
         px = s.H - Z(1)                                             # (a px of height: the face and the plate
         zb, zt = s.H - pv1 * px, Z(pv0)                             # straight, the plate on past the foot)
-        pp = [(d - 0.01, zb), (fr, zb), (fr, zt), (d - 0.01, zt)]
-        pc = s.cols(pp, "face")
-        pc[2] = XS
-        f.part(*U(pa, pb), pp, pc, SEAM, end=False)
+
+        def slab(u0, u1, z0, z1, out, shade_top):
+            pp = [(d - 0.01, z0), (out, z0), (out, z1), (d - 0.01, z1)]
+            pc = s.cols(pp, "face")
+            if shade_top:
+                pc[2] = XS
+            f.part(*U(u0, u1), pp, pc, YS[2], end=False)
+        slab(pa, pb, zb, zt, fi, False)                             # (the floor, then the border round it)
+        slab(pa, pb, s.H - (pv0 + b) * px, zt, fr, True)
+        slab(pa, pb, zb, s.H - (pv1 - b) * px, fr, False)
+        for u0, u1 in ((pa, pa + b), (pb - b, pb)):
+            slab(u0, u1, s.H - (pv1 - b) * px, s.H - (pv0 + b) * px, fr, False)
         top = [(fr - 0.01, Z(pv0 + 1)), (fr + PAINT, Z(pv0 + 1)), (fr + PAINT, zt), (fr - 0.01, zt)]
         f.part(*U(pa, pb), top, [YS[4]] * 4, YS[4], end=False)     # (a lit px along its front's top: its edge)
-        k = LOOK3["plate"][1]                                       # (its shade on the face by its -u end, clear
-        f.line(*U(pb + k, pb + k + 1), zb, zt, SEAM, end=False, bevel=False)   # of what it hides)
+        sh = [(d - 0.01, max(foot, zb)), (d + PAINT, max(foot, zb)), (d + PAINT, zt), (d - 0.01, zt)]
+        f.part(*U(pa - 1, pa), sh, [SHADOW] * 4, SHADOW, end=False)    # (its shade on the face by its +u end
+        f.line(*U(pb + k, pb + k + 1), zb, zt, SEAM, end=False, bevel=False)   # and its -u, clear of what it hides)
     with f.tag("recess"):                                           # (shade inside the recess under the cut and
         _, (ra, rb, _, rv) = _rects()                               # down its +u side, the light from over its +u)
         rf = s.front(s.H, s.H)[0][0] - LINE
@@ -57,8 +71,8 @@ def look3(f, s, back, U, Z, cols):
             f.part(*U(ua, ub), sh, [SEAM] * 4, SEAM, end=False)
     with f.tag("grille"):
         (ga, gb), (gv0, gv1) = LOOK3["grille"]
-        for p in range(ga, gb, 2):                                  # (soft gaps between the slats, on its front)
-            pf = [(fr - 0.01, Z(gv1)), (fr + PAINT, Z(gv1)), (fr + PAINT, Z(gv0)), (fr - 0.01, Z(gv0))]
+        for p in range(ga, gb, 2):                                  # (soft gaps between the slats, on its floor)
+            pf = [(fi - 0.01, Z(gv1)), (fi + PAINT, Z(gv1)), (fi + PAINT, Z(gv0)), (fi - 0.01, Z(gv0))]
             f.part(*U(p, p + 1), pf, [XS] * 4, XS, end=False)
     with f.tag("slope"):                                            # (the face's and the plate's edge on the
         x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
