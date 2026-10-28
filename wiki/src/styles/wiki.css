@@ -340,7 +340,7 @@
     margin-right: auto;
   }
   html.wiki-sidebar-hidden body:has(.toc) .theme-default--page-layout .content {
-    width: min(990px, calc(100vw - 260px));
+    width: min(900px, calc(100vw - 2 * min(22vw, 256px) - 64px));
   }
   html.wiki-sidebar-hidden .header-inner.has-sidebar { padding-left: 1rem; }
   /* The theme normally places the wordmark in the desktop sidebar.
