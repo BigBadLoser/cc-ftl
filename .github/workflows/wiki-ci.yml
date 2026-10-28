@@ -1,6 +1,7 @@
 name: Wiki static build
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'wiki/**'
@@ -43,7 +44,8 @@ jobs:
           test -f wiki/dist/reference/modules/reactor/index.html
           test -s wiki/dist/generated/previews/module-reactor.png
           test -s wiki/dist/generated/previews/module-engine-mk2.png
-      - name: Render actual wiki screenshots
+      - name: Render actual wiki screenshots (manual preview only)
+        if: github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           chrome="$(command -v google-chrome || command -v chromium || true)"
@@ -70,7 +72,7 @@ jobs:
           test -s wiki-preview/freight-container.png
           test -s wiki-preview/mass-driver.png
       - uses: actions/upload-artifact@v4
-        if: success()
+        if: github.event_name == 'workflow_dispatch' && success()
         with:
           name: cc-ftl-wiki-preview
           path: wiki-preview/
