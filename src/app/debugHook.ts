@@ -46,6 +46,19 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       }
       return out;
     },
+    /** Burning tiles of a ship, and the floor tiles that touch open space (damage-control screenshots). */
+    hazards(shipId: number) {
+      const grid = shipGrid(sim, shipId);
+      const fires: { x: number; y: number }[] = [];
+      const breaches: { x: number; y: number }[] = [];
+      if (grid)
+        for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+          for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+            if (grid.get('fire', x, y) > 0) fires.push({ x, y });
+            if (grid.get('room', x, y) && ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => grid.inBounds(x + dx, y + dy) && grid.get('struct', x + dx, y + dy) === Struct.Space)) breaches.push({ x, y });
+          }
+      return { fires, breaches };
+    },
     /** A ship's modules with their power state and hp, and its ruin dressing counts (for derelict checks). */
     wreck(shipId: number) {
       const ruin = sim.world.get(shipId, ShipC)?.ruin;

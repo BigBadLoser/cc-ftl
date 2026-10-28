@@ -1,4 +1,5 @@
 import { findFreeBed } from '../crew/beds';
+import { settleDamageOrders } from '../crew/damageControl';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
 import { origin, releaseAssignment } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
@@ -24,6 +25,7 @@ function drop(sim: Sim, jobId: number, job: Job): void {
  *  - extinguish (firefighting): one per burning tile, removed once the fire is out;
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone;
  *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
+ *  - damage-control orders (crew/damageControl) are carried on at the end;
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.
  */
@@ -55,6 +57,7 @@ export function autoJobsSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
+    if (m && def && m.hp >= def.maxHp) delete m.repairFirst; // mended: the priority repair order is done
     if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`)) continue;
     addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id });
   }
@@ -66,6 +69,7 @@ export function autoJobsSystem(sim: Sim): void {
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   robotJobs(sim, seen, (job) => addJob(sim, job));
+  settleDamageOrders(sim); // ordered crew move on to their next job (or back to their post) now the lists are fresh
 }
 
 function jobKey(job: Job): string {

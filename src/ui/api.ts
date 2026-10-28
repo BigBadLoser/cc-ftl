@@ -60,6 +60,13 @@ export interface UiStack {
   crate: { job: number; title: string; to: string } | null;
 }
 
+/** Trouble in a room that a damage-control order can answer: burning tiles, a hole in the hull. */
+export interface UiHazard {
+  room: number;
+  fire: boolean;
+  breach: boolean;
+}
+
 export interface UiInspect {
   /** The ship (ShipC entity id) the tile belongs to: the `ship` of tile commands. */
   ship: number;
@@ -74,6 +81,8 @@ export interface UiInspect {
   stack: UiStack | null;
   structName: string;
   room: number;
+  /** What the tile's room needs damage control for (the player's own ship only). */
+  hazard: UiHazard;
   fields: { name: string; value: number }[];
   /** A player job on the tile (forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
@@ -161,6 +170,10 @@ export interface UiModule {
   local: { x: number; y: number };
   hp: number;
   maxHp: number;
+  /** Ordered to the top of the repair queue (module.priorityRepair). */
+  repairFirst: boolean;
+  /** Trouble in the room it stands in. */
+  hazard: UiHazard;
   powerPriority: number;
   enabled: boolean;
   powered: boolean;

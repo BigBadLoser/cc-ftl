@@ -26,6 +26,7 @@ import { content } from './content';
 import { BodyC, SAVE_VERSION, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
+import { damageScenarioCommands } from './app/damageScenario';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -198,7 +199,15 @@ const stationFlag = params.get('station');
  * tool open with the Rectangle brush, and the game running at normal speed. The plan starts empty; the station's Shipyard tab is one click away.
  */
 const scenario = params.get('scenario');
+// ?scenario=damage: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
 function startScenario(): void {
+  if (scenario === 'damage') {
+    loop.setSpeed(1);
+    // Rooms exist after the first ticks: set the scene then, and pause once the debug commands landed so the first look is the fresh scene.
+    setTimeout(() => { for (const cmd of damageScenarioCommands(sim)) bridge.dispatch(cmd); }, 600);
+    setTimeout(() => loop.setSpeed(0), 3500);
+    return;
+  }
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });

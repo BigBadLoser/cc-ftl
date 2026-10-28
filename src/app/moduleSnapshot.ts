@@ -4,7 +4,9 @@ import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
 import { buildHeat } from './heatSnapshot';
 import { buildStock } from './logisticsSnapshot';
-import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
+import type { UiHazard, UiModule, UiModuleDef, UiStats } from '../ui/api';
+import { roomBreachTiles, roomFireTiles } from '../sim/crew/damageControl';
+import { shipById } from '../sim/combat/ships';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
 
@@ -13,6 +15,13 @@ import { homeShip } from '../sim/index';
 export function localOf(sim: Sim, shipId: number, x: number, y: number): { x: number; y: number } {
   const g = shipGrid(sim, shipId);
   return { x: x - (g?.x0 ?? 0), y: y - (g?.y0 ?? 0) };
+}
+
+/** Fire and hull breach in a room of a player's ship, for the damage-control buttons. */
+export function roomHazard(sim: Sim, shipId: number, room: number): UiHazard {
+  const grid = shipGrid(sim, shipId);
+  if (!grid || !room || shipById(sim, shipId)?.faction !== 'player') return { room, fire: false, breach: false };
+  return { room, fire: roomFireTiles(grid, room).length > 0, breach: roomBreachTiles(grid, room).length > 0 };
 }
 
 /** Plain-data module list for the UI. Reads the sim, never mutates it. */
@@ -25,7 +34,8 @@ export function buildModuleList(sim: Sim): UiModule[] {
     const def = m && sim.content.modules[m.def];
     if (!m || !def || shipIdOf(sim, m) !== GRID) continue;
     out.push({
-      id, ship: home, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp,
+      id, ship: home, def: m.def, name: def.name, x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp, repairFirst: !!m.repairFirst,
+      hazard: roomHazard(sim, GRID, shipGrid(sim, GRID)?.get('room', m.x, m.y) ?? 0),
       powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, bay: def.robotBay ? buildRobotBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,

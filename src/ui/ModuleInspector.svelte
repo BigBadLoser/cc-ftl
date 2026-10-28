@@ -3,6 +3,7 @@
   import type { UiApi, UiFtl, UiModule } from './api';
   import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
+  import DamageControl from './DamageControl.svelte';
   import PanelHead from './PanelHead.svelte';
   import FabPanel from './FabPanel.svelte';
   import RobotBayPanel from './RobotBayPanel.svelte';
@@ -42,6 +43,7 @@
       {#if m.suits}<dt>EVA suits</dt><dd data-testid="airlock-suits">{m.suits.stowed} / {m.suits.max}</dd>{/if}
     </dl>
     <div class="bar hp" class:low={hpPct(m) < 40}><i style:width="{hpPct(m)}%"></i></div>
+    <DamageControl {api} ship={m.ship} hazard={m.hazard} module={m} />
     {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
     {#if m.research}<button class="resbtn" data-testid="open-research" onclick={onResearch}><Icon name="research" size={18} /> Research projects</button>{/if}

@@ -69,6 +69,16 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   - **Open:** breakdowns. `breakdownRisk()` (mood under 10) is the hook; nothing calls it yet. Also open: beauty and
     room quality as a comfort factor, friends and rivals, whether drafted crew should starve quietly (they do now: they
     never stop to eat while drafted).
+- **Damage control (#181):** one-click orders in the tile and module inspectors: **Fight fire** and **Seal breach** (a room
+  with fire or a hull hole) and **Repair** (a damaged module), each a sim command (`damage.*`). The nearest able crew member
+  takes the very jobs the colony posts (extinguish, a wall build on the hole, repair), ignoring their work priorities, goes on
+  to the next burning tile or hole of the room, and then returns to the console they held. **Priority repair** (`module.priorityRepair`)
+  makes a module's repair job beat any other for every crew member who repairs, until it is mended.
+  - *Able* means the player's, awake and rested, not drafted (the player's own orders win), not fighting, eating, rescuing or
+    fitting a suit. If the way is thin air they fit a suit first. Prefer, in turn: anyone not at a console; operators of a
+    shield console; operators of the helm or a weapons console (only when nobody else can reach the job). Nearest wins within
+    a tier. A pulled operator keeps the console reserved while away; it stands empty meanwhile.
+  - Sealing needs wall materials in stock (it refuses without). Doors and venting stay manual.
 - **Danger awareness:** crew read tile fields (fire, vacuum, heat) and avoid or flee unless their job,
   species or gear allows.
 - **Species** are base bodies (organic, synthetic, hybrid) with real sim effects (no breathing, fire

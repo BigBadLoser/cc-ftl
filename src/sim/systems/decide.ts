@@ -164,6 +164,12 @@ function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   return !!m && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
 }
 
+/** A priority-repair module's repair job beats any walking distance; a later order goes first. */
+function repairUrgency(sim: Sim, job: Job): number {
+  const first = job.kind === 'repair' ? sim.world.get(job.target ?? 0, ModuleC)?.repairFirst : 0;
+  return first ? 100000 + first : 0;
+}
+
 /** Reserve the best job by priority level, then shortest path, then lowest id. */
 function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
   const prio = sim.world.get(crewId, PrioritiesC) as Priorities;
@@ -182,7 +188,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
       if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
       // a relief takes the console only when nothing else of their rank is waiting
-      const score = plan.steps.length - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0) + (job.kind === 'operate' && level > OPERATE_MAX_LEVEL ? RELIEF_PENALTY : 0);
+      const score = plan.steps.length - repairUrgency(sim, job) - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0) + (job.kind === 'operate' && level > OPERATE_MAX_LEVEL ? RELIEF_PENALTY : 0);
       if (!best || score < best.score) best = { id: jobId, steps: plan.steps, score, thin: plan.thin };
     }
     if (best) {
