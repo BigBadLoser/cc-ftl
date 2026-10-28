@@ -1,6 +1,6 @@
 import { homeShip } from '../sim/index';
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { CrewC, DownedC, ModuleC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
+import { CrewC, DeadC, DownedC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
@@ -56,7 +56,7 @@ export function createAlerts(sim: Sim): Alerts {
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
   const home = () => homeShip(sim);
   const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
-  const alive = (id: number) => sim.world.has(id, CrewC);
+  const alive = (id: number) => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
   /** Hostile ships and their crew raise no alerts of their own (a player crew member going down anywhere does). */
   const foreign = (e: SimEvent): boolean => {
     if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'power.shortage' || e.type === 'o2.low') return e.ship !== home();
@@ -85,16 +85,14 @@ export function createAlerts(sim: Sim): Alerts {
     for (const i of tiles) sum += o2[i] as number;
     return sum / tiles.length <= O2_ALERT_CLEAR_ABOVE;
   };
+  /** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network, ion-disabled parts excluded). */
   const shortOnPower = (ship: number) => {
-    let supply = 0;
-    let demand = 0;
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
-      if (!m || !m.enabled || m.hp <= 0 || shipIdOf(sim, m) !== ship) continue;
-      const p = sim.content.modules[m.def]?.power ?? 0;
-      if (p > 0) supply += p; else demand -= p;
+      if (!m || !m.enabled || m.hp <= 0 || m.powered || sim.world.has(id, IonC) || shipIdOf(sim, m) !== ship) continue;
+      if ((sim.content.modules[m.def]?.power ?? 0) < 0) return true;
     }
-    return demand > supply;
+    return false;
   };
 
   /** "Under attack: Raider": the enemy's name, short. */

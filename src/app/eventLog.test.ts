@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CombatC, ShipC, homeShip, newGame, type SimEvent } from '../sim';
+import { CombatC, CrewC, DeadC, ModuleC, ShipC, homeShip, newGame, type SimEvent } from '../sim';
+import { shipIdOf } from '../sim/regions';
 import { createAlerts } from './alerts';
 import { createEventLog } from './eventLog';
 import type { UiLogEntry } from '../ui/api';
@@ -74,6 +75,38 @@ describe('ship log and alerts', () => {
     t.alerts.sync();
     expect(t.alerts.get(1)).toBeDefined();
     t.sim.sector.inCombat = false;
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeUndefined();
+  });
+});
+
+describe('alerts clear against the sim state', () => {
+  it('creatures-aboard clears when the hatched creatures are dead (corpses keep CrewC)', () => {
+    const t = setup();
+    const crew = t.sim.world.query(CrewC)[0] as number;
+    t.feed({ type: 'eggsac.hatched', sac: 0, ship: homeShip(t.sim), x: 1, y: 1, aliens: [crew] });
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeDefined();
+    t.sim.world.add(crew, DeadC, { tick: 0 } as never);
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeUndefined();
+  });
+
+  it('power shortage stays while a consumer is unpowered, and clears when all are powered', () => {
+    const t = setup();
+    const ship = homeShip(t.sim);
+    const consumer = t.sim.world.query(ModuleC).find((id) => {
+      const m = t.sim.world.get(id, ModuleC)!;
+      return (t.sim.content.modules[m.def]?.power ?? 0) < 0 && shipIdOf(t.sim, m) === ship;
+    }) as number;
+    const m = t.sim.world.get(consumer, ModuleC)!;
+    m.enabled = true;
+    m.hp = 10;
+    m.powered = false;
+    t.feed({ type: 'power.shortage', ship, supply: 10, demand: 20 });
+    t.alerts.sync();
+    expect(t.alerts.get(1)).toBeDefined();
+    for (const id of t.sim.world.query(ModuleC)) t.sim.world.get(id, ModuleC)!.powered = true; // the power system's verdict: everyone has power
     t.alerts.sync();
     expect(t.alerts.get(1)).toBeUndefined();
   });
