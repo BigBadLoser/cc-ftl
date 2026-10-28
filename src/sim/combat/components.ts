@@ -168,6 +168,22 @@ export interface Weapon {
    * (y grows downward): 1 = +x+y, 2 = +y, 3 = -x+y, 4 = -x, 5 = -x-y, 6 = -y, 7 = +x-y. Renderer-readable.
    */
   aim: number;
+  /**
+   * The telegraphed aim of an enemy weapon in its final charge window (see `commit.ts`): the target it will shoot and the sector rectangle
+   * (the module's footprint, or the one blind tile) the shot lands in, give or take the weapon's scatter. Null/absent outside the window.
+   * Renderer-readable.
+   */
+  commit?: Commit | null;
+}
+/** A weapon's committed aim. `from` is the charge (0..1) at which it committed, so (charge - from) / (1 - from) is the countdown. */
+export interface Commit {
+  target: Target;
+  /** Aim area in sector tiles: top-left and size. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  from: number;
 }
 export const WeaponC = defineComponent<Weapon>('weapon');
 

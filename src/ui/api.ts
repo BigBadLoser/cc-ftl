@@ -517,6 +517,20 @@ export interface UiShipModule {
   ion: boolean;
 }
 
+/** An enemy weapon's charge, for the telegraph on the enemy panel. */
+export interface UiEnemyWeapon {
+  id: number;
+  name: string;
+  /** 0..1. */
+  charge: number;
+  /** 0..1: the charge at which it commits its aim (the last seconds before it can fire). */
+  commitAt: number;
+  /** It has committed an aim at the player's ship: a marker shows where. */
+  committed: boolean;
+  /** It is not charging (unpowered, ion-struck, destroyed or its console unmanned). */
+  stalled: boolean;
+}
+
 export interface UiShipCombat {
   /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
@@ -539,6 +553,8 @@ export interface UiShipCombat {
   /** Ship-wide target, with a label. */
   target: { ship: number; moduleId: number; label: string; tile?: { x: number; y: number } } | null;
   modules: UiShipModule[];
+  /** Weapon charges of a hostile ship (absent on the player's). */
+  charges?: UiEnemyWeapon[];
 }
 
 /** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */

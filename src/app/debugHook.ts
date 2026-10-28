@@ -1,4 +1,4 @@
-import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
+import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { ItemStackC } from '../sim/items/components';
@@ -27,6 +27,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       }
       return r.info().zoom;
     },
+    /** Committed enemy aims (the incoming-fire telegraph): weapon module, target ship, aim area and charge. */
+    commits: () => [...sim.world.query(WeaponC)].flatMap((id) => {
+      const w = sim.world.get(id, WeaponC);
+      return w?.commit ? [{ id, ship: w.commit.target.ship, x: w.commit.x, y: w.commit.y, w: w.commit.w, h: w.commit.h, charge: w.charge }] : [];
+    }),
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
     /** Loose floor stacks: item, count, tile and ship (a delivery crate carries its job id). */

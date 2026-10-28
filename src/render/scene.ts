@@ -10,6 +10,7 @@ import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
+import { createThreatMarks } from './threatMarks';
 import { createAimMarks, type AimHover } from './aimMarks';
 import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
@@ -231,6 +232,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const worldGrid = createWorldGrid(SL.ui);
   const cutLine = createCutLine(SL.ui);
   const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
+  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
   const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
@@ -389,6 +391,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       shuttles.update(dt);
       boxes.update();
       aimMarks.update();
+      threatMarks.update();
       fightFx.update(dt);
       crewMarks.update();
       orderFx.update();

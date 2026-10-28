@@ -247,4 +247,5 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };
+// Repinned for the incoming-fire telegraph (#180): enemy weapons now carry a `commit` field in the world JSON this hash covers. Outcomes are unchanged (with `commit` left out of the JSON the old hash c28a5816 still comes out).
+const EXPECTED = { combat: '3eddf766', disaster: 'fa40fdbe' };

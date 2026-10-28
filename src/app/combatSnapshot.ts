@@ -1,9 +1,10 @@
 import {
   CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC, type Sim, type Target,
 } from '../sim';
-import type { UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
+import type { UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
 import { shipIdOf } from '../sim/regions';
 import { factionsHostile } from '../sim/combat/factions';
+import { commitCharge } from '../sim/combat/commit';
 import { homeShip } from '../sim/index';
 
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
@@ -25,6 +26,22 @@ function modulesOf(sim: Sim, shipId: number): UiShipModule[] {
     const kind = def.weapon ? 'weapon' : def.shieldGen ? 'shield' : def.engine ? 'engine' : 'other';
     if (kind === 'other' && !def.console) continue;
     out.push({ id, name: def.name, kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC) });
+  }
+  return out;
+}
+
+function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
+  const out: UiEnemyWeapon[] = [];
+  for (const id of sim.world.query(WeaponC, ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    const w = sim.world.get(id, WeaponC);
+    const def = m && sim.content.modules[m.def];
+    const wd = def?.weapon ? sim.content.weapons?.[def.weapon] : undefined;
+    if (!m || !w || !def || !wd || shipIdOf(sim, m) !== shipId) continue;
+    out.push({
+      id, name: def.name, charge: round(w.charge), commitAt: round(commitCharge(wd.chargeSec)), committed: !!w.commit,
+      stalled: !m.powered || m.hp <= 0 || sim.world.has(id, IonC),
+    });
   }
   return out;
 }
@@ -80,7 +97,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
     } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.
-      enemies.push(isDormant(s) ? { ...base, dormant: true } : base);
+      enemies.push(isDormant(s) ? { ...base, dormant: true } : { ...base, charges: enemyWeapons(sim, id) });
     }
   }
   if (me) enemies.sort((a, b) => dist(sim, me, a.ship) - dist(sim, me, b.ship));

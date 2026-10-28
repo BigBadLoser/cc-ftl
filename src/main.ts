@@ -199,6 +199,18 @@ const stationFlag = params.get('station');
  */
 const scenario = params.get('scenario');
 function startScenario(): void {
+  if (scenario === 'fight') {
+    // `?scenario=fight`: a raider below the ship (clear of a station to the east), game at normal speed (the incoming-fire telegraph shows)
+    const mine = homeShipC();
+    const t = content.ships['ship.raider'];
+    if (mine && t) {
+      const h = t.rows.length;
+      const y = Math.min(sim.sector.height - h, mine.y + mine.height + MIN_SHIP_GAP + 2 * REGION_PAD + 2);
+      bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.raider', x: mine.x, y });
+    }
+    loop.setSpeed(1);
+    return;
+  }
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
