@@ -106,7 +106,7 @@ async function main(): Promise<void> {
   const itemIndex = [
     '---', 'title: Items and resources', 'order: 3', '---', '',
     
-    'The following item entries are generated from the game's definitions. Base values are not guaranteed station prices.', '',
+    'The following item entries are generated from game definitions. Base values are not guaranteed station prices.', '',
     ...itemRows, ''
   ].join('\n');
   await writeFile(join(itemRoutes, '+page.md'), itemIndex, 'utf8');
