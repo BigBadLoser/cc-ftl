@@ -138,3 +138,51 @@
   object-fit: contain;
   image-rendering: pixelated;
 }
+
+/* Filter by category, rather than duplicating the global site search. */
+.wiki-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.4rem;
+  border-bottom: 1px solid var(--wiki-card-border);
+  margin: 1.35rem 0 0;
+}
+.wiki-category-tabs button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--wiki-subtle);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+.wiki-category-tabs button:hover {
+  color: var(--wiki-card-color);
+  background: var(--wiki-card-bg);
+}
+.wiki-category-tabs button.active {
+  color: var(--svp-primary, #5899cd);
+  border-bottom-color: currentColor;
+  font-weight: 650;
+}
+.wiki-category-tabs button:focus-visible {
+  outline: 2px solid var(--svp-primary, #5899cd);
+  outline-offset: -2px;
+}
+.wiki-category-count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.76;
+}
+.wiki-category-summary {
+  color: var(--wiki-subtle);
+  font-size: 0.875rem;
+  margin: 0.85rem 0 0.6rem;
+}

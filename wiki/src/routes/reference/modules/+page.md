@@ -4,7 +4,7 @@ order: 2
 ---
 
 
-Module entries are generated directly from the game's module registry. Use the filter to narrow the list by name or category.
+Module entries are generated directly from the game's module registry. Choose a category below to browse the available equipment.
 
 <script lang="ts">
   import ModuleFilter from '../../../lib/ModuleFilter.svelte'
