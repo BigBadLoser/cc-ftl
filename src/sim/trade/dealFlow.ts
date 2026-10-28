@@ -30,7 +30,7 @@ export function advanceDeals(sim: Sim): void {
   for (const d of [...sim.trade.deals]) {
     if (isLive(d)) step(sim, d);
     else if (d.courier === 'them' && d.vehicle) dismissCourier(sim, d);
-    else if (d.courier === 'you' && d.vehicle && (d.phase === 'done' || d.reason === 'cancelled' || d.crew)) parkCourier(sim, d);
+    else if (d.courier === 'you' && d.vehicle && (d.phase === 'done' || d.reason === 'cancelled' || d.crew || d.handover)) parkCourier(sim, d);
   }
 }
 

@@ -163,7 +163,7 @@ export interface Deal {
    * A delivery handover (galaxy/handover.ts): the station's shuttle comes to the player's airlock for the crate of job `job`. No goods and no escrow; the
    * deal's `ship` is the station. `retryAt` is the tick after which a called-off run may be tried again.
    */
-  handover?: { job: number; retryAt?: number };
+  handover?: { job: number; via: 'station' | 'own'; retryAt?: number };
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */

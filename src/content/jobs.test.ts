@@ -107,7 +107,7 @@ describe('station jobs', () => {
     for (const k of kinds('den')) expect(['bounty', 'delivery']).toContain(k);
   });
 
-  it('a delivery: its crate comes aboard apart from storage; at the destination the station shuttle collects it from the airlock and the delivery pays then', () => {
+  it('a delivery: its crate comes aboard apart from storage; at the destination the player\'s shuttle carries it to the station and the delivery pays on the drop-off', () => {
     const { sim, job } = takeOffer('delivery', 'trade');
     const { item, to, reward, issuer } = job as Required<Pick<StationJob, 'item' | 'count' | 'to' | 'reward' | 'issuer'>>;
     const before = playerStock(sim, item);
@@ -132,14 +132,55 @@ describe('station jobs', () => {
     const types = seen.map((e) => e.type);
     expect(types.indexOf('job.shuttleSent')).toBeGreaterThanOrEqual(0);
     expect(types.indexOf('job.handedOver')).toBeGreaterThan(types.indexOf('job.shuttleSent'));
-    expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id, reward, via: 'shuttle' });
+    expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id, reward, via: 'own' });
     expect(sim.trade.credits).toBe(credits + reward);
     expect(rep(sim, issuer)).toBe(standing + 1);
     expect(playerStock(sim, CRATE)).toBe(0);
     expect(crateAboard(sim, id)).toBe(false);
-    // The shuttle goes home and is gone.
-    until(sim, () => sim.world.query(VehicleC).length === 1 || !sim.trade.deals.some((d) => d.handover && d.vehicle), 2000);
-    expect(sim.trade.deals.some((d) => d.handover && d.phase === 'done')).toBe(true);
+    // The shuttle flies home and is stowed again, free for other work.
+    const deal = sim.trade.deals.find((d) => d.handover)!;
+    expect(deal.phase).toBe('done');
+    until(sim, () => deal.vehicle === 0, 3000);
+    expect(deal.vehicle).toBe(0);
+    for (const vid of sim.world.query(VehicleC)) expect(sim.world.get(vid, VehicleC)).toMatchObject({ state: 'stowed', autopilot: false });
+  });
+
+  it('the crate rides in the player\'s shuttle to the station; the delivery pays only on the drop-off', () => {
+    const { sim, job } = takeOffer('delivery', 'trade');
+    goTo(sim, job.to!);
+    const credits = sim.trade.credits;
+    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'out'));
+    const d = sim.trade.deals.find((x) => x.handover)!;
+    expect(d.handover!.via).toBe('own');
+    expect(sim.world.get(d.vehicle, VehicleC)!.cargo).toEqual([{ item: CRATE, count: 1 }]);
+    expect(sim.galaxy.jobs).toHaveLength(1);
+    expect(sim.trade.credits).toBe(credits);
+    until(sim, () => sim.galaxy.jobs.length === 0);
+    expect(d.phase).toBe('done');
+    expect(sim.trade.credits).toBe(credits + job.reward);
+  });
+
+  it('a station with a shuttle of its own sends it first; the player\'s shuttle is the fallback', () => {
+    const { sim, job } = takeOffer('delivery', 'trade');
+    const kinds = Object.values(content.trade!.traders);
+    const was = kinds.map((k) => k.shuttle);
+    for (const k of kinds) k.shuttle = true;
+    try {
+      goTo(sim, job.to!);
+      const seen = until(sim, () => sim.galaxy.jobs.length === 0);
+      expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id: job.id, via: 'shuttle' });
+      expect(playerStock(sim, CRATE)).toBe(0);
+    } finally {
+      kinds.forEach((k, i) => (k.shuttle = was[i]!));
+    }
+  });
+
+  it('with no shuttle at all the crate is handed across by hand', () => {
+    const { sim, job } = takeOffer('delivery', 'trade');
+    goTo(sim, job.to!);
+    for (const vid of [...sim.world.query(VehicleC)]) sim.world.destroyEntity(vid);
+    const seen = until(sim, () => sim.galaxy.jobs.length === 0, 200);
+    expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id: job.id, via: 'instant' });
   });
 
   it('the delivery is not paid before the shuttle has the crate', () => {
@@ -317,7 +358,7 @@ describe('station jobs', () => {
     sim.step();
     expect(sim.galaxy.jobs.map((j) => j.kind)).toEqual(['delivery']);
     const seen = until(sim, () => sim.galaxy.jobs.length === 0);
-    expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ via: 'shuttle' });
+    expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ via: 'own' });
     for (const name of ['bounty', 'survey'] as const) {
       const other = newGame(3, content);
       ensureAround(other, other.galaxy.current);

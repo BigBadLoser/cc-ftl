@@ -361,10 +361,11 @@ export interface StationJob {
   node?: string;
   /** A survey's feature, what the node has to survey: a body kind ('nebula', 'black_hole', 'blue_giant') or 'asteroids'. */
   feature?: string;
-  /** A delivery: the station shuttle has taken the crate (trade/handover.ts); the next `tendJobs` pays it. */
-  collected?: boolean;
-  /** A delivery: handover runs called off so far (the crate is handed across by hand after a few). */
+  /** A delivery: the station's shuttle took the crate from the airlock, or the player's own shuttle dropped it at the station (galaxy/handover.ts); the next `tendJobs` pays it. */
+  collected?: 'shuttle' | 'own';
+  /** A delivery: handover runs called off so far, by the station's shuttle and by the player's own (the crate is handed across by hand once both are used up). */
   handoverTries?: number;
+  ownTries?: number;
 }
 
 /** The player's notoriety and who last sent hunters after them (heat.ts, hunters.ts). */

@@ -75,8 +75,8 @@ export function createEventLog(sim: Sim): EventLog {
       }
       case 'job.completed': return { kind: 'trade', tone: 'good', text: e.kind === 'bounty' ? `Bounty done: hand it in at a ${factionName(e.issuer)} military station (${e.reward} cr)` : `Survey done: hand it in at a ${factionName(e.issuer)} research station (${e.reward} cr)` };
       case 'job.handedIn': return { kind: 'trade', tone: 'good', text: `${e.kind === 'bounty' ? 'Bounty' : 'Survey'} handed in to ${factionName(e.issuer)}: +${e.reward} cr` };
-      case 'job.shuttleSent': return { kind: 'trade', tone: 'info', text: `${trader(e.station)} sends a shuttle for the crate` };
-      case 'job.handedOver': return { kind: 'trade', tone: 'good', text: e.via === 'shuttle' ? `Crate taken by the ${factionName(e.issuer)} shuttle: +${e.reward} cr` : `Crate handed across: +${e.reward} cr` };
+      case 'job.shuttleSent': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes the crate over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for the crate` };
+      case 'job.handedOver': return { kind: 'trade', tone: 'good', text: e.via === 'shuttle' ? `Crate taken by the ${factionName(e.issuer)} shuttle: +${e.reward} cr` : e.via === 'own' ? `Crate dropped at the station: +${e.reward} cr` : `Crate handed across: +${e.reward} cr` };
       case 'story.started': {
         const def = sim.content.events?.[e.event];
         return def ? { kind: 'story', tone: 'info', text: def.title } : null;

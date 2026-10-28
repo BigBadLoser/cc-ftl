@@ -227,9 +227,9 @@ export type SimEvent =
   /** A claim was handed in and paid. */
   | { type: 'job.handedIn'; id: number; kind: 'bounty' | 'survey'; issuer: string; reward: number; port: string }
   /** The station sent its shuttle for a delivery's crate. */
-  | { type: 'job.shuttleSent'; id: number; station: number }
-  /** The station shuttle took a delivery's crate from the airlock; the delivery was paid (`reward`). `via` 'instant' when no shuttle could come (see trade/handover.ts). */
-  | { type: 'job.handedOver'; id: number; issuer: string; reward: number; via: 'shuttle' | 'instant' }
+  | { type: 'job.shuttleSent'; id: number; station: number; via: 'station' | 'own' }
+  /** A delivery was paid (`reward`): the station's shuttle took the crate ('shuttle'), the player's shuttle dropped it at the station ('own'), or no shuttle could ('instant'; see galaxy/handover.ts). */
+  | { type: 'job.handedOver'; id: number; issuer: string; reward: number; via: 'shuttle' | 'own' | 'instant' }
   /** A goal of the tutorial chain was met, and an act of it finished (its reward paid). */
   | { type: 'goal.done'; goal: string; title: string }
   | { type: 'goal.actDone'; act: string; title: string }

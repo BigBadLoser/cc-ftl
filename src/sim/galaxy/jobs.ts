@@ -105,9 +105,9 @@ function pay(sim: Sim, job: StationJob): void {
 
 /**
  * Close a job: paid and thanked ('done': a delivery handed over, or a claim handed in), or failed (with the cost of a broken contract).
- * `via`: how a delivery's crate changed hands ('shuttle' when the station shuttle took it).
+ * `via`: how a delivery's crate changed hands (handover.ts).
  */
-function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandoned', via: 'shuttle' | 'instant' = 'instant'): void {
+function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandoned', via: 'shuttle' | 'own' | 'instant' = 'instant'): void {
   const g = sim.galaxy;
   g.jobs = g.jobs.filter((j) => j.id !== job.id);
   g.claims = g.claims.filter((j) => j.id !== job.id);
@@ -182,7 +182,7 @@ export function tendJobs(sim: Sim, destroyed: readonly number[]): void {
       // Entering the node is enough for now; a scanner module requirement comes later (issue #178 follow-up).
       if (job.node === g.current && sim.sector.state !== 'hyperspace' && !g.event) complete(sim, job);
     } else if (job.collected) {
-      close(sim, job, 'done', 'shuttle');
+      close(sim, job, 'done', job.collected);
     } else if (!g.event && sim.sector.state === 'active' && job.to === g.current && recoverCrate(sim, job.id)) {
       if (startHandover(sim, job) === 'instant') close(sim, job, 'done', 'instant');
     }
