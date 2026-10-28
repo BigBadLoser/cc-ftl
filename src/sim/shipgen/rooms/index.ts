@@ -13,27 +13,29 @@ export const RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
   bridge, quarters, cargo: storage, support: mess, reactor: engineering, weapons, shields, engine: engines, dock, hangar, farm, industry, armoury, plaza, garden, drill,
 };
 
-/** Modules stations never get, whatever the room recipe says (rows of hydroponics beds everywhere read as clutter). */
-const STATION_BANNED: readonly string[] = ['module.hydroponics'];
+/**
+ * Modules stations swap for others, whatever the room recipe says: no hydroponics beds (rows of them everywhere read as
+ * clutter), a planter in their place (not a locker: the lockers of a station belong in quarters, stores and armouries).
+ */
+const STATION_SWAP: Readonly<Record<string, string>> = { 'module.hydroponics': 'module.planter' };
 
-/** A recipe without the banned modules: a step of only banned modules is dropped, a choice list loses them. */
-function without(recipe: RoomRecipe, banned: readonly string[]): RoomRecipe {
+/** A recipe with modules swapped; a choice list that ends up naming one module twice keeps it once. */
+function swapped(recipe: RoomRecipe, swap: Readonly<Record<string, string>>): RoomRecipe {
   return {
     ...recipe,
     arrangements: recipe.arrangements.map((a) => ({
       ...a,
-      steps: a.steps.flatMap((st) => {
-        const mods = (typeof st.mod === 'string' ? [st.mod] : st.mod).filter((m) => !banned.includes(m));
-        if (!mods.length) return [];
-        return [{ ...st, mod: mods.length === 1 ? (mods[0] as string) : mods }];
+      steps: a.steps.map((st) => {
+        const mods = [...new Set((typeof st.mod === 'string' ? [st.mod] : st.mod).map((m) => swap[m] ?? m))];
+        return { ...st, mod: mods.length === 1 ? (mods[0] as string) : mods };
       }),
     })),
   };
 }
 
-/** Room recipes for stations (immobile hulls): the ship recipes without the station-banned modules. */
+/** Room recipes for stations (immobile hulls): the ship recipes with the station swaps. */
 export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
-  ...Object.fromEntries(Object.entries(RECIPES).map(([role, r]) => [role, without(r as RoomRecipe, STATION_BANNED)])),
+  ...Object.fromEntries(Object.entries(RECIPES).map(([role, r]) => [role, swapped(r as RoomRecipe, STATION_SWAP)])),
   // Station hangars are hangar decks: shuttle bays out on the floor, not against a wall.
   hangar: hangarDeck,
 };

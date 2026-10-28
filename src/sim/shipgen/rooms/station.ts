@@ -159,7 +159,7 @@ export const plaza = {
       name: 'food court', weight: 1,
       vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk, grove, benchPots], gap: 7, upTo: 0.12, centre: bazaar },
       steps: [
-        { mod: 'module.storage_locker', count: 4, wall: 'any' },
+        { mod: 'module.planter', count: 4, wall: 'any' },
       ],
     },
   ],
@@ -206,7 +206,7 @@ export const hangarDeck = {
         { mod: 'module.vehicle_bay', count: 'spec', centre: 'xy', clear: 2, grid: [7, 8] },
         { mod: 'module.deck_hazard', count: 10, near: 'module.vehicle_bay', row: true },
         { mod: 'module.storage_rack', count: 'fill', wall: 'long', row: true },
-        { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
+        { mod: 'module.storage_locker', count: 4, wall: 'any', row: true },
       ],
     },
   ],

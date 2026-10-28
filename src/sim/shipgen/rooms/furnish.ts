@@ -328,6 +328,7 @@ export function furnish(
     const n = s.once ? 1 : s.count === 'fill' ? 40 : s.count;
     for (let k = 0; k < n; k++) {
       if (s.count === 'fill' && roomFill(lay, room) >= (s.upTo ?? d.recipe.fill)) return;
+      if (s.per && roomModules(lay, room).filter((m) => m.def === id).length >= roomModules(lay, room).filter((m) => m.def === s.per).length) return;
       if (draw > 0 && draw > power.spare) return;
       const pm = placeStep(lay, rng, room, d, si, rotsOf(id));
       if (!pm) return;

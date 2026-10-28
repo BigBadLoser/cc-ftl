@@ -18,6 +18,8 @@ export interface Step {
    * fill target.
    */
   count: 'spec' | number | 'fill';
+  /** With `count: 'fill'`: at most one of this step's module per module of this def in the room (a locker a bed). */
+  per?: string;
   /** Walls the footprint should back onto (preferred, not required). */
   wall?: Wall;
   /** A second-choice wall, scored lower (the helm backs onto a long wall when the fore wall has a door). */
