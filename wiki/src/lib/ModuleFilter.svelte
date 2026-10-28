@@ -29,9 +29,14 @@
 <p aria-live="polite">{filtered.length} modules</p>
 <ul class="wiki-ref-list">
   {#each filtered as module (module.id)}
-    <li>
-      <a href={resolve('reference/modules/') + module.slug + '/'}>{module.name}</a>
-      <small>{module.category} · {module.footprint[0]}×{module.footprint[1]} tiles · {module.power > 0 ? '+' : ''}{module.power} power</small>
+    <li class="wiki-ref-entry">
+      {#if module.image}
+        <img class="wiki-ref-thumb" src={module.image} alt="" loading="lazy" width="78" height="60" />
+      {/if}
+      <div>
+        <a href={resolve('reference/modules/') + module.slug + '/'}>{module.name}</a>
+        <small>{module.category} · {module.footprint[0]}×{module.footprint[1]} tiles · {module.power > 0 ? '+' : ''}{module.power} power</small>
+      </div>
     </li>
   {/each}
 </ul>

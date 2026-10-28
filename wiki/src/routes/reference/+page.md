@@ -3,10 +3,14 @@ title: Reference database
 order: 1
 ---
 
+Reference pages are built from the game's content definitions alongside the playable build.
 
-These pages are generated from game content definitions when the wiki builds. They are updated automatically alongside the playable game.
+- [Ship modules](./modules/) — power, footprints, construction costs, durability, and game sprites.
+- [Items and resources](./items/) — stack limits, tags, and base values.
+- [Weapons](./weapons/) — charge, accuracy, shields, and effects.
+- [Vehicles](./vehicles/) — shuttles, mining pods, capacity, durability, and speed.
+- [Production recipes](./recipes/) — ingredients, outputs, work, and stations.
+- [Factions](./factions/) — known factions and characteristic equipment.
+- [Research](./research/) — costs, prerequisites, and unlocked technology.
 
-- [Ship modules](./modules/) — size, power, construction cost and durability.
-- [Items and resources](./items/) — tags, stack limits and base values.
-
-Values that depend on a specific market, ship or event are not presented as universal constants.
+Market prices, combat results, and other contextual values can differ from their static definitions.

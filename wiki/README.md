@@ -35,3 +35,5 @@ artifact, as either would replace the other.
 Generate thumbnail images from the game's sprite manifest; expand reference
 coverage; add verified game screenshots and guides. Keep market-dependent
 values separate from fixed item base values.
+
+Reference generation includes sprite crops from `../public/assets/1x/manifest.json` and the source PNG sheets. Generated transparent thumbnails are written under `static/generated/sprites/` with nearest-neighbor scaling. Entries without suitable static sprites omit the image; they never borrow an unrelated illustration.

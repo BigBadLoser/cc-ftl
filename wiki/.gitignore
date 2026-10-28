@@ -4,3 +4,9 @@ dist/
 src/data/generated/
 src/routes/reference/modules/*/
 src/routes/reference/items/*/
+static/generated/
+src/routes/reference/weapons/*/
+src/routes/reference/vehicles/*/
+src/routes/reference/recipes/*/
+src/routes/reference/factions/*/
+src/routes/reference/research/*/

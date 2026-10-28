@@ -20,7 +20,6 @@ export default defineConfig({
           { title: 'Guides', to: '/guides/getting-started/' },
           { title: 'Mechanics', to: '/mechanics/power/' },
           { title: 'Reference', to: '/reference/modules/' },
-          { title: 'Play', to: 'https://bigbadloser.github.io/cc-ftl/' },
         ],
         // Keep generated reference entries in the searchable catalog, not the sidebar.
         // The auto-sidebar grouped each index under an identical title,
@@ -36,6 +35,11 @@ export default defineConfig({
             { title: 'Reference overview', to: '/reference/' },
             { title: 'Ship modules', to: '/reference/modules/' },
             { title: 'Items and resources', to: '/reference/items/' },
+            { title: 'Weapons', to: '/reference/weapons/' },
+            { title: 'Vehicles', to: '/reference/vehicles/' },
+            { title: 'Production recipes', to: '/reference/recipes/' },
+            { title: 'Factions', to: '/reference/factions/' },
+            { title: 'Research', to: '/reference/research/' },
           ],
         },
         themeColor: {
