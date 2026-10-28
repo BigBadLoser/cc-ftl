@@ -121,7 +121,7 @@ for (const [id, def] of Object.entries(modules).sort()) {
   const img = assetForModule(id);
   moduleCatalog.push({ id, slug: slug('modules', id), name: def.name, category: def.category ?? 'other', footprint: def.footprint, power: def.power, image: img ?? null });
   const lines = [
-    image(img, def.name), def.description ? text(def.description) : 'Ship equipment.', '',
+    image(img, def.name), '', def.description ? text(def.description) : 'Ship equipment.', '',
     '## Statistics', '', ...stats([
       ['Category', def.category ?? 'other'],
       ['Footprint', def.footprint.join(' × ') + ' tiles'],
@@ -129,7 +129,7 @@ for (const [id, def] of Object.entries(modules).sort()) {
       ...(def.maxHp !== undefined ? [['Durability', def.maxHp + ' HP'] as [string,string]] : []),
       ...(def.buildWork !== undefined ? [['Construction work', def.buildWork + ' ticks'] as [string,string]] : []),
     ]),
-  ].filter(v => v !== '');
+  ];
   if (def.cost?.length) lines.push('', '## Construction materials', '', ...bulletsOfMaterials(def.cost, 'modules'));
   if (def.weapon) lines.push('', '## Weapon', '', link('weapons', def.weapon, 'modules'));
   await writeEntry('modules', id, lines);
@@ -142,14 +142,14 @@ for (const [id, def] of Object.entries(items).sort()) {
   const img = sprites[id];
   itemCatalog.push({ id, slug: slug('items', id), name: def.name, tags: def.tags ?? [], stackSize: def.stackSize, price: def.price ?? null, image: img ?? null });
   await writeEntry('items', id, [
-    image(img, def.name),
-    def.description ? text(def.description) : '',
+    image(img, def.name), '',
+    def.description ? text(def.description) : '', '',
     ...stats([
       ['Stack limit', def.stackSize], ['Tags', (def.tags ?? []).join(', ') || 'none'],
       ['Base value', def.price === undefined ? 'Not priced' : def.price + ' credits'],
     ]),
     '', 'Base values are not guaranteed market prices.',
-  ].filter(Boolean));
+  ]);
 }
 await saveJson('items', itemCatalog);
 await writeIndex('items', 'Items and resources', 'Item limits, tags, and base values. Prices at individual stations may differ.', listIndex('items'));
@@ -179,7 +179,7 @@ await writeIndex('weapons', 'Ship weapons', 'Weapon statistics are base values. 
 // Vehicles.
 for (const [id, def] of Object.entries(vehicles).sort()) {
   await writeEntry('vehicles', id, [
-    image(def.asset ? sprites[def.asset] : undefined, def.name),
+    image(def.asset ? sprites[def.asset] : undefined, def.name), '',
     ...stats([
       ['Class', def.class], ['Speed at piloting 0', def.speed + ' tiles/s'],
       ['Durability', def.maxHp + ' HP'], ['Passenger capacity', def.capacity],
