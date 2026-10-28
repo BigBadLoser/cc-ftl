@@ -1,9 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiLogEntry, UiLogKind } from './api';
+  const PULSE_MS = 2500;
+  const fresh = (e: UiLogEntry) => !!e.amount && Date.now() - e.born < PULSE_MS;
+  const go = (e: UiLogEntry) => {
+    if (!e.subject) return;
+    if (e.subject.kind === 'node') onNode?.(e.subject.id);
+    else api.focusSubject(e.subject);
+  };
   import Icon, { type IconName } from './Icon.svelte';
 
-  let { api }: { api: UiApi } = $props();
+  let { api, onNode }: { api: UiApi; onNode?: (node: string) => void } = $props();
   let list = $state<UiLogEntry[]>([]);
   const KEY = 'cc-ftl.log.open';
   let open = $state(true);
@@ -24,6 +31,7 @@
     fire: 'fire', breach: 'alert', 'crew.downed': 'downed', 'crew.died': 'skull', 'crew.rescued': 'person', 'module.destroyed': 'module',
     combat: 'combat', 'ship.disabled': 'ship', 'ship.destroyed': 'prize', 'ship.fled': 'fast', 'ship.captured': 'flag', hail: 'hail',
     trade: 'credits', production: 'wrench', container: 'stock', story: 'list', lost: 'skull',
+    payout: 'credits', kill: 'skull', warning: 'alert', job: 'stock', mining: 'pick', transfer: 'stock', galaxy: 'ship', outpost: 'station', creatures: 'combat', crew: 'person',
   };
   const shown = $derived(open ? list : list.slice(0, 1));
 </script>
@@ -32,10 +40,12 @@
   <div class="log sec" class:open data-testid="event-log" role="log" aria-label="Event log">
     <ul>
       {#each shown as e (e.id)}
-        <li class={e.tone} data-testid="log-entry" data-kind={e.kind}>
-          <span class="ic"><Icon name={icon[e.kind]} size={14} /></span>
-          <span class="tx">{e.text}</span>{#if e.count > 1}<span class="n">×{e.count}</span>{/if}
-          <span class="tk">T{e.tick}</span>
+        <li class={e.tone} class:pulse={fresh(e)} data-testid="log-entry" data-kind={e.kind}>
+          <button class="row" disabled={!e.subject} title={e.subject ? 'Go there' : undefined} onclick={() => go(e)}>
+            <span class="ic"><Icon name={icon[e.kind]} size={14} /></span>
+            <span class="tx">{e.text}</span>{#if e.amount}<span class="amt" data-testid="log-amount">+{e.amount} ₵</span>{/if}{#if e.count > 1}<span class="n">×{e.count}</span>{/if}
+            <span class="tk">T{e.tick}</span>
+          </button>
         </li>
       {/each}
     </ul>
@@ -45,19 +55,28 @@
 
 <style>
   .log { position: relative; width: 100%; }
-  ul { list-style: none; margin: 0; padding: 0; max-height: 110px; overflow-y: auto; touch-action: pan-y; }
+  ul { list-style: none; margin: 0; padding: 0; max-height: 132px; overflow-y: auto; touch-action: pan-y; }
   .open ul { padding-right: 0; }
-  li { display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px; font-size: 12px; border-left: 3px solid var(--line-hi); white-space: nowrap; }
+  li { height: 22px; font-size: 12px; border-left: 3px solid var(--line-hi); white-space: nowrap; }
+  .row { display: flex; align-items: center; gap: 6px; width: 100%; height: 22px; padding: 0 6px; border: 0; background: transparent; font: inherit; text-align: left; color: inherit; cursor: pointer; }
+  .row:disabled { cursor: default; opacity: 1; }
+  .row:not(:disabled):hover { background: #0d2233; }
   li + li { border-top: 1px solid #0d2233; }
   li.good { border-left-color: var(--green); } li.warn { border-left-color: var(--amber); } li.bad { border-left-color: var(--red); }
   .ic { display: inline-flex; color: var(--cyan); } .good .ic { color: var(--green); } .warn .ic { color: var(--amber); } .bad .ic { color: var(--red); }
   .tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
   li:not(:first-child) .tx { color: var(--dim); }
   .n { color: var(--amber); font: 600 12px var(--head-font); }
+  .amt { color: var(--green); font: 700 13px var(--head-font); letter-spacing: 0.04em; }
+  /* A credit gain: the row glows for a couple of seconds, then settles. */
+  li.pulse { animation: payout 2.4s ease-out 1; }
+  li.pulse .amt { animation: amt 2.4s ease-out 1; }
+  @keyframes payout { 0%, 25% { background: color-mix(in srgb, var(--green) 38%, transparent); box-shadow: 0 0 12px var(--green), inset 0 0 8px color-mix(in srgb, var(--green) 50%, transparent); } 100% { background: transparent; box-shadow: none; } }
+  @keyframes amt { 0%, 25% { transform: scale(1.25); text-shadow: 0 0 8px var(--green); } 100% { transform: scale(1); text-shadow: none; } }
   .tk { color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.05em; }
   /* The toggle rides on the first row, right of the time stamp. */
   .tg { position: absolute; top: 0; right: 0; width: 22px; height: 22px; border-width: 0 0 1px 1px; background: var(--panel-2); }
-  li:first-child { padding-right: 28px; }
+  li:first-child .row { padding-right: 28px; }
   .tg { border-width: 0 0 0 1px; }
   @media (max-width: 600px) {
     .log { position: relative; width: 100%; }

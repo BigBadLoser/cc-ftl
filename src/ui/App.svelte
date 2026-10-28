@@ -76,6 +76,8 @@
   /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
   let fleeShip = $state<number | null>(null);
   let sliding = $state(false);
+  /** A log entry or alert about a starmap node: open the map. */
+  const openNode = () => { if (!mapLocked) { fleeShip = null; mapOpen = true; } };
   /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
   let star = $state<UiStarmap | null>(null);
   let deploy = $state<UiDeploy | null>(null);
@@ -299,7 +301,7 @@
 <!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, the accepted-jobs tracker, then alerts, stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>
   <div class="frame">
-    <EventLog {api} />
+    <EventLog {api} onNode={openNode} />
     {#if !narrow}{@render time()}{/if}
   </div>
   <div class="cards">
@@ -307,7 +309,7 @@
     <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
   </div>
   <StrandedBanner {api} />
-  <AlertList {api} />
+  <AlertList {api} onNode={openNode} />
 </div>
 
 <style>
