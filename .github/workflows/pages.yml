@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+# Publishes main to https://bigbadloser.github.io/cc-ftl/. Manual only (Actions tab, "Run workflow"): main is not
+# deployed on every push. Needs Settings > Pages > Source: GitHub Actions. The build passes --base /cc-ftl/ so the
+# site serves from the project path; local dev and the CI build stay at /.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vite build --base /cc-ftl/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
