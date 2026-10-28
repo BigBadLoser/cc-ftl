@@ -343,6 +343,16 @@
     width: min(990px, calc(100vw - 260px));
   }
   html.wiki-sidebar-hidden .header-inner.has-sidebar { padding-left: 1rem; }
+  /* The theme normally places the wordmark in the desktop sidebar.
+   * Restore it to the header when the sidebar has been collapsed. */
+  html.wiki-sidebar-hidden .header-inner .logo-container,
+  html.wiki-sidebar-hidden .header-inner .logo-container:not(.desktop-visible) {
+    display: flex !important;
+    align-items: center;
+  }
+  html.wiki-sidebar-hidden .header-inner .logo-container .title {
+    display: inline !important;
+  }
 }
 /* SveltePress already provides its own mobile navigation drawer. */
 @media (max-width: 949px) {
