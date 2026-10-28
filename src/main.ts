@@ -222,7 +222,7 @@ function logScenario(): void {
   const p = crew === undefined ? undefined : sim.world.get(crew, PositionC);
   if (p) bridge.dispatch({ type: 'debug.setField', ship: homeShip(sim), x: Math.round(p.x), y: Math.round(p.y), field: 'fire', value: 200 });
   loop.setSpeed(3);
-  setTimeout(() => bridge.dispatch({ type: 'debug.setCredits', value: sim.trade.credits + 450 }), 12000);
+  for (const [ms, amount] of [[6000, 80], [8000, 200], [12000, 450]] as const) setTimeout(() => bridge.dispatch({ type: 'debug.setCredits', value: sim.trade.credits + amount }), ms);
 }
 
 /** The WebGL driver's renderer string, if the browser exposes it; pixi's canvas already owns a webgl context, so asking again returns it. */

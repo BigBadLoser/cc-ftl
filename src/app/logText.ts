@@ -47,7 +47,7 @@ export function createDescriber(sim: Sim) {
         const name = sim.content.modules[e.def]?.name ?? 'Module';
         return mine(e.ship) ? { kind: e.type, tone: 'bad', text: `${name} destroyed`, ...onShip(e.ship) } : { kind: e.type, tone: 'good', text: `Enemy ${name} destroyed`, ...onShip(e.ship) };
       }
-      case 'combat.started': return { kind: 'combat', tone: 'warn', text: 'Hostile ship in range', ...sub(enemyShip(sim, home())) };
+      case 'combat.started': return { kind: 'combat', tone: 'warn', text: 'Combat started', ...sub(enemyShip(sim, home())) };
       case 'combat.ended': return { kind: 'combat', tone: 'info', text: 'Combat over' };
       case 'ship.disabled': return { kind: e.type, tone: mine(e.ship) ? 'bad' : 'good', text: `${shipName(e.ship)} disabled`, ...onShip(e.ship) };
       case 'ship.destroyed': return mine(e.ship) ? { kind: 'lost', tone: 'bad', text: 'Your ship was destroyed' } : { kind: e.type, tone: 'good', text: `${shipName(e.ship)} destroyed` };

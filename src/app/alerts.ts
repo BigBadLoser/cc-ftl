@@ -97,6 +97,13 @@ export function createAlerts(sim: Sim): Alerts {
     return demand > supply;
   };
 
+  /** "Under attack: Raider": the enemy's name, short. */
+  const combatText = () => {
+    const s = enemyShip(sim, home());
+    const name = s?.kind === 'ship' ? sim.world.get(s.id, ShipC)?.name : undefined;
+    return `Under attack${name ? `: ${name}` : ''}`;
+  };
+
   function describe(e: SimEvent): Raised | null {
     if (!urgent(e.type) || foreign(e)) return null;
     switch (e.type) {
@@ -105,28 +112,28 @@ export function createAlerts(sim: Sim): Alerts {
         if (!def || e.mode !== 'notice' || e.notice <= 0) return null;
         return { kind: 'story.lead', key: `ev${e.event}`, text: def.text, subject: null, notice: { id: e.notice, lead: true, title: def.title } };
       }
-      case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire!', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
+      case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', subject: roomOf(sim, e.ship, e.room), resolved: () => !venting(e.ship, e.room) };
-      case 'power.shortage': return { kind: e.type, key: 'p', text: `Power shortage (${Math.round(e.supply)}/${Math.round(e.demand)})`, subject: powerSubject(), resolved: () => !shortOnPower(e.ship) };
+      case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(), resolved: () => !shortOnPower(e.ship) };
       case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', subject: roomOf(sim, e.ship, e.room), resolved: () => thin(e.ship, e.room) === false };
       case 'crew.downed': return {
-        kind: e.type, key: `d${e.crew}`, text: `${crewName(e.crew)} is down`, subject: crewSubject(sim, e.crew),
+        kind: e.type, key: `d${e.crew}`, text: `Down: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew),
         // Back on their feet, stabilised (no longer bleeding out), or gone (the death is in the log).
         resolved: () => !alive(e.crew) || !sim.world.has(e.crew, DownedC) || !!sim.world.get(e.crew, DownedC)?.stabilized,
       };
       case 'suit.airLow': case 'suit.airOut': {
         if (!playerSuit(e.crew)) return null;
-        return { kind: e.type, key: `sa${e.crew}`, text: `${crewName(e.crew)}: ${e.type === 'suit.airLow' ? 'suit air low' : 'suit out of air!'}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !isSuited(sim, e.crew) };
+        return { kind: e.type, key: `sa${e.crew}`, text: `${e.type === 'suit.airLow' ? 'Suit air low' : 'Suit air out'}: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !isSuited(sim, e.crew) };
       }
       case 'crew.starving': {
         if (!playerSuit(e.crew)) return null;
-        return { kind: e.type, key: `st${e.crew}`, text: `${crewName(e.crew)} is starving`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || (sim.world.get(e.crew, NeedsC)?.hunger ?? 0) > 0 };
+        return { kind: e.type, key: `st${e.crew}`, text: `Starving: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || (sim.world.get(e.crew, NeedsC)?.hunger ?? 0) > 0 };
       }
       case 'eggsac.hatched': {
         const aliens = e.aliens;
-        return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Hostile creatures aboard ${sim.world.get(e.ship, ShipC)?.name ?? 'the wreck'}`, subject: tileAt(e.x, e.y), resolved: () => !aliens.some(alive) };
+        return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Creatures aboard: ${sim.world.get(e.ship, ShipC)?.name ?? 'wreck'}`, subject: tileAt(e.x, e.y), resolved: () => !aliens.some(alive) };
       }
-      case 'combat.started': return { kind: e.type, key: 'cs', text: 'Hostile ship in range: combat!', subject: enemyShip(sim, home()), resolved: () => !sim.sector.inCombat };
+      case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !sim.sector.inCombat };
       default: return null;
     }
   }
@@ -162,7 +169,7 @@ export function createAlerts(sim: Sim): Alerts {
     }
     for (const w of want) {
       if (muted.has(w.fleet)) continue;
-      const text = `${w.name} drops from hyperspace in ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
+      const text = `Arriving: ${w.name}, ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
       const id = incoming.get(w.fleet);
       if (id !== undefined) {
         store.update((l) => l.map((a) => (a.id === id ? { ...a, text } : a)));

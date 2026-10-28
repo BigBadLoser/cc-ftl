@@ -37,7 +37,10 @@
 </script>
 
 {#if list.length}
-  <div class="log sec" class:open data-testid="event-log" role="log" aria-label="Event log">
+  <div class="log sec" class:open data-testid="event-log" role="log" aria-label="Ship's log">
+    <button class="bar" title={open ? 'Collapse the log' : 'Expand the log'} aria-label={open ? 'Collapse the log' : 'Expand the log'} aria-expanded={open} data-testid="log-toggle" onclick={toggle}>
+      <span class="cap">Ship's log</span><Icon name={open ? 'chevUp' : 'chevDown'} size={14} />
+    </button>
     <ul>
       {#each shown as e (e.id)}
         <li class={e.tone} class:pulse={fresh(e)} data-testid="log-entry" data-kind={e.kind}>
@@ -49,16 +52,19 @@
         </li>
       {/each}
     </ul>
-    <button class="tile tg" title={open ? 'Collapse the log' : 'Expand the log'} aria-label={open ? 'Collapse the log' : 'Expand the log'} aria-expanded={open} data-testid="log-toggle" onclick={toggle}><Icon name={open ? 'chevUp' : 'chevDown'} size={14} /></button>
   </div>
 {/if}
 
 <style>
-  .log { position: relative; width: 100%; }
-  ul { list-style: none; margin: 0; padding: 0; max-height: 132px; overflow-y: auto; touch-action: pan-y; }
-  .open ul { padding-right: 0; }
-  li { height: 22px; font-size: 12px; border-left: 3px solid var(--line-hi); white-space: nowrap; }
-  .row { display: flex; align-items: center; gap: 6px; width: 100%; height: 22px; padding: 0 6px; border: 0; background: transparent; font: inherit; text-align: left; color: inherit; cursor: pointer; }
+  .log { width: 100%; }
+  /* Title bar in the goals card's small caps; the collapse arrow lives here, not over the entries. */
+  .bar { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 0; height: 24px; padding: 0 8px; border: 0; border-bottom: 1px solid var(--line); background: var(--panel-2); color: var(--cyan); cursor: pointer; }
+  .cap { font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
+  /* Five full rows, then it scrolls. */
+  ul { list-style: none; margin: 0; padding: 0; max-height: 110px; overflow-y: auto; touch-action: pan-y; }
+  li { height: 22px; box-sizing: border-box; font-size: 12px; border-left: 3px solid var(--line-hi); white-space: nowrap; }
+  .row { display: flex; align-items: center; gap: 6px; box-sizing: border-box; width: 100%; height: 22px; min-height: 0; margin: 0; padding: 0 8px 0 6px; border: 0; background: transparent; font: inherit; line-height: 1; text-align: left; color: inherit; cursor: pointer; }
+  .row > * { line-height: 1; }
   .row:disabled { cursor: default; opacity: 1; }
   .row:not(:disabled):hover { background: #0d2233; }
   li + li { border-top: 1px solid #0d2233; }
@@ -74,11 +80,4 @@
   @keyframes payout { 0%, 25% { background: color-mix(in srgb, var(--green) 38%, transparent); box-shadow: 0 0 12px var(--green), inset 0 0 8px color-mix(in srgb, var(--green) 50%, transparent); } 100% { background: transparent; box-shadow: none; } }
   @keyframes amt { 0%, 25% { transform: scale(1.25); text-shadow: 0 0 8px var(--green); } 100% { transform: scale(1); text-shadow: none; } }
   .tk { color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.05em; }
-  /* The toggle rides on the first row, right of the time stamp. */
-  .tg { position: absolute; top: 0; right: 0; width: 22px; height: 22px; border-width: 0 0 1px 1px; background: var(--panel-2); }
-  li:first-child .row { padding-right: 28px; }
-  .tg { border-width: 0 0 0 1px; }
-  @media (max-width: 600px) {
-    .log { position: relative; width: 100%; }
-  }
 </style>
