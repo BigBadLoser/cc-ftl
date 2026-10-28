@@ -360,3 +360,123 @@
 @media (max-width: 949px) {
   .wiki-sidebar-toggle { display: none; }
 }
+
+/* Shared generated-reference presentation. The same components are used for
+ * equipment, vehicles, crafting, factions and research, not one-off lists. */
+.wiki-reference-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.wiki-reference-tabs button {
+  min-height: 42px;
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 500;
+  border: 1px solid var(--wiki-card-border);
+  border-radius: .45rem;
+  color: var(--wiki-subtle);
+  background: transparent;
+  cursor: pointer;
+}
+.wiki-reference-tabs button.active {
+  background: var(--wiki-card-bg);
+  border-color: #5899cd;
+  box-shadow: inset 0 -2px #5899cd;
+  color: var(--wiki-card-color);
+  font-weight: 650;
+}
+.wiki-reference-tabs button:focus-visible,
+.wiki-reference-card:focus-visible {
+  outline: 2px solid #5899cd;
+  outline-offset: 2px;
+}
+.wiki-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+.wiki-reference-grid.wiki-reference-with-art {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.wiki-reference-card {
+  min-width: 0;
+  display: block;
+  border: 1px solid var(--wiki-card-border);
+  border-radius: .55rem;
+  overflow: hidden;
+  color: var(--wiki-card-color);
+  background: var(--wiki-card-bg);
+  text-decoration: none;
+  transition: border-color .12s ease, background-color .12s ease;
+}
+.wiki-reference-card:hover { border-color: #5899cd; }
+.wiki-reference-art {
+  height: 145px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #080e16;
+  border-bottom: 1px solid var(--wiki-card-border);
+}
+.wiki-reference-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.wiki-reference-info {
+  display: grid;
+  gap: .4rem;
+  padding: .85rem .95rem;
+}
+.wiki-reference-title { line-height: 1.35; font-size: 1rem; }
+.wiki-reference-subtitle {
+  font-size: .79rem;
+  color: var(--wiki-subtle);
+  line-height: 1.45;
+}
+.wiki-reference-facts {
+  margin: .35rem 0 0;
+  padding: .5rem 0 0;
+  display: grid;
+  gap: .3rem;
+  border-top: 1px solid var(--wiki-card-border);
+}
+.wiki-reference-facts div {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: .78rem;
+}
+.wiki-reference-facts dt { color: var(--wiki-subtle); }
+.wiki-reference-facts dd {
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+.wiki-recipe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wiki-recipe-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: .35rem;
+  align-items: center;
+  padding: .65rem 0;
+}
+.wiki-recipe-flow > div { min-width: 0; display: grid; gap: .2rem; }
+.wiki-recipe-flow small { color: var(--wiki-subtle); font-size: .7rem; }
+.wiki-recipe-flow div > span { font-size: .8rem; line-height: 1.4; }
+.wiki-recipe-arrow { color: #5899cd; font-weight: bold; }
+@media (max-width: 1100px) {
+  .wiki-reference-grid.wiki-reference-with-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+  .wiki-reference-grid, .wiki-reference-grid.wiki-reference-with-art, .wiki-recipe-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wiki-reference-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
