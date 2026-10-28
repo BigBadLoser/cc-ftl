@@ -81,7 +81,11 @@ function link(kind: Kind, id: string, from: Kind): string {
   return '[' + text(named(kind, id)) + '](../../' + kind + '/' + slug(kind, id) + '/)';
 }
 function bulletsOfMaterials(list: Material[], from: Kind): string[] {
-  return list.map(material => '- ' + material.count + ' × ' + link('items', material.item, from));
+  return list.map(material => {
+    const icon = sprites[material.item];
+    const art = icon ? '<img class="wiki-material-icon" src="' + html(icon) + '" alt="" width="32" height="32" /> ' : '';
+    return '- ' + art + material.count + ' × ' + link('items', material.item, from);
+  });
 }
 function stats(rows: Array<[string, string | number]>): string[] {
   return ['| Attribute | Value |', '|---|---:|', ...rows.map(([a, b]) => '| ' + text(a) + ' | ' + text(b) + ' |')];
@@ -101,7 +105,7 @@ async function writeEntry(kind: Kind, id: string, lines: string[]): Promise<void
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, '+page.md'), page(named(kind, id), [...lines, '', '[Back to ' + kind + '](../)']), 'utf8');
 }
-type CatalogMaterial = { slug: string; name: string; count: number };
+type CatalogMaterial = { slug: string; name: string; count: number; image: string | null };
 type CatalogEntry = {
   id: string; slug: string; name: string; subtitle: string; category?: string;
   image: string | null; facts: Array<[string, string]>;
@@ -131,7 +135,7 @@ function materialLabel(list: Material[]): string {
   return list.map(m => m.count + '× ' + named('items', m.item)).join(' + ');
 }
 function catalogMaterials(list: Material[]): CatalogMaterial[] {
-  return list.map(m => ({ slug: slug('items', m.item), name: named('items', m.item), count: m.count }));
+  return list.map(m => ({ slug: slug('items', m.item), name: named('items', m.item), count: m.count, image: sprites[m.item] ?? null }));
 }
 
 await mkdir(generated, { recursive: true });

@@ -29,6 +29,7 @@ try {
   const cards = page.locator('.wiki-recipe-card');
   if (await cards.count() < 1) throw Error('Fabricator has no recipe cards');
   if (await cards.locator('a[href*="/reference/items/"]').count() < 2) throw Error('Recipe materials are missing item links');
+  if (await cards.locator('.wiki-recipe-materials img').count() < 2) throw Error('Recipe item sprite icons are missing');
   const expanded = await page.locator('.content').first().boundingBox();
   await shot('fabricator-open', true);
   const toggle = page.locator('.wiki-sidebar-toggle');
@@ -47,6 +48,9 @@ try {
   await visit('reference/recipes/');
   if (await page.locator('.wiki-recipe-card').count() !== 12) throw Error('Expected 12 catalog recipe cards');
   await shot('recipes-catalog');
+  await visit('reference/items/');
+  if (await page.locator('.wiki-reference-item-card img').count() < 2) throw Error('Item catalog has no game icons');
+  await shot('items-catalog');
   for (const [path, name] of [
     ['reference/modules/', 'modules-catalog'],
     ['reference/weapons/', 'weapons-catalog'],
@@ -55,6 +59,8 @@ try {
     ['reference/modules/airlock/', 'airlock-detail']
   ]) {
     await visit(path);
+    if (name === 'vehicles-catalog' && await page.locator('.wiki-reference-card img').count() !== 2)
+      throw Error('Both vehicle sprites must appear in the vehicle catalog');
     await shot(name, name === 'airlock-detail');
   }
   await page.setViewportSize({ width: 960, height: 980 });

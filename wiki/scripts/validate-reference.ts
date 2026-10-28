@@ -8,8 +8,8 @@ type Kind = typeof kinds[number];
 type CatalogEntry = {
   id: string; slug: string; name: string; image: string | null;
   station?: string; stationSlug?: string;
-  inputs?: Array<{ slug: string; name: string; count: number }>;
-  outputs?: Array<{ slug: string; name: string; count: number }>;
+  inputs?: Array<{ slug: string; name: string; count: number; image: string | null }>;
+  outputs?: Array<{ slug: string; name: string; count: number; image: string | null }>;
 };
 const data = JSON.parse(await readFile(join(root, 'src/data/generated/reference-catalog.json'), 'utf8')) as Record<Kind, CatalogEntry[]>;
 const staticRoot = join(root, 'static');
@@ -49,6 +49,7 @@ for (const kind of kinds) {
       if (!inside(location, staticRoot) || !await exists(location)) throw Error('Missing catalog image: ' + entry.image);
       images++;
     }
+    if (kind === 'vehicles' && !entry.image) throw Error('Missing vehicle sprite: ' + entry.id);
     if (kind === 'recipes') {
       const station = entry.station;
       if (!station) throw Error('Recipe has no production station: ' + entry.id);
@@ -57,8 +58,9 @@ for (const kind of kinds) {
       if (entry.stationSlug !== stationRoute.slug) throw Error('Incorrect station slug: ' + entry.id);
       for (const material of [...(entry.inputs ?? []), ...(entry.outputs ?? [])]) {
         if (!Number.isFinite(material.count) || material.count <= 0) throw Error('Invalid recipe quantity: ' + entry.id);
-        if (!data.items.some(item => item.slug === material.slug && item.name === material.name))
-          throw Error('Broken recipe material reference: ' + entry.id + ' -> ' + material.slug);
+        const item = data.items.find(item => item.slug === material.slug && item.name === material.name);
+        if (!item) throw Error('Broken recipe material reference: ' + entry.id + ' -> ' + material.slug);
+        if (material.image !== item.image) throw Error('Recipe uses an incorrect item icon: ' + material.slug);
       }
       if (!entry.inputs || !entry.outputs) throw Error('Missing structured recipe materials: ' + entry.id);
       const stationPage = await readFile(join(root, 'src/routes/reference/modules', stationRoute.slug, '+page.md'), 'utf8');

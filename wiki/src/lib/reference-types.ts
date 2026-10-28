@@ -1,6 +1,6 @@
 /** Shared schema for generated gameplay-reference cards and their relationships. */
 export type Kind = 'modules' | 'items' | 'weapons' | 'vehicles' | 'recipes' | 'factions' | 'research';
-export type CatalogMaterial = { slug: string; name: string; count: number };
+export type CatalogMaterial = { slug: string; name: string; count: number; image: string | null };
 export type CatalogEntry = {
   id: string;
   slug: string;

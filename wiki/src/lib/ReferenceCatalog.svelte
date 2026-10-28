@@ -28,7 +28,7 @@
   );
   const formatCategory = (value: string) =>
     value === 'All' ? value : value.replace(/\b\w/g, (letter) => letter.toUpperCase());
-  const showArtwork = $derived(['weapons', 'vehicles', 'research'].includes(kind));
+  const showArtwork = $derived(['items', 'weapons', 'vehicles', 'research'].includes(kind));
 </script>
 
 {#if categories.length > 2}
@@ -51,7 +51,7 @@
     {#if kind === 'recipes'}
       <RecipeCard recipe={item} />
     {:else}
-      <a class="wiki-reference-card" href={paths[kind] + item.slug + '/'}>
+      <a class="wiki-reference-card" class:wiki-reference-item-card={kind === 'items'} href={paths[kind] + item.slug + '/'}>
         {#if showArtwork && item.image}
           <div class="wiki-reference-art">
             <img src={item.image} loading="lazy" width="300" height="190" alt="" />
