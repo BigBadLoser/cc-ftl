@@ -5,7 +5,7 @@ import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
-import { lightRoom, placeOne, rotsOf } from './fit';
+import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
 import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
@@ -125,15 +125,13 @@ function fitOut(
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
   // Lamps the furnished rooms will need (a trial lighting, taken back: they are lit after furnishing), plus a margin.
   const recipeRooms = roles.map((_, i) => i).filter((i) => drawOf(i));
-  let lamps = 0;
   for (const room of recipeRooms) {
     const n = lay.modules.length;
     lightRoom(lay, rng, room);
-    lamps += lay.modules.length - n;
+    for (let i = n; i < lay.modules.length; i++) demand -= Math.min(0, (defs[lay.modules[i]!.def] as ModuleDef).power);
     while (lay.modules.length > n) lay.pop();
   }
-  const lampPower = -((defs['module.light'] as ModuleDef | undefined)?.power ?? 0);
-  demand += lamps * lampPower;
+  const lampPower = -((defs[LAMP] as ModuleDef | undefined)?.power ?? 0);
   // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
   const margin = recipeRooms.length * lampPower;
   // Short of power after lighting: squeeze extra reactors into engineering or stores.

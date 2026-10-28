@@ -41,7 +41,7 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
     hp += r.hp;
     // Power off: every source is shut down. Emergency: sources run, but only lights and life support stay switched on.
     if (def.power > 0) m.enabled = meta.power === 'emergency' && r.state !== 'destroyed';
-    else if (def.power < 0) m.enabled = meta.power === 'emergency' && (m.def === 'module.light' || m.def === 'module.lifeSupport');
+    else if (def.power < 0) m.enabled = meta.power === 'emergency' && (!!def.light || m.def === 'module.lifeSupport');
   }
   const w = Math.max(1, ...template.rows.map((r) => r.length));
   for (const room of meta.rooms) {

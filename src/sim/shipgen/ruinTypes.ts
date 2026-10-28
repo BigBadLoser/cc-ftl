@@ -34,7 +34,7 @@ export interface RuinModule {
   hp: number;
   /** Can crew still repair it (damaged) or strip it for parts (destroyed)? */
   salvage: 'repair' | 'strip' | 'none';
-  /** Art to use instead of / over the normal sprite (e.g. 'decay.burnt.2x2', 'module.light.broken'). */
+  /** Art to use instead of / over the normal sprite (e.g. 'decay.burnt.2x2', 'module.light_grate.broken'). */
   art?: string;
   /** Lights only: alternate `art` with the normal sprite (a failing tube). */
   flicker?: boolean;
