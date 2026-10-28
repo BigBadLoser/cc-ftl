@@ -85,6 +85,20 @@ solvers against cold-cache full solves.
 
 New interactions should come from new field reads and writes, not new calls between systems.
 
+**Battle damage data (save v65), for the damage art; no sim system reads it yet.**
+- `hullDamage` (`combat/effects.ts`) writes the `wear` field. Every non-Space tile in the splash gains damage x
+  `WEAR_PER_HULL_DAMAGE`, capped at 255. That includes floor and module tiles, so the roof over them wears too.
+- `hullDamage` also records the shot in the ship's `HullHitsC`:
+  - fields: sector tile, where on the tile in 16ths, power, radius, a shape seed hashed from the shot, and the tick;
+  - at most `HULL_HITS_MAX` hits are kept, oldest dropped first;
+  - nothing is drawn from the rng, so combat outcomes are unchanged.
+- A wall or door shot to 0 hp breaches as before (Space on the hull, Floor inside) but keeps a `breach` mark (`Breach.Wall`
+  or `Breach.Door`), on the Space tile too. So the renderer can draw the broken piece and keep the hull's outline.
+- `writeStruct` clears both `breach` and `wear`, so a rebuilt tile starts fresh.
+- The look is set by the reference mocks in `tools/damage_mock` on the `art/walls-2x` branch: `breach_mock.py` for
+  walls, `roof_mock.py` for roofs. Roof holes never go through to the room below for now (TODO: a rare through-hole,
+  once something in the sim can justify it).
+
 ### 2. Entities: a small in-house ECS
 
 Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.

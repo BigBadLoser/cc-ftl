@@ -1,5 +1,5 @@
 import type { Grid } from '../grid';
-import { Struct, bordersSpace, syncOwner } from '../structure';
+import { Breach, Struct, bordersSpace, syncOwner } from '../structure';
 
 const sums = new WeakMap<Grid, { hp: number; struct: number; sum: number }>();
 
@@ -122,7 +122,10 @@ export const hullTiles = (grid: Grid): number => counts(grid).n;
  */
 export const hullArea = (grid: Grid): number => counts(grid).area;
 
-/** Reduce a wall/door tile's integrity. At 0 it breaches: Space if it borders space, else open Floor. Returns true on breach. */
+/**
+ * Reduce a wall/door tile's integrity. At 0 it breaches: Space if it borders space, else open Floor, marked with what it
+ * was (`breach`, kept on the Space tile too) so the renderer still draws it torn open in the hull. Returns true on breach.
+ */
 export function damageStruct(grid: Grid, x: number, y: number, amount: number): boolean {
   const kind = grid.get('struct', x, y);
   if (kind !== Struct.Wall && kind !== Struct.Door) return false;
@@ -133,6 +136,7 @@ export function damageStruct(grid: Grid, x: number, y: number, amount: number): 
   }
   grid.set('hp', x, y, 0);
   grid.set('struct', x, y, bordersSpace(grid, x, y) ? Struct.Space : Struct.Floor);
+  if (grid.has('breach')) grid.set('breach', x, y, kind === Struct.Door ? Breach.Door : Breach.Wall);
   grid.set('door', x, y, 0);
   if (grid.has('jam')) grid.set('jam', x, y, 0);
   syncOwner(grid, x, y);

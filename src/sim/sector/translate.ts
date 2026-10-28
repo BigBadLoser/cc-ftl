@@ -44,6 +44,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   marker: xy,
   yardCrew: null,
   hullPlan: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),
+  hullHits: (c, dx, dy) => (c.hits as Xy[]).forEach((h) => point(h, dx, dy)),
   miningPod: (c, dx, dy) => {
     point(c.target as Xy | null, dx, dy);
     (c.tiles as Xy[] | null)?.forEach((t) => point(t, dx, dy));

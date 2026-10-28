@@ -173,6 +173,10 @@ export const FLEE_BELOW = 0.3;
 /** Ticks between ship-state and AI re-evaluations. */
 export const SHIP_STATE_INTERVAL = 10;
 export const AI_RETARGET_TICKS = 40;
+/** Hull hits a ship remembers for the damage art (`HullHitsC`): the oldest goes when a new one lands past this. */
+export const HULL_HITS_MAX = 64;
+/** Battle wear (`wear` field, 0..255) a tile gains per point of hull damage landing on it (walls, floors and roofs alike). */
+export const WEAR_PER_HULL_DAMAGE = 0.25;
 /** Fire intensity set by incendiary hits. */
 export const IGNITE_INTENSITY = 90;
 /** Crew with operating priority at or below this level (1 or 2) will man consoles on their own. */

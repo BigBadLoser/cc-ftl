@@ -58,8 +58,16 @@ export const SHIP_FIELDS = {
   module: 'u32',
   /** Entity id of the loose item stack lying on the tile (0 = none). At most one stack per tile. */
   item: 'u32',
-  /** Integrity of structural tiles (wall, door) 0..255. At 0 the tile breaches (see combat/breach.ts). */
+  /** Integrity of structural tiles (wall, door) 0..255. At 0 the tile breaches (see combat/hull.ts `damageStruct`). */
   hp: 'u8',
+  /**
+   * What a breached tile was (`Breach`): a wall or door shot through becomes Space (on the hull) or Floor as before, but
+   * keeps this mark, so the renderer still draws the broken piece and the hull keeps its outline. Cleared when the tile's
+   * struct is rewritten (a rebuild).
+   */
+  breach: 'u8',
+  /** Battle wear 0..255: hull damage that has landed on or near the tile, roof and floor tiles too (render only, for now). */
+  wear: 'u8',
   /** Entity id of the owning `ShipC` for non-Space tiles (0 = none). Written by stamping; read by the sector grid. */
   ship: 'u32',
   /** Ore kind on a rock tile: an `OreDef.code` (content/ores.ts), 0 = none. Only rock tiles carry ore. */
@@ -86,6 +94,8 @@ export const SHIP_EMPTY = {
   module: 0,
   item: 0,
   hp: 0,
+  breach: 0,
+  wear: 0,
   ship: 0,
   ore: 0,
   oreAmt: 0,
@@ -152,6 +162,9 @@ export function gasConductance(kind: number, doorOpen: number): number {
   return 0;
 }
 
+/** What a breached tile was (`breach` field). */
+export const Breach = { None: 0, Wall: 1, Door: 2 } as const;
+
 /** Starting integrity of a wall or door tile. */
 export const STRUCT_MAX_HP = 255;
 
@@ -160,11 +173,16 @@ export function hasIntegrity(kind: number): boolean {
   return kind === Struct.Wall || kind === Struct.Door;
 }
 
-/** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise). Keeps the owner. */
+/**
+ * Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise); a rewritten tile is
+ * no longer a breach and carries no battle wear. Keeps the owner.
+ */
 export function writeStruct(grid: GridLike, x: number, y: number, kind: number): void {
   if (grid.get('struct', x, y) !== kind) grid.set('struct', x, y, kind);
   const hp = hasIntegrity(kind) ? STRUCT_MAX_HP : 0;
   if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
+  if (grid.has('breach') && grid.get('breach', x, y) !== Breach.None) grid.set('breach', x, y, Breach.None);
+  if (grid.has('wear') && grid.get('wear', x, y) !== 0) grid.set('wear', x, y, 0);
   if (grid.has('jam') && grid.get('jam', x, y) !== 0) grid.set('jam', x, y, 0);
   syncOwner(grid, x, y);
 }

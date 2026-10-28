@@ -8,8 +8,9 @@ import type { Effect } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
-import { IGNITE_INTENSITY, ION_STUN_RADIUS } from '../tuning';
-import { CombatC, IonC } from './components';
+import { HULL_HITS_MAX, IGNITE_INTENSITY, ION_STUN_RADIUS, WEAR_PER_HULL_DAMAGE } from '../tuning';
+import { hash32 } from '../galaxy/hash';
+import { CombatC, HullHitsC, IonC } from './components';
 import { damageStruct } from './hull';
 
 import { armorOf } from '../robots/core';
@@ -53,14 +54,32 @@ export function applyEffects(sim: Sim, impact: Impact, effects: readonly Effect[
 function hullDamage(sim: Sim, at: Impact, amount: number, radius: number, falloff: number): void {
   const grid = shipGrid(sim, at.shipId);
   if (!grid?.has('hp')) return;
+  recordHit(sim, at, amount, radius);
   for (let dy = -radius; dy <= radius; dy++) {
     for (let dx = -radius; dx <= radius; dx++) {
       const x = at.x + dx;
       const y = at.y + dy;
       if (!grid.inBounds(x, y) || isEngineWall(sim, at.shipId, x, y)) continue;
-      damageStruct(grid, x, y, dx === 0 && dy === 0 ? amount : amount * falloff);
+      const dealt = dx === 0 && dy === 0 ? amount : amount * falloff;
+      if (grid.has('wear') && grid.get('struct', x, y) !== Struct.Space) {
+        grid.set('wear', x, y, Math.min(255, grid.get('wear', x, y) + Math.round(dealt * WEAR_PER_HULL_DAMAGE)));
+      }
+      damageStruct(grid, x, y, dealt);
     }
   }
+}
+
+/** Remember a hull hit on its ship for the damage art (the oldest goes past `HULL_HITS_MAX`). Draws nothing from the rng. */
+function recordHit(sim: Sim, at: Impact, power: number, radius: number): void {
+  const seed = hash32(sim.tick, at.projectile, at.x, at.y);
+  const hit = { x: at.x, y: at.y, ox: seed & 15, oy: (seed >>> 4) & 15, power, radius, seed, tick: sim.tick };
+  const hits = sim.world.get(at.shipId, HullHitsC);
+  if (!hits) {
+    sim.world.add(at.shipId, HullHitsC, { hits: [hit] });
+    return;
+  }
+  hits.hits.push(hit);
+  if (hits.hits.length > HULL_HITS_MAX) hits.hits.splice(0, hits.hits.length - HULL_HITS_MAX);
 }
 
 /** True if an engine's armoured wall row covers the tile: it replaces the hull wall and never breaches. */

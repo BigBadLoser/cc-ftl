@@ -205,6 +205,30 @@ export interface Projectile {
 }
 export const ProjectileC = defineComponent<Projectile>('projectile');
 
+/**
+ * One shot that did hull damage, for the damage art: where it landed (sector tile, and where on the tile in 16ths) and
+ * how hard. The renderer tears the hull or roof open round it, shaped by `seed`, grown by the wear around it (`wear`).
+ */
+export interface HullHit {
+  x: number;
+  y: number;
+  /** Where on the tile, 0..15 each way. */
+  ox: number;
+  oy: number;
+  /** Hull damage at the centre, and its splash radius (tiles). */
+  power: number;
+  radius: number;
+  /** Shape seed (a hash of the shot: no rng drawn). */
+  seed: number;
+  tick: number;
+}
+
+/** On a ship entity: the hull hits it has taken, oldest first (at most `HULL_HITS_MAX`). Render-only data, for now. */
+export interface HullHits {
+  hits: HullHit[];
+}
+export const HullHitsC = defineComponent<HullHits>('hullHits');
+
 /** On a module disabled by ion: out of action until this tick. */
 export interface Ion {
   until: number;

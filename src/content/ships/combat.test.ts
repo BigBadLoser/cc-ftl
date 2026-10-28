@@ -4,6 +4,9 @@ import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
 import { shipIds } from '../../sim/regions';
+import { HullHitsC } from '../../sim/combat/components';
+import { Breach } from '../../sim/structure';
+import { HULL_HITS_MAX } from '../../sim/tuning';
 
 type Mod = NonNullable<ShipTemplate['modules']>[number];
 
@@ -176,6 +179,27 @@ describe('weapons', () => {
     expect(ofType(events, 'projectile.hit').length).toBeGreaterThan(0);
     expect(ofType(events, 'hull.breach').length).toBeGreaterThan(0);
     expect(meanO2()).toBeLessThan(8);
+    // the damage art's data: the hits remembered on the ship, wear round them, breached walls still marked
+    const target = shipIds(sim)[1] as number;
+    const g = shipGrid(sim, target)!;
+    const hits = sim.world.get(target, HullHitsC)?.hits ?? [];
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.length).toBeLessThanOrEqual(HULL_HITS_MAX);
+    for (const h of hits) {
+      expect(g.inBounds(h.x, h.y)).toBe(true);
+      expect(h.ox).toBeGreaterThanOrEqual(0);
+      expect(h.ox).toBeLessThan(16);
+    }
+    let worn = 0;
+    let breached = 0;
+    for (let y = 0; y < g.height; y++) {
+      for (let x = 0; x < g.width; x++) {
+        if (g.get('wear', g.x0 + x, g.y0 + y) > 0) worn++;
+        if (g.get('breach', g.x0 + x, g.y0 + y) === Breach.Wall) breached++;
+      }
+    }
+    expect(worn).toBeGreaterThan(0);
+    expect(breached).toBeGreaterThan(0);
   });
 
   it('mass driver passes one shield layer, laser does not', () => {
