@@ -7,8 +7,8 @@ exterior's (wall3d_ext_diag). Its top is the cut (walls.CUT's tone). The sides f
 ghost rim's height (walls.ZG) and hung under the deck, DROP deep, the last CURVE of it curving back under the ship (as
 the ghost hull's belly, hull.py). The far sides (the side diagonals too: edge-on, a belly under one shows only where it
 hangs over the rooms' floor) stand on the deck, cut at `far` (ZG in the shortest view level, the hull's full height
-where the far hull stays up), their inner faces (the hull's inside, toward the rooms) dark. Where a part ends past its neighbour (a far part over a near one, a near one's
-belly past a far one's floor) its end shows.
+where the far hull stays up), their inner faces (the hull's inside, toward the rooms) dark. Where a part ends past
+its neighbour (a far part over a near one, a near one's belly past a far one's floor) its end shows.
 
 Each piece is two sprites, as hull 46's two belly layers: `under`, all of it under the deck, drawn before the floors
 (a floor in front of a belly hides it: at a concave corner a run's belly hangs behind the next room's floor), and
