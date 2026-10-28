@@ -10,8 +10,8 @@ export default defineConfig({
   plugins: [
     sveltepress({
       siteConfig: {
-        title: 'CC-FTL Wiki',
-        description: 'Gameplay guides, ship systems, and equipment reference for CC-FTL.',
+        title: 'Gameplay Wiki',
+        description: 'Guides to ships, crew, equipment, and survival.',
       },
       theme: defaultTheme({
         logo: '/favicon.svg',
@@ -20,11 +20,23 @@ export default defineConfig({
           { title: 'Guides', to: '/guides/getting-started/' },
           { title: 'Mechanics', to: '/mechanics/power/' },
           { title: 'Reference', to: '/reference/modules/' },
-          { title: 'Play CC-FTL', to: 'https://bigbadloser.github.io/cc-ftl/' },
+          { title: 'Play', to: 'https://bigbadloser.github.io/cc-ftl/' },
         ],
+        // Keep generated reference entries in the searchable catalog, not the sidebar.
+        // The auto-sidebar grouped each index under an identical title,
+        // producing "Ship modules / Ship modules" and "Items / Items".
         sidebar: {
-          enabled: true,
-          roots: ['/guides/', '/mechanics/', '/reference/'],
+          '/guides/': [
+            { title: 'Getting started', to: '/guides/getting-started/' },
+          ],
+          '/mechanics/': [
+            { title: 'Power and reactors', to: '/mechanics/power/' },
+          ],
+          '/reference/': [
+            { title: 'Reference overview', to: '/reference/' },
+            { title: 'Ship modules', to: '/reference/modules/' },
+            { title: 'Items and resources', to: '/reference/items/' },
+          ],
         },
         themeColor: {
           primary: '#5899cd',

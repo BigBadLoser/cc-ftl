@@ -52,3 +52,87 @@
 .wiki-ref-list li a { font-weight: 600; color: #2970ae; }
 :root.dark .wiki-ref-list li a { color: #9acff6; }
 .wiki-ref-list li small { display: block; color: var(--wiki-subtle); margin-top: 0.15rem; }
+
+
+/* Navigation: center the guide tabs and keep search on the far right.
+ * SveltePress renders search before nav in the DOM; only the desktop
+ * visual order changes, preserving keyboard and mobile accessibility. */
+@media (min-width: 1200px) {
+  body .header-inner {
+    display: grid;
+    grid-template-columns: minmax(185px, 1fr) auto minmax(205px, 1fr);
+    align-items: stretch;
+    column-gap: 1.25rem;
+  }
+  body .header-inner.has-sidebar {
+    padding-left: 1rem;
+  }
+  body .header-inner > .left {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+  body .header-inner > .nav-links {
+    grid-column: 2;
+    grid-row: 1;
+    align-items: stretch;
+    justify-self: center;
+  }
+  body .header-inner > .nav-links .desktop-nav-items {
+    display: flex;
+  }
+  body .header-inner > .doc-search {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    flex-grow: 0;
+    width: min(100%, 220px);
+    margin-left: 0;
+  }
+  body .header-inner > .doc-search.move {
+    margin-left: 0;
+  }
+  body .header-inner > .doc-search .local-search-trigger {
+    max-width: 100%;
+  }
+}
+/* Below desktop-nav width, preserve the native mobile/compact menu but
+ * still position search at the right edge, beside the theme controls. */
+@media (min-width: 950px) and (max-width: 1199px) {
+  body .header-inner > .nav-links { order: 1; }
+  body .header-inner > .doc-search {
+    order: 2;
+    flex: 0 1 200px;
+    margin-left: auto;
+  }
+  body .header-inner > .doc-search.move { margin-left: auto; }
+}
+@media (max-width: 949px) {
+  body .header-inner > .nav-links { order: 1; }
+  body .header-inner > .doc-search {
+    order: 2;
+    flex-grow: 0;
+    width: min(42vw, 200px);
+    margin-left: auto;
+  }
+}
+
+/* Native SveltePress cards put their link arrow in an otherwise empty
+ * heading row. Place it alongside the title instead of reserving a row. */
+.home-page .feature-item.clickable {
+  position: relative;
+}
+.home-page .feature-item.clickable .feature-header {
+  position: absolute;
+  top: 1.55rem;
+  right: 1.5rem;
+  width: auto;
+  margin: 0;
+}
+.home-page .feature-item.clickable .feature-header-left:empty {
+  display: none;
+}
+.home-page .feature-item.clickable .feature-title {
+  padding-right: 2rem;
+}

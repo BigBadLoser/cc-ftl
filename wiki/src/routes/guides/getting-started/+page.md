@@ -4,7 +4,7 @@ order: 1
 ---
 
 
-CC-FTL is a persistent isometric spaceship-colony game. You direct crew, install modules, manage resources, explore the galaxy, and fight or negotiate with other ships.
+Build and maintain a spaceship colony. Direct crew, install modules, manage resources, explore the galaxy, and fight or negotiate with other ships.
 
 ## Your immediate priorities
 

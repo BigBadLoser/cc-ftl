@@ -4,7 +4,7 @@ order: 2
 ---
 
 
-Module entries are generated directly from CC-FTL's module registry. Use the filter to narrow the list by name or category.
+Module entries are generated directly from the game's module registry. Use the filter to narrow the list by name or category.
 
 <script lang="ts">
   import ModuleFilter from '../../../lib/ModuleFilter.svelte'
