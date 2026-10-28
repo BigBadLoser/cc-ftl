@@ -22,7 +22,9 @@
     onGo: () => void; onConfirm: () => void; onCancel: () => void; onToggle: (id: number) => void; onDrop: () => void; onClear: () => void; onRespond: (id: number, choice: UiEncounterChoice['choice']) => void;
   } = $props();
 
-  const travel = $derived(map.travel);
+  /** Adrift (a flee with no route yet): the node cards pick a course, and the ship can drop back where it fled from. */
+  const adrift = $derived(map.travel?.phase === 'adrift');
+  const travel = $derived(adrift ? null : map.travel);
   const owner = $derived(node?.faction ? factions.find((f) => f.id === node.faction) ?? null : null);
   const nameOf = (id: string): string => {
     const n = nodes.get(id);
@@ -73,6 +75,7 @@
     <p class="note" class:warn={travel.phase === 'noFuel'}>{dropNote}</p>
     <button class="go" onclick={onDrop} disabled={travel.stopping || blocked} data-testid="starmap-drop">Drop from hyperspace</button>
   {:else if node}
+    {#if adrift}{@render adriftCard()}{/if}
     <section>
       <h4>Sector</h4>
       <div class="row"><b>{sector?.known ? sector.name : 'Uncharted sector'}</b>{#if cluster?.revealed}<span class="dim">{cluster.name}, {cluster.typeLabel}</span>{/if}</div>
@@ -166,7 +169,19 @@
       <p class="note dim">No known route.</p>
     {/if}
   {/if}
+  {#if adrift && !node}{@render adriftCard()}{/if}
 </aside>
+
+{#snippet adriftCard()}
+  <section class="adrift" data-testid="starmap-adrift">
+    <h4>Adrift in hyperspace</h4>
+    <div class="cells">
+      <span class="cell" class:bad={map.fuel < 2} title="Fuel left"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
+    </div>
+    <p class="note dim">{node ? 'Jump to start the route from here.' : 'Pick a node to plot a course. No FTL charge is needed: the flee paid it.'}{map.fuel < 1 ? ' No fuel for any hop.' : ''}</p>
+    <button onclick={onDrop} data-testid="starmap-drop"><Icon name="station" size={16} />Return to {nameOf(map.current)}</button>
+  </section>
+{/snippet}
 
 <style>
   /* Solid under the near-opaque panel colour, so map labels never ghost through the text. */

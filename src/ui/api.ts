@@ -563,28 +563,9 @@ export interface UiAiming {
   weapon: number | null;
 }
 
-/** A node one jump from the fight, as the combat panel's flee control lists it. `dx`, `dy`: map offset from the current node. */
-export interface UiFleeNode {
-  id: string;
-  name: string;
-  known: boolean;
-  danger: number;
-  dx: number;
-  dy: number;
-  /** Fuel the jump burns and the FTL charge seconds it needs. */
-  fuel: number;
-  charge: number;
-  /** Why it cannot go now (null: one click jumps). */
-  blocker: 'notCharged' | 'noFuel' | null;
-}
-
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & {
-    weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null;
-    /** The nodes a flee can jump to (null in an event grid, where fleeing just leaves it). */
-    flee: UiFleeNode[] | null;
-  }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }

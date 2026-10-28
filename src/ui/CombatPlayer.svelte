@@ -10,8 +10,6 @@
   } = $props();
 
   const ready = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
-  const ftlPct = $derived(Math.min(100, Math.round((me.ftl / me.ftlMax) * 100)));
-  const canFlee = $derived(me.ftl >= me.ftlMax && me.state === 'active');
   const warnings: Record<string, string> = {
     weapons: 'Unmanned: weapons will not fire',
     shields: 'Unmanned: shields recharge slowly',
@@ -20,11 +18,7 @@
 
   const setHold = (hold: boolean) => api.dispatch({ type: 'combat.setHold', ship: me.ship, hold });
   const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
-  /** The flee control is open (the lanes out and the drive's charge, in the panel). In an event grid there is nothing to pick: fleeing just leaves it. */
-  let fleeOpen = $state(false);
   const helmManned = $derived(me.consoles.some((c) => c.kind === 'helm' && c.powered && c.operator !== null));
-  const flee = () => (me.flee ? (fleeOpen = !fleeOpen) : onFlee(me.ship));
-  const jumpTo = (to: string) => { fleeOpen = false; api.dispatch({ type: 'combat.flee', ship: me.ship, to }); };
   const clearWeapon = (weaponId: number) =>
     api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId, targetShip: 0, targetModuleId: 0 });
   const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -74,14 +68,9 @@
       <button class="big go" disabled={!ready} title={volleyTitle} aria-label="Fire volley" data-testid="combat-volley" onclick={volley}><Icon name="volley" size={20} />Fire Volley</button>
     </div>
     {#if me.idle}<div class="why" data-testid="combat-idle">{me.idle}</div>{/if}
-    {#if fleeOpen && me.flee}<FleeControl nodes={me.flee} charge={me.ftl} max={me.ftlMax} {helmManned} onJump={jumpTo} onClose={() => (fleeOpen = false)} />{/if}
+    <FleeControl charge={me.ftl} max={me.ftlMax} {helmManned} active={me.state === 'active'} onFlee={() => onFlee(me.ship)} />
     <div class="sec">
       {#if enemy}<button class="tile sm q" title="Hail: call them on the radio. Only ships that are not hostile answer" aria-label="Hail" data-testid="combat-hail" onclick={() => { api.dispatch({ type: 'trade.hail', ship: enemy.ship }); onHail(enemy.ship); }}><Icon name="hail" size={16} /><span class="cap">Hail</span></button>{/if}
-      <span class="ftl" class:full={canFlee} title="FTL charge: charges by itself while the helm is manned; short jumps need less than a full drive">
-        <button class="tile sm q go" class:on={fleeOpen} disabled={me.state !== 'active'}  title={canFlee ? 'Flee: the drive is charged, pick a node to jump to' : 'Flee: the drive charges while the helm is manned'} aria-label="Flee" aria-expanded={fleeOpen} data-testid="combat-flee" onclick={flee}><Icon name="fast" size={16} /><span class="cap">Flee</span></button>
-        <span class="bar"><i style="width:{ftlPct}%"></i></span>
-        {#if canFlee}<b class="rdy">Ready</b>{/if}
-      </span>
       <span class="sh" title="Your shield layers" data-testid="ship-meters"><Icon name="shield" size={14} /><b data-testid="shield-pips">{me.shield.layers}/{me.shield.max}</b><span class="cap">Shields</span></span>
       <span class="consoles" data-testid="combat-consoles">
         {#each me.consoles as c (c.id)}
@@ -129,9 +118,6 @@
   button.tile.q .cap { font-size: 10px; }
   .cap { font-size: 10px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
   .sh .cap { margin-left: 2px; }
-  .ftl { display: inline-flex; align-items: center; gap: 6px; } .ftl .bar { width: 44px; } .ftl.full .bar > i { background: var(--green); }
-  .ftl .rdy { color: var(--green); font: 600 10px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .ftl.full button.go { border-color: var(--green); color: var(--green); } button.tile.q.on { background: var(--panel-3); border-color: var(--cyan); }
   .go:not(:disabled) { color: var(--cyan); }
   .sh { display: inline-flex; align-items: center; gap: 4px; color: var(--cyan); } .sh b { color: var(--text); font-weight: 600; }
   .consoles { display: inline-flex; flex-wrap: wrap; gap: 4px; }

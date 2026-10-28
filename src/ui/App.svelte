@@ -77,11 +77,16 @@
   /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
   let star = $state<UiStarmap | null>(null);
   let deploy = $state<UiDeploy | null>(null);
+  /** Adrift (a flee with no route yet): the map opens when the ship goes adrift, then can be closed and reopened; the ship stays adrift. */
+  const adrift = $derived(star?.state === 'hyperspace' && star.travel?.phase === 'adrift');
+  let wasAdrift = false;
   $effect(() => {
     if (deploy) mapOpen = false; // dropped out: the picker takes over, and the map stays closed once deployed
-    else if (star?.state === 'hyperspace') mapOpen = true; // in hyperspace the map is the view
+    else if (star?.state === 'hyperspace' && !adrift) mapOpen = true; // in hyperspace the map is the view
+    else if (adrift && !wasAdrift) mapOpen = true;
+    wasAdrift = adrift;
   });
-  const mapLocked = $derived(star?.state === 'hyperspace');
+  const mapLocked = $derived(star?.state === 'hyperspace' && !adrift);
   /** A scan that found contraband aboard waits for the player's answer: shown over the game when the map is not open. */
   const scanning = $derived(star?.encounters.find((e) => !!e.contraband) ?? null);
   let selShip = $state<number | null>(null);

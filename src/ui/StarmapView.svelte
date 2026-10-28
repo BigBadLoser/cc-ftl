@@ -20,7 +20,11 @@
   /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
   let art = $state<UiStarArt | null>(null);
   /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
-  const locked = $derived(map?.state === 'hyperspace');
+  /** Adrift: a flee left the ship in hyperspace with no route. The map is the way to pick one (and can be closed: the ship stays adrift). */
+  const adrift = $derived(map?.travel?.phase === 'adrift');
+  const locked = $derived(map?.state === 'hyperspace' && !adrift);
+  /** The trip under way (not the adrift state, which has no route to draw). */
+  const trip = $derived(map?.travel && !adrift ? map.travel : null);
   let w = $state(800);
   let h = $state(600);
   /**
@@ -55,7 +59,7 @@
   const sel = $derived(selected ? nodeById.get(selected) ?? null : null);
   /** Recomputed whenever the map or its fuel/charge figures change. */
   const route = $derived<UiStarRoute | null>(map && sel && sel.known && !sel.current ? api.planRoute(sel.id) : null);
-  const travelPts = $derived(map?.travel ? map.travel.route.slice(map.travel.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
+  const travelPts = $derived(trip ? trip.route.slice(trip.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
   const routePts = $derived(travelPts || (route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : ''));
   const here = $derived(map ? sectorById.get(map.currentSector) ?? null : null);
   /**
@@ -214,7 +218,7 @@
   function frame(now: number) {
     const dt = lastFrame ? Math.min(100, now - lastFrame) : 16;
     lastFrame = now;
-    const tr = map?.travel;
+    const tr = trip;
     if (tr) {
       const key = `${tr.route[0]}>${tr.route.length}`;
       if (key !== tripKey && (tripKey === '' || tr.at === 0)) {
@@ -255,7 +259,7 @@
   });
   /** The ship marker on the lane it is gliding along (ends of the lane for the heading). */
   function shipAt(glide: number): StarmapGlide | null {
-    const tr = map?.travel;
+    const tr = trip;
     if (!tr) return null;
     const i = Math.min(tr.route.length - 2, Math.max(0, Math.floor(glide)));
     const a = nodeById.get(tr.route[i] as string);
@@ -361,7 +365,7 @@
       picked = hit ? { kind: 'sector', id: hit.id } : null;
       selected = picked ? routeInto(picked.id) : null;
     } else if (level === 3) picked = hit ? { kind: 'cluster', id: hit.id } : null;
-    else if (hit && hit.id === selected && route && !route.blocker && !route.overweight && map?.state === 'active') go();
+    else if (hit && hit.id === selected && route && !route.blocker && !route.overweight && (map?.state === 'active' || adrift)) go();
     else {
       selected = hit?.id ?? null;
       confirming = null;
@@ -394,12 +398,13 @@
    * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). A jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
    */
   function go(queue = false, overcharge = false) {
-    if (!route || !map || map.state !== 'active') return;
+    if (!route || !map || (map.state !== 'active' && !adrift)) return;
     if (queue ? route.chargeOk : route.blocker) return;
     // A hull over what the engines carry only goes by the Overcharge button.
     if (route.overweight && !overcharge) return;
     overcharging = overcharge;
     queueing = queue;
+    if (adrift) return fly(); // nothing is left behind: the ship has already left the node
     const w = api.jumpWarnings(map.ship);
     if (w.crew.length || w.vehicles.length || w.hostileDocked.length) {
       confirming = w;
@@ -435,7 +440,7 @@
 
 <div class="starmap" data-testid="starmap" data-mode="browse">
   <div class="head">
-    <PanelHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+    <PanelHead icon="map" title="Starmap" sub={adrift ? 'Adrift in hyperspace' : locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
       onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
   </div>
   <div class="statbar">

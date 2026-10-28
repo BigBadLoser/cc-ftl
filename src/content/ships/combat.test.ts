@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, spawnCrew, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, CrewC, spawnCrew, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
@@ -342,25 +342,23 @@ describe('enemy AI, endings', () => {
     run(sim, 20 * 25);
     expect(combatOf(sim, 1).ftl).toBeGreaterThan(5);
     combatOf(sim, 1).ftl = 40;
-    const fuel = playerItems(sim, 'item.fuel');
     sim.enqueue({ type: 'combat.flee', ship: nth(sim, 1) });
     const events = run(sim, 40);
-    // One escape path: the same lift, archive and hyperspace trip as `galaxy.jump`, a one-hop route to the cheapest connected node.
+    // The same lift and archive as `galaxy.jump`, but adrift: no route yet, and no fuel burned. Dropping goes back to the node fled from.
     const entered = ofType(events, 'galaxy.hyperspace');
     expect(entered).toHaveLength(1);
-    const to = entered[0]!.route[1]!;
+    const from = entered[0]!.route[0]!;
+    expect(entered[0]!.route).toHaveLength(1);
     expect(ofType(events, 'ship.fled')).toEqual([]);
     expect(sim.sector).toMatchObject({ state: 'hyperspace', inCombat: false });
-    expect(sim.archives.map((a) => a.node)).toEqual([entered[0]!.route[0]]);
-    for (let i = 0; i < 2000 && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { sim.step(); sim.story.active = null; }
-    expect(sim.galaxy.current).toBe(to);
+    expect(sim.galaxy.travel).toMatchObject({ phase: 'adrift' });
+    expect(sim.archives.map((a) => a.node)).toEqual([from]);
     sim.enqueue({ type: 'galaxy.drop' });
     run(sim, 1);
-    expect(sim.sector).toMatchObject({ state: 'deploying', node: to });
+    expect(sim.sector).toMatchObject({ state: 'deploying', node: from });
     sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
     run(sim, 1);
     expect(combatOf(sim, 1).ftl).toBeLessThan(40);
-    expect(playerItems(sim, 'item.fuel')).toBeLessThan(fuel);
   });
 
   it('a badly damaged raider with a charged drive retreats', () => {
