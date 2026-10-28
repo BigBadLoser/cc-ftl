@@ -19,10 +19,9 @@ XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam 
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 9),         # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (8, 26)),                # the centre plate, a px proud (a faint shade under it), lit along its
-    "panel_line": 15,                           # top; a soft seam across it (2 px)
-    "lip": (26, 2, 4, 2),                       # the lip under it: a soft band (v, px) lit under, the face's width,
-    "slope_seam": ((7, 8), (24, 25)),           # its middle (inset px at each end) px deeper; seams down the slope,
-}                                               # a px in from the plate's sides; one across it
+    "panel_line": 15,                           # top; a soft seam across it (2 px); a px of shade under it
+    "slope_seam": ((7, 8), (24, 25)),           # seams down the slope, a px in from the plate's sides; one across it
+}
 
 
 def section():
@@ -48,9 +47,8 @@ def build(s2):
 
 def _look1(f, s, back):
     """D3 look 1 over the tile: the lit lip under the cut, the top's seams along its front and back, a seam across each
-    side plate, the centre plate a px proud (lit along its top, a seam across it with shade under, a faint shade under
-    it), a seam across the face under it (its lit lip stepped down in the middle), the slope's crease and rim, two
-    seams down it and one across its middle."""
+    side plate, the centre plate a px proud (lit along its top, a soft seam across it, a px of shade under it), the
+    slope's crease and rim, two seams down it and one across its middle."""
     def U(a, b):                                    # (px from the +u end -> u0, u1)
         return 0.5 - T3.px(b), 0.5 - T3.px(a)
 
@@ -67,16 +65,12 @@ def _look1(f, s, back):
     with f.tag("panel"):
         (a, b), (v0, v1) = LOOK1["panel"]
         u0, u1 = U(a, b)
-        f.shade(u0, u1, Z(v1), Z(v0), YS[1], side=0.0)
+        f.shade(u0, u1, Z(v1), Z(v1 - 2), YS[1], side=0.0)           # (under it only: the plate hides half)
         f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
         on = (LINE - 0.01, LINE + PAINT)                        # (painted on its front, as T3's bolts)
         vl = LOOK1["panel_line"]
         for z0, z1, col in ((Z(v0 + 1), Z(v0), YS[4]), (Z(vl + 2), Z(vl), XS)):
             f.raised(u0, u1, z0, z1, *on, col=col)
-    with f.tag("lip"):                                          # (tiered: its middle a step deeper)
-        vb, t, e, x = LOOK1["lip"]
-        for (a, b), h in (((0, e), t), ((e, 32 - e), t + x), ((32 - e, 32), t)):
-            f.line(*U(a, b), Z(vb + h), Z(vb), XS, weight=1.0)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)

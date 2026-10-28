@@ -238,7 +238,8 @@ class Face:
         in from it): `side` px beside its far (-u) end and `under` px under it (the part hides half a px of that),
         where its unseen faces are (painted behind the part, over the seams: it hides the rest; never across the
         bend). (On the lean its side runs slant on screen: a px there breaks into dots, so it takes more.)"""
-        zb = self.sec.zb if z0 >= self.sec.zb - 1e-6 else 0.0
+        bend = self.sec.under[0] if self.sec.under else 0.0     # (the upright's foot: a belly's hangs under 0)
+        zb = self.sec.zb if z0 >= self.sec.zb - 1e-6 else bend
         pf = self.on(max(zb, self.sec.z_at(z0, under)), z1, base - 0.01, base + SHADE)
         col = T.SEAM_PASS or col                        # (a plate's edge: a seam it may spring along)
         self.part(u0 - side * LINE, u1, pf, [col] * len(pf), col, end=False)
