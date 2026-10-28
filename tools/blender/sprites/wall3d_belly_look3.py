@@ -39,7 +39,8 @@ def look3(f, s, back, U, Z, cols):
     with f.tag("grille"):                                           # (the plate: its top and its +u end, where it
         d = s.front(foot, foot)[0][0]                               # meets the face, in the soft shade)
         fr = d + LOOK3["plate"][1] * LINE
-        zb, zt = max(foot, Z(pv1)), Z(pv0)
+        px = s.H - Z(1)                                             # (a px of height: the face and the plate
+        zb, zt = s.H - pv1 * px, Z(pv0)                             # straight, the plate on past the foot)
         pp = [(d - 0.01, zb), (fr, zb), (fr, zt), (d - 0.01, zt)]
         pc = s.cols(pp, "face")
         pc[2] = XS
@@ -59,8 +60,10 @@ def look3(f, s, back, U, Z, cols):
         for p in range(ga, gb, 2):                                  # (soft gaps between the slats, on its front)
             pf = [(fr - 0.01, Z(gv1)), (fr + PAINT, Z(gv1)), (fr + PAINT, Z(gv0)), (fr - 0.01, Z(gv0))]
             f.part(*U(p, p + 1), pf, [XS] * 4, XS, end=False)
-    with f.tag("slope"):                                            # (the face's edge on the slope, its +u end, rim)
-        z0 = s.z_at(foot, 0.5)
-        f.line(-0.5, 0.5, s.z_at(z0, 2), z0, CREASE, bevel=False)
+    with f.tag("slope"):                                            # (the face's and the plate's edge on the
+        x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
+        for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pb), x + 0.5, 3.5), ((pb, 32), 0.5, 2)):
+            z0 = s.z_at(foot, n)
+            f.line(*U(ua, ub), s.z_at(z0, w), z0, CREASE, bevel=False)
         f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
