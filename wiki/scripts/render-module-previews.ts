@@ -30,7 +30,7 @@ const world = new World();
 const mult = 128 / manifest.tile.w; // 2× world/art conversion; mirrors composeManifest().
 const HW = 64, HH = 32;
 const box = { w: 300, h: 200 };
-const result: Record<string, { url: string; art: boolean; layers: number; placeholder: boolean }> = {};
+const result: Record<string, { url: string; art: boolean; layers: number; placeholder: boolean; gameFallback?: boolean }> = {};
 const cache = new Map<string, string>();
 sharp.cache(false);
 sharp.concurrency(2);
@@ -62,7 +62,44 @@ async function rawFrame(id: string, asset: StaticAsset): Promise<string> {
   return base64;
 }
 
-let withArt=0, blank=0, multi=0, totalLayers=0;
+// Port of src/render/containerBox.ts for the one module without atlas art.
+// The game already displays this ribbed placeholder box; reproduce those
+// polygons at build time instead of inventing unrelated cargo-container art.
+async function gameContainerFallback(w: number, h: number): Promise<Layer> {
+  const K=2, z=Math.round(0.8 * (128/4) * Math.sqrt(6));
+  const N={x:0,y:-HH}, E={x:w*HW,y:(w-1)*HH};
+  const S={x:(w-h)*HW,y:(w+h-1)*HH}, W={x:-h*HW,y:(h-1)*HH};
+  const minX=W.x,minY=N.y-z, cw=E.x-W.x+2*K,ch=S.y-minY+2*K;
+  const P=(p:{x:number;y:number},up=0)=>[p.x-minX+K,p.y-minY+K-up] as const;
+  const poly=(pts:ReadonlyArray<readonly [number,number]>,fill:string,stroke='rgba(30,22,18,0.9)')=>
+    '<polygon points="'+pts.map(p=>p.join(',')).join(' ')+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/>';
+  const color=(k:number)=>'rgb('+[222,132,58].map(v=>Math.round(v*k)).join(',')+')';
+  let shapes=poly([P(W),P(S),P(S,z),P(W,z)],color(.62))
+    +poly([P(S),P(E),P(E,z),P(S,z)],color(.8))
+    +poly([P(N,z),P(E,z),P(S,z),P(W,z)],color(1));
+  for(const [a,b,n] of [[W,S,w*2],[S,E,h*2]] as const){
+    for(let i=1;i<n;i++){
+      const t=i/n, [x,y]=P({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+      shapes+='<line x1="'+Math.round(x)+'" y1="'+(y-2*K)+'" x2="'+Math.round(x)+'" y2="'+(y-z+2*K)+'" stroke="'+color(.45)+'" stroke-width="2"/>';
+    }
+  }
+  // The renderer defaults to north-facing clamps when none are assigned.
+  const a=N,b=E,mid={x:(N.x+S.x)/2,y:(N.y+S.y)/2};
+  const inset=(p:{x:number;y:number},t:number)=>({
+    x:p.x+(mid.x-(a.x+b.x)/2)*t,
+    y:p.y+(mid.y-(a.y+b.y)/2)*t
+  });
+  const t=.7/Math.max(w,h);
+  shapes+=poly([P(a,z),P(b,z),P(inset(b,t),z),P(inset(a,t),z)],color(.55),'none');
+  const [ax,ay]=P(a,z),[bx,by]=P(b,z);
+  shapes+='<line x1="'+(ax+(bx-ax)*.12)+'" y1="'+(ay+(by-ay)*.12)+'" x2="'+(ax+(bx-ax)*.88)+'" y2="'+(ay+(by-ay)*.88)+'" stroke="rgb(255,214,60)" stroke-width="6"/>';
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+cw+'" height="'+ch+'" viewBox="0 0 '+cw+' '+ch+'">'+shapes+'</svg>';
+  const bytes=await sharp(Buffer.from(svg)).png().toBuffer();
+  const front=iso(w-1,h-1);
+  return {left:front.x-((w-h)*HW-minX+K),top:front.y-((w+h-2)*HH-minY+K),
+    w:cw,h:ch,png:bytes.toString('base64'),z:w+h-2-.05};
+}
+let withArt=0, blank=0, multi=0, totalLayers=0, fallbacks=0;
 for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompare(b))) {
   const def = original;
   const [w,h] = def.footprint;
@@ -103,6 +140,10 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     } catch (e) {
       console.warn('Preview layer omitted for '+id+': '+String(e));
     }
+  }
+  if (def.container && layers.length === 0) {
+    layers.push(await gameContainerFallback(w,h));
+    fallbacks++;
   }
   if (def.weapon || def.pointDefense) {
     const turretStem=def.asset.replace(/^module\./,'');
@@ -173,9 +214,9 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     +'</svg>';
   const name=slug(id)+'.png';
   await sharp(Buffer.from(svg)).resize(600,400,{kernel:'nearest'}).png({compressionLevel:9}).toFile(join(dest,name));
-  result[id]={url:urlPrefix+name,art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt};
+  result[id]={url:urlPrefix+name,art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt,gameFallback:!!def.container && layers.length>0};
   if(layers.length){withArt++;if(layers.length>1)multi++;totalLayers+=layers.length;}else {blank++;console.warn('No atlas artwork for module '+id+' ('+def.name+')');}
 }
 await mkdir(join(root,'src/data/generated'),{recursive:true});
 await writeFile(join(root,'src/data/generated/previews.json'),JSON.stringify(result,null,2)+'\n');
-console.log('Placement previews: '+Object.keys(result).length+' modules; '+withArt+' with actual atlas art ('+multi+' composite), '+blank+' footprint-only; '+totalLayers+' layers total.');
+console.log('Placement previews: '+Object.keys(result).length+' modules; '+(withArt-fallbacks)+' with atlas art ('+multi+' composite), '+fallbacks+' with game fallback art, '+blank+' footprint-only; '+totalLayers+' layers total.');
