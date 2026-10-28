@@ -100,7 +100,8 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
         const cy = px((c.top.y + c.bottom.y) / 2);
         const rx = Math.min(px((c.right.x - c.left.x) / 2), px(footprintQuad(0, 0, 2, 2, { x: 0, y: 0 }, 0, project, 0).right.x) ) * 0.8;
         const ry = rx / 2;
-        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(2), color: C_OUTLINE, alpha: 0.6 });
+        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(4), color: C_OUTLINE, alpha: 0.7 });
+        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(2), color: C_THREAT, alpha: 0.35 });
         if (t.left > 0.01) {
           const n = Math.max(2, Math.ceil(t.left * 32));
           for (let i = 0; i <= n; i++) {
@@ -110,7 +111,7 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
             if (i === 0) gfx.moveTo(X, Y);
             else gfx.lineTo(X, Y);
           }
-          gfx.stroke({ width: px(3), color: C_THREAT, alpha: pulse, cap: 'butt' });
+          gfx.stroke({ width: px(4), color: C_THREAT, alpha: pulse, cap: 'butt' });
         }
         gfx.circle(cx, cy, px(2)).fill({ color: C_THREAT, alpha: pulse });
       }
