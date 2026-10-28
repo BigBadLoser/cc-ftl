@@ -5,7 +5,8 @@ import type { Sim } from '../sim';
 import { freeAirlock, playerShip } from '../trade/player';
 import { Struct } from '../structure';
 import { takeMetal } from './money';
-import { MAX_PLAN, quoteYard } from './plan';
+import { MAX_PLAN, plannedTiles, quoteYard } from './plan';
+import { changeViolations } from './width';
 import { postHullJobs, postTrussJobs } from './jobs';
 import { finishOrder } from './flow';
 import { HullPlanC, isLiveOrder, type YardOrder } from './types';
@@ -36,7 +37,7 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
   /**
    * `hull.plan`: set the plan for a player ship's outer hull: the tiles (sector tiles of open space) the ship should one day have as hull. Replaces
    * the plan; an empty list clears it. Free, at any time, and kept with the ship. Rejected: `badGrid` (not a player ship), `badValue`
-   * (not whole tiles, too many, or too far from the ship). Tiles that are not open space or the ship's own truss are dropped.
+   * (not whole tiles, too many, or too far from the ship), `narrowHull` (the replan would leave part of the ship narrower than 3 tiles). Tiles that are not open space or the ship's own truss are dropped.
    */
   'hull.plan': (sim, cmd) => {
     const s = sim.world.get(cmd.ship, ShipC);
@@ -51,6 +52,8 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
       return k === Struct.Space || (k === Struct.Beam && sim.sector.grid.get('ship', t.x, t.y) === cmd.ship);
     };
     const tiles = cmd.tiles.filter(open).map((t) => ({ x: t.x, y: t.y }));
+    // the 3-wide rule: a replan may not add a narrow part (a replan that only keeps or removes what was already narrow is fine)
+    if (changeViolations(sim, cmd.ship, plannedTiles(sim, cmd.ship), tiles).length > 0) return reject(sim, cmd.type, 'narrowHull');
     if (tiles.length === 0) sim.world.remove(cmd.ship, HullPlanC);
     else if (sim.world.has(cmd.ship, HullPlanC)) (sim.world.get(cmd.ship, HullPlanC) as { tiles: unknown }).tiles = tiles;
     else sim.world.add(cmd.ship, HullPlanC, { tiles });

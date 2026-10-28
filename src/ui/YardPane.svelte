@@ -8,7 +8,7 @@
    * yard prices what it can build on this visit and you buy it), and the running order with its progress and a Send them home button.
    */
   let { api, station, yard: svc, credits, metal }: { api: UiApi; station: number; yard: UiYardService; credits: number; metal: number } = $props();
-  let view = $state<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
+  let view = $state<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
   onMount(() => {
     api.watchYard(station);
     const u = api.yard.subscribe((y) => (view = y));

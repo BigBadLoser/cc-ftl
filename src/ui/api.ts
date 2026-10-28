@@ -750,6 +750,8 @@ export interface UiHullPlan {
   loose: { x: number; y: number }[];
   blocked: { x: number; y: number }[];
   floor: { x: number; y: number }[];
+  /** Tiles of the plan (with the floor it shuts in) that would leave part of the ship narrower than 3 tiles; empty when the plan is fine. */
+  bad: { x: number; y: number }[];
   /** Hull tiles now and with every reachable planned tile built, against the engines' capacity. */
   hull: { now: number; afterAll: number; capacity: number };
 }
@@ -976,8 +978,17 @@ export interface UiToolState {
   rot: number;
   /** The 'mine' tool: pod ids the painted ore is ordered to (empty = every pod). */
   pods?: number[];
-  /** The 'hull' tool (the outer hull plan): whether a drag erases planned tiles instead of adding a rectangle's outline. */
-  hull?: { erase: boolean };
+  /** The 'hull' tool (the outer hull plan's brushes). */
+  hull?: {
+    /** The brush: a rectangle (dragged out, at least 3x3) or a straight line (0, 45 or 90 degrees) that cuts the plan. */
+    brush: 'rect' | 'line';
+    /** Take planned tiles out instead of putting them in. */
+    erase: boolean;
+    /** Mirror every stroke across the ship's long axis. */
+    mirror: boolean;
+    /** The tool's report for the bar while dragging: why the stroke would not apply, or ''. */
+    note?: string;
+  };
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';
@@ -1120,7 +1131,7 @@ export interface UiApi {
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
   moduleThumb(def: string, rot: number): UiThumb | null;
   /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */
-  placeHint: Subscribable<{ x: number; y: number; text: string } | null>;
+  placeHint: Subscribable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
   setCutaway(mode: UiCutaway): void;

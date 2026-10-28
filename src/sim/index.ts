@@ -155,6 +155,8 @@ export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from
 export { playerStock } from './story/world';
 export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';
 export { quoteYard, viewPlan, plannedTiles, type YardQuote, type HullView, type YardError } from './yard/plan';
+export { brushPlan, cutPlan, touchesShip, type BrushResult } from './yard/brush';
+export { planViolations, planFootprint } from './yard/width';
 export { yardService, yardPrice, type YardService } from './yard/rules';
 export { liveOrderOf } from './yard/order';
 export { abortYards, YARD_HISTORY } from './yard/flow';

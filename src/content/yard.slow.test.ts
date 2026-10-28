@@ -30,14 +30,14 @@ describe('shipyard: bigger jobs', () => {
   }, 300000);
 
   it('trusses the whole plan outside the cap, turns up to the cap into hull, and leaves the rest as trusses that persist and are converted at the next yard without a second fee', () => {
-    // A small yard (8 tiles a visit) and a small plan keep the run short.
-    const small = { ...content, yard: { ...content.yard, sizes: { ...content.yard.sizes, station: { cap: 8, price: 1 } } } };
+    // A small yard (12 tiles a visit (a smaller cap cannot build a part 3 wide)) and a small plan keep the run short.
+    const small = { ...content, yard: { ...content.yard, sizes: { ...content.yard.sizes, station: { cap: 12, price: 1 } } } };
     const { sim, station, me } = yardGame('station', 'station.trading', small);
     giveItems(sim, 'item.metal', 200);
     planHull(sim, me, outline(sim, me, 8, -2, 6, 3)); // 14 tiles of outline round 4 floor: more than one visit builds
     const q1 = quoteYard(sim, station, me);
-    expect(q1.trusses.length).toBeGreaterThan(8); // the planning pass is not held to the cap
-    expect(q1.walls.length + q1.floor.length).toBeLessThanOrEqual(8);
+    expect(q1.trusses.length).toBeGreaterThan(12); // the planning pass is not held to the cap
+    expect(q1.walls.length + q1.floor.length).toBeLessThanOrEqual(12);
     expect(q1.fee.credits).toBe(2 * q1.trusses.length);
     const credits = sim.trade.credits;
     sim.enqueue({ type: 'yard.order', station });
@@ -55,7 +55,7 @@ describe('shipyard: bigger jobs', () => {
     run(sim, 6000, () => !isLiveOrder(o1));
     expect(o1.phase).toBe('done');
     const b1 = builtCount(sim, o1);
-    expect(b1.floor + b1.walls).toBeLessThanOrEqual(8);
+    expect(b1.floor + b1.walls).toBeLessThanOrEqual(12);
     expect(b1.truss).toBe(o1.trusses.length);
     // What is left of the plan is still trussed (open scaffolding).
     const left = plannedTiles(sim, me);

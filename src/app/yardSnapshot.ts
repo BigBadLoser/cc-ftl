@@ -1,4 +1,4 @@
-import { HullPlanC, ShipC, Struct, shipGrid, playerItems, hullLoad, isLiveOrder, quoteYard, viewPlan, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import { HullPlanC, ShipC, Struct, shipGrid, playerItems, hullLoad, isLiveOrder, quoteYard, viewPlan, planViolations, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
 import type { UiHullPlan, UiYard, UiYardOrder, UiYardQuote, UiYardService } from '../ui/api';
 import { rejectionMessage } from './messages';
 
@@ -37,7 +37,7 @@ export function planOf(sim: Sim): UiHullPlan {
   const v = viewPlan(sim);
   const grid = sim.sector.grid;
   const open = (t: Tile): boolean => grid.get('struct', t.x, t.y) === Struct.Space; // nothing is drawn over a truss
-  return { ship: playerShip(sim), tiles: v.tiles, connected: v.connected, loose: v.loose, blocked: v.blocked, floor: v.floor.filter(open), hull: v.hull };
+  return { ship: playerShip(sim), tiles: v.tiles, connected: v.connected, loose: v.loose, blocked: v.blocked, floor: v.floor.filter(open), bad: planViolations(sim, playerShip(sim), v.tiles), hull: v.hull };
 }
 
 /** What the yard of `station` would build of the plan now. */

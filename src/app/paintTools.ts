@@ -15,7 +15,7 @@ const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'h
 
 export interface PaintDeps {
   tool: Writable<UiToolState>;
-  placeHint: Writable<{ x: number; y: number; text: string } | null>;
+  placeHint: Writable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   renderer(): Renderer | undefined;
   showToast(msg: string): void;
   homeShipId(): number;
@@ -32,7 +32,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
   back(): void;
 } {
   const { tool, placeHint, showToast, homeShipId } = deps;
-  const hullPlan = createHullPlanTool(bridge, { tool, renderer: deps.renderer, ship: homeShipId });
+  const hullPlan = createHullPlanTool(sim, bridge, { tool, placeHint, renderer: deps.renderer, ship: homeShipId });
   let modPos: Tile | null = null;
   /** The renderer is drawing a placement ghost (so it must be cleared when the mode ends). */
   let ghostOn = false;
@@ -80,7 +80,10 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     return out;
   };
   const refreshPreview = () => {
+    deps.renderer()?.setWorldGrid(tool.get().tool === 'build'); // the world grid shows while the build tools are open
+    if (!hullPlan.active()) deps.renderer()?.setCutLine([]);
     if (hullPlan.active()) {
+      hullPlan.setHover(hover);
       deps.renderer()?.setHover(null);
       deps.renderer()?.setPreview([]);
       placeHint.set(null);
