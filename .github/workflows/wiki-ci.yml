@@ -69,6 +69,12 @@ jobs:
           "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/navy.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/factions/navy/
           "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/research.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/research/
           test -s wiki-preview/modules.png
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/engine-mk2.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/engine-mk2/
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/airlock.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/airlock/
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/freight-container.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/cargo-container/
+          test -s wiki-preview/engine-mk2.png
+          test -s wiki-preview/airlock.png
+          test -s wiki-preview/freight-container.png
           test -s wiki-preview/reactor.png
           test -s wiki-preview/weapons.png
           test -s wiki-preview/mass-driver.png
