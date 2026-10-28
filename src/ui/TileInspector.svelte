@@ -5,7 +5,6 @@
   import PanelHead from './PanelHead.svelte';
   import ItemIcon from './ItemIcon.svelte';
   import InspectorAction from './InspectorAction.svelte';
-  import DamageControl from './DamageControl.svelte';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let info = $state<UiInspect | null>(null);
@@ -50,7 +49,6 @@
         <dt>{f.name}</dt><dd>{Number.isInteger(f.value) ? f.value : f.value.toFixed(2)}</dd>
       {/each}
     </dl>
-    <DamageControl {api} ship={info.ship} hazard={info.hazard} />
     {#if info.stack?.crate}
       {@const crate = info.stack.crate}
       <InspectorAction testid="inspect-crate" resetKey={crate.job} message="Sealed delivery: {crate.title}, to {crate.to}."

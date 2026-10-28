@@ -23,12 +23,6 @@ export type Command =
   | { type: 'debug.setModuleHp'; id: number; hp: number }
   | { type: 'debug.ignite'; ship: number; x: number; y: number }
   | { type: 'debug.setField'; ship: number; x: number; y: number; field: string; value: number }
-  /** Damage control: send the nearest able crew member to put out the fires of a room (tile by tile until it is out), then back to their post. */
-  | { type: 'damage.fightFire'; ship: number; room: number }
-  /** Damage control: send the nearest able crew member, suited if the air is thin, to wall up the hull breach of a room with the usual wall materials. */
-  | { type: 'damage.sealBreach'; ship: number; room: number }
-  /** Damage control: send the nearest able crew member to repair a damaged module. */
-  | { type: 'damage.repair'; module: number }
   /** Put a damaged module at the top of the repair queue (`on`), or take it off again. */
   | { type: 'module.priorityRepair'; id: number; on: boolean }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }

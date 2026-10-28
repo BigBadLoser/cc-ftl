@@ -2,16 +2,14 @@ import { CrewC, ModuleC, PositionC, roomTiles, Struct, homeShip, type Command, t
 import { shipGrid } from '../sim/regions';
 
 /**
- * `?scenario=damage`: playtest damage control. Three burning tiles in one room, a hole in the hull of another, and the reactor
- * badly damaged. Everything is set through debug commands; the caller pauses the game so the first look is the untouched scene.
+ * `?scenario=damage`: playtest damage control. Two burning tiles in one room, a hole in the hull of another, and the reactor
+ * badly damaged. Everything is set through debug commands; crew answer the fire and the breach on their own.
  */
 export function damageScenarioCommands(sim: Sim): Command[] {
   const ship = homeShip(sim);
   const grid = shipGrid(sim, ship);
   if (!grid) return [];
   const out: Command[] = [];
-  // Nobody answers on their own (firefighting, repair and construction off), so the damage waits for an order.
-  for (const id of sim.world.query(CrewC)) for (const category of ['firefighting', 'repair', 'construction'] as const) out.push({ type: 'crew.setPriority', id, category, value: 0 });
   const crew = sim.world.query(CrewC).flatMap((id) => { const p = sim.world.get(id, PositionC); return p ? [p] : []; });
   const dist = (x: number, y: number): number => Math.min(...crew.map((p) => Math.abs(p.x - x) + Math.abs(p.y - y)), 99);
   const rooms = [...roomTiles(grid).entries()].sort((a, b) => b[1].length - a[1].length);
@@ -22,11 +20,17 @@ export function damageScenarioCommands(sim: Sim): Command[] {
   if (fireRoom) {
     const floor = fireRoom[1].map(at).filter((t) => grid.get('struct', t.x, t.y) === Struct.Floor && !grid.get('module', t.x, t.y));
     floor.sort((a, b) => dist(b.x, b.y) - dist(a.x, a.y));
-    for (const t of floor.slice(0, 3)) out.push({ type: 'debug.ignite', ship, x: t.x, y: t.y });
+    for (const t of floor.slice(0, 2)) out.push({ type: 'debug.ignite', ship, x: t.x, y: t.y });
   }
   // Breach: a hull wall of another room (the biggest first) with open space, or the edge of the grid, straight behind it.
   const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+  // Not the airlock's room: its suits are the way out to a hole, and a vented airlock room cannot give them.
+  const hasAirlock = (tiles: readonly number[]): boolean => tiles.some((i) => {
+    const m = sim.world.get(grid.get('module', at(i).x, at(i).y), ModuleC);
+    return !!m && !!sim.content.modules[m.def]?.airlock;
+  });
   for (const [, tiles] of rest) {
+    if (hasAirlock(tiles)) continue;
     const wall = tiles.map(at).flatMap((t) => dirs.map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy, bx: t.x + 2 * dx, by: t.y + 2 * dy })))
       .find((n) => grid.inBounds(n.x, n.y) && grid.get('struct', n.x, n.y) === Struct.Wall && !grid.get('module', n.x, n.y) && (!grid.inBounds(n.bx, n.by) || grid.get('struct', n.bx, n.by) === Struct.Space));
     if (wall) {

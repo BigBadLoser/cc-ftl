@@ -36,7 +36,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'damageOrder']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     const { pilot, cruisePilot, cruiseEvasion, ...rest } = raw as Record<string, unknown>;
@@ -247,4 +247,7 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };
+// Repinned for automatic damage control (#181): every working role now does damage control at priority 1 (was 2; the hashed world holds crew priorities, so
+// the combat hash changes by that alone: with the old role table it still gives c28a5816), and crew seal hull breaches by themselves (a wall build in the
+// firefighting category), which changes the fire and breach run.
+const EXPECTED = { combat: 'a01f1f5a', disaster: '6317c54b' };

@@ -10,7 +10,7 @@ import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
 import { containerHandlers } from './containers/handlers';
 import { crewHandlers } from './crew/handlers';
-import { damageHandlers } from './crew/damageControl';
+import { repairHandlers } from './crew/priorityRepair';
 import { evaHandlers } from './eva/handlers';
 import { fightHandlers } from './fight/handlers';
 import { galaxyHandlers } from './galaxy/handlers';
@@ -35,7 +35,7 @@ type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { typ
 /** One handler per command type. The compiler requires an entry for every Command variant. */
 export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...crewHandlers,
-  ...damageHandlers,
+  ...repairHandlers,
   ...fightHandlers,
   ...combatHandlers,
   ...captureHandlers,

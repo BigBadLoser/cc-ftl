@@ -203,9 +203,8 @@ const scenario = params.get('scenario');
 function startScenario(): void {
   if (scenario === 'damage') {
     loop.setSpeed(1);
-    // Rooms exist after the first ticks: set the scene then, and pause once the debug commands landed so the first look is the fresh scene.
+    // Rooms exist after the first ticks: set the scene then. Crew answer the fire and the breach on their own.
     setTimeout(() => { for (const cmd of damageScenarioCommands(sim)) bridge.dispatch(cmd); }, 600);
-    setTimeout(() => loop.setSpeed(0), 3500);
     return;
   }
   if (scenario !== 'hullplan') return;

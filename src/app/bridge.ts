@@ -1,8 +1,8 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage, UiHazard } from '../ui/api';
+import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
-import { buildModuleDefs, buildModuleList, buildStats, roomHazard } from './moduleSnapshot';
+import { buildModuleDefs, buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
 import { buildJobs } from './jobsSnapshot';
 import { buildStranded } from './strandedSnapshot';
@@ -60,7 +60,6 @@ export interface InspectSnapshot extends TileRef {
   stack: { item: string; name: string; count: number; crate: { job: number; title: string; to: string } | null } | null;
   /** Room id, or 0 when none. */
   room: number;
-  hazard: UiHazard;
   fields: { name: string; value: number }[];
   /** A player job on the tile (building, forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
@@ -218,7 +217,6 @@ export function createBridge(sim: Sim): Bridge {
         stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count, crate: crateInfo(sim, st.job) } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,
-        hazard: roomHazard(sim, shipId, fields.find((f) => f.name === 'room')?.value ?? 0),
         fields,
         selected: selected !== null,
       };

@@ -86,20 +86,6 @@ export interface Drafted {
 }
 export const DraftedC = defineComponent<Drafted>('drafted');
 
-/**
- * A damage-control order (sim/crew/damageControl): the crew member works `kind` in `room` / on `module` until it is done, then goes
- * back to `post` (the console job they held, 0 for none). `job` is the order job they hold now (0 between two).
- */
-export interface DamageOrder {
-  kind: 'fire' | 'breach' | 'repair';
-  ship: number;
-  room: number;
-  module: number;
-  job: number;
-  post: number;
-}
-export const DamageOrderC = defineComponent<DamageOrder>('damageOrder');
-
 /** The job a crew member has reserved/is doing. */
 export interface Assignment {
   jobId: number;
