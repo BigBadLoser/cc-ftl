@@ -12,6 +12,16 @@ import type { ShipRoleDef } from './types';
 
 export const SECURITY_ROLE = 'role.security';
 
+/**
+ * A room grown past its planned size, which stays its floor (some rooms should be small): most gain one to three
+ * tiles along their long side and up to two across; a quarter keep the planned size.
+ */
+function grown(rng: Rng, r: RoomSpec): RoomSpec {
+  if (rng.chance(0.25)) return r;
+  const along = rng.int(1, 3), across = rng.int(0, 2);
+  return r.w >= r.h ? { ...r, w: r.w + along, h: r.h + across } : { ...r, w: r.w + across, h: r.h + along };
+}
+
 /** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
 const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
 
@@ -58,21 +68,21 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   const quarters: RoomSpec[] = [];
   for (let i = 0; i < crew.length; i += 4) {
     const beds = Math.min(4, crew.length - i);
-    quarters.push({ role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: 6, h: 3 });
+    quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: 6, h: 3 }));
   }
   const support: RoomSpec[] = [];
   for (let i = 0; i < 1 + Math.floor(crew.length / 10); i++) {
-    support.push({ role: 'support', mods: ['module.lifeSupport', ...(i === 0 ? ['module.fabricator'] : [])], w: 5, h: 3 });
+    support.push(grown(rng, { role: 'support', mods: ['module.lifeSupport', ...(i === 0 ? ['module.fabricator'] : [])], w: 5, h: 3 }));
   }
   for (const r of def.rooms) {
     for (let i = 0; i < r.count[size]; i++) {
-      support.push({ role: r.role, mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) });
+      support.push(grown(rng, { role: r.role, mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) }));
     }
   }
   // Two docks come with every ring and lattice; the rest are planned here.
   for (let i = 2; i < t.docks; i++) support.push(dockSpec());
   const cargo: RoomSpec[] = [];
-  for (let left = t.crates; left > 0; left -= 6) cargo.push(cargoSpec(Math.min(6, left)));
+  for (let left = t.crates; left > 0; left -= 6) cargo.push(grown(rng, cargoSpec(Math.min(6, left))));
   // Shuttle bays, as on boarding ships (a court may take them over as the hangar deck: stationCourts.ts).
   const hangars: RoomSpec[] = Array.from({ length: t.bays ?? 0 }, () => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
   const plan: ShipPlan = {

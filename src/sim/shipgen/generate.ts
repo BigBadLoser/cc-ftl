@@ -6,7 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, companionFits, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, type RoomDraw } from './rooms';
 import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -106,27 +106,29 @@ function fitOut(
     const place = (): PlacedModule | null => (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
       ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
     let pm = place();
-    // A host that needs flush companions (a refinery's ore bins) goes where one fits (tried, then taken back: furnishing
-    // sets them once every host is in): a spot with no room for one is given up and the next best tried (marked
-    // keep-clear meanwhile), up to six spots; if every spot went, the host goes back to its best one without them.
+    let at = lay.modules.length - 1;
+    // A host that needs flush companions (a refinery's ore bins) goes in with its first one: a spot with no room for one
+    // is given up and the next best tried (marked keep-clear meanwhile), up to twenty spots; if every spot went, the host
+    // goes back to its best one without. Furnishing tops the companions up in turns.
     const w = d && si >= 0 ? d.arr.steps[si]?.with : undefined;
     if (pm && w) {
       const banned: number[] = [];
-      for (let t = 0; t < 6 && pm && !companionFits(lay, rng, j.room, pm, w); t++) {
+      for (let t = 0; t < 20 && pm && !claimCompanion(lay, rng, j.room, pm, w); t++) {
         lay.pop();
         const i = pm.y * lay.w + pm.x;
         banned.push(i);
         lay.keep[i] = (lay.keep[i] as number) + 1;
         pm = place();
+        at = lay.modules.length - 1;
       }
       for (const i of banned) lay.keep[i] = (lay.keep[i] as number) - 1;
-      if (!pm) pm = place();
+      if (!pm) { pm = place(); at = lay.modules.length - 1; }
     }
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
-    const idx = lay.modules.length - 1;
-    stockUp(idx, j.spec);
-    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
+    // The host, then any companion that went in with it.
+    for (let i = at; i < lay.modules.length; i++) stockUp(i, j.spec);
+    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(at);
   }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {

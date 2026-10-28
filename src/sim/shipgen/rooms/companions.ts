@@ -1,6 +1,6 @@
 /**
- * Flush companions: the ore bins that go against a refinery's feed end. Placed planned hosts are checked for room for
- * one (generate.ts), and furnishing sets them once every host is in (furnish.ts).
+ * Flush companions: the ore bins that go against a refinery's feed end. A planned host is placed with its first one
+ * (generate.ts), and furnishing tops them up in turns once every host is in (furnish.ts).
  */
 import type { Rng } from '../../rng';
 import { accessTile, footprintTiles, rotatedSize } from '../../modules/footprint';
@@ -96,11 +96,10 @@ export function withCompanions(lay: Layout, rng: Rng, room: number, host: Placed
   return big + (had + big < w.n ? flank(lay, rng, room, host, w.mod, w.n - had - big) : 0);
 }
 
-/** True if the host has a flush companion or a small one would fit beside it (tried, then taken back). */
-export function companionFits(lay: Layout, rng: Rng, room: number, host: PlacedModule, w: With): boolean {
-  if (flushCount(lay, host, w) > 0) return true;
-  const n0 = lay.modules.length;
-  const got = flank(lay, rng, room, host, w.mod, 1);
-  while (lay.modules.length > n0) lay.pop();
-  return got > 0;
+/**
+ * True if the host has a flush companion, or one went in now (the big one if it fits, and it stays: hosts placed later
+ * cannot take its floor; the rest come in turns while furnishing).
+ */
+export function claimCompanion(lay: Layout, rng: Rng, room: number, host: PlacedModule, w: With): boolean {
+  return flushCount(lay, host, w) > 0 || withCompanions(lay, rng, room, host, { ...w, n: 1 }) > 0;
 }
