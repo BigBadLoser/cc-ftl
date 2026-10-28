@@ -36,7 +36,6 @@ export function createNodeLayer(ctx: Ctx, root: Container, map: UiStarmap): Node
   let st = { sc: null as Scene | null, ship: false, k: 1 };
   const pieces: Piece[] = map.nodes.map((n) => {
     const p = piece(marks, [n.x, n.y, n.x, n.y], (gf, g) => {
-      const sc = st.sc!;
       const k = st.k;
       const o = (fn: (o: ReturnType<typeof newOps>) => void, color: number, alpha = 1) => {
         const ops = newOps();
@@ -53,7 +52,7 @@ export function createNodeLayer(ctx: Ctx, root: Container, map: UiStarmap): Node
         o((x) => pixelDiamondRing(x, n.x, n.y, 9 * k, g), pal.red);
       }
       o((x) => pixelDiamond(x, n.x, n.y, (n.current ? 6 : 5) * k, g), n.current ? pal.cyan : n.visited ? pal.text : pal.dim);
-      if (n.reachable && !st.ship && (!sc.only || sc.only.has(n.id))) o((x) => pixelDiamondRing(x, n.x, n.y, 10 * k, g), pal.green);
+      if (n.reachable && !st.ship) o((x) => pixelDiamondRing(x, n.x, n.y, 10 * k, g), pal.green);
       if (n.current && !st.ship) o((x) => pixelDiamondRing(x, n.x, n.y, 13 * k, g), pal.cyan);
     });
     return p;
@@ -83,10 +82,6 @@ export function createNodeLayer(ctx: Ctx, root: Container, map: UiStarmap): Node
       st = { sc, ship, k: 1 / cam.s };
       last = { sc, cam, v, g };
       for (const p of pieces) p.gfx.alpha = 1;
-      pieces.forEach((p, i) => {
-        const n = map.nodes[i]!;
-        p.gfx.alpha = sc.only && !sc.only.has(n.id) && !n.current ? 0.35 : 1;
-      });
       syncPieces(pieces, v, g, 100 / cam.s);
       if (zoomed) dropOrbits();
       const m = 100 / cam.s;

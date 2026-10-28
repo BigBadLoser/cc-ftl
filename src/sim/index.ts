@@ -128,7 +128,7 @@ export { applyOvercharge, riskOf, OVERCHARGE_FULL, type OverchargeRisk, type Ove
 export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } from './ftl/status';
 export { cheapestHop, distressBlocker, fuelOnSale, isStranded, tugQuote, type TugQuote } from './galaxy/stranded';
 export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge, jumpFuel, engineFuelFactor } from './galaxy/fuel';
-export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
+export { routeEdges, routeBlocker, routeCharge, hopTicksOf, isAdrift } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
 export { clearBlocker, clearCost, grudgeOf, huntPressure, isWanted, notorietyOf } from './galaxy/heat';
 export { WANTED_AT } from './galaxy/tuningHeat';

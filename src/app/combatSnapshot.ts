@@ -1,5 +1,6 @@
 import {
-  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC, type Sim, type Target,
+  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
+  type Sim, type Target,
 } from '../sim';
 import type { UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
 import { shipIdOf } from '../sim/regions';

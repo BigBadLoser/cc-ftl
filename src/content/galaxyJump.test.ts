@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, fuelStock, galaxyIndex, hopTicksOf, newGame, playerShip, routeEdges, serialize, type Sim,
+  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, fuelStock, galaxyIndex, hopTicksOf, jumpFuel, newGame, playerShip, routeEdges, serialize, type Sim,
 } from '../sim';
 import { ensureAround } from '../sim/galaxy/state';
 import { giveItems, takeItems } from '../sim/story/effects';
@@ -170,22 +170,108 @@ describe('hyperspace travel', () => {
     expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.drop', reason: 'notInHyperspace' });
   });
 
-  it('flees along a one-hop route to the cheapest neighbour', () => {
-    const sim = newGame(14, content);
-    const ship = playerShip(sim);
-    sim.enqueue({ type: 'combat.flee', ship });
-    expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'combat.flee', reason: 'notCharged' });
-    charge(sim);
-    sim.enqueue({ type: 'combat.flee', ship, to: 'nowhere' });
-    expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'combat.flee', reason: 'noRoute' });
-    const edges = [...(galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? [])].sort((p, q) => p.fuel - q.fuel || p.charge - q.charge || (p.id < q.id ? -1 : 1));
-    const cheapest = edges.find((e) => e.charge <= FTL_CHARGE_SEC)!;
-    sim.enqueue({ type: 'combat.flee', ship });
-    const events = step(sim);
-    expect(events.find((e) => e.type === 'galaxy.hyperspace')).toMatchObject({ route: [START_NODE, cheapest.a === START_NODE ? cheapest.b : cheapest.a] });
-    expect(sim.sector.state).toBe('hyperspace');
-    untilStops(sim);
-    expect(sim.galaxy.travel).toMatchObject({ phase: 'arrived' });
+  describe('flee: adrift in hyperspace with no route', () => {
+    /** A new game with the drive full, fled: adrift. */
+    function fled(seed: number): Sim {
+      const sim = newGame(seed, content);
+      charge(sim);
+      sim.enqueue({ type: 'combat.flee', ship: playerShip(sim) });
+      step(sim);
+      return sim;
+    }
+
+    it('needs the full charge, then spends it and enters hyperspace with no route and no fuel burned', () => {
+      const sim = newGame(14, content);
+      const ship = playerShip(sim);
+      sim.enqueue({ type: 'combat.flee', ship });
+      expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'combat.flee', reason: 'notCharged' });
+      expect(sim.sector.state).toBe('active');
+      charge(sim);
+      const fuel = fuelStock(sim);
+      sim.enqueue({ type: 'combat.flee', ship });
+      const events = step(sim);
+      expect(events.find((e) => e.type === 'galaxy.hyperspace')).toMatchObject({ route: [START_NODE], charge: FTL_CHARGE_SEC });
+      expect(sim.sector.state).toBe('hyperspace');
+      expect(sim.galaxy.travel).toMatchObject({ phase: 'adrift', route: [START_NODE], at: 0 });
+      expect(sim.galaxy.current).toBe(START_NODE);
+      expect(fuelStock(sim)).toBe(fuel);
+      expect(sim.world.get(ship, CombatC)?.ftl ?? 0).toBe(0);
+    });
+
+    it('stays adrift as time passes, and a destination pick pays the first hop\'s fuel and no charge', () => {
+      const sim = fled(15);
+      step(sim, 400);
+      expect(sim.galaxy.travel).toMatchObject({ phase: 'adrift' });
+      const to = neighbour(sim, START_NODE);
+      const edge = routeEdges(sim, [START_NODE, to])![0]!;
+      const fuel = fuelStock(sim);
+      const fuelCost = jumpFuel(sim, edge.fuel);
+      jump(sim, [to]);
+      const events = step(sim);
+      expect(events.some((e) => e.type === 'command.rejected')).toBe(false);
+      expect(events.find((e) => e.type === 'galaxy.hyperspace')).toMatchObject({ route: [START_NODE, to], charge: 0 });
+      expect(fuel - fuelStock(sim)).toBe(fuelCost);
+      expect(fuelCost).toBeGreaterThan(0);
+      expect(sim.galaxy.travel).toMatchObject({ phase: 'hop', route: [START_NODE, to] });
+      untilStops(sim);
+      expect(sim.galaxy.current).toBe(to);
+      expect(sim.galaxy.travel).toMatchObject({ phase: 'arrived' });
+    });
+
+    it('rejects a course with no fuel for the first hop, and the ship stays adrift', () => {
+      const sim = fled(16);
+      takeItems(sim, 'item.fuel', fuelStock(sim));
+      jump(sim, [neighbour(sim, START_NODE)]);
+      expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.jump', reason: 'noFuel' });
+      expect(sim.galaxy.travel).toMatchObject({ phase: 'adrift' });
+      sim.enqueue({ type: 'galaxy.drop' });
+      step(sim);
+      expect(sim.sector).toMatchObject({ state: 'deploying', node: START_NODE });
+    });
+
+    it('rejects a jump that does not join the node fled', () => {
+      const sim = fled(17);
+      jump(sim, ['nowhere']);
+      expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.jump', reason: 'noRoute' });
+      expect(sim.galaxy.travel).toMatchObject({ phase: 'adrift' });
+    });
+
+    it('drop returns to the node fled from at no fuel cost', () => {
+      const sim = fled(18);
+      const fuel = fuelStock(sim);
+      sim.enqueue({ type: 'galaxy.drop' });
+      const events = step(sim);
+      expect(events.some((e) => e.type === 'command.rejected')).toBe(false);
+      expect(sim.sector).toMatchObject({ state: 'deploying', node: START_NODE });
+      expect(sim.galaxy.travel).toBeNull();
+      deploy(sim);
+      expect(sim.sector.state).toBe('active');
+      expect(fuelStock(sim)).toBe(fuel);
+    });
+
+    it('survives a save and load while adrift, and then goes on exactly the same', () => {
+      const a = fled(19);
+      step(a, 50);
+      const b = deserialize(serialize(a), content);
+      expect(b.galaxy.travel).toMatchObject({ phase: 'adrift', route: [START_NODE] });
+      const to = neighbour(a, START_NODE);
+      for (const sim of [a, b]) {
+        jump(sim, [to]);
+        step(sim, 100);
+      }
+      expect(serialize(b)).toEqual(serialize(a));
+    });
+
+    it('is deterministic', () => {
+      const run = (): string => {
+        const sim = fled(20);
+        step(sim, 100);
+        jump(sim, [neighbour(sim, START_NODE)]);
+        step(sim, 200);
+        return JSON.stringify(serialize(sim));
+      };
+      expect(run()).toBe(run());
+    });
   });
 
   it('materialises a node\'s contacts when the ship drops, and the archive owns them afterwards', () => {
