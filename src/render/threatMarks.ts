@@ -6,7 +6,7 @@ import { ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { WeaponDef } from '../sim/registry';
 import { ROOF_H } from './heights';
-import { footprintQuad, isoBracketSegments, padQuad } from './targetBrackets';
+import { armLength, footprintQuad, isoBracketSegments, padQuad, type Seg } from './targetBrackets';
 
 const C_THREAT = 0xff5a5a;
 const C_OUTLINE = 0x05080d;
@@ -85,23 +85,32 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
       const lift = host.roofed(ref) ? ROOF_H : 0;
       const px = (n: number) => n / s;
       const now = performance.now();
-      for (const t of threats(ref)) {
+      // Weapons aimed at the same area alternate the mark: even ones hug the iso footprint, odd ones are screen-aligned (turned 90 degrees
+      // against it, so the pair reads as a square and a diamond); a third and later get a few px more room.
+      const seen = new Map<string, number>();
+      for (const t of threats(ref).sort((a, b) => a.key - b.key)) {
+        const area = `${t.x},${t.y},${t.w},${t.h}`;
+        const nth = seen.get(area) ?? 0;
+        seen.set(area, nth + 1);
+        const turned = nth % 2 === 1;
+        const extra = 2 + 3 * Math.floor(nth / 2);
         const project = (ax: number, ay: number) => ({ x: ax * s, y: ay * s });
         const r = t.radius;
         const quad = footprintQuad(t.x - r, t.y - r, t.w + 2 * r, t.h + 2 * r, { x: 0, y: 0 }, lift, project, 0);
         const pulse = t.flying ? 1 : 0.7 + 0.3 * Math.sin(now / (60 + 240 * t.left));
-        for (const sg of isoBracketSegments(padQuad(quad, 2))) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
+        const segs = turned ? alignedSegments(padQuad(quad, extra)) : isoBracketSegments(padQuad(quad, extra));
+        for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
         gfx.stroke({ width: px(6), color: C_OUTLINE, alpha: 0.85, cap: 'square' });
-        for (const sg of isoBracketSegments(padQuad(quad, 2))) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
+        for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
         gfx.stroke({ width: px(3), color: C_THREAT, alpha: pulse, cap: 'square' });
         // Countdown ring on the aim area: a squashed (iso) circle whose lit arc shrinks to nothing as the shot comes.
         const c = footprintQuad(t.x, t.y, t.w, t.h, { x: 0, y: 0 }, lift, project, 0);
         const cx = px((c.left.x + c.right.x) / 2);
         const cy = px((c.top.y + c.bottom.y) / 2);
-        const rx = Math.min(px((c.right.x - c.left.x) / 2), px(footprintQuad(0, 0, 2, 2, { x: 0, y: 0 }, 0, project, 0).right.x) ) * 0.8;
+        const rx = (turned ? 1.18 : 1) * Math.min(px((c.right.x - c.left.x) / 2), px(footprintQuad(0, 0, 2, 2, { x: 0, y: 0 }, 0, project, 0).right.x) ) * 0.8;
         const ry = rx / 2;
-        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(4), color: C_OUTLINE, alpha: 0.7 });
-        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(2), color: C_THREAT, alpha: 0.35 });
+        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(6), color: C_OUTLINE, alpha: 0.8 });
+        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(3), color: C_THREAT, alpha: 0.4 });
         if (t.left > 0.01) {
           const n = Math.max(2, Math.ceil(t.left * 32));
           for (let i = 0; i <= n; i++) {
@@ -111,10 +120,21 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
             if (i === 0) gfx.moveTo(X, Y);
             else gfx.lineTo(X, Y);
           }
-          gfx.stroke({ width: px(4), color: C_THREAT, alpha: pulse, cap: 'butt' });
+          gfx.stroke({ width: px(6), color: 0xff8a8a, alpha: Math.max(0.85, pulse), cap: 'butt' });
         }
         gfx.circle(cx, cy, px(2)).fill({ color: C_THREAT, alpha: pulse });
       }
     },
   };
+}
+
+/** Corner brackets of the quad's screen-aligned bounding box (the iso brackets turned to a square), 8 segments. */
+function alignedSegments(q: { top: { x: number; y: number }; right: { x: number; y: number }; bottom: { x: number; y: number }; left: { x: number; y: number } }): Seg[] {
+  const x0 = q.left.x, x1 = q.right.x, y0 = q.top.y, y1 = q.bottom.y;
+  const a = armLength(Math.min(x1 - x0, y1 - y0));
+  const out: Seg[] = [];
+  for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1]] as const) {
+    out.push({ x1: x, y1: y, x2: x + dx * a, y2: y }, { x1: x, y1: y, x2: x, y2: y + dy * a });
+  }
+  return out;
 }

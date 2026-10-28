@@ -45,6 +45,12 @@ function legacyWorld(sim: Sim): unknown {
     void cruiseEvasion;
     return [id, rest];
   });
+  // The telegraph's `commit` on weapons came with the incoming-fire marker (#180): not part of the legacy shape.
+  stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
+    const { commit, ...rest } = raw as Record<string, unknown>;
+    void commit;
+    return [id, rest];
+  });
   // `freeSince` on operate jobs came with station relief: not part of the legacy shape.
   stores.job = (stores.job ?? []).map(([id, raw]) => {
     const { freeSince, ...rest } = raw as Record<string, unknown>;
@@ -247,5 +253,4 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-// Repinned for the incoming-fire telegraph (#180): enemy weapons now carry a `commit` field in the world JSON this hash covers. Outcomes are unchanged (with `commit` left out of the JSON the old hash c28a5816 still comes out).
-const EXPECTED = { combat: '3eddf766', disaster: 'fa40fdbe' };
+const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };
