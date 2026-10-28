@@ -162,7 +162,7 @@ describe('station jobs', () => {
 
   it('a station with a shuttle of its own sends it first; the player\'s shuttle is the fallback', () => {
     const { sim, job } = takeOffer('delivery', 'trade');
-    const kinds = Object.values(content.trade!.traders);
+    const kinds = Object.values(content.trade!.traders) as { shuttle: boolean }[];
     const was = kinds.map((k) => k.shuttle);
     for (const k of kinds) k.shuttle = true;
     try {
