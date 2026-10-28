@@ -1667,7 +1667,7 @@ SPRITES.append(("concept.floor_inset_grate.flat", (1, 1), "block", floor_inset_g
 
 
 def floor_wheel_framed():
-    """The wheel with the framed grate's choices: a light grey frame ring, no bolts, its outer edge 0.45 of a tile
+    """The wheel with the framed grate's choices: a light grey frame ring with eight bolts, lighter spokes, its outer edge 0.45 of a tile
     (the grate's margin), level with the deck."""
     k = K("lc_f_wheel_framed", (1, 1), 0)
     outer, lip, d, n = 0.45, 0.07, 0.1, 64
@@ -1682,14 +1682,17 @@ def floor_wheel_framed():
                     (-math.cos(mid), -math.sin(mid), 0), col)
     k.cyl(0, 0, -d - 0.02, r + 0.02, 0.02, "steelD", sides=n)
     k.cyl(0, 0, -d, r - 0.02, 0.02, "fxW", sides=n)                                        # the light
-    _annulus(k, -0.004, 0.11, 0.135, "steelD", top="steel", h=0.018)                       # grate rings
-    _annulus(k, -0.004, 0.23, 0.255, "steelD", top="steel", h=0.018)
-    for a in range(8):                                                                 # spokes
-        ang = a * math.pi / 4 + math.pi / 8
+    _annulus(k, -0.004, 0.12, 0.15, "steel", top="steelL", h=0.018)                        # grate rings, as light
+    _annulus(k, -0.004, 0.235, 0.265, "steel", top="steelL", h=0.018)                      # as the spokes
+    for a in range(8):                                                                 # spokes (one toward the camera,
+        ang = a * math.pi / 4                                                          # splitting the near cell)
         k.box((r / 2 + 0.03) * math.cos(ang), (r / 2 + 0.03) * math.sin(ang), -0.004, r - 0.06, 2.2 * PX, 0.018,
-              "steelD", top="steel", rz=ang)
-    k.cyl(0, 0, -0.004, 0.065, 0.022, "steel", top="steelL", sides=32)                     # hub
+              "steel", top="steelL", rz=ang)                                               # lighter spokes
+    k.cyl(0, 0, -0.004, 0.08, 0.022, "steel", top="steelL", sides=32)                      # hub (covers the gap below it)
     _annulus(k, 0.0, r, outer, "steelD", top="gm", h=0.012)                                 # the frame ring
+    for a in range(8):                                                                 # bolts round the frame
+        ang = a * math.tau / 8
+        k.cyl((r + lip / 2) * math.cos(ang), (r + lip / 2) * math.sin(ang), 0.012, 0.02, 0.006, "steelD", sides=8)
     k.m.dz = -0.016                                                                    # top level with the deck
     return [*k.build(), _holdout_round("lc_f_wheel_framed_h", outer, n)]
 
