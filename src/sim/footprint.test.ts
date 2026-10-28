@@ -215,6 +215,8 @@ describe('footprint width rule', () => {
         g.set('ship', x, y, 7);
       }
     }
+    g.set('struct', 5, 5, Struct.Beam); // a strut is not hull
+    g.set('ship', 5, 5, 7);
     g.set('struct', 6, 1, Struct.Wall);
     g.set('ship', 6, 1, 8);
     const f7 = footprintFromGrid(g, 7);

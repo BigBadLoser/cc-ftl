@@ -277,7 +277,6 @@ const api: UiApi = {
   tool: controller.tool,
   toast: controller.toast,
   setTool: controller.setTool,
-  shapeAction: controller.shapeAction,
   selectCrew: controller.selectCrew,
   dispatch: bridge.dispatch,
   setSpeed: bridge.setSpeed,

@@ -101,6 +101,7 @@ const REASONS: Record<string, string> = {
   overlap: 'That overlaps another base',
   tooClose: 'Too close to another base or outpost',
   narrowHull: 'No part of the ship can be narrower than 3 tiles',
+  narrowCut: 'This yard cannot build part of that plan without leaving a strip narrower than 3 tiles: plan it deeper, or use a bigger yard',
   moduleHere: 'A module stands there: remove it first',
   notRock: 'That only works on asteroid rock',
   notJammed: 'That door is not jammed',

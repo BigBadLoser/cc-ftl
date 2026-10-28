@@ -112,8 +112,6 @@ export interface Job {
   progress: number;
   /** Crew entity that reserved it, or 0. */
   reservedBy: number;
-  /** Made by `job.buildArea` / `job.clearArea`: re-checked against the hull width rule when it completes (see crew/hullArea.ts). */
-  area?: boolean;
   /** For 'operate' jobs: the tick since which nobody holds it (absent while someone does). Crew with a low operating priority relieve it after RELIEF_AFTER_SEC. */
   freeSince?: number;
   /** For 'module' jobs: the blueprint. */

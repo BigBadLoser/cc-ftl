@@ -71,7 +71,8 @@ export function footprintFromTiles(tiles: Iterable<TileXY>): Footprint {
 }
 
 /**
- * Footprint of a ship read from the sim grid: every non-Space `struct` tile. When `shipId` is given and the grid has a
+ * Footprint of a ship read from the sim grid: every `struct` tile except Space and `Struct.Beam`. Struts (including the yard's scaffolding
+ * trusses) are exempt from the width rule, so only hull counts. When `shipId` is given and the grid has a
  * `ship` layer, only tiles owned by that ship count (a sector view holds several ships).
  */
 export function footprintFromGrid(grid: GridLike, shipId?: number): Footprint {
@@ -79,7 +80,8 @@ export function footprintFromGrid(grid: GridLike, shipId?: number): Footprint {
   const tiles: TileXY[] = [];
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
     for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
-      if (grid.get('struct', x, y) === Struct.Space) continue;
+      const kind = grid.get('struct', x, y);
+      if (kind === Struct.Space || kind === Struct.Beam) continue;
       if (useOwner && grid.get('ship', x, y) !== shipId) continue;
       tiles.push({ x, y });
     }
