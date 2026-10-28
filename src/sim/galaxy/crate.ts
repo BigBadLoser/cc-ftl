@@ -5,7 +5,9 @@ import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { playerShips, playerStorages } from '../story/world';
+import { isLive } from '../trade/deals';
 import { playerShip } from '../trade/player';
+import { cargoTake } from '../vehicles/cargo';
 import type { StationJob } from './types';
 
 /**
@@ -25,22 +27,38 @@ export function crateOf(sim: Sim, jobId: number): number | undefined {
   });
 }
 
-/** Set a delivery's crate on deck beside the player's first hold (else beside any module). False when there is no free floor near it. */
-export function loadCrate(sim: Sim, jobId: number): boolean {
+/** The module of the player's ship crates are set beside: its first hold, else any module. */
+const holdSpot = (sim: Sim) => {
   const ship = playerShip(sim);
-  const at = [...playerStorages(sim), ...sim.world.query(ModuleC)].map((id) => sim.world.get(id, ModuleC)).find((m) => m && shipIdOf(sim, m) === ship);
-  return !!at && spillItems(sim, ship, at.x, at.y, CRATE, 1, jobId) === 0;
+  return [...playerStorages(sim), ...sim.world.query(ModuleC)].map((id) => sim.world.get(id, ModuleC)).find((m) => m && shipIdOf(sim, m) === ship);
+};
+
+/** Set a delivery's crate on deck beside the player's first hold (else beside any module). False when there is no free floor near it (nothing is placed then). */
+export function loadCrate(sim: Sim, jobId: number): boolean {
+  const at = holdSpot(sim);
+  return !!at && spillItems(sim, playerShip(sim), at.x, at.y, CRATE, 1, jobId) === 0;
 }
 
 /** Hand a crate over (`open` false: it leaves the ship) or break it open (its goods spill out where it stood as stolen goods). */
 export function unloadCrate(sim: Sim, job: StationJob, open: boolean): void {
   const id = crateOf(sim, job.id);
-  if (id === undefined) return;
+  if (id === undefined) return resolveInTransit(sim, job, open);
   const { x, y } = sim.world.get(id, ItemStackC)!;
   const ship = shipIdAt(sim, x, y);
   takeFromStack(sim, id, 1);
   // A crate broken open is a breach of contract: what spills is stolen goods (contraband), not the delivery.
   if (open && job.item && job.count) spillItems(sim, ship, x, y, sim.content.items[STOLEN_GOODS] ? STOLEN_GOODS : job.item, job.count);
+}
+
+/**
+ * A crate in a shuttle's hold when its job ends (expired, abandoned, broken open): it leaves the hold, and a breach spills its goods as stolen goods beside the
+ * first hold, as for a crate on deck.
+ */
+function resolveInTransit(sim: Sim, job: StationJob, open: boolean): void {
+  const d = sim.trade.deals.find((x) => x.handover?.job === job.id && isLive(x) && x.vehicle !== 0);
+  if (!d || cargoTake(sim, d.vehicle, CRATE, 1) === 0) return;
+  const at = holdSpot(sim);
+  if (open && at && job.item && job.count) spillItems(sim, playerShip(sim), at.x, at.y, sim.content.items[STOLEN_GOODS] ? STOLEN_GOODS : job.item, job.count);
 }
 
 /**

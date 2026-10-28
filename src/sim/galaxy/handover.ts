@@ -117,15 +117,16 @@ const due = (d: Deal): boolean => d.timer % REPEAT === 1;
 function call(sim: Sim, d: Deal, reason: string): void {
   const job = sim.galaxy.jobs.find((j) => j.id === d.handover?.job);
   const own = d.handover?.via === 'own';
+  // A crate in the hold goes back on deck first. With no free floor for it, the run is not called off: the crate stays in the shuttle (nothing is lost) and the restore is tried again next tick.
+  if (job && d.vehicle && cargoOf(sim, d.vehicle, CRATE) > 0) {
+    if (!loadCrate(sim, job.id)) return;
+    cargoTake(sim, d.vehicle, CRATE, cargoOf(sim, d.vehicle, CRATE));
+  }
   if (job && reason !== 'combat') {
     if (own) job.ownTries = (job.ownTries ?? 0) + 1;
     else job.handoverTries = (job.handoverTries ?? 0) + 1;
   }
   if (d.handover) d.handover.retryAt = sim.tick + HANDOVER_RETRY_SEC * TICK_HZ;
-  if (job && d.vehicle && cargoOf(sim, d.vehicle, CRATE) > 0) {
-    cargoTake(sim, d.vehicle, CRATE, cargoOf(sim, d.vehicle, CRATE));
-    loadCrate(sim, job.id);
-  }
   failDeal(sim, d, reason);
   const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
   if (own && v && v.state !== 'stowed') {

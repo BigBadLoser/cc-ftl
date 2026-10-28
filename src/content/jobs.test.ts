@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as itemStacks from '../sim/items/stacks';
+import { cargoOf } from '../sim/vehicles/cargo';
 import { AirlockC, CombatC, ModuleC, ShipC, VehicleC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim, type SimEvent } from '../sim';
 import { spawnContact } from '../sim/galaxy/arrivals';
 import { featureOf, offersHere, portOffers } from '../sim/galaxy/jobOffers';
@@ -158,6 +160,46 @@ describe('station jobs', () => {
     until(sim, () => sim.galaxy.jobs.length === 0);
     expect(d.phase).toBe('done');
     expect(sim.trade.credits).toBe(credits + job.reward);
+  });
+
+  it('a delivery that ends while its crate is in the shuttle breaks the crate open: stolen goods on deck, nothing left in the hold', () => {
+    const { sim, job } = takeOffer('delivery', 'trade');
+    goTo(sim, job.to!);
+    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'out'));
+    const d = sim.trade.deals.find((x) => x.handover)!;
+    expect(cargoOf(sim, d.vehicle, CRATE)).toBe(1);
+    expireJobs(sim, job.due + 1);
+    expect(sim.galaxy.jobs).toHaveLength(0);
+    expect(cargoOf(sim, d.vehicle, CRATE)).toBe(0);
+    expect(playerStock(sim, 'item.stolen_goods')).toBe(job.count!);
+    expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
+    until(sim, () => d.vehicle === 0, 3000);
+    expect(playerStock(sim, CRATE)).toBe(0);
+  });
+
+  it('a crate in the shuttle is never lost when it cannot be put back on deck: the run waits with it', () => {
+    const { sim, job } = takeOffer('delivery', 'trade');
+    goTo(sim, job.to!);
+    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'out'));
+    const d = sim.trade.deals.find((x) => x.handover)!;
+    const foe = boards(sim).flatMap((b) => b.offers).find((o) => o.kind === 'bounty')!;
+    const c = { id: 9002, faction: foe.targetFaction!, shipgen: foe.shipgen!, seed: foe.seed ?? 0, depth: 1, since: 0 };
+    expect(spawnContact(sim, sim.galaxy.current, c)).toBe(true);
+    // No free floor for the crate: placing it on deck fails.
+    const spill = vi.spyOn(itemStacks, 'spillItems').mockImplementation((_s, _sh, _x, _y, _i, count) => count);
+    try {
+      until(sim, () => sim.sector.inCombat, 40);
+      for (let i = 0; i < 100; i++) sim.step();
+      expect(cargoOf(sim, d.vehicle, CRATE)).toBe(1);
+      expect(d.phase).not.toBe('failed');
+    } finally {
+      spill.mockRestore();
+    }
+    // With room again the crate comes back on deck and the run is called off.
+    until(sim, () => d.phase === 'failed', 200);
+    expect(d.phase).toBe('failed');
+    expect(cargoOf(sim, d.vehicle, CRATE)).toBe(0);
+    expect(playerStock(sim, CRATE)).toBe(1);
   });
 
   it('a station with a shuttle of its own sends it first; the player\'s shuttle is the fallback', () => {
