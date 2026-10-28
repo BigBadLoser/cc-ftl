@@ -69,6 +69,16 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   - **Open:** breakdowns. `breakdownRisk()` (mood under 10) is the hook; nothing calls it yet. Also open: beauty and
     room quality as a comfort factor, friends and rivals, whether drafted crew should starve quietly (they do now: they
     never stop to eat while drafted).
+- **Damage control (#181):** crew deal with fires and hull breaches on their own, at the top priority. The `firefighting`
+  work category (shown as "Dmg" in the priority grid: fires and breaches) is 1 for every working role (0 for roles that do no
+  work), and the player can lower it in the grid. The auto-jobs system posts an `extinguish` job per burning tile and a wall
+  `build` job (same category, so it outranks ordinary construction) on each hole in a player ship's hull, once the stock can pay
+  for a wall. Crew pick them like any job (nearest free crew by walking distance, a suit first when the way is thin air), and
+  materials are hauled to the site by the usual supply jobs. Crew manning a console never leave it for a fire or a breach (a
+  console job is held, not picked); that includes the shield console, which could leave "when nobody else can reach" but doesn't
+  yet. Doors and venting stay manual.
+  - **Priority repair** (`module.priorityRepair`, a button in the module inspector) is the one manual lever: a flagged module's
+    repair job beats every other for the crew who repair, until it is mended.
 - **Danger awareness:** crew read tile fields (fire, vacuum, heat) and avoid or flee unless their job,
   species or gear allows.
 - **Species** are base bodies (organic, synthetic, hybrid) with real sim effects (no breathing, fire

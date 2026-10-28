@@ -161,6 +161,8 @@ export interface UiModule {
   local: { x: number; y: number };
   hp: number;
   maxHp: number;
+  /** Ordered to the top of the repair queue (module.priorityRepair). */
+  repairFirst: boolean;
   powerPriority: number;
   enabled: boolean;
   powered: boolean;

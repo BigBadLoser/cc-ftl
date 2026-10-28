@@ -253,5 +253,9 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
+// Round 1 merge: combat 7dbce8c4 is the combination of the two repins below and nothing else (with the #168 weapon values reverted it gives a01f1f5a; the disaster hash is #181's).
 // Repinned for the charge-time rebalance (#168): the burst laser (5 s from 8), mass driver (8 s from 12) and missile (7 s from 10) charge faster and the laser's crew damage is 5 (from 8), so the starter-vs-raider run's volleys land at other ticks.
-const EXPECTED = { combat: '6ed5b590', disaster: 'fa40fdbe' };
+// Repinned for automatic damage control (#181): every working role now does damage control at priority 1 (was 2; the hashed world holds crew priorities, so
+// the combat hash changes by that alone: with the old role table it still gives c28a5816), and crew seal hull breaches by themselves (a wall build in the
+// firefighting category), which changes the fire and breach run.
+const EXPECTED = { combat: '7dbce8c4', disaster: '6317c54b' };

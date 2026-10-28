@@ -26,6 +26,7 @@ import { content } from './content';
 import { BodyC, SAVE_VERSION, galaxyIndex, nodeOf, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
+import { damageScenarioCommands } from './app/damageScenario';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -199,6 +200,7 @@ const stationFlag = params.get('station');
  */
 const scenario = params.get('scenario');
 /**
+ * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
  * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat panel (and its flee control).
  * `&charged` also fills the FTL drive.
  */
@@ -218,6 +220,12 @@ function startScenario(): void {
       }, 400);
     }, 400);
     loop.setSpeed(1);
+    return;
+  }
+  if (scenario === 'damage') {
+    loop.setSpeed(1);
+    // Rooms exist after the first ticks: set the scene then. Crew answer the fire and the breach on their own.
+    setTimeout(() => { for (const cmd of damageScenarioCommands(sim)) bridge.dispatch(cmd); }, 600);
     return;
   }
   if (scenario !== 'hullplan') return;

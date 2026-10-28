@@ -19,6 +19,7 @@ const REASONS: Record<string, string> = {
   otherShip: 'That crew member is on another ship',
   notWalkable: "Can't walk there",
   noCrew: 'That crew member is gone',
+  notDamaged: 'Nothing to repair',
   notFloor: 'Modules need bare floor',
   occupied: 'Something is already there',
   noAccess: 'Keep a walkable tile free for crew access',
