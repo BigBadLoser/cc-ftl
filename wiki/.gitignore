@@ -1,0 +1,6 @@
+node_modules/
+.svelte-kit/
+dist/
+src/data/generated/
+src/routes/reference/modules/*/
+src/routes/reference/items/*/

@@ -1,0 +1,29 @@
+/* Only customize branding and our own interactive reference UI.
+   Keep SveltePress's built-in navigation, search, and accessibility components. */
+:root {
+  color-scheme: dark;
+}
+.wiki-ref-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+}
+.wiki-ref-controls input,
+.wiki-ref-controls select {
+  min-width: 10rem;
+  padding: 0.55rem 0.7rem;
+  color: inherit;
+  background: #172337;
+  border: 1px solid #42546b;
+  border-radius: 0.35rem;
+}
+.wiki-ref-controls input:focus-visible,
+.wiki-ref-controls select:focus-visible {
+  outline: 2px solid #81bcec;
+  outline-offset: 2px;
+}
+.wiki-ref-list { list-style: none; padding: 0; display: grid; gap: 0.5rem; }
+.wiki-ref-list li { border: 1px solid #344358; border-radius: 0.4rem; padding: 0.6rem 0.8rem; background: #152033; }
+.wiki-ref-list a { font-weight: 600; }
+.wiki-ref-list small { display: block; opacity: 0.78; margin-top: 0.15rem; }

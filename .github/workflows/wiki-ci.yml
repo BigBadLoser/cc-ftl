@@ -1,0 +1,37 @@
+name: Wiki static build
+
+on:
+  pull_request:
+    paths:
+      - 'wiki/**'
+      - 'src/content/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/wiki-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - 'src/content/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/wiki-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm --prefix wiki install --no-audit --no-fund
+      - run: npm --prefix wiki run check
+      - run: npm --prefix wiki run build
+      - name: Verify wiki output
+        run: |
+          test -f wiki/dist/index.html
+          test -f wiki/dist/reference/modules/index.html
+          test -f wiki/dist/reference/items/index.html
