@@ -180,6 +180,7 @@ class Face:
         core, its lit edge): under a band along the face, on its +u side of one down it (the art mirrored, so both
         faces alike)."""
         short = 0.0 if wrap else LINE
+        col = T.SEAM_PASS or col                        # (a seam pass: every painted line in its key)
         along = (u1 - u0) / LINE >= self.sec.sy(z0) - self.sec.sy(z1)
         length = (u1 - u0) / LINE if along else self.sec.sy(z0) - self.sec.sy(z1)
         w = weight if weight is not None else (LINE_W if bevel and length >= 6 else 1.0)
@@ -193,7 +194,7 @@ class Face:
         self.part(cu0, u1, pf, [col] * len(pf), col, wrap=wrap, short=short, end=end)
         if not bevel:
             return
-        hi = HILITE if z0 >= self.sec.zb - 1e-6 else YS[4]
+        hi = T.SEAM_PASS or (HILITE if z0 >= self.sec.zb - 1e-6 else YS[4])
         if along:
             pf = self.on(self.sec.z_at(z0, 1), z0, -0.01, 0.001)
             self.part(u0, u1, pf, [hi] * len(pf), hi, wrap=wrap, short=short, end=end)
@@ -228,6 +229,7 @@ class Face:
         bend). (On the lean its side runs slant on screen: a px there breaks into dots, so it takes more.)"""
         zb = self.sec.zb if z0 >= self.sec.zb - 1e-6 else 0.0
         pf = self.on(max(zb, self.sec.z_at(z0, under)), z1, base - 0.01, base + SHADE)
+        col = T.SEAM_PASS or col                        # (a plate's edge: a seam it may spring along)
         self.part(u0 - side * LINE, u1, pf, [col] * len(pf), col, end=False)
 
     def shade_chamfer(self, t0, t1, z0, z1, col=YS[1], under=2):
@@ -255,4 +257,4 @@ class Face:
         m1 = m1 if abs(u1 - self.b) < 1e-6 else 0.0
         pts = ((u0 - d0 * m0, d0), (u1 + d0 * m1, d0), (u1 + d1 * m1, d1), (u0 - d1 * m0, d1))
         self.k.poly([T.P(self.ax, self.plane, u, self.sec.H + PAINT, d) for u, d in pts],
-                    F, 3, core.Vector((0, 0, 1)), fixed=DEBUG_COL if self.dbg else col)
+                    F, 3, core.Vector((0, 0, 1)), fixed=DEBUG_COL if self.dbg else (T.SEAM_PASS or col))

@@ -69,6 +69,8 @@ class Relief:
         flat = all(abs(p.z - pts[0].z) < 1e-6 for p in pts)
         col = CUT if self.top is not None and flat and abs(pts[0].z - self.top) < 1e-6 else tone(fam, lvl, n, self.side)
         col = fixed or col                    # a fixed palette name (a torn section's skins and core)
+        if SEAM_PASS and col != SEAM_PASS:
+            col = SEAM_DARK
         if self.no_shadow and self.ns is None:
             self.ns = core.Mesh(self.m.name + "_ns", flat=True)
         m = self.ns if self.no_shadow else self.m
@@ -91,6 +93,9 @@ def OUT(ax):
     return Vector((0, 1, 0)) if ax == "y" else Vector((1, 0, 0))
 
 
+SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) sets this to a key colour: painted lines
+                        # (seams, panel outlines, plates' shading) draw in it, everything else near black
+SEAM_DARK = "hsXK"
 CLIP = None             # a breach (wallbreach.py) sets this: f(u) -> the tear's height on the face being dressed
 STYLE = None            # a faction's relief (factions.py): {"wall": face fn, "hull": face fn, "skirt": "panel" | "outline"
                         # | None (the panel under each field), "toe": a family for a band along the skirt's foot, "seam": the

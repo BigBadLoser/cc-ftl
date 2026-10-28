@@ -12,6 +12,7 @@ import math
 
 from mathutils import Vector
 
+from . import wall3d as T
 from . import wall3d_ext_t3 as T3
 from .wall3d_ext_geom import D, HILITE, LEAN_RISE, LINE, LINE_W, PAINT, YS, Section
 from .wall3d_ext_t3 import UPRIGHT_SEAM
@@ -41,6 +42,7 @@ BD2 = (32, (4, 5, 18), (3, 2), 4)   # between the steps (hull 46's BottomD2), px
                                     # so only between two steps, not at a diagonal's end), a strip a px proud down the
                                     # upright (px either side; from px under the bend to the foot), a clamp over the
                                     # seam on it (px wider each side)
+SEAM_TONES = {CORE, DARK, *LEVEL_SEAM, *FAINT_SEAM}     # a seam pass's seams (wall3d.SEAM_PASS): their tones
 SIDE_COL = 0.25                     # the px columns there start this far in from the bend (measured: both sides alike,
                                     # so not the sprite's placement)
 
@@ -136,7 +138,10 @@ def _raised(rel, solid, cuts, n, c, out):
 
 
 def _paint(rel, solid, cuts, n, c, col, layer):
-    """A painted mark on the face n . p = c (its slab `layer` PAINTs out), inside the cuts."""
+    """A painted mark on the face n . p = c (its slab `layer` PAINTs out), inside the cuts. (A seam pass,
+    wall3d.SEAM_PASS: the seams' and plates' shading tones draw in its key.)"""
+    if T.SEAM_PASS and col in SEAM_TONES:
+        col = T.SEAM_PASS
     out = n.normalized()
     for pts, m, _ in solid(cuts + _slab(n, c, layer * PAINT)):
         if (m - out).length < 1e-6:                                     # (its outer face)
