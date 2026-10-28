@@ -10,15 +10,15 @@ from . import core
 from . import factions_relief as FR
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
-from .wall3d_ext_geom import D, E, LINE, YS, Face, Section
+from .wall3d_ext_geom import D, E, LINE, PAINT, YS, Face, Section
 
 RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes (wall3d: the face's normal)
 INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end, v down from the cut
-    "side_seam": ((0, 8), (27, 32), 13),        # a seam across each side plate (lit under it, its bevel)
-    "panel": ((8, 27), (10, 28)),               # the centre panel's outline (painted, as T3's top panel): lit top
-    "panel_line": 16,                           # and bottom, dark sides; a dark line across it (lit under it)
-}
+    "side_seam": ((0, 8), (27, 32), 13),        # a seam across each side plate, dark (lit under it, its bevel)
+    "panel": ((8, 27), (10, 28)),               # the centre plate, a px proud (a faint shade under it): lit top and
+    "panel_line": 16,                           # bottom, a seam across it; a seam down each side of it to the foot
+}                                               # and on down the slope, a seam across the slope at its middle
 
 
 def section():
@@ -44,7 +44,8 @@ def build(s2):
 
 def _look1(f, s, back):
     """D3 look 1 over the tile: the lit lip under the cut and at the foot, a seam across each side plate, the centre
-    panel's outline (lit top and bottom, dark sides, a seam across it), the top's seam along the back."""
+    plate a px proud (lit top and bottom, a seam across it, a faint shade under it), a seam down each side of it on
+    down the slope, one across the slope, the top's seam along the back."""
     def U(a, b):                                    # (px from the +u end -> u0, u1)
         return 0.5 - T3.px(b), 0.5 - T3.px(a)
 
@@ -57,17 +58,23 @@ def _look1(f, s, back):
     with f.tag("seams"):
         *sides, v = LOOK1["side_seam"]
         for a, b in sides:
-            f.line(*U(a, b), Z(v + 1), Z(v), YS[1])
+            f.line(*U(a, b), Z(v + 1), Z(v), YS[0])
         f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])    # (T3's, along the back)
     with f.tag("panel"):
         (a, b), (v0, v1) = LOOK1["panel"]
         u0, u1 = U(a, b)
-        for v in (v0, v1 - 1):                                  # (its top and bottom, lit)
-            f.line(u0, u1, Z(v + 1), Z(v), YS[4], bevel=False)
-        for u in (u0, u1 - ln):                                 # (its sides: slant on screen, no lit edge)
-            f.line(u, u + ln, Z(v1 - 1), Z(v0 + 1), YS[1], end=False, bevel=False)
-        v = LOOK1["panel_line"]
-        f.line(u0 + ln, u1 - ln, Z(v + 1), Z(v), YS[1], end=False)
+        f.shade(u0, u1, Z(v1), Z(v0), YS[1], side=0.0)
+        f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[1])     # (lit along its top by its facing)
+        on = (LINE - 0.01, LINE + PAINT)                        # (painted on its front, as T3's bolts)
+        vl = LOOK1["panel_line"]
+        for v, col in ((v0, YS[4]), (v1 - 1, YS[4]), (vl, YS[1]), (vl + 1, YS[4])):
+            f.raised(u0, u1, Z(v + 1), Z(v), *on, col=col)
+    with f.tag("seams"):                                        # (down each side of the plate, on down the slope:
+        for u in (u0 - 2 * ln, u1):                             # a px clear of its -u end, which hides the px by it)
+            f.line(u, u + ln, foot, Z(v0), YS[1], end=False, bevel=False)     # (dark, unlit: T3's uprights)
+            f.line(u, u + ln, s.zmin, foot, YS[0], end=False, bevel=False)
+        zm = (s.zmin + foot) / 2
+        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, YS[0])            # (across the slope, at its middle)
 
 
 def cut(objs, planes):
@@ -88,9 +95,11 @@ def cut(objs, planes):
 
 def art(f, planes, wide=False):
     """A near run's art for a front f ((s, c), c in 32nds, tile-local) cut to planes; wide: with a copy a tile either
-    way along the run (its colours run on past the tile's edges, env_build "wide")."""
+    way along the run (its colours run on past the tile's edges, env_build "wide"). The tile's side on its front's
+    side is no cut (the front is set in from it; what stands proud of the face may pass it)."""
     s2, c = f
-    off = (c - 15) / 32                                         # (the run set's outline is c 15)
+    planes = [q for q in planes if (q[0].x, q[0].y, q[0].z) != (s2[0], s2[1], 0)]   # (not its own tile side: what
+    off = (c - 15) / 32                                         # stands proud of the face runs past it)                                         # (the run set's outline is c 15)
     objs = build(s2)
     along = (1, 0) if s2 == (0, 1) else (0, 1)
     if wide:
