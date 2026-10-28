@@ -30,7 +30,7 @@
 <ul class="wiki-ref-list">
   {#each filtered as module (module.id)}
     <li>
-      <a href={resolve(('reference/modules/' + module.slug + '/') as Parameters<typeof resolve>[0])}>{module.name}</a>
+      <a href={resolve('reference/modules/') + module.slug + '/'}>{module.name}</a>
       <small>{module.category} · {module.footprint[0]}×{module.footprint[1]} tiles · {module.power > 0 ? '+' : ''}{module.power} power</small>
     </li>
   {/each}
