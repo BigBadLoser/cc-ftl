@@ -9,6 +9,9 @@ import { ROOF_H } from './heights';
 import { footprintQuad, padQuad, type Seg } from './targetBrackets';
 
 const C_THREAT = 0xff5a5a;
+/** Bracket stroke width in sector-layer units (about 4 screen px at the default fight framing, scale 0.375), and its floor in screen px when zoomed far out. */
+const STROKE_W = 10.7;
+const MIN_STROKE_PX = 1.5;
 const C_OUTLINE = 0x05080d;
 
 export interface ThreatMarksHost {
@@ -98,9 +101,9 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
         const quad = footprintQuad(t.x - r, t.y - r, t.w + 2 * r, t.h + 2 * r, { x: 0, y: 0 }, lift, project, 0);
         const pulse = t.flying ? 1 : 0.7 + 0.3 * Math.sin(now / (60 + 240 * t.left));
         const segs = turned ? turnedSegments(padQuad(quad, extra)) : cornerSegments(padQuad(quad, extra));
-        // One steady stroke (no outline pass, no pulse), so the width never seems to change along the arm or between zooms.
+        // One steady stroke (no outline pass, no pulse), its width in world space like the arms, so it grows and shrinks with the camera.
         for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
-        gfx.stroke({ width: px(4), color: C_THREAT, alpha: 1, cap: 'butt' });
+        gfx.stroke({ width: Math.max(STROKE_W, px(MIN_STROKE_PX)), color: C_THREAT, alpha: 1, cap: 'butt' });
         // Countdown ring on the aim area: a squashed (iso) circle whose lit arc shrinks to nothing as the shot comes.
         const c = footprintQuad(t.x, t.y, t.w, t.h, { x: 0, y: 0 }, lift, project, 0);
         const cx = px((c.left.x + c.right.x) / 2);
