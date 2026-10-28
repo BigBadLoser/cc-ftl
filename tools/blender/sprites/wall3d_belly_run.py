@@ -16,12 +16,13 @@ RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes
 INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
 XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam and shade, the slope's
                                                      # seams (navy) and its rim
-LOOK1 = {                            # D3 look 1, art px: u from the face's +u end, v down from the cut
-    "side_seam": ((0, 8), (27, 32), 9),         # a seam across each side plate (lit under it, its bevel)
-    "panel": ((8, 27), (8, 26)),                # the centre plate, a px proud (a faint shade under it), lit along its
-    "panel_line": 15,                           # top; a seam across it (2 px, 2 px of shade under); a seam down each
-    "bottom_seam": 26,                          # side of it on down the slope (the -u one from the lip); a seam across
-}                                               # the face under it (2 px, lit under); one across the slope
+LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
+    "side_seam": ((0, 7), (25, 32), 9),         # from the cut: a seam across each side plate (lit under it)
+    "panel": ((7, 25), (8, 26)),                # the centre plate, a px proud (a faint shade under it), lit along its
+    "panel_line": 15,                           # top; a seam across it (2 px, 2 px of shade under)
+    "bottom_seam": (26, 4),                     # a seam across the face under it (2 px), lit under but its ends
+    "slope_seam": ((7, 8), (24, 25)),           # seams down the slope, a px in from the plate's sides; one across it
+}
 
 
 def section():
@@ -48,14 +49,14 @@ def build(s2):
 def _look1(f, s, back):
     """D3 look 1 over the tile: the lit lip under the cut, the top's seams along its front and back, a seam across each
     side plate, the centre plate a px proud (lit along its top, a seam across it with shade under, a faint shade under
-    it), a seam down each side of it on down the slope, a seam across the face under it, the slope's crease and rim and
-    a seam across its middle."""
+    it), a seam across the face under it (its lit lip stepped down in the middle), the slope's crease and rim, two
+    seams down it and one across its middle."""
     def U(a, b):                                    # (px from the +u end -> u0, u1)
         return 0.5 - T3.px(b), 0.5 - T3.px(a)
 
     def Z(v):                                       # (px down from the cut -> height)
         return s.z_at(s.H, v)
-    ln, foot = LINE, s.under[0]
+    foot = s.under[0]
     with f.tag("lips"):
         f.line(-0.5, 0.5, Z(1), s.H, YS[4], bevel=False)
     with f.tag("seams"):
@@ -64,8 +65,9 @@ def _look1(f, s, back):
             f.line(*U(a, b), Z(v + 1), Z(v), CREASE)
         for d in (back + 2 * T3.TOP_PX, D + s.back - 2.25 * T3.TOP_PX):  # (T3's along the back, one by the front)
             f.top_line(-0.5, 0.5, d, d + 0.75 * T3.TOP_PX, YS[2])
-        vb = LOOK1["bottom_seam"]
-        f.line(-0.5, 0.5, Z(vb + 2), Z(vb), XS, weight=1.0)     # (2 px, lit under: the plate's foot on it)
+        vb, e = LOOK1["bottom_seam"]
+        f.line(-0.5, 0.5, Z(vb + 2), Z(vb), XS, bevel=False)    # (the plate's foot on it; its lit lip stepped:
+        f.line(*U(e, 32 - e), Z(vb + 3), Z(vb + 2), YS[4], bevel=False)        # not its ends)
     with f.tag("panel"):
         (a, b), (v0, v1) = LOOK1["panel"]
         u0, u1 = U(a, b)
@@ -75,10 +77,9 @@ def _look1(f, s, back):
         vl = LOOK1["panel_line"]
         for z0, z1, col in ((Z(v0 + 1), Z(v0), YS[4]), (Z(vl + 2), Z(vl), YS[1]), (Z(vl + 4), Z(vl + 2), XS)):
             f.raised(u0, u1, z0, z1, *on, col=col)
-    with f.tag("seams"):                                        # (down each side of the plate, on down the slope:
-        for u, top in ((u0 - 2 * ln, Z(1)), (u1, Z(v0))):       # a px clear of its -u end, which hides the px by it)
-            f.line(u, u + ln, foot, top, XS, end=False, bevel=False)          # (unlit: T3's uprights)
-            f.line(u, u + ln, s.zmin, foot, CREASE, end=False, bevel=False)
+    with f.tag("seams"):                                        # (down the slope)
+        for a, b in LOOK1["slope_seam"]:
+            f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
         zm = (s.zmin + foot) / 2
         f.line(-0.5, 0.5, s.z_at(zm, 1), zm, CREASE, bevel=False)   # (across the slope, at its middle)
         f.line(-0.5, 0.5, s.z_at(foot, 1), foot, CREASE, bevel=False)          # (the slope's crease, its rim)
