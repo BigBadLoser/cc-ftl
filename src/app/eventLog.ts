@@ -34,15 +34,18 @@ export function createEventLog(sim: Sim): EventLog {
       : [{ id: nextId++, tick, count: 1, born, ...d }, ...list].slice(0, MAX);
   }
 
-  /** Where the money came from, as far as this tick's events say. */
-  function source(events: SimEvent[]): Pick<LogEntry, 'text' | 'subject'> & { label: string } {
+  /** Where the money came from, as far as this tick's events say: the payout entry's text. */
+  function source(events: SimEvent[]): Pick<LogEntry, 'text' | 'subject'> {
+    const faction = (id: string) => sim.content.galaxy?.factions[id]?.name ?? id;
     for (const e of events) {
+      if (e.type === 'job.handedIn') return { text: `${e.kind === 'bounty' ? 'Bounty' : 'Survey'} handed in to ${faction(e.issuer)}` };
+      if (e.type === 'job.handedOver') return { text: e.via === 'own' ? 'Crate dropped at the station' : e.via === 'shuttle' ? `Crate taken by the ${faction(e.issuer)} shuttle` : 'Crate handed across' };
       if (e.type !== 'trade.settled' || e.credits >= 0) continue;
       const name = sim.world.get(e.ship, TraderC)?.name ?? 'trader';
       const s = shipSubject(sim, e.ship);
-      return { label: name, text: name, ...(s ? { subject: s } : {}) };
+      return { text: `Paid by ${name}`, ...(s ? { subject: s } : {}) };
     }
-    return { label: 'Credits received', text: 'Credits received' };
+    return { text: 'Credits received' };
   }
 
   function gain(list: UiLogEntry[], events: SimEvent[]): UiLogEntry[] {
@@ -51,8 +54,7 @@ export function createEventLog(sim: Sim): EventLog {
     credits = now;
     if (delta <= 0) return list;
     const src = source(events);
-    const text = src.label === 'Credits received' ? src.label : `Paid by ${src.label}`;
-    return add(list, { kind: 'payout', tone: 'good', text, amount: delta, ...(src.subject ? { subject: src.subject } : {}) }, sim.tick);
+    return add(list, { kind: 'payout', tone: 'good', amount: delta, ...src }, sim.tick);
   }
 
   return {

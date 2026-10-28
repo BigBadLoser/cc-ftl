@@ -19,6 +19,8 @@ export function createDescriber(sim: Sim) {
   const shipName = (id: number) => ship(id)?.name ?? 'Ship';
   const hireOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.crew?.[0];
   const trader = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
+  const handoverOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.handover;
+  const factionName = (id: string) => sim.content.galaxy?.factions[id]?.name ?? id;
   const item = (id: string) => sim.content.items[id]?.name ?? id;
   const sub = (s: UiSubject | null): { subject?: UiSubject } => (s ? { subject: s } : {});
   const onShip = (id: number) => sub(shipSubject(sim, id));
@@ -79,8 +81,12 @@ export function createDescriber(sim: Sim) {
       case 'trade.settled': return e.credits > 0 ? { kind: 'trade', tone: 'info', text: `Paid ${e.credits} ₵ to ${trader(e.ship)}` } : e.credits === 0 ? { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` } : null;
       case 'trade.failed': {
         const hire = hireOf(e.deal);
+        if (handoverOf(e.deal)) return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${e.reason === 'combat' ? 'combat' : 'it could not collect the crate'})` };
         return { kind: 'trade', tone: 'warn', text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${trader(e.ship)} called off` };
       }
+      case 'job.completed': return { kind: 'trade', tone: 'good', text: e.kind === 'bounty' ? `Bounty done: hand it in at a ${factionName(e.issuer)} military station (${e.reward} ₵)` : `Survey done: hand it in at a ${factionName(e.issuer)} research station (${e.reward} ₵)` };
+      case 'job.shuttleSent': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes the crate over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for the crate`, ...onShip(e.station) };
+      // job.handedIn and job.handedOver pay out: the credit-gain entry (eventLog.ts) carries them, named after the job.
       case 'story.started': {
         const def = sim.content.events?.[e.event];
         return def ? { kind: 'story', tone: 'info', text: def.title } : null;

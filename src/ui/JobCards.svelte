@@ -2,8 +2,8 @@
   import type { UiApi, UiJob, UiJobs, UiStrength } from './api';
   import Icon from './Icon.svelte';
 
-  /** The job cards of the board: `active` the jobs the player holds, `offers` the work posted at the node. */
-  let { api, jobs, list }: { api: UiApi; jobs: UiJobs; list: 'active' | 'offers' } = $props();
+  /** The job cards of the board: `active` the jobs the player holds, `offers` the work posted at the node, `handIn` the finished work this station takes in. */
+  let { api, jobs, list }: { api: UiApi; jobs: UiJobs; list: 'active' | 'offers' | 'handIn' } = $props();
   const full = $derived(jobs.active.length >= jobs.max);
   const far = (j: UiJob): string => (j.here ? 'here' : j.hops === null ? 'out of range' : `${j.hops} jump${j.hops === 1 ? '' : 's'}`);
   const turns = (j: UiJob): string => `${j.turnsLeft} turn${j.turnsLeft === 1 ? '' : 's'} left`;
@@ -51,6 +51,14 @@
         <div class="act">
           <button class="ghost" data-testid="job-abandon" onclick={() => j.id !== null && api.dispatch({ type: 'jobs.abandon', id: j.id })}>Abandon</button>
         </div>
+      </li>
+    {/each}
+  {:else if list === 'handIn'}
+    {#each jobs.handIn as c (c.id)}
+      <li data-testid="job-claim">
+        <div class="t"><b>{c.title}</b><span class="pay">{c.reward} cr</span></div>
+        <div class="sub">For {c.issuer}</div>
+        <div class="act"><button data-testid="job-handin" onclick={() => api.dispatch({ type: 'jobs.handIn', id: c.id })}>Hand in</button></div>
       </li>
     {/each}
   {:else}

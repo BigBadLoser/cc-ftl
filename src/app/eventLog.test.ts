@@ -63,6 +63,17 @@ describe('ship log and alerts', () => {
     expect(t.list()[0]).toMatchObject({ kind: 'payout', amount: 80 });
   });
 
+  it('names a job payout after the job, in one entry', () => {
+    const t = setup();
+    t.sim.trade.credits += 240;
+    t.feed({ type: 'job.handedOver', id: 1, issuer: 'faction.navy', reward: 240, via: 'own' } as SimEvent);
+    expect(t.list()).toHaveLength(1);
+    expect(t.list()[0]).toMatchObject({ kind: 'payout', amount: 240, text: 'Crate dropped at the station' });
+    t.sim.trade.credits += 400;
+    t.feed({ type: 'job.handedIn', id: 2, kind: 'bounty', issuer: 'faction.navy', reward: 400, port: 'p' } as SimEvent);
+    expect(t.list()[0]?.text).toMatch(/^Bounty handed in to /);
+  });
+
   it('combat alert jumps to the enemy ship and clears when combat ends', () => {
     const t = setup();
     const enemy = t.sim.world.query(ShipC).find((id) => id !== homeShip(t.sim) && t.sim.world.has(id, CombatC));

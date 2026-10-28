@@ -200,8 +200,26 @@ const stationFlag = params.get('station');
  * tool open with the Rectangle brush, and the game running at normal speed. The plan starts empty; the station's Shipyard tab is one click away.
  */
 const scenario = params.get('scenario');
+/**
+ * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
+ * a finished bounty / survey to hand in, and you at the nearest military / research station (drops in by itself). See galaxy/jobsDebug.ts.
+ */
+function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
+  if (name === 'handover') spawnStation('station.trading', 'outpost'); // a fresh game has no station ship at the start node: the shuttle needs one
+  bridge.dispatch({ type: 'debug.jobScenario', name });
+  bridge.dispatch({ type: 'debug.setCredits', value: 500 });
+  loop.setSpeed(1);
+  const spots = [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const;
+  const deploy = (i: number): void => {
+    if (name === 'handover' || sim.sector.state === 'active' || i >= 60) return;
+    if (sim.sector.state === 'deploying') bridge.dispatch({ type: 'sector.deploy', x: spots[i % spots.length]![0], y: spots[i % spots.length]![1] });
+    setTimeout(() => deploy(i + 1), 150);
+  };
+  deploy(0);
+}
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
+  if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
