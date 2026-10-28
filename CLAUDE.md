@@ -53,9 +53,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
   (`Refs #N`). When work lands or stalls without a PR, comment on the issue.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
-- Verify visual changes with a headless screenshot before handing them to the user. The user tests on desktop through
-  `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews (`<branch>-cc-ftl.bigbadloser.workers.dev`) are
-  unreliable, so finished, verified work goes to `main`.
+- Verify visual changes with a headless screenshot before handing them to the user. The user playtests branches locally
+  (`npm run dev`; debug starts like `?scenario=hullplan` help). `main` is published to https://bigbadloser.github.io/cc-ftl/
+  by the manual "Deploy to GitHub Pages" workflow; it does not deploy on every push. There are no branch previews.
 - **Desktop only.** The game will not be played on phones. Don't spend work on phone layouts, touch gestures or phone
   screenshots, and don't add phone-specific requirements to briefs. Existing phone breakpoints may stay as they are; don't
   extend or fix them unless the user asks.
