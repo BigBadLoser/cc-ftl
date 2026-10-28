@@ -137,6 +137,7 @@ export function createAlerts(sim: Sim): Alerts {
       case 'trade.settled': return { kind: 'trade', key: `td${e.deal}`, text: `Deal settled${e.credits ? `: ${e.credits > 0 ? '-' : '+'}${Math.abs(e.credits)} credits` : ''}`, at: null };
       case 'trade.failed': {
         const hire = hireOf(e.deal);
+        if (sim.trade.deals.find((d) => d.id === e.deal)?.handover) return { kind: 'trade', key: `td${e.deal}`, text: `${traderName(e.ship)} called its shuttle back`, at: null };
         return { kind: 'trade', key: `td${e.deal}`, text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${traderName(e.ship)} called off`, at: null };
       }
       case 'station.alarm': return { kind: e.type, key: `sa${e.ship}`, text: `Alarm on ${shipName(e.ship)?.name ?? 'the station'}: ${e.reason}`, at: null };

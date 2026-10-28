@@ -18,7 +18,7 @@ const far = (j: UiJob): string => (j.hops === null ? 'out of range' : `${j.hops}
 export function trackerRows(jobs: Pick<UiJobs, 'active'>): TrackerRow[] {
   return jobs.active.map((j) => {
     const missing = j.kind === 'delivery' && !j.ready;
-    const state = missing ? 'Crate missing' : j.here ? (j.kind === 'delivery' ? 'Deliver here' : 'Target in this node') : far(j);
+    const state = missing ? 'Crate missing' : j.here ? (j.kind === 'delivery' ? 'Deliver here' : j.kind === 'survey' ? 'Survey here' : 'Target in this node') : far(j);
     return { key: j.key, title: j.title, fact: `${j.where} · ${turns(j.turnsLeft)}`, state, warn: missing || j.turnsLeft <= 3 };
   });
 }

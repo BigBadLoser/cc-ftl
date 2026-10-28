@@ -403,7 +403,7 @@ export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
 export interface UiJob {
   key: string;
   id: number | null;
-  kind: 'delivery' | 'bounty';
+  kind: 'delivery' | 'bounty' | 'survey';
   issuer: string;
   title: string;
   detail: string;
@@ -417,11 +417,23 @@ export interface UiJob {
   target: { strength: UiStrength; read: UiStrengthRead | null } | null;
 }
 
+/** A finished bounty or survey that can be handed in at the station the player is at. */
+export interface UiClaim {
+  id: number;
+  kind: 'bounty' | 'survey';
+  issuer: string;
+  title: string;
+  reward: number;
+  here: boolean;
+}
+
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
 export interface UiJobs {
   here: string | null;
   offers: UiJob[];
   active: UiJob[];
+  /** Finished bounties and surveys the station here takes in (never kept on screen anywhere else). */
+  handIn: UiClaim[];
   max: number;
   /** The player's own ship, for comparing with a bounty target. */
   mine: UiStrength | null;

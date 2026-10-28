@@ -33,6 +33,8 @@ export function createEventLog(sim: Sim): EventLog {
   const mine = (id: number) => ship(id)?.faction === 'player';
   const shipName = (id: number) => ship(id)?.name ?? 'Ship';
   const hireOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.crew?.[0];
+  const handoverOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.handover;
+  const factionName = (id: string) => sim.content.galaxy?.factions[id]?.name ?? id;
   const trader = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
 
   function describe(e: SimEvent): Entry | null {
@@ -68,8 +70,13 @@ export function createEventLog(sim: Sim): EventLog {
       case 'trade.settled': return { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` };
       case 'trade.failed': {
         const hire = hireOf(e.deal);
+        if (handoverOf(e.deal)) return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${e.reason === 'combat' ? 'combat' : 'it could not collect the crate'})` };
         return { kind: 'trade', tone: 'warn', text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${trader(e.ship)} called off` };
       }
+      case 'job.completed': return { kind: 'trade', tone: 'good', text: e.kind === 'bounty' ? `Bounty done: hand it in at a ${factionName(e.issuer)} military station (${e.reward} cr)` : `Survey done: hand it in at a ${factionName(e.issuer)} research station (${e.reward} cr)` };
+      case 'job.handedIn': return { kind: 'trade', tone: 'good', text: `${e.kind === 'bounty' ? 'Bounty' : 'Survey'} handed in to ${factionName(e.issuer)}: +${e.reward} cr` };
+      case 'job.shuttleSent': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes the crate over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for the crate` };
+      case 'job.handedOver': return { kind: 'trade', tone: 'good', text: e.via === 'shuttle' ? `Crate taken by the ${factionName(e.issuer)} shuttle: +${e.reward} cr` : e.via === 'own' ? `Crate dropped at the station: +${e.reward} cr` : `Crate handed across: +${e.reward} cr` };
       case 'story.started': {
         const def = sim.content.events?.[e.event];
         return def ? { kind: 'story', tone: 'info', text: def.title } : null;

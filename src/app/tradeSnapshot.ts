@@ -106,7 +106,7 @@ export function buildTrade(sim: Sim): UiTrade {
     });
   }
   partners.sort((a, b) => a.distance - b.distance || a.id - b.id);
-  const deals: UiTradeDeal[] = sim.trade.deals.map((d) => ({
+  const deals: UiTradeDeal[] = sim.trade.deals.filter((d) => !d.handover).map((d) => ({
     id: d.id, ship: d.ship, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader', phase: d.phase, status: d.phase === 'failed' ? `Called off${d.trip ? ` in trip ${d.trip.n} of ${d.trip.of}` : ''}: ${d.reason ?? ''}`
       : d.crew ? HIRE_PHASE[d.phase] ?? PHASE[d.phase] : d.phase === 'exchange' && d.via === 'hover' ? 'Swapping cargo from a hover (no station airlock free)' : PHASE[d.phase],
     trip: d.trip ? { n: d.trip.n, of: d.trip.of, stopped: d.trip.stopped ?? '' } : null,

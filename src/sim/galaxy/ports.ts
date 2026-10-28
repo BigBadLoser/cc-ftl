@@ -24,7 +24,12 @@ export interface Port {
   role: FleetRole | null;
   /** A market: free traders keep ships here whoever owns it (`TRADE_GUESTS`). */
   trade: boolean;
+  /** The station type of a station structure (`StructureDef.station`; a station with none counts as a trade station), else absent. Decides which jobs it offers and takes in (jobOffers.ts). */
+  station?: 'trade' | 'military' | 'research';
 }
+
+/** What a port's jobs go by: its station type, or 'den' for a pirate den. Bounties and surveys are handed in at a port of the class that issued them (and the same owner). Null for outposts and nests. */
+export const stationClass = (port: Port): string | null => (port.kind === 'den' ? 'den' : port.station ?? null);
 
 /** The role a port kind fixes, or null. */
 const KIND_ROLE: Record<PortKind, FleetRole | null> = { station: null, den: 'pirate', depot: 'patrol', outpost: 'miner', nest: 'raider' };
@@ -57,7 +62,10 @@ export function portsOf(seed: number, content: GalaxyContent, node: NodeData, hu
     if (!kind) return;
     const id = `${node.id}#${i}`;
     const size = Math.min(3, 1 + (unit(seed, strHash(id), 71) < 0.5 ? 1 : 0) + (hub ? 1 : 0)) as 1 | 2 | 3;
-    out.push({ id, node: node.id, kind, size, owner: ownerId, role: KIND_ROLE[kind], trade: !!def.services?.includes('trade') });
+    out.push({
+      id, node: node.id, kind, size, owner: ownerId, role: KIND_ROLE[kind], trade: !!def.services?.includes('trade'),
+      ...(def.kind === 'station' ? { station: def.station ?? 'trade' } : {}),
+    });
   });
   return out;
 }
