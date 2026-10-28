@@ -10,7 +10,7 @@ from . import core
 from . import factions_relief as FR
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
-from .wall3d_ext_geom import BELLY_SLOPE, D, E, LINE, PAINT, YS, Face, Section
+from .wall3d_ext_geom import D, E, LINE, PAINT, YS, Face, Section
 
 RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes (wall3d: the face's normal)
 INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
@@ -19,10 +19,10 @@ XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam 
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 9),         # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (8, 26)),                # the centre plate, a px proud (a faint shade under it), lit along its
-    "panel_line": 15,                           # top; a seam across it (2 px, 2 px of shade under)
-    "lip": (28, 4),                             # the lip under it: a lit line the face's width, the face under it
-    "slope_seam": ((7, 8), (24, 25)),           # inset at each end (the slope rising to the lip there); seams down
-}                                               # the slope, a px in from the plate's sides; one across it
+    "panel_line": 15,                           # top; a soft seam across it (2 px)
+    "lip": (26, 2, 4, 2),                       # the lip under it: a soft band (v, px) lit under, the face's width,
+    "slope_seam": ((7, 8), (24, 25)),           # its middle (inset px at each end) px deeper; seams down the slope,
+}                                               # a px in from the plate's sides; one across it
 
 
 def section():
@@ -71,22 +71,18 @@ def _look1(f, s, back):
         f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
         on = (LINE - 0.01, LINE + PAINT)                        # (painted on its front, as T3's bolts)
         vl = LOOK1["panel_line"]
-        for z0, z1, col in ((Z(v0 + 1), Z(v0), YS[4]), (Z(vl + 2), Z(vl), YS[1]), (Z(vl + 4), Z(vl + 2), XS)):
+        for z0, z1, col in ((Z(v0 + 1), Z(v0), YS[4]), (Z(vl + 2), Z(vl), XS)):
             f.raised(u0, u1, z0, z1, *on, col=col)
-    with f.tag("lip"):                                          # (two tiers: the lit line the face's width, the
-        vl, e = LOOK1["lip"]                                    # face under it inset; at its ends the slope's tone
-        f.line(-0.5, 0.5, Z(vl + 1), Z(vl), YS[4], bevel=False)            # and crease rise to the lip)
-        for a, b in ((0, e), (32 - e, 32)):
-            f.line(*U(a, b), foot, Z(vl + 1), BELLY_SLOPE, bevel=False)
-            f.line(*U(a, b), Z(vl + 2), Z(vl + 1), CREASE, bevel=False)
+    with f.tag("lip"):                                          # (tiered: its middle a step deeper)
+        vb, t, e, x = LOOK1["lip"]
+        for (a, b), h in (((0, e), t), ((e, 32 - e), t + x), ((32 - e, 32), t)):
+            f.line(*U(a, b), Z(vb + h), Z(vb), XS, weight=1.0)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
         zm = (s.zmin + foot) / 2
         f.line(-0.5, 0.5, s.z_at(zm, 1), zm, CREASE, bevel=False)   # (across the slope, at its middle)
-        f.line(*U(e, 32 - e), s.z_at(foot, 1), foot, CREASE, bevel=False)      # (the slope's crease, its rim)
-        for a, b in ((0, e), (32 - e, 32)):
-            f.line(*U(a, b), s.z_at(foot, 1), foot, BELLY_SLOPE, bevel=False)
+        f.line(-0.5, 0.5, s.z_at(foot, 1), foot, CREASE, bevel=False)          # (the slope's crease, its rim)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
 
 
