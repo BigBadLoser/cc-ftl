@@ -13,7 +13,7 @@
   let stock = $state<UiStock[]>([]);
   let defs = $state<UiModuleDef[]>([]);
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
-  let hint = $state<{ x: number; y: number; text: string } | null>(null);
+  let hint = $state<{ x: number; y: number; text: string; ok?: boolean } | null>(null);
   let cat = $state<CategoryId>('structure');
   let query = $state('');
   let rev = $state(0);
@@ -118,7 +118,7 @@
   <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} onvariant={showVariant}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
 {/if}
-{#if hint}<div class="hint" role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}
+{#if hint}<div class="hint" class:ok={hint.ok} role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}
 
 <style>
   /* Same bottom gutter as the toolbar; it ends a gap before the toolbar's left edge (--tools-w, set by ToolBar) and centres in the room left. */
@@ -138,6 +138,7 @@
   .rotb { color: var(--amber); }
   .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: #050505; border: 1px solid #2c2c2c; color: #c8c8c8; padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }
+  .hint.ok { border-color: #c8c8c8; color: #fff; }
   .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: #ff9a9a; font-size: 12px; white-space: nowrap; }
   /* The combat panel (left, 420px) is open: the catalog starts to its right. */
   @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) .cat { left: calc(var(--combat-right, 436px) + var(--sal)); } }

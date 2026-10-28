@@ -2,7 +2,7 @@ import { ShipC, brushPlan, cutPlan, touchesShip, type BrushResult, type Sim } fr
 import type { Renderer } from '../render/scene';
 import type { UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
-import { MIN_SIDE, dragRect, lineTiles, mirrorTiles, rectTiles, withMirror } from './hullBrush';
+import { belowMin, dragRect, lineTiles, mirrorTiles, rectTiles, withMirror } from './hullBrush';
 import type { Tile } from './input';
 import { rejectionMessage } from './messages';
 import type { Writable } from './store';
@@ -38,7 +38,7 @@ export interface HullPlanTool {
  * ship: that shows red while it is dragged and does not apply. With no drag the brush's first footprint shows under the cursor. The plan lives in the sim
  * (`hull.plan`, saved with the ship); brushes only produce tile lists, which `brushPlan` and `cutPlan` judge and turn into the new outline.
  */
-export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writable<UiToolState>; placeHint: Writable<{ x: number; y: number; text: string } | null>; renderer(): Renderer | undefined; ship(): number }): HullPlanTool {
+export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writable<UiToolState>; placeHint: Writable<{ x: number; y: number; text: string; ok?: boolean } | null>; renderer(): Renderer | undefined; ship(): number }): HullPlanTool {
   let from: Tile | null = null;
   let to: Tile | null = null;
   let hover: Tile | null = null;
@@ -73,7 +73,7 @@ export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writa
     const tiles = mirror(part);
     const label = `${r.w} × ${r.h}`;
     if (idle) return { tiles, label, result: none(null), end: b, lines: [], idle, replacePlan: false };
-    if (r.w < MIN_SIDE || r.h < MIN_SIDE) return { tiles, label, result: none('minSize'), end: b, lines: [], idle, replacePlan: false };
+    if (belowMin(r)) return { tiles, label, result: none('minSize'), end: b, lines: [], idle, replacePlan: false };
     if (b0.erase) {
       const result = brushPlan(sim, deps.ship(), 'erase', tiles);
       return { tiles, label, result: { ...result, reason: result.error }, end: b, lines: [], idle, replacePlan: false };
@@ -130,7 +130,7 @@ export function createHullPlanTool(sim: Sim, bridge: Bridge, deps: { tool: Writa
     r.setCutLine(s && s.lines.length ? s.lines : [], s?.result.reason ? RED : MAGENTA);
     const dragging = from !== null;
     const at = s && dragging ? r.screenOf(deps.ship(), s.end.x, s.end.y) : null;
-    deps.placeHint.set(s && dragging && at ? { x: at.x, y: at.y, text: s.result.reason ? `${s.label}: ${rejectionMessage(s.result.reason)}` : s.label } : null);
+    deps.placeHint.set(s && dragging && at ? { x: at.x, y: at.y, text: s.result.reason ? `${s.label}: ${rejectionMessage(s.result.reason)}` : s.label, ok: !s.result.reason } : null);
     if (dragging) setNote(s?.result.reason ? rejectionMessage(s.result.reason) : '');
   }
 

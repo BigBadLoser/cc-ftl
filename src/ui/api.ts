@@ -1111,7 +1111,7 @@ export interface UiApi {
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
   moduleThumb(def: string, rot: number): UiThumb | null;
   /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */
-  placeHint: Subscribable<{ x: number; y: number; text: string } | null>;
+  placeHint: Subscribable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
   setCutaway(mode: UiCutaway): void;

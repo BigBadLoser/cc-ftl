@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HullPlanC, ShipC, brushPlan, cutPlan, plannedTiles, planViolations, quoteYard, touchesShip } from '../sim';
+import { HullPlanC, ShipC, planFootprint, brushPlan, cutPlan, plannedTiles, planViolations, quoteYard, touchesShip } from '../sim';
 import { newViolations, hullFootprint } from '../sim/yard/width';
 import { outline, planHull, rect, run, yardGame } from './yardFixture';
 
@@ -179,5 +179,28 @@ describe('hull plan brushes: connection, erase and cut', () => {
     expect(cutPlan(sim, me, along).unchanged).toBe(true);
     const away = Array.from({ length: 6 }, (_, i) => ({ x: s.x + 30 + i, y: s.y - 20 }));
     expect(cutPlan(sim, me, away).unchanged).toBe(true);
+  });
+
+  it('the preview footprint of an add is exactly the plan that applying it leaves', () => {
+    const { sim, me } = yardGame();
+    send(sim, me, outline(sim, me, 4, top(5), 5, 5));
+    const r = brushPlan(sim, me, 'add', rect(sim, me, 7, top(6), 5, 6)); // merges with the planned block and the hull
+    expect(r.error).toBe(null);
+    send(sim, me, r.outline);
+    const applied = planFootprint(sim, plannedTiles(sim, me)).map(key).sort();
+    expect(r.footprint.map(key).sort()).toEqual(applied);
+    expect(r.footprint.length).toBeGreaterThan(plannedTiles(sim, me).length); // the interior (floor) is part of it
+  });
+
+  it('a line cut keeps the side joined to the ship and drops the cut-off side', () => {
+    const { sim, me } = yardGame();
+    send(sim, me, outline(sim, me, 4, top(8), 6, 8));
+    const s = sim.world.get(me, ShipC)!;
+    const y = s.y + top(8) + 4;
+    const r = cutPlan(sim, me, Array.from({ length: 10 }, (_, i) => ({ x: s.x + 2 + i, y })));
+    const kept = new Set(r.footprint.map(key));
+    expect(kept.has(key({ x: s.x + 6, y: y + 2 }))).toBe(true); // the ship's side
+    expect(kept.has(key({ x: s.x + 6, y: y - 2 }))).toBe(false); // cut off
+    expect(r.removed.every((t) => t.y < y)).toBe(true);
   });
 });

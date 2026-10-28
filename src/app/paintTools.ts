@@ -15,7 +15,7 @@ const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'h
 
 export interface PaintDeps {
   tool: Writable<UiToolState>;
-  placeHint: Writable<{ x: number; y: number; text: string } | null>;
+  placeHint: Writable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   renderer(): Renderer | undefined;
   showToast(msg: string): void;
   homeShipId(): number;

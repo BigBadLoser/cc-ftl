@@ -27,6 +27,9 @@ export function dragRect(a: Tile, b: Tile, min = MIN_SIDE): BrushRect {
   return { x: sign(b.x - a.x) > 0 ? a.x : a.x - w + 1, y: sign(b.y - a.y) > 0 ? a.y : a.y - h + 1, w, h };
 }
 
+/** True when a dragged rectangle is under the 3 x 3 minimum: it shows red (`minSize`) and does nothing on release. */
+export const belowMin = (r: BrushRect): boolean => r.w < MIN_SIDE || r.h < MIN_SIDE;
+
 export function rectTiles(r: BrushRect): Tile[] {
   const out: Tile[] = [];
   for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) out.push({ x, y });

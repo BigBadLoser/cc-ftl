@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dragRect, lineTiles, mirrorTiles, rectTiles, withMirror } from './hullBrush';
+import { belowMin, dragRect, lineTiles, mirrorTiles, rectTiles, withMirror } from './hullBrush';
 
 describe('hull brushes', () => {
   it('a drag never makes a rectangle thinner than 3 x 3: it snaps up, towards the drag', () => {
@@ -8,6 +8,15 @@ describe('hull brushes', () => {
     expect(dragRect({ x: 5, y: 5 }, { x: 4, y: 3 })).toEqual({ x: 3, y: 3, w: 3, h: 3 }); // up and to the left: it grows that way
     expect(dragRect({ x: 5, y: 5 }, { x: 10, y: 7 })).toEqual({ x: 5, y: 5, w: 6, h: 3 });
     expect(rectTiles(dragRect({ x: 0, y: 0 }, { x: 3, y: 2 }))).toHaveLength(12);
+  });
+
+  it('a drag keeps its real size when asked, and is below the minimum until 3 x 3 (the minSize refusal)', () => {
+    const small = dragRect({ x: 5, y: 5 }, { x: 6, y: 6 }, 1);
+    expect(small).toEqual({ x: 5, y: 5, w: 2, h: 2 });
+    expect(belowMin(small)).toBe(true);
+    expect(belowMin(dragRect({ x: 5, y: 5 }, { x: 7, y: 6 }, 1))).toBe(true); // 3 x 2
+    expect(belowMin(dragRect({ x: 5, y: 5 }, { x: 7, y: 7 }, 1))).toBe(false);
+    expect(dragRect({ x: 5, y: 5 }, { x: 5, y: 5 }, 1)).toEqual({ x: 5, y: 5, w: 1, h: 1 });
   });
 
   it('a line snaps to 0, 45 or 90 degrees, and a diagonal has at least 2 steps', () => {

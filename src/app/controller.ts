@@ -27,7 +27,7 @@ const BODY_PX = 16;
 export interface Controller {
   tool: Readable<UiToolState>;
   /** Why the module being placed is invalid at the cursor, with a screen position near it. */
-  placeHint: Readable<{ x: number; y: number; text: string } | null>;
+  placeHint: Readable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   selectedCrew: Readable<number | null>;
   /** The selected crew (a click, a box or shift-adds); orders go to the drafted ones among them. */
   selectedGroup: Readable<number[]>;
@@ -70,7 +70,7 @@ export interface Controller {
 
 export function createController(sim: Sim, bridge: Bridge): Controller {
   const tool = createStore<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
-  const placeHint = createStore<{ x: number; y: number; text: string } | null>(null);
+  const placeHint = createStore<{ x: number; y: number; text: string; ok?: boolean } | null>(null);
   const modSel = createStore<number | null>(null);
   const siteSel = createStore<number | null>(null);
   const shipSel = createStore<number | null>(null);
