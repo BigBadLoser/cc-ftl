@@ -98,10 +98,9 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
         const quad = footprintQuad(t.x - r, t.y - r, t.w + 2 * r, t.h + 2 * r, { x: 0, y: 0 }, lift, project, 0);
         const pulse = t.flying ? 1 : 0.7 + 0.3 * Math.sin(now / (60 + 240 * t.left));
         const segs = turned ? turnedSegments(padQuad(quad, extra)) : cornerSegments(padQuad(quad, extra));
+        // One steady stroke (no outline pass, no pulse), so the width never seems to change along the arm or between zooms.
         for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
-        gfx.stroke({ width: px(8), color: C_OUTLINE, alpha: 0.85, cap: 'square' });
-        for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
-        gfx.stroke({ width: px(6), color: C_THREAT, alpha: pulse, cap: 'square' });
+        gfx.stroke({ width: px(4), color: C_THREAT, alpha: 1, cap: 'butt' });
         // Countdown ring on the aim area: a squashed (iso) circle whose lit arc shrinks to nothing as the shot comes.
         const c = footprintQuad(t.x, t.y, t.w, t.h, { x: 0, y: 0 }, lift, project, 0);
         const cx = px((c.left.x + c.right.x) / 2);
@@ -131,7 +130,7 @@ type Pt = { x: number; y: number };
 type Quad4 = { top: Pt; right: Pt; bottom: Pt; left: Pt };
 
 /** Arm length as a share of the side it runs along: the arms are sized in world space, so they scale with zoom like the ring. */
-const ARM_SHARE = 0.28;
+const ARM_SHARE = 0.15;
 
 function armsAt(p: Pt, a: Pt, b: Pt, out: Seg[], k: number): void {
   for (const o of [a, b]) {
