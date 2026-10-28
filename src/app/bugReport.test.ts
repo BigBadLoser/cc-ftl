@@ -66,6 +66,24 @@ describe('buildIssueUrl', () => {
   });
 });
 
+describe('surrogate safety', () => {
+  it('survives a message cut inside an emoji', () => {
+    const r = buildIssueUrl(draft, info({ errors: [{ message: '😀'.repeat(151), stack: '' }] }));
+    expect(() => decodeURIComponent(r.url)).not.toThrow();
+    expect(r.body).toContain('😀');
+  });
+  it('survives emoji in stacks, title and reporter text cut by the cap', () => {
+    const big = { title: '😀'.repeat(150), what: '😀'.repeat(5000), expected: '😀'.repeat(5000) };
+    const r = buildIssueUrl(big, info({ errors: errs(3).map((e) => ({ ...e, stack: '😀'.repeat(400) })) }));
+    expect(r.url.length).toBeLessThanOrEqual(MAX_URL);
+    expect(() => decodeURIComponent(r.url)).not.toThrow();
+  });
+  it('does not throw on a lone surrogate already in the input', () => {
+    expect(() => buildIssueUrl(draft, info({ errors: [{ message: 'bad \ud83d here', stack: '' }] }))).not.toThrow();
+    expect(() => issueUrl('t\ud83d', 'b\ude00')).not.toThrow();
+  });
+});
+
 describe('reportFileNames', () => {
   it('pairs the names with one stamp', () => {
     expect(reportFileNames(new Date(2026, 9, 28, 7, 5, 9))).toEqual({ save: 'cc-ftl-save-20261028-070509.json', shot: 'cc-ftl-shot-20261028-070509.png' });

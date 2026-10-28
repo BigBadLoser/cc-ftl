@@ -40,8 +40,22 @@ export const FULL_LIMITS: ContextLimits = { errors: 10, stack: 600 };
 
 const TITLE_MAX = 200;
 
+/** Cut to at most `n` UTF-16 units, never inside a surrogate pair (a lone surrogate makes `encodeURIComponent` throw). */
 function clip(s: string, n: number): string {
-  return s.length <= n ? s : `${s.slice(0, Math.max(0, n - 1))}…`;
+  if (s.length <= n) return s;
+  let end = Math.max(0, n - 1);
+  const c = s.charCodeAt(end - 1);
+  if (end > 0 && c >= 0xd800 && c <= 0xdbff) end--; // the cut would split a pair: step back
+  return `${s.slice(0, end)}…`;
+}
+
+/** `encodeURIComponent`, but a lone surrogate already in the text becomes U+FFFD instead of throwing. */
+function enc(s: string): string {
+  try {
+    return encodeURIComponent(s);
+  } catch {
+    return encodeURIComponent(s.replace(/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g, '\ufffd'));
+  }
 }
 
 /** The auto-collected context as markdown (the "Context" section of the issue body). */
@@ -85,7 +99,7 @@ export function buildBody(draft: ReportDraft, context: string): string {
 }
 
 export function issueUrl(title: string, body: string): string {
-  return `${ISSUE_URL}?title=${encodeURIComponent(clip(title.trim(), TITLE_MAX))}&body=${encodeURIComponent(body)}&labels=bug`;
+  return `${ISSUE_URL}?title=${enc(clip(title.trim(), TITLE_MAX))}&body=${enc(body)}&labels=bug`;
 }
 
 /**
