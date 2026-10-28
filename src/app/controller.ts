@@ -2,7 +2,7 @@ import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
-import type { UiToolState } from '../ui/api';
+import type { UiSubject, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
 import type { InputHandlers, Tile } from './input';
 import { createPaintTools } from './paintTools';
@@ -63,6 +63,9 @@ export interface Controller {
   selectedSite: Readable<number | null>;
   selectSite(id: number | null): void;
   focusAlert(id: number): void;
+  focusSubject(subject: UiSubject): void;
+  /** Per-frame upkeep: alerts whose condition resolved clear themselves, and credits that arrived without an event get logged. */
+  upkeep(): void;
   onEvents(events: SimEvent[]): void;
   /** Wire up the renderer once the canvas exists; returns handlers for attachInput. */
   attach(renderer: Renderer): InputHandlers;
@@ -79,8 +82,6 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
   const log = createEventLog(sim);
-  alerts.onRaised(log.defer);
-  alerts.onCleared((a, _tick, replaced) => log.release(a.id, replaced));
   const crewSel = createStore<number | null>(null);
   const group = createStore<number[]>([]);
   const shuttleSel = createStore<number | null>(null);
@@ -210,6 +211,12 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     shipSel.set(ship);
     if (frame && ship > 0) r?.frameShips([ship]);
   };
+  /** Jump to what a log entry or alert is about. A node is for the UI to open on the starmap. */
+  const focusSubject = (s: UiSubject) => {
+    if (s.kind === 'tile') r?.focusTile(s.x, s.y);
+    else if (s.kind === 'crew') selectCrew(s.id, true);
+    else if (s.kind === 'ship') selectShip(s.id);
+  };
   const selectAsteroid = (id: number | null) => {
     selectTile(null);
     const a = id === null ? undefined : sim.world.get(id, AsteroidC);
@@ -244,8 +251,13 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectedSite: siteSel,
     selectSite,
     focusAlert(id) {
-      const at = alerts.get(id)?.at;
-      if (at) r?.focusTile(at.x, at.y);
+      const s = alerts.get(id)?.subject;
+      if (s) focusSubject(s);
+    },
+    focusSubject,
+    upkeep() {
+      alerts.sync();
+      log.sync();
     },
     toast,
     setTool,
@@ -259,7 +271,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       }
       alerts.onEvents(events);
       alerts.syncIncoming();
-      log.onEvents(events, alerts.covers);
+      log.onEvents(events);
     },
     attach(renderer) {
       r = renderer;

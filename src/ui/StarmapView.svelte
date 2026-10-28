@@ -17,7 +17,7 @@
    * The starmap screen. `flee`: the player's ship id when it was opened from the combat panel to pick where to flee to (only the
    * nodes one jump away can be picked, the cheapest affordable one is preselected); null for ordinary browsing and jumping.
    */
-  let { api, flee = null, onClose, onSlide }: { api: UiApi; flee?: number | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
+  let { api, flee = null, focusNode = null, onClose, onSlide }: { api: UiApi; flee?: number | null; focusNode?: string | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
   /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
@@ -197,7 +197,12 @@
       map = m;
       if (!placed && m.nodes.length) {
         placed = true;
-        queueMicrotask(() => focusSector(m.currentSector, true));
+        queueMicrotask(() => {
+          const n = focusNode ? m.nodes.find((x) => x.id === focusNode) : undefined;
+          const sec = n ? sectorById.get(n.sector) : undefined;
+          if (n && sec) flyTo(n.x, n.y, (Math.min(w, h) * 0.62) / (2 * sec.r + 60), 0); // a log entry or alert about a node: open on it
+          else focusSector(m.currentSector, true);
+        });
       }
       if (moved && selected === m.current) selected = null;
       if (fleeing && !preselected && m.nodes.length) {
