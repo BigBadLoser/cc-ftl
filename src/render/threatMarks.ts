@@ -85,8 +85,7 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
       const lift = host.roofed(ref) ? ROOF_H : 0;
       const px = (n: number) => n / s;
       const now = performance.now();
-      // Weapons aimed at the same area alternate the mark: even ones hug the iso footprint, odd ones are screen-aligned (turned 90 degrees
-      // against it, so the pair reads as a square and a diamond); a third and later get a few px more room.
+      // Weapons aimed at the same area alternate the mark: even ones hug the iso footprint, odd ones are the same bracket turned 90 degrees about its centre (corners at the midpoints of the first one's sides); a third and later get a few px more room.
       const seen = new Map<string, number>();
       for (const t of threats(ref).sort((a, b) => a.key - b.key)) {
         const area = `${t.x},${t.y},${t.w},${t.h}`;
@@ -98,7 +97,7 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
         const r = t.radius;
         const quad = footprintQuad(t.x - r, t.y - r, t.w + 2 * r, t.h + 2 * r, { x: 0, y: 0 }, lift, project, 0);
         const pulse = t.flying ? 1 : 0.7 + 0.3 * Math.sin(now / (60 + 240 * t.left));
-        const segs = turned ? alignedSegments(padQuad(quad, extra)) : isoBracketSegments(padQuad(quad, extra));
+        const segs = turned ? turnedSegments(padQuad(quad, extra)) : isoBracketSegments(padQuad(quad, extra));
         for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
         gfx.stroke({ width: px(6), color: C_OUTLINE, alpha: 0.85, cap: 'square' });
         for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
@@ -128,13 +127,25 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
   };
 }
 
-/** Corner brackets of the quad's screen-aligned bounding box (the iso brackets turned to a square), 8 segments. */
-function alignedSegments(q: { top: { x: number; y: number }; right: { x: number; y: number }; bottom: { x: number; y: number }; left: { x: number; y: number } }): Seg[] {
-  const x0 = q.left.x, x1 = q.right.x, y0 = q.top.y, y1 = q.bottom.y;
-  const a = armLength(Math.min(x1 - x0, y1 - y0));
+type Pt = { x: number; y: number };
+type Quad4 = { top: Pt; right: Pt; bottom: Pt; left: Pt };
+
+/**
+ * The iso bracket turned 90 degrees about the footprint's centre: its corners sit at the midpoints of the first mark's sides, and its arms
+ * (the same length as the first mark's) run along the diamond joining those midpoints.
+ */
+function turnedSegments(q: Quad4): Seg[] {
+  const mid = (a: Pt, b: Pt): Pt => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  const v = [mid(q.top, q.right), mid(q.right, q.bottom), mid(q.bottom, q.left), mid(q.left, q.top)] as const;
+  const arm = armLength(Math.hypot(q.right.x - q.top.x, q.right.y - q.top.y));
   const out: Seg[] = [];
-  for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1]] as const) {
-    out.push({ x1: x, y1: y, x2: x + dx * a, y2: y }, { x1: x, y1: y, x2: x, y2: y + dy * a });
+  for (let i = 0; i < 4; i++) {
+    const p = v[i] as Pt;
+    for (const o of [v[(i + 1) % 4], v[(i + 3) % 4]] as Pt[]) {
+      const len = Math.hypot(o.x - p.x, o.y - p.y) || 1;
+      const k = Math.min(arm, len / 2) / len;
+      out.push({ x1: p.x, y1: p.y, x2: p.x + (o.x - p.x) * k, y2: p.y + (o.y - p.y) * k });
+    }
   }
   return out;
 }
