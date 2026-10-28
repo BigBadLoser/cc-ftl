@@ -76,10 +76,9 @@ def _look1(f, s, back):
         d, zb = s.front(foot, foot)[0][0], foot - x * (s.H - Z(1))     # (straight down, over the slope)
         prof = [(d - 0.01, zb), (d + LINE, zb), (d + LINE, foot), (d - 0.01, foot)]
         f.part(*U(e, 32 - e), prof, s.cols(prof, "face"), YS[2])
-        for (a, b), n in (((0, e), 0), ((e, 32 - e), x + 1), ((32 - e, 32), 0)):  # (its edge on the slope under
-            z0 = s.z_at(foot, n)                                                 # it, following its outline: 2 px,
-            f.line(*U(a, b), s.z_at(z0, 2), z0, CREASE, bevel=False)            # it hides some; a px more under
-                                                                                 # the part hanging past the foot)
+        for (a, b), n, w in (((0, e), 0, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0, 2)):   # (its edge on
+            z0 = s.z_at(foot, n)                                                 # the slope under it, following its
+            f.line(*U(a, b), s.z_at(z0, w), z0, CREASE, bevel=False)            # outline: a px past what it hides)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
