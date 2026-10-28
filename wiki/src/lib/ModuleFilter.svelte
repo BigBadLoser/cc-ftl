@@ -20,7 +20,7 @@
   <label>
     <span class="sr-only">Filter by category</span>
     <select aria-label="Filter by category" bind:value={category}>
-      {#each categories as option}
+      {#each categories as option (option)}
         <option value={option}>{option === 'all' ? 'All categories' : option}</option>
       {/each}
     </select>

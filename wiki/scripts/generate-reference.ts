@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { modules as baseModules } from '../../src/content/modules.ts';
@@ -18,8 +18,8 @@ const moduleRoutes = join(root, 'src/routes/reference/modules');
 const itemRoutes = join(root, 'src/routes/reference/items');
 
 function slugOf(id: string, prefix: string): string {
-  if (!id.startsWith(prefix)) throw Error('Unexpected content ID: ' + id);
-  const slug = id.slice(prefix.length).replaceAll('.', '-');
+  // Most IDs use module./item., but a few legacy module IDs (e.g. container.2x4) do not.
+  const slug = (id.startsWith(prefix) ? id.slice(prefix.length) : id).replaceAll('.', '-');
   if (!/^[a-z0-9-]+$/.test(slug)) throw Error('Unsafe reference slug: ' + id);
   return slug;
 }
