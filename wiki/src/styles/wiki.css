@@ -58,13 +58,13 @@
  * SveltePress renders search before nav in the DOM; only the desktop
  * visual order changes, preserving keyboard and mobile accessibility. */
 @media (min-width: 1200px) {
-  body .header-inner {
+  body .header-inner.header-inner {
     display: grid;
     grid-template-columns: minmax(185px, 1fr) auto minmax(205px, 1fr);
     align-items: stretch;
     column-gap: 1.25rem;
   }
-  body .header-inner.has-sidebar {
+  body .header-inner.header-inner.has-sidebar {
     padding-left: 1rem;
   }
   body .header-inner > .left {
