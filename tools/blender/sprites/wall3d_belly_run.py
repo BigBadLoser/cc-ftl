@@ -80,10 +80,10 @@ def _look1(f, s, back):
         side = [(fr - 0.01, zb), (fr + PAINT, zb), (fr + PAINT, top), (fr - 0.01, top)]   # face, the lip's height)
         for a in (e, 31 - e):
             f.part(*U(a, a + 1), side, [XS] * 4, XS, end=False)
-        for (a, b), n, w in (((0, e), 0.5, 1.5), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 1.5)):   # (its
+        for (a, b), n, w in (((0, e), 0.5, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 2)):   # (its
             z0 = s.z_at(foot, n)                                                 # edge on the slope under it, along
             f.line(*U(a, b), s.z_at(z0, w), z0, CREASE, bevel=False)            # its outline: a px showing past it)
-        f.line(*U(0, 1), s.zmin, s.z_at(foot, 0.5), CREASE, end=False, bevel=False)   # (and on down the slope's +u end)
+        f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)    # (and on down the slope's +u end, from its foot)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
