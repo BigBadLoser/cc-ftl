@@ -1,5 +1,5 @@
 ---
-title: Gameplay Wiki
+title: Wiki
 heroImage: false
 tagline: A field guide to ship systems, survival, strategy, and equipment.
 actions:

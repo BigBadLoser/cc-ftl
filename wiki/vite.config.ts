@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     sveltepress({
       siteConfig: {
-        title: 'Gameplay Wiki',
+        title: 'Wiki',
         description: 'Guides to ships, crew, equipment, and survival.',
       },
       theme: defaultTheme({

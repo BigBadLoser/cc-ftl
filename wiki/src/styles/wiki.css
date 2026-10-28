@@ -312,8 +312,9 @@
     align-items: center;
     justify-content: center;
     position: fixed;
-    top: 88px;
-    left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) - 16px);
+    /* Align with the brand in the sidebar's 73px title row. */
+    top: 20px;
+    left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) - 48px);
     z-index: 1002;
     width: 32px;
     height: 32px;
@@ -332,7 +333,8 @@
     visibility: hidden;
     pointer-events: none;
   }
-  html.wiki-sidebar-hidden .wiki-sidebar-toggle { left: 18px; }
+  /* Keep the toggle in the same header position after collapsing;
+   * the wordmark moves into the navbar, and the control stays beside it. */
   html.wiki-sidebar-hidden .theme-default--page-layout .content {
     width: min(1120px, calc(100vw - 60px));
     max-width: 1120px;
