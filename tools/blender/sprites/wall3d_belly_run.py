@@ -19,7 +19,8 @@ XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam 
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 9),         # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (8, 15)),                # the centre plate, a px proud, lit along its top, a px of shade under
-    "lip": 2,                                   # a plate the face's width on its foot, this tall and a px proud
+    "lip": (4, 3, 3),                           # a plate the face's width on its foot, this tall and a px proud;
+                                                # its middle (px in from each end) on down past the foot this far
     "slope_seam": ((7, 8), (24, 25)),           # seams down the slope, a px in from the plate's sides; one across it
 }
 
@@ -69,7 +70,11 @@ def _look1(f, s, back):
         f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
         f.raised(u0, u1, Z(v0 + 1), Z(v0), LINE - 0.01, LINE + PAINT, col=YS[4])    # (painted on, as T3's bolts)
     with f.tag("lip"):                                          # (lit along its top by its facing)
-        f.raised(-0.5, 0.5, foot, s.z_at(foot, -LOOK1["lip"]), -0.01, LINE, "face", cap=YS[2])
+        h, e, x = LOOK1["lip"]
+        f.raised(-0.5, 0.5, foot, s.z_at(foot, -h), -0.01, LINE, "face", cap=YS[2])
+        d, zb = s.front(foot, foot)[0][0], foot - x * (s.H - Z(1))     # (straight down, over the slope)
+        prof = [(d - 0.01, zb), (d + LINE, zb), (d + LINE, foot), (d - 0.01, foot)]
+        f.part(*U(e, 32 - e), prof, s.cols(prof, "face"), YS[2])
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
             f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
