@@ -142,7 +142,7 @@
 /* Category selection uses equal-width, full-row grid cells. */
 .wiki-category-tabs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   margin: 1.35rem 0 0;
 }
@@ -284,3 +284,12 @@
 }
 .wiki-module-art { background: #070b11; }
 .wiki-module-art img { max-width: none; width: 100%; object-fit: cover; }
+
+/* With two columns on small screens, center the final odd tab at the same size. */
+@media (max-width: 570px) {
+  .wiki-category-tabs button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc(50% - 0.25rem);
+    justify-self: center;
+  }
+}

@@ -130,19 +130,44 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     const y=g.sprite!.top+(l.top-bounds.minY)*scale;
     return '<image x="'+number(x)+'" y="'+number(y)+'" width="'+number(l.w*scale)+'" height="'+number(l.h*scale)+'" href="data:image/png;base64,'+l.png+'" style="image-rendering:pixelated" preserveAspectRatio="none"/>';
   }).join(''): '';
+  // Tiered engine placeholders share Mk I art, but the game adds a tier
+  // outline and badge around the actual expanded footprint.
+  let tierOverlay = '';
+  if (def.tierArt) {
+    const tint='#'+def.tierArt.tint.toString(16).padStart(6,'0');
+    const tilePolygons=g.foot.map(p=>p.split(' ').map(q=>q.split(',').map(Number) as [number,number]));
+    const edgeIndices=[ [1,2],[2,3],[3,0],[0,1] ] as const;
+    for (let py=0;py<h;py++) for(let px=0;px<w;px++) {
+      const p=tilePolygons[py*w+px];
+      if(!p)continue;
+      for(const [side,hasNeighbor] of [
+        [0,px<w-1],[1,py<h-1],[2,px>0],[3,py>0]
+      ] as [number,boolean][]) {
+        if(hasNeighbor)continue;
+        const [a,b]=edgeIndices[side]!;
+        tierOverlay+='<line x1="'+number(p[a]![0])+'" y1="'+number(p[a]![1])+'" x2="'+number(p[b]![0])+'" y2="'+number(p[b]![1])+'" stroke="'+tint+'" stroke-width="2.3" stroke-linecap="round"/>';
+      }
+    }
+    const frontPoly=tilePolygons.at(-1);
+    if(frontPoly){
+      const cx=frontPoly.reduce((s,p)=>s+p[0],0)/4,cy=frontPoly.reduce((s,p)=>s+p[1],0)/4;
+      const badge=def.blueprint?.tier===3?'III':'II';
+      tierOverlay+='<text x="'+number(cx)+'" y="'+number(cy-2)+'" text-anchor="middle" fill="'+tint+'" stroke="#05080d" paint-order="stroke" stroke-width="3" font-size="12" font-family="monospace" font-weight="bold">'+badge+'</text>';
+    }
+  }
   const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="300" height="200">'
     +'<rect width="300" height="200" fill="#070b11"/>'
     +'<g stroke="#29313b" stroke-width="0.8" fill="none">'+g.grid.map(p=>polygon(p,'grid')).join('')+'</g>'
     +'<g stroke="#36d4ff" stroke-width="1.15" fill="#143341" fill-opacity=".65">'+g.foot.map(p=>polygon(p,'foot')).join('')+'</g>'
     +(g.access?'<polygon points="'+g.access+'" stroke="#f0b13a" stroke-width="1.1" stroke-dasharray="4 3" fill="#f0b13a" fill-opacity=".12"/>':'')
-    +svgLayers
+    +svgLayers+ tierOverlay
     +(g.accessLabel?'<text x="'+number(g.accessLabel.x)+'" y="'+number(g.accessLabel.y)+'" text-anchor="middle" fill="#f0b13a" stroke="#05080d" stroke-width="2.5" paint-order="stroke" font-family="sans-serif" font-weight="700" font-size="9">USE</text>':'')
     +(!layers.length?'<text x="150" y="185" text-anchor="middle" fill="#8290a0" font-family="sans-serif" font-size="9">ARTWORK PENDING</text>':'')
     +'</svg>';
   const name=slug(id)+'.png';
   await sharp(Buffer.from(svg)).resize(600,400,{kernel:'nearest'}).png({compressionLevel:9}).toFile(join(dest,name));
   result[id]={url:urlPrefix+name,art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt};
-  if(layers.length){withArt++;if(layers.length>1)multi++;totalLayers+=layers.length;}else blank++;
+  if(layers.length){withArt++;if(layers.length>1)multi++;totalLayers+=layers.length;}else {blank++;console.warn('No atlas artwork for module '+id+' ('+def.name+')');}
 }
 await mkdir(join(root,'src/data/generated'),{recursive:true});
 await writeFile(join(root,'src/data/generated/previews.json'),JSON.stringify(result,null,2)+'\n');
