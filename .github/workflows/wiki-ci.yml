@@ -35,3 +35,35 @@ jobs:
           test -f wiki/dist/index.html
           test -f wiki/dist/reference/modules/index.html
           test -f wiki/dist/reference/items/index.html
+      - name: Render actual wiki screenshots
+        run: |
+          set -euo pipefail
+          chrome="$(command -v google-chrome || command -v chromium || true)"
+          if [ -z "$chrome" ]; then echo "No Chrome/Chromium found on runner" >&2; exit 1; fi
+          mkdir -p .preview-root/cc-ftl/wiki wiki-preview
+          cp -a wiki/dist/. .preview-root/cc-ftl/wiki/
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory .preview-root >/tmp/wiki-preview-http.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS -o /dev/null http://127.0.0.1:8765/cc-ftl/wiki/; then break; fi
+            sleep 1
+          done
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/home.png" http://127.0.0.1:8765/cc-ftl/wiki/
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/modules.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/
+          "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5000 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/power.png" http://127.0.0.1:8765/cc-ftl/wiki/mechanics/power/
+          test -s wiki-preview/home.png
+          test -s wiki-preview/modules.png
+          test -s wiki-preview/power.png
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: cc-ftl-wiki-preview
+          path: wiki-preview/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: cc-ftl-wiki-static-site
+          path: wiki/dist/
+          retention-days: 14

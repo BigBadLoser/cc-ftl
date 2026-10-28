@@ -7,14 +7,15 @@ name: CI
 #   install. The full suite is the author's job: `npm run check` after the last merge of main, pasted into the PR.
 # - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
 #   tier (*.slow.test.ts) included. This catches what slips through, such as two PRs that only break together.
-# Markdown-only changes don't run CI.
+# Wiki-only changes run .github/workflows/wiki-ci.yml instead of this full game CI.
+# Shared src/content edits still run both workflows. Markdown-only edits are excluded.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths-ignore: ['**/*.md']
+    paths-ignore: ['**/*.md', 'wiki/**', '.github/workflows/wiki-ci.yml', '.github/workflows/pages.yml']
   push:
     branches: [main]
-    paths-ignore: ['**/*.md']
+    paths-ignore: ['**/*.md', 'wiki/**', '.github/workflows/wiki-ci.yml', '.github/workflows/pages.yml']
   schedule:
     - cron: '17 6 * * *'
   workflow_dispatch:
