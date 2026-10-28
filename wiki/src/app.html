@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="%sveltekit.assets%/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#111825" />
+    <script>
+      // Default to the game's dark palette while preserving each visitor's theme preference.
+      try {
+        if (!localStorage.getItem('SVELTEPRESS_DARK_MODE')) {
+          localStorage.setItem('SVELTEPRESS_DARK_MODE', 'dark');
+        }
+      } catch { /* Private browsing can restrict storage. */ }
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
