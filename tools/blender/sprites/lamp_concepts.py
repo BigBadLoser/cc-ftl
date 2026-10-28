@@ -1605,11 +1605,23 @@ def floor_wheel_round():
     return [*k.build(), _holdout_round("lc_f_wheel_round_h", 0.43, n)]
 
 
+def _plain_grate(k, s, n=4, b=0.035):
+    """A plain n x n grate over an s-wide opening: a border and the bars, nothing else."""
+    for t in (-1, 1):
+        k.box(0, t * (s / 2 - b / 2), -0.004, s, b, 0.02, "steelD", top="steel")
+        k.box(t * (s / 2 - b / 2), 0, -0.004, b, s, 0.02, "steelD", top="steel")
+    for i in range(1, n):
+        t = -s / 2 + i * s / n
+        k.box(t, 0, -0.004, 2 * PX, s, 0.018, "steelD", top="steel")
+        k.box(0, t, -0.004, s, 2 * PX, 0.018, "steelD", top="steel")
+
+
 def floor_tile_grate():
-    """Grate A as a whole floor tile: the lip is the tile's edge, a lit well under a 4 x 4 hatch grate fills the rest,
-    so a run of them makes a lit deck strip."""
+    """Grate A as a whole floor tile: a plain lit well under a 4 x 4 grate, set back from the tile's edges by a deck
+    lip, so a run of them makes a lit deck strip."""
     k = K("lc_f_tile_grate", (1, 1), 0)
-    s, d, lip = 0.84, 0.1, 0.08
+    s, d = 0.76, 0.1
+    lip = (1.0 - s) / 2
     _shaft(k, s, s, 0.0, -d, WARM_WALL)
     k.box(0, 0, -d - 0.02, s + 0.04, s + 0.04, 0.02, "steelD")
     k.box(0, 0, -d, s - 0.04, s - 0.04, 0.02, "fxW", bevel=0.01)                           # the light
@@ -1619,10 +1631,7 @@ def floor_tile_grate():
     for su in (-1, 1):                                                                 # the deck's corner marks (clipped to
         for sv in (-1, 1):                                                             # the tile by the holdout)
             k.box(su * 0.5, sv * 0.5, 0.0, 0.13, 0.13, 0.0125, "steelD", top="steelD", rz=math.pi / 4)
-    for su in (-1, 1):
-        for sv in (-1, 1):
-            k.cyl(su * 0.46, sv * 0.46, 0.012, 0.018, 0.006, "plate", sides=6)
-    _hatch_grate(k, s)
+    _plain_grate(k, s)
     for t in (0, 1):                                                                   # the deck's seam on the far edges, as
         sz = (0.031, 1.0, 0.0125) if t == 0 else (1.0, 0.031, 0.0125)                  # every floor tile draws its own
         k.box(-0.4845 if t == 0 else 0, 0 if t == 0 else -0.4845, 0.0, *sz, "steelD", top="steelD")
