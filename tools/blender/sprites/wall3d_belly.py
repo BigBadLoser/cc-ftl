@@ -27,9 +27,11 @@ from .wall3d_ext_geom import YS
 from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
-ARMOUR = 0.82                       # tiles: the near armour's upright drop under the cut (hull 46 D3's: 32 px at 64 px
-SLOPE = (0.25, 0.49)                # tiles), then its slope in (s . p terms) and down under the ship: a px column shows
-                                    # 11 px of it on a run, 15 px on a facet facing the camera (as hull 46 D3, Bottom)
+ARMOUR = 0.82                       # tiles: the near armour's upright drop under the cut (hull 46 Bottom's: 33 px at
+SLOPE = (0.375, 0.587)              # 64 px tiles; its D3 draws 31, but the two meet), then its slope in (square to its
+                                    # front) and down under the ship: a px column shows 11 px of it on a run (39.2 h
+                                    # - 32 r), its end at the tile's side a 12 px taper (32 r), 14 px on a facet facing
+                                    # the camera (39.2 h - 16 r sqrt 2), as hull 46 D3's and Bottom's
 SLOPE_TONE = YS[1]
 OUTER = YS[2]                       # the outer faces (both near faces alike, as the exterior's)
 END = YS[1]                         # a part's end where it shows past its neighbour
@@ -50,9 +52,10 @@ def span(s, far):
 
 
 def _slope(s, c):
-    """The slope under a front (s, c: s . p <= c, tile units): from the armour's foot SLOPE in (in s . p terms, as the
-    hull's depths) and down."""
+    """The slope under a front (s, c: s . p <= c, tile units): from the armour's foot SLOPE in (square to the front:
+    s . p terms scaled by |s|, so a facet's slope matches a run's) and down."""
     (r, h), z = SLOPE, ZG - ARMOUR
+    r *= s.length
     return [(Vector((h * s.x, h * s.y, -r)), h * c - r * z)]
 
 
