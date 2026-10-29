@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
+  import Frame from './Frame.svelte';
   import { OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_ENGINE_EVASION, OVERCHARGE_HEAT_PER_SEC, OVERCHARGE_SEC, OVERCHARGE_SHIELD_REGEN, OVERCHARGE_WEAPON_CHARGE, VENT_MIN_HEAT } from '../../sim/combat/heatTuning';
   import type { UiShipCombat } from '../api';
 
@@ -33,7 +34,8 @@
   }
 </script>
 
-<section class="hh sec" data-testid="heat-gauge"><h3>Heat</h3>
+<Frame title="Heat" style="grid-column:6; grid-row:1" testid="heat-gauge">
+<div class="hh">
   <div class="top">
     <b class={tone}>{pct}%</b>
     <span class="rate" class:up={rate > 0.05} class:down={rate < -0.05} data-testid="heat-rate" title="Net heat change per second right now">{rateText}</span>
@@ -42,8 +44,9 @@
   <div class="gauge {tone}" role="meter" aria-label="Ship heat" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100">
     <i style="width:{pct}%"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u><s style="left:70%" title="Auto-vent line"></s>
   </div>
-</section>
-<section class="oc sec"><h3>Overcharge</h3>
+</div>
+</Frame>
+<Frame title="Overcharge" style="grid-column:6; grid-row:2">
   <div class="obs">
     {#each kinds as o (o.k)}
       {@const r = state(o.k, o.effect)}
@@ -54,13 +57,10 @@
       </button>
     {/each}
   </div>
-</section>
+</Frame>
 
 <style>
-  /* Framed section, same as PlayerStrip's. */
-  .sec { position: relative; box-sizing: border-box; min-width: 0; min-height: 0; padding: 12px 8px 8px; border: 1px solid rgba(90, 140, 175, 0.38); }
-  .sec > h3 { position: absolute; top: -6px; left: 9px; margin: 0; padding: 0 5px; background: var(--panel); font: 600 12px/12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-  .hh { grid-column: 6; grid-row: 1; display: grid; grid-template-rows: auto 1fr; gap: 8px; align-content: stretch; }
+  .hh { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 8px; align-content: stretch; }
   .top { display: flex; align-items: center; gap: 7px; }
   b { font: 700 20px/1 var(--head-font); } b.cool { color: var(--cyan); } b.amber { color: var(--amber); } b.red { color: var(--red); }
   .rate { font: 600 13px/1 var(--head-font); color: var(--dim); min-width: 46px; } .rate.up { color: var(--amber); } .rate.down { color: var(--cyan); }
@@ -74,7 +74,6 @@
   .gauge > s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--amber); }
   .gauge > u { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(216, 240, 255, 0.22); top: 55%; }
   @keyframes pulse { to { filter: brightness(1.35); } }
-  .oc { grid-column: 6; grid-row: 2; display: block; }
   .obs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 42px; }
   .ocb { position: relative; min-height: 0; min-width: 0; height: 100%; padding: 0 2px; display: grid; align-content: center; justify-items: center; gap: 3px; overflow: hidden; color: var(--cyan); }
   .ocb .nm { font: 700 12px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }

@@ -2,6 +2,7 @@
   import type { UiEnemyWeapon, UiShipCombat } from '../api';
   import Icon from '../Icon.svelte';
   import { hullTone } from './hullTone';
+  import Frame from './Frame.svelte';
 
   /** Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border. */
   let { enemy, state: pill, onFrame }: { enemy: UiShipCombat; state: { text: string; tone: string }; onFrame: () => void } = $props();
@@ -15,10 +16,11 @@
     w.destroyed ? 'Destroyed' : w.stalled ? 'Offline' : w.eta !== null ? `Aimed ${w.eta.toFixed(1)}s` : w.fired ? 'Fired' : 'Charging';
 </script>
 
-<section class="card" data-testid="enemy-card" aria-label="Enemy ship">
-  <h3 class="ttl">{enemy.name}</h3>
-  <div class="tr"><span class="pill {pill.tone}">{pill.text}</span><button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button></div>
-
+<Frame title={enemy.name} tone="red" style="width:290px; pointer-events:auto; background: var(--panel)" testid="enemy-card">
+  {#snippet right()}
+    <span class="pill {pill.tone}">{pill.text}</span><i class="ln" style="width:14px"></i><button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
+  {/snippet}
+<div class="body">
   {#if sub}<span class="fac">{sub}</span>{/if}
   <div class="def">
     <div class="srow">
@@ -40,16 +42,15 @@
       {/each}
     </div>
   {/if}
-</section>
+</div>
+</Frame>
 
 <style>
-  .card { position: relative; box-sizing: border-box; width: 290px; background: var(--panel); border: 1px solid #b8343c; padding: 14px 10px 10px; display: grid; gap: 10px; pointer-events: auto; }
-  .ttl { position: absolute; top: -10px; left: 9px; margin: 0; padding: 0 6px; background: var(--panel); font: 700 18px/20px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #ff8a8a; white-space: nowrap; }
-  .fac { margin: -4px 0 -4px; font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #c98a8a; }
-  .tr { position: absolute; top: -11px; right: 12px; display: flex; align-items: center; gap: 14px; }
-  .pill { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; background: var(--panel); box-shadow: 0 0 0 4px var(--panel); white-space: nowrap; }
+  .body { display: grid; gap: 10px; }
+  .fac { margin: 2px 0 -4px; font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #c98a8a; }
+  .pill { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; margin: 0 4px; background: var(--panel); white-space: nowrap; }
   .pill.red { color: #ff8a8a; } .pill.amber { color: var(--amber); } .pill.green { color: var(--green); } .pill.dim { color: var(--dim); }
-  .fr { min-height: 0; min-width: 0; width: 22px; height: 21px; padding: 0; display: grid; place-items: center; background: var(--panel); border: 1px solid #ff8a8a; border-radius: 0; box-shadow: 0 0 0 4px var(--panel); color: #ff8a8a; }
+  .fr { min-height: 0; min-width: 0; width: 22px; height: 21px; padding: 0; display: grid; place-items: center; background: var(--panel); border: 1px solid #ff8a8a; border-radius: 0; margin: 0 4px; color: #ff8a8a; }
 
   /* One bar style: dark track, thin dim-red edge, square fill. */
   .bar { position: relative; display: block; box-sizing: border-box; background: #061020; border: 1px solid #5a2229; }

@@ -4,6 +4,7 @@
   import { hullTone } from './hullTone';
   import FleeButton from './FleeButton.svelte';
   import HeatGauge from './HeatGauge.svelte';
+  import Frame from './Frame.svelte';
 
   type Me = NonNullable<UiCombat['player']>;
   let { api, me, flee, drive, aiming, rate, onSelect, onVent, onOvercharge }: {
@@ -39,20 +40,22 @@
 
 <div class="dock">
 <div class="strip" data-testid="combat-strip">
-  <section class="sec def" style="grid-column:1; grid-row:1"><h3>Status</h3>
+  <Frame title="Status" style="grid-column:1; grid-row:1">
+  <div class="def">
     <div class="line" title="Hull integrity"><span class="lbl">Hull</span><span class="hb {hullTone(hull)}"><i style="width:{hull}%"></i></span><b>{hull}%</b></div>
     <div class="line" title="Shield layers"><span class="lbl">Shields</span><span class="pips">{#each Array.from({ length: me.shield.max }, (_, i) => i) as i (i)}<i class:on={i < me.shield.layers}></i>{:else}<em>none</em>{/each}</span><b>{me.shield.layers}/{me.shield.max}</b></div>
     <div class="line" title="Chance an incoming shot misses"><span class="lbl">Evasion</span><b>{Math.round(me.evasion * 100)}%</b></div>
-  </section>
-  <section class="sec" style="grid-column:1; grid-row:2"><h3>Stations</h3>
+  </div>
+  </Frame>
+  <Frame title="Stations" style="grid-column:1; grid-row:2">
     <div class="stn">
       {#each stations as s (s.label)}
         <span class="s" class:ok={s.ok} title={s.tip}><b>{s.tag}</b><em>{s.status}</em></span>
       {/each}
     </div>
-  </section>
+  </Frame>
 
-  <section class="sec" style="grid-column:2 / 6; grid-row:1"><h3>Weapons</h3>
+  <Frame title="Weapons" style="grid-column:2 / 6; grid-row:1">
     <div class="cards">
       {#each [0, 1, 2, 3] as i (i)}
         {@const w = me.weapons[i]}
@@ -70,13 +73,13 @@
         {/if}
       {/each}
     </div>
-  </section>
-  <section class="sec" style="grid-column:2 / 6; grid-row:2"><h3>Actions</h3>
+  </Frame>
+  <Frame title="Actions" style="grid-column:2 / 6; grid-row:2">
     <div class="cards acts">
       <button class="act go" style="grid-column:1 / 3" disabled={!ready} title="Fire every charged weapon now (V)" data-testid="combat-volley" onclick={volley}><Icon name="volley" size={18} />Volley<kbd>V</kbd></button>
       <button class="act" style="grid-column:3 / 5" class:on={me.hold} title="Hold fire: weapons charge but do not fire (H)" data-testid="combat-hold" onclick={hold}><Icon name="hold" size={18} />Hold fire<kbd>H</kbd></button>
     </div>
-  </section>
+  </Frame>
 
   <HeatGauge heat={me.heat} {rate} {onVent} {onOvercharge} />
 
@@ -95,10 +98,7 @@
   .strip { position: relative; display: grid; grid-template-columns: 264px repeat(4, minmax(0, 1fr)) minmax(0, 300px); grid-template-rows: auto auto; gap: 12px 8px; background: var(--panel); border: 1px solid var(--line-hi); padding: 8px; flex: 1; min-width: 0; pointer-events: auto; }
   /* The strip and its docked Flee tab (FleeButton) side by side: the tab shares the strip's right border. */
   .dock { display: flex; align-items: stretch; width: min(1320px, calc(100vw - 24px)); pointer-events: auto; }
-  /* A framed section: a thin low-contrast border with its title set into the top line (like a fieldset legend). Shared with the heat block (HeatGauge.svelte). */
-  .sec { position: relative; box-sizing: border-box; min-width: 0; min-height: 0; padding: 12px 8px 8px; border: 1px solid rgba(90, 140, 175, 0.38); }
-  .sec > h3 { position: absolute; top: -6px; left: 9px; margin: 0; padding: 0 5px; background: var(--panel); font: 600 12px/12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-  .def { display: grid; align-content: space-between; }
+  .def { flex: 1; display: grid; align-content: space-between; }
   .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; grid-template-rows: 66px; }
   .cards.acts { grid-template-rows: 42px; }
   .line { display: flex; align-items: center; gap: 8px; color: var(--cyan); height: 20px; }
