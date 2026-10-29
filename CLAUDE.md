@@ -49,7 +49,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
      a branch is a backup, not a release).
   2. Then one round of testing and bug fixes: merge `main` in, run the full `npm run check`, and fix whatever it finds.
   3. Then open the PR, with the `npm run check` result in its body, as a draft while it still expects fixes (draft PRs
-     don't run CI). Mark it ready once the fixes are batched in; CI runs from then on. CI and Codex review it, and only
+     don't run CI). Codex skips drafts too, so comment `@codex review` to get its review. Mark the PR ready once the fixes
+     are batched in; CI (and another Codex review) runs from then on. CI and Codex review it, and only
      the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - GitHub issues track the work. Every bug or piece of work gets an issue (create one if none exists), and every PR
