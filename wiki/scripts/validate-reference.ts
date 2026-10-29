@@ -72,4 +72,16 @@ for (const kind of kinds) {
   const entries = (await readdir(join(root, 'src/routes/reference', kind), { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name);
   for (const slug of entries) if (!slugs.has(slug)) throw Error('Stale generated route: ' + kind + '/' + slug);
 }
+// These ids intentionally coexist in game data. The wiki must disambiguate
+// their descriptions and preserve both independently navigable routes.
+const aiModule = data.modules.find(entry => entry.id === 'module.aiCore');
+const aiGood = data.items.find(entry => entry.id === 'item.ai_core');
+if (aiModule?.name !== 'AI core' || aiGood?.name !== 'AI core (trade good)')
+  throw Error('AI core module and trade good must be distinct wiki entries.');
+const modulePage = await readFile(join(root, 'src/routes/reference/modules', aiModule.slug, '+page.md'), 'utf8');
+const itemPage = await readFile(join(root, 'src/routes/reference/items', aiGood.slug, '+page.md'), 'utf8');
+if (!modulePage.includes('../../items/' + aiGood.slug + '/') ||
+    !itemPage.includes('../../modules/' + aiModule.slug + '/'))
+  throw Error('AI core module/trade good cross-references are missing.');
+
 console.log('Wiki reference validation passed: ' + pages + ' pages, ' + links + ' links, ' + images + ' images.');

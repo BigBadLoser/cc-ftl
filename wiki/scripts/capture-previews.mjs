@@ -31,6 +31,17 @@ try {
   if (await cards.locator('a[href*="/reference/items/"]').count() < 2) throw Error('Recipe materials are missing item links');
   if (await cards.locator('.wiki-recipe-materials img').count() < 2) throw Error('Recipe item sprite icons are missing');
   if (await cards.locator('a[title="Shuttle"] img').count() !== 1) throw Error('Crafted shuttle must reuse its actual vehicle sprite');
+  // Every ingredient quantity must sit inside the same clickable unit as its
+  // sprite and name, rather than drifting to a shared column edge.
+  const misplaced = await cards.locator('.wiki-recipe-materials li').evaluateAll(rows =>
+    rows.filter(row => {
+      const name = row.querySelector('.wiki-recipe-material-name');
+      const quantity = row.querySelector('.wiki-recipe-quantity');
+      return !name || !quantity || !row.querySelector('a')?.contains(quantity)
+        || getComputedStyle(quantity).marginLeft === 'auto';
+    }).length
+  );
+  if (misplaced) throw Error(misplaced + ' recipe quantities are not grouped with their items');
   const expanded = await page.locator('.content').first().boundingBox();
   await shot('fabricator-open', true);
   const toggle = page.locator('.wiki-sidebar-toggle');
@@ -51,7 +62,17 @@ try {
   await shot('recipes-catalog');
   await visit('reference/items/');
   if (await page.locator('.wiki-reference-item-card img').count() < 2) throw Error('Item catalog has no game icons');
+  if (await page.getByText('AI core (trade good)', { exact: true }).count() !== 1)
+    throw Error('Inventory AI core not distinguished from installed module');
   await shot('items-catalog');
+  await visit('reference/items/ai-core/');
+  if (!await page.getByText('Trade good, not a ship module.', { exact: false }).count())
+    throw Error('Missing trade-good disambiguation');
+  await shot('ai-core-trade-good');
+  await visit('reference/modules/ai-core/');
+  if (!await page.getByText('Installed ship module.', { exact: false }).count())
+    throw Error('Missing installed AI core module disambiguation');
+  await shot('ai-core-module');
   for (const [path, name] of [
     ['reference/modules/', 'modules-catalog'],
     ['reference/weapons/', 'weapons-catalog'],

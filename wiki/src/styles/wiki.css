@@ -566,3 +566,29 @@
 
 /* Grid rows track the tallest recipe, but short cards should not inherit its empty height. */
 .wiki-recipe-grid { align-items: start; }
+
+
+
+/* Ingredients are self-contained visual units. Never right-align a quantity
+ * to the entire column; it belongs immediately after its own item's name. */
+.wiki-recipe-materials li { display: block; min-width: 0; }
+.wiki-recipe-materials a {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: .3rem;
+}
+.wiki-recipe-material-label {
+  min-width: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.wiki-recipe-quantity {
+  display: inline;
+  margin-left: 0;
+  font-size: .75rem;
+  font-weight: 650;
+  white-space: nowrap;
+  color: var(--wiki-card-color);
+}

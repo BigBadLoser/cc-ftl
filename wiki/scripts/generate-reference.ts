@@ -75,6 +75,9 @@ function assetForWeapon(id: string): string | undefined {
 function named(kind: Kind, id: string): string {
   const def = registries[kind][id];
   if (!def) throw Error('Broken ' + kind + ' reference: ' + id);
+  // Both an installed AI core module and a separate machine-bazaar commodity
+  // exist in the game. Distinguish the two without changing gameplay data.
+  if (kind === 'items' && id === 'item.ai_core') return 'AI core (trade good)';
   return def.name;
 }
 function link(kind: Kind, id: string, from: Kind): string {
@@ -117,7 +120,7 @@ const catalog: Record<Kind, CatalogEntry[]> = {
 function entry(kind: Kind, id: string, subtitle: string, facts: Array<[string, string]>, image?: string, category?: string, inputs?: CatalogMaterial[], outputs?: CatalogMaterial[], station?: string): void {
   const def = registries[kind][id];
   if (!def) throw Error('Catalog entry not found: ' + kind + ' ' + id);
-  catalog[kind].push({ id, slug: slug(kind, id), name: def.name, subtitle, category, image: image ?? null, facts, inputs, outputs, station, ...(station ? { stationSlug: slug('modules', station) } : {}) });
+  catalog[kind].push({ id, slug: slug(kind, id), name: named(kind, id), subtitle, category, image: image ?? null, facts, inputs, outputs, station, ...(station ? { stationSlug: slug('modules', station) } : {}) });
 }
 async function writeIndex(kind: Kind, title: string, intro: string): Promise<void> {
   const content = [
@@ -150,6 +153,9 @@ for (const [id, def] of Object.entries(modules).sort()) {
   const lines = [
     img ? '<figure class="wiki-placement-figure"><img src="' + html(img) + '" alt="Isometric placement preview of ' + html(def.name) + ', ' + def.footprint.join(' by ') + ' tiles" loading="lazy" width="600" height="400" /><figcaption>' + def.footprint.join(' × ') + ' tile footprint' + (!previews[id]?.art ? ' · Artwork pending' : previews[id]?.gameFallback ? ' · Procedural container art (atlas asset unavailable)' : previews[id]?.placeholder ? ' · Base-tier art used as a placeholder' : '') + '</figcaption></figure>' : '', '',
     def.description ? text(def.description) : 'Ship equipment.', '',
+    ...(id === 'module.aiCore'
+      ? ['**Installed ship module.** This is the placeable automation system, distinct from the [AI core trade good](../../items/ai-core/) listed in the inventory.', '']
+      : []),
     '## Statistics', '', ...stats([
       ['Category', def.category ?? 'other'],
       ['Footprint', def.footprint.join(' × ') + ' tiles'],
@@ -193,11 +199,14 @@ function relatedToItem(id: string): string[] {
 const itemCatalog = [];
 for (const [id, def] of Object.entries(items).sort()) {
   const img = sprites[id];
-  itemCatalog.push({ id, slug: slug('items', id), name: def.name, tags: def.tags ?? [], stackSize: def.stackSize, price: def.price ?? null, image: img ?? null });
-  entry('items', id, (def.tags ?? []).join(' · ') || 'Resource', [['Stack limit', String(def.stackSize)], ['Base value', def.price === undefined ? '—' : String(def.price)]], img, def.tags?.[0]);
+  itemCatalog.push({ id, slug: slug('items', id), name: named('items', id), tags: def.tags ?? [], stackSize: def.stackSize, price: def.price ?? null, image: img ?? null });
+  entry('items', id, id === 'item.ai_core' ? 'Machine · bazaar trade good' : (def.tags ?? []).join(' · ') || 'Resource', [['Stack limit', String(def.stackSize)], ['Base value', def.price === undefined ? '—' : String(def.price)]], img, def.tags?.[0]);
   await writeEntry('items', id, [
     image(img, def.name), '',
     def.description ? text(def.description) : '', '',
+    ...(id === 'item.ai_core'
+      ? ['**Trade good, not a ship module.** This inventory item is sold by the machine bazaar. The separately defined [AI core module](../../modules/ai-core/) is a placeable ship system for automation.', '']
+      : []),
     ...stats([
       ['Stack limit', def.stackSize], ['Tags', (def.tags ?? []).join(', ') || 'none'],
       ['Base value', def.price === undefined ? 'Not priced' : def.price + ' credits'],

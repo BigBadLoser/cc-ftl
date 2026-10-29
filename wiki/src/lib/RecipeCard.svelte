@@ -29,9 +29,11 @@
               {#if material.image}
                 <img src={material.image} alt="" width="32" height="32" loading="lazy" />
               {/if}
-              <span class="wiki-recipe-material-name">{material.name}</span>
+              <span class="wiki-recipe-material-label">
+                <span class="wiki-recipe-material-name">{material.name}</span>
+                <span class="wiki-recipe-quantity"> ×{material.count}</span>
+              </span>
             </a>
-            <span class="wiki-recipe-quantity">×{material.count}</span>
           </li>
         {/each}
       </ul>
@@ -46,9 +48,11 @@
               {#if material.image}
                 <img src={material.image} alt="" width="32" height="32" loading="lazy" />
               {/if}
-              <span class="wiki-recipe-material-name">{material.name}</span>
+              <span class="wiki-recipe-material-label">
+                <span class="wiki-recipe-material-name">{material.name}</span>
+                <span class="wiki-recipe-quantity"> ×{material.count}</span>
+              </span>
             </a>
-            <span class="wiki-recipe-quantity">×{material.count}</span>
           </li>
         {/each}
       </ul>
