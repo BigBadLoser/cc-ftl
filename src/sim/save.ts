@@ -79,8 +79,9 @@ import { newYard, type YardState } from './yard/types';
  * v65 (jobs by station): `GalaxyState.claims` (finished bounties and surveys waiting for hand-in), survey jobs (`StationJob.kind` 'survey', `station`, `feature`), `Deal.handover` (the station shuttle collecting a delivery crate).
  * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges), `WeaponDef.heat`, `ModuleDef.radiator`.
  * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
+ * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
  */
-export const SAVE_VERSION = 67;
+export const SAVE_VERSION = 68;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

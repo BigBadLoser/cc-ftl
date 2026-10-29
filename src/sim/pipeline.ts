@@ -42,6 +42,7 @@ import { lightingSystem } from './systems/lighting';
 import { modulesSystem } from './systems/modules';
 import { movementSystem } from './systems/movement';
 import { needsSystem } from './systems/needs';
+import { bedOwnersSystem } from './systems/bedOwners';
 import { moodSystem } from './systems/mood';
 import { operateJobsSystem } from './systems/operateJobs';
 import { powerSystem } from './systems/power';
@@ -130,6 +131,8 @@ export const pipeline: readonly System[] = [
   // Shuttle cargo hauls before the floor planner, so salvage on a prize goes to the shuttle, not nowhere.
   cargoJobsSystem,
   haulJobsSystem,
+  // Bed ownership (a once-a-second pass) before needs and decisions: a tired crew member walks to the bed they own.
+  bedOwnersSystem,
   // Needs before decisions, so a crew member who just got tired sleeps this tick.
   needsSystem,
   // Mood reads the fresh needs and room conditions; the stat resolver uses it for work speed from the next tick.

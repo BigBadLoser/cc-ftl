@@ -32,6 +32,8 @@ function legacyWorld(sim: Sim): unknown {
   const stores = { ...data.stores };
   const bodies = new Map((stores.body ?? []) as [number, Body][]);
   delete stores.body;
+  // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.
+  delete stores.bedOwner;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
@@ -263,4 +265,6 @@ describe('sector refactor equivalence', () => {
 // Repinned for combat heat (#185): shields regenerate 1.4x faster for every ship (SHIELD_REGEN_MULT, so layers come back at other ticks), and the raider overcharges
 // its weapons and vents its heat (the player ship does neither without a command). The new `heat` field on the combat component is dropped in legacyWorld, so the
 // disaster hash (no fight) is unchanged.
-const EXPECTED = { combat: 'd03dd6fa', disaster: '6317c54b' };
+// Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks; on main alone it pinned b0b4e040.
+// Merged with combat round 1 it is e65e90fe; the disaster hash is unchanged by the bed owners.
+const EXPECTED = { combat: 'e65e90fe', disaster: '6317c54b' };
