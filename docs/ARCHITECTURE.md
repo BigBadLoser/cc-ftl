@@ -695,6 +695,10 @@ palette.json    the single palette, read by Blender scripts and the game
   - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
     `screen`).
 
+## Crew AI
+
+The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in [`docs/CREW_AI.md`](CREW_AI.md), issue #194. It's being implemented in phases.
+
 ## UI
 
 - Svelte components read **snapshots** published by `app` after each tick, or on demand for
