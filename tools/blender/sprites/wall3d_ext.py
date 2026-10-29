@@ -9,6 +9,9 @@ from . import wall3d_ext_var as VAR
 from .wall3d_ext_geom import D, E, TOP
 
 EXT_PAIRS = [(1, 0), (2, 0), (3, 0)]    # straight runs' variants .a1 ..: (top design, bottom design)
+TINT = {"hsS", "hsM", "hsL", "hsH", "hsW"}  # the tones the ship's colour tints (core.TINT): the armour's light tones;
+                                    # a piece's mask is these less its seam pass (wall3d.SEAM_PASS: its seams, panel
+                                    # outlines and painted shading), as hull 46's topDeco leaves its seams untinted
 BACK = {0: T3.BACK, 1: VAR.SLOT + VAR.OCT_D}   # a design's block face further in than the armour's own (its
                                                 # armour builds the top's front back out)
 
