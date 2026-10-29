@@ -1,5 +1,4 @@
-import { PathC, type Crew, type Path, type Position } from '../../crew/components';
-import { JobC } from '../../crew/components';
+import { JobC, PathC, type Crew, type Job, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
 import { isSuited } from '../../eva/suit';
@@ -7,7 +6,9 @@ import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { StationC, StationCrewC } from '../../stations/components';
-import { clearJoblessTask, setJoblessTask, syncTask } from '../task';
+import { TaskC } from '../components';
+import type { Task } from '../types';
+import { clearJoblessTask, derivable, setJoblessTask, syncTask } from '../task';
 import { stowSuit } from './eva';
 
 /**
@@ -22,18 +23,23 @@ const WANDER_RADIUS = 3;
 
 /** The idle turn, after the scheduler found no job: stow the suit, vacate a site, stroll (station crew) or wander. */
 export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position): void {
-  syncTask(sim, id, true);
+  let t = sim.world.get(id, TaskC);
+  if (t && derivable(t)) {
+    syncTask(sim, id, true); // a meal given up this turn (no food, no way there) ends its task
+    t = sim.world.get(id, TaskC);
+  }
+
   if (stowSuit(sim, id, pos)) return;
   if (isSettled(pos) && vacateSite(sim, id, pos)) return setJoblessTask(sim, id, 'idle', 'generic', 'Navigate');
   if (strollTurn(sim, id, pos)) return setJoblessTask(sim, id, 'leisure', 'generic', 'Navigate');
-  wander(sim, id, pos, crew);
+  wander(sim, id, pos, crew, t);
 }
 
 /** Occasionally stroll a few tiles within the current room. */
-function wander(sim: Sim, id: number, pos: Position, crew: Crew): void {
+function wander(sim: Sim, id: number, pos: Position, crew: Crew, task: Task | undefined): void {
   const path = sim.world.get(id, PathC);
   if (!path || path.steps.length > 0 || !isSettled(pos)) return; // still walking: the walk's task goes on
-  clearJoblessTask(sim, id);
+  if (task) clearJoblessTask(sim, id);
   if (crew.activity !== 'idle') crew.activity = 'idle';
   if (!sim.rng.chance(WANDER_CHANCE)) return;
   const grid = shipGrid(sim, shipIdOf(sim, pos));
@@ -77,10 +83,14 @@ function vacateSite(sim: Sim, id: number, pos: Position): boolean {
   const here = origin(pos);
   const ship = shipIdOf(sim, pos);
   if (vacateTile(sim, id, here, ship)) return true;
-  const site = [...sim.world.query(JobC)]
-    .map((j) => sim.world.get(j, JobC))
-    .find((j) => j && j.kind === 'module' && j.size && shipIdOf(sim, j) === ship
-      && here.x >= j.x && here.x < j.x + j.size[0] && here.y >= j.y && here.y < j.y + j.size[1]);
+  let site: Job | undefined;
+  for (const jid of sim.world.query(JobC)) {
+    const j = sim.world.get(jid, JobC);
+    if (j && j.kind === 'module' && j.size && here.x >= j.x && here.x < j.x + j.size[0] && here.y >= j.y && here.y < j.y + j.size[1] && shipIdOf(sim, j) === ship) {
+      site = j;
+      break;
+    }
+  }
   const grid = shipGrid(sim, ship);
   if (!site?.size || !grid) return false;
   const [w, h] = site.size;
@@ -104,8 +114,17 @@ function vacateSite(sim: Sim, id: number, pos: Position): boolean {
  * on the hull ring may step to any tile they can stand on. True if a move was started.
  */
 function vacateTile(sim: Sim, id: number, here: Tile, ship: number): boolean {
+  // The common case first, with no list built: no build job on this tile.
+  let underFoot = false;
+  for (const jid of sim.world.query(JobC)) {
+    const j = sim.world.get(jid, JobC);
+    if (j?.kind === 'build' && j.x === here.x && j.y === here.y && shipIdOf(sim, j) === ship) {
+      underFoot = true;
+      break;
+    }
+  }
+  if (!underFoot) return false;
   const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)).filter((j) => j?.kind === 'build' && shipIdOf(sim, j) === ship);
-  if (!mine.some((j) => j && j.x === here.x && j.y === here.y)) return false;
   const grid = shipGrid(sim, ship);
   if (!grid) return false;
   const suited = isSuited(sim, id);

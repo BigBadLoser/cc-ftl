@@ -58,7 +58,7 @@ export function deriveTask(sim: Sim, crew: number): Task | null {
 }
 
 /** A task the legacy components spell out (so it ends when they no longer do): any job task and the need states. */
-const derivable = (t: Task): boolean =>
+export const derivable = (t: Task): boolean =>
   t.job !== 0 || t.machine === 'eat' || (t.machine === 'sleep' && t.state !== 'ClaimBed') || (t.machine === 'charge' && t.state === 'Charge');
 
 const sameHolds = (a: Hold[], b: Hold[]): boolean => a.length === b.length && a.every((h, i) => h.kind === b[i]?.kind && h.id === b[i]?.id);
@@ -76,6 +76,28 @@ function holdsSameJob(sim: Sim, crew: number, prev: Task): boolean {
   return prev.job === a.jobId && prev.stack.length === 0;
 }
 
+/** True if `prev`, a need task, is still the one the legacy components imply (its state refreshed), checked without building one. */
+function keepsSameNeed(sim: Sim, crew: number, prev: Task): boolean {
+  if (sim.world.has(crew, AssignmentC)) return false;
+  const activity = (sim.world.get(crew, CrewC) as Crew | undefined)?.activity;
+  if (prev.machine === 'sleep') {
+    const claim = sim.world.get(crew, BedClaimC);
+    if (activity !== 'sleeping' && !claim) return false;
+    const bed = prev.holds[0];
+    if (claim ? prev.holds.length !== 1 || bed?.kind !== 'bed' || bed.id !== claim.bed : prev.holds.length !== 0) return false;
+    setState(sim, crew, prev, activity === 'sleeping' ? 'Sleep' : 'Walk');
+    return true;
+  }
+  if (sim.world.has(crew, BedClaimC) || activity === 'sleeping') return false;
+  if (prev.machine === 'eat') {
+    const eat = sim.world.get(crew, EatC);
+    if (!eat) return false;
+    setState(sim, crew, prev, eat.left >= 0 ? 'Consume' : 'Walk');
+    return true;
+  }
+  return prev.machine === 'charge' && prev.state === 'Charge' && activity === 'charging' && !sim.world.has(crew, EatC);
+}
+
 /** Same task (same job, machine, nesting and holds): its state and start tick carry over. */
 function sameTask(a: Task, b: Task): boolean {
   return a.job === b.job && a.machine === b.machine && a.drive === b.drive && a.stack.length === b.stack.length && sameHolds(a.holds, b.holds);
@@ -88,7 +110,7 @@ function sameTask(a: Task, b: Task): boolean {
  */
 export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
   const prev = sim.world.get(crew, TaskC);
-  if (prev && prev.job !== 0 && holdsSameJob(sim, crew, prev)) return;
+  if (prev && (prev.job !== 0 ? holdsSameJob(sim, crew, prev) : keepsSameNeed(sim, crew, prev))) return;
   const next = deriveTask(sim, crew);
   if (!next) {
     if (prev && (!keepJobless || prev.job !== 0 || derivable(prev))) sim.world.remove(crew, TaskC);

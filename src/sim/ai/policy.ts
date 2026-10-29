@@ -1,6 +1,7 @@
 import { EatC, NeedsC } from '../crew/components';
 import { wantsToEat } from '../crew/eating';
 import { wantsBay } from '../robots/bay';
+import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { OPERATOR_EXHAUSTED_BELOW } from '../tuning';
@@ -21,8 +22,6 @@ export const LEGACY_DRIVES: readonly DriveId[] = ['recharge', 'sleep', 'eat', 'w
 
 /** What policy.legacy wants this tick. */
 export interface LegacyWants {
-  /** Carrying a patient: no drive pulls them off the rescue. */
-  carrying: boolean;
   /** A robot a mender has come for: hold still (an interrupt in the design; the legacy check stays inline). */
   mendHold: boolean;
   recharge: boolean;
@@ -32,17 +31,19 @@ export interface LegacyWants {
 
 const ON = 1000;
 
-/** Evaluate policy.legacy for a crew member and write their `Intent`. `operating`: they hold a console. */
+/**
+ * Evaluate policy.legacy for a crew member and write their `Intent`. `operating`: they hold a console. Whether they carry a patient
+ * is only looked up when some drive wants them (as `decide` did): it is the rare case.
+ */
 export function legacyIntent(sim: Sim, id: number, operating: boolean): LegacyWants {
-  const carrying = isCarrying(sim, id);
   const rest = (sim.world.get(id, NeedsC) as { rest: number }).rest;
-  const w: LegacyWants = {
-    carrying,
-    mendHold: !carrying && heldForMend(sim, id),
-    recharge: !carrying && wantsBay(sim, id),
-    sleep: !carrying && rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW),
-    eat: !carrying && (sim.world.has(id, EatC) || wantsToEat(sim, id, operating)),
-  };
+  // Only a mechanical body is ever mended (mend jobs are posted for robots alone): skip the job scan for everyone else.
+  const mend = !!speciesOf(sim, id)?.mechanical && heldForMend(sim, id);
+  const bay = wantsBay(sim, id);
+  const tired = rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW);
+  const hungry = sim.world.has(id, EatC) || wantsToEat(sim, id, operating);
+  const free = !((mend || bay || tired || hungry) && isCarrying(sim, id));
+  const w: LegacyWants = { mendHold: mend && free, recharge: bay && free, sleep: tired && free, eat: hungry && free };
   writeIntent(sim, id, w);
   return w;
 }
@@ -54,6 +55,8 @@ function writeIntent(sim: Sim, id: number, w: LegacyWants): void {
     sim.world.add(id, IntentC, { policy: LEGACY_POLICY, drive, since: sim.tick, scores: [w.recharge ? ON : 0, w.sleep ? ON : 0, w.eat ? ON : 0, ON], nextEval: sim.tick + 1 });
     return;
   }
+  intent.nextEval = sim.tick + 1;
+  if (intent.drive === drive && drive === 'work' && intent.scores[0] === 0 && intent.scores[1] === 0 && intent.scores[2] === 0) return; // the usual case: unchanged
   if (intent.drive !== drive) {
     intent.drive = drive;
     intent.since = sim.tick;
@@ -63,5 +66,4 @@ function writeIntent(sim: Sim, id: number, w: LegacyWants): void {
   s[1] = w.sleep ? ON : 0;
   s[2] = w.eat ? ON : 0;
   s[3] = ON;
-  intent.nextEval = sim.tick + 1;
 }

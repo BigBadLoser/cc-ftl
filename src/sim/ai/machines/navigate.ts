@@ -15,9 +15,8 @@ import { startErrand } from './eva';
  */
 export function navigateTurn(sim: Sim, id: number, pos: Position, jobId: number, job: Job): void {
   const path = sim.world.get(id, PathC);
-  const here = origin(pos);
-  if (atJob(here, job)) return;
-  if (path && path.steps.length === 0 && !routeToJob(sim, id, pos, jobId, job)) return abortTask(sim, id, 'unreachable');
+  if (!path || path.steps.length > 0 || atJob(origin(pos), job)) return; // walking, or there: the work step takes over
+  if (!routeToJob(sim, id, pos, jobId, job)) return abortTask(sim, id, 'unreachable');
   markState(sim, id, machineOf(job), travelState(sim, id, job), job);
 }
 
