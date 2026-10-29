@@ -2,11 +2,13 @@
   import type { UiAiming, UiApi, UiCombat } from '../api';
   import Icon, { type IconName } from '../Icon.svelte';
   import { hullTone } from './hullTone';
+  import { fleeVariant } from './fleeVariant';
+  import FleeButton from './FleeButton.svelte';
   import HeatGauge from './HeatGauge.svelte';
 
   type Me = NonNullable<UiCombat['player']>;
-  let { api, me, aiming, rate, onSelect, onVent, onOvercharge }: {
-    api: UiApi; me: Me; aiming: UiAiming | null; rate: number; onSelect: (id: number) => void;
+  let { api, me, flee, drive, aiming, rate, onSelect, onVent, onOvercharge }: {
+    api: UiApi; me: Me; flee: () => void; drive: { charge: number; max: number; helmManned: boolean; active: boolean } | null; aiming: UiAiming | null; rate: number; onSelect: (id: number) => void;
     onVent: () => void; onOvercharge: (k: 'weapons' | 'shields' | 'engines') => void;
   } = $props();
 
@@ -32,7 +34,7 @@
   });
 </script>
 
-<div class="strip" data-testid="combat-strip">
+<div class="strip" class:withcap={fleeVariant === 'a'} data-testid="combat-strip">
   <div class="def">
     <div class="line" title="Hull integrity"><Icon name="hull" size={15} /><span class="hb {hullTone(hull)}"><i style="width:{hull}%"></i></span><b>{hull}%</b></div>
     <div class="line" title="Shield layers"><Icon name="shield" size={15} /><span class="pips">{#each Array.from({ length: me.shield.max }, (_, i) => i) as i (i)}<i class:on={i < me.shield.layers}></i>{:else}<em>none</em>{/each}</span><b>{me.shield.layers}/{me.shield.max}</b></div>
@@ -65,6 +67,8 @@
 
   <HeatGauge heat={me.heat} {rate} {onVent} {onOvercharge} />
 
+  {#if fleeVariant === 'a' && drive}<div class="cap"><FleeButton {drive} layout="cap" onFlee={flee} /></div>{/if}
+
   {#if lock > 0}
     <div class="lock" role="alert" data-testid="thermal-overload">
       <b>Thermal overload</b>
@@ -76,6 +80,8 @@
 <style>
   /* One grid: column 1 defence/stations, columns 2-5 the weapon slots (cards and the action row share them), column 6 heat. Row 1 cards, row 2 actions. Gutters are all 8px. */
   .strip { position: relative; display: grid; grid-template-columns: 188px repeat(4, minmax(0, 1fr)) minmax(0, 320px); grid-template-rows: 66px 42px; gap: 8px; background: var(--panel); border: 1px solid var(--line-hi); padding: 8px; width: min(1240px, calc(100vw - 24px)); pointer-events: auto; }
+  .strip.withcap { grid-template-columns: 188px repeat(4, minmax(0, 1fr)) minmax(0, 320px) 64px; }
+  .cap { grid-column: 7; grid-row: 1 / 3; }
   .def { grid-column: 1; grid-row: 1; display: grid; align-content: space-between; }
   .line { display: flex; align-items: center; gap: 7px; color: var(--cyan); height: 20px; }
   .line b { font: 600 14px var(--head-font); color: var(--text); min-width: 34px; text-align: right; }

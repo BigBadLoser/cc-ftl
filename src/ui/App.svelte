@@ -7,6 +7,8 @@
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
   import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
+  import { fleeVariant } from './combat/fleeVariant';
+  import FleeButton from './combat/FleeButton.svelte';
   import CombatHud from './combat/CombatHud.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
@@ -309,6 +311,7 @@
   <div class="frame">
     <EventLog {api} onNode={openNode} />
     {#if !narrow}{@render time()}{/if}
+    {#if fightHud && fleeVariant === 'b' && combat.player}<FleeButton layout="bar" drive={{ charge: combat.player.ftl, max: combat.player.ftlMax, helmManned: combat.player.consoles.some((c) => c.kind === 'helm' && c.powered && c.operator !== null), active: combat.player.state === 'active' }} onFlee={() => combat.player && api.dispatch({ type: 'combat.flee', ship: combat.player.ship })} />{/if}
   </div>
   <div class="cards">
     {#if !fightHud}<GoalsCard {api} />

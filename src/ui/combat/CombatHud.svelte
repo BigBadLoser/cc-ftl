@@ -64,6 +64,7 @@
   });
 
   const select = (id: number) => api.setAiming(aiming?.weapon === id ? null : { weapon: id });
+  const drive = $derived(me ? { charge: me.ftl, max: me.ftlMax, helmManned, active: me.state === 'active' } : null);
   const flee = () => me && api.dispatch({ type: 'combat.flee', ship: me.ship });
   function onKey(e: KeyboardEvent) {
     if (e.ctrlKey || e.metaKey || e.altKey || !me) return;
@@ -94,10 +95,10 @@
 </script>
 
 <div class="hud" data-testid="combat-hud">
-  {#if enemy}<div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(enemy.ship)} drive={me ? { charge: me.ftl, max: me.ftlMax, helmManned, active: me.state === 'active' } : null} onFlee={flee} /></div>{/if}
+  {#if enemy}<div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(enemy.ship)} /></div>{/if}
   {#if me}
     <div class="bot">
-      <PlayerStrip {api} {me} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
+      <PlayerStrip {api} {me} {flee} {drive}  {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
     </div>
   {/if}
 </div>
