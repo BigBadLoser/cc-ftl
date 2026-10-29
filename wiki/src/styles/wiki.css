@@ -592,3 +592,21 @@
   white-space: nowrap;
   color: var(--wiki-card-color);
 }
+
+
+/* Continue the recipe's arrow shaft back to the first input material.
+ * A flexible line starts at the end of that item's linked icon/name/quantity,
+ * instead of running behind the text or assuming a fixed label width. */
+.wiki-recipe-side:first-child .wiki-recipe-materials li:first-child {
+  display: flex;
+  align-items: center;
+}
+.wiki-recipe-side:first-child .wiki-recipe-materials li:first-child::after {
+  content: "";
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  border-top: 1px solid #5899cd;
+  margin-left: .3rem;
+  margin-right: -.2rem;
+}

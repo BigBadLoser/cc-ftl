@@ -42,6 +42,17 @@ try {
     }).length
   );
   if (misplaced) throw Error(misplaced + ' recipe quantities are not grouped with their items');
+  // The connector should be a real horizontal shaft after the first input,
+  // without extending behind the clickable material label.
+  const connector = await cards.locator('.wiki-recipe-side:first-child .wiki-recipe-materials li:first-child').first().evaluate(row => {
+    const line = getComputedStyle(row, '::after');
+    const label = row.querySelector('a');
+    return {
+      present: line.content !== 'none' && line.borderTopWidth === '1px',
+      labelEndsBeforeLine: !!label && label.getBoundingClientRect().right < row.getBoundingClientRect().right - 8,
+    };
+  });
+  if (!connector.present || !connector.labelEndsBeforeLine) throw Error('Recipe arrow shaft does not extend from first material');
   const expanded = await page.locator('.content').first().boundingBox();
   await shot('fabricator-open', true);
   const toggle = page.locator('.wiki-sidebar-toggle');
