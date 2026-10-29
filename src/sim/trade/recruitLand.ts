@@ -3,6 +3,8 @@ import { isIncapacitated } from '../crew/helpers';
 import { AllegianceC } from '../fight/components';
 import { isTileWalkable } from '../modules/walk';
 import { shipGrid, shipIdOf } from '../regions';
+import { ShipC } from '../combat/components';
+import { playerShip } from './player';
 import type { Sim } from '../sim';
 import { ForHireC, StationCrewC } from '../stations/components';
 import { bumpStat } from '../story/goals';
@@ -36,6 +38,25 @@ export function boardRecruits(sim: Sim, d: Deal, repeat: boolean): boolean {
   return all;
 }
 
+/** Last resort for a forced landing: the walkable tile of the player's ship nearest its centre, or null when it has none. */
+function anyFloorTile(sim: Sim): { shipId: number; x: number; y: number } | null {
+  const id = playerShip(sim);
+  const ship = id ? sim.world.get(id, ShipC) : undefined;
+  const grid = id ? shipGrid(sim, id) : undefined;
+  if (!ship || !grid) return null;
+  const cx = ship.x + ship.width / 2;
+  const cy = ship.y + ship.height / 2;
+  let best: { x: number; y: number; d: number } | null = null;
+  for (let y = ship.y; y < ship.y + ship.height; y++) {
+    for (let x = ship.x; x < ship.x + ship.width; x++) {
+      if (!isTileWalkable(sim, grid, x, y)) continue;
+      const d = (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2;
+      if (!best || d < best.d) best = { x, y, d };
+    }
+  }
+  return best && { shipId: id, x: best.x, y: best.y };
+}
+
 /** Whether the shuttle is docked at an airlock of the given ship. */
 const dockedAt = (sim: Sim, v: Vehicle, ship: number): boolean => v.state === 'docked' && shipIdOf(sim, sim.world.get(v.dock, ModuleC)) === ship;
 
@@ -47,7 +68,7 @@ const dockedAt = (sim: Sim, v: Vehicle, ship: number): boolean => v.state === 'd
 export function landRecruits(sim: Sim, d: Deal, force = false): boolean {
   const v = sim.world.get(d.vehicle, VehicleC);
   // `force` (a run given up on, recruits already aboard): they step out at the shuttle's home bay even if it is not docked or stowed.
-  const at = v && (boardingTile(sim, d.vehicle) ?? (force ? bayAccessTile(sim, v) : null));
+  const at = v && (boardingTile(sim, d.vehicle) ?? (force ? bayAccessTile(sim, v) ?? anyFloorTile(sim) : null));
   const grid = at && shipGrid(sim, at.shipId);
   const ready = !!at && !!grid && (force || isTileWalkable(sim, grid, at.x, at.y));
   let done = true;

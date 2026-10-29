@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, deserialize, newGame, playerItems, serialize, type Sim } from '../sim';
-import { cargoCount } from '../sim/vehicles/cargo';
+import { ModuleC, ShipC, StorageC, TraderC, deserialize, newGame, playerItems, serialize, storageAdd, type Sim } from '../sim';
+import { cargoCount, cargoTake } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
 import { playerCrew } from '../sim/story/world';
 import { storagesHolding } from '../sim/trade/player';
+import { shipIdOf, shipIds } from '../sim/regions';
 import { content } from './index';
 
 /** A started game with a hailed trading outpost, and a bought order of 10 metal accepted. */
@@ -171,5 +172,48 @@ describe("a stuck delivery by the trader's own shuttle", () => {
       expect(stock(s)).toBe(before.stock);
       expect(metalLike(s, 'item.metal')).toBe(before.metal);
     }
+  });
+
+  /** Move `n` metal from the docked trader shuttle's hold into the player's store, as the crew do one stack at a time. */
+  function unloadSome(sim: Sim, vehicle: number, n: number): void {
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0])!;
+    storageAdd(sim, crate, 'item.metal', cargoTake(sim, vehicle, 'item.metal', n));
+  }
+
+  it('a partly unloaded delivery settles what arrived, refunds the rest and returns only the rest to the trader; survives a reload', () => {
+    const { sim, ship, before, stock } = order();
+    until(sim, 'unload');
+    for (const id of playerCrew(sim)) sim.world.destroyEntity(id); // hauling stops
+    const d = sim.trade.deals[0]!;
+    const held = d.held;
+    unloadSome(sim, d.vehicle, 5);
+    run(sim, 3000);
+    const reloaded = deserialize(serialize(sim), content);
+    run(reloaded, 3500);
+    const s = reloaded;
+    expect(s.trade.deals[0]!.phase).toBe('done');
+    const paid = s.world.get(ship, TraderC)!.credits - before.theirs;
+    expect(paid).toBeGreaterThan(0);
+    expect(paid).toBeLessThan(held); // 5 of 12, not all and not nothing
+    expect(paid).toBe(Math.round((held * 5) / 12));
+    expect(s.trade.credits).toBe(before.credits - paid); // the player pays only for what arrived
+    expect(metalLike(s, 'item.metal')).toBe(before.metal + 5);
+    expect(stock(s)).toBe(before.stock - 5); // the undelivered 7 went back to the trader, the 5 delivered did not
+    expect(metalLike(s, 'item.metal') + stock(s)).toBe(before.metal + before.stock); // nothing duplicated, nothing lost
+  });
+
+  it('a fully unloaded delivery settles in full', () => {
+    const { sim, ship, before, stock } = order();
+    until(sim, 'unload');
+    for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
+    const d = sim.trade.deals[0]!;
+    const held = d.held;
+    unloadSome(sim, d.vehicle, 12);
+    run(sim, 5);
+    expect(sim.trade.deals[0]!.phase).toBe('done');
+    expect(sim.world.get(ship, TraderC)!.credits).toBe(before.theirs + held);
+    expect(sim.trade.credits).toBe(before.credits - held);
+    expect(metalLike(sim, 'item.metal')).toBe(before.metal + 12);
+    expect(stock(sim)).toBe(before.stock - 12);
   });
 });

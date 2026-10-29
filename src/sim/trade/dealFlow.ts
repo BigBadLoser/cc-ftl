@@ -8,9 +8,12 @@ import { cargoAdd, cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
 import { addStock, failDeal, isLive, settleDeal, touchMarket } from './deals';
+import { unitPrice } from './pricing';
+import type { ItemQty } from '../registry';
 import { spawnCourier } from './courier';
 import { storagesHolding } from './player';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
+import { bayAccessTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
 import { stepHandover } from '../galaxy/handover';
@@ -190,13 +193,44 @@ function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
  */
 const exchanged = (sim: Sim, d: Deal): boolean => d.courier === 'you' && (!d.crew || recruitsAboard(sim, d));
 
+/**
+ * The trader's shuttle timed out: settle what actually reached the player and refund the rest. The shuttle's hold started as exactly `d.get`,
+ * so what is missing from it was unloaded. The player pays for that part pro rata (by value) from the escrow (a barter counts it as delivered);
+ * the unpaid share is refunded and only the undelivered goods go back to the trader's stock. Nothing delivered is a plain failure.
+ */
+function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
+  const delivered = d.get.map((l) => ({ item: l.item, count: l.count - Math.min(l.count, cargoOf(sim, d.vehicle, l.item)) }));
+  const got = delivered.filter((l) => l.count > 0);
+  if (got.length === 0) return failDeal(sim, d, reason);
+  const left = d.get.map((l, i) => ({ item: l.item, count: l.count - (delivered[i] as ItemQty).count })).filter((l) => l.count > 0);
+  const value = (lines: ItemQty[]): number => lines.reduce((n, l) => n + l.count * (unitPrice(sim, d.ship, l.item, 'sell') ?? 1), 0);
+  const trader = sim.world.get(d.ship, TraderC);
+  if (left.length > 0) {
+    if (trader) for (const l of left) addStock(trader.stock, l.item, l.count);
+    if (!d.barter && d.balance > 0) {
+      const pay = Math.min(d.held, Math.round((d.held * value(got)) / value(d.get)));
+      sim.trade.credits += d.held - pay; // the undelivered share is refunded
+      d.held = pay;
+      d.balance = pay;
+    }
+    d.get = got;
+    touchMarket(sim, trader);
+  }
+  if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; }
+  v.cargo = []; // what is left leaves with the shuttle (it went back to the trader's stock above)
+  settleDeal(sim, d);
+}
+
 /** A delivery that cannot be finished (no airlock to dock at, nobody or nowhere to unload): settle or refund by `exchanged`. */
 function giveUp(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
+  if (d.courier === 'them' && !d.crew) return reconcileDelivery(sim, d, v, reason);
   if (!exchanged(sim, d)) return failDeal(sim, d, reason);
   if (d.crew) {
-    landRecruits(sim, d, true);
+    if (!landRecruits(sim, d, true)) return; // nowhere to step out yet (no walkable ship): the deal stays pending and tries again next tick
     settleDeal(sim, d);
-    return void sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+    if (bayAccessTile(sim, v)) return void sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+    v.autopilot = false; // its bay is gone: nothing to fly home to
+    return;
   }
   if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; } // no further trips with a loaded hold
   v.outbound = false;

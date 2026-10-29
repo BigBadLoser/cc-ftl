@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, newGame, serialize, type Sim } from '../sim';
-import { shipIdOf } from '../sim/regions';
+import { shipGrid, shipIdOf } from '../sim/regions';
+import { isTileWalkable } from '../sim/modules/walk';
 import { AllegianceC } from '../sim/fight/components';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
@@ -110,7 +111,7 @@ describe('crew for hire', () => {
     expect(people(sim).some((id) => keyOf(sim, id) === fh.key)).toBe(false);
   });
 
-  it('a run stuck on the way home with the recruit aboard is given up as a hire: paid once, the recruit lands as player crew; survives a reload', () => {
+  for (const noBay of [false, true]) it(`a run stuck on the way home with the recruit aboard is given up as a hire: paid once, the recruit lands as player crew; survives a reload${noBay ? ' (home bay gone too)' : ''}`, () => {
     const sim = atStation();
     const [c] = people(sim) as [number];
     const fh = sim.world.get(c, ForHireC)!;
@@ -122,6 +123,7 @@ describe('crew for hire', () => {
     expect(d.phase).toBe('back');
     expect(sim.world.get(c, AboardC)).toBeDefined(); // boarded: the exchange is behind it
     sim.world.destroyEntity(d.airlock); // the airlock the shuttle was to dock at is gone
+    if (noBay) sim.world.destroyEntity(sim.world.get(d.vehicle, VehicleC)!.home); // and so is the hangar bay it would stow in
     run(sim, () => false, 1500);
     const reloaded = deserialize(serialize(sim), content); // save/load in the middle of the blocked stage
     run(reloaded, () => reloaded.trade.deals[0]?.phase === 'done', 4000);
@@ -136,6 +138,7 @@ describe('crew for hire', () => {
     expect(pos).toBeDefined();
     const shuttle = s.world.get(s.world.query(VehicleC)[0]!, VehicleC)!;
     expect(shipIdOf(s, pos)).toBe(shuttle.homeShip); // on the player's ship
+    expect(isTileWalkable(s, shipGrid(s, shuttle.homeShip)!, pos!.x, pos!.y)).toBe(true);
     expect(playerCrew(s).length).toBe(crew + 1);
     expect(s.story.flags['stat.hired']).toBe(1);
     expect(s.trade.deals.some((x) => x.phase !== 'done' && x.phase !== 'failed')).toBe(false);
