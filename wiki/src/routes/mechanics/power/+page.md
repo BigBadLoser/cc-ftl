@@ -40,7 +40,7 @@ module neither draws nor supplies power, which is the quickest way to free power
 
 ### Default power order
 
-<ModuleTable where="draw" sort="powerPriority" columns="power:Power, powerPriority:Order" />
+<ModuleTable where="draw" sort="powerPriority" group="powerPriority" groupLabel="Order" />
 
 Beds, storage and containers need no power and always work.
 
