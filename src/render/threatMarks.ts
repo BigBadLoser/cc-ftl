@@ -27,6 +27,8 @@ export interface ThreatMarksHost {
   scale(): number;
   /** Seconds until a weapon's committed shot lands (charge left plus flight), or null. */
   commitEta(weaponId: number): number | null;
+  /** The colour of a weapon's shot (shared with the incoming timeline). */
+  color(weaponId: number): number;
   /** The visible rectangle of the pass being drawn, in art px of the sector layer. */
   frame(): ArrowFrame;
   /** Centre of a ship's footprint, in sector tiles, or null. */
@@ -115,46 +117,47 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
       const lift = host.roofed(ref) ? ROOF_H : 0;
       const px = (n: number) => n / s;
       const now = performance.now();
-      // Weapons aimed at the same area alternate the mark: even ones hug the iso footprint, odd ones are the same bracket turned 90 degrees about its centre (corners at the midpoints of the first one's sides); a third and later get a few px more room.
-      const seen = new Map<string, number>();
-      for (const t of threats(ref).sort((a, b) => a.key - b.key)) {
+      // One ring and bracket per targeted area (the soonest shot drives it); every shot still gets its own arrow.
+      const seen = new Set<string>();
+      for (const t of threats(ref).sort((a, b) => a.eta - b.eta || a.key - b.key)) {
         const area = `${t.x},${t.y},${t.w},${t.h}`;
-        const nth = seen.get(area) ?? 0;
-        seen.set(area, nth + 1);
-        const turned = nth % 2 === 1;
-        const extra = 2 + 3 * Math.floor(nth / 2);
+        const first = !seen.has(area);
+        seen.add(area);
+        const extra = 2;
         const project = (ax: number, ay: number) => ({ x: ax * s, y: ay * s });
         const r = t.radius;
         const quad = footprintQuad(t.x - r, t.y - r, t.w + 2 * r, t.h + 2 * r, { x: 0, y: 0 }, lift, project, 0);
         const pulse = t.flying ? 1 : 0.7 + 0.3 * Math.sin(now / (60 + 240 * t.left));
-        const segs = turned ? turnedSegments(padQuad(quad, extra)) : cornerSegments(padQuad(quad, extra));
+        const segs = cornerSegments(padQuad(quad, extra));
         // One steady stroke (no outline pass, no pulse), its width in world space like the arms, so it grows and shrinks with the camera.
-        for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
-        gfx.stroke({ width: Math.max(STROKE_W, px(MIN_STROKE_PX)), color: C_THREAT, alpha: 1, cap: 'butt' });
+        if (first) for (const sg of segs) gfx.moveTo(px(sg.x1), px(sg.y1)).lineTo(px(sg.x2), px(sg.y2));
+        if (first) gfx.stroke({ width: Math.max(STROKE_W, px(MIN_STROKE_PX)), color: C_THREAT, alpha: 1, cap: 'butt' });
         // Countdown ring on the aim area: a squashed (iso) circle whose lit arc shrinks to nothing as the shot comes.
         const c = footprintQuad(t.x, t.y, t.w, t.h, { x: 0, y: 0 }, lift, project, 0);
         const cx = px((c.left.x + c.right.x) / 2);
         const cy = px((c.top.y + c.bottom.y) / 2);
-        const rx = (turned ? 1.18 : 1) * Math.min(px((c.right.x - c.left.x) / 2), px(footprintQuad(0, 0, 2, 2, { x: 0, y: 0 }, 0, project, 0).right.x) ) * 0.8;
+        const rx = Math.min(px((c.right.x - c.left.x) / 2), px(footprintQuad(0, 0, 2, 2, { x: 0, y: 0 }, 0, project, 0).right.x) ) * 0.8;
         const ry = rx / 2;
-        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(6), color: C_OUTLINE, alpha: 0.8 });
-        gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(3), color: C_THREAT, alpha: 0.4 });
-        if (t.left > 0.01) {
-          const n = Math.max(2, Math.ceil(t.left * 32));
-          for (let i = 0; i <= n; i++) {
-            const a = -Math.PI / 2 + (i / 32) * 2 * Math.PI;
-            const X = cx + Math.cos(a) * rx;
-            const Y = cy + Math.sin(a) * ry;
-            if (i === 0) gfx.moveTo(X, Y);
-            else gfx.lineTo(X, Y);
+        if (first) {
+          gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(6), color: C_OUTLINE, alpha: 0.8 });
+          gfx.ellipse(cx, cy, rx, ry).stroke({ width: px(3), color: C_THREAT, alpha: 0.4 });
+          if (t.left > 0.01) {
+            const n = Math.max(2, Math.ceil(t.left * 32));
+            for (let i = 0; i <= n; i++) {
+              const a = -Math.PI / 2 + (i / 32) * 2 * Math.PI;
+              const X = cx + Math.cos(a) * rx;
+              const Y = cy + Math.sin(a) * ry;
+              if (i === 0) gfx.moveTo(X, Y);
+              else gfx.lineTo(X, Y);
+            }
+            gfx.stroke({ width: px(6), color: 0xff8a8a, alpha: Math.max(0.85, pulse), cap: 'butt' });
           }
-          gfx.stroke({ width: px(6), color: 0xff8a8a, alpha: Math.max(0.85, pulse), cap: 'butt' });
+          gfx.circle(cx, cy, px(2)).fill({ color: C_THREAT, alpha: pulse });
         }
-        gfx.circle(cx, cy, px(2)).fill({ color: C_THREAT, alpha: pulse });
         if (showArrows && here) {
           const v = iso(t.src.x - here.x, t.src.y - here.y);
           const n = Math.hypot(v.x, v.y);
-          drawn.push({ key: t.key, x: cx, y: cy, r: Math.max(rx, ry) * 1.1, dx: n > 1e-6 ? v.x / n : 0, dy: n > 1e-6 ? v.y / n : -1, eta: t.eta });
+          drawn.push({ key: t.key, x: cx, y: cy, r: Math.max(rx, ry) * 1.1, dx: n > 1e-6 ? v.x / n : 0, dy: n > 1e-6 ? v.y / n : -1, eta: t.eta, color: host.color(t.key) });
         }
       }
       done();
@@ -180,10 +183,4 @@ function cornerSegments(q: Quad4, k = ARM_SHARE): Seg[] {
   const out: Seg[] = [];
   for (let i = 0; i < 4; i++) armsAt(v[i] as Pt, v[(i + 1) % 4] as Pt, v[(i + 3) % 4] as Pt, out, k);
   return out;
-}
-
-/** The same bracket turned 90 degrees about the footprint's centre: its corners sit at the midpoints of the first mark's sides. */
-function turnedSegments(q: Quad4): Seg[] {
-  const mid = (a: Pt, b: Pt): Pt => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-  return cornerSegments({ top: mid(q.left, q.top), right: mid(q.top, q.right), bottom: mid(q.right, q.bottom), left: mid(q.bottom, q.left) }, ARM_SHARE * Math.SQRT2); // its sides are 1/sqrt2 as long: same arm length as the first mark
 }

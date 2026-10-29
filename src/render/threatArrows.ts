@@ -1,12 +1,10 @@
 import { Container, Graphics, Text } from 'pixi.js';
 
-const C_ARROW = 0xff5a5a;
 const C_OUTLINE = 0x05080d;
-const C_PILL_TEXT = 0xffc2c2;
-/** Distance between flow chevrons, their speed and their size, in screen px. */
-const CHEV_GAP = 24;
-const CHEV_SPEED = 46;
-const CHEV_SIZE = 5;
+/** Dash length, gap and flow speed (towards the target), in screen px. */
+const DASH = 11;
+const DASH_GAP = 9;
+const DASH_SPEED = 26;
 /** Lateral spacing between neighbouring arrows' tails and the share of it kept at the head (so several arrows fan in to the target). */
 const LANE = 58;
 const HEAD_FAN = 0.2;
@@ -23,6 +21,8 @@ export interface ArrowIn {
   dx: number;
   dy: number;
   eta: number;
+  /** This shot's colour (matches its marker in the incoming timeline). */
+  color: number;
 }
 
 /** The visible rectangle of the pass being drawn, in art px. */
@@ -49,7 +49,7 @@ export function createThreatArrows(parent: Container): ThreatArrows {
   const text = (i: number): Text => {
     let t = texts[i];
     if (!t) {
-      t = new Text({ text: '', style: { fontFamily: 'Rajdhani, Arial Narrow, sans-serif', fontWeight: '700', fontSize: 14, fill: C_PILL_TEXT }, resolution: 2 });
+      t = new Text({ text: '', style: { fontFamily: 'Rajdhani, Arial Narrow, sans-serif', fontWeight: '700', fontSize: 14, fill: 0xffffff }, resolution: 2 });
       t.anchor.set(0.5);
       parent.addChild(t);
       texts[i] = t;
@@ -62,8 +62,7 @@ export function createThreatArrows(parent: Container): ThreatArrows {
       gfx.clear();
       const px = (n: number) => n / s;
       const m = px(MARGIN);
-      const phase = ((performance.now() / 1000) * CHEV_SPEED) % CHEV_GAP;
-      const pills: { x: number; y: number; w: number; px: number; py: number }[] = [];
+      const pills: { x: number; y: number; w: number; px: number; py: number; color: number }[] = [];
       const sorted = [...arrows].sort((a, b) => a.key - b.key);
       sorted.forEach((a, i) => {
         // Lanes fan out along the edge, perpendicular to the direction.
@@ -85,23 +84,21 @@ export function createThreatArrows(parent: Container): ThreatArrows {
         if (L < px(10)) return;
         const ux = (tailX - headX) / L;
         const uy = (tailY - headY) / L;
-        // Shaft: outline then core, plus chevrons that flow tail -> head.
-        gfx.moveTo(tailX, tailY).lineTo(headX + ux * px(10), headY + uy * px(10)).stroke({ width: px(6), color: C_OUTLINE, alpha: 0.7 });
-        gfx.moveTo(tailX, tailY).lineTo(headX + ux * px(10), headY + uy * px(10)).stroke({ width: px(2.5), color: C_ARROW, alpha: 0.55 });
-        const step = px(CHEV_GAP);
-        const sz = px(CHEV_SIZE);
-        const off = px(CHEV_GAP - phase);
-        for (let k = 0, d = px(16) + off; d < L - px(22) && k < 40; k++, d += step) {
-          const cx = headX + ux * d;
-          const cy = headY + uy * d;
-          gfx.moveTo(cx + ux * sz - uy * sz, cy + uy * sz + ux * sz).lineTo(cx, cy).lineTo(cx + ux * sz + uy * sz, cy + uy * sz - ux * sz);
+        // Dashed shaft, flowing tail -> head.
+        const period = px(DASH + DASH_GAP);
+        const off = period - px(((performance.now() / 1000) * DASH_SPEED) % (DASH + DASH_GAP)); // distance from the head to the first dash start
+        for (let d = off - period; d < L; d += period) {
+          const d0 = Math.max(px(14), d);
+          const d1 = Math.min(L - px(1), d + px(DASH));
+          if (d1 <= d0) continue;
+          gfx.moveTo(headX + ux * d0, headY + uy * d0).lineTo(headX + ux * d1, headY + uy * d1);
         }
-        gfx.stroke({ width: px(2.5), color: 0xffb0b0, alpha: 0.95, cap: 'round', join: 'round' });
+        gfx.stroke({ width: px(3), color: a.color, alpha: 0.95, cap: 'butt' });
         // Head.
         const hl = px(13);
         const hw = px(8);
-        gfx.poly([headX, headY, headX + ux * hl - uy * hw, headY + uy * hl + ux * hw, headX + ux * hl + uy * hw, headY + uy * hl - ux * hw]).fill({ color: C_ARROW }).stroke({ width: px(1.5), color: C_OUTLINE, alpha: 0.8 });
-        pills.push({ x: tailX, y: tailY, w: 0, px: nx, py: ny });
+        gfx.poly([headX, headY, headX + ux * hl - uy * hw, headY + uy * hl + ux * hw, headX + ux * hl + uy * hw, headY + uy * hl - ux * hw]).fill({ color: a.color }).stroke({ width: px(1.5), color: C_OUTLINE, alpha: 0.8 });
+        pills.push({ x: tailX, y: tailY, w: 0, px: nx, py: ny, color: a.color });
         const t = text(pills.length - 1);
         t.text = `${a.eta.toFixed(1)}s`;
         t.scale.set(px(1));
@@ -120,7 +117,7 @@ export function createThreatArrows(parent: Container): ThreatArrows {
         }
         p.x = Math.max(f.x0 + p.w / 2 + px(2), Math.min(f.x1 - p.w / 2 - px(2), p.x));
         p.y = Math.max(f.y0 + h / 2 + px(2), Math.min(f.y1 - h / 2 - px(2), p.y));
-        gfx.roundRect(p.x - p.w / 2, p.y - h / 2, p.w, h, h / 2).fill({ color: 0x3a0c12, alpha: 0.94 }).stroke({ width: px(1.5), color: C_ARROW });
+        gfx.roundRect(p.x - p.w / 2, p.y - h / 2, p.w, h, h / 2).fill({ color: 0x3a0c12, alpha: 0.94 }).stroke({ width: px(1.5), color: p.color });
         text(i).position.set(p.x, p.y);
         text(i).visible = true;
       }

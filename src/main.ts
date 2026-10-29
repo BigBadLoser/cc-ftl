@@ -23,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, CrewC, PositionC, SAVE_VERSION, commitEtaSec, galaxyIndex, nodeOf, serialize, ShipC } from './sim';
+import { BodyC, CrewC, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
@@ -363,6 +363,7 @@ const api: UiApi = {
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
+  insetSize: (ship) => renderer?.insetSize(ship) ?? null,
   setInset: (view) => renderer?.setInset(view && { shipId: view.ship, view: view.view }),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
@@ -408,6 +409,7 @@ const api: UiApi = {
       .then((r) => {
         renderer = r;
         r.setCommitEta((id) => commitEtaSec(sim, id));
+        r.setShotColor((id) => shotColor(shotSlot(sim, id)));
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);
         const grid = shipGrid(sim, homeShip(sim));

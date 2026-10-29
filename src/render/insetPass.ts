@@ -1,6 +1,6 @@
 import { Container, RenderTexture, Sprite, type Renderer as PixiRenderer } from 'pixi.js';
 import type { Ship } from '../sim/combat/components';
-import { createCamera, type Camera } from './camera';
+import { createCamera, floorLevel, zoomLevels, type Camera } from './camera';
 import { ROOF_H } from './heights';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
 import type { Origin } from './sectorPos';
@@ -28,9 +28,37 @@ export function viewDevicePx(rect: InsetRect, ratio: number): InsetRect {
 
 const PANEL_BG = 0x04070b;
 
-/** Scale that fits a span into a box: fractional so the ship fills the view (capped at 3 and floored at 0.25 against the 64 px-tile art). */
-function fitScale(boxW: number, boxH: number, spanW: number, spanH: number): number {
-  return Math.max(0.25 / ART_SCALE, Math.min(3 / ART_SCALE, boxW / spanW, boxH / spanH));
+/** The inset window's bounds in CSS px: it is sized to the ship at a pixel-perfect zoom, between these. */
+const MIN_W = 250;
+const MIN_H = 130;
+const MAX_W = 520;
+const MAX_H = 300;
+/** Empty margin around the ship, CSS px. */
+const PAD = 6;
+
+export interface InsetFit {
+  /** Device px per world px: one of the main camera's aligned levels (`zoomLevels`), so tiles and sprites land on whole device px (no seams). */
+  scale: number;
+  /** The window's size in CSS px. */
+  w: number;
+  h: number;
+}
+
+/**
+ * The largest aligned zoom at which the ship fits the biggest allowed window, and the window sized to the ship at that zoom (clamped to the bounds).
+ * The zoom never depends on the window, so the DOM size and the render pass agree.
+ */
+export function insetFit(ship: Pick<Ship, 'width' | 'height'>, lift: number, ratio: number): InsetFit {
+  const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W * 0.2;
+  const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 1.1 + lift;
+  const fit = Math.min((MAX_W - 2 * PAD) * ratio / spanW, (MAX_H - 2 * PAD) * ratio / spanH);
+  const scale = floorLevel(zoomLevels(3 / ART_SCALE + 2), fit);
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  return {
+    scale,
+    w: clamp(Math.ceil((spanW * scale) / ratio) + 2 * PAD, MIN_W, MAX_W),
+    h: clamp(Math.ceil((spanH * scale) / ratio) + 2 * PAD, MIN_H, MAX_H),
+  };
 }
 
 export interface InsetPassHost {
@@ -87,12 +115,10 @@ export function createInsetPass(h: InsetPassHost): InsetPass {
       }
       const { x, y, w, h: ht } = viewDevicePx({ x: box.left, y: box.top, w: box.width, h: box.height }, h.ratio());
       const lift = h.roofed(view.shipId) ? ROOF_H : 0;
-      const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W * 0.2;
-      const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 1.1 + lift;
       const o = h.origin(view.shipId);
       const c = iso(o.x + ship.width / 2 - 0.5, o.y + ship.height / 2 - 0.5);
       cam.resize(w, ht, 1);
-      cam.setExactScale(fitScale(w - 6, ht - 6, spanW, spanH), true);
+      cam.setExactScale(insetFit(ship, lift, h.ratio()).scale);
       cam.centerOn(c.x, c.y - lift / 2);
       if (!rt || rt.width !== w || rt.height !== ht) {
         rt?.destroy(true);

@@ -35,3 +35,16 @@ export function commitEtaSec(sim: Sim, weaponId: number): number | null {
   const dist = from ? Math.max(1, Math.hypot(c.x + c.w / 2 - from.x, c.y + c.h / 2 - from.y)) : 1;
   return charging + dist / wdef.speed;
 }
+
+/** A weapon's stable colour slot: its rank by entity id among the weapons of its ship, so a shot keeps its colour while others land. */
+export function shotSlot(sim: Sim, weaponId: number): number {
+  const m = sim.world.get(weaponId, ModuleC);
+  if (!m) return 0;
+  const ship = shipIdOf(sim, m);
+  let rank = 0;
+  for (const id of sim.world.query(WeaponC)) {
+    const o = sim.world.get(id, ModuleC);
+    if (id < weaponId && o && shipIdOf(sim, o) === ship) rank++;
+  }
+  return rank;
+}

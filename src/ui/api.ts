@@ -546,6 +546,10 @@ export interface UiShipModule {
 
 /** An enemy shot aimed at your ship: the weapon's name and the seconds until it lands (charge left plus flight). */
 export interface UiIncoming {
+  /** The firing weapon's entity id (stable while the shot lives). */
+  id: number;
+  /** Its colour (0xRRGGBB), the same in the timeline and in the world. */
+  color: number;
   name: string;
   eta: number;
   flying: boolean;
@@ -1168,6 +1172,8 @@ export interface UiApi {
   focusFight(ship: number | null): void;
   /** Show a ship in the combat inset's window, a page element (null hides it): the renderer draws a second camera there every frame. */
   setInset(view: { ship: number; view: HTMLElement } | null): void;
+  /** The inset window's size in CSS px for a ship (the renderer sizes it to the ship at a pixel-perfect zoom), or null. */
+  insetSize(ship: number): { w: number; h: number } | null;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */

@@ -11,7 +11,7 @@ import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
 import { createThreatMarks } from './threatMarks';
-import { createInsetPass } from './insetPass';
+import { createInsetPass, insetFit } from './insetPass';
 import { createAimMarks, type AimHover } from './aimMarks';
 import type { CutawayMode } from './gridView';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
@@ -128,8 +128,12 @@ export interface Renderer {
   onEvents(events: readonly SimEvent[]): void;
   /** Show a ship in the combat inset's window (a page element; null hides it): a second camera over the same scene, drawn there every frame. */
   setInset(view: { shipId: number; view: HTMLElement } | null): void;
+  /** The inset window's size in CSS px for a ship (sized to the ship at a pixel-perfect zoom), or null. */
+  insetSize(shipId: number): { w: number; h: number } | null;
   /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
   setCommitEta(fn: (weaponId: number) => number | null): void;
+  /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
+  setShotColor(fn: (weaponId: number) => number): void;
   /** The enemy tile or module the pointer would aim at while "Target in view" is armed (null clears the preview). */
   setAimHover(h: AimHover | null): void;
 }
@@ -230,8 +234,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
   /** The camera the world is currently placed for (the main one, or the inset's during pass B). */
   let placed: Camera = cam;
+  let shotColor: (weaponId: number) => number = () => 0xff5a5a;
   let commitEta: (weaponId: number) => number | null = () => null;
-  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id),
+  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id), color: (id) => shotColor(id),
     frame: () => ({ x0: -placed.originX / placed.scale, y0: -placed.originY / placed.scale, x1: (placed.w - placed.originX) / placed.scale, y1: (placed.h - placed.originY) / placed.scale }),
     shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
@@ -347,8 +352,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     placed = c;
     const any = shipOf(refId) !== undefined;
     for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
-    // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
-    atlas.setSmooth(target === null && c.scale < 1);
+    // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
+    atlas.setSmooth(c.scale < 1);
     W.setUiVisible(target === null);
     W.setMarksVisible(false);
     SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
@@ -524,7 +529,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setAimHover: (h) => aimMarks.setHover(h),
     setInset: (v) => inset.set(v),
+    insetSize: (id) => { const sh = shipOf(id); if (!sh) return null; const f = insetFit(sh, scenes.get(id)?.isRoofed() ? ROOF_H : 0, ratio()); return { w: f.w, h: f.h }; },
     setCommitEta: (fn) => { commitEta = fn; },
+    setShotColor: (fn) => { shotColor = fn; },
     dispose() {
       asteroids.dispose();
       pods.dispose();
