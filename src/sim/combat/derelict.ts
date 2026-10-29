@@ -114,7 +114,12 @@ export interface DerelictSpec {
 export function spawnDerelict(sim: Sim, spec: DerelictSpec): number | string {
   const faction = sim.content.factions?.[spec.faction];
   if (!faction) return 'badFaction';
-  const gen = generateShip(faction, spec.faction, spec.seed, spec.depth, sim.content.modules);
+  let gen: ReturnType<typeof generateShip>;
+  try {
+    gen = generateShip(faction, spec.faction, spec.seed, spec.depth, sim.content.modules);
+  } catch {
+    return 'noLayout'; // every attempt failed for this faction, seed and depth: a typed failure, not an exception out of the tick
+  }
   if (gen.problems.length > 0) return 'noLayout';
   const infest = spec.infest ?? (faction.living ? 'alien' : 'robot');
   const { template, meta } = ruin(gen.template, spec.seed, { defs: sim.content.modules, intensity: spec.intensity ?? 0.5, infest, origin: spec.faction, ...(spec.cause ? { cause: spec.cause } : {}) });
