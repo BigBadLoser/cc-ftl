@@ -97,3 +97,33 @@ describe('Tally', () => {
     expect(t.stats.size).toBe(0);
   });
 });
+
+describe('Tally excluded spans', () => {
+  it('times the span on its own and removes it from every open span, total and self', () => {
+    const c = clock();
+    const t = new Tally(c.now);
+    t.begin('frame');
+    t.begin('tick');
+    c.advance(1);
+    t.excluded('observe', () => c.advance(10));
+    c.advance(1);
+    t.end('tick');
+    t.end('frame');
+    expect(t.stats.get('tick')).toMatchObject({ total: 2, self: 2 });
+    expect(t.stats.get('frame')).toMatchObject({ total: 2, self: 0 });
+    expect(t.excludedStats.get('observe')).toMatchObject({ calls: 1, total: 10 });
+    expect(t.stats.has('observe')).toBe(false);
+    expect(t.takeFrame().map((s) => s.label)).not.toContain('observe');
+  });
+
+  it('counts nested excluded spans once and still removes the time if fn throws', () => {
+    const c = clock();
+    const t = new Tally(c.now);
+    t.begin('tick');
+    expect(() => t.excluded('observe', () => { c.advance(3); t.excluded('inner', () => c.advance(4)); throw new Error('x'); })).toThrow('x');
+    t.end('tick');
+    expect(t.stats.get('tick')!.total).toBe(0);
+    expect(t.excludedStats.get('observe')!.total).toBe(7);
+    expect(t.excludedStats.has('inner')).toBe(false);
+  });
+});
