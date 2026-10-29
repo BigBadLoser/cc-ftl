@@ -145,7 +145,7 @@ describe('weapons', () => {
     const events = run(sim, 1200);
     expect(ofType(events, 'projectile.shieldHit').length).toBeGreaterThanOrEqual(1);
     expect(combatOf(sim, 2).shield.layers).toBe(0);
-    // Recharge: one layer after rechargeSec (10 s) without further volleys (hold fire).
+    // Recharge: one layer after rechargeSec (10 s, about 7 s with SHIELD_REGEN_MULT) without further volleys (hold fire).
     sim.enqueue({ type: 'combat.setHold', ship: nth(sim, 1), hold: true });
     run(sim, 2);
     const weapon = modulesOf(sim, 1, 'module.burstLaser')[0] as number;
@@ -181,7 +181,8 @@ describe('weapons', () => {
   it('mass driver passes one shield layer, laser does not', () => {
     const sim = duel('module.massDriver', dummy);
     aim(sim, 1, 2);
-    const events = run(sim, 20 * 25);
+    // The first slug only: shields now regenerate fast enough (SHIELD_REGEN_MULT) for a second layer to be up before the next one lands.
+    const events = run(sim, 20 * 18);
     expect(ofType(events, 'projectile.shieldHit')).toHaveLength(0);
     expect(ofType(events, 'projectile.hit').length + ofType(events, 'projectile.miss').length).toBeGreaterThan(0);
   });
@@ -290,7 +291,7 @@ describe('evasion, point defence, shields', () => {
       run(sim, 400);
       combatOf(sim, 1).shield.layers = 0;
       combatOf(sim, 1).shield.timer = 0;
-      run(sim, 20 * 17);
+      run(sim, 20 * 11); // a layer per 10 s / SHIELD_REGEN_MULT unmanned, a bit under 7 s with an operator
       return combatOf(sim, 1).shield.layers;
     };
     expect(layersAfter(false)).toBe(1);

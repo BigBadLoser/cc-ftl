@@ -571,10 +571,10 @@ export interface UiShipCombat {
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
   /**
    * Combat heat: 0..max. `lockout` and `venting` are seconds left (0 = not). Heat falls only while the shields are down, so `cooling` says whether it does now.
-   * `overcharge` per system: seconds active (`left`) and seconds until it can start again (`cooldown`). `auto`: the ship vents and holds volleys itself.
+   * `overcharge` per system: seconds active (`left`) and seconds until it can start again (`cooldown`).
    */
   heat: {
-    value: number; max: number; lockout: number; venting: number; cooling: boolean; auto: boolean;
+    value: number; max: number; lockout: number; venting: number; cooling: boolean;
     overcharge: Record<'weapons' | 'shields' | 'engines', { left: number; cooldown: number }>;
   };
   /** 0..1 chance a shot misses. */

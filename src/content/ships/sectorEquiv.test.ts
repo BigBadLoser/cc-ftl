@@ -260,7 +260,7 @@ describe('sector refactor equivalence', () => {
 // Repinned for automatic damage control (#181): every working role now does damage control at priority 1 (was 2; the hashed world holds crew priorities, so
 // the combat hash changes by that alone: with the old role table it still gives c28a5816), and crew seal hull breaches by themselves (a wall build in the
 // firefighting category), which changes the fire and breach run.
-// Repinned for combat heat (#185): in the 2400-tick run the raider (ship 78) overcharges its weapons 3 times (ticks 2, 910, 1810) and vents twice (ticks 875, 1775),
-// which changes its volleys and its shield layers. With the AI overcharge off (AI_OVERCHARGE_BELOW 0) the two vents alone still give 1878aa45. The empty-shaped
-// new `heat` field on the combat component is dropped in legacyWorld, so the disaster hash (no fight) is unchanged.
-const EXPECTED = { combat: 'd3ae8215', disaster: '6317c54b' };
+// Repinned for combat heat (#185): shields regenerate 1.4x faster for every ship (SHIELD_REGEN_MULT, so layers come back at other ticks), and the raider overcharges
+// its weapons and vents its heat (the player ship does neither without a command). The new `heat` field on the combat component is dropped in legacyWorld, so the
+// disaster hash (no fight) is unchanged.
+const EXPECTED = { combat: 'd03dd6fa', disaster: '6317c54b' };

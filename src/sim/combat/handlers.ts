@@ -127,11 +127,6 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (why) return reject(sim, cmd.type, why);
     startOvercharge(sim, cmd.ship, combat, cmd.system);
   },
-  'combat.setAutoHeat': (sim, cmd) => {
-    const combat = sim.world.get(cmd.ship, CombatC);
-    if (!combat) return reject(sim, cmd.type, 'noShip');
-    combat.heat.auto = cmd.auto;
-  },
   'combat.flee': (sim, cmd) => {
     const entity = cmd.ship;
     const ship = sim.world.get(entity, ShipC);

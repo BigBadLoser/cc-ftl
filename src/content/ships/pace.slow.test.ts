@@ -3,13 +3,22 @@ import { CrewC, DeadC, DownedC, PositionC, newGame, type SimEvent } from '../../
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
+import { CombatC } from '../../sim';
+import { ventError } from '../../sim/combat/heat';
+import { HEAT_MAX } from '../../sim/combat/heatTuning';
+import { shotAboutToLand } from '../../sim/systems/heatAi';
 
 const TPS = 20;
 const CRITICAL = ['module.reactor', 'module.lifeSupport', 'module.shieldGen', 'module.engine'];
 
 interface Pace { seconds: number; winner: 'player' | 'raider' | 'none'; down: number; dead: number; critical: number }
 
-/** Starter ship vs one raider, default crew behaviour, default targeting (the player gives no orders). */
+/**
+ * Starter ship vs one raider, default crew behaviour, default targeting. The player is a scripted *basic player*: weapons on auto (the panel's
+ * whole-ship target, nothing else), and the one heat habit a player must have: vent when the meter is at 70% or more and no enemy shot is about
+ * to land (the same "shot soon" rule the enemy AI uses). It never overcharges. The ship does nothing about heat by itself, so without this habit
+ * it would overheat; the test models a player who plays the basics and nothing clever.
+ */
 function paceFight(seed: number, maxMinutes = 12): Pace {
   const sim = newGame(seed, content);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
@@ -21,6 +30,8 @@ function paceFight(seed: number, maxMinutes = 12): Pace {
   let seconds = maxMinutes * 60;
   let winner: Pace['winner'] = 'none';
   for (let t = 0; t < maxMinutes * 60 * TPS; t++) {
+    const c = sim.world.get(mine, CombatC);
+    if (c && c.heat.value >= 0.7 * HEAT_MAX && ventError(c) === null && !shotAboutToLand(sim, mine)) sim.enqueue({ type: 'combat.vent', ship: mine });
     sim.step();
     for (const e of sim.events.drain() as SimEvent[]) {
       if (e.type === 'module.destroyed' && e.ship === mine && CRITICAL.includes(e.def)) critical.add(e.moduleId);
@@ -39,11 +50,11 @@ function paceFight(seed: number, maxMinutes = 12): Pace {
   };
 }
 
-describe('starter vs raider pace (the player gives no orders, the panel aims at the whole ship)', { timeout: 300000 }, () => {
+describe('starter vs raider pace (a basic player: auto-fire at the whole ship, vents at 70% heat when safe, never overcharges)', { timeout: 300000 }, () => {
   // Seeds 1 to 8 as first measured; seeds 9 to 16 were run once as a holdout when the charge times were set (see #168).
   const seeds = Array.from({ length: 16 }, (_, i) => i + 1);
 
-  // The user's decision: this test plays with no orders at all, so an occasional loss is acceptable ("bad play should result in a loss").
+  // The user's decision: this test plays a basic player (it used to give no orders at all), so an occasional loss is acceptable ("bad play should result in a loss").
   // So the bar is aggregate over 16 seeds instead of every seed winning.
   it('mostly wins, a typical fight inside the 3 minutes the design asks for, and costs little crew', () => {
     const results = seeds.map((s) => paceFight(s));

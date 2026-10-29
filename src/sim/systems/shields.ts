@@ -1,6 +1,6 @@
 import { CombatC, ShipC } from '../combat/components';
 import { fireBlocked, overchargeActive } from '../combat/heat';
-import { OVERCHARGE_SHIELD_REGEN } from '../combat/heatTuning';
+import { OVERCHARGE_SHIELD_REGEN, SHIELD_REGEN_MULT } from '../combat/heatTuning';
 import { mannedConsole, skillOf } from '../combat/operators';
 import { shieldCapacity, shieldRechargeSec } from '../combat/ships';
 import type { Sim } from '../sim';
@@ -30,7 +30,7 @@ export function shieldSystem(sim: Sim): void {
       continue;
     }
     const op = mannedConsole(sim, id, 'shields');
-    const rate = (1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0)) * (combat && overchargeActive(combat, 'shields') ? OVERCHARGE_SHIELD_REGEN : 1);
+    const rate = SHIELD_REGEN_MULT * (1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0)) * (combat && overchargeActive(combat, 'shields') ? OVERCHARGE_SHIELD_REGEN : 1);
     s.timer += rate / TICK_HZ;
     if (s.timer >= shieldRechargeSec(sim, id)) {
       s.layers++;

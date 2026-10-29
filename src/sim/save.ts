@@ -77,9 +77,10 @@ import { newYard, type YardState } from './yard/types';
  * v63 (pirate factions): new galaxy factions (`raiders`, `cartel`, `zealots`, `mercenaries`) with their own reputation keys, `Contact.hired`, `CoreRaiderC` / `CoreRaidC`, boarder flags `prefer` / `coreRaid`.
  * v64 (black markets): optional `Trader.services` / `Trader.fence`, `NodeState.truce` / `scanned`, `Encounter.scan`, `Ship.banned`, `ForHire.shady` (and `SkillXpC` on shady crew), contraband items (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`, the zealot machine goods).
  * v65 (jobs by station): `GalaxyState.claims` (finished bounties and surveys waiting for hand-in), survey jobs (`StationJob.kind` 'survey', `station`, `feature`), `Deal.handover` (the station shuttle collecting a delivery crate).
- * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges, auto), `WeaponDef.heat`, `ModuleDef.radiator`.
+ * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges), `WeaponDef.heat`, `ModuleDef.radiator`.
+ * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
  */
-export const SAVE_VERSION = 66;
+export const SAVE_VERSION = 67;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

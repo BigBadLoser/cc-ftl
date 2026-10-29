@@ -49,8 +49,8 @@ export function firingSystem(sim: Sim): void {
     if (!ready || w.charge < 1 || held) continue;
     const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
-    // Auto heat control (the AI always, the player's ship by default): a volley that would overheat the ship waits for a vent.
-    if ((isAiFaction(ship.faction) || combat.heat.auto) && combat.heat.value + def.heat > HEAT_MAX * AUTO_FIRE_CEILING) continue;
+    // Enemy ships manage their own heat: a volley that would overheat them waits for a vent. The player's ship fires into an overheat if told to.
+    if (isAiFaction(ship.faction) && combat.heat.value + def.heat > HEAT_MAX * AUTO_FIRE_CEILING) continue;
     addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
