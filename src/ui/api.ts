@@ -544,6 +544,13 @@ export interface UiShipModule {
   powered: boolean;
 }
 
+/** An enemy shot aimed at your ship: the weapon's name and the seconds until it lands (charge left plus flight). */
+export interface UiIncoming {
+  name: string;
+  eta: number;
+  flying: boolean;
+}
+
 /** An enemy weapon's charge, for the telegraph on the enemy panel. */
 export interface UiEnemyWeapon {
   id: number;
@@ -619,7 +626,7 @@ export interface UiAiming {
 
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null; /** Enemy shots committed to or flying at your ship, soonest first. */ incoming: UiIncoming[] }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
@@ -1159,6 +1166,8 @@ export interface UiApi {
   setRoofPlayer(on: boolean): void;
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
   focusFight(ship: number | null): void;
+  /** Show a ship in the combat inset's window, a page element (null hides it): the renderer draws a second camera there every frame. */
+  setInset(view: { ship: number; view: HTMLElement } | null): void;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */

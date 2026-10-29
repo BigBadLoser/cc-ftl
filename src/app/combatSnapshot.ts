@@ -1,8 +1,8 @@
 import {
-  CombatC, CrewC, IonC, ModuleC, ShipC, WeaponC, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
+  CombatC, CrewC, IonC, ModuleC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
   type Combat, type Sim, type Target,
 } from '../sim';
-import type { UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
+import type { UiIncoming, UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
 import { HEAT_MAX } from '../sim/combat/heatTuning';
 import { shieldsDown } from '../sim/combat/heat';
 import { TICK_HZ } from '../sim/time';
@@ -33,6 +33,23 @@ function modulesOf(sim: Sim, shipId: number): UiShipModule[] {
     out.push({ id, name: def.name, kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC), powered: m.powered });
   }
   return out;
+}
+
+/** Enemy shots committed to or flying at a ship, soonest first: the weapon's name and the seconds to impact. */
+function incomingShots(sim: Sim, shipId: number): UiIncoming[] {
+  const out = new Map<number, UiIncoming>();
+  const nameOf = (module: number): string => sim.content.modules[sim.world.get(module, ModuleC)?.def ?? '']?.name ?? 'Shot';
+  for (const id of sim.world.query(WeaponC)) {
+    const c = sim.world.get(id, WeaponC)?.commit;
+    const eta = c && c.target.ship === shipId ? commitEtaSec(sim, id) : null;
+    if (eta !== null) out.set(id, { name: nameOf(id), eta: round(eta, 1), flying: false });
+  }
+  for (const id of sim.world.query(ProjectileC)) {
+    const p = sim.world.get(id, ProjectileC);
+    const eta = p && p.target.ship === shipId && !p.target.vehicle ? projectileEtaSec(sim, id) : null;
+    if (p && eta !== null && (out.get(p.fromModuleId)?.eta ?? Infinity) > eta) out.set(p.fromModuleId, { name: nameOf(p.fromModuleId), eta: round(eta, 1), flying: true });
+  }
+  return [...out.values()].sort((a, b) => a.eta - b.eta);
 }
 
 function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
@@ -118,7 +135,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           });
         }
       }
-      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid) };
+      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid), incoming: incomingShots(sim, playerGrid) };
     } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.

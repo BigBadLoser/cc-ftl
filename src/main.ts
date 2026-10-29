@@ -23,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, CrewC, PositionC, SAVE_VERSION, galaxyIndex, nodeOf, serialize, ShipC } from './sim';
+import { BodyC, CrewC, PositionC, SAVE_VERSION, commitEtaSec, galaxyIndex, nodeOf, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
@@ -109,12 +109,9 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 window.addEventListener('pagehide', save);
 
-/** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
+/** Frame one ship in the camera (null: the player's), clear of the combat HUD bands while a fight is on. */
 function focusFight(ship: number | null): void {
-  const inCombat = sim.sector.inCombat;
-  const me = homeShip(sim);
-  // In the combat view the enemy card (top) and the ship strip (bottom) cover the edges: keep the ships clear of them.
-  renderer?.frameShips(ship === null ? [me] : [me, ship], inCombat ? { top: 40, bottom: 170 } : undefined);
+  renderer?.frameShips([ship ?? homeShip(sim)], sim.sector.inCombat ? { top: 40, bottom: 170 } : undefined);
 }
 
 /**
@@ -157,7 +154,7 @@ function spawnDerelict(faction?: string): void {
 }
 
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
-function spawnRaider(boarders = false): void {
+function spawnRaider(boarders = false, far = params.has('far')): void {
   const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
   if (shipgenFlag?.startsWith('derelict')) {
     spawnDerelict(shipgenFlag.split(':')[1]);
@@ -174,8 +171,9 @@ function spawnRaider(boarders = false): void {
   const h = t.rows.length;
   const cy = mine.y + mine.height / 2;
   // Just past the player ship's padded frame plus the minimum gap, level with it, so the placement is never refused as tooClose.
-  const x = Math.min(sim.sector.width - w, mine.x + mine.width + MIN_SHIP_GAP + 2 * REGION_PAD + 4);
-  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2)));
+  // `far`: a typical engagement distance, well past what a camera can frame beside the player's ship (about 55 tiles east, 45 north: the free corner of the start node).
+  const x = Math.min(sim.sector.width - w, mine.x + mine.width + (far ? 55 : MIN_SHIP_GAP + 2 * REGION_PAD + 4));
+  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2) - (far ? 45 : 0)));
   bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
@@ -206,7 +204,7 @@ const stationFlag = params.get('station');
 const scenario = params.get('scenario');
 /**
  * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
- * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat panel (and its flee control).
+ * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
  * `&charged` also fills the FTL drive.
  * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
  * a finished bounty / survey to hand in, and you at the nearest military / research station (drops in by itself). See galaxy/jobsDebug.ts.
@@ -365,6 +363,7 @@ const api: UiApi = {
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
+  setInset: (view) => renderer?.setInset(view && { shipId: view.ship, view: view.view }),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
   spawnStation: (kind, size) => spawnStation(kind, size),
@@ -408,6 +407,7 @@ const api: UiApi = {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        r.setCommitEta((id) => commitEtaSec(sim, id));
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);
         const grid = shipGrid(sim, homeShip(sim));

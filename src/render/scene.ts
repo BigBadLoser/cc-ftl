@@ -11,6 +11,7 @@ import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
 import { createThreatMarks } from './threatMarks';
+import { createInsetPass } from './insetPass';
 import { createAimMarks, type AimHover } from './aimMarks';
 import type { CutawayMode } from './gridView';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
@@ -125,6 +126,10 @@ export interface Renderer {
   resetWorld(): void;
   /** Sim events of the last frame, for combat fx. */
   onEvents(events: readonly SimEvent[]): void;
+  /** Show a ship in the combat inset's window (a page element; null hides it): a second camera over the same scene, drawn there every frame. */
+  setInset(view: { shipId: number; view: HTMLElement } | null): void;
+  /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
+  setCommitEta(fn: (weaponId: number) => number | null): void;
   /** The enemy tile or module the pointer would aim at while "Target in view" is armed (null clears the preview). */
   setAimHover(h: AimHover | null): void;
 }
@@ -223,7 +228,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const worldGrid = createWorldGrid(SL.ui);
   const cutLine = createCutLine(SL.ui);
   const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
-  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
+  let commitEta: (weaponId: number) => number | null = () => null;
+  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id) }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
   const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
@@ -339,13 +345,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
     atlas.setSmooth(target === null && c.scale < 1);
     W.setUiVisible(target === null);
-    W.setMarksVisible(target !== null);
-    SL.ui.visible = target === null;
+    W.setMarksVisible(false);
+    SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
     W.root.scale.set(c.scale);
     W.root.position.set(c.originX, c.originY);
     SL.setScale(c.scale);
     SL.world.position.set(c.originX, c.originY);
   }
+
+  // The combat inset: camera pass B over the same world stack, into a texture shown above the main pass.
+  const inset = createInsetPass({ ship: shipOf, origin, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, ratio, place });
+  stage.addChild(inset.sprite);
 
   return {
     render(alpha) {
@@ -374,7 +384,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       art.settle();
+      inset.render(gl, stage, () => threatMarks.update());
       place(cam, null);
+      threatMarks.update();
       gl.render({ container: stage });
       atlas.tick();
     },
@@ -506,6 +518,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fightFx.onEvents(events);
     },
     setAimHover: (h) => aimMarks.setHover(h),
+    setInset: (v) => inset.set(v),
+    setCommitEta: (fn) => { commitEta = fn; },
     dispose() {
       asteroids.dispose();
       pods.dispose();
@@ -517,6 +531,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       orderFx.dispose();
       fx.dispose();
       sectorParticles.dispose();
+      inset.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
       gl.destroy();

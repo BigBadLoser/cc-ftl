@@ -1,10 +1,11 @@
 import { rotatedSize } from '../sim/modules/footprint';
 import { ModuleC } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
 import { ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { WeaponDef } from '../sim/registry';
+import { TICK_HZ } from '../sim/time';
 import { ROOF_H } from './heights';
 import { footprintQuad, padQuad, type Seg } from './targetBrackets';
 
@@ -22,6 +23,8 @@ export interface ThreatMarksHost {
   refId(): number;
   roofed(shipId: number): boolean;
   scale(): number;
+  /** Seconds until a weapon's committed shot lands (charge left plus flight), or null. */
+  commitEta(weaponId: number): number | null;
 }
 
 /** One incoming shot or committed aim: the aim area (module footprint or one tile), the scatter radius in tiles, and how much of the countdown is left (1 = just committed, 0 = lands). */
@@ -34,6 +37,8 @@ interface Threat {
   radius: number;
   left: number;
   flying: boolean;
+  /** Seconds to impact. */
+  eta: number;
 }
 
 export interface ThreatMarks {
@@ -47,6 +52,18 @@ export interface ThreatMarks {
 export function createThreatMarks(host: ThreatMarksHost, parent: Container): ThreatMarks {
   const gfx = new Graphics();
   parent.addChild(gfx);
+  /** One countdown label per weapon, reused frame to frame. */
+  const labels = new Map<number, Text>();
+  const label = (key: number): Text => {
+    let t = labels.get(key);
+    if (!t) {
+      t = new Text({ text: '', style: { fontFamily: 'Rajdhani, Arial Narrow, sans-serif', fontWeight: '700', fontSize: 15, fill: 0xff8a8a, stroke: { color: 0x05080d, width: 4 } }, resolution: 2 });
+      t.anchor.set(0, 0.5);
+      parent.addChild(t);
+      labels.set(key, t);
+    }
+    return t;
+  };
 
   /** Aim area of a shot in flight: its target module's footprint, else the tile it flies to. */
   function rectOf(p: { target: { moduleId: number; ship: number }; x1: number; y1: number }): { x: number; y: number; w: number; h: number } {
@@ -67,14 +84,14 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
       const c = w?.commit;
       if (!w || !c || c.target.ship !== ref) continue;
       const r = radius(host.modules[host.world.get(id, ModuleC)?.def ?? '']?.weapon ?? '');
-      out.set(id, { key: id, x: c.x, y: c.y, w: c.w, h: c.h, radius: r, left: 1 - Math.max(0, Math.min(1, (w.charge - c.from) / Math.max(1e-6, 1 - c.from))), flying: false });
+      out.set(id, { key: id, x: c.x, y: c.y, w: c.w, h: c.h, radius: r, left: 1 - Math.max(0, Math.min(1, (w.charge - c.from) / Math.max(1e-6, 1 - c.from))), flying: false, eta: host.commitEta(id) ?? 0 });
     }
     for (const id of host.world.query(ProjectileC)) {
       const p = host.world.get(id, ProjectileC);
       if (!p || p.target.ship !== ref || p.target.vehicle) continue;
       const left = 1 - Math.min(1, p.t);
       const prev = out.get(p.fromModuleId);
-      if (!prev || prev.left > left) out.set(p.fromModuleId, { key: p.fromModuleId, ...rectOf(p), radius: radius(p.weapon), left, flying: true });
+      if (!prev || prev.left > left) out.set(p.fromModuleId, { key: p.fromModuleId, ...rectOf(p), radius: radius(p.weapon), left, flying: true, eta: Math.max(0, (1 - p.t) / Math.max(1e-6, p.dt) / TICK_HZ) });
     }
     return [...out.values()];
   }
@@ -82,8 +99,10 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
   return {
     update() {
       gfx.clear();
+      const used = new Set<number>();
+      const done = () => { for (const [k, t] of labels) t.visible = used.has(k); };
       const ref = host.refId();
-      if (!host.world.get(ref, ShipC)) return;
+      if (!host.world.get(ref, ShipC)) return done();
       const s = host.scale();
       const lift = host.roofed(ref) ? ROOF_H : 0;
       const px = (n: number) => n / s;
@@ -124,7 +143,14 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
           gfx.stroke({ width: px(6), color: 0xff8a8a, alpha: Math.max(0.85, pulse), cap: 'butt' });
         }
         gfx.circle(cx, cy, px(2)).fill({ color: C_THREAT, alpha: pulse });
+        // Seconds to impact, beside the ring: always the same size on screen, whatever the camera.
+        const tx = label(t.key);
+        tx.text = `${t.eta.toFixed(1)}s`;
+        tx.scale.set(px(1));
+        tx.position.set(cx + rx + px(6), cy);
+        used.add(t.key);
       }
+      done();
     },
   };
 }
