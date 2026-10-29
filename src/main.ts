@@ -126,7 +126,12 @@ window.addEventListener('keydown', (e) => {
 const AUTOSAVE_MS = 30_000;
 const session = createStore<UiSession>({ notice: start.notice, lost: null });
 // Read the loss from the sim too, not only the session: the poll below lags by up to a second. A `?seed=` game never saves.
-const save = createSaver(sim, start.persist, () => session.get().lost !== null);
+const SAVE_FAILED = 'Saving failed: the browser refused the write (storage full or blocked). Your progress since the last save is not stored.';
+const save = createSaver(sim, start.persist, () => session.get().lost !== null, (ok) => {
+  const cur = session.get();
+  if (!ok && cur.notice !== SAVE_FAILED) session.set({ ...cur, notice: SAVE_FAILED });
+  else if (ok && cur.notice === SAVE_FAILED) session.set({ ...cur, notice: null });
+});
 setInterval(save, AUTOSAVE_MS);
 setInterval(() => {
   if (session.get().lost) return;
