@@ -228,8 +228,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const worldGrid = createWorldGrid(SL.ui);
   const cutLine = createCutLine(SL.ui);
   const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
+  /** The camera the world is currently placed for (the main one, or the inset's during pass B). */
+  let placed: Camera = cam;
   let commitEta: (weaponId: number) => number | null = () => null;
-  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id) }, SL.ui);
+  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id),
+    frame: () => ({ x0: -placed.originX / placed.scale, y0: -placed.originY / placed.scale, x1: (placed.w - placed.originX) / placed.scale, y1: (placed.h - placed.originY) / placed.scale }),
+    shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
   const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
@@ -340,6 +344,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   /** Place the world for a camera pass: the main pass (target null) or the combat panel (pass B, showing `target`). */
   function place(c: Camera, target: number | null): void {
+    placed = c;
     const any = shipOf(refId) !== undefined;
     for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.

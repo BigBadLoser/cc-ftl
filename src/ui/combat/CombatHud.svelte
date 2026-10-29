@@ -6,6 +6,7 @@
   import { TICK_HZ } from '../../sim/time';
   import { nextHeatRate, type HeatSample } from './heatRate';
   import { weaponForKey } from './weaponKeys';
+  import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
 
   /**
@@ -96,8 +97,9 @@
 <div class="hud" data-testid="combat-hud">
   {#if enemy}<div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} /></div>{/if}
   {#if me && insetShip}
-    <div class="insetdock"><InsetFrame {api} ship={insetShip} title={swapped ? 'Enemy ship' : 'Your ship'} incoming={me.incoming} threatened={me.incoming.length > 0} onSwap={swap} /></div>
+    <div class="insetdock"><InsetFrame {api} ship={insetShip} title={swapped ? 'Enemy ship' : 'Your ship'} threatened={me.incoming.length > 0} onSwap={swap} /></div>
   {/if}
+  {#if me && me.incoming.length > 0}<div class="incoming"><IncomingReadout shots={me.incoming} /></div>{/if}
   {#if me}
     <div class="bot">
       <PlayerStrip {api} {me} {flee} {drive}  {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
@@ -109,5 +111,6 @@
   .hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
   .top { position: absolute; left: calc(8px + var(--sal)); top: calc(8px + var(--sat)); }
   .insetdock { position: absolute; left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab) + 150px); }
+  .incoming { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 150px); }
   .bot { position: absolute; left: 0; right: 0; bottom: calc(8px + var(--sab)); display: flex; justify-content: center; }
 </style>

@@ -1,12 +1,14 @@
 import { rotatedSize } from '../sim/modules/footprint';
 import { ModuleC } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { WeaponDef } from '../sim/registry';
 import { TICK_HZ } from '../sim/time';
 import { ROOF_H } from './heights';
+import { iso } from './iso';
+import { createThreatArrows, type ArrowFrame, type ArrowIn } from './threatArrows';
 import { footprintQuad, padQuad, type Seg } from './targetBrackets';
 
 const C_THREAT = 0xff5a5a;
@@ -25,6 +27,10 @@ export interface ThreatMarksHost {
   scale(): number;
   /** Seconds until a weapon's committed shot lands (charge left plus flight), or null. */
   commitEta(weaponId: number): number | null;
+  /** The visible rectangle of the pass being drawn, in art px of the sector layer. */
+  frame(): ArrowFrame;
+  /** Centre of a ship's footprint, in sector tiles, or null. */
+  shipCenter(shipId: number): { x: number; y: number } | null;
 }
 
 /** One incoming shot or committed aim: the aim area (module footprint or one tile), the scatter radius in tiles, and how much of the countdown is left (1 = just committed, 0 = lands). */
@@ -39,6 +45,8 @@ interface Threat {
   flying: boolean;
   /** Seconds to impact. */
   eta: number;
+  /** Where the shot comes from (the firing weapon), in sector tiles. */
+  src: { x: number; y: number };
 }
 
 export interface ThreatMarks {
@@ -47,23 +55,13 @@ export interface ThreatMarks {
 
 /**
  * PLACEHOLDER debug-style overlay: the aim an enemy weapon committed on the player's ship (a red bracket over the scatter area, with a shrinking
- * countdown ring), kept by its shots until they land. One marker per weapon. Reads the sim only.
+ * countdown ring), kept by its shots until they land. One marker per weapon. Where the pass shows your ship, each shot also gets an arrow in from the
+ * frame edge facing its attacker, carrying the seconds to impact (threatArrows.ts). Reads the sim only.
  */
 export function createThreatMarks(host: ThreatMarksHost, parent: Container): ThreatMarks {
   const gfx = new Graphics();
   parent.addChild(gfx);
-  /** One countdown label per weapon, reused frame to frame. */
-  const labels = new Map<number, Text>();
-  const label = (key: number): Text => {
-    let t = labels.get(key);
-    if (!t) {
-      t = new Text({ text: '', style: { fontFamily: 'Rajdhani, Arial Narrow, sans-serif', fontWeight: '700', fontSize: 15, fill: 0xff8a8a, stroke: { color: 0x05080d, width: 4 } }, resolution: 2 });
-      t.anchor.set(0, 0.5);
-      parent.addChild(t);
-      labels.set(key, t);
-    }
-    return t;
-  };
+  const arrows = createThreatArrows(parent);
 
   /** Aim area of a shot in flight: its target module's footprint, else the tile it flies to. */
   function rectOf(p: { target: { moduleId: number; ship: number }; x1: number; y1: number }): { x: number; y: number; w: number; h: number } {
@@ -76,6 +74,11 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
     return { x: Math.floor(p.x1), y: Math.floor(p.y1), w: 1, h: 1 };
   }
 
+  function moduleTile(id: number): { x: number; y: number } {
+    const m = host.world.get(id, ModuleC);
+    return m ? { x: m.x, y: m.y } : { x: 0, y: 0 };
+  }
+
   function threats(ref: number): Threat[] {
     const out = new Map<number, Threat>();
     const radius = (weapon: string): number => Math.max(1, Math.round(host.weapons[weapon]?.spread ?? 1));
@@ -84,14 +87,14 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
       const c = w?.commit;
       if (!w || !c || c.target.ship !== ref) continue;
       const r = radius(host.modules[host.world.get(id, ModuleC)?.def ?? '']?.weapon ?? '');
-      out.set(id, { key: id, x: c.x, y: c.y, w: c.w, h: c.h, radius: r, left: 1 - Math.max(0, Math.min(1, (w.charge - c.from) / Math.max(1e-6, 1 - c.from))), flying: false, eta: host.commitEta(id) ?? 0 });
+      out.set(id, { key: id, x: c.x, y: c.y, w: c.w, h: c.h, radius: r, left: 1 - Math.max(0, Math.min(1, (w.charge - c.from) / Math.max(1e-6, 1 - c.from))), flying: false, eta: host.commitEta(id) ?? 0, src: moduleTile(id) });
     }
     for (const id of host.world.query(ProjectileC)) {
       const p = host.world.get(id, ProjectileC);
       if (!p || p.target.ship !== ref || p.target.vehicle) continue;
       const left = 1 - Math.min(1, p.t);
       const prev = out.get(p.fromModuleId);
-      if (!prev || prev.left > left) out.set(p.fromModuleId, { key: p.fromModuleId, ...rectOf(p), radius: radius(p.weapon), left, flying: true, eta: Math.max(0, (1 - p.t) / Math.max(1e-6, p.dt) / TICK_HZ) });
+      if (!prev || prev.left > left) out.set(p.fromModuleId, { key: p.fromModuleId, ...rectOf(p), radius: radius(p.weapon), left, flying: true, eta: Math.max(0, (1 - p.t) / Math.max(1e-6, p.dt) / TICK_HZ), src: { x: p.x0, y: p.y0 } });
     }
     return [...out.values()];
   }
@@ -99,9 +102,14 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
   return {
     update() {
       gfx.clear();
-      const used = new Set<number>();
-      const done = () => { for (const [k, t] of labels) t.visible = used.has(k); };
+      const frame = host.frame();
+      const done = () => arrows.update(drawn, frame, host.scale());
+      const drawn: ArrowIn[] = [];
       const ref = host.refId();
+      const here = host.shipCenter(ref);
+      // Arrows only where your ship is in the frame (the inset, or the main view once swapped).
+      const fa = here ? iso(here.x, here.y) : null;
+      const showArrows = !!fa && fa.x > frame.x0 && fa.x < frame.x1 && fa.y > frame.y0 && fa.y < frame.y1;
       if (!host.world.get(ref, ShipC)) return done();
       const s = host.scale();
       const lift = host.roofed(ref) ? ROOF_H : 0;
@@ -143,12 +151,11 @@ export function createThreatMarks(host: ThreatMarksHost, parent: Container): Thr
           gfx.stroke({ width: px(6), color: 0xff8a8a, alpha: Math.max(0.85, pulse), cap: 'butt' });
         }
         gfx.circle(cx, cy, px(2)).fill({ color: C_THREAT, alpha: pulse });
-        // Seconds to impact, beside the ring: always the same size on screen, whatever the camera.
-        const tx = label(t.key);
-        tx.text = `${t.eta.toFixed(1)}s`;
-        tx.scale.set(px(1));
-        tx.position.set(cx + rx + px(6), cy);
-        used.add(t.key);
+        if (showArrows && here) {
+          const v = iso(t.src.x - here.x, t.src.y - here.y);
+          const n = Math.hypot(v.x, v.y);
+          drawn.push({ key: t.key, x: cx, y: cy, r: Math.max(rx, ry) * 1.1, dx: n > 1e-6 ? v.x / n : 0, dy: n > 1e-6 ? v.y / n : -1, eta: t.eta });
+        }
       }
       done();
     },

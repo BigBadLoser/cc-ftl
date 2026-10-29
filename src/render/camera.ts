@@ -67,7 +67,7 @@ export interface Camera {
   /** Zoom to the largest level that does not exceed `fit` (the zoom at which a framed thing just fits). */
   fitZoom(fit: number): void;
   /** Set an exact device-px-per-art-px scale (may be fractional; the combat panel fits a ship with it). */
-  setExactScale(scale: number): void;
+  setExactScale(scale: number, fine?: boolean): void;
   centerOn(ax: number, ay: number): void;
   /** CSS px (canvas-relative) -> art px. */
   toArt(sx: number, sy: number): { x: number; y: number };
@@ -146,7 +146,8 @@ export function createCamera(maxZoom: number): Camera {
       cx = a.x - (px - w / 2) / scale();
       cy = a.y - (py - h / 2) / scale();
     },
-    setExactScale(s) {
+    setExactScale(s, fine) {
+      if (fine) { zoom = Math.max(1 / 64, Math.floor(s * 64) / 64); return; } // the inset trades pixel alignment for filling its window
       // Snapped down to an aligned scale, so the panel's tiles and sprites stay on whole device px (see SCALE_QUANTUM).
       zoom = alignedScale(s);
     },

@@ -87,12 +87,12 @@ export function createInsetPass(h: InsetPassHost): InsetPass {
       }
       const { x, y, w, h: ht } = viewDevicePx({ x: box.left, y: box.top, w: box.width, h: box.height }, h.ratio());
       const lift = h.roofed(view.shipId) ? ROOF_H : 0;
-      const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W;
-      const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 2 + lift;
+      const spanW = (ship.width + ship.height) * (TILE_W / 2) + TILE_W * 0.2;
+      const spanH = (ship.width + ship.height) * (TILE_H / 2) + TILE_H * 1.1 + lift;
       const o = h.origin(view.shipId);
       const c = iso(o.x + ship.width / 2 - 0.5, o.y + ship.height / 2 - 0.5);
       cam.resize(w, ht, 1);
-      cam.setExactScale(fitScale(w - 8, ht - 8, spanW, spanH));
+      cam.setExactScale(fitScale(w - 6, ht - 6, spanW, spanH), true);
       cam.centerOn(c.x, c.y - lift / 2);
       if (!rt || rt.width !== w || rt.height !== ht) {
         rt?.destroy(true);
