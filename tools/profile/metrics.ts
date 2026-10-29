@@ -18,7 +18,7 @@
  */
 import {
   AssignmentC, BedClaimC, CrewC, DraftedC, EatC, JobC, PositionC, PrioritiesC, TICK_HZ, shipIdOf,
-  type Job, type Sim, type SimEvent, type WorkCategory,
+  NOOP_PROBE, type Job, type Probe, type Sim, type SimEvent, type WorkCategory,
 } from '../../src/sim';
 import { isIncapacitated } from '../../src/sim/crew/helpers';
 import { jobTakeable, jobFits } from '../../src/sim/crew/jobFit';
@@ -81,6 +81,29 @@ export class MetricsRecorder {
 
   constructor(readonly opts: { stride: number } = { stride: 25 }) {}
 
+  /**
+   * A probe to step the sim with (`sim.step(rec.probe(sim, inner))`). A job taken and finished in one step is gone from `AssignmentC` by the time `observe` runs,
+   * so the crew members' job categories are read as `sim/work` begins, after every system that hands out jobs has run. Read-only.
+   */
+  probe(sim: Sim, inner: Probe = NOOP_PROBE): Probe {
+    return {
+      begin: (label) => {
+        if (label === 'sim/work') this.snapshotCategories(sim);
+        inner.begin(label);
+      },
+      end: (label) => inner.end(label),
+      count: (label, n) => inner.count(label, n),
+    };
+  }
+
+  private snapshotCategories(sim: Sim): void {
+    this.categoryByCrew.clear();
+    for (const id of sim.world.query(CrewC, AssignmentC)) {
+      const cat = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.category;
+      if (cat) this.categoryByCrew.set(id, cat);
+    }
+  }
+
   /** Observe the sim after a step. `events` are the events that step emitted (drained by the caller). */
   observe(sim: Sim, events: readonly SimEvent[] = []): void {
     const now = sim.tick;
@@ -115,11 +138,7 @@ export class MetricsRecorder {
       const cat = this.categoryByCrew.get(e.crew) ?? 'other';
       this.done[cat] = (this.done[cat] ?? 0) + 1;
     }
-    this.categoryByCrew.clear();
-    for (const id of sim.world.query(CrewC, AssignmentC)) {
-      const cat = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.category;
-      if (cat) this.categoryByCrew.set(id, cat);
-    }
+    this.snapshotCategories(sim); // for a step run without `probe`: the category of a job held across steps
     if (now % this.opts.stride === 0) this.sampleIdle(sim, open);
   }
 

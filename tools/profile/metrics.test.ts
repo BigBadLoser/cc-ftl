@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../src/content';
-import { AssignmentC, CrewC, JobC, ShipC, homeShip, newGame, serialize, shipGrid, type Sim } from '../../src/sim';
+import { AssignmentC, CrewC, JobC, PositionC, PrioritiesC, ShipC, homeShip, newGame, serialize, shipGrid, type Sim } from '../../src/sim';
 import { Struct } from '../../src/sim/structure';
 import { MetricsRecorder, percentile } from './metrics';
 import { buildScenario } from './scenarios';
@@ -119,6 +119,33 @@ describe('MetricsRecorder maths on a hand-driven sim', () => {
     const s = JSON.parse(a);
     expect(s.idleWithWork.idleWithWorkSamples).toBe(0);
     expect(s.timeToAssign.neverAssigned).toBeGreaterThan(50);
+  });
+});
+
+describe('completions in the step they were taken', () => {
+  /** A one-tick repair job beside an idle crew member: decide assigns it and work finishes it in the same step. */
+  const run = (withProbe: boolean): Record<string, { done: number }> => {
+    const sim = newGame(1, content);
+    sim.step();
+    sim.events.drain();
+    const ship = sim.world.get(homeShip(sim), ShipC)!;
+    const crew = sim.world.query(CrewC).find((id) => {
+      const p = sim.world.get(id, PositionC)!;
+      return p.x === p.toX && p.y === p.toY && (sim.world.get(id, PrioritiesC)!.repair ?? 0) > 0 && p.x > ship.x + 1;
+    })!;
+    const p = sim.world.get(crew, PositionC)!;
+    postJob(sim, p.x - 1, p.y, { category: 'repair', work: 1 });
+    const m = new MetricsRecorder({ stride: 1000 });
+    for (let i = 0; i < 5; i++) {
+      sim.step(withProbe ? m.probe(sim) : undefined);
+      m.observe(sim, sim.events.drain());
+    }
+    return m.summary().completion.byCategory;
+  };
+
+  it('counts it under the job category, not other', () => {
+    expect(run(true)).toEqual({ repair: { done: 1, per1000: 200 } });
+    expect(run(false)).toEqual({ other: { done: 1, per1000: 200 } }); // the gap the probe closes
   });
 });
 

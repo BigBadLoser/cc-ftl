@@ -5,7 +5,7 @@
  * The observers read the sim after each step, outside the timed span.
  */
 import { content } from '../../src/content';
-import { newGame } from '../../src/sim';
+import { NOOP_PROBE, newGame, type Probe } from '../../src/sim';
 import { Profiler } from '../../src/app/profiler/profiler';
 import { formatReport } from '../../src/app/profiler/report';
 import { dumpBoard, type Board } from './board';
@@ -56,6 +56,12 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
     if (opts.boardAt !== undefined && !board && sim.tick === opts.boardAt) board = dumpBoard(sim, { ...meta, tick: sim.tick });
   };
   maybeDump();
+  // The observers that must see assignments before `sim/work` ride on the probe chain, with the profiler (when timing) at the end.
+  const probeFor = (timing?: Profiler): Probe => {
+    const base = timing ?? NOOP_PROBE;
+    const withDecisions = decisions ? decisions.probe(sim, base) : base;
+    return metrics ? metrics.probe(sim, withDecisions) : withDecisions;
+  };
   const warm = Math.min(200, Math.floor(opts.ticks / 10));
   // Drain events like the app loop does (outside the timed span), or the buffer keeps the whole run's history in memory.
   const after = (): void => {
@@ -65,13 +71,13 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
     maybeDump();
   };
   for (let i = 0; i < warm; i++) {
-    sim.step(decisions?.probe(sim));
+    sim.step(probeFor());
     after();
   }
   profiler.startRecording();
   for (let i = 0; i < opts.ticks; i++) {
     profiler.begin('loop/frame');
-    sim.step(decisions ? decisions.probe(sim, profiler) : profiler);
+    sim.step(probeFor(profiler));
     profiler.end('loop/frame');
     after();
   }
