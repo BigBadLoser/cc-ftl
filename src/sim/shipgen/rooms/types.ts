@@ -60,7 +60,7 @@ export interface Step {
 
 export interface Arrangement {
   /** Lay the room out at once from a repeating unit (rooms/plans.ts); its steps are the fallback when the plan does not fit. */
-  plan?: { kind: 'berths'; lounge?: boolean } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' };
+  plan?: { kind: 'berths'; lounge?: boolean } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' };
   name: string;
   weight: number;
   /**

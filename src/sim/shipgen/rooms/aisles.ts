@@ -3,15 +3,16 @@ import { accessTile, footprintTiles } from '../../modules/footprint';
 import type { Layout, PlacedModule } from '../layout';
 
 /**
- * Aisles (holds and stores): rows of stock in pairs, back to back, with a one-tile aisle between each pair, every piece
+ * Aisles (holds, stores and farms): rows of stock (or of grow beds) in pairs, back to back, with a one-tile aisle between each pair, every piece
  * worked from its aisle; across the stripes, a cross aisle every so often so no row runs on unbroken. The stripe
  * pattern runs along the room's long axis at the offset that fits the most. The room's planned crates go into the rows
- * first, then the row piece (racks, or pallets two deep), then crates in the gaps it leaves, up to the room's fill
- * target. Works on any room shape: a slot is used only where the piece fits and the ship stays connected. Everything
- * placed or nothing: null, nothing placed, when a planned crate finds no slot.
+ * first, then the row piece (racks, pallets two deep, hydroponics bays), then (with `gaps`) crates in the gaps it
+ * leaves, up to the room's fill target. Works on any room shape: a slot is used only where the piece fits and the ship
+ * stays connected. Everything placed or nothing: null, nothing placed, when a planned crate finds no slot or fewer than
+ * `min` row pieces fit.
  */
 
-export interface AislePlan { piece: 'module.storage_rack' | 'module.storage_pallet'; crates: number; fill: number }
+export interface AislePlan { piece: string; crates: number; fill: number; min?: number; gaps?: boolean }
 
 /** The pieces placed (indices into lay.modules), or null when the plan does not fit. */
 export function planAisles(lay: Layout, rng: Rng, room: number, o: AislePlan): number[] | null {
@@ -90,14 +91,18 @@ export function planAisles(lay: Layout, rng: Rng, room: number, o: AislePlan): n
     if (!ok) return undo();
   }
   const rows = slots(o.piece, best.off, best.coff).sort((p, q) => vOf(p.x, p.y) - vOf(q.x, q.y) || uOf(p.x, p.y) - uOf(q.x, q.y));
+  let pieces = 0;
   for (const pm of rows) {
-    if (fill() >= o.fill) break;
-    tryPut(pm);
+    if (fill() >= o.fill && pieces >= (o.min ?? 0)) break;
+    if (tryPut(pm)) pieces++;
   }
+  if (pieces < (o.min ?? 0)) return undo();
   // Crates close the gaps the row piece leaves (row ends, short runs between crates), aisles kept.
-  for (const c of slots('module.storage', best.off, best.coff)) {
-    if (fill() >= o.fill) break;
-    tryPut(c);
+  if (o.gaps !== false) {
+    for (const c of slots('module.storage', best.off, best.coff)) {
+      if (fill() >= o.fill) break;
+      tryPut(c);
+    }
   }
   return placed;
 }

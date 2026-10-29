@@ -14,8 +14,9 @@ export const RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
 };
 
 /**
- * Modules stations swap for others, whatever the room recipe says: no hydroponics beds (rows of them everywhere read as
- * clutter), a planter in their place (not a locker: the lockers of a station belong in quarters, stores and armouries).
+ * Modules stations swap for others, whatever the room recipe says: no hydroponics beds outside a farm (scattered through
+ * messes and lounges they read as clutter), a planter in their place (not a locker: the lockers of a station belong in
+ * quarters, stores and armouries). Farms keep theirs, in rows (rooms/aisles.ts).
  */
 const STATION_SWAP: Readonly<Record<string, string>> = { 'module.hydroponics': 'module.planter' };
 
@@ -38,6 +39,7 @@ export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
   ...Object.fromEntries(Object.entries(RECIPES).map(([role, r]) => [role, swapped(r as RoomRecipe, STATION_SWAP)])),
   // Station hangars are hangar decks: shuttle bays out on the floor, not against a wall.
   hangar: hangarDeck,
+  farm,
 };
 
 export { pruneDoors } from './doors';

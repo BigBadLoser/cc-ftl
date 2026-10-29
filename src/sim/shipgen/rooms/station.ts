@@ -1,24 +1,18 @@
 import type { RoomRecipe, Vignette } from './types';
 
 /**
- * Station rooms. Farms: rows of hydroponics beds with walkways between them. Industry: refineries on the walls, ore
- * pallets and containers packed round one walkway. Armoury: weapon lockers (stocked with hand weapons) and racks.
+ * Station rooms. Farms: hydroponics bays in back-to-back rows, an aisle between each pair (rooms/aisles.ts; the steps
+ * are its fallback). Industry: refineries on the walls, ore pallets and containers packed round one walkway. Armoury:
+ * weapon lockers (stocked with hand weapons) and racks.
  */
 export const farm = {
   fill: 0.6,
   arrangements: [
     {
-      name: 'grow rows', weight: 2, walkway: 'long', steps: [
+      name: 'grow rows', weight: 2, plan: { kind: 'aisles', piece: 'module.hydroponics' }, steps: [
         { mod: 'module.lifeSupport', count: 'spec', wall: 'end' },
         { mod: 'module.hydroponics', count: 'spec', row: true, rots: [0] },
         { mod: 'module.hydroponics', count: 'fill', row: true, rots: [0] },
-      ],
-    },
-    {
-      name: 'grow beds', weight: 1, steps: [
-        { mod: 'module.lifeSupport', count: 'spec', wall: 'any' },
-        { mod: 'module.hydroponics', count: 'spec', wall: 'any', row: true },
-        { mod: ['module.hydroponics', 'module.storage_locker'], count: 'fill', wall: 'any', row: true },
       ],
     },
   ],

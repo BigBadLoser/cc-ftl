@@ -187,10 +187,10 @@ export interface WheelOpts {
 const isDock = (r: RoomSpec): boolean => r.role === 'dock';
 /**
  * System rooms keep rectangles (gun bays, shield generators, the core, reactors, shuttle bays and refinery floors need
- * square floor: a refinery is 3 x 4 with ore bins flush against it) and stand beyond the band with the docks, facing
+ * square floor: a refinery is 3 x 4 with ore bins flush against it; a farm's bays stand in rows) and stand beyond the band with the docks, facing
  * open space (gun bays need it).
  */
-const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'bridge', 'hangar', 'industry'];
+const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'bridge', 'hangar', 'industry', 'farm'];
 const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role);
 /**
  * Rim rooms beyond a band: docks first, near the top and bottom of the ring (airlocks face north or south), then the

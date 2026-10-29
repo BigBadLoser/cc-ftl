@@ -109,9 +109,11 @@ function fitOut(
       d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style: f.berths ?? 'apart', lounge: !!plan.lounge });
       if (d.planned) d.plannedDefs = new Set(['module.bed', 'module.lifeSupport']);
     } else {
-      const got = planAisles(lay, rng, room, { piece: plan.piece, crates: n('module.storage'), fill: 0.7 });
+      // A farm's planned beds are its row piece (at least that many); a hold's planned crates go in first.
+      const farm = plan.piece === 'module.hydroponics';
+      const got = planAisles(lay, rng, room, { piece: plan.piece, crates: n('module.storage'), fill: farm ? 0.6 : 0.7, min: n(plan.piece), gaps: !farm });
       d.planned = !!got;
-      if (got) { d.plannedDefs = new Set(['module.storage']); for (const i of got) stockUp(i, spec); }
+      if (got) { d.plannedDefs = new Set(['module.storage', plan.piece]); for (const i of got) stockUp(i, spec); }
     }
   });
   for (const j of jobs) {
