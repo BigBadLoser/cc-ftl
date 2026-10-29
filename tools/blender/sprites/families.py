@@ -43,6 +43,8 @@
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
+  hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
+            each piece with its tint mask (hulltiles.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -187,6 +189,9 @@ def jobs(name):
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
+    if name == "hull":
+        from . import hulltiles
+        return hulltiles.jobs(), True
     raise KeyError(name)
 
 
@@ -194,5 +199,5 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items", "storage_ore")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items", "storage_ore", "hull")
 ALL = RENDERED + ("sol", "damage_sol")
