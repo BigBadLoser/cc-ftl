@@ -54,6 +54,11 @@ function incomingShots(sim: Sim, shipId: number): UiIncoming[] {
 
 function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
   const out: UiEnemyWeapon[] = [];
+  const flying = new Set<number>();
+  for (const pid of sim.world.query(ProjectileC)) {
+    const p = sim.world.get(pid, ProjectileC);
+    if (p && p.fromShip === shipId) flying.add(p.fromModuleId);
+  }
   for (const id of sim.world.query(WeaponC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const w = sim.world.get(id, WeaponC);
@@ -62,7 +67,9 @@ function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
     if (!m || !w || !def || !wd || shipIdOf(sim, m) !== shipId) continue;
     out.push({
       id, name: def.name, charge: round(w.charge), commitAt: round(commitCharge(wd.chargeSec)), committed: !!w.commit,
-      stalled: !m.powered || m.hp <= 0 || sim.world.has(id, IonC),
+      stalled: !m.powered || m.hp <= 0 || sim.world.has(id, IonC), destroyed: m.hp <= 0,
+      eta: w.commit ? (() => { const e = commitEtaSec(sim, id); return e === null ? null : round(e, 1); })() : null,
+      fired: !w.commit && flying.has(id), color: shotColor(shotSlot(sim, id)),
     });
   }
   return out;

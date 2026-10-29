@@ -1,56 +1,79 @@
 <script lang="ts">
-  import type { UiShipCombat } from '../api';
+  import type { UiEnemyWeapon, UiShipCombat } from '../api';
   import Icon from '../Icon.svelte';
   import { hullTone } from './hullTone';
-  import EnemyCharges from '../EnemyCharges.svelte';
 
-  /** Compact enemy card, top left: everything on it is live from the combat snapshot. */
+  /** Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border. */
   let { enemy, state: pill, onFrame }: { enemy: UiShipCombat; state: { text: string; tone: string }; onFrame: () => void } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
   const hot = $derived(heatPct >= 90 ? 'red' : heatPct >= 70 ? 'amber' : '');
   const pips = $derived(Array.from({ length: Math.max(enemy.shield.max, 0) }, (_, i) => i < enemy.shield.layers));
+  const sub = $derived([enemy.faction, enemy.klass].filter((x): x is string => !!x && x.toLowerCase() !== pill.text.toLowerCase()).join(' · '));
+  const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
+  const status = (w: UiEnemyWeapon): string =>
+    w.destroyed ? 'Destroyed' : w.stalled ? 'Offline' : w.eta !== null ? `Aimed ${w.eta.toFixed(1)}s` : w.fired ? 'Fired' : 'Charging';
 </script>
 
 <section class="card" data-testid="enemy-card" aria-label="Enemy ship">
-  <h3 class="ttl">{enemy.name}<span class="sub"> · {enemy.faction}{enemy.klass ? ` · ${enemy.klass}` : ''}</span></h3>
+  <h3 class="ttl">{enemy.name}{#if sub}<span class="sub">{sub}</span>{/if}</h3>
   <div class="tr"><span class="pill {pill.tone}">{pill.text}</span><button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button></div>
-  <div class="grid">
-    <span class="lbl" title="Hull integrity">Hull</span>
-    <span class="hb {hullTone(hull)}" class:low={hull < 30}><i style="width:{hull}%"></i></span><b>{hull}%</b>
 
-    <span class="lbl" title="Shield layers">Shields</span>
-    <span class="pips">{#each pips as on, i (i)}<i class:on></i>{:else}<em>none</em>{/each}</span><b>{enemy.shield.layers}/{enemy.shield.max}</b>
-
-    <span class="lbl" title="Chance a shot misses">Evasion</span>
-    <span></span><b class="ev">{Math.round(enemy.evasion * 100)}%</b>
-
-    <span class="lbl" title="Heat">Heat</span>
-    <span class="hb heat {hot}"><i style="width:{heatPct}%"></i></span><b class={hot}>{heatPct}%</b>
-
-    <span class="lbl" title="Weapon charge">Weapons</span>
-    <span class="wch"><EnemyCharges weapons={enemy.charges ?? []} /></span><span></span>
+  <div class="def">
+    <div class="srow">
+      <span class="pips" title="Shield layers {enemy.shield.layers}/{enemy.shield.max}">{#each pips as on, i (i)}<i class:on></i>{:else}<em>no shields</em>{/each}</span>
+      <span class="chip" title="Chance a shot misses">Evade <b>{Math.round(enemy.evasion * 100)}%</b></span>
+    </div>
+    <span class="bar big {hullTone(hull)}" class:low={hull < 30} title="Hull integrity"><i style="width:{hull}%"></i><b>{hull}%</b></span>
+    <div class="hrow" title="Heat"><span class="bar slim heat {hot}"><i style="width:{heatPct}%"></i></span><span class="hp {hot}">Heat {heatPct}%</span></div>
   </div>
+
+  {#if enemy.charges && enemy.charges.length > 0}
+    <div class="wl" data-testid="enemy-charges">
+      {#each enemy.charges as w (w.id)}
+        <div class="w" class:aim={w.eta !== null} class:off={w.stalled || w.destroyed} style:--c={w.eta !== null ? hex(w.color) : null} title="{w.name}: {Math.round(w.charge * 100)}%">
+          <span class="nm">{w.name}</span>
+          <span class="bar slim"><i style="width:{Math.round(w.charge * 100)}%"></i><u style="left:{Math.round(w.commitAt * 100)}%"></u></span>
+          <span class="st">{status(w)}</span>
+        </div>
+      {/each}
+    </div>
+  {/if}
 </section>
 
 <style>
-  /* One thin red frame; the ship's name is set into its top line, the state pill and frame button into the right end (like the strip's section titles). */
-  .card { position: relative; box-sizing: border-box; width: 350px; background: var(--panel); border: 1px solid #b8343c; padding: 16px 10px 10px; pointer-events: auto; }
-  .ttl { position: absolute; top: -8px; left: 9px; margin: 0; padding: 0 6px; background: var(--panel); font: 700 15px/16px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #ff8a8a; white-space: nowrap; }
-  .sub { margin-left: 5px; font-weight: 400; font-size: 12px; letter-spacing: 0.04em; color: #c98a8a; }
+  .card { position: relative; box-sizing: border-box; width: 290px; background: var(--panel); border: 1px solid #b8343c; padding: 14px 10px 10px; display: grid; gap: 10px; pointer-events: auto; }
+  .ttl { position: absolute; top: -10px; left: 9px; margin: 0; padding: 0 6px; background: var(--panel); font: 700 18px/20px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #ff8a8a; white-space: nowrap; }
+  .sub { margin-left: 8px; font-weight: 400; font-size: 11px; letter-spacing: 0.06em; color: #c98a8a; }
   .tr { position: absolute; top: -11px; right: 9px; display: flex; align-items: center; gap: 2px; padding: 0 4px; background: var(--panel); }
   .pill { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; white-space: nowrap; }
   .pill.red { color: #ff8a8a; } .pill.amber { color: var(--amber); } .pill.green { color: var(--green); } .pill.dim { color: var(--dim); }
   .fr { min-height: 0; min-width: 0; width: 22px; height: 22px; padding: 0; display: grid; place-items: center; background: transparent; border-color: transparent; color: #ffb3b3; }
-  .grid { display: grid; grid-template-columns: 66px minmax(0, 1fr) 40px; gap: 7px 8px; align-items: center; }
-  .lbl { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-  b { font: 600 14px var(--head-font); text-align: right; } b.amber { color: var(--amber); } b.red { color: var(--red); }
-  .hb { display: block; height: 10px; background: #061020; border: 1px solid #5a2229; } .hb > i { display: block; height: 100%; background: var(--green); } .hb.amber > i { background: var(--amber); } .hb.red > i { background: var(--red); }
-  .hb.heat > i { background: linear-gradient(90deg, #1b8fb3, var(--cyan)); } .hb.heat.amber > i { background: linear-gradient(90deg, #1b8fb3, var(--amber)); } .hb.heat.red > i { background: linear-gradient(90deg, var(--amber), var(--red)); }
-  .hb.low > i { animation: blink 0.8s infinite alternate; }
-  .pips { display: inline-flex; gap: 4px; height: 10px; } .pips i { width: 20px; height: 10px; border: 1px solid var(--cyan); box-sizing: border-box; } .pips i.on { background: var(--cyan); }
-  b.ev { color: var(--text); grid-column: 3; }
-  em { font: 12px var(--head-font); color: var(--dim); font-style: normal; }
-  .wch :global(.chg) { padding-bottom: 0; } .wch :global(.bar) { height: 10px; }
+
+  /* One bar style: dark track, thin dim-red edge, square fill. */
+  .bar { position: relative; display: block; box-sizing: border-box; background: #061020; border: 1px solid #5a2229; }
+  .bar > i { display: block; height: 100%; background: var(--green); }
+  .bar.amber > i { background: var(--amber); } .bar.red > i { background: var(--red); }
+  .bar.low > i { animation: blink 0.8s infinite alternate; }
+  .bar.big { height: 20px; } .bar.slim { height: 8px; }
+  .bar.big > b { position: absolute; inset: 0; display: grid; place-items: center; font: 700 13px var(--head-font); color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  .bar.heat > i { background: linear-gradient(90deg, #1b8fb3, var(--cyan)); } .bar.heat.amber > i { background: linear-gradient(90deg, #1b8fb3, var(--amber)); } .bar.heat.red > i { background: linear-gradient(90deg, var(--amber), var(--red)); }
+  .def { display: grid; gap: 3px; }
+  .srow { display: flex; align-items: flex-end; justify-content: space-between; height: 16px; }
+  .pips { display: flex; gap: 2px; align-items: flex-end; } .pips i { width: 26px; height: 7px; border: 1px solid var(--cyan); box-sizing: border-box; } .pips i.on { background: var(--cyan); }
+  .chip { font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding: 2px 5px; border: 1px solid var(--line); } .chip b { color: var(--text); font-weight: 700; }
+  .hrow { display: flex; align-items: center; gap: 8px; margin-top: 3px; } .hrow .bar { flex: 1; }
+  .hp { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); min-width: 62px; text-align: right; } .hp.amber { color: var(--amber); } .hp.red { color: var(--red); }
+  em { font: 11px var(--head-font); color: var(--dim); font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Weapons: name, charge bar, status. A committed shot takes its colour (the same as its line in the world and its marker on the incoming timeline). */
+  .wl { display: grid; gap: 5px; }
+  .w { display: grid; grid-template-columns: 92px minmax(0, 1fr) 68px; gap: 8px; align-items: center; height: 16px; --c: var(--cyan); }
+  .w .nm { font: 600 13px/1 var(--head-font); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; color: var(--text); }
+  .w .st { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; text-align: right; white-space: nowrap; color: var(--dim); }
+  .w .bar > i { background: var(--cyan); }
+  .w .bar > u { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--dim); }
+  .w.aim .nm, .w.aim .st { color: var(--c); } .w.aim .bar { border-color: var(--c); } .w.aim .bar > i { background: var(--c); }
+  .w.off { opacity: 0.4; }
   @keyframes blink { to { opacity: 0.5; } }
 </style>

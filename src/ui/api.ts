@@ -567,6 +567,14 @@ export interface UiEnemyWeapon {
   committed: boolean;
   /** It is not charging (unpowered, ion-struck, destroyed or its console unmanned). */
   stalled: boolean;
+  /** The module is destroyed. */
+  destroyed: boolean;
+  /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
+  eta: number | null;
+  /** One of its shots is in flight to your ship and it has no new aim yet. */
+  fired: boolean;
+  /** Its shot colour (0xRRGGBB), the same as its line in the world and its marker on the incoming timeline. */
+  color: number;
 }
 
 export interface UiShipCombat {

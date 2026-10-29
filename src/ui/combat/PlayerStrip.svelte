@@ -28,11 +28,11 @@
     const live = (kind: 'weapons' | 'shields' | 'helm', tag: string, label: string, bad: string) => {
       const c = me.consoles.find((x) => x.kind === kind);
       const ok = !!c && c.powered && c.operator !== null;
-      return { tag, label, ok, status: ok ? 'MANNED' : 'UNMANNED', tip: ok ? `${label} manned by ${c.operator}` : !c ? `${label}: no console installed. ${bad}` : !c.powered ? `${label} console unpowered. ${bad}` : bad };
+      return { tag, label, ok, status: ok ? 'MANNED' : 'NO CREW', tip: ok ? `${label} manned by ${c.operator}` : !c ? `${label}: no console installed. ${bad}` : !c.powered ? `${label} console unpowered. ${bad}` : bad };
     };
     const engines = me.modules.filter((m) => m.kind === 'engine');
     const online = engines.some((m) => m.powered && m.hp > 0);
-    return [live('weapons', 'WPN', 'Weapons', "Weapons console unmanned: weapons won't charge"), live('shields', 'SHD', 'Shields', "Shield console unmanned: shields regenerate slower"), live('helm', 'HELM', 'Helm', "Helm unmanned: no evasion, FTL won't charge"),
+    return [live('weapons', 'WPN', 'Weapons', "Weapons console has no crew: weapons won't charge"), live('shields', 'SHD', 'Shields', "Shield console has no crew: shields regenerate slower"), live('helm', 'HELM', 'Helm', "Helm has no crew: no evasion, FTL won't charge"),
       { tag: 'ENG', label: 'Engines', ok: online, status: online ? 'ONLINE' : 'OFFLINE', tip: online ? 'Engines online' : engines.length === 0 ? 'No engines installed: no evasion' : 'Engines offline (unpowered or destroyed): no evasion' }];
   });
 </script>
@@ -112,7 +112,7 @@
   .stn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; height: 42px; }
   .s { display: grid; align-content: center; justify-items: center; gap: 3px; font-family: var(--head-font); color: var(--red); background: #2a0f14; border-bottom: 2px solid var(--red); }
   .s b { font: 700 12px/1 var(--head-font); letter-spacing: 0.06em; }
-  .s em { font: 600 9.5px/1 var(--head-font); letter-spacing: 0; color: inherit; opacity: 0.85; }
+  .s em { font: 600 10.5px/1 var(--head-font); letter-spacing: 0.02em; color: inherit; opacity: 0.85; }
   .s.ok { color: var(--cyan); background: #0a2233; border-bottom-color: var(--cyan); }
   .wc { min-height: 0; min-width: 0; padding: 6px 8px; display: grid; grid-template-rows: 30px 1fr 14px; gap: 5px; text-align: left; background: var(--panel-2); }
   .wc.empty { border: 1px dashed var(--line); background: transparent; display: grid; place-items: center; color: var(--dim); font-size: 12px; }
