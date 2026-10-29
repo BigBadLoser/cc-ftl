@@ -8,8 +8,9 @@ Options (env):
                   of the tile; diagonals and far sides the generic pieces; the rooms' roof plating from
                   public/assets).
   MIX=d1,d2,..    each tile's belly pieces from one of these dirs (one per look), by a hash of the tile.
-  TINT=r,g,b      the hull colour multiplied over each piece's tint mask (`<id>.deco` beside it or in DECODIRS, less
+  TINT=r,g,b      the deco colour multiplied over each piece's tint mask (`<id>.deco` beside it or in DECODIRS, less
                   its `.seam` if there is one).
+  ARMOR=r,g,b     the armour colour multiplied over the rest of each hull and belly piece.
   DECODIRS=d1,..  more dirs to find masks in.
   PICK=x,y;..     print which tile drew these px (of the saved image) and its key.
   SRC=1           print which dir each kind of sprite came from (stale renders shadow fresh ones: check this).
@@ -45,6 +46,7 @@ def inside(k):
 
 
 TINT = np.array([float(v) for v in os.environ["TINT"].split(",")]) / 255.0 if os.environ.get("TINT") else None
+ARMOR = np.array([float(v) for v in os.environ["ARMOR"].split(",")]) / 255.0 if os.environ.get("ARMOR") else None
 SRC = {}                                            # (which folder each kind of sprite came from: SRC=1 prints it)
 XM = np.zeros((H, W), bool)                         # (px the exterior pieces cover: EXTMASK)
 
@@ -95,14 +97,18 @@ def paste(n, x, y, clip=None):
         return
     z = np.load(f)
     rgba, a = z["rgba"].astype(np.float32), z["a"]
-    if TINT is not None and n.startswith(("tile.hull.belly", "tile.hull.ext")):   # (TINT=r,g,b: its tint mask,
-        dd = [f.parent] + DECO                                                      # `.deco`, less its seam pass,
-        mm = _mask(rgba, a, dd, n, "deco")                                          # `.seam`, multiplies the colour in)
-        if mm is not None:
+    if (TINT is not None or ARMOR is not None) and n.startswith(("tile.hull.belly", "tile.hull.ext")):
+        dd = [f.parent] + DECO                          # (TINT=r,g,b: the deco colour, multiplied over its tint
+        mm = _mask(rgba, a, dd, n, "deco")              # mask, `.deco` less its seam pass `.seam`; ARMOR=r,g,b:
+        if mm is not None:                              # the armour colour, over the rest of the hull)
             sm = _mask(rgba, a, dd, n, "seam")
             if sm is not None:
                 mm &= ~sm
-            rgba[..., :3] = np.where(mm[..., None], rgba[..., :3] * TINT, rgba[..., :3])
+        else:
+            mm = np.zeros(rgba.shape[:2], bool)
+        deco = TINT if TINT is not None else np.ones(3)
+        rest = ARMOR if ARMOR is not None else np.ones(3)
+        rgba[..., :3] = np.where(mm[..., None], rgba[..., :3] * deco, rgba[..., :3] * rest)
     cx, cy = ox_ + (x - y) * TW // 2, oy_ + (x + y) * TH // 2 + TH // 2
     x0, y0 = int(cx - a[0]), int(cy - a[1])
     h, w = rgba.shape[:2]
