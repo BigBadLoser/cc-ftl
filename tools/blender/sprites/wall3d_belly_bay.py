@@ -21,7 +21,8 @@ LOOKS = range(20, 29)
 FRAME = os.environ.get("BELLY_FRAME", "none")        # (the tile edge: "rib", "seam" or "none", to compare)
 TOP = HID + 7                                       # (the bays' features from here down: clear of every
                                                     # exterior design's foot, its top edges whole, not dots)
-SEAM = os.environ.get("BELLY_SEAM", "1") == "1"     # (a seam across under the exterior's foot)
+LEDGE = (2, 2)                                      # (a ledge on the deck line, px tall and proud: the
+                                                    # exterior stands on it, its lines ending on its lit top)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
 
@@ -68,8 +69,12 @@ def dress(n, f, s, back, U, Z):
         f.line(-0.5, 0.5, s.z_at(foot, -1), s.z_at(foot, -2), YS[4], bevel=False)
         f.line(-0.5, 0.5, s.z_at(foot, 1), foot, SLIT, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
-        if SEAM:                                    # (a seam across the cutaway's face, just over where the
-            f.line(-0.5, 0.5, Z(HID - 1), Z(HID - 2), YS[1])    # exterior's foot falls: it hides its lit px too)
+        h, k = LEDGE                                # (its top flush with the deck, where the layers meet:
+        zt = -1e-4                                  # wall3d_belly LAYERS; its shade under it)
+        zb = s.z_at(zt, h)
+        with f.tag("ledge"):
+            f.shade(-0.5, 0.5, zb, zt, side=0.0)
+            _slab(f, s, -0.5, 0.5, zb, zt, -0.01, k * LINE, (None, None))
         if FRAME == "rib":
             for (u0, u1), (c0, c1) in zip(RIBS, ((YS[1], None), (None, YS[1]))):     # (the ribs: their tops a px
                 _slab(f, s, u0, u1, foot, Z(HID), -0.01, 2 * LINE, (c0, c1))         # under the exterior's foot;
