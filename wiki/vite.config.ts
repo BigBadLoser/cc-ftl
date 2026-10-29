@@ -17,7 +17,7 @@ export default defineConfig({
         logo: '/favicon.svg',
         github: 'https://github.com/BigBadLoser/cc-ftl',
         navbar: [
-          { title: 'Guides', to: '/guides/getting-started/' },
+          { title: 'Guides', to: '/guides/first-hour/' },
           { title: 'Mechanics', to: '/mechanics/power/' },
           { title: 'Reference', to: '/reference/modules/' },
         ],
@@ -26,7 +26,7 @@ export default defineConfig({
         // producing "Ship modules / Ship modules" and "Items / Items".
         sidebar: {
           '/guides/': [
-            { title: 'Getting started', to: '/guides/getting-started/' },
+            { title: 'Your first hour', to: '/guides/first-hour/' },
           ],
           '/mechanics/': [
             { title: 'Power and reactors', to: '/mechanics/power/' },

@@ -4,7 +4,7 @@
 //   npm run capture -- ship    only shots whose name contains "ship"
 // Chromium comes from Playwright's browser cache (PLAYWRIGHT_BROWSERS_PATH) or CHROME_BIN.
 import { spawn } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
@@ -13,6 +13,8 @@ import { shots } from './guide-shots.mjs';
 
 const wiki = fileURLToPath(new URL('../', import.meta.url));
 const out = join(wiki, 'static/guides');
+// Marker positions for <GuideShot>, as fractions of the image, so callouts follow the UI when it moves.
+const marksOut = join(wiki, 'src/data/guide-shots');
 const port = 5199;
 const base = `http://127.0.0.1:${port}/cc-ftl/`;
 const only = process.argv[2];
@@ -96,6 +98,17 @@ try {
     await page.waitForTimeout(shot.settle ?? 6000);
     const h = helpers(page);
     await shot.steps?.(h);
+    const area = shot.selector ? await page.locator(shot.selector).first().boundingBox() : shot.clip ?? { x: 0, y: 0, width: 1600, height: 1000 };
+    if (shot.marks) {
+      const marks = [];
+      for (const [label, selector, anchor] of shot.marks) {
+        const box = await page.locator(selector).first().boundingBox();
+        if (!box) throw Error(`${shot.name}: mark ${label} (${selector}) is not on screen`);
+        marks.push({ label, anchor: anchor ?? 'corner', x: (box.x - area.x) / area.width, y: (box.y - area.y) / area.height, w: box.width / area.width, h: box.height / area.height });
+      }
+      await mkdir(marksOut, { recursive: true });
+      await writeFile(join(marksOut, shot.name.replaceAll('/', '__') + '.json'), JSON.stringify(marks, null, 2) + '\n');
+    }
     let png = shot.selector
       ? await page.locator(shot.selector).first().screenshot()
       : await page.screenshot({ clip: shot.clip });

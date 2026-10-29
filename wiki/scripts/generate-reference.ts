@@ -10,6 +10,8 @@ import { recipes as sourceRecipes } from '../../src/content/recipes.ts';
 import { factions as sourceFactions } from '../../src/content/factions/index.ts';
 import { research as sourceResearch } from '../../src/content/research.ts';
 import * as tuning from '../../src/sim/tuning.ts';
+import * as tuningJobs from '../../src/sim/galaxy/tuningJobs.ts';
+import { goals } from '../../src/content/goals.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const generated = join(root, 'src/data/generated');
@@ -325,7 +327,16 @@ function liveKind(kind: Kind, extra: (id: string, def: any) => Record<string, un
 await saveJson('game-data', {
   modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({ powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY })),
   items: liveKind('items'), weapons: liveKind('weapons'), vehicles: liveKind('vehicles'), research: liveKind('research'),
-  tuning: scalars(tuning),
+  tuning: { ...scalars(tuning), ...scalars(tuningJobs) },
+  goals: goals.map((act) => ({
+    title: act.title,
+    goals: act.goals.map((g) => ({ title: g.title, text: g.text })),
+    reward: [
+      ...(act.reward.credits ? [act.reward.credits + ' cr'] : []),
+      ...('reputation' in act.reward && act.reward.reputation ? ['+' + act.reward.reputation + ' standing'] : []),
+      ...('items' in act.reward ? (act.reward.items ?? []).map((m) => m.count + ' ' + named('items', m.item)) : []),
+    ],
+  })),
 });
 
 console.log('Generated reference pages: ' + Object.entries(seenSlugs).map(([kind, entries]) => kind + '=' + entries.size).join(', '));

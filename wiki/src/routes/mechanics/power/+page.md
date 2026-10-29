@@ -17,6 +17,14 @@ else draws it, and when there isn't enough to go round your ship decides who goe
 All the reactors on a ship feed a single shared pool, and every module on that ship draws from it. Distance, walls and
 rooms make no difference. Each ship and station has its own pool; docking doesn't share power.
 
+Power isn't stored: what the reactors make each moment is what the ship can use.
+
+<ComingLater>
+
+Storing power in battery banks. You can already build a battery bank, but for now it's decoration.
+
+</ComingLater>
+
 The ship overview shows the pool as **supply / demand** (for example `50/32`), and turns red when demand is higher than
 supply. Click any module to see whether it's **Running** or has **No power**, and how much it supplies or draws.
 

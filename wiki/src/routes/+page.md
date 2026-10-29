@@ -5,7 +5,7 @@ tagline: A field guide to ship systems, survival, strategy, and equipment.
 actions:
   - label: Start here
     type: primary
-    to: /guides/getting-started/
+    to: /guides/first-hour/
   - label: Browse equipment
     type: flat
     to: /reference/modules/
