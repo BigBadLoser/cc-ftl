@@ -1,9 +1,10 @@
+import { abortTask, detachJob } from '../ai/task';
 import {
   AssignmentC, CrewC, JobC, PathC, PositionC, type Crew, type Position,
 } from '../crew/components';
-import { atJob, clearPath, isIncapacitated, isSettled, releaseAssignment } from '../crew/helpers';
+import { atJob, clearPath, isIncapacitated, isSettled } from '../crew/helpers';
 import { performJob } from '../crew/jobWork';
-import { resumeAfter } from '../eva/errands';
+import { resumeAfter } from '../ai/machines/eva';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
@@ -22,7 +23,7 @@ export function workSystem(sim: Sim): void {
     const assignment = sim.world.get(id, AssignmentC) as { jobId: number };
     const job = sim.world.get(assignment.jobId, JobC);
     if (!job) {
-      releaseAssignment(sim, id); // cancelled or taken away
+      abortTask(sim, id, 'jobGone'); // cancelled or taken away
       if (crew.activity === 'working') crew.activity = 'idle';
       continue;
     }
@@ -39,7 +40,7 @@ export function workSystem(sim: Sim): void {
     }
     crew.activity = 'working';
     if (performJob(sim, id, job, stat(sim, id, 'workSpeed')) !== 'done') continue;
-    sim.world.remove(id, AssignmentC);
+    detachJob(sim, id);
     destroyJob(sim, assignment.jobId);
     sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, ship: shipIdOf(sim, job), x: job.x, y: job.y });
     crew.activity = 'idle';

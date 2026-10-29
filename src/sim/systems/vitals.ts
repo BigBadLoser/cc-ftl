@@ -1,11 +1,11 @@
 import { shipIdOf, shipGrid } from '../regions';
-import { releaseBed, releaseBedClaim } from '../crew/beds';
+import { abortTask } from '../ai/task';
+import { releaseBed } from '../crew/beds';
 import {
   CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC,
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
-import { releaseAssignment } from '../crew/helpers';
 import type { Grid } from '../grid';
 import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
@@ -97,8 +97,7 @@ export function vitalsSystem(sim: Sim): void {
 
 function down(sim: Sim, id: number, pos: Position): void {
   const crew = sim.world.get(id, CrewC) as Crew;
-  releaseAssignment(sim, id);
-  releaseBedClaim(sim, id);
+  abortTask(sim, id, 'downed');
   sim.world.remove(id, DraftedC);
   pos.toX = pos.x;
   pos.toY = pos.y;

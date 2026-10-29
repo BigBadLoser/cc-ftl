@@ -34,6 +34,8 @@ function legacyWorld(sim: Sim): unknown {
   delete stores.body;
   // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.
   delete stores.bedOwner;
+  // The crew-AI components (Phase 1 of docs/CREW_AI.md) mirror the legacy ones: not part of the legacy shape.
+  for (const k of ['task', 'intent', 'interrupt']) delete stores[k];
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.

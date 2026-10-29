@@ -1,4 +1,5 @@
 import { shipIdOf, shipGrid } from '../regions';
+import { abortTask } from '../ai/task';
 
 import type { Command } from '../commands';
 import { isTileWalkable } from '../modules/walk';
@@ -16,8 +17,7 @@ import { TICK_HZ } from '../time';
 import {
   CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew, type Job, type Position,
 } from './components';
-import { releaseBedClaim } from './beds';
-import { clearPath, findJobAt, isIncapacitated, origin, releaseAssignment } from './helpers';
+import { clearPath, findJobAt, isIncapacitated, origin } from './helpers';
 import { EmbarkOrderC } from '../vehicles/components';
 import { assignTiles, spreadTiles, tileKey, type Tile } from './spread';
 
@@ -128,8 +128,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (cmd.drafted) {
       if (sim.world.has(cmd.id, DraftedC)) return;
       if (isIncapacitated(sim, cmd.id)) return reject(sim, cmd.type, 'incapacitated');
-      releaseAssignment(sim, cmd.id);
-      releaseBedClaim(sim, cmd.id);
+      abortTask(sim, cmd.id, 'drafted');
       sim.world.add(cmd.id, DraftedC, { target: null });
       crew.activity = 'drafted'; // also wakes a sleeper
     } else if (sim.world.remove(cmd.id, DraftedC)) {
@@ -182,7 +181,7 @@ function orderMove(sim: Sim, id: number, shipId: number, x: number, y: number): 
   if (!isTileWalkable(sim, grid, x, y, sim.world.has(id, SuitC))) return 'notWalkable';
   const fighter = sim.world.get(id, FighterC);
   if (fighter) fighter.ordered = 0; // a move order cancels an attack order
-  releaseAssignment(sim, id); // and a suit errand
+  abortTask(sim, id, 'order'); // and a suit errand
   sim.world.remove(id, EmbarkOrderC); // and a walk to a shuttle
   drafted.target = { x, y };
   delete drafted.planned;

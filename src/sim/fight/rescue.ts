@@ -1,4 +1,5 @@
-import { AssignmentC, JobC, PathC, PrioritiesC, type Path, type Position, type Priorities } from '../crew/components';
+import { AssignmentC, JobC, PrioritiesC, type Position, type Priorities } from '../crew/components';
+import { reserveJob } from '../ai/task';
 import { jobGoal, origin } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { planWalk } from '../eva/route';
@@ -39,9 +40,7 @@ export function claimHiddenRescue(sim: Sim, grid: Grid, id: number, pos: Positio
     if (plan && !plan.thin && (!best || plan.steps.length < best.steps.length)) best = { job: jobId, steps: plan.steps };
   }
   if (!best) return false;
-  (sim.world.get(best.job, JobC) as { reservedBy: number }).reservedBy = id;
-  sim.world.add(id, AssignmentC, { jobId: best.job });
-  (sim.world.get(id, PathC) as Path).steps = best.steps;
+  reserveJob(sim, id, best.job, best.steps);
   return true;
 }
 

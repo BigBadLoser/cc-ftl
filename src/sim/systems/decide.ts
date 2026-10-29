@@ -1,14 +1,16 @@
 import { findFreeBed, ownedBedPlan, releaseBedClaim } from '../crew/beds';
+import { abortTask, isCarrying, reserveJob } from '../ai/task';
 import { vacateSite } from '../crew/vacate';
 import { goEat, wantsToEat } from '../crew/eating';
 import {
-  AssignmentC, BedClaimC, CarriedC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
+  AssignmentC, BedClaimC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES,
   type Crew, type Job, type Path, type Position, type Priorities,
 } from '../crew/components';
 import { freeOperatorFor, jobFits, jobTakeable } from '../crew/jobFit';
-import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin, releaseAssignment } from '../crew/helpers';
+import { atJob, clearPath, isIncapacitated, jobGoal, isSettled, origin } from '../crew/helpers';
 import { findPath, type Tile } from '../crew/pathfind';
-import { findSuitSource, findSuitStow, isErrand, startErrand, type SuitSource } from '../eva/errands';
+import { findSuitSource, findSuitStow, isErrand, type SuitSource } from '../eva/errands';
+import { startErrand } from '../ai/machines/eva';
 import { planSiteWalk } from '../eva/route';
 import { isSuited } from '../eva/suit';
 import { YardCrewC } from '../yard/types';
@@ -47,13 +49,12 @@ export function decideSystem(sim: Sim): void {
     const assignment = sim.world.get(id, AssignmentC);
     // Robots: hold still for a mender; head to the robot bay when the battery is low or badly damaged.
     if (heldForMend(sim, id) && !isCarrying(sim, id)) {
-      if (assignment) releaseAssignment(sim, id);
-      clearPath(sim, id);
+      abortTask(sim, id, 'heldForMend');
       continue;
     }
     if (wantsBay(sim, id) && !isCarrying(sim, id) && goToBay(sim, id, crew, pos)) {
       if (assignment) {
-        releaseAssignment(sim, id); // also clears the path: plan the walk to the bay again
+        abortTask(sim, id, 'drive'); // also clears the path: plan the walk to the bay again
         goToBay(sim, id, crew, pos);
       }
       dropCarried(sim, id);
@@ -63,7 +64,7 @@ export function decideSystem(sim: Sim): void {
     if (needs.rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW) && !isCarrying(sim, id)) {
       // Crew crossing the threshold together act on different ticks (a crew member already walking to a bed is not held up).
       if (!sim.world.has(id, BedClaimC) && (sim.tick + id) % SLEEP_STAGGER !== 0) continue;
-      if (assignment) releaseAssignment(sim, id);
+      if (assignment) abortTask(sim, id, 'drive');
       dropCarried(sim, id);
       goToSleep(sim, id, crew, pos);
       continue;
@@ -75,14 +76,14 @@ export function decideSystem(sim: Sim): void {
     if (assignment) {
       const job = sim.world.get(assignment.jobId, JobC);
       if (!job) {
-        releaseAssignment(sim, id);
+        abortTask(sim, id, 'jobGone');
         continue;
       }
       // An emergency (fire, downed crew member, hull hole) the crew member ranks above their job calls them off it.
-      if ((sim.tick + id) % EMERGENCY_CHECK_TICKS === 0 && !isCarrying(sim, id) && emergencyWaiting(sim, id, pos, job)) releaseAssignment(sim, id);
+      if ((sim.tick + id) % EMERGENCY_CHECK_TICKS === 0 && !isCarrying(sim, id) && emergencyWaiting(sim, id, pos, job)) abortTask(sim, id, 'preempt');
       else {
         const path = sim.world.get(id, PathC);
-        if (path && path.steps.length === 0 && !atJob(origin(pos), job) && !routeToJob(sim, id, pos, assignment.jobId, job)) releaseAssignment(sim, id);
+        if (path && path.steps.length === 0 && !atJob(origin(pos), job) && !routeToJob(sim, id, pos, assignment.jobId, job)) abortTask(sim, id, 'unreachable');
         continue;
       }
     }
@@ -118,13 +119,6 @@ function stowSuit(sim: Sim, id: number, pos: Position): boolean {
   if (!src) return false;
   startErrand(sim, id, 'suitOff', src, shipIdOf(sim, pos));
   return true;
-}
-
-/** True if the crew member is on a rescue job and holds the patient (they must not drop them to sleep). */
-function isCarrying(sim: Sim, id: number): boolean {
-  const a = sim.world.get(id, AssignmentC);
-  const job = a && sim.world.get(a.jobId, JobC);
-  return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === id;
 }
 
 /**
@@ -237,9 +231,7 @@ function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       if (!best || score < best.score) best = { id: jobId, steps: plan.steps, score, thin: plan.thin };
     }
     if (best) {
-      (sim.world.get(best.id, JobC) as { reservedBy: number }).reservedBy = crewId;
-      sim.world.add(crewId, AssignmentC, { jobId: best.id });
-      (sim.world.get(crewId, PathC) as { steps: Tile[] }).steps = best.steps;
+      reserveJob(sim, crewId, best.id, best.steps);
       if (best.thin && source) startErrand(sim, crewId, 'suitUp', source, shipIdOf(sim, pos), best.id);
       return true;
     }

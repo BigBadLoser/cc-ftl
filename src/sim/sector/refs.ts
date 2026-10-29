@@ -34,6 +34,9 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   const downed = data.downed as { bed: number } | undefined;
   if (downed && gone(downed.bed)) downed.bed = 0;
   if (gone((data.assignment as { jobId: number } | undefined)?.jobId)) delete data.assignment;
+  // The crew-AI task mirrors the assignment and claims: one that refers across the cut ends (the scheduler re-derives it).
+  const task = data.task as { job: number; holds: { id: number }[]; bb: { target?: number; aux?: number } } | undefined;
+  if (task && (gone(task.job) || task.holds.some((h) => gone(h.id)) || gone(task.bb.target) || gone(task.bb.aux))) delete data.task;
   if (gone((data.bedClaim as { bed: number } | undefined)?.bed)) delete data.bedClaim;
   if (gone((data.bedOwner as { bed: number } | undefined)?.bed)) delete data.bedOwner;
   return data;

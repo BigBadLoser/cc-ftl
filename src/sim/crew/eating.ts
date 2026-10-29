@@ -8,7 +8,8 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EAT_SEC, HUNGER_EAT_BELOW, HUNGER_EAT_URGENT } from '../tuning';
 import { EatC, NeedsC, PathC, type Crew, type Path, type Position } from './components';
-import { clearPath, isSettled, origin, releaseAssignment } from './helpers';
+import { clearPath, isSettled, origin } from './helpers';
+import { abortTask } from '../ai/task';
 import { findPath, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 
@@ -70,7 +71,7 @@ export function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean 
     if ((sim.tick + id) % 20 !== 0) return false; // look for a spot once a second, not every tick
     const spot = pickSpot(sim, shipIdOf(sim, pos), origin(pos), item);
     if (!spot) return false;
-    releaseAssignment(sim, id);
+    abortTask(sim, id, 'drive');
     dropCarried(sim, id);
     sim.world.add(id, EatC, (eat = { x: spot.x, y: spot.y, galley: spot.galley, item, left: -1 }));
     path.steps = spot.steps;
