@@ -5,8 +5,8 @@
   import HeatGauge from './HeatGauge.svelte';
 
   type Me = NonNullable<UiCombat['player']>;
-  let { api, me, aiming, helmManned, rate, onSelect, onFlee, onVent, onOvercharge }: {
-    api: UiApi; me: Me; aiming: UiAiming | null; helmManned: boolean; rate: number; onSelect: (id: number) => void; onFlee: () => void;
+  let { api, me, aiming, rate, onSelect, onVent, onOvercharge }: {
+    api: UiApi; me: Me; aiming: UiAiming | null; rate: number; onSelect: (id: number) => void;
     onVent: () => void; onOvercharge: (k: 'weapons' | 'shields' | 'engines') => void;
   } = $props();
 
@@ -17,7 +17,6 @@
     return same.length > 1 ? `${w.name} ${ROMAN[same.indexOf(w)] ?? i + 1}` : w.name;
   };
   const ready = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
-  const flee = $derived(me.ftl >= me.ftlMax && me.state === 'active');
   const hull = $derived(Math.round(me.integrity * 100));
   const lock = $derived(me.heat.lockout);
   const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
@@ -62,11 +61,7 @@
   {/each}
 
   <button class="act go" style="grid-column:2 / 4" disabled={!ready} title="Fire every charged weapon now (V)" data-testid="combat-volley" onclick={volley}><Icon name="volley" size={18} />Volley<kbd>V</kbd></button>
-  <button class="act" style="grid-column:4" class:on={me.hold} title="Hold fire: weapons charge but do not fire (H)" data-testid="combat-hold" onclick={hold}><Icon name="hold" size={18} />Hold fire<kbd>H</kbd></button>
-  <button class="act fl" style="grid-column:5" class:ready={flee} disabled={!flee} title={flee ? 'Flee: the drive is charged (F)' : helmManned ? `Flee: drive charging ${Math.floor(me.ftl)}/${me.ftlMax} s (F)` : 'Helm unmanned: the drive is not charging (F)'} data-testid="combat-flee" onclick={onFlee}>
-    <span class="fh"><Icon name="fast" size={16} />Flee<kbd>F</kbd></span>
-    <span class="fb"><i style="width:{Math.min(100, Math.round((me.ftl / me.ftlMax) * 100))}%"></i></span>
-  </button>
+  <button class="act" style="grid-column:4 / 6" class:on={me.hold} title="Hold fire: weapons charge but do not fire (H)" data-testid="combat-hold" onclick={hold}><Icon name="hold" size={18} />Hold fire<kbd>H</kbd></button>
 
   <HeatGauge heat={me.heat} {rate} {onVent} {onOvercharge} />
 
@@ -108,11 +103,6 @@
   .act { grid-row: 2; min-height: 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
   .act kbd { font-size: 10px; color: var(--dim); }
   .go:not(:disabled) { background: #0e6a80; border-color: var(--cyan); color: #fff; }
-  .fl { position: relative; padding: 0 8px; font-size: 14px; }
-  .fh { display: inline-flex; align-items: center; gap: 6px; }
-  .fb { position: absolute; left: 0; right: 0; bottom: 0; display: block; height: 3px; background: #061020; } .fb > i { display: block; height: 100%; background: var(--cyan); }
-  .fl.ready { border-color: var(--green); background: #0b4f3a; color: #fff; } .fl.ready .fb > i { background: var(--green); }
-  .fl:disabled { opacity: 0.8; }
   /* Thermal overload: covers the whole strip and blocks it. */
   .lock { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; gap: 6px; background: rgba(4, 8, 14, 0.93); box-shadow: inset 0 0 0 2px var(--red), inset 0 0 36px rgba(255, 90, 90, 0.35); animation: lk 1.1s infinite alternate; }
   .lock b { font: 700 30px/1 var(--head-font); letter-spacing: 0.16em; text-transform: uppercase; color: var(--red); }

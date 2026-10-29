@@ -94,10 +94,10 @@
 </script>
 
 <div class="hud" data-testid="combat-hud">
-  {#if enemy}<div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(enemy.ship)} /></div>{/if}
+  {#if enemy}<div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(enemy.ship)} drive={me ? { charge: me.ftl, max: me.ftlMax, helmManned, active: me.state === 'active' } : null} onFlee={flee} /></div>{/if}
   {#if me}
     <div class="bot">
-      <PlayerStrip {api} {me} {aiming} {helmManned} onSelect={select} onFlee={flee} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
+      <PlayerStrip {api} {me} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
     </div>
   {/if}
 </div>
