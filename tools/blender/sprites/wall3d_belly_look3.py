@@ -2,6 +2,7 @@
 face, the grille on the floor of the plate's own recess (a px deep, in a 2 px border), and over the plate a recess a
 px deep running up to the cut, on the run's shared dress (the top's seam, the face's edge, the slope's rim and
 end)."""
+from . import core
 from . import wall3d_ext_t3 as T3
 from .wall3d_ext_geom import LINE, PAINT, YS
 
@@ -16,7 +17,7 @@ LOOK3 = {                            # art px: u from the face's +u end (centred
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
                                      # each side
     "ribs": (8, 1),                  # a rib (a px wide, as proud) under each side of the plate: straight down this
-}                                    # far (its corner cut this much), then down and back to the slope's bottom
+}                                    # far (its corner cut this much), then back into the slope (level on screen)
 
 
 def _rects():
@@ -89,9 +90,12 @@ def look3(f, s, back, U, Z, cols):
         floor(gb - 1, gb, sv0, sv1, GSHADE)
     with f.tag("ribs"):                                             # (each its section: from the plate's bottom
         rh, rc = LOOK3["ribs"]                                      # straight down at its front, its corner cut,
-        zr = zb - rh * px                                           # then down and back to the slope's bottom)
+        zr = zb - rh * px                                           # then back into the slope)
+        _, r, h = s.under                                           # (its bottom edge falls as it goes back just
+        t = core.TILE_H / 2 / core.ZPX                              # enough to read level on screen, to where it
+        a = (fr - s.front(zr, zr)[0][0]) / (1 - r / h * t)          # meets the slope)
         rp = [(s.front(zb, zb)[0][0] - 0.01, zb), (fr, zb), (fr, zr + rc * px), (fr - rc * LINE, zr),
-              (s.front(s.zmin, s.zmin)[0][0], s.zmin)]
+              (fr - a, zr - t * a)]
         for a in (pa, pb - 1):
             f.part(*U(a, a + 1), rp, s.cols(rp, "face"), YS[2], end=False)
     with f.tag("slope"):                                            # (the face's and the plate's edge on the
@@ -101,3 +105,8 @@ def look3(f, s, back, U, Z, cols):
             f.line(*U(ua, ub), s.z_at(z0, w), z0, CREASE, bevel=False)
         f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
+        from .wall3d_belly_run import LOOK1                         # (look 1's seams down and across the slope)
+        for ua, ub in LOOK1["slope_seam"]:
+            f.line(*U(ua, ub), s.zmin, foot, CREASE, end=False, bevel=False)
+        zm = s.z_at((s.zmin + foot) / 2, LOOK1["slope_line"])
+        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, CREASE, bevel=False)
