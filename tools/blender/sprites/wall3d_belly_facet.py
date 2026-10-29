@@ -5,8 +5,8 @@ its rim. Drawn as the exterior's diagonals are (wall3d_ext_diag_detail): marks p
 raised from it, each clipped to the part's other planes and to a band of height (and across, for a seam down). Each
 band at the run's own heights (its section: so at a hip the lines meet), and a seam, level or upright on screen here,
 softened as a run's slant one comes out of coverage anti-aliasing (the exterior's diagonals' level seams so too,
-wall3d_ext_diag_detail LEVEL_SEAM): a level one two whole px rows at half its tone (the run's comes out a two-row
-core, its tone about that), one down a px column at a quarter."""
+wall3d_ext_diag_detail LEVEL_SEAM): a level one two whole px rows, the run's two-row core (a darker row over a
+lighter), one down a px column in the lighter."""
 from mathutils import Vector
 
 from .wall3d_belly_bay import LEDGE, RIM, SLIT, SLOPE_SEAMS
@@ -15,9 +15,9 @@ from .wall3d_ext_geom import LINE, YS
 
 UP = Vector((0, 0, 1))
 ACROSS = 16                         # (screen px down per tile unit of x + y)
-SOFT, FAINT = "hbSlopeLnSoft", "hbSlopeLnFaint"     # (a slope seam's tones here: a level one two rows of the
-                                                    # first, halfway from the slope's to the seam's; one down
-                                                    # the second, a quarter)
+SOFT, FAINT = "hbSlopeLnSoft", "hbSlopeLnFaint"     # (a slope seam's tones here, as a run's anti-aliased one
+                                                    # comes out: a level one a row of the first over a row of
+                                                    # the second; one down the second)
 ROW0 = 0.0                          # (screen px rows' edges, from the tile's middle: where a level seam's rows land)
 SEAMS_AT = range(-56, 57, 16)       # (the slope's seams down, px across from the tile's middle (x - y): a 16 px
                                     # lattice every tile shares, so one cut off at its column goes on in the next)
@@ -50,8 +50,8 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
     (n, c), rate = slope, Z64 + ACROSS * slope[0].z / slope[0].x    # (on the slope, screen px y at z: y0 - z rate,
     y0 = ACROSS * c / n.x                                           # from the tile's middle; the seam's top at the
     top = round(y0 - zm * rate - ROW0) + ROW0                       # run's, on a whole row)
-    for k in (0, 1):
-        on(slope, (y0 - top - k - 1) / rate, (y0 - top - k) / rate, SOFT)
+    for k, col in enumerate((SOFT, FAINT)):                         # (the run's two-row core: a darker row over
+        on(slope, (y0 - top - k - 1) / rate, (y0 - top - k) / rate, col)  # a lighter one)
     for u in SEAMS_AT:
         on(slope, zmin, foot, FAINT, u)
 
