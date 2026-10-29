@@ -22,6 +22,9 @@ const REPEAT = 20;
 const DISPATCH_SEC = 120;
 const LOAD_SEC = 300;
 const FLIGHT_SEC = 240;
+/** Seconds the shuttle gets to fly home and dock, and the crew to empty it, before the delivery is given up on (it must not block travel forever). */
+const BACK_SEC = 240;
+const UNLOAD_SEC = 300;
 
 const due = (d: Deal): boolean => d.timer % REPEAT === 1;
 
@@ -174,8 +177,22 @@ function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
   go(d, 'back');
 }
 
+/**
+ * A delivery that cannot be finished (no airlock to dock at, nobody or nowhere to unload). The goods are somewhere physical, and each is
+ * counted once: the player's own shuttle keeps what it carries and the deal is settled as paid (the goods are theirs to unload later);
+ * the trader's shuttle leaves with its cargo and the deal is refunded with the goods back in the trader's stock; recruits go back.
+ */
+function giveUp(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
+  if (d.crew || d.courier === 'them') return failDeal(sim, d, reason);
+  if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; } // no further trips with a loaded hold
+  v.outbound = false;
+  settleDeal(sim, d);
+  sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+}
+
 /** Step 5: fly home and dock at the player's airlock. */
 function back(sim: Sim, d: Deal, v: Vehicle): void {
+  if (d.timer > BACK_SEC * TICK_HZ) return giveUp(sim, d, v, 'noDock');
   if (v.state === 'docked' && v.dock !== d.airlock) {
     if (due(d)) sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
     return;
@@ -189,6 +206,7 @@ function back(sim: Sim, d: Deal, v: Vehicle): void {
 
 /** Step 6: crew haul the cargo out through the unloaders (cargoJobs does it); when the hold is empty, the deal settles. */
 function unload(sim: Sim, d: Deal, v: Vehicle): void {
+  if (d.timer > UNLOAD_SEC * TICK_HZ) return giveUp(sim, d, v, 'unloadTimeout');
   if (d.crew) {
     if (!landRecruits(sim, d)) return;
     settleDeal(sim, d);
