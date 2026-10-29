@@ -27,6 +27,9 @@ def build_palette():
         if "emissive" in v:
             cols += [c, c * 0.18 + np.array([6, 8, 12]), c * 0.6, np.minimum(c * 1.0 + 60, 255)]
             continue
+        if v.get("flat"):                       # (the colour alone, no ramp, kept exact: _flat)
+            cols.append(c)
+            continue
         for m in SHADES:
             x = c * m
             if m < 1:
@@ -39,6 +42,22 @@ def build_palette():
 
 BASE = build_palette()
 NB = len(BASE)
+
+
+def _flat():
+    """The flat colours' places in BASE: a tone painted exactly (a fixed polygon colour) keeps it, but the LUT never
+    picks one, so adding one moves no other pixel (a name for a tone anti-aliasing gives elsewhere, painted crisp)."""
+    i, out = 0, []
+    for name, v in PAL.items():
+        if name == "empty":
+            continue
+        if v.get("flat"):
+            out.append(i)
+        i += 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
+    return np.array(out, int)
+
+
+FLAT = _flat()
 
 # ---- team (palette-swap) key colours ------------------------------------------------------------------------
 # team.* materials are rendered with a pure key albedo; lighting scales it, so a lit pixel is (s*k) for a key
@@ -68,6 +87,7 @@ def _lut():
     w = np.array([2.0, 4.0, 3.0])
     for i in range(0, len(q), 2048):
         d = (((q[i:i + 2048, None, :] - BASE[None]) ** 2) * w).sum(-1)
+        d[:, FLAT] = np.inf
         out[i:i + 2048] = d.argmin(1)
     return out.reshape(32, 32, 32)
 
@@ -88,6 +108,9 @@ def _band_map():
         if "emissive" in v:
             i += 4
             continue
+        if v.get("flat"):
+            i += 1
+            continue
         for lv in range(5):
             m[i + lv] = i + BAND[lv]
         i += 5
@@ -106,6 +129,8 @@ def quantize(rgb):
     rgb = np.clip(rgb, 0, 255)
     q = (rgb / 8).astype(int).clip(0, 31)
     idx = LUT[q[..., 0], q[..., 1], q[..., 2]]
+    for i in FLAT:                                  # (a flat colour only where it is painted)
+        idx = np.where((np.abs(rgb - BASE[i]) <= 0.5).all(-1), i, idx)
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     lo = 4.0
     for t, team in enumerate(TEAMS):
@@ -148,9 +173,12 @@ def _block_modes(idx, n):
 
 
 def _aa_set():
-    """The palette's cool greys (low chroma, blue at least red): the tones anti-aliasing blends among."""
+    """The palette's cool greys (low chroma, blue at least red): the tones anti-aliasing blends among (not a flat
+    one: _flat)."""
     p = PALETTE[:NB]
-    return np.nonzero((p.max(1) - p.min(1) < 48) & (p[:, 2] >= p[:, 0]))[0]
+    grey = (p.max(1) - p.min(1) < 48) & (p[:, 2] >= p[:, 0])
+    grey[FLAT] = False
+    return np.nonzero(grey)[0]
 
 
 def _aa(mode, blk, n, S):
@@ -299,14 +327,15 @@ _STATES = {}
 def select(extra):
     """Switch the quantisation palette: the game palette (default) or it plus the neon extras. Existing sprites keep
     the plain one so their pixels never change when a colour is added."""
-    global PAL, BASE, NB, PALETTE, LUT, BAND_MAP
+    global PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT
     key = bool(extra)
     if key not in _STATES:
         PAL = {**_BASE_PAL, **EXTRA} if key else dict(_BASE_PAL)
         BASE = build_palette()
         NB = len(BASE)
+        FLAT = _flat()
         PALETTE = np.vstack([BASE, KEYS])
         LUT = _lut()
         BAND_MAP = _band_map()
-        _STATES[key] = (PAL, BASE, NB, PALETTE, LUT, BAND_MAP)
-    PAL, BASE, NB, PALETTE, LUT, BAND_MAP = _STATES[key]
+        _STATES[key] = (PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT)
+    PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT = _STATES[key]

@@ -2263,5 +2263,33 @@
  },
  "hbXhbSlopeLnFaint": {
   "hex": "#263445"
+ },
+ "hbFcLit": {
+  "hex": "#a4b1c1",
+  "flat": true
+ },
+ "hbFcMid": {
+  "hex": "#8999ab",
+  "flat": true
+ },
+ "hbFcSoft": {
+  "hex": "#414e61",
+  "flat": true
+ },
+ "hbFcLd1": {
+  "hex": "#7f8997",
+  "flat": true
+ },
+ "hbFcLd2": {
+  "hex": "#4a5864",
+  "flat": true
+ },
+ "hbFcRim": {
+  "hex": "#1d2a38",
+  "flat": true
+ },
+ "hbFcEdge": {
+  "hex": "#78889a",
+  "flat": true
  }
 }

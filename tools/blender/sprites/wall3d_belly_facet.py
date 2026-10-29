@@ -9,7 +9,7 @@ wall3d_ext_diag_detail LEVEL_SEAM): a level one two whole px rows, the run's two
 lighter), one down a px column in the lighter."""
 from mathutils import Vector
 
-from .wall3d_belly_bay import LEDGE, RIM, SLIT, SLOPE_SEAMS
+from .wall3d_belly_bay import LEDGE, SLOPE_SEAMS
 from .wall3d_ext_diag_detail import LIT, Z64, _paint
 from .wall3d_ext_geom import LINE, YS
 
@@ -18,6 +18,10 @@ ACROSS = 16                         # (screen px down per tile unit of x + y)
 SOFT, FAINT = "hbSlopeLnSoft", "hbSlopeLnFaint"     # (a slope seam's tones here, as a run's anti-aliased one
                                                     # comes out: a level one a row of the first over a row of
                                                     # the second; one down the second)
+FOOT = ("hbFcEdge", "hbFcLit", "hbFcMid")    # (the rows over the foot, up from it; the slope's lit top row, its rim
+SLOPE_TOP, RIM_ROW = "hbFcSoft", "hbFcRim"  # row; the ledge's front's top row, the rows under it: whole px rows here,
+LEDGE_TOP, LEDGE_SHADE = "hbFcLit", ("hbFcLd1", "hbFcLd2")  # each in the tone a run's comes out in, its anti-aliased
+                                    # 2:1 lines' average: crisp, the frame's own tones read harder than a run's)
 ROW0 = 0.0                          # (screen px rows' edges, from the tile's middle: where a level seam's rows land)
 SEAMS_AT = range(-56, 57, 16)       # (the slope's seams down, px across from the tile's middle (x - y): a 16 px
                                     # lattice every tile shares, so one cut off at its column goes on in the next)
@@ -33,28 +37,47 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
             cuts += [(t, (u + 1) / 32), (-t, -u / 32)]
         _paint(rel, solid, cuts, *plane, col, 1)
 
-    up = Z64
-    on(face, H - 1 / up, H, YS[4])                                  # (the cut's lit lip)
-    on(face, foot + 1 / up, foot + 2 / up, YS[4])                   # (the foot's chamfer)
-    on(face, foot + 2 / up, foot + 3 / up, YS[3])
+    def rows(plane, z, k, col, also=None):                          # (whole px row k under the edge at height z;
+        for q in (plane, also) if also else (plane,):               # at the foot on both planes: the edge between
+            on(q, *_row(q, _y(plane, z), k), col)                   # them may run across a row)
+
+    rows(face, H, 0, YS[4])                                         # (the cut's lit lip)
+    for i, col in enumerate(FOOT):                                  # (the foot's chamfer, rows up from it)
+        rows(face, foot, -1 - i, col, slope)
     h, k = LEDGE                                                    # (the ledge, its top flush with the deck, its
-    zt, zb = -1e-4, -h / up                                         # shade under it)
-    on(face, zb - 2 / up, zb, YS[1])
-    _ledge(rel, solid, [q for q in planes if q is not face] + [(UP, zt), (-UP, -zb)], *face, k * LINE)
+    zt, zb = -1e-4, -h / Z64                                        # shade under it)
+    n, c = face
+    front = (n, c + k * LINE * n.length)                            # (the ledge's front; proud, it stands lower on
+    for i, col in enumerate(LEDGE_SHADE):                           # screen than the face at its height)
+        on(face, *_row(face, _y(front, zb), i), col)
+    cuts = [q for q in planes if q is not face] + [(UP, zt), (-UP, -zb)]
+    _ledge(rel, solid, cuts, *face, k * LINE)
+    _paint(rel, solid, cuts + [(-UP, -_row(front, _y(front, zt), 0)[0])], *front, LEDGE_TOP, 2)  # (its top row lit)
     from .wall3d_belly_run import section                          # (the slope's bands at the run's heights)
     run = section()
-    on(slope, run.z_at(foot, 1), foot, SLIT)                        # (the slope's lit top edge, its rim)
-    on(slope, zmin, run.z_at(zmin, -1), RIM)
+    rows(slope, foot, 0, SLOPE_TOP, face)                           # (the slope's lit top edge, its rim)
+    rows(slope, zmin, -1, RIM_ROW)
     *_, down = SLOPE_SEAMS                                          # (a seam across its middle; seams down it)
     zm = run.z_at((zmin + foot) / 2, down)
-    (n, c), rate = slope, Z64 + ACROSS * slope[0].z / slope[0].x    # (on the slope, screen px y at z: y0 - z rate,
-    y0 = ACROSS * c / n.x                                           # from the tile's middle; the seam's top at the
-    top = round(y0 - zm * rate - ROW0) + ROW0                       # run's, on a whole row)
-    for k, col in enumerate((SOFT, FAINT)):                         # (the run's two-row core: a darker row over
-        on(slope, (y0 - top - k - 1) / rate, (y0 - top - k) / rate, col)  # a lighter one)
+    for i, col in enumerate((SOFT, FAINT)):                         # (the run's two-row core, a darker row over a
+        rows(slope, zm, i, col)                                     # lighter one, its top at the run's)
     lo, hi = run.z_at(zmin, -1), run.z_at(foot, 1)                  # (seams down it between its rim and its lit
     for u in SEAMS_AT:                                              # edge, not over them nor past its foot)
         on(slope, lo, hi, FAINT, u)
+
+
+def _y(plane, z):
+    """Screen px y (down) at height z on an upright or sloping plane (n, c) facing the camera, from the tile's
+    middle."""
+    n, c = plane
+    return (ACROSS * c - z * (Z64 * n.x + ACROSS * n.z)) / n.x
+
+
+def _row(plane, y, k):
+    """The heights (z0, z1) on a plane of whole px row k under screen y (its edge rounded to a row's)."""
+    n, c = plane
+    rate, top = Z64 + ACROSS * n.z / n.x, round(y - ROW0) + ROW0 + k
+    return (ACROSS * c / n.x - top - 1) / rate, (ACROSS * c / n.x - top) / rate
 
 
 def _ledge(rel, solid, cuts, n, c, out):
