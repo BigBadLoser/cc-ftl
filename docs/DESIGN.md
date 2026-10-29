@@ -517,6 +517,29 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
 6. **The Esc menu:** Esc first cancels the active tool or aim. When there is nothing to cancel, it opens a medium-sized
    menu (about the size of the ship stock panel, or smaller) with resume, save and load, new game, controls and settings.
 
+### Boarding in ship combat (user decisions, 2026-10-29; not built yet)
+
+The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to capture). The combat
+HUD from #184 does not show or drive it. Offence is the focus; defence stays automatic (crew fight boarders, the player
+drafts) and only gains visibility: an alert when boarders dock and intruder marks on the inset.
+
+- **Launch from the HUD.** A BOARD action (B) opens a party picker: the shuttle and its seats, crew with weapon and
+  health (default: armed crew not on a console), and the target airlock, clicked on the enemy in the main view or the
+  nearest one. Crew sent leave their stations, and the STATIONS tags show it.
+- **The flight is the risk.** Enemy point defence shoots the shuttle. Shields have **no effect** on docking: they stop
+  projectiles, not a shuttle; boarding is a way around a heavily shielded ship.
+- **Aboard.** The enemy is already the main view, so the party is commanded there with the existing crew orders. The
+  enemy card gains a party section (members, health, status).
+- **Objectives.** Capture: subdue the crew, then hold the bridge (a visible "holding bridge" bar); the result is a prize
+  with prisoners. **Sabotage:** order boarders to wreck a module (weapons, shields, reactor) from inside, then recall;
+  a reason to board a ship you don't want. Recall: back to the shuttle and home.
+- **Friendly fire is on.** Your weapons hit tiles, so they can hurt your own boarders. The enemy card warns "Your crew
+  aboard" and the rooms they are in are marked.
+- **Stranded parties are lost.** If the enemy is destroyed with the party aboard, they die; if it jumps away, they go
+  with it (a possible story hook later). The warnings make it fair; bad play loses.
+- **Fix:** a near-capture must not turn into a wreck when boarders step off before the bridge hold completes.
+- **Later:** a teleporter module, rarer, using the same picker with no flight and a cooldown.
+
 ### Lessons: the tutorial system (user decisions, 2026-10-29; not built yet)
 
 The goal chain (`src/sim/story/goals.ts`) says **what** to do next; lessons teach **how** a feature works. They are a
