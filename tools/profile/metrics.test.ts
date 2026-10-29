@@ -1,0 +1,123 @@
+import { describe, expect, it } from 'vitest';
+import { content } from '../../src/content';
+import { AssignmentC, CrewC, JobC, ShipC, homeShip, newGame, type Sim } from '../../src/sim';
+import { Struct } from '../../src/sim/structure';
+import { MetricsRecorder, percentile } from './metrics';
+import { buildScenario } from './scenarios';
+
+/** A crew-free-of-chores game: the starter ship with its crew, no jobs. `tick` is set by hand to drive the recorder at chosen times. */
+function bare(): { sim: Sim; crew: number[] } {
+  const sim = newGame(1, content);
+  return { sim, crew: [...sim.world.query(CrewC)] };
+}
+
+function postJob(sim: Sim, x: number, y: number, extra: Record<string, unknown> = {}): number {
+  const id = sim.world.createEntity();
+  sim.world.add(id, JobC, { category: 'construction', kind: 'build', x, y, struct: Struct.Wall, work: 100, progress: 0, reservedBy: 0, ...extra });
+  return id;
+}
+
+describe('percentile', () => {
+  it('uses nearest rank and is 0 for nothing', () => {
+    expect(percentile([], 0.95)).toBe(0);
+    expect(percentile([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.5)).toBe(5);
+    expect(percentile([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.95)).toBe(10);
+    expect(percentile([7], 0.95)).toBe(7);
+  });
+});
+
+describe('MetricsRecorder maths on a hand-driven sim', () => {
+  it('measures open age, time to assign and completions by category', () => {
+    const { sim, crew } = bare();
+    const m = new MetricsRecorder({ stride: 1000 }); // no idle sampling here
+    const ship = sim.world.get(homeShip(sim), ShipC)!;
+    const job = postJob(sim, ship.x + 3, ship.y + 3);
+    sim.tick = 10;
+    m.observe(sim); // first seen at 10: age 0
+    sim.tick = 20;
+    m.observe(sim); // age 10
+    sim.world.get(job, JobC)!.reservedBy = crew[0]!;
+    sim.world.add(crew[0]!, AssignmentC, { jobId: job });
+    sim.tick = 30;
+    m.observe(sim); // taken at 30: waited 20; no longer open
+    sim.tick = 40;
+    sim.world.remove(crew[0]!, AssignmentC);
+    sim.world.destroyEntity(job);
+    m.observe(sim, [{ type: 'crew.jobDone', crew: crew[0]!, kind: 'build', ship: homeShip(sim), x: 0, y: 0 }]);
+    const s = m.summary();
+    expect(s.ticksObserved).toBe(4);
+    expect(s.jobsSeen).toBe(1);
+    expect(s.oldestOpenAge).toEqual({ max: 10, p95: 10, atEnd: 0 });
+    expect(s.timeToAssign).toEqual({ n: 1, p50: 20, p95: 20, max: 20, neverAssigned: 0 });
+    expect(s.completion.total).toBe(1);
+    expect(s.completion.byCategory.construction).toEqual({ done: 1, per1000: 250 }); // 1 in 4 observed ticks
+  });
+
+  it('counts a job nobody takes as never assigned and keeps ageing it', () => {
+    const { sim } = bare();
+    const m = new MetricsRecorder({ stride: 1000 });
+    postJob(sim, 5, 5);
+    for (const t of [100, 150, 300]) {
+      sim.tick = t;
+      m.observe(sim);
+    }
+    const s = m.summary();
+    expect(s.oldestOpenAge.max).toBe(200);
+    expect(s.oldestOpenAge.atEnd).toBe(200);
+    expect(s.timeToAssign.neverAssigned).toBe(1);
+    expect(s.timeToAssign.n).toBe(0);
+  });
+
+  it('ignores operate jobs and errands', () => {
+    const { sim } = bare();
+    const m = new MetricsRecorder({ stride: 1000 });
+    postJob(sim, 5, 5, { kind: 'operate', category: 'operating' });
+    postJob(sim, 6, 5, { kind: 'suitUp', category: 'repair' });
+    sim.tick = 5;
+    m.observe(sim);
+    sim.tick = 50;
+    m.observe(sim);
+    expect(m.summary().jobsSeen).toBe(0);
+    expect(m.summary().oldestOpenAge.max).toBe(0);
+  });
+
+  it('counts idle crew with a takeable job as idle-with-work, and none when the job is out of reach', () => {
+    const { sim, crew } = bare();
+    const ship = sim.world.get(homeShip(sim), ShipC)!;
+    // A floor tile in the corridor (the starter ship's corridor runs along y = 9..10): reachable.
+    const near = postJob(sim, ship.x + 12, ship.y + 9, { kind: 'build', struct: Struct.Door });
+    const m = new MetricsRecorder({ stride: 1 });
+    sim.tick = 1;
+    m.observe(sim);
+    const a = m.summary().idleWithWork;
+    expect(a.samples).toBe(1);
+    expect(a.crewSamples).toBe(crew.length);
+    expect(a.idleWithWorkSamples).toBeGreaterThan(0);
+    expect(a.idleWithWorkSamples).toBeLessThanOrEqual(a.idleSamples);
+    expect(a.crewTicks).toBe(a.idleWithWorkSamples); // stride 1
+    sim.world.destroyEntity(near);
+    // Same job, but on a tile that is not on any ship: nobody can take it.
+    postJob(sim, 1, 1);
+    const m2 = new MetricsRecorder({ stride: 1 });
+    sim.tick = 2;
+    m2.observe(sim);
+    expect(m2.summary().idleWithWork.idleWithWorkSamples).toBe(0);
+  });
+
+  it('finds no idle-with-work in the sealed storm and repeats exactly', () => {
+    const run = (): string => {
+      const sim = buildScenario('storm', 1);
+      const m = new MetricsRecorder({ stride: 5 });
+      for (let i = 0; i < 40; i++) {
+        sim.step();
+        m.observe(sim, sim.events.drain());
+      }
+      return JSON.stringify(m.summary());
+    };
+    const a = run();
+    expect(run()).toBe(a);
+    const s = JSON.parse(a);
+    expect(s.idleWithWork.idleWithWorkSamples).toBe(0);
+    expect(s.timeToAssign.neverAssigned).toBeGreaterThan(50);
+  });
+});
