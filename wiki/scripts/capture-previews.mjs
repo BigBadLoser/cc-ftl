@@ -29,30 +29,45 @@ try {
   const cards = page.locator('.wiki-recipe-card');
   if (await cards.count() < 1) throw Error('Fabricator has no recipe cards');
   if (await cards.locator('a[href*="/reference/items/"]').count() < 2) throw Error('Recipe materials are missing item links');
-  if (await cards.locator('.wiki-recipe-materials img').count() < 2) throw Error('Recipe item sprite icons are missing');
+  if (await cards.locator('.recipe-material img').count() < 2) throw Error('Recipe item sprite icons are missing');
   if (await cards.locator('a[title="Shuttle"] img').count() !== 1) throw Error('Crafted shuttle must reuse its actual vehicle sprite');
-  // Every ingredient quantity must sit inside the same clickable unit as its
-  // sprite and name, rather than drifting to a shared column edge.
-  const misplaced = await cards.locator('.wiki-recipe-materials li').evaluateAll(rows =>
-    rows.filter(row => {
-      const name = row.querySelector('.wiki-recipe-material-name');
-      const quantity = row.querySelector('.wiki-recipe-quantity');
-      return !name || !quantity || !row.querySelector('a')?.contains(quantity)
-        || getComputedStyle(quantity).marginLeft === 'auto';
-    }).length
-  );
-  if (misplaced) throw Error(misplaced + ' recipe quantities are not grouped with their items');
-  // The connector should be a real horizontal shaft after the first input,
-  // without extending behind the clickable material label.
-  const connector = await cards.locator('.wiki-recipe-side:first-child .wiki-recipe-materials li:first-child').first().evaluate(row => {
-    const line = getComputedStyle(row, '::after');
-    const label = row.querySelector('a');
-    return {
-      present: line.content !== 'none' && line.borderTopWidth === '1px',
-      labelEndsBeforeLine: !!label && label.getBoundingClientRect().right < row.getBoundingClientRect().right - 8,
-    };
-  });
-  if (!connector.present || !connector.labelEndsBeforeLine) throw Error('Recipe arrow shaft does not extend from first material');
+  // The connector is one continuous, center-aligned geometric row. Validate
+  // real rendered coordinates, not the presence of unrelated CSS decorations.
+  async function verifyRecipeConnectors() {
+    const geometries = await page.locator('.recipe-flow').evaluateAll(flows =>
+      flows.map(flow => {
+        const input = flow.querySelector('.recipe-first-input .recipe-material');
+        const lead = flow.querySelector('.recipe-shaft');
+        const arrow = flow.querySelector('.recipe-arrow');
+        const output = flow.querySelector('.recipe-first-output .recipe-material');
+        if (!input || !lead || !arrow || !output) return null;
+        const a = input.getBoundingClientRect();
+        const l = lead.getBoundingClientRect();
+        const s = arrow.getBoundingClientRect();
+        const b = output.getBoundingClientRect();
+        return {
+          yMaterial: a.top + a.height / 2,
+          yLead: l.top + l.height / 2,
+          yArrow: s.top + s.height / 2,
+          yOutput: b.top + b.height / 2,
+          gapFromMaterial: l.left - a.right,
+          joinGap: s.left - l.right,
+          noTextOverlap: l.left >= a.right,
+          noOutputOverlap: s.right <= b.left + 1,
+          lineWidth: l.width,
+        };
+      })
+    );
+    if (!geometries.length || geometries.some(g => !g ||
+      !g.noTextOverlap || !g.noOutputOverlap ||
+      Math.abs(g.yLead - g.yArrow) > 2 ||
+      Math.abs(g.yMaterial - g.yArrow) > 2 ||
+      Math.abs(g.yOutput - g.yArrow) > 2 ||
+      Math.abs(g.joinGap) > 1 ||
+      g.gapFromMaterial < 0 || g.gapFromMaterial > 12
+    )) throw Error('Recipe connector geometry misaligned: ' + JSON.stringify(geometries));
+  }
+  await verifyRecipeConnectors();
   const expanded = await page.locator('.content').first().boundingBox();
   await shot('fabricator-open', true);
   const toggle = page.locator('.wiki-sidebar-toggle');
@@ -62,6 +77,7 @@ try {
   console.log('Content bounds: expanded=' + JSON.stringify(expanded) + ', collapsed=' + JSON.stringify(collapsed));
   if (collapsed && expanded && (collapsed.width <= expanded.width + 100 || collapsed.x >= expanded.x - 60))
     throw Error('Sidebar collapse failed to substantially expand and reposition content');
+  await verifyRecipeConnectors();
   await shot('fabricator-collapsed', true);
   await toggle.click();
   await page.waitForFunction(() => !document.documentElement.classList.contains('wiki-sidebar-hidden'));
@@ -70,7 +86,13 @@ try {
   await shot('refinery-detail', true);
   await visit('reference/recipes/');
   if (await page.locator('.wiki-recipe-card').count() !== 12) throw Error('Expected 12 catalog recipe cards');
+  await verifyRecipeConnectors();
   await shot('recipes-catalog');
+  await page.setViewportSize({ width: 960, height: 980 });
+  await visit('reference/recipes/');
+  await verifyRecipeConnectors();
+  await shot('recipes-narrow');
+  await page.setViewportSize({ width: 1440, height: 1050 });
   await visit('reference/items/');
   if (await page.locator('.wiki-reference-item-card img').count() < 2) throw Error('Item catalog has no game icons');
   if (await page.getByText('AI core (trade good)', { exact: true }).count() !== 1)

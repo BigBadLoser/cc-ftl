@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import RecipeFlow from './RecipeFlow.svelte';
   import type { CatalogEntry } from './reference-types';
 
   let { recipe, showStation = true }: { recipe: CatalogEntry; showStation?: boolean } = $props();
@@ -19,43 +20,5 @@
       <a href={resolve('reference/modules/') + recipe.stationSlug + '/'}>{stationName}</a>
     </span>
   {/if}
-  <div class="wiki-recipe-flow" aria-label={'Ingredients and outputs for ' + recipe.name}>
-    <div class="wiki-recipe-side">
-      <small>Inputs</small>
-      <ul class="wiki-recipe-materials">
-        {#each recipe.inputs ?? [] as material (material.slug)}
-          <li>
-            <a href={resolve('reference/items/') + material.slug + '/'} title={material.name}>
-              {#if material.image}
-                <img src={material.image} alt="" width="32" height="32" loading="lazy" />
-              {/if}
-              <span class="wiki-recipe-material-label">
-                <span class="wiki-recipe-material-name">{material.name}</span>
-                <span class="wiki-recipe-quantity"> ×{material.count}</span>
-              </span>
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </div>
-    <span class="wiki-recipe-arrow" aria-hidden="true">→</span>
-    <div class="wiki-recipe-side">
-      <small>Outputs</small>
-      <ul class="wiki-recipe-materials">
-        {#each recipe.outputs ?? [] as material (material.slug)}
-          <li>
-            <a href={resolve('reference/items/') + material.slug + '/'} title={material.name}>
-              {#if material.image}
-                <img src={material.image} alt="" width="32" height="32" loading="lazy" />
-              {/if}
-              <span class="wiki-recipe-material-label">
-                <span class="wiki-recipe-material-name">{material.name}</span>
-                <span class="wiki-recipe-quantity"> ×{material.count}</span>
-              </span>
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </div>
-  </div>
+  <RecipeFlow name={recipe.name} inputs={recipe.inputs ?? []} outputs={recipe.outputs ?? []} />
 </article>
