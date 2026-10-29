@@ -52,8 +52,9 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
     top = round(y0 - zm * rate - ROW0) + ROW0                       # run's, on a whole row)
     for k, col in enumerate((SOFT, FAINT)):                         # (the run's two-row core: a darker row over
         on(slope, (y0 - top - k - 1) / rate, (y0 - top - k) / rate, col)  # a lighter one)
-    for u in SEAMS_AT:
-        on(slope, zmin, foot, FAINT, u)
+    lo, hi = run.z_at(zmin, -1), run.z_at(foot, 1)                  # (seams down it between its rim and its lit
+    for u in SEAMS_AT:                                              # edge, not over them nor past its foot)
+        on(slope, lo, hi, FAINT, u)
 
 
 def _ledge(rel, solid, cuts, n, c, out):
