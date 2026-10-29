@@ -157,7 +157,9 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
       /** Fill the player's FTL drive (a fresh game has no pilot at the helm to charge it). */
       chargeFtl: () => { const c = sim.world.get(playerShip(sim), CombatC); if (c) c.ftl = FTL_CHARGE_SEC; },
-      /** Add combat heat to a ship (screenshots: force an overheat). */
+      /** Set a ship's integrity 0..1 (screenshots: a battered enemy). */
+    setIntegrity: (ship: number, v: number) => { const sc = sim.world.get(ship, ShipC); if (sc) sc.integrity = v; },
+    /** Add combat heat to a ship (screenshots: force an overheat). */
     addHeat: (ship: number, amount: number) => addHeat(sim, ship, amount),
     /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,

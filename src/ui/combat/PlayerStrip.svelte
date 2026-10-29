@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { UiAiming, UiApi, UiCombat } from '../api';
   import Icon, { type IconName } from '../Icon.svelte';
+  import { hullTone } from './hullTone';
   import HeatGauge from './HeatGauge.svelte';
 
   type Me = NonNullable<UiCombat['player']>;
@@ -34,7 +35,7 @@
 
 <div class="strip" data-testid="combat-strip">
   <div class="def">
-    <div class="line" title="Hull integrity"><Icon name="hull" size={15} /><span class="hb" class:low={hull < 35}><i style="width:{hull}%"></i></span><b>{hull}%</b></div>
+    <div class="line" title="Hull integrity"><Icon name="hull" size={15} /><span class="hb {hullTone(hull)}"><i style="width:{hull}%"></i></span><b>{hull}%</b></div>
     <div class="line" title="Shield layers"><Icon name="shield" size={15} /><span class="pips">{#each Array.from({ length: me.shield.max }, (_, i) => i) as i (i)}<i class:on={i < me.shield.layers}></i>{:else}<em>none</em>{/each}</span><b>{me.shield.layers}/{me.shield.max}</b></div>
     <div class="line" title="Chance an incoming shot misses"><Icon name="evasion" size={15} /><span class="lbl">Evasion</span><b>{Math.round(me.evasion * 100)}%</b></div>
   </div>
@@ -85,7 +86,7 @@
   .line b { font: 600 14px var(--head-font); color: var(--text); min-width: 34px; text-align: right; }
   .lbl { flex: 1; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
   .hb { flex: 1; height: 10px; background: #061020; border: 1px solid var(--line); } .hb > i { display: block; height: 100%; background: var(--green); }
-  .hb.low > i { background: var(--red); }
+  .hb.amber > i { background: var(--amber); } .hb.red > i { background: var(--red); }
   .pips { flex: 1; display: inline-flex; gap: 4px; } .pips i { width: 20px; height: 10px; border: 1px solid var(--cyan); } .pips i.on { background: var(--cyan); }
   em { font: 12px var(--head-font); color: var(--dim); font-style: normal; }
   /* Stations: flat tags with a text label and a coloured left edge, not buttons. */
