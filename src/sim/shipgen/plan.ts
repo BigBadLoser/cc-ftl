@@ -45,6 +45,13 @@ export interface RoomSpec {
   vehicle?: boolean;
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
+  /**
+   * Quarters to be one-bed cabins (off the navy): a ring band cuts them as one segment a bed (stationBands.ts); other
+   * layouts divide the room off a hallway at fit-out (rooms/cabins.ts).
+   */
+  cabins?: boolean;
+  /** One of those cabins (a ring band's segment). */
+  cabin?: boolean;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
   items?: readonly { item: string; min: number; max: number }[];
 }

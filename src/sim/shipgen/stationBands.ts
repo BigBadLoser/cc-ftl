@@ -6,8 +6,21 @@ import type { RoomSpec } from './plan';
  * Ring-band rooms: the rooms of a round ring fill the band outside (or inside) its corridor as ring segments cut by
  * radial partition walls, so a round station reads as a solid ring of rooms with no plating gaps. Segments are
  * stair-stepped polygons (rooms need not be rectangles: fit-out works on any floor set). Each segment is sized to its
- * room's floor area and doored straight onto the corridor (or, failing that, onto its neighbour).
+ * room's floor area and doored straight onto the corridor (or, failing that, onto its neighbour). Quarters marked for
+ * cabins are cut as one segment a bed, each its own room doored onto the corridor; the first keeps the room's other
+ * planned modules (life support).
  */
+
+/** Floor a band cabin should keep (a bed, its locker, a clear side, room to turn). */
+const CABIN = 16;
+
+/** A quarters room marked for cabins as one cabin spec a bed (the first with the room's other modules). */
+function cabinsOf(r: RoomSpec): RoomSpec[] {
+  const beds = r.mods.filter((m) => m === 'module.bed').length;
+  if (!r.cabins || r.role !== 'quarters' || beds < 2) return [r];
+  const others = r.mods.filter((m) => m !== 'module.bed');
+  return Array.from({ length: beds }, (_, i) => ({ role: 'quarters', mods: ['module.bed', ...(i === 0 ? others : [])], w: 2, h: i === 0 && others.length > 0 ? 5 : 4, cabin: true }));
+}
 
 const TAU = Math.PI * 2;
 
@@ -25,8 +38,79 @@ export function bandRadius(rooms: RoomSpec[], depth: number, share = 1, side: 1 
  * Stamp `rooms` as segments of the band between the corridor (radius R, label `ring`) and radius R +- (depth + 1),
  * over the angle ranges `arcs`. Returns false if a room gets too little floor or no door.
  */
-export function bandRooms(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1, tag = ''): boolean {
-  if (rooms.length === 0) return true;
+export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1, tag = ''): boolean {
+  if (roomsIn.length === 0) return true;
+  // Cabins where the band is wide enough for them; else the quarters stay whole. A band with floor to spare would swell
+  // its cabins: a garden (a small commons) after each cabin run takes the excess, so a cabin keeps about CABIN tiles.
+  let cabins = roomsIn.flatMap(cabinsOf);
+  let cut = cabins.length > roomsIn.length ? cutBand(b, R, cabins, depth, arcs, side) : null;
+  if (cut) {
+    // Floor goes to segments by weight (w * h + 4): a cabin (weight 12) keeps about CABIN tiles when the band's whole
+    // weight is (its floor) * 12 / CABIN. The gardens make up the difference, shared out by cabin run.
+    const cut0 = cut;
+    const floorAll = [...cut0.floor.values()].reduce((t, c) => t + c.length, 0);
+    const weight = cabins.reduce((t, r) => t + r.w * r.h + 4, 0);
+    const want = Math.round((floorAll * 12) / CABIN - weight);
+    const runs = roomsIn.filter((q) => cabinsOf(q).length > 1).length;
+    // Walls take floor too, so the share is a guess: smaller gardens are tried until every room keeps its floor.
+    for (const k of [1, 0.7, 0.45, 0.25]) {
+      if (want * k <= 24 || runs === 0) break;
+      const share = (want * k) / runs;
+      const withGarden = roomsIn.flatMap((q) => {
+        const cs = cabinsOf(q);
+        return cs.length === 1 ? cs : [...cs, { role: 'garden' as const, mods: [], w: Math.max(2, Math.round((share - 4) / depth)), h: depth }];
+      });
+      const again = cutBand(b, R, withGarden, depth, arcs, side);
+      if (again) { cabins = withGarden; cut = again; break; }
+    }
+  }
+  const rooms = cut ? cabins : roomsIn;
+  const plan = cut ?? cutBand(b, R, rooms, depth, arcs, side);
+  if (!plan) return false;
+  const { floor, isFloor } = plan;
+  const cv = b.cv;
+  const key = (x: number, y: number): string => `${x},${y}`;
+  for (const [s, r] of rooms.entries()) {
+    const cells = floor.get(s) ?? [];
+    const xs = cells.map((p) => p[0]);
+    const ys = cells.map((p) => p[1]);
+    const bx = Math.min(...xs) - 1, by = Math.min(...ys) - 1;
+    const rows = Array.from({ length: Math.max(...ys) - by + 2 }, () => Array<string>(Math.max(...xs) - bx + 2).fill('.'));
+    for (const [x, y] of cells) (rows[y - by] as string[])[x - bx] = letterOf(r.role);
+    // Walls: every 8-neighbour that is not floor of some band room.
+    for (const [x, y] of cells) {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const row = rows[y + dy - by] as string[];
+        if (row[x + dx - bx] === '.' && !isFloor.has(key(x + dx, y + dy))) row[x + dx - bx] = '#';
+      }
+    }
+    if (!b.cv.stamp(rows.map((q) => q.join('')), bx, by, `band${R}${tag}:${s}`)) return false;
+    b.parts.push({ x: bx, y: by, w: rows[0]?.length ?? 0, h: rows.length, key: `band${R}${tag}:${s}`, role: r.role, spec: r });
+  }
+  // Doors: straight through one wall onto the corridor, else onto the previous segment.
+  for (const [s] of rooms.entries()) {
+    const cells = floor.get(s) ?? [];
+    const me = cv.labelAt((cells[0] as [number, number])[0], (cells[0] as [number, number])[1]);
+    const spots: [number, number, boolean][] = [];
+    for (const [x, y] of cells) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        if (cv.at(x + dx, y + dy) !== '#' || cv.at(x + 2 * dx, y + 2 * dy) !== '_') continue;
+        const o = cv.labelAt(x + 2 * dx, y + 2 * dy);
+        if (o === ring) spots.push([x + dx, y + dy, true]);
+        else if (o !== me) spots.push([x + dx, y + dy, false]);
+      }
+    }
+    const best = spots.filter((p) => p[2]);
+    const pick = best.length > 0 ? best : spots;
+    if (pick.length === 0) return false;
+    const d = pick[pick.length >> 1] as [number, number, boolean];
+    cv.setDoor(d[0], d[1]);
+  }
+  return true;
+}
+
+/** The band's segments, one a room: floor cells by room, or null if a room gets too little floor (nothing stamped). */
+function cutBand(b: Builder, R: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1): { floor: Map<number, [number, number][]>; isFloor: Set<string> } | null {
   const cv = b.cv;
   const lo = side > 0 ? R + 0.5 : R - depth - 1.5;
   const hi = side > 0 ? R + depth + 1.5 : R - 0.5;
@@ -71,44 +155,8 @@ export function bandRooms(b: Builder, R: number, ring: number, rooms: RoomSpec[]
   }
   const isFloor = new Set<string>();
   for (const cells of floor.values()) for (const [x, y] of cells) isFloor.add(key(x, y));
-  for (const [s, r] of rooms.entries()) {
-    const cells = floor.get(s) ?? [];
-    if (cells.length < Math.max(4, Math.floor((r.w * r.h) / 2))) return false;
-    const xs = cells.map((p) => p[0]);
-    const ys = cells.map((p) => p[1]);
-    const bx = Math.min(...xs) - 1, by = Math.min(...ys) - 1;
-    const rows = Array.from({ length: Math.max(...ys) - by + 2 }, () => Array<string>(Math.max(...xs) - bx + 2).fill('.'));
-    for (const [x, y] of cells) (rows[y - by] as string[])[x - bx] = letterOf(r.role);
-    // Walls: every 8-neighbour that is not floor of some band room.
-    for (const [x, y] of cells) {
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const row = rows[y + dy - by] as string[];
-        if (row[x + dx - bx] === '.' && !isFloor.has(key(x + dx, y + dy))) row[x + dx - bx] = '#';
-      }
-    }
-    if (!b.cv.stamp(rows.map((q) => q.join('')), bx, by, `band${R}${tag}:${s}`)) return false;
-    b.parts.push({ x: bx, y: by, w: rows[0]?.length ?? 0, h: rows.length, key: `band${R}${tag}:${s}`, role: r.role, spec: r });
-  }
-  // Doors: straight through one wall onto the corridor, else onto the previous segment.
-  for (const [s] of rooms.entries()) {
-    const cells = floor.get(s) ?? [];
-    const me = cv.labelAt((cells[0] as [number, number])[0], (cells[0] as [number, number])[1]);
-    const spots: [number, number, boolean][] = [];
-    for (const [x, y] of cells) {
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-        if (cv.at(x + dx, y + dy) !== '#' || cv.at(x + 2 * dx, y + 2 * dy) !== '_') continue;
-        const o = cv.labelAt(x + 2 * dx, y + 2 * dy);
-        if (o === ring) spots.push([x + dx, y + dy, true]);
-        else if (o !== me) spots.push([x + dx, y + dy, false]);
-      }
-    }
-    const best = spots.filter((p) => p[2]);
-    const pick = best.length > 0 ? best : spots;
-    if (pick.length === 0) return false;
-    const d = pick[pick.length >> 1] as [number, number, boolean];
-    cv.setDoor(d[0], d[1]);
-  }
-  return true;
+  for (const [s, r] of rooms.entries()) if ((floor.get(s) ?? []).length < Math.max(4, Math.floor((r.w * r.h) / 2))) return null;
+  return { floor, isFloor };
 }
 
 /**
