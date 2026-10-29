@@ -147,9 +147,11 @@ def _piece(key, far, layer, margin, look):
         planes = planes + [LAYERS[layer]]
         own = {id(q[0]): h for q, h in shared}
         for pts, m, i in _solid(planes):
-            if i == len(planes) - 1:
-                continue                                # (the deck, where the layers meet: neither draws it, or
-            h = own.get(id(planes[i][0]))               # anti-aliasing leaks its tone along the seam)
+            if i == len(planes) - 1:                    # (the deck, where the layers meet: the over layer draws
+                if layer == "under" and near(f[0]):     # none of it, or anti-aliasing leaks its tone along the seam;
+                    rel.poly(pts, "steel", 3, m, fixed=OUTER)   # the under one closes its cut in the face's tone)
+                continue
+            h = own.get(id(planes[i][0]))
             if h is None:
                 rel.poly(pts, "steel", 3, m, fixed=_tone(m, i, n, f[0]))
                 continue
@@ -158,12 +160,29 @@ def _piece(key, far, layer, margin, look):
                 for p2, m2, j in _solid(planes + [cut]):
                     if j == i:
                         rel.poly(p2, "steel", 3, m2, fixed=END)
+        if near(f[0]):                                  # (the bay looks' frame, as the runs carry it)
+            _frame(rel, f, planes)
         if layer == "over":
             _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1])
     return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
 
 
+def _frame(rel, f, planes):
+    """The bay looks' shared frame on a near part that is not a run (wall3d_belly_facet), on its own face and slope."""
+    from . import wall3d_belly_facet as BF
+    v, c = Vector((f[0][0], f[0][1], 0.0)), f[1] / 32
+
+    def find(q):
+        return next(p for p in planes if (p[0] - q[0]).length < 1e-9 and abs(p[1] - q[1]) < 1e-9)
+    foot = ZG - ARMOUR
+    BF.dress(rel, _solid, planes, find((v, c)), find(_slope(v, c)[0]), ZG, foot, foot - SLOPE[1])
+
+
 def wide(key, far=ZG, layer="over", look=20):
-    """A piece as env_build's "wide" kind: (its own, the same run on past the tile's edges); none if it is empty."""
+    """A piece as env_build's "wide" kind: (its own, the same run on past the tile's edges); none if it is empty. A
+    piece of more than one front (a corner) takes its colours from itself: pushed out past the tile it is another
+    shape (as the exterior's, whose corners are "block" pieces)."""
     own = piece(key, far, layer, look=look)
-    return (own, piece(key, far, layer, WIDE, look)) if own else []
+    if not own:
+        return []
+    return (own, piece(key, far, layer, WIDE, look) if ";" not in key else piece(key, far, layer, look=look))
