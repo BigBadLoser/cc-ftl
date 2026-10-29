@@ -6,7 +6,6 @@ order: 1
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
   import ModuleTable from '../../../lib/ModuleTable.svelte'
-  import ComingLater from '../../../lib/ComingLater.svelte'
 </script>
 
 Almost everything aboard runs on power: air, lights, shields, engines, guns and workshops. Reactors make it, everything
@@ -19,12 +18,6 @@ rooms make no difference. Each ship and station has its own pool; docking doesn'
 
 The ship overview shows the pool as **supply / demand** (for example `50/32`), and turns red when demand is higher than
 supply. Click any module to see whether it's **Running** or has **No power**, and how much it supplies or draws.
-
-<ComingLater>
-
-Separate power networks joined by conduits, so a ship can lose power to one section and not another.
-
-</ComingLater>
 
 ## Shortages and the power order
 
@@ -79,11 +72,7 @@ through open doors and slowly bleeds away on its own. Engines add a little heat 
 Crew start taking damage above <Stat kind="tuning" id="HOT_ABOVE" unit="°C" />, and get grumpy in hot rooms well before
 that. Give reactors room to breathe: don't wall one into a small space where people work or sleep.
 
-<ComingLater>
-
-Reactors burning fuel rods. For now a reactor runs for as long as it is switched on and intact.
-
-</ComingLater>
+Reactors don't need fuel: one runs for as long as it's switched on and intact.
 
 ## Under fire
 
