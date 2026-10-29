@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import { flee } from '../galaxy/hyperspace';
 import { leave } from '../galaxy/respond';
 import { FTL_CHARGE_SEC } from '../tuning';
+import { overchargeError, startOvercharge, startVent, ventError } from './heat';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError, shipGrid, shipIdOf } from '../regions';
@@ -110,6 +111,26 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const combat = sim.world.get(cmd.ship, CombatC);
     if (!combat) return reject(sim, cmd.type, 'noShip');
     combat.volley = true;
+  },
+  'combat.vent': (sim, cmd) => {
+    const combat = sim.world.get(cmd.ship, CombatC);
+    if (!combat || shipById(sim, cmd.ship)?.state !== 'active') return reject(sim, cmd.type, 'noShip');
+    const why = ventError(combat);
+    if (why) return reject(sim, cmd.type, why);
+    startVent(sim, cmd.ship, combat);
+  },
+  'combat.overcharge': (sim, cmd) => {
+    const combat = sim.world.get(cmd.ship, CombatC);
+    if (!combat || shipById(sim, cmd.ship)?.state !== 'active') return reject(sim, cmd.type, 'noShip');
+    if (!['weapons', 'shields', 'engines'].includes(cmd.system)) return reject(sim, cmd.type, 'badValue');
+    const why = overchargeError(combat, cmd.system);
+    if (why) return reject(sim, cmd.type, why);
+    startOvercharge(sim, cmd.ship, combat, cmd.system);
+  },
+  'combat.setAutoHeat': (sim, cmd) => {
+    const combat = sim.world.get(cmd.ship, CombatC);
+    if (!combat) return reject(sim, cmd.type, 'noShip');
+    combat.heat.auto = cmd.auto;
   },
   'combat.flee': (sim, cmd) => {
     const entity = cmd.ship;

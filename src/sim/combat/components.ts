@@ -114,6 +114,28 @@ export interface Target {
 
 export type Doctrine = 'weapons' | 'shields' | 'random';
 
+/** The systems that can be overcharged (`combat.overcharge`). */
+export type OverchargeSystem = 'weapons' | 'shields' | 'engines';
+/** One system's overcharge, in ticks: `left` while it is active, `cooldown` until it can be started again. */
+export interface Overcharge {
+  left: number;
+  cooldown: number;
+}
+/** A ship's combat heat (rules in combat/heat.ts, numbers in combat/heatTuning.ts). */
+export interface Heat {
+  /** 0..HEAT_MAX. */
+  value: number;
+  /** Ticks of overheat lockout left. */
+  lockout: number;
+  /** Ticks of vent left. */
+  vent: number;
+  /** Ticks the running vent was started with (its length depends on the coolant console), for the HUD. */
+  ventLen: number;
+  /** The player's ship vents and holds volleys on its own (the AI always does). */
+  auto: boolean;
+  overcharge: Record<OverchargeSystem, Overcharge>;
+}
+
 /** Per-ship combat state. */
 export interface Combat {
   /** Hold fire: weapons charge but wait for combat.fireVolley. */
@@ -136,6 +158,7 @@ export interface Combat {
    */
   ftlOrder?: { jump: string[] | null; withDocked?: number[]; overcharge?: true } | null;
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
+  heat: Heat;
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;
   /** Piloting skill of whoever mans the helm (0 when nobody does); with `evasion` it gives the hyperspace evade odds. */

@@ -144,6 +144,12 @@ export type Command =
    * spent (`Travel.phase` 'adrift'); `galaxy.jump` then picks where to go. In an event grid it just leaves the grid. AI ships just leave (state 'fled').
    */
   | { type: 'combat.flee'; ship: number }
+  /** Vent heat: shields drop and the weapons hold fire for a few seconds while the meter dumps; shields then regenerate. Refused when cool, venting or overheated. */
+  | { type: 'combat.vent'; ship: number }
+  /** Overcharge one system for a few seconds (adds heat per second), then a cooldown. Refused while overheated or on cooldown. */
+  | { type: 'combat.overcharge'; ship: number; system: 'weapons' | 'shields' | 'engines' }
+  /** The ship vents and holds volleys on its own to avoid overheating (the default); off leaves it all to the player. */
+  | { type: 'combat.setAutoHeat'; ship: number; auto: boolean }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */

@@ -39,7 +39,9 @@ function legacyWorld(sim: Sim): unknown {
   for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
-    const { pilot, cruisePilot, cruiseEvasion, ...rest } = raw as Record<string, unknown>;
+    // `heat` (combat heat, #185) is a new empty field in the same way.
+    const { pilot, cruisePilot, cruiseEvasion, heat, ...rest } = raw as Record<string, unknown>;
+    void heat;
     void pilot;
     void cruisePilot;
     void cruiseEvasion;
@@ -258,4 +260,7 @@ describe('sector refactor equivalence', () => {
 // Repinned for automatic damage control (#181): every working role now does damage control at priority 1 (was 2; the hashed world holds crew priorities, so
 // the combat hash changes by that alone: with the old role table it still gives c28a5816), and crew seal hull breaches by themselves (a wall build in the
 // firefighting category), which changes the fire and breach run.
-const EXPECTED = { combat: '7dbce8c4', disaster: '6317c54b' };
+// Repinned for combat heat (#185): in the 2400-tick run the raider (ship 78) overcharges its weapons 3 times (ticks 2, 910, 1810) and vents twice (ticks 875, 1775),
+// which changes its volleys and its shield layers. With the AI overcharge off (AI_OVERCHARGE_BELOW 0) the two vents alone still give 1878aa45. The empty-shaped
+// new `heat` field on the combat component is dropped in legacyWorld, so the disaster hash (no fight) is unchanged.
+const EXPECTED = { combat: 'd3ae8215', disaster: '6317c54b' };
