@@ -1,139 +1,140 @@
 import type { Rng } from '../../rng';
-import { accessTile, rotatedSize } from '../../modules/footprint';
-import type { ModuleDef } from '../../registry';
+import { footprintTiles, rotatedSize, type Tile } from '../../modules/footprint';
 import type { Layout, PlacedModule } from '../layout';
+import { bedSides } from '../useTiles';
 
 /**
- * Whole-room plans: a room laid out at once from a repeating unit, instead of module by module (furnish.ts), so its
- * furniture lines up. A plan works on a plain rectangle only; it places everything or nothing, and the caller falls back
- * to the arrangement's steps when it returns false.
+ * Whole-room plans: a room laid out at once, piece by piece, each piece at the best-scoring spot of every spot it fits
+ * (after Tutenel et al. 2009's rule-based layout solver: the layout's use rules trim the spots, attractors and
+ * detractors weight the rest). Everything is placed or nothing (the caller falls back to the arrangement's steps).
+ * Works on any room shape.
  *
- * Dorm: beds in an unbroken row along one wall, each head to the wall with its locker beside it, skipping door
- * approaches; the rest on the opposite wall when the room is deep enough for an aisle between; life support against an
- * end wall; with `desk`, a table and chair at the other end.
+ * Berths (quarters): each bed head to a wall with a locker beside its head. `rows` (barracks) lines the beds up along
+ * a wall, a locker between each pair; `apart` (homes) spreads them round the walls in ones and twos, away from the
+ * doors, and a room big enough gets a lounge table with chairs out on the floor, away from the beds. Life support goes
+ * on a free wall, away from the beds.
  */
 
-type Side = 'n' | 's' | 'w' | 'e';
-interface Box { x0: number; y0: number; x1: number; y1: number }
+export type BerthStyle = 'rows' | 'apart';
 
-/** Rotation that turns a 1 x 2 piece's long side into the room from wall `side` (head to the wall). */
-const INTO: Record<Side, number> = { n: 0, s: 2, w: 1, e: 3 };
-/** Rotation that lays a 1 x 2 piece along wall `side`. */
-const ALONG: Record<Side, number> = { n: 1, s: 3, w: 0, e: 2 };
+interface Cand { pm: PlacedModule; score: number }
 
-/** The tile `d` steps in from wall `side` at position `p` along it. */
-function at(b: Box, side: Side, p: number, d: number): { x: number; y: number } {
-  if (side === 'n') return { x: b.x0 + p, y: b.y0 + d };
-  if (side === 's') return { x: b.x0 + p, y: b.y1 - d };
-  if (side === 'w') return { x: b.x0 + d, y: b.y0 + p };
-  return { x: b.x1 - d, y: b.y0 + p };
-}
-const runOf = (b: Box, side: Side): number => (side === 'n' || side === 's' ? b.x1 - b.x0 + 1 : b.y1 - b.y0 + 1);
-const depthOf = (b: Box, side: Side): number => (side === 'n' || side === 's' ? b.y1 - b.y0 + 1 : b.x1 - b.x0 + 1);
-const OPP: Record<Side, Side> = { n: 's', s: 'n', w: 'e', e: 'w' };
-/** A chair's rotation facing wall `side` (chairs face north at 0, east 1, south 2, west 3). */
-const FACE: Record<Side, number> = { n: 0, e: 1, s: 2, w: 3 };
-
-/** Top-left of a piece of `def` at rotation `rot` whose footprint starts at tile t (growing into the room from `side`). */
-function anchor(def: ModuleDef, rot: number, side: Side, t: { x: number; y: number }): { x: number; y: number } {
-  const [w, h] = rotatedSize(def, rot);
-  return { x: side === 'e' ? t.x - w + 1 : t.x, y: side === 's' ? t.y - h + 1 : t.y };
+/** Chebyshev gap between two footprints (1 = touching, diagonals included). */
+function gap(a: Tile[], b: Tile[]): number {
+  let best = Infinity;
+  for (const p of a) for (const q of b) best = Math.min(best, Math.max(Math.abs(p.x - q.x), Math.abs(p.y - q.y)));
+  return best;
 }
 
-/** Lay out a dorm in `room`; false (and nothing placed) when it does not fit. */
-export function planDorm(lay: Layout, rng: Rng, room: number, beds: number, extras: { lifeSupport: number; desk: boolean }): boolean {
+export function planBerths(
+  lay: Layout, rng: Rng, room: number, beds: number, o: { lifeSupport: number; style: BerthStyle; lounge: boolean },
+): boolean {
   const tiles = lay.roomTiles(room);
   if (tiles.length === 0) return false;
-  const xs = tiles.map((i) => i % lay.w), ys = tiles.map((i) => Math.floor(i / lay.w));
-  const b: Box = { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
-  if ((b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1) !== tiles.length) return false;
-  const bed = lay.defs['module.bed'], locker = lay.defs['module.storage_locker'], ls = lay.defs['module.lifeSupport'];
+  const bed = lay.defs['module.bed'], locker = lay.defs['module.storage_locker'], ls = lay.defs['module.lifeSupport'], table = lay.defs['module.mess_table'];
   if (!bed || !locker || !ls) return false;
+  const W = lay.w;
+  const wall = (t: Tile): boolean => lay.at(t.x, t.y) === '#';
+  const doors: Tile[] = [];
+  for (const i of tiles) for (const n of lay.neighbours(i)) if (lay.cells[n] === 'D') doors.push({ x: n % W, y: Math.floor(n / W) });
+  const xs = tiles.map((i) => i % W), ys = tiles.map((i) => Math.floor(i / W));
+  const centre = { x: xs.reduce((a, b) => a + b, 0) / tiles.length, y: ys.reduce((a, b) => a + b, 0) / tiles.length };
   const base = lay.unreached();
   const n0 = lay.modules.length;
+  const placedBeds: Tile[][] = [];
+  const undo = (): false => { while (lay.modules.length > n0) lay.pop(); return false; };
   const put = (pm: PlacedModule): boolean => {
     if (lay.fitError(pm.def, pm.x, pm.y, pm.rot, room)) return false;
     lay.push(pm);
     if (lay.unreached() > base) { lay.pop(); return false; }
     return true;
   };
-  const undo = (): false => { while (lay.modules.length > n0) lay.pop(); return false; };
-  // A locker against wall `side` facing into the room.
-  const lockerAt = (side: Side, t: { x: number; y: number }): PlacedModule | null => {
-    for (let rot = 0; rot < 4; rot++) {
-      const a = accessTile(locker, t.x, t.y, rot);
-      if (a && Math.abs(a.x - t.x) + Math.abs(a.y - t.y) === 1 && (side === 'n' ? a.y > t.y : side === 's' ? a.y < t.y : side === 'w' ? a.x > t.x : a.x < t.x)) return { def: 'module.storage_locker', x: t.x, y: t.y, rot };
+  /** Every spot `def` fits in the room, scored; the best is tried first (a little noise breaks ties by seed). */
+  const best = (def: string, score: (pm: PlacedModule, fp: Tile[]) => number | null): boolean => {
+    const d = lay.defs[def];
+    if (!d) return false;
+    const cands: Cand[] = [];
+    for (const i of tiles) {
+      for (let rot = 0; rot < 4; rot++) {
+        if (d.footprint[0] === d.footprint[1] && rot > 0) break;
+        const pm = { def, x: i % W, y: Math.floor(i / W), rot };
+        if (lay.fitError(def, pm.x, pm.y, rot, room)) continue;
+        const s = score(pm, footprintTiles(d, pm.x, pm.y, rot));
+        if (s !== null) cands.push({ pm, score: s + rng.next() * 0.5 });
+      }
     }
-    return null;
+    cands.sort((a, b) => b.score - a.score);
+    for (const c of cands.slice(0, 12)) if (put(c.pm)) return true;
+    return false;
   };
-  // Walls for the rows: the longer ones first (fewer doors first among equals), deep enough for a bed and an aisle.
-  const sides = (['n', 's', 'w', 'e'] as Side[]).filter((s) => depthOf(b, s) >= 3)
-    .sort((p, q) => runOf(b, q) - runOf(b, p) || rng.next() - 0.5);
-  if (sides.length === 0) return false;
-  const first = sides[0] as Side;
-  const rows: Side[] = [first, ...(depthOf(b, first) >= 5 ? [OPP[first]] : [])];
-  // A locker beside every bed's head; where the walls are too short for that, one between every pair, then none.
-  const lay1 = (gap: number): boolean => {
-    let left = beds;
-    rows.forEach((side, ri) => {
-      const run = runOf(b, side);
-      const fromEnd = rng.chance(0.5);
-      // The beds shared out evenly between the rows (the first row takes any odd one).
-      const want = Math.ceil(left / (rows.length - ri));
-      let here = 0;
-      for (let k = 0, inRun = 0; k < run && left > 0 && here < want;) {
-        const p = fromEnd ? run - 1 - k : k;
-        const brot = INTO[side];
-        const ba = anchor(bed, brot, side, at(b, side, p, 0));
-        if (!put({ def: 'module.bed', x: ba.x, y: ba.y, rot: brot })) { k++; continue; }
-        left--;
-        here++;
-        k++;
-        if (++inRun % gap !== 0) continue;
-        // The locker beside the bed's head, on the side the row is heading.
-        const q = fromEnd ? run - 1 - k : k;
-        const lk = q >= 0 && q < run ? lockerAt(side, at(b, side, q, 0)) : null;
-        if (lk && put(lk)) k++;
+  const doorGap = (fp: Tile[]): number => (doors.length > 0 ? gap(fp, doors) : 99);
+
+  for (let k = 0; k < beds; k++) {
+    const ok = best('module.bed', (pm, fp) => {
+      const [w, h] = rotatedSize(bed, pm.rot);
+      const ends: Tile[] = h > w ? [{ x: pm.x, y: pm.y - 1 }, { x: pm.x, y: pm.y + h }] : [{ x: pm.x - 1, y: pm.y }, { x: pm.x + w, y: pm.y }];
+      if (!ends.some(wall)) return null; // head to a wall
+      const sideWall = bedSides(bed, pm.x, pm.y, pm.rot).some((s) => s.every(wall));
+      let s = 3 + (sideWall ? 1 : 0);
+      const dg = doorGap(fp);
+      if (dg <= 1) s -= 3; else if (dg === 2) s -= 1;
+      for (const other of placedBeds) {
+        const g = gap(fp, other);
+        if (o.style === 'rows') {
+          // A row: the next bed two along the same wall (a locker between), parallel.
+          const sameLine = fp.some((p) => other.some((q) => (p.x === q.x || p.y === q.y)));
+          if (g === 2 && sameLine) s += 4;
+        } else {
+          if (g <= 1) s -= 3;
+          else if (g === 2) s -= placedBeds.length > 1 ? 1.5 : -0.5; // a pair shares a nightstand; more crowd
+          else s += Math.min(g, 6) * 0.3;
+        }
       }
+      return s;
     });
-    return left === 0;
-  };
-  let fits = false;
-  for (const gap of [1, 2, Infinity]) {
-    if (lay1(gap)) { fits = true; break; }
-    undo();
-  }
-  if (!fits) return false;
-  // Life support against an end wall, along it; the desk against the other end.
-  const ends = (['n', 's', 'w', 'e'] as Side[]).filter((s) => !rows.includes(s));
-  for (let i = 0; i < extras.lifeSupport; i++) {
-    let done = false;
-    for (const side of ends) {
-      const run = runOf(b, side);
-      for (const p of [Math.floor(run / 2) - 1, 0, run - 2, Math.floor(run / 2)]) {
-        if (p < 0 || p > run - 2) continue;
-        const rot = ALONG[side];
-        const a = anchor(ls, rot, side, at(b, side, p, 0));
-        if (put({ def: 'module.lifeSupport', x: a.x, y: a.y, rot })) { done = true; break; }
-      }
+    if (!ok) return undo();
+    const pm = lay.modules[lay.modules.length - 1] as PlacedModule;
+    const fp = footprintTiles(bed, pm.x, pm.y, pm.rot);
+    placedBeds.push(fp);
+    // Its locker beside the head (the end at the wall), against that wall if it can be.
+    const [w, h] = rotatedSize(bed, pm.rot);
+    const headAt0 = h > w ? wall({ x: pm.x, y: pm.y - 1 }) : wall({ x: pm.x - 1, y: pm.y });
+    const head = headAt0 ? (fp[0] as Tile) : (fp[fp.length - 1] as Tile);
+    const spots = h > w ? [{ x: head.x - 1, y: head.y }, { x: head.x + 1, y: head.y }] : [{ x: head.x, y: head.y - 1 }, { x: head.x, y: head.y + 1 }];
+    for (const t of rng.chance(0.5) ? spots : [...spots].reverse()) {
+      let done = false;
+      for (let rot = 0; rot < 4 && !done; rot++) done = put({ def: 'module.storage_locker', x: t.x, y: t.y, rot });
       if (done) break;
     }
-    if (!done) return undo();
   }
-  if (extras.desk) {
-    const table = lay.defs['module.mess_table'];
-    for (const side of [...ends].reverse()) {
-      if (!table) break;
-      const run = runOf(b, side);
-      const rot = side === 'n' || side === 's' ? 0 : 1;
-      const p = Math.max(0, Math.floor(run / 2) - 1);
-      const t = anchor(table, rot, side, at(b, side, p, 0));
-      if (!put({ def: 'module.mess_table', x: t.x, y: t.y, rot })) continue;
-      // Its chair in front, turned to face it (toward the wall).
-      const [tw, th] = rotatedSize(table, rot);
-      const seat = side === 'n' ? { x: t.x, y: t.y + th } : side === 's' ? { x: t.x, y: t.y - 1 } : side === 'w' ? { x: t.x + tw, y: t.y } : { x: t.x - 1, y: t.y };
-      put({ def: 'module.chair', x: seat.x, y: seat.y, rot: FACE[side] });
-      break;
+  for (let k = 0; k < o.lifeSupport; k++) {
+    const ok = best('module.lifeSupport', (pm, fp) => {
+      const [w, h] = rotatedSize(ls, pm.rot);
+      const back = h > w ? [fp.map((t) => ({ x: t.x - 1, y: t.y })), fp.map((t) => ({ x: t.x + w, y: t.y }))] : [fp.map((t) => ({ x: t.x, y: t.y - 1 })), fp.map((t) => ({ x: t.x, y: t.y + h }))];
+      if (!back.some((s) => s.every(wall))) return null; // along a wall
+      const near = placedBeds.length > 0 ? Math.min(...placedBeds.map((b) => gap(fp, b))) : 6;
+      return Math.min(near, 6) * 0.5 - (doorGap(fp) <= 1 ? 2 : 0);
+    });
+    if (!ok) return undo();
+  }
+  if (o.lounge && table) {
+    // The lounge: a table out on the floor (off the walls), toward the middle and away from the beds, two chairs at it.
+    const ok = best('module.mess_table', (pm, fp) => {
+      const ring = fp.flatMap((t) => [{ x: t.x + 1, y: t.y }, { x: t.x - 1, y: t.y }, { x: t.x, y: t.y + 1 }, { x: t.x, y: t.y - 1 }]);
+      if (ring.some(wall)) return null;
+      const near = placedBeds.length > 0 ? Math.min(...placedBeds.map((b) => gap(fp, b))) : 6;
+      if (near < 2) return null;
+      const c = { x: fp.reduce((a, t) => a + t.x, 0) / fp.length, y: fp.reduce((a, t) => a + t.y, 0) / fp.length };
+      return Math.min(near, 5) * 0.5 - Math.hypot(c.x - centre.x, c.y - centre.y) * 0.4;
+    });
+    if (ok) {
+      const t = lay.modules[lay.modules.length - 1] as PlacedModule;
+      const [w, h] = rotatedSize(table, t.rot);
+      // Chairs on the long sides, facing the table (r0 faces -y, r1 +x, r2 +y, r3 -x).
+      const seats = w >= h
+        ? [{ x: t.x + rng.int(0, w - 1), y: t.y - 1, rot: 2 }, { x: t.x + rng.int(0, w - 1), y: t.y + h, rot: 0 }]
+        : [{ x: t.x - 1, y: t.y + rng.int(0, h - 1), rot: 1 }, { x: t.x + w, y: t.y + rng.int(0, h - 1), rot: 3 }];
+      for (const s of seats) put({ def: 'module.chair', ...s });
     }
   }
   return true;

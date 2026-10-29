@@ -130,7 +130,7 @@ export const stations = {
   },
   // Military depot: heavy guns, shield generators, armouries and barracks, few docks.
   'station.military': {
-    name: 'Navy depot', kind: 'military', side: 'hostile', motif: 'motif.navy', security: 0.55,
+    name: 'Navy depot', kind: 'military', side: 'hostile', motif: 'motif.navy', berths: 'rows', security: 0.55,
     crew: { required: ['role.engineer', 'role.gunner', 'role.gunner'], pool: [{ value: 'role.gunner', weight: 3 }, { value: 'role.engineer', weight: 2 }, { value: 'role.medic', weight: 1 }], species: ['species.human'] },
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },

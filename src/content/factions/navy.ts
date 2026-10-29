@@ -48,6 +48,7 @@ const noses: ChunkDef[] = [
 export const navy = {
   name: 'Navy',
   motif: 'motif.navy',
+  berths: 'rows',
   art: { hull: 'hull.plated', wall: 'wall.clean', roof: 'roof.armour', livery: 'livery.navy', signature: ['module.shieldGen', 'module.missileLauncher'] },
   architecture: {
     roles: [

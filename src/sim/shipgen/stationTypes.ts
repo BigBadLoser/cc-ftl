@@ -50,6 +50,8 @@ export interface StationDef {
   /** Combat side of a spawned station (spawning is a later slice). */
   side: Faction;
   motif: string;
+  /** Quarters layout (FactionDef.berths). */
+  berths?: 'rows' | 'apart';
   /** Share (0..1) of the crew who are security (armed fighters, `role.security`). */
   security: number;
   /** Role ids of the non-security crew, weighted; the first `required` always come aboard. */

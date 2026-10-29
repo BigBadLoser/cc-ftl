@@ -6,7 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planDorm, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, type RoomDraw } from './rooms';
 import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -103,7 +103,7 @@ function fitOut(
     if (!spec || !d?.arr.plan) return;
     keepDoorApproach(lay, room);
     const n = (id: string): number => spec.mods.filter((m) => m === id).length;
-    d.planned = planDorm(lay, rng, room, n('module.bed'), { lifeSupport: n('module.lifeSupport'), desk: !!d.arr.plan.desk });
+    d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style: f.berths ?? 'apart', lounge: !!d.arr.plan.lounge });
   });
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;

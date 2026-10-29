@@ -176,6 +176,8 @@ export interface FactionDef {
   side?: Faction;
   /** Building style id; also the art lookup key. */
   motif: string;
+  /** How quarters are laid out (rooms/plans.ts): 'rows' barracks, 'apart' (default) beds spread round the walls. */
+  berths?: 'rows' | 'apart';
   /** Art variants for the renderer (looked up later; no art is generated here). */
   art: { hull: string; wall: string; roof: string; livery: string; signature: readonly string[] };
   architecture: ArchitectureDef;

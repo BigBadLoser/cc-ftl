@@ -23,7 +23,7 @@ export function stationFaction(def: StationDef, size: StationSize): FactionDef {
     batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'], ...(def.tiers[size].cages ? { cages: def.tiers[size].cages } : {}), ...(def.atrium ? { atrium: def.atrium } : {}),
   };
   return {
-    name: def.name, side: def.side, motif: def.motif,
+    name: def.name, side: def.side, motif: def.motif, ...(def.berths ? { berths: def.berths } : {}),
     art: { hull: 'hull.clean', wall: 'wall.clean', roof: 'roof.grid', livery: 'livery.navy', signature: [] },
     architecture: { roles: [], symmetry: 0, corridorWidth: [1, 2], strutLength: [1, 3], battery: 2, noses: [] },
     hullFamilies: [fam], transition: def.transition, weapons: def.weapons, shields: def.shields, stock: def.stock,
