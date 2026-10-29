@@ -5,7 +5,7 @@ Top / TopD; the far side, seen from behind, as caps of the same solid). Along a 
 its fronts' at once (where two meet, a hip), at a concave corner either side's; each part the convex solid inside a set
 of flat cuts, so every shape (a join, an end step, an inner step behind a deep diagonal) comes from one rule."""
 import math
-from itertools import combinations
+from itertools import combinations, product, repeat
 
 from mathutils import Vector
 
@@ -108,23 +108,68 @@ def _front(f):
     return Vector((f[0][0], f[0][1], 0.0)), f[1] / 32, HO.deep(f[0])
 
 
-def _part(g, before, after, H, tile):
+def _part(g, side, H, tile, extra=()):
     """A convex run's parts [(ends, rest)], the cuts they share, its fronts (s, c, g) and its ridge cuts (_ridges):
-    all its fronts' upright faces and leans (D in at the top) cut it, and a concave corner's other side where their
-    depths meet (that cut shared). No back: the roof (flush with the hull's top) lies over the rest (roof()), so the
-    solid is never cut across a face seen (a cut leaks through anti-aliasing as a dotted line)."""
+    all its fronts' upright faces and leans (D in at the top) cut it, and its concave corners' cells (side: _cells,
+    those cuts shared), and `extra` (another stretch's ship side: _ship). No back: the roof (flush with the hull's top)
+    lies over the rest (roof()), so the solid is never cut across a face seen (a cut leaks through anti-aliasing as a
+    dotted line)."""
     k = D / LEAN_RISE
     fronts = [_front(f) for f in g]
     faces = [(UP, H), (-UP, 0.0)]
     for s, c, w in fronts:
         faces += [(s, c), (s + w * k * UP, c - w * D + w * k * H)]
-    side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
+    faces += list(extra)
     ridges = _ridges(fronts, H, k)
     if not ridges:
         return [(tile, faces + side)], side, fronts, ()
     under, over = (UP, H - LEAN_RISE), (-UP, LEAN_RISE - H)              # (split at the bend, a crease all round:
     return ([(tile, faces + side + [under]), (tile, faces + side + [over] + ridges)],    # the cuts only over it)
             side + [under, over], fronts, ridges)
+
+
+def _cells(g, corners):
+    """A convex run's share of the hull at its concave corners (corners: (the other side's front o, this side's f,
+    the other side's run)), as cells (lists of cuts; a convex part each). Each side has the hull on its side of the
+    corner's bisector, but past one side's back, where one of the other run's further fronts (not the one at the
+    corner) is nearer than that run's corner front, the hull is that run's: at a narrow notch the bisector runs on
+    across the tile into a run's far end (a short diagonal past it). A plain corner (one front each side) keeps the
+    bisector alone."""
+    def flip(q):
+        return (-q[0], -q[1])
+    options = []
+    for o, f, other in corners:
+        q = _lift(HO.nearer(o, f))
+        mine = [h for h in g if h is not f]
+        theirs = [h for h in other if h is not o]
+        cells = [[q]] if not theirs else [
+            [q, flip(_lift(HO.at_least(f, HO.back(f[0]))))],
+            [q, _lift(HO.at_least(f, HO.back(f[0])))] + [_lift(HO.nearer(o, h)) for h in theirs]]
+        for j, h in enumerate(mine):                                    # (past the other side's back, nearer one of
+            cells.append([flip(q), _lift(HO.at_least(o, HO.back(o[0]))), _lift(HO.nearer(h, f))]  # this run's
+                         + [flip(_lift(HO.nearer(e, f))) for e in mine[:j]])                # further fronts)
+        options.append(cells)
+    return [sum(c, []) for c in product(*options)]
+
+
+def _corners(groups, i):
+    """A stretch's run i's concave corners, as _cells takes them."""
+    g, before, after = groups[i]
+    return ([(before, g[0], groups[i - 1][0])] if before else []) + ([(after, g[-1], groups[i + 1][0])] if after else [])
+
+
+def _ship(stretch, H, eps=0.002):
+    """A stretch's ship side, as cells (each a convex run's fronts' faces and leans, its concave corners' bisectors),
+    eps behind them: another stretch's solid on the same tile kept to it (each runs on across the tile; past the
+    other's front it would stand over that one's faces)."""
+    k, cells = D / LEAN_RISE, []
+    for g, before, after in HO.groups(stretch):
+        cell = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
+        for s, c, w in map(_front, g):
+            for n, d in ((s, c), (s + w * k * UP, c - w * D + w * k * H)):
+                cell.append((n, d - eps * n.length))
+        cells.append(cell)
+    return cells
 
 
 def _screen(d):
@@ -188,21 +233,24 @@ def piece(key, H=None, margin=0.0):
     straight run's share of it (a join's, a corner's: art()) is the run set's own art, clipped to it."""
     H = W.hull_top() if H is None else H
     rel = T.Relief(f"ext_solid_{HO.name(key)}")
-    art = []
-    for stretch in HO.parse(key):
-        for g, before, after in HO.groups(stretch):
-            parts, shared, fronts, ridges = _part(g, before, after, H, _tile(margin))
-            side = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
-            runs = [i for i, (s2, _) in enumerate(g) if s2 in HO.NEAR] if len(g) > 1 or side else []
-            rest = parts[0][1]                                          # (its fronts' faces: 2 + 2 i, 3 + 2 i)
-            own = [q for i in runs for q in rest[2 + 2 * i:4 + 2 * i]]
-            _emit(rel, parts, fronts, shared + own, {id(q): YS[5] for q in ridges})
-            _seam(rel, parts[-1], g, H)
-            DD.detail(rel, _solid, fronts, g, side, _tile(margin), H, skip=runs)
-            for i in runs:                                              # (the run's art, cut by the rest's faces)
-                cut = [q for j in range(len(g)) if j != i for q in rest[2 + 2 * j:4 + 2 * j]] + side
-                art.append((g[i][0], cut))
-    objs = rel.build()
+    art, stretches = [], HO.parse(key)
+    for n, stretch in enumerate(stretches):
+        groups = HO.groups(stretch)
+        others = [_ship(st, H) for j, st in enumerate(stretches) if j != n]
+        for gi, (g, before, after) in enumerate(groups):
+            runs = [i for i, (s2, _) in enumerate(g) if s2 in HO.NEAR] if len(g) > 1 or before or after else []
+            for side in _cells(g, _corners(groups, gi)):
+                for extra in map(sum, product(*others), repeat([])):
+                    parts, shared, fronts, ridges = _part(g, side, H, _tile(margin), extra)
+                    rest = parts[0][1]                                  # (its fronts' faces: 2 + 2 i, 3 + 2 i)
+                    own = [q for i in runs for q in rest[2 + 2 * i:4 + 2 * i]]
+                    _emit(rel, parts, fronts, shared + own, {id(q): YS[5] for q in ridges})
+                    _seam(rel, parts[-1], g, H)
+                    DD.detail(rel, _solid, fronts, g, side + extra, _tile(margin), H, skip=runs)
+                    for i in runs:                                      # (the run's art, cut by the rest's faces)
+                        cut = [q for j in range(len(g)) if j != i for q in rest[2 + 2 * j:4 + 2 * j]] + side + extra
+                        art.append((g[i][0], cut))
+    objs = rel.build() if rel.m.f else []
     for s2, cut in art:
         objs += _run_art(s2, cut)
     return objs
@@ -231,7 +279,12 @@ def _run_art(s2, cut):
                                    plane_no=inv.to_3x3() @ nw, clear_outer=True)
         bm.to_mesh(ob.data)
         bm.free()
-    return objs
+    import bpy
+    keep = [ob for ob in objs if ob.data.polygons]
+    for ob in objs:
+        if not ob.data.polygons:                                        # (cut away whole: none of it in this cell)
+            bpy.data.objects.remove(ob)
+    return keep
 
 
 def roof(key, H=None):
