@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, newGame, serialize, type Sim } from '../sim';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
+import { bayAccessTile } from '../sim/vehicles/geometry';
+import { landRecruits } from '../sim/trade/recruitLand';
 import { AllegianceC } from '../sim/fight/components';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
@@ -111,7 +113,7 @@ describe('crew for hire', () => {
     expect(people(sim).some((id) => keyOf(sim, id) === fh.key)).toBe(false);
   });
 
-  for (const noBay of [false, true]) it(`a run stuck on the way home with the recruit aboard is given up as a hire: paid once, the recruit lands as player crew; survives a reload${noBay ? ' (home bay gone too)' : ''}`, () => {
+  for (const lost of ['airlock', 'bay'] as const) it(`a run stuck on the way home with the recruit aboard is given up as a hire: paid once, the recruit lands as player crew; survives a reload (${lost} lost)`, () => {
     const sim = atStation();
     const [c] = people(sim) as [number];
     const fh = sim.world.get(c, ForHireC)!;
@@ -123,7 +125,8 @@ describe('crew for hire', () => {
     expect(d.phase).toBe('back');
     expect(sim.world.get(c, AboardC)).toBeDefined(); // boarded: the exchange is behind it
     sim.world.destroyEntity(d.airlock); // the airlock the shuttle was to dock at is gone
-    if (noBay) sim.world.destroyEntity(sim.world.get(d.vehicle, VehicleC)!.home); // and so is the hangar bay it would stow in
+    const v = sim.world.get(d.vehicle, VehicleC)!;
+    if (lost === 'bay') sim.world.destroyEntity(v.home); // and so is the hangar bay it would stow in
     run(sim, () => false, 1500);
     const reloaded = deserialize(serialize(sim), content); // save/load in the middle of the blocked stage
     run(reloaded, () => reloaded.trade.deals[0]?.phase === 'done', 4000);
@@ -142,6 +145,26 @@ describe('crew for hire', () => {
     expect(playerCrew(s).length).toBe(crew + 1);
     expect(s.story.flags['stat.hired']).toBe(1);
     expect(s.trade.deals.some((x) => x.phase !== 'done' && x.phase !== 'failed')).toBe(false);
+  });
+
+  it('a forced landing skips a bay tile that lost its floor and lands the recruit on walkable floor', () => {
+    const sim = atStation();
+    const [c] = people(sim) as [number];
+    hire(sim, sim.world.get(c, ForHireC)!.key);
+    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
+    const d = sim.trade.deals[0]!;
+    run(sim, () => sim.world.get(d.vehicle, VehicleC)?.state === 'flying', 2000); // away from the station: no boarding tile under it
+    expect(sim.world.get(d.vehicle, VehicleC)?.state).toBe('flying');
+    expect(sim.world.get(c, AboardC)).toBeDefined();
+    sim.world.destroyEntity(d.airlock);
+    const t = bayAccessTile(sim, sim.world.get(d.vehicle, VehicleC)!)!;
+    const grid = shipGrid(sim, t.shipId)!;
+    grid.set('struct', t.x, t.y, 0); // the bay stands, but the tile its crew step out on has lost its floor
+    expect(isTileWalkable(sim, grid, t.x, t.y)).toBe(false);
+    expect(landRecruits(sim, d, true)).toBe(true);
+    const pos = sim.world.get(c, PositionC)!;
+    expect(sim.world.get(c, AboardC)).toBeUndefined();
+    expect(isTileWalkable(sim, shipGrid(sim, shipIdOf(sim, pos))!, pos.x, pos.y)).toBe(true);
   });
 
   it('a run that times out before anyone boards fails, refunds, and the candidate is still for hire at the station; survives a reload', () => {

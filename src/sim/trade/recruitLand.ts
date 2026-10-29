@@ -67,10 +67,14 @@ const dockedAt = (sim: Sim, v: Vehicle, ship: number): boolean => v.state === 'd
  */
 export function landRecruits(sim: Sim, d: Deal, force = false): boolean {
   const v = sim.world.get(d.vehicle, VehicleC);
-  // `force` (a run given up on, recruits already aboard): they step out at the shuttle's home bay even if it is not docked or stowed.
-  const at = v && (boardingTile(sim, d.vehicle) ?? (force ? bayAccessTile(sim, v) ?? anyFloorTile(sim) : null));
-  const grid = at && shipGrid(sim, at.shipId);
-  const ready = !!at && !!grid && (force || isTileWalkable(sim, grid, at.x, at.y));
+  // `force` (a run given up on, recruits already aboard): they step out at the shuttle's home bay even if it is not docked or stowed,
+  // else on any floor of the player's ship. Every candidate must be walkable, so a bay tile that lost its floor falls through.
+  const walkable = (t: { shipId: number; x: number; y: number } | null | undefined) => {
+    const g = t && shipGrid(sim, t.shipId);
+    return t && g && isTileWalkable(sim, g, t.x, t.y) ? t : null;
+  };
+  const at = v ? walkable(boardingTile(sim, d.vehicle)) ?? (force ? walkable(bayAccessTile(sim, v)) ?? anyFloorTile(sim) : null) : null;
+  const ready = !!at;
   let done = true;
   for (const c of d.crew ?? []) {
     if (sim.world.get(c, AboardC)?.vehicle === d.vehicle) {
