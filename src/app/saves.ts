@@ -24,6 +24,8 @@ export interface Start {
   sim: Sim;
   /** Shown once on start: the save could not be loaded (an older version), so this is a new game. */
   notice: string | null;
+  /** False for a `?seed=` debug game: it must never write over the player's campaign save. */
+  persist: boolean;
 }
 
 /**
@@ -34,25 +36,36 @@ export interface Start {
 export function startGame(seedParam: string | null): Start {
   const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true);
   const random = () => (Math.random() * 0x100000000) >>> 0;
-  if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null };
+  if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
   if (read(NEW_GAME, sessionStorage)) {
     try {
       sessionStorage.removeItem(NEW_GAME);
     } catch {
       /* the flag only lasts the reload */
     }
-    return { sim: fresh(random()), notice: null };
+    return { sim: fresh(random()), notice: null, persist: true };
   }
   const json = read(SLOT);
   if (json) {
     try {
-      return { sim: deserialize(json, content), notice: null };
+      return { sim: deserialize(json, content), notice: null, persist: true };
     } catch {
       clearSave();
-      return { sim: fresh(random()), notice: 'Your saved game is from an older version of the game and could not be loaded. A new game has started.' };
+      return { sim: fresh(random()), notice: 'Your saved game is from an older version of the game and could not be loaded. A new game has started.', persist: true };
     }
   }
-  return { sim: fresh(random()), notice: null };
+  return { sim: fresh(random()), notice: null, persist: true };
+}
+
+/**
+ * The save function for the main loop (periodic, tab-hide and pagehide saves all go through it). Does nothing for a game that
+ * must not persist (`?seed=`) or that is lost.
+ */
+export function createSaver(sim: Sim, persist: boolean, isLost: () => boolean): () => void {
+  return () => {
+    if (!persist || isLost() || lostReason(sim)) return;
+    writeSave(sim);
+  };
 }
 
 /** Write the save. False when the browser refuses (storage full or blocked). */
