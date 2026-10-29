@@ -48,12 +48,12 @@ describe("hullArt", () => {
     expect(bellyIds(keys, 4, 6, () => false)).toBeNull();
   });
 
-  it("takes the default design on a quarter of the tiles and the others alike on the rest", () => {
+  it("takes the default design on half the tiles and the others alike on the rest", () => {
     for (const n of [4, 6]) {
       const counts = new Array<number>(n).fill(0);
       for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) counts[pickDesign(x, y, n, 1)]!++;
-      expect(counts[0]! / 4096).toBeCloseTo(0.25, 1);
-      for (const c of counts.slice(1)) expect(c / 4096).toBeCloseTo(0.75 / (n - 1), 1);
+      expect(counts[0]! / 4096).toBeCloseTo(0.5, 1);
+      for (const c of counts.slice(1)) expect(c / 4096).toBeCloseTo(0.5 / (n - 1), 1);
     }
     // Along a run there is no repeating pattern: no period up to 8 holds over 40 tiles.
     const run = Array.from({ length: 40 }, (_, x) => pickDesign(x, 7, 4, 1));

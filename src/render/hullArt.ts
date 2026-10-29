@@ -72,12 +72,12 @@ function runSetId(h: HullKeys, x: number, y: number): string {
 }
 
 /**
- * Which of n designs a tile takes (0 the default): the default on a quarter of the tiles, one of the others, alike, on
+ * Which of n designs a tile takes (0 the default): the default on half the tiles, one of the others, alike, on
  * the rest; by a hash of the tile (`salt` keeps the exterior's and the belly's picks apart).
  */
 export function pickDesign(x: number, y: number, n: number, salt: number): number {
   const h = tileHash(x + salt * 7919, y - salt * 104729);
-  return n < 2 || h % 4 === 0 ? 0 : 1 + ((h >>> 8) % (n - 1));
+  return n < 2 || h % 2 === 0 ? 0 : 1 + ((h >>> 8) % (n - 1));
 }
 
 /**
