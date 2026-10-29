@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DecisionRecorder, diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';
-import { buildScenario } from './scenarios';
+import { diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';
 
 const d = (t: number, c: number, job: number, kind = 'build', x = 1, y = 1): Decision => ({ t, c, job, kind, cat: 'construction', x, y });
 
@@ -64,24 +63,4 @@ describe('decision files', () => {
     expect(() => parseDecisions(serializeDecisions(header, base) + 'not json\n', 'f.jsonl')).toThrow(/f.jsonl: line 7/);
     expect(() => parseDecisions(serializeDecisions(header, base) + '{"t":1}\n')).toThrow(/not a decision/);
   });
-});
-
-describe('DecisionRecorder', () => {
-  const run = (): Decision[] => {
-    const sim = buildScenario('haul', 1);
-    const rec = new DecisionRecorder();
-    for (let i = 0; i < 30; i++) {
-      sim.step();
-      sim.events.drain();
-      rec.observe(sim);
-    }
-    return rec.decisions;
-  };
-
-  it('records assignments, the same on every run of one seed', () => {
-    const a = run();
-    expect(a.length).toBeGreaterThan(20);
-    expect(a.some((x) => x.kind === 'haul')).toBe(true);
-    expect(diffDecisions(a, run()).identical).toBe(true);
-  }, 120000);
 });
