@@ -64,7 +64,8 @@ def _mask(rgba, a, dirs_, n, kind):
     if d is None:
         return None
     zd = np.load(d)
-    m, ad = (zd["rgba"][..., :3].mean(-1) > 127) & (zd["rgba"][..., 3] > 127), zd["a"]
+    m, ad = (zd["rgba"][..., :3].min(-1) > 240) & (zd["rgba"][..., 3] > 127), zd["a"]   # (the key's white only: a
+                                                    # surface the pass leaves alone keeps its own tone, light or not)
     dx, dy = int(a[0] - ad[0]), int(a[1] - ad[1])
     out = np.zeros(rgba.shape[:2], bool)
     h, w = m.shape
