@@ -23,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, CrewC, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
+import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
@@ -397,6 +397,22 @@ const api: UiApi = {
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
   insetSize: (ship) => renderer?.insetSize(ship) ?? null,
+  moduleScreenRect: (id) => {
+    const m = sim.world.get(id, ModuleC);
+    const def = m && sim.content.modules[m.def];
+    if (!renderer || !m || !def) return null;
+    const tiles = footprintTiles(def, m.x, m.y, m.rot);
+    const o = renderer.screenOf(0, m.x, m.y);
+    const dx = renderer.screenOf(0, m.x + 1, m.y);
+    const half = Math.max(Math.abs(dx.x - o.x), Math.abs(dx.y - o.y)) * 0.75; // a tile's diamond is about this far from its centre
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const t of tiles) {
+      const p = renderer.screenOf(0, t.x, t.y);
+      x0 = Math.min(x0, p.x - half); x1 = Math.max(x1, p.x + half);
+      y0 = Math.min(y0, p.y - half * 1.5); y1 = Math.max(y1, p.y + half * 0.75); // the module stands up from the floor: more room above
+    }
+    return x0 === Infinity ? null : { x0, y0, x1, y1 };
+  },
   setInset: (view) => renderer?.setInset(view && { shipId: view.ship, view: view.view }),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),

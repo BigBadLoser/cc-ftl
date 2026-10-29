@@ -133,7 +133,7 @@
     </div>
   {/if}
   {#if me && swapped}
-    <div class="quick"><ModuleQuickPanel {api} ship={me.ship} /></div>
+    <ModuleQuickPanel {api} ship={me.ship} />
   {/if}
   {#if me && me.incoming.length > 0}
     <div class="incoming"><IncomingReadout shots={me.incoming} /></div>
@@ -161,12 +161,6 @@
   .insetdock {
     position: absolute;
     left: calc(var(--gutter) + var(--sal));
-    bottom: calc(var(--gutter) + var(--sab) + 192px);
-  }
-  /* Your own ship in the main view: the clicked module's quick panel, bottom right, clear of the strip, inset and incoming timeline. */
-  .quick {
-    position: absolute;
-    right: calc(var(--gutter) + var(--sar));
     bottom: calc(var(--gutter) + var(--sab) + 192px);
   }
   .incoming {
