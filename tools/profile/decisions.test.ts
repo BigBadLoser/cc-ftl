@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../src/content';
 import { CrewC, JobC, PositionC, PrioritiesC, ShipC, homeShip, newGame } from '../../src/sim';
+import { releaseAssignment } from '../../src/sim/crew/helpers';
 import { Struct } from '../../src/sim/structure';
 import { DecisionRecorder, diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';
 
@@ -99,5 +100,24 @@ describe('DecisionRecorder and same-step completion', () => {
     expect(withProbe.some((d) => d.c === take.c && d.job === 0 && d.t >= take.t)).toBe(true);
     // Without the probe (observing only after the step) the one-tick job leaves no trace: the gap this closes.
     expect(run(false).some((d) => d.kind === 'build' && d.job !== 0)).toBe(false);
+  });
+
+  it('captures an assignment that one system makes and a later system drops before work', () => {
+    const sim = newGame(1, content);
+    sim.step();
+    sim.events.drain();
+    const rec = new DecisionRecorder();
+    rec.observe(sim);
+    const crew = sim.world.query(CrewC).find((id) => (sim.world.get(id, PrioritiesC)!.construction ?? 0) > 0)!;
+    const p = sim.world.get(crew, PositionC)!;
+    // An open job in reach, taken by decide at the next step...
+    sim.world.add(sim.world.createEntity(), JobC, { category: 'construction', kind: 'build', x: p.x - 1, y: p.y, struct: Struct.Door, work: 500, progress: 0, reservedBy: 0 });
+    // ...and released again by a system between decide and work (standing in for a fight or cancel system).
+    const dropper = { begin: (l: string) => { if (l === 'sim/work') for (const id of sim.world.query(CrewC)) releaseAssignment(sim, id); }, end() {}, count() {} };
+    sim.step(rec.probe(sim, dropper));
+    sim.events.drain();
+    rec.observe(sim);
+    expect(rec.decisions.some((d) => d.c === crew && d.kind === 'build' && d.job !== 0)).toBe(true);
+    expect(rec.decisions.some((d) => d.c === crew && d.job === 0)).toBe(true);
   });
 });

@@ -279,37 +279,38 @@ Produced by `npm run profile:baseline -- --seeds 1,2,3` (scenarios in `tools/pro
 
 | scenario | seed | ticks | decide mean ms | p95 | max | oldest open max | p95 | assign p50 | p95 | never assigned | idle-with-work crew-ticks | completed /1000 ticks |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| colony | 1 | 5000 | 0.128 | 0.163 | 11.1 | 2028 | 1768 | 1 | 270 | 0 | 0 | 7.5 |
-| colony | 2 | 5000 | 0.094 | 0.183 | 7.1 | 324 | 64 | 1 | 1 | 0 | 0 | 11.15 |
-| colony | 3 | 5000 | 0.130 | 0.263 | 32.6 | 573 | 313 | 1 | 1 | 0 | 0 | 38.85 |
-| hullplan | 1 | 5000 | 14.600 | 50.222 | 97.3 | 5199 | 4939 | 226 | 2613 | 53 | 350 | 60 |
-| hullplan | 2 | 5000 | 0.407 | 0.621 | 4.3 | 5199 | 4939 | 1 | 784 | 20 | 0 | 16.54 |
-| hullplan | 3 | 5000 | 4.347 | 27.577 | 113.9 | 5199 | 4939 | 1 | 2384 | 59 | 175 | 81.73 |
-| log | 1 | 5000 | 0.225 | 0.364 | 7.4 | 3768 | 3508 | 78 | 922 | 12 | 25 | 8.85 |
-| log | 2 | 5000 | 0.223 | 0.463 | 2.5 | 4465 | 4205 | 1 | 483 | 16 | 25 | 14.04 |
-| log | 3 | 5000 | 0.277 | 0.537 | 11.2 | 4799 | 4539 | 1 | 343 | 18 | 25 | 32.5 |
-| hub | 1 | 5000 | 0.249 | 0.487 | 13.9 | 1920 | 1781 | 1 | 1 | 1 | 0 | 18.08 |
-| hub | 2 | 5000 | 0.238 | 0.449 | 16.4 | 1816 | 1702 | 1 | 1 | 0 | 0 | 14.04 |
-| hub | 3 | 5000 | 0.231 | 0.432 | 12.2 | 2186 | 1969 | 1 | 1 | 0 | 0 | 15.77 |
-| storm | 1 | 1500 | 61.383 | 74.778 | 103.5 | 1649 | 1567 | 0 | 0 | 177 | 0 | 0 |
-| storm | 2 | 1500 | 58.278 | 70.006 | 97.5 | 1649 | 1567 | 0 | 0 | 177 | 0 | 0 |
-| storm | 3 | 1500 | 54.593 | 70.278 | 94.2 | 1649 | 1567 | 0 | 0 | 177 | 0 | 0 |
-| haul | 1 | 2500 | 4.272 | 3.246 | 185.8 | 2691 | 2556 | 460 | 1481 | 111 | 275 | 160.74 |
-| haul | 2 | 2500 | 3.750 | 3.744 | 147.7 | 2691 | 2556 | 402 | 1520 | 112 | 400 | 160.37 |
-| haul | 3 | 2500 | 3.846 | 3.543 | 109.9 | 2691 | 2556 | 472 | 1487 | 112 | 325 | 160.74 |
-| multiship | 1 | 5000 | 1.288 | 2.841 | 11.1 | 5199 | 4939 | 1 | 190 | 133 | 0 | 7.5 |
-| multiship | 2 | 5000 | 1.221 | 2.264 | 19.0 | 5199 | 4939 | 1 | 1 | 133 | 0 | 6.73 |
-| multiship | 3 | 5000 | 1.303 | 2.747 | 11.4 | 5199 | 4939 | 1 | 1 | 133 | 0 | 7.31 |
+| colony | 1 | 5000 | 0.133 | 0.179 | 10.9 | 2028 | 1768 | 0 | 269 | 0 | 0 | 7.5 |
+| colony | 2 | 5000 | 0.090 | 0.182 | 2.0 | 324 | 64 | 0 | 0 | 0 | 0 | 11.15 |
+| colony | 3 | 5000 | 0.119 | 0.240 | 25.1 | 573 | 313 | 0 | 0 | 0 | 0 | 38.85 |
+| hullplan | 1 | 5000 | 14.023 | 48.799 | 91.0 | 5200 | 4940 | 226 | 2613 | 53 | 350 | 60 |
+| hullplan | 2 | 5000 | 0.392 | 0.666 | 11.6 | 5200 | 4940 | 0 | 784 | 20 | 0 | 16.54 |
+| hullplan | 3 | 5000 | 4.064 | 26.094 | 106.8 | 5200 | 4940 | 0 | 2384 | 59 | 175 | 81.73 |
+| log | 1 | 5000 | 0.227 | 0.379 | 10.0 | 3769 | 3509 | 77 | 922 | 12 | 25 | 8.85 |
+| log | 2 | 5000 | 0.229 | 0.495 | 4.1 | 4466 | 4206 | 0 | 483 | 16 | 25 | 14.04 |
+| log | 3 | 5000 | 0.261 | 0.508 | 11.4 | 4800 | 4540 | 0 | 343 | 18 | 25 | 32.5 |
+| hub | 1 | 5000 | 0.249 | 0.548 | 13.1 | 1920 | 1781 | 0 | 0 | 1 | 0 | 18.08 |
+| hub | 2 | 5000 | 0.236 | 0.457 | 13.6 | 1816 | 1702 | 0 | 0 | 0 | 0 | 14.04 |
+| hub | 3 | 5000 | 0.238 | 0.452 | 23.0 | 2186 | 1969 | 0 | 0 | 0 | 0 | 15.77 |
+| storm | 1 | 1500 | 57.750 | 67.542 | 110.1 | 1650 | 1568 | 0 | 0 | 177 | 0 | 0 |
+| storm | 2 | 1500 | 56.459 | 69.404 | 102.8 | 1650 | 1568 | 0 | 0 | 177 | 0 | 0 |
+| storm | 3 | 1500 | 53.248 | 67.308 | 98.3 | 1650 | 1568 | 0 | 0 | 177 | 0 | 0 |
+| haul | 1 | 2500 | 4.438 | 3.304 | 182.3 | 2692 | 2557 | 460 | 1481 | 111 | 275 | 160.74 |
+| haul | 2 | 2500 | 4.076 | 3.116 | 222.8 | 2692 | 2557 | 402 | 1520 | 112 | 400 | 160.37 |
+| haul | 3 | 2500 | 3.963 | 3.154 | 143.5 | 2692 | 2557 | 472 | 1487 | 112 | 325 | 160.74 |
+| multiship | 1 | 5000 | 1.248 | 2.545 | 11.3 | 5200 | 4940 | 0 | 189 | 133 | 0 | 7.5 |
+| multiship | 2 | 5000 | 1.189 | 2.334 | 6.9 | 5200 | 4940 | 0 | 0 | 133 | 0 | 6.73 |
+| multiship | 3 | 5000 | 1.253 | 2.647 | 15.2 | 5200 | 4940 | 0 | 0 | 133 | 0 | 7.31 |
 
 Reading it:
 
-- **Wall-clock figures vary; the counts do not.** The `decide` times were taken on a shared machine (load average 3 to 7 during the run), so means and p95 are indicative and the max column holds scheduler and GC outliers. The metrics columns are deterministic: the first seed of every scenario was run twice and the full metrics JSON was identical in all seven.
-- **Bed owners (#196) removed the first-tick spikes.** Before it, `hub`, `hullplan` and `haul` had 0.9 to 1.1 s maxima while every crew member searched every bed; now the worst `decide` frames are 2 to 33 ms in `colony`, `log`, `hub` and `multiship`, 4 to 115 ms in `hullplan` and 110 to 190 ms in `haul`.
-- `storm` is the headline: **about 55 to 61 ms per tick (p95 70 to 75 ms) from `decide` alone, more than the whole 50 ms tick**, for four crew and 177 unreachable jobs on a 30x20 ship. Nothing is ever assigned or completed, which is correct, so the cost is pure wasted search (section 7's component prefilter targets exactly this).
-- `haul` (500 stacks, 48 crew over a ship and a hub) costs about 4 ms per tick mean with a heavy start; a job waits a median of 400 to 470 ticks (20 s) and 111 to 112 are still open after 2500 ticks. `hullplan` seeds 1 and 3 average 4 to 15 ms per tick (p95 28 to 50 ms) while the yard and interior jobs are open; seed 2 stays at 0.4 ms (its yard order was cheaper), so the cost depends on the board, not just the scenario.
-- `log` changed with #184 (damage control at priority 1, automatic breach sealing): more jobs stay open longer during and after the fight (oldest open 3768 to 4799 ticks, 12 to 18 never assigned). The other scenarios have no fight and their counts did not move.
+- **Wall-clock figures vary; the counts do not.** The `decide` times were taken on a shared machine (load average about 1 during the re-record; 0.27, 2.13, 2.64 at its start), so means and p95 are indicative and the max column holds scheduler and GC outliers. The metrics columns are deterministic: the first seed of every scenario was run twice and the full metrics JSON was identical in all seven.
+- **Bed owners (#196) removed the first-tick spikes.** Before it, `hub`, `hullplan` and `haul` had 0.9 to 1.1 s maxima while every crew member searched every bed; now the worst `decide` frames are 2 to 25 ms in `colony`, `log`, `hub` and `multiship`, 12 to 107 ms in `hullplan` and 140 to 220 ms in `haul`.
+- `storm` is the headline: **about 53 to 58 ms per tick (p95 67 to 69 ms) from `decide` alone, more than the whole 50 ms tick**, for four crew and 177 unreachable jobs on a 30x20 ship. Nothing is ever assigned or completed, which is correct, so the cost is pure wasted search (section 7's component prefilter targets exactly this).
+- `haul` (500 stacks, 48 crew over a ship and a hub) costs about 4 ms per tick mean with a heavy start; a job waits a median of 400 to 470 ticks (20 s) and 111 to 112 are still open after 2500 ticks. `hullplan` seeds 1 and 3 average 4 to 14 ms per tick (p95 26 to 49 ms) while the yard and interior jobs are open; seed 2 stays at 0.4 ms (its yard order was cheaper), so the cost depends on the board, not just the scenario.
+- `log` changed with #184 (damage control at priority 1, automatic breach sealing): more jobs stay open longer during and after the fight (oldest open 3769 to 4800 ticks, 12 to 18 never assigned). The other scenarios have no fight and their counts did not move.
 - `colony`, `log` and `hub` are cheap (0.1 to 0.3 ms mean). The `decide` budget of 0.5 ms average on the colony baseline is already met; the hub budget (5% of 50 ms = 2.5 ms p95) is met today at 0.4 to 0.5 ms.
 - Oldest open job age is dominated by jobs that are not takeable at all (patrol posts, jobs on a derelict, hull jobs behind a thin-air route with no suit); only `haul`, `hullplan` seeds 1 and 3, and `log` show idle-with-work crew-ticks above zero, and those are small (25 to 400 crew-ticks of several thousand idle). Per decision 6 (no aging until starvation is shown), the metric to watch for starvation is the p95 of oldest open age on a board where every job is takeable; none of these boards is that, so this baseline does not yet show starvation.
+- **Metric sampling changed (same-step jobs).** The first baseline read jobs only after the step, so a job taken and finished in one step was never seen: the short jobs were missing from time-to-assign. Jobs, first reservations and categories are now also read as `sim/work` begins (see the `metrics.ts` header). Against the previous table this moved only the assign and age columns: the assign p50 is 0 (not 1) wherever jobs are taken in the step they appear (colony, hub, multiship, most of log and hullplan), the p95s move by at most 1 tick, and the oldest open age rose by 1 where jobs were open from the start (they are now stamped a tick earlier). Never-assigned, idle-with-work and completed per 1000 ticks did not move, and the runs repeat exactly.
 - Not covered yet: `fight` and `damage` (arrive with #184), and prize or yard-crew runs in `multiship`.
 
 ## 8. Policy interface (refinement 6)

@@ -149,6 +149,56 @@ describe('completions in the step they were taken', () => {
   });
 });
 
+describe('jobs that live inside one step', () => {
+  const idleCrew = (sim: Sim): number => {
+    const ship = sim.world.get(homeShip(sim), ShipC)!;
+    return sim.world.query(CrewC).find((id) => {
+      const p = sim.world.get(id, PositionC)!;
+      return p.x === p.toX && p.y === p.toY && (sim.world.get(id, PrioritiesC)!.repair ?? 0) > 0 && p.x > ship.x + 1;
+    })!;
+  };
+  const stepOnce = (sim: Sim, m: MetricsRecorder): void => {
+    sim.step(m.probe(sim));
+    m.observe(sim, sim.events.drain());
+  };
+
+  it('counts a job created, assigned and finished in one step, with a wait of 0', () => {
+    const sim = newGame(1, content);
+    sim.step();
+    sim.events.drain();
+    const m = new MetricsRecorder({ stride: 1000 });
+    m.observe(sim);
+    const p = sim.world.get(idleCrew(sim), PositionC)!;
+    postJob(sim, p.x - 1, p.y, { category: 'repair', work: 1 });
+    stepOnce(sim, m);
+    const s = m.summary();
+    expect(s.jobsSeen).toBe(1);
+    expect(s.timeToAssign).toMatchObject({ n: 1, p50: 0, max: 0, neverAssigned: 0 });
+    expect(s.completion.byCategory.repair?.done).toBe(1);
+  });
+
+  it('counts a job seen one step and assigned and finished the next, with a wait of 1', () => {
+    const sim = newGame(1, content);
+    sim.step();
+    sim.events.drain();
+    const m = new MetricsRecorder({ stride: 1000 });
+    m.observe(sim);
+    const crew = idleCrew(sim);
+    const p = sim.world.get(crew, PositionC)!;
+    // Posted in the open air of the corridor, out of the crew member's reach until a step later: a job nobody can take this step.
+    const job = postJob(sim, p.x - 1, p.y, { category: 'repair', work: 1, struct: Struct.Door, needs: [{ item: 'item.metal', count: 1 }], delivered: [] });
+    stepOnce(sim, m);
+    expect(m.summary().jobsSeen).toBe(1);
+    expect(m.summary().timeToAssign.n).toBe(0);
+    delete (sim.world.get(job, JobC) as { needs?: unknown }).needs; // funded now: decide takes it next step and work finishes it
+    stepOnce(sim, m);
+    const s = m.summary();
+    expect(s.jobsSeen).toBe(1);
+    expect(s.timeToAssign).toMatchObject({ n: 1, p50: 1, max: 1, neverAssigned: 0 });
+    expect(s.completion.byCategory.repair?.done).toBe(1);
+  });
+});
+
 describe('the recorder leaves the sim alone', () => {
   /** Breathable air everywhere, a build job open when observed, then all the air removed: unsuited crew may not take it, whether or not anyone measured. */
   const run = (observe: boolean): string => {

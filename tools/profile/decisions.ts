@@ -32,14 +32,16 @@ export class DecisionRecorder {
   private held = new Map<number, number>();
 
   /**
-   * A probe to step the sim with (`sim.step(rec.probe(sim))`), passing the timing probe through as `inner`. Every system that hands out a job (commands, operate
-   * jobs, decide, rescue, drafted orders) runs before `sim/work`, which can finish a one-tick job and drop the assignment in the same step; so the assignments are
-   * captured as `sim/work` begins, and `observe` then only has to see what changed after it. Read-only: it adds no events and no sim code.
+   * A probe to step the sim with (`sim.step(rec.probe(sim))`), passing the timing probe through as `inner`. An assignment can be made and dropped inside one step
+   * (decide hands out a one-tick job and `sim/work` finishes it; a fight system releases what decide just gave), so the assignments are captured as every system
+   * begins, i.e. after the previous one, and `observe` after the step sees what the last system changed. The assigners are commands, decide, rescue and
+   * `resumeAfter` (inside work, which re-assigns a job the crew member had already reserved), so nothing is made and dropped between two captures except by one
+   * system doing both. Costs a scan of the assigned crew per system, so it is only on when recording. Read-only: no events, no sim code.
    */
   probe(sim: Sim, inner: Probe = NOOP_PROBE): Probe {
     return {
       begin: (label) => {
-        if (label === 'sim/work') this.capture(sim, sim.tick);
+        if (label !== 'sim/tick') this.capture(sim, sim.tick); // before every system: sees what the previous one did
         inner.begin(label);
       },
       end: (label) => inner.end(label),

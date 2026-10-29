@@ -59,7 +59,7 @@ point of them. The other scenarios are quick.
 ### Metrics (`tools/profile/metrics.ts`)
 
 Ticks, not wall time, so they repeat exactly for a seed (check with `profile:baseline`, which reruns the first seed and compares). They cover the warm-up too.
-Definitions are in the file header; in short:
+Definitions, and which field is read before `sim/work` (through the probe) and which after the step, are in the file header; in short:
 
 - **oldest open job age**: per tick the age of the oldest unreserved job (errands and `operate` jobs excluded); `max`, `p95` over ticks, `atEnd`.
 - **time to assign**: first seen to first reserved, per job (`p50`, `p95`, `max`); `neverAssigned` = jobs still open at the end.

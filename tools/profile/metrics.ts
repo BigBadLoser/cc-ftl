@@ -1,7 +1,19 @@
 /**
- * Crew-AI metrics harness (docs/CREW_AI.md section 7.4). Reads sim state only, once per tick after `sim.step()`, outside any timed span, so it never
- * changes the sim and its numbers are counts in ticks (deterministic for a seed; wall-clock figures are not). Call `observe(sim, events)` after each step
- * with the events the step drained (`sim.events.drain()`), then `summary()`.
+ * Crew-AI metrics harness (docs/CREW_AI.md section 7.4). Reads sim state only, outside any timed span, so it never changes the sim and its numbers are
+ * counts in ticks (deterministic for a seed; wall-clock figures are not). Step the sim with `rec.probe(sim, inner)` and call `observe(sim, events)` after each
+ * step with the events the step drained (`sim.events.drain()`), then `summary()`.
+ *
+ * **When each field is sampled, and why.** Within one step `sim/work` can finish a job and destroy it, so anything that must see a job or an assignment that
+ * lives only inside a step has to be read before `sim/work` begins (the probe does that: every poster of jobs and every assigner except `resumeAfter` runs
+ * before work). What describes the board at the end of the step is read after the step.
+ * - Before `sim/work` (probe), stamped with the step's own tick: job discovery (`jobsSeen`, created tick), first reservation (time to assign), and the job
+ *   category each crew member holds (to file a `crew.jobDone` under its category). A job posted, taken and finished within one step is therefore counted, with a
+ *   wait of 0.
+ * - After the step (`observe`), stamped with the incremented tick: the same scan again (jobs posted by systems after work, and every job when the step ran
+ *   without the probe), the open list and the per-tick oldest open age (the board the next decide pass will see), the completions (events), and the
+ *   idle-with-work sample (idle crew and open jobs at the end of the step).
+ * - Not visible: a job posted and destroyed entirely after work in one step (nothing can assign it: assigners all run before work or are commands), or
+ *   assigned and destroyed before work (a cancel or drop system).
  *
  * Definitions (all ticks; TICK_HZ ticks per second):
  * - **open job**: a job entity nobody has reserved. Errands (suitUp/suitOff) and `operate` jobs are left out: errands are personal, and an operate job never
@@ -82,13 +94,16 @@ export class MetricsRecorder {
   constructor(readonly opts: { stride: number } = { stride: 25 }) {}
 
   /**
-   * A probe to step the sim with (`sim.step(rec.probe(sim, inner))`). A job taken and finished in one step is gone from `AssignmentC` by the time `observe` runs,
-   * so the crew members' job categories are read as `sim/work` begins, after every system that hands out jobs has run. Read-only.
+   * A probe to step the sim with (`sim.step(rec.probe(sim, inner))`). Job discovery, first reservations and crew job categories are read as `sim/work` begins,
+   * after every system that posts or hands out jobs has run and before work can finish and destroy one (see the header). Read-only.
    */
   probe(sim: Sim, inner: Probe = NOOP_PROBE): Probe {
     return {
       begin: (label) => {
-        if (label === 'sim/work') this.snapshotCategories(sim);
+        if (label === 'sim/work') {
+          this.scanJobs(sim, sim.tick);
+          this.snapshotCategories(sim);
+        }
         inner.begin(label);
       },
       end: (label) => inner.end(label),
@@ -104,11 +119,12 @@ export class MetricsRecorder {
     }
   }
 
-  /** Observe the sim after a step. `events` are the events that step emitted (drained by the caller). */
-  observe(sim: Sim, events: readonly SimEvent[] = []): void {
-    const now = sim.tick;
-    if (this.first < 0) this.first = now;
-    this.ticks++;
+  /**
+   * Walk the jobs: first sight (`jobsSeen`, created tick), first reservation (time to assign) and the open list with the oldest age. Run twice per step with the
+   * probe (stamped with the step's tick before work, with the incremented tick after the step), once without. A job seen only before work and gone after
+   * it (finished in the step) keeps its stamp and is dropped by `observe`.
+   */
+  private scanJobs(sim: Sim, now: number): { open: number[]; oldest: number } {
     const open: number[] = [];
     let oldest = 0;
     for (const id of sim.world.query(JobC)) {
@@ -130,7 +146,16 @@ export class MetricsRecorder {
         oldest = Math.max(oldest, now - t.created);
       }
     }
-    for (const [id, t] of this.tracked) if (t.seen !== now) this.tracked.delete(id); // finished or cancelled: no longer waiting
+    return { open, oldest };
+  }
+
+  /** Observe the sim after a step. `events` are the events that step emitted (drained by the caller). */
+  observe(sim: Sim, events: readonly SimEvent[] = []): void {
+    const now = sim.tick;
+    if (this.first < 0) this.first = now;
+    this.ticks++;
+    const { open, oldest } = this.scanJobs(sim, now);
+    for (const [id, t] of this.tracked) if (t.seen !== now) this.tracked.delete(id); // finished or cancelled since the last scan: no longer waiting
     this.oldest.push(oldest);
     // Completions are the sim's own `crew.jobDone` events; the category is that of the job the crew member held at the previous observation.
     for (const e of events) {
