@@ -6,7 +6,7 @@
   /** Compact enemy card, top left. Everything is live (including heat) except faction and class: the UI snapshot has no such fields yet (MOCK strings below). */
   let { enemy, state: pill, onFrame }: { enemy: UiShipCombat; state: { text: string; tone: string }; onFrame: () => void } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
-  const FAKE = { faction: 'Rust Pirates', klass: 'Raider-class' };
+  const FAKE = { faction: 'Pirate', klass: 'Raider' };
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
   const hot = $derived(heatPct >= 90 ? 'red' : heatPct >= 70 ? 'amber' : '');
   const pips = $derived(Array.from({ length: Math.max(enemy.shield.max, 0) }, (_, i) => i < enemy.shield.layers));
@@ -35,10 +35,10 @@
 </section>
 
 <style>
-  .card { box-sizing: border-box; grid-template-columns: minmax(0, 1fr); width: 340px; background: var(--panel); border: 1px solid var(--line-hi); padding: 0 8px 8px; display: grid; gap: 8px; pointer-events: auto; }
+  .card { box-sizing: border-box; grid-template-columns: minmax(0, 1fr); width: 350px; background: var(--panel); border: 1px solid var(--line-hi); padding: 0 8px 8px; display: grid; gap: 8px; pointer-events: auto; }
   header { display: flex; align-items: center; gap: 8px; margin: 0 -8px; padding: 3px 4px 3px 8px; background: #0d4a66; color: #fff; height: 30px; box-sizing: border-box; }
   h2 { margin: 0; font: 600 17px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .sub { font: 12px var(--head-font); color: #a9d8ee; letter-spacing: 0.04em; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub { font: 12px var(--head-font); color: #a9d8ee; letter-spacing: 0.04em; flex: 1; white-space: nowrap; }
   .pill { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; background: #061020; white-space: nowrap; }
   .pill.red { color: #ff8a8a; } .pill.amber { color: var(--amber); } .pill.green { color: var(--green); } .pill.dim { color: var(--dim); }
   .fr { min-height: 0; min-width: 0; width: 24px; height: 24px; padding: 0; display: grid; place-items: center; background: transparent; border-color: transparent; color: #fff; }
