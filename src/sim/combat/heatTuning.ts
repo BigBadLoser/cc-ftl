@@ -10,9 +10,17 @@ export const HEAT_MAX = 100;
 /** Heat added for each shield layer a hit absorbs (a shot that takes 2 layers adds twice this; ion drain counts). */
 export const HEAT_PER_LAYER = 3;
 
+// --- Shields ---
+/**
+ * Shield regeneration speed multiplier for every ship (1.4: a Mk I layer returns in about 7 s instead of 10). With heat that only falls while the
+ * shields are down, shields that hold a bit longer are what makes the heat bite: the ship has to choose when to drop them or vent.
+ */
+export const SHIELD_REGEN_MULT = 1.4;
+
 // --- Cooling: heat only falls while the shields are down (0 layers, unpowered or disabled generators included) ---
 /** Heat per second shed while the shields are down, before radiators. */
-export const PASSIVE_COOL_PER_SEC = 4;
+// Slow on purpose: holding the shields up runs the ship hot, so dropping them (or venting) is a choice.
+export const PASSIVE_COOL_PER_SEC = 2;
 /** Out of combat the hull sheds heat at this rate whatever the shields do, so a new fight starts cool. */
 export const IDLE_COOL_PER_SEC = 10;
 /** A radiator's `coolPerSec` also counts towards a vent at this fraction. */
@@ -48,8 +56,8 @@ export const OVERCHARGE_SHIELD_REGEN = 3;
 /** Engines overcharge: added to evasion (still capped by EVASION_CAP; needs a pilot, as evasion does). */
 export const OVERCHARGE_ENGINE_EVASION = 0.15;
 
-// --- Automatic behaviour (the AI always; the player's ship while `Heat.auto`, which is the default) ---
-/** Auto-fire holds a volley that would take heat above this fraction of HEAT_MAX. */
+// --- Enemy AI heat behaviour (the player's ship never does any of this on its own) ---
+/** Enemy auto-fire holds a volley that would take heat above this fraction of HEAT_MAX. */
 export const AUTO_FIRE_CEILING = 0.95;
 /** Vent at this fraction of HEAT_MAX when no foe shot is about to land. */
 export const AUTO_VENT_AT = 0.7;
@@ -57,5 +65,5 @@ export const AUTO_VENT_AT = 0.7;
 export const AUTO_VENT_FORCE_AT = 0.9;
 /** A foe weapon charged to this fraction counts as a shot about to land. */
 export const AUTO_SHOT_SOON_CHARGE = 0.85;
-/** Auto mode (the AI, and the player ship while Heat.auto) overcharges the weapons while heat is below this fraction of HEAT_MAX. */
+/** The AI overcharges the weapons while heat is below this fraction of HEAT_MAX. */
 export const AI_OVERCHARGE_BELOW = 0.2;

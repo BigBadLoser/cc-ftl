@@ -8,10 +8,10 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 
 /**
- * Heat management by command. The enemy AI always plays by the player's rules: it vents when its heat is high and no shot is about to land
- * on it (or at once when it is nearly overheated: a lockout is worse), and overcharges its weapons while its heat is low. The player's ship does
- * the same (vent and weapons overcharge) on its own while `Heat.auto` is on (the default), so a ship given no orders still avoids overheating. Auto-fire's own half
- * (holding a volley that would overheat) is in the firing system. Commands apply next tick; this system only reads.
+ * Enemy heat management by command. Enemy ships play by the player's rules: they vent when their heat is high and no shot is about to land
+ * on them (or at once when nearly overheated: a lockout is worse), and overcharge their weapons while their heat is low. The player's ship
+ * does none of this by itself; its heat is the player's to manage. The AI's auto-fire half (holding a volley that would overheat) is in the
+ * firing system. Commands apply next tick; this system only reads.
  */
 export function heatAiSystem(sim: Sim): void {
   if (!sim.sector.inCombat) return;
@@ -19,8 +19,7 @@ export function heatAiSystem(sim: Sim): void {
     const ship = sim.world.get(id, ShipC);
     const c = sim.world.get(id, CombatC);
     if (!ship || !c || ship.state !== 'active') continue;
-    const ai = isAiFaction(ship.faction);
-    if (!ai && !(ship.faction === 'player' && c.heat.auto)) continue;
+    if (!isAiFaction(ship.faction)) continue; // the player's heat is the player's to manage
     if (ventError(c) === null && c.heat.value >= HEAT_MAX * AUTO_VENT_AT && (c.heat.value >= HEAT_MAX * AUTO_VENT_FORCE_AT || !shotAboutToLand(sim, id))) {
       sim.enqueue({ type: 'combat.vent', ship: id });
       continue;
@@ -32,7 +31,7 @@ export function heatAiSystem(sim: Sim): void {
 }
 
 /** A shot is in the air at this ship, or a hostile weapon aimed at it is nearly charged. */
-function shotAboutToLand(sim: Sim, shipId: number): boolean {
+export function shotAboutToLand(sim: Sim, shipId: number): boolean {
   for (const pid of sim.world.query(ProjectileC)) {
     if (sim.world.get(pid, ProjectileC)?.target.ship === shipId) return true;
   }

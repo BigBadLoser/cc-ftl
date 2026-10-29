@@ -130,7 +130,6 @@ describe('combat heat', () => {
   it('a vent drops the shields and holds fire while dumping heat, then the shields regenerate', () => {
     const f = fight();
     shieldsUp(f);
-    combat(f).heat.auto = false;
     combat(f).heat.value = 60;
     sim(f).enqueue({ type: 'combat.vent', ship: f.mine });
     run(f, 2);
@@ -168,7 +167,6 @@ describe('combat heat', () => {
     const f = fight();
     shieldsUp(f);
     const ev: SimEvent[] = [];
-    combat(f).heat.auto = false;
     combat(f).heat.value = HEAT_MAX - 1;
     expect(shoot(f, 'weapon.burstLaser')).toBe(true);
     const c = combat(f);
@@ -223,12 +221,10 @@ describe('combat heat', () => {
   it('overcharged shields regenerate faster, and engines give more evasion', () => {
     const a = fight();
     shieldsOff(a);
-    combat(a).heat.auto = false;
     run(a, 8 * TPS);
     const t0 = combat(a).shield.timer + combat(a).shield.layers * 100;
     const b = fight();
     shieldsOff(b);
-    combat(b).heat.auto = false;
     b.sim.enqueue({ type: 'combat.overcharge', ship: b.mine, system: 'shields' });
     run(b, 8 * TPS);
     expect(combat(b).shield.timer + combat(b).shield.layers * 100).toBeGreaterThan(t0);
@@ -266,20 +262,63 @@ describe('combat heat', () => {
     expect(ev.some((e) => e.type === 'combat.vented' && e.ship === f.foe)).toBe(true);
   });
 
-  it('auto-fire holds a volley that would overheat the ship, and a manual ship does not', () => {
-    for (const auto of [true, false]) {
+  it('the AI holds a volley that would overheat it, and the player ship fires into an overheat', () => {
+    for (const who of ['foe', 'mine'] as const) {
       const f = fight();
-      shieldsUp(f);
-      combat(f).heat.auto = auto;
-      combat(f).heat.value = HEAT_MAX - 2;
-      sim(f).enqueue({ type: 'combat.setTarget', ship: f.mine, weaponId: null, targetShip: f.foe, targetModuleId: 0 });
-      for (const id of sim(f).world.query(WeaponC)) if (inShip(sim(f), id, f.mine)) sim(f).world.get(id, WeaponC)!.charge = 1;
+      const [shooter, other] = who === 'foe' ? [f.foe, f.mine] : [f.mine, f.foe];
+      // The foe's weapons were switched off by fight(): bring them back for this one.
+      for (const id of sim(f).world.query(WeaponC, ModuleC)) sim(f).world.get(id, ModuleC)!.enabled = true;
+      run(f, 40);
+      combat(f, who).shield.layers = combat(f, who).shield.max;
+      combat(f, who).heat.value = HEAT_MAX - 2;
+      sim(f).enqueue({ type: 'combat.setTarget', ship: shooter, weaponId: null, targetShip: other, targetModuleId: 0 });
+      for (const id of sim(f).world.query(WeaponC)) if (inShip(sim(f), id, shooter)) sim(f).world.get(id, WeaponC)!.charge = 1;
       const ev: SimEvent[] = [];
       run(f, 3, ev);
-      // With auto on the ship vents before it fires (its meter is above the vent threshold and the foe is quiet); with auto off it fires and overheats.
-      if (auto) expect(ev.some((e) => e.type === 'combat.overheated')).toBe(false);
-      else expect(ev.some((e) => e.type === 'combat.overheated')).toBe(true);
+      const overheated = ev.some((e) => e.type === 'combat.overheated' && e.ship === shooter);
+      expect(overheated).toBe(who === 'mine');
     }
+  });
+
+  it('the player ship never vents or overcharges without a command, whatever its heat', () => {
+    const f = fight(4, false);
+    sim(f).enqueue({ type: 'combat.setTarget', ship: f.mine, weaponId: null, targetShip: f.foe, targetModuleId: 0 });
+    combat(f).heat.value = HEAT_MAX * 0.9;
+    const ev: SimEvent[] = [];
+    run(f, 600, ev);
+    expect(ev.some((e) => (e.type === 'combat.vented' || e.type === 'combat.overcharged') && e.ship === f.mine)).toBe(false);
+  });
+
+  it('a player ship that never vents overheats under sustained fire with its shields up', () => {
+    const f = fight();
+    const ev: SimEvent[] = [];
+    // Shields held up and a steady stream of absorbed hits: nothing cools them, so the meter climbs to the maximum.
+    for (let i = 0; i < 20 * 3 && !ev.some((e) => e.type === 'combat.overheated'); i++) {
+      shieldsUp(f);
+      const p = f.sim.world.createEntity();
+      f.sim.world.add(p, ProjectileC, {
+        weapon: 'weapon.burstLaser', fromShip: f.foe, fromModuleId: 0, target: { ship: f.mine, moduleId: 0 }, x0: 0, y0: 0, x1: 0, y1: 0, x: 0, y: 0, t: 1, dt: 0, spread: 0, pdRolled: true,
+      });
+      run(f, 1, ev);
+      combat(f).evasion = 0;
+    }
+    run(f, 1, ev);
+    expect(ev.some((e) => e.type === 'combat.overheated' && e.ship === f.mine)).toBe(true);
+    expect(ev.some((e) => e.type === 'combat.vented' && e.ship === f.mine)).toBe(false);
+  });
+
+  it('the AI manages its own heat through a whole fight: it vents and does not stay overheated', () => {
+    const f = fight(3, false);
+    sim(f).enqueue({ type: 'combat.setTarget', ship: f.mine, weaponId: null, targetShip: f.foe, targetModuleId: 0 });
+    const ev: SimEvent[] = [];
+    let peak = 0;
+    for (let i = 0; i < 150 * TPS; i++) {
+      run(f, 1, ev);
+      peak = Math.max(peak, combat(f, 'foe').heat.value);
+    }
+    expect(ev.some((e) => e.type === 'combat.vented' && e.ship === f.foe)).toBe(true);
+    expect(ev.filter((e) => e.type === 'combat.overheated' && e.ship === f.foe)).toHaveLength(0);
+    expect(peak).toBeGreaterThan(HEAT_MAX * 0.5);
   });
 
   it('is deterministic and survives a save and load mid-fight', () => {

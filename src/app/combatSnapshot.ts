@@ -55,7 +55,7 @@ function heatOf(c: Combat): UiShipCombat['heat'] {
   const oc = (o: { left: number; cooldown: number }) => ({ left: sec(o.left), cooldown: sec(o.cooldown) });
   const h = c.heat;
   return {
-    value: round(h.value, 1), max: HEAT_MAX, lockout: sec(h.lockout), venting: sec(h.vent), cooling: shieldsDown(c) || h.vent > 0, auto: h.auto,
+    value: round(h.value, 1), max: HEAT_MAX, lockout: sec(h.lockout), venting: sec(h.vent), cooling: shieldsDown(c) || h.vent > 0,
     overcharge: { weapons: oc(h.overcharge.weapons), shields: oc(h.overcharge.shields), engines: oc(h.overcharge.engines) },
   };
 }

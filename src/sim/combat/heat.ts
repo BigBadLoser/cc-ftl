@@ -17,7 +17,7 @@ export const OVERCHARGE_SYSTEMS: readonly OverchargeSystem[] = ['weapons', 'shie
 
 export function newHeat(): Heat {
   return {
-    value: 0, lockout: 0, vent: 0, ventLen: 0, auto: true,
+    value: 0, lockout: 0, vent: 0, ventLen: 0,
     overcharge: { weapons: { left: 0, cooldown: 0 }, shields: { left: 0, cooldown: 0 }, engines: { left: 0, cooldown: 0 } },
   };
 }

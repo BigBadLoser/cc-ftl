@@ -131,8 +131,6 @@ export interface Heat {
   vent: number;
   /** Ticks the running vent was started with (its length depends on the coolant console), for the HUD. */
   ventLen: number;
-  /** The player's ship vents and holds volleys on its own (the AI always does). */
-  auto: boolean;
   overcharge: Record<OverchargeSystem, Overcharge>;
 }
 
