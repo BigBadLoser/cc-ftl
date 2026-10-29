@@ -143,7 +143,7 @@ export function createBridge(sim: Sim): Bridge {
   const moduleDefs = createStore<UiModuleDef[]>(buildModuleDefs(sim));
   let lastBlueprints = sim.story.blueprints.join(',');
   const sites = createStore<UiSite[]>([]);
-  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
+  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
   const goals = createStore<UiGoals | null>(null);
   const stranded = createStore<UiStranded | null>(null);
   let lastStranded = 'null';

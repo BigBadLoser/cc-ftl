@@ -23,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, SAVE_VERSION, serialize, ShipC } from './sim';
+import { BodyC, CrewC, PositionC, SAVE_VERSION, serialize, ShipC } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
@@ -53,12 +53,14 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 const starmapArt = createStore<UiStarArt | null>(null);
 loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.push(e));
 
+let upkeepFrame = 0;
 const loop = createLoop({
   sim,
   // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
   render: (alpha) => {
     // World animations freeze while the game is paused (speed 0); camera, UI and hover feedback keep running.
     setAnimPaused(loop.getSpeed() === 0);
+    if (upkeepFrame++ % 10 === 0) controller.upkeep();
     if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha);
   },
   onEvents: (events) => {
@@ -198,13 +200,47 @@ const stationFlag = params.get('station');
  * tool open with the Rectangle brush, and the game running at normal speed. The plan starts empty; the station's Shipyard tab is one click away.
  */
 const scenario = params.get('scenario');
+/**
+ * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
+ * a finished bounty / survey to hand in, and you at the nearest military / research station (drops in by itself). See galaxy/jobsDebug.ts.
+ */
+function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
+  if (name === 'handover') spawnStation('station.trading', 'outpost'); // a fresh game has no station ship at the start node: the shuttle needs one
+  bridge.dispatch({ type: 'debug.jobScenario', name });
+  bridge.dispatch({ type: 'debug.setCredits', value: 500 });
+  loop.setSpeed(1);
+  const spots = [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const;
+  const deploy = (i: number): void => {
+    if (name === 'handover' || sim.sector.state === 'active' || i >= 60) return;
+    if (sim.sector.state === 'deploying') bridge.dispatch({ type: 'sector.deploy', x: spots[i % spots.length]![0], y: spots[i % spots.length]![1] });
+    setTimeout(() => deploy(i + 1), 150);
+  };
+  deploy(0);
+}
 function startScenario(): void {
+  if (scenario === 'log') return logScenario();
+  if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
   bridge.dispatch({ type: 'debug.giveItems', item: 'item.metal', count: 500 });
   controller.setTool({ tool: 'build', build: 'hull', hull: { brush: 'rect', erase: false, mirror: false } });
   loop.setSpeed(1);
+}
+
+/**
+ * `?scenario=log`: look at the ship's log and alerts. A raider arrives (combat alert, jumps to it), a fire breaks out on the ship, and a few
+ * seconds later 450 credits come in (the log entry pulses).
+ */
+function logScenario(): void {
+  // The first free spot wins (a rejected spawn overlaps something).
+  const spots = [[110, 80], [60, 20], [20, 100], [150, 30], [100, 50], [40, 90], [130, 110]];
+  spots.forEach(([x, y], i) => setTimeout(() => { if (!sim.sector.inCombat) bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.raider', x: x as number, y: y as number }); }, i * 400));
+  const crew = sim.world.query(CrewC)[0];
+  const p = crew === undefined ? undefined : sim.world.get(crew, PositionC);
+  if (p) bridge.dispatch({ type: 'debug.setField', ship: homeShip(sim), x: Math.round(p.x), y: Math.round(p.y), field: 'fire', value: 200 });
+  loop.setSpeed(3);
+  for (const [ms, amount] of [[6000, 80], [8000, 200], [12000, 450]] as const) setTimeout(() => bridge.dispatch({ type: 'debug.setCredits', value: sim.trade.credits + amount }), ms);
 }
 
 /** The WebGL driver's renderer string, if the browser exposes it; pixi's canvas already owns a webgl context, so asking again returns it. */
@@ -309,6 +345,7 @@ const api: UiApi = {
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,
   focusAlert: controller.focusAlert,
+  focusSubject: controller.focusSubject,
   selectModule: controller.selectModule,
   tool: controller.tool,
   toast: controller.toast,

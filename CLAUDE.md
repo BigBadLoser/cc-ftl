@@ -59,6 +59,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - **Desktop only.** The game will not be played on phones. Don't spend work on phone layouts, touch gestures or phone
   screenshots, and don't add phone-specific requirements to briefs. Existing phone breakpoints may stay as they are; don't
   extend or fix them unless the user asks.
+- UI work follows the **UI soft rules** in `docs/DESIGN.md` ("UI"): nothing happens only in UI, show don't tell, numbers
+  on demand, the ship's log vs urgent clickable alerts, the Esc menu. They are soft: suggest breaking one when it fits better,
+  and let the user decide.
 - Visual changes: send the user the screenshots (default and zoomed-in) and get their approval before
   merging to `main`. Don't merge visual work on the strength of your own review alone.
 

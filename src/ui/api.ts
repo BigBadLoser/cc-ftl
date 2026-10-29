@@ -403,7 +403,7 @@ export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
 export interface UiJob {
   key: string;
   id: number | null;
-  kind: 'delivery' | 'bounty';
+  kind: 'delivery' | 'bounty' | 'survey';
   issuer: string;
   title: string;
   detail: string;
@@ -417,11 +417,23 @@ export interface UiJob {
   target: { strength: UiStrength; read: UiStrengthRead | null } | null;
 }
 
+/** A finished bounty or survey that can be handed in at the station the player is at. */
+export interface UiClaim {
+  id: number;
+  kind: 'bounty' | 'survey';
+  issuer: string;
+  title: string;
+  reward: number;
+  here: boolean;
+}
+
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
 export interface UiJobs {
   here: string | null;
   offers: UiJob[];
   active: UiJob[];
+  /** Finished bounties and surveys the station here takes in (never kept on screen anywhere else). */
+  handIn: UiClaim[];
   max: number;
   /** The player's own ship, for comparing with a bounty target. */
   mine: UiStrength | null;
@@ -456,19 +468,24 @@ export interface UiStory {
   last: { tick: number; title: string; choice: string; success: boolean | null; text: string; lines: string[] } | null;
 }
 
+/** What a log entry or an alert is about, so a click can jump to it. A node is a starmap node id. */
+export type UiSubject =
+  | { kind: 'tile'; x: number; y: number }
+  | { kind: 'crew'; id: number }
+  | { kind: 'ship'; id: number }
+  | { kind: 'node'; id: string };
+
+/** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
-  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
-  | 'job.missingMaterials' | 'storage.full' | 'production.done'
-  | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
-  | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard' | 'station.alarm'
-  | 'outpost.discovered' | 'ship.provoked' | 'mining.waiting' | 'mining.done' | 'galaxy.encounter' | 'galaxy.incoming' | 'galaxy.incomingHostile' | 'transfer';
+  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.starving'
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
-  | 'ship.fled' | 'ship.captured' | 'hail' | 'trade' | 'production' | 'container' | 'story' | 'lost';
+  | 'ship.fled' | 'ship.captured' | 'hail' | 'trade' | 'production' | 'container' | 'story' | 'lost'
+  | 'payout' | 'kill' | 'warning' | 'job' | 'mining' | 'transfer' | 'galaxy' | 'outpost' | 'creatures' | 'crew';
 
-/** One happening in the event log (history, not an ongoing state like an alert). */
+/** One happening in the ship's log (the full record, not an ongoing state like an alert). */
 export interface UiLogEntry {
   id: number;
   /** Sim tick it happened on. */
@@ -478,6 +495,12 @@ export interface UiLogEntry {
   text: string;
   /** How many times in a row this happened (same text as the entry before). */
   count: number;
+  /** Where a click on the entry goes, when the event has a subject. */
+  subject?: UiSubject;
+  /** Credits gained (a payout, sale or bounty): the entry shows `+N ₵` and pulses briefly. */
+  amount?: number;
+  /** Wall-clock ms when the entry was added or last folded into; drives the brief highlight. */
+  born: number;
 }
 
 /** A weapon module of the player's ship. */
@@ -915,8 +938,8 @@ export interface UiAlert {
   id: number;
   kind: UiAlertKind;
   text: string;
-  /** Where the camera goes when tapped, or null if unknown. */
-  at: { x: number; y: number } | null;
+  /** Where a click goes. Every urgent alert has one. */
+  subject: UiSubject | null;
   /** Event notices: the sim notice id (tap opens its lead when `lead`), and a title shown above the text. */
   notice?: { id: number; lead: boolean; title: string };
 }
@@ -1123,6 +1146,8 @@ export interface UiApi {
   dismissAlert(id: number): void;
   /** Move the camera to an alert's location. */
   focusAlert(id: number): void;
+  /** Jump to a log entry's subject: a tile, crew member or ship (a node is the UI's to open on the starmap). */
+  focusSubject(subject: UiSubject): void;
   /** Brief message (e.g. a rejected command), or null. */
   toast: Subscribable<string | null>;
   setTool(state: Partial<UiToolState>): void;

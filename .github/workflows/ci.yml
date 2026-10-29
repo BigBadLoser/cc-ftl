@@ -7,8 +7,8 @@ name: CI
 #   install. The full suite is the author's job: `npm run check` after the last merge of main, pasted into the PR.
 # - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
 #   tier (*.slow.test.ts) included. This catches what slips through, such as two PRs that only break together.
-# Wiki-only changes run .github/workflows/wiki-ci.yml instead of this full game CI.
-# Shared src/content edits still run both workflows. Markdown-only edits are excluded.
+# Markdown-only and wiki-only changes don't run this CI (the wiki has .github/workflows/wiki-ci.yml).
+# Shared src/content edits still run both.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -32,35 +32,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      # Path filters on PRs examine *all* files in the PR, so this mixed
-      # bootstrap PR still triggers game CI after wiki-only pushes.
-      # On synchronize, inspect the actual push delta before installing anything.
-      # Missing/unfetchable SHAs fail open: run game checks rather than skip them.
-      - name: Detect wiki-only PR update
-        id: scope
-        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-        env:
-          BEFORE: ${{ github.event.before }}
-          AFTER: ${{ github.event.after }}
-        run: |
-          if [[ ! "$BEFORE" =~ ^[0-9a-f]{40}$ || ! "$AFTER" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "No reliable PR-update commit range; run regular game checks"
-            exit 0
-          fi
-          if ! git fetch --no-tags --depth=1 origin "$BEFORE" "$AFTER"; then
-            echo "Could not fetch update commits; run regular game checks"
-            exit 0
-          fi
-          changed=$(git diff --name-only "$BEFORE" "$AFTER") || exit 0
-          [[ -n "$changed" ]] || exit 0
-          while IFS= read -r file; do
-            case "$file" in
-              wiki/*|wiki-preview/*|.github/workflows/wiki-ci.yml|.github/workflows/wiki-preview.yml) ;;
-              *) echo "Game-relevant change: $file"; exit 0 ;;
-            esac
-          done <<< "$changed"
-          echo "wiki_only=true" >> "$GITHUB_OUTPUT"
-          echo "Wiki-only PR update: skip game dependency install, lint, tests, and build"
       # The daily run skips itself when main has no commit from the last 24 hours.
       - name: Daily run needed?
         id: fresh
@@ -69,24 +40,24 @@ jobs:
             echo "main unchanged for a day: skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-node@v4
-        if: steps.fresh.outputs.skip != 'true' && steps.scope.outputs.wiki_only != 'true'
+        if: steps.fresh.outputs.skip != 'true'
         with:
           node-version: 22
           cache: npm
-      - if: steps.fresh.outputs.skip != 'true' && steps.scope.outputs.wiki_only != 'true'
+      - if: steps.fresh.outputs.skip != 'true'
         run: npm ci
       - name: Lint
-        if: steps.fresh.outputs.skip != 'true' && steps.scope.outputs.wiki_only != 'true'
+        if: steps.fresh.outputs.skip != 'true'
         run: npm run lint
       - name: Typecheck
-        if: steps.fresh.outputs.skip != 'true' && steps.scope.outputs.wiki_only != 'true'
+        if: steps.fresh.outputs.skip != 'true'
         run: npm run typecheck
       - name: Test (affected fast tests)
-        if: (github.event_name == 'pull_request' || github.event_name == 'push') && steps.scope.outputs.wiki_only != 'true'
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         run: npx vitest run --changed HEAD~1 --passWithNoTests --exclude 'src/**/*.slow.test.ts'
       - name: Test (every test, slow tier included)
-        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.fresh.outputs.skip != 'true' && steps.scope.outputs.wiki_only != 'true'
+        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.fresh.outputs.skip != 'true'
         run: npm test
       - name: Build
-        if: steps.fresh.outputs.skip != 'true' && steps.scope.outputs.wiki_only != 'true'
+        if: steps.fresh.outputs.skip != 'true'
         run: npm run build

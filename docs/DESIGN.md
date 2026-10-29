@@ -452,13 +452,44 @@ common there, and the starmap hints at notable stock.
 
 ## UI
 
-- Full-screen game view with Svelte panels over it: a top bar (resources, time), a bottom context panel
-  (selection), side drawers (build, crew, priorities, starmap). Drawers become sheets on phones.
-- Field **overlays** (O2, heat, power, light, damage) and a **tile inspector**.
-- **Alert queue** with click-to-jump and per-type auto-pause.
-- Keyboard: space pauses, 1–3 set speed, plus drawer hotkeys. Touch has buttons for everything.
-- The starmap is its own view.
-- Expect heavy refinement once it's playable.
+- **Layout:** a full-screen game view with Svelte panels over it.
+  - **Top:** the crew bar and the node strip.
+  - **Top left:** drawer buttons (starmap, ship, crew, build and so on).
+  - **Top right:** the time controls, with the ship's log above them and the goals and alerts below them.
+  - **Bottom left:** a context panel for the selection.
+  - **Bottom right:** a tool bar.
+
+  The layout that grew in play replaced the original plan (a top bar, a crew roster on the left, one right-hand drawer).
+- **Overlays and inspection:** field overlays (O2, heat, power, light, damage) and a tile inspector.
+- **Keyboard:** Space pauses, 1–3 set speed, backtick opens the debug menu, plus drawer hotkeys.
+- **Starmap:** it is its own view.
+- **Platform:** desktop only.
+
+### UI soft rules (user decisions, 2026-10-28)
+
+**These are soft rules.** They set the default direction. An agent or session should always feel free to suggest
+breaking one, or to ask whether it should apply in a given case. Say why, and let the user decide.
+
+1. **Nothing happens only in the UI.** Story and interactions play out in the world wherever possible. For example, navy
+   inspectors dock and come aboard (#138) rather than a dialog doing the search.
+2. **Show, don't tell.** State is shown in the world first: sprites, effects, overlays, and small floating feedback where
+   it happens (for example "+245 ₵" rising off the station). Text on screen is the fallback, not the default.
+3. **Numbers on demand.** These games tend towards dense, number-heavy UI, and that overloads the player. Dense
+   information lives behind an action: inspect a tile, crew member or module, or open a drawer from the top-left
+   buttons. The always-on HUD stays sparse.
+4. **The ship's log** (above the time controls) is the full, persistent record of everything notable: trades and
+   payouts, combat, deaths, story beats, production. It can be scrolled back, and each entry jumps to its subject when
+   clicked. Events that also raise an alert are logged as well.
+5. **Alerts** (under the clock) are for urgent, actionable things only. Every alert is clickable and takes you to its
+   subject:
+   - combat goes to the enemy;
+   - a downed crew member goes to them;
+   - a fire or breach goes to the room;
+   - a shortage opens the relevant panel.
+
+   Alerts clear themselves once resolved. Anything that isn't urgent goes to the log, not the alerts.
+6. **The Esc menu:** Esc first cancels the active tool or aim. When there is nothing to cancel, it opens a medium-sized
+   menu (about the size of the ship stock panel, or smaller) with resume, save and load, new game, controls and settings.
 
 ## Open questions
 

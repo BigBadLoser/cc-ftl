@@ -35,7 +35,7 @@ function busyVehicles(sim: Sim): Set<number> {
 }
 
 /** The player's shuttle that can make a trade run, or a reason it cannot. */
-function playerCourier(sim: Sim): { vehicle: number; cap: number } | { error: string } {
+export function playerCourier(sim: Sim): { vehicle: number; cap: number } | { error: string } {
   const me = playerShip(sim);
   const busy = busyVehicles(sim);
   let error = 'noCourier';

@@ -76,6 +76,9 @@
   /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
   let fleeShip = $state<number | null>(null);
   let sliding = $state(false);
+  /** A log entry or alert about a starmap node: open the map. */
+  let focusNode = $state<string | null>(null);
+  const openNode = (id: string) => { if (!mapLocked) { fleeShip = null; focusNode = id; mapOpen = true; } };
   /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
   let star = $state<UiStarmap | null>(null);
   let deploy = $state<UiDeploy | null>(null);
@@ -185,7 +188,7 @@
       api.togglePause();
     } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
     else if (e.key === '`') debug = !debug;
-    else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; mapOpen = !mapOpen; } }
+    else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; focusNode = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
       // A pinned window ignores Esc.
       if (researchOpen) researchOpen = false;
@@ -231,7 +234,7 @@
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   <NavStrip
-    {mapOpen} {mapLocked} onMap={() => { fleeShip = null; mapOpen = !mapOpen; }}
+    {mapOpen} {mapLocked} onMap={() => { fleeShip = null; focusNode = null; mapOpen = !mapOpen; }}
     {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
     {hasLab} {researchOpen} onResearch={() => (researchOpen = !researchOpen)}
@@ -291,7 +294,7 @@
 {/if}
 {#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
 {#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
-{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
+{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <ErrorOverlay {api} />
 <GameSession {api} />
@@ -299,7 +302,7 @@
 <!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, the accepted-jobs tracker, then alerts, stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>
   <div class="frame">
-    <EventLog {api} />
+    <EventLog {api} onNode={openNode} />
     {#if !narrow}{@render time()}{/if}
   </div>
   <div class="cards">
@@ -307,7 +310,7 @@
     <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
   </div>
   <StrandedBanner {api} />
-  <AlertList {api} />
+  <AlertList {api} onNode={openNode} />
 </div>
 
 <style>
