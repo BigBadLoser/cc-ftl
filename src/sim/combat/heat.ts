@@ -4,7 +4,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { CombatC, IonC, type Combat, type Heat, type OverchargeSystem } from './components';
 import {
-  HEAT_MAX, LOCKOUT_SEC, OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_SEC, PASSIVE_COOL_PER_SEC, RADIATOR_VENT_FACTOR, VENT_MIN_HEAT, VENT_OPERATED_BONUS, VENT_SEC,
+  AUTO_FIRE_CEILING, HEAT_MAX, LOCKOUT_SEC, OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_SEC, PASSIVE_COOL_PER_SEC, RADIATOR_VENT_FACTOR, VENT_MIN_HEAT, VENT_OPERATED_BONUS, VENT_SEC,
 } from './heatTuning';
 
 /**
@@ -30,6 +30,11 @@ export function shieldsDown(c: Combat): boolean {
 /** Overheated: weapons cannot charge or fire. */
 export function lockedOut(c: Combat): boolean {
   return c.heat.lockout > 0;
+}
+
+/** An AI ship holds a volley of `weaponHeat` that would take it past the auto-fire ceiling (firingSystem waits, heatAiSystem vents). */
+export function heatCeilingBlocks(c: Combat, weaponHeat: number): boolean {
+  return c.heat.value + weaponHeat > HEAT_MAX * AUTO_FIRE_CEILING;
 }
 
 /** Weapons cannot fire: venting or locked out. */

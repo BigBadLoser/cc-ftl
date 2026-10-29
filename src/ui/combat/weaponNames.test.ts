@@ -14,4 +14,8 @@ describe('weaponLabels', () => {
   it('handles no weapons', () => {
     expect(weaponLabels([])).toEqual([]);
   });
+
+  it('numbers six like weapons with numerals, not digits', () => {
+    expect(weaponLabels(Array.from({ length: 6 }, () => ({ name: 'Burst laser' }))).slice(4)).toEqual(['Burst laser V', 'Burst laser VI']);
+  });
 });

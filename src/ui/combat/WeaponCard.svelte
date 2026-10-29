@@ -4,10 +4,12 @@
   import type { UiWeapon } from '../api';
 
   /** One player weapon: hotkey, name, charge bar and target. Click to arm it, then click an enemy module in the world to aim. */
-  let { weapon, label, hotkey, selected, onSelect }: {
+  let { weapon, label, hotkey, selected, onSelect, compact = false }: {
     weapon: UiWeapon;
     label: string;
     hotkey: string;
+    /** One line (name, ammo) over the charge bar, no target line: for ships with more than four weapons. */
+    compact?: boolean;
     selected: boolean;
     onSelect: () => void;
   } = $props();
@@ -22,21 +24,28 @@
   class="wc"
   class:sel={selected}
   class:off={!weapon.powered}
+  class:compact
   aria-pressed={selected}
   data-testid="combat-weapon"
-  title={tip}
+  title={compact && own ? `${tip}. Aimed at ${weapon.target}` : tip}
   onclick={onSelect}
 >
   <span class="top">
-    <KeyBadge>{hotkey}</KeyBadge>
+    {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
     <span class="nm">{label}</span>
     {#if weapon.ammo !== null}<span class="am">x{weapon.ammo}</span>{/if}
   </span>
-  <Meter value={weapon.charge} fill={weapon.charge >= 1 ? 'var(--health-good)' : 'var(--amber)'} />
-  <span class="tg" class:own>
-    <Icon name="target" size={12} />
-    <span>{aimText}</span>
-  </span>
+  {#if compact}
+    <span class="cm"><Meter value={weapon.charge} fill={weapon.charge >= 1 ? 'var(--health-good)' : 'var(--amber)'} height={5} /></span>
+  {:else}
+    <Meter value={weapon.charge} fill={weapon.charge >= 1 ? 'var(--health-good)' : 'var(--amber)'} />
+  {/if}
+  {#if !compact}
+    <span class="tg" class:own>
+      <Icon name="target" size={12} />
+      <span>{aimText}</span>
+    </span>
+  {/if}
 </button>
 
 <style>
@@ -50,6 +59,15 @@
     text-align: left;
     background: var(--panel-2);
   }
+  .wc.compact {
+    position: relative;
+    padding: 0 var(--sp-2) 8px;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+  }
+  .cm { position: absolute; left: 6px; right: 6px; bottom: 3px; }
+  .compact .nm { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .compact.sel .nm, .compact .nm { line-height: 1.2; }
   .wc.sel {
     border-color: var(--cyan);
     background: var(--panel-3);

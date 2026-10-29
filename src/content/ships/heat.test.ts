@@ -280,6 +280,34 @@ describe('combat heat', () => {
     }
   });
 
+  it('the AI vents when its heat ceiling blocks every usable weapon, even while the player holds a charged shot on it', () => {
+    const f = fight();
+    // The foe's only usable weapon is a mass driver (8 heat): at 88 its volley would pass the ceiling, and 88 is under the force-vent line.
+    let driver = 0;
+    for (const id of sim(f).world.query(WeaponC, ModuleC)) {
+      const m = sim(f).world.get(id, ModuleC)!;
+      if (!inShip(sim(f), id, f.foe)) continue;
+      m.enabled = !driver;
+      if (m.enabled) { m.def = 'module.massDriver'; driver = id; }
+    }
+    expect(driver).toBeGreaterThan(0);
+    // The player holds fire with a charged weapon aimed at the foe: a shot "about to land" (on the player's terms, never fired).
+    sim(f).enqueue({ type: 'combat.setTarget', ship: f.mine, weaponId: null, targetShip: f.foe, targetModuleId: 0 });
+    sim(f).enqueue({ type: 'combat.setHold', ship: f.mine, hold: true });
+    sim(f).enqueue({ type: 'combat.setTarget', ship: f.foe, weaponId: null, targetShip: f.mine, targetModuleId: 0 });
+    combat(f, 'foe').shield.layers = combat(f, 'foe').shield.max;
+    combat(f, 'foe').heat.value = 88;
+    const ev: SimEvent[] = [];
+    for (let i = 0; i < 400; i++) {
+      for (const id of sim(f).world.query(WeaponC)) if (inShip(sim(f), id, f.mine)) sim(f).world.get(id, WeaponC)!.charge = 1;
+      sim(f).world.get(driver, WeaponC)!.charge = 1;
+      combat(f, 'foe').shield.layers = combat(f, 'foe').shield.max;
+      run(f, 1, ev);
+      if (ev.some((e) => e.type === 'combat.vented' && e.ship === f.foe)) break;
+    }
+    expect(ev.some((e) => e.type === 'combat.vented' && e.ship === f.foe)).toBe(true);
+  });
+
   it('the player ship never vents or overcharges without a command, whatever its heat', () => {
     const f = fight(4, false);
     sim(f).enqueue({ type: 'combat.setTarget', ship: f.mine, weaponId: null, targetShip: f.foe, targetModuleId: 0 });

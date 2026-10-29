@@ -1,4 +1,4 @@
-const ROMAN = ['I', 'II', 'III', 'IV'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
 /**
  * Display names for a ship's weapons, in order: a name that several weapons share gets a numeral by their order

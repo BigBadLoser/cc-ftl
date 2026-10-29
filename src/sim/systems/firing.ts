@@ -5,8 +5,7 @@ import { aimDirection, turretPosition } from '../combat/geometry';
 import { mannedConsole, operatorSkill } from '../combat/operators';
 
 import { resolveTarget } from '../combat/targets';
-import { addHeat, fireBlocked } from '../combat/heat';
-import { AUTO_FIRE_CEILING, HEAT_MAX } from '../combat/heatTuning';
+import { addHeat, fireBlocked, heatCeilingBlocks } from '../combat/heat';
 import { updateCommit } from '../combat/commit';
 import { isAiFaction } from '../combat/factions';
 import { ModuleC } from '../modules/components';
@@ -50,7 +49,7 @@ export function firingSystem(sim: Sim): void {
     const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
     // Enemy ships manage their own heat: a volley that would overheat them waits for a vent. The player's ship fires into an overheat if told to.
-    if (isAiFaction(ship.faction) && combat.heat.value + def.heat > HEAT_MAX * AUTO_FIRE_CEILING) continue;
+    if (isAiFaction(ship.faction) && heatCeilingBlocks(combat, def.heat)) continue;
     addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
