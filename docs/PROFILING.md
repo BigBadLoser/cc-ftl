@@ -53,7 +53,7 @@ TODO: `fight` and `damage` arrive with PR #184. A prize or a yard crew run is no
 `ticks`, `populate`, `setup(sim)`) to `SCENARIOS` in `tools/profile/scenarios.ts`: `exec(sim, commands, steps)` queues commands and steps the sim, and tallies
 rejected commands in `setupRejections` (a test can assert that the commands that matter went through). Scenario setup ticks count in `sim.tick`.
 
-Costs to expect (one machine, see the baseline in `docs/CREW_AI.md` 7.4): `storm` and `haul` are dominated by `sim/decide` (tens of ms per tick), which is the
+Costs to expect (one machine, see the baseline in `docs/CREW_AI.md` 7.4): `storm` and `haul` are dominated by `sim/decide` (since crew AI Phase 1 `sim/schedule`, the same code in the same slot; `sim/interrupt` is the forced-state detector) (tens of ms per tick), which is the
 point of them. The other scenarios are quick.
 
 ### Metrics (`tools/profile/metrics.ts`)
