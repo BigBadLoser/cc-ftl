@@ -1,11 +1,12 @@
 /**
  * Room sheets (dev tool, not shipped): rooms of one role across seeds, each drawn large on its own, top-down, so the
  * room engine's output reads at a glance (on a phone too). Every module is a coloured box with a short label, its front
- * marked by a bar on the side it faces; doors are orange, other rooms' floor is dimmed. A caption per room gives the
+ * marked by a bar on the side it faces (a chair's on the side it faces); doors are orange, other rooms' floor is dimmed.
+ * A module that breaks a use rule (shipgen/rooms/usage.ts) is framed red, with the rule in the caption. A caption per room gives the
  * seed, size, floor and fill, and the modules by count; the legend lists only the modules on the sheet.
  */
 import { content } from '../../src/content';
-import { accessTile, footprintTiles, rotatedSize, type GenResult, type ModuleDef, type RoomRole } from '../../src/sim';
+import { accessTile, checkUse, footprintTiles, rotatedSize, type GenResult, type ModuleDef, type RoomRole } from '../../src/sim';
 import { gen, MOD, Raster, ROLE_TINT, type RGB } from './draw';
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -57,7 +58,12 @@ function drawRoom(r: Raster, p: Pick, ox: number, oy: number, s: number, x0: num
     }
   }
   const counts = new Map<string, number>();
-  for (const m of g.template.modules ?? []) {
+  const mods = (g.template.modules ?? []).map((m) => ({ ...m, rot: m.rot ?? 0 }));
+  const issues = checkUse(rows, mods, defs);
+  const broken = new Map<number, string[]>();
+  for (const b of issues) broken.set(b.module, [...(broken.get(b.module) ?? []), b.kind]);
+  const mine: string[] = [];
+  for (const [mi, m] of (g.template.modules ?? []).entries()) {
     const d = defs[m.def];
     if (!d) continue;
     const tiles = footprintTiles(d, m.x, m.y, m.rot ?? 0);
@@ -67,8 +73,18 @@ function drawRoom(r: Raster, p: Pick, ox: number, oy: number, s: number, x0: num
     const st = style(m.def);
     const lamp = !!d.light && !d.solid;
     if (lamp) { r.rect(bx(m.x) + s / 2 - 3, by(m.y) + s / 2 - 3, 6, 6, st.c); continue; }
+    const bad = broken.get(mi);
+    if (bad) mine.push(...bad.map((k) => `${st.label || short(m.def)} ${k}`));
     r.rect(bx(m.x) + 2, by(m.y) + 2, w * s - 4, h * s - 4, st.c);
-    r.frame(bx(m.x) + 2, by(m.y) + 2, w * s - 4, h * s - 4, [0, 0, 0], 2);
+    r.frame(bx(m.x) + 2, by(m.y) + 2, w * s - 4, h * s - 4, bad ? [230, 30, 30] : [0, 0, 0], bad ? 4 : 2);
+    if (m.def === 'module.chair') {
+      // A chair's front: the side a seated crew member faces (r0 -y, r1 +x, r2 +y, r3 -x).
+      const rr = (m.rot ?? 0) % 4;
+      if (rr === 0) r.rect(bx(m.x) + 4, by(m.y) + 2, s - 8, 4, [20, 20, 20]);
+      else if (rr === 2) r.rect(bx(m.x) + 4, by(m.y + 1) - 6, s - 8, 4, [20, 20, 20]);
+      else if (rr === 3) r.rect(bx(m.x) + 2, by(m.y) + 4, 4, s - 8, [20, 20, 20]);
+      else r.rect(bx(m.x + 1) - 6, by(m.y) + 4, 4, s - 8, [20, 20, 20]);
+    }
     // The front: a dark bar on the side the module is worked from.
     const a = accessTile(d, m.x, m.y, m.rot ?? 0);
     if (a) {
@@ -88,9 +104,12 @@ function drawRoom(r: Raster, p: Pick, ox: number, oy: number, s: number, x0: num
     for (const t of footprintTiles(d, m.x, m.y, m.rot ?? 0)) if (mineTile.has(t.y * W + t.x)) solidTiles++;
   }
   const bw = Math.max(...xs) - Math.min(...xs) + 1, bh = Math.max(...ys) - Math.min(...ys) + 1;
+  const tally = new Map<string, number>();
+  for (const k of mine) tally.set(k, (tally.get(k) ?? 0) + 1);
   return [
     `seed ${p.seed}  ${bw}x${bh}  ${room.tiles.length} tiles  ${Math.round((100 * solidTiles) / room.tiles.length)}% full`,
     used.sort((a, b) => b[1] - a[1]).map(([id, n]) => `${style(id).label || short(id)} ${n}`).join('  '),
+    [...tally].map(([k, n]) => `${n} ${k}`).join('  ') || 'no rule breaks',
   ];
 }
 
@@ -106,7 +125,7 @@ export function roomSheet(spec: string, role: RoomRole, from: number, count: num
   const cellW = 660;
   const tile = (p: Pick): number => { const [a, , c] = box(p); return Math.max(12, Math.min(40, Math.floor((cellW - 20) / (c - a + 1)))); };
   const roomH = (p: Pick): number => { const [, b, , d] = box(p); return (d - b + 1) * tile(p); };
-  const CAP = 66;
+  const CAP = 90;
   const rowH: number[] = [];
   for (let i = 0; i < picks.length; i += cols) rowH.push(Math.max(...picks.slice(i, i + cols).map(roomH)) + CAP + 24);
   // Legend: the modules on the sheet, with their full names.
@@ -135,6 +154,7 @@ export function roomSheet(spec: string, role: RoomRole, from: number, count: num
     const lines = drawRoom(r, p, ox, oy + CAP, tile(p), x0, y0);
     r.text(lines[0] as string, ox, oy + 6, [255, 255, 255], 3);
     r.text(lines[1] as string, ox, oy + 30, [190, 200, 210], 3);
+    r.text(lines[2] as string, ox, oy + 54, lines[2] === 'no rule breaks' ? [120, 200, 120] : [255, 90, 90], 2);
     text.push(...lines, '');
     if (i % cols === cols - 1) oy += rowH[Math.floor(i / cols)] as number;
   });

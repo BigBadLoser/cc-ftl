@@ -7,6 +7,7 @@ export { structureParts, validateTemplate } from './validate';
 export { scaled, hullChoices } from './plan';
 export { roleOfLetter } from './canvas';
 export { CAGE, LAMP, MAST, isLamp, reachOf } from './fit';
+export { checkUse, type UseBreak, type UseIssue } from './rooms/usage';
 export { adjacencyDistance, adjacencySignature, layoutMetrics, meanPairwise, profileDistance, silhouetteDistance, silhouetteMask } from './metrics';
 export { Arranger, mirrorBlock, flipId, type Block, type BlockPort, type AttachOpts } from './arranger';
 export { generateStation, stationFaction, stationProblems, type StationResult } from './stationGen';
