@@ -2,7 +2,6 @@
 face, the grille on the floor of the plate's own recess (a px deep, in a 2 px border), and over the plate a recess a
 px deep running up to the cut, on the run's shared dress (the top's seam, the face's edge, the slope's rim and
 end)."""
-from . import core
 from . import wall3d_ext_t3 as T3
 from .wall3d_ext_geom import LINE, PAINT, YS
 
@@ -15,9 +14,7 @@ LOOK3 = {                            # art px: u from the face's +u end (centred
     "plate": (3, 2),                 # its plate: the grille and this much more every way, this many px proud
     "inset": (2, 1),                 # the plate's recess (the grille on its floor): its border, its depth
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
-                                     # each side
-    "ribs": (8, 1),                  # a rib (a px wide, as proud) under each side of the plate: straight down this
-}                                    # far (its corner cut this much), then back into the slope (level on screen)
+}                                    # each side
 
 
 def _rects():
@@ -88,16 +85,6 @@ def look3(f, s, back, U, Z, cols):
             floor(p, p + 1, sv0, sv1, XS)
         floor(ga, gb, sv0, sv0 + 1, GSHADE)
         floor(gb - 1, gb, sv0, sv1, GSHADE)
-    with f.tag("ribs"):                                             # (each its section: from the plate's bottom
-        rh, rc = LOOK3["ribs"]                                      # straight down at its front, its corner cut,
-        zr = zb - rh * px                                           # then back into the slope)
-        _, r, h = s.under                                           # (its bottom edge falls as it goes back just
-        t = core.TILE_H / 2 / core.ZPX                              # enough to read level on screen, to where it
-        a = (fr - s.front(zr, zr)[0][0]) / (1 - r / h * t)          # meets the slope)
-        rp = [(s.front(zb, zb)[0][0] - 0.01, zb), (fr, zb), (fr, zr + rc * px), (fr - rc * LINE, zr),
-              (fr - a, zr - t * a)]
-        for a in (pa, pb - 1):
-            f.part(*U(a, a + 1), rp, s.cols(rp, "face"), YS[2], end=False)
     with f.tag("slope"):                                            # (the face's and the plate's edge on the
         x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
         for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pb), x + 0.5, 3.5), ((pb, 32), 0.5, 2)):
