@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { bellyIds, exteriorIds, hullKeys, hullPaintParam, tileLook } from "./hullArt";
+import { bellyIds, exteriorIds, hullKeys, hullPaintParam, pickDesign, tileLook } from "./hullArt";
 
 /** A box ship: hull walls round floors, in a region with a tile of space round it. */
 function box(w: number, h: number, extra: (x: number, y: number) => number | undefined = () => undefined) {
@@ -46,6 +46,18 @@ describe("hullArt", () => {
     expect(b.under).toBe(look === 20 ? "tile.hull.belly.under.0_1_15" : `tile.hull.belly.under.0_1_15.l${look}`);
     expect(bellyIds(keys, 4, 6, (id) => !/\.l\d+$/.test(id))).toEqual({ under: "tile.hull.belly.under.0_1_15", low: "tile.hull.belly.low.0_1_15" });
     expect(bellyIds(keys, 4, 6, () => false)).toBeNull();
+  });
+
+  it("takes the default design on a quarter of the tiles and the others alike on the rest", () => {
+    for (const n of [4, 6]) {
+      const counts = new Array<number>(n).fill(0);
+      for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) counts[pickDesign(x, y, n, 1)]!++;
+      expect(counts[0]! / 4096).toBeCloseTo(0.25, 1);
+      for (const c of counts.slice(1)) expect(c / 4096).toBeCloseTo(0.75 / (n - 1), 1);
+    }
+    // Along a run there is no repeating pattern: no period up to 8 holds over 40 tiles.
+    const run = Array.from({ length: 40 }, (_, x) => pickDesign(x, 7, 4, 1));
+    for (let p = 1; p <= 8; p++) expect(run.every((v, i) => i < p || v === run[i - p])).toBe(false);
   });
 
   it("reads the debug paint", () => {

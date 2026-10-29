@@ -1,7 +1,7 @@
 import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
 import { hullKey, hullKeyGeneric, hullKeyName, hullOutline, type Front } from "./hullKey";
-import type { KindAt } from "./tiles";
+import { tileHash, type KindAt } from "./tiles";
 
 /**
  * The hull from outside and its belly (the `hull` sprite family, tools/blender/sprites/hulltiles.py), picked per tile by
@@ -71,7 +71,14 @@ function runSetId(h: HullKeys, x: number, y: number): string {
   return `tile.hull.ext.${ox && oy ? "o3" : oy ? "o1" : "o2"}.m${m}`;
 }
 
-const mod = (a: number, n: number) => ((a % n) + n) % n;
+/**
+ * Which of n designs a tile takes (0 the default): the default on a quarter of the tiles, one of the others, alike, on
+ * the rest; by a hash of the tile (`salt` keeps the exterior's and the belly's picks apart).
+ */
+export function pickDesign(x: number, y: number, n: number, salt: number): number {
+  const h = tileHash(x + salt * 7919, y - salt * 104729);
+  return n < 2 || h % 4 === 0 ? 0 : 1 + ((h >>> 8) % (n - 1));
+}
 
 /**
  * The exterior sprites of a hull tile (the ship roofed), back to front: a near run or corner the run set's piece (a
@@ -83,7 +90,7 @@ export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string)
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
     const id = runSetId(h, x, y);
-    const v = STRAIGHT.has(id) ? ["", ".a1", ".a2", ".a3"][mod(x * 11 + y * 5 + mod(x + y, 3), 4)] : "";
+    const v = STRAIGHT.has(id) ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
     for (const c of [id + v, id]) if (has(c)) return [c];
   }
   const n = hullKeyName(k);
@@ -91,7 +98,7 @@ export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string)
 }
 
 /** The bay look a tile's belly takes. */
-export const tileLook = (x: number, y: number) => BELLY_LOOKS[mod(x * 7 + y * 13 + mod(x * y, 5), BELLY_LOOKS.length)];
+export const tileLook = (x: number, y: number) => BELLY_LOOKS[pickDesign(x, y, BELLY_LOOKS.length, 2)]!;
 
 /**
  * The belly sprites of a tile: below the deck (`under`) and its cut top over it (`low`, cutaway views), in the tile's
