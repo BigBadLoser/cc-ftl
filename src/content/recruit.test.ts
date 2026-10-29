@@ -109,6 +109,28 @@ describe('crew for hire', () => {
     expect(people(sim).some((id) => keyOf(sim, id) === fh.key)).toBe(false);
   });
 
+  it('a run stuck on the way home is given up: the deal fails, the fee is refunded and nobody is hired; survives a reload', () => {
+    const sim = atStation();
+    const [c] = people(sim) as [number];
+    const fh = sim.world.get(c, ForHireC)!;
+    const credits = (sim.trade.credits = 1000);
+    hire(sim, fh.key);
+    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
+    const d = sim.trade.deals[0]!;
+    expect(d.phase).toBe('back');
+    sim.world.destroyEntity(d.airlock); // the airlock the shuttle was to dock at is gone
+    run(sim, () => false, 1500);
+    const reloaded = deserialize(serialize(sim), content);
+    run(reloaded, () => reloaded.trade.deals[0]?.phase === 'failed', 4000);
+    for (const s of [reloaded]) {
+      expect(s.trade.deals[0]?.phase).toBe('failed');
+      expect(s.trade.credits).toBe(credits);
+      expect(s.world.get(c, AllegianceC)?.faction).not.toBe('player');
+      expect(s.story.flags['stat.hired']).toBeUndefined();
+      expect(s.trade.deals.some((x) => x.phase !== 'done' && x.phase !== 'failed')).toBe(false);
+    }
+  });
+
   it('refunds when the run is called off, and the candidate stays hireable', () => {
     const sim = atStation();
     const [c] = people(sim) as [number];

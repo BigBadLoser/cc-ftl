@@ -178,12 +178,20 @@ function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
 }
 
 /**
- * A delivery that cannot be finished (no airlock to dock at, nobody or nowhere to unload). The goods are somewhere physical, and each is
- * counted once: the player's own shuttle keeps what it carries and the deal is settled as paid (the goods are theirs to unload later);
- * the trader's shuttle leaves with its cargo and the deal is refunded with the goods back in the trader's stock; recruits go back.
+ * Has the exchange happened by the time a deal is in `back` or `unload`, so that what the player paid for is physically theirs? One decision
+ * for every timeout:
+ * - the player's shuttle (`you`): yes. The give goods went to the trader and the get goods are in the shuttle's hold at the exchange, before
+ *   `back`. The deal settles as done, the hold stays aboard (nothing is refunded or duplicated).
+ * - the trader's shuttle (`them`): no. It only carries the trader's goods (a deal with give goods always uses the player's shuttle, see
+ *   `planCourier`), which reach the player when they are unloaded; the shuttle is dismissed when the deal ends, so a stuck delivery fails
+ *   and refunds, and the goods go back to the trader.
+ * - a hiring run: no. The recruits are only aboard; the fee is paid when they land, so it fails, refunds, and the recruits go home.
  */
+const exchanged = (d: Deal): boolean => d.courier === 'you' && !d.crew;
+
+/** A delivery that cannot be finished (no airlock to dock at, nobody or nowhere to unload): settle or refund by `exchanged`. */
 function giveUp(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
-  if (d.crew || d.courier === 'them') return failDeal(sim, d, reason);
+  if (!exchanged(d)) return failDeal(sim, d, reason);
   if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; } // no further trips with a loaded hold
   v.outbound = false;
   settleDeal(sim, d);
