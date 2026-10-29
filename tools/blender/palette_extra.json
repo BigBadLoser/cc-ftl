@@ -2253,9 +2253,15 @@
   "hex": "#3e4f5a"
  },
  "hbSlopeLnSoft": {
-  "hex": "#3c4e64"
+  "hex": "#35465e"
  },
  "hbXhbSlopeLnSoft": {
+  "hex": "#243040"
+ },
+ "hbSlopeLnFaint": {
+  "hex": "#3c4e64"
+ },
+ "hbXhbSlopeLnFaint": {
   "hex": "#283544"
  }
 }

@@ -31,15 +31,15 @@ ARMOUR = 0.77                       # tiles: the near armour's upright drop unde
 SLOPE = (0.375, 0.638)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its
                                     # front) and down under the ship: a px column shows 13 px of it on a run (39.2 h
                                     # - 32 r: hull 46 D3's 11 and 2 more, as the lip hangs over its top), its end at
-                                    # the tile's side a 12 px taper (32 r), 16 px on a facet facing the camera (39.2 h
-                                    # - 16 r sqrt 2)
+                                    # the tile's side a 12 px taper (32 r), 19 px on a facet facing the camera (39.2 h
+                                    # - 16 r: _slope)
 SLOPE_TONE = BELLY_SLOPE
 OUTER = YS[2]                       # the outer faces (both near faces alike, as the exterior's)
 END = YS[1]                         # a part's end where it shows past its neighbour
 INNER = ("nvF1", "nvF3")            # the hull's inside, facing +y / +x (the machinery, later)
 BOTTOM = YS[0]
 # (the belly proper, the slope under the ship and its lines, a step darker: hbX*, 0.68 of each;
-DARK = ("hbSlope", "hbRim", "hbSlopeLn", "hbSlopeLit", "hbSlopeLnSoft")
+DARK = ("hbSlope", "hbRim", "hbSlopeLn", "hbSlopeLit", "hbSlopeLnSoft", "hbSlopeLnFaint")
 REMAP = {n: "hbX" + n for n in DARK}  # the face above it keeps the hull's tones)
 if os.environ.get("BELLY_DEBUG"):                   # (each role its own colour: which face is which)
     SLOPE_TONE, OUTER, END, INNER = "lampY", "green", "dbgR", ("blueN", "blueN")
@@ -56,10 +56,10 @@ def span(s, far):
 
 
 def _slope(s, c):
-    """The slope under a front (s, c: s . p <= c, tile units): from the armour's foot SLOPE in (square to the front:
-    s . p terms scaled by |s|, so a facet's slope matches a run's) and down."""
+    """The slope under a front (s, c: s . p <= c, tile units): from the armour's foot SLOPE in and down, in along
+    each axis as a run's (a facet's not square to it: so at a tile edge it holds the next run's slope edge, and their
+    lines at a height meet there)."""
     (r, h), z = SLOPE, ZG - ARMOUR
-    r *= s.length
     return [(Vector((h * s.x, h * s.y, -r)), h * c - r * z)]
 
 

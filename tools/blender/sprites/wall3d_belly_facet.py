@@ -4,7 +4,8 @@ ledge on the deck line with its shade, the foot's lit chamfer, the slope's lit t
 its rim. Drawn as the exterior's diagonals are (wall3d_ext_diag_detail): marks painted on a face's plane, a part
 raised from it, each clipped to the part's other planes and to a band of height (and across, for a seam down). Each
 band at the run's own heights (its section: so at a hip the lines meet), and a seam, level or upright on screen here,
-in a soft tone: a run's, slant, comes out of coverage anti-aliasing at about half its own."""
+softened as a run's slant one comes out of coverage anti-aliasing: a level one every other px at half its tone, one
+down in a quarter of it (a level band that faint blends away)."""
 from mathutils import Vector
 
 from .wall3d_belly_bay import LEDGE, RIM, SLIT, SLOPE_SEAMS
@@ -12,7 +13,9 @@ from .wall3d_ext_diag_detail import LIT, Z64, _paint
 from .wall3d_ext_geom import LINE, YS
 
 UP = Vector((0, 0, 1))
-SOFT = "hbSlopeLnSoft"              # (a slope seam's tone here: a quarter of the way from the slope's to the seam's)
+SOFT, FAINT = "hbSlopeLnSoft", "hbSlopeLnFaint"     # (a slope seam's tones here: halfway from the slope's to
+                                                    # the seam's, every other px of a level one; a quarter, a
+                                                    # seam down)
 SEAMS_AT = range(-56, 57, 16)       # (the slope's seams down, px across from the tile's middle (x - y): a 16 px
                                     # lattice every tile shares, so one cut off at its column goes on in the next)
 
@@ -41,9 +44,10 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
     on(slope, zmin, run.z_at(zmin, -1), RIM)
     *_, down = SLOPE_SEAMS                                          # (a seam across its middle; seams down it)
     zm = run.z_at((zmin + foot) / 2, down)
-    on(slope, run.z_at(zm, 1), zm, SOFT)
+    for u in range(-64, 64, 2):
+        on(slope, run.z_at(zm, 1), zm, SOFT, u)
     for u in SEAMS_AT:
-        on(slope, zmin, foot, SOFT, u)
+        on(slope, zmin, foot, FAINT, u)
 
 
 def _ledge(rel, solid, cuts, n, c, out):
