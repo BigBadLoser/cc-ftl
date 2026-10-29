@@ -93,7 +93,7 @@ def _cap(bm, edges, no, mw):
     if not edges:
         return
     faces = bmesh.ops.triangle_fill(bm, use_beauty=True, use_dissolve=False, edges=edges, normal=no)["geom"]
-    slope, face = core.lin(core.REMAP.get(SLOPE_TONE, SLOPE_TONE)), core.lin(OUTER)
+    slope, face = core.lin(core.tone(SLOPE_TONE)), core.lin(core.tone(OUTER))
     layers = [bm.loops.layers.float_color.get(k) for k in ("Col", "Self", "Glow")]
     for f in faces:
         if not isinstance(f, bmesh.types.BMFace):

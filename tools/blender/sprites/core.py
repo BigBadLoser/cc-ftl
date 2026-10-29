@@ -190,6 +190,16 @@ def clear_scene_meshes():
 # ---- procedural mesh builder (grid frame) -----------------------------------------------------------------
 
 REMAP = {}                    # palette name -> name, applied to every polygon made (a family re-toned while it builds)
+TINT = None                   # a tint mask pass: the palette names the ship's colour tints (drawn TINT_KEYS[0]), the
+TINT_KEYS = ("tintW", "tintK")  # rest TINT_KEYS[1], so the render is the mask (a piece's `.deco`)
+
+
+def tone(color):
+    """A polygon's palette name as built: REMAP's, then in a tint mask pass its key."""
+    color = REMAP.get(color, color)
+    if TINT is not None:
+        color = TINT_KEYS[0] if color in TINT else TINT_KEYS[1]
+    return color
 
 
 class Mesh:
@@ -212,7 +222,7 @@ class Mesh:
 
     def poly(self, pts, color, flip=False):
         """pts: Blender-space points."""
-        color = REMAP.get(color, color)
+        color = tone(color)
         base = len(self.v)
         self.v += [tuple(p) for p in pts]
         idx = list(range(base, base + len(pts)))

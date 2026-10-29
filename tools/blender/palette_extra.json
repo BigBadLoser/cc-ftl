@@ -2291,5 +2291,13 @@
  "hbFcEdge": {
   "hex": "#78889a",
   "flat": true
+ },
+ "tintW": {
+  "hex": "#ffffff",
+  "flat": true
+ },
+ "tintK": {
+  "hex": "#000000",
+  "flat": true
  }
 }

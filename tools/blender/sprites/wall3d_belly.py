@@ -42,6 +42,10 @@ BOTTOM = YS[0]
 # (the belly proper, the slope under the ship and its lines, a step darker: hbX*, 0.68 of each;
 DARK = ("hbSlope", "hbRim", "hbSlopeLn", "hbSlopeLit", "hbSlopeLnSoft", "hbSlopeLnFaint")
 REMAP = {n: "hbX" + n for n in DARK}  # the face above it keeps the hull's tones)
+TINT = {"hsD", "hsS", "hsM", "hsL", "hbXhbSlope", "hbXhbSlopeLit", "hbXhbRim", "hbFcLit", "hbFcMid", "hbFcEdge",
+        "hbFcSoft", "hbFcLd1", "hbFcLd2", "hbFcRim"}   # the tones the ship's colour tints (core.TINT): the armour and
+                                                    # its slope, their lit edges; not the seams down and across, the
+                                                    # grille's gaps, the conduit's ends, the dark under- and insides
 if os.environ.get("BELLY_DEBUG"):                   # (each role its own colour: which face is which)
     SLOPE_TONE, OUTER, END, INNER = "lampY", "green", "dbgR", ("blueN", "blueN")
 
