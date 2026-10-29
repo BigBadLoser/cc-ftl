@@ -9,7 +9,7 @@ Costs are reported as **self ms** (time in the label, minus nested labels) and t
 | Goal | Command |
 | --- | --- |
 | Per-system sim cost, no browser, deterministic work | `npm run profile:sim -- --ticks 5000 --seed 1` |
-| Whole game in headless Chromium | `npm run profile -- --scenario fight --seconds 20 --speed 3 --seed 1` |
+| Whole game in headless Chromium | `npm run profile -- --scenario log --seconds 20 --speed 3 --seed 1` |
 | Colony baseline (no scenario) | `npm run profile -- --seconds 20` |
 | In a browser tab | open `/?perf` (optionally `&scenario=..&seed=..`), press **F3** for the panel |
 
@@ -17,9 +17,9 @@ Both scripts print the text report to stdout and write the JSON summary (`--out`
 `profile` starts its own dev server on a free port and stops it by PID when done (`--url` uses a running one instead). It uses the dev
 server on purpose: system labels come from function names, which a minified build mangles.
 
-Scenarios are the `?scenario=` values in `src/main.ts`: `log`, `hullplan`, `handover`, `bounty`, `survey`. `fight` is an alias for `log`
-(a raider arrives, fire breaks out, speed 3). `none` or no flag is the colony baseline. `--speed 1|2|3` presses the speed key after load;
-`--warmup 2` seconds run before the tally resets and the recording starts.
+Scenarios are the `?scenario=` values in `src/main.ts`, passed straight through: currently `log` (a raider arrives, fire breaks out, speed 3),
+`hullplan`, `handover`, `bounty`, `survey`. `fight` and `damage` arrive with #184. `none` or no flag is the colony baseline.
+`--speed 1|2|3` presses the speed key after load; `--warmup 2` seconds run before the tally resets and the recording starts.
 
 Headless Chromium renders with software WebGL (SwiftShader): `render/present`, `render/gl` and `render/combatPass` are inflated by it and
 the frame rate is low. Trust the CPU-side labels (`sim/*`, `ui/*`, `render/scenes`, `render/sync`, `render/views`) and the counters; compare

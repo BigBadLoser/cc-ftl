@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * Profile the running game in headless Chromium and print the report.
- *   npm run profile -- [--scenario fight|log|hullplan|handover|bounty|survey|none] [--seconds 20] [--speed 1|2|3] [--seed 1]
+ *   npm run profile -- [--scenario log|hullplan|handover|bounty|survey|none] [--seconds 20] [--speed 1|2|3] [--seed 1]
  *                      [--out profile.json] [--warmup 2] [--port N (default: a free one)] [--url http://host:port/] [--rows 20]
  * Starts `vite` (dev server: system labels need unminified function names) unless --url is given, opens
  * `/?scenario=..&perf&seed=..`, lets it run, prints `__perf.report()` and writes `__perf.summary()` JSON to --out.
- * `fight` is an alias of the `log` scenario (a raider arrives, fire breaks out, speed 3). No scenario = colony baseline.
+ * Every scenario name is passed straight through as `?scenario=`. No scenario (or `none`) = colony baseline.
  */
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -37,7 +37,7 @@ const warmup = Number(opt('warmup', 2));
 const portArg = opt('port', null);
 const rows = Number(opt('rows', 20));
 const given = opt('url', null);
-const ALIAS = { fight: 'log', none: '', baseline: '' };
+const ALIAS = { none: '', baseline: '' };
 const scenarioParam = scenario in ALIAS ? ALIAS[scenario] : scenario;
 
 const require = createRequire(import.meta.url);
