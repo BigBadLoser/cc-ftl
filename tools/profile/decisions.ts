@@ -136,13 +136,19 @@ export interface DiffResult {
 const sameKey = (a: Decision, b: Decision, match: 'id' | 'site'): boolean =>
   a.t === b.t && a.c === b.c && (match === 'id' ? a.job === b.job : a.kind === b.kind && a.x === b.x && a.y === b.y);
 
-/** Normalise the order within a tick (crew id, job) so the comparison does not depend on how a run iterates. */
-const normalise = (ds: readonly Decision[]): Decision[] => [...ds].sort((p, q) => p.t - q.t || p.c - q.c || p.job - q.job);
+/**
+ * Normalise the order within a tick (crew id, then the compared key) so the comparison does not depend on how a run iterates. With
+ * `match: 'site'` the job id plays no part, so two runs whose ids are numbered differently still line up.
+ */
+const normalise = (ds: readonly Decision[], match: 'id' | 'site'): Decision[] =>
+  [...ds].sort((p, q) => p.t - q.t || p.c - q.c || (match === 'id'
+    ? p.job - q.job
+    : (p.kind < q.kind ? -1 : p.kind > q.kind ? 1 : 0) || p.y - q.y || p.x - q.x));
 
 /** Find the first divergence between two decision lists. */
 export function diffDecisions(aIn: readonly Decision[], bIn: readonly Decision[], opts: DiffOptions = {}): DiffResult {
   const ctx = opts.context ?? 5, match = opts.match ?? 'id';
-  const a = normalise(aIn), b = normalise(bIn);
+  const a = normalise(aIn, match), b = normalise(bIn, match);
   const n = Math.max(a.length, b.length);
   for (let i = 0; i < n; i++) {
     const x = a[i], y = b[i];

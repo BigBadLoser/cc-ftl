@@ -10,6 +10,13 @@ const d = (t: number, c: number, job: number, kind = 'build', x = 1, y = 1): Dec
 const base = [d(1, 10, 100), d(1, 11, 101), d(5, 10, 0, '-', 0, 0), d(6, 10, 102), d(9, 12, 103)];
 
 describe('diffDecisions', () => {
+  it('matches by site regardless of how job ids are ordered', () => {
+    const a = [d(3, 10, 100, 'build', 1, 1), d(3, 10, 101, 'build', 2, 2)];
+    const b = [d(3, 10, 201, 'build', 1, 1), d(3, 10, 200, 'build', 2, 2)];
+    expect(diffDecisions(a, b, { match: 'site' }).identical).toBe(true);
+    expect(diffDecisions(a, b).identical).toBe(false);
+  });
+
   it('reports identical runs', () => {
     const r = diffDecisions(base, [...base]);
     expect(r.identical).toBe(true);
