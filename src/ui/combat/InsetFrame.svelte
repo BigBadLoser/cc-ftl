@@ -10,14 +10,30 @@
   } = $props();
 
   let win: HTMLElement | undefined = $state();
-  // The renderer sizes the window to the ship at a pixel-perfect zoom; poll since the zoom depends on devicePixelRatio and the ship's roof.
+  // The renderer sizes the window to the ship at a pixel-perfect zoom (the zoom itself never changes smoothly, only the frame does): read the target every
+  // frame and ease the frame toward it (exponential, time constant TAU), in whole CSS px. The render pass re-centres the ship in whatever size the window has.
+  const TAU = 0.07;
   let size = $state({ w: 360, h: 200 });
   $effect(() => {
     const id = ship;
-    const read = () => { const z = api.insetSize(id); if (z && (z.w !== size.w || z.h !== size.h)) size = z; };
-    read();
-    const t = setInterval(read, 500);
-    return () => clearInterval(t);
+    let raf = 0;
+    let last = performance.now();
+    let cur: { w: number; h: number } | null = null;
+    const frame = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      const t = api.insetSize(id);
+      if (t) {
+        const k = 1 - Math.exp(-dt / TAU);
+        const step = (c: number, to: number) => (Math.abs(to - c) < 0.5 ? to : c + (to - c) * k);
+        cur = cur ? { w: step(cur.w, t.w), h: step(cur.h, t.h) } : t;
+        const w = Math.round(cur.w), h = Math.round(cur.h);
+        if (w !== size.w || h !== size.h) size = { w, h };
+      }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
   });
   $effect(() => {
     const el = win;
