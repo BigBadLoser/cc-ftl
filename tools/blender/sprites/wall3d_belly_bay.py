@@ -18,7 +18,8 @@ RW = 3 * P                                          # (the rib's half width, abo
 RIBS = ((0.5 - RW, 0.5), (-0.5, RW - 0.5))          # (the rib, either side of the tile edge it spans)
 BAY = (RW - 0.5, 0.5 - RW)                          # (between the ribs)
 LOOKS = range(20, 29)
-FRAME = os.environ.get("BELLY_FRAME", "none")         # (the tile edge: "rib", "seam" or "none", to compare)
+FRAME = os.environ.get("BELLY_FRAME", "none")        # (the tile edge: "rib", "seam" or "none", to compare)
+SEAM = os.environ.get("BELLY_SEAM", "1") == "1"     # (a seam across under the exterior's foot)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
 
@@ -65,6 +66,8 @@ def dress(n, f, s, back, U, Z):
         f.line(-0.5, 0.5, s.z_at(foot, -1), s.z_at(foot, -2), YS[4], bevel=False)
         f.line(-0.5, 0.5, s.z_at(foot, 1), foot, SLIT, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
+        if SEAM:                                    # (a seam across where the exterior's foot falls: the
+            f.line(-0.5, 0.5, Z(HID + 1), Z(HID), YS[1])    # cutaway's face its upper and lower parts)
         if FRAME == "rib":
             for (u0, u1), (c0, c1) in zip(RIBS, ((YS[1], None), (None, YS[1]))):     # (the ribs: their tops a px
                 _slab(f, s, u0, u1, foot, Z(HID), -0.01, 2 * LINE, (c0, c1))         # under the exterior's foot;
