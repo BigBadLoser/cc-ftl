@@ -21,7 +21,7 @@ LOOKS = range(20, 29)
 FRAME = os.environ.get("BELLY_FRAME", "none")        # (the tile edge: "rib", "seam" or "none", to compare)
 TOP = HID + 7                                       # (the bays' features from here down: clear of every
                                                     # exterior design's foot, its top edges whole, not dots)
-LEDGE = (1, 2)                                      # (a ledge on the deck line, px tall and proud: the
+LEDGE = (2, 1)                                      # (a ledge on the deck line, px tall and proud: the
                                                     # exterior stands on it, its lines ending on its lit top)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
