@@ -9,6 +9,7 @@ import { vehicles as sourceVehicles } from '../../src/content/vehicles.ts';
 import { recipes as sourceRecipes } from '../../src/content/recipes.ts';
 import { factions as sourceFactions } from '../../src/content/factions/index.ts';
 import { research as sourceResearch } from '../../src/content/research.ts';
+import * as tuning from '../../src/sim/tuning.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const generated = join(root, 'src/data/generated');
@@ -311,5 +312,20 @@ for (const [id, def] of Object.entries(research).sort()) {
 }
 await writeIndex('research', 'Research', 'Project costs, prerequisites, and unlocked equipment.');
 await saveJson('reference-catalog', catalog);
+
+// Live numbers for handwritten guides (<Stat>, <ModuleTable>): the plain scalar fields of each definition and the
+// sim's tuning constants, so a rebalance updates the guides on the next build.
+function scalars(def: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(def).filter(([, v]) =>
+    ['number', 'string', 'boolean'].includes(typeof v) || (Array.isArray(v) && v.every(x => typeof x === 'number'))));
+}
+function liveKind(kind: Kind, extra: (id: string, def: any) => Record<string, unknown> = () => ({})) {
+  return Object.fromEntries(Object.entries(registries[kind]).map(([id, def]) => [id, { slug: slug(kind, id), ...scalars(def), ...extra(id, def) }]));
+}
+await saveJson('game-data', {
+  modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({ powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY })),
+  items: liveKind('items'), weapons: liveKind('weapons'), vehicles: liveKind('vehicles'), research: liveKind('research'),
+  tuning: scalars(tuning),
+});
 
 console.log('Generated reference pages: ' + Object.entries(seenSlugs).map(([kind, entries]) => kind + '=' + entries.size).join(', '));
