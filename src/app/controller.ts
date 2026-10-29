@@ -189,6 +189,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const paint = createPaintTools(sim, bridge, { tool, placeHint, renderer: () => r, showToast, homeShipId });
   const { setTool } = paint;
   /** "Target in view" (a weapon armed from the main view): its left-click aim, cancelled by right-click or Esc before anything else. */
+  let wasFighting = sim.sector.inCombat;
   const aiming = createAiming(sim, () => homeShip(sim), () => r?.setAimHover(null));
   const back = () => {
     if (aiming.aiming.get()) return aiming.set(null);
@@ -256,6 +257,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     focusSubject,
     upkeep() {
+      // A fight starting drops any build / deconstruct tool (its UI is hidden), so canvas clicks reach weapon targeting.
+      const fighting = sim.sector.inCombat;
+      if (fighting && !wasFighting && tool.get().tool !== 'select') paint.endTools();
+      wasFighting = fighting;
       alerts.sync();
       log.sync();
     },
@@ -356,9 +361,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         },
         onHover: paint.onHover,
         onPointer: (sx, sy) => aiming.hover(renderer, sx, sy),
-        paintMode: paint.paintMode,
+        paintMode: () => !sim.sector.inCombat && paint.paintMode(),
         pickLift: paint.pickLift,
-        onPaint: paint.onPaint,
+        onPaint: (phase, t) => (sim.sector.inCombat ? paint.onPaint('cancel', null) : paint.onPaint(phase, t)),
         onKey(key, shift) {
           if (menu.get()) {
             menu.set(null);

@@ -117,7 +117,7 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     dyn.clear();
     if (sc.current && !hasShip) {
       const o = newOps();
-      for (const n of map.nodes) if (n.reachable && (!sc.only || sc.only.has(n.id))) pixelLine(o, sc.current.x, sc.current.y, n.x, n.y, g);
+      for (const n of map.nodes) if (n.reachable) pixelLine(o, sc.current.x, sc.current.y, n.x, n.y, g);
       fillOps(dyn, o, pal.green, 0.8);
     }
     if (sc.routePts.length >= 4) {

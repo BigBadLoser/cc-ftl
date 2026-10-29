@@ -205,6 +205,8 @@ export interface WeaponDef {
    * `bypass` skips shields entirely.
    */
   shield: { damage: number; pierce: number; bypass?: boolean };
+  /** Heat the firing ship gains per volley (combat/heat.ts). */
+  heat: number;
   /** Applied (in order) when the shot lands on the hull. */
   effects: Effect[];
 }
@@ -473,6 +475,8 @@ export interface ModuleDef {
    * `hullCapacity`: how many tiles of ship size (interior area, see `hullArea`) the engine can push through a jump; the ship's capacity is the sum over its engines
    * that still work, and a ship over it cannot make a normal jump (ftl/capacity.ts).
    */
+  /** Cools the ship while its shields are down: heat per second shed (combat/heat.ts). */
+  radiator?: { coolPerSec: number };
   engine?: { evasionPerPower: number; fuelFactor?: number; hullCapacity?: number };
   /**
    * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a

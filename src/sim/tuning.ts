@@ -304,3 +304,8 @@ export const ALIEN_ROAM = 4;
 export const ALIEN_WANDER_CHANCE = 0.01;
 /** Seconds the player's ship must stay clear of intruders before emergency-armed crew put their weapon back in storage. */
 export const EMERGENCY_STAND_DOWN_SEC = 30;
+
+/** Enemy weapons commit their aim (and the player's ship shows a marker) for this many seconds of charge before they can fire, at base gunnery. */
+export const COMMIT_WINDOW_SEC = 4;
+/** The window never exceeds this share of a weapon's charge, so a fast weapon still charges unmarked first. */
+export const COMMIT_MAX_FRACTION = 0.5;

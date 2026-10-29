@@ -1,6 +1,8 @@
 import { CombatC, IonC, ShipC } from '../combat/components';
 import { CrewC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
+import { overchargeActive } from '../combat/heat';
+import { OVERCHARGE_ENGINE_EVASION } from '../combat/heatTuning';
 import { mannedConsole, skillOf } from '../combat/operators';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -32,7 +34,7 @@ export function helmSystem(sim: Sim): void {
     const skill = pilot ? Math.max(0, skillOf(sim, pilot.crew, 'piloting')) : 0;
     const boost = pilot ? 1 + SKILL_STEP * skill : 0;
     combat.pilot = skill;
-    combat.evasion = Math.min(EVASION_CAP, engines * boost);
+    combat.evasion = Math.min(EVASION_CAP, engines * boost + (pilot && engines > 0 && overchargeActive(combat, 'engines') ? OVERCHARGE_ENGINE_EVASION : 0));
     if (ship.faction === 'player' && sim.tick % CRUISE_EVERY === 0) cruise(sim, id, combat);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
     if (combat.ftlOrder) settleOrder(sim, id);

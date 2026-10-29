@@ -317,7 +317,7 @@ export interface UiTravel {
   route: string[];
   at: number;
   /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid; 'story': held for a story decision. */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story';
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story' | 'adrift';
   /** A drop was asked for: the route ends at the next node, where the ship drops out. */
   stopping: boolean;
   /** Fuel the next hop needs (when stopped for want of it). */

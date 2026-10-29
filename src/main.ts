@@ -23,9 +23,10 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, CrewC, NOOP_PROBE, PositionC, SAVE_VERSION, serialize, ShipC, type Probe } from './sim';
+import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
+import { damageScenarioCommands } from './app/damageScenario';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -141,9 +142,9 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 window.addEventListener('pagehide', save);
 
-/** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
+/** Frame one ship in the camera (null: the player's), clear of the combat HUD bands while a fight is on. */
 function focusFight(ship: number | null): void {
-  renderer?.frameShips(ship === null ? [1] : [1, ship]);
+  renderer?.frameShips([ship ?? homeShip(sim)], sim.sector.inCombat ? { top: 40, bottom: 170 } : undefined);
 }
 
 /**
@@ -186,7 +187,7 @@ function spawnDerelict(faction?: string): void {
 }
 
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
-function spawnRaider(boarders = false): void {
+function spawnRaider(boarders = false, far = params.has('far')): void {
   const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
   if (shipgenFlag?.startsWith('derelict')) {
     spawnDerelict(shipgenFlag.split(':')[1]);
@@ -203,8 +204,9 @@ function spawnRaider(boarders = false): void {
   const h = t.rows.length;
   const cy = mine.y + mine.height / 2;
   // Just past the player ship's padded frame plus the minimum gap, level with it, so the placement is never refused as tooClose.
-  const x = Math.min(sim.sector.width - w, mine.x + mine.width + MIN_SHIP_GAP + 2 * REGION_PAD + 4);
-  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2)));
+  // `far`: a typical engagement distance, well past what a camera can frame beside the player's ship (about 55 tiles east, 45 north: the free corner of the start node).
+  const x = Math.min(sim.sector.width - w, mine.x + mine.width + (far ? 55 : MIN_SHIP_GAP + 2 * REGION_PAD + 4));
+  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2) - (far ? 45 : 0)));
   bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
@@ -234,6 +236,9 @@ const stationFlag = params.get('station');
  */
 const scenario = params.get('scenario');
 /**
+ * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
+ * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
+ * `&charged` also fills the FTL drive.
  * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
  * a finished bounty / survey to hand in, and you at the nearest military / research station (drops in by itself). See galaxy/jobsDebug.ts.
  */
@@ -253,6 +258,29 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
+  if (scenario === 'fight') {
+    // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
+    const g = sim.galaxy;
+    const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
+      .find((id) => !nodeOf(sim, id)?.structures.length) ?? g.current;
+    const at = homeShipC();
+    if (next !== g.current) bridge.dispatch({ type: 'debug.galaxyTeleport', node: next });
+    setTimeout(() => {
+      if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
+      setTimeout(() => {
+        spawnRaider();
+        if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
+      }, 400);
+    }, 400);
+    loop.setSpeed(1);
+    return;
+  }
+  if (scenario === 'damage') {
+    loop.setSpeed(1);
+    // Rooms exist after the first ticks: set the scene then. Crew answer the fire and the breach on their own.
+    setTimeout(() => { for (const cmd of damageScenarioCommands(sim)) bridge.dispatch(cmd); }, 600);
+    return;
+  }
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
@@ -365,12 +393,27 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, canvas: view.canvas }),
-  setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
-  pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
+  insetSize: (ship) => renderer?.insetSize(ship) ?? null,
+  moduleScreenRect: (id) => {
+    const m = sim.world.get(id, ModuleC);
+    const def = m && sim.content.modules[m.def];
+    if (!renderer || !m || !def) return null;
+    const tiles = footprintTiles(def, m.x, m.y, m.rot);
+    const o = renderer.screenOf(0, m.x, m.y);
+    const dx = renderer.screenOf(0, m.x + 1, m.y);
+    const half = Math.max(Math.abs(dx.x - o.x), Math.abs(dx.y - o.y)) * 0.75; // a tile's diamond is about this far from its centre
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const t of tiles) {
+      const p = renderer.screenOf(0, t.x, t.y);
+      x0 = Math.min(x0, p.x - half); x1 = Math.max(x1, p.x + half);
+      y0 = Math.min(y0, p.y - half * 1.5); y1 = Math.max(y1, p.y + half * 0.75); // the module stands up from the floor: more room above
+    }
+    return x0 === Infinity ? null : { x0, y0, x1, y1 };
+  },
+  setInset: (view) => renderer?.setInset(view && { shipId: view.ship, view: view.view }),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
   spawnStation: (kind, size) => spawnStation(kind, size),
@@ -414,6 +457,8 @@ const api: UiApi = {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        r.setCommitEta((id) => commitEtaSec(sim, id));
+        r.setShotColor((id) => shotColor(shotSlot(sim, id)));
         r.setProbe(probe);
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);

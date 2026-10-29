@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Profile the running game in headless Chromium and print the report.
- *   npm run profile -- [--scenario log|hullplan|handover|bounty|survey|none] [--seconds 20] [--speed 1|2|3] [--seed 1]
+ *   npm run profile -- [--scenario log|hullplan|handover|bounty|survey|fight|damage|none] [--seconds 20] [--speed 1|2|3] [--seed 1]
  *                      [--out profile.json] [--warmup 2] [--port N (default: a free one)] [--url http://host:port/] [--rows 20]
  * Starts `vite` (dev server: system labels need unminified function names) unless --url is given, opens
  * `/?scenario=..&perf&seed=..`, lets it run, prints `__perf.report()` and writes `__perf.summary()` JSON to --out.

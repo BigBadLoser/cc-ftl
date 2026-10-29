@@ -1,6 +1,7 @@
 import type { Sim } from '../sim';
 import { discoverOutpost } from '../outposts/state';
 import { shieldCapacity } from './ships';
+import { newHeat } from './heat';
 import { CombatC, ShipC, type Combat, type Ship } from './components';
 
 /**
@@ -31,7 +32,7 @@ export function wake(sim: Sim, id: number, reason: WakeReason): void {
     const layers = shieldCapacity(sim, id, false);
     const combat: Combat = {
       hold: false, volley: false, target: null, doctrine: 'random', ftl: 0,
-      shield: { layers, max: layers, timer: 0 }, evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
+      shield: { layers, max: layers, timer: 0 }, heat: newHeat(), evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
     };
     sim.world.add(id, CombatC, combat);
   }
