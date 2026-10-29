@@ -1,10 +1,10 @@
 import { homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry, UiSubject } from '../ui/api';
 import { crewSubject, crewTile, enemyShip, roomOf, shipSubject, tileAt } from './subjects';
 
-export type LogEntry = Pick<UiLogEntry, 'kind' | 'tone' | 'text'> & { subject?: UiSubject };
+export type LogEntry = Pick<UiLogEntry, 'kind' | 'tone' | 'text' | 'fold'> & { subject?: UiSubject };
 
 const BLOCKED = { noShuttle: 'no free shuttle', noPilot: 'no free pilot', noAirlock: 'no working airlock', noStock: 'nothing left to take', failed: 'trips keep failing' } as const;
 
@@ -47,7 +47,11 @@ export function createDescriber(sim: Sim) {
       case 'suit.airOut': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: suit out of air`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'module.destroyed': {
         const name = sim.content.modules[e.def]?.name ?? 'Module';
-        return mine(e.ship) ? { kind: e.type, tone: 'bad', text: `${name} destroyed`, ...onShip(e.ship) } : { kind: e.type, tone: 'good', text: `Enemy ${name} destroyed`, ...onShip(e.ship) };
+        const m = sim.world.get(e.moduleId, ModuleC);
+        const at = m ? sub(tileAt(m.x, m.y)) : onShip(e.ship); // an own module jumps to its tile; folded lines keep the first one
+        return mine(e.ship)
+          ? { kind: e.type, tone: 'bad', text: `${name} destroyed`, ...at, fold: { ship: e.ship, enemy: false, names: [name] } }
+          : { kind: e.type, tone: 'good', text: `Enemy ${name} destroyed`, ...onShip(e.ship), fold: { ship: e.ship, enemy: true, names: [name] } };
       }
       case 'combat.started': return { kind: 'combat', tone: 'warn', text: 'Combat started', ...sub(enemyShip(sim, home())) };
       case 'combat.ended': return { kind: 'combat', tone: 'info', text: 'Combat over' };

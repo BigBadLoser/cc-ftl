@@ -80,8 +80,9 @@ import { newYard, type YardState } from './yard/types';
  * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges), `WeaponDef.heat`, `ModuleDef.radiator`.
  * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
  * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
+ * v69 (weapon modes): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
  */
-export const SAVE_VERSION = 68;
+export const SAVE_VERSION = 69;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

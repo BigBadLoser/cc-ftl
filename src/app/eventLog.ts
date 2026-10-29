@@ -2,10 +2,23 @@ import { TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry } from '../ui/api';
 import { createDescriber, type LogEntry } from './logText';
 import { shipSubject } from './subjects';
-import { emptyTally, fightSummary, tallyFight } from './fightSummary';
+import { TICK_HZ } from '../sim/time';
 import { createStore, type Readable } from './store';
 
 const MAX = 200;
+/** Destructions on one ship this close together (sim seconds) fold into one line. */
+const FOLD_SEC = 8;
+const SHOWN_NAMES = 4;
+const FOLD_LOOKBACK = 6;
+
+/** "3 modules destroyed: Reactor, Galley, Shield generator": the folded line for a run of destructions. */
+function foldedText(enemy: boolean, names: string[]): string {
+  const count = new Map<string, number>();
+  for (const n of names) count.set(n, (count.get(n) ?? 0) + 1);
+  const parts = [...count].map(([n, c]) => (c > 1 ? `${n} ×${c}` : n));
+  const shown = parts.slice(0, SHOWN_NAMES).join(', ') + (parts.length > SHOWN_NAMES ? `, +${parts.length - SHOWN_NAMES} more` : '');
+  return `${names.length} ${enemy ? 'enemy modules' : 'modules'} destroyed: ${shown}`;
+}
 
 export interface EventLog {
   list: Readable<UiLogEntry[]>;
@@ -13,6 +26,8 @@ export interface EventLog {
   onEvents(events: SimEvent[]): void;
   /** Credits that came in without an event (anything that just sets the balance) still get their entry. */
   sync(): void;
+  /** Add one line of its own (the fight summary), outside the event stream. */
+  note(entry: LogEntry): void;
 }
 
 /**
@@ -25,13 +40,21 @@ export function createEventLog(sim: Sim): EventLog {
   const describe = createDescriber(sim);
   let nextId = 1;
   let credits = sim.trade.credits;
-  let tally = emptyTally();
 
   function add(list: UiLogEntry[], d: LogEntry & { amount?: number }, tick: number): UiLogEntry[] {
     const top = list[0];
     const born = Date.now();
+    // Destructions on the same ship in quick succession fold into one line (looking back a few entries, so a crew line between does not
+    // split a burst): the first module stays the click target.
+    const f = d.fold;
+    const at = f ? list.slice(0, FOLD_LOOKBACK).findIndex((e) => e.fold && e.kind === d.kind && e.fold.ship === f.ship && e.fold.enemy === f.enemy && tick - e.tick <= FOLD_SEC * TICK_HZ) : -1;
+    if (f && at >= 0) {
+      const e = list[at] as UiLogEntry;
+      const names = [...(e.fold as NonNullable<UiLogEntry['fold']>).names, ...f.names];
+      return list.map((x, i) => (i === at ? { ...e, tick, born, text: foldedText(f.enemy, names), fold: { ...f, names } } : x));
+    }
     // The same thing again straight away folds into one line with a count.
-    return top && top.kind === d.kind && top.text === d.text && !d.amount
+    return top && top.kind === d.kind && top.text === d.text && !d.amount && !d.fold
       ? [{ ...top, tick, count: top.count + 1, born }, ...list.slice(1)]
       : [{ id: nextId++, tick, count: 1, born, ...d }, ...list].slice(0, MAX);
   }
@@ -67,15 +90,12 @@ export function createEventLog(sim: Sim): EventLog {
         const d = describe(e);
         if (d) list = add(list, d, sim.tick);
       }
-      tally = tallyFight(sim, tally, events);
-      // After a fight one line says what it cost, so the per-module entries above need not be read one by one.
-      if (events.some((e) => e.type === 'combat.ended')) {
-        const sum = fightSummary(tally);
-        if (sum) list = add(list, sum, sim.tick);
-        tally = emptyTally();
-      }
+
       list = gain(list, events);
       if (list !== store.get()) store.set(list);
+    },
+    note(entry) {
+      store.set(add(store.get(), entry, sim.tick));
     },
     sync() {
       const list = gain(store.get(), []);

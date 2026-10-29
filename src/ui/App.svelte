@@ -6,7 +6,7 @@
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
-  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiFightReport, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatHud from './combat/CombatHud.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
@@ -19,6 +19,7 @@
   import PriorityGrid from './PriorityGrid.svelte';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
+  import FightReportCard from './combat/FightReportCard.svelte';
   import StrandedBanner from './StrandedBanner.svelte';
   import EventLog from './EventLog.svelte';
   import BuildCatalog from './BuildCatalog.svelte';
@@ -60,6 +61,7 @@
     speedBeforeReport = null;
   }
   let stockOpen = $state(false);
+  let fightReport = $state<UiFightReport | null>(null);
   let jobsOpen = $state(false);
   let researchOpen = $state(false);
   /** The home ship has a research module: the nav strip shows the research button. */
@@ -133,6 +135,7 @@
       api.jobs.subscribe((j) => (jobCount = j.active.length)),
       api.research.subscribe((r) => { hasLab = r.labs > 0; if (!hasLab) researchOpen = false; }),
       api.toast.subscribe((t) => (toast = t)),
+      api.fightReport.subscribe((r) => (fightReport = r)),
       api.starmap.subscribe((m) => (star = m)),
       api.deploy.subscribe((d) => (deploy = d)),
       api.selectedShip.subscribe((g) => (selShip = g)),
@@ -184,7 +187,8 @@
     else if (e.key === 'm') { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
     else if (e.key === 'Escape') {
       // A pinned window ignores Esc.
-      if (researchOpen) researchOpen = false;
+      if (fightReport && !isPinned('fightReport')) api.closeFightReport();
+      else if (researchOpen) researchOpen = false;
       else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
       else if (stockOpen && !isPinned('stock')) stockOpen = false;
       else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
@@ -253,6 +257,9 @@
 {/if}
 {#if stockOpen && !fightHud}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />
+{/if}
+{#if fightReport}
+  <FightReportCard {api} report={fightReport} />
 {/if}
 {#if reporting}
   <BugReport {api} onClose={closeReport} />

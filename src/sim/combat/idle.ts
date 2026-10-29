@@ -49,6 +49,6 @@ export function weaponsIdleReason(sim: Sim, shipId: number): string | null {
     return !ammo || ammoCount(sim, shipId, ammo) > 0;
   });
   if (armed.length === 0) return 'No ammo';
-  if (combat.hold) return 'Holding fire';
+  if (combat.hold || armed.every((id) => sim.world.get(id, WeaponC)?.mode === 'hold' && !sim.world.get(id, WeaponC)?.once)) return 'Holding fire';
   return null;
 }

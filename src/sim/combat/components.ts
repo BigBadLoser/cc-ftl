@@ -173,7 +173,18 @@ export interface Combat {
 export const CombatC = defineComponent<Combat>('combat');
 
 /** On weapon modules. */
+export type WeaponMode = 'auto' | 'hold';
+
 export interface Weapon {
+  /**
+   * The player's per-weapon fire mode. `auto` fires when charged; `hold` charges and waits for a volley, or for the player to aim it at a
+   * target (see `once`). Ammo weapons start on `hold`, the rest on `auto`. AI ships ignore it (they use `Combat.hold`).
+   */
+  mode: WeaponMode;
+  /** The mode to go back to when "hold all" is switched off; set only while hold all has put this weapon on hold. */
+  restore?: WeaponMode;
+  /** A held weapon the player aimed: it fires once when charged, then stays on hold. */
+  once?: boolean;
   /** 0..1, full at 1. */
   charge: number;
   /** Own target; null = use the ship-wide one. */

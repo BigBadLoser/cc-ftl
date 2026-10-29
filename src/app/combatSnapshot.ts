@@ -131,7 +131,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           const ammo = sim.content.weapons?.[def.weapon]?.ammo;
           weapons.push({
             id: mid, name: def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
-            ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
+            mode: w.mode ?? 'auto', ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
           });
         }
         if (def.console) {
@@ -143,7 +143,8 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           });
         }
       }
-      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid), incoming: incomingShots(sim, playerGrid) };
+      const holdAll = [...sim.world.query(WeaponC, ModuleC)].some((id) => sim.world.get(id, WeaponC)?.restore !== undefined && shipIdOf(sim, sim.world.get(id, ModuleC)) === playerGrid);
+      player = { ...base, weapons, consoles, holdAll, idle: weaponsIdleReason(sim, playerGrid), incoming: incomingShots(sim, playerGrid) };
     } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.

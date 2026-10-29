@@ -46,7 +46,7 @@
         <li class={e.tone} class:pulse={fresh(e)} data-testid="log-entry" data-kind={e.kind}>
           <button class="row" disabled={!e.subject} title={e.subject ? 'Go there' : undefined} onclick={() => go(e)}>
             <span class="ic"><Icon name={icon[e.kind]} size={14} /></span>
-            <span class="tx">{e.text}</span>{#if e.amount}<span class="amt" data-testid="log-amount">+{e.amount} ₵</span>{/if}{#if e.count > 1}<span class="n">×{e.count}</span>{/if}
+            <span class="tx" title={e.text}>{e.text}</span>{#if e.amount}<span class="amt" data-testid="log-amount">+{e.amount} ₵</span>{/if}{#if e.count > 1}<span class="n">×{e.count}</span>{/if}
             <span class="tk">T{e.tick}</span>
           </button>
         </li>

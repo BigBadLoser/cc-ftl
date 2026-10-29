@@ -26,15 +26,15 @@
   const canVolley = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
   const lock = $derived(me.heat.lockout);
   const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
-  const hold = () => api.dispatch({ type: 'combat.setHold', ship: me.ship, hold: !me.hold });
+  const hold = () => api.dispatch({ type: 'combat.holdAll', ship: me.ship, hold: !me.holdAll });
 </script>
 
 <div class="dock">
   <div class="strip" data-testid="combat-strip">
     <StatusBlock {me} style="grid-column:1; grid-row:1" />
     <StationTags {me} style="grid-column:1; grid-row:2" />
-    <WeaponBay {me} {aiming} {onSelect} style="grid-column:2 / 6; grid-row:1" />
-    <ActionButtons canVolley={canVolley} holding={me.hold} onVolley={volley} onHold={hold} style="grid-column:2 / 6; grid-row:2" />
+    <WeaponBay {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} style="grid-column:2 / 6; grid-row:1" />
+    <ActionButtons canVolley={canVolley} holding={me.holdAll} onVolley={volley} onHold={hold} style="grid-column:2 / 6; grid-row:2" />
     <HeatGauge heat={me.heat} {rate} {onVent} style="grid-column:6; grid-row:1" />
     <OverchargeButtons heat={me.heat} {onOvercharge} style="grid-column:6; grid-row:2" />
 

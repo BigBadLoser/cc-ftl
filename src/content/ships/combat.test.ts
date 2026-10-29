@@ -193,7 +193,8 @@ describe('weapons', () => {
     const crate = modulesOf(sim, 1, 'module.storage')[0] as number;
     const stock = (): number => countAmmo(sim, crate);
     expect(stock()).toBe(20);
-    // The player's missiles are held: nothing leaves without a volley.
+    // Ammo weapons start on hold: they charge but nothing leaves without a volley.
+    expect(sim.world.get(modulesOf(sim, 1, 'module.missileLauncher')[0] as number, WeaponC)!.mode).toBe('hold');
     expect(ofType(run(sim, 20 * 15), 'weapon.fired')).toHaveLength(0);
     expect(stock()).toBe(20);
     const events: SimEvent[] = [];

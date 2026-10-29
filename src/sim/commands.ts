@@ -135,8 +135,12 @@ export type Command =
   | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
   /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked; `targetTile` (with targetModuleId 0) aims blind at one sector tile of the target ship, and the hits land near it. */
   | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number; targetTile?: { x: number; y: number } }
-  /** Hold fire: weapons charge but only fire on combat.fireVolley. */
+  /** Hold fire (AI ships: the raider sparing its prize): weapons charge but only fire on combat.fireVolley. The player's H is `combat.holdAll`. */
   | { type: 'combat.setHold'; ship: number; hold: boolean }
+  /** Set one weapon's fire mode: `auto` fires when charged, `hold` waits for a volley or an aim (the player's ship; AI ships use `combat.setHold`). */
+  | { type: 'combat.setWeaponMode'; ship: number; weaponId: number; mode: 'auto' | 'hold' }
+  /** Put every weapon of the ship on hold, remembering each one's mode; `hold: false` restores them. */
+  | { type: 'combat.holdAll'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
   /**

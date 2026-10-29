@@ -109,13 +109,11 @@ describe('shuttles and weapons', () => {
     const missile = weaponsOf(sim, 1, 'weapon.missile')[0] as number;
     sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, 1), weaponId: missile, targetShip: nth(sim, 2), targetModuleId: 0 });
     launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }));
-    const out: SimEvent[] = [];
-    for (let i = 0; i < 40; i++) {
-      sim.enqueue({ type: 'combat.fireVolley', ship: nth(sim, 1) }); // missiles aimed at a ship wait for a volley
-      out.push(...run(sim, 20));
-    }
+    // The missile launcher starts on hold; aiming it by hand is the order to fire, once, at the ship, not at the shuttle.
+    const out = run(sim, 20 * 40);
     const shots = out.filter((e) => e.type === 'weapon.fired' && e.weaponId === missile);
     expect(shots.length).toBeGreaterThan(0);
+    expect(shots).toHaveLength(1); // fired once on the aim, then back to waiting
     for (const e of shots) if (e.type === 'weapon.fired') expect(e.targetShip).toBe(nth(sim, 2));
   });
 

@@ -2,7 +2,7 @@
   import Icon from '../Icon.svelte';
   import { ActionButton, Frame, KeyBadge } from '../kit';
 
-  /** The ACTIONS frame: fire the charged weapons now, or hold fire (weapons charge but do not shoot). */
+  /** The ACTIONS frame: fire the charged weapons now, or put every weapon on hold (H; again to restore). */
   let { canVolley, holding, onVolley, onHold, style = '' }: {
     canVolley: boolean;
     holding: boolean;
@@ -22,11 +22,11 @@
     <span class="wide">
       <ActionButton
         tone={holding ? 'active' : 'plain'}
-        title="Hold fire: weapons charge but do not fire (H)"
+        title={holding ? 'Restore every weapon to the mode it had (H)' : 'Put every weapon on hold: they charge but wait for a volley or an aim (H)'}
         testid="combat-hold"
         onclick={onHold}
       >
-        <Icon name="hold" size={18} />Hold fire<KeyBadge tone="dim" size="sm" padX={5}>H</KeyBadge>
+        <Icon name="hold" size={18} />{holding ? 'Held' : 'Hold all'}<KeyBadge tone="dim" size="sm" padX={5}>H</KeyBadge>
       </ActionButton>
     </span>
   </div>
