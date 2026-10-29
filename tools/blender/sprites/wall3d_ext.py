@@ -74,13 +74,13 @@ def ext_run_wide(mask, o, variant=0):
     from . import core
     own = ext_block(mask, o, variant)
     dx, dy = STRAIGHT[(mask, o)]
-    more = []
-    for k in (-1, 1):
-        for ob in own:
-            cp = ob.copy()
-            cp.data = ob.data.copy()
-            cp.location = ob.location + core.G(k * dx, k * dy, 0.0)
-            for col in ob.users_collection:
-                col.objects.link(cp)
-            more.append(cp)
+    more, was = [], T.VARIANT
+    T.VARIANT = (0, 0)                                  # (the copies in the base design: the designs share their
+    try:                                                # strips at the tile's edges, so it gives a join's colours;
+        for k in (-1, 1):                               # a copy of this one's own showed slivers of it beside
+            for ob in ext_block(mask, o, variant):      # another design)
+                ob.location = ob.location + core.G(k * dx, k * dy, 0.0)
+                more.append(ob)
+    finally:
+        T.VARIANT = was
     return own, own + more

@@ -71,10 +71,14 @@ def render_sprite(sid, kind, objs):
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
     if wide:                                            # ("wide": (own, wide): its px are own's, their colours wide's,
         extra = [o for o in wide if o not in own]       # the same solid run on past the tile's edges, so a px on an
-        only = [o for o in own if o not in wide]        # edge resolves as it does mid-surface; wide may take own in)
-        _show(extra, False)
+        only = [o for o in own if o not in wide]        # edge resolves as it does mid-surface; wide may take own in:
+        cut = not only                                  # then its px only where it is in front of the copies, the
+        for o in extra:                                 # next tiles' own there, drawn before or after it whatever
+            o.is_holdout = cut                          # design they are; a wide of its own, its px all its own's)
+            o.hide_render = not cut
         _, a = core.render(W, H, "color")
-        _show(extra, True)
+        for o in extra:
+            o.is_holdout, o.hide_render = False, False
         _show(only, False)
         rgb, aw = core.render(W, H, "color")
         _show(only, True)
