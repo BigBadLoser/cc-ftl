@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Icon, { type IconName } from '../Icon.svelte';
-  import { OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_SEC, VENT_MIN_HEAT } from '../../sim/combat/heatTuning';
+  import Icon from '../Icon.svelte';
+  import { OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_ENGINE_EVASION, OVERCHARGE_HEAT_PER_SEC, OVERCHARGE_SEC, OVERCHARGE_SHIELD_REGEN, OVERCHARGE_WEAPON_CHARGE, VENT_MIN_HEAT } from '../../sim/combat/heatTuning';
   import type { UiShipCombat } from '../api';
 
   type Sys = 'weapons' | 'shields' | 'engines';
@@ -12,10 +12,11 @@
     heat: UiShipCombat['heat']; rate: number; onVent: () => void; onOvercharge: (k: Sys) => void;
   } = $props();
 
-  const kinds: { k: Sys; icon: IconName; label: string; tag: string }[] = [
-    { k: 'weapons', icon: 'target', label: 'Weapons', tag: 'WPN' },
-    { k: 'shields', icon: 'shield', label: 'Shields', tag: 'SHD' },
-    { k: 'engines', icon: 'bolt', label: 'Engines', tag: 'ENG' },
+  /** Effect lines and tooltips come from the tuning constants. */
+  const kinds: { k: Sys; label: string; effect: string; tip: string }[] = [
+    { k: 'weapons', label: 'Weapons', effect: `+${Math.round((OVERCHARGE_WEAPON_CHARGE - 1) * 100)}% charge`, tip: `weapons charge ${Math.round((OVERCHARGE_WEAPON_CHARGE - 1) * 100)}% faster` },
+    { k: 'shields', label: 'Shields', effect: `${OVERCHARGE_SHIELD_REGEN}× regen`, tip: `shields regenerate ${OVERCHARGE_SHIELD_REGEN}× as fast` },
+    { k: 'engines', label: 'Engines', effect: `+${Math.round(OVERCHARGE_ENGINE_EVASION * 100)}% evasion`, tip: `+${Math.round(OVERCHARGE_ENGINE_EVASION * 100)}% evasion (needs a pilot at the helm)` },
   ];
   const frac = $derived(heat.value / heat.max);
   const pct = $derived(Math.round(frac * 100));
@@ -23,13 +24,12 @@
   const locked = $derived(heat.lockout > 0);
   const rateText = $derived(`${rate >= 0 ? '+' : '−'}${Math.abs(rate).toFixed(1)}%/s`);
   const canVent = $derived(!locked && heat.venting === 0 && heat.value >= VENT_MIN_HEAT);
-  const R = 15;
-  const C = 2 * Math.PI * R;
-  function ring(k: Sys): { f: number; cls: string; text: string } {
+  /** Bar fill and the status line of one system: active (time left), cooling down (time until ready), or idle (its effect). */
+  function state(k: Sys, effect: string): { f: number; cls: string; text: string } {
     const o = heat.overcharge[k];
-    if (o.left > 0) return { f: o.left / OVERCHARGE_SEC, cls: 'act', text: `${o.left.toFixed(0)}s` };
-    if (o.cooldown > 0) return { f: 1 - o.cooldown / OVERCHARGE_COOLDOWN_SEC, cls: 'cd', text: `${Math.ceil(o.cooldown)}s` };
-    return { f: 0, cls: '', text: '' };
+    if (o.left > 0) return { f: o.left / OVERCHARGE_SEC, cls: 'act', text: `${Math.ceil(o.left)}s left` };
+    if (o.cooldown > 0) return { f: 1 - o.cooldown / OVERCHARGE_COOLDOWN_SEC, cls: 'cd', text: `ready in ${Math.ceil(o.cooldown)}s` };
+    return { f: 0, cls: '', text: effect };
   }
 </script>
 
@@ -45,16 +45,17 @@
   </div>
 </div>
 <div class="oc">
-  {#each kinds as o (o.k)}
-    {@const r = ring(o.k)}
-    <button class="ocb {r.cls}" disabled={locked || r.cls === 'cd'} title="Overcharge {o.label}: stronger for {OVERCHARGE_SEC} s, adds heat, then a {OVERCHARGE_COOLDOWN_SEC} s cooldown" data-testid="overcharge-{o.k}" onclick={() => onOvercharge(o.k)}>
-      <span class="ring">
-        {#if r.cls}<svg viewBox="0 0 36 36" width="34" height="34"><circle cx="18" cy="18" r={R} class="trk" /><circle cx="18" cy="18" r={R} class="arc" stroke-dasharray={C} stroke-dashoffset={C * (1 - r.f)} transform="rotate(-90 18 18)" /></svg>{/if}
-        <Icon name={o.icon} size={16} />
-      </span>
-      <span class="lb">{o.tag}{#if r.text}<em>{r.text}</em>{/if}</span>
-    </button>
-  {/each}
+  <span class="cap">Overcharge</span>
+  <div class="obs">
+    {#each kinds as o (o.k)}
+      {@const r = state(o.k, o.effect)}
+      <button class="ocb {r.cls}" disabled={locked || r.cls === 'cd'} title="Overcharge {o.label}: {o.tip} for {OVERCHARGE_SEC} s. +{OVERCHARGE_HEAT_PER_SEC[o.k]} heat/s while active, then a {OVERCHARGE_COOLDOWN_SEC} s cooldown." data-testid="overcharge-{o.k}" onclick={() => onOvercharge(o.k)}>
+        <span class="nm">{o.label}</span>
+        <span class="fx">{r.text}</span>
+        {#if r.cls}<i class="bar" style="width:{Math.round(r.f * 100)}%"></i>{/if}
+      </button>
+    {/each}
+  </div>
 </div>
 
 <style>
@@ -73,14 +74,12 @@
   .gauge > s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--amber); }
   .gauge > u { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(216, 240, 255, 0.22); top: 55%; }
   @keyframes pulse { to { filter: brightness(1.35); } }
-  .oc { grid-column: 6; grid-row: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .ocb { min-height: 0; min-width: 0; height: 100%; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 5px; overflow: hidden; color: var(--cyan); }
-  .ocb.act { border-color: var(--amber); color: #fff; background: #2a2210; }
-  .ocb.cd { color: var(--dim); }
-  .ring { position: relative; flex: none; width: 34px; height: 34px; display: grid; place-items: center; }
-  .ring svg { position: absolute; inset: 0; }
-  .trk { fill: none; stroke: #12384f; stroke-width: 3; }
-  .arc { fill: none; stroke: var(--cyan); stroke-width: 3; } .act .arc { stroke: var(--amber); } .act .trk { stroke: #3a2f10; } .cd .arc { stroke: var(--line-hi); }
-  .lb { display: grid; gap: 2px; text-align: left; white-space: nowrap; font: 600 10px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); } .act .lb { color: var(--amber); }
-  .lb em { font-style: normal; color: var(--dim); font-size: 11px; }
+  .oc { grid-column: 6; grid-row: 2; display: grid; grid-template-rows: auto 1fr; gap: 4px; min-height: 0; }
+  .obs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; min-height: 0; }
+  .ocb { position: relative; min-height: 0; min-width: 0; height: 100%; padding: 0 2px; display: grid; align-content: center; justify-items: center; gap: 3px; overflow: hidden; color: var(--cyan); }
+  .ocb .nm { font: 700 12px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+  .ocb .fx { font: 600 11px/1 var(--head-font); color: var(--dim); white-space: nowrap; }
+  .ocb .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--cyan); }
+  .ocb.act { border-color: var(--amber); color: #fff; background: #2a2210; } .act .fx { color: var(--amber); } .act .bar { background: var(--amber); }
+  .ocb.cd { color: var(--dim); } .cd .bar { background: var(--line-hi); }
 </style>
