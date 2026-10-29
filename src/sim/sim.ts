@@ -6,7 +6,8 @@ import { commandHandlers } from './handlers';
 import { newSectorGrid } from './stamp';
 import type { Sector } from './combat/components';
 import type { SectorArchive } from './sector/archive';
-import { pipeline } from './pipeline';
+import { runPipeline } from './pipeline';
+import { NOOP_PROBE, type Probe } from './probe';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
 import { advanceTravel } from './galaxy/hyperspace';
@@ -56,12 +57,16 @@ export class Sim {
   }
 
   /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */
-  step(): void {
+  step(probe: Probe = NOOP_PROBE): void {
+    probe.begin('sim/tick');
+    probe.begin('sim/commands');
     this.commands.drain(this.tick, (cmd) => this.apply(cmd));
+    probe.end('sim/commands');
     // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
-    if (this.sector.state === 'active') for (const system of pipeline) system(this);
+    if (this.sector.state === 'active') runPipeline(this, probe);
     else if (this.sector.state === 'hyperspace') advanceTravel(this);
     this.tick++;
+    probe.end('sim/tick');
   }
 
   private apply(cmd: Command): void {

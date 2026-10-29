@@ -23,7 +23,7 @@ import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
 import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
 import { content } from './content';
-import { BodyC, CrewC, PositionC, SAVE_VERSION, serialize, ShipC } from './sim';
+import { BodyC, CrewC, NOOP_PROBE, PositionC, SAVE_VERSION, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
@@ -53,19 +53,37 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 const starmapArt = createStore<UiStarArt | null>(null);
 loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.push(e));
 
+/** Where the layers report timings: the no-op until the profiler (`?perf` or F3, loaded on demand) swaps itself in. */
+let probe: Probe = NOOP_PROBE;
+const setProbe = (p: Probe | null): void => {
+  probe = p ?? NOOP_PROBE;
+  renderer?.setProbe(probe);
+};
+
 let upkeepFrame = 0;
 const loop = createLoop({
   sim,
+  probe: () => probe,
   // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
   render: (alpha) => {
     // World animations freeze while the game is paused (speed 0); camera, UI and hover feedback keep running.
     setAnimPaused(loop.getSpeed() === 0);
-    if (upkeepFrame++ % 10 === 0) controller.upkeep();
-    if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha);
+    if (upkeepFrame++ % 10 === 0) {
+      probe.begin('ui/upkeep');
+      controller.upkeep();
+      probe.end('ui/upkeep');
+    }
+    if (!starmapOpen && sim.sector.state === 'active') {
+      probe.begin('render/main');
+      renderer?.render(alpha);
+      probe.end('render/main');
+    }
   },
   onEvents: (events) => {
+    probe.begin('ui/events');
     controller.onEvents(events);
     renderer?.onEvents(events);
+    probe.end('ui/events');
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
     for (const e of events) {
       if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace' || e.type === 'galaxy.eventLeft') {
@@ -80,9 +98,24 @@ const loop = createLoop({
     }
     hook?.onEvents(events.map((e) => e.type));
   },
-  onFrame: (stats) => bridge.update(stats, renderer?.info()),
+  onFrame: (stats) => {
+    probe.begin('ui/bridge');
+    const info = renderer?.info();
+    if (info) probe.count('render/sprites', info.sprites);
+    bridge.update(stats, info);
+    probe.end('ui/bridge');
+  },
 });
 bridge.attachLoop(loop);
+
+// Profiler (debug only, loaded on demand): `?perf` turns it on at start, F3 toggles its panel. See docs/PROFILING.md.
+const perfBoot = (): Promise<import('./app/profiler/install').ProfilerHandle> => import('./app/profiler/install').then((m) => m.installProfiler(setProbe));
+if (new URLSearchParams(location.search).has('perf')) void perfBoot().then((h) => h.api.enable());
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'F3') return;
+  e.preventDefault();
+  void perfBoot().then((h) => h.togglePanel());
+});
 
 /**
  * Saving: the game is written every AUTOSAVE_MS, when the page is hidden or closed (a phone killing the tab), and after a
@@ -381,6 +414,7 @@ const api: UiApi = {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        r.setProbe(probe);
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);
         const grid = shipGrid(sim, homeShip(sim));

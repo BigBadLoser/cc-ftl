@@ -20,7 +20,9 @@
     "assets": "tools/blender/setup.sh && \"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/build.py",
     "assets:preview": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/preview.py -- /tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scratchpad/assets-preview",
     "sprites": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/sprites/build_sprites.py",
-    "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs"
+    "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs",
+    "profile": "node tools/profile/cli.js",
+    "profile:sim": "node tools/profile/sim.js"
   },
   "dependencies": {
     "@tabler/icons": "3.49.0",

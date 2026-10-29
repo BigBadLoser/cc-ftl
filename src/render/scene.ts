@@ -1,5 +1,6 @@
 import { autoDetectRenderer, Container } from 'pixi.js';
 import { animNow } from './animClock';
+import { NOOP_PROBE, type Probe } from '../sim/probe';
 import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -58,6 +59,8 @@ export type { CombatMarks, CombatViewRect };
 
 export interface Renderer {
   render(alpha: number): void;
+  /** Where `render` reports its passes (labels `render/...`); the no-op by default. */
+  setProbe(probe: Probe): void;
   resize(): void;
   dispose(): void;
   /** The sector grid every ship is stamped into. Ships are drawn for every ShipC (a scene reads its ShipC rectangle of it). */
@@ -354,6 +357,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     SL.world.position.set(c.originX, c.originY);
   }
 
+  let probe: Probe = NOOP_PROBE;
+
   // The combat panel: camera pass B over the same world stack, into a texture shown above the main pass.
   const pass = createCombatPass({
     world,
@@ -368,15 +373,21 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(pass.sprite);
 
   return {
+    setProbe(p) {
+      probe = p;
+    },
     render(alpha) {
       if (atlas.restoring) return;
+      probe.begin('render/sync');
       sync();
       art.update();
+      probe.end('render/sync');
       const now = animNow();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
       W.setScale(cam.scale);
       const shown = pass.target();
+      probe.begin('render/scenes');
       for (const [id, sc] of scenes) {
         const o = origin(id);
         const p = iso(o.x, o.y);
@@ -384,6 +395,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         sc.setMarks(id === shown, id === shown ? targetedModules(world, refId, id) : NONE);
         sc.update(dt);
       }
+      probe.end('render/scenes');
+      probe.begin('render/views');
       asteroids.update(sector);
       pods.update(dt);
       shuttles.update(dt);
@@ -392,14 +405,24 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fightFx.update(dt);
       crewMarks.update();
       orderFx.update();
+      probe.end('render/views');
+      probe.begin('render/fx');
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       art.settle();
+      probe.end('render/fx');
+      probe.begin('render/combatPass');
       pass.render(gl, stage);
+      probe.end('render/combatPass');
+      probe.begin('render/gl');
       place(cam, null);
       gl.render({ container: stage });
+      probe.end('render/gl');
+      probe.begin('render/present');
       pass.present(canvas);
       atlas.tick();
+      probe.end('render/present');
+      probe.count('render/sceneCount', scenes.size);
     },
     resize,
     resetWorld() {

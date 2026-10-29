@@ -18,6 +18,7 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   body. Affected-only or partial runs don't count. CI minutes cost money: CI runs only lint, typecheck, the build and
   the fast tests the change affects (on PR pushes and on `main`, skipping markdown-only changes), plus the full suite
   once a day on `main` when it changed. Batch fixes into one push rather than pushing every commit to an open PR.
+- `npm run profile` / `npm run profile:sim`: performance profiler for agents (headless game / sim only). See `docs/PROFILING.md`.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
