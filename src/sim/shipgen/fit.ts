@@ -3,6 +3,7 @@ import { footprintTiles, rotatedSize } from '../modules/footprint';
 import type { ModuleDef } from '../registry';
 import type { Layout, PlacedModule } from './layout';
 import type { RoomRole } from './types';
+import { SLEEP } from './useTiles';
 
 /** Rotations the generator uses per module: the ones the hand-made templates use (and the art covers). */
 export function rotsOf(defId: string, def: ModuleDef): number[] {
@@ -65,7 +66,7 @@ export function placeOne(
     cands.sort((a, b) => b.score - a.score);
     for (const c of cands.slice(0, 40)) {
       lay.push(c.pm);
-      if ((!def.solid && !def.airlock) || opts.sealed || lay.connected()) return c.pm;
+      if ((!def.solid && !def.airlock && !SLEEP.has(defId)) || opts.sealed || lay.connected()) return c.pm;
       lay.pop();
     }
   }

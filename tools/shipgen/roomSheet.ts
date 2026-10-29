@@ -59,7 +59,7 @@ function drawRoom(r: Raster, p: Pick, ox: number, oy: number, s: number, x0: num
   }
   const counts = new Map<string, number>();
   const mods = (g.template.modules ?? []).map((m) => ({ ...m, rot: m.rot ?? 0 }));
-  const issues = checkUse(rows, mods, defs);
+  const issues = checkUse(rows, mods, defs, g.roomOf);
   const broken = new Map<number, string[]>();
   for (const b of issues) broken.set(b.module, [...(broken.get(b.module) ?? []), b.kind]);
   const mine: string[] = [];
