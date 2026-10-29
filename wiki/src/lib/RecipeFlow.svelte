@@ -19,14 +19,22 @@
     {#if inputs[0]}
       <RecipeMaterial material={inputs[0]} />
     {/if}
-    <span class="recipe-shaft" aria-hidden="true"></span>
+    <!-- Drawn as SVG with the arrowhead's crisp stroke, so both render at
+         the same thickness; it overlaps the arrow by 1px to hide the seam. -->
+    <svg class="recipe-shaft" viewBox="0 0 100 32" preserveAspectRatio="none"
+      height="32" fill="none" aria-hidden="true" focusable="false">
+      <path d="M0 16 H100" stroke="currentColor" stroke-width="1.5"
+        vector-effect="non-scaling-stroke" shape-rendering="crispEdges" />
+    </svg>
   </div>
 
   <!-- Single SVG contains both the central shaft and arrowhead. Its
        horizontal midline is the first material row's vertical center. -->
   <svg class="recipe-arrow" viewBox="0 0 24 32" width="24" height="32"
     fill="none" aria-hidden="true" focusable="false">
-    <path d="M0 16 H19 M14 11 L19 16 L14 21"
+    <path d="M0 16 H19" stroke="currentColor" stroke-width="1.5"
+      shape-rendering="crispEdges" />
+    <path d="M14 11 L19 16 L14 21"
       stroke="currentColor" stroke-width="1.5"
       stroke-linecap="round" stroke-linejoin="round" />
   </svg>
@@ -84,8 +92,10 @@
   .recipe-shaft {
     flex: 1 1 auto;
     min-width: 0;
+    height: 32px;
     margin-left: .35rem;
-    border-top: 1.5px solid #5899cd;
+    margin-right: -1px;
+    color: #5899cd;
   }
   .recipe-arrow {
     display: block;
