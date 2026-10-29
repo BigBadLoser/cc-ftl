@@ -54,6 +54,10 @@ def build(s2, look=1):
     back = -0.5 - plane                                         # (the tile's inner edge, d from the block's face)
     prof = [(back, sec.zmin), (0.0, sec.zmin), (0.0, sec.H), (back, sec.H)]
     FR.prism(k, ax, plane, -0.5, 0.5, prof, "steel", 3, [BOTTOM, None, T.CUT, INNER], YS[1])
+    fc = sec.cols(sec.sec(foot, sec.H), "face")[1]             # (a lid just under the deck, where the layers
+    lid = [(back, -0.002), (sec.front(0.0, 0.0)[0][0], -0.002)]  # meet (wall3d_belly LAYERS), in the face's tone:
+    lid += [(lid[1][0], -1e-4), (back, -1e-4)]                  # the under layer's cut open there shows the slope's
+    f.part(-0.5, 0.5, lid, [fc] * 4, fc, end=False)             # lit top inside, dots along the exterior's foot)
     if look == 3:
         from .wall3d_belly_look3 import look3
         look3(f, sec, back, *_uz(sec), (XS, CREASE, RIM, EDGE, SEAM))
