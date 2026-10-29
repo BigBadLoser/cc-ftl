@@ -34,6 +34,7 @@ import {
 } from '../../src/sim';
 import { isIncapacitated } from '../../src/sim/crew/helpers';
 import { jobTakeable, jobFits } from '../../src/sim/crew/jobFit';
+import { OBSERVE_LABEL, runPlain, type Excluder } from './excluded';
 import { isErrand } from '../../src/sim/eva/errands';
 import { isOffDuty } from '../../src/sim/fight/relations';
 
@@ -97,12 +98,14 @@ export class MetricsRecorder {
    * A probe to step the sim with (`sim.step(rec.probe(sim, inner))`). Job discovery, first reservations and crew job categories are read as `sim/work` begins,
    * after every system that posts or hands out jobs has run and before work can finish and destroy one (see the header). Read-only.
    */
-  probe(sim: Sim, inner: Probe = NOOP_PROBE): Probe {
+  probe(sim: Sim, inner: Probe = NOOP_PROBE, excluded: Excluder = runPlain): Probe {
     return {
       begin: (label) => {
         if (label === 'sim/work') {
-          this.scanJobs(sim, sim.tick);
-          this.snapshotCategories(sim);
+          excluded(OBSERVE_LABEL, () => {
+            this.scanJobs(sim, sim.tick);
+            this.snapshotCategories(sim);
+          });
         }
         inner.begin(label);
       },

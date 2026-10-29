@@ -55,6 +55,9 @@ export interface FrameShare {
 
 export class Tally {
   readonly stats = new Map<string, Stat>();
+  /** Time spent in excluded spans (instrumentation), by label: kept out of `stats`, the frame shares and every enclosing span. */
+  readonly excludedStats = new Map<string, Stat>();
+  private excludedDepth = 0;
   private readonly labels: string[] = [];
   private readonly starts: number[] = [];
   private readonly children: number[] = [];
@@ -95,6 +98,27 @@ export class Tally {
     if (i > 0) this.children[i - 1]! += ms;
   }
 
+  /**
+   * Run `fn` as an excluded span: its time is measured under `label` on its own and taken out of every span open around it, in total and self time, as if
+   * it had not run (for observers that read the sim from inside a probe call). Nested excluded spans count once, under the outermost label.
+   */
+  excluded(label: string, fn: () => void): void {
+    if (this.excludedDepth > 0) return fn();
+    this.excludedDepth++;
+    const t0 = this.now();
+    try {
+      fn();
+    } finally {
+      this.excludedDepth--;
+      const ms = this.now() - t0;
+      for (let i = 0; i < this.depth; i++) this.starts[i]! += ms;
+      let s = this.excludedStats.get(label);
+      if (!s) this.excludedStats.set(label, (s = new Stat(label, false)));
+      s.add(ms, ms);
+      s.frameTotal = s.frameSelf = s.frameCalls = 0; // never part of a frame's shares
+    }
+  }
+
   count(label: string, n = 1): void {
     const s = this.stat(label, true);
     s.add(n, 0);
@@ -120,6 +144,7 @@ export class Tally {
 
   reset(): void {
     this.stats.clear();
+    this.excludedStats.clear();
     this.touched = new Set();
     this.depth = 0;
   }

@@ -37,7 +37,7 @@ debug commands, so any run is reproducible from `--scenario` and `--seed`.
 
 `npm run profile:sim -- --scenario <name> [--ticks N] [--seed 1] [--out file.json] [--no-metrics] [--stride 25] [--record-decisions f.jsonl] [--dump-board <tick> --board-out f.json]`.
 `--ticks` defaults to the scenario's own count; `--empty` and no scenario keep the old start-node run. The text report ends with the metrics block and the
-JSON summary has `scenario`, `seed` and `metrics`. `--no-metrics` gives the plain timing run (the observers run outside the timed span, but they allocate).
+JSON summary has `scenario`, `seed` and `metrics`. The observers (metrics, decision recorder) read the sim from inside probe calls and after each step; their time is measured under `profile/observe` with `Profiler.excluded` (`Tally.excluded`) and removed from every enclosing span, so `sim/tick`, `loop/frame`, the over-budget counts and the `decide` self times are the sim's own. It is printed on its own "instrument time" line (`summary.excluded`). `--no-metrics` and no `--record-decisions` give the plain timing run (the observers still allocate, which shows up as GC noise, not as span time).
 
 | Scenario | What it builds | Default ticks |
 | --- | --- | --- |
@@ -107,6 +107,13 @@ change behaviour records identical files, and a deliberate change shows where it
 - Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites`,
   `render/sceneCount`.
 - p95 is over the most recent 1024 samples; mean and max cover everything since the last `reset()`.
+
+## Excluded spans (instrument time)
+
+Code that watches the sim from inside a probe call (an observer scanning jobs as `sim/work` begins) calls `profiler.excluded('profile/observe', () => ...)`. The time is reported
+on its own (`summary().excluded`, the "instrument time" line of the report) and subtracted from every span open around it, in total and self time, so it never inflates
+`sim/tick`, `loop/frame` or the over-budget count. Nested excluded spans count once, under the outermost label; disabled, the function just runs. Do not use it for work
+the game really does.
 
 ## Add a probe label
 

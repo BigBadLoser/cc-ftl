@@ -9,6 +9,7 @@ import { NOOP_PROBE, newGame, type Probe } from '../../src/sim';
 import { Profiler } from '../../src/app/profiler/profiler';
 import { formatReport } from '../../src/app/profiler/report';
 import { dumpBoard, type Board } from './board';
+import { OBSERVE_LABEL, type Excluder } from './excluded';
 import { DecisionRecorder, type Decision } from './decisions';
 import { MetricsRecorder, formatMetrics, type MetricsSummary } from './metrics';
 import { buildScenario, getScenario } from './scenarios';
@@ -59,8 +60,9 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
   // The observers that must see assignments before `sim/work` ride on the probe chain, with the profiler (when timing) at the end.
   const probeFor = (timing?: Profiler): Probe => {
     const base = timing ?? NOOP_PROBE;
-    const withDecisions = decisions ? decisions.probe(sim, base) : base;
-    return metrics ? metrics.probe(sim, withDecisions) : withDecisions;
+    const ex: Excluder | undefined = timing ? (label, fn) => timing.excluded(label, fn) : undefined;
+    const withDecisions = decisions ? decisions.probe(sim, base, ex) : base;
+    return metrics ? metrics.probe(sim, withDecisions, ex) : withDecisions;
   };
   const warm = Math.min(200, Math.floor(opts.ticks / 10));
   // Drain events like the app loop does (outside the timed span), or the buffer keeps the whole run's history in memory.
@@ -79,7 +81,7 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
     profiler.begin('loop/frame');
     sim.step(probeFor(profiler));
     profiler.end('loop/frame');
-    after();
+    profiler.excluded(OBSERVE_LABEL, after);
   }
   profiler.stopRecording();
   const m = metrics?.summary();

@@ -3,6 +3,7 @@
  * no sim hook needed) and logs every change as a decision: crew X took job J (or let go, job 0). Two runs (two revisions, two flags) written as JSONL can be
  * compared with `diffDecisions`, which finds the first point where they differ. A decision's tick is the tick the step ran at (`sim.tick` before it).
  */
+import { OBSERVE_LABEL, runPlain, type Excluder } from './excluded';
 import { AssignmentC, CrewC, JobC, NOOP_PROBE, type Probe, type Sim } from '../../src/sim';
 
 /** One assignment change. `job` 0 = released; then `kind` is '-' and `cat`, `x`, `y` are blank. */
@@ -38,10 +39,10 @@ export class DecisionRecorder {
    * `resumeAfter` (inside work, which re-assigns a job the crew member had already reserved), so nothing is made and dropped between two captures except by one
    * system doing both. Costs a scan of the assigned crew per system, so it is only on when recording. Read-only: no events, no sim code.
    */
-  probe(sim: Sim, inner: Probe = NOOP_PROBE): Probe {
+  probe(sim: Sim, inner: Probe = NOOP_PROBE, excluded: Excluder = runPlain): Probe {
     return {
       begin: (label) => {
-        if (label !== 'sim/tick') this.capture(sim, sim.tick); // before every system: sees what the previous one did
+        if (label !== 'sim/tick') excluded(OBSERVE_LABEL, () => this.capture(sim, sim.tick)); // before every system: sees what the previous one did
         inner.begin(label);
       },
       end: (label) => inner.end(label),

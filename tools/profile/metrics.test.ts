@@ -199,6 +199,16 @@ describe('jobs that live inside one step', () => {
   });
 });
 
+describe('observer cost', () => {
+  it('runs its pre-work scan through the excluder, so a profiler can keep it out of the tick', () => {
+    const sim = newGame(1, content);
+    const labels: string[] = [];
+    const m = new MetricsRecorder({ stride: 1000 });
+    sim.step(m.probe(sim, undefined, (label, fn) => { labels.push(label); fn(); }));
+    expect(labels).toEqual(['profile/observe']);
+  });
+});
+
 describe('the recorder leaves the sim alone', () => {
   /** Breathable air everywhere, a build job open when observed, then all the air removed: unsuited crew may not take it, whether or not anyone measured. */
   const run = (observe: boolean): string => {
