@@ -1,32 +1,19 @@
 """The belly's straight runs (the cutaway hull, wall3d_belly), built as the exterior's are (wall3d_ext, wall3d_ext_t3):
 the armour on wall3d_ext_geom's Section (its belly option: cut at the rim, upright, then the slope under the ship) and
 Face, set out in front of the hull's own block as the exterior's (T3's BACK in), the block running back to the tile's
-inner edge; dressed as hull 46's D3 look 1 with Face's helpers (painted seams and outlines with their lit bevel, the
-top's seam), in art px from the face's +u end (hull 46's D3 measured from its left, mirrored, as T3's clamps).
+inner edge; dressed in one of the bay looks (wall3d_belly_bay) with Face's helpers, in art px from the face's +u end.
 Rendered as the exterior's runs: coverage anti-aliased (env_build.AA) and "wide"."""
 import bmesh
 
 from . import core
 from . import factions_relief as FR
 from . import wall3d as T
+from . import wall3d_belly_bay as BAY
 from . import wall3d_ext_t3 as T3
-from .wall3d_ext_geom import D, E, LINE, PAINT, YS, Face, Section
+from .wall3d_ext_geom import D, E, YS, Face, Section
 
 RUNS = {(0, 1): "y", (1, 0): "x"}  # the near runs' fronts and their faces' axes (wall3d: the face's normal)
 INNER, BOTTOM = "nvF3", YS[0]        # the block's back (the hull's inside) and bottom
-XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam and shade, the slope's
-                                                     # seams (navy: the lip's edge on it too), its rim
-EDGE = "hbEdge"                                      # (a face's edge: a faint light over its tone)
-SEAM = "hbSeam"                                      # (the lip's seams: between the soft tone and navy)
-SLN = "hbSlopeLn"                                   # (the slope's lines: darker with it, wall3d_belly DARK)
-LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
-    "side_seam": ((0, 7), (25, 32), 10),        # from the cut: a seam across each side plate (lit under it)
-    "panel": ((7, 25), (7, 16)),                # the centre plate, a px proud, lit along its top, a px of shade under
-    "lip": (4, 5, 1),                           # a plate the face's width on its foot, this tall and a px proud;
-                                                # its middle (px in from each end) on down past the foot this far
-    "slope_seam": ((7, 8), (24, 25)),           # seams down the slope, a px in from the plate's sides; one across it
-    "slope_line": 2,                            # (px under its middle)
-}
 
 
 def section():
@@ -34,23 +21,16 @@ def section():
     return Section(ZG, T3.BACK, under=(ZG - ARMOUR, SLOPE[0], SLOPE[1]))
 
 
-def build(s2, look=1):
-    """The run along a near front s2 ((0, 1) or (1, 0)) of a tile whose outline is the run set's (c 15), whole, in
-    one of hull 46's D3 looks (1, or 3: wall3d_belly_look3)."""
+def build(s2, look=BAY.PLAIN):
+    """The run along a near front s2 ((0, 1) or (1, 0)) of a tile whose outline is the run set's (c 15), whole, in a
+    bay look (wall3d_belly_bay.LOOKS)."""
     ax, sec = RUNS[s2], section()
     k = T.Relief(f"belly_run_{ax}")
     plane = E - D - T3.BACK
     f = Face(k, ax, plane, -0.5, 0.5, ("cont", "cont"), sec)
     foot = sec.under[0]
-    blocks = [(-0.5, 0.5, sec.zmin, foot, 0.0), (-0.5, 0.5, foot, sec.H, 0.0)]    # (the armour: not across its
-    if look == 3:                                                                   # foot; a look's recesses its own)
-        from .wall3d_belly_look3 import blocks3
-        blocks = blocks[:1] + blocks3(sec, *_uz(sec))
-    elif look >= 20:
-        from . import wall3d_belly_bay as BAY
-        blocks = BAY.blocks(look, sec, _uz(sec)[1])
-    for u0, u1, z0, z1, off, *role in blocks:
-        f.block(u0, u1, z0, z1, *role, off=off)
+    for u0, u1, z0, z1, off, role in BAY.blocks(look, sec, _uz(sec)[1]):    # (the armour: not across its foot; a
+        f.block(u0, u1, z0, z1, role, off=off)                              # look's recesses its own)
     back = -0.5 - plane                                         # (the tile's inner edge, d from the block's face)
     prof = [(back, sec.zmin), (0.0, sec.zmin), (0.0, sec.H), (back, sec.H)]
     FR.prism(k, ax, plane, -0.5, 0.5, prof, "steel", 3, [BOTTOM, None, T.CUT, INNER], YS[1])
@@ -58,63 +38,13 @@ def build(s2, look=1):
     lid = [(back, -0.002), (sec.front(0.0, 0.0)[0][0], -0.002)]  # meet (wall3d_belly LAYERS), in the face's tone:
     lid += [(lid[1][0], -1e-4), (back, -1e-4)]                  # the under layer's cut open there shows the slope's
     f.part(-0.5, 0.5, lid, [fc] * 4, fc, end=False)             # lit top inside, dots along the exterior's foot)
-    if look == 3:
-        from .wall3d_belly_look3 import look3
-        look3(f, sec, back, *_uz(sec), (XS, CREASE, RIM, EDGE, SEAM))
-    elif look >= 20:
-        BAY.dress(look, f, sec, back, *_uz(sec))
-    elif look >= 5:
-        from .wall3d_belly_looks import look as looks
-        looks(look, f, sec, back, *_uz(sec))
-    else:
-        _look1(f, sec, back)
+    BAY.dress(look, f, sec, back, *_uz(sec))
     return k.build()
 
 
 def _uz(s):
     """Art px to the face's u (px from its +u end -> u0, u1) and height (px down from the cut)."""
     return (lambda a, b: (0.5 - T3.px(b), 0.5 - T3.px(a))), (lambda v: s.z_at(s.H, v))
-
-
-def _look1(f, s, back):
-    """D3 look 1 over the tile: the lit lip under the cut, the top's seams along its front and back, a seam across each
-    side plate, the centre plate a px proud (lit along its top, a px of shade under it), the slope's
-    rim, the lip on the face's foot (its shade on the slope under it), two seams down the slope and one across it."""
-    U, Z = _uz(s)
-    foot = s.under[0]
-    with f.tag("lips"):
-        f.line(-0.5, 0.5, Z(1), s.H, YS[4], bevel=False)
-        f.line(*U(0, 1), foot, Z(1), EDGE, end=False, bevel=False)          # (the face's +u edge, faintly lit)
-    with f.tag("seams"):
-        *sides, v = LOOK1["side_seam"]
-        for a, b in sides:
-            f.line(*U(a, b), Z(v + 1), Z(v), CREASE)
-        f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])    # (T3's, along the back)
-    with f.tag("panel"):
-        (a, b), (v0, v1) = LOOK1["panel"]
-        u0, u1 = U(a, b)
-        f.shade(u0, u1, Z(v1), Z(v1 - 2), XS, under=3, side=0.0)     # (under it only: the plate hides half)
-        f.raised(u0, u1, Z(v1), Z(v0), -0.01, LINE, "face", cap=YS[2])     # (lit along its top by its facing)
-    with f.tag("lip"):                                          # (lit along its top by its facing)
-        h, e, x = LOOK1["lip"]
-        f.raised(-0.5, 0.5, foot, s.z_at(foot, -h), -0.01, LINE, "face", cap=YS[2])
-        d, zb = s.front(foot, foot)[0][0], foot - x * (s.H - Z(1))     # (straight down, over the slope)
-        prof = [(d - 0.01, zb), (d + LINE, zb), (d + LINE, foot), (d - 0.01, foot)]
-        f.part(*U(e, 32 - e), prof, s.cols(prof, "face"), YS[2])
-        top, fr = s.z_at(foot, -h), d + LINE                            # (the middle's ends: a soft seam down its
-        side = [(fr - 0.01, zb), (fr + PAINT, zb), (fr + PAINT, top), (fr - 0.01, top)]   # face, the lip's height)
-        for a in (e + 2, 28 - e):                                       # (2 px wide, 2 px in from the middle's ends)
-            f.part(*U(a, a + 2), side, [SEAM] * 4, SEAM, end=False)
-        for (a, b), n, w in (((0, e), 0.5, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 2)):   # (its
-            z0 = s.z_at(foot, n)                                                 # edge on the slope under it, along
-            f.line(*U(a, b), s.z_at(z0, w), z0, SLN, bevel=False)            # its outline: a px showing past it)
-        f.line(*U(0, 2), s.zmin, foot, SLN, end=False, bevel=False)    # (on down the slope's +u end, from the foot)
-    with f.tag("seams"):                                        # (down the slope)
-        for a, b in LOOK1["slope_seam"]:
-            f.line(*U(a, b), s.zmin, foot, SLN, end=False, bevel=False)
-        zm = s.z_at((s.zmin + foot) / 2, LOOK1["slope_line"])
-        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)   # (across the slope, under its middle; its rim)
-        f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
 
 
 def cut(objs, planes):
@@ -133,7 +63,7 @@ def cut(objs, planes):
     return objs
 
 
-def art(f, planes, wide=False, look=1):
+def art(f, planes, wide=False, look=BAY.PLAIN):
     """A near run's art for a front f ((s, c), c in 32nds, tile-local) cut to planes; wide: with a copy a tile either
     way along the run (its colours run on past the tile's edges, env_build "wide"). The tile's side on its front's
     side is no cut (the front is set in from it; what stands proud of the face may pass it)."""

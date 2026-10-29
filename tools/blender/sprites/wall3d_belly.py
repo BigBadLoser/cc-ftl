@@ -120,7 +120,7 @@ def _tone(m, i, n, s):
 LAYERS = {"under": (UP, 0.0), "over": (-UP, 0.0)}   # (a layer's cut: under the deck, over it)
 
 
-def piece(key, far=ZG, layer="over", margin=0.0, look=1):
+def piece(key, far=ZG, layer="over", margin=0.0, look=20):
     """A layer (LAYERS) of the belly piece of a tile with this key: a near run's part the run's own art (wall3d_belly
     _run, as the exterior's pieces take the run set's), cut to it; each other part a solid, its faces toned by facing
     (a face shared with a neighbour part drawn only where it rises over or hangs under that part, else it is inside
@@ -163,7 +163,7 @@ def _piece(key, far, layer, margin, look):
     return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
 
 
-def wide(key, far=ZG, layer="over", look=1):
+def wide(key, far=ZG, layer="over", look=20):
     """A piece as env_build's "wide" kind: (its own, the same run on past the tile's edges); none if it is empty."""
     own = piece(key, far, layer, look=look)
     return (own, piece(key, far, layer, WIDE, look)) if own else []
