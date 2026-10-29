@@ -7,7 +7,11 @@
   //   where="power" | "draw"                     keeps modules that supply or draw power / only draw it, and
   //   sort="powerPriority"                       orders by a field, then name.
   //   columns="power:Power:signed, powerPriority:Order"   field:label[:signed] per column.
-  let { ids, where, sort, columns }: { ids?: string; where?: 'power' | 'draw'; sort?: string; columns: string } = $props();
+  //   group="powerPriority" groupLabel="Order"   one row per value of that field instead, listing its modules with
+  //                                              the first column's value after each name.
+  let { ids, where, sort, columns, group, groupLabel }: {
+    ids?: string; where?: 'power' | 'draw'; sort?: string; columns: string; group?: string; groupLabel?: string;
+  } = $props();
 
   const list = (value: string) => value.split(',').map((part) => part.trim()).filter(Boolean);
   const cols = $derived(list(columns).map((spec) => {
@@ -28,6 +32,22 @@
   };
 </script>
 
+{#if group}
+  {@const groups = Map.groupBy(rows, ([, m]) => m[group])}
+  <table class="wiki-module-table">
+    <thead><tr><th>{groupLabel ?? group}</th><th>Modules ({cols[0]?.label.toLowerCase()})</th></tr></thead>
+    <tbody>
+      {#each [...groups] as [value, members] (value)}
+        <tr>
+          <td class="num">{value}</td>
+          <td>
+            {#each members as [id, m], i (id)}<a href={resolve('reference/modules/') + m.slug + '/'}>{m.name}</a>&nbsp;<span class="draw">{cell(m[cols[0]?.field ?? ''], cols[0]?.signed)}</span>{i < members.length - 1 ? ', ' : ''}{/each}
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+{:else}
 <table class="wiki-module-table">
   <thead><tr><th>Module</th>{#each cols as c (c.field)}<th>{c.label}</th>{/each}</tr></thead>
   <tbody>
@@ -39,9 +59,11 @@
     {/each}
   </tbody>
 </table>
+{/if}
 
 <style>
   .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .draw { color: var(--wiki-subtle, #8a9bb0); font-variant-numeric: tabular-nums; }
   a { color: #2c6699; text-decoration: underline; text-underline-offset: 2px; }
   :global(:root.dark) a { color: #9acff6; }
 </style>
