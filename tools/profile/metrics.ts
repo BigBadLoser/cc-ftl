@@ -53,6 +53,21 @@ const dist = (values: number[]): Dist => {
 /** Jobs the metrics ignore (see the header). */
 const skip = (job: Job): boolean => job.kind === 'operate' || isErrand(job);
 
+/**
+ * `jobTakeable` without leaving a trace. Route planning memoises "does this grid have thin air" keyed by `sim.tick`, and an observer runs after the
+ * step has already incremented the tick, so an entry written here would be reused by the next step after commands and atmosphere changed the grid: the
+ * measurement would change the sim. Running the check with `sim.tick` set to -1 stores the entry under a tick no step ever runs at, then restores the tick.
+ */
+function takeableWithoutMemo(sim: Sim, id: number, pos: Parameters<typeof jobTakeable>[2], job: Job): boolean {
+  const tick = sim.tick;
+  sim.tick = -1;
+  try {
+    return jobTakeable(sim, id, pos, job);
+  } finally {
+    sim.tick = tick;
+  }
+}
+
 export class MetricsRecorder {
   private categoryByCrew = new Map<number, WorkCategory>();
   private tracked = new Map<number, Tracked>();
@@ -123,7 +138,7 @@ export class MetricsRecorder {
       const ship = shipIdOf(sim, pos);
       for (const { job } of jobs) {
         if ((pr[job.category] ?? 0) <= 0 || shipIdOf(sim, job) !== ship || !jobFits(sim, id, pos, job)) continue;
-        if (jobTakeable(sim, id, pos, job)) {
+        if (takeableWithoutMemo(sim, id, pos, job)) {
           this.idle.work++;
           break;
         }

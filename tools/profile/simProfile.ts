@@ -65,13 +65,13 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
     maybeDump();
   };
   for (let i = 0; i < warm; i++) {
-    sim.step();
+    sim.step(decisions?.probe(sim));
     after();
   }
   profiler.startRecording();
   for (let i = 0; i < opts.ticks; i++) {
     profiler.begin('loop/frame');
-    sim.step(profiler);
+    sim.step(decisions ? decisions.probe(sim, profiler) : profiler);
     profiler.end('loop/frame');
     after();
   }

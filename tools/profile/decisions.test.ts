@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';
+import { content } from '../../src/content';
+import { CrewC, JobC, PositionC, PrioritiesC, ShipC, homeShip, newGame } from '../../src/sim';
+import { Struct } from '../../src/sim/structure';
+import { DecisionRecorder, diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';
 
 const d = (t: number, c: number, job: number, kind = 'build', x = 1, y = 1): Decision => ({ t, c, job, kind, cat: 'construction', x, y });
 
@@ -62,5 +65,39 @@ describe('decision files', () => {
     expect(() => parseDecisions('{"format":"other"}\n')).toThrow(/header/);
     expect(() => parseDecisions(serializeDecisions(header, base) + 'not json\n', 'f.jsonl')).toThrow(/f.jsonl: line 7/);
     expect(() => parseDecisions(serializeDecisions(header, base) + '{"t":1}\n')).toThrow(/not a decision/);
+  });
+});
+
+describe('DecisionRecorder and same-step completion', () => {
+  /** A one-tick job beside an idle crew member: decide assigns it and work finishes it in the same step. */
+  const run = (withProbe: boolean): Decision[] => {
+    const sim = newGame(1, content);
+    sim.step();
+    sim.events.drain();
+    const rec = new DecisionRecorder();
+    rec.observe(sim);
+    const ship = sim.world.get(homeShip(sim), ShipC)!;
+    const crew = sim.world.query(CrewC).find((id) => {
+      const p = sim.world.get(id, PositionC)!;
+      return p.x === p.toX && p.y === p.toY && sim.world.get(id, PrioritiesC)!.construction > 0 && p.x > ship.x + 1;
+    })!;
+    const p = sim.world.get(crew, PositionC)!;
+    const job = sim.world.createEntity();
+    sim.world.add(job, JobC, { category: 'construction', kind: 'build', x: p.x - 1, y: p.y, struct: Struct.Door, work: 1, progress: 0, reservedBy: 0 });
+    for (let i = 0; i < 5; i++) {
+      sim.step(withProbe ? rec.probe(sim) : undefined);
+      sim.events.drain();
+      rec.observe(sim);
+    }
+    return rec.decisions;
+  };
+
+  it('captures an assignment that is made and finished within one step', () => {
+    const withProbe = run(true);
+    expect(withProbe.some((d) => d.kind === 'build' && d.job !== 0)).toBe(true);
+    const take = withProbe.find((d) => d.job !== 0 && d.kind === 'build')!;
+    expect(withProbe.some((d) => d.c === take.c && d.job === 0 && d.t >= take.t)).toBe(true);
+    // Without the probe (observing only after the step) the one-tick job leaves no trace: the gap this closes.
+    expect(run(false).some((d) => d.kind === 'build' && d.job !== 0)).toBe(false);
   });
 });

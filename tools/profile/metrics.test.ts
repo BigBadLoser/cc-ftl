@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../src/content';
-import { AssignmentC, CrewC, JobC, ShipC, homeShip, newGame, type Sim } from '../../src/sim';
+import { AssignmentC, CrewC, JobC, ShipC, homeShip, newGame, serialize, shipGrid, type Sim } from '../../src/sim';
 import { Struct } from '../../src/sim/structure';
 import { MetricsRecorder, percentile } from './metrics';
 import { buildScenario } from './scenarios';
@@ -119,5 +119,34 @@ describe('MetricsRecorder maths on a hand-driven sim', () => {
     const s = JSON.parse(a);
     expect(s.idleWithWork.idleWithWorkSamples).toBe(0);
     expect(s.timeToAssign.neverAssigned).toBeGreaterThan(50);
+  });
+});
+
+describe('the recorder leaves the sim alone', () => {
+  /** Breathable air everywhere, a build job open when observed, then all the air removed: unsuited crew may not take it, whether or not anyone measured. */
+  const run = (observe: boolean): string => {
+    const sim = newGame(1, content);
+    const me = homeShip(sim);
+    const s = sim.world.get(me, ShipC)!;
+    const fill = (v: number): void => {
+      const g = shipGrid(sim, me)!;
+      for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) g.set('o2', x, y, v);
+    };
+    const m = new MetricsRecorder({ stride: 1 });
+    for (let i = 0; i < 40; i++) {
+      sim.step();
+      const events = sim.events.drain();
+      if (i === 0) {
+        fill(21);
+        postJob(sim, s.x + 12, s.y + 9, { struct: Struct.Door }); // open when observed, taken in the next decide pass
+      }
+      if (observe) m.observe(sim, events);
+      if (i === 0) fill(0);
+    }
+    return JSON.stringify(serialize(sim));
+  };
+
+  it('gives a byte-identical sim with metrics on and off, through an oxygen loss', () => {
+    expect(run(true)).toBe(run(false));
   });
 });

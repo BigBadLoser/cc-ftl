@@ -78,7 +78,7 @@ the same state can be rebuilt. It is the input for replaying a scheduler candida
 ### Decision diff
 
 `--record-decisions run.jsonl` on `profile:sim`, or `npm run ai:diff -- --record --scenario <name> [--seed 1] [--ticks N] [--note "rev abc"] --out run.jsonl`, writes one line
-per assignment change `{t, c, job, kind, cat, x, y, name}` (`job` 0 = released) after a header line. The tick is the one the step ran at.
+per assignment change `{t, c, job, kind, cat, x, y, name}` (`job` 0 = released) after a header line. The tick is the one the step ran at. Assignments are captured as `sim/work` begins (through the `Probe`, so a job taken and finished in one step still shows) and again after the step.
 Record on two revisions (check out each, record, compare) or with two flags, then:
 
 `npm run ai:diff -- --a old.jsonl --b new.jsonl [--context 5] [--match id|site]`

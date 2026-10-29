@@ -3,7 +3,7 @@
  * no sim hook needed) and logs every change as a decision: crew X took job J (or let go, job 0). Two runs (two revisions, two flags) written as JSONL can be
  * compared with `diffDecisions`, which finds the first point where they differ. A decision's tick is the tick the step ran at (`sim.tick` before it).
  */
-import { AssignmentC, CrewC, JobC, type Sim } from '../../src/sim';
+import { AssignmentC, CrewC, JobC, NOOP_PROBE, type Probe, type Sim } from '../../src/sim';
 
 /** One assignment change. `job` 0 = released; then `kind` is '-' and `cat`, `x`, `y` are blank. */
 export interface Decision {
@@ -31,9 +31,29 @@ export class DecisionRecorder {
   readonly decisions: Decision[] = [];
   private held = new Map<number, number>();
 
-  /** Call after each `sim.step()`. */
+  /**
+   * A probe to step the sim with (`sim.step(rec.probe(sim))`), passing the timing probe through as `inner`. Every system that hands out a job (commands, operate
+   * jobs, decide, rescue, drafted orders) runs before `sim/work`, which can finish a one-tick job and drop the assignment in the same step; so the assignments are
+   * captured as `sim/work` begins, and `observe` then only has to see what changed after it. Read-only: it adds no events and no sim code.
+   */
+  probe(sim: Sim, inner: Probe = NOOP_PROBE): Probe {
+    return {
+      begin: (label) => {
+        if (label === 'sim/work') this.capture(sim, sim.tick);
+        inner.begin(label);
+      },
+      end: (label) => inner.end(label),
+      count: (label, n) => inner.count(label, n),
+    };
+  }
+
+  /** Call after each `sim.step()`, whether or not the step ran with `probe`. */
   observe(sim: Sim): void {
-    const t = sim.tick - 1;
+    this.capture(sim, sim.tick - 1);
+  }
+
+  /** Log what changed since the last capture, as decisions of tick `t`. */
+  private capture(sim: Sim, t: number): void {
     const now = new Map<number, number>();
     for (const c of sim.world.query(CrewC, AssignmentC)) now.set(c, sim.world.get(c, AssignmentC)?.jobId ?? 0);
     const changed: Decision[] = [];
