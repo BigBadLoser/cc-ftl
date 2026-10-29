@@ -18,10 +18,10 @@ Both scripts print the text report to stdout and write the JSON summary (`--out`
 server on purpose: system labels come from function names, which a minified build mangles.
 
 Scenarios are the `?scenario=` values in `src/main.ts`, passed straight through: currently `log` (a raider arrives, fire breaks out, speed 3),
-`hullplan`, `handover`, `bounty`, `survey`. `fight` and `damage` arrive with #184. `none` or no flag is the colony baseline.
+`hullplan`, `handover`, `bounty`, `survey`, `fight` (a raider beside the ship, game running; add `far` for engagement distance, which exercises the combat view and inset) and `damage` (a fire, a breach and a damaged reactor). `none` or no flag is the colony baseline.
 `--speed 1|2|3` presses the speed key after load; `--warmup 2` seconds run before the tally resets and the recording starts.
 
-Headless Chromium renders with software WebGL (SwiftShader): `render/present`, `render/gl` and `render/combatPass` are inflated by it and
+Headless Chromium renders with software WebGL (SwiftShader): `render/present`, `render/gl` and `render/inset` are inflated by it and
 the frame rate is low. Trust the CPU-side labels (`sim/*`, `ui/*`, `render/scenes`, `render/sync`, `render/views`) and the counters; compare
 GPU-bound numbers only between runs on the same machine.
 
@@ -39,7 +39,7 @@ GPU-bound numbers only between runs on the same machine.
 ## Reading the report
 
 - `loop/frame` is the work done per frame (sim ticks, render, ui). `interval` is the real time between frames (fps).
-- Labels: `sim/tick` (whole tick, children are `sim/<system>` and `sim/commands`), `render/{sync,scenes,views,fx,combatPass,gl,present,main}`,
+- Labels: `sim/tick` (whole tick, children are `sim/<system>` and `sim/commands`), `render/{sync,scenes,views,fx,inset,gl,present,main}`,
   `ui/{bridge,events,upkeep}`, `loop/frame`.
 - Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites`,
   `render/sceneCount`.

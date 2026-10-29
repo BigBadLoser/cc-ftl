@@ -1,4 +1,4 @@
-import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
+import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { ItemStackC } from '../sim/items/components';
@@ -6,6 +6,7 @@ import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
 import { AsteroidC } from '../sim/asteroids/components';
+import { addHeat } from '../sim/combat/heat';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -27,6 +28,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       }
       return r.info().zoom;
     },
+    /** Committed enemy aims (the incoming-fire telegraph): weapon module, target ship, aim area and charge. */
+    commits: () => [...sim.world.query(WeaponC)].flatMap((id) => {
+      const w = sim.world.get(id, WeaponC);
+      return w?.commit ? [{ id, ship: w.commit.target.ship, x: w.commit.x, y: w.commit.y, w: w.commit.w, h: w.commit.h, charge: w.charge }] : [];
+    }),
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
     /** Trade and handover deals: phase, shuttle state and position, airlock. */
@@ -51,6 +57,19 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         out.push({ id, shipId: shipIdOf(sim, m), ship: shipIdOf(sim, m), x: m.x, y: m.y, ax: a.x, ay: a.y });
       }
       return out;
+    },
+    /** Burning tiles of a ship, and the floor tiles that touch open space (damage-control screenshots). */
+    hazards(shipId: number) {
+      const grid = shipGrid(sim, shipId);
+      const fires: { x: number; y: number }[] = [];
+      const breaches: { x: number; y: number }[] = [];
+      if (grid)
+        for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+          for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+            if (grid.get('fire', x, y) > 0) fires.push({ x, y });
+            if (grid.get('room', x, y) && ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => grid.inBounds(x + dx, y + dy) && grid.get('struct', x + dx, y + dy) === Struct.Space)) breaches.push({ x, y });
+          }
+      return { fires, breaches };
     },
     /** A ship's modules with their power state and hp, and its ruin dressing counts (for derelict checks). */
     wreck(shipId: number) {
@@ -138,7 +157,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
       /** Fill the player's FTL drive (a fresh game has no pilot at the helm to charge it). */
       chargeFtl: () => { const c = sim.world.get(playerShip(sim), CombatC); if (c) c.ftl = FTL_CHARGE_SEC; },
-      /** Mood readout. */
+      /** Set a ship's integrity 0..1 (screenshots: a battered enemy). */
+    setIntegrity: (ship: number, v: number) => { const sc = sim.world.get(ship, ShipC); if (sc) sc.integrity = v; },
+    /** Add combat heat to a ship (screenshots: force an overheat). */
+    addHeat: (ship: number, amount: number) => addHeat(sim, ship, amount),
+    /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
     /** Module construction sites with their status (progress, materials, block). */

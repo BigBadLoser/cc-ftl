@@ -40,6 +40,8 @@ export { BodyC, ALT, isAirborne, type Body } from './body';
 export { hullSum, hullTiles, hullArea, outerProfile, interiorArea, templateHullTiles, templateHullArea, isHullKind, damageStruct } from './combat/hull';
 export { shieldRechargeSec } from './combat/ships';
 export { operatorOf } from './combat/operators';
+export { commitEtaSec, projectileEtaSec, shotSlot } from './combat/eta';
+export { SHOT_COLORS, shotColor } from './combat/shotColors';
 export { weaponsIdleReason } from './combat/idle';
 export { ammoCount } from './combat/ammo';
 export { aimDirection, turretPosition } from './combat/geometry';
@@ -129,7 +131,7 @@ export { applyOvercharge, riskOf, OVERCHARGE_FULL, type OverchargeRisk, type Ove
 export { ftlStatus, ftlBlocker, type FtlStatus, type FtlBlock, type FtlState } from './ftl/status';
 export { cheapestHop, distressBlocker, fuelOnSale, isStranded, tugQuote, type TugQuote } from './galaxy/stranded';
 export { FUEL_ITEM, burnFuel, fuelStock, ftlCharge, jumpFuel, engineFuelFactor } from './galaxy/fuel';
-export { routeEdges, routeBlocker, routeCharge, hopTicksOf } from './galaxy/hyperspace';
+export { routeEdges, routeBlocker, routeCharge, hopTicksOf, isAdrift } from './galaxy/hyperspace';
 export { standing, standings, tierOf, isHostileFaction } from './galaxy/standing';
 export { clearBlocker, clearCost, grudgeOf, huntPressure, isWanted, notorietyOf } from './galaxy/heat';
 export { WANTED_AT } from './galaxy/tuningHeat';

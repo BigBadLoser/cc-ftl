@@ -8,9 +8,6 @@
     /** In hyperspace the map is the view: it stays open until the ship drops. */
     mapLocked: boolean;
     prioritiesOpen: boolean;
-    /** Enemies are present in the node. */
-    hostile: boolean;
-    combatOpen: boolean;
     jobsOpen: boolean;
     /** Jobs held, shown on the tile. */
     jobCount: number;
@@ -23,9 +20,8 @@
     onOverview: () => void;
     onCrew: () => void;
     onStock: () => void;
-    onCombat: () => void;
   };
-  let { mapOpen, mapLocked, onMap, overviewOpen, stockOpen, prioritiesOpen, hostile, combatOpen, jobsOpen, jobCount, onJobs, hasLab, researchOpen, onResearch, onOverview, onCrew, onStock, onCombat }: Props = $props();
+  let { mapOpen, mapLocked, onMap, overviewOpen, stockOpen, prioritiesOpen, jobsOpen, jobCount, onJobs, hasLab, researchOpen, onResearch, onOverview, onCrew, onStock }: Props = $props();
 </script>
 
 <!-- Global screens: one framed strip of flush icon tiles, the starmap first. -->
@@ -36,7 +32,6 @@
   <button class="tile" class:on={stockOpen} title="Ship stock" aria-label="Stock" data-testid="stock-open" onclick={onStock}><Icon name="stock" size={22} /></button>
  <button class="tile" class:on={jobsOpen} title="Jobs" aria-label="Jobs" data-testid="jobs-open" onclick={onJobs}><Icon name="list" size={22} />{#if jobCount}<b class="badge">{jobCount}</b>{/if}</button>
   {#if hasLab}<button class="tile" class:on={researchOpen} title="Research" aria-label="Research" data-testid="research-open" onclick={onResearch}><Icon name="research" size={22} /></button>{/if}
-  <button class="tile combat" class:on={combatOpen} class:hot={hostile} title={hostile ? 'Combat' : 'No enemies'} aria-label="Combat" aria-disabled={!hostile} data-testid="combat-open" onclick={onCombat}><Icon name="target" size={22} /></button>
 </div>
 
 <style>
@@ -47,9 +42,6 @@
   .strip button.tile:last-child { border-right: 0; }
   .strip button.tile:hover { background: var(--panel-3); }
   .strip button.tile.on { background: var(--panel-3); box-shadow: inset 0 0 0 1px var(--cyan); }
-  .combat { color: var(--dim); }
-  .combat.hot { color: var(--red); animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { background: #3a1216; } }
-  @media (prefers-reduced-motion: reduce) { .combat.hot { animation: none; background: #3a1216; } }
   @media (max-width: 600px) { .strip button.tile { width: 36px; height: 36px; } }
 </style>

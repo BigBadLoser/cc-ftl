@@ -16,8 +16,9 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   const target = (t: Target): Target => (t && (t.vehicle ? gone(t.vehicle) : gone(t.ship)) ? null : t);
   const combat = data.combat as { target: Target } | undefined;
   if (combat) combat.target = target(combat.target);
-  const weapon = data.weapon as { target: Target; volleyTarget: Target; shotsLeft: number } | undefined;
+  const weapon = data.weapon as { target: Target; volleyTarget: Target; shotsLeft: number; commit?: { target: Target } | null } | undefined;
   if (weapon) {
+    if (weapon.commit && !target(weapon.commit.target)) weapon.commit = null; // a telegraphed aim at a ship across the cut would come back with stale coordinates
     weapon.target = target(weapon.target);
     const volley = target(weapon.volleyTarget);
     if (weapon.volleyTarget && !volley) weapon.shotsLeft = 0;

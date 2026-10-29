@@ -26,6 +26,44 @@
   --hdr: 100px;
   /** Pixel headings (the starmap): Silkscreen, SIL Open Font License (public/fonts/Silkscreen-OFL.txt). */
   --pixel-font: 'Silkscreen', 'Rajdhani', monospace;
+  /* Spacing scale and the gutter between panels and rows. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --gutter: var(--sp-2);
+  /* Thin frames: the line colour and weight shared by every titled frame. */
+  --frame-line: rgba(90, 140, 175, 0.38);
+  --frame-w: 1px;
+  /* Bars and tags. */
+  --track: #061020;
+  --ok-fill: #0a2233;
+  --go: #0e6a80;
+  /* Panel bands and muted text used by the combat HUD. */
+  --band: #0d4a66;
+  --band-hot: #6a1c25;
+  --heat-low: #1b8fb3;
+  --axis: #56697b;
+  --muted: #8fa3b3;
+  --light: #a9d8ee;
+  --amber-fill: #2a2210;
+  /* Health tones (hull, heat, charge). */
+  --health-good: var(--green);
+  --health-warn: var(--amber);
+  --health-bad: var(--red);
+  /* The hostile red family: the enemy card, enemy state, the hostile frame. */
+  --hostile: #ff8a8a;
+  --hostile-dim: #c98a8a;
+  --hostile-line: #b8343c;
+  --hostile-track: #5a2229;
+  --hostile-fill: #2a0f14;
+  /* One colour per incoming shot, shared by the enemy weapon row, its line in the world and its marker on the timeline.
+     These mirror SHOT_COLORS in src/sim/combat/shotColors.ts (the source); shotColors.test.ts checks they agree. */
+  --shot-0: #f08a9a;
+  --shot-1: #ffc06a;
+  --shot-2: #ff5a5a;
+  --shot-3: #ff9a78;
+  --shot-4: #e0508f;
+  --shot-5: #ffe27a;
   --head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
 }
 @media (max-width: 600px) { :root { --hdr: 180px; } }

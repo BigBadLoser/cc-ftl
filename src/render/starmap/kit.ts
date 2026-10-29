@@ -37,7 +37,6 @@ export interface Scene {
   /** The plotted route, flat x, y pairs. */
   routePts: number[];
   routeSectors: ReadonlySet<string>;
-  only: ReadonlySet<string> | null;
   /** Screen px at the right edge that the drawer covers. */
   inset: number;
 }

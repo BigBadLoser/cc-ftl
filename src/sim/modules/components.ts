@@ -20,6 +20,8 @@ export interface Module {
   reservedBy: number;
   /** Set when hp hits 0 and cleared once repaired past half: a wrecked module that is patched and shot again does not announce its destruction again. */
   wrecked?: boolean;
+  /** Priority repair (module.priorityRepair): crew pick this module's repair job before any other; a higher number was ordered later and goes first. Cleared at full hp. */
+  repairFirst?: number;
 }
 export const ModuleC = defineComponent<Module>('module');
 

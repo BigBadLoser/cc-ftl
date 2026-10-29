@@ -1,4 +1,6 @@
 import { CombatC, ProjectileC } from '../combat/components';
+import { addHeat } from '../combat/heat';
+import { HEAT_PER_LAYER } from '../combat/heatTuning';
 import { applyEffects } from '../combat/effects';
 import { gauss } from '../combat/geometry';
 import { shipById } from '../combat/ships';
@@ -43,7 +45,9 @@ export function impactSystem(sim: Sim): void {
       continue;
     }
     if (combat && !def.shield.bypass && combat.shield.layers > def.shield.pierce) {
-      combat.shield.layers = Math.max(0, combat.shield.layers - def.shield.damage);
+      const before = combat.shield.layers;
+      combat.shield.layers = Math.max(0, before - def.shield.damage);
+      addHeat(sim, shipId, (before - combat.shield.layers) * HEAT_PER_LAYER); // absorbing a hit heats the generator
       sim.events.emit({ type: 'projectile.shieldHit', ...base, layers: combat.shield.layers });
       continue;
     }

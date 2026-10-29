@@ -40,7 +40,6 @@
   @media (max-width: 600px) {
     /* A narrow column on the right edge; the selection sheet leaves this strip free. */
     .tools { flex-direction: row-reverse; align-items: flex-start; top: calc(var(--hdr) + 6px + var(--sat)); bottom: auto; }
-    :global(html[data-combat]) .tools { display: none; }
     .dock { display: flex; flex-direction: column; flex-wrap: nowrap; width: 38px; box-sizing: border-box; align-items: center; }
     .dock :global(button.tile) { width: 34px; height: 34px; }
     .dock > .tool { order: 0; }

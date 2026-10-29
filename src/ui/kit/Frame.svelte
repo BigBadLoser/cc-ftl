@@ -1,0 +1,78 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import FrameGap from './FrameGap.svelte';
+
+  /**
+   * A titled frame: a thin border whose top edge is built from segments (line, title, line, optional right-hand items, line), so the break
+   * around the title is a real gap and works over a transparent panel. `right` renders items (a Pill, a button) into the top edge: put a
+   * `<FrameGap width={n} />` between them. `tone="hostile"` is the red frame with a large title.
+   */
+  let { title, tone = 'normal', style = '', testid, children, right }: {
+    title: string;
+    tone?: 'normal' | 'hostile';
+    style?: string;
+    testid?: string;
+    children: Snippet;
+    right?: Snippet;
+  } = $props();
+</script>
+
+<section class="frame {tone}" {style} data-testid={testid}>
+  <div class="rail">
+    <FrameGap width={9} />
+    <h3>{title}</h3>
+    <FrameGap grow />
+    {#if right}
+      {@render right()}
+      <FrameGap width={12} />
+    {/if}
+  </div>
+  {@render children()}
+</section>
+
+<style>
+  .frame {
+    --edge: var(--frame-line);
+    position: relative;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--sp-3) var(--sp-2) var(--sp-2);
+    border: var(--frame-w) solid var(--edge);
+    border-top: 0;
+  }
+  .frame.hostile {
+    --edge: var(--hostile-line);
+  }
+  /* The top edge is 13px tall so its 1px lines sit exactly on the box's top edge, flush with the side borders. */
+  .rail {
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: -6px;
+    height: 13px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+  .rail > :global(*) {
+    pointer-events: auto;
+  }
+  h3 {
+    margin: 0;
+    padding: 0 5px;
+    flex: none;
+    font: 600 12px/13px var(--head-font);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    white-space: nowrap;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+  }
+  .hostile h3 {
+    font: 700 18px/13px var(--head-font);
+    color: var(--hostile);
+  }
+</style>

@@ -11,8 +11,9 @@ import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
 import { createCamera, type Camera } from './camera';
+import { createThreatMarks } from './threatMarks';
+import { createInsetPass, insetFit } from './insetPass';
 import { createAimMarks, type AimHover } from './aimMarks';
-import { createCombatPass, type CombatMarks, type CombatViewRect } from './combatPass';
 import type { CutawayMode } from './gridView';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
@@ -30,7 +31,7 @@ import { crewMuzzle } from './crewMuzzle';
 import { createCrewMarks } from './crewMarks';
 import { createOrderFx, type OrderKind } from './orderFx';
 import { sectorTileAt, pickCrewAcross, pickTileAcross, screenOfTile, type PickHost } from './scenePick';
-import { targetedModules, wantsRoof } from './regionRules';
+import { wantsRoof } from './regionRules';
 import { beamLookFor } from './beamArt';
 import { createSectorFx } from './sectorFx';
 import { createAsteroidView } from './asteroidView';
@@ -55,7 +56,6 @@ export interface RenderInfo {
 
 type Tile = { x: number; y: number; lift?: number };
 
-export type { CombatMarks, CombatViewRect };
 
 export interface Renderer {
   render(alpha: number): void;
@@ -90,7 +90,8 @@ export interface Renderer {
   /** Center the camera on a sector position (tiles). */
   focusSector(x: number, y: number): void;
   /** Frame the given ships (by grid id) in the view: centered, at the largest zoom that fits them (at least 1). */
-  frameShips(gridIds: readonly number[]): void;
+  /** Fit the ships in view; `inset` (CSS px) keeps them clear of HUD bands along the top and bottom edge. */
+  frameShips(gridIds: readonly number[], inset?: { top: number; bottom: number }): void;
   info(): RenderInfo;
   /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
   portrait(id: number): string | null;
@@ -128,13 +129,14 @@ export interface Renderer {
   resetWorld(): void;
   /** Sim events of the last frame, for combat fx. */
   onEvents(events: readonly SimEvent[]): void;
-  /** Show a ship in the combat overlay rectangle (null hides it). */
-  /** Show a ship in the combat panel's view canvas (null hides it); see CombatPass.set. */
-  setCombatView(view: { shipId: number; canvas: HTMLCanvasElement } | null): void;
-  /** Which target brackets the combat overlay draws. */
-  setCombatMarks(marks: CombatMarks): void;
-  /** Module (0 = the hull itself) under a canvas-relative position inside the combat overlay, or null if outside the ship. */
-  pickCombat(screenX: number, screenY: number): { moduleId: number } | null;
+  /** Show a ship in the combat inset's window (a page element; null hides it): a second camera over the same scene, drawn there every frame. */
+  setInset(view: { shipId: number; view: HTMLElement } | null): void;
+  /** The inset window's size in CSS px for a ship (sized to the ship at a pixel-perfect zoom), or null. */
+  insetSize(shipId: number): { w: number; h: number } | null;
+  /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
+  setCommitEta(fn: (weaponId: number) => number | null): void;
+  /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
+  setShotColor(fn: (weaponId: number) => number): void;
   /** The enemy tile or module the pointer would aim at while "Target in view" is armed (null clears the preview). */
   setAimHover(h: AimHover | null): void;
 }
@@ -226,7 +228,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     const g = scenes.get(shipId)?.grid ?? (sector ? shipGridOf(sector, world, shipId) : undefined);
     return g ? regionOrigin(g) : ZERO;
   };
-  const NONE: ReadonlySet<number> = new Set();
   const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
   // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
@@ -234,6 +235,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const worldGrid = createWorldGrid(SL.ui);
   const cutLine = createCutLine(SL.ui);
   const aimMarks = createAimMarks({ world, modules: content.modules, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale }, SL.ui);
+  /** The camera the world is currently placed for (the main one, or the inset's during pass B). */
+  let placed: Camera = cam;
+  let shotColor: (weaponId: number) => number = () => 0xff5a5a;
+  let commitEta: (weaponId: number) => number | null = () => null;
+  const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id), color: (id) => shotColor(id),
+    frame: () => ({ x0: -placed.originX / placed.scale, y0: -placed.originY / placed.scale, x1: (placed.w - placed.originX) / placed.scale, y1: (placed.h - placed.originY) / placed.scale }),
+    shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
   const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
@@ -344,33 +352,25 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   /** Place the world for a camera pass: the main pass (target null) or the combat panel (pass B, showing `target`). */
   function place(c: Camera, target: number | null): void {
+    placed = c;
     const any = shipOf(refId) !== undefined;
     for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
-    // Shrunk art (the main camera below zoom 1) is drawn with linear filtering; the combat panel keeps nearest.
-    atlas.setSmooth(target === null && c.scale < 1);
+    // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
+    atlas.setSmooth(c.scale < 1);
     W.setUiVisible(target === null);
-    W.setMarksVisible(target !== null);
-    SL.ui.visible = target === null;
+    W.setMarksVisible(false);
+    SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
     W.root.scale.set(c.scale);
     W.root.position.set(c.originX, c.originY);
     SL.setScale(c.scale);
     SL.world.position.set(c.originX, c.originY);
   }
 
-  let probe: Probe = NOOP_PROBE;
+  // The combat inset: camera pass B over the same world stack, into a texture shown above the main pass.
+  const inset = createInsetPass({ ship: shipOf, origin, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, ratio, place });
+  stage.addChild(inset.sprite);
 
-  // The combat panel: camera pass B over the same world stack, into a texture shown above the main pass.
-  const pass = createCombatPass({
-    world,
-    modules: content.modules,
-    ship: shipOf,
-    grid: (id) => scenes.get(id)?.grid,
-    origin,
-    roofed: (id) => scenes.get(id)?.isRoofed() ?? false,
-    ratio,
-    place,
-  });
-  stage.addChild(pass.sprite);
+  let probe: Probe = NOOP_PROBE;
 
   return {
     setProbe(p) {
@@ -386,13 +386,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
       W.setScale(cam.scale);
-      const shown = pass.target();
       probe.begin('render/scenes');
       for (const [id, sc] of scenes) {
         const o = origin(id);
         const p = iso(o.x, o.y);
         sc.layers.setOrigin(p.x, p.y, o.x + o.y);
-        sc.setMarks(id === shown, id === shown ? targetedModules(world, refId, id) : NONE);
         sc.update(dt);
       }
       probe.end('render/scenes');
@@ -402,6 +400,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       shuttles.update(dt);
       boxes.update();
       aimMarks.update();
+      threatMarks.update();
       fightFx.update(dt);
       crewMarks.update();
       orderFx.update();
@@ -411,15 +410,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       sectorParticles.update(dt);
       art.settle();
       probe.end('render/fx');
-      probe.begin('render/combatPass');
-      pass.render(gl, stage);
-      probe.end('render/combatPass');
+      probe.begin('render/inset');
+      inset.render(gl, stage, () => threatMarks.update());
+      probe.end('render/inset');
       probe.begin('render/gl');
       place(cam, null);
+      threatMarks.update();
       gl.render({ container: stage });
       probe.end('render/gl');
       probe.begin('render/present');
-      pass.present(canvas);
       atlas.tick();
       probe.end('render/present');
       probe.count('render/sceneCount', scenes.size);
@@ -479,7 +478,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const p = sectorArt(x, y);
       cam.centerOn(p.x, p.y);
     },
-    frameShips(ids) {
+    frameShips(ids, inset) {
       const r = shipOf(refId);
       if (!r) return;
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -492,8 +491,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         }
       }
       if (x0 === Infinity) return;
+      const dpr = window.devicePixelRatio || 1;
+      const top = (inset?.top ?? 0) * dpr, bottom = (inset?.bottom ?? 0) * dpr;
       cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2);
-      cam.fitZoom(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), cam.h / (y1 - y0 + 64 * ART_SCALE)));
+      cam.fitZoom(Math.min(cam.w / (x1 - x0 + 64 * ART_SCALE), (cam.h - top - bottom) / (y1 - y0 + 64 * ART_SCALE)));
+      if (top || bottom) cam.centerOn((x0 + x1) / 2, (y0 + y1) / 2 - (top - bottom) / 2 / cam.zoom);
     },
     info: () => {
       let sprites = sectorParticles.count();
@@ -548,10 +550,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fx.onEvents(events);
       fightFx.onEvents(events);
     },
-    setCombatView: (v) => pass.set(v),
-    setCombatMarks: (m) => pass.setMarks(m),
-    pickCombat: (sx, sy) => pass.pick(sx, sy),
     setAimHover: (h) => aimMarks.setHover(h),
+    setInset: (v) => inset.set(v),
+    insetSize: (id) => { const sh = shipOf(id); if (!sh) return null; const f = insetFit(sh, scenes.get(id)?.isRoofed() ? ROOF_H : 0, ratio()); return { w: f.w, h: f.h }; },
+    setCommitEta: (fn) => { commitEta = fn; },
+    setShotColor: (fn) => { shotColor = fn; },
     dispose() {
       asteroids.dispose();
       pods.dispose();
@@ -563,7 +566,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       orderFx.dispose();
       fx.dispose();
       sectorParticles.dispose();
-      pass.dispose();
+      inset.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
       gl.destroy();

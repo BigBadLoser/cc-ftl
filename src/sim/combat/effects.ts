@@ -1,3 +1,5 @@
+import { addHeat } from './heat';
+import { HEAT_PER_LAYER } from './heatTuning';
 import { ContainerC } from '../containers/components';
 import { StorageC } from '../items/components';
 import { shipIdOf, shipGrid } from '../regions';
@@ -131,7 +133,9 @@ function ignite(sim: Sim, at: Impact, radius: number): void {
 function drainShield(sim: Sim, at: Impact, layers: number): boolean {
   const combat = sim.world.get(at.shipId, CombatC);
   if (!combat || combat.shield.layers <= 0) return false;
-  combat.shield.layers = Math.max(0, combat.shield.layers - layers);
+  const before = combat.shield.layers;
+  combat.shield.layers = Math.max(0, before - layers);
+  addHeat(sim, at.shipId, (before - combat.shield.layers) * HEAT_PER_LAYER);
   sim.events.emit({ type: 'projectile.shieldHit', projectile: at.projectile, weapon: at.weapon, ship: at.shipId, layers: combat.shield.layers });
   return true;
 }

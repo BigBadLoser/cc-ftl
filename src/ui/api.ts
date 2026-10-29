@@ -161,6 +161,8 @@ export interface UiModule {
   local: { x: number; y: number };
   hp: number;
   maxHp: number;
+  /** Ordered to the top of the repair queue (module.priorityRepair). */
+  repairFirst: boolean;
   powerPriority: number;
   enabled: boolean;
   powered: boolean;
@@ -538,12 +540,50 @@ export interface UiShipModule {
   hp: number;
   maxHp: number;
   ion: boolean;
+  /** Has power (an engine module counts as online when it is powered and intact). */
+  powered: boolean;
+}
+
+/** An enemy shot aimed at your ship: the weapon's name and the seconds until it lands (charge left plus flight). */
+export interface UiIncoming {
+  /** The firing weapon's entity id (stable while the shot lives). */
+  id: number;
+  /** Its colour (0xRRGGBB), the same in the timeline and in the world. */
+  color: number;
+  name: string;
+  eta: number;
+  flying: boolean;
+}
+
+/** An enemy weapon's charge, for the telegraph on the enemy panel. */
+export interface UiEnemyWeapon {
+  id: number;
+  name: string;
+  /** 0..1. */
+  charge: number;
+  /** 0..1: the charge at which it commits its aim (the last seconds before it can fire). */
+  commitAt: number;
+  /** It has committed an aim at the player's ship: a marker shows where. */
+  committed: boolean;
+  /** It is not charging (unpowered, ion-struck, destroyed or its console unmanned). */
+  stalled: boolean;
+  /** The module is destroyed. */
+  destroyed: boolean;
+  /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
+  eta: number | null;
+  /** One of its shots is in flight to your ship and it has no new aim yet. */
+  fired: boolean;
+  /** Its shot colour (0xRRGGBB), the same as its line in the world and its marker on the incoming timeline. */
+  color: number;
 }
 
 export interface UiShipCombat {
   /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
   name: string;
+  /** Faction display name (the galaxy faction that fields it, else its combat side) and its role as a class label (null when it has none). */
+  faction: string;
+  klass: string | null;
   /** Sector tile of the ship's top-left corner (a tile aim is shown relative to it). */
   x: number;
   y: number;
@@ -553,6 +593,14 @@ export interface UiShipCombat {
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
+  /**
+   * Combat heat: 0..max. `lockout` and `venting` are seconds left (0 = not). Heat falls only while the shields are down, so `cooling` says whether it does now.
+   * `overcharge` per system: seconds active (`left`) and seconds until it can start again (`cooldown`).
+   */
+  heat: {
+    value: number; max: number; lockout: number; venting: number; cooling: boolean;
+    overcharge: Record<'weapons' | 'shields' | 'engines', { left: number; cooldown: number }>;
+  };
   /** 0..1 chance a shot misses. */
   evasion: number;
   hold: boolean;
@@ -562,6 +610,8 @@ export interface UiShipCombat {
   /** Ship-wide target, with a label. */
   target: { ship: number; moduleId: number; label: string; tile?: { x: number; y: number } } | null;
   modules: UiShipModule[];
+  /** Weapon charges of a hostile ship (absent on the player's). */
+  charges?: UiEnemyWeapon[];
 }
 
 /** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */
@@ -588,7 +638,7 @@ export interface UiAiming {
 
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null; /** Enemy shots committed to or flying at your ship, soonest first. */ incoming: UiIncoming[] }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
@@ -1119,12 +1169,6 @@ export interface UiApi {
   selectAsteroid(id: number | null): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
-  /** Show a ship in the combat panel's view canvas (null hides it): the renderer draws into it every frame. */
-  setCombatView(view: { ship: number; canvas: HTMLCanvasElement } | null): void;
-  /** Which target brackets the combat view draws over the enemy's modules (module ids; 0/absent = none). */
-  setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
-  /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
-  pickCombat(x: number, y: number): { moduleId: number } | null;
   /** The armed "Target in view" aim, or null. */
   aiming: Subscribable<UiAiming | null>;
   setAiming(a: UiAiming | null): void;
@@ -1134,6 +1178,12 @@ export interface UiApi {
   setRoofPlayer(on: boolean): void;
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
   focusFight(ship: number | null): void;
+  /** Show a ship in the combat inset's window, a page element (null hides it): the renderer draws a second camera there every frame. */
+  setInset(view: { ship: number; view: HTMLElement } | null): void;
+  /** The inset window's size in CSS px for a ship (the renderer sizes it to the ship at a pixel-perfect zoom), or null. */
+  insetSize(ship: number): { w: number; h: number } | null;
+  /** A module's on-screen bounds in viewport CSS px (read every frame, it follows pan and zoom), or null when it is not drawn. */
+  moduleScreenRect(id: number): { x0: number; y0: number; x1: number; y1: number } | null;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */

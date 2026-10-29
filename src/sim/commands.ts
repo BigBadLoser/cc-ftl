@@ -20,8 +20,11 @@ export type Command =
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
+  | { type: 'debug.setModuleHp'; id: number; hp: number }
   | { type: 'debug.ignite'; ship: number; x: number; y: number }
   | { type: 'debug.setField'; ship: number; x: number; y: number; field: string; value: number }
+  /** Put a damaged module at the top of the repair queue (`on`), or take it off again. */
+  | { type: 'module.priorityRepair'; id: number; on: boolean }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
@@ -137,10 +140,14 @@ export type Command =
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
   /**
-   * Flee: leave the node with a charged FTL drive. The player's ship enters hyperspace like `galaxy.jump` with a one-hop route to `to` (an
-   * adjacent node), else to the cheapest connected node it can afford; AI ships just leave (state 'fled').
+   * Flee: leave the node with a fully charged FTL drive. The player's ship spends the charge and enters hyperspace adrift, with no route and no fuel
+   * spent (`Travel.phase` 'adrift'); `galaxy.jump` then picks where to go. In an event grid it just leaves the grid. AI ships just leave (state 'fled').
    */
-  | { type: 'combat.flee'; ship: number; to?: string }
+  | { type: 'combat.flee'; ship: number }
+  /** Vent heat: shields drop and the weapons hold fire for a few seconds while the meter dumps; shields then regenerate. Refused when cool, venting or overheated. */
+  | { type: 'combat.vent'; ship: number }
+  /** Overcharge one system for a few seconds (adds heat per second), then a cooldown. Refused while overheated or on cooldown. */
+  | { type: 'combat.overcharge'; ship: number; system: 'weapons' | 'shields' | 'engines' }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */

@@ -91,7 +91,6 @@
   .ic { display: inline-flex; color: var(--amber); }
   .danger .ic { color: var(--red); }
   .more { color: var(--dim); font-size: 12px; padding-left: 4px; }
-  @media (max-width: 600px) { :global(html[data-combat]) .alerts { display: none; } }
   /* Phone: a single-line toast, cyan-panel badge for the rest, the rest listed in a dropdown on tap. */
   .toastrow { display: flex; gap: 2px; align-items: stretch; }
   .one { flex: 1; min-width: 0; display: grid; }

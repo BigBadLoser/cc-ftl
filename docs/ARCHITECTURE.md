@@ -721,6 +721,11 @@ ARIA behaviour and no styling). The game keeps its own look: every kit component
   (add a token to `theme.css` rather than a literal), keep it working at 390px wide with a visible focus ring, put pure logic in a
   `<name>.ts` with a `*.test.ts` beside it, and export it from `index.ts`.
 - Portalled parts (Select list, Tooltip, Dialog) render under `body`, so their styles are `:global` and namespaced `kit-*`.
+- **Panel pieces** (combat view and later HUD): `Frame` (titled section frame: the title sits in a real gap in the border via `FrameGap`, so content
+  behind a semi-transparent panel shows through, no background patch), `Meter` (bar with value), `Pips` (shield and charge pips), `Pill` and
+  `StatusTag` (small labelled badges), `KeyBadge` (hotkey cap) and `ActionButton` (button with icon, label and `KeyBadge`). Their look comes from tokens
+  in `theme.css` (`--frame-line`, `--frame-w`, `--track`, `--heat-low`, `--band`, `--health-good` and the other combat tokens). **New panels compose these** and add tokens
+  rather than redrawing borders, bars or badges by hand; a panel component only lays its sections out.
 
 ## Saves
 
@@ -1579,7 +1584,7 @@ Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch 
 - **Sector frame.** The art origin is sector tile (0, 0). `render/sectorPos.ts` (`regionOrigin`, `sectorPos`, `sectorArt`)
   adds the ShipC origin until step 6, when it becomes the identity. Camera framing, focus, `fightFx`, `crewMarks`,
   `sectorFx` and shuttles use it; the "camera ship's frame" (`ref`) is gone from the fx hosts.
-- **Pass B** (`render/combatPass.ts`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
+- **Pass B** (`render/insetPass.ts, which replaced the old combatPass`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
   and fitted on the target region, renders the stage into a `RenderTexture` the size of `CombatViewRect` (the texture is the
   scissor: a GL scissor would also clip filter passes). The main pass draws that texture in place. `place(cam, target)`
   positions the stack per pass, culls regions by their padded art box, and shows target marks only in pass B and UI layers
