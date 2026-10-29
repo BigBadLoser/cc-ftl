@@ -7,7 +7,8 @@
     "dev": "npm run generate && vite dev",
     "generate": "tsx scripts/extract-sprites.ts && tsx scripts/render-module-previews.ts && tsx scripts/generate-reference.ts",
     "build": "npm run generate && tsx scripts/validate-reference.ts && vite build",
-    "check": "npm run generate && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "npm run generate && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "capture": "node scripts/capture-guides.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^4.0.0",
@@ -16,9 +17,10 @@
     "@sveltepress/theme-default": "^8.11.0",
     "@sveltepress/vite": "^1.10.0",
     "@types/node": "^24.19.1",
+    "playwright-core": "^1.63.0",
+    "sharp": "^0.34.5",
     "svelte": "^5.57.1",
     "svelte-check": "^4.3.3",
-    "sharp": "^0.34.5",
     "tsx": "^4.20.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.2"
