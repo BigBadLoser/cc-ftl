@@ -12,12 +12,17 @@ export function profileSim(opts: { ticks: number; seed: number; rows: number; po
   const profiler = new Profiler(() => performance.now());
   profiler.enabled = true;
   const warm = Math.min(200, Math.floor(opts.ticks / 10));
-  for (let i = 0; i < warm; i++) sim.step();
+  // Drain events like the app loop does (outside the timed span), or the buffer keeps the whole run's history in memory.
+  for (let i = 0; i < warm; i++) {
+    sim.step();
+    sim.events.drain();
+  }
   profiler.startRecording();
   for (let i = 0; i < opts.ticks; i++) {
     profiler.begin('loop/frame');
     sim.step(profiler);
     profiler.end('loop/frame');
+    sim.events.drain();
   }
   profiler.stopRecording();
   const summary = profiler.summary(40);

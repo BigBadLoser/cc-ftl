@@ -58,6 +58,9 @@ export function installProfiler(setProbe: (p: Probe | null) => void): ProfilerHa
     if (!readDraws) {
       readDraws = installDrawCounter();
       profiler.beforeFrameEnd = () => profiler.count('render/drawCalls', readDraws?.() ?? 0);
+    } else {
+      // The draw wrappers keep counting while disabled: drop those draws so the first measured frame counts only its own.
+      readDraws();
     }
     profiler.enabled = true;
     setProbe(profiler);
