@@ -15,8 +15,8 @@ LOOK3 = {                            # art px: u from the face's +u end (centred
     "inset": (2, 1),                 # the plate's recess (the grille on its floor): its border, its depth
     "recess": (4, 1),                # the recess (a px deep) up to the cut: this far over the plate, this much wider
                                      # each side
-    "foot": (13, 8, 4),              # under the plate: a block (as proud) from its +u end this wide, hanging this far
-}                                    # under it, and by it a dark opening this tall under the rest
+    "ribs": 6,                       # a rib (a px wide, as proud) under each side of the plate: straight down this
+}                                    # far, then in to meet the slope's bottom
 
 
 def _rects():
@@ -87,17 +87,14 @@ def look3(f, s, back, U, Z, cols):
             floor(p, p + 1, sv0, sv1, XS)
         floor(ga, gb, sv0, sv0 + 1, GSHADE)
         floor(gb - 1, gb, sv0, sv1, GSHADE)
-    fw, fh, oh = LOOK3["foot"]
-    fz = s.H - (pv1 + fh) * px                                      # (the block's bottom, straight down)
-    with f.tag("foot"):                                             # (the block under the plate: its bottom's edge
-        bp = [(d - 0.01, fz), (fr, fz), (fr, zb), (d - 0.01, zb)]   # dark; the opening by it, the slope there dark)
-        f.part(*U(pa, pa + fw), bp, s.cols(bp, "face"), YS[2], end=False)
-        z0 = s.z_at(foot, (foot - zb) / px + 0.5)
-        f.line(*U(pa + fw, pb), s.z_at(z0, oh), z0, RIM, bevel=False)
-    with f.tag("slope"):                                            # (the face's, the plate's and the block's edge
-        x, xf = max(0.0, (foot - zb) / px), (foot - fz) / px        # on the slope, as look 1's lip's; its +u end,
-        for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pa + fw), xf + 0.5, 3.5), ((pa + fw, pb), x + oh + 0.5, 2),
-                               ((pb, 32), 0.5, 2)):                 # rim)
+    with f.tag("ribs"):                                             # (each its section: from the plate's bottom
+        zr = zb - LOOK3["ribs"] * px                                # straight down at its front, then on in to the
+        rp = [(s.front(zb, zb)[0][0] - 0.01, zb), (fr, zb), (fr, zr), (s.front(s.zmin, s.zmin)[0][0], s.zmin)]
+        for a in (pa, pb - 1):                                      # slope's bottom; its back in the slope)
+            f.part(*U(a, a + 1), rp, s.cols(rp, "face"), YS[2], end=False)
+    with f.tag("slope"):                                            # (the face's and the plate's edge on the
+        x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
+        for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pb), x + 0.5, 3.5), ((pb, 32), 0.5, 2)):
             z0 = s.z_at(foot, n)
             f.line(*U(ua, ub), s.z_at(z0, w), z0, CREASE, bevel=False)
         f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)
