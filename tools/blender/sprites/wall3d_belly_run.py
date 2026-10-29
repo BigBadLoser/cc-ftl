@@ -42,18 +42,23 @@ def build(s2, look=1):
     plane = E - D - T3.BACK
     f = Face(k, ax, plane, -0.5, 0.5, ("cont", "cont"), sec)
     foot = sec.under[0]
-    blocks = [(-0.5, 0.5, foot, sec.H, 0.0)]                    # (the armour: not across its foot; a look's
-    if look == 3:                                               # recesses its own)
+    blocks = [(-0.5, 0.5, sec.zmin, foot, 0.0), (-0.5, 0.5, foot, sec.H, 0.0)]    # (the armour: not across its
+    if look == 3:                                                                   # foot; a look's recesses its own)
         from .wall3d_belly_look3 import blocks3
-        blocks = blocks3(sec, *_uz(sec))
-    for u0, u1, z0, z1, off in [(-0.5, 0.5, sec.zmin, foot, 0.0)] + blocks:
-        f.block(u0, u1, z0, z1, off=off)
+        blocks = blocks[:1] + blocks3(sec, *_uz(sec))
+    elif look >= 20:
+        from . import wall3d_belly_bay as BAY
+        blocks = BAY.blocks(look, sec, _uz(sec)[1])
+    for u0, u1, z0, z1, off, *role in blocks:
+        f.block(u0, u1, z0, z1, *role, off=off)
     back = -0.5 - plane                                         # (the tile's inner edge, d from the block's face)
     prof = [(back, sec.zmin), (0.0, sec.zmin), (0.0, sec.H), (back, sec.H)]
     FR.prism(k, ax, plane, -0.5, 0.5, prof, "steel", 3, [BOTTOM, None, T.CUT, INNER], YS[1])
     if look == 3:
         from .wall3d_belly_look3 import look3
         look3(f, sec, back, *_uz(sec), (XS, CREASE, RIM, EDGE, SEAM))
+    elif look >= 20:
+        BAY.dress(look, f, sec, back, *_uz(sec))
     elif look >= 5:
         from .wall3d_belly_looks import look as looks
         looks(look, f, sec, back, *_uz(sec))
