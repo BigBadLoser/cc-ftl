@@ -1,20 +1,19 @@
 name: CI
 
 # CI minutes cost money, so CI runs only what a local run can't vouch for:
-# - PR pushes and pushes to main: lint, typecheck, build, and only the fast tests the change can affect (Vitest's
-#   import graph against the first parent: the base branch for a PR's merge commit, the previous main for a push).
-#   Vitest runs everything when package.json or the Vite config changes. This checks the merge result on a clean
-#   install. The full suite is the author's job: `npm run check` after the last merge of main, pasted into the PR.
+# - Ready PRs: lint, typecheck, build, and only the fast tests the change can affect (Vitest's import graph against the
+#   first parent: the base branch for the PR's merge commit). Vitest runs everything when package.json or the Vite
+#   config changes. This checks the merge result on a clean install. Draft PRs don't run CI: open a PR as a draft while
+#   review fixes go back and forth, and mark it ready when it is; CI then runs on that and on every later push.
+#   The full suite is the author's job: `npm run check` after the last merge of main, pasted into the PR.
+# - Pushes to main don't run CI: everything reaching main is a PR merge CI already checked, or a markdown-only change.
 # - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
 #   tier (*.slow.test.ts) included. This catches what slips through, such as two PRs that only break together.
 # Markdown-only and wiki-only changes don't run this CI (the wiki has .github/workflows/wiki-ci.yml).
 # Shared src/content edits still run both.
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
-  push:
-    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
   schedule:
     - cron: '17 6 * * *'
@@ -26,6 +25,7 @@ concurrency:
 
 jobs:
   check:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -53,7 +53,7 @@ jobs:
         if: steps.fresh.outputs.skip != 'true'
         run: npm run typecheck
       - name: Test (affected fast tests)
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        if: github.event_name == 'pull_request'
         run: npx vitest run --changed HEAD~1 --passWithNoTests --exclude 'src/**/*.slow.test.ts'
       - name: Test (every test, slow tier included)
         if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.fresh.outputs.skip != 'true'
