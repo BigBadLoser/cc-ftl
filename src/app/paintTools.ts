@@ -24,6 +24,8 @@ export interface PaintDeps {
 /** The build, deconstruct, cancel, mine and module-placement tools: previews while hovering and dragging, and the commands they send on release. */
 export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pick<InputHandlers, 'onHover' | 'paintMode' | 'pickLift' | 'onPaint'> & {
   setTool(state: Partial<UiToolState>): void;
+  /** A fight starts: back to the select tool, cancelling any placement in progress. */
+  endTools(): void;
   /** Redraw the hull plan's ghost tiles (the plan or the yard order changed). */
   drawPlan(): void;
   moduleMode(): boolean;
@@ -183,8 +185,15 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     else setTool({ tool: 'select' });
   };
 
+  /** Drop whatever tool is active (a fight starts): back to select, any placement or drag in progress cancelled. */
+  const endTools = () => {
+    modPos = null;
+    setTool({ tool: 'select', build: 'module', moduleDef: null });
+  };
+
   return {
     setTool,
+    endTools,
     drawPlan: () => hullPlan.draw(),
     moduleMode,
     rotate,

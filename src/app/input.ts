@@ -1,3 +1,4 @@
+import { isTypingTarget } from '../ui/keys';
 import type { Renderer } from '../render/scene';
 
 export interface Tile {
@@ -174,9 +175,8 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     if (dx || dy) renderer.pan(dx * KEY_PAN_PX_PER_S * dt, dy * KEY_PAN_PX_PER_S * dt);
     raf = held.size ? requestAnimationFrame(tick) : 0;
   };
-  const typing = (e: KeyboardEvent) => e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
   const onKeyDown = (e: KeyboardEvent) => {
-    if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.toLowerCase();
     if (k in panKeys) {
       e.preventDefault();

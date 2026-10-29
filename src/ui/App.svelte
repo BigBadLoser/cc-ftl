@@ -35,6 +35,7 @@
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import Icon, { type IconName } from './Icon.svelte';
+  import { isTypingTarget } from './keys';
   import { isPinned } from './floatingWindow';
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
@@ -173,7 +174,7 @@
   const outside = outsideTap(() => closeOutside(panels));
 
   function onKey(e: KeyboardEvent) {
-    if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (isTypingTarget(e)) return;
     if (reporting && e.key !== '`') return; // the bug report keeps the game paused and handles its own keys
     if (e.key === ' ') {
       e.preventDefault();

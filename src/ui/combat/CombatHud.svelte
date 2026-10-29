@@ -8,6 +8,8 @@
   import { weaponForKey } from './weaponKeys';
   import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
+  import ModuleQuickPanel from './ModuleQuickPanel.svelte';
+  import { isTypingTarget } from '../keys';
 
   /**
    * The combat view (issue #186): while in combat this replaces the colony panels. Enemy card top left, your ship's strip along the bottom.
@@ -60,6 +62,10 @@
     if (mainShip) api.focusFight(mainShip);
   });
   const swap = () => (swapped = !swapped);
+  // The module quick panel belongs to your ship in the main view: swapping back drops the selection.
+  $effect(() => {
+    if (!swapped) api.selectModule(null);
+  });
 
   // A new hostile ship starts as the ship-wide target (as the old panel did), and the camera frames both ships once.
   let autoAimed = 0;
@@ -80,7 +86,7 @@
     e.stopImmediatePropagation();
   }
   function onKey(e: KeyboardEvent) {
-    if (e.ctrlKey || e.metaKey || e.altKey || !me) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
     if (e.key === 'Tab') {
       consume(e);
       swap();
@@ -126,6 +132,9 @@
       <InsetFrame {api} ship={insetShip} title={swapped ? 'Enemy ship' : 'Your ship'} threatened={me.incoming.length > 0} onSwap={swap} />
     </div>
   {/if}
+  {#if me && swapped}
+    <div class="quick"><ModuleQuickPanel {api} ship={me.ship} /></div>
+  {/if}
   {#if me && me.incoming.length > 0}
     <div class="incoming"><IncomingReadout shots={me.incoming} /></div>
   {/if}
@@ -152,6 +161,12 @@
   .insetdock {
     position: absolute;
     left: calc(var(--gutter) + var(--sal));
+    bottom: calc(var(--gutter) + var(--sab) + 192px);
+  }
+  /* Your own ship in the main view: the clicked module's quick panel, bottom right, clear of the strip, inset and incoming timeline. */
+  .quick {
+    position: absolute;
+    right: calc(var(--gutter) + var(--sar));
     bottom: calc(var(--gutter) + var(--sab) + 192px);
   }
   .incoming {
