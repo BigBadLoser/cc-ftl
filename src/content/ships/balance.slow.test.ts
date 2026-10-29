@@ -96,7 +96,7 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
       expect(r.firstDownSec).toBeGreaterThanOrEqual(30);
       expect(r.deadAt4).toBe(0);
       expect(r.downAt4).toBeLessThanOrEqual(3);
-      expect(r.minIntegrity).toBeLessThan(0.92); // 0.904 on one seed after the mirrored (engines east) layouts
+      expect(r.minIntegrity).toBeLessThan(0.93); // 0.904 on one seed after the mirrored (engines east) layouts; 0.9224 after bed owners (#195: crew sleep in their own bed, on staggered ticks)
       expect(r.destroyed).toBeGreaterThanOrEqual(5); // distinct announcements: a module is announced once until repaired past half (main counted 100+ per seed, mostly the same wrecks re-announced); 7, 9, 12 on seeds 1, 2, 6 at the old 6 minute length
     }
   });

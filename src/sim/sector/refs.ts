@@ -34,5 +34,6 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   if (downed && gone(downed.bed)) downed.bed = 0;
   if (gone((data.assignment as { jobId: number } | undefined)?.jobId)) delete data.assignment;
   if (gone((data.bedClaim as { bed: number } | undefined)?.bed)) delete data.bedClaim;
+  if (gone((data.bedOwner as { bed: number } | undefined)?.bed)) delete data.bedOwner;
   return data;
 }

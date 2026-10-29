@@ -1,4 +1,4 @@
-import { findFreeBed, releaseBedClaim } from '../crew/beds';
+import { findFreeBed, ownedBedPlan, releaseBedClaim } from '../crew/beds';
 import { vacateSite } from '../crew/vacate';
 import { goEat, wantsToEat } from '../crew/eating';
 import {
@@ -27,6 +27,8 @@ import { strollTurn } from '../stations/life';
 
 /** Below this rest a non-drafted crew member drops everything and sleeps in place. */
 const SLEEP_BELOW = 20;
+/** A tired crew member acts when (tick + id) is a multiple of this, so a whole crew crossing the threshold at once does not search for beds in one tick. */
+export const SLEEP_STAGGER = 4;
 /** Per-tick chance that an idle crew member wanders (about once per 10 s). */
 const WANDER_CHANCE = 0.005;
 const WANDER_RADIUS = 3;
@@ -57,6 +59,8 @@ export function decideSystem(sim: Sim): void {
     }
     const operating = assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
     if (needs.rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW) && !isCarrying(sim, id)) {
+      // Crew crossing the threshold together act on different ticks (a crew member already walking to a bed is not held up).
+      if (!sim.world.has(id, BedClaimC) && (sim.tick + id) % SLEEP_STAGGER !== 0) continue;
       if (assignment) releaseAssignment(sim, id);
       dropCarried(sim, id);
       goToSleep(sim, id, crew, pos);
@@ -118,7 +122,7 @@ function isCarrying(sim: Sim, id: number): boolean {
 }
 
 /**
- * Tired: claim the nearest free bed and walk to it, then sleep there (faster rest). With no
+ * Tired: claim the bed they own (else the nearest free one) and walk to it, then sleep there (faster rest). With no
  * reachable bed, sleep where standing. Only falls asleep once settled on a tile.
  */
 function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
@@ -139,7 +143,7 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
     }
     releaseBedClaim(sim, id); // unreachable: sleep on the floor instead
   } else {
-    const plan = findFreeBed(sim, shipIdOf(sim, pos), origin(pos));
+    const plan = ownedBedPlan(sim, id, shipIdOf(sim, pos), origin(pos)) ?? findFreeBed(sim, shipIdOf(sim, pos), origin(pos));
     if (plan) {
       (sim.world.get(plan.bed, ModuleC) as { reservedBy: number }).reservedBy = id;
       sim.world.add(id, BedClaimC, { bed: plan.bed });
