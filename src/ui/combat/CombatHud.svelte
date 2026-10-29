@@ -110,7 +110,7 @@
 <style>
   .hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
   .top { position: absolute; left: calc(8px + var(--sal)); top: calc(8px + var(--sat)); }
-  .insetdock { position: absolute; left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab) + 150px); }
-  .incoming { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 150px); }
+  .insetdock { position: absolute; left: calc(8px + var(--sal)); bottom: calc(8px + var(--sab) + 192px); }
+  .incoming { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 192px); }
   .bot { position: absolute; left: 0; right: 0; bottom: calc(8px + var(--sab)); display: flex; justify-content: center; }
 </style>

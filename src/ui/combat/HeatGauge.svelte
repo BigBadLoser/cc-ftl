@@ -33,9 +33,8 @@
   }
 </script>
 
-<div class="hh" data-testid="heat-gauge">
+<section class="hh sec" data-testid="heat-gauge"><h3>Heat</h3>
   <div class="top">
-    <span class="cap"><Icon name="fire" size={14} />Heat</span>
     <b class={tone}>{pct}%</b>
     <span class="rate" class:up={rate > 0.05} class:down={rate < -0.05} data-testid="heat-rate" title="Net heat change per second right now">{rateText}</span>
     <button class="vent" class:on={heat.venting > 0} disabled={!canVent} title="Vent: dump heat fast, but shields drop and weapons hold fire (G)" onclick={onVent}><Icon name="wind" size={15} />{heat.venting > 0 ? `${heat.venting.toFixed(1)}s` : 'Vent'}<kbd>G</kbd></button>
@@ -43,9 +42,8 @@
   <div class="gauge {tone}" role="meter" aria-label="Ship heat" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100">
     <i style="width:{pct}%"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u><s style="left:70%" title="Auto-vent line"></s>
   </div>
-</div>
-<div class="oc">
-  <span class="cap">Overcharge</span>
+</section>
+<section class="oc sec"><h3>Overcharge</h3>
   <div class="obs">
     {#each kinds as o (o.k)}
       {@const r = state(o.k, o.effect)}
@@ -56,12 +54,14 @@
       </button>
     {/each}
   </div>
-</div>
+</section>
 
 <style>
-  .hh { box-sizing: border-box; padding-right: 2px; overflow: hidden; grid-column: 6; grid-row: 1; display: grid; grid-template-rows: auto 1fr; gap: 8px; min-width: 0; align-content: stretch; }
+  /* Framed section, same as PlayerStrip's. */
+  .sec { position: relative; box-sizing: border-box; min-width: 0; min-height: 0; padding: 12px 8px 8px; border: 1px solid rgba(90, 140, 175, 0.38); }
+  .sec > h3 { position: absolute; top: -6px; left: 9px; margin: 0; padding: 0 5px; background: var(--panel); font: 600 12px/12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .hh { grid-column: 6; grid-row: 1; display: grid; grid-template-rows: auto 1fr; gap: 8px; align-content: stretch; }
   .top { display: flex; align-items: center; gap: 7px; }
-  .cap { display: inline-flex; align-items: center; gap: 4px; font: 600 13px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
   b { font: 700 20px/1 var(--head-font); } b.cool { color: var(--cyan); } b.amber { color: var(--amber); } b.red { color: var(--red); }
   .rate { font: 600 13px/1 var(--head-font); color: var(--dim); min-width: 46px; } .rate.up { color: var(--amber); } .rate.down { color: var(--cyan); }
   .vent { margin-left: auto; min-height: 0; min-width: 0; height: 26px; padding: 0 7px; font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
@@ -74,8 +74,8 @@
   .gauge > s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--amber); }
   .gauge > u { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(216, 240, 255, 0.22); top: 55%; }
   @keyframes pulse { to { filter: brightness(1.35); } }
-  .oc { grid-column: 6; grid-row: 2; display: grid; grid-template-rows: auto 1fr; gap: 4px; min-height: 0; }
-  .obs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; min-height: 0; }
+  .oc { grid-column: 6; grid-row: 2; display: block; }
+  .obs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 42px; }
   .ocb { position: relative; min-height: 0; min-width: 0; height: 100%; padding: 0 2px; display: grid; align-content: center; justify-items: center; gap: 3px; overflow: hidden; color: var(--cyan); }
   .ocb .nm { font: 700 12px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
   .ocb .fx { font: 600 11px/1 var(--head-font); color: var(--dim); white-space: nowrap; }
