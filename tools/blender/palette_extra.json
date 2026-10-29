@@ -2176,5 +2176,68 @@
  },
  "hbShade": {
   "hex": "#36485e"
+ },
+ "hbXhsK": {
+  "hex": "#161b1f"
+ },
+ "hbXhsD": {
+  "hex": "#30383f"
+ },
+ "hbXhsM": {
+  "hex": "#4a545c"
+ },
+ "hbXhsS": {
+  "hex": "#616b74"
+ },
+ "hbXhsL": {
+  "hex": "#768188"
+ },
+ "hbXhsH": {
+  "hex": "#8d959a"
+ },
+ "hbXhsW": {
+  "hex": "#9a9ea2"
+ },
+ "hbXhsXK": {
+  "hex": "#12161a"
+ },
+ "hbXhsXD": {
+  "hex": "#232930"
+ },
+ "hbXhsXM": {
+  "hex": "#333b43"
+ },
+ "hbXhsXS": {
+  "hex": "#424b53"
+ },
+ "hbXhsXL": {
+  "hex": "#535c65"
+ },
+ "hbXhbSoft": {
+  "hex": "#3f505a"
+ },
+ "hbXhbSeam": {
+  "hex": "#32414e"
+ },
+ "hbXhbShade": {
+  "hex": "#253140"
+ },
+ "hbXhbSlope": {
+  "hex": "#2d3a48"
+ },
+ "hbXhbCrease": {
+  "hex": "#1b2537"
+ },
+ "hbXhbRim": {
+  "hex": "#0d121e"
+ },
+ "hbXhbEdge": {
+  "hex": "#525c69"
+ },
+ "hbXnvF1": {
+  "hex": "#39414b"
+ },
+ "hbXnvF3": {
+  "hex": "#2a3037"
  }
 }

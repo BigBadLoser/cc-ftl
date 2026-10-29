@@ -38,6 +38,9 @@ OUTER = YS[2]                       # the outer faces (both near faces alike, as
 END = YS[1]                         # a part's end where it shows past its neighbour
 INNER = ("nvF1", "nvF3")            # the hull's inside, facing +y / +x (the machinery, later)
 BOTTOM = YS[0]
+DARK = ("hsK", "hsD", "hsM", "hsS", "hsL", "hsH", "hsW", "hsXK", "hsXD", "hsXM", "hsXS", "hsXL", "hbSoft", "hbSeam",
+        "hbShade", "hbSlope", "hbCrease", "hbRim", "hbEdge", "nvF1", "nvF3")
+REMAP = {n: "hbX" + n for n in DARK}  # (the belly in its own tones' darker steps, hbX*: 0.68 of each, under the ship)
 if os.environ.get("BELLY_DEBUG"):                   # (each role its own colour: which face is which)
     SLOPE_TONE, OUTER, END, INNER = "lampY", "green", "dbgR", ("blueN", "blueN")
 
@@ -123,6 +126,15 @@ def piece(key, far=ZG, layer="over", margin=0.0, look=1):
     (a face shared with a neighbour part drawn only where it rises over or hangs under that part, else it is inside
     the hull), the top's seam on its cut (the exterior's). `margin`: its sides that far out (WIDE: the solid its
     colours come from, env_build "wide"); look: its runs' (wall3d_belly_run.build)."""
+    from . import core
+    was, core.REMAP = core.REMAP, REMAP
+    try:
+        return _piece(key, far, layer, margin, look)
+    finally:
+        core.REMAP = was
+
+
+def _piece(key, far, layer, margin, look):
     from . import wall3d_belly_run as BR
     rel, art = T.Relief(f"belly_{layer}_{HO.name(key)}"), []
     for f, planes, n, shared, cuts in _parts(key, far, margin):

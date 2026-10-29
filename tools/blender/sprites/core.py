@@ -189,6 +189,9 @@ def clear_scene_meshes():
 
 # ---- procedural mesh builder (grid frame) -----------------------------------------------------------------
 
+REMAP = {}                    # palette name -> name, applied to every polygon made (a family re-toned while it builds)
+
+
 class Mesh:
     def __init__(self, name, selflit=False, flat=False):
         """flat: every polygon is unlit (Self emission = its palette colour), so tones are exactly the palette's."""
@@ -209,6 +212,7 @@ class Mesh:
 
     def poly(self, pts, color, flip=False):
         """pts: Blender-space points."""
+        color = REMAP.get(color, color)
         base = len(self.v)
         self.v += [tuple(p) for p in pts]
         idx = list(range(base, base + len(pts)))
