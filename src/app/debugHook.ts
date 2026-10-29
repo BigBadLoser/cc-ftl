@@ -6,6 +6,7 @@ import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
 import { AsteroidC } from '../sim/asteroids/components';
+import { addHeat } from '../sim/combat/heat';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -156,7 +157,9 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
       /** Fill the player's FTL drive (a fresh game has no pilot at the helm to charge it). */
       chargeFtl: () => { const c = sim.world.get(playerShip(sim), CombatC); if (c) c.ftl = FTL_CHARGE_SEC; },
-      /** Mood readout. */
+      /** Add combat heat to a ship (screenshots: force an overheat). */
+    addHeat: (ship: number, amount: number) => addHeat(sim, ship, amount),
+    /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
     /** Module construction sites with their status (progress, materials, block). */
