@@ -7,6 +7,8 @@ import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
 import { AsteroidC } from '../sim/asteroids/components';
 import { addHeat } from '../sim/combat/heat';
+import { explainAll, explainCrew } from '../sim/ai/explain';
+import { auditReservations } from '../sim/ai/audit';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -35,6 +37,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     }),
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
+    /** Crew AI inspector (docs/CREW_AI.md section 11, first cut): a crew member's drive, interrupt, task state path and holds; `dump` for all. */
+    ai: {
+      crew: (id: number) => explainCrew(sim, id),
+      dump: () => ({ crew: explainAll(sim), audit: auditReservations(sim), log: sim.aiLog }),
+    },
     /** Trade and handover deals: phase, shuttle state and position, airlock. */
     deals: () => sim.trade.deals.map((d) => {
       const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;

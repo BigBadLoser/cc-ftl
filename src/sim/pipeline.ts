@@ -15,6 +15,7 @@ import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
 import { researchJobsSystem } from './systems/researchJobs';
 import { scheduleSystem } from './ai/schedule';
+import { interruptSystem } from './ai/interrupt';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
@@ -140,6 +141,8 @@ export const pipeline: readonly System[] = [
   // Crew decisions (sim/ai: policy.legacy, the legacy picker and the need machines) before drafted/movement: new paths are walked
   // the same tick. Weapon fetching before them: crew on an equip order must not be handed a job this tick.
   equipSystem,
+  // The forced-state detector reads this tick's equip orders (Phase 1: it only records `Interrupt`; nothing reads it yet).
+  interruptSystem,
   scheduleSystem,
   draftedSystem,
   // Egg sacs before crew combat: a sac disturbed or hurt last tick hatches, and new aliens fight from this tick on.

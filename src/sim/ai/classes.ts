@@ -6,7 +6,7 @@ import type { MachineId, TaskClass } from './types';
  * legacy code still decides when a task is dropped.
  */
 const CLASSES: Record<MachineId, Record<string, TaskClass>> = {
-  generic: { Navigate: 'any', Work: 'any', Dwell: 'any' },
+  generic: { Navigate: 'any', Work: 'any' },
   haul: { ToSource: 'any', Take: 'any', ToDest: 'safe', Deposit: 'safe' },
   rescue: { ToPatient: 'any', Lift: 'any', ToBed: 'finish', Lay: 'finish' },
   eva: { Wait: 'any', ToAirlock: 'any', Don: 'safe', Doff: 'safe' },
