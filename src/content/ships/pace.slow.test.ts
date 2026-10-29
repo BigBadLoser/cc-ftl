@@ -56,13 +56,13 @@ describe('starter vs raider pace (a basic player: auto-fire at the whole ship, v
 
   // The user's decision: this test plays a basic player (it used to give no orders at all), so an occasional loss is acceptable ("bad play should result in a loss").
   // So the bar is aggregate over 16 seeds instead of every seed winning.
-  it('mostly wins, a typical fight inside the 3 minutes the design asks for, and costs little crew', () => {
+  it('mostly wins, a typical fight inside 3.5 minutes (the design asks for about 3; venting adds downtime), and costs little crew', () => {
     const results = seeds.map((s) => paceFight(s));
     const wins = results.filter((r) => r.winner === 'player');
     expect(wins.length).toBeGreaterThanOrEqual(14);
     expect(wins.reduce((n, r) => n + r.dead, 0)).toBeLessThanOrEqual(2); // was 1 to 3 crew dead on most seeds
     const sorted = results.map((r) => r.seconds).sort((x, y) => x - y);
-    expect(((sorted[7] as number) + (sorted[8] as number)) / 2).toBeLessThan(3 * 60);
+    expect(((sorted[7] as number) + (sorted[8] as number)) / 2).toBeLessThan(3.5 * 60); // the user accepted 3.5 min (was 3) on 2026-10-29 because venting adds downtime
   });
 
   it('is deterministic', () => {
