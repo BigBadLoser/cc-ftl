@@ -3,8 +3,9 @@ edge (a rib 2 px proud down the face and the slope, centred on the tile edge: th
 shares, its designs' strips meeting there and the base's gap between its panels spanning it; the cut's lit lip, the
 foot's lit chamfer, the slope's lit top edge and its rim), and between the ribs a bay whose geometry is the look's
 own, as the exterior's designs vary between their shared strips (wall3d_ext_var): 20 plain; 21 a recess with a
-grille on its floor; 22 a blister, a rounded housing down over the foot; 23 a hatch set into the slope; 24 a keel
-block standing out over the slope; 25 stripped, the bay open on pipes."""
+grille on its floor; 22 a blister, a rounded housing down over the foot; 23 a hatch on the slope; 24 a keel
+block standing out over the slope; 25 stripped, the bay open on pipes; 26 cooling fins; 27 a bolted armour plate;
+28 a conduit over the foot, clamped."""
 import math
 import os
 
@@ -16,8 +17,8 @@ P = T3.px(1)
 RW = 3 * P                                          # (the rib's half width, about the tile edge)
 RIBS = ((0.5 - RW, 0.5), (-0.5, RW - 0.5))          # (the rib, either side of the tile edge it spans)
 BAY = (RW - 0.5, 0.5 - RW)                          # (between the ribs)
-LOOKS = range(20, 26)
-FRAME = os.environ.get("BELLY_FRAME", "rib")         # (the tile edge: "rib", "seam" or "none", to compare)
+LOOKS = range(20, 29)
+FRAME = os.environ.get("BELLY_FRAME", "none")         # (the tile edge: "rib", "seam" or "none", to compare)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
 
@@ -25,11 +26,14 @@ def _fp(s, z):
     return s.front(z, z)[0][0]
 
 
-def _slab(f, s, u0, u1, z0, z1, base, out, caps, role="plate"):
-    """A part on the front over [u0, u1] x [z0, z1] (not across the foot), from base out to out."""
+def _slab(f, s, u0, u1, z0, z1, base, out, caps, role="plate", edge=None):
+    """A part on the front over [u0, u1] x [z0, z1] (not across the foot), from base out to out; edge: its top's and
+    bottom's tone, if not by their facing."""
     pts = [(_fp(s, z), z) for z in (z0, z1)]
     prof = [(d + base, z) for d, z in pts] + [(d + out, z) for d, z in pts[::-1]]
     cols = s.cols(prof, role)
+    if edge:
+        cols[1], cols[3] = edge, edge
     f.part(u0, u1, prof, cols, tuple(cols[2] if c is None else c for c in caps), end=False)
 
 
@@ -44,11 +48,6 @@ def blocks(n, s, Z):
         u0, u1 = b0 + i * P, b1 - i * P
         return [full[0], (-0.5, 0.5, foot, za, 0.0, "face"), (-0.5, 0.5, zb, s.H, 0.0, "face"),
                 (-0.5, u0, za, zb, 0.0, "face"), (u0, u1, za, zb, k * LINE, "floor"), (u1, 0.5, za, zb, 0.0, "face")]
-    if n == 23:                                     # (a hatch in the slope)
-        za, zb = s.z_at(s.zmin, -3), s.z_at(foot, 3)
-        u0, u1 = b0 + 3 * P, b1 - 3 * P
-        return [full[1], (-0.5, 0.5, s.zmin, za, 0.0, "face"), (-0.5, 0.5, zb, foot, 0.0, "face"),
-                (-0.5, u0, za, zb, 0.0, "face"), (u0, u1, za, zb, 2 * LINE, "face"), (u1, 0.5, za, zb, 0.0, "face")]
     return full
 
 
@@ -79,7 +78,7 @@ def dress(n, f, s, back, U, Z):
     with f.tag("bay"):
         if n == 20:
             zm = s.z_at((s.zmin + foot) / 2, 2)
-            f.line(b0, b1, s.z_at(zm, 1), zm, SLN, bevel=False)
+            f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)
         elif n == 21:
             fl = _fp(s, foot) - 2 * LINE
             z0, z1 = Z(nf - 6), Z(HID + 5)
@@ -89,15 +88,29 @@ def dress(n, f, s, back, U, Z):
         elif n == 22:
             _blister(f, s, Z, b0 + 3 * P, b1 - 3 * P, Z(HID + 4), 4 * LINE)
         elif n == 23:
-            za, zb = s.z_at(s.zmin, -3), s.z_at(foot, 3)            # (its doors' seam; their hinges' lit lines)
-            m = (b0 + b1) / 2
-            f.line(m - P / 2, m + P / 2, za, zb, SLN, end=False, bevel=False)
-            for u in (b0 + 5 * P, b1 - 6 * P):
-                f.line(u, u + P, za, zb, SLIT, end=False, bevel=False)
-            for z in (s.z_at(za, -3), s.z_at(zb, 3)):              # (bars across the doors, a lit px under each)
-                f.line(b0 + 6 * P, b1 - 6 * P, s.z_at(z, 1), z, SLN, bevel=False)
+            za, zb = s.z_at(s.zmin, -4), s.z_at(foot, 3)            # (two doors a px proud on the slope, a px
+            m = (b0 + b1) / 2                                       # apart)
+            for u0, u1 in ((b0 + 4 * P, m - P / 2), (m + P / 2, b1 - 4 * P)):
+                _slab(f, s, u0, u1, za, zb, -0.01, LINE, (SLN, SLN), "face", edge=SLN)
         elif n == 24:
             _keel(f, s, b0 + 8 * P, b1 - 8 * P, Z(nf - 6), s.z_at(foot, 8), 3 * LINE)
+        elif n == 26:                                               # (cooling fins standing out of the face)
+            for k in range(5):
+                u = (b0 + b1) / 2 + (k - 2) * 4 * P - P / 2
+                _slab(f, s, u, u + P, foot, Z(HID + 3), -0.01, 3 * LINE, (YS[1], YS[1]))
+        elif n == 27:                                               # (an armour plate, bolted)
+            u0, u1, zt = b0 + 2 * P, b1 - 2 * P, Z(HID + 2)
+            f.shade(u0, u1, foot, zt, under=0)
+            f.raised(u0, u1, foot, zt, -0.01, 2 * LINE, cap=YS[2])
+            for u in (u0 + 2 * P, u1 - 3 * P):
+                for z in (Z(HID + 4), Z(nf - 3)):
+                    f.raised(u, u + P, z, s.z_at(z, -1), 2 * LINE - 0.01, 2 * LINE + PAINT, col=YS[4])
+        elif n == 28:                                               # (a conduit along the bay over the foot, two
+            ph, fr = s.H - Z(1), _fp(s, foot)                       # clamps over it)
+            z = Z(nf - 5)
+            _pipe(f, b0 + P, b1 - P, fr + 1.5 * LINE, z, 1.5 * LINE, 1.5 * ph)
+            for u in (b0 + 6 * P, b1 - 8 * P):
+                _slab(f, s, u, u + 2 * P, Z(nf - 2), Z(nf - 8), -0.01, 3.5 * LINE, (YS[1], YS[1]))
         elif n == 25:
             fl = _fp(s, foot) - 4 * LINE
             ph = s.H - Z(1)
