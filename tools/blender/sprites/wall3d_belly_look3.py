@@ -7,6 +7,7 @@ from .wall3d_ext_geom import LINE, PAINT, YS
 
 SHADOW = "hbSlope"                   # (the plate's shade on the face by its lit end: a step under the seams' tone)
 GSHADE = "hbShade"                   # (the grille's shade along its top and -u side: darker still)
+SLN = "hbSlopeLn"                    # (the slope's lines: darker with it, wall3d_belly DARK)
 
 LOOK3 = {                            # art px: u from the face's +u end (centred on its 32), v down from the cut
     "grille": ((8, 24), (19, 29)),   # the grille's footprint (the plate round it): u, v
@@ -89,11 +90,11 @@ def look3(f, s, back, U, Z, cols):
         x = max(0.0, (foot - zb) / px)                              # slope, as look 1's lip's; its +u end, rim)
         for (ua, ub), n, w in (((0, pa), 0.5, 2), ((pa, pb), x + 0.5, 3.5), ((pb, 32), 0.5, 2)):
             z0 = s.z_at(foot, n)
-            f.line(*U(ua, ub), s.z_at(z0, w), z0, CREASE, bevel=False)
-        f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)
+            f.line(*U(ua, ub), s.z_at(z0, w), z0, SLN, bevel=False)
+        f.line(*U(0, 2), s.zmin, foot, SLN, end=False, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
         from .wall3d_belly_run import LOOK1                         # (look 1's seams down and across the slope)
         for ua, ub in LOOK1["slope_seam"]:
-            f.line(*U(ua, ub), s.zmin, foot, CREASE, end=False, bevel=False)
+            f.line(*U(ua, ub), s.zmin, foot, SLN, end=False, bevel=False)
         zm = s.z_at((s.zmin + foot) / 2, LOOK1["slope_line"])
-        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, CREASE, bevel=False)
+        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)

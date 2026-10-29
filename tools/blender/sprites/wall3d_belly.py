@@ -38,7 +38,8 @@ OUTER = YS[2]                       # the outer faces (both near faces alike, as
 END = YS[1]                         # a part's end where it shows past its neighbour
 INNER = ("nvF1", "nvF3")            # the hull's inside, facing +y / +x (the machinery, later)
 BOTTOM = YS[0]
-DARK = ("hbSlope", "hbRim")           # (the belly proper, the slope under the ship, a step darker: hbX*, 0.68 of each;
+# (the belly proper, the slope under the ship and its lines, a step darker: hbX*, 0.68 of each;
+DARK = ("hbSlope", "hbRim", "hbSlopeLn", "hbSlopeLit")
 REMAP = {n: "hbX" + n for n in DARK}  # the face above it keeps the hull's tones)
 if os.environ.get("BELLY_DEBUG"):                   # (each role its own colour: which face is which)
     SLOPE_TONE, OUTER, END, INNER = "lampY", "green", "dbgR", ("blueN", "blueN")

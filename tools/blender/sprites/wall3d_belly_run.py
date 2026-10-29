@@ -18,6 +18,7 @@ XS, CREASE, RIM = "hbSoft", "hbCrease", "hbRim"     # hull 46 belly's soft seam 
                                                      # seams (navy: the lip's edge on it too), its rim
 EDGE = "hbEdge"                                      # (a face's edge: a faint light over its tone)
 SEAM = "hbSeam"                                      # (the lip's seams: between the soft tone and navy)
+SLN = "hbSlopeLn"                                   # (the slope's lines: darker with it, wall3d_belly DARK)
 LOOK1 = {                            # D3 look 1, art px: u from the face's +u end (centred on its 32), v down
     "side_seam": ((0, 7), (25, 32), 10),        # from the cut: a seam across each side plate (lit under it)
     "panel": ((7, 25), (7, 16)),                # the centre plate, a px proud, lit along its top, a px of shade under
@@ -53,6 +54,9 @@ def build(s2, look=1):
     if look == 3:
         from .wall3d_belly_look3 import look3
         look3(f, sec, back, *_uz(sec), (XS, CREASE, RIM, EDGE, SEAM))
+    elif look >= 5:
+        from .wall3d_belly_looks import look as looks
+        looks(look, f, sec, back, *_uz(sec))
     else:
         _look1(f, sec, back)
     return k.build()
@@ -94,13 +98,13 @@ def _look1(f, s, back):
             f.part(*U(a, a + 2), side, [SEAM] * 4, SEAM, end=False)
         for (a, b), n, w in (((0, e), 0.5, 2), ((e, 32 - e), x + 0.5, 3.5), ((32 - e, 32), 0.5, 2)):   # (its
             z0 = s.z_at(foot, n)                                                 # edge on the slope under it, along
-            f.line(*U(a, b), s.z_at(z0, w), z0, CREASE, bevel=False)            # its outline: a px showing past it)
-        f.line(*U(0, 2), s.zmin, foot, CREASE, end=False, bevel=False)    # (on down the slope's +u end, from the foot)
+            f.line(*U(a, b), s.z_at(z0, w), z0, SLN, bevel=False)            # its outline: a px showing past it)
+        f.line(*U(0, 2), s.zmin, foot, SLN, end=False, bevel=False)    # (on down the slope's +u end, from the foot)
     with f.tag("seams"):                                        # (down the slope)
         for a, b in LOOK1["slope_seam"]:
-            f.line(*U(a, b), s.zmin, foot, CREASE, end=False, bevel=False)
+            f.line(*U(a, b), s.zmin, foot, SLN, end=False, bevel=False)
         zm = s.z_at((s.zmin + foot) / 2, LOOK1["slope_line"])
-        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, CREASE, bevel=False)   # (across the slope, under its middle; its rim)
+        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)   # (across the slope, under its middle; its rim)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
 
 

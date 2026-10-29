@@ -2239,5 +2239,17 @@
  },
  "hbXnvF3": {
   "hex": "#2a3037"
+ },
+ "hbSlopeLn": {
+  "hex": "#283751"
+ },
+ "hbXhbSlopeLn": {
+  "hex": "#1b2537"
+ },
+ "hbSlopeLit": {
+  "hex": "#5c7585"
+ },
+ "hbXhbSlopeLit": {
+  "hex": "#3e4f5a"
  }
 }
