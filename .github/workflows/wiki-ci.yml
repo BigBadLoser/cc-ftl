@@ -2,7 +2,10 @@ name: Wiki static build
 
 on:
   workflow_dispatch:
+  # Draft PRs skip the build (Actions minutes are billed on this private
+  # repo); it runs when the PR is marked ready for review and on later pushes.
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'wiki/**'
       - 'src/content/**'
@@ -21,6 +24,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

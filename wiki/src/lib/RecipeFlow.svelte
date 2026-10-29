@@ -19,25 +19,21 @@
     {#if inputs[0]}
       <RecipeMaterial material={inputs[0]} />
     {/if}
-    <!-- Drawn as SVG with the arrowhead's crisp stroke, so both render at
-         the same thickness; it overlaps the arrow by 1px to hide the seam. -->
-    <svg class="recipe-shaft" viewBox="0 0 100 32" preserveAspectRatio="none"
-      height="32" fill="none" aria-hidden="true" focusable="false">
-      <path d="M0 16 H100" stroke="currentColor" stroke-width="1.5"
-        vector-effect="non-scaling-stroke" shape-rendering="crispEdges" />
+    <!-- One SVG draws the whole arrow. It fills the rest of the input
+         cell and reaches into the arrow column; the head is pinned to its
+         right edge by a nested SVG at x=100%, so the line can stretch
+         without scaling the stroke. -->
+    <svg class="recipe-arrow" height="32" fill="none"
+      aria-hidden="true" focusable="false">
+      <g stroke="currentColor" stroke-width="1.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="0.75" y1="16" x2="100%" y2="16" />
+        <svg x="100%" y="16" overflow="visible">
+          <path d="M-5 -5 L0 0 L-5 5" />
+        </svg>
+      </g>
     </svg>
   </div>
-
-  <!-- Single SVG contains both the central shaft and arrowhead. Its
-       horizontal midline is the first material row's vertical center. -->
-  <svg class="recipe-arrow" viewBox="0 0 24 32" width="24" height="32"
-    fill="none" aria-hidden="true" focusable="false">
-    <path d="M0 16 H19" stroke="currentColor" stroke-width="1.5"
-      shape-rendering="crispEdges" />
-    <path d="M14 11 L19 16 L14 21"
-      stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round" />
-  </svg>
 
   <div class="recipe-first-output">
     {#if outputs[0]}
@@ -89,21 +85,14 @@
   }
   .recipe-first-input { grid-column: 1; }
   .recipe-first-output { grid-column: 3; }
-  .recipe-shaft {
-    flex: 1 1 auto;
+  .recipe-arrow {
+    flex: 1 1 0;
     min-width: 0;
     height: 32px;
     margin-left: .35rem;
-    margin-right: -1px;
-    color: #5899cd;
-  }
-  .recipe-arrow {
-    display: block;
-    grid-column: 2;
-    grid-row: 2;
-    width: 24px;
-    height: 32px;
-    align-self: center;
+    /* Into the 24px arrow column, stopping 5px short of the outputs. */
+    margin-right: -19px;
+    overflow: visible;
     color: #5899cd;
   }
   .recipe-extra-inputs, .recipe-extra-outputs {
