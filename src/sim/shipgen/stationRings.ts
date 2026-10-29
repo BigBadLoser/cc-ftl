@@ -186,10 +186,11 @@ export interface WheelOpts {
 
 const isDock = (r: RoomSpec): boolean => r.role === 'dock';
 /**
- * System rooms keep rectangles (gun bays, shield generators, the core, reactors and shuttle bays need square floor) and
- * stand beyond the band with the docks, facing open space (gun bays need it).
+ * System rooms keep rectangles (gun bays, shield generators, the core, reactors, shuttle bays and refinery floors need
+ * square floor: a refinery is 3 x 4 with ore bins flush against it) and stand beyond the band with the docks, facing
+ * open space (gun bays need it).
  */
-const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'bridge', 'hangar'];
+const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'bridge', 'hangar', 'industry'];
 const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role);
 /**
  * Rim rooms beyond a band: docks first, near the top and bottom of the ring (airlocks face north or south), then the
@@ -297,8 +298,9 @@ export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], 
   for (const d of ['n', 's', 'e', 'w'] as const) if (!spoke(b, d, R1 + 1, R2 - 1, r1.label, r2.label)) return null;
   const ANGLE = { e: 0, s: Math.PI / 2, w: Math.PI, n: -Math.PI / 2 } as const;
   // Spokes cut the inner bands into arcs: the hub's spokes inboard, the four cardinal ones outboard.
-  if (!bandArcs(b, R1, r1.label, iIn, dI, arcsBetween(spokes.map((d) => ANGLE[d])), -1)) return null;
-  if (!bandArcs(b, R1, r1.label, iOut, dO, arcsBetween([0, 1, 2, 3].map((q) => (q * TAU) / 4)))) return null;
+  // The inner bands have nothing beyond them (the hub's room, the court): they thin when the ring has floor to spare.
+  if (!bandArcs(b, R1, r1.label, iIn, dI, arcsBetween(spokes.map((d) => ANGLE[d])), -1, true)) return null;
+  if (!bandArcs(b, R1, r1.label, iOut, dO, arcsBetween([0, 1, 2, 3].map((q) => (q * TAU) / 4)), 1, true)) return null;
   return outerBand(b, R2, r2.label, oBand, sys, docks, dB) ? b : null;
 }
 

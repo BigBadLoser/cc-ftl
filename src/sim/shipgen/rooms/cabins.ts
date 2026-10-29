@@ -10,8 +10,9 @@ import type { RoomRole } from '../types';
  * The cabins take a rectangle inside the room: a hallway one or two tiles wide along its length and, on one side of it (both,
  * when deep enough), a row of cabins, each at least 2 wide and 3 deep, behind a wall with its own door onto the
  * hallway. Whatever of the room lies outside the rectangle joins the hallway as a lobby. Every door the room had must
- * open onto the hallway or lobby, which must stay one piece; lobby floor touching a cabin (a diagonal room's wedge) is
- * walled off.
+ * open onto the hallway or lobby (a door that would open into a cabin slides along its wall to the hallway, when the
+ * floor beyond is the same room there), which must stay one piece; lobby floor touching a cabin (a diagonal room's
+ * wedge) is walled off.
  * Of the rectangles that work, the one closest to 2-3 wide, 3-4 deep cabins wins (a two-wide hallway when the room has
  * life support to keep there). The hallway keeps the room's other planned modules (life support), unless it is one tile
  * wide: then the last cabin does. Each cabin gets one bed. Walls and doors carry no room (-1), as everywhere.
@@ -20,7 +21,7 @@ import type { RoomRole } from '../types';
 export interface Split { rows: string[]; roomOf: Int16Array; roles: RoomRole[]; specs: (RoomSpec | undefined)[]; cabins: number }
 
 interface CabinRow { wall: number; from: number; to: number; n: number }
-interface Option { x0: number; y0: number; L: number; D: number; along: 0 | 1; hw: number; rows: CabinRow[]; walls: number[]; score: number }
+interface Option { x0: number; y0: number; L: number; D: number; along: 0 | 1; hw: number; rows: CabinRow[]; walls: number[]; moves: [number, number][]; score: number }
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
@@ -52,6 +53,7 @@ export function splitCabins(rows: string[], roomOf: Int16Array, w: number, roles
     outSpecs.push({ ...spec, role: 'hall', mods: opt.hw > 1 ? others : [] });
     for (let i = 0; i < room.length; i++) if (room[i] === id) room[i] = hall;
     for (const j of opt.walls) { (cells[Math.floor(j / w)] as string[])[j % w] = '#'; room[j] = -1; }
+    for (const [from, to] of opt.moves) { (cells[Math.floor(from / w)] as string[])[from % w] = '#'; (cells[Math.floor(to / w)] as string[])[to % w] = 'D'; }
     for (const r of opt.rows) {
       for (let u = 0; u < L; u++) set(u, r.wall, '#', -1);
       // n cabins share the row's length: (n - 1) dividing walls, the rest split evenly.
@@ -96,8 +98,27 @@ function bestOption(cells: string[][], room: Int16Array, w: number, id: number, 
     return a(y1 + 1, x1 + 1) - a(y0, x1 + 1) - a(y1 + 1, x0) + a(y0, x0) === (x1 - x0 + 1) * (y1 - y0 + 1);
   };
   // The tiles beside each door of the room: they must stay hallway.
-  const doorSide: number[] = [];
-  for (const i of tiles) for (const [dx, dy] of N4) if (cells[Math.floor(i / w) + dy]?.[(i % w) + dx] === 'D') doorSide.push(i);
+  const doors: { door: number; inner: number; outer: number; dir: number }[] = [];
+  for (const i of tiles) for (const [dx, dy] of N4) {
+    const dir = dy * w + dx;
+    if (cells[Math.floor(i / w) + dy]?.[(i % w) + dx] === 'D') doors.push({ door: i + dir, inner: i, outer: i + 2 * dir, dir });
+  }
+  const cell = (i: number): string => cells[Math.floor(i / w)]?.[i % w] ?? '.';
+  /** Where each door goes: kept, or slid along its wall to a spot opening onto the hallway; null if a door cannot. */
+  const placeDoors = (hallSet: Set<number>): [number, number][] | null => {
+    const moves: [number, number][] = [];
+    for (const d of doors) {
+      if (hallSet.has(d.inner)) continue;
+      const perp = Math.abs(d.dir) === 1 ? w : 1;
+      let to = -1;
+      for (let k = 1; k <= 12 && to < 0; k++) for (const c of [d.door + k * perp, d.door - k * perp]) {
+        if (to < 0 && cell(c) === '#' && hallSet.has(c - d.dir) && cell(c + d.dir) === '_' && room[c + d.dir] === room[d.outer]) to = c;
+      }
+      if (to < 0) return null;
+      moves.push([d.door, to]);
+    }
+    return moves;
+  };
   let best: Option | null = null;
   for (let y0 = by0; y0 <= by1; y0++) for (let x0 = bx0; x0 <= bx1; x0++) for (let y1 = y0; y1 <= by1; y1++) for (let x1 = x0; x1 <= bx1; x1++) {
     if (!full(x0, y0, x1, y1)) break; // a wider one would not be either
@@ -126,7 +147,6 @@ function bestOption(cells: string[][], room: Int16Array, w: number, id: number, 
         const taken = new Set<number>();
         for (const r of p.rows) for (let u = 0; u < L; u++) for (let v = Math.min(r.wall, r.from); v <= Math.max(r.wall, r.to); v++) taken.add(toWorld(u, v));
         const hallSet = new Set(tiles.filter((i) => !taken.has(i)));
-        if (!doorSide.every((i) => hallSet.has(i))) continue;
         // The cabins meet the lobby only through walls: lobby floor beside a cabin tile (diagonals too) is walled off.
         const walls = new Set<number>();
         for (const r of p.rows) for (let u = 0; u < L; u++) for (let v = r.from; v <= r.to; v++) {
@@ -137,7 +157,8 @@ function bestOption(cells: string[][], room: Int16Array, w: number, id: number, 
           }
         }
         for (const j of walls) hallSet.delete(j);
-        if (!doorSide.every((i) => hallSet.has(i))) continue;
+        const moves = placeDoors(hallSet);
+        if (!moves) continue;
         // The hallway is one piece.
         const start = hallSet.values().next().value as number;
         const seen = new Set([start]);
@@ -149,8 +170,8 @@ function bestOption(cells: string[][], room: Int16Array, w: number, id: number, 
         if (seen.size !== hallSet.size) continue;
         const depth = p.rows[0] ? p.rows[0].to - p.rows[0].from + 1 : 0;
         const width = (L - ((p.rows[0]?.n ?? 1) - 1)) / (p.rows[0]?.n ?? 1);
-        const score = -Math.abs(width - 2.5) - Math.abs(depth - 3.5) - (hallSet.size - p.hw * L) * 0.02 - walls.size * 0.1 + (kit && p.hw === 2 ? 1.5 : 0);
-        if (!best || score > best.score) best = { x0, y0, L, D, along, hw: p.hw, rows: p.rows, walls: [...walls], score };
+        const score = -moves.length * 0.5 - Math.abs(width - 2.5) - Math.abs(depth - 3.5) - (hallSet.size - p.hw * L) * 0.02 - walls.size * 0.1 + (kit && p.hw === 2 ? 1.5 : 0);
+        if (!best || score > best.score) best = { x0, y0, L, D, along, hw: p.hw, rows: p.rows, walls: [...walls], moves, score };
       }
     }
   }

@@ -11,8 +11,8 @@ import type { RoomSpec } from './plan';
  * planned modules (life support).
  */
 
-/** Floor a band cabin should keep (a bed, its locker, a clear side, room to turn). */
-const CABIN = 16;
+/** Floor a band cabin should keep: a bed, its locker, a clear side, and the stair-stepped partitions of a diagonal slice. */
+const CABIN = 24;
 
 /** A quarters room marked for cabins as one cabin spec a bed (the first with the room's other modules). */
 function cabinsOf(r: RoomSpec): RoomSpec[] {
@@ -34,38 +34,52 @@ export function bandRadius(rooms: RoomSpec[], depth: number, share = 1, side: 1 
   return Math.ceil(area / (TAU * share * depth) - (side * (depth + 2)) / 2);
 }
 
+/** Floor a band may give its rooms over their planned area before a flexible band is made shallower. */
+const SPARE = 1.5;
+
 /**
  * Stamp `rooms` as segments of the band between the corridor (radius R, label `ring`) and radius R +- (depth + 1),
- * over the angle ranges `arcs`. Returns false if a room gets too little floor or no door.
+ * over the angle ranges `arcs`. Returns false if a room gets too little floor or no door. A `flex` band (nothing stands
+ * beyond it) with floor to spare is made shallower, down to 4 deep, so its rooms keep about their planned size.
  */
-export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1, tag = ''): boolean {
+export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec[], depth0: number, arcs: [number, number][], side: 1 | -1 = 1, tag = '', flex = false): boolean {
   if (roomsIn.length === 0) return true;
-  // Cabins where the band is wide enough for them; else the quarters stay whole. A band with floor to spare would swell
-  // its cabins: a garden (a small commons) after each cabin run takes the excess, so a cabin keeps about CABIN tiles.
+  let depth = depth0;
+  if (flex) {
+    const planned = roomsIn.reduce((t, r) => t + r.w * r.h, 0);
+    for (let d = depth0; d >= 4; d--) {
+      const c = cutBand(b, R, ring, roomsIn, d, arcs, side);
+      if (!c) break;
+      depth = d;
+      if ([...c.floor.values()].reduce((t, f) => t + f.length, 0) <= planned * SPARE) break;
+    }
+  }
+  // Cabins where the band is wide enough for them; else the quarters stay whole. A band still with floor to spare would
+  // swell its cabins: a crew mess beside each cabin run takes the excess, so a cabin keeps about CABIN tiles.
   let cabins = roomsIn.flatMap(cabinsOf);
-  let cut = cabins.length > roomsIn.length ? cutBand(b, R, cabins, depth, arcs, side) : null;
+  let cut = cabins.length > roomsIn.length ? cutBand(b, R, ring, cabins, depth, arcs, side) : null;
   if (cut) {
     // Floor goes to segments by weight (w * h + 4): a cabin (weight 12) keeps about CABIN tiles when the band's whole
-    // weight is (its floor) * 12 / CABIN. The gardens make up the difference, shared out by cabin run.
+    // weight is (its floor) * 12 / CABIN. The messes make up the difference, shared out by cabin run.
     const cut0 = cut;
     const floorAll = [...cut0.floor.values()].reduce((t, c) => t + c.length, 0);
     const weight = cabins.reduce((t, r) => t + r.w * r.h + 4, 0);
     const want = Math.round((floorAll * 12) / CABIN - weight);
     const runs = roomsIn.filter((q) => cabinsOf(q).length > 1).length;
-    // Walls take floor too, so the share is a guess: smaller gardens are tried until every room keeps its floor.
+    // Walls take floor too, so the share is a guess: smaller messes are tried until every room keeps its floor.
     for (const k of [1, 0.7, 0.45, 0.25]) {
       if (want * k <= 24 || runs === 0) break;
       const share = (want * k) / runs;
-      const withGarden = roomsIn.flatMap((q) => {
+      const withMess = roomsIn.flatMap((q) => {
         const cs = cabinsOf(q);
-        return cs.length === 1 ? cs : [...cs, { role: 'garden' as const, mods: [], w: Math.max(2, Math.round((share - 4) / depth)), h: depth }];
+        return cs.length === 1 ? cs : [...cs, { role: 'support' as const, mods: [], w: Math.max(2, Math.round((share - 4) / depth)), h: depth }];
       });
-      const again = cutBand(b, R, withGarden, depth, arcs, side);
-      if (again) { cabins = withGarden; cut = again; break; }
+      const again = cutBand(b, R, ring, withMess, depth, arcs, side);
+      if (again) { cabins = withMess; cut = again; break; }
     }
   }
   const rooms = cut ? cabins : roomsIn;
-  const plan = cut ?? cutBand(b, R, rooms, depth, arcs, side);
+  const plan = cut ?? cutBand(b, R, ring, rooms, depth, arcs, side);
   if (!plan) return false;
   const { floor, isFloor } = plan;
   const cv = b.cv;
@@ -87,30 +101,38 @@ export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec
     if (!b.cv.stamp(rows.map((q) => q.join('')), bx, by, `band${R}${tag}:${s}`)) return false;
     b.parts.push({ x: bx, y: by, w: rows[0]?.length ?? 0, h: rows.length, key: `band${R}${tag}:${s}`, role: r.role, spec: r });
   }
-  // Doors: straight through one wall onto the corridor, else onto the previous segment.
-  for (const [s] of rooms.entries()) {
-    const cells = floor.get(s) ?? [];
-    const me = cv.labelAt((cells[0] as [number, number])[0], (cells[0] as [number, number])[1]);
-    const spots: [number, number, boolean][] = [];
-    for (const [x, y] of cells) {
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-        if (cv.at(x + dx, y + dy) !== '#' || cv.at(x + 2 * dx, y + 2 * dy) !== '_') continue;
-        const o = cv.labelAt(x + 2 * dx, y + 2 * dy);
-        if (o === ring) spots.push([x + dx, y + dy, true]);
-        else if (o !== me) spots.push([x + dx, y + dy, false]);
+  // Doors: straight through one wall onto the corridor; a segment with no wall on it doors onto a neighbour already
+  // joined to the corridor, so every segment is reached (cutBand checked that this can be done).
+  const labelOf = (s: number): number => { const c = (floor.get(s) ?? [])[0] as [number, number]; return cv.labelAt(c[0], c[1]); };
+  const joined = new Set<number>([ring]);
+  let left = rooms.map((_, s) => s);
+  while (left.length > 0) {
+    const next: number[] = [];
+    for (const s of left) {
+      const me = labelOf(s);
+      const spots: [number, number, boolean][] = [];
+      for (const [x, y] of floor.get(s) ?? []) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          if (cv.at(x + dx, y + dy) !== '#' || cv.at(x + 2 * dx, y + 2 * dy) !== '_') continue;
+          const o = cv.labelAt(x + 2 * dx, y + 2 * dy);
+          if (o !== me && joined.has(o)) spots.push([x + dx, y + dy, o === ring]);
+        }
       }
+      const best = spots.filter((p) => p[2]);
+      const pick = best.length > 0 ? best : spots;
+      if (pick.length === 0) { next.push(s); continue; }
+      const d = pick[pick.length >> 1] as [number, number, boolean];
+      cv.setDoor(d[0], d[1]);
+      joined.add(me);
     }
-    const best = spots.filter((p) => p[2]);
-    const pick = best.length > 0 ? best : spots;
-    if (pick.length === 0) return false;
-    const d = pick[pick.length >> 1] as [number, number, boolean];
-    cv.setDoor(d[0], d[1]);
+    if (next.length === left.length) return false;
+    left = next;
   }
   return true;
 }
 
 /** The band's segments, one a room: floor cells by room, or null if a room gets too little floor (nothing stamped). */
-function cutBand(b: Builder, R: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1): { floor: Map<number, [number, number][]>; isFloor: Set<string> } | null {
+function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1): { floor: Map<number, [number, number][]>; isFloor: Set<string> } | null {
   const cv = b.cv;
   const lo = side > 0 ? R + 0.5 : R - depth - 1.5;
   const hi = side > 0 ? R + depth + 1.5 : R - 0.5;
@@ -156,6 +178,21 @@ function cutBand(b: Builder, R: number, rooms: RoomSpec[], depth: number, arcs: 
   const isFloor = new Set<string>();
   for (const cells of floor.values()) for (const [x, y] of cells) isFloor.add(key(x, y));
   for (const [s, r] of rooms.entries()) if ((floor.get(s) ?? []).length < Math.max(4, Math.floor((r.w * r.h) / 2))) return null;
+  // Every segment reaches the corridor: through a wall onto it, or through a chain of segments that does.
+  const segOf = new Map<string, number>();
+  for (const [s, cells] of floor) for (const [x, y] of cells) segOf.set(key(x, y), s);
+  const links = new Map<number, Set<number>>();
+  const onRing = new Set<number>();
+  for (const [s, cells] of floor) for (const [x, y] of cells) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    if (isFloor.has(key(x + dx, y + dy))) continue;
+    if (cv.at(x + 2 * dx, y + 2 * dy) === '_' && cv.labelAt(x + 2 * dx, y + 2 * dy) === ring) onRing.add(s);
+    const t = segOf.get(key(x + 2 * dx, y + 2 * dy));
+    if (t !== undefined && t !== s) { links.set(s, (links.get(s) ?? new Set()).add(t)); links.set(t, (links.get(t) ?? new Set()).add(s)); }
+  }
+  const reached = new Set(onRing);
+  const stack = [...onRing];
+  while (stack.length > 0) for (const t of links.get(stack.pop() as number) ?? []) if (!reached.has(t)) { reached.add(t); stack.push(t); }
+  if (reached.size < rooms.length) return null;
   return { floor, isFloor };
 }
 
@@ -163,7 +200,7 @@ function cutBand(b: Builder, R: number, rooms: RoomSpec[], depth: number, arcs: 
  * A band over several separate arcs (cut by dock banks or spokes): rooms shared out to the arcs by length, each arc
  * banded on its own so no segment straddles a gap. Arcs too short for one room get none.
  */
-export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1): boolean {
+export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1, flex = false): boolean {
   const total = arcs.reduce((t, [a, z]) => t + (z - a), 0);
   const area = rooms.reduce((t, r) => t + r.w * r.h + 4, 0);
   let i = 0;
@@ -177,7 +214,7 @@ export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[],
       acc += r.w * r.h + 4;
       mine.push(r);
     }
-    if (!bandRooms(b, R, ring, mine, depth, [arc], side, `${side > 0 ? 'o' : 'i'}${k}`)) return false;
+    if (!bandRooms(b, R, ring, mine, depth, [arc], side, `${side > 0 ? 'o' : 'i'}${k}`, flex)) return false;
   }
   return true;
 }
