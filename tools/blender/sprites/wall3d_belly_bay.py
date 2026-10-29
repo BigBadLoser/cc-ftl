@@ -6,6 +6,7 @@ own, as the exterior's designs vary between their shared strips (wall3d_ext_var)
 grille on its floor; 22 a blister, a rounded housing down over the foot; 23 a hatch set into the slope; 24 a keel
 block standing out over the slope; 25 stripped, the bay open on pipes."""
 import math
+import os
 
 from . import wall3d_ext_t3 as T3
 from .wall3d_belly_looks import HID, RIM, SLIT, SLN
@@ -16,6 +17,7 @@ RW = 3 * P                                          # (the rib's half width, abo
 RIBS = ((0.5 - RW, 0.5), (-0.5, RW - 0.5))          # (the rib, either side of the tile edge it spans)
 BAY = (RW - 0.5, 0.5 - RW)                          # (between the ribs)
 LOOKS = range(20, 26)
+FRAME = os.environ.get("BELLY_FRAME", "rib")         # (the tile edge: "rib", "seam" or "none", to compare)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
 
@@ -64,10 +66,15 @@ def dress(n, f, s, back, U, Z):
         f.line(-0.5, 0.5, s.z_at(foot, -1), s.z_at(foot, -2), YS[4], bevel=False)
         f.line(-0.5, 0.5, s.z_at(foot, 1), foot, SLIT, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
-        for (u0, u1), (c0, c1) in zip(RIBS, ((YS[1], None), (None, YS[1]))):     # (the ribs: their tops a px
-            _slab(f, s, u0, u1, foot, Z(HID), -0.01, 2 * LINE, (c0, c1))         # under the exterior's foot; their
-            _slab(f, s, u0, u1, s.z_at(s.zmin, -2), foot, -0.01, 2 * LINE,      # sides on the slope its lines' tone;
-                  tuple(c and SLN for c in (c0, c1)))                           # all clear of the rim)
+        if FRAME == "rib":
+            for (u0, u1), (c0, c1) in zip(RIBS, ((YS[1], None), (None, YS[1]))):     # (the ribs: their tops a px
+                _slab(f, s, u0, u1, foot, Z(HID), -0.01, 2 * LINE, (c0, c1))         # under the exterior's foot;
+                _slab(f, s, u0, u1, s.z_at(s.zmin, -2), foot, -0.01, 2 * LINE,      # their sides on the slope its
+                      tuple(c and SLN for c in (c0, c1)))                           # lines' tone; clear of the rim)
+        elif FRAME == "seam":                       # (a seam on the tile edge: dark its +u side, lit its -u)
+            for (u0, u1), face, slope in (((0.5 - P, 0.5), YS[1], SLN), ((-0.5, P - 0.5), YS[3], SLIT)):
+                f.line(u0, u1, foot, Z(HID), face, end=False, bevel=False)
+                f.line(u0, u1, s.zmin, foot, slope, end=False, bevel=False)
     b0, b1 = BAY
     with f.tag("bay"):
         if n == 20:
