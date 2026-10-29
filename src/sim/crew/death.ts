@@ -1,5 +1,5 @@
 import type { Sim } from '../sim';
-import { releaseBedClaim } from './beds';
+import { releaseBedClaim, releaseBedOwner } from './beds';
 import {
   AssignmentC, CrewC, DeadC, DownedC, DraftedC, NeedsC, PathC, PrioritiesC, type Crew,
 } from './components';
@@ -11,6 +11,7 @@ export function killCrew(sim: Sim, id: number): void {
   if (sim.world.has(id, DeadC) || !sim.world.has(id, CrewC)) return;
   releaseAssignment(sim, id);
   releaseBedClaim(sim, id);
+  releaseBedOwner(sim, id);
   dropWeapon(sim, id);
   sim.world.remove(id, DownedC);
   for (const key of [DraftedC, PrioritiesC, NeedsC, AssignmentC]) sim.world.remove(id, key);

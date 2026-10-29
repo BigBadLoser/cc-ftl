@@ -32,6 +32,8 @@ function legacyWorld(sim: Sim): unknown {
   const stores = { ...data.stores };
   const bodies = new Map((stores.body ?? []) as [number, Body][]);
   delete stores.body;
+  // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.
+  delete stores.bedOwner;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
@@ -247,4 +249,5 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };
+// Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks. Each moves the hash alone (stagger only 7e4e05b0, owned beds only a081a857, both b0b4e040); the pass, the early-stop search and the pathfinder scratch reuse move nothing.
+const EXPECTED = { combat: 'b0b4e040', disaster: 'fa40fdbe' };
