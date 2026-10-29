@@ -37,4 +37,16 @@ describe('combat snapshot', () => {
     sim.step();
     expect(buildCombat(sim).player?.idle).toBeTypeOf('string');
   });
+
+  it('names the faction and class of a ship, and its engines are online while powered', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const c = buildCombat(sim);
+    const raider = c.enemies[0]!;
+    expect(raider.faction).toBe('Hostile'); // a hand-built ship has no galaxy faction: its combat side names it
+    expect(raider.klass).toBeNull();
+    expect(c.player?.faction).toBe('Player');
+    expect(c.player?.modules.filter((m) => m.kind === 'engine').every((m) => typeof m.powered === 'boolean')).toBe(true);
+  });
 });

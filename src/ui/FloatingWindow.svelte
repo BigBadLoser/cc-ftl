@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { combatRight } from './combatDock';
   import { EDGE_CURSOR, setDragCursor } from './dragCursor';
   import Icon, { type IconName } from './Icon.svelte';
   import { clampRect, EDGES, moveRect, readWindow, resizeRect, writeWindow, type Bounds, type DefaultRect, type Edge, type Rect, type Size } from './floatingWindow';
@@ -10,7 +9,7 @@
    * outside click and Esc, see outsideClick.ts), remembered per `id` for the browser session, and kept on screen.
    * It is always a positioned window, clamped to the viewport at any width (desktop only; no phone layout).
    */
-  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, avoidCombat = true, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
+  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
     id: string; title: string; icon?: IconName;
     /** The smallest size this panel can be dragged to. */
     min: Size;
@@ -27,7 +26,6 @@
     /** No header of its own: the content brings its own `.ph` heading, which drags the window; only the pin tile is added (`pinRight` px in from the right edge). */
     bare?: boolean; pinRight?: number;
     /** Default spot keeps right of the combat panel while it is docked on the left. */
-    avoidCombat?: boolean;
     z?: number; pinned?: boolean; class?: string;
     titleExtra?: Snippet; actions?: Snippet; children: Snippet;
   } = $props();
@@ -46,9 +44,9 @@
     void vw; void vh;
     return { left: MARGIN, top: hdr() + MARGIN, right: vw - MARGIN, bottom: vh - MARGIN };
   });
-  /** Bounds for the default spot only: right of the combat panel while it is docked. */
+  /** Bounds for the default spot only: clear of the top-right column. */
   const defBounds = $derived<Bounds>({
-    ...(avoidCombat && $combatRight > 0 && $combatRight < bounds.right - min.w ? { ...bounds, left: Math.max(bounds.left, $combatRight) } : bounds),
+    ...bounds,
     clearRight: bounds.right - RIGHT_COLUMN,
   });
 

@@ -4,10 +4,9 @@
   import { hullTone } from './hullTone';
   import EnemyCharges from '../EnemyCharges.svelte';
 
-  /** Compact enemy card, top left. Everything is live (including heat) except faction and class: the UI snapshot has no such fields yet (MOCK strings below). */
+  /** Compact enemy card, top left: everything on it is live from the combat snapshot. */
   let { enemy, state: pill, onFrame }: { enemy: UiShipCombat; state: { text: string; tone: string }; onFrame: () => void } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
-  const FAKE = { faction: 'Pirate', klass: 'Raider' };
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
   const hot = $derived(heatPct >= 90 ? 'red' : heatPct >= 70 ? 'amber' : '');
   const pips = $derived(Array.from({ length: Math.max(enemy.shield.max, 0) }, (_, i) => i < enemy.shield.layers));
@@ -16,7 +15,7 @@
 <section class="card" data-testid="enemy-card" aria-label="Enemy ship">
   <header>
     <h2>{enemy.name}</h2>
-    <span class="sub">{FAKE.faction} · {FAKE.klass}</span>
+    <span class="sub">{enemy.faction}{enemy.klass ? ` · ${enemy.klass}` : ''}</span>
     <span class="pill {pill.tone}">{pill.text}</span>
     <button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={16} /></button>
   </header>

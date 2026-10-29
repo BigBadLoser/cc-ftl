@@ -6,7 +6,7 @@
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
-  import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
+  import type { UiApi, UiCombat, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatHud from './combat/CombatHud.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
@@ -68,9 +68,6 @@
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
-  let foes = $state<UiCrew[]>([]);
-  let combatOpen = $state(false);
-  let wasInCombat = false;
   let overviewOpen = $state(false);
   let mapOpen = $state(false);
   let sliding = $state(false);
@@ -103,21 +100,17 @@
     if (stationOpen !== null && (selShip !== stationOpen || !stations.includes(stationOpen))) stationOpen = null;
   });
 
-  /** The combat view (#186) replaces the colony panels while a fight is on. The old CombatPanel stays in the tree but is not rendered. */
+  /** The combat view (#186) replaces the colony panels while a fight is on. */
   const fightHud = $derived(combat.inCombat);
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */
   let roofOn = $state(false);
   let tool = $state<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
-  $effect(() => {
-    document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
-  });
   let narrow = $state(window.matchMedia('(max-width: 600px)').matches);
   let rcolH = $state(0);
   $effect(() => {
     document.documentElement.style.setProperty('--rcol-h', `${rcolH}px`);
   });
-  const phone = () => window.matchMedia('(max-width: 600px)').matches;
   const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
   function toggleRoof() {
@@ -154,13 +147,8 @@
         prizes = v;
       }),
       api.tool.subscribe((t) => (tool = t)),
-      // Hostile crew where the player's crew are (boarders, aliens on a derelict) light the combat button too.
-      api.hostiles.subscribe((v) => (foes = v)),
       api.combat.subscribe((c) => {
         combat = c;
-        // The overlay opens by itself when a fight starts; closing it is the player's call until the next fight.
-        if (c.inCombat && !wasInCombat) combatOpen = true;
-        wasInCombat = c.inCombat;
       }),
     ];
     api.attachCanvas(canvas);
@@ -169,7 +157,7 @@
 
   /**
    * Panels the outside click knows about. A click on the world (or a modal's backdrop) closes every open one that is not `sticky`:
-   * combat and the build catalog (while in build mode) stay, as do the goals card, alerts, top bars and toolbar (never listed).
+   * the build catalog (while in build mode) stays, as do the goals card, alerts, top bars and toolbar (never listed).
    * A pinned window (floatingWindow.ts) stays open too. The selection inspector is not here: the world tap itself selects or deselects, in the same click;
    * a pinned inspector just stays up, empty, when the selection clears.
    */
@@ -180,7 +168,6 @@
     { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
     { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
     { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
-    { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
   ];
   const outside = outsideTap(() => closeOutside(panels));
@@ -240,13 +227,12 @@
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
   {#if !fightHud}<NavStrip
     {mapOpen} {mapLocked} onMap={() => { focusNode = null; mapOpen = !mapOpen; }}
-    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
+    {overviewOpen} {stockOpen} prioritiesOpen={priorities}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
     {hasLab} {researchOpen} onResearch={() => (researchOpen = !researchOpen)}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
-    onCombat={() => { if (combat.inCombat) { combatOpen = !combatOpen; if (phone()) priorities = false; } }}
   />{/if}
   <span class="mid">
     <CrewBar {api} compact={fightHud} />
@@ -336,8 +322,6 @@
   }
   header > :global(*) { pointer-events: auto; }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); pointer-events: none; z-index: 9; }
-  /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
-  @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   header > :global(.strip) { grid-column: 1; justify-self: start; }
   .mid { grid-column: 2; justify-self: start; max-width: 100%; display: flex; gap: 6px; align-items: start; min-width: 0; }
   /* The top-right frame: log and time in a single box divided by a hairline; alerts hang below it. */

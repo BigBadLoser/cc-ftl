@@ -183,8 +183,12 @@ FTL's decision-making with physical consequences, in a shared sector.
   you stay.
 - **No movement, no maneuvering, no firing arcs.** Distance only affects **projectile travel time**,
   so a far deployment gives more time to react (shields, point defence). There is no accuracy penalty.
-- **Combat overlay:** the camera stays on your ship, and an overlay panel shows the enemy ship live,
-  where you pick targets. On phones it is an expandable sheet.
+- **Combat view:** while a fight is on, a dedicated combat HUD replaces the colony HUD (see "Combat view" under UI). The camera
+  frames both ships, and you pick targets by clicking the enemy's modules in the world.
+- **Heat (user decision):** every combat ship has a heat meter (0-100); the player manages it entirely by hand, no auto-vent. Shots
+  and shield hits add heat, and it only falls while the shields are down. **Vent** (G) dumps heat fast but drops the shields and holds fire.
+  **Overcharge** boosts weapons, shields or engines for a few seconds, adds heat, then has a long cooldown. Hitting the maximum is a
+  **thermal overload**: weapons and shields lock out for a few seconds. Tuning lives in `sim/combat/heatTuning.ts`.
 - **Consoles, not manned weapons:**
   - The **weapons console** operator runs all weapons; their skill affects charge and accuracy. With
     no operator, weapons don't fire.
@@ -211,8 +215,8 @@ FTL's decision-making with physical consequences, in a shared sector.
   the interior. Modules that should be visible from outside (weapons, shield generators, engines and
   similar) show a unique roof tile above them instead of the generic one, so they can still be
   identified and targeted. Enemy roofs can't be hidden without a scanning upgrade (planned research).
-- **Aiming from the main view:** while a fight is on, the combat panel's "Target in view" button (per weapon, and for all weapons) arms a
-  left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A roof-visible
+- **Aiming from the main view:** while a fight is on, selecting a weapon card (Q W E R) arms a
+  left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A weapon with no aim of its own follows the ship target, shown as "Auto". A roof-visible
   module (weapons, shields, engines, AI core) is aimed at as that module; any other roof tile is a **blind tile aim**, and shots land near it
   with the usual spread. A bracket marks the aimed tile or module in the main view.
 - **Hits** land on tiles near the aim point (spread by accuracy). Walls lose integrity and breach,
@@ -471,9 +475,21 @@ common there, and the starmap hints at notable stock.
 
   The layout that grew in play replaced the original plan (a top bar, a crew roster on the left, one right-hand drawer).
 - **Overlays and inspection:** field overlays (O2, heat, power, light, damage) and a tile inspector.
-- **Keyboard:** Space pauses, 1–3 set speed, backtick opens the debug menu, plus drawer hotkeys.
+- **Keyboard:** Space pauses, 1–3 set speed, backtick opens the debug menu, plus drawer hotkeys. In a fight: Q W E R select weapons 1-4 (R only when there is a fourth weapon, else it stays crew draft), V volley, H hold fire, G vent, F flee.
 - **Starmap:** it is its own view.
 - **Platform:** desktop only.
+
+### Combat view (user decisions, 2026-10-29)
+
+- **It replaces the colony HUD during a fight:** the nav strip, node strip, drawers, build tools, inspector and goals give way. The ship's log,
+  the clock and time controls, and urgent alerts stay; the crew bar shrinks to portraits. The camera frames both ships, clear of the HUD bands.
+- **Enemy card (top left, red hostile theme):** name, faction and class, hull (green, amber, red at 60% and 30%), shield pips, evasion,
+  heat, and a charge bar per weapon with the commit notch (red once it has committed an aim).
+- **Your strip (bottom):** defence block (hull, shields, evasion) and station tags (WPN, SHD, HELM manned; ENG online when an engine is
+  powered), four weapon slots (card: key badge, charge, target or "Auto"), Volley and Hold fire, the heat block (gauge with the net
+  %/s rate, Vent, three Overcharge buttons with active and cooldown rings), and a docked Flee tab on the right edge whose drive charge fills upward.
+- **Thermal overload:** a dark overlay with a red THERMAL OVERLOAD label and a countdown covers the strip and its hotkeys.
+- **No Hail and no colony inspection in a fight.**
 
 ### UI soft rules (user decisions, 2026-10-28)
 

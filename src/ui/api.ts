@@ -540,6 +540,8 @@ export interface UiShipModule {
   hp: number;
   maxHp: number;
   ion: boolean;
+  /** Has power (an engine module counts as online when it is powered and intact). */
+  powered: boolean;
 }
 
 /** An enemy weapon's charge, for the telegraph on the enemy panel. */
@@ -560,6 +562,9 @@ export interface UiShipCombat {
   /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
   name: string;
+  /** Faction display name (the galaxy faction that fields it, else its combat side) and its role as a class label (null when it has none). */
+  faction: string;
+  klass: string | null;
   /** Sector tile of the ship's top-left corner (a tile aim is shown relative to it). */
   x: number;
   y: number;
@@ -1145,12 +1150,6 @@ export interface UiApi {
   selectAsteroid(id: number | null): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
-  /** Show a ship in the combat panel's view canvas (null hides it): the renderer draws into it every frame. */
-  setCombatView(view: { ship: number; canvas: HTMLCanvasElement } | null): void;
-  /** Which target brackets the combat view draws over the enemy's modules (module ids; 0/absent = none). */
-  setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
-  /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
-  pickCombat(x: number, y: number): { moduleId: number } | null;
   /** The armed "Target in view" aim, or null. */
   aiming: Subscribable<UiAiming | null>;
   setAiming(a: UiAiming | null): void;

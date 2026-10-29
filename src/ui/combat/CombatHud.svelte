@@ -3,6 +3,8 @@
   import type { UiAiming, UiApi, UiCombat, UiShipCombat } from '../api';
   import EnemyCard from './EnemyCard.svelte';
   import { TICK_HZ } from '../../sim/time';
+  import { nextHeatRate, type HeatSample } from './heatRate';
+  import { weaponForKey } from './weaponKeys';
   import PlayerStrip from './PlayerStrip.svelte';
 
   /**
@@ -18,21 +20,16 @@
   const vent = () => me && api.dispatch({ type: 'combat.vent', ship: me.ship });
   const overcharge = (system: 'weapons' | 'shields' | 'engines') => me && api.dispatch({ type: 'combat.overcharge', ship: me.ship, system });
 
-  // Net heat rate (%/s): the change of the heat value per game second between snapshots, smoothed (an exponential average) so it does not flicker.
-  const HEAT_SAMPLE_TICKS = 6;
+  // Net heat rate (%/s): see heatRate.ts.
   let tick = $state(0);
   let rate = $state(0);
-  let last: { tick: number; v: number } | null = null;
+  let last: HeatSample | null = null;
   $effect(() => {
     const h = me?.heat;
     if (!h) { last = null; return; }
-    const pct = (h.value / h.max) * 100;
-    if (!last || tick < last.tick) { last = { tick, v: pct }; return; }
-    const dt = tick - last.tick;
-    if (dt < HEAT_SAMPLE_TICKS) return;
-    const inst = (pct - last.v) / (dt / TICK_HZ);
-    rate = Math.abs(rate) < 1e-6 ? inst : rate * 0.55 + inst * 0.45;
-    last = { tick, v: pct };
+    const next = nextHeatRate(rate, last, { tick, pct: (h.value / h.max) * 100 }, TICK_HZ);
+    last = next.last;
+    if (next.rate !== rate) rate = next.rate;
   });
   const shownRate = $derived(rate);
 
@@ -59,9 +56,6 @@
   $effect(() => {
     if (enemy && framed !== enemy.ship) { framed = enemy.ship; api.focusFight(enemy.ship); }
   });
-  $effect(() => {
-    api.setCombatMarks({ shipTarget: me?.target?.moduleId || undefined, overrides: me?.weapons.filter((w) => w.targetModuleId !== 0).map((w) => w.targetModuleId) ?? [], arming: aiming !== null });
-  });
 
   const select = (id: number) => api.setAiming(aiming?.weapon === id ? null : { weapon: id });
   const drive = $derived(me ? { charge: me.ftl, max: me.ftlMax, helmManned, active: me.state === 'active' } : null);
@@ -71,13 +65,11 @@
     const k = e.key.toLowerCase();
     if (me.heat.lockout > 0 && /^[qwevhfg]$/.test(k)) { e.preventDefault(); e.stopImmediatePropagation(); return; } // thermal overload: the strip is locked
     // Weapon hotkeys are Q W E R (1-3 stay the game-speed keys). R is also the crew-draft key (controller.ts): in combat it picks weapon 4 only when
-    // the ship has a fourth weapon; with three or fewer it falls through to draft as before.
-    const slot = 'qwer'.indexOf(k);
-    if (k.length === 1 && slot >= 0) {
-      const w = me.weapons[slot];
-      if (!w) return;
-      select(w.id);
-    } else if (k === 'v') api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
+    // the ship has a fourth weapon; with three or fewer it falls through to draft as before (see weaponKeys.ts).
+    const w = weaponForKey(k, me.weapons);
+    if (w) select(w.id);
+    else if (/^[qwer]$/.test(k)) return;
+    else if (k === 'v') api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
     else if (k === 'h') api.dispatch({ type: 'combat.setHold', ship: me.ship, hold: !me.hold });
     else if (k === 'f') { if (me.ftl >= me.ftlMax) flee(); }
     else if (k === 'g') vent();

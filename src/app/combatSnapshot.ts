@@ -10,6 +10,7 @@ import { shipIdOf } from '../sim/regions';
 import { factionsHostile } from '../sim/combat/factions';
 import { commitCharge } from '../sim/combat/commit';
 import { homeShip } from '../sim/index';
+import { ROLE_LABEL } from './encounterSnapshot';
 
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
 
@@ -29,7 +30,7 @@ function modulesOf(sim: Sim, shipId: number): UiShipModule[] {
     if (!m || !def || shipIdOf(sim, m) !== shipId) continue;
     const kind = def.weapon ? 'weapon' : def.shieldGen ? 'shield' : def.engine ? 'engine' : 'other';
     if (kind === 'other' && !def.console) continue;
-    out.push({ id, name: def.name, kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC) });
+    out.push({ id, name: def.name, kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC), powered: m.powered });
   }
   return out;
 }
@@ -60,6 +61,15 @@ function heatOf(c: Combat): UiShipCombat['heat'] {
   };
 }
 
+const SIDE_LABEL: Record<string, string> = { hostile: 'Hostile', neutral: 'Neutral', rogue: 'Rogue', alien: 'Alien', player: 'Player' };
+const capital = (v: string): string => v.charAt(0).toUpperCase() + v.slice(1);
+
+/** The faction a ship belongs to, as the card shows it: the galaxy faction that fields it, else its generator faction, else its combat side. */
+function factionLabel(sim: Sim, ship: { faction: string; gen?: { faction: string; owner?: string } }): string {
+  const id = ship.gen?.owner ?? ship.gen?.faction;
+  return (id && (sim.content.galaxy?.factions[id]?.name ?? sim.content.factions?.[id]?.name)) || SIDE_LABEL[ship.faction] || capital(ship.faction);
+}
+
 function snapOf(sim: Sim, id: number): UiShipCombat | null {
   const ship = sim.world.get(id, ShipC);
   const c = sim.world.get(id, CombatC);
@@ -67,7 +77,7 @@ function snapOf(sim: Sim, id: number): UiShipCombat | null {
   const need = shieldRechargeSec(sim, id);
   const t = c.target;
   return {
-    ship: id, name: ship.name, x: ship.x, y: ship.y, state: ship.state, integrity: round(ship.integrity),
+    ship: id, name: ship.name, faction: factionLabel(sim, ship), klass: ship.gen?.role ? (ROLE_LABEL[ship.gen.role] ?? capital(ship.gen.role)) : null, x: ship.x, y: ship.y, state: ship.state, integrity: round(ship.integrity),
     shield: { layers: c.shield.layers, max: c.shield.max, progress: Number.isFinite(need) ? round(Math.min(1, c.shield.timer / need)) : 0 },
     heat: heatOf(c),
     evasion: round(c.evasion), hold: c.hold, ftl: round(c.ftl, 1), ftlMax: FTL_CHARGE_SEC,

@@ -23,13 +23,16 @@
   const volley = () => api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
   const hold = () => api.dispatch({ type: 'combat.setHold', ship: me.ship, hold: !me.hold });
 
-  /** Stations: weapons, shields and helm are live (console manned and powered); engines/coolant has no console in the sim yet (MOCK: always manned). */
+  /** Stations: weapons, shields and helm are manned and powered consoles; ENG is online when at least one engine module is powered and intact (engines have no console). */
   const stations = $derived.by(() => {
     const live = (kind: 'weapons' | 'shields' | 'helm', icon: IconName, tag: string, label: string) => {
       const c = me.consoles.find((x) => x.kind === kind);
-      return { icon, tag, label, ok: !!c && c.powered && c.operator !== null, who: c?.operator ?? null };
+      return { icon, tag, label, ok: !!c && c.powered && c.operator !== null, tip: c ? (c.operator ? `manned by ${c.operator}` : 'unmanned') : 'none installed' };
     };
-    return [live('weapons', 'target', 'WPN', 'Weapons'), live('shields', 'shield', 'SHD', 'Shields'), live('helm', 'helm', 'HELM', 'Helm'), { icon: 'bolt' as IconName, tag: 'ENG', label: 'Engines', ok: true, who: null }];
+    const engines = me.modules.filter((m) => m.kind === 'engine');
+    const online = engines.some((m) => m.powered && m.hp > 0);
+    return [live('weapons', 'target', 'WPN', 'Weapons'), live('shields', 'shield', 'SHD', 'Shields'), live('helm', 'helm', 'HELM', 'Helm'),
+      { icon: 'bolt' as IconName, tag: 'ENG', label: 'Engines', ok: online, tip: engines.length === 0 ? 'none installed' : online ? 'online' : 'offline (unpowered or destroyed)' }];
   });
 </script>
 
@@ -42,7 +45,7 @@
   </div>
   <div class="stn">
     {#each stations as s (s.label)}
-      <span class="s" class:ok={s.ok} title="{s.label}: {s.ok ? `manned${s.who ? ' by ' + s.who : ''}` : 'unmanned'}"><Icon name={s.icon} size={14} />{s.tag}</span>
+      <span class="s" class:ok={s.ok} title="{s.label}: {s.tip}"><Icon name={s.icon} size={14} />{s.tag}</span>
     {/each}
   </div>
 
