@@ -127,6 +127,17 @@ def _generic(k):
     return out + _items(f"tile.roof.g.{n}", "block", lambda: DG.roof(k))
 
 
+def _guard(what, fn):
+    """A job that logs FAIL and yields nothing if it raises (a degenerate key: its tiles keep the old hull art)."""
+    def run():
+        try:
+            return fn()
+        except Exception as e:                          # noqa: BLE001
+            print("FAIL", what, repr(e), flush=True)
+            return []
+    return run
+
+
 def jobs():
     """Callable jobs (env_build.render_jobs), their defaults plain data (the render cache keys on them). HULL_SLICE=i/n
     keeps every n-th job from the i-th (n processes fill the render cache at once; a run without it packs them)."""
@@ -137,10 +148,10 @@ def jobs():
         for m in range(16):
             if not m & clear:
                 for d in range(len(X.EXT_PAIRS) + 1 if (m, o) in X.STRAIGHT else 1):
-                    out.append(lambda m=m, o=o, d=d: _run_set(m, o, d))
+                    out.append(lambda m=m, o=o, d=d: _guard((m, o, d), lambda: _run_set(m, o, d))())
     for k in HC.keys():
         if k:
-            out.append(lambda k=k: _generic(k))
-            out += [lambda k=k, layer=layer: _belly(k, layer) for layer in ("under", "low")]
+            out.append(lambda k=k: _guard(k, lambda: _generic(k))())
+            out += [lambda k=k, layer=layer: _guard((k, layer), lambda: _belly(k, layer))() for layer in ("under", "low")]
     i, n = map(int, os.environ.get("HULL_SLICE", "0/1").split("/"))
     return out[i::n]

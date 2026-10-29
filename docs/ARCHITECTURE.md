@@ -397,6 +397,20 @@ palette.json    the single palette, read by Blender scripts and the game
   partition. So a wall that touches space through a breach, a notch or beside its run stays a partition: cut in
   cutaway, never a ghost. The rays reach `HULL_RAY` (16) tiles, and `gridView` keys its chunks on the struct that far
   round them.
+- **The hull from outside and its belly (`hull`, `sprites/hulltiles.py`, wired in `src/render/hullArt.ts`):**
+  - Each tile of a ship (floor, wall, door) gets a hull key: the fronts of the ship's outline that shape it. The key
+    comes from `hullKey.ts`, a port of `sprites/hull_outline.py` that its test checks against the Python output.
+    `hull_keys.json` is the catalog the art is rendered for (`sprites/hull_catalog.py`). A key outside it, or a region
+    with rock in it, keeps the old hull pieces.
+  - Roofed: a near run or corner draws the run set's piece, `tile.hull.ext.o<o>.m<mask>`. A straight run uses one of its
+    designs, `.a1` .. `.a3`, picked by a hash of the tile. Every other key draws `tile.hull.ext.g.<key>` and its roof
+    stand-in `tile.roof.g.<key>`. The roof plating skips these tiles. The belly hangs under them.
+  - Cutaway: near hull tiles, and floors their hull reaches, draw the belly instead of the old ghost.
+    `tile.hull.belly.under.<key>` sits below the deck, and `.low.<key>` is its cut top. Each tile has a bay look,
+    `.l<look>`, which is rendered only where it differs from the plain look.
+  - Paint: the ship's armour colour multiplies each piece. Its deco colour multiplies the piece's deco layer `<id>.tint`
+    (the piece's own px in its tint mask), drawn over it. Ships are plain for now. `?hullPaint=<armour>,<deco>` (hex)
+    paints them all.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
