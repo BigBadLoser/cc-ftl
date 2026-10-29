@@ -12,7 +12,7 @@
 <Frame title="Stations" {style}>
   <div class="tags">
     {#each tags as t (t.tag)}
-      <StatusTag tag={t.tag} status={t.status} ok={t.ok} title={t.tip} />
+      <StatusTag tag={t.tag} status={t.status} ok={t.ok} warn={t.warn} title={t.tip} />
     {/each}
   </div>
 </Frame>

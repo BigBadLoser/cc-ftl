@@ -529,6 +529,8 @@ export interface UiConsole {
   kind: 'weapons' | 'shields' | 'helm';
   name: string;
   operator: string | null;
+  /** Crew member who took the console job and is walking there (null when nobody is on the way). */
+  enRoute: string | null;
   powered: boolean;
 }
 

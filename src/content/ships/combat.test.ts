@@ -193,7 +193,14 @@ describe('weapons', () => {
     const crate = modulesOf(sim, 1, 'module.storage')[0] as number;
     const stock = (): number => countAmmo(sim, crate);
     expect(stock()).toBe(20);
-    const events = run(sim, 20 * 30);
+    // The player's missiles are held: nothing leaves without a volley.
+    expect(ofType(run(sim, 20 * 15), 'weapon.fired')).toHaveLength(0);
+    expect(stock()).toBe(20);
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 30; i++) {
+      sim.enqueue({ type: 'combat.fireVolley', ship: nth(sim, 1) });
+      events.push(...run(sim, 20));
+    }
     const fired = ofType(events, 'weapon.fired').length;
     expect(fired).toBeGreaterThanOrEqual(2);
     expect(stock()).toBe(20 - fired);

@@ -41,7 +41,8 @@ export function firingSystem(sim: Sim): void {
       else if (sim.tick >= w.nextShotTick) launchNext(sim, id, w, weaponId as string, def, shipIdOf(sim, m));
       continue;
     }
-    const held = combat.hold && !combat.volley;
+    // Ammo weapons (missiles) are held by default on the player's ship: they fire on a volley only, so auto-fire cannot spend the stock. Shooting down a hostile shuttle stays automatic.
+    const held = (combat.hold || (!!def.ammo && !isAiFaction(ship.faction) && !w.target?.vehicle && !(def.antiVehicle && combat.vehicleTarget))) && !combat.volley;
     // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
     const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && (!def.ammo || ammoCount(sim, shipId, def.ammo) > 0)));
     const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;

@@ -14,7 +14,7 @@
     onSelect: () => void;
   } = $props();
   const own = $derived(weapon.target !== null);
-  const aimText = $derived(selected ? 'click a module...' : own ? weapon.target : 'Auto');
+  const aimText = $derived(selected ? 'click a module...' : own ? weapon.target : weapon.ammo !== null ? 'Volley only (V)' : 'Auto');
   const tip = $derived(
     selected ? 'Click an enemy module in the world to aim this weapon (Esc cancels)' : 'Select, then click an enemy module to aim',
   );

@@ -2,6 +2,7 @@ import { TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry } from '../ui/api';
 import { createDescriber, type LogEntry } from './logText';
 import { shipSubject } from './subjects';
+import { emptyTally, fightSummary, tallyFight } from './fightSummary';
 import { createStore, type Readable } from './store';
 
 const MAX = 200;
@@ -24,6 +25,7 @@ export function createEventLog(sim: Sim): EventLog {
   const describe = createDescriber(sim);
   let nextId = 1;
   let credits = sim.trade.credits;
+  let tally = emptyTally();
 
   function add(list: UiLogEntry[], d: LogEntry & { amount?: number }, tick: number): UiLogEntry[] {
     const top = list[0];
@@ -64,6 +66,13 @@ export function createEventLog(sim: Sim): EventLog {
       for (const e of events) {
         const d = describe(e);
         if (d) list = add(list, d, sim.tick);
+      }
+      tally = tallyFight(sim, tally, events);
+      // After a fight one line says what it cost, so the per-module entries above need not be read one by one.
+      if (events.some((e) => e.type === 'combat.ended')) {
+        const sum = fightSummary(tally);
+        if (sum) list = add(list, sum, sim.tick);
+        tally = emptyTally();
       }
       list = gain(list, events);
       if (list !== store.get()) store.set(list);

@@ -109,7 +109,11 @@ describe('shuttles and weapons', () => {
     const missile = weaponsOf(sim, 1, 'weapon.missile')[0] as number;
     sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, 1), weaponId: missile, targetShip: nth(sim, 2), targetModuleId: 0 });
     launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }));
-    const out = run(sim, 20 * 40);
+    const out: SimEvent[] = [];
+    for (let i = 0; i < 40; i++) {
+      sim.enqueue({ type: 'combat.fireVolley', ship: nth(sim, 1) }); // missiles aimed at a ship wait for a volley
+      out.push(...run(sim, 20));
+    }
     const shots = out.filter((e) => e.type === 'weapon.fired' && e.weaponId === missile);
     expect(shots.length).toBeGreaterThan(0);
     for (const e of shots) if (e.type === 'weapon.fired') expect(e.targetShip).toBe(nth(sim, 2));

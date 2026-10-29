@@ -1,9 +1,9 @@
 <script lang="ts">
-  /** A two-line station tag: a short name over a one-word status, flat, with a coloured bottom edge (cyan when ok, red when down). */
-  let { tag, status, ok, title }: { tag: string; status: string; ok: boolean; title?: string } = $props();
+  /** A two-line station tag: a short name over a one-word status, flat, with a coloured bottom edge (cyan when ok, amber when warn, red when down). */
+  let { tag, status, ok, warn = false, title }: { tag: string; status: string; ok: boolean; warn?: boolean; title?: string } = $props();
 </script>
 
-<span class="tag" class:ok {title}>
+<span class="tag" class:ok class:warn {title}>
   <b>{tag}</b>
   <em>{status}</em>
 </span>
@@ -23,6 +23,11 @@
     color: var(--cyan);
     background: var(--ok-fill);
     border-bottom-color: var(--cyan);
+  }
+  .tag.warn {
+    color: var(--amber);
+    background: var(--amber-fill);
+    border-bottom-color: var(--amber);
   }
   b {
     font: 700 12px/1 var(--head-font);
