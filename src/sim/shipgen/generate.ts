@@ -7,7 +7,7 @@ import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
 import { splitCabins } from './rooms/cabins';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, planAisles, type RoomDraw } from './rooms';
 import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -104,12 +104,20 @@ function fitOut(
     if (!spec || !d?.arr.plan) return;
     keepDoorApproach(lay, room);
     const n = (id: string): number => spec.mods.filter((m) => m === id).length;
-    d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style: f.berths ?? 'apart', lounge: !!d.arr.plan.lounge });
+    const plan = d.arr.plan;
+    if (plan.kind === 'berths') {
+      d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style: f.berths ?? 'apart', lounge: !!plan.lounge });
+      if (d.planned) d.plannedDefs = new Set(['module.bed', 'module.lifeSupport']);
+    } else {
+      const got = planAisles(lay, rng, room, { piece: plan.piece, crates: n('module.storage'), fill: 0.7 });
+      d.planned = !!got;
+      if (got) { d.plannedDefs = new Set(['module.storage']); for (const i of got) stockUp(i, spec); }
+    }
   });
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     const d = drawOf(j.room);
-    if (d?.planned) { placed[j.def] = (placed[j.def] ?? 0) + 1; continue; }
+    if (d?.planned && d.plannedDefs?.has(j.def)) { placed[j.def] = (placed[j.def] ?? 0) + 1; continue; }
     const si = d ? specStep(d, j.def) : -1;
     const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
     const k = `${j.room} ${j.def}`;

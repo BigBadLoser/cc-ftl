@@ -15,6 +15,8 @@ export interface RoomDraw {
   picks: string[];
   /** The arrangement's plan laid the room out (rooms/plans.ts): its steps are skipped. */
   planned?: boolean;
+  /** The planned modules the plan placed (their jobs are done). */
+  plannedDefs?: Set<string>;
 }
 
 export function drawRoom(rng: Rng, recipe: RoomRecipe): RoomDraw {
