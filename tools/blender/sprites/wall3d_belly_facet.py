@@ -2,27 +2,19 @@
 45-degree facet, a convex corner's chamfer), so they carry the runs' lines on round to them: the cut's lit lip, the
 ledge on the deck line with its shade, the foot's lit chamfer, the slope's lit top edge, its seams down and across,
 its rim. Drawn as the exterior's diagonals are (wall3d_ext_diag_detail): marks painted on a face's plane, a part
-raised from it, each clipped to the part's other planes and to a band of height (and across, for a seam down)."""
+raised from it, each clipped to the part's other planes and to a band of height (and across, for a seam down). Each
+band at the run's own heights (its section: so at a hip the lines meet), and a seam, level or upright on screen here,
+in a soft tone: a run's, slant, comes out of coverage anti-aliasing at about half its own."""
 from mathutils import Vector
 
-from .wall3d_belly_bay import LEDGE, RIM, SLIT, SLN, SLOPE_SEAMS
+from .wall3d_belly_bay import LEDGE, RIM, SLIT, SLOPE_SEAMS
 from .wall3d_ext_diag_detail import LIT, Z64, _paint
 from .wall3d_ext_geom import LINE, YS
 
 UP = Vector((0, 0, 1))
-ACROSS = 16                         # (screen px down per tile unit of x + y)
+SOFT = "hbSlopeLnSoft"              # (a slope seam's tone here: a quarter of the way from the slope's to the seam's)
 SEAMS_AT = range(-56, 57, 16)       # (the slope's seams down, px across from the tile's middle (x - y): a 16 px
                                     # lattice every tile shares, so one cut off at its column goes on in the next)
-
-
-def _rate(n):
-    """Screen px per unit of height on the plane n (n . p <= c), up the face square to its run: a face's upright
-    part Z64; on a slope, less (its foot further in, further down the screen)."""
-    h = Vector((n.x, n.y, 0.0))
-    if abs(n.z) < 1e-9:
-        return Z64
-    su = h.normalized()
-    return Z64 - ACROSS * (su.x + su.y) * (-n.z) / h.dot(su)
 
 
 def dress(rel, solid, planes, face, slope, H, foot, zmin):
@@ -35,7 +27,7 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
             cuts += [(t, (u + 1) / 32), (-t, -u / 32)]
         _paint(rel, solid, cuts, *plane, col, 1)
 
-    up, sl = Z64, _rate(slope[0])
+    up = Z64
     on(face, H - 1 / up, H, YS[4])                                  # (the cut's lit lip)
     on(face, foot + 1 / up, foot + 2 / up, YS[4])                   # (the foot's chamfer)
     on(face, foot + 2 / up, foot + 3 / up, YS[3])
@@ -43,13 +35,15 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
     zt, zb = -1e-4, -h / up                                         # shade under it)
     on(face, zb - 2 / up, zb, YS[1])
     _ledge(rel, solid, [q for q in planes if q is not face] + [(UP, zt), (-UP, -zb)], *face, k * LINE)
-    on(slope, foot - 1 / sl, foot, SLIT)                            # (the slope's lit top edge, its rim)
-    on(slope, zmin, zmin + 1 / sl, RIM)
+    from .wall3d_belly_run import section                          # (the slope's bands at the run's heights)
+    run = section()
+    on(slope, run.z_at(foot, 1), foot, SLIT)                        # (the slope's lit top edge, its rim)
+    on(slope, zmin, run.z_at(zmin, -1), RIM)
     *_, down = SLOPE_SEAMS                                          # (a seam across its middle; seams down it)
-    zm = (zmin + foot) / 2 - down / sl
-    on(slope, zm - 1 / sl, zm, SLN)
+    zm = run.z_at((zmin + foot) / 2, down)
+    on(slope, run.z_at(zm, 1), zm, SOFT)
     for u in SEAMS_AT:
-        on(slope, zmin, foot, SLN, u)
+        on(slope, zmin, foot, SOFT, u)
 
 
 def _ledge(rel, solid, cuts, n, c, out):

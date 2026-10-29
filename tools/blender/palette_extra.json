@@ -2251,5 +2251,11 @@
  },
  "hbXhbSlopeLit": {
   "hex": "#3e4f5a"
+ },
+ "hbSlopeLnSoft": {
+  "hex": "#3c4e64"
+ },
+ "hbXhbSlopeLnSoft": {
+  "hex": "#283544"
  }
 }
