@@ -6,6 +6,7 @@ order: 1
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
   import ModuleTable from '../../../lib/ModuleTable.svelte'
+  import ComingLater from '../../../lib/ComingLater.svelte'
 </script>
 
 Almost everything aboard runs on power: air, lights, shields, engines, guns and workshops. Reactors make it, everything
@@ -72,7 +73,11 @@ through open doors and slowly bleeds away on its own. Engines add a little heat 
 Crew start taking damage above <Stat kind="tuning" id="HOT_ABOVE" unit="°C" />, and get grumpy in hot rooms well before
 that. Give reactors room to breathe: don't wall one into a small space where people work or sleep.
 
-Reactors don't need fuel: one runs for as long as it's switched on and intact.
+<ComingLater>
+
+Reactors burning fuel rods. For now a reactor runs for as long as it is switched on and intact.
+
+</ComingLater>
 
 ## Under fire
 
