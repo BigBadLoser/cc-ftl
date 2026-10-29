@@ -4,7 +4,7 @@ import type { RoomSpec } from './plan';
 
 /**
  * Ring-band rooms: the rooms of a round ring fill the band outside (or inside) its corridor as ring segments cut by
- * radial partition walls, so a round station reads as a solid ring of rooms with no plating gaps. Segments are
+ * straight partition walls, so a round station reads as a solid ring of rooms with no plating gaps. Segments are
  * stair-stepped polygons (rooms need not be rectangles: fit-out works on any floor set). Each segment is sized to its
  * room's floor area and doored straight onto the corridor (or, failing that, onto its neighbour). Quarters marked for
  * cabins are cut as one segment a bed, each its own room doored onto the corridor; the first keeps the room's other
@@ -153,15 +153,36 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
     }
     return -1;
   };
+  const angleAt = (pos: number): number => {
+    let t = pos;
+    for (const [a0, a1] of arcs) { if (t <= a1 - a0) return a0 + t; t -= a1 - a0; }
+    return (arcs[arcs.length - 1] as [number, number])[1];
+  };
+  // Partitions are straight walls, not radial staircases: each crosses the band at its angle along the grid axis nearer
+  // the radius there (a vertical wall where the radius runs north-south, a horizontal one where it runs east-west), so a
+  // segment off the axes is a straight-sided quadrilateral. Away from a partition, the angle alone decides the side.
+  const rm = (lo + hi) / 2;
+  const win = Math.min(0.6, (1.5 * (depth + 2)) / rm);
+  const cuts = ends.slice(0, -1).map((pos) => {
+    const a = angleAt(pos);
+    const vertical = Math.abs(Math.sin(a)) >= Math.abs(Math.cos(a));
+    return { pos, a, vertical, px: rm * Math.cos(a), py: rm * Math.sin(a), sign: vertical ? Math.sign(-Math.sin(a)) : Math.sign(Math.cos(a)) };
+  });
+  const passed = (c: (typeof cuts)[number], x: number, y: number, ang: number, t: number): boolean => {
+    const da = Math.atan2(Math.sin(ang - c.a), Math.cos(ang - c.a));
+    if (Math.abs(da) > win) return t >= c.pos;
+    return (c.vertical ? x - c.px : y - c.py) * c.sign >= 0;
+  };
   const seg = new Map<string, number>();
   const key = (x: number, y: number): string => `${x},${y}`;
   for (let y = -M; y <= M; y++) {
     for (let x = -M; x <= M; x++) {
       const d = Math.hypot(x, y);
       if (d < lo || d > hi || cv.at(x, y) !== '.') continue;
-      const t = along(Math.atan2(y, x));
+      const ang = Math.atan2(y, x);
+      const t = along(ang);
       if (t < 0) continue;
-      seg.set(key(x, y), Math.min(rooms.length - 1, ends.findIndex((e) => t < e) < 0 ? rooms.length - 1 : ends.findIndex((e) => t < e)));
+      seg.set(key(x, y), Math.min(rooms.length - 1, cuts.filter((c) => passed(c, x, y, ang, t)).length));
     }
   }
   // Partition walls: a band cell touching (4-neighbour) the next segment is wall; so is the band's far edge.
@@ -174,6 +195,14 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
     const part = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seg.get(key(x + (dx as number), y + (dy as number))) === (s + 1) % rooms.length && rooms.length > 1);
     if (edge || part) continue;
     floor.set(s, [...(floor.get(s) ?? []), [x, y]]);
+  }
+  // One-tile spurs (floor in no 2 x 2 square of its own segment, where a stair-stepped edge meets a partition) turn to
+  // wall: nothing stands in them and they read as notches.
+  for (const [s, cells] of floor) {
+    const mine = new Set(cells.map(([x, y]) => key(x, y)));
+    const inSquare = ([x, y]: [number, number]): boolean => [[0, 0], [-1, 0], [0, -1], [-1, -1]].some(([ox, oy]) =>
+      [[0, 0], [1, 0], [0, 1], [1, 1]].every(([dx, dy]) => mine.has(key(x + (ox as number) + (dx as number), y + (oy as number) + (dy as number)))));
+    floor.set(s, cells.filter(inSquare));
   }
   const isFloor = new Set<string>();
   for (const cells of floor.values()) for (const [x, y] of cells) isFloor.add(key(x, y));
