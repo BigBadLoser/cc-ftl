@@ -14,7 +14,7 @@ import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwin
 import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
 import { stepHandover } from '../galaxy/handover';
-import { boardRecruits, landRecruits, lostRecruit } from './recruitLand';
+import { boardRecruits, landRecruits, lostRecruit, recruitsAboard } from './recruitLand';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
 const REPEAT = 20;
@@ -185,13 +185,19 @@ function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
  * - the trader's shuttle (`them`): no. It only carries the trader's goods (a deal with give goods always uses the player's shuttle, see
  *   `planCourier`), which reach the player when they are unloaded; the shuttle is dismissed when the deal ends, so a stuck delivery fails
  *   and refunds, and the goods go back to the trader.
- * - a hiring run: no. The recruits are only aboard; the fee is paid when they land, so it fails, refunds, and the recruits go home.
+ * - a hiring run: once a recruit is aboard (boarding is its exchange): yes. The shuttle brings them home, so the hire completes (they
+ *   step out at the shuttle's home bay, the fee is paid once). Before anyone boards: no, it fails, refunds, and they stay at the station.
  */
-const exchanged = (d: Deal): boolean => d.courier === 'you' && !d.crew;
+const exchanged = (sim: Sim, d: Deal): boolean => d.courier === 'you' && (!d.crew || recruitsAboard(sim, d));
 
 /** A delivery that cannot be finished (no airlock to dock at, nobody or nowhere to unload): settle or refund by `exchanged`. */
 function giveUp(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
-  if (!exchanged(d)) return failDeal(sim, d, reason);
+  if (!exchanged(sim, d)) return failDeal(sim, d, reason);
+  if (d.crew) {
+    landRecruits(sim, d, true);
+    settleDeal(sim, d);
+    return void sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+  }
   if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; } // no further trips with a loaded hold
   v.outbound = false;
   settleDeal(sim, d);

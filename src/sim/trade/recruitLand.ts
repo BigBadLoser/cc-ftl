@@ -8,7 +8,7 @@ import { ForHireC, StationCrewC } from '../stations/components';
 import { bumpStat } from '../story/goals';
 import { logRecruit } from '../galaxy/recruit';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
-import { boardingTile } from '../vehicles/geometry';
+import { bayAccessTile, boardingTile } from '../vehicles/geometry';
 import { unboardCrew } from '../vehicles/lifecycle';
 import { ModuleC } from '../modules/components';
 import type { Deal } from './types';
@@ -41,13 +41,15 @@ const dockedAt = (sim: Sim, v: Vehicle, ship: number): boolean => v.state === 'd
 
 /**
  * Docked at home: the recruits step out and become the player's crew (allegiance, off the station roll, out of the for-hire list); their
- * keys go into the log so the candidate does not come back. True when everyone is out (or gone).
+ * keys go into the log so the candidate does not come back. True when everyone is out (or gone). `force` lands them even where the
+ * shuttle is not docked, so nobody is left aboard without a tile.
  */
-export function landRecruits(sim: Sim, d: Deal): boolean {
+export function landRecruits(sim: Sim, d: Deal, force = false): boolean {
   const v = sim.world.get(d.vehicle, VehicleC);
-  const at = v && boardingTile(sim, d.vehicle);
+  // `force` (a run given up on, recruits already aboard): they step out at the shuttle's home bay even if it is not docked or stowed.
+  const at = v && (boardingTile(sim, d.vehicle) ?? (force ? bayAccessTile(sim, v) : null));
   const grid = at && shipGrid(sim, at.shipId);
-  const ready = !!at && !!grid && isTileWalkable(sim, grid, at.x, at.y);
+  const ready = !!at && !!grid && (force || isTileWalkable(sim, grid, at.x, at.y));
   let done = true;
   for (const c of d.crew ?? []) {
     if (sim.world.get(c, AboardC)?.vehicle === d.vehicle) {
@@ -90,3 +92,6 @@ export function releaseRecruits(sim: Sim, d: Deal): void {
     }
   }
 }
+
+/** Whether any recruit of a hiring run is aboard the run's shuttle (boarding is the exchange: the hire is theirs from then on). */
+export const recruitsAboard = (sim: Sim, d: Deal): boolean => !!d.crew?.some((c) => sim.world.get(c, AboardC)?.vehicle === d.vehicle);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, newGame, serialize, type Sim } from '../sim';
+import { shipIdOf } from '../sim/regions';
 import { AllegianceC } from '../sim/fight/components';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
@@ -109,26 +110,59 @@ describe('crew for hire', () => {
     expect(people(sim).some((id) => keyOf(sim, id) === fh.key)).toBe(false);
   });
 
-  it('a run stuck on the way home is given up: the deal fails, the fee is refunded and nobody is hired; survives a reload', () => {
+  it('a run stuck on the way home with the recruit aboard is given up as a hire: paid once, the recruit lands as player crew; survives a reload', () => {
+    const sim = atStation();
+    const [c] = people(sim) as [number];
+    const fh = sim.world.get(c, ForHireC)!;
+    const credits = (sim.trade.credits = 1000);
+    const crew = playerCrew(sim).length;
+    hire(sim, fh.key);
+    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
+    const d = sim.trade.deals[0]!;
+    expect(d.phase).toBe('back');
+    expect(sim.world.get(c, AboardC)).toBeDefined(); // boarded: the exchange is behind it
+    sim.world.destroyEntity(d.airlock); // the airlock the shuttle was to dock at is gone
+    run(sim, () => false, 1500);
+    const reloaded = deserialize(serialize(sim), content); // save/load in the middle of the blocked stage
+    run(reloaded, () => reloaded.trade.deals[0]?.phase === 'done', 4000);
+    run(reloaded, () => false, 200);
+    const s = reloaded;
+    expect(s.trade.deals[0]?.phase).toBe('done');
+    expect(s.trade.credits).toBe(credits - fh.cost); // the fee is charged exactly once
+    expect(s.world.get(c, AllegianceC)?.faction).toBe('player');
+    expect(s.world.has(c, ForHireC)).toBe(false);
+    expect(s.world.get(c, AboardC)).toBeUndefined();
+    const pos = s.world.get(c, PositionC);
+    expect(pos).toBeDefined();
+    const shuttle = s.world.get(s.world.query(VehicleC)[0]!, VehicleC)!;
+    expect(shipIdOf(s, pos)).toBe(shuttle.homeShip); // on the player's ship
+    expect(playerCrew(s).length).toBe(crew + 1);
+    expect(s.story.flags['stat.hired']).toBe(1);
+    expect(s.trade.deals.some((x) => x.phase !== 'done' && x.phase !== 'failed')).toBe(false);
+  });
+
+  it('a run that times out before anyone boards fails, refunds, and the candidate is still for hire at the station; survives a reload', () => {
     const sim = atStation();
     const [c] = people(sim) as [number];
     const fh = sim.world.get(c, ForHireC)!;
     const credits = (sim.trade.credits = 1000);
     hire(sim, fh.key);
-    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
+    run(sim, () => sim.trade.deals[0]?.phase === 'stationWork', 6000);
     const d = sim.trade.deals[0]!;
-    expect(d.phase).toBe('back');
-    sim.world.destroyEntity(d.airlock); // the airlock the shuttle was to dock at is gone
-    run(sim, () => false, 1500);
+    expect(d.phase).toBe('stationWork');
+    expect(sim.world.get(c, AboardC)).toBeUndefined();
+    d.timer = 300 * 20 - 2; // just short of the boarding deadline, with the recruit still on the station
     const reloaded = deserialize(serialize(sim), content);
-    run(reloaded, () => reloaded.trade.deals[0]?.phase === 'failed', 4000);
-    for (const s of [reloaded]) {
-      expect(s.trade.deals[0]?.phase).toBe('failed');
-      expect(s.trade.credits).toBe(credits);
-      expect(s.world.get(c, AllegianceC)?.faction).not.toBe('player');
-      expect(s.story.flags['stat.hired']).toBeUndefined();
-      expect(s.trade.deals.some((x) => x.phase !== 'done' && x.phase !== 'failed')).toBe(false);
-    }
+    run(reloaded, () => reloaded.trade.deals[0]?.phase === 'failed', 20);
+    const s = reloaded;
+    expect(s.trade.deals[0]?.phase).toBe('failed');
+    expect(s.trade.deals[0]?.reason).toBe('boardTimeout');
+    expect(s.trade.credits).toBe(credits);
+    expect(s.world.get(c, AllegianceC)?.faction).not.toBe('player');
+    expect(s.world.has(c, ForHireC)).toBe(true);
+    expect(s.world.get(c, AboardC)).toBeUndefined();
+    expect(s.world.get(c, PositionC)).toBeDefined();
+    expect(s.story.flags['stat.hired']).toBeUndefined();
   });
 
   it('refunds when the run is called off, and the candidate stays hireable', () => {
