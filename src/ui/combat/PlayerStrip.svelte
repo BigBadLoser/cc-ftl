@@ -92,9 +92,9 @@
 
 <style>
   /* One grid: column 1 defence/stations, columns 2-5 the weapon slots (cards and the action row share them), column 6 heat. Row 1 cards, row 2 actions. Gutters are all 8px. */
-  .strip { position: relative; display: grid; grid-template-columns: 232px repeat(4, minmax(0, 1fr)) minmax(0, 320px); grid-template-rows: auto auto; gap: 12px 8px; background: var(--panel); border: 1px solid var(--line-hi); padding: 8px; flex: 1; min-width: 0; pointer-events: auto; }
+  .strip { position: relative; display: grid; grid-template-columns: 264px repeat(4, minmax(0, 1fr)) minmax(0, 300px); grid-template-rows: auto auto; gap: 12px 8px; background: var(--panel); border: 1px solid var(--line-hi); padding: 8px; flex: 1; min-width: 0; pointer-events: auto; }
   /* The strip and its docked Flee tab (FleeButton) side by side: the tab shares the strip's right border. */
-  .dock { display: flex; align-items: stretch; width: min(1240px, calc(100vw - 24px)); pointer-events: auto; }
+  .dock { display: flex; align-items: stretch; width: min(1320px, calc(100vw - 24px)); pointer-events: auto; }
   /* A framed section: a thin low-contrast border with its title set into the top line (like a fieldset legend). Shared with the heat block (HeatGauge.svelte). */
   .sec { position: relative; box-sizing: border-box; min-width: 0; min-height: 0; padding: 12px 8px 8px; border: 1px solid rgba(90, 140, 175, 0.38); }
   .sec > h3 { position: absolute; top: -6px; left: 9px; margin: 0; padding: 0 5px; background: var(--panel); font: 600 12px/12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
@@ -112,7 +112,7 @@
   .stn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; height: 42px; }
   .s { display: grid; align-content: center; justify-items: center; gap: 3px; font-family: var(--head-font); color: var(--red); background: #2a0f14; border-bottom: 2px solid var(--red); }
   .s b { font: 700 12px/1 var(--head-font); letter-spacing: 0.06em; }
-  .s em { font: 600 8px/1 var(--head-font); letter-spacing: 0; color: inherit; opacity: 0.85; }
+  .s em { font: 600 9.5px/1 var(--head-font); letter-spacing: 0; color: inherit; opacity: 0.85; }
   .s.ok { color: var(--cyan); background: #0a2233; border-bottom-color: var(--cyan); }
   .wc { min-height: 0; min-width: 0; padding: 6px 8px; display: grid; grid-template-rows: 30px 1fr 14px; gap: 5px; text-align: left; background: var(--panel-2); }
   .wc.empty { border: 1px dashed var(--line); background: transparent; display: grid; place-items: center; color: var(--dim); font-size: 12px; }
