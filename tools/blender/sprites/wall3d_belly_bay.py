@@ -53,26 +53,38 @@ def _nf(s, Z):
     return round((s.H - s.under[0]) / (s.H - Z(1)))
 
 
-def dress(n, f, s, back, U, Z):
-    """Bay look n on face f of section s: the frame, then its bay."""
-    foot, nf = s.under[0], _nf(s, Z)
-    with f.tag("frame"):
-        f.line(-0.5, 0.5, Z(1), s.H, YS[4], bevel=False)
-        f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])
-        f.line(-0.5, 0.5, s.z_at(foot, -2), s.z_at(foot, -3), YS[3], bevel=False)     # (the foot's chamfer)
-        f.line(-0.5, 0.5, s.z_at(foot, -1), s.z_at(foot, -2), YS[4], bevel=False)
-        f.line(-0.5, 0.5, s.z_at(foot, 1), foot, SLIT, bevel=False)
-        f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
-        h, k = LEDGE                                # (its top flush with the deck, where the layers meet:
-        zt = -1e-4                                  # wall3d_belly LAYERS; its shade under it)
-        zb = s.z_at(zt, h)
-        f.shade(-0.5, 0.5, zb, zt, side=0.0)
-        _slab(f, s, -0.5, 0.5, zb, zt, -0.01, k * LINE, (None, None))
-        *down, n_ = SLOPE_SEAMS
-        for a, b in down:
-            f.line(*U(a, b), s.zmin, foot, SLN, end=False, bevel=False)
-        zm = s.z_at((s.zmin + foot) / 2, n_)
-        f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)
+def dress(n, f, s, back, U, Z, frame=True):
+    """Bay look n on face f of section s: the frame (unless not `frame`: a diagonal paints its own,
+    wall3d_belly_facet), then its bay."""
+    if frame:
+        with f.tag("frame"):
+            _frame(f, s, back, U, Z)
+    _bay(n, f, s, Z, s.under[0], _nf(s, Z))
+
+
+def _frame(f, s, back, U, Z):
+    """The frame every look shares."""
+    foot = s.under[0]
+    f.line(-0.5, 0.5, Z(1), s.H, YS[4], bevel=False)
+    f.top_line(-0.5, 0.5, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])
+    f.line(-0.5, 0.5, s.z_at(foot, -2), s.z_at(foot, -3), YS[3], bevel=False)     # (the foot's chamfer)
+    f.line(-0.5, 0.5, s.z_at(foot, -1), s.z_at(foot, -2), YS[4], bevel=False)
+    f.line(-0.5, 0.5, s.z_at(foot, 1), foot, SLIT, bevel=False)
+    f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
+    h, k = LEDGE                                # (its top flush with the deck, where the layers meet:
+    zt = -1e-4                                  # wall3d_belly LAYERS; its shade under it)
+    zb = s.z_at(zt, h)
+    f.shade(-0.5, 0.5, zb, zt, side=0.0)
+    _slab(f, s, -0.5, 0.5, zb, zt, -0.01, k * LINE, (None, None))
+    *down, n_ = SLOPE_SEAMS
+    for a, b in down:
+        f.line(*U(a, b), s.zmin, foot, SLN, end=False, bevel=False)
+    zm = s.z_at((s.zmin + foot) / 2, n_)
+    f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)
+
+
+def _bay(n, f, s, Z, foot, nf):
+    """Bay look n's own geometry."""
     b0, b1 = BAY
     with f.tag("bay"):
         if n == 21:

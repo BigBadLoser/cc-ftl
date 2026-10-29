@@ -21,9 +21,9 @@ def section():
     return Section(ZG, T3.BACK, under=(ZG - ARMOUR, SLOPE[0], SLOPE[1]))
 
 
-def build(s2, look=BAY.PLAIN):
+def build(s2, look=BAY.PLAIN, frame=True):
     """The run along a near front s2 ((0, 1) or (1, 0)) of a tile whose outline is the run set's (c 15), whole, in a
-    bay look (wall3d_belly_bay.LOOKS)."""
+    bay look (wall3d_belly_bay.LOOKS); its frame left off if not `frame` (a diagonal's: diag_art)."""
     ax, sec = RUNS[s2], section()
     k = T.Relief(f"belly_run_{ax}")
     plane = E - D - T3.BACK
@@ -39,7 +39,7 @@ def build(s2, look=BAY.PLAIN):
     lid = [(back, -0.002), (sec.front(0.0, 0.0)[0][0], -0.002)]  # meet (wall3d_belly LAYERS), in the face's tone:
     lid += [(lid[1][0], -1e-4), (back, -1e-4)]                  # the under layer's cut open there shows the slope's
     f.part(-0.5, 0.5, lid, [fc] * 4, fc, end=False)             # lit top inside, dots along the exterior's foot)
-    BAY.dress(look, f, sec, back, *_uz(sec))
+    BAY.dress(look, f, sec, back, *_uz(sec), frame=frame)
     return k.build()
 
 
@@ -118,15 +118,33 @@ def art(f, planes, wide=False, look=BAY.PLAIN):
                                                                 # set's outline is c 15)
     objs = build(s2, look)
     along = (1, 0) if s2 == (0, 1) else (0, 1)
-    if wide:
-        for kk in (-1, 1):
-            for ob in list(objs):
-                cp = ob.copy()
-                cp.data = ob.data.copy()
-                cp.location = ob.location + core.G(kk * along[0], kk * along[1], 0.0)
-                for col in ob.users_collection:
-                    col.objects.link(cp)
-                objs.append(cp)
+    if wide:                                                    # (the next tiles plain: whatever look they are,
+        for kk in (-1, 1):                                      # they cover their own; past a hip, or by
+            for ob in build(s2, BAY.PLAIN):                     # another look, a copy of this one's bay would show)
+                ob.location = ob.location + core.G(kk * along[0], kk * along[1], 0.0)
+                objs.append(ob)
     for ob in objs:
         ob.location = ob.location + core.G(s2[0] * off, s2[1] * off, 0.0)
+    return cut(objs, planes)
+
+
+DIAG = (-2, -1, 0, 1)               # (a diagonal's bays: run tiles from these, a bay a tile, each 32 px across as a run's)
+
+
+def diag_art(f, planes, look=BAY.PLAIN):
+    """A near diagonal's art (front f: ((1, 1), c)) cut to planes: the +y run's, frame left off (the diagonal paints
+    its own: wall3d_belly_facet), a row of its tiles laid on the diagonal by p -> (x (1, -1) + y (1, 1)) / 2: its
+    face and slope then lie on the diagonal's (its depth in s . p terms, as a diagonal's, hull_outline.deep), its art
+    px a screen column each, its bays' ends on the tile's corners (where diagonal pieces meet, so they mix as a run's
+    tiles)."""
+    from mathutils import Matrix
+    _, c = f
+    lay = Matrix(((0.5, -0.5, 0.0, 0.0), (0.5, 0.5, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
+    objs = []                                                   # (the map in Blender's axes, y flipped: core.G)
+    for k in DIAG:                                              # (its own two bays in its look; the next, plain:
+        for ob in build((0, 1), look if k in (-1, 0) else BAY.PLAIN, frame=False):     # art)
+            ob.data.transform(Matrix.Translation(core.G(k + 0.5, (c - 15) / 32, 0.0)) @ ob.matrix_world)
+            ob.data.transform(lay)                              # (baked: the cut takes an object's matrix as
+            ob.matrix_world = Matrix.Identity(4)                # a rotation and an offset)
+            objs.append(ob)
     return cut(objs, planes)

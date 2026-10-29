@@ -169,6 +169,7 @@ def piece(key, far=ZG, layer="over", margin=0.0, look=20):
 def _piece(key, far, layer, margin, look):
     from . import wall3d_belly_run as BR
     rel, art = T.Relief(f"belly_{layer}_{HO.name(key)}"), []
+    given = [h for st in HO.parse(key) for h in st]     # (the key's own fronts: not a corner's chamfer)
     for f, planes, n, shared, cuts in _parts(key, far, margin):
         lo, hi = span(f[0], far)
         if (-lo if layer == "under" else hi) <= 0.0:
@@ -177,6 +178,12 @@ def _piece(key, far, layer, margin, look):
             art += BR.art(f, cuts + [LAYERS[layer]], wide=margin > 0, look=look)
             continue
         planes = planes + [LAYERS[layer]]
+        if f[0] == (1, 1) and f in given:               # (a near diagonal: the runs' bays laid on it, its frame
+            art += BR.diag_art(f, cuts + [LAYERS[layer]], look)    # painted as a chamfer's, the top's seam)
+            _frame(rel, f, planes)
+            if layer == "over":
+                _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], hi)
+            continue
         own = {id(q[0]): h for q, h in shared}
         for pts, m, i in _solid(planes):
             if i == len(planes) - 1:                    # (the deck, where the layers meet: the over layer draws
