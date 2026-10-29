@@ -6,6 +6,7 @@ import { isErrand } from '../eva/errands';
 import { dropCarried } from '../items/stacks';
 import type { Sim } from '../sim';
 import { classOf } from './classes';
+import { machineOf, travelState } from './jobStates';
 import { IntentC, InterruptC, TaskC } from './components';
 import type { Blackboard, DriveId, Frame, Hold, MachineId, Task } from './types';
 
@@ -15,31 +16,6 @@ import type { Blackboard, DriveId, Frame, Hold, MachineId, Task } from './types'
  * crew member it visits. Jobless tasks (a walk to the robot bay, an idle stroll) exist only in `Task` and are set by the
  * machine that starts them.
  */
-
-/** The machine that carries out a job of this kind. */
-export function machineOf(job: Job): MachineId {
-  if (job.kind === 'haul') return 'haul';
-  if (job.kind === 'rescue') return 'rescue';
-  if (isErrand(job)) return 'eva';
-  return 'generic';
-}
-
-/** The state a job machine is in while on the way (before work): derived from the legacy components. */
-export function travelState(sim: Sim, crew: number, job: Job): string {
-  if (job.kind === 'haul') return job.haul?.phase === 'deliver' ? 'ToDest' : 'ToSource';
-  if (job.kind === 'rescue') return sim.world.get(job.target ?? 0, CarriedC)?.carrier === crew ? 'ToBed' : 'ToPatient';
-  if (isErrand(job)) return 'ToAirlock';
-  return 'Navigate';
-}
-
-/** The state a job machine is in while working at the site. */
-export function workState(sim: Sim, crew: number, job: Job): string {
-  if (job.kind === 'haul') return job.haul?.phase === 'deliver' ? 'Deposit' : 'Take';
-  if (job.kind === 'rescue') return sim.world.get(job.target ?? 0, CarriedC)?.carrier === crew ? 'Lay' : 'Lift';
-  if (job.kind === 'suitUp') return 'Don';
-  if (job.kind === 'suitOff') return 'Doff';
-  return 'Work';
-}
 
 function newTask(sim: Sim, job: number, drive: DriveId, machine: MachineId, state: string, bb: Blackboard, holds: Hold[] = [], stack: Frame[] = [], jobC?: Job): Task {
   return { job, drive, machine, state, since: sim.tick, class: classOf(machine, state, jobC), stack, holds, bb };
@@ -87,6 +63,19 @@ const derivable = (t: Task): boolean =>
 
 const sameHolds = (a: Hold[], b: Hold[]): boolean => a.length === b.length && a.every((h, i) => h.kind === b[i]?.kind && h.id === b[i]?.id);
 
+/** True if `prev` is still the task the crew member's assignment implies (the common case, checked without building one). */
+function holdsSameJob(sim: Sim, crew: number, prev: Task): boolean {
+  const a = sim.world.get(crew, AssignmentC);
+  if (!a) return false;
+  const job = sim.world.get(a.jobId, JobC);
+  if (!job) return prev.job === a.jobId && prev.machine === 'generic' && prev.stack.length === 0;
+  if (!isErrand(job)) return prev.job === a.jobId && prev.machine === machineOf(job) && prev.stack.length === 0;
+  if (prev.machine !== 'eva') return false;
+  const parent = job.resume ? sim.world.get(job.resume, JobC) : undefined;
+  if (job.resume && parent && parent.reservedBy === crew) return prev.job === job.resume && prev.stack.length === 1 && prev.holds.length === 1 && prev.holds[0]?.id === a.jobId;
+  return prev.job === a.jobId && prev.stack.length === 0;
+}
+
 /** Same task (same job, machine, nesting and holds): its state and start tick carry over. */
 function sameTask(a: Task, b: Task): boolean {
   return a.job === b.job && a.machine === b.machine && a.drive === b.drive && a.stack.length === b.stack.length && sameHolds(a.holds, b.holds);
@@ -99,6 +88,7 @@ function sameTask(a: Task, b: Task): boolean {
  */
 export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
   const prev = sim.world.get(crew, TaskC);
+  if (prev && prev.job !== 0 && holdsSameJob(sim, crew, prev)) return;
   const next = deriveTask(sim, crew);
   if (!next) {
     if (prev && (!keepJobless || prev.job !== 0 || derivable(prev))) sim.world.remove(crew, TaskC);

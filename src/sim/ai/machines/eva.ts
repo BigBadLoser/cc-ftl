@@ -1,10 +1,13 @@
-import { AssignmentC, JobC, PathC, type Job } from '../../crew/components';
+import { AssignmentC, JobC, PathC, type Job, type Position } from '../../crew/components';
+import { isSettled } from '../../crew/helpers';
 import type { Tile } from '../../crew/pathfind';
-import { isErrand, type SuitSource } from '../../eva/errands';
-import { suitDef, suitTile } from '../../eva/suit';
+import { findSuitStow, isErrand, type SuitSource } from '../../eva/errands';
+import { isSuited, suitDef, suitTile } from '../../eva/suit';
+import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
-import { attachJob } from '../task';
+import { YardCrewC } from '../../yard/types';
+import { attachJob, setJoblessTask } from '../task';
 
 /**
  * The eva machine (docs/CREW_AI.md section 6): `ToAirlock`, then `Don` or `Doff` at the airlock's suit tile. A suit errand is a
@@ -53,4 +56,17 @@ export function sweepErrands(sim: Sim): void {
     job.reservedBy = 0;
     sim.world.destroyEntity(id);
   }
+}
+
+/** A suited crew member with nothing to do walks to an airlock and takes the suit off, so the suit is free for the next one. */
+export function stowSuit(sim: Sim, id: number, pos: Position): boolean {
+  if (!isSuited(sim, id) || sim.world.has(id, YardCrewC)) return false; // the shipyard's contractors keep their suits on until the shuttle
+  if (!isSettled(pos) || (sim.tick + id) % 20 !== 0) {
+    setJoblessTask(sim, id, 'idle', 'eva', 'Wait'); // look for an airlock every second or so; meanwhile stand still
+    return true;
+  }
+  const src = findSuitStow(sim, id, pos);
+  if (!src) return false;
+  startErrand(sim, id, 'suitOff', src, shipIdOf(sim, pos));
+  return true;
 }

@@ -1,19 +1,20 @@
-import { abortTask, detachJob } from '../ai/task';
-import {
-  AssignmentC, CrewC, JobC, PathC, PositionC, type Crew, type Position,
-} from '../crew/components';
+import { AssignmentC, CrewC, JobC, PathC, PositionC, type Crew, type Position } from '../crew/components';
 import { atJob, clearPath, isIncapacitated, isSettled } from '../crew/helpers';
 import { performJob } from '../crew/jobWork';
-import { resumeAfter } from '../ai/machines/eva';
 import { destroyJob } from '../items/stacks';
+import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
-import { shipIdOf } from '../regions';
+import { machineOf, travelState, workState } from './jobStates';
+import { resumeAfter } from './machines/eva';
+import { abortTask, detachJob, markState } from './task';
 
 /**
- * Crew adjacent to their job's tile do one tick of work on it (what that means per job kind is in
- * crew/jobWork). Finished jobs disappear; jobs that cannot finish yet (tile occupied, no free bed)
- * keep the crew in place until they can.
+ * The executor's work step (docs/CREW_AI.md section 6), in the work system's slot, last: completed jobs change the grid, which
+ * rooms picks up next tick. Crew at their job's site do one tick of work on it (what that means per job kind is
+ * `performJob`, crew/jobWork); the machine is then in its work state (`Work`, `Take`/`Deposit`, `Lift`/`Lay`, `Don`/`Doff`).
+ * A finished job completes: it is destroyed, `crew.jobDone` is emitted and a suit errand hands the crew member back to the job
+ * it was set aside for (the parent frame pops). Jobs that cannot finish yet (tile occupied, no free bed) keep them in place.
  */
 export function workSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, AssignmentC, PositionC, PathC)) {
@@ -39,7 +40,12 @@ export function workSystem(sim: Sim): void {
       continue;
     }
     crew.activity = 'working';
-    if (performJob(sim, id, job, stat(sim, id, 'workSpeed')) !== 'done') continue;
+    const machine = machineOf(job);
+    markState(sim, id, machine, workState(sim, id, job), job);
+    if (performJob(sim, id, job, stat(sim, id, 'workSpeed')) !== 'done') {
+      if (!atJob(pos, job)) markState(sim, id, machine, travelState(sim, id, job), job); // a load taken, a patient lifted: on to the next stop
+      continue;
+    }
     detachJob(sim, id);
     destroyJob(sim, assignment.jobId);
     sim.events.emit({ type: 'crew.jobDone', crew: id, kind: job.kind, ship: shipIdOf(sim, job), x: job.x, y: job.y });

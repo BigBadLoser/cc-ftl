@@ -110,7 +110,7 @@ function isRelief(sim: Sim, crew: number): boolean {
 /**
  * An empty console in a fight calls the crew member who operates by choice (operating priority 1 or 2, the best skill first) away from a
  * chore they rank lower, so a gunner busy with repairs goes back to the weapons console instead of leaving it empty. The release only frees
- * them: `decideSystem` then picks the best job, which is the console.
+ * them: the scheduler (`scheduleSystem`) then picks the best job, which is the console.
  */
 function callOperator(sim: Sim, job: Job): void {
   if (!sim.sector.inCombat) return;

@@ -1,4 +1,5 @@
-import { releaseBedClaim } from '../crew/beds';
+import { wakeUp } from '../ai/machines/sleep';
+import { dropMeal, finishMeal } from '../ai/machines/eat';
 import { BedClaimC, CrewC, DraftedC, EatC, NeedsC, PositionC, type Crew, type Needs } from '../crew/components';
 import { noteMeal, noteSleep } from '../crew/mood';
 import { AllegianceC } from '../fight/components';
@@ -41,8 +42,7 @@ export function needsSystem(sim: Sim): void {
       needs.rest = Math.min(100, needs.rest + perTick * SLEEP_RECOVERY_MULT * (bed ? BED_REST_MULT : 1));
       if (needs.rest >= 100) {
         noteSleep(sim, id, bed);
-        releaseBedClaim(sim, id);
-        crew.activity = 'idle';
+        wakeUp(sim, id, crew);
         sim.events.emit({ type: 'crew.wokeUp', crew: id });
       }
     } else {
@@ -74,11 +74,10 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
   if (!def || (!station && sim.world.get(id, AllegianceC)?.faction !== 'player')) return;
   needs.hunger ??= 70 + (crew.appearanceSeed % 31);
   const eat = sim.world.get(id, EatC);
-  if (eat && (sim.world.has(id, DraftedC) || (eat.left >= 0 && crew.activity !== 'eating'))) sim.world.remove(id, EatC);
+  if (eat && (sim.world.has(id, DraftedC) || (eat.left >= 0 && crew.activity !== 'eating'))) dropMeal(sim, id);
   else if (eat && eat.left >= 0 && --eat.left <= 0) {
     needs.hunger = Math.min(100, needs.hunger + (sim.content.items[eat.item]?.food?.nutrition ?? 0));
-    sim.world.remove(id, EatC);
-    crew.activity = 'idle';
+    finishMeal(sim, id);
     noteMeal(sim, id, eat.galley);
     sim.events.emit({ type: 'crew.ate', crew: id, item: eat.item, galley: eat.galley });
   }
