@@ -6,6 +6,7 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
+import { splitCabins } from './rooms/cabins';
 import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, type RoomDraw } from './rooms';
 import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
@@ -302,12 +303,14 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
+  // Off the navy, bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts). Metrics read the rooms as planned.
+  const cab = f.berths === 'rows' ? { rows, roomOf, roles, specs } : splitCabins(rows, roomOf, width, roles, specs, rng);
+  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
   const dockTile = new Set(opened.tiles);
-  const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
+  const fitted = opened.merged > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
@@ -315,9 +318,9 @@ export function finishLayout(
   const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x), defs);
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);
-  const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
+  const rooms: GenRoom[] = cab.roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
+    template, rooms, roomOf: cab.roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }

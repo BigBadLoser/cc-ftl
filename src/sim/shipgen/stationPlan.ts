@@ -68,7 +68,10 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   const quarters: RoomSpec[] = [];
   for (let i = 0; i < crew.length; i += 4) {
     const beds = Math.min(4, crew.length - i);
-    quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: 6, h: 3 }));
+    // Barracks are a bunk room; elsewhere a block of one-bed cabins off a hallway (rooms/cabins.ts): 2 wide each and a
+    // dividing wall between, 3 deep behind a wall, and the hallway.
+    const cabins = def.berths !== 'rows' && beds > 1;
+    quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3 }));
   }
   const support: RoomSpec[] = [];
   for (let i = 0; i < 1 + Math.floor(crew.length / 10); i++) {
