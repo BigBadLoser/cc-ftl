@@ -16,6 +16,7 @@ Each piece is two sprites, as hull 46's two belly layers: `under`, all of it und
 `over`, the rest (the rim and the walls), sorted with everything else."""
 import math
 import os
+from itertools import product, repeat
 
 from mathutils import Vector
 
@@ -79,11 +80,12 @@ def _parts(key, far, margin=0.0):
     its front; planes: the tile's sides (4, `margin` out), top, bottom, back, the fronts' outer faces, their slopes,
     the splits; cuts: what bounds it but its own front (a near run's art cut to it: the tile's sides, the other fronts'
     faces and slopes, the splits)."""
-    out = []
-    for stretch in HO.parse(key):
+    out, stretches = [], HO.parse(key)
+    for k, stretch in enumerate(stretches):
+        others = [_ship(st) for j, st in enumerate(stretches) if j != k]
         for g, before, after in HO.groups(stretch):
             g = _chamfer(g)
-            side = [(_lift(HO.nearer(o, f)), o) for o, f in ((before, g[0]), (after, g[-1])) if o]
+            side = [(_lift(HO.nearer(o, f)), o, f) for o, f in ((before, g[0]), (after, g[-1])) if o]
             outer = [(Vector((s[0], s[1], 0.0)), c / 32) for s, c in g]
             slopes = [_slope(v, cc) if near(s) else [] for (s, c), (v, cc) in zip(g, outer)]
             arcs = [q for qs in slopes for q in qs]
@@ -94,9 +96,39 @@ def _parts(key, far, margin=0.0):
                 tile = _tile(margin)
                 planes = tile + [(UP, hi), (-UP, -lo), (Vector((-a, -b, 0.0)), -c)] + outer + arcs
                 cuts = tile + [q for j in range(len(g)) if j != i for q in [outer[j]] + slopes[j]]
-                out.append((f, planes + [q for q, _ in split + side], len(g), split + side,
-                            cuts + [q for q, _ in split + side]))
+                for bound in _sides(side, f):
+                    for inside in map(sum, product(*others), repeat([])):
+                        out.append((f, planes + [q for q, _ in split + bound] + inside, len(g), split + bound,
+                                    cuts + [q for q, _ in split + bound] + inside))
     return out
+
+
+def _ship(stretch, eps=0.002):
+    """A stretch's ship side, as cells (a convex region each: a group's fronts' outer faces and slopes, its concave
+    corners' bisectors), set eps behind them: another stretch's hull on the same tile kept to it (each stretch's
+    solid runs on across the tile: past the other's front it would stand over that one's art)."""
+    cells = []
+    for g, before, after in HO.groups(stretch):
+        g = _chamfer(g)
+        cell = [_lift(HO.nearer(o, f)) for o, f in ((before, g[0]), (after, g[-1])) if o]
+        for s, c in g:
+            v = Vector((s[0], s[1], 0.0))
+            cell += [(n, d - eps * n.length) for n, d in [(v, c / 32)] + (_slope(v, c / 32) if near(s) else [])]
+        cells.append(cell)
+    return cells
+
+
+def _sides(side, f):
+    """A part's bounds at its group's concave corners (side: (bisector, the other side's front, this side's front at
+    the corner)), as cells (a convex part each): the bisector (the hull nearer the other side's front is that
+    front's); for a part whose front does not meet the corner, also past it but behind that front's hull, where the
+    hull is still this part's (at a narrow notch the bisector runs on across the tile into the group's far end)."""
+    cells = [[]]
+    for q, o, at in side:
+        a, b, c = HO.at_least(o, HO.back(o[0]))
+        past = [((-q[0], -q[1]), f), (_lift((a, b, c)), o)]    # (its face inside this part's hull: never drawn)
+        cells = [k + w for k in cells for w in ([(q, o)],) + ((past,) if at is not f else ())]
+    return cells
 
 
 def _tone(m, i, n, s):

@@ -166,23 +166,26 @@ def _uses(fronts):
     """Which fronts of a stretch (tile-local) shape the tile: one is the nearest of its convex run somewhere on the
     tile's hull, or its back runs across the tile there."""
     sq = [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)]
-    used = set()
-    for g, before, after in groups(fronts):
+    used, i0 = set(), 0                                                 # (by place in the stretch: a front may
+    for g, before, after in groups(fronts):                             # come twice, as a run either side of a
+        i1 = i0 + len(g)                                                # notch)
         side = [nearer(o, f) for o, f in ((before, g[0]), (after, g[-1])) if o]    # (the concave corners' splits)
         base = _clip(sq, [at_least(f) for f in g])
         hull = _clip(base, side)
         had = len(used)
-        for f in g:                                                     # (past its own back, a front shapes
+        for i, f in enumerate(g, i0):                                   # (past its own back, a front shapes
             a, b, c = at_least(f, back(f[0]))                           # nothing: the top is flat there)
-            near = _clip(hull, [nearer(f, h) for h in g if h is not f] + [(-a, -b, -c)])
+            others = [h for j, h in enumerate(g, i0) if j != i]
+            near = _clip(hull, [nearer(f, h) for h in others] + [(-a, -b, -c)])
             if _area(near) > EPS:
-                used.add(fronts.index(f))
-            span = _clip(hull, [nearer(f, h, back(f[0]), back(h[0])) for h in g if h is not f])
+                used.add(i)
+            span = _clip(hull, [nearer(f, h, back(f[0]), back(h[0])) for h in others])
             if _across(span, at_least(f, back(f[0]))):                 # (where the roof starts)
-                used.add(fronts.index(f))
-        for o, f in ((before, g[0]), (after, g[-1])):                   # (a concave corner's other side cutting
+                used.add(i)
+        for o, f, j in ((before, g[0], i0 - 1), (after, g[-1], i1)):    # (a concave corner's other side cutting
             if o and len(used) > had and _across(base, nearer(o, f)):  # this one off: it stands full there, past
-                used.add(fronts.index(o))                               # its back too)
+                used.add(j)                                             # its back too)
+        i0 = i1
     return used
 
 

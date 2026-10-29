@@ -77,7 +77,12 @@ def cut(objs, planes):
                      ob.matrix_world)
         bm.to_mesh(ob.data)
         bm.free()
-    return objs
+    import bpy
+    keep = [ob for ob in objs if ob.data.polygons]
+    for ob in objs:
+        if not ob.data.polygons:                                    # (cut away whole: none of it in this cell)
+            bpy.data.objects.remove(ob)
+    return keep
 
 
 def _cap(bm, edges, no, mw):
