@@ -1,19 +1,20 @@
 """The belly run's bay looks (wall3d_belly_run, looks 20 on): a frame every look shares, so any two meet along a tile
-edge (a rib 2 px proud down the face and the slope under the exterior's gap between its panels, which spans the tile
-edge; the cut's lit lip, the foot's lit chamfer, the slope's lit top edge and its rim), and between the ribs a bay
-whose geometry is the look's own, as the exterior's designs vary between their shared strips (wall3d_ext_var):
-20 plain; 21 a recess with a grille on its floor; 22 a blister, a rounded housing down over the foot; 23 a hatch set
-into the slope; 24 a keel block standing out over the slope; 25 stripped, the bay open on pipes."""
+edge (a rib 2 px proud down the face and the slope, centred on the tile edge: the one line every exterior design
+shares, its designs' strips meeting there and the base's gap between its panels spanning it; the cut's lit lip, the
+foot's lit chamfer, the slope's lit top edge and its rim), and between the ribs a bay whose geometry is the look's
+own, as the exterior's designs vary between their shared strips (wall3d_ext_var): 20 plain; 21 a recess with a
+grille on its floor; 22 a blister, a rounded housing down over the foot; 23 a hatch set into the slope; 24 a keel
+block standing out over the slope; 25 stripped, the bay open on pipes."""
 import math
 
 from . import wall3d_ext_t3 as T3
-from .wall3d_belly_looks import GAP, HID, RIM, SLIT, SLN
+from .wall3d_belly_looks import HID, RIM, SLIT, SLN
 from .wall3d_ext_geom import LINE, PAINT, YS
 
 P = T3.px(1)
-RW = 3 * P                                          # (the rib's half width, about the exterior's gap's middle)
-RIBS = ((GAP - RW, 0.5), (-0.5, GAP + RW - 1))      # (the rib, either side of the tile edge it spans)
-BAY = (GAP + RW - 1, GAP - RW)                      # (between the ribs)
+RW = 3 * P                                          # (the rib's half width, about the tile edge)
+RIBS = ((0.5 - RW, 0.5), (-0.5, RW - 0.5))          # (the rib, either side of the tile edge it spans)
+BAY = (RW - 0.5, 0.5 - RW)                          # (between the ribs)
 LOOKS = range(20, 26)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
