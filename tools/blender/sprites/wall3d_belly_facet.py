@@ -4,8 +4,9 @@ ledge on the deck line with its shade, the foot's lit chamfer, the slope's lit t
 its rim. Drawn as the exterior's diagonals are (wall3d_ext_diag_detail): marks painted on a face's plane, a part
 raised from it, each clipped to the part's other planes and to a band of height (and across, for a seam down). Each
 band at the run's own heights (its section: so at a hip the lines meet), and a seam, level or upright on screen here,
-softened as a run's slant one comes out of coverage anti-aliasing: a level one every other px at half its tone, one
-down in a quarter of it (a level band that faint blends away)."""
+softened as a run's slant one comes out of coverage anti-aliasing (the exterior's diagonals' level seams so too,
+wall3d_ext_diag_detail LEVEL_SEAM): a level one two whole px rows at half its tone (the run's comes out a two-row
+core, its tone about that), one down a px column at a quarter."""
 from mathutils import Vector
 
 from .wall3d_belly_bay import LEDGE, RIM, SLIT, SLOPE_SEAMS
@@ -13,9 +14,11 @@ from .wall3d_ext_diag_detail import LIT, Z64, _paint
 from .wall3d_ext_geom import LINE, YS
 
 UP = Vector((0, 0, 1))
-SOFT, FAINT = "hbSlopeLnSoft", "hbSlopeLnFaint"     # (a slope seam's tones here: halfway from the slope's to
-                                                    # the seam's, every other px of a level one; a quarter, a
-                                                    # seam down)
+ACROSS = 16                         # (screen px down per tile unit of x + y)
+SOFT, FAINT = "hbSlopeLnSoft", "hbSlopeLnFaint"     # (a slope seam's tones here: a level one two rows of the
+                                                    # first, halfway from the slope's to the seam's; one down
+                                                    # the second, a quarter)
+ROW0 = 0.0                          # (screen px rows' edges, from the tile's middle: where a level seam's rows land)
 SEAMS_AT = range(-56, 57, 16)       # (the slope's seams down, px across from the tile's middle (x - y): a 16 px
                                     # lattice every tile shares, so one cut off at its column goes on in the next)
 
@@ -44,8 +47,11 @@ def dress(rel, solid, planes, face, slope, H, foot, zmin):
     on(slope, zmin, run.z_at(zmin, -1), RIM)
     *_, down = SLOPE_SEAMS                                          # (a seam across its middle; seams down it)
     zm = run.z_at((zmin + foot) / 2, down)
-    for u in range(-64, 64, 2):
-        on(slope, run.z_at(zm, 1), zm, SOFT, u)
+    (n, c), rate = slope, Z64 + ACROSS * slope[0].z / slope[0].x    # (on the slope, screen px y at z: y0 - z rate,
+    y0 = ACROSS * c / n.x                                           # from the tile's middle; the seam's top at the
+    top = round(y0 - zm * rate - ROW0) + ROW0                       # run's, on a whole row)
+    for k in (0, 1):
+        on(slope, (y0 - top - k - 1) / rate, (y0 - top - k) / rate, SOFT)
     for u in SEAMS_AT:
         on(slope, zmin, foot, FAINT, u)
 
