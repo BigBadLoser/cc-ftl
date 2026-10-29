@@ -1,4 +1,5 @@
 import { PointDefenseC, WeaponC } from '../combat/components';
+import { clearBedOwners } from '../crew/beds';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
@@ -52,6 +53,7 @@ export function removeModule(sim: Sim, id: number): void {
   }
   if (def?.vehicleBay) releaseBayVehicle(sim, id, shipIdOf(sim, m), m.x, m.y);
   for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, shipIdOf(sim, m), m.x, m.y, st.item, st.count);
+  clearBedOwners(sim, id);
   sim.world.destroyEntity(id);
 }
 
