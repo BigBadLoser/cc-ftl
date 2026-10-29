@@ -16,9 +16,10 @@
 </script>
 
 <section class="card" data-testid="enemy-card" aria-label="Enemy ship">
-  <h3 class="ttl">{enemy.name}{#if sub}<span class="sub">{sub}</span>{/if}</h3>
+  <h3 class="ttl">{enemy.name}</h3>
   <div class="tr"><span class="pill {pill.tone}">{pill.text}</span><button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button></div>
 
+  {#if sub}<span class="fac">{sub}</span>{/if}
   <div class="def">
     <div class="srow">
       <span class="pips" title="Shield layers {enemy.shield.layers}/{enemy.shield.max}">{#each pips as on, i (i)}<i class:on></i>{:else}<em>no shields</em>{/each}</span>
@@ -31,7 +32,7 @@
   {#if enemy.charges && enemy.charges.length > 0}
     <div class="wl" data-testid="enemy-charges">
       {#each enemy.charges as w (w.id)}
-        <div class="w" class:aim={w.eta !== null} class:off={w.stalled || w.destroyed} style:--c={w.eta !== null ? hex(w.color) : null} title="{w.name}: {Math.round(w.charge * 100)}%">
+        <div class="w" class:aim={w.eta !== null || w.fired} class:off={w.stalled || w.destroyed} style:--c={w.eta !== null || w.fired ? hex(w.color) : null} title="{w.name}: {Math.round(w.charge * 100)}%">
           <span class="nm">{w.name}</span>
           <span class="bar slim"><i style="width:{Math.round(w.charge * 100)}%"></i><u style="left:{Math.round(w.commitAt * 100)}%"></u></span>
           <span class="st">{status(w)}</span>
@@ -44,11 +45,11 @@
 <style>
   .card { position: relative; box-sizing: border-box; width: 290px; background: var(--panel); border: 1px solid #b8343c; padding: 14px 10px 10px; display: grid; gap: 10px; pointer-events: auto; }
   .ttl { position: absolute; top: -10px; left: 9px; margin: 0; padding: 0 6px; background: var(--panel); font: 700 18px/20px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #ff8a8a; white-space: nowrap; }
-  .sub { margin-left: 8px; font-weight: 400; font-size: 11px; letter-spacing: 0.06em; color: #c98a8a; }
-  .tr { position: absolute; top: -11px; right: 9px; display: flex; align-items: center; gap: 2px; padding: 0 4px; background: var(--panel); }
-  .pill { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; white-space: nowrap; }
+  .fac { margin: -4px 0 -4px; font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: #c98a8a; }
+  .tr { position: absolute; top: -11px; right: 12px; display: flex; align-items: center; gap: 14px; }
+  .pill { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; background: var(--panel); box-shadow: 0 0 0 4px var(--panel); white-space: nowrap; }
   .pill.red { color: #ff8a8a; } .pill.amber { color: var(--amber); } .pill.green { color: var(--green); } .pill.dim { color: var(--dim); }
-  .fr { min-height: 0; min-width: 0; width: 22px; height: 22px; padding: 0; display: grid; place-items: center; background: transparent; border-color: transparent; color: #ffb3b3; }
+  .fr { min-height: 0; min-width: 0; width: 22px; height: 21px; padding: 0; display: grid; place-items: center; background: var(--panel); border: 1px solid #ff8a8a; border-radius: 0; box-shadow: 0 0 0 4px var(--panel); color: #ff8a8a; }
 
   /* One bar style: dark track, thin dim-red edge, square fill. */
   .bar { position: relative; display: block; box-sizing: border-box; background: #061020; border: 1px solid #5a2229; }
@@ -59,8 +60,8 @@
   .bar.big > b { position: absolute; inset: 0; display: grid; place-items: center; font: 700 13px var(--head-font); color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   .bar.heat > i { background: linear-gradient(90deg, #1b8fb3, var(--cyan)); } .bar.heat.amber > i { background: linear-gradient(90deg, #1b8fb3, var(--amber)); } .bar.heat.red > i { background: linear-gradient(90deg, var(--amber), var(--red)); }
   .def { display: grid; gap: 3px; }
-  .srow { display: flex; align-items: flex-end; justify-content: space-between; height: 16px; }
-  .pips { display: flex; gap: 2px; align-items: flex-end; } .pips i { width: 26px; height: 7px; border: 1px solid var(--cyan); box-sizing: border-box; } .pips i.on { background: var(--cyan); }
+  .srow { display: flex; align-items: center; justify-content: space-between; height: 20px; }
+  .pips { display: flex; gap: 2px; align-items: center; } .pips i { width: 26px; height: 7px; border: 1px solid var(--cyan); box-sizing: border-box; } .pips i.on { background: var(--cyan); }
   .chip { font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding: 2px 5px; border: 1px solid var(--line); } .chip b { color: var(--text); font-weight: 700; }
   .hrow { display: flex; align-items: center; gap: 8px; margin-top: 3px; } .hrow .bar { flex: 1; }
   .hp { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); min-width: 62px; text-align: right; } .hp.amber { color: var(--amber); } .hp.red { color: var(--red); }
