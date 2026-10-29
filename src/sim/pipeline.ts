@@ -1,4 +1,5 @@
 import type { Sim } from './sim';
+import { NOOP_PROBE, type Probe } from './probe';
 import { airlockSystem } from './systems/airlock';
 import { suitsSystem } from './systems/suits';
 import { evaFloatSystem } from './systems/evaFloat';
@@ -218,3 +219,16 @@ export const pipeline: readonly System[] = [
   // Events last: periodic draws, due chains and lapsing notices read the finished tick. Reads no grid state.
   storySystem,
 ];
+
+/** Probe label of each pipeline entry, in order (`sim/<system>`), built once so running with a probe allocates nothing. */
+export const systemLabels: readonly string[] = pipeline.map((system) => `sim/${system.name.replace(/System$/, '')}`);
+
+/** Run every system in order, timing each through `probe` (the no-op costs one empty call per system). */
+export function runPipeline(sim: Sim, probe: Probe = NOOP_PROBE): void {
+  for (let i = 0; i < pipeline.length; i++) {
+    const label = systemLabels[i]!;
+    probe.begin(label);
+    pipeline[i]!(sim);
+    probe.end(label);
+  }
+}

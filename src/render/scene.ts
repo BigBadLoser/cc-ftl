@@ -1,5 +1,6 @@
 import { autoDetectRenderer, Container } from 'pixi.js';
 import { animNow } from './animClock';
+import { NOOP_PROBE, type Probe } from '../sim/probe';
 import { ShipC, type Ship } from '../sim/combat/components';
 import type { World } from '../sim/ecs';
 import type { SimEvent } from '../sim/events';
@@ -58,6 +59,8 @@ type Tile = { x: number; y: number; lift?: number };
 
 export interface Renderer {
   render(alpha: number): void;
+  /** Where `render` reports its passes (labels `render/...`); the no-op by default. */
+  setProbe(probe: Probe): void;
   resize(): void;
   dispose(): void;
   /** The sector grid every ship is stamped into. Ships are drawn for every ShipC (a scene reads its ShipC rectangle of it). */
@@ -367,21 +370,31 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const inset = createInsetPass({ ship: shipOf, origin, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, ratio, place });
   stage.addChild(inset.sprite);
 
+  let probe: Probe = NOOP_PROBE;
+
   return {
+    setProbe(p) {
+      probe = p;
+    },
     render(alpha) {
       if (atlas.restoring) return;
+      probe.begin('render/sync');
       sync();
       art.update();
+      probe.end('render/sync');
       const now = animNow();
       const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
       W.setScale(cam.scale);
+      probe.begin('render/scenes');
       for (const [id, sc] of scenes) {
         const o = origin(id);
         const p = iso(o.x, o.y);
         sc.layers.setOrigin(p.x, p.y, o.x + o.y);
         sc.update(dt);
       }
+      probe.end('render/scenes');
+      probe.begin('render/views');
       asteroids.update(sector);
       pods.update(dt);
       shuttles.update(dt);
@@ -391,14 +404,24 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       fightFx.update(dt);
       crewMarks.update();
       orderFx.update();
+      probe.end('render/views');
+      probe.begin('render/fx');
       fx.update(dt, alpha);
       sectorParticles.update(dt);
       art.settle();
+      probe.end('render/fx');
+      probe.begin('render/inset');
       inset.render(gl, stage, () => threatMarks.update());
+      probe.end('render/inset');
+      probe.begin('render/gl');
       place(cam, null);
       threatMarks.update();
       gl.render({ container: stage });
+      probe.end('render/gl');
+      probe.begin('render/present');
       atlas.tick();
+      probe.end('render/present');
+      probe.count('render/sceneCount', scenes.size);
     },
     resize,
     resetWorld() {
