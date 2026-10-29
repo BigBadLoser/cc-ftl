@@ -21,7 +21,7 @@ const NEAR = (s: V) => (s[0] === 1 && s[1] === 0) || (s[0] === 0 && s[1] === 1);
 
 const cross = (a: V, b: V) => a[0] * b[1] - a[1] * b[0];
 const back = () => LIP;
-const at = <T>(a: T[], i: number): T => a[((i % a.length) + a.length) % a.length];
+const at = <T>(a: T[], i: number): T => a[((i % a.length) + a.length) % a.length]!;
 
 /** The mask's edges on space as closed loops, the ship on their left: [tile, outward normal]. */
 function cycles(mask: Set<string>, tiles: V[]): [V, V][][] {
@@ -44,7 +44,7 @@ function cycles(mask: Set<string>, tiles: V[]): [V, V][][] {
         seen.add(`${e[0]},${e[1]}`);
         loop.push([e[0], e[1]]);
         const nxt = out.get(`${e[2][0]},${e[2][1]}`)!;
-        e = nxt.find((m) => cross(e[1], m[1]) > 0) ?? nxt[0];
+        e = nxt.find((m) => cross(e[1], m[1]) > 0) ?? nxt[0]!;
       }
       if (loop.length) loops.push(loop);
     }
@@ -63,12 +63,12 @@ function fronts(loop0: [V, V][]): Front[] {
   let i = 0;
   while (i < m) {
     let j = i;
-    while (j < m - 1 && turn[j] * ((j - i) % 2 === 0 ? 1 : -1) > 0) j++;
+    while (j < m - 1 && turn[j]! * ((j - i) % 2 === 0 ? 1 : -1) > 0) j++;
     if ((j - i) % 2 === 0) j--;
-    const [[x, y], a] = loop[i];
+    const [[x, y], a] = loop[i]!;
     let f: Front;
     if (j - i >= 3) {
-      const b = loop[i + 1][1];
+      const b = loop[i + 1]![1];
       const s: V = [a[0] + b[0], a[1] + b[1]];
       f = [s, Math.round(32 * (s[0] * x + s[1] * y) + 32 * E - 16)];
       i = j + 1;
@@ -79,7 +79,7 @@ function fronts(loop0: [V, V][]): Front[] {
     const l = out[out.length - 1];
     if (!l || !same(l, f)) out.push(f);
   }
-  if (out.length > 1 && same(out[0], out[out.length - 1])) out.pop();
+  if (out.length > 1 && same(out[0]!, out[out.length - 1]!)) out.pop();
   return out;
 }
 
@@ -116,16 +116,16 @@ type Group = [Front[], Front | null, Front | null];
 /** A stretch split at its concave corners: [convex run, front before it, front after it]. */
 export function hullGroups(fr: Front[]): Group[] {
   const out: Front[][] = [];
-  let cur: Front[] = [fr[0]];
+  let cur: Front[] = [fr[0]!];
   for (let i = 1; i < fr.length; i++) {
-    if (cross(fr[i - 1][0], fr[i][0]) < 0) {
+    if (cross(fr[i - 1]![0], fr[i]![0]) < 0) {
       out.push(cur);
       cur = [];
     }
-    cur.push(fr[i]);
+    cur.push(fr[i]!);
   }
   out.push(cur);
-  return out.map((g, i) => [g, i ? out[i - 1][out[i - 1].length - 1] : null, i + 1 < out.length ? out[i + 1][0] : null]);
+  return out.map((g, i) => [g, i ? out[i - 1]!.at(-1)! : null, i + 1 < out.length ? out[i + 1]![0]! : null]);
 }
 
 type Half = [number, number, number];
@@ -135,8 +135,8 @@ function clip(poly0: V[], hs: Half[]): V[] {
   for (const [a, b, c] of hs) {
     const out: V[] = [];
     for (let i = 0; i < poly.length; i++) {
-      const p = poly[i];
-      const q = poly[(i + 1) % poly.length];
+      const p = poly[i]!;
+      const q = poly[(i + 1) % poly.length]!;
       const u = a * p[0] + b * p[1] - c;
       const v = a * q[0] + b * q[1] - c;
       if (u <= EPS) out.push(p);
@@ -156,7 +156,7 @@ function across(poly: V[], h: Half): boolean {
   return v.length > 0 && Math.min(...v) < -1e-6 && Math.max(...v) > 1e-6;
 }
 
-const area = (poly: V[]) => Math.abs(poly.reduce((s, p, i) => s + cross(p, poly[(i + 1) % poly.length]), 0)) / 2;
+const area = (poly: V[]) => Math.abs(poly.reduce((s, p, i) => s + cross(p, poly[(i + 1) % poly.length]!), 0)) / 2;
 
 /** Half-plane d(f) >= k. */
 const atLeast = (f: Front, k = 0): Half => [f[0][0], f[0][1], f[1] / 32 - k];
@@ -176,7 +176,7 @@ function uses(fr: Front[]): Set<number> {
   for (const [g, before, after] of hullGroups(fr)) {
     const i1 = i0 + g.length;
     const side: Half[] = [];
-    for (const [o, f] of [[before, g[0]], [after, g[g.length - 1]]] as [Front | null, Front][]) if (o) side.push(nearer(o, f));
+    for (const [o, f] of [[before, g[0]], [after, g.at(-1)]] as [Front | null, Front][]) if (o) side.push(nearer(o, f));
     const base = clip(sq, g.map((f) => atLeast(f)));
     const hull = clip(base, side);
     const had = used.size;
@@ -188,7 +188,7 @@ function uses(fr: Front[]): Set<number> {
       const span = clip(hull, others.map((h) => nearer(f, h, back(), back())));
       if (across(span, atLeast(f, back()))) used.add(i);
     });
-    for (const [o, f, j] of [[before, g[0], i0 - 1], [after, g[g.length - 1], i1]] as [Front | null, Front, number][])
+    for (const [o, f, j] of [[before, g[0], i0 - 1], [after, g.at(-1), i1]] as [Front | null, Front, number][])
       if (o && used.size > had && across(base, nearer(o, f))) used.add(j);
     i0 = i1;
   }
@@ -202,22 +202,24 @@ export function hullKey(loops: Front[][], x: number, y: number): string {
     const n = fr.length;
     const pts = n > 1 ? fr.map((f, i) => meet(at(fr, i - 1), f)) : [null];
     const nearI: number[] = [];
-    for (let i = 0; i < n; i++) if (near([x, y], pts[i], n > 1 ? pts[(i + 1) % n] : null) <= REACH) nearI.push(i);
+    for (let i = 0; i < n; i++) if (near([x, y], pts[i]!, n > 1 ? pts[(i + 1) % n]! : null) <= REACH) nearI.push(i);
     if (!nearI.length) continue;
     const runs: number[][] = [];
-    let cur = [nearI[0]];
+    let cur = [nearI[0]!];
     for (const i of nearI.slice(1)) {
-      if (i === cur[cur.length - 1] + 1) cur.push(i);
+      if (i === cur.at(-1)! + 1) cur.push(i);
       else {
         runs.push(cur);
         cur = [i];
       }
     }
     runs.push(cur);
-    if (runs.length > 1 && runs[0][0] === 0 && runs[runs.length - 1][runs[runs.length - 1].length - 1] === n - 1)
-      runs[0] = [...runs.pop()!, ...runs[0]];
+    if (runs.length > 1 && runs[0]![0] === 0 && runs.at(-1)!.at(-1) === n - 1) runs[0] = [...runs.pop()!, ...runs[0]!];
     for (const run of runs) {
-      const loc: Front[] = run.map((i) => [fr[i][0], fr[i][1] - 32 * (fr[i][0][0] * x + fr[i][0][1] * y)]);
+      const loc: Front[] = run.map((i) => {
+        const [s, c] = fr[i]!;
+        return [s, c - 32 * (s[0] * x + s[1] * y)];
+      });
       const u = uses(loc);
       if (u.size) parts.push(loc.slice(Math.min(...u), Math.max(...u) + 1));
     }

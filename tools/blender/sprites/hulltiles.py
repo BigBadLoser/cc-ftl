@@ -6,8 +6,9 @@
   stand-in for a near piece the run set lacks), tile.roof.g.<key> its roof over the rest of the tile.
 - tile.hull.belly.<under|low>.<key>: the belly below the deck (under) and its cut top over it (low), in the plain
   look; .l<look> the other bay looks (wall3d_belly_run), only where one differs from the plain.
-- <id>.tint: a hull piece's tint mask (white where the ship's deco colour goes; the armour colour takes the rest):
-  its tones in the piece's TINT set (core.TINT), less the exterior's seam pass (wall3d.SEAM_PASS).
+- <id>.tint: a hull piece's deco layer, Hull 46's bottomDeco: the piece's own px where the ship's deco colour goes
+  (drawn over the piece and tinted with it; the armour colour tints the piece): its tones in the piece's TINT set
+  (core.TINT), less the exterior's seam pass (wall3d.SEAM_PASS).
 
 A key is hull_outline.name(key); the catalog is hull_keys.json (hull_catalog). Each job is a callable rendering a
 piece and its mask together, so the mask shares the piece's anchor."""
@@ -66,7 +67,9 @@ def _items(sid, kind, build, tint=None, seams=False):
     ys, xs = np.where(m)
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     rgba = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
-    rgba[m[y0:y1, x0:x1]] = 255
+    keep = m[y0:y1, x0:x1]
+    rgba[..., :3][keep] = r[0][y0:y1, x0:x1][keep]
+    rgba[..., 3][keep] = 255
     mask = {"id": sid + ".tint", "fp": (1, 1), "rgba": rgba, "g": np.zeros_like(rgba), "ax": r[3] - x0,
             "ay": r[4] - y0}
     return [it, mask]
@@ -125,7 +128,9 @@ def _generic(k):
 
 
 def jobs():
-    """Callable jobs (env_build.render_jobs), their defaults plain data (the render cache keys on them)."""
+    """Callable jobs (env_build.render_jobs), their defaults plain data (the render cache keys on them). HULL_SLICE=i/n
+    keeps every n-th job from the i-th (n processes fill the render cache at once; a run without it packs them)."""
+    import os
     from . import wall3d_ext as X
     out = []
     for o, clear in OUT_MASK.items():
@@ -137,4 +142,5 @@ def jobs():
         if k:
             out.append(lambda k=k: _generic(k))
             out += [lambda k=k, layer=layer: _belly(k, layer) for layer in ("under", "low")]
-    return out
+    i, n = map(int, os.environ.get("HULL_SLICE", "0/1").split("/"))
+    return out[i::n]

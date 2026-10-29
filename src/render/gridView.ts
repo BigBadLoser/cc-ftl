@@ -15,7 +15,8 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, floorChain, ghostVertsIn, HULL_RAY, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { bellyIds, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
 
 export type { CutawayMode };
 
@@ -38,6 +39,8 @@ export interface GridViewHost {
   overlayWorld: OverlayWorld;
   /** Beam look of this ship (by faction); default civil. */
   beamLook?(): BeamLook;
+  /** The ship's hull colours; default plain. */
+  hullPaint?(): HullPaint;
 }
 
 /** Air thinner than this (kPa) is vacuum and gets a cold cast. */
@@ -62,6 +65,8 @@ interface Tinted {
   wall: boolean;
   /** Walls and doors darken as their integrity drops. */
   solid: boolean;
+  /** Hull paint multiplied over the light (the armour, or the deco on a deco layer). */
+  paint?: number;
 }
 
 /** The tile sprites of one sector chunk of the region. */
@@ -107,6 +112,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let frameKey = "";
   let replaced = new Set<number>();
   let airlocks = new Set<number>();
+  /** The region's hull keys (hullArt), null for no new hull art (not a ship). */
+  let hull: HullKeys | null = null;
+  const has = (id: string) => !!atlas.stat(id);
 
   const kindAt = tiles.kindAt;
   const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
@@ -147,6 +155,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const { world, modules } = host.overlayWorld;
     const tiles = airlockDoorTiles(world, modules, (x, y) => grid.inBounds(x, y));
     return new Set(tiles.filter((t) => grid.inBounds(t.x, t.y)).map((t) => (t.y - grid.y0) * width + (t.x - grid.x0))); // region-local index
+  }
+
+  /** A chunk's hull keys (a key reads the outline far past the struct strip round the chunk). */
+  function hullKeysIn(c: ChunkRef): string {
+    if (!hull) return "";
+    const r = tiles.chunkRect(c);
+    let k = "";
+    for (let y = r.y0; y < r.y1; y++) for (let x = r.x0; x < r.x1; x++) k += `${hull.at(x, y)}/`;
+    return k;
   }
 
   /** The engine and airlock hull tiles within two tiles of a chunk (the reach of its wall pieces), as part of its key. */
@@ -212,10 +229,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             owned.push(...made);
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
           }
+          // The new hull (hullArt): roofed, the hull from outside over the tile's walls; in cutaway the near hull's belly
+          // in place of its ghost. A tile without its art keeps the old pieces.
+          const special = gapAt(x, y) || airlocks.has(idx);
+          const drew = !special && hull ? drawHull(hull, x, y, k, ci, v) : false;
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
-          if (gapAt(x, y) || airlocks.has(idx)) continue;
+          if (special) continue;
           for (const piece of wallPieces(wallAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt)) {
+            if (drew && (k !== Struct.Door || !ghosts || piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
@@ -233,11 +255,48 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: true });
           }
         }
-    if (ghosts) {
+    if (ghosts && !hull) {
       const vert = atlas.stat("tile.hull.ghost.vert");
       if (vert) for (const t of ghostVertsIn(wallAt, r.x0, r.y0, r.x1, r.y1)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
     }
     return v;
+  }
+
+  /**
+   * The new hull's sprites on tile (x, y), if it has them: roofed, the exterior pieces (hullArt.exteriorIds) and the
+   * belly under them; in cutaway the belly of a near hull tile or of a floor its hull reaches (`low` its cut top). Each
+   * piece takes the armour paint, its deco layer (`<id>.tint`) the deco paint. False if it drew nothing.
+   */
+  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk): boolean {
+    const paint = host.hullPaint?.() ?? PLAIN_PAINT;
+    const put = (id: string, z: number, parent: Container, solid: boolean) => {
+      const s = atlas.stat(id);
+      if (!s) return;
+      for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
+        const ps = pid === id ? s : atlas.stat(pid);
+        if (!ps || (pid !== id && paint.deco === paint.armour)) continue; // (unpainted: the piece is its own colours)
+        const made = addStatic(L, ps, x, y, z + (pid === id ? 0 : 0.0005), parent);
+        v.owned.push(...made);
+        v.tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid, paint: col });
+      }
+    };
+    const solid = k !== Struct.Floor;
+    const z = depthKey(x, y);
+    if (!ghosts) {
+      const ext = exteriorIds(h, x, y, has);
+      if (!ext) return false;
+      // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front.
+      ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? 0.9 : 0), L.sorted, solid));
+      const b = bellyIds(h, x, y, has);
+      if (b?.under) put(b.under, z, L.under, solid);
+      return true;
+    }
+    if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
+    const b = bellyIds(h, x, y, has);
+    if (!b) return false;
+    if (b.under) put(b.under, z, L.under, solid);
+    if (b.low) put(b.low, z + 0.001, L.sorted, solid);
+    return true;
   }
 
   function updateDoors(v: TileChunk): void {
@@ -289,7 +348,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
       const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
       const base = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
-      t.spr.tint = base;
+      t.spr.tint = t.paint === undefined ? base : mulColor(base, t.paint);
     }
   }
 
@@ -321,13 +380,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         airlocks = airlockHull();
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;
-      const base = `${mode}|${ghosts}|${look}`;
+      const paint = host.hullPaint?.() ?? PLAIN_PAINT;
+      const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
       const built = `${base}|${grid.revision("struct")}|${mr}`;
       if (built !== builtKey) {
         builtKey = built;
-        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}`, buildChunk);
+        hull = gridHullKeys(grid, wallAt, width, height);
+        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk);
         frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(animNow()) : -1;

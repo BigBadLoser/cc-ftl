@@ -23,6 +23,7 @@ import { createWorldStack } from './worldLayers';
 import { regionOrigin, sectorArt, type Origin } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
 import { ROOF_H, Z_PX } from './heights';
+import { hullPaintParam } from './hullArt';
 import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createContainerBodyView } from './containerBodyView';
@@ -282,12 +283,14 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   /** A ship's roof livery; the debug URL parameter `?bow=east|west` forces the end the bow motifs take. */
   const bowParam = new URLSearchParams(window.location.search).get('bow');
+  // `?hullPaint=<armour>,<deco>` (hex): every ship's hull painted so (hullArt; ships are plain until they get colours).
+  const hullPaint = hullPaintParam(window.location.search) ?? undefined;
   const shipLivery = (s: Ship) => ({ ...liveryFor(s.faction, s.name), ...(bowParam ? { bowWest: bowParam === 'west' } : {}) });
   // a hidden outpost stays under its rock roof whatever the roof toggle says
   const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s), beamLook: beamLookFor(s.gen?.faction), hullPaint, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
