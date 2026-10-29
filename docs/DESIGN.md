@@ -517,6 +517,27 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
 6. **The Esc menu:** Esc first cancels the active tool or aim. When there is nothing to cancel, it opens a medium-sized
    menu (about the size of the ship stock panel, or smaller) with resume, save and load, new game, controls and settings.
 
+### Lessons: the tutorial system (user decisions, 2026-10-29; not built yet)
+
+The goal chain (`src/sim/story/goals.ts`) says **what** to do next; lessons teach **how** a feature works. They are a
+UI-layer system: they read the sim and its events, never change it, and are not part of the game save.
+
+- **Just-in-time, not scripted.** A lesson fires the first time the player meets a feature: the first fight, the first
+  build, the first trade. There is no scripted opening sequence; the goal chain gives direction, and a goal row can link
+  to a lesson ("Show me how").
+- **Coach marks.** Each step is a short callout pointing at the real thing: a UI element or an object in the world (a
+  module, a station). A lesson is a few steps, a few lines each.
+- **Pause.** The game pauses while a lesson is open and resumes when it closes. A step that needs time to pass (watching
+  shields recharge) says so and runs the game during that step.
+- **Completion per step.** A step either waits for the player to do the thing ("Press Q to arm a weapon", done when they
+  do) or just needs "Got it".
+- **One at a time.** Lessons queue, with a cooldown between them, and wait while something urgent is on screen.
+- **Remembered per profile, not per save.** Seen lessons are kept in the browser profile. Settings has "Reset
+  tutorials", and every lesson can be replayed from Help (#167), whose index is built from the same definitions.
+- **Content, like everything else.** Lessons are TS objects (`satisfies LessonDef`) referenced by string ID. UI elements
+  carry a `data-lesson` anchor from a typed list, so a missing or renamed anchor fails the typecheck. World anchors use
+  the screen projection the module quick panel uses.
+
 ## Open questions
 
 - Mood and breakdown severity.
