@@ -19,6 +19,8 @@ RIBS = ((0.5 - RW, 0.5), (-0.5, RW - 0.5))          # (the rib, either side of t
 BAY = (RW - 0.5, 0.5 - RW)                          # (between the ribs)
 LOOKS = range(20, 29)
 FRAME = os.environ.get("BELLY_FRAME", "none")        # (the tile edge: "rib", "seam" or "none", to compare)
+TOP = HID + 7                                       # (the bays' features from here down: clear of every
+                                                    # exterior design's foot, its top edges whole, not dots)
 SEAM = os.environ.get("BELLY_SEAM", "1") == "1"     # (a seam across under the exterior's foot)
 GRILLE, PIPE = "hbSoft", "hbShade"                  # (the grille's soft gaps; the stripped bay's shadow)
 
@@ -44,7 +46,7 @@ def blocks(n, s, Z):
     full = [(-0.5, 0.5, s.zmin, foot, 0.0, "face"), (-0.5, 0.5, foot, s.H, 0.0, "face")]
     b0, b1 = BAY
     if n in (21, 25):                               # (a recess in the bay's face: a grille's, or the stripped bay's)
-        (i, v0, v1, k) = (2, HID + 3, nf - 4, 2) if n == 21 else (1, HID + 2, nf - 3, 4)
+        (i, v0, v1, k) = (2, TOP, nf - 4, 2) if n == 21 else (1, TOP, nf - 3, 4)
         za, zb = Z(v1), Z(v0)
         u0, u1 = b0 + i * P, b1 - i * P
         return [full[0], (-0.5, 0.5, foot, za, 0.0, "face"), (-0.5, 0.5, zb, s.H, 0.0, "face"),
@@ -66,8 +68,8 @@ def dress(n, f, s, back, U, Z):
         f.line(-0.5, 0.5, s.z_at(foot, -1), s.z_at(foot, -2), YS[4], bevel=False)
         f.line(-0.5, 0.5, s.z_at(foot, 1), foot, SLIT, bevel=False)
         f.line(-0.5, 0.5, s.zmin, s.z_at(s.zmin, -1), RIM, bevel=False)
-        if SEAM:                                    # (a seam across where the exterior's foot falls: the
-            f.line(-0.5, 0.5, Z(HID + 1), Z(HID), YS[1])    # cutaway's face its upper and lower parts)
+        if SEAM:                                    # (a seam across the cutaway's face, just over where the
+            f.line(-0.5, 0.5, Z(HID - 1), Z(HID - 2), YS[1])    # exterior's foot falls: it hides its lit px too)
         if FRAME == "rib":
             for (u0, u1), (c0, c1) in zip(RIBS, ((YS[1], None), (None, YS[1]))):     # (the ribs: their tops a px
                 _slab(f, s, u0, u1, foot, Z(HID), -0.01, 2 * LINE, (c0, c1))         # under the exterior's foot;
@@ -84,12 +86,12 @@ def dress(n, f, s, back, U, Z):
             f.line(-0.5, 0.5, s.z_at(zm, 1), zm, SLN, bevel=False)
         elif n == 21:
             fl = _fp(s, foot) - 2 * LINE
-            z0, z1 = Z(nf - 6), Z(HID + 5)
+            z0, z1 = Z(nf - 6), Z(TOP + 2)
             pf = [(fl - 0.01, z0), (fl + PAINT, z0), (fl + PAINT, z1), (fl - 0.01, z1)]
             for u in [b0 + 4 * P + k * 2 * P for k in range(int((b1 - b0) / P - 8) // 2 + 1)]:
                 f.part(u, u + P, pf, [GRILLE] * 4, GRILLE, end=False)
         elif n == 22:
-            _blister(f, s, Z, b0 + 3 * P, b1 - 3 * P, Z(HID + 4), 4 * LINE)
+            _blister(f, s, Z, b0 + 3 * P, b1 - 3 * P, Z(TOP), 4 * LINE)
         elif n == 23:
             za, zb = s.z_at(s.zmin, -4), s.z_at(foot, 3)            # (two doors a px proud on the slope, a px
             m = (b0 + b1) / 2                                       # apart)
@@ -100,13 +102,13 @@ def dress(n, f, s, back, U, Z):
         elif n == 26:                                               # (cooling fins standing out of the face)
             for k in range(5):
                 u = (b0 + b1) / 2 + (k - 2) * 4 * P - P / 2
-                _slab(f, s, u, u + P, foot, Z(HID + 3), -0.01, 3 * LINE, (YS[1], YS[1]))
+                _slab(f, s, u, u + P, foot, Z(TOP), -0.01, 3 * LINE, (YS[1], YS[1]))
         elif n == 27:                                               # (an armour plate, bolted)
-            u0, u1, zt = b0 + 2 * P, b1 - 2 * P, Z(HID + 2)
+            u0, u1, zt = b0 + 2 * P, b1 - 2 * P, Z(TOP)
             f.shade(u0, u1, foot, zt, under=0)
             f.raised(u0, u1, foot, zt, -0.01, 2 * LINE, cap=YS[2])
             for u in (u0 + 2 * P, u1 - 3 * P):
-                for z in (Z(HID + 4), Z(nf - 3)):
+                for z in (Z(TOP + 3), Z(nf - 3)):
                     f.raised(u, u + P, z, s.z_at(z, -1), 2 * LINE - 0.01, 2 * LINE + PAINT, col=YS[4])
         elif n == 28:                                               # (a conduit along the bay over the foot, two
             ph, fr = s.H - Z(1), _fp(s, foot)                       # clamps over it)
@@ -117,7 +119,7 @@ def dress(n, f, s, back, U, Z):
         elif n == 25:
             fl = _fp(s, foot) - 4 * LINE
             ph = s.H - Z(1)
-            for v in (HID + 6, nf - 8):
+            for v in (TOP + 2, nf - 5):
                 _pipe(f, b0 + P, b1 - P, fl + 1.6 * LINE, Z(v), 1.5 * LINE, 1.5 * ph)
 
 
