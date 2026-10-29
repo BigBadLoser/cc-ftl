@@ -519,3 +519,17 @@
 
 /* Grid rows track the tallest recipe, but short cards should not inherit its empty height. */
 .wiki-recipe-grid { align-items: start; }
+
+/* Home hero: the starter ship, captured from the game with its UI hidden and the
+ * background keyed out. Wider than the theme's square logo slot, and unframed. */
+html .hero-image {
+  grid-column: 7 / span 6;
+}
+html .hero-image img {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+}

@@ -106,5 +106,6 @@
   }
   .recipe-extra-inputs { grid-column: 1; }
   .recipe-extra-outputs { grid-column: 3; }
-  li { min-width: 0; }
+  /* The page theme spaces `li + li` for prose lists; the grid gap spaces these. */
+  .recipe-extra-inputs > li, .recipe-extra-outputs > li { display: flex; min-width: 0; margin: 0; }
 </style>

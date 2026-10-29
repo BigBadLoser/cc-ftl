@@ -50,6 +50,10 @@ function slugOf(id: string, prefix: string): string {
 function slug(kind: Kind, id: string): string {
   return slugOf(id, prefixes[kind]);
 }
+// Content ids and tags are lowercase codes; show them as words.
+function label(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 function text(value: unknown): string {
   return String(value).replaceAll('|', '\\|').replaceAll('\r', ' ').replaceAll('\n', ' ');
 }
@@ -157,7 +161,7 @@ for (const [id, def] of Object.entries(modules).sort()) {
       ? ['**Installed ship module.** This is the placeable automation system, distinct from the [AI core trade good](../../items/ai-core/) listed in the inventory.', '']
       : []),
     '## Statistics', '', ...stats([
-      ['Category', def.category ?? 'other'],
+      ['Category', label(def.category ?? 'other')],
       ['Footprint', def.footprint.join(' × ') + ' tiles'],
       ['Power', (def.power > 0 ? '+' : '') + def.power],
       ...(def.maxHp !== undefined ? [['Durability', def.maxHp + ' HP'] as [string,string]] : []),
@@ -200,7 +204,7 @@ const itemCatalog = [];
 for (const [id, def] of Object.entries(items).sort()) {
   const img = sprites[id];
   itemCatalog.push({ id, slug: slug('items', id), name: named('items', id), tags: def.tags ?? [], stackSize: def.stackSize, price: def.price ?? null, image: img ?? null });
-  entry('items', id, id === 'item.ai_core' ? 'Machine · bazaar trade good' : (def.tags ?? []).join(' · ') || 'Resource', [['Stack limit', String(def.stackSize)], ['Base value', def.price === undefined ? '—' : String(def.price)]], img, def.tags?.[0]);
+  entry('items', id, id === 'item.ai_core' ? 'Machine · Bazaar trade good' : (def.tags ?? []).map(label).join(' · ') || 'Resource', [['Stack limit', String(def.stackSize)], ['Base value', def.price === undefined ? '—' : String(def.price)]], img, def.tags?.[0]);
   await writeEntry('items', id, [
     image(img, def.name), '',
     def.description ? text(def.description) : '', '',
@@ -208,7 +212,7 @@ for (const [id, def] of Object.entries(items).sort()) {
       ? ['**Trade good, not a ship module.** This inventory item is sold by the machine bazaar. The separately defined [AI core module](../../modules/ai-core/) is a placeable ship system for automation.', '']
       : []),
     ...stats([
-      ['Stack limit', def.stackSize], ['Tags', (def.tags ?? []).join(', ') || 'none'],
+      ['Stack limit', def.stackSize], ['Tags', (def.tags ?? []).map(label).join(', ') || 'None'],
       ['Base value', def.price === undefined ? 'Not priced' : def.price + ' credits'],
     ]),
     '', 'Base values are not guaranteed market prices.',
@@ -218,22 +222,32 @@ for (const [id, def] of Object.entries(items).sort()) {
 await saveJson('items', itemCatalog);
 await writeIndex('items', 'Items and resources', 'Item limits, tags, and base values. Prices at individual stations may differ.');
 
+function effectTotal(def: Weapon, type: string): number {
+  return def.effects.filter(effect => effect.type === type).reduce((sum, effect) => sum + (effect.amount ?? 0), 0);
+}
 // Ship-mounted weapons, not crew hand weapons (those are defined as items).
 for (const [id, def] of Object.entries(weapons).sort()) {
   const effectRows = def.effects.map(effect => {
     const detail = [effect.amount !== undefined ? String(effect.amount) : '', effect.layers !== undefined ? effect.layers + ' layers' : '', effect.seconds !== undefined ? effect.seconds + ' seconds' : '', effect.radius !== undefined ? 'radius ' + effect.radius : ''].filter(Boolean).join(', ');
-    return '| ' + text(effect.type.replace(/([a-z])([A-Z])/g, '$1 $2')) + ' | ' + text(detail || '—') + ' |';
+    return '| ' + text(label(effect.type.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase())) + ' | ' + text(detail || '—') + ' |';
   });
   const related = Object.entries(modules).filter(([, m]) => m.weapon === id);
   const img = related[0] ? previews[related[0][0]]?.url : assetForWeapon(id);
-  entry('weapons', id, def.ammo ? 'Uses ' + named('items', def.ammo) : 'Ship-mounted weapon', [['Charge', def.chargeSec + ' s'], ['Volley', String(def.shots)], ['Shield pierce', String(def.shield.pierce)]], img);
+  const hull = effectTotal(def, 'hullDamage');
+  const system = effectTotal(def, 'moduleDamage');
+  const perVolley = (amount: number) => amount ? (def.shots > 1 ? amount + ' × ' + def.shots : String(amount)) : '—';
+  entry('weapons', id, 'Ship-mounted weapon' + (def.ammo ? ' · fires ' + named('items', def.ammo) : ''), [
+    ['Hull damage', perVolley(hull)], ['System damage', perVolley(system)], ['Charge', def.chargeSec + ' s'],
+    ['Shields', def.shield.bypass ? 'Bypasses' : def.shield.pierce ? 'Pierces ' + def.shield.pierce : 'No pierce'],
+  ], img);
   await writeEntry('weapons', id, [
     image(img, def.name),
     'Ship-mounted weapon. Charge time assumes gunnery skill 0; power draw belongs to the installed weapon module.', '',
     ...stats([
       ['Shots per volley', def.shots], ['Delay between shots', def.shotDelaySec + ' s'],
       ['Charge time', def.chargeSec + ' s'], ['Projectile speed', def.speed + ' tiles/s'],
-      ['Spread (σ)', def.spread + ' tiles'], ['Shield damage', def.shield.damage],
+      ['Spread (σ)', def.spread + (def.spread === 1 ? ' tile' : ' tiles')], ['Hull damage per shot', effectTotal(def, 'hullDamage') || '—'],
+      ['System damage per shot', effectTotal(def, 'moduleDamage') || '—'], ['Shield damage', def.shield.damage],
       ['Shield pierce', def.shield.pierce], ['Shield bypass', def.shield.bypass ? 'Yes' : 'No'],
     ]), '',
     ...(def.ammo ? ['**Ammunition:** ' + link('items', def.ammo, 'weapons'), ''] : []),
@@ -289,7 +303,7 @@ for (const [id, def] of Object.entries(research).sort()) {
   const unlocked = (def.unlocks ?? []).map(mid => named('modules', mid)).join(', ');
   entry('research', id, unlocked ? 'Unlocks ' + unlocked : 'Research project', [['Work', String(def.work)], ['Materials', materialLabel(def.cost)]], def.unlocks?.[0] ? previews[def.unlocks[0]]?.url : undefined, def.category);
   await writeEntry('research', id, [
-    ...stats([['Category', def.category ?? 'general'], ['Research work', def.work + ' ticks']]), '',
+    ...stats([['Category', label(def.category ?? 'general')], ['Research work', def.work + ' ticks']]), '',
     '## Required materials', '', ...bulletsOfMaterials(def.cost, 'research'), '',
     '## Prerequisites', '', ...(def.requires?.length ? def.requires.map(m => '- ' + link('modules', m, 'research')) : ['None']), '',
     '## Unlocks', '', ...(def.unlocks?.length ? def.unlocks.map(m => '- ' + link('modules', m, 'research')) : ['None']),
