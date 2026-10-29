@@ -10,6 +10,9 @@ from . import core, post, sprite_cache
 from . import geom_digest as gd
 
 SS = core.SS
+SHADOW = (0.5, 0.75)                    # a builder's shadows (core.SHADOWS): a px shaded with this much of it in
+                                        # shadow, darkened by this (to the nearest palette tone)
+AA = ("tile.hull.ext.", "tile.hull.belly.")              # sprites coverage anti-aliased (post.downsample aa): their painted seams
 
 
 def diamond_mask(W, H):
@@ -47,6 +50,11 @@ def render_ghost(objs, W, H):
     return mixed.astype(np.uint8), alpha
 
 
+def _show(objs, on):
+    for ob in objs:
+        ob.hide_render = not on
+
+
 def render_sprite(sid, kind, objs):
     if kind == "ghost":
         xs = core.extent_px(objs)
@@ -57,15 +65,39 @@ def render_sprite(sid, kind, objs):
         c, al = _pad1(c), np.pad(al, 1)
         z = np.zeros((H + 2, W + 2, 4), np.uint8)
         return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
-    xmin, xmax, ymin, ymax = core.extent_px(objs)
+    own, wide = objs if kind == "wide" else (objs, None)
+    xmin, xmax, ymin, ymax = core.extent_px(own)
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
-    rgb, a = core.render(W, H, "color")
-    c, op = post.downsample(rgb, a > 0.5, SS, 8, True)
+    if wide:                                            # ("wide": (own, wide): its px are own's, their colours wide's,
+        extra = [o for o in wide if o not in own]       # the same solid run on past the tile's edges, so a px on an
+        only = [o for o in own if o not in wide]        # edge resolves as it does mid-surface; wide may take own in:
+        cut = not only                                  # then its px only where it is in front of the copies, the
+        for o in extra:                                 # next tiles' own there, drawn before or after it whatever
+            o.is_holdout = cut                          # design they are; a wide of its own, its px all its own's)
+            o.hide_render = not cut
+        _, a = core.render(W, H, "color")
+        for o in extra:
+            o.is_holdout, o.hide_render = False, False
+        _show(only, False)
+        rgb, aw = core.render(W, H, "color")
+        _show(only, True)
+        _show(extra, False)
+        c, _ = post.downsample(rgb, aw > 0.5, SS, 8, True, sid.startswith(AA))
+        op = post.blocks(a > 0.5, SS).sum(-1) >= post.scaled(8, SS)
+    else:
+        rgb, a = core.render(W, H, "color")
+        c, op = post.downsample(rgb, a > 0.5, SS, 8, True, sid.startswith(AA))
+    if core.SHADOWS.get("on"):                          # (a px in shadow: most of its samples)
+        sh = op & (post.blocks(core.render_shadow(W, H), SS).mean(-1) >= SHADOW[0])
+        if core.SHADOWS.get("band"):                    # (kept as a band along what casts it, toward the sun)
+            x, y = core.screen_xy(Vector(core.SHADOWS.get("L", core.SHADOW_L)))
+            sh = post.band(sh, op, (x / math.hypot(x, y), -y / math.hypot(x, y)), core.SHADOWS["band"])
+        c = post.shade(c, sh, SHADOW[1], core.SHADOWS.get("ramp", ()), core.SHADOWS.get("steps", 1))
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
-    elif kind in ("block", "fx", "ghost"):
+    elif kind in ("block", "wide", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)
@@ -152,7 +184,8 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
         post.select(pal)
         objs = fn()
         if family:
-            key = sprite_cache.digest(glob, sid, fp, kind, pal, gd.scene_digest(), gd.objects_digest(objs))
+            key = sprite_cache.digest(glob, sid, fp, kind, pal, gd.scene_digest(), gd.objects_digest(objs),
+                                      repr(core.SHADOWS))
             path, got = cached(sid, key)
             if got is not None:
                 items += got

@@ -27,6 +27,9 @@ def build_palette():
         if "emissive" in v:
             cols += [c, c * 0.18 + np.array([6, 8, 12]), c * 0.6, np.minimum(c * 1.0 + 60, 255)]
             continue
+        if v.get("flat"):                       # (the colour alone, no ramp, kept exact: _flat)
+            cols.append(c)
+            continue
         for m in SHADES:
             x = c * m
             if m < 1:
@@ -39,6 +42,22 @@ def build_palette():
 
 BASE = build_palette()
 NB = len(BASE)
+
+
+def _flat():
+    """The flat colours' places in BASE: a tone painted exactly (a fixed polygon colour) keeps it, but the LUT never
+    picks one, so adding one moves no other pixel (a name for a tone anti-aliasing gives elsewhere, painted crisp)."""
+    i, out = 0, []
+    for name, v in PAL.items():
+        if name == "empty":
+            continue
+        if v.get("flat"):
+            out.append(i)
+        i += 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
+    return np.array(out, int)
+
+
+FLAT = _flat()
 
 # ---- team (palette-swap) key colours ------------------------------------------------------------------------
 # team.* materials are rendered with a pure key albedo; lighting scales it, so a lit pixel is (s*k) for a key
@@ -68,6 +87,7 @@ def _lut():
     w = np.array([2.0, 4.0, 3.0])
     for i in range(0, len(q), 2048):
         d = (((q[i:i + 2048, None, :] - BASE[None]) ** 2) * w).sum(-1)
+        d[:, FLAT] = np.inf
         out[i:i + 2048] = d.argmin(1)
     return out.reshape(32, 32, 32)
 
@@ -88,6 +108,9 @@ def _band_map():
         if "emissive" in v:
             i += 4
             continue
+        if v.get("flat"):
+            i += 1
+            continue
         for lv in range(5):
             m[i + lv] = i + BAND[lv]
         i += 5
@@ -106,6 +129,8 @@ def quantize(rgb):
     rgb = np.clip(rgb, 0, 255)
     q = (rgb / 8).astype(int).clip(0, 31)
     idx = LUT[q[..., 0], q[..., 1], q[..., 2]]
+    for i in FLAT:                                  # (a flat colour only where it is painted)
+        idx = np.where((np.abs(rgb - BASE[i]) <= 0.5).all(-1), i, idx)
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     lo = 4.0
     for t, team in enumerate(TEAMS):
@@ -143,8 +168,70 @@ def _block_modes(idx, n):
     return np.take_along_axis(s, eq.argmax(1)[:, None], 1)[:, 0]
 
 
-def downsample(rgb, alpha, S, thresh, quant):
-    """rgb (H*S,W*S,3) 0..255, alpha bool. Returns (rgb (h,w,3) uint8, opaque bool (h,w))."""
+# coverage anti-aliasing (downsample's aa, per sprite: env_build.AA) among the cool greys (the steel family: _aa_set):
+# a pixel whose covered samples are all of them takes the one nearest their mean; any other keeps the crisp majority
+
+
+def _aa_set():
+    """The palette's cool greys (low chroma, blue at least red): the tones anti-aliasing blends among (not a flat
+    one: _flat)."""
+    p = PALETTE[:NB]
+    grey = (p.max(1) - p.min(1) < 48) & (p[:, 2] >= p[:, 0])
+    grey[FLAT] = False
+    return np.nonzero(grey)[0]
+
+
+def _aa(mode, blk, n, S):
+    """mode (h*w,) majority indices, blk (h*w, S*S) sample indices: a pixel whose covered samples are all cool greys
+    takes the one nearest their mean (its coverage); any other keeps the majority."""
+    aa = _aa_set()
+    cov = blk != n
+    sel = (np.isin(blk, aa) | ~cov).all(1) & cov.any(1)
+    if not sel.any():
+        return mode
+    b, c = blk[sel], cov[sel]
+    mean = (PALETTE[np.where(c, b, 0)] * c[..., None]).sum(1) / c.sum(1)[:, None]
+    d = ((mean[:, None, :] - PALETTE[aa][None]) ** 2).sum(-1)
+    out = mode.copy()
+    out[sel] = aa[d.argmin(1)]
+    return out
+
+
+def _name_rgb(name):
+    """A palette name's colour as the sprite's palette has it (the nearest entry)."""
+    h = (PAL.get(name) or EXTRA[name])["hex"].lstrip("#")
+    return PALETTE[quantize(np.array([[int(h[i:i + 2], 16) for i in (0, 2, 4)]], float))[0]]
+
+
+def band(mask, opaque, toward, w):
+    """mask's px with an opaque px outside it at most w px away toward `toward` (an image direction (dx, dy), unit):
+    a cast shadow kept as an even band along what casts it."""
+    h, wd = mask.shape
+    lit, keep = opaque & ~mask, np.zeros_like(mask)
+    for t in range(1, w + 1):
+        dx, dy = int(round(toward[0] * t)), int(round(toward[1] * t))
+        at = np.zeros_like(mask)
+        at[max(0, -dy):h - max(0, dy), max(0, -dx):wd - max(0, dx)] = \
+            lit[max(0, dy):h - max(0, -dy), max(0, dx):wd - max(0, -dx)]
+        keep |= mask & at
+    return keep
+
+
+def shade(rgb, mask, k, ramp=(), steps=1):
+    """rgb (h, w, 3) palette colours, those under mask darkened (a cast shadow): a tone of ramp (palette names, dark to
+    light) steps down it, any other by k to the nearest palette tone."""
+    out = rgb.copy()
+    out[mask] = PALETTE[quantize(rgb[mask].astype(float) * k)]
+    tones = [_name_rgb(n) for n in ramp]
+    for i, t in enumerate(tones):
+        at = mask & (rgb == t).all(-1)
+        out[at] = tones[max(0, i - steps)]
+    return out
+
+
+def downsample(rgb, alpha, S, thresh, quant, aa=False):
+    """rgb (H*S,W*S,3) 0..255, alpha bool, aa coverage anti-aliasing (_aa). Returns (rgb (h,w,3) uint8, opaque bool
+    (h,w))."""
     am = blocks(alpha, S)
     cnt = am.sum(-1)
     opaque = cnt >= scaled(thresh, S)
@@ -155,7 +242,10 @@ def downsample(rgb, alpha, S, thresh, quant):
         full[alpha] = quantize(rgb[alpha])                  # only covered pixels: most of a frame is empty
         sel = (cnt > 0).ravel()
         mode = np.zeros(h * w, np.int64)                    # empty blocks: PALETTE[0], as the histogram argmax gave
-        mode[sel] = _block_modes(blocks(full, S).reshape(h * w, S * S)[sel], n)
+        blk = blocks(full, S).reshape(h * w, S * S)[sel]
+        mode[sel] = _block_modes(blk, n)
+        if aa:
+            mode[sel] = _aa(mode[sel], blk, n, S)
         out = PALETTE[mode].reshape(h, w, 3)
     else:
         rb = blocks(rgb, S)
@@ -237,14 +327,15 @@ _STATES = {}
 def select(extra):
     """Switch the quantisation palette: the game palette (default) or it plus the neon extras. Existing sprites keep
     the plain one so their pixels never change when a colour is added."""
-    global PAL, BASE, NB, PALETTE, LUT, BAND_MAP
+    global PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT
     key = bool(extra)
     if key not in _STATES:
         PAL = {**_BASE_PAL, **EXTRA} if key else dict(_BASE_PAL)
         BASE = build_palette()
         NB = len(BASE)
+        FLAT = _flat()
         PALETTE = np.vstack([BASE, KEYS])
         LUT = _lut()
         BAND_MAP = _band_map()
-        _STATES[key] = (PAL, BASE, NB, PALETTE, LUT, BAND_MAP)
-    PAL, BASE, NB, PALETTE, LUT, BAND_MAP = _STATES[key]
+        _STATES[key] = (PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT)
+    PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT = _STATES[key]
