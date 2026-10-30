@@ -498,7 +498,7 @@ export function createBridge(sim: Sim): Bridge {
     dispatch(cmd) {
       sim.enqueue(cmd);
       // A UI command (accept a job, answer a trade offer, hire, ...) takes effect at once even with the game paused: the panel would
-      // otherwise sit unchanged until time runs. The command still goes through the queue; flush() runs just the one tick that drains it.
+      // otherwise sit unchanged until time runs. The command still goes through the queue; flush() drains it without running a tick.
       if (store.get().paused) loop?.flush();
     },
     setSpeed,

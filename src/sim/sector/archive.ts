@@ -1,4 +1,5 @@
 import { ProjectileC } from '../combat/components';
+import { restoreTasks } from '../ai/task';
 import { SectorGrid, type SectorGridData } from '../sectorGrid';
 import type { Sim } from '../sim';
 import { newSectorGrid } from '../stamp';
@@ -56,6 +57,7 @@ export function restoreArchive(sim: Sim, node: string): boolean {
   sim.sector.width = archive.width;
   sim.sector.height = archive.height;
   for (const e of archive.entities) sim.world.restore(e.id, translated(e.c, 0, 0));
+  restoreTasks(sim); // a task the archive's cut dropped
   sim.archives = sim.archives.filter((a) => a !== archive);
   return true;
 }

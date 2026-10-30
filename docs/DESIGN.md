@@ -517,6 +517,50 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
 6. **The Esc menu:** Esc first cancels the active tool or aim. When there is nothing to cancel, it opens a medium-sized
    menu (about the size of the ship stock panel, or smaller) with resume, save and load, new game, controls and settings.
 
+### Boarding in ship combat (user decisions, 2026-10-29; not built yet)
+
+The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to capture). The combat
+HUD from #184 does not show or drive it. Offence is the focus; defence stays automatic (crew fight boarders, the player
+drafts) and only gains visibility: an alert when boarders dock and intruder marks on the inset.
+
+- **Launch from the HUD.** A BOARD action (B) opens a party picker: the shuttle and its seats, crew with weapon and
+  health (default: armed crew not on a console), and the target airlock, clicked on the enemy in the main view or the
+  nearest one. Crew sent leave their stations, and the STATIONS tags show it.
+- **The flight is the risk.** Enemy point defence shoots the shuttle. Shields have **no effect** on docking: they stop
+  projectiles, not a shuttle; boarding is a way around a heavily shielded ship.
+- **Aboard.** The enemy is already the main view, so the party is commanded there with the existing crew orders. The
+  enemy card gains a party section (members, health, status).
+- **Objectives.** Capture: subdue the crew, then hold the bridge (a visible "holding bridge" bar); the result is a prize
+  with prisoners. **Sabotage:** order boarders to wreck a module (weapons, shields, reactor) from inside, then recall;
+  a reason to board a ship you don't want. Recall: back to the shuttle and home.
+- **Friendly fire is on.** Your weapons hit tiles, so they can hurt your own boarders. The enemy card warns "Your crew
+  aboard" and the rooms they are in are marked.
+- **Stranded parties are lost.** If the enemy is destroyed with the party aboard, they die; if it jumps away, they go
+  with it (a possible story hook later). The warnings make it fair; bad play loses.
+- **Fix:** a near-capture must not turn into a wreck when boarders step off before the bridge hold completes.
+- **Later:** a teleporter module, rarer, using the same picker with no flight and a cooldown.
+
+### Lessons: the tutorial system (user decisions, 2026-10-29; not built yet)
+
+The goal chain (`src/sim/story/goals.ts`) says **what** to do next; lessons teach **how** a feature works. They are a
+UI-layer system: they read the sim and its events, never change it, and are not part of the game save.
+
+- **Just-in-time, not scripted.** A lesson fires the first time the player meets a feature: the first fight, the first
+  build, the first trade. There is no scripted opening sequence; the goal chain gives direction, and a goal row can link
+  to a lesson ("Show me how").
+- **Coach marks.** Each step is a short callout pointing at the real thing: a UI element or an object in the world (a
+  module, a station). A lesson is a few steps, a few lines each.
+- **Pause.** The game pauses while a lesson is open and resumes when it closes. A step that needs time to pass (watching
+  shields recharge) says so and runs the game during that step.
+- **Completion per step.** A step either waits for the player to do the thing ("Press Q to arm a weapon", done when they
+  do) or just needs "Got it".
+- **One at a time.** Lessons queue, with a cooldown between them, and wait while something urgent is on screen.
+- **Remembered per profile, not per save.** Seen lessons are kept in the browser profile. Settings has "Reset
+  tutorials", and every lesson can be replayed from Help (#167), whose index is built from the same definitions.
+- **Content, like everything else.** Lessons are TS objects (`satisfies LessonDef`) referenced by string ID. UI elements
+  carry a `data-lesson` anchor from a typed list, so a missing or renamed anchor fails the typecheck. World anchors use
+  the screen projection the module quick panel uses.
+
 ## Open questions
 
 - Mood and breakdown severity.

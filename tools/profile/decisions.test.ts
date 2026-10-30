@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../src/content';
 import { CrewC, JobC, PositionC, PrioritiesC, ShipC, homeShip, newGame } from '../../src/sim';
-import { releaseAssignment } from '../../src/sim/crew/helpers';
+import { abortTask } from '../../src/sim/ai/task';
 import { Struct } from '../../src/sim/structure';
 import { DecisionRecorder, diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';
 
@@ -120,7 +120,7 @@ describe('DecisionRecorder and same-step completion', () => {
     // An open job in reach, taken by decide at the next step...
     sim.world.add(sim.world.createEntity(), JobC, { category: 'construction', kind: 'build', x: p.x - 1, y: p.y, struct: Struct.Door, work: 500, progress: 0, reservedBy: 0 });
     // ...and released again by a system between decide and work (standing in for a fight or cancel system).
-    const dropper = { begin: (l: string) => { if (l === 'sim/work') for (const id of sim.world.query(CrewC)) releaseAssignment(sim, id); }, end() {}, count() {} };
+    const dropper = { begin: (l: string) => { if (l === 'sim/work') for (const id of sim.world.query(CrewC)) abortTask(sim, id, 'debug'); }, end() {}, count() {} };
     sim.step(rec.probe(sim, dropper));
     sim.events.drain();
     rec.observe(sim);

@@ -14,7 +14,8 @@ import { stationAlarmSystem } from './systems/stationAlarm';
 import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
 import { researchJobsSystem } from './systems/researchJobs';
-import { decideSystem } from './systems/decide';
+import { scheduleSystem } from './ai/schedule';
+import { interruptSystem } from './ai/interrupt';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
 import { draftedSystem } from './systems/drafted';
@@ -55,7 +56,7 @@ import { vitalsSystem } from './systems/vitals';
 import { robotsSystem } from './systems/robots';
 import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
-import { workSystem } from './systems/work';
+import { workSystem } from './ai/work';
 import { vehicleSystem } from './systems/vehicles';
 import { miningSystem } from './systems/mining';
 import { ferrySystem } from './ferry/flow';
@@ -137,10 +138,12 @@ export const pipeline: readonly System[] = [
   needsSystem,
   // Mood reads the fresh needs and room conditions; the stat resolver uses it for work speed from the next tick.
   moodSystem,
-  // Decide before drafted/movement: new paths are walked the same tick.
-  // Weapon fetching before decide: crew on an equip order must not be handed a job this tick.
+  // Crew decisions (sim/ai: policy.legacy, the legacy picker and the need machines) before drafted/movement: new paths are walked
+  // the same tick. Weapon fetching before them: crew on an equip order must not be handed a job this tick.
   equipSystem,
-  decideSystem,
+  // The forced-state detector reads this tick's equip orders (Phase 1: it only records `Interrupt`; nothing reads it yet).
+  interruptSystem,
+  scheduleSystem,
   draftedSystem,
   // Egg sacs before crew combat: a sac disturbed or hurt last tick hatches, and new aliens fight from this tick on.
   eggSacSystem,
@@ -167,7 +170,7 @@ export const pipeline: readonly System[] = [
   ferrySystem,
   // Transfer orders (queue) take free shuttles and pilots and start the runs above; they book trips the ferry flow just settled.
   logisticsSystem,
-  // Work last: completed jobs change the grid, which rooms picks up next tick.
+  // Work last (the executor's work step, sim/ai): completed jobs change the grid, which rooms picks up next tick.
   workSystem,
   // Outposts found or provoked by player presence, before the combat state reads who is a combatant.
   outpostSystem,

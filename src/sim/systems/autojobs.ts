@@ -1,7 +1,8 @@
 import { findFreeBed } from '../crew/beds';
+import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
-import { origin, releaseAssignment } from '../crew/helpers';
+import { origin } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
 import type { Sim } from '../sim';
@@ -21,7 +22,7 @@ function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'x
 }
 
 function drop(sim: Sim, jobId: number, job: Job): void {
-  if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
+  if (job.reservedBy) abortTask(sim, job.reservedBy, 'cancelled');
   sim.world.destroyEntity(jobId);
 }
 

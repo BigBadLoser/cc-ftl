@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Baseline table for the crew AI (docs/CREW_AI.md section 7.4): runs `profile:sim` for each scenario and seed in one process and prints a Markdown table of
- * `sim/decide` self ms (mean/p95/max) and the metrics. The first seed of every scenario runs twice and the metrics are compared: a mismatch is reported (and the
+ * the crew decisions' self ms (mean/p95/max: `sim/schedule`, which took `sim/decide`'s slot in crew AI Phase 1, or `sim/decide` on older code) and the metrics. The first seed of every scenario runs twice and the metrics are compared: a mismatch is reported (and the
  * exit code is 1), because the counts must be deterministic. Wall-clock figures vary with machine load; the metrics must not.
  *   npm run profile:baseline -- [--scenarios colony,hullplan] [--seeds 1,2,3] [--ticks N (default: each scenario's own)] [--out baseline.json]
  */
@@ -32,7 +32,7 @@ try {
     let first;
     for (const seed of seeds) {
       const r = profileSim({ ticks, seed, rows: 5, populate: sc.populate, scenario: sc.name });
-      const d = r.summary.bySelf.find((x) => x.label === 'sim/decide') ?? { mean: 0, p95: 0, max: 0 };
+      const d = r.summary.bySelf.find((x) => x.label === 'sim/schedule' || x.label === 'sim/decide') ?? { mean: 0, p95: 0, max: 0 };
       const m = r.metrics;
       console.log(`| ${sc.name} | ${seed} | ${ticks} | ${d.mean.toFixed(3)} | ${d.p95.toFixed(3)} | ${d.max.toFixed(1)} | ${m.oldestOpenAge.max} | ${m.oldestOpenAge.p95} | ${m.timeToAssign.p50} | ${m.timeToAssign.p95} | ${m.timeToAssign.neverAssigned} | ${m.idleWithWork.crewTicks} | ${m.completion.per1000} |`);
       rows.push({ scenario: sc.name, seed, ticks, decide: { mean: d.mean, p95: d.p95, max: d.max }, metrics: m });

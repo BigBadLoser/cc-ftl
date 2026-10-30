@@ -57,7 +57,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
   (`Refs #N`). When work lands or stalls without a PR, comment on the issue.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
-- Verify visual changes with a headless screenshot before handing them to the user. The user playtests branches locally
+- Verify visual changes with a headless screenshot before handing them to the user. Shoot at a 1920×950 viewport (2x scale):
+  the user plays on a 1080p monitor in a browser window that isn't fullscreen. The user playtests branches locally
   (`npm run dev`; debug starts like `?scenario=hullplan` help). `main` is published to https://bigbadloser.github.io/cc-ftl/
   by the manual "Deploy to GitHub Pages" workflow; it does not deploy on every push. There are no branch previews.
 - **Desktop only.** The game will not be played on phones. Don't spend work on phone layouts, touch gestures or phone
@@ -80,7 +81,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
     change direction early. Finish the work and open the PR only after their go.
   - Non-visual work: no prototype stop. Work it through to a tested PR.
 - Reference repos (e.g. `bigbadloser/space-web-game`) are design reference only; never port code from them.
-- No save migrations while this is a prototype: bump `SAVE_VERSION` instead.
+- Save migrations are not a priority yet, not a ban: by default bump `SAVE_VERSION` when the saved shape changes. When
+  keeping existing saves is cheap (a storage move, a renamed field), suggest a migration and let the user decide.
 - Terminology: a **node** is one playable grid, a **sector** is a group of nodes, **hyperlanes** link sectors (older code
   says "sector" for a node; a rename is pending).
 - Don't `pkill -f` (it can kill your own shell); stop processes by PID.

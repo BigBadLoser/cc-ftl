@@ -1,6 +1,7 @@
 import type { QueuedCommand } from './commands';
 import type { Sector } from './combat/components';
 import { World, type WorldData } from './ecs';
+import { restoreTasks } from './ai/task';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
@@ -80,9 +81,10 @@ import { newYard, type YardState } from './yard/types';
  * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges), `WeaponDef.heat`, `ModuleDef.radiator`.
  * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
  * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
- * v69 (weapon modes): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
+ * v69 (trade): optional `Deal.getValue` (each get line's agreed share of the escrow, for settling a part-delivered run).
+ * v70 (weapon modes, merged after trade): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
  */
-export const SAVE_VERSION = 69;
+export const SAVE_VERSION = 70;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -145,5 +147,6 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;
+  restoreTasks(sim); // a save from before the crew-AI task mirror (Phase 1) has none
   return sim;
 }

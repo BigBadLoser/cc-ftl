@@ -16,6 +16,7 @@ import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
 import { newYard, type YardState } from './yard/types';
 import { TICK_HZ } from './time';
+import { newAiLog, type AiLog } from './ai/log';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
 export { TICK_HZ };
@@ -39,6 +40,8 @@ export class Sim {
   archives: SectorArchive[] = [];
   /** Shipyard hull-expansion orders (yard/). */
   yard: YardState = newYard();
+  /** Crew-AI diagnostics (ai/log.ts): not saved, never read by the sim. */
+  aiLog: AiLog = newAiLog();
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */
@@ -54,6 +57,14 @@ export class Sim {
   /** Queue a command to apply at the start of the next tick. */
   enqueue(cmd: Command): void {
     this.commands.enqueue(cmd, this.tick);
+  }
+
+  /**
+   * Apply the queued commands now, without running the pipeline or advancing the tick: how a UI command takes effect while the
+   * game is paused. Same queue and order as `step`; the events are left for the caller to drain.
+   */
+  applyCommands(): void {
+    this.commands.drain(this.tick, (cmd) => this.apply(cmd));
   }
 
   /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */

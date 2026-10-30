@@ -1,9 +1,7 @@
 import { ammoCount, consumeAmmo } from '../combat/ammo';
 
-import { CrewC, DeadC, HealthC, JobC, NeedsC, PathC, PositionC, type Crew, type Job, type Path, type Position } from '../crew/components';
-import { clearPath, isSettled, origin } from '../crew/helpers';
+import { CrewC, DeadC, HealthC, JobC, NeedsC, PositionC, type Job } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
-import { findPath } from '../crew/pathfind';
 import { createCrew } from '../crew/spawn';
 import { consumeDelivered } from '../items/materials';
 import { ModuleC } from '../modules/components';
@@ -66,44 +64,6 @@ export function wantsBay(sim: Sim, robot: number): boolean {
   const hp = sim.world.get(robot, HealthC);
   const pos = sim.world.get(robot, PositionC);
   return !!hp && !!pos && hp.hp < hp.max * BAY_REPAIR_BELOW && repairItem(sim, robot, shipIdOf(sim, pos)) !== null;
-}
-
-/**
- * Walk to the home bay (claiming the nearest free one on this grid as home if it has none here) and settle into the
- * cradle: activity 'charging'. Returns false when no bay can be reached, so the robot carries on as usual.
- */
-export function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): boolean {
-  let bay = homeBay(sim, robot);
-  const home = bay ? sim.world.get(bay, ModuleC) : undefined;
-  if (home && shipIdOf(sim, home) !== shipIdOf(sim, pos)) return false; // its home is on another grid: no squatting here
-  if (home && home.hp <= 0) {
-    home.reservedBy = 0; // wrecked home: find another
-    bay = 0;
-  }
-  if (!bay) {
-    let best = Infinity;
-    for (const id of sim.world.query(ModuleC)) {
-      const m = sim.world.get(id, ModuleC);
-      if (!m || shipIdOf(sim, m) !== shipIdOf(sim, pos) || !bayFree(sim, id)) continue;
-      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), cradleOf(sim, id));
-      if (steps && steps.length < best) [bay, best] = [id, steps.length];
-    }
-    if (!bay) return false;
-    (sim.world.get(bay, ModuleC) as { reservedBy: number }).reservedBy = robot;
-  }
-  const m = cradleOf(sim, bay);
-  const path = sim.world.get(robot, PathC) as Path;
-  if (isSettled(pos) && pos.x === m.x && pos.y === m.y) {
-    clearPath(sim, robot);
-    crew.activity = 'charging';
-    sim.events.emit({ type: 'robot.charging', crew: robot, bay });
-    return true;
-  }
-  if (path.steps.length > 0 || !isSettled(pos)) return true;
-  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y });
-  if (!steps || steps.length === 0) return false;
-  path.steps = steps;
-  return true;
 }
 
 /** Assemble: once the materials are in, `work` ticks; then the robot steps out of the cradle and the bay is its home. */

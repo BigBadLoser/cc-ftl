@@ -1,5 +1,6 @@
 import { CrewC, HealthC, NeedsC, PositionC, type Crew, type Health, type Needs, type Position } from '../crew/components';
 import { isSettled } from '../crew/helpers';
+import { endCharge } from '../ai/machines/charge';
 import { ModuleC } from '../modules/components';
 import { RobotBayC } from '../robots/components';
 import { buyRepair, cradleOf, homeBay, repairItem } from '../robots/bay';
@@ -23,7 +24,7 @@ export function robotBaySystem(sim: Sim): void {
     const bay = sim.world.get(bayId, ModuleC);
     const def = bay && sim.content.modules[bay.def]?.robotBay;
     if (!bay || !def || bay.hp <= 0 || shipIdOf(sim, bay) !== shipIdOf(sim, pos) || cradleOf(sim, bayId).x !== pos.x || cradleOf(sim, bayId).y !== pos.y || !isSettled(pos)) {
-      crew.activity = 'idle';
+      endCharge(sim, id);
       continue;
     }
     if (!bay.powered) continue; // waits in the cradle for power
@@ -41,7 +42,7 @@ export function robotBaySystem(sim: Sim): void {
       whole = hp.hp >= hp.max || (st.credit <= 0 && repairItem(sim, id, shipIdOf(sim, bay)) === null);
     }
     if (needs.charge >= 100 && whole) {
-      crew.activity = 'idle';
+      endCharge(sim, id);
       sim.events.emit({ type: 'robot.charged', crew: id, bay: bayId });
     }
   }

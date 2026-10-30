@@ -1,4 +1,4 @@
-import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
+import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, detachJob, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { ItemStackC } from '../sim/items/components';
@@ -7,6 +7,8 @@ import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
 import { AsteroidC } from '../sim/asteroids/components';
 import { addHeat } from '../sim/combat/heat';
+import { explainAll, explainCrew } from '../sim/ai/explain';
+import { auditReservations } from '../sim/ai/audit';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -35,6 +37,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     }),
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
+    /** Crew AI inspector (docs/CREW_AI.md section 11, first cut): a crew member's drive, interrupt, task state path and holds; `dump` for all. */
+    ai: {
+      crew: (id: number) => explainCrew(sim, id),
+      dump: () => ({ crew: explainAll(sim), audit: auditReservations(sim), log: sim.aiLog }),
+    },
     /** Trade and handover deals: phase, shuttle state and position, airlock. */
     deals: () => sim.trade.deals.map((d) => {
       const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
@@ -148,7 +155,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       /** Set the progress of every module construction site to a share of its work (the ghost shots). */
       siteProgress: (frac: number) => { for (const id of sim.world.query(JobC)) { const j = sim.world.get(id, JobC); if (j?.kind === 'module') j.progress = Math.round(j.work * frac); } },
       /** Put every player crew member on a tile and drop their orders (keeps crew out of the ghost shots). */
-      parkCrew: (x: number, y: number) => { let i = 0; for (const id of sim.world.query(CrewC, PositionC)) { const p = sim.world.get(id, PositionC); const path = sim.world.get(id, PathC); if (p && sim.world.get(id, AllegianceC)?.faction === 'player') { p.x = p.toX = x + (i++ % 3); p.y = p.toY = y; p.progress = 0; if (path) path.steps = []; sim.world.remove(id, AssignmentC); } } },
+      parkCrew: (x: number, y: number) => { let i = 0; for (const id of sim.world.query(CrewC, PositionC)) { const p = sim.world.get(id, PositionC); const path = sim.world.get(id, PathC); if (p && sim.world.get(id, AllegianceC)?.faction === 'player') { p.x = p.toX = x + (i++ % 3); p.y = p.toY = y; p.progress = 0; if (path) path.steps = []; detachJob(sim, id); } } },
       /** Take stored `item` out of every storage until `keep` units are left (the "missing materials" shot). */
       drainStock: (item: string, keep: number) => { for (const id of sim.world.query(StorageC)) { const extra = totalStock(sim, item) - keep; if (extra > 0) storageTake(sim, id, item, extra); } },
       /** Set a suit's tank (the air-warning shot). */
