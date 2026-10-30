@@ -56,8 +56,8 @@ def drone_ramp(plate, u0, u1, run_, r, **_):
               PAINT, 0, 0.0)
 
 
-NAVY_PAIRS = [(0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 2), (4, 0), (4, 1), (4, 2),
-              (5, 0), (5, 1), (5, 2)]                   # set 4: six tops x three ramps (T1-4 has no B1-2)
+NAVY_PAIRS = [(0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2),
+              (5, 0), (5, 1), (5, 2)]                   # set 4: tops x ramps (no lit rack T3 or window panel T4)
 
 
 def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
