@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Shield-style segments: `total` boxes, the first `on` of them filled. Shows `empty` text when there are none. */
-  let { total, on, width = 20, height = 10, gap = 4, color = 'var(--cyan)', empty = 'none', emptyCaps = false, title }: {
+  let { total, on, width = 20, height = 10, gap = 4, color = 'var(--hud-ok, var(--cyan))', empty = 'none', emptyCaps = false, title }: {
     total: number;
     on: number;
     width?: number;

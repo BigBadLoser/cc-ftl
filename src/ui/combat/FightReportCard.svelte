@@ -1,86 +1,149 @@
 <script lang="ts">
   import type { UiApi, UiFightLine, UiFightReport } from '../api';
   import FloatingWindow from '../FloatingWindow.svelte';
+  import Icon from '../Icon.svelte';
   import { centerTop } from '../floatingWindow';
-  import { Meter, Pill } from '../kit';
+  import { Frame } from '../kit';
+  import './steel.css';
 
   /**
-   * The post-fight breakdown, opened from its alert: the outcome, how long it took, the hull before and after, then only the lists that
-   * have something in them. Lines that point at something jump to it (the one place a camera move is fine). Esc or the close button shuts it.
+   * The post-fight breakdown, opened from its alert, in the combat HUD's palette: the outcome as a coloured title with the duration, a
+   * You | Enemy block, then your losses as clickable rows (a box or dot, the name, its state in its colour). Rows jump to their subject;
+   * Esc or the close button shuts the card. There is no salvage row: the UI has no salvage data.
    */
   let { api, report }: { api: UiApi; report: UiFightReport } = $props();
 
-  const OUTCOME: Record<UiFightReport['outcome'], { text: string; tone: 'red' | 'amber' | 'green' | 'dim' }> = {
-    destroyed: { text: 'Enemy destroyed', tone: 'green' }, captured: { text: 'Captured', tone: 'green' }, disabled: { text: 'Enemy disabled', tone: 'green' },
-    fled: { text: 'Enemy fled', tone: 'amber' }, youFled: { text: 'You fled', tone: 'amber' }, lost: { text: 'Ship lost', tone: 'red' }, ended: { text: 'Fight over', tone: 'dim' },
-  };
-  const out = $derived(OUTCOME[report.outcome]);
-  const pct = (v: number) => `${Math.round(v * 100)}%`;
-  const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  const hullFill = $derived(report.hullAfter < 0.35 ? 'var(--health-bad)' : report.hullAfter < 0.7 ? 'var(--health-warn)' : 'var(--health-good)');
-  const groups = $derived<{ title: string; tone: string; lines: UiFightLine[] }[]>([
-    { title: 'Crew dead', tone: 'bad', lines: report.dead },
-    { title: 'Crew down', tone: 'bad', lines: report.down },
-    { title: 'Modules lost', tone: 'bad', lines: report.lost },
-    { title: 'Modules damaged', tone: 'warn', lines: report.damaged },
-    { title: 'Enemy modules destroyed', tone: 'good', lines: report.enemyLost },
-  ].filter((g) => g.lines.length));
-  /** The same module (or same-named enemy module) twice in a list reads "Storage crate ×2". */
-  const folded = (lines: UiFightLine[]) => {
-    const out: { line: UiFightLine; n: number }[] = [];
-    for (const l of lines) {
-      const hit = out.find((o) => o.line.name === l.name && JSON.stringify(o.line.subject) === JSON.stringify(l.subject));
-      if (hit) hit.n++;
-      else out.push({ line: l, n: 1 });
+  type Tone = 'good' | 'warn' | 'bad' | 'dim';
+  const title = $derived.by((): { text: string; tone: Tone } => {
+    const who = report.enemy.toUpperCase();
+    switch (report.outcome) {
+      case 'destroyed': return { text: `${who} DESTROYED`, tone: 'good' };
+      case 'disabled': return { text: `${who} DISABLED`, tone: 'good' };
+      case 'captured': return { text: 'CAPTURED', tone: 'good' };
+      case 'fled': return { text: 'ENEMY FLED', tone: 'warn' };
+      case 'youFled': return { text: 'YOU FLED', tone: 'warn' };
+      case 'lost': return { text: 'SHIP LOST', tone: 'bad' };
+      default: return { text: 'FIGHT OVER', tone: 'dim' };
     }
+  });
+  const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const delta = $derived(Math.round((report.hullAfter - report.hullBefore) * 100));
+  const hullText = $derived(delta === 0 ? '0%' : `${delta < 0 ? '−' : '+'}${Math.abs(delta)}%`);
+  const enemyHull = $derived(report.enemyHull === null ? '?' : `${Math.round(report.enemyHull * 100)}%`);
+  const ammoTotal = $derived(report.ammo.reduce((n, a) => n + a.n, 0));
+  const ammoName = $derived(report.ammo.length === 1 ? (report.ammo[0]?.name ?? 'Ammo') : 'Ammo');
+  const crewDead = $derived(report.dead.length);
+
+  interface Row { name: string; n: number; state: string; tone: 'bad' | 'warn'; dot: boolean; subject: UiFightLine['subject'] }
+  /** Your losses: destroyed, damaged, down and dead, the same module (or name) folded into "×2". */
+  const rows = $derived.by((): Row[] => {
+    const out: Row[] = [];
+    const add = (lines: UiFightLine[], state: string, tone: Row['tone'], dot: boolean) => {
+      for (const l of lines) {
+        const hit = out.find((r) => r.name === l.name && r.state === state && JSON.stringify(r.subject) === JSON.stringify(l.subject));
+        if (hit) hit.n++;
+        else out.push({ name: l.name, n: 1, state, tone, dot, subject: l.subject });
+      }
+    };
+    add(report.lost, 'DESTROYED', 'bad', false);
+    add(report.damaged, 'DAMAGED', 'warn', false);
+    add(report.down, 'DOWN', 'warn', true);
+    add(report.dead, 'DEAD', 'bad', true);
     return out;
-  };
+  });
 </script>
 
-<FloatingWindow id="fightReport" title="Fight report" icon="combat" min={{ w: 300, h: 140 }} defaultRect={(b) => centerTop(b, 340, 0, 40)} onClose={() => api.closeFightReport()} testId="fight-report" closeTestId="fight-report-close" padded>
-  <div class="top">
-    <Pill tone={out.tone}>{out.text}</Pill>
-    <span class="who">{report.enemy}</span>
-    <span class="time" title="How long the fight lasted">{clock(report.seconds)}</span>
+<FloatingWindow id="fightReport" title="Fight report" min={{ w: 320, h: 140 }} defaultRect={(b) => centerTop(b, 360, 0, 40)} onClose={() => api.closeFightReport()} testId="fight-report" bare bg={false} pinRight={34} class="fr-card">
+  <div class="steel card">
+    <Frame title="Fight report">
+      {#snippet right()}
+        <button class="x" aria-label="Close" title="Close (Esc)" data-testid="fight-report-close" onclick={() => api.closeFightReport()}><Icon name="close" size={12} /></button>
+      {/snippet}
+      <div class="ph head">
+        <h2 class={title.tone}>{title.text}</h2>
+        <span class="time" title="How long the fight lasted">{clock(report.seconds)}</span>
+      </div>
+      <div class="cols">
+        <div class="col">
+          <span class="who">You</span>
+          <b class="big">{hullText}<small>Hull</small></b>
+          <div class="kv"><span>Modules lost</span><b>{report.lost.length}</b></div>
+          <div class="kv"><span>Crew down</span><b>{report.down.length}</b></div>
+          {#if crewDead}<div class="kv"><span>Crew dead</span><b>{crewDead}</b></div>{/if}
+          {#if ammoTotal}<div class="kv"><span>{ammoName}</span><b>{ammoTotal}</b></div>{/if}
+        </div>
+        <div class="col foe">
+          <span class="who">{report.enemy}</span>
+          <b class="big">{enemyHull}<small>Hull</small></b>
+          <div class="kv"><span>Modules lost</span><b>{report.enemyLost.length}</b></div>
+          <div class="kv"><span>Crew</span><b>{report.enemyCrew} dead</b></div>
+          {#if report.prize}<div class="kv"><span>Prize</span><b>{report.prize}</b></div>{/if}
+        </div>
+      </div>
+      {#if rows.length}
+        <div class="loss">
+          <span class="who">Your losses</span>
+          <ul>
+            {#each rows as r, i (i)}
+              <li>
+                <button disabled={!r.subject} title={r.subject ? 'Go there' : undefined} onclick={() => r.subject && api.focusSubject(r.subject)}>
+                  <i class="mark {r.tone}" class:dot={r.dot}></i>
+                  <span class="nm">{r.name}{#if r.n > 1}&nbsp;×{r.n}{/if}</span>
+                  <em class={r.tone}>{r.state}</em>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
+    </Frame>
   </div>
-  <div class="hull" title="Hull before and after: the mark shows where it started">
-    <span class="k">Hull</span>
-    <Meter value={report.hullAfter} fill={hullFill} height={14} notches={[report.hullBefore]} label="{pct(report.hullBefore)} to {pct(report.hullAfter)}" />
-  </div>
-  {#each groups as g (g.title)}
-    <h4 class={g.tone}>{g.title}</h4>
-    <ul>
-      {#each folded(g.lines) as { line, n }, i (i)}
-        <li><button disabled={!line.subject} title={line.subject ? 'Go there' : undefined} onclick={() => line.subject && api.focusSubject(line.subject)}>{line.name}{#if n > 1} <span class="n">×{n}</span>{/if}</button></li>
-      {/each}
-    </ul>
-  {/each}
-  {#if report.ammo.length}
-    <h4>Ammo spent</h4>
-    <p>{report.ammo.map((a) => `${a.name} ×${a.n}`).join(', ')}</p>
-  {/if}
-  {#if report.prize}
-    <h4 class="good">Prize</h4>
-    <p>{report.prize}</p>
-  {/if}
-  {#if !groups.length && !report.ammo.length && !report.prize}<p class="none">Nothing lost, nothing destroyed.</p>{/if}
 </FloatingWindow>
 
 <style>
-  .top { display: flex; align-items: center; gap: var(--sp-2); }
-  .top :global(.pill) { margin: 0; }
-  .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .time { color: var(--dim); font: 600 12px/1 var(--head-font); }
-  .hull { display: grid; grid-template-columns: 40px 1fr; align-items: center; margin: var(--sp-2) 0; }
-  .k { color: var(--dim); font-size: 12px; }
-  h4 { margin: var(--sp-2) 0 2px; font: 700 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--cyan); }
-  h4.bad { color: var(--red); }
-  h4.warn { color: var(--amber); }
-  h4.good { color: var(--green); }
-  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 10px; }
-  li button { padding: 2px 0; background: transparent; border: 0; border-bottom: 1px dotted var(--dim); color: inherit; font-size: 13px; }
-  li button:disabled { border-bottom-color: transparent; }
-  .n { color: var(--dim); }
-  p { margin: 0; font-size: 13px; }
-  .none { color: var(--dim); }
+  .card { color: var(--text); background: var(--panel); }
+  .card :global(.frame) { padding: 8px 0 0; }
+  .ph.head {
+    margin: 0;
+    padding: 4px 12px 8px calc(12px);
+    padding-right: 44px;
+    background: transparent;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    min-height: 0;
+  }
+  h2 { margin: 0; font: 700 24px/1 var(--head-font); letter-spacing: 0.04em; }
+  h2.good { color: var(--green); }
+  h2.warn { color: var(--amber); }
+  h2.bad { color: var(--red); }
+  h2.dim { color: var(--dim); }
+  .time { font: 600 13px/1 var(--head-font); color: var(--dim); }
+  .x { flex: none; min-width: 0; min-height: 0; width: 18px; height: 18px; padding: 0; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); color: var(--dim); pointer-events: auto; }
+  .x:hover { border-color: var(--cyan); color: var(--text); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--frame-line); }
+  .col { padding: 8px 12px 10px; display: grid; gap: 3px; align-content: start; min-width: 0; }
+  .col + .col { border-left: 1px solid var(--frame-line); }
+  .who { font: 600 11px/1 var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .foe .who { color: var(--hostile-dim); }
+  .big { font: 700 26px/1.1 var(--head-font); color: var(--text); }
+  .foe .big { color: var(--hostile); }
+  .big small { margin-left: 6px; font: 600 11px/1 var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .kv { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .kv span { color: var(--dim); }
+  .kv b { font-weight: 700; color: var(--text); }
+  .loss { border-top: 1px solid var(--frame-line); padding: 8px 12px 8px; display: grid; gap: 4px; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; max-height: 190px; overflow-y: auto; }
+  li button {
+    width: 100%; min-height: 0; min-width: 0; padding: 4px 4px; display: flex; align-items: center; gap: 8px;
+    background: transparent; border: 0; color: var(--text); font: 600 14px var(--head-font); text-align: left;
+  }
+  li button:not(:disabled):hover { background: var(--panel-2); }
+  li button:disabled { opacity: 1; cursor: default; }
+  .mark { flex: none; width: 14px; height: 14px; border: 1px solid currentColor; box-sizing: border-box; }
+  .mark.dot { border: 0; border-radius: 50%; background: currentColor; width: 9px; height: 9px; margin: 0 2.5px; }
+  .mark.bad, em.bad { color: var(--red); }
+  .mark.warn, em.warn { color: var(--amber); }
+  .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  em { font: 700 12px var(--head-font); font-style: normal; letter-spacing: 0.08em; }
 </style>

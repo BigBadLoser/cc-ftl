@@ -1012,6 +1012,10 @@ export interface UiFightReport {
   seconds: number;
   hullBefore: number;
   hullAfter: number;
+  /** The enemy's hull as of the last tick it was seen (0..1), or null when it was never seen. */
+  enemyHull: number | null;
+  /** Enemy crew killed (deaths off your ship). */
+  enemyCrew: number;
   lost: UiFightLine[];
   /** Hit but still standing. */
   damaged: UiFightLine[];

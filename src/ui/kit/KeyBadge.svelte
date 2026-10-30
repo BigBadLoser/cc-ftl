@@ -17,15 +17,15 @@
   kbd {
     font: 700 11px/1 var(--head-font);
     padding: 2px 5px;
-    border: 1px solid var(--line-hi);
+    border: 1px solid var(--hud-key, var(--line-hi));
     background: var(--track);
   }
   kbd.sm {
     font-size: 10px;
     padding: 2px 4px;
   }
-  .cyan { color: var(--cyan); }
-  .dim { color: var(--dim); }
+  .cyan { color: var(--hud-key, var(--cyan)); }
+  .dim { color: var(--dim); border-color: var(--line-hi); }
   .green { color: var(--green); border-color: var(--green); }
   .light {
     color: #d8f0ff;

@@ -7,6 +7,7 @@
   import StationTags from './StationTags.svelte';
   import StatusBlock from './StatusBlock.svelte';
   import WeaponBay from './WeaponBay.svelte';
+  
 
   type Me = NonNullable<UiCombat['player']>;
   type Drive = { charge: number; max: number; helmManned: boolean; active: boolean };
@@ -29,14 +30,14 @@
   const hold = () => api.dispatch({ type: 'combat.holdAll', ship: me.ship, hold: !me.holdAll });
 </script>
 
-<div class="dock">
+<div class="dock steel">
   <div class="strip" data-testid="combat-strip">
     <StatusBlock {me} style="grid-column:1; grid-row:1" />
     <StationTags {me} style="grid-column:1; grid-row:2" />
-    <WeaponBay {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} style="grid-column:2 / 6; grid-row:1" />
-    <ActionButtons canVolley={canVolley} holding={me.holdAll} onVolley={volley} onHold={hold} style="grid-column:2 / 6; grid-row:2" />
-    <HeatGauge heat={me.heat} {rate} {onVent} style="grid-column:6; grid-row:1" />
-    <OverchargeButtons heat={me.heat} {onOvercharge} style="grid-column:6; grid-row:2" />
+    <WeaponBay {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} style="grid-column:2; grid-row:1" />
+    <ActionButtons canVolley={canVolley} holding={me.holdAll} onVolley={volley} onHold={hold} style="grid-column:2; grid-row:2" />
+    <HeatGauge heat={me.heat} {rate} {onVent} style="grid-column:3; grid-row:1" />
+    <OverchargeButtons heat={me.heat} {onOvercharge} style="grid-column:3; grid-row:2" />
 
     {#if lock > 0}
       <div class="lock" role="alert" data-testid="thermal-overload">
@@ -49,24 +50,23 @@
 </div>
 
 <style>
-  /* One grid: column 1 status and stations, columns 2-5 the weapon slots (cards and the action row share them), column 6 heat. */
+  /* One grid for the whole strip, shared by every column: row 1 status, weapons, heat; row 2 stations, actions, overcharge. Sections in a row
+     are the same height. No frame around the strip: each section has its own. */
   .strip {
     position: relative;
     display: grid;
-    grid-template-columns: 264px repeat(4, minmax(0, 1fr)) minmax(0, 300px);
+    grid-template-columns: 264px minmax(0, 1fr) minmax(0, 300px);
     grid-template-rows: auto auto;
     gap: var(--sp-3) var(--gutter);
-    background: var(--panel);
-    border: 1px solid var(--line-hi);
-    padding: var(--sp-2);
     flex: 1;
     min-width: 0;
     pointer-events: auto;
   }
-  /* The strip and its docked Flee tab (FleeButton) side by side: the tab shares the strip's right border. */
+  /* The strip and its Flee tab side by side, with a gap between. */
   .dock {
     display: flex;
     align-items: stretch;
+    gap: 10px;
     width: min(1320px, calc(100vw - 24px));
     pointer-events: auto;
   }

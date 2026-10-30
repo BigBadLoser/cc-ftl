@@ -46,17 +46,18 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gutter);
-    grid-template-rows: 66px;
+    grid-template-rows: minmax(66px, 1fr);
+    flex: 1;
   }
   /* More than four: two compact rows in the same height, as many columns as it takes. Every weapon is shown and clickable. */
   .cards.dense {
     grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 4px var(--gutter);
-    height: 66px;
+    min-height: 66px;
   }
   .empty {
-    border: 1px dashed var(--line);
+    border: 1px dashed var(--hud-dash, var(--line));
     display: grid;
     place-items: center;
     color: var(--dim);

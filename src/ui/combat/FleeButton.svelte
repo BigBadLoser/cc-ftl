@@ -45,9 +45,8 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text);
-    background: var(--panel);
-    border: 1px solid var(--line-hi);
-    border-left: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
   }
   .lab {
     position: relative;
@@ -61,8 +60,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(54, 212, 255, 0.26);
-    box-shadow: inset 0 2px 0 var(--cyan);
+    background: rgba(223, 228, 232, 0.16);
+    box-shadow: inset 0 2px 0 var(--hud-bar, var(--cyan));
   }
   .ready {
     color: #fff;

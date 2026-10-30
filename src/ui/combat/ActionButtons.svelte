@@ -37,7 +37,9 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gutter);
-    grid-template-rows: 42px;
+    grid-template-rows: 1fr;
+    flex: 1;
+    min-height: 42px;
   }
   .wide {
     grid-column: span 2;

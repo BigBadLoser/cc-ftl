@@ -1,0 +1,53 @@
+/*
+ * The "hybrid" palette for the combat HUD (strip, flee tab, fight report), applied by wrapping them in `.steel` so the rest of the UI keeps
+ * the global theme until that is decided: cool-steel backgrounds, graphite lines and controls, cyan only for interaction (selected, hover,
+ * focus), green / amber / red only for gameplay state. The heat gradient is not touched (it reads --cyan and --heat-low as before).
+ * Components pick the neutral tokens up through fallbacks, e.g. `var(--hud-ok, var(--cyan))`.
+ */
+.steel {
+  --panel: #0b0e11;
+  --panel-2: #11151a;
+  --panel-3: #181d23;
+  --track: #080a0c;
+  --line: #2a3036;
+  --line-hi: #3a424a;
+  --frame-line: #2e353c;
+  --text: #e4e9ee;
+  --dim: #8b939a;
+  --ok-fill: #11151a;
+  --hostile-fill: #11151a;
+  --amber-fill: #11151a;
+  /* neutral stand-ins for cyan where it only meant "fine" */
+  --hud-ok: #c9ced3;
+  --hud-key: #c9ced3;
+  --hud-bar: #dfe4e8;
+  --hud-dash: #1c2228;
+  /* controls: lighter fill, no border until selected or active */
+  --btn-edge: transparent;
+  --btn-go: #11151a;
+  --btn-go-edge: var(--green);
+  --btn-active-edge: var(--amber);
+}
+/* Each section keeps its own frame; a steel fill keeps it readable over the world. */
+.steel .frame {
+  background: var(--panel);
+}
+/* The fight report card is a bare floating window: its own frame (the legend on the border) replaces the window's border and header. */
+section.fw.fr-card {
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  padding-top: 8px;
+}
+section.fw.fr-card .barepin {
+  top: 4px;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 0;
+  color: var(--dim);
+}
+section.fw.fr-card .barepin.on {
+  background: transparent;
+  color: var(--cyan);
+}

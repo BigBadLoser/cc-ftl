@@ -12,6 +12,8 @@ interface Tracker {
   hullBefore: number;
   /** The hull as of the last tick of the fight (after a jump away the home ship is a different grid). */
   hullNow: number;
+  enemyHull: number | null;
+  enemyCrew: number;
   enemy: number;
   /** Read while the enemy still exists: after a jump or a wreck the entity may be gone. */
   enemyName: string;
@@ -55,7 +57,7 @@ export function createFightReporter(sim: Sim): FightReporter {
     return s?.kind === 'ship' ? s.id : 0;
   };
   const fresh = (): Tracker => ({
-    start: sim.tick, hullBefore: hull(), hullNow: hull(), enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
+    start: sim.tick, hullBefore: hull(), hullNow: hull(), enemyHull: null, enemyCrew: 0, enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
     ammo: new Map(), prize: false,
   });
 
@@ -90,7 +92,7 @@ export function createFightReporter(sim: Sim): FightReporter {
         if (ours(e.crew)) {
           c.down.delete(e.crew);
           c.dead.push({ name: sim.world.get(e.crew, CrewC)?.name ?? 'Crew', subject: crewTile(sim, e.crew) });
-        }
+        } else c.enemyCrew++;
         break;
       case 'ship.destroyed': if (mine(e.ship)) c.outcome = 'lost'; else { c.enemy ||= e.ship; c.outcome = 'destroyed'; } break;
       case 'ship.fled': c.enemy ||= mine(e.ship) ? 0 : e.ship; c.outcome = mine(e.ship) ? 'youFled' : 'fled'; break;
@@ -112,7 +114,7 @@ export function createFightReporter(sim: Sim): FightReporter {
     const es = c.enemy ? sim.world.get(c.enemy, ShipC) : undefined;
     return {
       outcome: c.outcome, enemy: es?.name ?? (c.enemyName || 'Enemy'), seconds: Math.round((sim.tick - c.start) / TICK_HZ),
-      hullBefore: c.hullBefore, hullAfter: c.hullNow, lost: c.lost, damaged, down: [...c.down.values()], dead: c.dead, enemyLost: c.enemyLost,
+      hullBefore: c.hullBefore, hullAfter: c.hullNow, enemyHull: c.outcome === 'destroyed' ? 0 : c.enemyHull, enemyCrew: c.enemyCrew, lost: c.lost, damaged, down: [...c.down.values()], dead: c.dead, enemyLost: c.enemyLost,
       ammo: [...c.ammo].map(([item, n]) => ({ name: itemName(item), n })), prize: c.prize ? (es?.name ?? 'Prize') : null,
     };
   }
@@ -123,6 +125,8 @@ export function createFightReporter(sim: Sim): FightReporter {
       for (const e of events) {
         if (e.type === 'combat.started') t = fresh();
         else if (e.type === 'combat.ended') {
+          // The player's flee ends the fight by jumping out: the sector is in hyperspace when `combat.ended` comes (see sector/jump.ts).
+          if (t && t.outcome === 'ended' && sim.sector.state === 'hyperspace') t.outcome = 'youFled';
           if (t) {
             const report = finish(t);
             const summary = fightLine(report);
@@ -133,6 +137,8 @@ export function createFightReporter(sim: Sim): FightReporter {
       }
       if (t) {
         t.hullNow = hull();
+        const es = t.enemy ? sim.world.get(t.enemy, ShipC) : undefined;
+        if (es) t.enemyHull = es.integrity;
         if (t.enemy && !t.enemyName) t.enemyName = sim.world.get(t.enemy, ShipC)?.name ?? '';
       }
       return done;

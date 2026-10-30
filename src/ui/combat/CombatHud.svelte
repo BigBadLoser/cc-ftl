@@ -10,6 +10,7 @@
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
   import { isTypingTarget } from '../keys';
+  import './steel.css';
 
   /**
    * The combat view (issue #186): while in combat this replaces the colony panels. Enemy card top left, your ship's strip along the bottom.

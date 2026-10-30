@@ -41,7 +41,7 @@
     display: flex;
     align-items: center;
     gap: var(--sp-2);
-    color: var(--cyan);
+    color: var(--hud-ok, var(--cyan));
     height: 20px;
   }
   .grow {

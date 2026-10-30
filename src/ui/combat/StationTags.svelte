@@ -22,6 +22,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
-    height: 42px;
+    flex: 1;
+    min-height: 42px;
   }
 </style>

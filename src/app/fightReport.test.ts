@@ -35,7 +35,7 @@ describe('fight report', () => {
 
   it('words losses and kills in one line', () => {
     const l = (n: number) => Array.from({ length: n }, () => ({ name: 'x', subject: null }));
-    const r = { outcome: 'destroyed' as const, enemy: 'R', seconds: 5, hullBefore: 1, hullAfter: 0.5, lost: l(4), damaged: [], down: l(2), dead: [], enemyLost: l(1), ammo: [], prize: null };
+    const r = { outcome: 'destroyed' as const, enemy: 'R', seconds: 5, hullBefore: 1, hullAfter: 0.5, enemyHull: 0, enemyCrew: 0, lost: l(4), damaged: [], down: l(2), dead: [], enemyLost: l(1), ammo: [], prize: null };
     expect(fightLine(r)?.text).toBe('Fight over: 4 modules lost, 2 crew down, 1 enemy module destroyed');
   });
 });

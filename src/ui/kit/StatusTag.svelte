@@ -20,9 +20,9 @@
     border-bottom: 2px solid var(--red);
   }
   .tag.ok {
-    color: var(--cyan);
+    color: var(--hud-ok, var(--cyan));
     background: var(--ok-fill);
-    border-bottom-color: var(--cyan);
+    border-bottom-color: var(--hud-ok, var(--cyan));
   }
   .tag.warn {
     color: var(--amber);
