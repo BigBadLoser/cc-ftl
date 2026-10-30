@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EDGE, markerPlace, spread } from './poiMarkers';
+import { EDGE, ICON_GAP, markerPlace, spread } from './poiMarkers';
 
 describe('markerPlace', () => {
   it('has no marker for a target on screen and clear of the HUD', () => {
@@ -22,23 +22,24 @@ describe('markerPlace', () => {
   });
 });
 
-describe('hover room', () => {
-  it('grows toward the interior and stops at the HUD', () => {
-    const p = markerPlace({ x: 5000, y: 475 }, 1920, 950, [{ l: 1750, t: 400, r: 1900, b: 560 }]);
-    expect(p).toMatchObject({ edge: 'r', grow: 'l' });
-    expect(p!.room).toBeLessThanOrEqual(170);
+describe('icon and name', () => {
+  it('puts the icon behind the arrow, toward the screen centre, and opens the name away from the arrow', () => {
+    const p = markerPlace({ x: 5000, y: 475 }, 1920, 950)!;
+    expect(p).toMatchObject({ edge: 'r', ux: 1, uy: 0, grow: 'l' });
+    expect(p.x - p.ux * ICON_GAP).toBeLessThan(p.x);
+    expect(markerPlace({ x: -5000, y: 475 }, 1920, 950)).toMatchObject({ edge: 'l', ux: -1, grow: 'r' });
   });
-  it('on the bottom edge grows toward the side with more room', () => {
-    const p = markerPlace({ x: 1800, y: 3000 }, 1920, 950, [{ l: 1840, t: 860, r: 1920, b: 950 }]);
-    expect(p).toMatchObject({ edge: 'b', grow: 'l' });
+  it('stops the name at the HUD', () => {
+    const p = markerPlace({ x: 5000, y: 475 }, 1920, 950, [{ l: 1500, t: 400, r: 1700, b: 560 }])!;
+    expect(p.room).toBeLessThan(170);
   });
 });
 
 describe('spread', () => {
   it('moves a marker that would overlap an earlier one along the edge', () => {
-    const a = { x: 1896, y: 800, edge: 'r' as const, angle: 0, tx: -100, ty: -50, grow: 'l' as const, room: 100 };
+    const a = { x: 1896, y: 800, edge: 'r' as const, angle: 0, ux: 1, uy: 0, grow: 'l' as const, room: 100 };
     const out = spread([a, { ...a, y: 805 }], 1920, 950);
     expect(out[0]!.y).toBe(800);
-    expect(out[1]!.y).toBeLessThan(800 - 20);
+    expect(out[1]!.y).toBeLessThan(800 - 40);
   });
 });

@@ -2,18 +2,22 @@
 export interface Rect { l: number; t: number; r: number; b: number }
 
 /**
- * Where an off-screen marker sits: `x`/`y` is the anchor point on the screen edge (CSS px), `edge` the side it hugs, `angle` the direction toward
- * the target (degrees, 0 = right, clockwise), and `tx`/`ty` the percentages the marker is translated by so it lies inside the screen from the anchor
- * (a marker on the right edge hangs left of its anchor). `grow` is the side its name expands to on hover, and `room` the width available there
- * before the screen edge or a HUD rectangle.
+ * Where an off-screen marker sits. `x`/`y` is the arrow's centre on the screen edge, `edge` the side it hugs, `angle` the direction toward the target
+ * (degrees, 0 = right, clockwise) and `ux`/`uy` the same as a unit vector. The icon sits `ICON_GAP` px behind the arrow on the line toward the screen
+ * centre, so it orbits the arrow as the direction changes. `grow` is the side the name opens to on hover (away from the arrow), and `room` the width
+ * free there before the screen edge or a HUD rectangle.
  */
-export interface Place { x: number; y: number; edge: 'l' | 'r' | 't' | 'b'; angle: number; tx: number; ty: number; grow: 'l' | 'r'; room: number }
+export interface Place { x: number; y: number; edge: 'l' | 'r' | 't' | 'b'; angle: number; ux: number; uy: number; grow: 'l' | 'r'; room: number }
 
+/** Distance from the arrow's centre to the icon's centre (CSS px). */
+export const ICON_GAP = 28;
 /** Gap between a marker and the screen edge. */
 export const EDGE = 24;
-/** Compact marker size used to keep it clear of the HUD and its neighbours (CSS px): its width and height, and the gap (the arrow and icon chip; the name only shows on hover). */
-const MARK_W = 50;
-const MARK_H = 28;
+/** The arrow-and-icon footprint used to keep it clear of the HUD and its neighbours (CSS px): its extent along the edge and across it, and the gap. */
+const FOOT = 68;
+const DEPTH = 64;
+/** Icon half-size, for measuring the room beside it. */
+const ICON_R = 14;
 /** The widest the hover-expanded name may get. */
 const NAME_MAX = 170;
 const GAP = 6;
@@ -61,47 +65,44 @@ export function markerPlace(at: { x: number; y: number }, w: number, h: number, 
   const k = Math.min(tx, ty);
   const angle = Math.round((Math.atan2(dy, dx) * 180) / Math.PI);
   const px = cx + dx * k, py = cy + dy * k;
-  /** The width free beside a compact chip spanning [x0, x1] x [y0, y1], toward `dir`: up to the screen margin or the nearest HUD rectangle in the way. */
+  const ux = dx / Math.hypot(dx, dy), uy = dy / Math.hypot(dx, dy);
+  /** The width free beside a box [x0, x1] x [y0, y1], toward `dir`: up to the screen margin or the nearest HUD rectangle in the way. */
   const roomTo = (dir: 'l' | 'r', x0: number, x1: number, y0: number, y1: number): number => {
     const lim = dir === 'r' ? r - x1 : x0 - l;
     const hits = hud.filter((q) => q.b > y0 - GAP && q.t < y1 + GAP && (dir === 'r' ? q.l >= x1 - 1 : q.r <= x0 + 1)).map((q) => (dir === 'r' ? q.l - GAP - x1 : x0 - (q.r + GAP)));
     return Math.max(0, Math.min(lim, ...hits));
   };
+  const finish = (edge: Place['edge'], x: number, y: number): Place => {
+    // The name opens away from the arrow: the icon is behind the arrow, so a target to the right puts the icon (and the name) to the left.
+    const ix = x - ux * ICON_GAP, iy = y - uy * ICON_GAP;
+    const grow: 'l' | 'r' = Math.abs(ux) < 0.2 ? (roomTo('r', ix - ICON_R, ix + ICON_R, iy - ICON_R, iy + ICON_R) >= roomTo('l', ix - ICON_R, ix + ICON_R, iy - ICON_R, iy + ICON_R) ? 'r' : 'l') : ux > 0 ? 'l' : 'r';
+    const room = Math.min(NAME_MAX, roomTo(grow, ix - ICON_R, ix + ICON_R, iy - ICON_R, iy + ICON_R) - 4);
+    return { x: Math.round(x), y: Math.round(y), edge, angle, ux: Math.round(ux * 1000) / 1000, uy: Math.round(uy * 1000) / 1000, grow, room: Math.max(0, Math.round(room)) };
+  };
   if (tx < ty) {
-    // Left or right edge: slide along y. The chip lies horizontally in [EDGE, EDGE + MARK_W] or the mirror, and its name grows toward the screen interior.
+    // Left or right edge: slide along y; the arrow and icon fill [edge, edge + DEPTH] across.
     const edge = dx > 0 ? 'r' : 'l';
-    const bx0 = edge === 'l' ? l : r - MARK_W, bx1 = edge === 'l' ? l + MARK_W : r;
+    const bx0 = edge === 'l' ? l - 12 : r - DEPTH + 12, bx1 = edge === 'l' ? l - 12 + DEPTH : r + 12;
     const rects = hud.filter((q) => q.r > bx0 && q.l < bx1).map((q) => ({ from: q.t, to: q.b }));
-    const y = slide(py, t + MARK_H / 2, b - MARK_H / 2, MARK_H / 2, rects);
-    const grow = edge === 'l' ? 'r' : 'l';
-    const room = Math.min(NAME_MAX, roomTo(grow, bx0, bx1, y - MARK_H / 2, y + MARK_H / 2));
-    return { x: Math.round(edge === 'l' ? l : r), y: Math.round(y), edge, angle, tx: edge === 'l' ? 0 : -100, ty: -50, grow, room };
+    return finish(edge, edge === 'l' ? l : r, slide(py, t + FOOT / 2, b - FOOT / 2, FOOT / 2, rects));
   }
   const edge = dy > 0 ? 'b' : 't';
-  const by0 = edge === 't' ? t : b - MARK_H, by1 = edge === 't' ? t + MARK_H : b;
+  const by0 = edge === 't' ? t - 12 : b - DEPTH + 12, by1 = edge === 't' ? t - 12 + DEPTH : b + 12;
   const rects = hud.filter((q) => q.b > by0 && q.t < by1).map((q) => ({ from: q.l, to: q.r }));
-  const x = slide(px, l + MARK_W / 2, r - MARK_W / 2, MARK_W / 2, rects);
-  // Top or bottom edge: the name grows to whichever side has more room.
-  const x0 = x - MARK_W / 2, x1 = x + MARK_W / 2;
-  const roomR = roomTo('r', x0, x1, by0, by1), roomL = roomTo('l', x0, x1, by0, by1);
-  const grow = roomR >= roomL ? 'r' : 'l';
-  return {
-    x: Math.round(grow === 'r' ? x0 : x1), y: Math.round(edge === 't' ? t : b), edge, angle, tx: grow === 'r' ? 0 : -100, ty: edge === 't' ? 0 : -100,
-    grow, room: Math.min(NAME_MAX, grow === 'r' ? roomR : roomL),
-  };
+  return finish(edge, slide(px, l + FOOT / 2, r - FOOT / 2, FOOT / 2, rects), edge === 't' ? t : b);
 }
 
-/** Move a marker that would overlap an earlier one along its edge (away from the screen's corner side) in steps of its own size. */
+/** Move a marker that would overlap an earlier one along its edge (away from the screen's corner side) in steps of its footprint. */
 export function spread<T extends Place>(places: readonly T[], w: number, h: number): T[] {
   const out: T[] = [];
   for (const p of places) {
     let { x, y } = p;
     const vertical = p.edge === 'l' || p.edge === 'r';
     const dir = vertical ? (y > h / 2 ? -1 : 1) : (x > w / 2 ? -1 : 1);
-    const hit = () => out.some((o) => Math.abs(o.x - x) < MARK_W + GAP && Math.abs(o.y - y) < MARK_H + GAP);
+    const hit = () => out.some((o) => Math.abs(o.x - x) < FOOT + GAP && Math.abs(o.y - y) < FOOT + GAP);
     while (hit()) {
-      if (vertical) y += dir * (MARK_H + GAP);
-      else x += dir * (MARK_W + GAP);
+      if (vertical) y += dir * (FOOT + GAP);
+      else x += dir * (FOOT + GAP);
     }
     out.push({ ...p, x, y });
   }
