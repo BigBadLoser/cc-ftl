@@ -254,6 +254,11 @@ export interface CourtOpts {
   deck?: boolean;
   minTiles?: number;
   shopDoors?: number;
+  /**
+   * At most this many pockets become courts, the largest first; the rest stay open to space (a wheel's sectors between
+   * its spokes, as on a real ring station), their walls hull.
+   */
+  maxCourts?: number;
 }
 
 /** Court floor a shuttle bay needs on a hangar deck (the 4x5 pit, its access tile and room to walk round it). */
@@ -335,11 +340,17 @@ export function courtyards(b: Builder, rng: Rng, role: RoomRole, o: CourtOpts = 
     if (role === 'hall') halls.add(L);
     else if (role && SHOPS.includes(role)) shops.add(L);
   });
+  const pockets: number[][] = [];
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       if (mark[(y - y0) * W + x - x0] !== -1 || at(x, y) !== '.') continue;
-      const pocket = fill(x, y, n + 1);
-      if (pocket.length < minTiles) continue;
+      const pocket = fill(x, y, pockets.length + 1);
+      if (pocket.length >= minTiles) pockets.push(pocket);
+    }
+  }
+  pockets.sort((p, q) => q.length - p.length);
+  for (const pocket of pockets.slice(0, o.maxCourts ?? pockets.length)) {
+    {
       // Big pockets get a band of rooms round their inside edge; the court is what is left in the middle.
       const cells = pocket.length >= (packed ? PACKED_MIN : BAND_MIN) && bandRoles.length > 0 ? band(b, pocket, bandRoles, packed, halls, `court${n}`) : pocket;
       // The first court big enough for a bay may be the hangar deck.

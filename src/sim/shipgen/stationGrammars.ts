@@ -34,9 +34,9 @@ const undocked = (c: Ctx): { rooms: RoomSpec[]; docks: number } => {
 type Court = (b: Builder | null) => Builder | null;
 
 /** The kind's courtyard rule for one block: enclosed centres become an open room (seeded per block, for variety). */
-const courtOf = (c: Ctx): Court => (b) => {
+const courtOf = (c: Ctx, maxCourts?: number): Court => (b) => {
   const a = c.fam.atrium;
-  if (b && a && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role, { band: a.band, ...(a.packed ? { packed: true } : {}), ...(a.deck ? { deck: true } : {}) }) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
+  if (b && a && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role, { band: a.band, ...(a.packed ? { packed: true } : {}), ...(a.deck ? { deck: true } : {}), ...(maxCourts ? { maxCourts } : {}) }) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
   return b;
 };
 
@@ -191,11 +191,11 @@ function wheel(c: Ctx): boolean {
   const spokes = cardinal(c, 2);
   const o = { spokes, extra: c.rng.int(0, 2), centre: spokes.length < 4 ? c.rng.int(0, 2) : 0 };
   c.parts.push(`spokes ${spokes.join('')}${o.centre ? ` centre ${o.centre}` : ''}`);
-  return placeRoot(c, civil(courtOf(c)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
+  return placeRoot(c, civil(courtOf(c, 1)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
 }
 
 function concentric(c: Ctx): boolean {
-  return placeRoot(c, civil(courtOf(c)(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2))), 'command', 'concentric station'), 'concentric');
+  return placeRoot(c, civil(courtOf(c, 1)(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2))), 'command', 'concentric station'), 'concentric');
 }
 
 function arc(c: Ctx): boolean {
