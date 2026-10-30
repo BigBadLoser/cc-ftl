@@ -15,6 +15,7 @@ import type { RegionLayers } from './worldLayers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
+import { PLAIN_PAINT, type HullPaint } from './hullArt';
 import { createRoofView } from './roofView';
 import { createRockRoofView } from './rockRoofView';
 import { createRuinView } from './ruinView';
@@ -42,6 +43,8 @@ export interface ShipSceneOptions {
   suitAirSec?(): number;
   /** Look of the ship's structural beams; default civil. */
   beamLook?: BeamLook;
+  /** The ship's hull colours (hullArt); default plain. */
+  hullPaint?: HullPaint;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx): a region decorator of the shared world stack. */
@@ -85,7 +88,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   let wreckTick = 0;
   let targeted: ReadonlySet<number> = new Set();
   const inside = () => (roofed ? null : { grid });
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK });
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
