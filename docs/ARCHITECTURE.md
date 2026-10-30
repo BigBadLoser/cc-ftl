@@ -729,6 +729,21 @@ ARIA behaviour and no styling). The game keeps its own look: every kit component
   in `theme.css` (`--frame-line`, `--frame-w`, `--track`, `--heat-low`, `--band`, `--health-good` and the other combat tokens). **New panels compose these** and add tokens
   rather than redrawing borders, bars or badges by hand; a panel component only lays its sections out.
 
+## Lessons (tutorials), `src/ui/lessons/`
+
+UI layer only (design: DESIGN.md, "Lessons"). `LessonHost.svelte` builds a `LessonCtx` from the snapshots and feeds `LessonEngine` (plain TS) every
+frame with the signals since the last one: sim events and every queued command, from `api.onSignal` (`app/signals.ts` reads the command queue, so
+an aim made while paused counts). The engine queues triggered lessons, opens one at a time (cooldown, waits while `ctx.busy`), pauses through
+`api.setSpeed` and restores the player's speed (never unpausing a game they had paused). Seen lessons and the on/off switch are in localStorage
+(`prefs.ts`); reset and the switch are in the debug panel until the Esc menu exists; `?lessons=reset` / `?lessons=off` for scripts.
+
+**Adding a lesson:** write a `LessonDef` in `defs/<name>.ts` (`satisfies LessonDef`) and list it in `defs/index.ts`. A step has a `title`,
+`text` (`[Q]` renders a key badge), a `target` and `advance: 'gotIt'` or a condition (a "do" step). Conditions (`conditions.ts`): `onEvent`,
+`onCommand` (with a match), `when` (a state of the context), `anyOf` / `allOf`. Targets (`targets.ts`): `uiTarget(anchor)` rings an element
+carrying `data-lesson={anchor('...')}` (names are typed in `anchors.ts`; a kit `Frame` takes `lesson=`), `moduleTarget(pick)` rings a module in the
+world through `api.moduleScreenRect`. A new condition or target kind is one shape in the `...Kinds` interface plus one evaluator or resolver beside
+it; the engine does not change. If a lesson needs more of the game, add the field to `LessonCtx` and fill it in the host.
+
 ## Saves
 
 - A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,

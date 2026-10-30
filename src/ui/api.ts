@@ -1,11 +1,14 @@
 import type { UiDeploy, UiJumpWarnings, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
-import type { Command, WorkCategory } from '../sim';
+import type { Command, SimEvent, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
 export interface Subscribable<T> {
   subscribe(run: (value: T) => void): () => void;
 }
+
+/** A sim event after a tick, or a command as it is queued (by the UI, input or the sim's own AI): what the lessons engine listens to. */
+export type UiSignal = { kind: 'event'; event: SimEvent } | { kind: 'command'; command: Command };
 
 export interface UiSnapshot {
   tick: number;
@@ -1252,6 +1255,8 @@ export interface UiApi {
   setCutaway(mode: UiCutaway): void;
   setOverlay(field: string | null): void;
   dispatch(cmd: Command): void;
+  /** Listen to sim events and issued commands (see UiSignal); returns the unsubscribe. */
+  onSignal(fn: (s: UiSignal) => void): () => void;
   setSpeed(speed: 0 | 1 | 2 | 3): void;
   togglePause(): void;
   clearErrors(): void;

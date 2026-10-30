@@ -3,6 +3,7 @@
   import { Struct } from '../sim';
   import type { UiApi, UiCombat, UiInspect, UiModule, UiSnapshot } from './api';
   import { copyText } from './clipboard';
+  import { lessonPrefs } from './lessons/prefs';
 
   let { api, snap }: { api: UiApi; snap: UiSnapshot } = $props();
   let toast = $state('');
@@ -17,6 +18,17 @@
     const c = api.combat.subscribe((v) => (foes = v.enemies));
     return () => (a(), b(), c());
   });
+  // Lessons (tutorials): until the Esc menu's settings exist, reset and the on/off switch live here.
+  let lessonsOn = $state(lessonPrefs.enabled());
+  const resetLessons = () => {
+    lessonPrefs.reset();
+    toast = 'Lessons reset';
+    setTimeout(() => (toast = ''), 1500);
+  };
+  const toggleLessons = () => {
+    lessonsOn = !lessonsOn;
+    lessonPrefs.setEnabled(lessonsOn);
+  };
   let roofed = $state(true);
   const toggleRoof = () => {
     roofed = !roofed;
@@ -56,6 +68,8 @@
   </dl>
   <div class="btns">
     <button data-testid="dbg-new-game" class:warn={confirmNew} onclick={() => (confirmNew ? api.newGame() : (confirmNew = true))}>{confirmNew ? 'Discard this game?' : 'New game'}</button>
+    <button data-testid="dbg-lessons-reset" onclick={resetLessons}>Reset lessons</button>
+    <button data-testid="dbg-lessons-toggle" class:on={lessonsOn} onclick={toggleLessons}>Lessons: {lessonsOn ? 'on' : 'off'}</button>
     <button data-testid="dbg-ignite" disabled={!tile} onclick={ignite}>Ignite selected tile</button>
     <button data-testid="dbg-breach" disabled={!tile} onclick={breach}>Breach selected tile</button>
     <button data-testid="dbg-kill-reactor" onclick={killReactor}>Kill reactor</button>

@@ -7,17 +7,19 @@
    * around the title is a real gap and works over a transparent panel. `right` renders items (a Pill, a button) into the top edge: put a
    * `<FrameGap width={n} />` between them. `tone="hostile"` is the red frame with a large title.
    */
-  let { title, tone = 'normal', style = '', testid, children, right }: {
+  let { title, tone = 'normal', style = '', testid, lesson, children, right }: {
     title: string;
     tone?: 'normal' | 'hostile';
     style?: string;
     testid?: string;
+    /** A `data-lesson` anchor (ui/lessons/anchors.ts) a tutorial step can point at. */
+    lesson?: string;
     children: Snippet;
     right?: Snippet;
   } = $props();
 </script>
 
-<section class="frame {tone}" {style} data-testid={testid}>
+<section class="frame {tone}" {style} data-testid={testid} data-lesson={lesson}>
   <div class="rail">
     <FrameGap width={9} />
     <h3>{title}</h3>

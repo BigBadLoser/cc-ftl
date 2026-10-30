@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Frame, Meter, Pips } from '../kit';
+  import { anchor } from '../lessons/anchors';
   import type { UiCombat } from '../api';
   import { hullTone } from './hullTone';
 
@@ -10,7 +11,7 @@
   const HULL_FILL = { green: 'var(--health-good)', amber: 'var(--health-warn)', red: 'var(--health-bad)' } as const;
 </script>
 
-<Frame title="Status" {style}>
+<Frame title="Status" {style} lesson={anchor('combat.status')}>
   <div class="rows">
     <div class="line" title="Hull integrity">
       <span class="lbl">Hull</span>

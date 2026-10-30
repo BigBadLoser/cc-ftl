@@ -27,6 +27,7 @@ import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERS
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
+import { createSignalFeed } from './app/signals';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -61,6 +62,8 @@ const setProbe = (p: Probe | null): void => {
   renderer?.setProbe(probe);
 };
 
+/** Sim events and issued commands for the lessons engine (ui/lessons). */
+const signals = createSignalFeed(sim.commands);
 let upkeepFrame = 0;
 const loop = createLoop({
   sim,
@@ -97,6 +100,7 @@ const loop = createLoop({
         setTimeout(save, 0); // after a jump lands: the new node is in the save
       }
     }
+    signals.events(events);
     hook?.onEvents(events.map((e) => e.type));
   },
   onFrame: (stats) => {
@@ -104,6 +108,7 @@ const loop = createLoop({
     const info = renderer?.info();
     if (info) probe.count('render/sprites', info.sprites);
     bridge.update(stats, info);
+    signals.poll();
     probe.end('ui/bridge');
   },
 });
@@ -434,6 +439,7 @@ const api: UiApi = {
   setTool: controller.setTool,
   selectCrew: controller.selectCrew,
   dispatch: bridge.dispatch,
+  onSignal: signals.listen,
   setSpeed: bridge.setSpeed,
   togglePause: bridge.togglePause,
   clearErrors: errorLog.clear,
