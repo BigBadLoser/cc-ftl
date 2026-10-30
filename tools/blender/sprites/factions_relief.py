@@ -89,7 +89,8 @@ def seams(a, b):
 
 # ---- navy (set 4): light plates, a maroon band, a dark header carrying a round lit tube on rounded brackets --------
 
-NAVY_SEAM = 0.24                    # the plate seams, in from each tile edge, up the face and down the ramp
+NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up the face and down the ramp (on the px
+                                    # grid: a px wide, they fill whole px on both faces)
 
 
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
@@ -303,7 +304,8 @@ def navy(hull):
         if not full:
             return
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
-        T.run(k, ax, plane, a, b, pe, zh, rt - 0.02, PX, "rose", 1, 0)                           # the dark header
+        T.run(k, ax, plane, a, b, pe, zh, rt, PX, "rose", 1, 0)          # the dark header, up to the cap (a step under
+                                                                         # it showed as a dotted line on the black top)
         tv = T.VARIANT[0]                               # (a straight piece's variant: factions_variants)
         if tv == 5:
             FV.navy_band(k, ax, plane, a, b, pe, zh, H)
@@ -317,19 +319,18 @@ def navy(hull):
             tube(k, ax, plane, a + (0.02 if back else 0.0), b - (0.02 if end1 else 0.0), dc, zc, r,
                  mitre=(mit[0], 0.0 if end1 else mit[1]))
         if cp:
-            corner_piece(k, X, plane, C, _slab(zh, rt - 0.02, PX), "rose", 1)
+            corner_piece(k, X, plane, C, _slab(zh, rt, PX), "rose", 1)
             corner_piece(k, X, plane, C, _slab(zh - 0.33 * H, zh, PAINT), "ochre", 3)
             prof, cols = tube_prof(dc, zc, r)
             corner_piece(k, X, plane, C, prof, "wall", 0, cols, "or")
         bw = 0.1
         clear = {"out": 0.05, "in": dc + r + 0.03}      # brackets clear of a corner (and of the other face's tube)
-        for s0, s1 in ([] if endf else T.spans(a, b)):
-            lo = s0 + ((0.02 if back else clear.get(ends[0], 0.0)) if abs(s0 - a) < 1e-6 else 0.0)
+        for s0, s1 in ([] if endf else T.spans(a, b)):  # one bracket a tile, at the tile's middle (clear of a
+            lo = s0 + ((0.02 if back else clear.get(ends[0], 0.0)) if abs(s0 - a) < 1e-6 else 0.0)   # corner)
             hi = s1 - ((0.02 if end1 else clear.get(ends[1], 0.0)) if abs(s1 - b) < 1e-6 else 0.0)
-            if hi - lo < 2 * bw:
-                continue
-            for u0, u1 in ((lo - 0.003, lo + bw), (hi - bw, hi + 0.003)):                        # the brackets
-                bracket(k, ax, plane, u0, u1, dc, zc, 0.085, zc - 0.15, zc + 0.1, F, 4)    # (past the tube's end)
+            um = (s0 + s1) / 2
+            if lo <= um - bw / 2 and um + bw / 2 <= hi:
+                bracket(k, ax, plane, um - bw / 2, um + bw / 2, dc, zc, 0.085, zc - 0.15, zc + 0.1, F, 4)
         if hull and variant:
             for s0, s1 in T.spans(a, b):
                 if s1 - s0 > 0.6:

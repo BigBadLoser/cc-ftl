@@ -39,9 +39,10 @@ for _name, _role in (("gB3", "rail"), ("gB2", "edge"), ("gB1", "body"), ("gO", "
 for _name, _role in (("gBX3", "rail"), ("gBX2", "edge"), ("gBX1", "body"), ("gOX", "trim")):
     ROLE[_name] = ("belly", "x", _role)
 
-# role -> ramp step (0 lightest .. 6 darkest), per face; the x (shade) face sits a step darker, like wallart.RAMP
-STEP = {"y": {"H": 0, "L": 1, "S": 2, "T": 2, "M": 3, "D": 4, "K": 6, "rail": 3, "edge": 4, "body": 5, "trim": 2},
-        "x": {"H": 1, "L": 2, "S": 3, "T": 3, "M": 4, "D": 5, "K": 6, "rail": 4, "edge": 5, "body": 5, "trim": 3}}
+# role -> ramp step (0 lightest .. 6 darkest), per face: the x (shade) face sits two steps darker, its light lines (H, L:
+# highlights, lit joints) one, so they stay light lines
+STEP = {"y": {"H": 0, "L": 1, "S": 2, "T": 2, "M": 3, "D": 4, "K": 6, "rail": 3, "edge": 4, "body": 5, "trim": 2}}
+STEP["x"] = {k: min(6, v + (1 if k in ("H", "L") else 2)) for k, v in STEP["y"].items()}
 LIGHT = (0.27, 0.17, 0.08, 0.0, -0.09, -0.17, -0.26)          # lightness offsets of the 7 steps from the base colour
 
 

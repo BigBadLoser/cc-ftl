@@ -16,6 +16,8 @@ Both faces of a wall are lit, as in the Space Haven sets (the +x face only a ste
 wall's cut end (the end pieces' section), in the look's own shade ramp. Scrap keeps its plain ends."""
 from . import factions_relief as R
 from . import factions_variants as FV
+from . import wall3d as T
+from . import walls as W
 from .restyle import STEP, Look, ramp
 from .structure_looks import FLOOR_STEP
 
@@ -56,6 +58,10 @@ class Faction(Look):
         if P.sprite.startswith("tile.floor"):
             s = FLOOR_STEP.get(P.name)
             return f"{self.pre}F{max(0, min(6, s))}" if s is not None else P.name
+        if P.kind == "top" and P.sprite.startswith("tile.wall."):      # a partition's top (cap or cut): black, as
+            lv = "up" if ".full." in P.sprite else "low" if ".low." in P.sprite else "cut"   # the default walls'
+            if P.z >= W.wall_top("wall", lv) - 0.03:            # (the header's top, 0.02 under the cap, too)
+                return T.CUT
         end = P.sprite.partition(".end.")[2][:1]                       # s / e: the end piece's section faces y / x
         if (self.shaded and end and P.kind == ("y" if end == "s" else "x") and P.fam in ("wall", "hull")
                 and P.role in STEP["x"]):

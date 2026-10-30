@@ -16,6 +16,8 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
   ghost as tile.hull.ghost.m{6|7|14|15}c2[.r*] (SE diagonal solid: no dip toward it).
 - End faces where a wall butts into a ghost: tile.{fam}.{full.|low.|}end.{s|e}[.c{bits}] (the fills reaching that edge).
 - The belly alone for a door in the near hull (tile.hull.drop.{s|e}); doors, never cut (tile.door.{x|y}[.open])."""
+import re
+
 from .doors import door
 from .floors import floor
 from .hull import drop, out_block, vert
@@ -95,3 +97,38 @@ for _s in ("s", "e"):
 for _ax in ("x", "y"):
     SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
                 (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True))]
+
+
+STEPS = {1: (0, -1), 2: (1, 0), 4: (0, 1), 8: (-1, 0)}    # a mask bit's neighbour (N1 E2 S4 W8)
+_WALL = re.compile(r"^tile\.wall\.(full\.|low\.)?m(\d+)")
+
+
+def _with_runs(fn, mask, level):
+    """A wall piece as env_build "wide" (own, wide): the piece, and on each connected side the wall's straight run one
+    tile on, so a px on a tile edge (anti-aliased: env_build.AA) resolves against the wall running on there, not the
+    empty canvas, and the tiles meet without specks. The runs are built plain (no straight-run variant) and in the
+    look's style (a faction look wraps the whole build)."""
+    def build():
+        from mathutils import Matrix
+        from . import core, wall3d
+        own = fn()
+        extra, tv = [], wall3d.VARIANT
+        wall3d.VARIANT = (0, 0)
+        try:
+            for bit, (dx, dy) in STEPS.items():
+                if mask & bit:
+                    for o in block(10 if bit in (2, 8) else 5, "wall", level=level):
+                        o.data.transform(Matrix.Translation(core.G(dx, dy, 0.0)))
+                        o.data.update()
+                        extra.append(o)
+        finally:
+            wall3d.VARIANT = tv
+        return own, own + extra
+    return build
+
+
+for _k, (_sid, _fp, _kind, _fn) in enumerate(SPRITES):     # every wall piece by mask, at each level, with its runs
+    _mm = _WALL.match(_sid)
+    if _mm and _kind == "block":
+        SPRITES[_k] = (_sid, _fp, "wide", _with_runs(_fn, int(_mm.group(2)), {"full.": "up", "low.": "low"}.get(
+            _mm.group(1) or "", "cut")))

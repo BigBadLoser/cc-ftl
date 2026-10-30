@@ -191,6 +191,18 @@ def _polys(Pz, cv):
     return [[Pz[0], Pz[1], Pz[3]], [Pz[1], Pz[2], Pz[3]]]
 
 
+def _skirt_polys(Pz, zc):
+    """A skirt cell's two triangles, split along the diagonal whose midpoint height is nearer the true height at the
+    cell's centre zc: where two skirts meet in an inside corner the crease runs along a cell diagonal, and the split
+    across it sawtoothed the crease."""
+    z = [p[2] for p in Pz]
+    if abs(z[0] + z[2] - z[1] - z[3]) < 1e-9:
+        return [Pz]
+    if abs((z[0] + z[2]) / 2 - zc) <= abs((z[1] + z[3]) / 2 - zc):
+        return [[Pz[0], Pz[1], Pz[2]], [Pz[0], Pz[2], Pz[3]]]
+    return [[Pz[0], Pz[1], Pz[3]], [Pz[1], Pz[2], Pz[3]]]
+
+
 def _face(m, sp, face, a, b, za, zt):
     """Vertical face over the ground segment a -> b (screen left to right), bottoms za, tops zt (per endpoint)."""
     h = max(zt[0] - za[0], zt[1] - za[1])
@@ -232,7 +244,7 @@ def emit(m, sp):
                 Pz = [(x, y, sp.skirtz(x, y)) for x, y in P]
                 if max(p[2] for p in Pz) < 1e-9:
                     continue
-                for poly in _polys(Pz, None):
+                for poly in _skirt_polys(Pz, sp.skirtz((x0 + x1) / 2, (y0 + y1) / 2)):
                     m.poly([core.G(*p) for p in poly], sp.col_skirt(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
     for j in range(GN):
         for i in range(GN):
