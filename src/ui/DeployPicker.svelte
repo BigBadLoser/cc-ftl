@@ -8,6 +8,7 @@
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
+  import { isTypingTarget } from './keys';
   import PanelHead from './PanelHead.svelte';
   import type { UiDeploy } from './starmapApi';
 
@@ -70,7 +71,7 @@
     if (best) cell = best;
   };
   function key(e: KeyboardEvent) {
-    if (e.key === 'Enter') go();
+    if (e.key === 'Enter' && !isTypingTarget(e)) go();
   }
 </script>
 
