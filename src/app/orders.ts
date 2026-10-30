@@ -27,8 +27,9 @@ export function orderChoices(p: OrderProbe): OrderChoice[] {
   if (p.foe) out.push({ id: 'attack', label: `Attack ${p.foe.name}` });
   if (p.station) out.push({ id: 'man', label: `Man ${p.station.name}` });
   if (p.shuttle) out.push({ id: 'board', label: `Board ${p.shuttle.name}` });
+  // Alone, sabotage is the default right-click on an enemy module (it runs at once, walking onto a module is not a choice); with a foe under the cursor it stays a menu entry.
   if (p.sabotage) out.push({ id: 'sabotage', label: `Sabotage ${p.sabotage.name}` });
-  if (p.walk) out.push({ id: 'walk', label: 'Walk here' });
+  if (p.walk && !(p.sabotage && !p.foe)) out.push({ id: 'walk', label: 'Walk here' });
   return out;
 }
 

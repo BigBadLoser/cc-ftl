@@ -634,8 +634,6 @@ export interface UiBoarding {
   fireOn: { by: string; at: string; crew: string[] }[];
   /** A shuttle of yours is docked here and someone can still be sent back to it. */
   canRecall: boolean;
-  /** What a jump now would leave behind (crew away from the ship, shuttles outside). */
-  jump: { crew: string[]; vehicles: string[] };
 }
 
 /** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */

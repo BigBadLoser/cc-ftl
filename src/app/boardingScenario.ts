@@ -4,7 +4,7 @@ import { shipIdOf } from '../sim/regions';
 /**
  * `?scenario=boarding` (after the fight scenario has spawned its raider): disarm the raider, fly three of your crew over in a shuttle,
  * dock, step them out, draft them and order them to wreck the raider's reactor. Debug only; it reads the sim and enqueues commands.
- * Add `&aim` to point every weapon at the reactor room as well (the friendly-fire warning).
+ * `&manual` leaves the sabotage order for the player (right-click the module). Add `&aim` to point every weapon at the reactor room as well (the friendly-fire warning).
  */
 export function startBoardingScenario(sim: Sim, send: (c: Command) => void, aim: boolean, spawn: () => void): void {
   let step = 0;
@@ -20,7 +20,7 @@ export function startBoardingScenario(sim: Sim, send: (c: Command) => void, aim:
     const shuttle = sim.world.query(VehicleC)[0];
 
     // The fight scenario's own spawn can miss a deploy race: spawn a raider once the ship is placed and none came.
-    if (!foe && sim.sector.state === 'active' && idle++ === 12) spawn();
+    if (!foe && sim.sector.state === 'active' && idle++ % 12 === 11) spawn();
     if (!foe || shuttle === undefined) return;
     const v = sim.world.get(shuttle, VehicleC)!;
     if (step === 0) {
@@ -47,7 +47,7 @@ export function startBoardingScenario(sim: Sim, send: (c: Command) => void, aim:
       step = 4;
     } else if (step === 4) {
       const reactor = mods(foe, 'module.reactor')[0];
-      if (reactor !== undefined) send({ type: 'crew.sabotage', ids: party, module: reactor });
+      if (reactor !== undefined && !location.search.includes('manual')) send({ type: 'crew.sabotage', ids: party, module: reactor });
       clearInterval(timer);
     }
   }, 300);

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import type { UiJumpWarnings } from '../starmapApi';
   import type { UiAiming, UiApi, UiBoarding, UiCombat, UiShipCombat } from '../api';
   import InsetFrame from './InsetFrame.svelte';
   import EnemyCard from './EnemyCard.svelte';
+  import JumpConfirm from '../JumpConfirm.svelte';
   import BoardingCard from './BoardingCard.svelte';
   import { TICK_HZ } from '../../sim/time';
   import { nextHeatRate, type HeatSample } from './heatRate';
@@ -81,7 +83,15 @@
 
   const select = (id: number) => api.setAiming(aiming?.weapon === id ? null : { weapon: id });
   const drive = $derived(me ? { charge: me.ftl, max: me.ftlMax, helmManned, active: me.state === 'active' } : null);
-  const flee = () => me && api.dispatch({ type: 'combat.flee', ship: me.ship });
+  // Fleeing jumps: with crew or shuttles that would stay behind, ask first (the same confirmation the starmap uses).
+  let leaving = $state<UiJumpWarnings | null>(null);
+  const doFlee = () => { leaving = null; if (me) api.dispatch({ type: 'combat.flee', ship: me.ship }); };
+  const flee = () => {
+    if (!me) return;
+    const w = api.jumpWarnings(me.ship);
+    if (w.crew.length || w.vehicles.length) leaving = { ...w, hostileDocked: [] };
+    else doFlee();
+  };
 
   /** Run a key's action and swallow the event so no other handler sees it. */
   function consume(e: KeyboardEvent): void {
@@ -158,6 +168,7 @@
       <PlayerStrip {api} {me} {flee} {drive} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
     </div>
   {/if}
+  <JumpConfirm warnings={leaving} onConfirm={doFlee} onCancel={() => (leaving = null)} />
 </div>
 
 <style>

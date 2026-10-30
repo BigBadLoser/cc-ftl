@@ -4,7 +4,7 @@
 
   /**
    * The boarding party on the enemy ship under the enemy card: who is aboard, the sabotage under way (with the module's health),
-   * Recall, and the two warnings: friendly fire (your aim lands where your crew stand) and a jump that would leave crew behind.
+   * Recall, and the friendly-fire warning (your aim lands where your crew stand).
    * Boarders are ordered with a right-click on an enemy module ("Sabotage ..."), see app/crewOrders.ts.
    */
   let { api, b }: { api: UiApi; b: UiBoarding } = $props();
@@ -12,12 +12,11 @@
   const TONE = { sabotage: 'green', paused: 'amber', fighting: 'amber', holding: 'dim', returning: 'cyan', down: 'red' } as const;
   const hpFill = (v: number) => (v < 0.3 ? 'var(--health-bad)' : v < 0.6 ? 'var(--health-warn)' : 'var(--health-good)');
   const recallIds = $derived(b.party.filter((p) => p.state !== 'returning' && p.state !== 'down').map((p) => p.id));
-  const leaves = $derived([...b.jump.crew, ...b.jump.vehicles]);
 </script>
 
 <Frame title="Boarding party" style="width:290px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
   {#snippet right()}
-    <Pill tone="cyan">{b.party.length} aboard</Pill>
+    <Pill tone="dim">{b.party.length} aboard</Pill>
   {/snippet}
   <div class="body">
     {#if b.fireOn.length}
@@ -43,7 +42,7 @@
           <b>{s.name}</b>
           <Pill tone={s.state === 'active' ? 'green' : 'amber'}>{s.state === 'active' ? 'Sabotage active' : 'Sabotage paused'}</Pill>
         </div>
-        <Meter value={s.hp / Math.max(1, s.maxHp)} fill={hpFill(s.hp / Math.max(1, s.maxHp))} height={14} edge="var(--hostile-track)" label="{s.hp}/{s.maxHp}" title="Module health" />
+        <Meter value={s.hp / Math.max(1, s.maxHp)} fill="var(--hud-bar, var(--dim))" height={14} edge="var(--hostile-track)" label="{s.hp}/{s.maxHp}" title="Module health" />
         <div class="line">
           <span class="dim">{s.state === 'paused' ? 'Resumes after the fight: ' : ''}{s.crew.join(', ')}</span>
           <button class="act" data-testid="sabotage-cancel" onclick={() => api.dispatch({ type: 'crew.cancelSabotage', ids: s.crewIds })}>Cancel</button>
@@ -52,9 +51,6 @@
     {:else}
       <p class="hint">Select boarders and right-click an enemy module to sabotage it.</p>
     {/each}
-    {#if leaves.length}
-      <div class="warn amber" data-testid="jump-warning">Jumping now leaves behind: {leaves.join(', ')}</div>
-    {/if}
     <button class="go" data-testid="boarding-recall" disabled={!b.canRecall || recallIds.length === 0} title={b.canRecall ? 'Walk the party back to the shuttle and fly home' : 'No shuttle is docked here'} onclick={() => api.dispatch({ type: 'crew.recall', ids: recallIds })}>Recall party</button>
   </div>
 </Frame>
@@ -73,7 +69,7 @@
   .dim, .hint { color: var(--dim); font-size: 12px; margin: 0; }
   .warn { display: grid; gap: 2px; padding: 5px 7px; border: 1px solid currentColor; border-left-width: 3px; font-size: 12px; line-height: 1.3; background: var(--panel-2, var(--panel)); }
   .warn b { font: 700 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .warn.red { color: var(--red); } .warn.amber { color: var(--amber); }
+  .warn.red { color: var(--red); }
   .warn span { color: var(--text); }
   button.act, button.go { min-height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; background: var(--act-fill, var(--panel-2)); border: 1px solid var(--act-edge, var(--cyan)); }
   button.go { min-height: 32px; background: var(--go-fill); border-color: var(--go-edge); }
