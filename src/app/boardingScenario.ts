@@ -4,9 +4,11 @@ import { shipIdOf } from '../sim/regions';
 /**
  * `?scenario=boarding` (after the fight scenario has spawned its raider): disarm the raider, fly three of your crew over in a shuttle,
  * dock, step them out, draft them and order them to wreck the raider's reactor. Debug only; it reads the sim and enqueues commands.
- * `&manual` leaves the sabotage order for the player (right-click the module). Add `&aim` to point every weapon at the reactor room as well (the friendly-fire warning).
+ * `&menu` leaves some raider crew awake so right-clicking one shows the order menu (pause first). `&manual` leaves the sabotage order for the player (right-click the module). Add `&aim` to point every weapon at the reactor room as well (the friendly-fire warning).
  */
-export function startBoardingScenario(sim: Sim, send: (c: Command) => void, aim: boolean, spawn: () => void): void {
+export function startBoardingScenario(sim: Sim, send: (c: Command) => void, aim: boolean): void {
+  const spots = [[110, 80], [60, 20], [20, 100], [150, 30], [100, 50], [40, 90], [130, 110]] as const;
+  let tries = 0;
   let step = 0;
   let idle = 0;
   let party: number[] = [];
@@ -19,13 +21,16 @@ export function startBoardingScenario(sim: Sim, send: (c: Command) => void, aim:
     const foe = sim.world.query(ShipC).find((i) => i !== home && sim.world.get(i, ShipC)?.faction === 'hostile');
     const shuttle = sim.world.query(VehicleC)[0];
 
-    // The fight scenario's own spawn can miss a deploy race: spawn a raider once the ship is placed and none came.
-    if (!foe && sim.sector.state === 'active' && idle++ % 12 === 11) spawn();
+    // The fight scenario's own spawn can miss a deploy race: try the raider at a few fixed spots once the ship is placed and none came.
+    if (!foe && sim.sector.state === 'active' && idle++ % 6 === 5) {
+      const at = spots[tries++ % spots.length]!;
+      send({ type: 'debug.spawnEnemy', template: 'ship.raider', x: at[0], y: at[1] });
+    }
     if (!foe || shuttle === undefined) return;
     const v = sim.world.get(shuttle, VehicleC)!;
     if (step === 0) {
       // The raider's crew sleep through it (a debug scene: it keeps the party alive for the screenshots).
-      for (const c of sim.world.query(CrewC)) if (sim.world.get(c, AllegianceC)?.faction === 'hostile') sim.world.add(c, StunC, { until: 1e9 });
+      for (const c of sim.world.query(CrewC)) if (sim.world.get(c, AllegianceC)?.faction === 'hostile' && !(location.search.includes('menu') && c % 2 === 0)) sim.world.add(c, StunC, { until: 1e9 });
       const crew = sim.world.query(CrewC).filter((c) => !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'player').slice(0, 3);
       for (const c of crew) send({ type: 'vehicle.embark', crew: c, vehicle: shuttle });
       step = 1;

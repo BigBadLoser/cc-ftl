@@ -273,7 +273,7 @@ function startScenario(): void {
       if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
       setTimeout(() => {
         spawnRaider();
-        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'), spawnRaider);
+        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'));
         if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
       }, 400);
     }, 400);
