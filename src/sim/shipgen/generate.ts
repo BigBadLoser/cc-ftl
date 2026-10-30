@@ -19,6 +19,7 @@ import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
 import { openArchways } from './archways';
+import { swapRoles } from './roleSwap';
 import { openBareDocks } from './openDocks';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
@@ -323,8 +324,10 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
+  // Stations: rooms that can stand in for each other trade roles where their neighbours suit them better (roleSwap.ts).
+  const sw = opts.immobile ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
   // Off the navy, bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts). Metrics read the rooms as planned.
-  const cab = f.berths === 'rows' ? { rows, roomOf, roles, specs } : splitCabins(rows, roomOf, width, roles, specs, rng);
+  const cab = f.berths === 'rows' ? { rows, roomOf, roles: sw.roles, specs: sw.specs } : splitCabins(rows, roomOf, width, sw.roles, sw.specs, rng);
   const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);

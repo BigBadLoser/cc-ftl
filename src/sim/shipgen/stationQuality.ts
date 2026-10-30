@@ -38,14 +38,20 @@ const NEAR = 12;
 
 export interface StationQuality { adjacency: number; pairs: Record<string, number>; clustering: number; contacts: number }
 
-/** Quality of a layout's room arrangement: rows (as in a ShipTemplate), the room of each tile and each room's role. */
-export function stationQuality(rows: readonly string[], roomOf: Int16Array, roles: readonly RoomRole[]): StationQuality {
+/**
+ * The rooms of a layout as a graph: which rooms touch (a shared wall, or a door or archway between them) and the walk
+ * between every two (tiles from one's floor to the other's). Fixed by the geometry: roles can be swapped over it and
+ * re-scored cheaply (`scoreRoles`).
+ */
+export interface RoomGraph { rooms: number[]; touch: Map<number, Set<number>>; door: Map<number, Set<number>>; walk: Map<number, Map<number, number>> }
+
+export function roomGraph(rows: readonly string[], roomOf: Int16Array): RoomGraph {
   const H = rows.length;
   const W = Math.max(...rows.map((r) => r.length));
   const cell = (x: number, y: number): string => rows[y]?.[x] ?? '.';
   const roomAt = (x: number, y: number): number => (x < 0 || y < 0 || x >= W || y >= H || cell(x, y) !== '_' ? -1 : roomOf[y * W + x] ?? -1);
   const door = new Map<number, Set<number>>();
-  const wall = new Map<number, Set<number>>();
+  const touch = new Map<number, Set<number>>();
   const link = (m: Map<number, Set<number>>, a: number, b: number): void => {
     if (a < 0 || b < 0 || a === b) return;
     (m.get(a) ?? m.set(a, new Set()).get(a) as Set<number>).add(b);
@@ -53,28 +59,30 @@ export function stationQuality(rows: readonly string[], roomOf: Int16Array, role
   };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = cell(x, y);
-    if (c === '_') { link(door, roomAt(x, y), roomAt(x + 1, y)); link(door, roomAt(x, y), roomAt(x, y + 1)); continue; } // an archway
-    if (c !== '#' && c !== 'D') continue;
-    for (const [a, b] of [[roomAt(x - 1, y), roomAt(x + 1, y)], [roomAt(x, y - 1), roomAt(x, y + 1)]] as const) link(c === 'D' ? door : wall, a, b);
+    const pairs = c === '_' ? [[roomAt(x, y), roomAt(x + 1, y)], [roomAt(x, y), roomAt(x, y + 1)]] // an archway
+      : c === '#' || c === 'D' ? [[roomAt(x - 1, y), roomAt(x + 1, y)], [roomAt(x, y - 1), roomAt(x, y + 1)]] : [];
+    for (const [a, b] of pairs as [number, number][]) {
+      link(touch, a, b);
+      if (c !== '#') link(door, a, b);
+    }
   }
-  const present = new Set<number>();
-  for (let i = 0; i < roomOf.length; i++) if ((roomOf[i] ?? -1) >= 0 && cell(i % W, Math.floor(i / W)) === '_') present.add(roomOf[i] as number);
-  const rooms = [...present];
   const tilesOf = new Map<number, number[]>();
   for (let i = 0; i < roomOf.length; i++) {
     const r = roomOf[i] ?? -1;
     if (r >= 0 && cell(i % W, Math.floor(i / W)) === '_') (tilesOf.get(r) ?? tilesOf.set(r, []).get(r) as number[]).push(i);
   }
-  /** Walking distance from a room's floor to every tile (floor and doors), in tiles. */
-  const walk = new Map<number, Int32Array>();
-  const from = (room: number): Int32Array => {
-    const hit = walk.get(room);
-    if (hit) return hit;
-    const d = new Int32Array(W * H).fill(-1);
-    const q = [...(tilesOf.get(room) ?? [])];
+  const rooms = [...tilesOf.keys()].sort((a, b) => a - b);
+  const walk = new Map<number, Map<number, number>>();
+  const d = new Int32Array(W * H);
+  for (const r of rooms) {
+    d.fill(-1);
+    const q = [...(tilesOf.get(r) as number[])];
     for (const i of q) d[i] = 0;
+    const best = new Map<number, number>();
     for (let h = 0; h < q.length; h++) {
       const i = q[h] as number;
+      const o = roomOf[i] ?? -1;
+      if (o >= 0 && o !== r && cell(i % W, Math.floor(i / W)) === '_' && !best.has(o)) best.set(o, d[i] as number);
       const x = i % W, y = (i - x) / W;
       for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
         const c = cell(nx, ny);
@@ -82,18 +90,28 @@ export function stationQuality(rows: readonly string[], roomOf: Int16Array, role
         if ((c === '_' || c === 'D') && d[j] === -1) { d[j] = (d[i] as number) + 1; q.push(j); }
       }
     }
-    walk.set(room, d);
-    return d;
-  };
+    walk.set(r, best);
+  }
+  return { rooms, touch, door, walk };
+}
+
+/** Quality of a layout's room arrangement: rows (as in a ShipTemplate), the room of each tile and each room's role. */
+export function stationQuality(rows: readonly string[], roomOf: Int16Array, roles: readonly RoomRole[]): StationQuality {
+  return scoreRoles(roomGraph(rows, roomOf), roles);
+}
+
+/** The quality of `roles` over a room graph. */
+export function scoreRoles(g: RoomGraph, roles: readonly RoomRole[]): StationQuality {
+  const { rooms, touch, walk } = g;
   const pairs: Record<string, number> = {};
   for (const [a, b, want] of ADJACENCY) {
     const as = rooms.filter((r) => roles[r] === a), bs = rooms.filter((r) => roles[r] === b);
     if (as.length === 0 || bs.length === 0) continue;
     let ok = 0;
     for (const r of as) {
-      const d = from(r);
-      const near = Math.min(...bs.map((o) => Math.min(...(tilesOf.get(o) ?? []).map((i) => (d[i] as number) < 0 ? Infinity : (d[i] as number)))));
-      const touching = bs.some((o) => wall.get(r)?.has(o) || door.get(r)?.has(o));
+      const w = walk.get(r);
+      const near = Math.min(...bs.map((o) => w?.get(o) ?? Infinity));
+      const touching = bs.some((o) => touch.get(r)?.has(o));
       if (want > 0 ? near <= NEAR : near > NEAR && !touching) ok++;
     }
     pairs[`${a}${want > 0 ? '~' : '/'}${b}`] = ok / as.length;
@@ -105,7 +123,7 @@ export function stationQuality(rows: readonly string[], roomOf: Int16Array, role
   for (const r of inD) share.set(DISTRICT[roles[r] as RoomRole] as string, (share.get(DISTRICT[roles[r] as RoomRole] as string) ?? 0) + 1 / inD.length);
   const expected = [...share.values()].reduce((s, p) => s + p * p, 0);
   let contacts = 0, same = 0;
-  for (const r of inD) for (const o of new Set([...(wall.get(r) ?? []), ...(door.get(r) ?? [])])) {
+  for (const r of inD) for (const o of touch.get(r) ?? []) {
     if (o <= r || !DISTRICT[roles[o] as RoomRole]) continue;
     contacts++;
     if (DISTRICT[roles[o] as RoomRole] === DISTRICT[roles[r] as RoomRole]) same++;
