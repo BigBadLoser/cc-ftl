@@ -59,8 +59,54 @@ def _corners(k0, k1):
     return ((k0, k0), (k1, k0), (k0, k1), (k1, k1))
 
 
+def _hash(i, j, seed):
+    """A stable 0..1 value per cell (for scattered detail that tiles: callers wrap i, j)."""
+    h = (i * 73856093 ^ j * 19349663 ^ seed * 83492791) & 0xFFFFFFFF
+    h = (h ^ (h >> 13)) * 1274126177 & 0xFFFFFFFF
+    return ((h ^ (h >> 16)) & 0xFFFF) / 65535
+
+
+def court(variant, i, j):
+    """Court floors (placed by the station generator, not the hash): walk (promenade paving), soil (garden beds),
+    market (plaza tiles), tread (drill-hall plate). Each tiles seamlessly; its seams sit on the low sides, as a's."""
+    if variant == "walk":                         # pale composite pavers, two by two, with dark joints and a worn lip
+        pi, pj = i % 32, j % 32
+        if pi < 2 or pj < 2:
+            return "c4F4"
+        if pi < 4 or pj < 4:
+            return "c4W5"
+        return "c4F1" if _hash(i // 32, j // 32, 3) < 0.5 else "c4F0"
+    if variant == "soil":                         # dark earth with moss tufts and a few pebbles
+        r = _hash(i // 2, j // 2, 7)
+        if r < 0.07:
+            return "xnFL" if r < 0.025 else "xnF"
+        if r < 0.10:
+            return "alG"
+        if r < 0.115:
+            return "rkL"
+        return "gdD" if _hash(i // 4, j // 4, 9) < 0.55 else "rkDM"
+    if variant == "market":                       # small terracotta tiles, a darker one at random, pale grout
+        ti, tj = i % 16, j % 16
+        if ti < 2 or tj < 2:
+            return "c1H5"
+        return "c1T5" if _hash(i // 16, j // 16, 5) < 0.3 else "c1T4"
+    # tread: diamond plate, raised bars on a darker plate, framed at the tile seam
+    if i < 2 or j < 2:
+        return "steelD"
+    a, b = (i + j) % 12, (i - j) % 12
+    if (a < 2 and (i // 6) % 2 == 0) or (b < 2 and (i // 6) % 2 == 1):
+        return "steelL"
+    return "steelM"
+
+
+COURT = ("walk", "soil", "market", "tread")
+
+
 def floor(variant):
     m = core.Mesh(f"floor_{variant}")
+    if variant in COURT:
+        m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, lambda i, j: court(variant, i, j))
+        return [m.build()]
 
     def fn(i, j):
         if variant == "a":                        # the deck everywhere: one plain panel (detail would repeat)
