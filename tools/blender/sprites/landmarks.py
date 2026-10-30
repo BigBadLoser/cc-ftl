@@ -216,34 +216,64 @@ def memorial(rot):
     return k.build()
 
 
-def banner(rot, company=None):
-    """A banner gate (3x1): two masts on weighted feet, a crossbar, and a wide banner hung between them carrying a
-    shipping company's logo on both faces (containers_logo: the same emblems as the container panels), or plain."""
-    from .containers_logo import GN, _cell
-    k = K(f"banner_{company or 'plain'}_{rot}", (3, 1), rot)
-    for u in (-1.2, 1.2):
-        k.box(u, 0, 0.0, 0.42, 0.42, 0.08, "steelD", top="steel", bevel=0.02)            # weighted foot
-        k.cyl(u, 0, 0.08, 0.05, 2.05, "steelL", top="steel", sides=8)                    # mast
-        k.cyl(u, 0, 2.13, 0.08, 0.06, "ochD", top="ochM", sides=8)                       # finial
-    k.box(0, 0, 1.98, 2.5, 0.05, 0.05, "steel", top="steelL")                            # crossbar
-    lw, hp, z0 = 2.0, 0.62, 1.3
-    k.box(0, 0, z0 - 0.05, lw + 0.04, 0.05, 0.05, "gmD")                                 # the weighted hem
-    out = k.build()
-    f = K(f"banner_{company or 'plain'}_{rot}_face", (3, 1), rot)
+EMBLEMS = ("dot", "delta", "cross", "star", "diamond")
+
+
+def _banner_face(emblem, nu, nv, keyed):
+    """A banner's face, cell (i, j) from its lower left: a field of livery P, a roundel of the ship's roof emblem near
+    the top (roof_livery._emblem, the same shape as on the roof), two S bars below it, a swallow-tail hem. `keyed`:
+    the key colours (mkP / mkS) of the livery mask; else the base sprite's neutral cloth under it."""
+    from .roof_livery import _emblem
+    P, S = ("mkP", "mkS") if keyed else ("plate", "steelL")
+    sc = 60 / nu                                                                       # emblem cells per banner cell
+    cy = nv - nu / 2 - 1
+
+    def fn(i, j):
+        if i in (0, nu - 1) or j == nv - 1:
+            return None if keyed else "gmD"                                          # the hem and sides: not painted
+        if j < 6 and abs(i - (nu - 1) / 2) < (6 - j) * nu / 12:
+            return None                                                              # the swallow-tail notch
+        if emblem:
+            X, Y = (i + 0.5 - nu / 2) * sc, (cy - j - 0.5) * sc
+            if X * X + Y * Y < 27 * 27:
+                I, J = int(X + 32), int(Y + 32)
+                c = _emblem(emblem, (I >= 32) + 2 * (J >= 32))(I % 32, J % 32)
+                return {"P": P, "S": S}.get(c, P)
+        lo = cy - nu / 2 - (4 if emblem else -nu / 2)
+        if lo - 6 < j < lo - 3 or lo - 10 < j < lo - 8:
+            return S
+        return P
+    return fn
+
+
+def banner(rot, emblem=None, keyed=False):
+    """A hanging banner (1x1): a mast on a weighted foot, an arm at the top, the banner hung from it in the ship's
+    livery with its roof emblem on both faces (livery mask <id>.lv.<emblem>; plain bars without one)."""
+    k = K(f"banner_{rot}", (1, 1), rot)
+    k.box(-0.32, 0, 0.0, 0.3, 0.3, 0.07, "steelD", top="steel", bevel=0.02)             # weighted foot
+    k.cyl(-0.32, 0, 0.07, 0.04, 2.05, "steelL", top="steel", sides=8)                  # mast
+    k.cyl(-0.32, 0, 2.12, 0.065, 0.05, "ochD", top="ochM", sides=8)                    # finial
+    k.box(0.02, 0, 2.0, 0.72, 0.04, 0.04, "steel", top="steelL")                         # arm
+    objs = k.build()
+    f = K(f"banner_{rot}_face{'_lv' if keyed else ''}", (1, 1), rot)
     f.m.flat = True
-    nu, nv = round(lw * GN), round(hp * GN)
-    fn = _cell(company, nu, nv) if company else (lambda i, j: "gmD" if i in (0, nu - 1) or j in (0, nv - 1) else
-                                                 ("hazY" if j in (3, 4) else "navy"))
-    for sv in (1, -1):                                                                 # both faces, each reading left to right
-        a, b = f.p(-sv * lw / 2, sv * 0.03), f.p(sv * lw / 2, sv * 0.03)
-        f.m.pattern((a[0], a[1], z0), (b[0] - a[0], b[1] - a[1], 0), (0, 0, hp), nu, nv, fn)
-    return out + f.build()
+    w, h, z0 = 0.6, 1.1, 0.88
+    nu, nv = round(w * 32), round(h * 32)
+    fn = _banner_face(emblem, nu, nv, keyed)
+    for sv in (1, -1):                                                                 # both faces
+        a, b = f.p(0.05 - sv * w / 2, sv * 0.012), f.p(0.05 + sv * w / 2, sv * 0.012)
+        f.m.pattern((a[0], a[1], z0), (b[0] - a[0], b[1] - a[1], 0), (0, 0, h), nu, nv, fn)
+    faces = f.build()
+    if keyed:                                                                          # the mask: the face alone, the rest a holdout
+        for o in objs:
+            o.is_holdout = True
+    return objs + faces
 
 
 VARIANTS = (("holo_ring", (2, 2), holo_ring), ("holo_pylon", (2, 2), holo_pylon), ("holo_globe", (2, 2), holo_globe),
             ("sparring", (3, 3), sparring), ("targets", (3, 2), targets), ("memorial", (2, 2), memorial),
-            *((f"banner.{c}", (3, 1), lambda r, c=c: banner(r, c)) for c in ("halvard", "meridian", "vantor", "talos", "sable")),
-            ("banner.plain", (3, 1), banner))
+            ("banner", (1, 1), banner),
+            *((f"banner.lv.{e or 'plain'}", (1, 1), lambda r, e=e: banner(r, e, True)) for e in (*EMBLEMS, None)))
 for _r in range(4):
     for _name, _fp, _fn in VARIANTS:
         fp = (_fp[1], _fp[0]) if _r % 2 == 1 else _fp
