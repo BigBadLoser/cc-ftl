@@ -76,8 +76,8 @@ export interface Keymap {
   get(): Bindings;
   /** The action's chords now (primary first). */
   keys(id: ActionId): readonly string[];
-  /** Does this key press trigger the action? */
-  matches(e: Pick<KeyboardEvent, 'code' | 'shiftKey'>, id: ActionId): boolean;
+  /** Does this key press trigger the action? Never with Ctrl, Alt or Meta held: those chords are the browser's (Ctrl+P prints). */
+  matches(e: Pick<KeyboardEvent, 'code' | 'shiftKey'> & Partial<Pick<KeyboardEvent, 'ctrlKey' | 'altKey' | 'metaKey'>>, id: ActionId): boolean;
   /** Actions (other than `id`) whose bindings would clash with `chord` on `id`. */
   conflicts(id: ActionId, chord: string): ActionId[];
   /**
@@ -121,6 +121,7 @@ export function createKeymap(storage: () => Store | null): Keymap {
     get: () => cur,
     keys: (id) => cur[id] ?? [],
     matches(e, id) {
+      if (e.ctrlKey || e.altKey || e.metaKey) return false;
       const c = chordOf(e);
       return !!c && km.keys(id).includes(c);
     },

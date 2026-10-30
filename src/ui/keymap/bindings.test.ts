@@ -22,6 +22,10 @@ describe('key map', () => {
     expect(km.matches(press('KeyQ'), 'combat.weapon1')).toBe(true);
     expect(km.matches(press('KeyQ', true), 'combat.weapon1')).toBe(false);
     expect(km.matches(press('KeyQ', true), 'combat.mode1')).toBe(true);
+    // Ctrl, Alt and Meta chords stay the browser's.
+    expect(km.matches({ ...press('KeyQ'), ctrlKey: true }, 'combat.weapon1')).toBe(false);
+    expect(km.matches({ ...press('KeyQ'), metaKey: true }, 'combat.weapon1')).toBe(false);
+    expect(km.matches({ ...press('KeyQ'), altKey: true }, 'combat.weapon1')).toBe(false);
     // Pan down on Shift+Up: no conflict with Pan up on Up, and at run time each key moves one way only.
     expect(km.conflicts('cam.down', 'Shift+ArrowUp')).toEqual([]);
     km.bind('cam.down', 1, 'Shift+ArrowUp');
