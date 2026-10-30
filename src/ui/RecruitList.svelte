@@ -24,7 +24,7 @@
           {#if poor}<div class="warn">Not enough credits</div>
           {:else if busy}<div class="warn">The station has a run open</div>
           {:else if partner.hireError}<div class="warn">{REASONS[partner.hireError] ?? partner.hireError}</div>{/if}
-          <button data-testid="recruit-hire" disabled={poor || busy || !!partner.hireError} onclick={() => api.dispatch({ type: 'crew.hire', key: r.key })}>Hire</button>
+          <button class="commit" data-testid="recruit-hire" disabled={poor || busy || !!partner.hireError} onclick={() => api.dispatch({ type: 'crew.hire', key: r.key })}>Hire</button>
         {/if}
       </li>
     {/each}

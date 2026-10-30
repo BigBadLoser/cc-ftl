@@ -64,6 +64,7 @@
   .odds { color: var(--ink-accent); font-size: 12px; font-weight: 600; }
   .cost { color: var(--amber); font-size: 12px; }
   .reason { color: #ff8d8d; font-size: 12px; }
+  .choice:not(.locked) { border-color: var(--act-edge); }
   .choice.locked { opacity: 1; background: var(--panel-3); border-style: dashed; color: var(--dim); }
   .choice.locked .label { color: var(--dim); }
   .result { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(420px, calc(100vw - 24px)); display: grid; gap: 4px; z-index: 12; touch-action: pan-y; }

@@ -61,5 +61,5 @@
   .cell.warn { border-color: var(--amber); color: var(--amber); }
   .cell.wide { grid-column: 1 / -1; }
   .fight { margin-top: 8px; width: 100%; }
-  .go { width: 100%; background: var(--go-fill); border-color: var(--go-edge); }
+  .go { width: 100%; background: var(--act-fill); border-color: var(--act-edge); }
 </style>

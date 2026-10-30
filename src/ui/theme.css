@@ -2,20 +2,11 @@
 @font-face { font-family: 'Silkscreen'; src: url('/fonts/Silkscreen-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 /* Design language: sharp corners, near-opaque panels, thin cyan rules, condensed caps headings, icon-first buttons. */
 :root {
-  --bg: #06080a;
-  --panel: #0b0e11;
-  --panel-2: #11151a;
-  --panel-3: #181d23;
-  --line: #2a3036;
-  --line-hi: #3a424a;
-  --text: #e4e9ee;
-  --dim: #8b939a;
   --cyan: #36d4ff;
   --red: #ff5a5a;
   --amber: #f0b13a;
   --green: #47e0a0;
   --hp: #ff6b5a;
-  --rest: #c9ced3;
   --hunger: #f0b13a;
   --focus: var(--cyan);
   --kit-dialog-radius: 0;
@@ -32,36 +23,13 @@
   --sp-3: 12px;
   --gutter: var(--sp-2);
   /* Thin frames: the line colour and weight shared by every titled frame. */
-  --frame-line: #2e353c;
   --frame-w: 1px;
   /* Bars and tags. */
-  --track: #080a0c;
-  --ok-fill: #11151a;
-  --go: #11151a;
   /* Panel bands and muted text used by the combat HUD. */
-  --band: #1c2228;
   --band-hot: #6a1c25;
   --heat-low: #1b8fb3;
-  --axis: #4a525a;
-  --muted: #8b939a;
-  --light: #c9ced3;
-  --amber-fill: #11151a;
   /* Steel hybrid (see combat/steel.css): neutral stand-ins for cyan where it only meant "fine", and borderless controls. */
   /* Window header tiles, pin and role ink, and the "go" button (neutral steel, green edge: the go state, as Volley). */
-  --band-tile: #232a31;
-  --pin-ink: var(--dim);
-  --role-ink: var(--dim);
-  --go-fill: #11151a;
-  --go-edge: var(--green);
-  --ink-accent: #c9ced3; /* headings, icons and labels that are not controls (cyan is for interaction) */
-  --hud-ok: #c9ced3;
-  --hud-key: #c9ced3;
-  --hud-bar: #dfe4e8;
-  --hud-dash: #1c2228;
-  --btn-edge: transparent;
-  --btn-go: #11151a;
-  --btn-go-edge: var(--green);
-  --btn-active-edge: var(--amber);
   /* Health tones (hull, heat, charge). */
   --health-good: var(--green);
   --health-warn: var(--amber);
@@ -82,6 +50,45 @@
   --shot-5: #ffe27a;
   --head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
 }
+/* The palette (steel). `.steel-tokens` re-applies it inside a `.legacy` region (dialogs and cards that sit on the old-look starmap). */
+:root, .steel-tokens {
+  --bg: #06080a;
+  --panel: #0b0e11;
+  --panel-2: #11151a;
+  --panel-3: #181d23;
+  --line: #2a3036;
+  --line-hi: #3a424a;
+  --text: #e4e9ee;
+  --dim: #8b939a;
+  --rest: #c9ced3;
+  --frame-line: #2e353c;
+  --track: #080a0c;
+  --ok-fill: #11151a;
+  --go: #11151a;
+  --band: #1c2228;
+  --axis: #4a525a;
+  --muted: #8b939a;
+  --light: #c9ced3;
+  --amber-fill: #11151a;
+  --band-tile: #232a31;
+  --pin-ink: var(--dim);
+  --role-ink: var(--dim);
+  --go-fill: #11151a;
+  --go-edge: var(--green);
+  /* the "act" button: opens, hails, navigates, continues (cyan edge); `go` commits a gameplay change (green edge). */
+  --act-fill: #11151a;
+  --act-edge: var(--cyan);
+  --ink-accent: #c9ced3; /* headings, icons and labels that are not controls (cyan is for interaction) */
+  --hud-ok: #c9ced3;
+  --hud-key: #c9ced3;
+  --hud-bar: #dfe4e8;
+  --hud-dash: #1c2228;
+  --btn-edge: transparent;
+  --btn-go: #11151a;
+  --btn-go-edge: var(--green);
+  --btn-active-edge: var(--amber);
+}
+
 @media (max-width: 600px) { :root { --hdr: 180px; } }
 html, body, #app { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
 body { font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-variant-numeric: tabular-nums; touch-action: none; -webkit-user-select: none; user-select: none; }
@@ -127,6 +134,8 @@ html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
   --role-ink: #9fd6ea;
   --go-fill: #0e4a56;
   --go-edge: var(--cyan);
+  --act-fill: #0a2233;
+  --act-edge: var(--cyan);
   --axis: #56697b;
   --muted: #8fa3b3;
   --light: #a9d8ee;
@@ -142,3 +151,6 @@ html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
   --btn-active-edge: var(--cyan);
 }
 .legacy button:disabled { opacity: 0.4; }
+/* Utility classes for buttons that have no styles of their own: `commit` (a gameplay change, green edge) and `interact` (opens, navigates; cyan edge). */
+button.commit { background: var(--go-fill); border-color: var(--go-edge); }
+button.interact { background: var(--act-fill); border-color: var(--act-edge); }
