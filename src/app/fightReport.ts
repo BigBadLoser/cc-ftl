@@ -34,14 +34,27 @@ export interface FightReporter {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** The alert and log line for a report: "4 modules lost, 2 crew down". Null when the fight cost nothing either way. */
+/**
+ * The alert and log line for a report: "4 modules lost, 2 crew down". Without losses or kills it falls back to the lesser costs (hull, damaged
+ * modules, ammo), so any fight that left a mark gets a report. Null when the fight cost nothing either way.
+ */
 export function fightLine(r: UiFightReport): LogEntry | null {
   const lost: string[] = [];
   if (r.lost.length) lost.push(`${plural(r.lost.length, 'module', 'modules')} lost`);
   if (r.dead.length) lost.push(`${r.dead.length} crew dead`);
   if (r.down.length) lost.push(`${r.down.length} crew down`);
-  const won = r.enemyLost.length ? [`${plural(r.enemyLost.length, 'enemy module', 'enemy modules')} destroyed`] : [];
-  if (!lost.length && !won.length) return null;
+  const won: string[] = [];
+  if (r.enemyLost.length) won.push(`${plural(r.enemyLost.length, 'enemy module', 'enemy modules')} destroyed`);
+  if (r.enemyCrew) won.push(`${r.enemyCrew} enemy crew killed`);
+  if (r.prize) won.push(`${r.prize} captured`);
+  if (!lost.length && !won.length) {
+    const hull = Math.round((r.hullBefore - r.hullAfter) * 100);
+    if (hull > 0) lost.push(`hull −${hull}%`);
+    if (r.damaged.length) lost.push(`${plural(r.damaged.length, 'module', 'modules')} damaged`);
+    const shots = r.ammo.reduce((n, a) => n + a.n, 0);
+    if (!lost.length && !shots) return null;
+    if (shots) won.push(r.ammo.map((a) => `${a.n} ${a.name.toLowerCase()}${a.n === 1 ? '' : 's'} spent`).join(', '));
+  }
   return { kind: 'combat', tone: lost.length ? 'bad' : 'good', text: `Fight over: ${[...lost, ...won].join(', ')}` };
 }
 

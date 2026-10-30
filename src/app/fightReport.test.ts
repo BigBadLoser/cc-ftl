@@ -38,4 +38,12 @@ describe('fight report', () => {
     const r = { outcome: 'destroyed' as const, enemy: 'R', seconds: 5, hullBefore: 1, hullAfter: 0.5, enemyHull: 0, enemyCrew: 0, lost: l(4), damaged: [], down: l(2), dead: [], enemyLost: l(1), ammo: [], prize: null };
     expect(fightLine(r)?.text).toBe('Fight over: 4 modules lost, 2 crew down, 1 enemy module destroyed');
   });
+
+  it('still reports a fight whose only costs were hull, damage, ammo or enemy crew', () => {
+    const base = { outcome: 'fled' as const, enemy: 'R', seconds: 5, hullBefore: 1, hullAfter: 1, enemyHull: 0.8, enemyCrew: 0, lost: [], damaged: [], down: [], dead: [], enemyLost: [], ammo: [], prize: null };
+    expect(fightLine({ ...base, hullAfter: 0.93, damaged: [{ name: 'Shield generator', subject: null }] })).toMatchObject({ tone: 'bad', text: 'Fight over: hull −7%, 1 module damaged' });
+    expect(fightLine({ ...base, ammo: [{ name: 'Missile', n: 2 }] })?.text).toBe('Fight over: 2 missiles spent');
+    expect(fightLine({ ...base, enemyCrew: 3 })).toMatchObject({ tone: 'good', text: 'Fight over: 3 enemy crew killed' });
+    expect(fightLine(base)).toBeNull();
+  });
 });

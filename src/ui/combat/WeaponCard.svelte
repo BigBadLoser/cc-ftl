@@ -4,7 +4,8 @@
 
   /**
    * One player weapon: hotkey, name, charge bar and a bottom line that says what it aims at and what it does when charged. Click the card to
-   * arm it, then click an enemy module in the world to aim; click the bottom line (or Shift + its hotkey) to flip AUTO / HOLD.
+   * arm it, then click an enemy module in the world to aim; click the bottom line, right-click the card or press Shift + its hotkey to flip
+   * AUTO / HOLD (right-click is the only way for a compact card past the fourth hotkey).
    * AUTO reads "Ship"; HOLD reads "HOLD · Ship" with the bar in amber, and "HOLD · READY" once a held weapon is charged. Compact cards
    * (five or more weapons) have no bottom line: hold is shown by the amber bar alone.
    */
@@ -23,13 +24,14 @@
   const held = $derived(weapon.mode === 'hold');
   const ready = $derived(held && weapon.charge >= 1 && weapon.powered && !weapon.ion);
   const flip = (e: Event) => {
+    e.preventDefault();
     e.stopPropagation();
     onMode(held ? 'auto' : 'hold');
   };
   const modeTip = $derived(
     held
-      ? 'HOLD: charges and waits for a volley (V) or an aim. Click for AUTO (Shift + hotkey)'
-      : 'AUTO: fires when charged. Click for HOLD (Shift + hotkey)',
+      ? 'HOLD: charges and waits for a volley (V) or an aim. Click or right-click the card for AUTO (Shift + hotkey)'
+      : 'AUTO: fires when charged. Click or right-click the card for HOLD (Shift + hotkey)',
   );
   const onKey = (e: KeyboardEvent) => {
     if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
@@ -55,8 +57,9 @@
   aria-pressed={selected}
   data-testid="combat-weapon"
   data-mode={weapon.mode}
-  title={`${weapon.name}. ${compact ? `${tip}${held ? '. On HOLD' : ''}${own ? `. Aimed at ${weapon.target}` : ''}` : tip}`}
+  title={`${weapon.name}. ${compact ? `${tip}${held ? '. On HOLD' : ''}${own ? `. Aimed at ${weapon.target}` : ''}. Right-click for ${held ? 'AUTO' : 'HOLD'}` : tip}`}
   onclick={onSelect}
+  oncontextmenu={flip}
   onkeydown={onKey}
 >
   <span class="top">
