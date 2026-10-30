@@ -1,4 +1,4 @@
-import { ACTION_BY_ID, ACTIONS, type ActionDef, type ActionId, type KeyGroup } from './actions';
+import { ACTION_BY_ID, ACTIONS, type ActionDef, type ActionId, type KeyContext, type KeyGroup } from './actions';
 import { chordLabel, chordOf, codeOf } from './chords';
 
 /**
@@ -15,10 +15,21 @@ type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
 const defaults = (): Record<string, string[]> => Object.fromEntries(ACTIONS.map((x) => [x.id, [...x.keys]]));
 
-/** Two actions can share a key without conflict: their contexts never overlap, or one says it shares on purpose. */
+/**
+ * Which contexts' handlers can run at the same moment (actions.ts, KeyContext). Only build and combat never meet: a fight drops the build
+ * tools and hides the tool bar.
+ */
+const LIVE_WITH: Record<KeyContext, readonly KeyContext[]> = {
+  global: ['global', 'world', 'build', 'combat'],
+  world: ['global', 'world', 'build', 'combat'],
+  build: ['global', 'world', 'build'],
+  combat: ['global', 'world', 'combat'],
+};
+
+/** Two actions on one key clash when their handlers can run together, unless one says it shares the key on purpose. */
 export function overlaps(x: ActionDef, y: ActionDef): boolean {
   if (x.shares?.includes(y.id) || y.shares?.includes(x.id)) return false;
-  return x.context === 'global' || y.context === 'global' || x.context === y.context;
+  return LIVE_WITH[x.context].includes(y.context);
 }
 
 /** An action that lost a key to keep the map free of conflicts: `chord` now belongs only to `to`. */

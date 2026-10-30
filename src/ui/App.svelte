@@ -73,6 +73,7 @@
     const s = snap?.speed ?? 0;
     speedBeforeMenu = s === 0 ? null : s;
     api.setSpeed(0);
+    (document.activeElement as HTMLElement | null)?.blur?.(); // nothing behind the menu keeps focus (Enter must not press a speed button)
     menuOpen = true;
   }
   function closeMenu() {

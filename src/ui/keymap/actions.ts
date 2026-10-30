@@ -16,8 +16,13 @@ export const KEY_GROUPS = [
 export type KeyGroup = (typeof KEY_GROUPS)[number]['id'];
 
 /**
- * Where an action listens. Two actions on one key conflict when their contexts overlap (`global` overlaps everything), unless one lists
- * the other in `shares`: a deliberate double use, such as R drafting crew, rotating a module in the build tool and picking weapon 4.
+ * When an action's handler runs (see LIVE_WITH in bindings.ts):
+ * - `global`: always (App keys, camera keys).
+ * - `world`: the main view, in a fight or not (app/input.ts forwards Draft with no combat guard: drafting crew in a fight is real play).
+ * - `build`: while a build tool is open, which never happens in a fight (a fight drops the tools and the tool bar is hidden).
+ * - `combat`: during a fight (the combat strip, CombatHud).
+ * Two actions on one key conflict when their contexts can be live together, unless one lists the other in `shares`: a deliberate double
+ * use, such as R drafting crew, rotating a module and picking weapon 4 (the combat strip lets R fall through when there is no fourth weapon).
  */
 export type KeyContext = 'global' | 'world' | 'build' | 'combat';
 

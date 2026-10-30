@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi } from '../api';
   import Icon, { type IconName } from '../Icon.svelte';
-  import { Frame } from '../kit';
+  import { Dialog, Frame } from '../kit';
   import { keyModal } from '../keymap';
   import ControlsPage from './ControlsPage.svelte';
   import SavesPage from './SavesPage.svelte';
@@ -18,6 +18,11 @@
   let page = $state<Page>('main');
   /** The Controls page is waiting for a key: it takes Esc too (to cancel the rebind). */
   let capturing = $state(false);
+  // A new page: focus its Back button (the button that opened it is gone), so the keyboard stays in the menu.
+  let body: HTMLElement | undefined = $state();
+  $effect(() => {
+    if (page !== 'main') body?.closest('.menu')?.querySelector<HTMLElement>('[data-testid=menu-back]')?.focus();
+  });
   const TITLES: Record<Page, string> = { main: 'Menu', save: 'Save game', load: 'Load game', controls: 'Controls', settings: 'Settings', newGame: 'New game' };
   const ITEMS: { page: Page | 'resume'; label: string; icon: IconName; testid: string }[] = [
     { page: 'resume', label: 'Resume', icon: 'play', testid: 'menu-resume' },
@@ -31,7 +36,8 @@
   onMount(() => {
     keyModal.open = true;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || capturing || e.defaultPrevented) return;
+      // The Dialog itself ignores Esc (and marks it handled), so this listener owns it. An open dropdown inside the menu gets it first.
+      if (e.key !== 'Escape' || capturing || document.querySelector('.kit-sel-content')) return;
       e.preventDefault();
       onClose();
     };
@@ -39,12 +45,14 @@
     return () => {
       keyModal.open = false;
       window.removeEventListener('keydown', onKey);
+      (document.activeElement as HTMLElement | null)?.blur?.(); // back to the game: no menu or HUD button keeps the keyboard
     };
   });
 </script>
 
-<div class="veil" data-testid="esc-menu-veil"></div>
-<div class="menu steel" role="dialog" aria-modal="true" aria-label={TITLES[page]} data-testid="esc-menu" class:wide={page === 'controls' || page === 'settings'} class:mid={page === 'save' || page === 'load' || page === 'newGame'}>
+<!-- The kit Dialog moves focus in (Resume), traps it and keeps the background out of reach; Esc is handled above (not while rebinding). -->
+<Dialog open bare dismissable={false} title={TITLES[page]} testId="esc-menu" initialFocus="[data-testid=menu-resume]" onCloseFocus={() => (document.activeElement as HTMLElement | null)?.blur?.()}>
+<div class="menu steel" class:wide={page === 'controls' || page === 'settings'} class:mid={page === 'save' || page === 'load' || page === 'newGame'}>
   <Frame title={TITLES[page]}>
     {#snippet right()}
       {#if page !== 'main'}
@@ -53,7 +61,7 @@
         <button class="back" aria-label="Close menu" onclick={onClose}><Icon name="close" size={14} />Esc</button>
       {/if}
     {/snippet}
-    <div class="body">
+    <div class="body" bind:this={body}>
       {#if page === 'main'}
         <nav class="items">
           {#each ITEMS as it (it.page)}
@@ -80,20 +88,10 @@
     </div>
   </Frame>
 </div>
+</Dialog>
 
 <style>
-  .veil {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    background: rgba(0, 0, 0, 0.55);
-  }
   .menu {
-    position: fixed;
-    z-index: 41;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
     width: 300px;
     max-height: min(780px, calc(100vh - 80px));
     display: flex;

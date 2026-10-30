@@ -77,6 +77,13 @@ describe('key map', () => {
     expect(chordOf(press('KeyR', true))).toBe('Shift+KeyR');
   });
 
+  it('treats Draft as live in a fight: Draft on V clashes with Volley; a build key can still match a combat key', () => {
+    const km = createKeymap(() => null);
+    expect(km.conflicts('crew.draft', 'KeyV')).toEqual(['combat.volley']);
+    expect(km.conflicts('build.rotateBack', 'Shift+KeyR')).toEqual([]); // the build tool is never open in a fight
+    expect(km.conflicts('build.rotate', 'KeyV')).toEqual([]);
+  });
+
   it('lets R draft crew, rotate a module and pick weapon 4 on purpose', () => {
     const byId = new Map(ACTIONS.map((a) => [a.id, a]));
     expect(overlaps(byId.get('crew.draft')!, byId.get('combat.weapon4')!)).toBe(false);
