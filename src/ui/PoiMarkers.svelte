@@ -7,7 +7,7 @@
 
   /**
    * Off-screen points of interest: every other ship or station in the node (the node strip's list) whose centre is outside the camera view gets a
-   * marker on the screen edge, on the line from the screen centre toward it, with an arrow, its icon and its name. A click pans the camera to it and
+   * marker on the screen edge, on the line from the screen centre toward it, with an arrow and its icon (the name expands on hover). A click pans the camera to it and
    * selects it, as in the node strip. Positions come from the renderer's screen projection each frame; markers hug the screen edge and slide along it
    * clear of the HUD rectangles measured from the page (top bars, right column, tool dock, build menu).
    */
@@ -54,7 +54,7 @@
 
 <div class="pois" data-testid="pois">
   {#each placed as m (m.ship)}
-    <button class="poi" class:foe={m.kind === 'hostile'} class:after={m.edge === 'r'} style="left:{m.x}px; top:{m.y}px; transform: translate({m.tx}%, {m.ty}%)" data-testid="poi-{m.ship}" data-kind={m.kind} data-edge={m.edge} aria-label="{m.name}: off screen, go to" onclick={() => api.selectShip(m.ship)}>
+    <button class="poi" class:foe={m.kind === 'hostile'} class:rev={m.grow === 'l'} style="left:{m.x}px; top:{m.y}px; transform: translate({m.tx}%, {m.ty}%); --room:{m.room}px" data-testid="poi-{m.ship}" data-kind={m.kind} data-edge={m.edge} aria-label="{m.name}: off screen, go to" onclick={() => api.selectShip(m.ship)}>
       <svg class="arrow" width="12" height="12" viewBox="-6 -6 12 12" style="transform: rotate({m.angle}deg)" aria-hidden="true"><path d="M-5 0 H4 M0 -4.5 L4.5 0 L0 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
       <Icon name={NODE_ICONS[m.kind]} size={18} />
       <span class="name">{m.name}</span>
@@ -64,12 +64,13 @@
 
 <style>
   .pois { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-  .poi { position: absolute; display: flex; align-items: center; gap: 4px; min-height: 0; min-width: 0; height: 28px; max-width: 180px; padding: 0 8px 0 4px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--cyan); pointer-events: auto; font-size: 12px; }
-  .poi:hover { background: var(--panel-3); border-color: var(--cyan); }
+  /* Compact at rest (arrow and icon); the name expands on hover or focus toward the screen interior, up to the room measured beside the chip. */
+  .poi { position: absolute; display: flex; align-items: center; gap: 4px; min-height: 0; min-width: 0; box-sizing: border-box; width: fit-content; height: 28px; padding: 0 6px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--cyan); pointer-events: auto; font-size: 12px; }
+  .poi.rev { flex-direction: row-reverse; }
+  .poi:hover, .poi:focus-visible { background: var(--panel-3); border-color: var(--cyan); }
   .poi.foe { color: var(--red); border-color: #7a2a2a; }
-  /* A small arrow drawn pointing right (angle 0) and rotated by the direction to the target. */
   .arrow { flex: none; }
-  /* The arrow sits on the side that faces the target: after the name on the right edge, before it otherwise. */
-  .poi.after .arrow { order: 3; }
-  .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .name { display: block; max-width: 0; margin-left: -4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); transition: max-width 0.12s ease-out; }
+  .rev .name { margin-left: 0; margin-right: -4px; }
+  .poi:hover .name, .poi:focus-visible .name { max-width: var(--room); margin: 0; }
 </style>

@@ -22,9 +22,21 @@ describe('markerPlace', () => {
   });
 });
 
+describe('hover room', () => {
+  it('grows toward the interior and stops at the HUD', () => {
+    const p = markerPlace({ x: 5000, y: 475 }, 1920, 950, [{ l: 1750, t: 400, r: 1900, b: 560 }]);
+    expect(p).toMatchObject({ edge: 'r', grow: 'l' });
+    expect(p!.room).toBeLessThanOrEqual(170);
+  });
+  it('on the bottom edge grows toward the side with more room', () => {
+    const p = markerPlace({ x: 1800, y: 3000 }, 1920, 950, [{ l: 1840, t: 860, r: 1920, b: 950 }]);
+    expect(p).toMatchObject({ edge: 'b', grow: 'l' });
+  });
+});
+
 describe('spread', () => {
   it('moves a marker that would overlap an earlier one along the edge', () => {
-    const a = { x: 1896, y: 800, edge: 'r' as const, angle: 0, tx: -100, ty: -50 };
+    const a = { x: 1896, y: 800, edge: 'r' as const, angle: 0, tx: -100, ty: -50, grow: 'l' as const, room: 100 };
     const out = spread([a, { ...a, y: 805 }], 1920, 950);
     expect(out[0]!.y).toBe(800);
     expect(out[1]!.y).toBeLessThan(800 - 20);
