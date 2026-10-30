@@ -86,3 +86,139 @@ for _r in range(4):
         SPRITES.append((f"module.{_name}.r{_r}", fp, "prop", lambda r=_r, fn=_fn: fn(r)))
         if _r == 0:
             SPRITES.append((f"module.{_name}", fp, "prop", lambda fn=_fn: fn(0)))
+
+
+# ---- variations under review (round 2) ------------------------------------------------------------------------------
+
+def _plinth(k):
+    k.cyl(0, 0, 0.0, 0.84, 0.1, "steelD", top="steel", sides=8)
+    k.cyl(0, 0, 0.1, 0.62, 0.1, "gmD", top="gm", sides=8)
+    for i in range(8):
+        a = i * math.tau / 8 + math.tau / 16
+        k.box(0.72 * math.cos(a), 0.72 * math.sin(a), 0.1, 0.1, 0.1, 0.02, "cyan")
+
+
+def holo_ring(rot):
+    """B: a slim mast; two thin rings of light float apart from it, a magenta diamond hangs in the middle."""
+    k = K(f"holo_ring_{rot}", (2, 2), rot)
+    _plinth(k)
+    k.cyl(0, 0, 0.2, 0.09, 1.9, "steel", top="steelL", sides=8)
+    for z, r, col in ((0.95, 0.55, "cyan"), (1.6, 0.45, "magenta")):
+        n = 24
+        for i in range(n):
+            a = i * math.tau / n
+            k.box(r * math.cos(a), r * math.sin(a), z, 0.16, 0.03, 0.04, col, rz=a + math.pi / 2)
+    for i in range(4):                                                                 # the diamond: four slats in a rhombus
+        a = i * math.pi / 2 + math.pi / 4
+        k.box(0.13 * math.cos(a), 0.13 * math.sin(a), 1.12, 0.04, 0.04, 0.36, "magenta", rz=a)
+    k.cyl(0, 0, 2.1, 0.14, 0.06, "steel", top="cyan", sides=10, rtop=0.18)
+    return k.build()
+
+
+def holo_pylon(rot):
+    """C: a billboard pylon: two steel legs, a tall sign panel between them with a cyan frame and magenta glyph bars."""
+    k = K(f"holo_pylon_{rot}", (2, 2), rot)
+    k.box(0, 0, 0.0, 1.7, 0.9, 0.12, "steelD", top="steel", bevel=0.02)
+    for u in (-0.7, 0.7):
+        k.box(u, 0, 0.12, 0.14, 0.24, 2.0, "steel", top="steelL")
+    k.box(0, 0, 0.55, 1.26, 0.06, 1.45, "gmD", top="steelD")                              # the panel
+    for z in (0.58, 1.95):                                                             # cyan frame top and bottom
+        k.box(0, 0.035, z, 1.22, 0.02, 0.05, "cyan")
+    for u in (-0.6, 0.6):
+        k.box(u, 0.035, 0.58, 0.05, 0.02, 1.42, "cyan")
+    rnd = random.Random(4)
+    for row in range(6):                                                               # glyph bars
+        z = 0.75 + row * 0.2
+        u = -0.45
+        while u < 0.4:
+            w = rnd.choice((0.12, 0.2, 0.28))
+            k.box(u + w / 2, 0.04, z, w, 0.02, 0.1, "magenta" if row != 2 else "cyan")
+            u += w + 0.08
+    k.box(0, 0, 2.12, 1.6, 0.3, 0.08, "steelD", top="steel")                             # the cap
+    return k.build()
+
+
+def holo_globe(rot):
+    """D: a globe of light: meridian slats round a floating sphere over a squat drum."""
+    k = K(f"holo_globe_{rot}", (2, 2), rot)
+    _plinth(k)
+    k.cyl(0, 0, 0.2, 0.32, 0.55, "steel", top="steelD", sides=10)
+    k.cyl(0, 0, 0.75, 0.38, 0.06, "ochD", top="ochM", sides=10)
+    k.cyl(0, 0, 0.81, 0.22, 0.04, "cyan", sides=10)
+    c, r = 1.45, 0.48
+    for m in range(8):                                                                 # meridians
+        a = m * math.pi / 8
+        for j in range(1, 10):
+            t = -math.pi / 2 + j * math.pi / 10
+            k.box(r * math.cos(t) * math.cos(a), r * math.cos(t) * math.sin(a), c + r * math.sin(t), 0.04, 0.04, 0.08,
+                  "cyan" if m % 2 else "magenta")
+    for j in range(1, 5):                                                              # a few latitude lines
+        t = -math.pi / 2 + j * math.pi / 5
+        n = 16
+        for i in range(n):
+            a = i * math.tau / n
+            k.box(r * math.cos(t) * math.cos(a), r * math.cos(t) * math.sin(a), c + r * math.sin(t), 0.1, 0.03, 0.03, "cyan",
+                  rz=a + math.pi / 2)
+    return k.build()
+
+
+def ring_post(k, u, v):
+    k.cyl(u, v, 0.12, 0.07, 0.9, "steelL", top="hazY", sides=8)
+    k.cyl(u, v, 0.98, 0.09, 0.05, "hazY", sides=8)
+
+
+def sparring(rot):
+    """Drill A: a sparring ring: a raised mat, corner posts, three ropes a side."""
+    k = K(f"sparring_{rot}", (3, 3), rot)
+    k.box(0, 0, 0.0, 2.8, 2.8, 0.12, "gmD", top="gm", bevel=0.02)
+    k.box(0, 0, 0.12, 2.5, 2.5, 0.02, "navy", top="hbM")                                 # the mat
+    k.box(0, 0, 0.14, 0.9, 0.9, 0.005, "hbL")                                            # its centre mark
+    c = 1.25
+    for u, v in ((-c, -c), (c, -c), (-c, c), (c, c)):
+        ring_post(k, u, v)
+    for z in (0.42, 0.62, 0.82):                                                       # ropes
+        for u, v, su, sv in ((0, -c, 2.5, 0.03), (0, c, 2.5, 0.03), (-c, 0, 0.03, 2.5), (c, 0, 0.03, 2.5)):
+            k.box(u, v, z, su, sv, 0.03, "rH" if z == 0.62 else "lvR")
+    return k.build()
+
+
+def targets(rot):
+    """Drill B: a target stand: three man-shaped targets on posts in a striped bay, a sandbag wall behind."""
+    k = K(f"targets_{rot}", (3, 2), rot)
+    k.box(0, 0, 0.0, 2.8, 1.8, 0.04, "dark", top="dark")
+    for i in range(-6, 7):                                                             # hazard stripes on the bay's front edge
+        k.box(i * 0.2, 0.86, 0.04, 0.1, 0.08, 0.01, "hazY")
+    for u in (-0.9, 0.0, 0.9):
+        k.box(u, -0.1, 0.04, 0.05, 0.05, 0.75, "steel")
+        k.box(u, -0.1, 0.8, 0.4, 0.04, 0.55, "lvW", top="lvW2")                          # the body
+        k.cyl(u, -0.1, 1.35, 0.11, 0.05, "lvW", sides=10)
+        k.box(u, -0.08, 1.37, 0.2, 0.03, 0.2, "lvW")                                     # the head
+        k.box(u, -0.07, 1.0, 0.16, 0.02, 0.16, "lvR")                                    # bullseye
+    for u in (-1.1, -0.55, 0.0, 0.55, 1.1):                                            # sandbags
+        k.box(u, -0.72, 0.04, 0.5, 0.3, 0.22, "gdM", top="gd", bevel=0.05)
+        k.box(u + 0.27, -0.72, 0.26, 0.5, 0.3, 0.2, "gdM", top="gd", bevel=0.05)
+    return k.build()
+
+
+def memorial(rot):
+    """Drill C: a memorial: a stepped stone plinth, a helmet on a planted rifle, two lamps, a brass plaque."""
+    k = K(f"memorial_{rot}", (2, 2), rot)
+    k.box(0, 0, 0.0, 1.8, 1.8, 0.1, "steelD", top="steel")
+    k.box(0, 0, 0.1, 1.3, 1.3, 0.12, "c4F3", top="c4F1")
+    k.box(0, 0, 0.22, 0.8, 0.8, 0.5, "c4F2", top="c4F0", bevel=0.02)
+    k.box(0, 0.41, 0.36, 0.44, 0.012, 0.2, "ochM")                                       # plaque
+    k.box(0, 0, 0.72, 0.05, 0.05, 0.75, "gm")                                            # the rifle, muzzle down
+    k.box(0, 0.02, 1.2, 0.07, 0.12, 0.25, "gmD")                                         # its stock
+    k.cyl(0, 0, 1.42, 0.17, 0.12, "jacketD", top="jacket", sides=10, rtop=0.12)          # the helmet
+    for u in (-0.75, 0.75):                                                            # two lamps
+        k.cyl(u, 0.75, 0.1, 0.06, 0.45, "steel", sides=8)
+        k.box(u, 0.75, 0.55, 0.1, 0.1, 0.1, "lampY")
+    return k.build()
+
+
+VARIANTS = (("holo_ring", (2, 2), holo_ring), ("holo_pylon", (2, 2), holo_pylon), ("holo_globe", (2, 2), holo_globe),
+            ("sparring", (3, 3), sparring), ("targets", (3, 2), targets), ("memorial", (2, 2), memorial))
+for _r in range(4):
+    for _name, _fp, _fn in VARIANTS:
+        fp = (_fp[1], _fp[0]) if _r % 2 == 1 else _fp
+        SPRITES.append((f"module.{_name}.r{_r}", fp, "prop", lambda r=_r, fn=_fn: fn(r)))
