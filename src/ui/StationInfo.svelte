@@ -32,7 +32,7 @@
 
 <style>
   .info { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-  .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); min-height: 20px; }
+  .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); min-height: 20px; }
   .cell b { color: var(--text); font-weight: 600; }
   .cell small { color: var(--dim); font-size: 11px; }
   .cell.warn { border-color: var(--amber); color: var(--amber); }

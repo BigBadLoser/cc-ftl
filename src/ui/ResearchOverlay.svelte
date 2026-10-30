@@ -38,7 +38,7 @@
 </script>
 
 <svelte:window onkeydowncapture={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }} />
-<div class="rt" data-testid="research-panel" role="dialog" aria-label="Research">
+<div class="rt legacy" data-testid="research-panel" role="dialog" aria-label="Research">
   <div class="top">
     <Icon name="research" size={18} /><b>Research</b>
     <span class="chip" data-testid="research-labs">{rs.labs} {rs.labs === 1 ? 'module' : 'modules'}</span>

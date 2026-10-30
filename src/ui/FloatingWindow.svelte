@@ -149,11 +149,11 @@
   .fwbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
   header.ph { margin: 0; padding: 0 0 0 10px; display: flex; align-items: center; gap: 8px; min-height: 32px; flex: none; }
   header.drag, .fw.bare :global(.ph) { cursor: move; touch-action: none; }
-  header .ico { display: inline-flex; color: var(--cyan); }
+  header .ico { display: inline-flex; color: var(--ink-accent); }
   header .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  header :global(button.tile), .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; cursor: pointer; }
+  header :global(button.tile), .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: #fff; cursor: pointer; }
   header :global(button.tile:hover), .barepin:hover { background: var(--panel-3); }
-  header :global(button.tile.pin), .barepin { color: #8fc4da; }
+  header :global(button.tile.pin), .barepin { color: var(--pin-ink); }
   header :global(button.tile.pin.on), .barepin.on { background: var(--cyan); color: #04202c; }
   .barepin { position: absolute; top: 0; z-index: 3; }
   .fw.bare :global(.ph button) { cursor: pointer; }

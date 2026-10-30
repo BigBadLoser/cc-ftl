@@ -44,5 +44,5 @@
   .bar { height: 4px; background: var(--panel-3); margin: 3px 0; }
   .bar i { display: block; height: 100%; background: var(--cyan); }
   .bot button { padding: 2px 10px; }
-  .go { border-color: var(--cyan); }
+  .go { border-color: var(--go-edge); }
 </style>

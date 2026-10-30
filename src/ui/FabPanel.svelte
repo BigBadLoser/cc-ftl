@@ -114,7 +114,7 @@
   .dim { color: var(--dim); }
   .bad { color: #ff9a9a; }
   .prog > i { background: #ff9a3c; }
-  h3 { margin: 10px 0 4px; font-size: 13px; color: var(--cyan); }
+  h3 { margin: 10px 0 4px; font-size: 13px; color: var(--ink-accent); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .orders li { background: #0e1626; border: 1px solid var(--line); border-radius: 0; padding: 4px 6px; }
@@ -138,8 +138,8 @@
   .rt { flex: 1; display: grid; line-height: 1.2; min-width: 0; }
   .rn { font-weight: 600; }
   .rf { color: var(--dim); font-size: 12px; }
-  .sec { color: var(--cyan); font-size: 12px; }
+  .sec { color: var(--ink-accent); font-size: 12px; }
   .form { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
-  .go { background: #0e4a56; border-color: var(--cyan); min-width: 64px; }
+  .go { background: var(--go-fill); border-color: var(--go-edge); min-width: 64px; }
   .hint { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
 </style>

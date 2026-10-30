@@ -15,7 +15,7 @@
   --amber: #f0b13a;
   --green: #47e0a0;
   --hp: #ff6b5a;
-  --rest: #36d4ff;
+  --rest: #c9ced3;
   --hunger: #f0b13a;
   --focus: var(--cyan);
   --kit-dialog-radius: 0;
@@ -37,16 +37,23 @@
   /* Bars and tags. */
   --track: #080a0c;
   --ok-fill: #11151a;
-  --go: #0e6a80;
+  --go: #11151a;
   /* Panel bands and muted text used by the combat HUD. */
-  --band: #0d4a66;
+  --band: #1c2228;
   --band-hot: #6a1c25;
   --heat-low: #1b8fb3;
-  --axis: #56697b;
-  --muted: #8fa3b3;
-  --light: #a9d8ee;
+  --axis: #4a525a;
+  --muted: #8b939a;
+  --light: #c9ced3;
   --amber-fill: #11151a;
   /* Steel hybrid (see combat/steel.css): neutral stand-ins for cyan where it only meant "fine", and borderless controls. */
+  /* Window header tiles, pin and role ink, and the "go" button (neutral steel, green edge: the go state, as Volley). */
+  --band-tile: #232a31;
+  --pin-ink: var(--dim);
+  --role-ink: var(--dim);
+  --go-fill: #11151a;
+  --go-edge: var(--green);
+  --ink-accent: #c9ced3; /* headings, icons and labels that are not controls (cyan is for interaction) */
   --hud-ok: #c9ced3;
   --hud-key: #c9ced3;
   --hud-bar: #dfe4e8;
@@ -79,7 +86,7 @@
 html, body, #app { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
 body { font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-variant-numeric: tabular-nums; touch-action: none; -webkit-user-select: none; user-select: none; }
 button { min-height: 40px; min-width: 40px; padding: 0 12px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 0; font: inherit; cursor: pointer; }
-button:disabled { opacity: 0.4; cursor: default; }
+button:disabled { opacity: 0.6; cursor: default; }
 button:hover { border-color: var(--line-hi); }
 button.on { background: var(--panel-3); border-color: var(--cyan); color: #fff; }
 /* An icon tile: square, icon only, cyan glyph. */
@@ -89,9 +96,49 @@ button.tile.on { color: #fff; }
 .bar > i { display: block; height: 100%; background: var(--cyan); }
 .sheet { position: fixed; z-index: 5; background: var(--panel); border: 1px solid var(--line-hi); border-radius: 0; padding: 10px; pointer-events: auto; }
 /* Panel heading: condensed caps on a cyan band. */
-.ph { margin: -10px -10px 8px; padding: 4px 10px; background: #0d4a66; color: #fff; font: 600 14px/1.3 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
+.ph { margin: -10px -10px 8px; padding: 4px 10px; background: var(--band); color: #fff; font: 600 14px/1.3 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
 @media (max-width: 600px) {
   .sheet { left: 0; right: 0; bottom: 0; border-width: 1px 0 0; padding: 10px 14px calc(10px + var(--sab)); max-height: 60vh; overflow-y: auto; }
 }
 /* While a floating window is dragged or resized, one cursor everywhere (see dragCursor.ts). */
 html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
+
+/*
+ * The pre-steel blue look, pinned for the surfaces that keep it (the starmap, the build catalog and the research overlay): a wrapper class that
+ * puts the old token values back for everything inside it.
+ */
+.legacy {
+  --bg: #04080e;
+  --panel: rgba(6, 14, 24, 0.96);
+  --panel-2: #0a1828;
+  --panel-3: #0e2236;
+  --line: #17506a;
+  --line-hi: #2a9cc4;
+  --text: #d8f0ff;
+  --dim: #7fa9c0;
+  --frame-line: rgba(90, 140, 175, 0.38);
+  --track: #061020;
+  --ok-fill: #0a2233;
+  --amber-fill: #2a2210;
+  --go: #0e6a80;
+  --band: #0d4a66;
+  --band-tile: #0a3a52;
+  --pin-ink: #8fc4da;
+  --role-ink: #9fd6ea;
+  --go-fill: #0e4a56;
+  --go-edge: var(--cyan);
+  --axis: #56697b;
+  --muted: #8fa3b3;
+  --light: #a9d8ee;
+  --rest: #36d4ff;
+  --ink-accent: var(--cyan);
+  --hud-ok: var(--cyan);
+  --hud-key: var(--cyan);
+  --hud-bar: var(--cyan);
+  --hud-dash: var(--line);
+  --btn-edge: var(--line);
+  --btn-go: #0e6a80;
+  --btn-go-edge: var(--cyan);
+  --btn-active-edge: var(--cyan);
+}
+.legacy button:disabled { opacity: 0.4; }

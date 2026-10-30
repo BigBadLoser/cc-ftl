@@ -62,7 +62,7 @@
 
 <style>
   .body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-  .role { color: #9fd6ea; font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .role { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
   .chip { padding: 2px 8px; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; font: inherit; letter-spacing: 0; }
   .tabs { flex: none; display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
   .tabs button { flex: 1; background: transparent; border: 0; border-bottom: 2px solid transparent; min-height: 32px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }

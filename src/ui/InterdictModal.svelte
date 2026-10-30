@@ -69,7 +69,7 @@
   .choices { display: grid; gap: 6px; }
   .choices button { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; font: 600 16px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .lbl { display: inline-flex; align-items: center; gap: 8px; }
-  .choices button small { font: 600 14px var(--head-font); letter-spacing: 0.04em; text-transform: none; color: var(--cyan); text-align: right; }
+  .choices button small { font: 600 14px var(--head-font); letter-spacing: 0.04em; text-transform: none; color: var(--ink-accent); text-align: right; }
   .choices button:disabled small { color: var(--red); }
   .choices button.fight { border-color: var(--red); }
   @media (max-width: 600px) {

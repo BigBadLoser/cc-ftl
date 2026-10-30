@@ -61,13 +61,13 @@
   .choice { display: grid; gap: 2px; text-align: left; padding: 9px 12px; min-height: 44px; }
   .label { font-weight: 600; }
   .hint { color: var(--dim); font-size: 12px; }
-  .odds { color: var(--cyan); font-size: 12px; font-weight: 600; }
+  .odds { color: var(--ink-accent); font-size: 12px; font-weight: 600; }
   .cost { color: var(--amber); font-size: 12px; }
   .reason { color: #ff8d8d; font-size: 12px; }
-  .choice.locked { opacity: 1; background: #141b28; border-style: dashed; color: var(--dim); }
-  .choice.locked .label { color: #7a8aa3; }
+  .choice.locked { opacity: 1; background: var(--panel-3); border-style: dashed; color: var(--dim); }
+  .choice.locked .label { color: var(--dim); }
   .result { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(420px, calc(100vw - 24px)); display: grid; gap: 4px; z-index: 12; touch-action: pan-y; }
-  .result b { color: var(--cyan); }
+  .result b { color: var(--ink-accent); }
   .chose { color: var(--dim); font-size: 12px; }
   .result .text { margin: 4px 0; }
   ul { margin: 0 0 4px; padding-left: 18px; color: var(--amber); }

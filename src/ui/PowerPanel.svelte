@@ -45,11 +45,11 @@
   .hint { margin: 6px 0; color: var(--dim); font-size: 12px; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
   .lbl { color: var(--dim); }
-  h3 { margin: 10px 0 4px; font-size: 13px; color: var(--cyan); }
+  h3 { margin: 10px 0 4px; font-size: 13px; color: var(--ink-accent); }
   ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 260px; overflow-y: auto; }
   li { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; padding: 2px 6px; background: var(--panel-2); border: 1px solid transparent; }
   li.me { border-color: var(--cyan); }
   li.dark { color: #ff9a9a; }
-  li b { color: var(--cyan); font-weight: 600; }
+  li b { color: var(--ink-accent); font-weight: 600; }
   .d { color: var(--dim); }
 </style>

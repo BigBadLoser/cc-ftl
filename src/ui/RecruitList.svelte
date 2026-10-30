@@ -42,7 +42,7 @@
   .pay { color: #ffd77a; font-weight: 600; white-space: nowrap; }
   .d { color: var(--dim); font-size: 12px; }
   .warn { color: var(--red); font-size: 12px; }
-  .way { color: var(--cyan); font-size: 12px; }
+  .way { color: var(--ink-accent); font-size: 12px; }
   li button { justify-self: end; min-height: 30px; padding: 0 12px; }
   .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
   .note { margin-top: 8px; }

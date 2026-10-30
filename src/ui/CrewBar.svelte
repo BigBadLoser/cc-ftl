@@ -89,7 +89,7 @@
   .face.down img { filter: saturate(0.6) brightness(0.75) sepia(1) hue-rotate(-45deg) saturate(2.2); }
   .st { position: absolute; left: calc(var(--face) - 6px); top: calc(var(--face) * 1.0689 - 5px); display: grid; place-items: center; padding: 1px; background: var(--panel); border-radius: 50%; }
   .st.ok { color: var(--green); } .st.warn { color: var(--amber); } .st.bad { color: var(--red); } .st.dim { color: var(--dim); }
-  .name { font: 600 14px/1.1 var(--head-font); color: var(--cyan); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .name { font: 600 14px/1.1 var(--head-font); color: var(--ink-accent); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .role { font: 10px/1.2 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bars { grid-column: 1 / 3; align-self: end; display: grid; gap: 2px; width: 100%; }
   .bars i { display: block; height: 3px; background: #061020; }

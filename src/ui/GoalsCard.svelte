@@ -99,7 +99,7 @@
   .head { display: flex; align-items: center; gap: 6px; margin: 0; }
   .done-act .head { color: var(--green); font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .title { flex: 1; display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
-  .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
+  .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
   ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; }
@@ -118,7 +118,7 @@
   .confirm .danger { border-color: var(--red); color: var(--red); }
   /* Phone chip: one line, name ellipsised, chevron at the right. */
   .chip { padding: 0 8px; }
-  .title :global(.icon) { margin-left: auto; align-self: center; color: var(--cyan); }
+  .title :global(.icon) { margin-left: auto; align-self: center; color: var(--ink-accent); }
   .chip .title { min-height: 32px; align-items: center; min-width: 0; }
   .chip .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sep { color: var(--dim); }
