@@ -221,8 +221,9 @@
     else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
     else if (stockOpen && !isPinned('stock')) stockOpen = false;
     else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
-    else if (mapOpen || deploy) return; // the starmap and the deploy picker answer Esc themselves
-    else if (!api.cancel()) openMenu();
+    else if (mapOpen && !mapLocked && !deploy) return; // the starmap closes itself on Esc (StarmapView)
+    // Over the deploy picker or the locked hyperspace map nothing else answers Esc: it opens the menu (the only way in).
+    else if (deploy || mapOpen || !api.cancel()) openMenu();
   }
 
   const speeds: { label: string; icon: IconName; speed: 0 | 1 | 2 | 3 }[] = [

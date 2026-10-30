@@ -28,8 +28,6 @@ export interface Keymap {
   keys(id: ActionId): readonly string[];
   /** Does this key press trigger the action? */
   matches(e: Pick<KeyboardEvent, 'code' | 'shiftKey'>, id: ActionId): boolean;
-  /** The same, ignoring Shift (held camera pans). */
-  matchesCode(code: string, id: ActionId): boolean;
   /** Actions (other than `id`) whose bindings would clash with `chord` on `id`. */
   conflicts(id: ActionId, chord: string): ActionId[];
   /** Put `chord` in the action's slot (null clears it). With `swap`, the actions it conflicts with get the chord that slot had. */
@@ -69,7 +67,6 @@ export function createKeymap(storage: () => Store | null): Keymap {
       const c = chordOf(e);
       return !!c && km.keys(id).includes(c);
     },
-    matchesCode: (code, id) => km.keys(id).some((c) => codeOf(c) === code),
     conflicts(id, chord) {
       const me = ACTION_BY_ID.get(id);
       if (!me) return [];

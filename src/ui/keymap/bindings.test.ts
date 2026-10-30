@@ -14,12 +14,18 @@ describe('key map', () => {
     for (const a of ACTIONS) for (const c of a.keys) expect(km.conflicts(a.id, c), `${a.id} ${c}`).toEqual([]);
   });
 
-  it('matches chords with Shift exactly, and codes without it for camera pans', () => {
+  it('matches chords with Shift exactly, the same way the conflict check reads them', () => {
     const km = createKeymap(() => null);
     expect(km.matches(press('KeyQ'), 'combat.weapon1')).toBe(true);
     expect(km.matches(press('KeyQ', true), 'combat.weapon1')).toBe(false);
     expect(km.matches(press('KeyQ', true), 'combat.mode1')).toBe(true);
-    expect(km.matchesCode('ArrowUp', 'cam.up')).toBe(true);
+    // Pan down on Shift+Up: no conflict with Pan up on Up, and at run time each key moves one way only.
+    expect(km.conflicts('cam.down', 'Shift+ArrowUp')).toEqual([]);
+    km.bind('cam.down', 1, 'Shift+ArrowUp');
+    expect(km.matches(press('ArrowUp'), 'cam.up')).toBe(true);
+    expect(km.matches(press('ArrowUp'), 'cam.down')).toBe(false);
+    expect(km.matches(press('ArrowUp', true), 'cam.down')).toBe(true);
+    expect(km.matches(press('ArrowUp', true), 'cam.up')).toBe(false);
   });
 
   it('rebinds, persists only the changes, and resets per group or all', () => {

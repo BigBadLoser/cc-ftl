@@ -1,5 +1,5 @@
 import { isTypingTarget } from '../ui/keys';
-import { keymap, keyModal, type ActionId } from '../ui/keymap';
+import { chordOf, keymap, keyModal, type ActionId } from '../ui/keymap';
 import { settings } from '../ui/settings/settings';
 import type { Renderer } from '../render/scene';
 
@@ -162,7 +162,8 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   };
 
   // Keyboard (held pan keys, keymap.ts) and edge scrolling move the camera each frame.
-  const held = new Set<string>();
+  /** Held pan keys: physical key -> the chord it was pressed as (with or without Shift), matched exactly against the bindings. */
+  const held = new Map<string, string>();
   let raf = 0;
   let lastT = 0;
   /** The mouse in the window (null once it leaves), for edge scrolling. */
@@ -176,9 +177,9 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     const dt = Math.min((t - lastT) / 1000, 0.1);
     lastT = t;
     let [dx, dy] = edgeDir();
-    for (const code of held) {
+    for (const chord of held.values()) {
       for (const [id, x, y] of PAN_DIRS) {
-        if (keymap.matchesCode(code, id)) {
+        if (keymap.keys(id).includes(chord)) {
           dx += x;
           dy += y;
         }
@@ -196,9 +197,9 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   };
   const onKeyDown = (e: KeyboardEvent) => {
     if (keyModal.open || isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (PAN_DIRS.some(([id]) => keymap.matchesCode(e.code, id))) {
+    if (PAN_DIRS.some(([id]) => keymap.matches(e, id))) {
       e.preventDefault();
-      held.add(e.code);
+      held.set(e.code, chordOf(e)!);
       run();
       return;
     }
