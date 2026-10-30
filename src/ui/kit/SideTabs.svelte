@@ -31,5 +31,5 @@
   :global(.kit-side-tab:hover) { color: var(--text); border-color: var(--line-hi); }
   :global(.kit-side-tab[data-state='active']) { background: var(--panel-3); border-color: var(--cyan); color: #fff; }
   :global(.kit-side-tab:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
-  :global(.kit-side-page) { min-width: 0; min-height: 0; overflow-y: auto; outline: none; padding-right: 2px; }
+  :global(.kit-side-page) { min-width: 0; min-height: 0; overflow-y: auto; outline: none; }
 </style>

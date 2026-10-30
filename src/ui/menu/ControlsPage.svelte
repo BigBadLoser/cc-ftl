@@ -60,6 +60,7 @@
 
 <SideTabs options={TABS} value={tab} onChange={(v) => { stop(); clash = null; tab = v as KeyGroup; }} label="Key groups" testId="controls">
   <div class="page">
+    <div class="list">
     <header>
       <h4>{group.label}</h4>
       <button class="reset" data-testid="keys-reset-{group.id}" onclick={() => reset(group.id)}>Reset {group.label}</button>
@@ -92,6 +93,7 @@
         </div>
       {/if}
     {/each}
+    </div>
     <footer>
       <p class="hint">Click a key, then press the new one. <KeyBadge tone="dim" size="sm">Del</KeyBadge> clears it. <KeyBadge tone="dim" size="sm">Esc</KeyBadge> cancels a tool, aim or selection, then opens this menu; it cannot be changed.</p>
       <button class="interact" data-testid="keys-reset-all" onclick={() => reset()}>Reset all keys</button>
@@ -100,11 +102,20 @@
 </SideTabs>
 
 <style>
+  /* The list scrolls; the footer stays a fixed row under it on every tab. */
   .page {
     display: flex;
     flex-direction: column;
+    height: 100%;
+  }
+  .list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     gap: 2px;
-    min-height: 100%;
+    padding-right: 4px;
   }
   .hint {
     flex: 1;
@@ -216,8 +227,10 @@
     text-transform: uppercase;
   }
   footer {
-    margin-top: auto;
-    padding-top: var(--sp-3);
+    flex: none;
+    padding-top: var(--sp-2);
+    margin-top: var(--sp-2);
+    border-top: 1px solid var(--line);
     display: flex;
     align-items: flex-end;
     gap: var(--sp-3);

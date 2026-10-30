@@ -44,7 +44,7 @@
 </script>
 
 <div class="veil" data-testid="esc-menu-veil"></div>
-<div class="menu steel" role="dialog" aria-modal="true" aria-label={TITLES[page]} data-testid="esc-menu" class:wide={page === 'controls' || page === 'settings'} class:mid={page === 'save' || page === 'load'}>
+<div class="menu steel" role="dialog" aria-modal="true" aria-label={TITLES[page]} data-testid="esc-menu" class:wide={page === 'controls' || page === 'settings'} class:mid={page === 'save' || page === 'load' || page === 'newGame'}>
   <Frame title={TITLES[page]}>
     {#snippet right()}
       {#if page !== 'main'}
@@ -94,7 +94,7 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 420px;
+    width: 300px;
     max-height: min(780px, calc(100vh - 80px));
     display: flex;
     pointer-events: auto;

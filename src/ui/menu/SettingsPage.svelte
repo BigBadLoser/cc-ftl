@@ -41,6 +41,7 @@
 
 <SideTabs options={TABS} value={tab} onChange={(v) => (tab = v)} label="Settings" testId="settings">
   <div class="page">
+    <div class="list">
     {#if tab === 'lessons'}
       <div class="row">
         <span class="label">Lessons<small>Short how-to cards the first time something happens</small></span>
@@ -66,16 +67,25 @@
       {@render toggle('showFps', 'Show FPS', 'Under the clock')}
       {@render toggle('tooltips', 'Tooltips')}
     {/if}
+    </div>
     <footer><button class="plain" data-testid="set-reset" onclick={() => settings.reset()}>Reset all settings</button></footer>
   </div>
 </SideTabs>
 
 <style>
+  /* The rows scroll if a tab ever grows; the footer stays a fixed row under them. */
   .page {
     display: flex;
     flex-direction: column;
+    height: 100%;
+  }
+  .list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     gap: var(--sp-1);
-    min-height: 100%;
   }
   .row {
     display: flex;
@@ -127,8 +137,10 @@
     text-transform: uppercase;
   }
   footer {
-    margin-top: auto;
-    padding-top: var(--sp-3);
+    flex: none;
+    padding-top: var(--sp-2);
+    margin-top: var(--sp-2);
+    border-top: 1px solid var(--line);
     display: flex;
     justify-content: flex-end;
   }
