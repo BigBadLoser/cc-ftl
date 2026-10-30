@@ -7,7 +7,7 @@
    * around the title is a real gap and works over a transparent panel. `right` renders items (a Pill, a button) into the top edge: put a
    * `<FrameGap width={n} />` between them. `tone="hostile"` is the red frame with a large title.
    */
-  let { title, tone = 'normal', style = '', testid, lesson, children, right }: {
+  let { title, tone = 'normal', style = '', testid, lesson, notch, children, head, right }: {
     title: string;
     tone?: 'normal' | 'hostile';
     style?: string;
@@ -15,14 +15,22 @@
     /** A `data-lesson` anchor (ui/lessons/anchors.ts) a tutorial step can point at. */
     lesson?: string;
     children: Snippet;
+    /** Replaces the title text in the top edge (a title in two tones). */
+    head?: Snippet;
+    /** A real break in the left border, `top` px down from the top edge and `height` px tall (a portrait sits in it). */
+    notch?: { top: number; height: number };
     right?: Snippet;
   } = $props();
 </script>
 
-<section class="frame {tone}" {style} data-testid={testid} data-lesson={lesson}>
+<section class="frame {tone}" class:notched={!!notch} {style} data-testid={testid} data-lesson={lesson}>
+  {#if notch}
+    <i class="side" style:top="0" style:height="{notch.top}px"></i>
+    <i class="side" style:top="{notch.top + notch.height}px" style:bottom="0"></i>
+  {/if}
   <div class="rail">
     <FrameGap width={9} />
-    <h3>{title}</h3>
+    <h3>{#if head}{@render head()}{:else}{title}{/if}</h3>
     <FrameGap grow />
     {#if right}
       {@render right()}
@@ -44,6 +52,17 @@
     padding: var(--sp-3) var(--sp-2) var(--sp-2);
     border: var(--frame-w) solid var(--edge);
     border-top: 0;
+  }
+  /* The left border as two segments around the notch: the side stays transparent (same geometry), nothing is painted over the gap. */
+  .frame.notched {
+    border-left-color: transparent;
+  }
+  .side {
+    position: absolute;
+    left: calc(-1 * var(--frame-w));
+    width: var(--frame-w);
+    background: var(--edge);
+    pointer-events: none;
   }
   .frame.hostile {
     --edge: var(--hostile-line);

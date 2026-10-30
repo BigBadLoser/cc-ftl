@@ -3,6 +3,7 @@
   import { placePanel, type Rect } from '../combat/panelPlace';
   import { keyText } from './keyText';
   import type { LessonView } from './engine';
+  import type { SpeakerDef } from './speakers';
   import type { ScreenRect } from './targets';
 
   /**
@@ -10,8 +11,11 @@
    * light steel when it only points), and a small card beside it with the text, the step count and the buttons. The dim and the ring take
    * no clicks, so the player can act on the target (or anywhere) while the card is up.
    */
-  let { view, rect, obstacles, onGotIt, onDismiss }: {
+  let { view, speaker, face, rect, obstacles, onGotIt, onDismiss }: {
     view: LessonView;
+    /** Who speaks this step (null: the plain card), and their portrait (a data URL, null while it loads). */
+    speaker: SpeakerDef | null;
+    face: string | null;
     rect: ScreenRect | null;
     /** Other anchored HUD pieces the card should not cover. */
     obstacles: Rect[];
@@ -35,6 +39,14 @@
       y1: Math.min(vh - EDGE, rect.y1 + PAD),
     },
   );
+  /**
+   * With a speaker: the portrait (72px in a frame, FACE px overall) sits centred on the card's left border, its top level with the step title
+   * (the frame's 12px padding plus the body's 2px), in a real break of the border NOTCH_GAP px above and below.
+   */
+  const FACE = 82;
+  const FACE_TOP = 14;
+  const NOTCH_GAP = 10;
+  const notch = { top: FACE_TOP - NOTCH_GAP, height: FACE + 2 * NOTCH_GAP };
   let cw = $state(0);
   let ch = $state(0);
   const at = $derived.by(() => {
@@ -66,6 +78,9 @@
 
 <div
   class="card steel"
+  class:spoken={!!speaker}
+  style:--face="{FACE}px"
+  style:--face-top="{FACE_TOP}px"
   role="dialog"
   aria-label="{view.lesson.title}: {view.step.title}"
   data-testid="lesson-card"
@@ -74,8 +89,12 @@
   style:transform={at ? `translate(${Math.round(at.x)}px, ${Math.round(at.y)}px)` : undefined}
   style:visibility={at ? 'visible' : 'hidden'}
 >
-  <Frame title={view.lesson.title}>
-    {#snippet right()}<span class="count">{view.index + 1}/{view.lesson.steps.length}</span>{/snippet}
+  {#if speaker}
+    <span class="face" data-testid="lesson-face">{#if face}<img src={face} alt={speaker.name} />{/if}</span>
+  {/if}
+  <Frame title={view.lesson.title} notch={speaker ? notch : undefined}>
+    {#snippet head()}{#if speaker}<span class="who">{speaker.name}</span> · <span class="role">{speaker.role}</span>{:else}{view.lesson.title}{/if}{/snippet}
+    {#snippet right()}<span class="count">{#if speaker}<span class="cat">{view.lesson.title}</span> {/if}{view.index + 1}/{view.lesson.steps.length}</span>{/snippet}
     <div class="body">
       <h4>{view.step.title}</h4>
       <p>
@@ -131,9 +150,49 @@
   .card :global(.frame) {
     background: var(--panel);
   }
+  /* A speaker: the card grows left by half the portrait (so placement counts it) and the body clears the portrait's inner half. */
+  .card.spoken {
+    width: 400px;
+    padding-left: calc(var(--face) / 2);
+  }
+  .card.spoken .body {
+    min-height: calc(var(--face) + 14px);
+    padding-left: calc(var(--face) / 2 + 6px);
+  }
+  .face {
+    position: absolute;
+    left: 0;
+    top: var(--face-top);
+    z-index: 1;
+    box-sizing: border-box;
+    width: var(--face);
+    height: var(--face);
+    padding: 4px;
+    border: var(--frame-w) solid var(--frame-line);
+    background: var(--track);
+  }
+  .face img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    image-rendering: pixelated;
+  }
+  .who {
+    color: var(--text);
+  }
+  .role,
+  .cat {
+    color: var(--dim);
+  }
+  .cat {
+    margin-right: 0.35em;
+  }
   .count {
     font: 600 13px/1 var(--head-font);
     letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--dim);
   }
   .body {
@@ -166,6 +225,7 @@
     flex: 1;
   }
   .btns button {
+    white-space: nowrap;
     min-height: 34px;
     display: inline-flex;
     align-items: center;
@@ -185,6 +245,7 @@
     border-color: var(--line);
   }
   .wait {
+    white-space: nowrap;
     font: 600 13px var(--head-font);
     letter-spacing: 0.05em;
     text-transform: uppercase;

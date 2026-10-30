@@ -744,6 +744,8 @@ the scene settle between the trigger and the card. Conditions (`conditions.ts`):
 carrying `data-lesson={anchor('...')}` (names are typed in `anchors.ts`; a kit `Frame` takes `lesson=`), `moduleTarget(pick)` rings a module in the
 world through `api.moduleScreenRect`. A new condition or target kind is one shape in the `...Kinds` interface plus one evaluator or resolver beside
 it; the engine does not change. If a lesson needs more of the game, add the field to `LessonCtx` and fill it in the host.
+A lesson (or a step) names its `speaker` from `speakers.ts`: a fixed instructor (name, role, `look`), whose portrait the crew portrait
+renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the plain card.
 
 ## Saves
 

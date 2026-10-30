@@ -1,6 +1,7 @@
 import type { Command, SimEvent } from '../../sim';
 import type { UiAiming, UiCombat } from '../api';
 import type { Condition } from './conditions';
+import type { SpeakerId } from './speakers';
 import type { LessonTarget } from './targets';
 
 /**
@@ -30,6 +31,8 @@ export interface StepDef {
   target?: LessonTarget;
   /** `gotIt`: the player reads and clicks Got it. A condition: a "do" step that advances when it holds (the player did the thing). */
   advance: 'gotIt' | Condition;
+  /** Overrides the lesson's speaker for this step. */
+  speaker?: SpeakerId;
   /** Time runs during this step (the game resumes at the player's speed); otherwise the game stays paused. */
   run?: boolean;
 }
@@ -38,6 +41,8 @@ export interface LessonDef {
   /** Stable id (`lesson.combat`): the seen-state key. */
   id: string;
   title: string;
+  /** Who speaks it (speakers.ts); none keeps the plain card. */
+  speaker?: SpeakerId;
   /** Queues the lesson the first time it holds (once seen, never again unless replayed). */
   trigger: Condition;
   /** Real ms between the trigger and the lesson opening (the scene settles first: camera framed, art loaded). Default 0. */

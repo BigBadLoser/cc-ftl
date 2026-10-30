@@ -3,6 +3,9 @@ import type { Atlas, LayerSprite } from './assets/loader';
 import { hash } from './assets/palette';
 import type { ClipDef, LayerAsset } from './assets/manifest';
 import type { Crew } from '../sim/crew/components';
+
+/** What a crew figure's look depends on: species, role (the kit) and the appearance seed (hair, colours). */
+export type CrewLook = Pick<Crew, 'species' | 'role' | 'appearanceSeed'>;
 import type { HandWeaponArt } from '../sim';
 import { FAMILY, weaponLayerIds } from './handWeapon';
 
@@ -30,7 +33,7 @@ const TALL_HAIR = ['hair.mohawk', 'hair.bun'];
  * `weapon`: the art of the equipped hand weapon: both its holster and held layers are worn, and the view draws one of
  * them per clip (see handWeapon.layerShown). Robots and species without the weapon layers wear none.
  */
-export function crewLoadout(atlas: Atlas, crew: Crew, suited = false, weapon?: HandWeaponArt): LayerSprite[] {
+export function crewLoadout(atlas: Atlas, crew: CrewLook, suited = false, weapon?: HandWeaponArt): LayerSprite[] {
   const own = crew.species.replace(/^species\./, '');
   const single = singleBody(atlas, crew);
   if (single) return [single];
@@ -63,7 +66,7 @@ export function crewLoadout(atlas: Atlas, crew: Crew, suited = false, weapon?: H
  * layer per type (worker, repair, security), built from the role id; creatures of one art species with several bodies
  * (`species.alien_hunter` wears `crew.alien.body.hunter`). These carry no gear, so no weapon is drawn on them.
  */
-export function singleBody(atlas: Atlas, crew: Crew): LayerSprite | undefined {
+export function singleBody(atlas: Atlas, crew: CrewLook): LayerSprite | undefined {
   const own = crew.species.replace(/^species\./, '');
   const bot = atlas.layer(`crew.${own}.body.${crew.role.replace(/^role\.robot_/, '')}`);
   if (bot && bot.def.species === own) return bot;

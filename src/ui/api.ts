@@ -10,6 +10,13 @@ export interface Subscribable<T> {
 /** A sim event after a tick, or a command as it is queued (by the UI, input or the sim's own AI): what the lessons engine listens to. */
 export type UiSignal = { kind: 'event'; event: SimEvent } | { kind: 'command'; command: Command };
 
+/** A crew figure's look: species and role content ids (the role sets the outfit) and the appearance seed (hair, colours). */
+export interface UiLook {
+  species: string;
+  role: string;
+  appearanceSeed: number;
+}
+
 export interface UiSnapshot {
   tick: number;
   speed: 0 | 1 | 2 | 3;
@@ -1246,6 +1253,8 @@ export interface UiApi {
   setTool(state: Partial<UiToolState>): void;
   /** Portrait (PNG data URL, whole art px: show it pixelated) of a crew member, or null while their sheets load. */
   portrait(id: number): string | null;
+  /** The same portrait drawn from a look (species and role ids, appearance seed) with no crew member behind it: a lesson's instructor. */
+  lookPortrait(look: UiLook): string | null;
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
   moduleThumb(def: string, rot: number): UiThumb | null;
   /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */

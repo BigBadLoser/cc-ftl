@@ -40,6 +40,7 @@ import { createWorldGrid } from './worldGrid';
 import { createCutLine } from './cutLine';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
+import type { CrewLook } from './loadout';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
 import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
 import { createShipScene, type ShipScene } from './shipScene';
@@ -95,6 +96,8 @@ export interface Renderer {
   info(): RenderInfo;
   /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
   portrait(id: number): string | null;
+  /** The same for a look with no crew entity behind it (a lesson's instructor). */
+  portraitOf(look: CrewLook): string | null;
   /** A module def's art as an image at a rotation (the build catalog's thumbnail), or null while its sheets load. */
   moduleThumb(def: string, rot: number): ModuleThumb | null;
   /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
@@ -503,6 +506,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return { sprites, zoom: cam.zoom };
     },
     portrait: (id) => portraits.url(id),
+    portraitOf: (look) => portraits.lookUrl(look),
     moduleThumb: (def, rot) => thumbs.get(def, rot),
     art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),

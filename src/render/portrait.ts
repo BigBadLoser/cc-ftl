@@ -1,12 +1,13 @@
 import { Container, Rectangle, Sprite, type ExtractSystem } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { ItemDef } from '../sim/registry';
+import type { HandWeaponArt } from '../sim';
 import { CrewC } from '../sim/crew/components';
 import { EquipC } from '../sim/fight/components';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import { ART_SCALE } from './iso';
-import { crewLoadout, singleBody } from './loadout';
+import { crewLoadout, singleBody, type CrewLook } from './loadout';
 import { artSize, portraitAssetId, portraitKey } from './portraitMath';
 
 export interface Portraits {
@@ -18,6 +19,8 @@ export interface Portraits {
   source(id: number): HTMLCanvasElement | null;
   /** The same as a PNG data URL (cached with the canvas), for an <img>. */
   url(id: number): string | null;
+  /** A portrait from a look alone (no crew entity): the lessons' instructors. PNG data URL, or null while its sheets load. */
+  lookUrl(look: CrewLook): string | null;
 }
 
 /**
@@ -34,7 +37,10 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
   function build(id: number): { canvas: HTMLCanvasElement; url: string } | null {
     const crew = world.get(id, CrewC);
     if (!crew) return null;
-    const art = items[world.get(id, EquipC)?.weapon ?? '']?.hand?.art;
+    return compose(crew, items[world.get(id, EquipC)?.weapon ?? '']?.hand?.art);
+  }
+
+  function compose(crew: CrewLook, art: HandWeaponArt | undefined): { canvas: HTMLCanvasElement; url: string } | null {
     const key = portraitKey(crew.species, crew.role, crew.appearanceSeed, art?.id);
     const hit = cache.get(key);
     if (hit) return hit;
@@ -79,5 +85,5 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
     return entry;
   }
 
-  return { source: (id) => build(id)?.canvas ?? null, url: (id) => build(id)?.url ?? null };
+  return { source: (id) => build(id)?.canvas ?? null, url: (id) => build(id)?.url ?? null, lookUrl: (look) => compose(look, undefined)?.url ?? null };
 }

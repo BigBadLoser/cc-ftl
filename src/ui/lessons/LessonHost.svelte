@@ -6,6 +6,7 @@
   import { LESSONS } from './defs';
   import { LessonEngine, type LessonView, type Speed } from './engine';
   import { lessonPrefs, type LessonPrefs } from './prefs';
+  import { SPEAKERS, type SpeakerDef } from './speakers';
   import { resolveTarget, type ScreenRect } from './targets';
   import type { LessonCtx } from './types';
 
@@ -18,6 +19,9 @@
   let view = $state<LessonView | null>(null);
   let rect = $state<ScreenRect | null>(null);
   let obstacles = $state<Rect[]>([]);
+  /** The open step's speaker (a step overrides its lesson) and their portrait, polled until its sheets have loaded. */
+  const speaker = $derived<SpeakerDef | null>(view ? SPEAKERS[view.step.speaker ?? view.lesson.speaker ?? ('' as never)] ?? null : null);
+  let face = $state<string | null>(null);
   /** Set on mount (the card only shows once it runs). */
   const ref: { engine: LessonEngine | null } = { engine: null };
 
@@ -53,6 +57,8 @@
       const r = t ? resolveTarget(t, { ctx, api, doc: document }) : null;
       if (!sameRect(r, rect)) rect = r;
       if (eng.current) obstacles = anchoredOthers(r);
+      const f = speaker ? api.lookPortrait(speaker.look) : null;
+      if (f !== face) face = f;
     };
     raf = requestAnimationFrame(frame);
 
@@ -94,5 +100,5 @@
 </script>
 
 {#if view}
-  <CoachMark {view} {rect} {obstacles} onGotIt={() => ref.engine?.gotIt()} onDismiss={() => ref.engine?.dismiss()} />
+  <CoachMark {view} {speaker} {face} {rect} {obstacles} onGotIt={() => ref.engine?.gotIt()} onDismiss={() => ref.engine?.dismiss()} />
 {/if}
