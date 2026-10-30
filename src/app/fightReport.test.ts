@@ -92,6 +92,34 @@ describe('fight report', () => {
     expect(done?.report).toMatchObject({ outcome: 'captured', lost: [], enemyLost: [{}] });
   });
 
+  it('keeps a crew death on the player side when a jump detaches the crew before the events are read', () => {
+    const sim = newGame(3, content);
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    const crew = sim.world.query(CrewC)[0] as number;
+    const name = sim.world.get(crew, CrewC)!.name;
+    sim.world.detach(crew); // what the jump does to the ship's occupants before this frame's events are drained
+    const done = reporter.onEvents([{ type: 'crew.died', crew }, { type: 'combat.ended' }]);
+    expect(done?.report).toMatchObject({ dead: [{ name }], enemyCrew: 0 });
+  });
+
+  it('reads the enemy hull as the fight ends, not as of the previous frame', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const enemy = shipIds(sim)[1] as number;
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    sim.world.get(enemy, ShipC)!.integrity = 0.4;
+    const mod = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === enemy) as number;
+    const done = reporter.onEvents([
+      { type: 'module.destroyed', moduleId: mod, def: sim.world.get(mod, ModuleC)!.def, ship: enemy },
+      { type: 'ship.fled', ship: enemy },
+      { type: 'combat.ended' },
+    ]);
+    expect(done?.report).toMatchObject({ outcome: 'fled', enemyHull: 0.4 });
+  });
+
   it('says nothing for a fight that cost nothing', () => {
     const sim = newGame(3, content);
     const reporter = createFightReporter(sim);
