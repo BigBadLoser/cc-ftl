@@ -1,16 +1,32 @@
 import { content } from '../content';
-import { deserialize, homeShip, newGame, serialize, ShipC, type Sim } from '../sim';
+import { deserialize, homeShip, newGame, nodeOf, serialize, ShipC, type Sim } from '../sim';
+import { AUTO_ID, saveStore, type SaveMeta } from './saveStore';
 import { playerCrew } from '../sim/story/world';
 
 /**
- * The browser save: one slot in localStorage (a save is well under a megabyte early on). `startGame` loads it on page load;
- * the main loop writes it with `autosave`. Starting over or reloading the last save reloads the page: the renderer, bridge
- * and controller are all built around one Sim, and a reload is the clean way to swap it.
+ * The browser saves (saveStore.ts): the autosave plus a few named slots. `startGame` loads the autosave on page load (or the slot the
+ * player picked, see `loadSlot`); the main loop writes the autosave with `createSaver`. Starting over or loading a save reloads the page:
+ * the renderer, bridge and controller are all built around one Sim, and a reload is the clean way to swap it.
  */
 
-const SLOT = 'cc.save';
 /** Set before a reload to start a new game instead of loading the save. */
 const NEW_GAME = 'cc.newGame';
+/** Set before a reload to load this save slot instead of the autosave. */
+const LOAD_SLOT = 'cc.loadSlot';
+/** A save is being loaded: the reload's pagehide must not write this game over the autosave first. */
+let loading = false;
+
+function take(key: string): string | null {
+  const v = read(key, sessionStorage);
+  if (v !== null) {
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      /* the flag only lasts the reload */
+    }
+  }
+  return v;
+}
 
 function read(key: string, store: Storage = localStorage): string | null {
   try {
@@ -37,15 +53,24 @@ export function startGame(seedParam: string | null): Start {
   const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true);
   const random = () => (Math.random() * 0x100000000) >>> 0;
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
-  if (read(NEW_GAME, sessionStorage)) {
+  if (take(NEW_GAME)) return { sim: fresh(random()), notice: null, persist: true };
+  const slot = take(LOAD_SLOT);
+  if (slot && slot !== AUTO_ID) {
+    const picked = saveStore.read(slot);
     try {
-      sessionStorage.removeItem(NEW_GAME);
+      if (picked) return { sim: deserialize(picked, content), notice: null, persist: true };
     } catch {
-      /* the flag only lasts the reload */
+      /* falls through to the autosave below; the slot itself is left as it is */
     }
-    return { sim: fresh(random()), notice: null, persist: true };
+    const auto = loadAuto(fresh, random);
+    const why = 'The save you picked could not be loaded (it may be from another version of the game). It was kept; you are playing your autosave instead.';
+    return { ...auto, notice: auto.notice ?? why };
   }
-  const json = read(SLOT);
+  return loadAuto(fresh, random);
+}
+
+function loadAuto(fresh: (seed: number) => Sim, random: () => number): Start {
+  const json = saveStore.read(AUTO_ID);
   if (json) {
     try {
       return { sim: deserialize(json, content), notice: null, persist: true };
@@ -86,27 +111,41 @@ function keepBroken(json: string): boolean {
  */
 export function createSaver(sim: Sim, persist: boolean, isLost: () => boolean, onResult: (ok: boolean) => void): () => void {
   return () => {
-    if (!persist || isLost() || lostReason(sim)) return;
+    if (!persist || loading || isLost() || lostReason(sim)) return;
     onResult(writeSave(sim));
   };
 }
 
 /** Write the save. False when the browser refuses (storage full or blocked). */
-export function writeSave(sim: Sim): boolean {
+export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave'): boolean {
+  let json: string;
   try {
-    localStorage.setItem(SLOT, serialize(sim));
-    return true;
+    json = serialize(sim);
   } catch {
     return false;
   }
+  return saveStore.write(saveMeta(sim, id, name), json);
+}
+
+/** The list label of a save of this game now. */
+export function saveMeta(sim: Sim, id: string, name: string): SaveMeta {
+  return { id, name, savedAt: Date.now(), turn: sim.galaxy.turn, node: nodeOf(sim, sim.galaxy.current)?.name ?? '' };
 }
 
 export function clearSave(): void {
+  saveStore.remove(AUTO_ID);
+}
+
+/** Load a save slot (a reload: the game is rebuilt around it). Progress since the last save is lost. The page drops its debug query. */
+export function loadSlot(id: string): void {
+  loading = true;
   try {
-    localStorage.removeItem(SLOT);
+    sessionStorage.setItem(LOAD_SLOT, id);
   } catch {
-    /* nothing to clear */
+    /* without the flag the reload plays the autosave */
   }
+  // Without the query: a debug start (`?seed=`, `?scenario=`) would otherwise replace the loaded game.
+  location.assign(location.pathname);
 }
 
 /** Throw this game away and start a new one (a reload). */

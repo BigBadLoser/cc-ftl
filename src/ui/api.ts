@@ -1133,8 +1133,24 @@ export interface UiError {
   time: number;
 }
 
+/** A save in the Save / Load list: the autosave or a named slot, with its label (null: the slot is empty). */
+export interface UiSaveSlot {
+  id: string;
+  auto: boolean;
+  meta: { name: string; savedAt: number; turn: number; node: string } | null;
+}
+
 /** Everything the UI may call or observe; built in main.ts. */
 export interface UiApi {
+  /** The saves: the autosave and the named slots. `save` writes this game to a slot (false: the browser refused); `load` reloads the page into one. */
+  saves: {
+    list(): UiSaveSlot[];
+    save(id: string, name: string): boolean;
+    load(id: string): void;
+    remove(id: string): boolean;
+  };
+  /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel. */
+  cancel(): boolean;
   session: Subscribable<UiSession>;
   /** Throw this game away and start a new one (reloads the page). */
   newGame: () => void;

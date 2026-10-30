@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { keyLabel, keymap, type ActionId } from '../keymap';
   import { Frame, KeyBadge } from '../kit';
   import { placePanel, type Rect } from '../combat/panelPlace';
   import { keyText } from './keyText';
@@ -57,7 +58,7 @@
   });
 </script>
 
-{#snippet line(s: string)}{#each keyText(s) as run, i (i)}{#if run.kind === 'key'}<KeyBadge tone="light" size="sm">{run.text}</KeyBadge>{:else if run.kind === 'strong'}<b>{run.text}</b>{:else}{run.text}{/if}{/each}{/snippet}
+{#snippet line(s: string)}{#each keyText(s, (id) => keyLabel($keymap, id as ActionId)) as run, i (i)}{#if run.kind === 'key'}<KeyBadge tone="light" size="sm">{run.text}</KeyBadge>{:else if run.kind === 'strong'}<b>{run.text}</b>{:else}{run.text}{/if}{/each}{/snippet}
 
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 
@@ -116,7 +117,7 @@
           <span class="wait">Your move</span>
           <button class="quiet" data-testid="lesson-skip-step" onclick={onGotIt}>Skip step</button>
         {:else}
-          <button class="interact" data-testid="lesson-next" onclick={onGotIt}>{last ? 'Done' : 'Got it'}<KeyBadge tone="dim" size="sm">Enter</KeyBadge></button>
+          <button class="interact" data-testid="lesson-next" onclick={onGotIt}>{last ? 'Done' : 'Got it'}<KeyBadge tone="dim" size="sm">{keyLabel($keymap, 'ui.confirm')}</KeyBadge></button>
         {/if}
       </div>
     </div>
