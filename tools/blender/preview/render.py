@@ -27,7 +27,7 @@ out.mkdir(parents=True, exist_ok=True)
 for k in want:
     kind, fn = JOBS[k]
     core.clear_scene_meshes()
-    post.select(True)
+    post.select("hull")                             # (the hull pieces: palette_extra "set": "hull")
     objs = fn()
     try:
         it = env_build.crop_item(k, (1, 1), *env_build.render_sprite(k, kind, objs)) if objs else None

@@ -40,6 +40,8 @@ export interface Summary {
   bySelf: Row[];
   byTotal: Row[];
   counts: Row[];
+  /** Instrumentation time kept out of every span above (observers run inside probe calls), by label. */
+  excluded: Row[];
   mem: { heapMB: number; maxMB: number } | null;
   recording: SpikeSummary | null;
 }
@@ -79,6 +81,12 @@ export class Profiler implements Probe {
 
   count(label: string, n = 1): void {
     if (this.enabled) this.tally.count(label, n);
+  }
+
+  /** Run `fn` as an excluded span (see `Tally.excluded`): its time is reported under `label` in `summary().excluded` and removed from every open span. */
+  excluded(label: string, fn: () => void): void {
+    if (this.enabled) this.tally.excluded(label, fn);
+    else fn();
   }
 
   private endFrame(): void {
@@ -142,6 +150,7 @@ export class Profiler implements Probe {
       bySelf: [...timers].sort((a, b) => b.self - a.self).slice(0, topN).map(row),
       byTotal: [...timers].sort((a, b) => b.total - a.total).slice(0, topN).map(row),
       counts: all.filter((s) => s.isCount && s.label !== INTERVAL_LABEL).sort((a, b) => a.label.localeCompare(b.label)).map(row),
+      excluded: [...this.tally.excludedStats.values()].sort((a, b) => a.label.localeCompare(b.label)).map(row),
       mem: this.mem ? { heapMB: r3(this.mem.heapMB), maxMB: r3(this.mem.maxMB) } : null,
       recording,
     };

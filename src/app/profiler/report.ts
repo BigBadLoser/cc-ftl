@@ -23,6 +23,10 @@ export function formatReport(s: Summary, rows = 20): string {
   if (s.interval) out.push(`interval    mean ${f(s.interval.mean)}  p95 ${f(s.interval.p95)}  max ${f(s.interval.max)} ms  (${f(s.interval.fps, 1)} fps)`);
   if (s.mem) out.push(`heap ${f(s.mem.heapMB, 1)} MB (max ${f(s.mem.maxMB, 1)})`);
   out.push('', 'timers by self time (ms; self excludes nested labels)', ...table(s.bySelf.slice(0, rows)));
+  if (s.excluded?.length) {
+    out.push('', 'instrument time (observers; excluded from every span above, not in the frame work)');
+    for (const r of s.excluded) out.push(`  ${r.label}  ${r.calls} calls  ${f(r.total)} ms total  mean ${f(r.mean, 3)}  p95 ${f(r.p95, 3)}  max ${f(r.max, 3)}`);
+  }
   if (s.counts.length) out.push('', 'counters (per call/frame)', ...table(s.counts, true));
   const rec = s.recording;
   if (rec) {

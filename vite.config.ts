@@ -14,5 +14,5 @@ function commit(): string {
 export default defineConfig({
   define: { __COMMIT__: JSON.stringify(commit()) },
   plugins: [svelte()],
-  test: { include: ['src/**/*.test.ts'], testTimeout: 30000 }, // full-size ships make the combat scenarios slow under parallel load
+  test: { include: ['src/**/*.test.ts', 'tools/**/*.test.ts'], testTimeout: 30000 }, // full-size ships make the combat scenarios slow under parallel load
 });

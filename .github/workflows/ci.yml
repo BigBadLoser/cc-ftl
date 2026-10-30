@@ -55,7 +55,7 @@ jobs:
         run: npm run typecheck
       - name: Test (affected fast tests)
         if: github.event_name == 'pull_request'
-        run: npx vitest run --changed HEAD~1 --passWithNoTests --exclude 'src/**/*.slow.test.ts'
+        run: npx vitest run --changed HEAD~1 --passWithNoTests --exclude '**/*.slow.test.ts'
       - name: Test (every test, slow tier included)
         if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.fresh.outputs.skip != 'true'
         run: npm test

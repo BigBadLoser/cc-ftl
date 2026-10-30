@@ -191,7 +191,7 @@ def jobs(name):
         return tip_bin.jobs(), True
     if name == "hull":
         from . import hulltiles
-        return hulltiles.jobs(), True
+        return hulltiles.jobs(), "hull"                 # (its own palette set: palette_extra "set": "hull")
     raise KeyError(name)
 
 

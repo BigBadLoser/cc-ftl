@@ -27,7 +27,7 @@ def _render(sid, kind, build):
     """(c, op, g, ox, oy) of a builder's objects, uncropped; None if it built nothing."""
     from . import env_build, post
     core.clear_scene_meshes()
-    post.select(True)
+    post.select("hull")
     objs = build()
     if not objs:
         return None

@@ -1101,1203 +1101,1600 @@
   "hex": "#3f3a35"
  },
  "fNW0": {
-  "hex": "#f0f2f4"
+  "hex": "#f0f2f4",
+  "set": "hull"
  },
  "fNW1": {
-  "hex": "#dce1e7"
+  "hex": "#dce1e7",
+  "set": "hull"
  },
  "fNW2": {
-  "hex": "#c1c9d5"
+  "hex": "#c1c9d5",
+  "set": "hull"
  },
  "fNW3": {
-  "hex": "#a9b4c4"
+  "hex": "#a9b4c4",
+  "set": "hull"
  },
  "fNW4": {
-  "hex": "#8e9cb1"
+  "hex": "#8e9cb1",
+  "set": "hull"
  },
  "fNW5": {
-  "hex": "#7687a1"
+  "hex": "#7687a1",
+  "set": "hull"
  },
  "fNW6": {
-  "hex": "#5f708a"
+  "hex": "#5f708a",
+  "set": "hull"
  },
  "fNH0": {
-  "hex": "#e7e9ed"
+  "hex": "#e7e9ed",
+  "set": "hull"
  },
  "fNH1": {
-  "hex": "#c9cfd8"
+  "hex": "#c9cfd8",
+  "set": "hull"
  },
  "fNH2": {
-  "hex": "#afb8c4"
+  "hex": "#afb8c4",
+  "set": "hull"
  },
  "fNH3": {
-  "hex": "#97a3b3"
+  "hex": "#97a3b3",
+  "set": "hull"
  },
  "fNH4": {
-  "hex": "#7c8ca0"
+  "hex": "#7c8ca0",
+  "set": "hull"
  },
  "fNH5": {
-  "hex": "#67778d"
+  "hex": "#67778d",
+  "set": "hull"
  },
  "fNH6": {
-  "hex": "#536172"
+  "hex": "#536172",
+  "set": "hull"
  },
  "fNT0": {
-  "hex": "#c78992"
+  "hex": "#c78992",
+  "set": "hull"
  },
  "fNT1": {
-  "hex": "#bd606d"
+  "hex": "#bd606d",
+  "set": "hull"
  },
  "fNT2": {
-  "hex": "#a94654"
+  "hex": "#a94654",
+  "set": "hull"
  },
  "fNT3": {
-  "hex": "#8c3a46"
+  "hex": "#8c3a46",
+  "set": "hull"
  },
  "fNT4": {
-  "hex": "#6c2d36"
+  "hex": "#6c2d36",
+  "set": "hull"
  },
  "fNT5": {
-  "hex": "#4f2127"
+  "hex": "#4f2127",
+  "set": "hull"
  },
  "fNT6": {
-  "hex": "#2e1317"
+  "hex": "#2e1317",
+  "set": "hull"
  },
  "fNF0": {
-  "hex": "#616e7f"
+  "hex": "#616e7f",
+  "set": "hull"
  },
  "fNF1": {
-  "hex": "#545f6e"
+  "hex": "#545f6e",
+  "set": "hull"
  },
  "fNF2": {
-  "hex": "#49525f"
+  "hex": "#49525f",
+  "set": "hull"
  },
  "fNF3": {
-  "hex": "#3e4651"
+  "hex": "#3e4651",
+  "set": "hull"
  },
  "fNF4": {
-  "hex": "#333a43"
+  "hex": "#333a43",
+  "set": "hull"
  },
  "fNF5": {
-  "hex": "#282d34"
+  "hex": "#282d34",
+  "set": "hull"
  },
  "fNF6": {
-  "hex": "#1b1e23"
+  "hex": "#1b1e23",
+  "set": "hull"
  },
  "fDW0": {
-  "hex": "#b6bdc1"
+  "hex": "#b6bdc1",
+  "set": "hull"
  },
  "fDW1": {
-  "hex": "#99a5ab"
+  "hex": "#99a5ab",
+  "set": "hull"
  },
  "fDW2": {
-  "hex": "#808e96"
+  "hex": "#808e96",
+  "set": "hull"
  },
  "fDW3": {
-  "hex": "#6b7a82"
+  "hex": "#6b7a82",
+  "set": "hull"
  },
  "fDW4": {
-  "hex": "#566269"
+  "hex": "#566269",
+  "set": "hull"
  },
  "fDW5": {
-  "hex": "#444d52"
+  "hex": "#444d52",
+  "set": "hull"
  },
  "fDW6": {
-  "hex": "#2f3639"
+  "hex": "#2f3639",
+  "set": "hull"
  },
  "fDH0": {
-  "hex": "#a7b1b6"
+  "hex": "#a7b1b6",
+  "set": "hull"
  },
  "fDH1": {
-  "hex": "#8998a0"
+  "hex": "#8998a0",
+  "set": "hull"
  },
  "fDH2": {
-  "hex": "#70828c"
+  "hex": "#70828c",
+  "set": "hull"
  },
  "fDH3": {
-  "hex": "#5e6d75"
+  "hex": "#5e6d75",
+  "set": "hull"
  },
  "fDH4": {
-  "hex": "#4a555c"
+  "hex": "#4a555c",
+  "set": "hull"
  },
  "fDH5": {
-  "hex": "#374045"
+  "hex": "#374045",
+  "set": "hull"
  },
  "fDH6": {
-  "hex": "#23292b"
+  "hex": "#23292b",
+  "set": "hull"
  },
  "fDT0": {
-  "hex": "#597280"
+  "hex": "#597280",
+  "set": "hull"
  },
  "fDT1": {
-  "hex": "#415865"
+  "hex": "#415865",
+  "set": "hull"
  },
  "fDT2": {
-  "hex": "#2f4049"
+  "hex": "#2f4049",
+  "set": "hull"
  },
  "fDT3": {
-  "hex": "#1f2a30"
+  "hex": "#1f2a30",
+  "set": "hull"
  },
  "fDT4": {
-  "hex": "#0d1214"
+  "hex": "#0d1214",
+  "set": "hull"
  },
  "fDT5": {
-  "hex": "#040506"
+  "hex": "#040506",
+  "set": "hull"
  },
  "fDT6": {
-  "hex": "#040506"
+  "hex": "#040506",
+  "set": "hull"
  },
  "fDF0": {
-  "hex": "#515c63"
+  "hex": "#515c63",
+  "set": "hull"
  },
  "fDF1": {
-  "hex": "#434c52"
+  "hex": "#434c52",
+  "set": "hull"
  },
  "fDF2": {
-  "hex": "#373f44"
+  "hex": "#373f44",
+  "set": "hull"
  },
  "fDF3": {
-  "hex": "#2c3236"
+  "hex": "#2c3236",
+  "set": "hull"
  },
  "fDF4": {
-  "hex": "#212528"
+  "hex": "#212528",
+  "set": "hull"
  },
  "fDF5": {
-  "hex": "#15181a"
+  "hex": "#15181a",
+  "set": "hull"
  },
  "fDF6": {
-  "hex": "#070809"
+  "hex": "#070809",
+  "set": "hull"
  },
  "fC1W0": {
-  "hex": "#f1f3f3"
+  "hex": "#f1f3f3",
+  "set": "hull"
  },
  "fC1W1": {
-  "hex": "#f1f3f3"
+  "hex": "#f1f3f3",
+  "set": "hull"
  },
  "fC1W2": {
-  "hex": "#dfe4e4"
+  "hex": "#dfe4e4",
+  "set": "hull"
  },
  "fC1W3": {
-  "hex": "#c9d1d1"
+  "hex": "#c9d1d1",
+  "set": "hull"
  },
  "fC1W4": {
-  "hex": "#b0bcbc"
+  "hex": "#b0bcbc",
+  "set": "hull"
  },
  "fC1W5": {
-  "hex": "#9aa9a9"
+  "hex": "#9aa9a9",
+  "set": "hull"
  },
  "fC1W6": {
-  "hex": "#819494"
+  "hex": "#819494",
+  "set": "hull"
  },
  "fC1H0": {
-  "hex": "#f1f3f3"
+  "hex": "#f1f3f3",
+  "set": "hull"
  },
  "fC1H1": {
-  "hex": "#edefef"
+  "hex": "#edefef",
+  "set": "hull"
  },
  "fC1H2": {
-  "hex": "#d4d9da"
+  "hex": "#d4d9da",
+  "set": "hull"
  },
  "fC1H3": {
-  "hex": "#bec6c7"
+  "hex": "#bec6c7",
+  "set": "hull"
  },
  "fC1H4": {
-  "hex": "#a5b0b2"
+  "hex": "#a5b0b2",
+  "set": "hull"
  },
  "fC1H5": {
-  "hex": "#8f9d9f"
+  "hex": "#8f9d9f",
+  "set": "hull"
  },
  "fC1H6": {
-  "hex": "#77888a"
+  "hex": "#77888a",
+  "set": "hull"
  },
  "fC1T0": {
-  "hex": "#e0b5ad"
+  "hex": "#e0b5ad",
+  "set": "hull"
  },
  "fC1T1": {
-  "hex": "#d89081"
+  "hex": "#d89081",
+  "set": "hull"
  },
  "fC1T2": {
-  "hex": "#ce715e"
+  "hex": "#ce715e",
+  "set": "hull"
  },
  "fC1T3": {
-  "hex": "#c4553f"
+  "hex": "#c4553f",
+  "set": "hull"
  },
  "fC1T4": {
-  "hex": "#a34532"
+  "hex": "#a34532",
+  "set": "hull"
  },
  "fC1T5": {
-  "hex": "#843829"
+  "hex": "#843829",
+  "set": "hull"
  },
  "fC1T6": {
-  "hex": "#61291e"
+  "hex": "#61291e",
+  "set": "hull"
  },
  "fC1F0": {
-  "hex": "#858279"
+  "hex": "#858279",
+  "set": "hull"
  },
  "fC1F1": {
-  "hex": "#75726a"
+  "hex": "#75726a",
+  "set": "hull"
  },
  "fC1F2": {
-  "hex": "#67655e"
+  "hex": "#67655e",
+  "set": "hull"
  },
  "fC1F3": {
-  "hex": "#5a5852"
+  "hex": "#5a5852",
+  "set": "hull"
  },
  "fC1F4": {
-  "hex": "#4d4b46"
+  "hex": "#4d4b46",
+  "set": "hull"
  },
  "fC1F5": {
-  "hex": "#3f3e3a"
+  "hex": "#3f3e3a",
+  "set": "hull"
  },
  "fC1F6": {
-  "hex": "#2f2e2b"
+  "hex": "#2f2e2b",
+  "set": "hull"
  },
  "fC2W0": {
-  "hex": "#f1f3f3"
+  "hex": "#f1f3f3",
+  "set": "hull"
  },
  "fC2W1": {
-  "hex": "#f1f3f3"
+  "hex": "#f1f3f3",
+  "set": "hull"
  },
  "fC2W2": {
-  "hex": "#dfe4e4"
+  "hex": "#dfe4e4",
+  "set": "hull"
  },
  "fC2W3": {
-  "hex": "#c9d1d1"
+  "hex": "#c9d1d1",
+  "set": "hull"
  },
  "fC2W4": {
-  "hex": "#b0bcbc"
+  "hex": "#b0bcbc",
+  "set": "hull"
  },
  "fC2W5": {
-  "hex": "#9aa9a9"
+  "hex": "#9aa9a9",
+  "set": "hull"
  },
  "fC2W6": {
-  "hex": "#819494"
+  "hex": "#819494",
+  "set": "hull"
  },
  "fC2H0": {
-  "hex": "#f1f3f3"
+  "hex": "#f1f3f3",
+  "set": "hull"
  },
  "fC2H1": {
-  "hex": "#edefef"
+  "hex": "#edefef",
+  "set": "hull"
  },
  "fC2H2": {
-  "hex": "#d4d9da"
+  "hex": "#d4d9da",
+  "set": "hull"
  },
  "fC2H3": {
-  "hex": "#bec6c7"
+  "hex": "#bec6c7",
+  "set": "hull"
  },
  "fC2H4": {
-  "hex": "#a5b0b2"
+  "hex": "#a5b0b2",
+  "set": "hull"
  },
  "fC2H5": {
-  "hex": "#8f9d9f"
+  "hex": "#8f9d9f",
+  "set": "hull"
  },
  "fC2H6": {
-  "hex": "#77888a"
+  "hex": "#77888a",
+  "set": "hull"
  },
  "fC2T0": {
-  "hex": "#abc1df"
+  "hex": "#abc1df",
+  "set": "hull"
  },
  "fC2T1": {
-  "hex": "#7fa4d8"
+  "hex": "#7fa4d8",
+  "set": "hull"
  },
  "fC2T2": {
-  "hex": "#5c8ace"
+  "hex": "#5c8ace",
+  "set": "hull"
  },
  "fC2T3": {
-  "hex": "#3d74c4"
+  "hex": "#3d74c4",
+  "set": "hull"
  },
  "fC2T4": {
-  "hex": "#315fa2"
+  "hex": "#315fa2",
+  "set": "hull"
  },
  "fC2T5": {
-  "hex": "#284d83"
+  "hex": "#284d83",
+  "set": "hull"
  },
  "fC2T6": {
-  "hex": "#1d385f"
+  "hex": "#1d385f",
+  "set": "hull"
  },
  "fC2F0": {
-  "hex": "#767f86"
+  "hex": "#767f86",
+  "set": "hull"
  },
  "fC2F1": {
-  "hex": "#687076"
+  "hex": "#687076",
+  "set": "hull"
  },
  "fC2F2": {
-  "hex": "#5c6369"
+  "hex": "#5c6369",
+  "set": "hull"
  },
  "fC2F3": {
-  "hex": "#50565b"
+  "hex": "#50565b",
+  "set": "hull"
  },
  "fC2F4": {
-  "hex": "#44494d"
+  "hex": "#44494d",
+  "set": "hull"
  },
  "fC2F5": {
-  "hex": "#383c40"
+  "hex": "#383c40",
+  "set": "hull"
  },
  "fC2F6": {
-  "hex": "#2a2d30"
+  "hex": "#2a2d30",
+  "set": "hull"
  },
  "fC3W0": {
-  "hex": "#f3f3f1"
+  "hex": "#f3f3f1",
+  "set": "hull"
  },
  "fC3W1": {
-  "hex": "#f3f3f1"
+  "hex": "#f3f3f1",
+  "set": "hull"
  },
  "fC3W2": {
-  "hex": "#e1e0db"
+  "hex": "#e1e0db",
+  "set": "hull"
  },
  "fC3W3": {
-  "hex": "#cfcdc5"
+  "hex": "#cfcdc5",
+  "set": "hull"
  },
  "fC3W4": {
-  "hex": "#bab7ac"
+  "hex": "#bab7ac",
+  "set": "hull"
  },
  "fC3W5": {
-  "hex": "#a8a496"
+  "hex": "#a8a496",
+  "set": "hull"
  },
  "fC3W6": {
-  "hex": "#938e7c"
+  "hex": "#938e7c",
+  "set": "hull"
  },
  "fC3H0": {
-  "hex": "#f3f3f1"
+  "hex": "#f3f3f1",
+  "set": "hull"
  },
  "fC3H1": {
-  "hex": "#eae9e6"
+  "hex": "#eae9e6",
+  "set": "hull"
  },
  "fC3H2": {
-  "hex": "#d6d3cd"
+  "hex": "#d6d3cd",
+  "set": "hull"
  },
  "fC3H3": {
-  "hex": "#c3c0b7"
+  "hex": "#c3c0b7",
+  "set": "hull"
  },
  "fC3H4": {
-  "hex": "#aeaa9e"
+  "hex": "#aeaa9e",
+  "set": "hull"
  },
  "fC3H5": {
-  "hex": "#9c9788"
+  "hex": "#9c9788",
+  "set": "hull"
  },
  "fC3H6": {
-  "hex": "#868070"
+  "hex": "#868070",
+  "set": "hull"
  },
  "fC3T0": {
-  "hex": "#e5cfa5"
+  "hex": "#e5cfa5",
+  "set": "hull"
  },
  "fC3T1": {
-  "hex": "#e2bd76"
+  "hex": "#e2bd76",
+  "set": "hull"
  },
  "fC3T2": {
-  "hex": "#daaa50"
+  "hex": "#daaa50",
+  "set": "hull"
  },
  "fC3T3": {
-  "hex": "#d39a2e"
+  "hex": "#d39a2e",
+  "set": "hull"
  },
  "fC3T4": {
-  "hex": "#ae7f25"
+  "hex": "#ae7f25",
+  "set": "hull"
  },
  "fC3T5": {
-  "hex": "#8d661e"
+  "hex": "#8d661e",
+  "set": "hull"
  },
  "fC3T6": {
-  "hex": "#674b16"
+  "hex": "#674b16",
+  "set": "hull"
  },
  "fC3F0": {
-  "hex": "#837d71"
+  "hex": "#837d71",
+  "set": "hull"
  },
  "fC3F1": {
-  "hex": "#726d63"
+  "hex": "#726d63",
+  "set": "hull"
  },
  "fC3F2": {
-  "hex": "#656057"
+  "hex": "#656057",
+  "set": "hull"
  },
  "fC3F3": {
-  "hex": "#57534b"
+  "hex": "#57534b",
+  "set": "hull"
  },
  "fC3F4": {
-  "hex": "#49463f"
+  "hex": "#49463f",
+  "set": "hull"
  },
  "fC3F5": {
-  "hex": "#3c3933"
+  "hex": "#3c3933",
+  "set": "hull"
  },
  "fC3F6": {
-  "hex": "#2b2925"
+  "hex": "#2b2925",
+  "set": "hull"
  },
  "fC4W0": {
-  "hex": "#f1f3f2"
+  "hex": "#f1f3f2",
+  "set": "hull"
  },
  "fC4W1": {
-  "hex": "#f1f3f2"
+  "hex": "#f1f3f2",
+  "set": "hull"
  },
  "fC4W2": {
-  "hex": "#dee3df"
+  "hex": "#dee3df",
+  "set": "hull"
  },
  "fC4W3": {
-  "hex": "#c8d0ca"
+  "hex": "#c8d0ca",
+  "set": "hull"
  },
  "fC4W4": {
-  "hex": "#afbbb2"
+  "hex": "#afbbb2",
+  "set": "hull"
  },
  "fC4W5": {
-  "hex": "#99a89d"
+  "hex": "#99a89d",
+  "set": "hull"
  },
  "fC4W6": {
-  "hex": "#819385"
+  "hex": "#819385",
+  "set": "hull"
  },
  "fC4H0": {
-  "hex": "#f1f3f2"
+  "hex": "#f1f3f2",
+  "set": "hull"
  },
  "fC4H1": {
-  "hex": "#eaedeb"
+  "hex": "#eaedeb",
+  "set": "hull"
  },
  "fC4H2": {
-  "hex": "#d2d8d3"
+  "hex": "#d2d8d3",
+  "set": "hull"
  },
  "fC4H3": {
-  "hex": "#bcc5be"
+  "hex": "#bcc5be",
+  "set": "hull"
  },
  "fC4H4": {
-  "hex": "#a3b0a6"
+  "hex": "#a3b0a6",
+  "set": "hull"
  },
  "fC4H5": {
-  "hex": "#8e9d91"
+  "hex": "#8e9d91",
+  "set": "hull"
  },
  "fC4H6": {
-  "hex": "#758779"
+  "hex": "#758779",
+  "set": "hull"
  },
  "fC4T0": {
-  "hex": "#96cdad"
+  "hex": "#96cdad",
+  "set": "hull"
  },
  "fC4T1": {
-  "hex": "#6dc392"
+  "hex": "#6dc392",
+  "set": "hull"
  },
  "fC4T2": {
-  "hex": "#4cb679"
+  "hex": "#4cb679",
+  "set": "hull"
  },
  "fC4T3": {
-  "hex": "#3f9a66"
+  "hex": "#3f9a66",
+  "set": "hull"
  },
  "fC4T4": {
-  "hex": "#327950"
+  "hex": "#327950",
+  "set": "hull"
  },
  "fC4T5": {
-  "hex": "#265c3d"
+  "hex": "#265c3d",
+  "set": "hull"
  },
  "fC4T6": {
-  "hex": "#193c28"
+  "hex": "#193c28",
+  "set": "hull"
  },
  "fC4F0": {
-  "hex": "#717f73"
+  "hex": "#717f73",
+  "set": "hull"
  },
  "fC4F1": {
-  "hex": "#636f64"
+  "hex": "#636f64",
+  "set": "hull"
  },
  "fC4F2": {
-  "hex": "#576158"
+  "hex": "#576158",
+  "set": "hull"
  },
  "fC4F3": {
-  "hex": "#4b544c"
+  "hex": "#4b544c",
+  "set": "hull"
  },
  "fC4F4": {
-  "hex": "#3f4740"
+  "hex": "#3f4740",
+  "set": "hull"
  },
  "fC4F5": {
-  "hex": "#333934"
+  "hex": "#333934",
+  "set": "hull"
  },
  "fC4F6": {
-  "hex": "#252925"
+  "hex": "#252925",
+  "set": "hull"
  },
  "fSW0": {
-  "hex": "#b5b0a8"
+  "hex": "#b5b0a8",
+  "set": "hull"
  },
  "fSW1": {
-  "hex": "#9e978b"
+  "hex": "#9e978b",
+  "set": "hull"
  },
  "fSW2": {
-  "hex": "#898173"
+  "hex": "#898173",
+  "set": "hull"
  },
  "fSW3": {
-  "hex": "#736c60"
+  "hex": "#736c60",
+  "set": "hull"
  },
  "fSW4": {
-  "hex": "#5a554b"
+  "hex": "#5a554b",
+  "set": "hull"
  },
  "fSW5": {
-  "hex": "#444039"
+  "hex": "#444039",
+  "set": "hull"
  },
  "fSW6": {
-  "hex": "#2b2824"
+  "hex": "#2b2824",
+  "set": "hull"
  },
  "fSH0": {
-  "hex": "#a2a09a"
+  "hex": "#a2a09a",
+  "set": "hull"
  },
  "fSH1": {
-  "hex": "#8a877f"
+  "hex": "#8a877f",
+  "set": "hull"
  },
  "fSH2": {
-  "hex": "#727068"
+  "hex": "#727068",
+  "set": "hull"
  },
  "fSH3": {
-  "hex": "#5d5b55"
+  "hex": "#5d5b55",
+  "set": "hull"
  },
  "fSH4": {
-  "hex": "#45443f"
+  "hex": "#45443f",
+  "set": "hull"
  },
  "fSH5": {
-  "hex": "#302f2c"
+  "hex": "#302f2c",
+  "set": "hull"
  },
  "fSH6": {
-  "hex": "#181716"
+  "hex": "#181716",
+  "set": "hull"
  },
  "fST0": {
-  "hex": "#d1a17f"
+  "hex": "#d1a17f",
+  "set": "hull"
  },
  "fST1": {
-  "hex": "#cd8450"
+  "hex": "#cd8450",
+  "set": "hull"
  },
  "fST2": {
-  "hex": "#ba6d35"
+  "hex": "#ba6d35",
+  "set": "hull"
  },
  "fST3": {
-  "hex": "#9a5a2c"
+  "hex": "#9a5a2c",
+  "set": "hull"
  },
  "fST4": {
-  "hex": "#764522"
+  "hex": "#764522",
+  "set": "hull"
  },
  "fST5": {
-  "hex": "#573319"
+  "hex": "#573319",
+  "set": "hull"
  },
  "fST6": {
-  "hex": "#331e0f"
+  "hex": "#331e0f",
+  "set": "hull"
  },
  "fSF0": {
-  "hex": "#716e66"
+  "hex": "#716e66",
+  "set": "hull"
  },
  "fSF1": {
-  "hex": "#615e57"
+  "hex": "#615e57",
+  "set": "hull"
  },
  "fSF2": {
-  "hex": "#53514b"
+  "hex": "#53514b",
+  "set": "hull"
  },
  "fSF3": {
-  "hex": "#46443f"
+  "hex": "#46443f",
+  "set": "hull"
  },
  "fSF4": {
-  "hex": "#393733"
+  "hex": "#393733",
+  "set": "hull"
  },
  "fSF5": {
-  "hex": "#2b2a27"
+  "hex": "#2b2a27",
+  "set": "hull"
  },
  "fSF6": {
-  "hex": "#1b1a18"
+  "hex": "#1b1a18",
+  "set": "hull"
  },
  "fNS0": {
-  "hex": "#5776a0"
+  "hex": "#5776a0",
+  "set": "hull"
  },
  "fNS1": {
-  "hex": "#405d84"
+  "hex": "#405d84",
+  "set": "hull"
  },
  "fNS2": {
-  "hex": "#314765"
+  "hex": "#314765",
+  "set": "hull"
  },
  "fNS3": {
-  "hex": "#24344a"
+  "hex": "#24344a",
+  "set": "hull"
  },
  "fNS4": {
-  "hex": "#151e2b"
+  "hex": "#151e2b",
+  "set": "hull"
  },
  "fNS5": {
-  "hex": "#080b10"
+  "hex": "#080b10",
+  "set": "hull"
  },
  "fNS6": {
-  "hex": "#030507"
+  "hex": "#030507",
+  "set": "hull"
  },
  "fNX0": {
-  "hex": "#88a0bf"
+  "hex": "#88a0bf",
+  "set": "hull"
  },
  "fNX1": {
-  "hex": "#6084b3"
+  "hex": "#6084b3",
+  "set": "hull"
  },
  "fNX2": {
-  "hex": "#4a6d9c"
+  "hex": "#4a6d9c",
+  "set": "hull"
  },
  "fNX3": {
-  "hex": "#3d5a80"
+  "hex": "#3d5a80",
+  "set": "hull"
  },
  "fNX4": {
-  "hex": "#2e4461"
+  "hex": "#2e4461",
+  "set": "hull"
  },
  "fNX5": {
-  "hex": "#213145"
+  "hex": "#213145",
+  "set": "hull"
  },
  "fNX6": {
-  "hex": "#121b26"
+  "hex": "#121b26",
+  "set": "hull"
  },
  "fDS0": {
-  "hex": "#678290"
+  "hex": "#678290",
+  "set": "hull"
  },
  "fDS1": {
-  "hex": "#4f6875"
+  "hex": "#4f6875",
+  "set": "hull"
  },
  "fDS2": {
-  "hex": "#3c5059"
+  "hex": "#3c5059",
+  "set": "hull"
  },
  "fDS3": {
-  "hex": "#2c3a41"
+  "hex": "#2c3a41",
+  "set": "hull"
  },
  "fDS4": {
-  "hex": "#192226"
+  "hex": "#192226",
+  "set": "hull"
  },
  "fDS5": {
-  "hex": "#090c0d"
+  "hex": "#090c0d",
+  "set": "hull"
  },
  "fDS6": {
-  "hex": "#040506"
+  "hex": "#040506",
+  "set": "hull"
  },
  "fDX0": {
-  "hex": "#748ca2"
+  "hex": "#748ca2",
+  "set": "hull"
  },
  "fDX1": {
-  "hex": "#57738c"
+  "hex": "#57738c",
+  "set": "hull"
  },
  "fDX2": {
-  "hex": "#465c70"
+  "hex": "#465c70",
+  "set": "hull"
  },
  "fDX3": {
-  "hex": "#364757"
+  "hex": "#364757",
+  "set": "hull"
  },
  "fDX4": {
-  "hex": "#24303b"
+  "hex": "#24303b",
+  "set": "hull"
  },
  "fDX5": {
-  "hex": "#151b22"
+  "hex": "#151b22",
+  "set": "hull"
  },
  "fDX6": {
-  "hex": "#040506"
+  "hex": "#040506",
+  "set": "hull"
  },
  "fC1S0": {
-  "hex": "#d8dbdc"
+  "hex": "#d8dbdc",
+  "set": "hull"
  },
  "fC1S1": {
-  "hex": "#bcc2c4"
+  "hex": "#bcc2c4",
+  "set": "hull"
  },
  "fC1S2": {
-  "hex": "#a4acaf"
+  "hex": "#a4acaf",
+  "set": "hull"
  },
  "fC1S3": {
-  "hex": "#8e989c"
+  "hex": "#8e989c",
+  "set": "hull"
  },
  "fC1S4": {
-  "hex": "#768286"
+  "hex": "#768286",
+  "set": "hull"
  },
  "fC1S5": {
-  "hex": "#636d71"
+  "hex": "#636d71",
+  "set": "hull"
  },
  "fC1S6": {
-  "hex": "#4d5558"
+  "hex": "#4d5558",
+  "set": "hull"
  },
  "fC1X0": {
-  "hex": "#869fbc"
+  "hex": "#869fbc",
+  "set": "hull"
  },
  "fC1X1": {
-  "hex": "#5f85b0"
+  "hex": "#5f85b0",
+  "set": "hull"
  },
  "fC1X2": {
-  "hex": "#4a6e97"
+  "hex": "#4a6e97",
+  "set": "hull"
  },
  "fC1X3": {
-  "hex": "#3d5a7c"
+  "hex": "#3d5a7c",
+  "set": "hull"
  },
  "fC1X4": {
-  "hex": "#2e445d"
+  "hex": "#2e445d",
+  "set": "hull"
  },
  "fC1X5": {
-  "hex": "#203042"
+  "hex": "#203042",
+  "set": "hull"
  },
  "fC1X6": {
-  "hex": "#111923"
+  "hex": "#111923",
+  "set": "hull"
  },
  "fC2S0": {
-  "hex": "#d8dbdc"
+  "hex": "#d8dbdc",
+  "set": "hull"
  },
  "fC2S1": {
-  "hex": "#bcc2c4"
+  "hex": "#bcc2c4",
+  "set": "hull"
  },
  "fC2S2": {
-  "hex": "#a4acaf"
+  "hex": "#a4acaf",
+  "set": "hull"
  },
  "fC2S3": {
-  "hex": "#8e989c"
+  "hex": "#8e989c",
+  "set": "hull"
  },
  "fC2S4": {
-  "hex": "#768286"
+  "hex": "#768286",
+  "set": "hull"
  },
  "fC2S5": {
-  "hex": "#636d71"
+  "hex": "#636d71",
+  "set": "hull"
  },
  "fC2S6": {
-  "hex": "#4d5558"
+  "hex": "#4d5558",
+  "set": "hull"
  },
  "fC2X0": {
-  "hex": "#869fbc"
+  "hex": "#869fbc",
+  "set": "hull"
  },
  "fC2X1": {
-  "hex": "#5f85b0"
+  "hex": "#5f85b0",
+  "set": "hull"
  },
  "fC2X2": {
-  "hex": "#4a6e97"
+  "hex": "#4a6e97",
+  "set": "hull"
  },
  "fC2X3": {
-  "hex": "#3d5a7c"
+  "hex": "#3d5a7c",
+  "set": "hull"
  },
  "fC2X4": {
-  "hex": "#2e445d"
+  "hex": "#2e445d",
+  "set": "hull"
  },
  "fC2X5": {
-  "hex": "#203042"
+  "hex": "#203042",
+  "set": "hull"
  },
  "fC2X6": {
-  "hex": "#111923"
+  "hex": "#111923",
+  "set": "hull"
  },
  "fC3S0": {
-  "hex": "#d4d2cf"
+  "hex": "#d4d2cf",
+  "set": "hull"
  },
  "fC3S1": {
-  "hex": "#bdb9b3"
+  "hex": "#bdb9b3",
+  "set": "hull"
  },
  "fC3S2": {
-  "hex": "#a7a39b"
+  "hex": "#a7a39b",
+  "set": "hull"
  },
  "fC3S3": {
-  "hex": "#948f85"
+  "hex": "#948f85",
+  "set": "hull"
  },
  "fC3S4": {
-  "hex": "#7d786e"
+  "hex": "#7d786e",
+  "set": "hull"
  },
  "fC3S5": {
-  "hex": "#68635b"
+  "hex": "#68635b",
+  "set": "hull"
  },
  "fC3S6": {
-  "hex": "#4f4c45"
+  "hex": "#4f4c45",
+  "set": "hull"
  },
  "fC3X0": {
-  "hex": "#8d98b1"
+  "hex": "#8d98b1",
+  "set": "hull"
  },
  "fC3X1": {
-  "hex": "#6a7ba0"
+  "hex": "#6a7ba0",
+  "set": "hull"
  },
  "fC3X2": {
-  "hex": "#566587"
+  "hex": "#566587",
+  "set": "hull"
  },
  "fC3X3": {
-  "hex": "#46526e"
+  "hex": "#46526e",
+  "set": "hull"
  },
  "fC3X4": {
-  "hex": "#343d52"
+  "hex": "#343d52",
+  "set": "hull"
  },
  "fC3X5": {
-  "hex": "#242b39"
+  "hex": "#242b39",
+  "set": "hull"
  },
  "fC3X6": {
-  "hex": "#12161d"
+  "hex": "#12161d",
+  "set": "hull"
  },
  "fC4S0": {
-  "hex": "#d3d7d4"
+  "hex": "#d3d7d4",
+  "set": "hull"
  },
  "fC4S1": {
-  "hex": "#b8bfba"
+  "hex": "#b8bfba",
+  "set": "hull"
  },
  "fC4S2": {
-  "hex": "#a0a9a2"
+  "hex": "#a0a9a2",
+  "set": "hull"
  },
  "fC4S3": {
-  "hex": "#8a968d"
+  "hex": "#8a968d",
+  "set": "hull"
  },
  "fC4S4": {
-  "hex": "#738076"
+  "hex": "#738076",
+  "set": "hull"
  },
  "fC4S5": {
-  "hex": "#5f6a62"
+  "hex": "#5f6a62",
+  "set": "hull"
  },
  "fC4S6": {
-  "hex": "#4a524c"
+  "hex": "#4a524c",
+  "set": "hull"
  },
  "fC4X0": {
-  "hex": "#7ea3b0"
+  "hex": "#7ea3b0",
+  "set": "hull"
  },
  "fC4X1": {
-  "hex": "#5a8ea2"
+  "hex": "#5a8ea2",
+  "set": "hull"
  },
  "fC4X2": {
-  "hex": "#4a7484"
+  "hex": "#4a7484",
+  "set": "hull"
  },
  "fC4X3": {
-  "hex": "#3b5d6a"
+  "hex": "#3b5d6a",
+  "set": "hull"
  },
  "fC4X4": {
-  "hex": "#2b434d"
+  "hex": "#2b434d",
+  "set": "hull"
  },
  "fC4X5": {
-  "hex": "#1c2c32"
+  "hex": "#1c2c32",
+  "set": "hull"
  },
  "fC4X6": {
-  "hex": "#0c1215"
+  "hex": "#0c1215",
+  "set": "hull"
  },
  "fBW0": {
-  "hex": "#9099ad"
+  "hex": "#9099ad",
+  "set": "hull"
  },
  "fBW1": {
-  "hex": "#707d9a"
+  "hex": "#707d9a",
+  "set": "hull"
  },
  "fBW2": {
-  "hex": "#5b6781"
+  "hex": "#5b6781",
+  "set": "hull"
  },
  "fBW3": {
-  "hex": "#4a5469"
+  "hex": "#4a5469",
+  "set": "hull"
  },
  "fBW4": {
-  "hex": "#373e4e"
+  "hex": "#373e4e",
+  "set": "hull"
  },
  "fBW5": {
-  "hex": "#262b36"
+  "hex": "#262b36",
+  "set": "hull"
  },
  "fBW6": {
-  "hex": "#13161b"
+  "hex": "#13161b",
+  "set": "hull"
  },
  "fBH0": {
-  "hex": "#838ea5"
+  "hex": "#838ea5",
+  "set": "hull"
  },
  "fBH1": {
-  "hex": "#637392"
+  "hex": "#637392",
+  "set": "hull"
  },
  "fBH2": {
-  "hex": "#515d76"
+  "hex": "#515d76",
+  "set": "hull"
  },
  "fBH3": {
-  "hex": "#404a5e"
+  "hex": "#404a5e",
+  "set": "hull"
  },
  "fBH4": {
-  "hex": "#2d3543"
+  "hex": "#2d3543",
+  "set": "hull"
  },
  "fBH5": {
-  "hex": "#1d212a"
+  "hex": "#1d212a",
+  "set": "hull"
  },
  "fBH6": {
-  "hex": "#0a0c0f"
+  "hex": "#0a0c0f",
+  "set": "hull"
  },
  "fBT0": {
-  "hex": "#c8cdd7"
+  "hex": "#c8cdd7",
+  "set": "hull"
  },
  "fBT1": {
-  "hex": "#a8b2c3"
+  "hex": "#a8b2c3",
+  "set": "hull"
  },
  "fBT2": {
-  "hex": "#8d9ab1"
+  "hex": "#8d9ab1",
+  "set": "hull"
  },
  "fBT3": {
-  "hex": "#7585a0"
+  "hex": "#7585a0",
+  "set": "hull"
  },
  "fBT4": {
-  "hex": "#5e6e89"
+  "hex": "#5e6e89",
+  "set": "hull"
  },
  "fBT5": {
-  "hex": "#4e5b71"
+  "hex": "#4e5b71",
+  "set": "hull"
  },
  "fBT6": {
-  "hex": "#3b4556"
+  "hex": "#3b4556",
+  "set": "hull"
  },
  "fBS0": {
-  "hex": "#5f6b8e"
+  "hex": "#5f6b8e",
+  "set": "hull"
  },
  "fBS1": {
-  "hex": "#475372"
+  "hex": "#475372",
+  "set": "hull"
  },
  "fBS2": {
-  "hex": "#363e56"
+  "hex": "#363e56",
+  "set": "hull"
  },
  "fBS3": {
-  "hex": "#262c3d"
+  "hex": "#262c3d",
+  "set": "hull"
  },
  "fBS4": {
-  "hex": "#141821"
+  "hex": "#141821",
+  "set": "hull"
  },
  "fBS5": {
-  "hex": "#050508"
+  "hex": "#050508",
+  "set": "hull"
  },
  "fBS6": {
-  "hex": "#040506"
+  "hex": "#040506",
+  "set": "hull"
  },
  "fBX0": {
-  "hex": "#7480a0"
+  "hex": "#7480a0",
+  "set": "hull"
  },
  "fBX1": {
-  "hex": "#58658a"
+  "hex": "#58658a",
+  "set": "hull"
  },
  "fBX2": {
-  "hex": "#46506e"
+  "hex": "#46506e",
+  "set": "hull"
  },
  "fBX3": {
-  "hex": "#363e55"
+  "hex": "#363e55",
+  "set": "hull"
  },
  "fBX4": {
-  "hex": "#242a39"
+  "hex": "#242a39",
+  "set": "hull"
  },
  "fBX5": {
-  "hex": "#141720"
+  "hex": "#141720",
+  "set": "hull"
  },
  "fBX6": {
-  "hex": "#040506"
+  "hex": "#040506",
+  "set": "hull"
  },
  "fBF0": {
-  "hex": "#525a6f"
+  "hex": "#525a6f",
+  "set": "hull"
  },
  "fBF1": {
-  "hex": "#454c5d"
+  "hex": "#454c5d",
+  "set": "hull"
  },
  "fBF2": {
-  "hex": "#3a404f"
+  "hex": "#3a404f",
+  "set": "hull"
  },
  "fBF3": {
-  "hex": "#2f3440"
+  "hex": "#2f3440",
+  "set": "hull"
  },
  "fBF4": {
-  "hex": "#242831"
+  "hex": "#242831",
+  "set": "hull"
  },
  "fBF5": {
-  "hex": "#191c23"
+  "hex": "#191c23",
+  "set": "hull"
  },
  "fBF6": {
-  "hex": "#0c0e11"
+  "hex": "#0c0e11",
+  "set": "hull"
  },
  "fSS0": {
-  "hex": "#918c81"
+  "hex": "#918c81",
+  "set": "hull"
  },
  "fSS1": {
-  "hex": "#797267"
+  "hex": "#797267",
+  "set": "hull"
  },
  "fSS2": {
-  "hex": "#605b52"
+  "hex": "#605b52",
+  "set": "hull"
  },
  "fSS3": {
-  "hex": "#4a463f"
+  "hex": "#4a463f",
+  "set": "hull"
  },
  "fSS4": {
-  "hex": "#312f2a"
+  "hex": "#312f2a",
+  "set": "hull"
  },
  "fSS5": {
-  "hex": "#1b1a17"
+  "hex": "#1b1a17",
+  "set": "hull"
  },
  "fSS6": {
-  "hex": "#060505"
+  "hex": "#060505",
+  "set": "hull"
  },
  "fSX0": {
-  "hex": "#76716b"
+  "hex": "#76716b",
+  "set": "hull"
  },
  "fSX1": {
-  "hex": "#5c5852"
+  "hex": "#5c5852",
+  "set": "hull"
  },
  "fSX2": {
-  "hex": "#44413c"
+  "hex": "#44413c",
+  "set": "hull"
  },
  "fSX3": {
-  "hex": "#2e2c29"
+  "hex": "#2e2c29",
+  "set": "hull"
  },
  "fSX4": {
-  "hex": "#161513"
+  "hex": "#161513",
+  "set": "hull"
  },
  "fSX5": {
-  "hex": "#050505"
+  "hex": "#050505",
+  "set": "hull"
  },
  "fSX6": {
-  "hex": "#050505"
+  "hex": "#050505",
+  "set": "hull"
  },
  "hsK": {
-  "hex": "#20272e"
+  "hex": "#20272e",
+  "set": "hull"
  },
  "hsD": {
-  "hex": "#46525d"
+  "hex": "#46525d",
+  "set": "hull"
  },
  "hsM": {
-  "hex": "#6d7c88"
+  "hex": "#6d7c88",
+  "set": "hull"
  },
  "hsS": {
-  "hex": "#8e9eab"
+  "hex": "#8e9eab",
+  "set": "hull"
  },
  "hsL": {
-  "hex": "#aebdc8"
+  "hex": "#aebdc8",
+  "set": "hull"
  },
  "hsH": {
-  "hex": "#d0dbe2"
+  "hex": "#d0dbe2",
+  "set": "hull"
  },
  "hsXK": {
-  "hex": "#1a2026"
+  "hex": "#1a2026",
+  "set": "hull"
  },
  "hsXD": {
-  "hex": "#333d46"
+  "hex": "#333d46",
+  "set": "hull"
  },
  "hsXM": {
-  "hex": "#4b5762"
+  "hex": "#4b5762",
+  "set": "hull"
  },
  "hsXS": {
-  "hex": "#616e7a"
+  "hex": "#616e7a",
+  "set": "hull"
  },
  "hsXL": {
-  "hex": "#7a8894"
+  "hex": "#7a8894",
+  "set": "hull"
  },
  "dbgR": {
-  "hex": "#ff2a2a"
+  "hex": "#ff2a2a",
+  "set": "hull"
  },
  "hsW": {
-  "hex": "#e2e9ee"
+  "hex": "#e2e9ee",
+  "set": "hull"
  },
  "hsSeamSoft": {
-  "hex": "#cdd2d7"
+  "hex": "#cdd2d7",
+  "set": "hull"
  },
  "hsSeamMid": {
-  "hex": "#bbc1cc"
+  "hex": "#bbc1cc",
+  "set": "hull"
  },
  "hsSeamHi": {
-  "hex": "#dce1e7"
+  "hex": "#dce1e7",
+  "set": "hull"
  },
  "hbSoft": {
-  "hex": "#5c7585"
+  "hex": "#5c7585",
+  "set": "hull"
  },
  "hbSlope": {
-  "hex": "#42566a"
+  "hex": "#42566a",
+  "set": "hull"
  },
  "hbCrease": {
-  "hex": "#283751"
+  "hex": "#283751",
+  "set": "hull"
  },
  "hbRim": {
-  "hex": "#131a2c"
+  "hex": "#131a2c",
+  "set": "hull"
  },
  "hbEdge": {
-  "hex": "#78889a"
+  "hex": "#78889a",
+  "set": "hull"
  },
  "hbSeam": {
-  "hex": "#4a5f72"
+  "hex": "#4a5f72",
+  "set": "hull"
  },
  "hbShade": {
-  "hex": "#36485e"
+  "hex": "#36485e",
+  "set": "hull"
  },
  "hbXhsK": {
-  "hex": "#161b1f"
+  "hex": "#161b1f",
+  "set": "hull"
  },
  "hbXhsD": {
-  "hex": "#30383f"
+  "hex": "#30383f",
+  "set": "hull"
  },
  "hbXhsM": {
-  "hex": "#4a545c"
+  "hex": "#4a545c",
+  "set": "hull"
  },
  "hbXhsS": {
-  "hex": "#616b74"
+  "hex": "#616b74",
+  "set": "hull"
  },
  "hbXhsL": {
-  "hex": "#768188"
+  "hex": "#768188",
+  "set": "hull"
  },
  "hbXhsH": {
-  "hex": "#8d959a"
+  "hex": "#8d959a",
+  "set": "hull"
  },
  "hbXhsW": {
-  "hex": "#9a9ea2"
+  "hex": "#9a9ea2",
+  "set": "hull"
  },
  "hbXhsXK": {
-  "hex": "#12161a"
+  "hex": "#12161a",
+  "set": "hull"
  },
  "hbXhsXD": {
-  "hex": "#232930"
+  "hex": "#232930",
+  "set": "hull"
  },
  "hbXhsXM": {
-  "hex": "#333b43"
+  "hex": "#333b43",
+  "set": "hull"
  },
  "hbXhsXS": {
-  "hex": "#424b53"
+  "hex": "#424b53",
+  "set": "hull"
  },
  "hbXhsXL": {
-  "hex": "#535c65"
+  "hex": "#535c65",
+  "set": "hull"
  },
  "hbXhbSoft": {
-  "hex": "#3f505a"
+  "hex": "#3f505a",
+  "set": "hull"
  },
  "hbXhbSeam": {
-  "hex": "#32414e"
+  "hex": "#32414e",
+  "set": "hull"
  },
  "hbXhbShade": {
-  "hex": "#253140"
+  "hex": "#253140",
+  "set": "hull"
  },
  "hbXhbSlope": {
-  "hex": "#2d3a48"
+  "hex": "#2d3a48",
+  "set": "hull"
  },
  "hbXhbCrease": {
-  "hex": "#1b2537"
+  "hex": "#1b2537",
+  "set": "hull"
  },
  "hbXhbRim": {
-  "hex": "#0d121e"
+  "hex": "#0d121e",
+  "set": "hull"
  },
  "hbXhbEdge": {
-  "hex": "#525c69"
+  "hex": "#525c69",
+  "set": "hull"
  },
  "hbXnvF1": {
-  "hex": "#39414b"
+  "hex": "#39414b",
+  "set": "hull"
  },
  "hbXnvF3": {
-  "hex": "#2a3037"
+  "hex": "#2a3037",
+  "set": "hull"
  },
  "hbSlopeLn": {
-  "hex": "#283751"
+  "hex": "#283751",
+  "set": "hull"
  },
  "hbXhbSlopeLn": {
-  "hex": "#1b2537"
+  "hex": "#1b2537",
+  "set": "hull"
  },
  "hbSlopeLit": {
-  "hex": "#5c7585"
+  "hex": "#5c7585",
+  "set": "hull"
  },
  "hbXhbSlopeLit": {
-  "hex": "#3e4f5a"
+  "hex": "#3e4f5a",
+  "set": "hull"
  },
  "hbSlopeLnSoft": {
-  "hex": "#35465e"
+  "hex": "#35465e",
+  "set": "hull"
  },
  "hbXhbSlopeLnSoft": {
-  "hex": "#1c2c3c"
+  "hex": "#1c2c3c",
+  "set": "hull"
  },
  "hbSlopeLnFaint": {
-  "hex": "#3c4e64"
+  "hex": "#3c4e64",
+  "set": "hull"
  },
  "hbXhbSlopeLnFaint": {
-  "hex": "#263445"
+  "hex": "#263445",
+  "set": "hull"
  },
  "hbFcLit": {
   "hex": "#a4b1c1",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "hbFcMid": {
   "hex": "#8999ab",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "hbFcSoft": {
   "hex": "#414e61",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "hbFcLd1": {
   "hex": "#7f8997",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "hbFcLd2": {
   "hex": "#4a5864",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "hbFcRim": {
   "hex": "#1d2a38",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "hbFcEdge": {
   "hex": "#78889a",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "tintW": {
   "hex": "#ffffff",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  },
  "tintK": {
   "hex": "#000000",
-  "flat": true
+  "flat": true,
+  "set": "hull"
  }
 }
