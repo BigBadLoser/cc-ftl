@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, DownedC, DraftedC, EquipC, HealthC, JobC, ModuleC, PositionC, StunC, deserialize, serialize, type Sim } from '../../sim';
+import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, JobC, ModuleC, PositionC, SabotageOrderC, StunC, deserialize, serialize, type Sim } from '../../sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { SABOTAGE_PER_SEC } from '../../sim/tuning';
@@ -54,7 +54,7 @@ describe('sabotage', () => {
     expect(rate(null, 2)).toBeCloseTo(2 * SABOTAGE_PER_SEC, 5);
   });
 
-  it('is interrupted when attacked: the boarders defend themselves instead', () => {
+  it('is paused when attacked: the boarders defend themselves instead', () => {
     const sim = setup();
     const { party } = dockParty(sim, 1);
     const laser = reactor(sim);
@@ -68,10 +68,47 @@ describe('sabotage', () => {
     sim.world.add(raider, PositionC, { x: at.x, y: at.y - 1, toX: at.x, toY: at.y - 1, progress: 0, facing: 0 });
     const out = run(sim, 600, () => !sim.world.has(party[0]!, AssignmentC));
     out.push(...run(sim, 60));
-    expect(of(out, 'crew.sabotageEnded')).toEqual([{ type: 'crew.sabotageEnded', crew: party[0], module: laser, ship: nth(sim, 2), reason: 'interrupted' }]);
+    expect(of(out, 'crew.sabotagePaused')).toEqual([{ type: 'crew.sabotagePaused', crew: party[0], module: laser, ship: nth(sim, 2) }]);
+    expect(of(out, 'crew.sabotageEnded')).toEqual([]);
     expect(of(out, 'crew.attacked').some((e) => e.crew === party[0])).toBe(true);
     expect(sabotageJobs(sim)).toEqual([]);
     expect(hpOf(sim, laser)).toBeGreaterThan(0);
+  });
+
+  it('pauses for a fight and resumes by itself once the attacker is dead, also across save and load', () => {
+    const play = (reload: boolean): { events: string; hp: number; dead: boolean } => {
+      let sim = setup();
+      const { party } = dockParty(sim, 1);
+      const boarder = party[0]!;
+      const core = reactor(sim);
+      sim.world.add(boarder, EquipC, { weapon: 'item.rifle' });
+      sim.world.get(boarder, HealthC)!.max = sim.world.get(boarder, HealthC)!.hp = 100000;
+      sim.enqueue({ type: 'crew.sabotage', ids: party, module: core });
+      const events = run(sim, 2000, () => sim.world.get(boarder, CrewC)!.activity === 'working');
+      const at = sim.world.get(boarder, PositionC)!;
+      const raider = raiderCrew(sim)[0]!;
+      sim.world.remove(raider, StunC);
+      sim.world.add(raider, PositionC, { x: at.x, y: at.y - 1, toX: at.x, toY: at.y - 1, progress: 0, facing: 0 });
+      events.push(...run(sim, 600, () => sim.world.has(boarder, SabotageOrderC) && !sim.world.has(boarder, AssignmentC)));
+      events.push(...run(sim, 1));
+      expect(of(events, 'crew.sabotagePaused')).toHaveLength(1);
+      expect(of(events, 'crew.sabotageEnded')).toEqual([]);
+      expect(sim.world.get(boarder, SabotageOrderC)?.module).toBe(core); // the order is kept while the job is gone
+      expect(sabotageJobs(sim)).toEqual([]);
+      run(sim, 20); // the fight goes on: still paused
+      expect(sabotageJobs(sim)).toEqual([]);
+      if (reload) sim = deserialize(serialize(sim), content);
+      sim.world.get(raider, HealthC)!.hp = 0; // the attacker goes down
+      events.push(...run(sim, 3000, () => hpOf(sim, core) <= 0));
+      events.push(...run(sim, 5));
+      expect(of(events, 'crew.sabotageResumed')).toHaveLength(1);
+      expect(sim.world.has(boarder, SabotageOrderC)).toBe(false);
+      return { events: events.filter((e) => e.type.startsWith('crew.sabotage')).map((e) => e.type).join(), hp: hpOf(sim, core), dead: sim.world.has(raider, DeadC) || sim.world.has(raider, DownedC) };
+    };
+    const base = play(false);
+    expect(base).toMatchObject({ hp: 0, dead: true });
+    expect(base.events).toBe('crew.sabotageStarted,crew.sabotagePaused,crew.sabotageResumed,crew.sabotageEnded');
+    expect(play(true)).toEqual(base);
   });
 
   it('stops when the boarder goes down', () => {

@@ -44,7 +44,11 @@ function canGoHome(sim: Sim, id: number, v: Vehicle): boolean {
  */
 export function orderRecall(sim: Sim, ids: readonly number[]): string | null {
   const failed = new Map<string, number[]>();
-  const fail = (reason: string, crew: number): void => void (failed.get(reason) ?? failed.set(reason, []).get(reason)!).push(crew);
+  const left: { crew: number; reason: string }[] = [];
+  const fail = (reason: string, crew: number): void => {
+    (failed.get(reason) ?? failed.set(reason, []).get(reason)!).push(crew);
+    left.push({ crew, reason });
+  };
   const seats = new Map<number, number>();
   const party = new Map<number, number[]>();
   const shuttles = (shipId: number): number[] =>
@@ -88,11 +92,13 @@ export function orderRecall(sim: Sim, ids: readonly number[]): string | null {
     (party.get(seat) ?? party.set(seat, []).get(seat)!).push(crew);
   }
   for (const [reason, crew] of failed) sim.events.emit({ type: 'crew.recallFailed', vehicle: 0, crew, reason });
+  let reported = false;
   for (const [sid, crew] of party) {
     const v = sim.world.get(sid, VehicleC) as Vehicle;
     const ship = shipIdOf(sim, sim.world.get(v.dock, ModuleC));
     sim.world.add(sid, RecallC, { ship, crew, state: 'boarding', since: sim.tick });
-    sim.events.emit({ type: 'crew.recallStarted', vehicle: sid, ship, crew: [...crew] });
+    sim.events.emit({ type: 'crew.recallStarted', vehicle: sid, ship, crew: [...crew], left: reported ? [] : left });
+    reported = true; // the members left behind are listed once, on the first shuttle's event
   }
   return party.size > 0 ? null : (first ?? 'noCrew');
 }

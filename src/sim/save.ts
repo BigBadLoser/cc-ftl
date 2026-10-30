@@ -84,7 +84,7 @@ import { newYard, type YardState } from './yard/types';
  * v69 (trade): optional `Deal.getValue` (each get line's agreed share of the escrow, for settling a part-delivered run).
  * v70 (boarding): `RecallC` (a player boarding party's recall, on the shuttle) and the 'sabotage' job kind.
  */
-export const SAVE_VERSION = 70;
+export const SAVE_VERSION = 71;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

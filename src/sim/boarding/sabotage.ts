@@ -15,6 +15,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { SABOTAGE_PER_SEC } from '../tuning';
 import { EmbarkOrderC } from '../vehicles/components';
+import { SabotageOrderC } from './components';
 
 /**
  * Sabotage: a boarder wrecks a module of the hostile ship they stand on. It is a job of kind 'sabotage' (like an ordered hack):
@@ -42,19 +43,35 @@ function sabotageError(sim: Sim, crew: number, module: number): string | null {
   return null;
 }
 
-/** Order one crew member to wreck `module`. Returns 'ok' or a reject reason. */
-function orderSabotage(sim: Sim, crew: number, module: number): Result {
-  const err = sabotageError(sim, crew, module);
-  if (err) return err;
-  const pos = sim.world.get(crew, PositionC)!;
-  const m = sim.world.get(module, ModuleC)!;
-  const def = sim.content.modules[m.def];
-  if (!def) return 'badTarget';
+/** A walk to a tile beside the module: the shortest over its footprint, or null. */
+export function planSabotage(sim: Sim, crew: number, module: number): { x: number; y: number; steps: { x: number; y: number }[] } | null {
+  const pos = sim.world.get(crew, PositionC);
+  const m = sim.world.get(module, ModuleC);
+  const def = m && sim.content.modules[m.def];
+  if (!pos || !m || !def) return null;
   let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
   for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
     const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true });
     if (steps && (!plan || steps.length < plan.steps.length)) plan = { x: t.x, y: t.y, steps };
   }
+  return plan;
+}
+
+/** Create the sabotage job for a standing-by boarder and start the walk. */
+export function startSabotageJob(sim: Sim, crew: number, module: number, plan: NonNullable<ReturnType<typeof planSabotage>>): void {
+  const job = sim.world.createEntity();
+  sim.world.add(job, JobC, {
+    category: 'operating', kind: 'sabotage', x: plan.x, y: plan.y, struct: 0, work: 1, progress: 0, reservedBy: crew, target: module, holder: crew,
+  });
+  attachJob(sim, crew, job);
+  (sim.world.get(crew, PathC) as Path).steps = plan.steps;
+}
+
+/** Order one crew member to wreck `module`. Returns 'ok' or a reject reason. */
+function orderSabotage(sim: Sim, crew: number, module: number): Result {
+  const err = sabotageError(sim, crew, module);
+  if (err) return err;
+  const plan = planSabotage(sim, crew, module);
   if (!plan) return 'unreachable';
   endSabotage(sim, crew, 'cancelled'); // a new order replaces an old one
   abortTask(sim, crew, 'order');
@@ -67,13 +84,9 @@ function orderSabotage(sim: Sim, crew: number, module: number): Result {
   if (f) f.ordered = 0;
   sim.world.remove(crew, EmbarkOrderC);
   (sim.world.get(crew, CrewC) as { activity: string }).activity = 'drafted';
-  const job = sim.world.createEntity();
-  sim.world.add(job, JobC, {
-    category: 'operating', kind: 'sabotage', x: plan.x, y: plan.y, struct: 0, work: 1, progress: 0, reservedBy: crew, target: module, holder: crew,
-  });
-  attachJob(sim, crew, job);
-  (sim.world.get(crew, PathC) as Path).steps = plan.steps;
-  sim.events.emit({ type: 'crew.sabotageStarted', crew, module, ship: shipIdOf(sim, m) });
+  startSabotageJob(sim, crew, module, plan);
+  sim.world.add(crew, SabotageOrderC, { module });
+  sim.events.emit({ type: 'crew.sabotageStarted', crew, module, ship: shipIdOf(sim, sim.world.get(module, ModuleC)) });
   return 'ok';
 }
 
@@ -95,14 +108,27 @@ function sabotageJobOf(sim: Sim, crew: number): number {
   return a && sim.world.get(a.jobId, JobC)?.kind === 'sabotage' ? a.jobId : 0;
 }
 
-/** Stop the crew member's sabotage job (if any) with `reason`. Returns true if there was one. */
+/** Stop the crew member's sabotage order (the job, or the order alone while a fight pauses it) with `reason`. Returns true if there was one. */
 function endSabotage(sim: Sim, crew: number, reason: 'cancelled'): boolean {
   const jobId = sabotageJobOf(sim, crew);
   const job = jobId ? sim.world.get(jobId, JobC) : undefined;
-  if (!job) return false;
-  emitEnded(sim, crew, job, reason);
-  destroyJob(sim, jobId); // releases the holder's task
+  const order = sim.world.get(crew, SabotageOrderC);
+  sim.world.remove(crew, SabotageOrderC);
+  if (job) {
+    emitEnded(sim, crew, job, reason);
+    destroyJob(sim, jobId); // releases the holder's task
+    return true;
+  }
+  if (!order) return false;
+  endOrder(sim, crew, order.module, reason);
   return true;
+}
+
+/** The order ended for good with no job to name it (paused by a fight): report it and forget it. */
+export function endOrder(sim: Sim, crew: number, module: number, reason: 'destroyed' | 'interrupted' | 'downed' | 'cancelled'): void {
+  sim.world.remove(crew, SabotageOrderC);
+  const m = sim.world.get(module, ModuleC);
+  sim.events.emit({ type: 'crew.sabotageEnded', crew, module, ship: m ? shipIdOf(sim, m) : 0, reason });
 }
 
 /** `crew.cancelSabotage`: drop the members' sabotage orders. They stay drafted where they stand. Returns a reject reason, or null. */
@@ -121,25 +147,42 @@ export function performSabotage(sim: Sim, crew: number, job: Job): WorkResult {
   const id = job.target ?? 0;
   const m = sim.world.get(id, ModuleC);
   if (!m || m.hp <= 0) {
+    sim.world.remove(crew, SabotageOrderC);
     emitEnded(sim, crew, job, 'destroyed');
     return 'done';
   }
   damageModule(sim, id, SABOTAGE_PER_SEC / TICK_HZ, shipIdOf(sim, m));
   if (m.hp > 0) return 'working';
+  sim.world.remove(crew, SabotageOrderC);
   emitEnded(sim, crew, job, 'destroyed');
   return 'done';
 }
 
 /**
  * Keep or drop a sabotage job (autojobs). It lasts while its module stands and its boarder still holds it, drafted and standing
- * by; otherwise it is dropped with the reason (the module wrecked by someone else counts as 'destroyed').
+ * by. When it is dropped:
+ *  - the module is gone (wrecked by someone else counts), or the boarder is downed or dead: the order ends ('destroyed', 'downed');
+ *  - the boarder is still drafted and standing by with nothing else to do (a fight took the job): the order is only PAUSED, kept in
+ *    `SabotageOrderC`, and `crew.sabotagePaused` is reported; it resumes by itself when the fight is over (boarding/resume.ts);
+ *  - otherwise (moved, undrafted, given another job) the order ends ('interrupted').
  */
 export function keepSabotage(sim: Sim, jobId: number, job: Job): boolean {
   const by = job.holder ?? 0;
   const m = sim.world.get(job.target ?? 0, ModuleC);
-  const holding = job.reservedBy === by && by !== 0 && sim.world.get(by, AssignmentC)?.jobId === jobId && sim.world.get(by, DraftedC)?.target === null;
+  const drafted = sim.world.get(by, DraftedC);
+  const holding = job.reservedBy === by && by !== 0 && sim.world.get(by, AssignmentC)?.jobId === jobId && drafted?.target === null;
   if (m && m.hp > 0 && holding) return true;
-  const reason = !m || m.hp <= 0 ? 'destroyed' : by !== 0 && (sim.world.has(by, DownedC) || sim.world.has(by, DeadC)) ? 'downed' : 'interrupted';
-  emitEnded(sim, by, job, reason);
+  if (!m || m.hp <= 0) {
+    sim.world.remove(by, SabotageOrderC);
+    emitEnded(sim, by, job, 'destroyed');
+  } else if (sim.world.has(by, DownedC) || sim.world.has(by, DeadC)) {
+    sim.world.remove(by, SabotageOrderC);
+    emitEnded(sim, by, job, 'downed');
+  } else if (drafted?.target === null && !sim.world.has(by, AssignmentC) && sim.world.get(by, SabotageOrderC)?.module === job.target) {
+    sim.events.emit({ type: 'crew.sabotagePaused', crew: by, module: job.target ?? 0, ship: shipIdOf(sim, job) });
+  } else {
+    sim.world.remove(by, SabotageOrderC);
+    emitEnded(sim, by, job, 'interrupted');
+  }
   return false;
 }

@@ -162,9 +162,12 @@ export type SimEvent =
   | { type: 'core.hacked'; moduleId: number; ship: number; by: Faction }
   /** Player boarders: a crew member was ordered to wreck `module` of hostile ship `ship`; it ended (`destroyed`, `interrupted` by a fight or a new order, `downed`, `cancelled`). */
   | { type: 'crew.sabotageStarted'; crew: number; module: number; ship: number }
+  /** A fight took the boarder off the job; the order stays and resumes (`crew.sabotageResumed`) once nothing hostile is in sight. */
+  | { type: 'crew.sabotagePaused'; crew: number; module: number; ship: number }
+  | { type: 'crew.sabotageResumed'; crew: number; module: number; ship: number }
   | { type: 'crew.sabotageEnded'; crew: number; module: number; ship: number; reason: 'destroyed' | 'interrupted' | 'downed' | 'cancelled' }
   /** A boarding party was recalled: `crew` walk to shuttle `vehicle` docked at hostile ship `ship`; the shuttle brought them home; the recall failed (`crew` may be empty) for `reason`. */
-  | { type: 'crew.recallStarted'; vehicle: number; ship: number; crew: number[] }
+  | { type: 'crew.recallStarted'; vehicle: number; ship: number; crew: number[]; left: { crew: number; reason: string }[] }
   | { type: 'crew.recalled'; vehicle: number; crew: number[] }
   | { type: 'crew.recallFailed'; vehicle: number; crew: number[]; reason: string }
   /** Player crew were aboard a ship that left (`fled`: it jumped away; `lifted`: it left the node) and left with it: they are lost. */

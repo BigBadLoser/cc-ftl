@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CombatC, CrewC, DeadC, ModuleC, VehicleC } from '../../sim';
+import { jumpWarnings, AboardC, AllegianceC, CombatC, CrewC, DeadC, ModuleC, VehicleC } from '../../sim';
 import { loseStrandedCrew } from '../../sim/boarding/stranded';
 import { FTL_CHARGE_SEC } from '../../sim/tuning';
 import { shipIdOf } from '../../sim/regions';
@@ -43,5 +43,15 @@ describe('stranded parties are lost', () => {
     expect(loseStrandedCrew(sim, nth(sim, 2), 'lifted').sort()).toEqual([...party].sort());
     expect(of(run(sim, 1), 'crew.leftWithShip').map((e) => e.how)).toEqual(['lifted', 'lifted']);
     expect(crewOn(sim, 2).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player')).toEqual([]);
+  });
+});
+
+describe('a jump with a party aboard another ship', () => {
+  it('lists the party as crew the jump would leave behind (the jump warning reads this)', () => {
+    const sim = setup();
+    const { party, pilot, shuttle } = dockParty(sim);
+    const warn = jumpWarnings(sim, nth(sim, 1));
+    expect(warn.crew.sort()).toEqual([...party, pilot].sort()); // the party and the pilot waiting in the shuttle
+    expect(warn.vehicles).toEqual([shuttle]); // docked at the other ship, so it stays too
   });
 });

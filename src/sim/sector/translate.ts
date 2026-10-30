@@ -67,7 +67,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, bedOwner: null, mood: null, suit: null,
   intent: null, interrupt: null,
   trader: null, coreRaider: null, coreRaid: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
-  vehicle: null, ferry: null, transfer: null, salvageWatch: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
+  vehicle: null, ferry: null, transfer: null, salvageWatch: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, sabotageOrder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
 };
 
 /** A deep copy of one entity's components with every coordinate moved by (dx, dy). Components are plain JSON data. */

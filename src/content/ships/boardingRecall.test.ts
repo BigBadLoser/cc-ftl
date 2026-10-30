@@ -15,7 +15,7 @@ describe('recall', () => {
     sim.enqueue({ type: 'crew.recall', ids: party });
     const out = run(sim, 3000, () => !sim.world.has(shuttle, RecallC) && party.every((c) => home(sim, c)));
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
-    expect(of(out, 'crew.recallStarted')).toEqual([{ type: 'crew.recallStarted', vehicle: shuttle, ship: nth(sim, 2), crew: [...party].sort((a, b) => a - b) }]);
+    expect(of(out, 'crew.recallStarted')).toEqual([{ type: 'crew.recallStarted', vehicle: shuttle, ship: nth(sim, 2), crew: [...party].sort((a, b) => a - b), left: [] }]);
     expect(of(out, 'crew.sabotageEnded').map((e) => e.reason)).toEqual(['cancelled', 'cancelled']);
     expect(of(out, 'vehicle.undocked')).toHaveLength(1);
     expect(of(out, 'vehicle.stowed')).toHaveLength(1);
@@ -88,6 +88,22 @@ describe('recall', () => {
     expect(sim.world.has(shuttle, RecallC)).toBe(false);
     sim.enqueue({ type: 'crew.recall', ids: crewOn(sim, 1) });
     expect(of(run(sim, 5), 'command.rejected').map((e) => e.reason)).toEqual(['notAboard']);
+  });
+});
+
+describe('recall with too few seats', () => {
+  it('takes as many as fit and reports who stayed', () => {
+    const sim = setup();
+    const { shuttle, party } = dockParty(sim);
+    sim.world.get(shuttle, VehicleC)!.passengers = [9001, 9002, 9003]; // three seats taken: one left of five
+    sim.enqueue({ type: 'crew.recall', ids: party });
+    const out = run(sim, 2);
+    const [first, stayed] = [...party].sort((a, b) => a - b);
+    expect(of(out, 'crew.recallStarted')).toEqual([{ type: 'crew.recallStarted', vehicle: shuttle, ship: nth(sim, 2), crew: [first], left: [{ crew: stayed, reason: 'full' }] }]);
+    expect(of(out, 'crew.recallFailed')).toEqual([{ type: 'crew.recallFailed', vehicle: 0, crew: [stayed], reason: 'full' }]);
+    expect(of(out, 'command.rejected')).toEqual([]);
+    expect(sim.world.has(stayed!, EmbarkOrderC)).toBe(false);
+    sim.world.get(shuttle, VehicleC)!.passengers = [];
   });
 });
 
