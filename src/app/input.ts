@@ -1,4 +1,6 @@
-import { isTypingTarget } from '../ui/keys';
+import { isTypingTarget, modalOpen } from '../ui/keys';
+import { chordOf, keymap, type ActionId } from '../ui/keymap';
+import { settings } from '../ui/settings/settings';
 import type { Renderer } from '../render/scene';
 
 export interface Tile {
@@ -20,8 +22,9 @@ export interface InputHandlers {
   onPaint(phase: 'start' | 'move' | 'end' | 'cancel', tile: Tile | null): void;
   /** Right-click at canvas-relative px: back out of the current tool, or give an order to the selection. */
   onContext(screenX: number, screenY: number, shift: boolean): void;
-  /** Non-camera hotkeys: 'escape', 'r' (shift = the other way). */
-  onKey(key: string, shift?: boolean): void;
+  /** Non-camera world hotkeys (keymap actions): rotate the module being placed (either way), or draft the selected crew. */
+  /** Returns true when the key was used, so a key bound to several actions (R) runs only the first that applies. */
+  onKey(action: 'rotate' | 'rotateBack' | 'draft'): boolean;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
   /** Mouse position in canvas px (the "Target in view" preview reads the ship tile under it). */
@@ -34,6 +37,10 @@ const DRAG_THRESHOLD = 4;
 const KEY_PAN_PX_PER_S = 700;
 const WHEEL_ZOOM = 0.0015;
 const KEY_ZOOM = 1.25;
+/** The mouse within this many px of a window edge pans the camera (edge scrolling, a setting). */
+const EDGE_PX = 8;
+const PAN_DIRS: [ActionId, number, number][] = [['cam.up', 0, 1], ['cam.down', 0, -1], ['cam.left', 1, 0], ['cam.right', -1, 0]];
+const WORLD_KEYS: [ActionId, 'rotate' | 'rotateBack' | 'draft'][] = [['build.rotate', 'rotate'], ['build.rotateBack', 'rotateBack'], ['crew.draft', 'draft']];
 
 /** Pointer + keyboard camera control and tile picking on the canvas. Returns a disposer. */
 export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: InputHandlers): () => void {
@@ -119,7 +126,10 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       }
     }
     if (boxing) h.onBox?.('move', start, p, e.shiftKey);
-    else if (dragging) renderer.pan(p.x - prev.x, p.y - prev.y);
+    else if (dragging) {
+      const k = settings.get().invertDrag ? -1 : 1;
+      renderer.pan(k * (p.x - prev.x), k * (p.y - prev.y));
+    }
     else if (e.pointerType === 'mouse') h.onHover(renderer.pickSector(p.x, p.y, h.pickLift?.()));
   };
 
@@ -149,51 +159,70 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     e.preventDefault();
     const p = local(e);
     const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-    renderer.zoomAt(Math.exp(-dy * WHEEL_ZOOM), p.x, p.y);
+    renderer.zoomAt(Math.exp(-dy * WHEEL_ZOOM * settings.get().zoomSpeed), p.x, p.y);
   };
 
-  // Keyboard: held pan keys move the camera each frame.
-  const held = new Set<string>();
+  // Keyboard (held pan keys, keymap.ts) and edge scrolling move the camera each frame.
+  /** Held pan keys: physical key -> the chord it was pressed as (with or without Shift), matched exactly against the bindings. */
+  const held = new Map<string, string>();
   let raf = 0;
   let lastT = 0;
-  const panKeys: Record<string, [number, number]> = {
-    w: [0, 1], arrowup: [0, 1], s: [0, -1], arrowdown: [0, -1],
-    a: [1, 0], arrowleft: [1, 0], d: [-1, 0], arrowright: [-1, 0],
+  /** The mouse in the window (null once it leaves), for edge scrolling. */
+  let mouse: { x: number; y: number } | null = null;
+  const edgeDir = (): [number, number] => {
+    if (!mouse || !settings.get().edgeScroll || !document.hasFocus()) return [0, 0];
+    const { innerWidth: w, innerHeight: hh } = window;
+    return [mouse.x <= EDGE_PX ? 1 : mouse.x >= w - 1 - EDGE_PX ? -1 : 0, mouse.y <= EDGE_PX ? 1 : mouse.y >= hh - 1 - EDGE_PX ? -1 : 0];
   };
   const tick = (t: number) => {
     const dt = Math.min((t - lastT) / 1000, 0.1);
     lastT = t;
-    let dx = 0;
-    let dy = 0;
-    for (const k of held) {
-      const v = panKeys[k];
-      if (v) {
-        dx += v[0];
-        dy += v[1];
+    let [dx, dy] = edgeDir();
+    for (const chord of held.values()) {
+      for (const [id, x, y] of PAN_DIRS) {
+        if (keymap.keys(id).includes(chord)) {
+          dx += x;
+          dy += y;
+        }
       }
     }
-    if (dx || dy) renderer.pan(dx * KEY_PAN_PX_PER_S * dt, dy * KEY_PAN_PX_PER_S * dt);
-    raf = held.size ? requestAnimationFrame(tick) : 0;
+    const v = KEY_PAN_PX_PER_S * settings.get().scrollSpeed * dt;
+    if (dx || dy) renderer.pan(Math.sign(dx) * v, Math.sign(dy) * v);
+    const [ex, ey] = edgeDir();
+    raf = held.size || ex || ey ? requestAnimationFrame(tick) : 0;
+  };
+  const run = () => {
+    if (raf) return;
+    lastT = performance.now();
+    raf = requestAnimationFrame(tick);
   };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
-    const k = e.key.toLowerCase();
-    if (k in panKeys) {
+    if (modalOpen() || isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (PAN_DIRS.some(([id]) => keymap.matches(e, id))) {
       e.preventDefault();
-      held.add(k);
-      if (!raf) {
-        lastT = performance.now();
-        raf = requestAnimationFrame(tick);
-      }
-    } else if (k === 'escape' || k === 'r') {
-      h.onKey(k, e.shiftKey);
-    } else if (k === '+' || k === '=' || k === '-' || k === '_') {
+      held.set(e.code, chordOf(e)!);
+      run();
+      return;
+    }
+    for (const [id, action] of WORLD_KEYS) if (keymap.matches(e, id) && h.onKey(action)) break;
+    const zin = keymap.matches(e, 'cam.zoomIn');
+    if (zin || keymap.matches(e, 'cam.zoomOut')) {
       const r = canvas.getBoundingClientRect();
-      renderer.zoomAt(k === '-' || k === '_' ? 1 / KEY_ZOOM : KEY_ZOOM, r.width / 2, r.height / 2);
+      const f = Math.pow(KEY_ZOOM, settings.get().zoomSpeed);
+      renderer.zoomAt(zin ? f : 1 / f, r.width / 2, r.height / 2);
     }
   };
-  const onKeyUp = (e: KeyboardEvent) => held.delete(e.key.toLowerCase());
+  const onKeyUp = (e: KeyboardEvent) => held.delete(e.code);
   const onBlur = () => held.clear();
+  const onMouse = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
+    mouse = { x: e.clientX, y: e.clientY };
+    const [ex, ey] = edgeDir();
+    if (ex || ey) run();
+  };
+  const onMouseOut = (e: PointerEvent) => {
+    if (!e.relatedTarget) mouse = null; // left the window
+  };
 
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
@@ -206,6 +235,8 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
+  window.addEventListener('pointermove', onMouse);
+  window.addEventListener('pointerout', onMouseOut);
   return () => {
     canvas.removeEventListener('pointerdown', onDown);
     canvas.removeEventListener('pointermove', onMove);
@@ -217,6 +248,8 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('blur', onBlur);
+    window.removeEventListener('pointermove', onMouse);
+    window.removeEventListener('pointerout', onMouseOut);
     cancelAnimationFrame(raf);
   };
 }

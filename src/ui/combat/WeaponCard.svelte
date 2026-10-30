@@ -4,7 +4,7 @@
 
   /**
    * One player weapon: hotkey, name, charge bar and a bottom line that says what it aims at and what it does when charged. Click the card to
-   * arm it, then click an enemy module in the world to aim; click the bottom line, right-click the card or press Shift + its hotkey to flip
+   * arm it, then click an enemy module in the world to aim; click the bottom line, right-click the card or press its mode key (Shift + its hotkey by default) to flip
    * AUTO / HOLD (right-click is the only way for a compact card past the fourth hotkey).
    * AUTO reads "Ship"; HOLD reads "HOLD · Ship" with the bar in amber, and "HOLD · READY" once a held weapon is charged. Compact cards
    * (five or more weapons) have no bottom line: hold is shown by the amber bar alone.
@@ -30,8 +30,8 @@
   };
   const modeTip = $derived(
     held
-      ? 'HOLD: charges and waits for a volley (V) or an aim. Click or right-click the card for AUTO (Shift + hotkey)'
-      : 'AUTO: fires when charged. Click or right-click the card for HOLD (Shift + hotkey)',
+      ? 'HOLD: charges and waits for a volley or an aim. Click or right-click the card for AUTO'
+      : 'AUTO: fires when charged. Click or right-click the card for HOLD',
   );
   const onKey = (e: KeyboardEvent) => {
     if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {

@@ -5,6 +5,9 @@ import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
+import t_settings from '@tabler/icons/outline/settings.svg?raw';
+import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
+import t_device_floppy from '@tabler/icons/outline/device-floppy.svg?raw';
 import t_broadcast from '@tabler/icons/outline/broadcast.svg?raw';
 import t_bug from '@tabler/icons/outline/bug.svg?raw';
 import t_download from '@tabler/icons/outline/download.svg?raw';
@@ -109,6 +112,9 @@ export const FILES = {
   fast: 'player-track-next',
   faster: 'player-skip-forward',
   draft: 'shield-chevron',
+  settings: 'settings',
+  keyboard: 'keyboard',
+  save: 'device-floppy',
   downed: 'heart-broken',
   back: 'chevron-left',
   list: 'list',
@@ -155,6 +161,9 @@ export const FILES = {
 } as const;
 
 const RAW: Record<string, string> = {
+  'settings': t_settings,
+  'keyboard': t_keyboard,
+  'device-floppy': t_device_floppy,
   'alert-triangle': t_alert_triangle,
   'arrow-curve-right': t_arrow_curve_right,
   'arrows-exchange': t_arrows_exchange,

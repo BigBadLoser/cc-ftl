@@ -6,6 +6,7 @@ export { default as Chips } from './Chips.svelte';
 export { default as Tooltip } from './Tooltip.svelte';
 export { default as Dialog } from './Dialog.svelte';
 export { default as Slider } from './Slider.svelte';
+export { default as SideTabs } from './SideTabs.svelte';
 export { default as Frame } from './Frame.svelte';
 export { default as FrameGap } from './FrameGap.svelte';
 export { default as Meter } from './Meter.svelte';

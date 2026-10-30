@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { isTypingTarget } from '../keys';
+  import { keymap } from '../keymap';
+  import { isTypingTarget, modalOpen } from '../keys';
   import { onMount } from 'svelte';
   import type { UiAiming, UiApi, UiCombat, UiSignal } from '../api';
   import type { Rect } from '../combat/panelPlace';
@@ -36,6 +37,10 @@
     let aiming: UiAiming | null = null;
     let speed: Speed = 0;
     let storyBusy = false;
+    // The window is in the background: no lesson opens while the player is away (the background pause owns the clock then).
+    let away = false;
+    const onBlur = () => (away = true);
+    const onFocus = () => (away = false);
     const pending: UiSignal[] = [];
     // The game's own time controls: the same path as the pause key.
     const eng = new LessonEngine(LESSONS, { speed: () => speed, setSpeed: (s) => api.setSpeed(s) }, prefs);
@@ -53,7 +58,7 @@
     let raf = 0;
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      const ctx: LessonCtx = { combat, aiming, busy: storyBusy || uiBusy };
+      const ctx: LessonCtx = { combat, aiming, busy: storyBusy || uiBusy || away };
       eng.update(ctx, performance.now(), pending.splice(0));
       const t = eng.current?.step.target;
       const r = t ? resolveTarget(t, { ctx, api, doc: document }) : null;
@@ -69,18 +74,22 @@
     const onKey = (e: KeyboardEvent) => {
       const v = eng.current;
       // Typing in a text field (the bug report, a name) keeps its keys.
-      if (!v || isTypingTarget(e)) return;
-      if (e.key === ' ' || e.key === '1' || e.key === '2' || e.key === '3') {
+      if (!v || uiBusy || modalOpen() || isTypingTarget(e)) return;
+      if ((['game.pause', 'game.speed1', 'game.speed2', 'game.speed3'] as const).some((id) => keymap.matches(e, id))) {
         e.preventDefault();
         e.stopImmediatePropagation();
-      } else if (e.key === 'Enter' && v.step.advance === 'gotIt') {
+      } else if (keymap.matches(e, 'ui.confirm') && v.step.advance === 'gotIt') {
         e.preventDefault();
         e.stopImmediatePropagation();
         eng.gotIt();
       }
     };
     window.addEventListener('keydown', onKey, true);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
     return () => {
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKey, true);
       unsubs.forEach((u) => u());

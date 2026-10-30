@@ -19,6 +19,11 @@ describe('lesson conditions', () => {
     expect(checkCondition(allOf(onEvent('combat.started'), when((c) => c.combat.inCombat)), f)).toBe(false);
   });
 
+  it('resolves [@action] badges to the bound key', () => {
+    expect(keyText('[@combat.volley] fires', (id) => (id === 'combat.volley' ? 'V' : ''))).toEqual([{ kind: 'key', text: 'V' }, { kind: 'text', text: ' fires' }]);
+    expect(keyText('[@nope]', () => '')).toEqual([{ kind: 'key', text: 'unbound' }]);
+  });
+
   it('splits key badges and strong words out of step text', () => {
     expect(keyText('Press [Q] or [Shift]+[Q] to **arm**.')).toEqual([
       { kind: 'text', text: 'Press ' }, { kind: 'key', text: 'Q' }, { kind: 'text', text: ' or ' },
