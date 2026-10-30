@@ -91,9 +91,13 @@ def _band_hue(spec, k):
     return h if isinstance(h, str) else h[k]
 
 
+SOFTEN = None                   # a hook (spec -> spec) every star goes through; backdrop_bodies sets it for soft halos
+
+
 def star(kind, seed, spec=None, c=None, r=RB, reach=EDGE):
     """A star of radius r at c (default: the body radius at the origin), its halo bands out to `reach`."""
     spec = spec or STARS[kind]
+    spec = SOFTEN(spec) if SOFTEN else spec
     c = Vector() if c is None else c
     rng = np.random.default_rng(seed + 101)
     body = core.Mesh("star")

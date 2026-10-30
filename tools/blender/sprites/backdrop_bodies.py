@@ -27,12 +27,14 @@ GFREQ = 9.0                     # a star's granulation frequency (starmap: 5): f
 
 
 def smooth_star(spec):
-    """A starmap star spec with a soft halo (HALO_BANDS bands halving every quarter of the reach from the starmap's first
-    band, tapered to nothing at the frame's edge) and finer granulation."""
-    b0 = spec["bands"][0]
-    hues = spec["halo"] if isinstance(spec["halo"], str) else spec["halo"][0]
+    """A starmap star spec with a soft halo and finer granulation: HALO_BANDS bands from the starmap's first band level,
+    halving every seventh of the reach and tapered to nothing at its end, so it reads as a glow and not a second disc.
+    A halo with a hue per band keeps its hues by position."""
+    b0, n = spec["bands"][0], len(spec["bands"])
     xs = [(k + 0.5) / HALO_BANDS for k in range(HALO_BANDS)]
-    return {**spec, "bands": tuple(b0 * 0.5 ** (4 * x) * (1 - x) ** 1.5 for x in xs), "halo": hues, "gfreq": GFREQ}
+    h = spec["halo"]
+    halo = h if isinstance(h, str) else tuple(h[min(n - 1, int(x * n))] for x in xs)
+    return {**spec, "bands": tuple(b0 * 0.5 ** (7 * x) * (1 - x) ** 2 for x in xs), "halo": halo, "gfreq": GFREQ}
 
 
 SOURCES = {**{k: starmap_bodies for k in ("star", "red_dwarf", "blue_giant", "gas_giant", "black_hole")},
@@ -45,17 +47,11 @@ def variants(kind):
 
 def body_items(kind, v):
     """Variant v of a body kind, built by its starmap module at DETAIL and scaled up about the frame centre."""
-    starmap_kit.DETAIL = DETAIL
+    starmap_kit.DETAIL, starmap_bodies.SOFTEN = DETAIL, smooth_star      # every star: a soft halo, finer granulation
     try:
-        if kind in starmap_bodies.STARS:                # the same star, with a soft halo and finer granulation
-            starmap_kit.start()
-            spec = smooth_star(starmap_bodies.STARS[kind])
-            _, halo = starmap_bodies.star(kind, starmap_bodies.seed_of(kind, v), spec=spec)
-            outlined = False
-        else:
-            halo, outlined = SOURCES[kind].scene(kind, v)
+        halo, outlined = SOURCES[kind].scene(kind, v)
     finally:
-        starmap_kit.DETAIL = 1
+        starmap_kit.DETAIL, starmap_bodies.SOFTEN = 1, None
     for ob in bpy.context.scene.objects:
         if ob.type == "MESH":
             ob.location = ob.location * SCALE
