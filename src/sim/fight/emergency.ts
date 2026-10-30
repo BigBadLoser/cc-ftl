@@ -1,5 +1,6 @@
 import { CrewC, DraftedC, JobC, PathC, PositionC } from '../crew/components';
-import { clearPath, isIncapacitated, origin, releaseAssignment } from '../crew/helpers';
+import { abortTask } from '../ai/task';
+import { clearPath, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
@@ -107,7 +108,7 @@ function standDown(sim: Sim, threatened: ReadonlySet<number>): void {
     if (sim.tick - mark.quietSince < EMERGENCY_STAND_DOWN_SEC * TICK_HZ || sim.world.has(id, StowOrderC) || isIncapacitated(sim, id)) continue;
     const storage = reachableRoom(sim, id, mark.item);
     if (storage) {
-      releaseAssignment(sim, id);
+      abortTask(sim, id, 'standDown');
       sim.world.add(id, StowOrderC, { storage });
     } else {
       // No locker with room that they can reach: leave the weapon on the floor rather than stay armed for good.

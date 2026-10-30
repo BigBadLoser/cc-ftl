@@ -5,6 +5,7 @@
   import BuildPopover from './BuildPopover.svelte';
   import { buildEntries, filterEntries, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
   import { createThumbs } from './buildThumbs';
+  import HullPlanBar from './HullPlanBar.svelte';
   import Icon from './Icon.svelte';
 
   let { api }: { api: UiApi } = $props();
@@ -12,7 +13,7 @@
   let stock = $state<UiStock[]>([]);
   let defs = $state<UiModuleDef[]>([]);
   let mining = $state<UiMining>({ asteroids: [], pods: [] });
-  let hint = $state<{ x: number; y: number; text: string } | null>(null);
+  let hint = $state<{ x: number; y: number; text: string; ok?: boolean } | null>(null);
   let cat = $state<CategoryId>('structure');
   let query = $state('');
   let rev = $state(0);
@@ -82,11 +83,14 @@
   };
   const press = (e: Entry, el: HTMLElement) => { clearTimeout(closeT); pinned = false; pop = { entry: e, rect: el.getBoundingClientRect() }; };
   const dismiss = () => { pinned = false; pop = null; };
+  // With the Hull plan open the menu folds down to its category row (the plan is drawn over the view); it unfolds under the pointer.
+  let over = $state(false);
+  const collapsed = $derived(st.build === 'hull' && !over && !pop);
 </script>
 
 <svelte:window onpointerdown={(e) => { if (pop && !(e.target as Element).closest?.('[data-testid="build-popover"], .card')) dismiss(); }} />
 
-<div class="cat" data-testid="build-catalog">
+<div class="cat legacy" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}
@@ -109,16 +113,18 @@
     </div>
   </div>
 
+{#if st.build === 'hull'}<HullPlanBar {api} />{/if}
 {#if pop}
   <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} onvariant={showVariant}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
 {/if}
-{#if hint}<div class="hint" role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}
+{#if hint}<div class="hint" class:ok={hint.ok} role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}
 
 <style>
   /* Same bottom gutter as the toolbar; it ends a gap before the toolbar's left edge (--tools-w, set by ToolBar) and centres in the room left. */
   .cat { position: fixed; z-index: 5; left: calc(8px + var(--sal)); right: calc(var(--tools-w, 0px) + 16px + var(--sar)); max-width: 1180px; margin-inline: auto; box-sizing: border-box; bottom: calc(8px + var(--sab)); background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); }
-  .strip { display: flex; height: 150px; border-bottom: 1px solid #242424; }
+  .strip { display: flex; height: 150px; border-bottom: 1px solid #242424; overflow: hidden; transition: height 0.18s ease, border-color 0.18s ease; }
+  .cat.collapsed .strip { height: 0; border-bottom-color: transparent; }
   .cards { display: flex; gap: 6px; padding: 12px 8px 4px; overflow-x: auto; overflow-y: hidden; flex: 1; scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
   .none { margin: auto; color: #9a9a9a; }
   .nav { display: flex; align-items: center; height: 36px; padding: 0 8px; gap: 4px; }
@@ -132,11 +138,9 @@
   .rotb { color: var(--amber); }
   .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: #050505; border: 1px solid #2c2c2c; color: #c8c8c8; padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }
+  .hint.ok { border-color: #c8c8c8; color: #fff; }
   .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: #ff9a9a; font-size: 12px; white-space: nowrap; }
-  /* The combat panel (left, 372px) is open: the catalog starts to its right. */
-  @media (min-width: 601px) { :global(html[data-combat]) .cat { left: calc(388px + var(--sal)); } }
   @media (max-width: 600px) {
-    :global(html[data-combat]) .cat { display: none; }
     .cat { left: 0; right: calc(var(--tools-w, 0px) + 16px + var(--sar)); bottom: 0; border-width: 1px 1px 0 0; padding-bottom: var(--sab); }
     .strip { height: 146px; }
     .search { width: 84px; }

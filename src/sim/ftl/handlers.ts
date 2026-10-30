@@ -3,6 +3,7 @@ import type { Command } from '../commands';
 import { routeEdges } from '../galaxy/hyperspace';
 import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
+import { hullLoad } from './capacity';
 import { ftlBlocker } from './status';
 
 type FtlCommandType = Extract<Command['type'], `ftl.${string}`>;
@@ -19,7 +20,8 @@ export const ftlHandlers: { [T in FtlCommandType]: Handler<T> } = {
     if (blocked) return reject(sim, cmd.type, blocked);
     if (cmd.jump && !routeEdges(sim, [sim.galaxy.current, ...cmd.jump])) return reject(sim, cmd.type, 'noRoute');
     if (!cmd.jump && combat.ftl + 1e-9 >= FTL_CHARGE_SEC) return reject(sim, cmd.type, 'alreadyCharged');
-    combat.ftlOrder = { jump: cmd.jump ? [...cmd.jump] : null, ...(cmd.withDocked?.length ? { withDocked: [...cmd.withDocked] } : {}) };
+    if (cmd.jump && !cmd.overcharge && hullLoad(sim, cmd.ship).over > 0) return reject(sim, cmd.type, 'overweight');
+    combat.ftlOrder = { jump: cmd.jump ? [...cmd.jump] : null, ...(cmd.withDocked?.length ? { withDocked: [...cmd.withDocked] } : {}), ...(cmd.jump && cmd.overcharge ? { overcharge: true as const } : {}) };
   },
   /** Drop the charge order (and any queued jump); the pilot goes back to normal work. The charge already stored is kept. */
   'ftl.cancelCharge': (sim, cmd) => {

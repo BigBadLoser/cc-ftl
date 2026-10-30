@@ -138,6 +138,12 @@ export interface Job {
   resume?: number;
   /** For suitUp / suitOff: the crew member this personal errand belongs to (nobody else may take it). */
   errandFor?: number;
+  /** For a shipyard order's build jobs: the order (`YardOrder.id`) that paid for them (yard/). */
+  yard?: number;
+  /** The job's row out from the ship (`YardOrder.rank`): the yard's crew work the nearest open row and the one after it. */
+  yardRank?: number;
+  /** The yard's closing wall: only the yard's own crew take it (anyone else might wall themselves in). */
+  yardOnly?: true;
 }
 export const JobC = defineComponent<Job>('job');
 
@@ -189,6 +195,15 @@ export interface BedClaim {
   bed: number;
 }
 export const BedClaimC = defineComponent<BedClaim>('bedClaim');
+
+/**
+ * The bed module a crew member owns: assigned by the bed-owner pass (nearest unowned bed on their ship) and kept until the
+ * bed is lost or they change ship. Tired crew walk to it first (BedClaim is the temporary reservation for one sleep).
+ */
+export interface BedOwner {
+  bed: number;
+}
+export const BedOwnerC = defineComponent<BedOwner>('bedOwner');
 
 /**
  * A hungry crew member on the way to eat (left = -1) or eating (left = ticks to go). `x, y` is the tile to stand on:

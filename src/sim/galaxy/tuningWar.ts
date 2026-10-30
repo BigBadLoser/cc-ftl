@@ -25,8 +25,7 @@ export const AVOID_RATIO = 0.45;
 export const AVOID_CHANCE = 0.8;
 /** A patrol that drove a pirate off follows it this many hops. */
 export const CHASE_HOPS = 2;
-/** Relation sum (each way) at or below which two factions fight on sight, and the roles that carry weapons (the rest only fight when attacked). */
-export const WAR_RELATION = -0.3;
+/** The roles that carry weapons (the rest only fight when attacked). */
 export const ARMED: readonly FleetRole[] = ['patrol', 'pirate', 'raider'];
 /** Wrecks a node keeps for the player to find (the oldest are forgotten). */
 export const WRECKS_PER_NODE = 4;

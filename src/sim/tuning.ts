@@ -206,6 +206,11 @@ export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
 
+/** Zealot core raid (capture/coreRaid.ts): ticks raiders must hold an AI core undisturbed to tear it out, how close they stand, and how close a defender must be to stop them. */
+export const CORE_RAID_HOLD_TICKS = 40 * 20;
+export const CORE_RAID_RADIUS = 2.5;
+export const CORE_RAID_DEFENDER_RADIUS = 5;
+
 // --- Crew combat ---
 /** Crew notice hostiles this far away (tiles) when they have line of sight. */
 export const COMBAT_SIGHT = 16;
@@ -299,3 +304,8 @@ export const ALIEN_ROAM = 4;
 export const ALIEN_WANDER_CHANCE = 0.01;
 /** Seconds the player's ship must stay clear of intruders before emergency-armed crew put their weapon back in storage. */
 export const EMERGENCY_STAND_DOWN_SEC = 30;
+
+/** Enemy weapons commit their aim (and the player's ship shows a marker) for this many seconds of charge before they can fire, at base gunnery. */
+export const COMMIT_WINDOW_SEC = 4;
+/** The window never exceeds this share of a weapon's charge, so a fast weapon still charges unmarked first. */
+export const COMMIT_MAX_FRACTION = 0.5;

@@ -1,4 +1,5 @@
 import { ShipC } from '../combat/components';
+import { restoreTasks } from '../ai/task';
 import type { EntityData } from '../ecs';
 import type { DenseGrid } from '../grid';
 import { placementGapError, shipRect } from '../regions';
@@ -112,6 +113,7 @@ export function stampPacket(sim: Sim, packet: ShipPacket, x: number, y: number):
   if (gap) throw new Error(`stampPacket: ship ${packet.ship} at (${x}, ${y}): ${gap}`);
   stampTiles(sim, packet, x, y);
   for (const e of packet.entities) sim.world.restore(e.id, translated(e.c, x, y));
+  restoreTasks(sim); // a task the lift's cut dropped
   return packet.ship;
 }
 

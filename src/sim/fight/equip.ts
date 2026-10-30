@@ -1,7 +1,8 @@
 import { CrewC, DraftedC, PathC, PositionC, type Position } from '../crew/components';
-import { clearPath, isIncapacitated, origin, releaseAssignment } from '../crew/helpers';
+import { abortTask } from '../ai/task';
+import { clearPath, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
-import { dropCarried, spillItems } from '../items/stacks';
+import { spillItems } from '../items/stacks';
 import { storageAdd, storageCount, storageTake } from '../items/storage';
 import { StorageC } from '../items/components';
 import { ModuleC } from '../modules/components';
@@ -44,8 +45,7 @@ export function orderEquip(sim: Sim, crew: number, item: string): string | null 
   if (sim.world.get(crew, EquipC)?.weapon === item) return 'alreadyEquipped';
   const storage = nearestStock(sim, shipIdOf(sim, pos), origin(pos), item);
   if (!storage) return 'noStock';
-  releaseAssignment(sim, crew);
-  dropCarried(sim, crew);
+  abortTask(sim, crew, 'equip');
   sim.world.add(crew, EquipOrderC, { item, storage });
   return null;
 }

@@ -1,8 +1,8 @@
-import { releaseBedClaim } from '../crew/beds';
-import { AssignmentC, CarriedC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
-import { clearPath, facingOf, isSettled, origin, releaseAssignment } from '../crew/helpers';
+import { CoreRaiderC, besideBox, coreObjective } from '../capture/coreRaid';
+import { abortTask, isCarrying } from '../ai/task';
+import { AssignmentC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
+import { clearPath, facingOf, isSettled, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
-import { dropCarried } from '../items/stacks';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
@@ -49,22 +49,11 @@ function fighterOf(sim: Sim, id: number): Fighter {
   return f;
 }
 
-/** True while the crew member carries a patient on a rescue job: they finish it rather than flee or fight. */
-function carryingPatient(sim: Sim, id: number): boolean {
-  const a = sim.world.get(id, AssignmentC);
-  const job = a && sim.world.get(a.jobId, JobC);
-  return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === id;
-}
-
 /** Enter or leave a fighting mode. Leaving idle drops the colony chores; leaving a fight forgets the chase path. */
 function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void {
   if (f.mode === mode) return;
   if (f.mode === 'idle') {
-    releaseAssignment(sim, id);
-    releaseBedClaim(sim, id);
-    dropCarried(sim, id);
-    const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') crew.activity = 'idle';
+    abortTask(sim, id, 'fight');
   } else if (mode === 'idle' && !sim.world.get(id, DraftedC)?.target) clearPath(sim, id);
   f.mode = mode;
   if (mode === 'idle') {
@@ -74,7 +63,7 @@ function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void 
 }
 
 /** Walk to `goal` (adjacent to it if `adjacent`), replanning when idle on the way or when the goal moved. */
-function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: number; y: number }, adjacent: boolean): void {
+function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: number; y: number; w?: number; h?: number }, adjacent: boolean): void {
   const path = sim.world.get(id, PathC) as Path;
   const moved = !f.goal || f.goal.x !== goal.x || f.goal.y !== goal.y;
   const idle = path.steps.length === 0 && isSettled(pos);
@@ -126,14 +115,21 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
-      const goal = consoleObjective(sim, shipIdOf(sim, pos), pos);
-      if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
+      const shipId = shipIdOf(sim, pos);
+      // Zealot raiders go for the AI core when the ship has one; otherwise they board like anyone else.
+      const core = sim.world.has(id, CoreRaiderC) ? coreObjective(sim, shipId, pos) : null;
+      if (core) {
+        if (!besideBox(pos, core)) walkTo(sim, id, f, pos, core, true);
+      } else {
+        const goal = consoleObjective(sim, shipId, pos);
+        if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
+      }
     }
     return;
   }
   const faction0 = sim.world.get(id, AllegianceC)?.faction;
   if (!controlled && wantsToSurrender(sim, id, units.filter((o) => sim.world.get(o, AllegianceC)?.faction === faction0), foes.map((o) => o.id))) return surrender(sim, id);
-  if (carryingPatient(sim, id)) return;
+  if (isCarrying(sim, id)) return; // carrying a patient: they finish the rescue rather than flee or fight
 
   const crew = sim.world.get(id, CrewC) as Crew;
   const role = sim.content.roles[crew.role];

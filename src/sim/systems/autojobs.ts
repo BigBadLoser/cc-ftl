@@ -1,13 +1,20 @@
 import { findFreeBed } from '../crew/beds';
+import { abortTask } from '../ai/task';
+import { breachTiles, canAffordWall } from '../crew/breach';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
-import { origin, releaseAssignment } from '../crew/helpers';
+import { origin } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { regions, shipIdOf, shipGrid } from '../regions';
+import { createJob, BUILD_TICKS } from '../crew/handlers';
+import { findJobAt } from '../crew/helpers';
+import { Struct } from '../structure';
 
 /** Work value for jobs that finish by condition (fire out, hp full, patient delivered), not by progress. */
 const CONDITIONAL_WORK = 1;
+/** How often (ticks) the hull is scanned for holes to post wall jobs on. */
+const BREACH_SCAN_TICKS = 10;
 
 function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>): void {
   const id = sim.world.createEntity();
@@ -15,13 +22,14 @@ function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'x
 }
 
 function drop(sim: Sim, jobId: number, job: Job): void {
-  if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
+  if (job.reservedBy) abortTask(sim, job.reservedBy, 'cancelled');
   sim.world.destroyEntity(jobId);
 }
 
 /**
  * Maintains the jobs the colony creates for itself, so crew react to emergencies without orders:
  *  - extinguish (firefighting): one per burning tile, removed once the fire is out;
+ *  - breach: a wall build (category firefighting) on each hole in a player ship's hull, once the stock can pay for a wall;
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone;
  *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
@@ -52,9 +60,16 @@ export function autoJobsSystem(sim: Sim): void {
       }
     }
   }
+  // Hull breaches: a wall build (firefighting category, ahead of ordinary construction) on each hole, once the stock can pay for one.
+  if (sim.tick % BREACH_SCAN_TICKS === 0 && canAffordWall(sim)) {
+    for (const { ship, tile } of breachTiles(sim)) {
+      if (!findJobAt(sim, ship, tile.x, tile.y)) createJob(sim, 'build', ship, tile.x, tile.y, Struct.Wall, BUILD_TICKS[Struct.Wall] as number, false, { category: 'firefighting' });
+    }
+  }
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
+    if (m && def && m.hp >= def.maxHp) delete m.repairFirst; // mended: the priority repair order is done
     if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`)) continue;
     addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id });
   }

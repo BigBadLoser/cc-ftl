@@ -20,8 +20,11 @@ export type Command =
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
+  | { type: 'debug.setModuleHp'; id: number; hp: number }
   | { type: 'debug.ignite'; ship: number; x: number; y: number }
   | { type: 'debug.setField'; ship: number; x: number; y: number; field: string; value: number }
+  /** Put a damaged module at the top of the repair queue (`on`), or take it off again. */
+  | { type: 'module.priorityRepair'; id: number; on: boolean }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
@@ -132,15 +135,23 @@ export type Command =
   | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
   /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked; `targetTile` (with targetModuleId 0) aims blind at one sector tile of the target ship, and the hits land near it. */
   | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number; targetTile?: { x: number; y: number } }
-  /** Hold fire: weapons charge but only fire on combat.fireVolley. */
+  /** Hold fire (AI ships: the raider sparing its prize): weapons charge but only fire on combat.fireVolley. The player's H is `combat.holdAll`. */
   | { type: 'combat.setHold'; ship: number; hold: boolean }
+  /** Set one weapon's fire mode: `auto` fires when charged, `hold` waits for a volley or an aim (the player's ship; AI ships use `combat.setHold`). */
+  | { type: 'combat.setWeaponMode'; ship: number; weaponId: number; mode: 'auto' | 'hold' }
+  /** Put every weapon of the ship on hold, remembering each one's mode; `hold: false` restores them. */
+  | { type: 'combat.holdAll'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
   /**
-   * Flee: leave the node with a charged FTL drive. The player's ship enters hyperspace like `galaxy.jump` with a one-hop route to `to` (an
-   * adjacent node), else to the cheapest connected node it can afford; AI ships just leave (state 'fled').
+   * Flee: leave the node with a fully charged FTL drive. The player's ship spends the charge and enters hyperspace adrift, with no route and no fuel
+   * spent (`Travel.phase` 'adrift'); `galaxy.jump` then picks where to go. In an event grid it just leaves the grid. AI ships just leave (state 'fled').
    */
-  | { type: 'combat.flee'; ship: number; to?: string }
+  | { type: 'combat.flee'; ship: number }
+  /** Vent heat: shields drop and the weapons hold fire for a few seconds while the meter dumps; shields then regenerate. Refused when cool, venting or overheated. */
+  | { type: 'combat.vent'; ship: number }
+  /** Overcharge one system for a few seconds (adds heat per second), then a cooldown. Refused while overheated or on cooldown. */
+  | { type: 'combat.overcharge'; ship: number; system: 'weapons' | 'shields' | 'engines' }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
@@ -178,19 +189,29 @@ export type Command =
    * ship (with its stowed and docked own vehicles and the crew aboard) lifts into a packet and the rest of the sector is archived.
    * `withDocked`: ids of non-player vehicles docked at its airlocks to take along (the others are cut loose). Crew or shuttles away
    * stay in the archive (the UI confirms first, see `jumpWarnings`). Nothing is paid or moved if it is rejected.
+   * A ship over its engines' hull capacity is rejected with `overweight` unless `overcharge` is set: it then jumps at a risk that grows with the overload (ftl/overcharge.ts).
    */
-  | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[] }
+  | { type: 'galaxy.jump'; ship: number; route: string[]; withDocked?: number[]; overcharge?: boolean }
   /** End the hyperspace trip at the node last passed: its archive comes back (or its ships appear on the first visit) and the ship waits to deploy. */
   | { type: 'galaxy.drop' }
   /** Charge the drive: post the helm job (the best free pilot, else any crew, walks over and sits). With `jump`, fly that route (without the current node) once charged. */
-  | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[] }
+  | { type: 'ftl.charge'; ship: number; jump?: string[]; withDocked?: number[]; overcharge?: boolean }
   /** Cancel the charge order and any queued jump. */
   | { type: 'ftl.cancelCharge'; ship: number }
+  /** Set a player ship's planned outer hull (sector tiles of open space); replaces the plan, empty clears it. Free, any time, saved with the ship (yard/). */
+  | { type: 'hull.plan'; ship: number; tiles: { x: number; y: number }[] }
+  /**
+   * Buy what a station's yard builds of the plan now (yard/): hull tiles up to its cap that touch the ship, and the floor they enclose. Pays into escrow and
+   * posts the jobs; the station's shuttle brings the crew. Rejected with the quote's error, `busy`, `inCombat`, `noYardDock`, `cantAfford` or `noMetal`.
+   */
+  | { type: 'yard.order'; station: number }
+  /** Send the yard crew home: the unbuilt part is refunded at once. */
+  | { type: 'yard.cancel'; order: number }
   /**
    * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
    * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.
    */
-  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' }
+  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender' }
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
   /** Stranded with no fuel on sale here: call a tug (galaxy/stranded.ts). It arrives after a few turns with emergency fuel. */
@@ -207,10 +228,14 @@ export type Command =
   | { type: 'research.move'; ship: number; project: string; to: number }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
+  /** Collect a finished bounty or survey (a claim) at a station of the issuing type and faction at the player's node. */
+  | { type: 'jobs.handIn'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */
   | { type: 'jobs.openCrate'; id: number }
   /** Debug: set the player's notoriety (galaxy/heat.ts). */
   | { type: 'debug.notoriety'; value: number }
+  /** Debug: set up station jobs for playtesting (galaxy/jobsDebug.ts). */
+  | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */
   | { type: 'galaxy.leaveEvent' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
@@ -240,6 +265,8 @@ export type Command =
   | { type: 'debug.spawnStation'; kind?: string; size?: 'outpost' | 'station' | 'hub'; seed?: number; x?: number; y?: number; profile?: string; name?: string }
   /** Set the player's credits. */
   | { type: 'debug.setCredits'; value: number }
+  /** Put `count` of an item into the player's storage (as a reward would). */
+  | { type: 'debug.giveItems'; item: string; count: number }
   | { type: 'debug.spawnItems'; ship: number; x: number; y: number; item: string; count: number };
 
 /** A command tagged with the tick at whose start it applies. */

@@ -444,3 +444,16 @@ Three views, in both the CLI sheets (`--views all`) and the phone page (View sel
   dotted by access kind; ports green when matched, red when not.
 
 Each ship shows its family, its section profile and its metrics.
+
+## Footprint width rule (#143)
+
+No part of the hull of a generated ship or station may be narrower than 3 tiles: the hull footprint (wall, floor and door
+tiles) must equal its 3x3 opening (`src/sim/footprint.ts`). Struts (Beam tiles, `=` in template rows, which includes
+container cells) are exempt and may stay thin. `validateTemplate` and `stationProblems` report `width: N hull tiles in
+parts narrower than 3`, and the attempt is reseeded like any other problem. What the generator does to meet it:
+- `trimThin` (salvage.ts) takes off bare wall stubs under 3 wide after a cut or notch (scrapper donors), and on every
+  finished layout after wall thinning (`finishLayout`). It never removes a wall that closes a floor or door in; such a
+  layout is reseeded.
+- Ruins (`ruinStructure.ts`) open the hull by a 3x3 square after each `keepLargest`, then keep the largest piece again.
+  Beams in a wreck may stay thin.
+- Dug outposts are exempt (their outer wall is rock, not hull).

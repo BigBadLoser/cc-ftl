@@ -19,6 +19,9 @@
   {#if offers.length}
     <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<span class="chip">{#if o.n}<em>{o.n}</em>{/if}{o.label}</span>{/each}</span></span>
   {/if}
+  {#if info.hints.length}
+    <span class="cell wide" title="Notable stock"><Icon name="list" size={18} /><b data-testid="si-hints">{info.hints.join(' · ')}</b></span>
+  {/if}
   {#if info.market && (info.market.cheap.length || info.market.dear.length)}
     <span class="cell wide" title="Goods that are cheap or wanted here now"><Icon name="trade" size={18} /><b data-testid="si-market">{#if info.market.cheap.length}Cheap: {info.market.cheap.join(', ')}{/if}{#if info.market.cheap.length && info.market.dear.length} · {/if}{#if info.market.dear.length}Wanted: {info.market.dear.join(', ')}{/if}</b></span>
   {/if}
@@ -29,7 +32,7 @@
 
 <style>
   .info { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
-  .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); min-height: 20px; }
+  .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); min-height: 20px; }
   .cell b { color: var(--text); font-weight: 600; }
   .cell small { color: var(--dim); font-size: 11px; }
   .cell.warn { border-color: var(--amber); color: var(--amber); }

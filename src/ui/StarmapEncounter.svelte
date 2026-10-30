@@ -7,7 +7,7 @@
   let { encounter, onChoose }: { encounter: UiEncounter; onChoose: (id: number, choice: UiEncounterChoice['choice']) => void } = $props();
 </script>
 
-<section class="enc" class:hostile={encounter.hostile && encounter.kind === 'interdict'} data-testid="starmap-encounter" data-kind={encounter.kind}>
+<section class="enc steel-tokens" class:hostile={encounter.hostile && encounter.kind === 'interdict'} data-testid="starmap-encounter" data-kind={encounter.kind}>
   <h4><Icon name={encounter.kind === 'interdict' ? 'alert' : encounter.kind === 'distress' ? 'hail' : encounter.kind === 'scan' ? 'target' : 'trade'} size={14} />{encounter.title}</h4>
   <div class="who">
     <i style={`background: ${toneColor(encounter.tone)}`}></i>
@@ -30,7 +30,8 @@
 <style>
   .enc { display: grid; gap: 6px; padding: 8px; background: var(--panel-2); border: 1px solid var(--line-hi); }
   .enc.hostile { border-color: var(--red); }
-  h4 { margin: 0; display: flex; align-items: center; gap: 6px; font: 600 12px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
+  h4 { margin: 0; display: flex; align-items: center; gap: 6px; font: 600 12px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-accent); }
+  .choices button:not(.fight) { border-color: var(--act-edge); }
   .hostile h4 { color: var(--red); }
   .who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
   .who i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }

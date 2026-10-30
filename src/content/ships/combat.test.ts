@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, spawnCrew, IonC, playerItems, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, CrewC, spawnCrew, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
@@ -105,7 +105,7 @@ describe('combat start and consoles', () => {
     const [laser] = modulesOf(sim, 1, 'module.burstLaser') as [number];
     expect(sim.world.get(laser, WeaponC)!.charge).toBe(1);
     sim.enqueue({ type: 'combat.fireVolley', ship: nth(sim, 1) });
-    expect(ofType(run(sim, 40), 'weapon.fired')).toHaveLength(3);
+    expect(ofType(run(sim, 25), 'weapon.fired')).toHaveLength(3); // 40 ticks at the old 8 s laser charge, the same share of the 5 s charge
     expect(sim.world.get(laser, WeaponC)!.charge).toBeLessThan(0.4);
   });
 });
@@ -145,7 +145,7 @@ describe('weapons', () => {
     const events = run(sim, 1200);
     expect(ofType(events, 'projectile.shieldHit').length).toBeGreaterThanOrEqual(1);
     expect(combatOf(sim, 2).shield.layers).toBe(0);
-    // Recharge: one layer after rechargeSec (10 s) without further volleys (hold fire).
+    // Recharge: one layer after rechargeSec (10 s, about 7 s with SHIELD_REGEN_MULT) without further volleys (hold fire).
     sim.enqueue({ type: 'combat.setHold', ship: nth(sim, 1), hold: true });
     run(sim, 2);
     const weapon = modulesOf(sim, 1, 'module.burstLaser')[0] as number;
@@ -181,7 +181,8 @@ describe('weapons', () => {
   it('mass driver passes one shield layer, laser does not', () => {
     const sim = duel('module.massDriver', dummy);
     aim(sim, 1, 2);
-    const events = run(sim, 20 * 25);
+    // The first slug only: shields now regenerate fast enough (SHIELD_REGEN_MULT) for a second layer to be up before the next one lands.
+    const events = run(sim, 20 * 18);
     expect(ofType(events, 'projectile.shieldHit')).toHaveLength(0);
     expect(ofType(events, 'projectile.hit').length + ofType(events, 'projectile.miss').length).toBeGreaterThan(0);
   });
@@ -192,7 +193,15 @@ describe('weapons', () => {
     const crate = modulesOf(sim, 1, 'module.storage')[0] as number;
     const stock = (): number => countAmmo(sim, crate);
     expect(stock()).toBe(20);
-    const events = run(sim, 20 * 30);
+    // Ammo weapons start on hold: they charge but nothing leaves without a volley.
+    expect(sim.world.get(modulesOf(sim, 1, 'module.missileLauncher')[0] as number, WeaponC)!.mode).toBe('hold');
+    expect(ofType(run(sim, 20 * 15), 'weapon.fired')).toHaveLength(0);
+    expect(stock()).toBe(20);
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 30; i++) {
+      sim.enqueue({ type: 'combat.fireVolley', ship: nth(sim, 1) });
+      events.push(...run(sim, 20));
+    }
     const fired = ofType(events, 'weapon.fired').length;
     expect(fired).toBeGreaterThanOrEqual(2);
     expect(stock()).toBe(20 - fired);
@@ -290,7 +299,7 @@ describe('evasion, point defence, shields', () => {
       run(sim, 400);
       combatOf(sim, 1).shield.layers = 0;
       combatOf(sim, 1).shield.timer = 0;
-      run(sim, 20 * 17);
+      run(sim, 20 * 11); // a layer per 10 s / SHIELD_REGEN_MULT unmanned, a bit under 7 s with an operator
       return combatOf(sim, 1).shield.layers;
     };
     expect(layersAfter(false)).toBe(1);
@@ -342,25 +351,23 @@ describe('enemy AI, endings', () => {
     run(sim, 20 * 25);
     expect(combatOf(sim, 1).ftl).toBeGreaterThan(5);
     combatOf(sim, 1).ftl = 40;
-    const fuel = playerItems(sim, 'item.fuel');
     sim.enqueue({ type: 'combat.flee', ship: nth(sim, 1) });
     const events = run(sim, 40);
-    // One escape path: the same lift, archive and hyperspace trip as `galaxy.jump`, a one-hop route to the cheapest connected node.
+    // The same lift and archive as `galaxy.jump`, but adrift: no route yet, and no fuel burned. Dropping goes back to the node fled from.
     const entered = ofType(events, 'galaxy.hyperspace');
     expect(entered).toHaveLength(1);
-    const to = entered[0]!.route[1]!;
+    const from = entered[0]!.route[0]!;
+    expect(entered[0]!.route).toHaveLength(1);
     expect(ofType(events, 'ship.fled')).toEqual([]);
     expect(sim.sector).toMatchObject({ state: 'hyperspace', inCombat: false });
-    expect(sim.archives.map((a) => a.node)).toEqual([entered[0]!.route[0]]);
-    for (let i = 0; i < 2000 && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { sim.step(); sim.story.active = null; }
-    expect(sim.galaxy.current).toBe(to);
+    expect(sim.galaxy.travel).toMatchObject({ phase: 'adrift' });
+    expect(sim.archives.map((a) => a.node)).toEqual([from]);
     sim.enqueue({ type: 'galaxy.drop' });
     run(sim, 1);
-    expect(sim.sector).toMatchObject({ state: 'deploying', node: to });
+    expect(sim.sector).toMatchObject({ state: 'deploying', node: from });
     sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
     run(sim, 1);
     expect(combatOf(sim, 1).ftl).toBeLessThan(40);
-    expect(playerItems(sim, 'item.fuel')).toBeLessThan(fuel);
   });
 
   it('a badly damaged raider with a charged drive retreats', () => {

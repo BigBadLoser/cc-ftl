@@ -4,7 +4,7 @@ import { bandBlock, bankBlock, noseBlock } from './navyBlocks';
 import type { Ctx } from './navyKit';
 import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
-import { cutSeam, freeze, notch, survivors } from './salvage';
+import { cutSeam, freeze, notch, survivors, trimThin } from './salvage';
 import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
 import { pickNose } from './topoNavy';
 import type { DonorKind, FactionDef } from './types';
@@ -89,6 +89,7 @@ function settle(p: Pool, b: Builder, taken: { specs: RoomSpec[]; guns: string[];
 function wear(c: Ctx, b: Builder, cut: number): void {
   if (c.rng.chance(cut) && cutSeam(b, c.rng, c.rng.chance(0.5) ? 'w' : 'e')) c.parts.push('cut');
   for (let k = c.rng.int(0, 2); k > 0; k--) if (notch(b, c.rng, c.rng.int(2, 3), c.defs)) c.parts.push('damage');
+  trimThin(b);
 }
 
 type Build = (c: Ctx, f: FactionDef, p: Pool) => Block | null;
@@ -151,6 +152,7 @@ const navyHulk: Build = (c, f, p) => {
   p.reactors -= reactors;
   // Fore halves keep the bridge, aft halves the drive.
   if (cutSeam(g.b, c.rng, cmd ? 'w' : c.rng.chance(0.5) ? 'w' : 'e', 0.4, 0.2)) c.parts.push('cut');
+  trimThin(g.b);
   settle(p, g.b, { specs: [...(cmd ? [cmd] : []), ...quarters], guns, crates: 0, engines, reactors });
   return freeze(g.b, 'hulk', 'hull section', 'navy', 'human', g.A);
 };

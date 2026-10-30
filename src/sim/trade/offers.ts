@@ -1,5 +1,6 @@
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
+import { contrabandRate, isContraband } from '../blackmarket/services';
 import { quote, type Quote } from './pricing';
 import { playerItems } from './player';
 import { ensureTrader, hailVerdict } from './traders';
@@ -42,6 +43,8 @@ export function checkOffer(sim: Sim, ship: number, giveIn: readonly ItemQty[], g
   const hail = sim.trade.hails.find((h) => h.ship === ship);
   if (!hail?.answered || !hailVerdict(sim, ship).answers) return fail('notAnswered');
   if (give.length + get.length === 0) return fail('empty');
+  // Only a black market takes contraband; a legitimate trader refuses it.
+  if (give.some((l) => isContraband(sim, l.item)) && contrabandRate(sim, trader) === null) return fail('contraband');
   const q = quote(sim, ship, give, get);
   if (!q) return fail('noPrice');
   for (const l of get) if ((trader.stock.find((s) => s.item === l.item)?.count ?? 0) < l.count) return fail('theyLack', q);

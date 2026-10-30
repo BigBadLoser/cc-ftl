@@ -1,6 +1,6 @@
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiFtl, UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
 import { buildModuleDefs, buildModuleList, buildStats } from './moduleSnapshot';
 import { buildSites } from './siteSnapshot';
@@ -14,6 +14,7 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
+import { buildYard, yardInputs } from './yardSnapshot';
 import { buildStory } from './storySnapshot';
 import { warmOutlines } from './starmapClusters';
 import { warmNebula } from './starmapNebula';
@@ -89,6 +90,9 @@ export interface Bridge {
   ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
+  /** The hull plan, the quote of the watched station (the open station panel) and the yard order. */
+  yard: Writable<UiYard>;
+  watchYard(station: number): void;
   prizes: Readable<UiPrize[]>;
   mining: Readable<UiMining>;
   story: Readable<UiStory>;
@@ -139,14 +143,14 @@ export function createBridge(sim: Sim): Bridge {
   const moduleDefs = createStore<UiModuleDef[]>(buildModuleDefs(sim));
   let lastBlueprints = sim.story.blueprints.join(',');
   const sites = createStore<UiSite[]>([]);
-  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
+  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
   const goals = createStore<UiGoals | null>(null);
   const stranded = createStore<UiStranded | null>(null);
   let lastStranded = 'null';
   let lastGoals = '';
   let lastJobsKey = '';
   let lastSites = '[]';
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null });
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
@@ -158,6 +162,9 @@ export function createBridge(sim: Sim): Bridge {
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
+  const yard = createStore<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
+  let yardStation = 0;
+  let lastYard = '';
   const prizes = createStore<UiPrize[]>([]);
   const mining = createStore<UiMining>({ asteroids: [], pods: [] });
   let lastMining = '';
@@ -329,6 +336,18 @@ export function createBridge(sim: Sim): Bridge {
     lastTrade = key;
     trade.set(snap);
   };
+  let yardInputsKey = '';
+  const refreshYard = (force = false) => {
+    if (!force && combatFrame % 3) return;
+    const inputs = yardInputs(sim, yardStation);
+    if (!force && inputs === yardInputsKey) return; // nothing the yard view depends on has changed: no need to quote the plan again
+    yardInputsKey = inputs;
+    const snap = buildYard(sim, yardStation);
+    const key = JSON.stringify(snap);
+    if (key === lastYard) return;
+    lastYard = key;
+    yard.set(snap);
+  };
   const refreshMining = () => {
     if (combatFrame % 6) return;
     const snap = buildMining(sim);
@@ -375,8 +394,9 @@ export function createBridge(sim: Sim): Bridge {
   };
   /** While the screen is open: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
   const refreshStarmap = () => {
-    // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace.
-    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel) || starFrame++ % 5) return;
+    // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace, and answer a scan that found contraband.
+    const scanning = sim.galaxy.encounters.some((e) => !!e.scan) || starmap.get().encounters.some((e) => !!e.contraband);
+    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel && !scanning) || starFrame++ % 5) return;
     const cur = starmap.get();
     if (starOpen && cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
     const st = starmapStatus(sim);
@@ -466,6 +486,11 @@ export function createBridge(sim: Sim): Bridge {
       selected = t;
       refreshInspect();
     },
+    yard,
+    watchYard(station) {
+      yardStation = station;
+      refreshYard(true);
+    },
     setHovered(t) {
       hovered = t;
       refreshInspect();
@@ -473,7 +498,7 @@ export function createBridge(sim: Sim): Bridge {
     dispatch(cmd) {
       sim.enqueue(cmd);
       // A UI command (accept a job, answer a trade offer, hire, ...) takes effect at once even with the game paused: the panel would
-      // otherwise sit unchanged until time runs. The command still goes through the queue; flush() runs just the one tick that drains it.
+      // otherwise sit unchanged until time runs. The command still goes through the queue; flush() drains it without running a tick.
       if (store.get().paused) loop?.flush();
     },
     setSpeed,
@@ -488,6 +513,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshShip();
       refreshShuttles();
       refreshTrade();
+      refreshYard();
       refreshPrizes();
       refreshMining();
       refreshCombat();

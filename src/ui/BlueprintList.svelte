@@ -16,7 +16,7 @@
         <div class="d">{MK[b.tier] ?? ''} · {b.w}×{b.h} tiles{b.blurb ? ` · ${b.blurb}` : ''}</div>
         {#if !b.known}
           {#if poor}<div class="warn">Not enough credits</div>{/if}
-          <button data-testid="blueprint-buy" disabled={poor} onclick={() => api.dispatch({ type: 'blueprint.buy', port, def: b.def })}>Buy blueprint</button>
+          <button class="commit" data-testid="blueprint-buy" disabled={poor} onclick={() => api.dispatch({ type: 'blueprint.buy', port, def: b.def })}>Buy blueprint</button>
         {/if}
       </li>
     {/each}

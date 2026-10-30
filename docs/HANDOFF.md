@@ -12,7 +12,7 @@ decisions are in `docs/handoff/project-memory.md`, `docs/DESIGN.md` and `docs/AR
 
 The refactor's `SectorGrid` is really the node grid. It gets renamed after render step 5 lands (see Open work).
 
-## On `main` (deploys to https://cc-ftl.bigbadloser.workers.dev)
+## On `main` (published to https://bigbadloser.github.io/cc-ftl/ by the manual Pages workflow)
 
 - **M5:**
   - shuttle bay (4x5 pit) and the shuttle with flight art;

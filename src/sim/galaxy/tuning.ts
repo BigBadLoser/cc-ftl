@@ -161,6 +161,8 @@ export const STORY_ANCHOR_CHANCE = 0.5;
 export const PASSING_ENCOUNTER_CHANCE = 0.12;
 /** At most this many ships other than the player's are in a live node when a fleet's ships materialise (the sector is small; the rest wait as descriptors). */
 export const FLEET_NODE_SHIPS = 3;
+/** Fleets this many jumps from the player's node (or routed to it) have their ship generated ahead of arrival (fleetShips.ts `warmFleets`). */
+export const WARM_HOPS = 2;
 /** Turns before the same fleet can meet the player again, and before an unresolved encounter expires (interdictions last longer). */
 export const ENCOUNTER_COOLDOWN = 6;
 export const ENCOUNTER_TTL = { alert: 3, interdict: 6 } as const;

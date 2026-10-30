@@ -1,4 +1,5 @@
 import type { TradeDef } from '../sim';
+import { pirateTraders, pirateTradeFactions } from './tradePirates';
 
 /**
  * Trade content. Prices live on the items (`ItemDef.price`, credits); this file holds the spread, how each faction treats the
@@ -23,6 +24,7 @@ export const trade = {
     'faction.corp': { name: 'Corporation', reputation: 'corp', relation: 1, sell: 1.15, buy: 1.1 },
     'faction.navy': { name: 'Navy', reputation: 'navy', relation: 0, sell: 1.1, buy: 0.95 },
     'faction.scrapper': { name: 'Scrappers', reputation: 'pirates', relation: -2, sell: 1.3, buy: 0.8 },
+    ...pirateTradeFactions,
     'faction.drones': { name: 'Drones', reputation: 'drones', relation: -9 },
     // Ships spawned from plain templates (no generator faction) trade by their combat side.
     'side.neutral': { name: 'Neutral', reputation: 'traders', relation: 1 },
@@ -132,6 +134,7 @@ export const trade = {
         { item: 'item.blade', min: 1, max: 4, chance: 0.6 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
       ],
     },
+    ...pirateTraders,
     // Ships from plain templates (raiders and the like) fall back to their side.
     'trader.raider': {
       name: 'Raider', match: { side: 'hostile' }, shuttle: false, credits: [50, 300],

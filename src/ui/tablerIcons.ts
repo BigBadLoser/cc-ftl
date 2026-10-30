@@ -7,6 +7,7 @@ import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_broadcast from '@tabler/icons/outline/broadcast.svg?raw';
 import t_bug from '@tabler/icons/outline/bug.svg?raw';
+import t_download from '@tabler/icons/outline/download.svg?raw';
 import t_check from '@tabler/icons/outline/check.svg?raw';
 import t_checklist from '@tabler/icons/outline/checklist.svg?raw';
 import t_chevron_down from '@tabler/icons/outline/chevron-down.svg?raw';
@@ -41,6 +42,7 @@ import t_map from '@tabler/icons/outline/map.svg?raw';
 import t_mood_smile from '@tabler/icons/outline/mood-smile.svg?raw';
 import t_package from '@tabler/icons/outline/package.svg?raw';
 import t_pin from '@tabler/icons/outline/pin.svg?raw';
+import t_pinned_off from '@tabler/icons/outline/pinned-off.svg?raw';
 import t_plane_departure from '@tabler/icons/outline/plane-departure.svg?raw';
 import t_player_pause from '@tabler/icons/outline/player-pause.svg?raw';
 import t_player_play from '@tabler/icons/outline/player-play.svg?raw';
@@ -67,6 +69,8 @@ import t_wall from '@tabler/icons/outline/wall.svg?raw';
 import t_x from '@tabler/icons/outline/x.svg?raw';
 import t_zoom_in from '@tabler/icons/outline/zoom-in.svg?raw';
 import t_zoom_out from '@tabler/icons/outline/zoom-out.svg?raw';
+import t_wind from '@tabler/icons/outline/wind.svg?raw';
+import t_steering_wheel from '@tabler/icons/outline/steering-wheel.svg?raw';
 import t_zzz from '@tabler/icons/outline/zzz.svg?raw';
 
 /** The drawing inside Tabler's <svg> (24-unit grid, stroke from the component): the outer tag and the empty bounding path are dropped. */
@@ -98,6 +102,7 @@ export const FILES = {
   roof: 'eye',
   overlay: 'stack',
   debug: 'bug',
+  download: 'download',
   pause: 'player-pause',
   play: 'player-play',
   fast: 'player-track-next',
@@ -140,8 +145,11 @@ export const FILES = {
   clock: 'clock',
   fire: 'flame',
   pin: 'pin',
+  unpin: 'pinned-off',
   lock: 'lock',
   research: 'flask-2',
+  wind: 'wind',
+  helm: 'steering-wheel',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -151,6 +159,7 @@ const RAW: Record<string, string> = {
   'bolt': t_bolt,
   'broadcast': t_broadcast,
   'bug': t_bug,
+  'download': t_download,
   'check': t_check,
   'checklist': t_checklist,
   'chevron-down': t_chevron_down,
@@ -185,6 +194,7 @@ const RAW: Record<string, string> = {
   'mood-smile': t_mood_smile,
   'package': t_package,
   'pin': t_pin,
+  'pinned-off': t_pinned_off,
   'plane-departure': t_plane_departure,
   'player-pause': t_player_pause,
   'player-play': t_player_play,
@@ -211,6 +221,8 @@ const RAW: Record<string, string> = {
   'x': t_x,
   'zoom-in': t_zoom_in,
   'zoom-out': t_zoom_out,
+  'wind': t_wind,
+  'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
 };
 

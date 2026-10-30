@@ -3,7 +3,8 @@
   import type { UiApi, UiCrew } from './api';
   import Icon, { type IconName } from './Icon.svelte';
 
-  let { api }: { api: UiApi } = $props();
+  /** `compact`: small portraits only (the combat view). */
+  let { api, compact = false }: { api: UiApi; compact?: boolean } = $props();
   let crew = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
   const ready = (c: UiCrew) => !c.dead && !c.downed && c.ship !== 0;
@@ -51,7 +52,7 @@
   const trouble = (c: UiCrew) => !c.dead && (c.downed !== null || (c.hunger !== null && c.hunger < 35) || c.hp < c.maxHp * 0.5);
 </script>
 
-<nav data-testid="crewbar">
+<nav data-testid="crewbar" class:compact>
   {#each crew as c (c.id)}
     {@const s = status(c)}
     {@const pic = portrait(c)}
@@ -88,13 +89,17 @@
   .face.down img { filter: saturate(0.6) brightness(0.75) sepia(1) hue-rotate(-45deg) saturate(2.2); }
   .st { position: absolute; left: calc(var(--face) - 6px); top: calc(var(--face) * 1.0689 - 5px); display: grid; place-items: center; padding: 1px; background: var(--panel); border-radius: 50%; }
   .st.ok { color: var(--green); } .st.warn { color: var(--amber); } .st.bad { color: var(--red); } .st.dim { color: var(--dim); }
-  .name { font: 600 14px/1.1 var(--head-font); color: var(--cyan); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .name { font: 600 14px/1.1 var(--head-font); color: var(--ink-accent); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .role { font: 10px/1.2 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bars { grid-column: 1 / 3; align-self: end; display: grid; gap: 2px; width: 100%; }
   .bars i { display: block; height: 3px; background: #061020; }
   .bars b { display: block; height: 100%; }
   .hp b { background: var(--hp); } .rest b { background: var(--rest); } .hunger b { background: var(--hunger); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  nav.compact .card { --face: 30px; width: calc(var(--face) + 10px); height: auto; padding: 3px; display: block; }
+  nav.compact .name, nav.compact .role, nav.compact .bars { display: none; }
+  nav.compact .card .st { left: calc(var(--face) - 4px); top: calc(var(--face) * 1.0689 - 6px); }
+  nav.compact .all { width: 30px; }
   .all { height: auto; align-self: stretch; }
   @media (max-width: 600px) { .card { width: calc(var(--face) + 56px); padding: 4px; } .name { font-size: 12px; } .role { display: none; } }
 </style>

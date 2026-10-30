@@ -1,62 +1,40 @@
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { bumpStat } from '../story/goals';
-import { ItemStackC } from '../items/components';
-import { spillItems, takeFromStack } from '../items/stacks';
-import { ModuleC } from '../modules/components';
-import { shipIdAt, shipIdOf } from '../regions';
-import { playerShips, playerStorages } from '../story/world';
-import { playerShip } from '../trade/player';
+import { CRATE, crateOf, loadCrate, recoverCrate, unloadCrate } from './crate';
 import { addNotoriety, tallyLosses } from './heat';
+import { handoverOf, startHandover } from './handover';
 import { offersHere } from './jobOffers';
-import { repKey } from './standing';
+import { atWarContent } from './relations';
+import { portsAt } from './portIndex';
+import { stationClass } from './ports';
+import { repKey, tierOf } from './standing';
 import { nodeState } from './state';
 import { planStarRoute } from './route';
 import { ShipC } from '../combat/components';
-import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS } from './tuningJobs';
+import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS, RIVAL_REPUTATION } from './tuningJobs';
 import type { StationJob } from './types';
 
 /**
- * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node), `jobs.abandon` and `jobs.openCrate`.
- * A delivery's goods come aboard as one sealed crate (`CRATE`, ItemStack.job) set on deck beside the hold, apart from storage: haulers leave it be.
- * The galaxy system calls `tendJobs` while the player is at a node: a delivery is handed over on arrival with its crate aboard; a bounty is paid when the player
- * destroys or takes its target (`tallyLosses` hands their ids over; the target ship carries the job id). `expireJobs` fails what ran out of time, once a turn.
+ * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node), `jobs.abandon`,
+ * `jobs.openCrate` and `jobs.handIn`.
+ * A delivery's goods come aboard as one sealed crate (`CRATE`, crate.ts) set on deck beside the hold, apart from storage: haulers leave it be.
+ * The galaxy system calls `tendJobs` while the player is at a node:
+ * - a delivery at its destination with the crate aboard asks the station for its shuttle (handover.ts: crew haul the crate to the airlock, the shuttle takes
+ *   it, and the delivery is paid then); where no shuttle can come it is handed across by hand at once;
+ * - a bounty whose target the player destroys or takes (`tallyLosses` hands their ids over; the target ship carries the job id), and a survey whose node the
+ *   player enters, are completed: the job leaves the task list and waits as a claim (`GalaxyState.claims`, no expiry) until `jobs.handIn` at a station of
+ *   the issuing type (`StationJob.station`) owned by the issuing faction pays it.
+ * `expireJobs` fails what ran out of time, once a turn (claims never expire).
  */
 
-/** The item id of a delivery crate (content items, `cargo`). */
-export const CRATE = 'item.cargo_crate';
+export { CRATE };
 
-/** The loose stack holding a delivery's crate on a player ship, or undefined (lost, or not aboard). */
-export function crateOf(sim: Sim, jobId: number): number | undefined {
-  const ships = playerShips(sim);
-  return sim.world.query(ItemStackC).find((id) => {
-    const s = sim.world.get(id, ItemStackC);
-    return s?.job === jobId && ships.has(shipIdAt(sim, s.x, s.y));
-  });
-}
-
-/** Whether a delivery's crate is aboard the player's ship, in hyperspace too (then it is packed in the ship's packet). */
+/** Whether a delivery's crate is aboard the player's ship, in hyperspace too (then it is packed in the ship's packet), or on its way out with the station shuttle. */
 export function crateAboard(sim: Sim, jobId: number): boolean {
   const packet = sim.sector.state === 'hyperspace' ? sim.sector.packet : null;
   if (packet) return packet.entities.some((e) => (e.c['itemStack'] as { job?: number } | undefined)?.job === jobId);
-  return crateOf(sim, jobId) !== undefined;
-}
-
-/** Set a delivery's crate on deck beside the player's first hold (else beside any module). False when there is no free floor near it. */
-function loadCrate(sim: Sim, jobId: number): boolean {
-  const ship = playerShip(sim);
-  const at = [...playerStorages(sim), ...sim.world.query(ModuleC)].map((id) => sim.world.get(id, ModuleC)).find((m) => m && shipIdOf(sim, m) === ship);
-  return !!at && spillItems(sim, ship, at.x, at.y, CRATE, 1, jobId) === 0;
-}
-
-/** Hand a crate over (`open` false: it leaves the ship) or break it open (its goods spill out where it stood: kept). */
-function unloadCrate(sim: Sim, job: StationJob, open: boolean): void {
-  const id = crateOf(sim, job.id);
-  if (id === undefined) return;
-  const { x, y } = sim.world.get(id, ItemStackC)!;
-  const ship = shipIdAt(sim, x, y);
-  takeFromStack(sim, id, 1);
-  if (open && job.item && job.count) spillItems(sim, ship, x, y, job.item, job.count);
+  return crateOf(sim, jobId) !== undefined || handoverOf(sim, jobId) !== undefined;
 }
 
 const reject = (sim: Sim, command: string, reason: string): false => (sim.events.emit({ type: 'command.rejected', command, reason }), false);
@@ -64,6 +42,15 @@ const reject = (sim: Sim, command: string, reason: string): false => (sim.events
 function standing(sim: Sim, faction: string, delta: number): void {
   const key = repKey(sim, faction);
   sim.story.reputation[key] = reputationOf(sim.story, key) + delta;
+}
+
+/** Pirate factions at war with `target` (other than `issuer`) think better of the player: they took a rival down. */
+function rivalsPleased(sim: Sim, target: string, issuer: string): void {
+  const content = sim.content.galaxy;
+  if (!content) return;
+  for (const id of Object.keys(content.factions).sort()) {
+    if (id !== target && id !== issuer && content.factions[id]?.kind === 'pirates' && atWarContent(content, id, target)) standing(sim, id, RIVAL_REPUTATION);
+  }
 }
 
 function remember(sim: Sim, key: string): void {
@@ -96,7 +83,7 @@ export function acceptJob(sim: Sim, key: string): boolean {
   bumpStat(sim, 'jobsTaken');
   // The issuer says where: the destination (or the target's node) goes on the player's map, with the cheapest way there, so the
   // starmap can plot the whole trip (the planner only routes through discovered nodes) instead of showing a lone dot out of sensor range.
-  const where = job.kind === 'delivery' ? job.to : job.node;
+  const where = job.kind === 'delivery' ? job.to : job.node; // a survey's node too
   if (where) {
     for (const n of planStarRoute(g, g.current, where, { known: false })?.path ?? [where]) g.discovered[n] ??= sim.tick;
   }
@@ -105,23 +92,62 @@ export function acceptJob(sim: Sim, key: string): boolean {
   return true;
 }
 
-/** Close a job: paid and thanked, or failed (with the cost of a broken contract). */
-function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandoned'): void {
+/** Pay a finished job: credits, standing with the issuer and the stats the goals read. */
+function pay(sim: Sim, job: StationJob): void {
+  sim.trade.credits += job.reward;
+  bumpStat(sim, 'jobsDone');
+  if (job.kind === 'bounty') bumpStat(sim, 'bountiesDone');
+  if (job.kind === 'survey') bumpStat(sim, 'surveysDone');
+  standing(sim, job.issuer, JOB_REPUTATION);
+  // A bounty on one pirate faction pleases the pirate factions at war with it (never the issuer twice).
+  if (job.kind === 'bounty' && job.targetFaction) rivalsPleased(sim, job.targetFaction, job.issuer);
+}
+
+/**
+ * Close a job: paid and thanked ('done': a delivery handed over, or a claim handed in), or failed (with the cost of a broken contract).
+ * `via`: how a delivery's crate changed hands (handover.ts).
+ */
+function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandoned', via: 'shuttle' | 'own' | 'instant' = 'instant'): void {
   const g = sim.galaxy;
   g.jobs = g.jobs.filter((j) => j.id !== job.id);
+  g.claims = g.claims.filter((j) => j.id !== job.id);
   // A crate handed over leaves the ship; one not delivered is broken open, its goods kept (a breach of contract).
   if (job.kind === 'delivery') unloadCrate(sim, job, outcome !== 'done');
   if (outcome === 'done') {
-    sim.trade.credits += job.reward;
-    bumpStat(sim, 'jobsDone');
-    if (job.kind === 'bounty') bumpStat(sim, 'bountiesDone');
-    standing(sim, job.issuer, JOB_REPUTATION);
+    pay(sim, job);
+    if (job.kind === 'delivery') sim.events.emit({ type: 'job.handedOver', id: job.id, issuer: job.issuer, reward: job.reward, via });
   } else {
     standing(sim, job.issuer, -JOB_FAIL_REPUTATION);
     if (job.kind === 'delivery') addNotoriety(sim, BREACH_NOTORIETY, job.issuer);
   }
   g.rev++;
   sim.events.emit({ type: 'job.closed', id: job.id, kind: job.kind, outcome, reward: outcome === 'done' ? job.reward : 0 });
+}
+
+/** A bounty's target is down or a survey's node entered: the job leaves the task list and waits as a claim to hand in (no payment yet). */
+function complete(sim: Sim, job: StationJob): void {
+  const g = sim.galaxy;
+  g.jobs = g.jobs.filter((j) => j.id !== job.id);
+  g.claims.push({ ...job });
+  g.rev++;
+  sim.events.emit({ type: 'job.completed', id: job.id, kind: job.kind as 'bounty' | 'survey', issuer: job.issuer, reward: job.reward });
+}
+
+/** The port at the player's node that takes a claim in, or undefined: the issuing station type, owned by the issuing faction, not hostile to the player. */
+export function handInPort(sim: Sim, claim: StationJob): string | undefined {
+  if (sim.sector.state !== 'active' || sim.galaxy.event) return undefined;
+  return portsAt(sim, sim.galaxy.current).find((p) => stationClass(p) === claim.station && p.owner === claim.issuer && tierOf(sim, p.owner) !== 'hostile')?.id;
+}
+
+/** `jobs.handIn`: collect a finished bounty or survey at a station of the issuing type and faction. Pays through the normal credit path. */
+export function handIn(sim: Sim, id: number): boolean {
+  const claim = sim.galaxy.claims.find((j) => j.id === id);
+  if (!claim) return reject(sim, 'jobs.handIn', 'noClaim');
+  const port = handInPort(sim, claim);
+  if (!port) return reject(sim, 'jobs.handIn', 'notHere');
+  close(sim, claim, 'done');
+  sim.events.emit({ type: 'job.handedIn', id: claim.id, kind: claim.kind as 'bounty' | 'survey', issuer: claim.issuer, reward: claim.reward, port });
+  return true;
 }
 
 /** `jobs.openCrate`: break a delivery's crate open where it lies (the player must be at a node, with the crate aboard). The delivery fails. */
@@ -143,16 +169,22 @@ export function abandonJob(sim: Sim, id: number): boolean {
 
 /**
  * Keep the jobs up to date while the player is at a node (or in an event grid): `destroyed` are the ships the player just destroyed or took (heat.ts
- * `tallyLosses`). A bounty whose target is among them is paid; a delivery at its destination with the goods aboard is handed over.
+ * `tallyLosses`). A bounty whose target is among them is completed (a claim), and so is a survey whose node the player is at; a delivery at its destination
+ * with the crate aboard is handed over (handover.ts), and paid once the station shuttle has the crate.
  */
 export function tendJobs(sim: Sim, destroyed: readonly number[]): void {
   const g = sim.galaxy;
   const hits = new Set(destroyed.map((id) => sim.world.get(id, ShipC)?.bounty).filter((b): b is number => b !== undefined));
   for (const job of [...g.jobs]) {
     if (job.kind === 'bounty') {
-      if (hits.has(job.id)) close(sim, job, 'done');
-    } else if (!g.event && sim.sector.state === 'active' && job.to === g.current && crateOf(sim, job.id) !== undefined) {
-      close(sim, job, 'done');
+      if (hits.has(job.id)) complete(sim, job);
+    } else if (job.kind === 'survey') {
+      // Entering the node is enough for now; a scanner module requirement comes later (issue #178 follow-up).
+      if (job.node === g.current && sim.sector.state !== 'hyperspace' && !g.event) complete(sim, job);
+    } else if (job.collected) {
+      close(sim, job, 'done', job.collected);
+    } else if (!g.event && sim.sector.state === 'active' && job.to === g.current && recoverCrate(sim, job.id)) {
+      if (startHandover(sim, job) === 'instant') close(sim, job, 'done', 'instant');
     }
   }
 }
@@ -167,5 +199,5 @@ export function settleLosses(sim: Sim): void {
 
 /** Fail the jobs whose time ran out. Once a turn. */
 export function expireJobs(sim: Sim, turn: number): void {
-  for (const job of [...sim.galaxy.jobs]) if (turn > job.due) close(sim, job, 'failed');
+  for (const job of [...sim.galaxy.jobs]) if (turn > job.due && !job.collected) close(sim, job, 'failed');
 }

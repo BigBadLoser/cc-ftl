@@ -65,7 +65,7 @@ function build(sim: Sim, port: Port): Econ | null {
   const faction = sim.content.trade?.traders[profile]?.match.faction ?? profile;
   const base: Record<string, number> = {};
   for (const g of m.goods) base[g] = 0;
-  for (const l of rollTrader(sim, profile, faction, port.id, strHash(port.id), true).stock) base[l.item] = l.count;
+  for (const l of rollTrader(sim, profile, faction, port.id, strHash(port.id), true, port.owner).stock) base[l.item] = l.count;
   const net: Record<string, number> = {};
   const rates = m.rates[profile];
   for (const [item, r] of Object.entries(rates?.produce ?? {})) net[item] = (net[item] ?? 0) + r * port.size;
@@ -74,7 +74,7 @@ function build(sim: Sim, port: Port): Econ | null {
     base[item] = Math.max(base[item] ?? 0, Math.round(MARKET_WANT_TURNS * r * port.size));
   }
   const items = [...new Set([...Object.keys(base), ...Object.keys(net)])].sort();
-  return { id: port.id, profile, trader: { profile, faction, name: port.id, credits: 0, stock: [], station: true }, base, net, items };
+  return { id: port.id, profile, trader: { profile, faction, name: port.id, credits: 0, stock: [], station: true, owner: port.owner }, base, net, items };
 }
 
 /** The most of an item the port holds. */

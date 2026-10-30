@@ -4,8 +4,11 @@ import { content } from '../index';
 import { factions } from './index';
 
 const defs = content.modules as Record<string, ModuleDef>;
-/** Welded scrapper seams keep a few wall tiles with no room beside them (between welded donors). */
-const BOUND: Record<string, [number, number]> = { 'faction.scrapper': [0.06, 0.1] };
+/** Welded scrapper seams keep a few wall tiles with no room beside them (between welded donors); the pirate factions fly the same hulls. */
+const SCRAP: [number, number] = [0.06, 0.1];
+const BOUND: Record<string, [number, number]> = {
+  'faction.scrapper': SCRAP, 'faction.raider': SCRAP, 'faction.cartel': SCRAP, 'faction.zealot': SCRAP, 'faction.mercenary': SCRAP,
+};
 
 describe('wall thickness', () => {
   it('walls are one tile thick, and wall thinning never changes the outline (stair-stepped tapers stay)', () => {

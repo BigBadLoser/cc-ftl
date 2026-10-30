@@ -24,13 +24,23 @@ export interface ShipTemplate {
    * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
    * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
    */
-  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
+  boarding?: {
+    party: number; afterSec: number; losingBelow: number;
+    /** Hand weapon (item id) issued to the party when it leaves. */
+    weapon?: string;
+    /** Raiders: once the party is on its way the ship stops shooting, so the prize is not wrecked under it. */
+    prefer?: true;
+    /** Zealots: the party heads for the player's AI core (capture/coreRaid.ts) and tears it out if it holds it. */
+    coreRaid?: true;
+  };
 }
 
 import type { EventDef, GoalActDef } from './story/defs';
 import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
+import type { YardDef } from './yard/types';
+import type { BlackMarketDef } from './blackmarket/defs';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -75,6 +85,10 @@ export interface ContentRegistry {
   research?: Record<string, ResearchDef>;
   /** The research tree's bands in order (ids are `ResearchDef.category`). */
   researchBands?: { id: string; name: string }[];
+  /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
+  yard?: YardDef;
+  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */
+  blackMarkets?: Record<string, BlackMarketDef>;
 }
 
 /**
@@ -168,6 +182,8 @@ export type Effect =
 /** A weapon: how it charges, flies and what it does. Power draw is on the carrying ModuleDef. */
 export interface WeaponDef {
   name: string;
+  /** One-line name for the combat HUD's weapon cards ("Missiles"); the module's own name is the tooltip. Defaults to the module name. */
+  shortName?: string;
   /** Render asset id of the projectile. */
   projectileAsset: string;
   /** Shots per volley. */
@@ -191,6 +207,8 @@ export interface WeaponDef {
    * `bypass` skips shields entirely.
    */
   shield: { damage: number; pierce: number; bypass?: boolean };
+  /** Heat the firing ship gains per volley (combat/heat.ts). */
+  heat: number;
   /** Applied (in order) when the shot lands on the hull. */
   effects: Effect[];
 }
@@ -454,8 +472,14 @@ export interface ModuleDef {
   weapon?: string;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };
-  /** Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less). */
-  engine?: { evasionPerPower: number; fuelFactor?: number };
+  /**
+   * Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less).
+   * `hullCapacity`: how many tiles of ship size (interior area, see `hullArea`) the engine can push through a jump; the ship's capacity is the sum over its engines
+   * that still work, and a ship over it cannot make a normal jump (ftl/capacity.ts).
+   */
+  /** Cools the ship while its shields are down: heat per second shed (combat/heat.ts). */
+  radiator?: { coolPerSec: number };
+  engine?: { evasionPerPower: number; fuelFactor?: number; hullCapacity?: number };
   /**
    * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a
    * basic blueprint every game starts with. Stations sell the blueprint from danger tier `minDanger` up, for `price` credits scaled by

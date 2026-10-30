@@ -71,7 +71,7 @@ export function discover(sim: Sim): number {
   return found;
 }
 
-/** Point the story pool (danger tier, territory by its owner's reputation key, e.g. 'corp') at a node. Enemy generation reads the node's danger directly. */
+/** Point the story pool (danger tier, territory by its owner's reputation key, e.g. 'meridian') at a node. Enemy generation reads the node's danger directly. */
 function setContext(sim: Sim, node: NodeData): void {
   sim.story.context.danger = node.danger;
   sim.story.context.faction = node.faction ? repKey(sim, node.faction) : null;

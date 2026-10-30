@@ -1,28 +1,66 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-22 (asteroids on `asteroids`, merged with stations and galaxy from `main`).
+Last updated: 2026-10-27 (main at PR #124).
 
-**Ship generator (branch `genint`):** see [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) for the handoff (scope, file
-map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md) for the design history.
+Work is tracked in GitHub issues. Per-feature sections further down are history: their branch names and "not merged"
+notes are stale (asteroids, stations, galaxy, trade, aliens, events, needs, refinery art, ore bins, starmap art and
+playtest clarity are all on `main`). Treat the sections below as design notes, not as a branch list.
 
-**Refinery art (`feat/refinery-art`):** the ore refinery has final Blender art (sheet `refinery`, 4 rotations, idle, `.unpowered`,
-4-frame `.active` loop). `module.refinery.access` is now [3, 3] (the operator tile beside the console). Modules with
-`.unpowered` or `.active.fN` art now show them generically (4 fps, texture swap). The refinery is exported by its own driver, not
-`npm run sprites` (see "Ore refinery" in ARCHITECTURE.md). Nothing old was removed: the manifest had no refinery entries (the
-module used the tinted-crate placeholder in `fallback.ts`, which stays as the fallback). Awaiting visual approval before `main`.
+**Ship generator:** a separate shipgen session works on ships, stations and room layout. See
+[SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
-**Ore bins (tip bins, same branch):** the Blender sources of PR #56's hydraulic tip bin (`tip_bin.py`, `tip_bin_wear.py`, shared
-`steelkit.py`, and `ore_cage.py` which the tip bin imports; the scrap cage `scrap.py` and its `storage_scrap` family were left out)
-render at native 1x as family `storage_ore` (`npm run sprites -- public/assets/1x storage_ore`, ~2 min; 82 sprites, sheet
-`storage_ore`). `module.storage_ore` (2x2, 24 slots) and `module.storage_ore_large` (3x2, 40) are
-ordinary storage in `furniture.ts`, buildable like the pallet. The bins take only ores: `ModuleDef.storageAccepts` becomes the storage's existing `filter` at spawn, and every path (hauling planner, stock
-seeding, deliveries, unload) already went through `storageSpace`/`storageAdd`, which honour it. The `ModuleDef.storageArt` map (item to art kind) only picks the sprite: `.empty`, else `.<iron|ice|rare>.<fill1|fill2|full>` by the
-ore filling the most slots and the share of slots in use (`storageState` in `render/moduleArt.ts`; 0.25 and 0.6). Station bins are seeded with one ore each, across all fill levels. Station industry rooms set up to two
-bins (a large one first where it fits, `with.big`) flush against each refinery, away from its access tile (`with` on a `count: 'spec'` step, `flank()` in `rooms/furnish.ts`; it
-runs after all planned modules are in, falls back to taking walkway floor if every tile stays reachable, and reserves each bin's own
-access tile). The scattered `module.storage` crates left the refinery floor; pallets stay. The mining industry room stocks ore.
-Scrap cage: add `scrap.py`, the `storage_scrap` family entry in `families.py` and render it (about 1x work, same pattern).
+## On `main` now (PRs #97 to #124)
+
+- **#97 progression phase 1:** blueprints, tiers, research stations.
+- **#98 playtest UI** and **#100 playtest render:** playtest fixes to the HUD and the renderer.
+- **#106 shield and reactor tier art:** Mk II/III art for shields and reactors.
+- **#113 GPU texture fix:** invisible sprites.
+- **#114 research tree:** nodes inspectable only when researchable.
+- **#115 trade trips and the combat panel,** now on the left.
+- **#117 combat:** roof fog of war, aiming from the main view, derelict ending, station relief.
+- **#118 drafted-crew control.**
+- **#121 floating windows.**
+- **#124 PixiJS starmap.**
+
+## In progress
+
+- **Hull width rule and hull plan brushes (branch `build/footprint-width`, #143):** no part of a ship narrower than 3 tiles (3x3 opening, struts exempt); generated
+  ships, stations and wrecks obey it; the Hull plan tool gets rectangle (min 3x3, must touch the ship), erase and line-cut brushes with mirror, a world grid, a cursor
+  ghost and a collapsing Build menu; `hull.plan` and the yard quote refuse a narrow plan. Playtest with `?scenario=hullplan`. No save change (stays v64). See "Hull width rule
+  and the hull plan brushes" in [ARCHITECTURE.md](ARCHITECTURE.md). Open: the line cut's slope set is one list (`LINE_SLOPES`) pending the user's call on 1:2 and 1:3.
+
+- **Progression phase 5 (branch `progression-5`, #125):** plan the outer hull in the build tools (Hull plan, any time, saved with the ship), buy it at a yard
+  (station panel quote, contractors build up to the visit cap in EVA, the rest stays planned). Size (interior area inside the outer hull) is the readout everywhere (ship panel, engine
+  capacity, jobs screen); the yard prices and caps by tiles built, outline plus floor (station cap 40, hub 100, 10 credits and 0.75 metal a tile). Engine capacity is Mk I 330 / Mk II 495 / Mk III 700 per engine (starter 416 / 660); There is no ship maximum: engine capacity (summed over any number of engines) is the only size limit. Yards truss the whole plan first (real `Struct.Beam` tiles, 2 credits a tile planning fee, outside the cap), then turn trusses into hull row by row up to the cap; leftovers stay as scaffolding for the next yard. The plan's ghost tiles show only in the Hull plan tool or a Shipyard tab. Waiting on screenshot approval.
+  See "Engine capacity and the shipyard" in [ARCHITECTURE.md](ARCHITECTURE.md). **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough
+  engines (#129).
+
+- **Progression phase 2b slice 2 (branch `progression-2b-market`, #136):** contraband, navy/corporation scans (surrender or bribe), the cartel fence, black-market
+  service sets (lesser wired to pirate-held and lawless stations; cartel, zealot and mercenary sets ready to attach but not spawned), shady crew and the node truce.
+  Save v63. See "Black markets" in [ARCHITECTURE.md](ARCHITECTURE.md). Waiting on screenshot approval of the scan prompt and the trade screens. Deferred: spawning the named markets
+  (station generation belongs to the shipgen session), pirate dens as conquerable stations, shady-crew drawback traits.
+
+## Decisions (user)
+
+- Desktop only; no phone layout work.
+- GitHub issues track work.
+- Shield tiers are 2x2, 2x3 and 3x3. Reactors are 2x2, 2x3 and 2x4.
+- The derelict ending kills everyone aboard. Prisoners wait for the black market phase (#116).
+- Enemy roofs can't be lifted without a future scanning upgrade.
+- The balance-test cap is 12 minutes.
+- Research nodes are inspectable only when researchable.
+- Drafted-crew colour is lime `#7ae64a`.
+
+## Open work, in order
+
+1. Engine Mk II/III art (#105).
+2. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
+3. Station intruder bug (#107).
+4. Build order: phase 5 shipyard, then phases 2/2b pirate factions and black market (#116), then phase 4 upgrade slots.
+5. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103).
+
+Other open issues: #65 sim performance, #60, #59, #54, #53, #52, #51, #50, #49, #48, #47.
 
 ## Where things are
 
@@ -42,7 +80,7 @@ Not done: the legacy `tools/blender/build.py` (old `npm run assets` crew pipelin
 drawn as hard 2x2 blocks) is the only art set; see "One art set" in [ARCHITECTURE.md](ARCHITECTURE.md). Older notes below that
 mention 2x art describe the earlier state.
 
-**On `main`** (live at https://cc-ftl.bigbadloser.workers.dev):
+**On `main`** (published to https://bigbadloser.github.io/cc-ftl/ by hand):
 - **M0–M2:** the core sim (ECS, grids, commands, saves), crew, jobs, priorities and drafting.
 - **R1:** the PixiJS isometric pixel-art renderer with the Blender sprite pipeline. Tiles are 64x32.
 - **Walls:** autotiled, with low cut-away blocks, full-height versions, ghosts for the exterior walls
@@ -71,7 +109,7 @@ m4-combat + m4-assets + m4-ui to main.
 Old branches (`m0`…`m3b-ui`, `r1-*`, `walls-*`, `asset-pipeline`, `crew-art`, `a1-readability`)
 are already merged or superseded. Don't build on them.
 
-## Starmap art (branch `claude/new-session-avb5cj`; art only; not merged; awaiting the user's review and the main thread's wiring)
+## Starmap art (merged; history)
 
 - Family `starmap` (sheet `starmap`): sector bodies (6 kinds x 3 variants), structure icons (6), fleet icons
   (6 roles x 8 headings), a backdrop tile. Contract (frames, scale `r / 60`, headings, tint, glow) in `docs/ARCHITECTURE.md`,
@@ -92,7 +130,7 @@ are already merged or superseded. Don't build on them.
 - Open choices: body fill is about 62% of the frame (the brief suggested about 70%) to leave room for the gas giant's
   ring and the black hole's disc; the backdrop is placed in numpy (dots need no 3D model), not rendered.
 
-## Playtest clarity (branch `playtest-clarity`, save v43; not merged)
+## Playtest clarity (merged; history)
 
 - **Food:** the stock drawer lists Food first (rations stay listed at 0, in red); `buildStock` now counts only the player's ships
   (it used to sum every grid, stations included). Production orders show `inputs -> outputs` and "missing X" (`UiOrder.missing`). The ship
@@ -104,7 +142,7 @@ are already merged or superseded. Don't build on them.
   galley to it or drop it; split `repair` (modules) from `maintenance`/`firefighting`; split `hauling` into supply (to crafters/builds) and tidying.
 - **Roof toggle:** a Roof button beside Walls draws the player ship roofed (`wantsRoof(..., roofPlayer)`).
 
-## Asteroids (branch `asteroids`; slices 1-3; not merged; visual: needs the user's screenshot approval)
+## Asteroids (merged; history)
 
 **User decisions (2026-10-21):**
 1. Asteroids are real tiles in the sector grid, mineable and buildable like any other region.
@@ -265,7 +303,7 @@ Planner's calls:
    picking outposts by kind; crew walking between regions in suits when they are close; auto-supply of a base.
 2. Asteroid art at the 2x scale (`art-2x`, 128x64 tiles), including rock mass that depth-sorts against crew; pod and pod-bay art.
 
-## Stations, slice 1: generation (branch `stations`; not merged)
+## Stations, slice 1: generation (merged; history)
 
 **User decisions (2026-10-21):** stations come in sizes from small frontier trading posts up to system hubs, and a hub is
 much bigger than any ship. All five kinds are wanted: trading, mining, farming, military depot and pirate den. A player can
@@ -471,7 +509,7 @@ Next slices (not built):
    - wheel hubs with one hub room leave a big empty centre, so wheels are weighted only for outposts and stations;
    - spines have no doubled form for hubs.
 
-## Aliens on derelicts (branch `aliens`, based on `derelict-ingame` plus `art/alien`; not merged; awaiting user review)
+## Aliens on derelicts (merged; history)
 
 - **Sim** (`src/sim/aliens/`, `systems/eggSacs.ts`, `systems/aliens.ts`): `applyRuin` turns the ruin pass's `eggsac` and
   `nest` hooks into `EggSacC` / `NestC` entities (navy combat wrecks still get no alien hooks). A dormant sac (some spawn
@@ -502,7 +540,7 @@ Next slices (not built):
 - Debug: `?shipgen=derelict:civilian&ruin=0.6&cause=decay&genAt=0,45&hook`, Spawn raider, then
   `__cc.aliens(shipId)` lists sacs and aliens; `debug.spawnCrew` with `faction: 'player'` on the wreck sets them off.
 
-## Trade (branch `trade`, based on `main` at 160e20b; not merged; awaiting user approval of the in-game look)
+## Trade (merged; history)
 
 Model, commands, price rules and "how to add a trader or a price" are in `docs/ARCHITECTURE.md` ("Trade"); player-facing rules in
 `docs/DESIGN.md` (Economy, "Trade"). New terminology (user decision): **node** (one playable location, formerly "sector"), **sector**
@@ -522,7 +560,7 @@ Model, commands, price rules and "how to add a trader or a price" are in `docs/A
 - **Not done:** hyperlane/sector prices, restocking over time, NPC-to-NPC trade, selling floor stacks (storage only), several runs for
   a big deal, per-faction shuttle livery, art for credits and the trade window (plain UI).
 
-## Galaxy sim (branch `galaxy`, cut from `main` at efd356b; sim only; not merged)
+## Galaxy sim (merged; history)
 
 Port of the starmap sim from `starmap-macro-wip` (PR #16, 175 commits behind main) onto today's main. No UI, no app snapshot, no tools, no
 visual change. Design in `docs/DESIGN.md` ("Starmap and factions"), model, pipeline and tuning in `docs/ARCHITECTURE.md` ("Starmap").
@@ -778,7 +816,7 @@ Details in `tools/blender/README.md` (Crew layers, Incremental builds) and `docs
 ## Story events in transit (branch `playtest-events`, save v43)
 Fix for "events pop up while I'm idle in a node": the periodic draw (180 s in `main.ts`) and the arrival draw at deploy (`pendingDraw`) are gone; story events are drawn only at hyperspace hops (`galaxy/storyHop.ts`), hold the trip (`Travel.phase 'story'`) and never share a hop with an interdiction. Details in `docs/ARCHITECTURE.md` (Events). Open: lead notices still open their decision when tapped, even idle (player-initiated).
 
-## Event system (branch `events`, based on `eva`; not merged; awaiting user approval of the in-game look)
+## Event system (merged; history)
 
 Design in `docs/DESIGN.md` (Exploration & events); schema and "adding an event" in `docs/ARCHITECTURE.md` (Events). Sim in
 `src/sim/story/` (no grids or sectors: context is a parameter, physical outcomes are stubbed into `story.physical`), content in
@@ -790,7 +828,7 @@ Design in `docs/DESIGN.md` (Exploration & events); schema and "adding an event" 
   effects use all player-ship storage (grid-independent); crew skill xp is new (`SkillXpC` + a stat modifier source).
 - Debug: `?hook` then `__cc.fireEvent('event.distress_call')`.
 
-## Needs: hunger, food and mood (branch `needs`, based on `eva`; not merged; awaiting user review)
+## Needs: hunger, food and mood (merged; history)
 
 Rules and values are in `docs/DESIGN.md` (Crew, "Needs and mood"). What exists:
 - **Sim:** `Needs.hunger` (lazily created for player-side crew of a species with `SpeciesDef.hunger`; robots have none),
@@ -809,7 +847,7 @@ Rules and values are in `docs/DESIGN.md` (Crew, "Needs and mood"). What exists:
   member stands idle at the galley's access tile); optional mood and hunger icons.
 - Not done: breakdowns, beauty or room quality, drafted crew eating on order, a "no food" alert, food for crew on shuttles.
 
-## Shuttle bay (branch `opus-bay`, not merged; awaiting user approval of the in-game look)
+## Shuttle bay (merged; history)
 
 - `module.vehicle_bay` is a solid 4x5 pit (nothing walkable inside). Its access tile is outside the footprint beside the
   long side in the hatch row (r0: (4, 3), rotating with the module). Starter bay moved its fabricator to (19, 12) so the
@@ -826,7 +864,7 @@ Rules and values are in `docs/DESIGN.md` (Crew, "Needs and mood"). What exists:
   `RETURN_LAND` in `vehicleBayArt.ts`; the lifting sprite is drawn over the near lip, not cut by it).
 - Missing: per-faction livery (the player's blue/ochre is baked; the export keys mkP/mkS have no runtime remap), pod bays.
 
-## EVA and spacesuits (branch `eva`, based on `airlock-int` plus `art/spacesuit`; not merged; awaiting user approval of the in-game look)
+## EVA and spacesuits (merged; history)
 
 Design is in `docs/DESIGN.md` (Crew, "EVA and spacesuits"). What exists:
 - **Sim** (`src/sim/eva/`):
@@ -843,7 +881,7 @@ Design is in `docs/DESIGN.md` (Crew, "EVA and spacesuits"). What exists:
 - **Debug hook** (`?hook`): `stage.suitAir`, `crewInfo` (plus `dispatch` / `sim` for `vehicle.hover` and `eva.out`).
 - Not done: beams (seam only), jobs on the hull exterior, suit use by the enemy AI, art for the suit-up pose (crew stand idle), a tooltip for the free-suit count on the airlock inspector.
 
-## Docking airlock (branch `airlock-int`, not merged; awaiting user approval of the in-game look)
+## Docking airlock (merged; history)
 
 - `module.airlock` is footprint [3, 4] (`hullEdge: 'n'`, solid with open tiles) with `airlock.layout`: pod (inner door) (1,1), hull tile
   and outer door (1,0), inside tile (1,2), collar (1,-1) outside the footprint, two unloaders (body tiles, chute, keep-out
@@ -874,7 +912,7 @@ The user did not approve the first m4-assets sheets: modules were far too small.
   (`overlap.py`) on every new model.
 - **Consoles:** the user likes the chairs and screens of the `m4-art-consoles` prototype.
 - **No module floor slabs:** modules sit directly on the ship floor (no plinth/deck plate).
-- **Walls redesign** (branch `walls-tall`, not merged): height alone was not the problem (tried 2.2
+- **Walls redesign** (merged; history): height alone was not the problem (tried 2.2
   and 3.0; settled ~2.4, crew are 1.5). Space Haven-like profile: base covers the whole tile, thin
   top, ONE slope that always faces the camera, vertical back. Hull is a separate chunky
   colour-blocked armour band. Interior walls get their own colour and subtle seams (lockers and
@@ -1312,7 +1350,7 @@ Open: CombatPanel still old style; phone hides the crew row while the combat she
   frames become trusses plus clamped containers; a detached container becomes a free body (like shuttles) carrying its
   stock. Not walk-in (walk-in plus detachable would need grid surgery).
 
-## Cargo containers (branch `shipgen-containers`; not merged; awaiting user review of the look)
+## Cargo containers (merged; history)
 
 - **Component** (`src/sim/containers`): a container is a module with `ModuleDef.container` (`container.2x3` cap 7,
   90 hp; `container.3x5` cap 18, 160 hp; solid, full cover, no power). Cargo doors are on a short end, and that end

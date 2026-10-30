@@ -47,9 +47,9 @@ export function populateNode(sim: Sim, id: string): number {
   const ports = new Map<number, Port>(portsAt(sim, id).map((p) => [Number(p.id.slice(p.id.indexOf('#') + 1)), p]));
   const hasField = node.structures.some((s) => content.structures[s.def]?.kind === 'asteroids');
   let made = 0;
-  node.structures.forEach((s, i) => {
+  const build = (s: (typeof node.structures)[number], i: number): boolean => {
     const def = content.structures[s.def];
-    if (!def) return;
+    if (!def) return false;
     const port = ports.get(i);
     const at = slot(sim, id, i);
     let ok = false;
@@ -68,7 +68,14 @@ export function populateNode(sim: Sim, id: string): number {
     } else {
       ok = populateDerelict(sim, node, port?.kind === 'nest', structureSeed(sim, id, i, SALT.derelict), at);
     }
-    if (ok) made++;
+    return ok;
+  };
+  node.structures.forEach((s, i) => {
+    try {
+      if (build(s, i)) made++;
+    } catch {
+      // One structure that fails to build is skipped and the node keeps what it has: it must not abort the others or the tick.
+    }
   });
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.populated', node: id, count: made });

@@ -1,11 +1,10 @@
 import { ALT, BodyC } from '../body';
+import { abortTask } from '../ai/task';
 import { shipById } from '../combat/ships';
-import { releaseBedClaim } from '../crew/beds';
 import {
   CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, type Crew,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
-import { releaseAssignment } from '../crew/helpers';
 import { spillItems } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 
@@ -64,8 +63,7 @@ export function spawnVehicle(sim: Sim, defId: string, bay: number): number {
 /** Hide a crew member aboard a vehicle: off the grid, out of every job and route. The first aboard is the pilot. */
 export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'passenger' {
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
-  releaseAssignment(sim, crew);
-  releaseBedClaim(sim, crew);
+  abortTask(sim, crew, 'boarded');
   for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';

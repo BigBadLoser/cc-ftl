@@ -112,7 +112,7 @@
   .panel { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); box-sizing: border-box; background: linear-gradient(var(--panel), var(--panel)), var(--bg); }
   @media (min-width: 601px) { .panel { left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 24px)); border-width: 1px; } }
   .cells { display: flex; gap: 4px; flex-wrap: wrap; }
-  .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); }
+  .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); }
   .cell b { color: var(--text); font-weight: 600; }
   .cell small { color: var(--dim); font-size: 11px; }
   .cell.bad { border-color: var(--red); color: var(--red); }
@@ -132,5 +132,5 @@
   .k.ship { background: var(--dim); } .k.hostile { background: var(--red); } .k.keep { background: color-mix(in srgb, var(--red) 25%, transparent); }
   .actions { display: flex; gap: 6px; }
   .actions button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
+  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
 </style>

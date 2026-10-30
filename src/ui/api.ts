@@ -1,4 +1,5 @@
 import type { UiDeploy, UiJumpWarnings, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
+import type { CreateStarmapGpu } from './starmapGpu';
 import type { Command, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -160,6 +161,8 @@ export interface UiModule {
   local: { x: number; y: number };
   hp: number;
   maxHp: number;
+  /** Ordered to the top of the repair queue (module.priorityRepair). */
+  repairFirst: boolean;
   powerPriority: number;
   enabled: boolean;
   powered: boolean;
@@ -390,7 +393,7 @@ export interface UiHeat {
  * A station job (sim galaxy/jobs.ts) as the board shows it: an offer (`id` null) or one the player holds. `where` is the delivery's destination or the
  * bounty target's node, `hops` how many jumps away it is (null when out of the known map), `here` that the player is there; `ready` that a delivery's crate is aboard.
  */
-/** A ship's fighting strength as the job card shows it: working guns, shield layers, hull plates (walls and doors). */
+/** A ship's fighting strength as the job card shows it: working guns, shield layers, size (interior area). */
 export interface UiStrength {
   guns: number;
   shields: number;
@@ -402,7 +405,7 @@ export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
 export interface UiJob {
   key: string;
   id: number | null;
-  kind: 'delivery' | 'bounty';
+  kind: 'delivery' | 'bounty' | 'survey';
   issuer: string;
   title: string;
   detail: string;
@@ -416,11 +419,23 @@ export interface UiJob {
   target: { strength: UiStrength; read: UiStrengthRead | null } | null;
 }
 
+/** A finished bounty or survey that can be handed in at the station the player is at. */
+export interface UiClaim {
+  id: number;
+  kind: 'bounty' | 'survey';
+  issuer: string;
+  title: string;
+  reward: number;
+  here: boolean;
+}
+
 /** The job board: offers at the node the player is at (`here` its name, null when jobs cannot be taken now: in hyperspace or an event grid), and the jobs they hold (at most `max`). */
 export interface UiJobs {
   here: string | null;
   offers: UiJob[];
   active: UiJob[];
+  /** Finished bounties and surveys the station here takes in (never kept on screen anywhere else). */
+  handIn: UiClaim[];
   max: number;
   /** The player's own ship, for comparing with a bounty target. */
   mine: UiStrength | null;
@@ -433,6 +448,8 @@ export interface UiStats {
   heat: UiHeat;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
   o2: number | null;
+  /** Ship size (interior area) against what the working engines carry: the ship panel's "Size N / M" (interior area). */
+  hull: { tiles: number; capacity: number };
 }
 
 /** One option of an open decision. `reasons` explain why it is greyed out; `odds` is the skill check, if any. */
@@ -453,19 +470,24 @@ export interface UiStory {
   last: { tick: number; title: string; choice: string; success: boolean | null; text: string; lines: string[] } | null;
 }
 
+/** What a log entry or an alert is about, so a click can jump to it. A node is a starmap node id. */
+export type UiSubject =
+  | { kind: 'tile'; x: number; y: number }
+  | { kind: 'crew'; id: number }
+  | { kind: 'ship'; id: number }
+  | { kind: 'node'; id: string };
+
+/** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
-  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'crew.died' | 'crew.rescued'
-  | 'job.missingMaterials' | 'storage.full' | 'production.done'
-  | 'suit.airLow' | 'suit.airOut' | 'crew.starving' | 'crew.moodLow'
-  | 'story.notice' | 'story.lead' | 'trade'
-  | 'combat.started' | 'module.destroyed' | 'ship.destroyed' | 'ship.fled' | 'ship.lost' | 'creatures.aboard' | 'station.alarm'
-  | 'outpost.discovered' | 'ship.provoked' | 'mining.waiting' | 'mining.done' | 'galaxy.encounter' | 'galaxy.incoming' | 'galaxy.incomingHostile' | 'transfer';
+  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.starving'
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
-  | 'ship.fled' | 'ship.captured' | 'hail' | 'trade' | 'production' | 'container' | 'story' | 'lost';
+  | 'ship.fled' | 'ship.captured' | 'hail' | 'trade' | 'production' | 'container' | 'story' | 'lost'
+  | 'payout' | 'kill' | 'warning' | 'job' | 'mining' | 'transfer' | 'galaxy' | 'outpost' | 'creatures' | 'crew';
 
-/** One happening in the event log (history, not an ongoing state like an alert). */
+/** One happening in the ship's log (the full record, not an ongoing state like an alert). */
 export interface UiLogEntry {
   id: number;
   /** Sim tick it happened on. */
@@ -475,18 +497,31 @@ export interface UiLogEntry {
   text: string;
   /** How many times in a row this happened (same text as the entry before). */
   count: number;
+  /** Where a click on the entry goes, when the event has a subject. */
+  subject?: UiSubject;
+  /** Credits gained (a payout, sale or bounty): the entry shows `+N ₵` and pulses briefly. */
+  amount?: number;
+  /** Wall-clock ms when the entry was added or last folded into; drives the brief highlight. */
+  born: number;
+  /** Destructions on one ship that fold into this line (module names), so more can join while the window is open. */
+  fold?: { ship: number; enemy: boolean; names: string[] };
 }
 
 /** A weapon module of the player's ship. */
 export interface UiWeapon {
   id: number;
+  /** The module's full name (the card's tooltip). */
   name: string;
+  /** One-line display name for the card (WeaponDef.shortName, else the module name). */
+  short: string;
   /** 0..1. */
   charge: number;
   /** Missiles in stock for ammo weapons, null for weapons that use none. */
   ammo: number | null;
   ion: boolean;
   powered: boolean;
+  /** `auto` fires when charged; `hold` waits for a volley or for the player to aim it (then it fires once and stays on hold). */
+  mode: 'auto' | 'hold';
   /** Own target label, or null when it uses the ship-wide one. */
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */
@@ -501,6 +536,8 @@ export interface UiConsole {
   kind: 'weapons' | 'shields' | 'helm';
   name: string;
   operator: string | null;
+  /** Crew member who took the console job and is walking there (null when nobody is on the way). */
+  enRoute: string | null;
   powered: boolean;
 }
 
@@ -512,12 +549,50 @@ export interface UiShipModule {
   hp: number;
   maxHp: number;
   ion: boolean;
+  /** Has power (an engine module counts as online when it is powered and intact). */
+  powered: boolean;
+}
+
+/** An enemy shot aimed at your ship: the weapon's name and the seconds until it lands (charge left plus flight). */
+export interface UiIncoming {
+  /** The firing weapon's entity id (stable while the shot lives). */
+  id: number;
+  /** Its colour (0xRRGGBB), the same in the timeline and in the world. */
+  color: number;
+  name: string;
+  eta: number;
+  flying: boolean;
+}
+
+/** An enemy weapon's charge, for the telegraph on the enemy panel. */
+export interface UiEnemyWeapon {
+  id: number;
+  name: string;
+  /** 0..1. */
+  charge: number;
+  /** 0..1: the charge at which it commits its aim (the last seconds before it can fire). */
+  commitAt: number;
+  /** It has committed an aim at the player's ship: a marker shows where. */
+  committed: boolean;
+  /** It is not charging (unpowered, ion-struck, destroyed or its console unmanned). */
+  stalled: boolean;
+  /** The module is destroyed. */
+  destroyed: boolean;
+  /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
+  eta: number | null;
+  /** One of its shots is in flight to your ship and it has no new aim yet. */
+  fired: boolean;
+  /** Its shot colour (0xRRGGBB), the same as its line in the world and its marker on the incoming timeline. */
+  color: number;
 }
 
 export interface UiShipCombat {
   /** ShipC entity id: the key of the ship everywhere in the UI and in commands. */
   ship: number;
   name: string;
+  /** Faction display name (the galaxy faction that fields it, else its combat side) and its role as a class label (null when it has none). */
+  faction: string;
+  klass: string | null;
   /** Sector tile of the ship's top-left corner (a tile aim is shown relative to it). */
   x: number;
   y: number;
@@ -527,6 +602,14 @@ export interface UiShipCombat {
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
+  /**
+   * Combat heat: 0..max. `lockout` and `venting` are seconds left (0 = not). Heat falls only while the shields are down, so `cooling` says whether it does now.
+   * `overcharge` per system: seconds active (`left`) and seconds until it can start again (`cooldown`).
+   */
+  heat: {
+    value: number; max: number; lockout: number; venting: number; cooling: boolean;
+    overcharge: Record<'weapons' | 'shields' | 'engines', { left: number; cooldown: number }>;
+  };
   /** 0..1 chance a shot misses. */
   evasion: number;
   hold: boolean;
@@ -536,6 +619,8 @@ export interface UiShipCombat {
   /** Ship-wide target, with a label. */
   target: { ship: number; moduleId: number; label: string; tile?: { x: number; y: number } } | null;
   modules: UiShipModule[];
+  /** Weapon charges of a hostile ship (absent on the player's). */
+  charges?: UiEnemyWeapon[];
 }
 
 /** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */
@@ -562,7 +647,7 @@ export interface UiAiming {
 
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ holdAll: boolean; idle: string | null; /** Enemy shots committed to or flying at your ship, soonest first. */ incoming: UiIncoming[] }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
@@ -647,6 +732,22 @@ export interface UiTradeLine {
   buy: number;
   /** Sold as surplus (older, middle-grade gear: a military depot's). */
   surplus?: boolean;
+  /** Contraband: only a black market takes it, and navy and corporation scans confiscate it. */
+  contraband?: boolean;
+}
+
+/** A station's black-market services (sim blackmarket/): shown at the top of its trade window. */
+export interface UiMarketServices {
+  /** The set names ("Back-room dealer"), the share of value it pays for contraband (0.7 = 70%) and the fence rate when it has a fence (else null). */
+  names: string[];
+  contrabandRate: number;
+  fence: number | null;
+  /** Nobody starts a fight at its node, until someone breaks the truce. */
+  truce: boolean;
+  /** The truce is broken and the player is banned here. */
+  banned: boolean;
+  /** It has shady crew for hire. */
+  shadyCrew: boolean;
 }
 
 export interface UiTradeOffer {
@@ -667,6 +768,8 @@ export interface UiRecruit {
   skills: string[];
   cost: number;
   coming: boolean;
+  /** A black market's shady crew: the extra levels (already in `skills`) over the role's own. */
+  shady?: number;
 }
 
 /** A module blueprint a station sells (sim galaxy/blueprintShop.ts). */
@@ -696,6 +799,8 @@ export interface UiStationInfo {
   /** The port id `blueprint.buy` takes (empty without a port). */
   blueprintPort: string;
   market: UiStarMarket | null;
+  /** Notable stock in a few words ("Mk II shield gens", "Cheap fuel"). */
+  hints: string[];
   /** Working airlocks to dock at. */
   docks: number;
   guns: number;
@@ -703,6 +808,77 @@ export interface UiStationInfo {
   shields: number;
   /** Why the alarm is up, or null while calm. */
   alarm: string | null;
+  /** The shipyard this station runs (hull expansion), or null. */
+  yard: UiYardService | null;
+}
+
+/** What a station's shipyard offers. `price` is per tile now (the node's danger and the tier's multiplier included). */
+export interface UiYardService {
+  /** 'station' or 'hub'. */
+  size: string;
+  /** Hull tiles one visit builds. */
+  cap: number;
+  price: { credits: number; metal: number };
+  /** The ship's size (interior area) against what its engines carry. */
+  hull: { tiles: number; capacity: number };
+}
+
+/** The ship's planned outer hull (the build tools' Hull plan), checked: what can be built from the ship, what floats, what is in the way, the floor it shuts in. */
+export interface UiHullPlan {
+  /** The ship the plan belongs to (the `ship` of `hull.plan`), 0 when there is none. */
+  ship: number;
+  tiles: { x: number; y: number }[];
+  connected: { x: number; y: number }[];
+  loose: { x: number; y: number }[];
+  blocked: { x: number; y: number }[];
+  floor: { x: number; y: number }[];
+  /** Tiles of the plan (with the floor it shuts in) that would leave part of the ship narrower than 3 tiles; empty when the plan is fine. */
+  bad: { x: number; y: number }[];
+  /** Hull tiles now and with every reachable planned tile built, against the engines' capacity. */
+  hull: { now: number; afterAll: number; capacity: number };
+}
+
+/** What a yard would build of the plan on this visit, and for how much. `error` is the sim's reason code, `errorText` the sentence. */
+export interface UiYardQuote {
+  station: number;
+  error: string | null;
+  errorText: string;
+  /** Tiles turned into hull now (outline plus floor), the floor they enclose, tiles planned in all, and tiles left for a later yard. */
+  buy: number;
+  floor: number;
+  /** Tiles the quick planning pass trusses (outside the cap), and its fee in credits (part of `price`). */
+  truss: number;
+  fee: number;
+  planned: number;
+  rest: number;
+  price: { credits: number; metal: number };
+  afford: { credits: boolean; metal: boolean };
+  cap: number;
+  hull: { before: number; after: number; capacity: number };
+}
+
+/** The player's yard order: running, or just ended. `status` says what is happening. */
+export interface UiYardOrder {
+  id: number;
+  station: number;
+  live: boolean;
+  phase: string;
+  status: string;
+  built: number;
+  total: number;
+  price: { credits: number; metal: number };
+  /** Why it ended early, in words, or ''. */
+  reason: string;
+  /** The floor and wall tiles still to build (empty once the order has ended), for the overlay. */
+  floor: { x: number; y: number }[];
+  walls: { x: number; y: number }[];
+}
+
+/** The hull plan, a yard's quote for it (for the station panel that is open: null otherwise) and the order under way. */
+export interface UiYard {
+  plan: UiHullPlan;
+  quote: UiYardQuote | null;
+  order: UiYardOrder | null;
 }
 
 export interface UiTradePartner {
@@ -731,6 +907,8 @@ export interface UiTradePartner {
   hireError: string;
   /** Stations only. */
   info?: UiStationInfo;
+  /** Black-market services the station carries, or absent. */
+  market?: UiMarketServices;
 }
 
 export interface UiTradeDeal {
@@ -819,10 +997,37 @@ export interface UiAlert {
   id: number;
   kind: UiAlertKind;
   text: string;
-  /** Where the camera goes when tapped, or null if unknown. */
-  at: { x: number; y: number } | null;
+  /** Where a click goes. Every urgent alert has one. */
+  subject: UiSubject | null;
   /** Event notices: the sim notice id (tap opens its lead when `lead`), and a title shown above the text. */
   notice?: { id: number; lead: boolean; title: string };
+  /** A click opens the fight breakdown card (api.openFightReport) instead of moving the camera. */
+  report?: boolean;
+}
+
+/** One module or crew member in a fight report; a click jumps to `subject` when it has one. */
+export interface UiFightLine { name: string; subject: UiSubject | null }
+
+/** What a finished fight cost, collected from its events (see app/fightReport.ts). Hull figures are 0..1 integrity. */
+export interface UiFightReport {
+  outcome: 'destroyed' | 'fled' | 'youFled' | 'captured' | 'disabled' | 'lost' | 'ended';
+  enemy: string;
+  seconds: number;
+  hullBefore: number;
+  hullAfter: number;
+  /** The enemy's hull as of the last tick it was seen (0..1), or null when it was never seen. */
+  enemyHull: number | null;
+  /** Enemy crew killed (deaths off your ship). */
+  enemyCrew: number;
+  lost: UiFightLine[];
+  /** Hit but still standing. */
+  damaged: UiFightLine[];
+  down: UiFightLine[];
+  dead: UiFightLine[];
+  enemyLost: UiFightLine[];
+  ammo: { name: string; n: number }[];
+  /** The captured ship's name, when the fight ended in a capture. */
+  prize: string | null;
 }
 
 export interface UiLegend {
@@ -835,7 +1040,7 @@ export interface UiLegend {
 
 export type UiTool = 'select' | 'build' | 'deconstruct' | 'cancel';
 /** 'dig' / 'level' / 'finish' work rock mass (dig: Floor, level: Ground, finish: RockWall); 'claim' drags a base rectangle onto an asteroid; 'mine' drags a rectangle over ore (the ore tiles in it go to the mining pods in `pods`, or every pod when empty). */
-export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine';
+export type UiBuildKind = 'wall' | 'floor' | 'door' | 'module' | 'dig' | 'level' | 'finish' | 'claim' | 'mine' | 'hull';
 /** A mining pod of the player's (VehicleC with a mining laser). */
 export interface UiPod {
   id: number;
@@ -882,6 +1087,17 @@ export interface UiToolState {
   rot: number;
   /** The 'mine' tool: pod ids the painted ore is ordered to (empty = every pod). */
   pods?: number[];
+  /** The 'hull' tool (the outer hull plan's brushes). */
+  hull?: {
+    /** The brush: a rectangle (dragged out, at least 3x3) or a straight line (0, 45 or 90 degrees) that cuts the plan. */
+    brush: 'rect' | 'line';
+    /** Take planned tiles out instead of putting them in. */
+    erase: boolean;
+    /** Mirror every stroke across the ship's long axis. */
+    mirror: boolean;
+    /** The tool's report for the bar while dragging: why the stroke would not apply, or ''. */
+    note?: string;
+  };
 }
 
 export type UiCutaway = 'auto' | 'up' | 'down';
@@ -932,6 +1148,8 @@ export interface UiApi {
   itemIcons: Subscribable<Record<string, UiIcon>>;
   /** The starmap's sprites, once loaded (null until then, or without the sheet: the map draws its code shapes). */
   starmapArt: Subscribable<UiStarArt | null>;
+  /** Make the starmap's GPU view (Pixi) inside an element: the map content is drawn by it, the screen keeps the camera and panels. */
+  createStarmapGpu: CreateStarmapGpu;
   stock: Subscribable<UiStock[]>;
   storages: Subscribable<UiStorage[]>;
   fabs: Subscribable<UiFab[]>;
@@ -973,6 +1191,10 @@ export interface UiApi {
   ftl: Subscribable<UiFtl | null>;
   /** Credits, hailable ships and stations, and the running deliveries. */
   trade: Subscribable<UiTrade>;
+  /** The hull plan, the quote of the station whose panel is open (see `watchYard`) and the player's yard order. */
+  yard: Subscribable<UiYard>;
+  /** Quote this station's yard in `yard` (0 stops). */
+  watchYard(station: number): void;
   shuttles: Subscribable<UiShuttles>;
   prizes: Subscribable<UiPrize[]>;
   /** Asteroids in the node and the player's mining pods. */
@@ -983,12 +1205,6 @@ export interface UiApi {
   selectAsteroid(id: number | null): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
-  /** Show a ship in the combat overlay rectangle (null hides it). */
-  setCombatView(view: { ship: number; rect: UiRect } | null): void;
-  /** Which target brackets the combat view draws over the enemy's modules (module ids; 0/absent = none). */
-  setCombatMarks(marks: { shipTarget?: number; overrides: number[]; hover?: number; arming: boolean }): void;
-  /** Module (0 = hull) at a page position inside the combat view, or null if outside the ship. */
-  pickCombat(x: number, y: number): { moduleId: number } | null;
   /** The armed "Target in view" aim, or null. */
   aiming: Subscribable<UiAiming | null>;
   setAiming(a: UiAiming | null): void;
@@ -998,6 +1214,12 @@ export interface UiApi {
   setRoofPlayer(on: boolean): void;
   /** Frame the player's ship and a hostile ship (or only the player's ship) in the camera. */
   focusFight(ship: number | null): void;
+  /** Show a ship in the combat inset's window, a page element (null hides it): the renderer draws a second camera there every frame. */
+  setInset(view: { ship: number; view: HTMLElement } | null): void;
+  /** The inset window's size in CSS px for a ship (the renderer sizes it to the ship at a pixel-perfect zoom), or null. */
+  insetSize(ship: number): { w: number; h: number } | null;
+  /** A module's on-screen bounds in viewport CSS px (read every frame, it follows pan and zoom), or null when it is not drawn. */
+  moduleScreenRect(id: number): { x0: number; y0: number; x1: number; y1: number } | null;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;
   /** Spawn a procedurally generated enemy of a faction id (random faction if omitted) where a raider would go. */
@@ -1008,8 +1230,14 @@ export interface UiApi {
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;
   dismissAlert(id: number): void;
+  /** The open post-fight breakdown card's data (null while closed). Opening it clears its alert; the next fight starting closes it. */
+  fightReport: Subscribable<UiFightReport | null>;
+  openFightReport(alertId?: number): void;
+  closeFightReport(): void;
   /** Move the camera to an alert's location. */
   focusAlert(id: number): void;
+  /** Jump to a log entry's subject: a tile, crew member or ship (a node is the UI's to open on the starmap). */
+  focusSubject(subject: UiSubject): void;
   /** Brief message (e.g. a rejected command), or null. */
   toast: Subscribable<string | null>;
   setTool(state: Partial<UiToolState>): void;
@@ -1018,7 +1246,7 @@ export interface UiApi {
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
   moduleThumb(def: string, rot: number): UiThumb | null;
   /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */
-  placeHint: Subscribable<{ x: number; y: number; text: string } | null>;
+  placeHint: Subscribable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   /** Select a crew member (null clears) and optionally center the camera on them. */
   selectCrew(id: number | null, focus?: boolean): void;
   setCutaway(mode: UiCutaway): void;
@@ -1028,6 +1256,13 @@ export interface UiApi {
   togglePause(): void;
   clearErrors(): void;
   buildRepro(): string;
+  /** The in-game bug report: the context shown in the dialog, the pre-filled GitHub issue link, and the save and screenshot files. */
+  bugReport: {
+    context(): string;
+    issue(draft: { title: string; what: string; expected: string }): { url: string; trimmed: boolean };
+    saveJson(): string;
+    screenshot(): Promise<Blob | null>;
+  };
   /** Called once with the game canvas so the app layer can attach the renderer. */
   attachCanvas(canvas: HTMLCanvasElement): void;
   throwTestError(): void;

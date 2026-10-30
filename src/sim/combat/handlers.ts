@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import { flee } from '../galaxy/hyperspace';
 import { leave } from '../galaxy/respond';
 import { FTL_CHARGE_SEC } from '../tuning';
+import { overchargeError, startOvercharge, startVent, ventError } from './heat';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError, shipGrid, shipIdOf } from '../regions';
@@ -100,6 +101,31 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const weapon = sim.world.get(cmd.weaponId, WeaponC);
     if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
     weapon.target = target;
+    // Aiming a held weapon is the order to shoot: it fires once when charged, then stays on hold.
+    if (weapon.mode === 'hold') weapon.once = true;
+  },
+  'combat.setWeaponMode': (sim, cmd) => {
+    const weapon = sim.world.get(cmd.weaponId, WeaponC);
+    if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
+    if (cmd.mode !== 'auto' && cmd.mode !== 'hold') return reject(sim, cmd.type, 'badValue');
+    weapon.mode = cmd.mode;
+    weapon.once = false;
+    delete weapon.restore; // an explicit choice, so hold-all no longer owns this weapon
+  },
+  'combat.holdAll': (sim, cmd) => {
+    if (!sim.world.get(cmd.ship, CombatC)) return reject(sim, cmd.type, 'noShip');
+    for (const id of sim.world.query(WeaponC, ModuleC)) {
+      const w = sim.world.get(id, WeaponC);
+      if (!w || !moduleOnGrid(sim, id, cmd.ship)) continue;
+      if (cmd.hold) {
+        if (w.restore === undefined) w.restore = w.mode;
+        w.mode = 'hold';
+      } else if (w.restore !== undefined) {
+        w.mode = w.restore;
+        delete w.restore;
+      }
+      w.once = false;
+    }
   },
   'combat.setHold': (sim, cmd) => {
     const combat = sim.world.get(cmd.ship, CombatC);
@@ -111,6 +137,21 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (!combat) return reject(sim, cmd.type, 'noShip');
     combat.volley = true;
   },
+  'combat.vent': (sim, cmd) => {
+    const combat = sim.world.get(cmd.ship, CombatC);
+    if (!combat || shipById(sim, cmd.ship)?.state !== 'active') return reject(sim, cmd.type, 'noShip');
+    const why = ventError(combat);
+    if (why) return reject(sim, cmd.type, why);
+    startVent(sim, cmd.ship, combat);
+  },
+  'combat.overcharge': (sim, cmd) => {
+    const combat = sim.world.get(cmd.ship, CombatC);
+    if (!combat || shipById(sim, cmd.ship)?.state !== 'active') return reject(sim, cmd.type, 'noShip');
+    if (!['weapons', 'shields', 'engines'].includes(cmd.system)) return reject(sim, cmd.type, 'badValue');
+    const why = overchargeError(combat, cmd.system);
+    if (why) return reject(sim, cmd.type, why);
+    startOvercharge(sim, cmd.ship, combat, cmd.system);
+  },
   'combat.flee': (sim, cmd) => {
     const entity = cmd.ship;
     const ship = sim.world.get(entity, ShipC);
@@ -119,7 +160,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (ship.state !== 'active') return reject(sim, cmd.type, 'notActive');
     if (ship.immobile) return reject(sim, cmd.type, 'immobile');
     // The player's ship leaves through the galaxy: charge the drive, then jump (`to`, else the cheapest affordable neighbour).
-    if (ship.faction === 'player') return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity, cmd.to));
+    if (ship.faction === 'player') return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity));
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
     ship.state = 'fled';
     sim.events.emit({ type: 'ship.fled', ship: cmd.ship });

@@ -68,10 +68,24 @@ The phase numbers below are names, not the order.
    - Upgrades come from buying, finding or research, and the UI to slot them is in the module inspector.
    - Art: item icons. Some already exist, and more go in an item art top-up.
 5. **Hull expansion at a station (shipyard refit).**
-   - A shipyard service at certain stations: choose hull sections to add, pay credits and materials, dock, and the
-     station builds them.
-   - A bigger ship costs more fuel per jump (fuel cost scales with hull size).
-   - Decide then whether the size cap comes from reactor or AI core tier.
+   - **Shipyards:** found at trading and military stations of the station and hub tiers. Outposts have none, and
+     research and farming stations don't do hull work. Pirate dens may offer cheaper, riskier refits once phase 2b
+     lands.
+   - **What you buy:** you paint the new hull area in a planning view, and it must touch the existing hull. The yard
+     builds bare floor and outer walls, and the player fits it out as usual. The painting tool is reused by phase 6.
+   - **Price:** credits plus metal per tile. It rises a little with danger, as blueprints do, and a hub costs more.
+   - **Size cap:** set by the yard. A station-tier yard adds up to N tiles per visit, and a hub allows more, up to an
+     overall ship maximum. The reactor and AI core don't cap size.
+   - **The work is visible.** The station sends a shuttle with a few human crew. They suit up, work in EVA and
+     build the new tiles as ordinary construction jobs, and the player's own crew can help. Undocking early sends
+     the yard crew home and refunds the part not yet built. No bots: they have no float animation.
+   - **Engine capacity:** each engine supports a set number of hull tiles, and Mk II and Mk III support more. The
+     tiles counted are the same hull tile count the jobs screen already shows. The ship panel shows "Hull N / M".
+     - Over capacity, a normal jump is blocked.
+     - Over capacity, the player can choose to **overcharge** the hyperdrive. The jump goes ahead, at a risk that
+       grows with the overload: engine damage, engines destroyed, fires.
+     - Starter and generated ships must fit within their own engine capacity.
+   - **No fuel scaling by hull size** (dropped by the user, 2026-10-27).
 6. **Construction pod and drones.**
    - Blueprints for building them; once built, the crew can expand the hull anywhere using materials.
 7. **Implant tiers.** Tiered implants: bought, researched or found, and fitted at a medbay or station.
@@ -87,4 +101,4 @@ shipgen (generated ships fit Mk II and Mk III cores by depth and faction; see `d
 - **Phase 1:** the exact Mk II and Mk III stat curves, and whether blueprints are items (tradeable, lootable) or
   instant unlocks.
 - **Phase 3:** settled: a science skill speeds research (see phase 3).
-- **Phase 5:** which stations have shipyards, and how expansion is priced.
+- **Phase 5:** settled (2026-10-27): see phase 5 above.

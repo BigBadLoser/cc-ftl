@@ -91,8 +91,8 @@ export interface UiStarMarket {
 
 /** A held station job that ends at a node: a delivery's destination or a bounty's target. */
 export interface UiNodeJob {
-  kind: 'delivery' | 'bounty';
-  /** "Deliver a sealed crate (12 Ration)" or "Bounty: Bone Saint". */
+  kind: 'delivery' | 'bounty' | 'survey';
+  /** "Deliver a sealed crate (12 Ration)", "Bounty: Bone Saint" or "Survey: nebula". */
   label: string;
 }
 
@@ -120,6 +120,8 @@ export interface UiStarNode {
   reachable: boolean;
   /** The market of its trading port, when sensors reach it and it has one. */
   market?: UiStarMarket | null;
+  /** Notable stock at its ports ("Mk II shield gens"), for known nodes. */
+  hints?: string[];
   /** The player's held jobs that end here (discovered nodes only). */
   jobs?: UiNodeJob[];
 }
@@ -176,6 +178,7 @@ export interface UiStarFaction {
   name: string;
   tone: Tone;
   tier: 'hostile' | 'neutral' | 'friendly';
+  /** The player's standing with this faction alone (each corporation and each pirate faction has its own). */
   standing: number;
 }
 
@@ -250,7 +253,7 @@ export interface UiStarmap {
 
 /** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
 export interface UiEncounterChoice {
-  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
   label: string;
   detail: string;
   enabled: boolean;
@@ -275,6 +278,8 @@ export interface UiEncounter {
   how: string;
   node: string;
   choices: UiEncounterChoice[];
+  /** A scan that found contraband aboard: what was found (a line of text) and what it is worth; the choices are surrender / bribe. */
+  contraband?: { found: string; value: number; fine: number; bribe: number };
 }
 
 /** How the last encounter ended, as a line with a tone. */
@@ -312,7 +317,7 @@ export interface UiTravel {
   route: string[];
   at: number;
   /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid; 'story': held for a story decision. */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story';
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story' | 'adrift';
   /** A drop was asked for: the route ends at the next node, where the ship drops out. */
   stopping: boolean;
   /** Fuel the next hop needs (when stopped for want of it). */
@@ -349,6 +354,8 @@ export interface UiStarRoute {
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;
+  /** The hull is over what the engines carry: a normal jump is blocked, an overcharged one goes at a risk (`risk` 0..1). Null when it fits. */
+  overweight: { tiles: number; capacity: number; risk: number } | null;
 }
 
 /** What a jump would leave behind or cut loose (the confirm step lists it). Names only: the ids of docked vehicles go in `withDocked`. */

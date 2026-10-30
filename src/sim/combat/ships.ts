@@ -11,6 +11,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { BoarderC, VehicleC } from '../vehicles/components';
+import { newHeat } from './heat';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
 import { hullSum } from './hull';
 
@@ -125,7 +126,7 @@ export function spawnShip(
   const layers = shieldCapacity(sim, ship, false);
   const combat: Combat = {
     hold: false, volley: false, target: null, doctrine: template.doctrine ?? 'random', ftl: 0,
-    shield: { layers, max: layers, timer: 0 }, evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
+    shield: { layers, max: layers, timer: 0 }, heat: newHeat(), evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
   };
   sim.world.add(ship, CombatC, combat);
   if (template.boarding) {
@@ -133,6 +134,8 @@ export function spawnShip(
       party: template.boarding.party, afterTicks: Math.round(template.boarding.afterSec * TICK_HZ),
       losingBelow: template.boarding.losingBelow, state: 'idle', timer: 0, vehicle: 0, crew: [],
       ...(template.boarding.weapon ? { weapon: template.boarding.weapon } : {}),
+      ...(template.boarding.prefer ? { prefer: true as const } : {}),
+      ...(template.boarding.coreRaid ? { coreRaid: true as const } : {}),
     });
   }
   spawnCrew(sim, ship, template.crew ?? [], opts.rest);

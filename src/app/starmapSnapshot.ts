@@ -1,7 +1,8 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
-  fleetName, nodeOf, portNode, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
+  fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
+import { featureName } from './jobsSnapshot';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
 import { newsOf } from './newsSnapshot';
@@ -9,6 +10,7 @@ import { buildHeat } from './heatSnapshot';
 import { toneOf } from './starmapTone';
 import { ROLE_LABEL, encountersOf, eventOf, resultOf } from './encounterSnapshot';
 import { nebulaAround } from './starmapNebula';
+import { nodeHints } from './stockHints';
 import { buildClusters, sectorOutline } from './starmapClusters';
 
 
@@ -70,13 +72,14 @@ export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'ch
   };
 }
 
-/** The held jobs by the node they end at: a delivery's destination, a bounty's target node. */
+/** The held jobs by the node they end at: a delivery's destination, a bounty's target node, a survey's node. */
 function jobMarkers(sim: Sim): Map<string, UiNodeJob[]> {
   const out = new Map<string, UiNodeJob[]>();
   for (const j of sim.galaxy.jobs) {
     const at = j.kind === 'delivery' ? j.to : j.node;
     if (!at) continue;
-    const label = j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'})` : `Bounty: ${j.target ?? 'target'}`;
+    const label = j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'})`
+      : j.kind === 'survey' ? `Survey: ${featureName(j.feature)}` : `Bounty: ${j.target ?? 'target'}`;
     out.set(at, [...(out.get(at) ?? []), { kind: j.kind, label }]);
   }
   return out;
@@ -107,6 +110,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
       jobs: k ? jobsAt.get(n.id) ?? [] : [],
+      hints: k ? nodeHints(sim, n.id) : [],
     });
   }
   const sectors = [...index.sectors.values()].map((s) => {
@@ -158,13 +162,21 @@ const BLOCKERS: Record<string, string> = {
   noFuel: 'Not enough fuel for the first hop.',
 };
 
+/** The player's hull against its engines when it is over: what the route preview shows beside the Overcharge button. */
+function overweightOf(sim: Sim): UiStarRoute['overweight'] {
+  const ship = playerShip(sim);
+  const load = ship ? hullLoad(sim, ship) : null;
+  return load && load.over > 0 ? { tiles: load.tiles, capacity: load.capacity, risk: riskOf(load).risk } : null;
+}
+
 /** The route preview to a node: the hops with their fuel and days, the charge to enter hyperspace, and whether it can go. */
 export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
   const r = planStarRoute(sim.galaxy, sim.galaxy.current, to);
   if (!r || r.path.length < 2) return null;
   const status = starmapStatus(sim);
   const block = routeBlocker(sim, r.edges);
-  const charge = routeCharge(r.edges);
+  const adrift = isAdrift(sim); // the flee spent the charge already: a course from here asks for none
+  const charge = adrift ? 0 : routeCharge(r.edges);
   // The drive's engines may burn less per hop than the lane's base cost (Mk II / III engines).
   const legFuel = r.edges.map((e) => jumpFuel(sim, e.fuel));
   const fuel = legFuel.reduce((t, f) => t + f, 0);
@@ -173,6 +185,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
     legs: r.edges.map((e, i) => ({ to: r.path[i + 1] as string, fuel: legFuel[i] as number, time: e.time, kind: e.kind, gate: !!e.gate })),
     nextCharge: charge, fuelOk: status.fuel >= fuel, fuelShort: Math.max(0, fuel - status.fuel), chargeOk: charge <= status.charge + 1e-9,
     blocker: block ? BLOCKERS[block] ?? block : null,
+    overweight: adrift ? null : overweightOf(sim),
   };
 }
 

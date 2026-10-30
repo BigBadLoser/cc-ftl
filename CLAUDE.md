@@ -16,8 +16,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round, after the last
   merge of `main` into the branch, and paste its result (pass, test count, any load timeouts rerun alone) into the PR
   body. Affected-only or partial runs don't count. CI minutes cost money: CI runs only lint, typecheck, the build and
-  the fast tests the change affects (on PR pushes and on `main`, skipping markdown-only changes), plus the full suite
-  once a day on `main` when it changed. Batch fixes into one push rather than pushing every commit to an open PR.
+  the fast tests the change affects (on ready PRs only: drafts and pushes to `main` don't run it, nor do markdown-only
+  changes), plus the full suite once a day on `main` when it changed. Batch fixes into one push rather than pushing every commit to an open PR.
+- `npm run profile` / `npm run profile:sim`: performance profiler for agents (headless game / sim only). See `docs/PROFILING.md`.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
 
@@ -47,18 +48,25 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   1. Iterate on a work branch until the user is happy. Commit often with `check:fast` and push the branch freely (a push to
      a branch is a backup, not a release).
   2. Then one round of testing and bug fixes: merge `main` in, run the full `npm run check`, and fix whatever it finds.
-  3. Then open the PR, with the `npm run check` result in its body. CI and Codex review it, and only the user merges it to `main`. Nothing reaches `main` any other way.
+  3. Then open the PR, with the `npm run check` result in its body, as a draft while it still expects fixes (draft PRs
+     don't run CI). Codex skips drafts too, so comment `@codex review` to get its review. Mark the PR ready once the fixes
+     are batched in; CI (and another Codex review) runs from then on. CI and Codex review it, and only
+     the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - GitHub issues track the work. Every bug or piece of work gets an issue (create one if none exists), and every PR
   links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
   (`Refs #N`). When work lands or stalls without a PR, comment on the issue.
 - Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
-- Verify visual changes with a headless screenshot before handing them to the user. The user tests on desktop through
-  `main` at https://cc-ftl.bigbadloser.workers.dev. Branch previews (`<branch>-cc-ftl.bigbadloser.workers.dev`) are
-  unreliable, so finished, verified work goes to `main`.
+- Verify visual changes with a headless screenshot before handing them to the user. Shoot at a 1920×950 viewport (2x scale):
+  the user plays on a 1080p monitor in a browser window that isn't fullscreen. The user playtests branches locally
+  (`npm run dev`; debug starts like `?scenario=hullplan` help). `main` is published to https://bigbadloser.github.io/cc-ftl/
+  by the manual "Deploy to GitHub Pages" workflow; it does not deploy on every push. There are no branch previews.
 - **Desktop only.** The game will not be played on phones. Don't spend work on phone layouts, touch gestures or phone
   screenshots, and don't add phone-specific requirements to briefs. Existing phone breakpoints may stay as they are; don't
   extend or fix them unless the user asks.
+- UI work follows the **UI soft rules** in `docs/DESIGN.md` ("UI"): nothing happens only in UI, show don't tell, numbers
+  on demand, the ship's log vs urgent clickable alerts, the Esc menu. They are soft: suggest breaking one when it fits better,
+  and let the user decide.
 - Visual changes: send the user the screenshots (default and zoomed-in) and get their approval before
   merging to `main`. Don't merge visual work on the strength of your own review alone.
 
@@ -73,7 +81,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
     change direction early. Finish the work and open the PR only after their go.
   - Non-visual work: no prototype stop. Work it through to a tested PR.
 - Reference repos (e.g. `bigbadloser/space-web-game`) are design reference only; never port code from them.
-- No save migrations while this is a prototype: bump `SAVE_VERSION` instead.
+- Save migrations are not a priority yet, not a ban: by default bump `SAVE_VERSION` when the saved shape changes. When
+  keeping existing saves is cheap (a storage move, a renamed field), suggest a migration and let the user decide.
 - Terminology: a **node** is one playable grid, a **sector** is a group of nodes, **hyperlanes** link sectors (older code
   says "sector" for a node; a rename is pending).
 - Don't `pkill -f` (it can kill your own shell); stop processes by PID.

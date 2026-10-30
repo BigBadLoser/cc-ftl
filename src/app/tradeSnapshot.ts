@@ -1,10 +1,11 @@
 import {
-  CrewC, ForHireC, ShipC, TraderC, VehicleC, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
+  CrewC, ForHireC, ShipC, TraderC, VehicleC, type Trader, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
 } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
+import { contrabandRate, isContraband, setsOf, truceBanned, truceHolds } from '../sim';
 import { isIncapacitated } from '../sim/crew/helpers';
 import { hardware, stationInfo } from './stationInfo';
-import type { UiRecruit, UiTrade, UiTradeDeal, UiTradePartner } from '../ui/api';
+import type { UiMarketServices, UiRecruit, UiTrade, UiTradeDeal, UiTradePartner } from '../ui/api';
 
 /** Short label of what a deal is doing now. */
 const PHASE: Record<Deal['phase'], string> = {
@@ -41,10 +42,21 @@ function recruitsAt(sim: Sim, station: number): UiRecruit[] {
     const role = sim.content.roles[crew.role];
     out.push({
       key: fh.key, name: crew.name, role: role?.name ?? crew.role, species: sim.content.species[crew.species]?.name ?? crew.species, cost: fh.cost,
-      skills: Object.entries(role?.skills ?? {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`), coming: !!fetching(sim, id),
+      skills: Object.entries(role?.skills ?? {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v + (fh.shady ?? 0)}`), coming: !!fetching(sim, id),
+      ...(fh.shady ? { shady: fh.shady } : {}),
     });
   }
   return out.sort((a, b) => (a.key < b.key ? -1 : 1));
+}
+
+/** The black-market services of a trader, or undefined when it has none. */
+function marketOf(sim: Sim, trader: Trader | undefined): UiMarketServices | undefined {
+  const sets = trader ? setsOf(sim, trader) : [];
+  if (!trader || !sets.length) return undefined;
+  return {
+    names: sets.map((d) => d.name), contrabandRate: contrabandRate(sim, trader) ?? 0, fence: trader.fence ?? null,
+    truce: sets.some((d) => d.truce) && (truceHolds(sim) || truceBanned(sim)), banned: truceBanned(sim), shadyCrew: sets.some((d) => !!d.shadyCrew),
+  };
 }
 
 /** What would stop a hiring run from this station now: the shuttle's reject code ('noShuttle', 'courierBusy', 'noAirlock'), or ''. */
@@ -74,7 +86,7 @@ export function buildTrade(sim: Sim): UiTrade {
         const sell = unitPrice(sim, id, item, 'sell');
         const buy = unitPrice(sim, id, item, 'buy');
         if (sell !== null && buy !== null && (theirs > 0 || mine > 0)) {
-          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}) });
+          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}), ...(isContraband(sim, item) ? { contraband: true } : {}) });
         }
       }
     }
@@ -88,12 +100,13 @@ export function buildTrade(sim: Sim): UiTrade {
       offer: offer ? { id: offer.id, give: offer.give, get: offer.get, barter: offer.barter, balance: offer.balance } : null,
       recruits: trader?.station ? recruitsAt(sim, id) : [],
       hireError: trader?.station ? hireProbe(sim, id) : '',
+      ...(marketOf(sim, trader) ? { market: marketOf(sim, trader) } : {}),
       ...(trader?.station ? { info: stationInfo(sim, id, trader.port, (hw ??= hardware(sim))) } : {}),
       distance: ship && me ? Math.round(Math.hypot(ship.x - me.x, ship.y - me.y)) : 0,
     });
   }
   partners.sort((a, b) => a.distance - b.distance || a.id - b.id);
-  const deals: UiTradeDeal[] = sim.trade.deals.map((d) => ({
+  const deals: UiTradeDeal[] = sim.trade.deals.filter((d) => !d.handover).map((d) => ({
     id: d.id, ship: d.ship, partner: sim.world.get(d.ship, TraderC)?.name ?? 'Trader', phase: d.phase, status: d.phase === 'failed' ? `Called off${d.trip ? ` in trip ${d.trip.n} of ${d.trip.of}` : ''}: ${d.reason ?? ''}`
       : d.crew ? HIRE_PHASE[d.phase] ?? PHASE[d.phase] : d.phase === 'exchange' && d.via === 'hover' ? 'Swapping cargo from a hover (no station airlock free)' : PHASE[d.phase],
     trip: d.trip ? { n: d.trip.n, of: d.trip.of, stopped: d.trip.stopped ?? '' } : null,

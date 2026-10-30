@@ -627,8 +627,22 @@ palette.json    the single palette, read by Blender scripts and the game
   - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
     single frame for the shots, the old one-sprite flash.
 - **Starmap art (`starmap` family, sheet `starmap`; `sprites/starmap.py`, `starmap_kit.py`, `starmap_bodies.py`,
-  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`; not wired yet):** pipeline
-  sprites for the pictures the starmap draws in code today. Lanes, node pips, territory outlines and labels stay UI.
+  `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`):** pipeline
+  sprites for the pictures the starmap shows, drawn by the Pixi starmap view (below). Lanes, node pips and territory outlines are
+  pixel cells drawn in code, and labels are Pixi text.
+  - **The Pixi view (`src/render/starmap/`, wired by `app`; the screen is `ui/StarmapView.svelte`).** The map is one canvas under the
+    panels. The screen keeps the camera (centre and scale as plain numbers, the scale snapped to sixteenths of an octave so the pixel
+    grid is rebuilt at few distinct scales), hit-testing, the panels and the level tabs, and tells the view what changed through the
+    `StarmapGpu` interface (`ui/starmapGpu.ts`: `scene`, `camera`, `glide`, `tip`). `ui` and `render` cannot import each other, so the
+    view's data types are the `ui/starmapApi.ts` snapshot types (an ESLint exception for `src/render/starmap` allows those two files,
+    types only). One world container carries pan and zoom (position on a whole device px). The renderer runs with `roundPixels` off and
+    each object opts in, so only the orbiting icons glide between pixels. A level (`level1/2/3.ts`) is rebuilt only when the map data or
+    the level changes; areas, outlines and lanes are *pieces* built when they come into view and again on a zoom step (a pan only moves
+    the camera); state changes (hover, selection, route) recolour pieces by tint and alpha instead of rebuilding. Frames are drawn on
+    demand: on a camera or scene change, at the display rate while orbits are on screen, at 30 fps for the pulse alone. Textures are
+    nearest-filtered sheet cuts (`art.ts`); owner-tinted icons are canvas colour swaps (a Pixi `tint` cannot map two key colours); the
+    nebula and the starfield backdrop are drawn inside the canvas so the nebula's screen blend meets the backdrop. Labels are pooled
+    Pixi `Text` at 1:1 device px.
   - Every sprite has a fixed square frame with the anchor at its centre, so the map places and scales it without knowing what
     was drawn. Sizes below are world px (what `compose.ts` hands out; the frames are half that in the file).
   - Bodies, `starmap.body.<kind>.v0..v2` and `starmap.body.<kind>` (= v0), kinds `star`, `red_dwarf`, `blue_giant`,
@@ -651,9 +665,10 @@ palette.json    the single palette, read by Blender scripts and the game
     three-quarter projection points that way. One model scale per ship for all its headings, the one that makes its
     longest heading (east or west) about 46 px, each heading centred in the frame; north and south views stay shorter,
     foreshortened like the ships.
-  - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size, like today's badges. Never draw them
-    smaller than their art: a shrunk sprite is smoothed (soft), even with `image-rendering: pixelated` (seen in Chromium),
-    while an enlarged one keeps hard edges. Draw each art px as a whole number k >= 1 of device px, nearest-neighbour, at a
+  - Icon drawing (crisp pixels): structure and fleet icons are a fixed screen size that steps with the map scale
+    (`kit.ts` `iconSize`): below scale 1.4 the frames are used halved (a 2x2 average, made once as its own texture), above it full
+    size, each at a whole number of device px per texel. Never draw a texture smaller than its art: a shrunk sprite is smoothed
+    (soft), while an enlarged one keeps hard edges. Draw each texel as a whole number k >= 1 of device px, nearest-neighbour, at a
     device-pixel-aligned position: for a target screen size T (about 24 px for structures, 20 for fleets) and the frame's
     file px F, k = max(1, round(T * devicePixelRatio / F)) and the drawn size is F * k / devicePixelRatio. On a 3x phone
     that is 32 px structures and 27 px fleets (k 2).
@@ -667,9 +682,11 @@ palette.json    the single palette, read by Blender scripts and the game
     membrane on the glow sheet) and `starmap.exit.rift` (a tear with a banded rim, a starry core and drifting shards), at the gateway where a gate or rift lane leaves the sector, in place
     of the thick or dashed lane end. Frame 96 px like the structures, same crisp rule.
   - Nebula field tiles (`sprites/starmap_fields.py`): `starmap.nebula.haze`, `.body`, `.core`, seamless 512 px tiles
-    (256 in the 1x file, anchor 0,0), glow only, for the field `StarmapNebula` paints in code today. Tile each across the
+    (256 in the 1x file, anchor 0,0), glow only, for the nebula field (`render/starmap/nebula.ts`). Tile each across the
     field (the sim's density tiles are 3000 map units) and show it where the density passes its step (about 0.15 haze,
-    0.45 body, 0.8 core: a mask per step, hard edged for the stepped look), added at the opacity the map wants.
+    0.45 body, 0.8 core: a mask per step, hard edged for the stepped look), added at the opacity the map wants. The three
+    steps are baked once into one canvas; the density is faded to nothing over the outer 12% of the square, so the contours close
+    up before the edge and panning past the generated field never shows a cut.
   - `starmap.backdrop`: a 512 px tile of dim 1-2 px stars (anchor 0,0), colour only and transparent between stars; tile it
     over the map's background.
   - Tint: stations, the den and fleets paint their livery in the crew key colours (`keyColors`: `team.cloth` panels,
@@ -677,6 +694,12 @@ palette.json    the single palette, read by Blender scripts and the game
     becomes the owner's colour on the shade ramp `MULT`, 0.42 .. 1.22). Asteroids and derelicts carry no key colour.
   - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
     `screen`).
+
+## Crew AI
+
+The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in [`docs/CREW_AI.md`](CREW_AI.md), issue #194. It's being implemented in phases.
+
+Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs `policy.legacy`, the need machines and the legacy job picker; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
 
 ## UI
 
@@ -700,6 +723,11 @@ ARIA behaviour and no styling). The game keeps its own look: every kit component
   (add a token to `theme.css` rather than a literal), keep it working at 390px wide with a visible focus ring, put pure logic in a
   `<name>.ts` with a `*.test.ts` beside it, and export it from `index.ts`.
 - Portalled parts (Select list, Tooltip, Dialog) render under `body`, so their styles are `:global` and namespaced `kit-*`.
+- **Panel pieces** (combat view and later HUD): `Frame` (titled section frame: the title sits in a real gap in the border via `FrameGap`, so content
+  behind a semi-transparent panel shows through, no background patch), `Meter` (bar with value), `Pips` (shield and charge pips), `Pill` and
+  `StatusTag` (small labelled badges), `KeyBadge` (hotkey cap) and `ActionButton` (button with icon, label and `KeyBadge`). Their look comes from tokens
+  in `theme.css` (`--frame-line`, `--frame-w`, `--track`, `--heat-low`, `--band`, `--health-good` and the other combat tokens). **New panels compose these** and add tokens
+  rather than redrawing borders, bars or badges by hand; a panel component only lays its sections out.
 
 ## Saves
 
@@ -1173,13 +1201,23 @@ about is a flee and needs the drive charged (spent). `GalaxyState.lastResult` ke
 (factions with `traffic` at that danger, the owner weighted up) filtered to hostile ones. Rolls use the galaxy Rng. Contacts of wrecked, fled or
 captured ships are pruned each second. Danger 0 never rolls. `playerShipInfo` is the galaxy's `{id, ship}` helper; trade's `playerShip(sim)` is the id.
 
-**Factions and standings** (`standing.ts`, `src/content/galaxy.ts`). There is one faction table: the galaxy faction defs. Each names the
-generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `relations` and a **reputation key** (`reputation`),
-one of trade's keys: `traders`, `corp`, `navy`, `pirates`, `drones` (the three corporations share `corp`). Reputation stays in `sim.story.reputation`,
-the only store; trade's `reputationWith` and `hailVerdict` are the source of truth for prices and hailing and the galaxy only reads the same
-numbers: `standing = baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(relation x reputation[their key])`, tiers hostile below
-`HOSTILE_BELOW` (-2), friendly from `FRIENDLY_AT` (3), `alwaysHostile` overrides. `story.context.faction` is the territory owner's reputation key
-(so event `factions: ['corp']` matches any corporation's space).
+**Factions and standings** (`standing.ts`, `relations.ts`, `src/content/galaxy.ts`, `galaxyRelations.ts`). There is one faction table: the galaxy
+faction defs. Each names the generator styles of its ships, combat side, territory, stations, traffic, `baseStanding`, `specialities` and a
+**reputation key** (`reputation`), one per faction (`navy`, `meridian`, `helix`, `vantor`, `traders`, `pirates`, `drones`; the test checks they are
+unique). Reputation stays in `sim.story.reputation`, the only store. Who is at war and who shares standing is the **pairwise relations table**
+(`GalaxyContent.relations`: `{ a, b, stance: 'war' | 'neutral' | 'allied', spill?: [into a, into b] }`, one row per pair; an unlisted pair is
+neutral; `alwaysHostile` factions are at war with all). `stanceBetween`, `atWar` and `spillSources` read it; phase 2b adds rows. Standing:
+`baseStanding + reputation[own key] + STANDING_SPILLOVER (0.25) x sum(spill x reputation[their key])`, tiers hostile below `HOSTILE_BELOW` (-2),
+friendly from `FRIENDLY_AT` (3). Trade reads the **owner**: `Trader.owner` (a galaxy faction id, set from the port by `bindTrader`/`Econ`, or from
+`Ship.gen.owner` for fleet ships) picks the reputation key for prices and hails (`repKeyOf`); a trader with no owner falls back to its trade faction's
+key. `story.context.faction` is the territory owner's reputation key (so event `factions: ['meridian']` matches Meridian space). Save v58.
+
+**Faction specialities** (`FactionSpecialityDef`). The station kind decides what a station sells; the owner faction weights it. `stock` is a tag ->
+weight on the count and odds of the trade profile's stock lines (`rollTrader`, same draws, so unweighted lines roll as before); `prices` multiplies
+what its stations sell an item or tag for (Meridian fuel x0.85, in `applyMods`); `blueprints` lists the module categories it always stocks (others at
+`OFF_SPECIALITY_STOCK` odds, a fixed roll per port and def); `gate` holds a category's tier back until standing with the owner reaches a number (the
+navy: Mk II defence from 0, Mk III from 3); `shipyard` is Vantor's hook for #125 and nothing reads it yet. The starmap node info and the station
+inspector show `app/stockHints.ts` (`portHints`, `nodeHints`).
 
 **Zoom levels** (view design, built on `starmap-macro-wip`, not ported). The map has three levels by zoom, each drawing from the same chunks:
 1. **Sector:** nodes, routes, hyperlane exits labelled with where they lead, central bodies, sector outlines, the nebula cloud channel, the plotted
@@ -1548,7 +1586,7 @@ Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch 
 - **Sector frame.** The art origin is sector tile (0, 0). `render/sectorPos.ts` (`regionOrigin`, `sectorPos`, `sectorArt`)
   adds the ShipC origin until step 6, when it becomes the identity. Camera framing, focus, `fightFx`, `crewMarks`,
   `sectorFx` and shuttles use it; the "camera ship's frame" (`ref`) is gone from the fx hosts.
-- **Pass B** (`render/combatPass.ts`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
+- **Pass B** (`render/insetPass.ts, which replaced the old combatPass`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
   and fitted on the target region, renders the stage into a `RenderTexture` the size of `CombatViewRect` (the texture is the
   scissor: a GL scissor would also clip filter passes). The main pass draws that texture in place. `place(cam, target)`
   positions the stack per pass, culls regions by their padded art box, and shows target marks only in pass B and UI layers
@@ -1769,3 +1807,121 @@ shuttle docks at a station airlock (no hover fallback: `noDock`), the recruit wa
 and on docking the recruit steps out as player crew (allegiance switch, `crew.hired`, key into `recruitLog`) and the escrow is paid. Any failure
 (no shuttle, no dock, recruit dead, board timeout, cancel) refunds and puts the recruit back to station life. One live deal per station.
 UI: selecting a station opens `StationPanel` (tabs Trade, Jobs, Crew; `TradePane`, `JobCards`, `RecruitList`); recruits ride in `UiTradePartner`.
+
+
+## Engine capacity and the shipyard (progression phase 5)
+
+**Size = the area inside the outer hull.** `hullArea(grid)` (`combat/hull.ts`, `interiorArea`) counts every tile the outer hull profile encloses: interior
+walls, doors, modules and floor all count as area, the outer ring itself does not. It is the number behind the ship panel's "Size N / M", engine capacity,
+and the jobs screen. There is no overall ship maximum: engine capacity, summed over any number of engines, is the only size limit (add engines to grow). The quiet technical guards are the plan reach (`PLAN_REACH`, 40 tiles from the ship's rectangle), `MAX_PLAN` and the growth clearance from neighbouring ships and rocks (`crowded`), none of them a readout. The jobs screen (an enemy's is `templateHullArea(rows)`, the same rule on its template). The outer ring is
+`hullTiles(grid)` (`outerProfile`: hull-kind tiles facing open space or the grid edge). The yard prices and caps by tiles built, outline and floor together. The starter is 416 (ring 88).
+
+**Engine capacity** (`sim/ftl/capacity.ts`, `ftl/overcharge.ts`). `EngineDef.hullCapacity` is the size one engine carries (Mk I 330 in
+`content/modules.ts`, Mk II 495 and Mk III 700 in `content/tiers.ts`; the starter on two Mk I is 416 / 660, 63%). `hullLoad(sim, ship)` gives tiles, capacity
+(engines with hp above 0), `over` and `ratio`; a ship with no engine module has no limit. Over capacity, `jump` rejects with `overweight` (`galaxy.jump`
+and a queued `ftl.charge` with a route) unless the command carries `overcharge`; `combat.flee` always overcharges. Only the player's ship obeys it: NPC ships
+are exempt until shipgen gives big hulls enough engines (issue #129, TODO at `hullLoad` and in `jump`). An overcharged jump calls `applyOvercharge`
+before the ship is lifted: risk = overload (tiles over capacity / capacity) against `OVERCHARGE_FULL` (0.5), zero at capacity (nothing rolled). Each working
+engine rolls once for its fate (hit for 25-60% of max hp, or destroyed) and once for a fire in its room, on `sim.rng` in engine id order. Event
+`ftl.overcharged`. No fuel scaling by hull size. UI: "Size N / M" in the ship overview, and the starmap drawer's overweight line, warning and Overcharge button.
+
+**The hull plan** (`HullPlanC` on the player's ship, set by `hull.plan { ship, tiles }`; free, any time, saved). It is the planned outer hull only: tiles
+of open space. Interior walls and doors stay ordinary free builds. `viewPlan` reads it: the tiles a chain of neighbours can build from the ship
+(`connected`), floating ones (`loose`), ones in a shuttle's way (`blocked`), and the floor the connected hull shuts in (flood fill). The build tools'
+**Hull plan** tool (`app/hullPlanTool.ts`, `HullPlanBar`) paints it with `app/areaPaint.ts` (drag a rectangle's outline; erase takes tiles out) and draws ghost
+tiles with `Renderer.setAreas`, only while that tool or a station's Shipyard tab is open (plus the live order's unbuilt tiles at any time).
+
+**The shipyard** (`sim/yard/`). Trading and military stations of the station and hub tiers (`ContentRegistry.yard`, `content/yard.ts`, via `yardService`;
+the station must answer hails) sell the plan, in two passes. **Planning pass:** the contractors truss the whole footprint that is still open space (every reachable planned tile and all the
+floor the plan encloses), quickly (1 s a tile) and outside the visit cap, for a planning fee (`YardDef.trussFee`, 2 credits a tile, no metal; a tile that already
+has a truss is never charged again). A truss is a real `Struct.Beam` tile (existing beam art and rules: saved with the ship, owned by it, not walkable on deck, no
+integrity so combat leaves it alone; a suited crew member walks along it, `isEvaWalkable`; the ship's size and engine capacity ignore it: `interiorArea` reads an
+open truss as open space). A planned tile stays part of the plan after it is trussed; deconstructing a truss with the normal tool removes it from the plan
+(`yard/trussPlan.ts`). **Hull pass:** `quoteYard(sim, station)` turns up to the tier's cap of tiles (walls and floor together) into hull, laid out in rows
+(`yard/rows.ts`: the distance in steps from the ship's own structure, trusses not counted; nearest rows first). When the cap cuts a room short it takes the rows
+up to a depth that fits plus a cross wall that shuts them in (so the ship left behind is closed and rectangular; the cross wall is paid as hull). If no cut
+fits, it builds the largest closed rectangle of the plan's floor against the ship, with its own rim of new walls (`closedRect`), so every visit ends sealed with
+no floorless wall stubs. What the cap does not reach stays as truss (open scaffolding) and the next yard picks it up from there. Jobs go up in row order
+(`Job.yardRank`) and the crew work the nearest open row and the next (`YardOrder.rank`, `jobFits`); the hull jobs are posted when the planning pass is done
+(`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
+danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
+against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle with `YardDef.crew` contractors,
+neutral allegiance, `YardCrewC`, to a free player airlock), `fly`, `work` (the crew step out in the shuttle's suits and take the jobs through the normal crew AI;
+the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
+is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall`, `home`, `done`.
+Suits are the contractors' own and never run dry. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
+(`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
+(`abortYards`). Save v61. UI: the station panel's
+Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.
+
+## Black markets, contraband, scans and the truce (progression phase 2b slice 2), `src/sim/blackmarket/`
+
+Design: DESIGN.md "Pirate factions and the black market". Content: `content/blackMarkets.ts` (`ContentRegistry.blackMarkets`, `BlackMarketDef`).
+
+- **Service sets.** A set (`bm.lesser`, and the named `bm.cartel`, `bm.zealot`, `bm.mercenary`) is attached to any station with `attachServices(sim, station, setId)`
+  (`attach.ts`): it records the set on `Trader.services`, rolls the fence rate (`Trader.fence`), adds the set's stock lines to the shelf, takes the owner faction if the
+  galaxy has one by that string id, and sets the node's truce flag when the set has a truce. The lesser set is attached at populate time to a seeded 25% (LESSER_SHARE) of pirate-held stations and of
+  unowned stations in lawless space (`attachLesser`, `galaxy/populateSpawn.ts`); the rest stay hostile dens. Every set has a truce. The named sets are not spawned by the galaxy yet. The station keeps its own trade profile and
+  port market; `galaxy/marketLive.ts` leaves the service shelves alone when it binds, steps and unbinds a market.
+- **Contraband** is the `contraband` item tag (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`). Sources: a delivery crate broken open or abandoned spills stolen
+  goods instead of the delivery (`galaxy/jobs.ts`); a captured ship's hold gets looted goods (`capture/prize.ts`, LOOT_*); the disruptor is sold only at black markets.
+  A legitimate trader does not buy contraband (`unitPrice` is null, `checkOffer` says `contraband`); a black market pays `contrabandBuy` of the base value; the fence (cartel
+  only) pays its 50-60% for anything.
+- **Scans** (`scan.ts`). A navy or corporation station scans the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node), and a patrol that crosses
+  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (value, fine, bribe) and waits for
+  `galaxy.respond` with `surrender` (goods taken, fine paid, standing down) or `bribe`; trade offers are refused meanwhile (`scanPending`). The UI reuses `InterdictModal`.
+- **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
+  there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
+  every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.
+- **Shady crew** (`galaxy/recruit.ts`, `shadyRecruits`). Sets with `shadyCrew` post extra candidates (`ForHire.shady`) with extra skill levels (`SkillXpC`) for a higher
+  one-time fee. No wages exist for anyone.
+
+### Pirate factions (phase 2b slice 1)
+
+- Galaxy factions `pirates` (Scrappers), `raiders`, `cartel`, `zealots`, `mercenaries`, each with its own reputation key and generator style (`content/factions/pirates.ts`, scrapper hulls, told apart by loadout, budget, crew and doctrine; `livery.<id>` hooks await #127). Every pirate pair has a row in `galaxyRelations.ts`; an `allied` row beats `alwaysHostile` (zealots and the Rogue AI). Zealots fly on the rogue combat side so drones never shoot them.
+- Territory: `territory.shares` (raiders, cartel, mercenaries share the Scrappers' seeds) and `territory.near` (zealots take open or pirate seeds beside the machines'); neither moves any other power's map.
+- Cartel: `guardsRoutes` (interdicts only in its own space, hunts only there) and `FleetGroupDef.escort` (hired mercenary ships, `Contact.hired`, fly on the employer's side).
+- Raiders: `boarding.prefer` (the ship holds fire while its party is out). Zealots: `boarding.coreRaid`, `capture/coreRaid.ts` (the party walks to the AI core; held for CORE_RAID_HOLD_TICKS undefended, the core module is removed and robots go inert), `FactionDef.neverSurrender` (no prize; the fight ends in a derelict).
+- Standing: kills lower the victim faction's key (heat.ts); relation spill warms its rivals; a done bounty also pleases pirate factions at war with its target (jobs.ts `RIVAL_REPUTATION`). Trade: zealots answer a hail only at high standing; `trade/augmentation.ts` is a stub (always 0) until implants (phase 7).
+
+## Hull width rule and the hull plan brushes (#143)
+
+**The rule.** No part of a ship may be narrower than 3 tiles. The footprint (every `struct` tile except Space and `Struct.Beam`: struts and the yard's scaffolding
+trusses are exempt) must equal its morphological opening by a 3x3 square (erode, then dilate). Straight edges and 45 degree staircases survive it, 1-2 wide
+spines and stubs do not (a 1-step corner notch passes too). `sim/footprint.ts` is the pure helper (`footprintFromGrid`, `footprintFromTiles`, `openingOf`,
+`widthViolations(footprint, change?)`, flat byte masks, about 0.2 ms on 120x80). Generated ships, stations and wrecks obey it (shipgen validators reseed an
+attempt that breaks it, ruins open by a 3x3 square; see `docs/SHIPGEN.md`).
+
+**The plan is judged as ship hull plus the planned footprint** (the outline plus the floor it shuts in, `yard/width.ts`), and only violations the plan ADDS count
+(`changeViolations`), so an old thin template can still be planned on elsewhere. `hull.plan` rejects `narrowHull`; `quoteYard` returns `narrowHull` for a
+plan that has violations, and `narrowCut` if no cut the visit cap pays for stays wide (`pickSection` and `closedRect` take a `wide` predicate). I could not make the
+cut leave a narrow strip (strips flush against the hull count as supported), so the guard is defensive; `content/yardWidth.test.ts` searches 60 random plans.
+
+**Brushes** (`app/hullPlanTool.ts`, geometry in `app/hullBrush.ts`, the plan logic in `sim/yard/brush.ts`). A brush produces a tile list; `brushPlan(sim, ship,
+'add'|'erase', tiles)` and `cutPlan(sim, ship, line)` return the new outline, the footprint, the tiles removed and the new violations, and the tool sends `hull.plan`
+on release (no confirm). Rectangle: drag, shown at its real size, red under 3x3 (`minSize`), must touch the ship or the connected plan (`touchesShip`, else
+`mustTouch`), preview shows the merged hull ring (amber) and floor (cyan). Erase: outline plus only the planned tiles it removes; real hull is never in the plan, so it
+is never touched. Line cut: a straight line snapped to `LINE_SLOPES` (0, 45, 90 degrees; adding 0.5 or 1/3 allows 1:2 or 1:3 staircases, runs of at least 2); planned
+tiles cut off from the hull are dropped, the line's tiles become the edge; a line that cuts nothing is a no-op. Mirror reflects every stroke across the ship's long axis.
+A stroke that adds a narrow part shows red and does not apply. With no drag the brush shows a 1x1 ghost under the cursor. While the build tools are open a thin
+world grid (`render/worldGrid.ts`, Pixi `pixelLine`) is drawn, and with Hull plan open the Build menu folds down to its category row until hovered. A freehand
+0/45/90 brush later is one more source of tile lists.
+
+**Debug start:** `?scenario=hullplan` spawns a trading hub (visit cap 100) beside the ship, 100000 credits and 500 metal (`debug.giveItems`), and opens Hull plan.
+
+## Station jobs by station type (issue #178)
+
+Offers (`galaxy/jobOffers.ts`) are still a pure function of (seed, port, window, slot). The port's station type (`Port.station`, from `StructureDef.station`; `stationClass(port)` in `ports.ts`, 'den' for a pirate den) decides the kind:
+trade stations post deliveries only, military stations and depots bounties only, research stations **surveys** only, dens the old half-and-half mix. Tuning is in `tuningJobs.ts`.
+
+- **Bounty and survey completion** (`jobs.ts` `tendJobs`): the kill (or entering a survey's node) moves the job from `galaxy.jobs` to `galaxy.claims` and emits `job.completed`. A claim never expires, is not a task (no tracker or HUD entry) and does not
+  count against `MAX_JOBS`. Command `jobs.handIn {id}` pays it (normal credit path, standing, stats, `job.handedIn`) at a port of the issuing station class (`StationJob.station`) owned by the issuing faction, at the player's node.
+  A survey's target is a node with a feature: a sector body of kind nebula, black hole or blue giant, or an asteroid field (`featureOf`). A scanner module requirement is a later follow-up.
+- **Delivery handover** (`galaxy/handover.ts`): arriving with the crate aboard asks for a shuttle, run as a `Deal` with `Deal.handover` set (no goods, no escrow). Preference: (1) the station's own shuttle, only for a trader kind with
+  `shuttle: true` (it docks at a working player airlock, crew haul the crate from the deck into its hold, the job is paid when it has it: `job.handedOver` `via: 'shuttle'`); (2) the player's own shuttle, which is the usual case since most stations have none
+  (it docks at the airlock, crew load the crate, it hovers beside the station and drops it there, the job is paid on the drop-off with `via: 'own'`, then it flies home and is stowed); (3) by hand at once (`via: 'instant'`) only when neither can run
+  (no station ship at the node, no working airlock, no shuttle on either side) or each that could has been called off `MAX_TRIES` times. Crew load through the airlock's unloaders (an ordinary floor-to-vehicle haul) and the hold is sealed `outbound`.
+  Combat holds both back alike (a run out is called off, a crate in the hold goes back on deck, the job's clock runs, it is retried when calm); a run that cannot dock or load is retried after `HANDOVER_RETRY_SEC`. A live handover blocks jumping like any live deal.
+- Debug: `?scenario=handover|bounty|survey` (handover shows the own-shuttle path: the spawned trade station has no shuttle) (`debug.jobScenario`, `galaxy/jobsDebug.ts`).
+- Save v65: `GalaxyState.claims`, `StationJob.station/feature/collected/handoverTries`, `Deal.handover`.

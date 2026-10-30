@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { advance } from './loop';
+import { content } from '../content';
+import { newGame } from '../sim';
+import { MarkerC } from '../sim/components';
+import { advance, createLoop } from './loop';
 
 describe('advance', () => {
   it('runs one step per 50ms at 20Hz 1x and carries remainder', () => {
@@ -24,5 +27,19 @@ describe('advance', () => {
   });
   it('ignores negative dt', () => {
     expect(advance(10, -5, 1).steps).toBe(0);
+  });
+});
+
+describe('flush', () => {
+  it('applies queued commands and publishes their events without advancing the tick', () => {
+    const sim = newGame(4, content);
+    const seen: string[] = [];
+    const loop = createLoop({ sim, render: () => undefined, onFrame: () => undefined, onEvents: (es) => seen.push(...es.map((e) => e.type)) });
+    const tick = sim.tick;
+    sim.enqueue({ type: 'debug.spawnMarker', x: 1, y: 1 });
+    loop.flush();
+    expect(sim.tick).toBe(tick);
+    expect(sim.world.query(MarkerC)).toHaveLength(1);
+    expect(seen.length).toBeGreaterThan(0);
   });
 });

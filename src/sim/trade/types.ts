@@ -32,6 +32,8 @@ export interface TradeFactionDef {
   reputation: string;
   /** Base attitude: >= 0 talks to strangers, < 0 needs reputation first. */
   relation: number;
+  /** Added to the hail score for each heavily augmented crew member of the player (trade/augmentation.ts; the zealots). */
+  augmentBonus?: number;
   /** Price multipliers of the whole faction (default 1). */
   sell?: number;
   buy?: number;
@@ -72,11 +74,20 @@ export interface Trader {
   /** True for a station (an immobile ship): its trades run like any ship's, by shuttle. */
   station: boolean;
   /**
+   * The galaxy faction that owns this trader (a ship's fleet, a station's port): its standing sets the prices and the hail, its specialities the
+   * stock and some prices. Absent = the trade faction's own reputation key.
+   */
+  owner?: string;
+  /**
    * Set while a station stands in a node with a port (galaxy/marketLive.ts): the port whose market this trader is. Its `stock` is then the port's stock, and
    * `base` the port's baseline for the commodities (item, count; 0 allowed), against which prices rise with scarcity and fall with plenty (`stockFactor`).
    */
   port?: string;
   base?: ItemQty[];
+  /** Black-market service sets this station carries (`ContentRegistry.blackMarkets` ids; blackmarket/services.ts). */
+  services?: string[];
+  /** The fence's rate (its share of an item's value) when a set gives the station a fence. */
+  fence?: number;
 }
 export const TraderC = defineComponent<Trader>('trader');
 
@@ -134,6 +145,8 @@ export interface Deal {
   timer: number;
   /** Tick the deal was made. */
   tick: number;
+  /** The agreed value of each `get` line (aligned with `get`, summing to the escrow), fixed when the trip opens: a part-delivered run is settled by it, not by later prices. */
+  getValue?: number[];
   /** Why a failed deal failed. */
   reason?: string;
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
@@ -148,6 +161,11 @@ export interface Deal {
   trip?: { n: number; of: number; rest: Trip[]; stopped?: string };
   /** A hiring run: the recruits (crew entities of the station) the shuttle fetches. The escrow is their cost, paid when they arrive. */
   crew?: number[];
+  /**
+   * A delivery handover (galaxy/handover.ts): the station's shuttle comes to the player's airlock for the crate of job `job`. No goods and no escrow; the
+   * deal's `ship` is the station. `retryAt` is the tick after which a called-off run may be tried again.
+   */
+  handover?: { job: number; via: 'station' | 'own'; retryAt?: number };
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */

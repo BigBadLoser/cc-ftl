@@ -1,10 +1,11 @@
 import { CombatC, ShipC } from '../combat/components';
+import { abortTask, reserveJob } from '../ai/task';
 import { skillOf } from '../combat/operators';
 import { shipById } from '../combat/ships';
 import {
   AssignmentC, BedClaimC, CrewC, DeadC, DraftedC, EatC, JobC, PathC, PositionC, type Position,
 } from '../crew/components';
-import { isIncapacitated, jobGoal, origin, releaseAssignment } from '../crew/helpers';
+import { isIncapacitated, jobGoal, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import { isOffDuty } from '../fight/relations';
 import { AllegianceC } from '../fight/components';
@@ -54,10 +55,8 @@ function seatHelm(sim: Sim, ship: number, jobId: number): boolean {
     if (!canTakeRobotJob(sim, id, job)) continue;
     const plan = planWalk(sim, id, ship, origin(sim.world.get(id, PositionC) as Position), jobGoal(job));
     if (!plan || plan.thin) continue;
-    releaseAssignment(sim, id);
-    job.reservedBy = id;
-    sim.world.add(id, AssignmentC, { jobId });
-    (sim.world.get(id, PathC) as { steps: typeof plan.steps }).steps = plan.steps;
+    abortTask(sim, id, 'order');
+    reserveJob(sim, id, jobId, plan.steps);
     return true;
   }
   return false;
@@ -92,5 +91,5 @@ export function settleOrder(sim: Sim, ship: number): void {
   }
   if (combat.ftl + 1e-9 < routeCharge(edges)) return;
   combat.ftlOrder = null;
-  jump(sim, ship, order.jump, order.withDocked, 'ftl.charge');
+  jump(sim, ship, order.jump, order.withDocked, 'ftl.charge', order.overcharge);
 }

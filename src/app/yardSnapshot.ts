@@ -1,0 +1,88 @@
+import { HullPlanC, ShipC, Struct, shipGrid, playerItems, hullLoad, isLiveOrder, quoteYard, viewPlan, planViolations, playerShip, totalTiles, yardPrice, yardService, builtCount, type Sim, type YardOrder, type YardPhase } from '../sim';
+import type { UiHullPlan, UiYard, UiYardOrder, UiYardQuote, UiYardService } from '../ui/api';
+import { rejectionMessage } from './messages';
+
+type Tile = { x: number; y: number };
+
+/** What each phase of a yard order reads as. */
+const PHASE: Record<YardPhase, string> = {
+  launch: 'Shuttle launching', fly: 'Yard shuttle on its way', work: 'Yard crew building', seal: 'Yard crew sealing the hull', recall: 'Yard crew heading back to the shuttle',
+  home: 'Yard shuttle flying home', done: 'Done', failed: 'Called off',
+};
+
+/** Words for a reason an order ended early. */
+const ENDED: Record<string, string> = {
+  'called off': 'Called off', combat: 'Pulled out for the fight', stalled: 'The crew could not finish', noDock: 'The shuttle could not dock', left: 'You left the node',
+  'crew lost': 'The yard crew was lost', lost: 'The shuttle was lost', noShuttle: 'The station had no shuttle to send',
+};
+
+/** What one painted tile costs here (the price of ten, over ten, so a fraction of a metal shows). */
+function perTile(sim: Sim, svc: NonNullable<ReturnType<typeof yardService>>): { credits: number; metal: number } {
+  const ten = yardPrice(sim, svc, 10);
+  return { credits: ten.credits / 10, metal: ten.metal / 10 };
+}
+
+/** The yard a station runs, as the station panel shows it, or null when it has none. */
+export function yardOf(sim: Sim, station: number): UiYardService | null {
+  const svc = yardService(sim, station);
+  const def = sim.content.yard;
+  const ship = playerShip(sim);
+  if (!svc || !def) return null;
+  const load = ship ? hullLoad(sim, ship) : { tiles: 0, capacity: 0 };
+  return { size: svc.size, cap: svc.tier.cap, price: perTile(sim, svc), hull: { tiles: load.tiles, capacity: load.capacity } };
+}
+
+/** The ship's hull plan for the build tools and the ghost tiles. */
+export function planOf(sim: Sim): UiHullPlan {
+  const v = viewPlan(sim);
+  const grid = sim.sector.grid;
+  const open = (t: Tile): boolean => grid.get('struct', t.x, t.y) === Struct.Space; // nothing is drawn over a truss
+  return { ship: playerShip(sim), tiles: v.tiles, connected: v.connected, loose: v.loose, blocked: v.blocked, floor: v.floor.filter(open), bad: planViolations(sim, playerShip(sim), v.tiles), hull: v.hull };
+}
+
+/** What the yard of `station` would build of the plan now. */
+export function quoteOf(sim: Sim, station: number): UiYardQuote | null {
+  if (!station) return null;
+  const q = quoteYard(sim, station);
+  return {
+    station, error: q.error, errorText: q.error ? rejectionMessage(q.error) : '', buy: q.walls.length + q.floor.length, floor: q.floor.length, truss: q.trusses.length, fee: q.fee.credits, planned: q.planned, rest: q.rest,
+    price: q.price, afford: q.afford, cap: q.cap, hull: q.hull,
+  };
+}
+
+function orderOf(sim: Sim, o: YardOrder): UiYardOrder {
+  const b = builtCount(sim, o);
+  const live = isLiveOrder(o);
+  const grid = shipGrid(sim, o.ship);
+  const open = (t: Tile): boolean => !!grid && grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Space; // nothing is ghosted over a truss
+  return {
+    id: o.id, station: o.station, live, phase: o.phase, built: b.truss + b.floor + b.walls, total: totalTiles(o), price: o.price,
+    status: live ? PHASE[o.phase] : o.reason ? ENDED[o.reason] ?? o.reason : 'Done', reason: o.reason ? ENDED[o.reason] ?? o.reason : '',
+    floor: live ? o.floor.filter(open) : [], walls: live ? o.walls.filter(open) : [],
+  };
+}
+
+/** The shipyard view: the hull plan, the quote at `station` (the open station panel) and the player's live order (else the last one to end). */
+export function buildYard(sim: Sim, station: number): UiYard {
+  const mine = sim.yard.orders.filter((o) => o.ship === playerShip(sim));
+  const o = mine.find(isLiveOrder) ?? mine[mine.length - 1];
+  return { plan: planOf(sim), quote: quoteOf(sim, station), order: o ? orderOf(sim, o) : null };
+}
+
+/**
+ * Everything `buildYard` depends on, as a cheap key: the sector's structure revision, the plan, the ship's rectangle, the credits and metal, the station
+ * and the order's progress. While it is unchanged the snapshot is too, so the bridge need not quote the plan again (a big plan costs a few ms).
+ */
+export function yardInputs(sim: Sim, station: number): string {
+  const ship = playerShip(sim);
+  const plan = ship ? sim.world.get(ship, HullPlanC) : undefined;
+  let h = 0;
+  for (const t of plan?.tiles ?? []) h = (h * 31 + t.x * 7919 + t.y) | 0;
+  const s = ship ? sim.world.get(ship, ShipC) : undefined;
+  const o = sim.yard.orders.at(-1);
+  return [
+    station, sim.sector.grid.revision('struct'), sim.sector.grid.revision('ship'), plan?.tiles.length ?? 0, h, s ? `${s.x},${s.y},${s.width},${s.height}` : '',
+    sim.trade.credits, playerItems(sim, 'item.metal'), Math.floor(sim.tick / 90), // (the tick bucket re-quotes now and then: standing, neighbours and the like change on their own)
+     o ? `${o.id}:${o.phase}:${o.stage}` : '', sim.galaxy.current,
+  ].join('|');
+}

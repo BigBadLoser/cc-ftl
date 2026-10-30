@@ -75,5 +75,9 @@ export interface Boarder {
   crew: number[];
   /** Hand weapon item id issued to the party when it leaves. */
   weapon?: string;
+  /** The ship holds fire while its party is out (raiders). */
+  prefer?: true;
+  /** The party goes for the AI core (zealots). */
+  coreRaid?: true;
 }
 export const BoarderC = defineComponent<Boarder>('boarder');

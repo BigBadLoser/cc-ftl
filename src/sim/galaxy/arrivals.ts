@@ -29,6 +29,47 @@ function generated(sim: Sim): Map<string, ReturnType<typeof generateShip> | null
   return m;
 }
 
+export const GENERATED_CAP = GENERATED_MAX;
+/** The memo key of a contact's ship: the generator faction, seed and depth are all `generateShip` reads besides content. */
+export const contactKey = (c: Contact): string => `${c.shipgen}|${c.seed}|${c.depth}`;
+/** Is the contact's ship already in the memo (generated, or known not to generate)? */
+export const isGenerated = (sim: Sim, c: Contact): boolean => generated(sim).has(contactKey(c));
+
+/** The memoised ship of a contact without generating or touching its place in the order (undefined: not there). */
+export const peekGenerated = (sim: Sim, c: Contact): ReturnType<typeof generateShip> | null | undefined => generated(sim).get(contactKey(c));
+
+/** The contact's generated ship from the memo (most recently used last), generating and remembering it on a miss. Null when it cannot be generated. */
+function shipFor(sim: Sim, c: Contact, def: NonNullable<Sim['content']['factions']>[string]): ReturnType<typeof generateShip> | null {
+  const memo = generated(sim);
+  const key = contactKey(c);
+  let gen = memo.get(key);
+  if (gen !== undefined) {
+    memo.delete(key);
+    memo.set(key, gen);
+    return gen;
+  }
+  try {
+    gen = generateShip(def, c.shipgen, c.seed, c.depth, sim.content.modules);
+  } catch {
+    gen = null;
+  }
+  if (gen && gen.problems.length > 0) gen = null;
+  memo.set(key, gen);
+  if (memo.size > GENERATED_MAX) memo.delete(memo.keys().next().value as string);
+  return gen;
+}
+
+/**
+ * Generate a contact's ship into the memo ahead of its arrival (fleetShips.ts `warmFleets`). Touches nothing but the memo: no Rng, no sim state.
+ * False when it was already there or its generator faction is missing.
+ */
+export function warmContact(sim: Sim, c: Contact): boolean {
+  const def = sim.content.factions?.[c.shipgen];
+  if (!def || isGenerated(sim, c)) return false;
+  shipFor(sim, c, def);
+  return true;
+}
+
 /** The player's flown ship (lowest id) with its components: active, player faction, with combat state. Trade's `playerShip` returns just the id. */
 export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
   for (const id of sim.world.query(ShipC, CombatC)) {
@@ -71,28 +112,19 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
-  const key = `${c.shipgen}|${c.seed}|${c.depth}`;
-  const memo = generated(sim);
-  let gen = memo.get(key);
-  if (gen === undefined) {
-    try {
-      gen = generateShip(def, c.shipgen, c.seed, c.depth, sim.content.modules);
-    } catch {
-      gen = null;
-    }
-    if (gen && gen.problems.length > 0) gen = null;
-    memo.set(key, gen);
-    if (memo.size > GENERATED_MAX) memo.delete(memo.keys().next().value as string);
-  }
+  const key = contactKey(c);
+  const gen = shipFor(sim, c, def);
   if (!gen) return false;
   const spot = freeSpot(sim, gen.width, gen.height);
   if (!spot) return false;
-  memo.delete(key);
-  const side = isHostileFaction(sim, c.faction) ? sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile' : 'neutral';
+  generated(sim).delete(key);
+  // A hired escort fights for whoever pays it.
+  const payer = c.hired ?? c.faction;
+  const side = isHostileFaction(sim, payer) ? sim.content.galaxy?.factions[payer]?.combatFaction ?? 'hostile' : 'neutral';
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
   if (ship) {
-    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction };
     if (c.name) ship.name = c.name;
     if (c.bounty !== undefined) ship.bounty = c.bounty;
   }

@@ -77,9 +77,9 @@ const toolOf = (c: { tool: { subscribe(fn: (v: UiToolState) => void): () => void
 
 describe('placement tool state', () => {
   const setup = () => {
-    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]) } as unknown as Bridge;
+    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(newGame(1, content), bridge);
-    const h = c.attach({ setPreview: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined } as unknown as Renderer);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined } as unknown as Renderer);
     return { c, h };
   };
 
@@ -100,7 +100,7 @@ describe('placement tool state', () => {
     expect(toolOf(c).moduleDef).toBe('module.fabricator');
     const sim2 = newGame(1, content);
     sim2.story.blueprints.push('module.reactor.mk2');
-    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]) } as unknown as Bridge;
+    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c2 = createController(sim2, bridge);
     c2.setTool({ tool: 'build', build: 'module', moduleDef: 'module.reactor.mk2' });
     expect(toolOf(c2).moduleDef).toBe('module.reactor.mk2');
@@ -139,5 +139,27 @@ describe('placement reasons', () => {
       expect(m.length).toBeGreaterThan(8);
     }
     expect(rejectionMessage('unknownCode')).not.toContain('unknownCode');
+  });
+});
+
+describe('combat start', () => {
+  it('drops an active build tool, and canvas paints no longer reach the tools during the fight', () => {
+    const sim2 = newGame(1, content);
+    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
+    const c = createController(sim2, bridge);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setCutaway: () => undefined } as unknown as Renderer);
+    c.setTool({ tool: 'deconstruct' });
+    c.upkeep();
+    expect(toolOf(c).tool).toBe('deconstruct'); // no fight: untouched
+    sim2.sector.inCombat = true;
+    expect(h.paintMode()).toBe(false);
+    c.upkeep();
+    expect(toolOf(c).tool).toBe('select');
+    c.setTool({ tool: 'build', build: 'wall' });
+    c.upkeep(); // still the same fight: no further reset (nothing in the UI offers tools, but the edge fires once)
+    expect(toolOf(c).tool).toBe('build');
+    sim2.sector.inCombat = false;
+    c.upkeep();
+    expect(h.paintMode()).toBe(true);
   });
 });

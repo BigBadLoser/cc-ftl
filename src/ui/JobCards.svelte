@@ -2,14 +2,14 @@
   import type { UiApi, UiJob, UiJobs, UiStrength } from './api';
   import Icon from './Icon.svelte';
 
-  /** The job cards of the board: `active` the jobs the player holds, `offers` the work posted at the node. */
-  let { api, jobs, list }: { api: UiApi; jobs: UiJobs; list: 'active' | 'offers' } = $props();
+  /** The job cards of the board: `active` the jobs the player holds, `offers` the work posted at the node, `handIn` the finished work this station takes in. */
+  let { api, jobs, list }: { api: UiApi; jobs: UiJobs; list: 'active' | 'offers' | 'handIn' } = $props();
   const full = $derived(jobs.active.length >= jobs.max);
   const far = (j: UiJob): string => (j.here ? 'here' : j.hops === null ? 'out of range' : `${j.hops} jump${j.hops === 1 ? '' : 's'}`);
   const turns = (j: UiJob): string => `${j.turnsLeft} turn${j.turnsLeft === 1 ? '' : 's'} left`;
   const VERDICT = { outmatched: 'Outmatched', even: 'Even match', weaker: 'Weaker than you' } as const;
   const ROWS: { key: keyof UiStrength; label: string }[] = [
-    { key: 'guns', label: 'Guns' }, { key: 'shields', label: 'Shields' }, { key: 'hull', label: 'Hull' },
+    { key: 'guns', label: 'Guns' }, { key: 'shields', label: 'Shields' }, { key: 'hull', label: 'Size' },
   ];
 </script>
 
@@ -53,13 +53,21 @@
         </div>
       </li>
     {/each}
+  {:else if list === 'handIn'}
+    {#each jobs.handIn as c (c.id)}
+      <li data-testid="job-claim">
+        <div class="t"><b>{c.title}</b><span class="pay">{c.reward} cr</span></div>
+        <div class="sub">For {c.issuer}</div>
+        <div class="act"><button data-testid="job-handin" onclick={() => api.dispatch({ type: 'jobs.handIn', id: c.id })}>Hand in</button></div>
+      </li>
+    {/each}
   {:else}
     {#each jobs.offers as j (j.key)}
       <li data-testid="job-offer">
         {@render head(j)}
         {@render strength(j)}
         <div class="act">
-          <button data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
+          <button class="commit" data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
         </div>
       </li>
     {/each}
