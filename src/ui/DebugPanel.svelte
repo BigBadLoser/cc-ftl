@@ -18,7 +18,7 @@
     const c = api.combat.subscribe((v) => (foes = v.enemies));
     return () => (a(), b(), c());
   });
-  // Lessons (tutorials): until the Esc menu's settings exist, reset and the on/off switch live here.
+  // TODO(#203): move "Reset lessons" and the on/off switch to the Esc menu's settings once that menu exists.
   let lessonsOn = $state(lessonPrefs.enabled());
   const resetLessons = () => {
     lessonPrefs.reset();

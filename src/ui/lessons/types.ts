@@ -40,6 +40,8 @@ export interface LessonDef {
   title: string;
   /** Queues the lesson the first time it holds (once seen, never again unless replayed). */
   trigger: Condition;
+  /** Real ms between the trigger and the lesson opening (the scene settles first: camera framed, art loaded). Default 0. */
+  delay?: number;
   /** While this fails, a queued lesson is dropped and an open one closes unfinished (not marked seen): its situation passed. */
   while?: Condition;
   steps: readonly StepDef[];

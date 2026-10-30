@@ -77,6 +77,15 @@ describe('LessonEngine', () => {
     expect(e.current?.lesson.id).toBe('lesson.other');
   });
 
+  it('opens a delayed lesson only once its delay has passed since the trigger', () => {
+    const { e } = setup([{ ...fight, delay: 1500 }]);
+    e.update(ctx({ fight: true }), 100);
+    e.update(ctx({ fight: true }), 1500);
+    expect(e.current).toBeNull();
+    e.update(ctx({ fight: true }), 1600);
+    expect(e.current?.lesson.id).toBe('lesson.fight');
+  });
+
   it('waits while something urgent is up', () => {
     const { e } = setup([fight]);
     e.update(ctx({ fight: true, busy: true }), 0);

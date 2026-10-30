@@ -93,11 +93,11 @@
     pointer-events: none;
   }
   .dim {
-    background: rgba(2, 4, 6, 0.5);
+    background: rgba(0, 0, 0, 0.62);
   }
   .dim.all {
     inset: 0;
-    background: rgba(2, 4, 6, 0.4);
+    background: rgba(0, 0, 0, 0.5);
   }
   .ring {
     box-sizing: border-box;

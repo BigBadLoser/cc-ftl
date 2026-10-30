@@ -738,7 +738,8 @@ an aim made while paused counts). The engine queues triggered lessons, opens one
 (`prefs.ts`); reset and the switch are in the debug panel until the Esc menu exists; `?lessons=reset` / `?lessons=off` for scripts.
 
 **Adding a lesson:** write a `LessonDef` in `defs/<name>.ts` (`satisfies LessonDef`) and list it in `defs/index.ts`. A step has a `title`,
-`text` (`[Q]` renders a key badge), a `target` and `advance: 'gotIt'` or a condition (a "do" step). Conditions (`conditions.ts`): `onEvent`,
+`text` (`[Q]` renders a key badge), a `target` and `advance: 'gotIt'` or a condition (a "do" step); the lesson's optional `delay` (ms) lets
+the scene settle between the trigger and the card. Conditions (`conditions.ts`): `onEvent`,
 `onCommand` (with a match), `when` (a state of the context), `anyOf` / `allOf`. Targets (`targets.ts`): `uiTarget(anchor)` rings an element
 carrying `data-lesson={anchor('...')}` (names are typed in `anchors.ts`; a kit `Frame` takes `lesson=`), `moduleTarget(pick)` rings a module in the
 world through `api.moduleScreenRect`. A new condition or target kind is one shape in the `...Kinds` interface plus one evaluator or resolver beside

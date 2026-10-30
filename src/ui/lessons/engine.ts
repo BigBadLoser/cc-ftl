@@ -26,7 +26,8 @@ export const LESSON_COOLDOWN_MS = 1500;
  * while a lesson is open. Lessons are data (`LessonDef`); conditions and targets are registries (conditions.ts, targets.ts).
  */
 export class LessonEngine {
-  private queue: LessonDef[] = [];
+  /** Triggered lessons in order, each with the time (ms) it may open: trigger time plus its `delay`. */
+  private queue: { def: LessonDef; at: number }[] = [];
   private open: { def: LessonDef; index: number; held: Speed } | null = null;
   private cooldownUntil = -Infinity;
   private now = 0;
@@ -68,13 +69,15 @@ export class LessonEngine {
       else if (step && step.advance !== 'gotIt' && checkCondition(step.advance, f)) this.next();
     }
     for (const def of this.defs) {
-      if (this.prefs.isSeen(def.id) || this.open?.def === def || this.queue.includes(def)) continue;
-      if (checkCondition(def.trigger, f)) this.queue.push(def);
+      if (this.prefs.isSeen(def.id) || this.open?.def === def || this.queue.some((q) => q.def === def)) continue;
+      if (checkCondition(def.trigger, f)) this.queue.push({ def, at: now + (def.delay ?? 0) });
     }
-    this.queue = this.queue.filter((d) => !d.while || checkCondition(d.while, f));
+    this.queue = this.queue.filter((q) => !q.def.while || checkCondition(q.def.while, f));
     if (!this.open && !ctx.busy && now >= this.cooldownUntil) {
-      const head = this.queue.shift();
-      if (head) this.start(head);
+      // The first lesson whose delay has passed (one still waiting does not hold up a later one that is ready).
+      const i = this.queue.findIndex((q) => now >= q.at);
+      const next = i >= 0 ? this.queue.splice(i, 1)[0] : undefined;
+      if (next) this.start(next.def);
     }
   }
 
@@ -92,7 +95,7 @@ export class LessonEngine {
   replay(id: string): void {
     const def = this.defs.find((d) => d.id === id);
     if (!def || this.open?.def === def) return;
-    this.queue = [def, ...this.queue.filter((d) => d !== def)];
+    this.queue = [{ def, at: this.now }, ...this.queue.filter((q) => q.def !== def)];
   }
 
   private start(def: LessonDef): void {
