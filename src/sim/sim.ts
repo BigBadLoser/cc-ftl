@@ -59,6 +59,14 @@ export class Sim {
     this.commands.enqueue(cmd, this.tick);
   }
 
+  /**
+   * Apply the queued commands now, without running the pipeline or advancing the tick: how a UI command takes effect while the
+   * game is paused. Same queue and order as `step`; the events are left for the caller to drain.
+   */
+  applyCommands(): void {
+    this.commands.drain(this.tick, (cmd) => this.apply(cmd));
+  }
+
   /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */
   step(probe: Probe = NOOP_PROBE): void {
     probe.begin('sim/tick');

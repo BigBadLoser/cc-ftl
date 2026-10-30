@@ -51,7 +51,7 @@ export interface Loop {
   stop(): void;
   setSpeed(speed: Speed): void;
   getSpeed(): Speed;
-  /** Run one tick now (even paused) so queued commands apply: trade offers answer while the game is paused. */
+  /** Apply queued commands now (even paused) without running a tick: trade offers answer while the game is paused. */
   flush(): void;
   readonly alpha: number;
 }
@@ -122,7 +122,7 @@ export function createLoop(opts: LoopOptions): Loop {
     },
     getSpeed: () => speed,
     flush() {
-      sim.step();
+      sim.applyCommands(); // commands only: a paused click must not advance game time
       const events = sim.events.drain();
       if (events.length) opts.onEvents?.(events);
     },

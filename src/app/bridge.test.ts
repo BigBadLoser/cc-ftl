@@ -16,14 +16,14 @@ describe('UI commands while paused', () => {
     const sim = newGame(3, content);
     ensureAround(sim, sim.galaxy.current);
     const bridge = createBridge(sim);
-    const loop = fakeLoop(() => sim.step());
+    const loop = fakeLoop(() => sim.applyCommands());
     bridge.attachLoop(loop);
     bridge.setSpeed(0);
     const offer = buildJobs(sim).offers[0]!;
     const tick = sim.tick;
     bridge.dispatch({ type: 'jobs.accept', key: offer.key });
     expect(loop.flushes).toBe(1);
-    expect(sim.tick).toBe(tick + 1);
+    expect(sim.tick).toBe(tick); // a paused click applies the command but advances no time
     expect(buildJobs(sim).active.map((j) => j.key)).toEqual([offer.key]);
   });
 
