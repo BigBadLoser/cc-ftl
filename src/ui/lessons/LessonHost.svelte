@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isTypingTarget } from '../keys';
   import { onMount } from 'svelte';
   import type { UiAiming, UiApi, UiCombat, UiSignal } from '../api';
   import type { Rect } from '../combat/panelPlace';
@@ -66,7 +67,8 @@
     // While a lesson is open the speed keys are the lesson's (it restores the speed on close); Enter is Got it.
     const onKey = (e: KeyboardEvent) => {
       const v = eng.current;
-      if (!v) return;
+      // Typing in a text field (the bug report, a name) keeps its keys.
+      if (!v || isTypingTarget(e)) return;
       if (e.key === ' ' || e.key === '1' || e.key === '2' || e.key === '3') {
         e.preventDefault();
         e.stopImmediatePropagation();
