@@ -9,3 +9,16 @@ export function isTypingTarget(e: { target: EventTarget | null }): boolean {
   if (ce !== null && ce !== undefined && ce !== 'false') return true;
   return el.getAttribute?.('role') === 'textbox';
 }
+
+/** Open modal dialogs (the jump confirmation and the like). While any is open, game shortcuts stand aside so the dialog gets its keys. */
+let modals = 0;
+export const modalOpen = (): boolean => modals > 0;
+/** Mark a modal open; call the returned function once when it closes. */
+export function holdModal(): () => void {
+  modals++;
+  let done = false;
+  return () => {
+    if (!done) modals--;
+    done = true;
+  };
+}
