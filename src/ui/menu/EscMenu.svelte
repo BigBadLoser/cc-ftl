@@ -3,7 +3,7 @@
   import type { UiApi } from '../api';
   import Icon, { type IconName } from '../Icon.svelte';
   import { Dialog, Frame } from '../kit';
-  import { keyModal } from '../keymap';
+  import { holdModal } from '../keys';
   import ControlsPage from './ControlsPage.svelte';
   import SavesPage from './SavesPage.svelte';
   import SettingsPage from './SettingsPage.svelte';
@@ -34,7 +34,7 @@
   ];
 
   onMount(() => {
-    keyModal.open = true;
+    const release = holdModal();
     const onKey = (e: KeyboardEvent) => {
       // The Dialog itself ignores Esc (and marks it handled), so this listener owns it. An open dropdown inside the menu gets it first.
       if (e.key !== 'Escape' || capturing || document.querySelector('.kit-sel-content')) return;
@@ -43,7 +43,7 @@
     };
     window.addEventListener('keydown', onKey);
     return () => {
-      keyModal.open = false;
+      release();
       window.removeEventListener('keydown', onKey);
       (document.activeElement as HTMLElement | null)?.blur?.(); // back to the game: no menu or HUD button keeps the keyboard
     };

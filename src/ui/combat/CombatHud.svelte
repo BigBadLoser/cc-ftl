@@ -1,15 +1,18 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { UiAiming, UiApi, UiCombat, UiShipCombat } from '../api';
+  import type { UiJumpWarnings } from '../starmapApi';
+  import type { UiAiming, UiApi, UiBoarding, UiCombat, UiShipCombat } from '../api';
   import InsetFrame from './InsetFrame.svelte';
   import EnemyCard from './EnemyCard.svelte';
+  import JumpConfirm from '../JumpConfirm.svelte';
+  import BoardingCard from './BoardingCard.svelte';
   import { TICK_HZ } from '../../sim/time';
   import { nextHeatRate, type HeatSample } from './heatRate';
-  import { keyModal, keymap, MODE_ACTIONS, WEAPON_ACTIONS, type ActionId } from '../keymap';
+  import { keymap, MODE_ACTIONS, WEAPON_ACTIONS, type ActionId } from '../keymap';
   import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
-  import { isTypingTarget } from '../keys';
+  import { isTypingTarget, modalOpen } from '../keys';
   import './steel.css';
 
   /**
@@ -20,6 +23,7 @@
 
   type System = 'weapons' | 'shields' | 'engines';
   let aiming = $state<UiAiming | null>(null);
+  let boarding = $state<UiBoarding[]>([]);
   const enemy = $derived<UiShipCombat | undefined>(
     combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0],
   );
@@ -79,7 +83,15 @@
 
   const select = (id: number) => api.setAiming(aiming?.weapon === id ? null : { weapon: id });
   const drive = $derived(me ? { charge: me.ftl, max: me.ftlMax, helmManned, active: me.state === 'active' } : null);
-  const flee = () => me && api.dispatch({ type: 'combat.flee', ship: me.ship });
+  // Fleeing jumps: with crew or shuttles that would stay behind, ask first (the same confirmation the starmap uses).
+  let leaving = $state<UiJumpWarnings | null>(null);
+  const doFlee = () => { leaving = null; if (me) api.dispatch({ type: 'combat.flee', ship: me.ship }); };
+  const flee = () => {
+    if (!me) return;
+    const w = api.jumpWarnings(me.ship);
+    if (w.crew.length || w.vehicles.length) leaving = { ...w, hostileDocked: [] };
+    else doFlee();
+  };
 
   /** Run a key's action and swallow the event so no other handler sees it. */
   function consume(e: KeyboardEvent): void {
@@ -87,7 +99,8 @@
     e.stopImmediatePropagation();
   }
   function onKey(e: KeyboardEvent) {
-    if (keyModal.open || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
+    // A modal (the Esc menu, the flee/jump confirmation) owns the keys (Tab, Enter, Esc); so does leaving the fight.
+    if (leaving || modalOpen() || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
     const is = (id: ActionId) => keymap.matches(e, id);
     if (is('combat.swap')) {
       consume(e);
@@ -121,6 +134,7 @@
   }
   onMount(() => {
     const un = api.aiming.subscribe((a) => (aiming = a));
+    const un3 = api.boarding.subscribe((b) => (boarding = b));
     const un2 = api.snapshot.subscribe((x) => {
       tick = x.tick;
     });
@@ -128,6 +142,7 @@
     return () => {
       un();
       un2();
+      un3();
       window.removeEventListener('keydown', onKey, true);
     };
   });
@@ -136,7 +151,10 @@
 
 <div class="hud" data-testid="combat-hud">
   {#if enemy}
-    <div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} /></div>
+    <div class="top">
+      <EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} />
+      {#each boarding as b (b.ship)}<BoardingCard {api} {b} named={boarding.length > 1} />{/each}
+    </div>
   {/if}
   {#if me && insetShip}
     <div class="insetdock">
@@ -154,6 +172,7 @@
       <PlayerStrip {api} {me} {flee} {drive} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
     </div>
   {/if}
+  <JumpConfirm warnings={leaving} onConfirm={doFlee} onCancel={() => (leaving = null)} />
 </div>
 
 <style>
@@ -167,6 +186,8 @@
     position: absolute;
     left: calc(var(--gutter) + var(--sal));
     top: calc(34px + var(--sat));
+    display: grid;
+    gap: 10px;
   }
   /* Clear of the strip (182px tall, 8px off the bottom) with a gutter between. */
   .insetdock {

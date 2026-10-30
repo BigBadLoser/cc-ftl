@@ -490,12 +490,12 @@ export type UiSubject =
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.starving'
-  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report';
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
   | 'ship.fled' | 'ship.captured' | 'hail' | 'trade' | 'production' | 'container' | 'story' | 'lost'
-  | 'payout' | 'kill' | 'warning' | 'job' | 'mining' | 'transfer' | 'galaxy' | 'outpost' | 'creatures' | 'crew';
+  | 'payout' | 'kill' | 'warning' | 'job' | 'mining' | 'transfer' | 'galaxy' | 'outpost' | 'creatures' | 'crew' | 'boarding';
 
 /** One happening in the ship's log (the full record, not an ongoing state like an alert). */
 export interface UiLogEntry {
@@ -631,6 +631,21 @@ export interface UiShipCombat {
   modules: UiShipModule[];
   /** Weapon charges of a hostile ship (absent on the player's). */
   charges?: UiEnemyWeapon[];
+}
+
+/** The player's boarding parties on one hostile ship: who is aboard, the sabotage under way, and what would hurt them. */
+export interface UiBoarding {
+  /** The hostile ShipC entity the party is on. */
+  ship: number;
+  /** That ship's name, for the card's legend when parties are aboard more than one ship. */
+  shipName: string;
+  party: { id: number; name: string; /** 0..1 */ hp: number; state: 'sabotage' | 'paused' | 'fighting' | 'holding' | 'returning' | 'down'; /** The module they were ordered to wreck (0 = none). */ module: number }[];
+  /** One row per module being wrecked: 'active' while a boarder works on it, 'paused' once every one of them has broken off to fight. */
+  sabotage: { module: number; name: string; hp: number; maxHp: number; state: 'active' | 'paused'; crew: string[]; crewIds: number[] }[];
+  /** Friendly fire: your aims (ship-wide or per weapon) that land on a room where your own crew stand. */
+  fireOn: { by: string; at: string; crew: string[] }[];
+  /** A shuttle of yours is docked here and someone can still be sent back to it. */
+  canRecall: boolean;
 }
 
 /** The player's FTL drive and its charge order (the starmap's and the ship panel's Charge FTL button). */
@@ -1213,6 +1228,8 @@ export interface UiApi {
   /** Pick an option of the open decision and resume play. */
   chooseStory(choice: string): void;
   combat: Subscribable<UiCombat>;
+  /** Boarding parties on hostile ships (empty when none). */
+  boarding: Subscribable<UiBoarding[]>;
   /** The FTL drive and its charge order (null when the ship is not on the map). */
   ftl: Subscribable<UiFtl | null>;
   /** Credits, hailable ships and stations, and the running deliveries. */

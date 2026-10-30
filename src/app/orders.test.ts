@@ -29,4 +29,17 @@ describe('order choices', () => {
   it('nothing under the cursor offers nothing', () => {
     expect(orderChoices({})).toEqual([]);
   });
+
+  it('a hostile module is sabotaged by the right-click itself, with no menu', () => {
+    const c = orderChoices({ sabotage: { module: 9, name: 'reactor' }, walk: true });
+    expect(c.map((x) => x.id)).toEqual(['sabotage']);
+    expect(c[0]?.label).toBe('Sabotage reactor');
+    expect(needsMenu(c)).toBe(false);
+  });
+
+  it('with a foe under the cursor, sabotage stays a menu entry', () => {
+    const c = orderChoices({ foe: { id: 5, name: 'Raider' }, sabotage: { module: 9, name: 'reactor' }, walk: true });
+    expect(c.map((x) => x.id)).toEqual(['attack', 'sabotage', 'walk']);
+    expect(needsMenu(c)).toBe(true);
+  });
 });

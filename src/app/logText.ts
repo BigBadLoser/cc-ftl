@@ -2,6 +2,7 @@ import { homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry, UiSubject } from '../ui/api';
+import { describeBoarding } from './boardingText';
 import { crewSubject, crewTile, enemyShip, roomOf, shipSubject, tileAt } from './subjects';
 
 export type LogEntry = Pick<UiLogEntry, 'kind' | 'tone' | 'text' | 'fold'> & { subject?: UiSubject };
@@ -109,7 +110,7 @@ export function createDescriber(sim: Sim) {
       case 'truce.breached': return { kind: 'galaxy', tone: 'bad', text: 'Truce broken: everyone here is hostile to you for 30 turns', ...node(e.node) };
       case 'galaxy.eventEntered': return { kind: 'galaxy', tone: 'warn', text: e.kind === 'fight' ? 'Dropped into deep space: fight' : 'Dropped into deep space to help', ...here() };
       case 'game.lost': return { kind: 'lost', tone: 'bad', text: 'Game over' };
-      default: return null;
+      default: return describeBoarding(sim, e);
     }
   };
 }

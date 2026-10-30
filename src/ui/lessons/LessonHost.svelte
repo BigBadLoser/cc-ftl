@@ -1,6 +1,6 @@
 <script lang="ts">
   import { keymap } from '../keymap';
-  import { isTypingTarget } from '../keys';
+  import { isTypingTarget, modalOpen } from '../keys';
   import { onMount } from 'svelte';
   import type { UiAiming, UiApi, UiCombat, UiSignal } from '../api';
   import type { Rect } from '../combat/panelPlace';
@@ -70,7 +70,7 @@
     const onKey = (e: KeyboardEvent) => {
       const v = eng.current;
       // Typing in a text field (the bug report, a name) keeps its keys.
-      if (!v || uiBusy || isTypingTarget(e)) return;
+      if (!v || uiBusy || modalOpen() || isTypingTarget(e)) return;
       if ((['game.pause', 'game.speed1', 'game.speed2', 'game.speed3'] as const).some((id) => keymap.matches(e, id))) {
         e.preventDefault();
         e.stopImmediatePropagation();

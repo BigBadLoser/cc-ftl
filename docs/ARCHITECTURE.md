@@ -759,7 +759,7 @@ renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the pl
   background, tooltips off), `app/input.ts` (edge scroll, scroll and zoom speed, invert drag), App (FPS), main.ts (start speed).
   Lessons keep their own prefs.
 - **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
-  menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open `keyModal.open` makes the game's key handlers stand aside; the App pauses the game and restores the speed.
+  menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open it holds the one modal gate (`holdModal` / `modalOpen` in `ui/keys.ts`, also held by the jump confirmation), and every game key handler stands aside; the App pauses the game and restores the speed.
 - **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
   ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
 

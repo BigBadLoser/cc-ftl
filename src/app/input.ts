@@ -1,5 +1,5 @@
-import { isTypingTarget } from '../ui/keys';
-import { chordOf, keymap, keyModal, type ActionId } from '../ui/keymap';
+import { isTypingTarget, modalOpen } from '../ui/keys';
+import { chordOf, keymap, type ActionId } from '../ui/keymap';
 import { settings } from '../ui/settings/settings';
 import type { Renderer } from '../render/scene';
 
@@ -196,7 +196,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
     raf = requestAnimationFrame(tick);
   };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (keyModal.open || isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (modalOpen() || isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
     if (PAN_DIRS.some(([id]) => keymap.matches(e, id))) {
       e.preventDefault();
       held.set(e.code, chordOf(e)!);

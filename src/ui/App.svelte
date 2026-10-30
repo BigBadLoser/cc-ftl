@@ -41,7 +41,7 @@
   import { settings } from './settings/settings';
   import { applySettings } from './settings/apply';
   import Icon, { type IconName } from './Icon.svelte';
-  import { isTypingTarget } from './keys';
+  import { isTypingTarget, modalOpen } from './keys';
   import { isPinned } from './floatingWindow';
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
@@ -202,7 +202,7 @@
 
   /** Keys from the key map (keymap/actions.ts). The Esc menu, when open, takes every key itself. */
   function onKey(e: KeyboardEvent) {
-    if (isTypingTarget(e) || menuOpen) return;
+    if (isTypingTarget(e) || menuOpen || modalOpen()) return;
     if (reporting && !keymap.matches(e, 'debug.panel')) return; // the bug report keeps the game paused and handles its own keys
     if (e.key === 'Escape') return escape();
     if (e.ctrlKey || e.metaKey || e.altKey) return;

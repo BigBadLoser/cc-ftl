@@ -1,3 +1,4 @@
+import { startBoardingScenario } from './app/boardingScenario';
 import { mount } from 'svelte';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
@@ -29,7 +30,8 @@ import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
 import { createSignalFeed } from './app/signals';
-import { keyModal, keymap } from './ui/keymap';
+import { keymap } from './ui/keymap';
+import { modalOpen } from './ui/keys';
 import { settings } from './ui/settings/settings';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
@@ -123,7 +125,7 @@ if (!new URLSearchParams(location.search).has('scenario')) bridge.setSpeed(setti
 const perfBoot = (): Promise<import('./app/profiler/install').ProfilerHandle> => import('./app/profiler/install').then((m) => m.installProfiler(setProbe));
 if (new URLSearchParams(location.search).has('perf')) void perfBoot().then((h) => h.api.enable());
 window.addEventListener('keydown', (e) => {
-  if (keyModal.open || !keymap.matches(e, 'debug.profiler')) return;
+  if (modalOpen() || !keymap.matches(e, 'debug.profiler')) return;
   e.preventDefault();
   void perfBoot().then((h) => h.togglePanel());
 });
@@ -271,7 +273,7 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
-  if (scenario === 'fight') {
+  if (scenario === 'fight' || scenario === 'boarding') {
     // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
     const g = sim.galaxy;
     const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
@@ -282,6 +284,7 @@ function startScenario(): void {
       if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
       setTimeout(() => {
         spawnRaider();
+        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'));
         if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
       }, 400);
     }, 400);
@@ -390,6 +393,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  boarding: bridge.boarding,
   ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
