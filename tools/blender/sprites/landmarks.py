@@ -216,8 +216,34 @@ def memorial(rot):
     return k.build()
 
 
+def banner(rot, company=None):
+    """A banner gate (3x1): two masts on weighted feet, a crossbar, and a wide banner hung between them carrying a
+    shipping company's logo on both faces (containers_logo: the same emblems as the container panels), or plain."""
+    from .containers_logo import GN, _cell
+    k = K(f"banner_{company or 'plain'}_{rot}", (3, 1), rot)
+    for u in (-1.2, 1.2):
+        k.box(u, 0, 0.0, 0.42, 0.42, 0.08, "steelD", top="steel", bevel=0.02)            # weighted foot
+        k.cyl(u, 0, 0.08, 0.05, 2.05, "steelL", top="steel", sides=8)                    # mast
+        k.cyl(u, 0, 2.13, 0.08, 0.06, "ochD", top="ochM", sides=8)                       # finial
+    k.box(0, 0, 1.98, 2.5, 0.05, 0.05, "steel", top="steelL")                            # crossbar
+    lw, hp, z0 = 2.0, 0.62, 1.3
+    k.box(0, 0, z0 - 0.05, lw + 0.04, 0.05, 0.05, "gmD")                                 # the weighted hem
+    out = k.build()
+    f = K(f"banner_{company or 'plain'}_{rot}_face", (3, 1), rot)
+    f.m.flat = True
+    nu, nv = round(lw * GN), round(hp * GN)
+    fn = _cell(company, nu, nv) if company else (lambda i, j: "gmD" if i in (0, nu - 1) or j in (0, nv - 1) else
+                                                 ("hazY" if j in (3, 4) else "navy"))
+    for sv in (1, -1):                                                                 # both faces, each reading left to right
+        a, b = f.p(-sv * lw / 2, sv * 0.03), f.p(sv * lw / 2, sv * 0.03)
+        f.m.pattern((a[0], a[1], z0), (b[0] - a[0], b[1] - a[1], 0), (0, 0, hp), nu, nv, fn)
+    return out + f.build()
+
+
 VARIANTS = (("holo_ring", (2, 2), holo_ring), ("holo_pylon", (2, 2), holo_pylon), ("holo_globe", (2, 2), holo_globe),
-            ("sparring", (3, 3), sparring), ("targets", (3, 2), targets), ("memorial", (2, 2), memorial))
+            ("sparring", (3, 3), sparring), ("targets", (3, 2), targets), ("memorial", (2, 2), memorial),
+            *((f"banner.{c}", (3, 1), lambda r, c=c: banner(r, c)) for c in ("halvard", "meridian", "vantor", "talos", "sable")),
+            ("banner.plain", (3, 1), banner))
 for _r in range(4):
     for _name, _fp, _fn in VARIANTS:
         fp = (_fp[1], _fp[0]) if _r % 2 == 1 else _fp
