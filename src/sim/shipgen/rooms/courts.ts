@@ -10,12 +10,14 @@ import { turned } from './vignettes';
  * clear floor round it; then promenades, two tiles wide, leading from every door to it by the shortest way (a tree:
  * each door to the nearest tile already joined; door to door when there is no landmark); then the floor between them splits into zones,
  * each given one theme (a seating area, a row of stalls, a grove, a lab corner) whose pieces are set densely in it; a
- * hedge of planters lines each zone where it meets a promenade, with gaps to walk in; with no landmark, a brass
+ * few hedge planters mark each zone where it meets a promenade (its floor does the rest); with no landmark, a brass
  * inlay marks the court's middle on its promenade. Pieces and planters are the existing modules: the zoning is what is new.
  */
 
 type T = { x: number; y: number };
 
+/** Least gap between two hedge markers on a zone's edge. */
+const HEDGE_GAP = 5;
 /** Zones bigger than this are cut in two. */
 const ZONE_MAX = 80;
 
@@ -131,16 +133,19 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
   zones.filter((z) => z.length >= 16).sort((a, b) => b.length - a.length).forEach((zone, zi) => {
     const theme = themes[zi % themes.length] as readonly Vignette[];
     const zset = new Set(zone);
-    // The hedge: zone tiles along a promenade get the hedge module, two in every three.
-    let k = 0;
+    // The hedge: a few markers along the zone's promenade edge, not a wall of them (the zone's floor already marks it):
+    // the ends of each edge run first, then any edge tile HEDGE_GAP or more from the last.
     const hedge = plan.hedge;
-    for (const i of hedge ? zone : []) {
-      if (!hedge || !lay.neighbours(i).some((n) => wide.has(n) && !solid.has(n))) continue;
-      if (k++ % 3 === 2) continue; // a gap every third tile to walk in
+    const edge = hedge ? zone.filter((i) => lay.neighbours(i).some((n) => wide.has(n) && !solid.has(n))) : [];
+    const onEdge = new Set(edge);
+    const ends = edge.filter((i) => lay.neighbours(i).filter((n) => onEdge.has(n)).length <= 1);
+    const marks: number[] = [];
+    for (const i of [...ends, ...edge]) {
+      if (!hedge || marks.some((j) => Math.max(Math.abs((j % W) - (i % W)), Math.abs(Math.floor(j / W) - Math.floor(i / W))) < HEDGE_GAP)) continue;
       if (!lay.fitError(hedge, i % W, Math.floor(i / W), 0, room)) {
         const base = lay.unreached();
         lay.push({ def: hedge, x: i % W, y: Math.floor(i / W), rot: 0 });
-        if (lay.unreached() > base) lay.pop(); else placed++;
+        if (lay.unreached() > base) lay.pop(); else { placed++; marks.push(i); }
       }
     }
     // The theme's pieces, densely: anchors in reading order, each piece where it fits whole inside the zone.
