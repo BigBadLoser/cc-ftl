@@ -146,6 +146,7 @@ export function createFightReporter(sim: Sim): FightReporter {
       case 'ship.destroyed': if (c.ours.has(e.ship)) c.outcome = 'lost'; else { c.enemy = e.ship; c.outcome = 'destroyed'; } break;
       case 'ship.fled': if (!c.ours.has(e.ship)) c.enemy = e.ship; c.outcome = c.ours.has(e.ship) ? 'youFled' : 'fled'; break;
       case 'ship.captured': if (e.by === 'player') { c.enemy = e.ship; c.outcome = 'captured'; c.prize = true; } break;
+      case 'ship.recovered': if (e.ship === c.enemy && c.outcome === 'disabled') c.outcome = 'ended'; break;
       case 'ship.disabled': if (!c.ours.has(e.ship) && c.outcome === 'ended') { c.enemy = e.ship; c.outcome = 'disabled'; } break;
       default: break;
     }
@@ -177,7 +178,8 @@ export function createFightReporter(sim: Sim): FightReporter {
         if (e.type === 'combat.started') t = fresh();
         else if (e.type === 'combat.ended') {
           // The player's flee ends the fight by jumping out: the sector is in hyperspace when `combat.ended` comes (see sector/jump.ts).
-          if (t && t.outcome === 'ended' && sim.sector.state === 'hyperspace') t.outcome = 'youFled';
+          // A disabled enemy is still a combatant, so leaving it behind is an escape, not a win.
+          if (t && (t.outcome === 'ended' || t.outcome === 'disabled') && sim.sector.state === 'hyperspace') t.outcome = 'youFled';
           if (t) {
             t.hullNow = finalHull(t);
             const report = finish(t);

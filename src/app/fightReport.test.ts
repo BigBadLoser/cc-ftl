@@ -145,6 +145,19 @@ describe('fight report', () => {
     expect(done?.report).toMatchObject({ outcome: 'captured', enemy: 'Raider B', prize: 'Raider B', enemyHull: 0.3 });
   });
 
+  it('reports an escape, not a disabled enemy, when the player jumps away from one', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const enemy = shipIds(sim)[1] as number;
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }, { type: 'ship.disabled', ship: enemy }]);
+    const mod = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === enemy) as number;
+    sim.sector.state = 'hyperspace'; // enterHyperspace emits only combat.ended for the player's jump
+    const done = reporter.onEvents([{ type: 'module.destroyed', moduleId: mod, def: sim.world.get(mod, ModuleC)!.def, ship: enemy }, { type: 'combat.ended' }]);
+    expect(done?.report.outcome).toBe('youFled');
+  });
+
   it('says nothing for a fight that cost nothing', () => {
     const sim = newGame(3, content);
     const reporter = createFightReporter(sim);
