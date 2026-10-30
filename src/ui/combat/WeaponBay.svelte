@@ -16,7 +16,7 @@
     onMode: (id: number, mode: 'auto' | 'hold') => void;
     style?: string;
   } = $props();
-  const labels = $derived(weaponLabels(me.weapons));
+  const labels = $derived(weaponLabels(me.weapons.map((w) => ({ name: w.short }))));
   const dense = $derived(me.weapons.length > 4);
 </script>
 

@@ -19,7 +19,7 @@
     onMode: (mode: 'auto' | 'hold') => void;
   } = $props();
   const own = $derived(weapon.target !== null);
-  const aimText = $derived(selected ? 'click a module...' : own ? weapon.target : 'Ship');
+  const aimText = $derived(selected ? 'Select target' : own ? weapon.target : 'Ship');
   const held = $derived(weapon.mode === 'hold');
   const ready = $derived(held && weapon.charge >= 1 && weapon.powered && !weapon.ion);
   const flip = (e: Event) => {
@@ -55,21 +55,21 @@
   aria-pressed={selected}
   data-testid="combat-weapon"
   data-mode={weapon.mode}
-  title={compact ? `${tip}${held ? '. On HOLD' : ''}${own ? `. Aimed at ${weapon.target}` : ''}` : tip}
+  title={`${weapon.name}. ${compact ? `${tip}${held ? '. On HOLD' : ''}${own ? `. Aimed at ${weapon.target}` : ''}` : tip}`}
   onclick={onSelect}
   onkeydown={onKey}
 >
   <span class="top">
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
     <span class="nm">{label}</span>
-    {#if weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
+    {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
   {#if compact}
     <span class="cm"><Meter value={weapon.charge} {fill} height={4} edge="var(--track)" /></span>
   {:else}
     <Meter value={weapon.charge} {fill} height={4} edge="var(--track)" />
-    <button class="sub" class:own data-testid="weapon-mode" title={modeTip} onclick={flip}>
-      {#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
+    <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
+      {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>
   {/if}
 </div>
@@ -119,6 +119,9 @@
     min-width: 0;
     font: 600 15px/1.1 var(--head-font);
     letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .am {
     font-size: 11px;
@@ -143,6 +146,7 @@
   }
   .sub:hover { color: var(--text); border: 0; }
   .sub.own { color: var(--text); }
+  .sub.pick, .sub.pick:hover { color: var(--cyan); }
   .sub b { font-weight: 700; }
   .hold { color: var(--amber); }
   .rdy { color: var(--green); }

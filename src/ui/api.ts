@@ -510,7 +510,10 @@ export interface UiLogEntry {
 /** A weapon module of the player's ship. */
 export interface UiWeapon {
   id: number;
+  /** The module's full name (the card's tooltip). */
   name: string;
+  /** One-line display name for the card (WeaponDef.shortName, else the module name). */
+  short: string;
   /** 0..1. */
   charge: number;
   /** Missiles in stock for ammo weapons, null for weapons that use none. */

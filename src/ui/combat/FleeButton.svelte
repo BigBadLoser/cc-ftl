@@ -46,7 +46,8 @@
     text-transform: uppercase;
     color: var(--text);
     background: var(--panel-2);
-    border: 1px solid var(--line);
+    box-sizing: border-box;
+    border: 1px solid var(--frame-line);
   }
   .lab {
     position: relative;
@@ -66,8 +67,9 @@
   .ready {
     color: #fff;
   }
+  /* Ready is the green bar along the top edge alone: no green fill. */
   .ready .fill {
-    background: rgba(71, 224, 160, 0.3);
+    background: transparent;
     box-shadow: inset 0 2px 0 var(--green);
   }
   .flee:disabled {
