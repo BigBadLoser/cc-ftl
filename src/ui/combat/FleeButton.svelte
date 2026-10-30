@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { keyLabel, keymap } from '../keymap';
   import Icon from '../Icon.svelte';
   import { KeyBadge } from '../kit';
   import { anchor } from '../lessons/anchors';
@@ -15,10 +16,10 @@
   const pct = $derived(Math.min(100, Math.round((drive.charge / drive.max) * 100)));
   const tip = $derived(
     ready
-      ? 'Flee: jump out of the fight, then pick where to go on the starmap (F)'
+      ? `Flee: jump out of the fight, then pick where to go on the starmap (${keyLabel($keymap, 'combat.flee')})`
       : drive.helmManned
-        ? `Flee: drive charging ${Math.floor(drive.charge)}/${drive.max} s (F)`
-        : 'Helm unmanned: the drive is not charging (F)',
+        ? `Flee: drive charging ${Math.floor(drive.charge)}/${drive.max} s (${keyLabel($keymap, 'combat.flee')})`
+        : `Helm unmanned: the drive is not charging (${keyLabel($keymap, 'combat.flee')})`,
   );
 </script>
 
@@ -27,7 +28,7 @@
   <span class="lab">
     <Icon name="fast" size={22} />
     <span>Flee</span>
-    <KeyBadge tone={ready ? 'green' : 'cyan'} size="sm">F</KeyBadge>
+    <KeyBadge tone={ready ? 'green' : 'cyan'} size="sm">{keyLabel($keymap, 'combat.flee')}</KeyBadge>
   </span>
 </button>
 

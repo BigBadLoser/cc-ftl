@@ -714,7 +714,7 @@ Small in-house controls for panels, built on [Bits UI](https://bits-ui.com) (hea
 ARIA behaviour and no styling). The game keeps its own look: every kit component is styled here with the tokens in
 `src/ui/theme.css` (sharp dark panels, the global `button.on` state, 40px touch targets, `--focus` ring), not by a styled library.
 
-- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, exported from `src/ui/kit/index.ts`.
+- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, `SideTabs` (left-sidebar tabs), exported from `src/ui/kit/index.ts`.
   Props are plain values plus an `onChange` callback (controlled); options are `KitOption` (`value`, `label`, `sub`, `disabled`, `testId`).
 - **Rule: panels import from `ui/kit` only, never `bits-ui`.** ESLint (`no-restricted-imports`) allows `bits-ui` only under
   `src/ui/kit`, so the library can be swapped by editing the kit alone. Panels still never mutate the sim; a kit control only reports a
@@ -746,6 +746,22 @@ world through `api.moduleScreenRect`. A new condition or target kind is one shap
 it; the engine does not change. If a lesson needs more of the game, add the field to `LessonCtx` and fill it in the host.
 A lesson (or a step) names its `speaker` from `speakers.ts`: a fixed instructor (name, role, `look`), whose portrait the crew portrait
 renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the plain card.
+
+## Keys, settings and the Esc menu
+
+- **Key map** (`src/ui/keymap/`): every key the game answers to is an action in `actions.ts` (id, group, label, default chords, context).
+  A chord is an optional `Shift+` and a `KeyboardEvent.code`, so bindings are physical keys. `keymap.matches(e, id)` is the only way a
+  handler reads a key (App, the combat strip, lessons, the deploy picker, `app/input.ts` for camera and R, the profiler's F3); key badges
+  read `keyLabel($keymap, id)`, and lesson text writes `[@combat.volley]` for the bound key. The player's changes live in localStorage
+  (`cc-ftl.keys`, only the differences). Two actions on one key conflict when their contexts overlap, unless one `shares` the other on
+  purpose (R drafts crew, rotates a module and picks weapon 4). Esc is fixed. A new key: add an action, then call `matches` in its handler.
+- **Settings** (`src/ui/settings/`): a store in localStorage (`cc-ftl.settings`), applied live: `apply.ts` (pause on alert or in the
+  background, tooltips off), `app/input.ts` (edge scroll, scroll and zoom speed, invert drag), App (FPS), main.ts (start speed).
+  Lessons keep their own prefs.
+- **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
+  menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open it holds the one modal gate (`holdModal` / `modalOpen` in `ui/keys.ts`, also held by the jump confirmation), and every game key handler stands aside; the App pauses the game and restores the speed.
+- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
+  ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
 
 ## Saves
 

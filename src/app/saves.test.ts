@@ -4,6 +4,7 @@ import { deserialize, homeShip, newGame, serialize, ShipC } from '../sim';
 import { DeadC } from '../sim/crew/components';
 import { playerCrew } from '../sim/story/world';
 import { createSaver, lostReason, startGame, writeSave } from './saves';
+import { saveStore } from './saveStore';
 
 describe('game over', () => {
   it('is not lost at the start, and is lost when the ship is wrecked or the crew is all dead', () => {
@@ -122,5 +123,25 @@ describe('save failures and recovery', () => {
     for (let i = 0; i < 60; i++) sim.archives.push({ ...base, node: `n${i}`, tick: i });
     const back = deserialize(serialize(sim), content);
     expect(back.archives.map((a) => a.node)).toEqual(sim.archives.map((a) => a.node));
+  });
+
+  it('loads a picked slot; an unloadable one is kept and the autosave plays instead', () => {
+    const local = fakeStorage();
+    const session = fakeStorage();
+    vi.stubGlobal('localStorage', local);
+    vi.stubGlobal('sessionStorage', session);
+    const a = newGame(3, content);
+    a.tick = 42;
+    writeSave(a, 'slot1', 'Mine');
+    writeSave(newGame(3, content));
+    session.setItem('cc.loadSlot', 'slot1');
+    expect(startGame(null).sim.tick).toBe(42);
+    expect(session.getItem('cc.loadSlot')).toBeNull();
+    local.setItem('cc.save.slot2', '{"trunc');
+    session.setItem('cc.loadSlot', 'slot2');
+    const start = startGame(null);
+    expect(start.sim.tick).toBe(0);
+    expect(start.notice).toMatch(/could not be loaded/);
+    expect(saveStore.read('slot2')).toBe('{"trunc');
   });
 });

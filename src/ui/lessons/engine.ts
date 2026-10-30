@@ -33,6 +33,13 @@ export class LessonEngine {
   private now = 0;
   private frame: LessonFrame | null = null;
   private subs = new Set<(v: LessonView | null) => void>();
+  /** Something else holds the pause now (the Esc menu, the bug report, a decision): the engine never un-pauses behind it. */
+  private busy = false;
+  /**
+   * The speed a lesson closed under a busy screen would have restored. The pause owner that closes last restores: once nothing is busy
+   * and no lesson is open, this goes back on (if the game is still paused); a lesson opening first takes it over as its own.
+   */
+  private deferred: Speed | null = null;
 
   constructor(
     private readonly defs: readonly LessonDef[],
@@ -57,6 +64,14 @@ export class LessonEngine {
     this.now = now;
     const f: LessonFrame = { ctx, signals };
     this.frame = f;
+    const wasBusy = this.busy;
+    this.busy = ctx.busy;
+    if (!ctx.busy) {
+      if (this.deferred !== null && !this.open) {
+        if (this.clock.speed() === 0) this.clock.setSpeed(this.deferred);
+        this.deferred = null;
+      } else if (wasBusy) this.applySpeed(); // a run step held back while busy gets its time now
+    }
     if (!this.prefs.enabled()) {
       this.queue = [];
       if (this.open) this.close(false);
@@ -99,7 +114,8 @@ export class LessonEngine {
   }
 
   private start(def: LessonDef): void {
-    const held = this.clock.speed();
+    const held = this.deferred ?? this.clock.speed();
+    this.deferred = null;
     this.open = { def, index: 0, held };
     this.applySpeed();
     this.emit();
@@ -123,7 +139,7 @@ export class LessonEngine {
     const want = o.def.steps[o.index]?.run ? o.held : 0;
     const now = this.clock.speed();
     if (want === 0 && now !== 0) this.clock.setSpeed(0);
-    else if (want !== 0 && now === 0) this.clock.setSpeed(want);
+    else if (want !== 0 && now === 0 && !this.busy) this.clock.setSpeed(want);
   }
 
   private close(seen: boolean): void {
@@ -131,8 +147,12 @@ export class LessonEngine {
     if (!o) return;
     if (seen) this.prefs.markSeen(o.def.id);
     this.open = null;
-    // Back to the player's speed, unless they paused the game themselves before the lesson (or changed speed during it).
-    if (o.held !== 0 && this.clock.speed() === 0) this.clock.setSpeed(o.held);
+    // Back to the player's speed, unless they paused the game themselves before the lesson (or changed speed during it). Under a busy
+    // screen the restore waits for it to close (see `deferred`).
+    if (o.held !== 0) {
+      if (this.busy) this.deferred = o.held;
+      else if (this.clock.speed() === 0) this.clock.setSpeed(o.held);
+    }
     this.cooldownUntil = this.now + this.cooldownMs;
     this.emit();
   }

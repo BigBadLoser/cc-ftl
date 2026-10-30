@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { keyLabel, keymap } from '../keymap';
   import type { UiApi } from '../api';
   import { KeyBadge } from '../kit';
 
@@ -57,7 +58,7 @@
   class="inset"
   class:hot={threatened}
   style:width="{size.w + 2}px"
-  title="Swap the main view and the inset (Tab)"
+  title="Swap the main view and the inset ({keyLabel($keymap, 'combat.swap')})"
   aria-label="Swap views"
   data-testid="combat-inset"
   onclick={onSwap}
@@ -65,7 +66,7 @@
   <span class="head">
     <b>{title}</b>
     <span class="sp"></span>
-    <KeyBadge tone="light" size="sm">Tab</KeyBadge>
+    <KeyBadge tone="light" size="sm">{keyLabel($keymap, 'combat.swap')}</KeyBadge>
     <span class="hint">swap</span>
   </span>
   <span class="win" bind:this={win} style:height="{size.h}px"></span>
