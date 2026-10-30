@@ -124,6 +124,8 @@
     text-overflow: ellipsis;
   }
   .am {
+    flex: none;
+    white-space: nowrap;
     font-size: 11px;
     color: var(--dim);
   }

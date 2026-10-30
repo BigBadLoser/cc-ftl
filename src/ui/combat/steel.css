@@ -51,3 +51,7 @@ section.fw.fr-card .barepin.on {
   background: transparent;
   color: var(--cyan);
 }
+/* Section legends a step quieter than the dim text, toward the frame line. */
+.steel .frame h3 {
+  color: #727a82;
+}

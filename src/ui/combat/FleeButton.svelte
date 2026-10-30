@@ -61,8 +61,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(223, 228, 232, 0.16);
-    box-shadow: inset 0 2px 0 var(--hud-bar, var(--cyan));
+    background: rgba(223, 228, 232, 0.05);
+    box-shadow: inset 0 1px 0 rgba(223, 228, 232, 0.4);
   }
   .ready {
     color: #fff;
@@ -76,7 +76,7 @@
     opacity: 1;
   }
   .flee:disabled:not(.ready) .lab {
-    opacity: 0.55;
+    opacity: 0.8;
   }
   .flee.ready:disabled {
     color: #fff;
