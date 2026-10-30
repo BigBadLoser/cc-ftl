@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { content } from '../../../content';
 import type { ModuleDef } from '../../registry';
 import { roomQuality } from './quality';
 
-const defs = content.modules as unknown as Record<string, ModuleDef>;
+const piece = (id: string): ModuleDef => ({ name: id, asset: id, footprint: [1, 1], solid: true, power: 0 }) as unknown as ModuleDef;
+const defs: Record<string, ModuleDef> = { 'module.storage_locker': piece('module.storage_locker'), 'module.planter': piece('module.planter') };
 const roomOf = (rows: string[]): Int16Array => {
   const w = Math.max(...rows.map((r) => r.length));
   return Int16Array.from({ length: w * rows.length }, (_, i) => (rows[Math.floor(i / w)]?.[i % w] === '_' ? 0 : -1));
