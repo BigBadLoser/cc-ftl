@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { keyLabel, keymap, WEAPON_ACTIONS } from '../keymap';
   import { Frame } from '../kit';
   import { anchor } from '../lessons/anchors';
   import type { UiAiming, UiCombat } from '../api';
@@ -29,7 +30,7 @@
         <WeaponCard
           weapon={w}
           label={labels[i] ?? w.name}
-          hotkey={'QWER'[i] ?? ''}
+          hotkey={i < WEAPON_ACTIONS.length ? keyLabel($keymap, WEAPON_ACTIONS[i]!) : ''}
           compact={dense}
           selected={aiming?.weapon === w.id}
           onSelect={() => onSelect(w.id)}

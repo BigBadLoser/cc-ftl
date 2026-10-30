@@ -36,6 +36,10 @@
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import LessonHost from './lessons/LessonHost.svelte';
+  import EscMenu from './menu/EscMenu.svelte';
+  import { keymap } from './keymap';
+  import { settings } from './settings/settings';
+  import { applySettings } from './settings/apply';
   import Icon, { type IconName } from './Icon.svelte';
   import { isTypingTarget } from './keys';
   import { isPinned } from './floatingWindow';
@@ -61,6 +65,22 @@
     if (speedBeforeReport !== null) api.setSpeed(speedBeforeReport);
     speedBeforeReport = null;
   }
+  /** The Esc menu: the game pauses while it is open and goes back to its speed on close (as the bug report). */
+  let menuOpen = $state(false);
+  let speedBeforeMenu: 1 | 2 | 3 | null = null;
+  function openMenu() {
+    if (menuOpen) return;
+    const s = snap?.speed ?? 0;
+    speedBeforeMenu = s === 0 ? null : s;
+    api.setSpeed(0);
+    menuOpen = true;
+  }
+  function closeMenu() {
+    menuOpen = false;
+    if (speedBeforeMenu !== null && snap?.speed === 0) api.setSpeed(speedBeforeMenu);
+    speedBeforeMenu = null;
+  }
+  let showFps = $state(settings.get().showFps);
   let stockOpen = $state(false);
   let fightReport = $state<UiFightReport | null>(null);
   let jobsOpen = $state(false);
@@ -155,6 +175,8 @@
       api.combat.subscribe((c) => {
         combat = c;
       }),
+      settings.subscribe((s) => (showFps = s.showFps)),
+      applySettings(api),
     ];
     api.attachCanvas(canvas);
     return () => unsubs.forEach((u) => u());
@@ -177,24 +199,30 @@
   ];
   const outside = outsideTap(() => closeOutside(panels));
 
+  /** Keys from the key map (keymap/actions.ts). The Esc menu, when open, takes every key itself. */
   function onKey(e: KeyboardEvent) {
-    if (isTypingTarget(e)) return;
-    if (reporting && e.key !== '`') return; // the bug report keeps the game paused and handles its own keys
-    if (e.key === ' ') {
+    if (isTypingTarget(e) || menuOpen) return;
+    if (reporting && !keymap.matches(e, 'debug.panel')) return; // the bug report keeps the game paused and handles its own keys
+    if (e.key === 'Escape') return escape();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (keymap.matches(e, 'game.pause')) {
       e.preventDefault();
       api.togglePause();
-    } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
-    else if (e.key === '`') debug = !debug;
-    else if (e.key === 'm') { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
-    else if (e.key === 'Escape') {
-      // A pinned window ignores Esc.
-      if (fightReport && !isPinned('fightReport')) api.closeFightReport();
-      else if (researchOpen) researchOpen = false;
-      else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
-      else if (stockOpen && !isPinned('stock')) stockOpen = false;
-      else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
-      else api.selectCrew(null);
-    }
+    } else if (keymap.matches(e, 'game.speed1')) api.setSpeed(1);
+    else if (keymap.matches(e, 'game.speed2')) api.setSpeed(2);
+    else if (keymap.matches(e, 'game.speed3')) api.setSpeed(3);
+    else if (keymap.matches(e, 'debug.panel')) debug = !debug;
+    else if (keymap.matches(e, 'view.starmap')) { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
+  }
+  /** Esc: close the top panel, else cancel the tool, aim or selection, else open the menu. A pinned window ignores Esc. */
+  function escape() {
+    if (fightReport && !isPinned('fightReport')) api.closeFightReport();
+    else if (researchOpen) researchOpen = false;
+    else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
+    else if (stockOpen && !isPinned('stock')) stockOpen = false;
+    else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
+    else if (mapOpen || deploy) return; // the starmap and the deploy picker answer Esc themselves
+    else if (!api.cancel()) openMenu();
   }
 
   const speeds: { label: string; icon: IconName; speed: 0 | 1 | 2 | 3 }[] = [
@@ -214,11 +242,12 @@
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}</span>
+    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
     <span class="speeds">
       {#each speeds as s (s.speed)}
         <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
       {/each}
+      <button class="tile" class:on={menuOpen} title="Menu (Esc)" aria-label="Menu" data-testid="open-menu" onclick={openMenu}><Icon name="menu" size={18} /></button>
     </span>
   </span>
 {/snippet}
@@ -296,7 +325,8 @@
 {#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
-<LessonHost {api} busy={reporting} />
+<LessonHost {api} busy={reporting || menuOpen} />
+{#if menuOpen}<EscMenu {api} onClose={closeMenu} />{/if}
 <ErrorOverlay {api} />
 <GameSession {api} />
 
@@ -343,9 +373,10 @@
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }
-  .tick { flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
+  .fps { display: block; margin-top: 2px; font-size: 11px; color: var(--text); }
+  .tick { white-space: nowrap; flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
   .speeds { display: flex; }
-  .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
+  .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 33px; height: 36px; }
   .speeds :global(button.tile:hover) { background: var(--panel-3); }
   .speeds :global(button.tile.on) { background: var(--panel-3); box-shadow: inset 0 0 0 1px var(--cyan); }
   @media (max-width: 600px) {

@@ -109,16 +109,16 @@ describe('placement tool state', () => {
   it('rotates with R and back with Shift+R', () => {
     const { c, h } = setup();
     c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.fabricator' });
-    h.onKey('r');
+    h.onKey('rotate');
     expect(toolOf(c).rot).toBe(1);
-    h.onKey('r', true);
-    h.onKey('r', true);
+    h.onKey('rotateBack');
+    h.onKey('rotateBack');
     expect(toolOf(c).rot).toBe(3);
   });
 
   it.each(['escape', 'back'])('%s drops the placement first, then leaves build mode', (how) => {
     const { c, h } = setup();
-    const press = () => (how === 'escape' ? h.onKey('escape') : h.onContext(0, 0, false));
+    const press = () => (how === 'escape' ? c.cancel() : h.onContext(0, 0, false));
     c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.fabricator' });
     press();
     expect(toolOf(c)).toMatchObject({ tool: 'build', build: 'module', moduleDef: null });

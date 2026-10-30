@@ -5,6 +5,7 @@
    * the cells where the ship may go tinted, and a ghost block for your ship. Tap or drag to pick a cell; the ship's top-left tile is
    * that cell's origin, and the gap rule is still checked at tile level (`api.deployCheck`).
    */
+  import { keyModal, keymap } from './keymap';
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
@@ -70,7 +71,7 @@
     if (best) cell = best;
   };
   function key(e: KeyboardEvent) {
-    if (e.key === 'Enter') go();
+    if (!keyModal.open && keymap.matches(e, 'ui.confirm')) go();
   }
 </script>
 

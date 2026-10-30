@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { keymap } from '../keymap';
   import { isTypingTarget } from '../keys';
   import { onMount } from 'svelte';
   import type { UiAiming, UiApi, UiCombat, UiSignal } from '../api';
@@ -69,11 +70,11 @@
     const onKey = (e: KeyboardEvent) => {
       const v = eng.current;
       // Typing in a text field (the bug report, a name) keeps its keys.
-      if (!v || isTypingTarget(e)) return;
-      if (e.key === ' ' || e.key === '1' || e.key === '2' || e.key === '3') {
+      if (!v || uiBusy || isTypingTarget(e)) return;
+      if ((['game.pause', 'game.speed1', 'game.speed2', 'game.speed3'] as const).some((id) => keymap.matches(e, id))) {
         e.preventDefault();
         e.stopImmediatePropagation();
-      } else if (e.key === 'Enter' && v.step.advance === 'gotIt') {
+      } else if (keymap.matches(e, 'ui.confirm') && v.step.advance === 'gotIt') {
         e.preventDefault();
         e.stopImmediatePropagation();
         eng.gotIt();

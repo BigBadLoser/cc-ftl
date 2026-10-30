@@ -21,13 +21,16 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { createSaver, lostReason, reloadLastSave, restartNewGame, startGame } from './app/saves';
+import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
+import { AUTO_ID, SLOT_IDS, saveStore } from './app/saveStore';
 import { content } from './content';
 import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
 import { createSignalFeed } from './app/signals';
+import { keyModal, keymap } from './ui/keymap';
+import { settings } from './ui/settings/settings';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -113,12 +116,14 @@ const loop = createLoop({
   },
 });
 bridge.attachLoop(loop);
+// The player's start speed (Settings); a debug scenario sets its own once it is set up.
+if (!new URLSearchParams(location.search).has('scenario')) bridge.setSpeed(settings.get().startSpeed);
 
 // Profiler (debug only, loaded on demand): `?perf` turns it on at start, F3 toggles its panel. See docs/PROFILING.md.
 const perfBoot = (): Promise<import('./app/profiler/install').ProfilerHandle> => import('./app/profiler/install').then((m) => m.installProfiler(setProbe));
 if (new URLSearchParams(location.search).has('perf')) void perfBoot().then((h) => h.api.enable());
 window.addEventListener('keydown', (e) => {
-  if (e.key !== 'F3') return;
+  if (keyModal.open || !keymap.matches(e, 'debug.profiler')) return;
   e.preventDefault();
   void perfBoot().then((h) => h.togglePanel());
 });
@@ -334,6 +339,16 @@ function reportInfo(): ReportInfo {
 const api: UiApi = {
   snapshot: bridge.snapshot,
   session,
+  saves: {
+    list: () => {
+      const metas = new Map(saveStore.list().map((m) => [m.id, m]));
+      return [AUTO_ID, ...SLOT_IDS].map((id) => ({ id, auto: id === AUTO_ID, meta: metas.get(id) ?? null }));
+    },
+    save: (id, name) => id !== AUTO_ID && writeSave(sim, id, name),
+    load: loadSlot,
+    remove: (id) => id !== AUTO_ID && saveStore.remove(id),
+  },
+  cancel: () => controller.cancel(),
   newGame: restartNewGame,
   loadLastSave: reloadLastSave,
   dismissNotice: () => session.set({ ...session.get(), notice: null }),
