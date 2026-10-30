@@ -156,6 +156,8 @@ export type Command =
   | { type: 'crew.sabotage'; ids: number[]; module: number }
   /** Drop the members' sabotage orders. */
   | { type: 'crew.cancelSabotage'; ids: number[] }
+  /** Send player crew on a hostile ship back to the shuttle docked there; it flies them home and they disembark. Fails (reason event, crew stay) with no reachable shuttle. */
+  | { type: 'crew.recall'; ids: number[] }
   /** Queue assembly of a robot of `role` (a role with `assemble`) in a free robot bay; the bay becomes its home. */
   | { type: 'module.assembleRobot'; moduleId: number; role: string }
   /** Cancel the assembly running in a robot bay (delivered materials drop to the floor). */

@@ -82,7 +82,7 @@ import { newYard, type YardState } from './yard/types';
  * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
  * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
  * v69 (trade): optional `Deal.getValue` (each get line's agreed share of the escrow, for settling a part-delivered run).
- * v70 (boarding): the 'sabotage' job kind and `Job.holder`.
+ * v70 (boarding): `RecallC` (a player boarding party's recall, on the shuttle) and the 'sabotage' job kind.
  */
 export const SAVE_VERSION = 70;
 

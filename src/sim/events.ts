@@ -163,6 +163,10 @@ export type SimEvent =
   /** Player boarders: a crew member was ordered to wreck `module` of hostile ship `ship`; it ended (`destroyed`, `interrupted` by a fight or a new order, `downed`, `cancelled`). */
   | { type: 'crew.sabotageStarted'; crew: number; module: number; ship: number }
   | { type: 'crew.sabotageEnded'; crew: number; module: number; ship: number; reason: 'destroyed' | 'interrupted' | 'downed' | 'cancelled' }
+  /** A boarding party was recalled: `crew` walk to shuttle `vehicle` docked at hostile ship `ship`; the shuttle brought them home; the recall failed (`crew` may be empty) for `reason`. */
+  | { type: 'crew.recallStarted'; vehicle: number; ship: number; crew: number[] }
+  | { type: 'crew.recalled'; vehicle: number; crew: number[] }
+  | { type: 'crew.recallFailed'; vehicle: number; crew: number[]; reason: string }
   /** The player lost the game; `reason` is a short code ('captured'). */
   | { type: 'game.lost'; reason: string }
   /** EVA: a crew member put on / took off a suit at `airlock` (a module); the tank hit the warning level / ran dry. */

@@ -40,7 +40,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     // `heat` (combat heat, #185) is a new empty field in the same way.
@@ -269,4 +269,5 @@ describe('sector refactor equivalence', () => {
 // disaster hash (no fight) is unchanged.
 // Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks; on main alone it pinned b0b4e040.
 // Merged with combat round 1 it is e65e90fe; the disaster hash is unchanged by the bed owners.
+// Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it.
 const EXPECTED = { combat: 'e65e90fe', disaster: '6317c54b' };
