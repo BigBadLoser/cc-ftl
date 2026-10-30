@@ -21,6 +21,45 @@ export function overlaps(x: ActionDef, y: ActionDef): boolean {
   return x.context === 'global' || y.context === 'global' || x.context === y.context;
 }
 
+/** An action that lost a key to keep the map free of conflicts: `chord` now belongs only to `to`. */
+export interface LostKey {
+  id: ActionId;
+  chord: string;
+  to: ActionId[];
+}
+
+/**
+ * Make a key map conflict-free with the same rule the Controls page shows (`overlaps`): wherever two actions share a key in overlapping
+ * contexts, one keeps it and the other is unbound from it, never silently shared. Who keeps it: the actions the player just set (`target`),
+ * then actions the change did not touch, then actions it moved as a side effect (a swap's displaced key); between equals, the one listed
+ * first in actions.ts. Returns the clean map and every key an action lost.
+ */
+export function resolveConflicts(next: Record<string, string[]>, prev: Bindings, target: ReadonlySet<string>): { map: Record<string, string[]>; lost: LostKey[] } {
+  const map: Record<string, string[]> = Object.fromEntries(Object.entries(next).map(([k, v]) => [k, [...v]]));
+  const rank = (id: string) => (target.has(id) ? 2 : (prev[id] ?? []).join() === (next[id] ?? []).join() ? 1 : 0);
+  const order = new Map(ACTIONS.map((a, i) => [a.id, i]));
+  const lost = new Map<string, LostKey>();
+  for (let i = 0; i < ACTIONS.length; i++) {
+    for (let j = i + 1; j < ACTIONS.length; j++) {
+      const a = ACTIONS[i]!;
+      const b = ACTIONS[j]!;
+      if (!overlaps(a, b)) continue;
+      for (const chord of [...(map[a.id] ?? [])]) {
+        if (!(map[b.id] ?? []).includes(chord)) continue;
+        let [, lose] = rank(a.id) > rank(b.id) || (rank(a.id) === rank(b.id) && order.get(a.id)! < order.get(b.id)!) ? [a, b] : [b, a];
+        if (lose.fixed) lose = lose === a ? b : a; // a fixed key (Esc) is never taken away: whoever tried to share it loses
+        if (lose.fixed) continue;
+        map[lose.id] = map[lose.id]!.filter((c) => c !== chord);
+        // Name every action that still uses the key where the loser listens, not only the one it was weighed against.
+        const to = ACTIONS.filter((o) => o.id !== lose.id && (map[o.id] ?? []).includes(chord) && overlaps(lose, o)).map((o) => o.id as ActionId);
+        const key = `${lose.id}|${chord}`;
+        if (!lost.has(key)) lost.set(key, { id: lose.id as ActionId, chord, to });
+      }
+    }
+  }
+  return { map, lost: [...lost.values()] };
+}
+
 export interface Keymap {
   subscribe(run: (b: Bindings) => void): () => void;
   get(): Bindings;
@@ -30,10 +69,13 @@ export interface Keymap {
   matches(e: Pick<KeyboardEvent, 'code' | 'shiftKey'>, id: ActionId): boolean;
   /** Actions (other than `id`) whose bindings would clash with `chord` on `id`. */
   conflicts(id: ActionId, chord: string): ActionId[];
-  /** Put `chord` in the action's slot (null clears it). With `swap`, the actions it conflicts with get the chord that slot had. */
-  bind(id: ActionId, slot: number, chord: string | null, swap?: boolean): void;
-  /** Back to the defaults: one group, or everything. */
-  reset(group?: KeyGroup): void;
+  /**
+   * Put `chord` in the action's slot (null clears it). With `swap`, the actions it conflicts with get the chord that slot had. Every change
+   * leaves the map conflict-free (`resolveConflicts`); returns the keys other actions lost on the way, for the player to rebind.
+   */
+  bind(id: ActionId, slot: number, chord: string | null, swap?: boolean): LostKey[];
+  /** Back to the defaults: one group, or everything. Returns the keys other actions lost (a group's defaults win over custom keys). */
+  reset(group?: KeyGroup): LostKey[];
 }
 
 export function createKeymap(storage: () => Store | null): Keymap {
@@ -45,15 +87,19 @@ export function createKeymap(storage: () => Store | null): Keymap {
       const def = ACTION_BY_ID.get(id);
       if (def && !def.fixed && Array.isArray(v)) cur[id] = v.filter((c): c is string => typeof c === 'string').slice(0, SLOTS);
     }
+    cur = resolveConflicts(cur, cur, new Set()).map; // stored keys from an older or hand-edited map: no conflict survives a load
   } catch { /* blocked or junk: the defaults */ }
   const subs = new Set<(b: Bindings) => void>();
-  const commit = (next: Record<string, string[]>) => {
+  /** The one way the map changes: resolve conflicts (the `target` actions keep their keys), store, notify. */
+  const commit = (raw: Record<string, string[]>, target: ReadonlySet<string>): LostKey[] => {
+    const { map: next, lost } = resolveConflicts(raw, cur, target);
     cur = next;
     // Only the changes are stored, so a later default change still reaches untouched actions.
     const diff: Record<string, string[]> = {};
     for (const def of ACTIONS) if (cur[def.id]!.join() !== def.keys.join()) diff[def.id] = cur[def.id]!;
     try { storage()?.setItem(KEYS_STORE, JSON.stringify(diff)); } catch { /* not remembered */ }
     for (const fn of [...subs]) fn(cur);
+    return lost;
   };
   const km: Keymap = {
     subscribe(run) {
@@ -74,7 +120,7 @@ export function createKeymap(storage: () => Store | null): Keymap {
     },
     bind(id, slot, chord, swap = false) {
       const def = ACTION_BY_ID.get(id);
-      if (!def || def.fixed) return;
+      if (!def || def.fixed) return [];
       const next = { ...cur, [id]: [...(cur[id] ?? [])] };
       const old = next[id]![slot] ?? null;
       if (chord && swap) {
@@ -87,11 +133,13 @@ export function createKeymap(storage: () => Store | null): Keymap {
       if (chord) mine[slot] = chord;
       else mine.splice(slot, 1);
       next[id] = [...new Set(mine.filter(Boolean))].slice(0, SLOTS);
-      commit(next);
+      return commit(next, new Set([id]));
     },
     reset(group) {
       const d = defaults();
-      commit(group ? { ...cur, ...Object.fromEntries(ACTIONS.filter((x) => x.group === group).map((x) => [x.id, d[x.id]!])) } : d);
+      if (!group) return commit(d, new Set(ACTIONS.map((x) => x.id)));
+      const ids = ACTIONS.filter((x) => x.group === group).map((x) => x.id);
+      return commit({ ...cur, ...Object.fromEntries(ids.map((id) => [id, d[id]!])) }, new Set(ids));
     },
   };
   return km;

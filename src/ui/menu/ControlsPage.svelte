@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { KeyBadge, SideTabs } from '../kit';
-  import { ACTION_BY_ID, ACTIONS, chordLabel, chordOf, KEY_GROUPS, keymap, SLOTS, type ActionId, type KeyGroup } from '../keymap';
+  import { ACTION_BY_ID, ACTIONS, chordLabel, chordOf, KEY_GROUPS, keymap, SLOTS, type ActionId, type KeyGroup, type LostKey } from '../keymap';
 
   /**
    * Rebind keys: click a slot, press a key. Esc cancels, Delete or Backspace clears the slot. A key another action already uses asks
@@ -11,6 +11,9 @@
 
   let listening = $state<{ id: ActionId; slot: number } | null>(null);
   let clash = $state<{ id: ActionId; slot: number; chord: string; with: ActionId[] } | null>(null);
+  /** Keys other actions lost to the last change (the map never keeps a conflict): shown in the footer so the player can rebind them. */
+  let lost = $state<LostKey[]>([]);
+  const note = (l: LostKey[]) => (lost = l);
 
   const labelOf = (id: string) => ACTION_BY_ID.get(id)?.label ?? id;
   const groups = KEY_GROUPS.map((g) => ({ ...g, actions: ACTIONS.filter((a) => a.group === g.id) }));
@@ -20,6 +23,7 @@
 
   function listen(id: ActionId, slot: number) {
     clash = null;
+    lost = [];
     listening = { id, slot };
     onCapture(true);
     window.addEventListener('keydown', onKey, true);
@@ -36,7 +40,7 @@
     e.stopImmediatePropagation();
     if (e.code === 'Escape') return stop();
     if (e.code === 'Backspace' || e.code === 'Delete') {
-      keymap.bind(l.id, l.slot, null);
+      note(keymap.bind(l.id, l.slot, null));
       return stop();
     }
     const chord = chordOf(e);
@@ -44,21 +48,21 @@
     if (chord === 'Escape' || chord === 'Shift+Escape') return stop();
     const others = keymap.conflicts(l.id, chord);
     if (others.length) clash = { ...l, chord, with: others };
-    else keymap.bind(l.id, l.slot, chord);
+    else note(keymap.bind(l.id, l.slot, chord));
     stop();
   }
   function swap() {
-    if (clash) keymap.bind(clash.id, clash.slot, clash.chord, true);
+    if (clash) note(keymap.bind(clash.id, clash.slot, clash.chord, true));
     clash = null;
   }
   const reset = (g?: KeyGroup) => {
     clash = null;
-    keymap.reset(g);
+    note(keymap.reset(g));
   };
   onDestroy(stop);
 </script>
 
-<SideTabs options={TABS} value={tab} onChange={(v) => { stop(); clash = null; tab = v as KeyGroup; }} label="Key groups" testId="controls">
+<SideTabs options={TABS} value={tab} onChange={(v) => { stop(); clash = null; lost = []; tab = v as KeyGroup; }} label="Key groups" testId="controls">
   <div class="page">
     <div class="list">
     <header>
@@ -94,6 +98,13 @@
       {/if}
     {/each}
     </div>
+    {#if lost.length}
+      <div class="lost" role="status" data-testid="keys-lost">
+        {#each lost as l (l.id + l.chord)}
+          <span><b>{labelOf(l.id)}</b> lost <KeyBadge tone="light" size="sm">{chordLabel(l.chord)}</KeyBadge> (used by {l.to.map(labelOf).join(', ')}).{#if !$keymap[l.id]?.length} Now unbound.{/if}</span>
+        {/each}
+      </div>
+    {/if}
     <footer>
       <p class="hint">Click a key, then press the new one. <KeyBadge tone="dim" size="sm">Del</KeyBadge> clears it. <KeyBadge tone="dim" size="sm">Esc</KeyBadge> cancels a tool, aim or selection, then opens this menu; it cannot be changed.</p>
       <button class="interact" data-testid="keys-reset-all" onclick={() => reset()}>Reset all keys</button>
@@ -199,6 +210,16 @@
   }
   .dash {
     color: var(--dim);
+  }
+  .lost {
+    flex: none;
+    display: grid;
+    gap: 2px;
+    margin-top: var(--sp-2);
+    padding: 6px var(--sp-2);
+    border: 1px solid var(--hud-bar, var(--line-hi));
+    font-size: 13px;
+    color: var(--rest);
   }
   .clash {
     display: flex;

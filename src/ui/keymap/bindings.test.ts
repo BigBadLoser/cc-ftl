@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ACTIONS } from './actions';
-import { chordLabel, chordOf, createKeymap, KEYS_STORE, overlaps } from './bindings';
+import { chordLabel, chordOf, createKeymap, KEYS_STORE, overlaps, type Keymap } from './bindings';
+import type { ActionId } from './actions';
 
 const memory = () => {
   const m = new Map<string, string>();
   return { m, s: { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) } };
 };
 const press = (code: string, shiftKey = false) => ({ code, shiftKey });
+/** Every key of every action, checked with the Controls page's own rule. */
+const clashes = (km: Keymap) => ACTIONS.flatMap((a) => km.keys(a.id).flatMap((c) => km.conflicts(a.id, c).map((o) => `${a.id}/${o} on ${c}`)));
 
 describe('key map', () => {
   it('has no clashing defaults', () => {
@@ -78,5 +81,57 @@ describe('key map', () => {
     const byId = new Map(ACTIONS.map((a) => [a.id, a]));
     expect(overlaps(byId.get('crew.draft')!, byId.get('combat.weapon4')!)).toBe(false);
     expect(overlaps(byId.get('combat.volley')!, byId.get('game.pause')!)).toBe(true);
+  });
+
+  it('a group reset never leaves another group sharing its default key (Codex: Pause V, Volley Space, Reset Combat)', () => {
+    const km = createKeymap(() => null);
+    km.bind('game.pause', 0, 'KeyV', true); // swap: Volley takes Space
+    expect(km.keys('combat.volley')).toEqual(['Space']);
+    const lost = km.reset('combat');
+    expect(km.keys('combat.volley')).toEqual(['KeyV']);
+    expect(km.keys('game.pause')).toEqual([]); // V went back to Volley; Pause is unbound, not sharing
+    expect(lost).toEqual([{ id: 'game.pause', chord: 'KeyV', to: ['combat.volley'] }]);
+    expect(clashes(km)).toEqual([]);
+  });
+
+  it('a swap never hands the displaced key into a second conflict (Codex: Draft to Space)', () => {
+    const km = createKeymap(() => null);
+    const lost = km.bind('crew.draft', 0, 'Space', true); // Pause would get R, which Rotate module and Select weapon 4 still use
+    expect(km.keys('crew.draft')).toEqual(['Space']);
+    expect(km.keys('game.pause')).toEqual([]);
+    expect(km.keys('build.rotate')).toEqual(['KeyR']);
+    expect(km.keys('combat.weapon4')).toEqual(['KeyR']);
+    expect(lost).toEqual([{ id: 'game.pause', chord: 'KeyR', to: ['build.rotate', 'combat.weapon4'] }]);
+    expect(clashes(km)).toEqual([]);
+  });
+
+  it('stays conflict-free after any sequence of rebinds, swaps, clears and resets', () => {
+    let seed = 12345;
+    const rnd = (n: number) => {
+      seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+      return seed % n;
+    };
+    const chords = [...new Set(ACTIONS.flatMap((a) => a.keys))].concat(['KeyB', 'KeyP', 'Shift+KeyV', 'Digit4']);
+    const ids = ACTIONS.map((a) => a.id as ActionId);
+    const groups = [...new Set(ACTIONS.map((a) => a.group))];
+    for (let run = 0; run < 40; run++) {
+      const km = createKeymap(() => null);
+      for (let step = 0; step < 60; step++) {
+        const op = rnd(10);
+        const id = ids[rnd(ids.length)]!;
+        if (op < 6) km.bind(id, rnd(2), chords[rnd(chords.length)]!, rnd(2) === 1);
+        else if (op < 8) km.bind(id, rnd(2), null);
+        else if (op < 9) km.reset(groups[rnd(groups.length)]);
+        else km.reset();
+        expect(clashes(km), `run ${run} step ${step}`).toEqual([]);
+      }
+    }
+  });
+
+  it('a stored map with conflicts loads clean', () => {
+    const { m, s } = memory();
+    m.set(KEYS_STORE, JSON.stringify({ 'game.pause': ['KeyV'] }));
+    const km = createKeymap(() => s);
+    expect(clashes(km)).toEqual([]);
   });
 });
