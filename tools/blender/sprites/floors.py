@@ -85,11 +85,23 @@ def court(variant, i, j):
         if r < 0.115:
             return "rkL"
         return "gdD" if _hash(i // 4, j // 4, 9) < 0.55 else "rkDM"
-    if variant == "market":                       # small terracotta tiles, a darker one at random, pale grout
+    if variant in MARKET:                         # small terracotta tiles, a darker one at random, grout
+        lo, hi, grout = MARKET[variant]
         ti, tj = i % 16, j % 16
         if ti < 2 or tj < 2:
-            return "c1H5"
-        return "c1T5" if _hash(i // 16, j // 16, 5) < 0.3 else "c1T4"
+            return grout
+        return lo if _hash(i // 16, j // 16, 5) < 0.3 else hi
+    if variant == "tread2":                       # diamond plate: raised bars, two ways in a checker, lit top, shadow
+        if i < 2 or j < 2:
+            return "steelD"
+        bi, bj = i // 16, j // 16
+        u, v = i % 16 - 8, j % 16 - 8
+        a, b = (u + v, u - v) if (bi + bj) % 2 == 0 else (u - v, u + v)
+        if abs(a) <= 7 and -1 <= b <= 1:
+            return "plate" if b < 0 else "steelL"
+        if abs(a) <= 7 and b == 2:
+            return "steelD"
+        return "steel"
     # tread: diamond plate, raised bars on a darker plate, framed at the tile seam
     if i < 2 or j < 2:
         return "steelD"
@@ -99,7 +111,8 @@ def court(variant, i, j):
     return "steelM"
 
 
-COURT = ("walk", "soil", "market", "tread")
+MARKET = {"market": ("c1T5", "c1T4", "c1H5"), "marketA": ("c1T6", "c1T5", "c1F4"), "marketB": ("cOR", "cOS", "c1F4")}
+COURT = ("walk", "soil", "tread", "tread2", *MARKET)
 
 
 def floor(variant):

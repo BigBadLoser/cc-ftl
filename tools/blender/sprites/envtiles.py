@@ -21,7 +21,7 @@ from .floors import floor
 from .hull import drop, out_block, vert
 from .walls import block, corner_sets, end_face
 
-FLOORS = [*"abcdefgh", "walk", "soil", "market", "tread"]
+FLOORS = [*"abcdefgh", "walk", "soil", "market", "marketA", "marketB", "tread", "tread2"]
 PRE = {"up": "full.", "cut": "", "low": "low."}
 SPRITES = [(f"tile.floor.{v}", (1, 1), "floor", lambda v=v: floor(v)) for v in FLOORS]
 for _m in range(16):
