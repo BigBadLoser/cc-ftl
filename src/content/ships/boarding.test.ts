@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, JobC, ModuleC, PositionC, SabotageOrderC, StunC, deserialize, serialize, type Sim } from '../../sim';
+import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, EquipC, FighterC, HealthC, JobC, ModuleC, PositionC, SabotageOrderC, StunC, deserialize, serialize, type Sim } from '../../sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { SABOTAGE_PER_SEC } from '../../sim/tuning';
@@ -109,6 +109,32 @@ describe('sabotage', () => {
     expect(base).toMatchObject({ hp: 0, dead: true });
     expect(base.events).toBe('crew.sabotageStarted,crew.sabotagePaused,crew.sabotageResumed,crew.sabotageEnded');
     expect(play(true)).toEqual(base);
+  });
+
+  it('starts paused when ordered mid-fight: no sabotage while the boarder is engaged, then it resumes', () => {
+    const sim = setup();
+    const { party } = dockParty(sim, 1);
+    const boarder = party[0]!;
+    const core = reactor(sim);
+    sim.world.add(boarder, EquipC, { weapon: 'item.rifle' });
+    sim.world.get(boarder, HealthC)!.max = sim.world.get(boarder, HealthC)!.hp = 100000;
+    const at = sim.world.get(boarder, PositionC)!;
+    const raider = raiderCrew(sim)[0]!;
+    sim.world.remove(raider, StunC);
+    sim.world.add(raider, PositionC, { x: at.x, y: at.y - 1, toX: at.x, toY: at.y - 1, progress: 0, facing: 0 });
+    run(sim, 600, () => sim.world.get(boarder, FighterC)?.mode === 'engage');
+    expect(sim.world.get(boarder, FighterC)?.mode).toBe('engage');
+    const hp = hpOf(sim, core);
+    sim.enqueue({ type: 'crew.sabotage', ids: party, module: core });
+    const out = run(sim, 20);
+    expect(of(out, 'crew.sabotagePaused')).toHaveLength(1);
+    expect(sabotageJobs(sim)).toEqual([]);
+    expect(sim.world.get(boarder, SabotageOrderC)?.module).toBe(core);
+    expect(hpOf(sim, core)).toBe(hp); // not wrecking while it fights
+    sim.world.get(raider, HealthC)!.hp = 0;
+    const after = run(sim, 3000, () => hpOf(sim, core) < hp);
+    expect(of(after, 'crew.sabotageResumed')).toHaveLength(1);
+    expect(hpOf(sim, core)).toBeLessThan(hp);
   });
 
   it('stops when the boarder goes down', () => {

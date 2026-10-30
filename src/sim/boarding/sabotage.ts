@@ -84,9 +84,13 @@ function orderSabotage(sim: Sim, crew: number, module: number): Result {
   if (f) f.ordered = 0;
   sim.world.remove(crew, EmbarkOrderC);
   (sim.world.get(crew, CrewC) as { activity: string }).activity = 'drafted';
-  startSabotageJob(sim, crew, module, plan);
   sim.world.add(crew, SabotageOrderC, { module });
-  sim.events.emit({ type: 'crew.sabotageStarted', crew, module, ship: shipIdOf(sim, sim.world.get(module, ModuleC)) });
+  const ship = shipIdOf(sim, sim.world.get(module, ModuleC));
+  sim.events.emit({ type: 'crew.sabotageStarted', crew, module, ship });
+  // A boarder already in a fight does not sabotage while it lasts (crew combat only drops a job when it *enters* a fight): the order
+  // starts paused and the resume system posts the job once the fight is over.
+  if (f && f.mode !== 'idle') sim.events.emit({ type: 'crew.sabotagePaused', crew, module, ship });
+  else startSabotageJob(sim, crew, module, plan);
   return 'ok';
 }
 

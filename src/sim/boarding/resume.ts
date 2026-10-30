@@ -1,5 +1,6 @@
 import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
+import { FighterC } from '../fight/components';
 import { combatReadyUnits } from '../fight/fighter';
 import { sightLine } from '../fight/los';
 import { isCombatReady, isHostile } from '../fight/relations';
@@ -43,7 +44,7 @@ export function sabotageResumeSystem(sim: Sim): void {
     else if (sim.world.has(crew, DownedC)) endOrder(sim, crew, order.module, 'downed');
     else if (a && sim.world.get(a.jobId, JobC)?.kind !== 'sabotage') endOrder(sim, crew, order.module, 'interrupted'); // given another job
     else if (!pos || !drafted || drafted.target !== null || shipIdOf(sim, pos) !== shipIdOf(sim, m)) endOrder(sim, crew, order.module, 'interrupted');
-    else if (!a && !isIncapacitated(sim, crew) && !hostileInSight(sim, crew, ready.get(shipIdOf(sim, pos)) ?? [])) {
+    else if (!a && !isIncapacitated(sim, crew) && (sim.world.get(crew, FighterC)?.mode ?? 'idle') === 'idle' && !hostileInSight(sim, crew, ready.get(shipIdOf(sim, pos)) ?? [])) {
       const plan = planSabotage(sim, crew, order.module);
       if (!plan) endOrder(sim, crew, order.module, 'interrupted');
       else {
