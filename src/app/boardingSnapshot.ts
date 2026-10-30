@@ -58,6 +58,8 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
     const standing = new Set(aboard.tiles.map((t) => t.y * 100000 + t.x));
     const roomAt = (x: number, y: number): number => (grid?.has('room') && grid.inBounds(x, y) ? grid.get('room', x, y) : 0);
     const fireOn: UiBoarding['fireOn'] = [];
+    // One warning per target location (a module, else the tile's room, else the tile), merging every gun and every endangered boarder.
+    const fireAt = new Map<string, { row: UiBoarding['fireOn'][number]; crew: Set<number> }>();
     const aim = (t: { ship: number; moduleId: number; tile?: { x: number; y: number } } | null | undefined, by: string): void => {
       if (!t || t.ship !== id) return;
       const m = t.moduleId ? sim.world.get(t.moduleId, ModuleC) : undefined;
@@ -74,10 +76,18 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
         }
       }
       if (!hit.size) return;
-      const at = def?.name ?? 'a room';
-      const seen = fireOn.find((f) => f.at === at);
-      if (seen) seen.by = 'Your weapons'; // several guns on one spot are one warning
-      else fireOn.push({ by, at, crew: [...hit].map(name) });
+      const tile = tiles[0];
+      const key = m ? `m${t.moduleId}` : tile && roomAt(tile.x, tile.y) ? `r${roomAt(tile.x, tile.y)}` : `t${tile?.x},${tile?.y}`;
+      const seen = fireAt.get(key);
+      if (seen) {
+        seen.row.by = 'Your weapons'; // several guns on one spot are one warning
+        for (const p of hit) seen.crew.add(p);
+        seen.row.crew = [...seen.crew].map(name);
+      } else {
+        const row = { by, at: def?.name ?? 'a room', crew: [...hit].map(name) };
+        fireAt.set(key, { row, crew: hit });
+        fireOn.push(row);
+      }
     };
     const mine = sim.world.get(home, CombatC);
     aim(mine?.target, 'Your guns');
