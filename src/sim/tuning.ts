@@ -206,6 +206,14 @@ export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
 
+/**
+ * Sabotage (boarding/sabotage.ts): hp per second one boarder takes off the module they were ordered to wreck, with a weapon or
+ * tools alike (melee and ranged are the same). A reactor (200 hp) falls to one boarder in 25 s, a weapon (80 hp) in 10 s.
+ */
+export const SABOTAGE_PER_SEC = 8;
+/** Ticks a recalled party gets to reach the docked shuttle before it leaves with whoever has boarded (the rest stay put). */
+export const RECALL_BOARD_TICKS = 600;
+
 /** Zealot core raid (capture/coreRaid.ts): ticks raiders must hold an AI core undisturbed to tear it out, how close they stand, and how close a defender must be to stop them. */
 export const CORE_RAID_HOLD_TICKS = 40 * 20;
 export const CORE_RAID_RADIUS = 2.5;

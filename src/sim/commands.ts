@@ -152,6 +152,10 @@ export type Command =
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
   | { type: 'crew.hack'; id: number; module: number }
+  /** Boarders (player crew on a hostile ship) walk to `module` of that ship and wreck it over time, until it falls, they are interrupted or cancelled. */
+  | { type: 'crew.sabotage'; ids: number[]; module: number }
+  /** Drop the members' sabotage orders. */
+  | { type: 'crew.cancelSabotage'; ids: number[] }
   /** Queue assembly of a robot of `role` (a role with `assemble`) in a free robot bay; the bay becomes its home. */
   | { type: 'module.assembleRobot'; moduleId: number; role: string }
   /** Cancel the assembly running in a robot bay (delivered materials drop to the floor). */

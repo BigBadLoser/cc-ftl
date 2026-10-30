@@ -160,6 +160,9 @@ export type SimEvent =
   | { type: 'robot.fabricated'; crew: number; moduleId: number; ship: number }
   /** An AI core was hacked by `by`. */
   | { type: 'core.hacked'; moduleId: number; ship: number; by: Faction }
+  /** Player boarders: a crew member was ordered to wreck `module` of hostile ship `ship`; it ended (`destroyed`, `interrupted` by a fight or a new order, `downed`, `cancelled`). */
+  | { type: 'crew.sabotageStarted'; crew: number; module: number; ship: number }
+  | { type: 'crew.sabotageEnded'; crew: number; module: number; ship: number; reason: 'destroyed' | 'interrupted' | 'downed' | 'cancelled' }
   /** The player lost the game; `reason` is a short code ('captured'). */
   | { type: 'game.lost'; reason: string }
   /** EVA: a crew member put on / took off a suit at `airlock` (a module); the tank hit the warning level / ran dry. */

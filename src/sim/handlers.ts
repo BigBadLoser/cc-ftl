@@ -6,6 +6,7 @@ import { miningHandlers } from './mining/handlers';
 import { ferryHandlers } from './ferry/handlers';
 import { logisticsHandlers } from './logistics/handlers';
 import { outpostHandlers } from './outposts/handlers';
+import { boardingHandlers } from './boarding/handlers';
 import { captureHandlers } from './capture/handlers';
 import { combatHandlers } from './combat/handlers';
 import { containerHandlers } from './containers/handlers';
@@ -39,6 +40,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...fightHandlers,
   ...combatHandlers,
   ...captureHandlers,
+  ...boardingHandlers,
   ...moduleHandlers,
   ...containerHandlers,
   ...itemHandlers,
