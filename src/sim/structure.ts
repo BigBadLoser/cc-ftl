@@ -1,6 +1,15 @@
 import type { FieldSpec, GridLike } from './grid';
 import { SPACE_TEMP } from './tuning';
 
+/**
+ * Floor finish of a tile, stored in the `floor` field: how a court's deck is paved (the station generator paints its
+ * walkways and zones). Looks only; nothing in the sim reads it. Template `floors` rows spell it with FINISH_CHARS.
+ */
+export const Finish = { Plain: 0, Walk: 1, Soil: 2, Market: 3, Tread: 4 } as const;
+export type FinishKind = (typeof Finish)[keyof typeof Finish];
+/** Template `floors` characters: anything else (a space, '.') is the plain deck. */
+export const FINISH_CHARS: Readonly<Record<string, FinishKind>> = { w: Finish.Walk, s: Finish.Soil, m: Finish.Market, t: Finish.Tread };
+
 /** Structural kind of a tile, stored in the `struct` field. Materials/variants come later. */
 export const Struct = {
   Space: 0,
@@ -66,6 +75,8 @@ export const SHIP_FIELDS = {
   ore: 'u8',
   /** Units of ore left on the tile (0..255); 0 with `ore` 0. */
   oreAmt: 'u8',
+  /** Floor finish of a floor tile (`Finish`, 0 = the plain deck): what it is paved with. Looks only; set by stamping. */
+  floor: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -89,6 +100,7 @@ export const SHIP_EMPTY = {
   ship: 0,
   ore: 0,
   oreAmt: 0,
+  floor: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
 /** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */

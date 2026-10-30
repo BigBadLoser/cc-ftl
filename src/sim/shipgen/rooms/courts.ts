@@ -129,9 +129,15 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
     for (let q = 0; q < z.length; q++) for (const n of lay.neighbours(z[q] as number)) if (offSet.has(n) && !zoneOf.has(n)) { zoneOf.set(n, zones.length); z.push(n); }
     zones.push(z);
   }
-  const themes = [...plan.zones].sort(() => rng.next() - 0.5);
+  const themes = plan.zones.map((_, k) => k).sort(() => rng.next() - 0.5);
+  // Floors: the court paved as its promenades, the landmark and each zone as their own.
+  const fin = plan.finish ?? {};
+  for (const i of floor) lay.finish[i] = fin.walk ?? 0;
+  for (const i of solid) lay.finish[i] = fin.centre ?? fin.walk ?? 0;
   zones.filter((z) => z.length >= 16).sort((a, b) => b.length - a.length).forEach((zone, zi) => {
-    const theme = themes[zi % themes.length] as readonly Vignette[];
+    const tk = themes[zi % themes.length] as number;
+    const theme = plan.zones[tk] as readonly Vignette[];
+    for (const i of zone) lay.finish[i] = fin.zones?.[tk] ?? fin.zone ?? fin.walk ?? 0;
     const zset = new Set(zone);
     // The hedge: a few markers along the zone's promenade edge, not a wall of them (the zone's floor already marks it):
     // the ends of each edge run first, then any edge tile HEDGE_GAP or more from the last.

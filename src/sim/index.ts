@@ -24,7 +24,7 @@ export { pipeline, runPipeline, systemLabels, type System } from './pipeline';
 export { NOOP_PROBE, type Probe } from './probe';
 export { MarkerC, type Marker } from './components';
 export { SAVE_VERSION, serialize, deserialize, migrate, type SaveData } from './save';
-export { Struct, SHIP_FIELDS, isWalkable, isEvaWalkable, writeStruct, type StructKind } from './structure';
+export { Struct, Finish, SHIP_FIELDS, isWalkable, isEvaWalkable, writeStruct, type StructKind, type FinishKind } from './structure';
 export * from './crew/components';
 export { findPath, type Tile, type PathGoal } from './crew/pathfind';
 export { stat, modifierSources, type Modifier, type ModifierSource, type StatName } from './stats';

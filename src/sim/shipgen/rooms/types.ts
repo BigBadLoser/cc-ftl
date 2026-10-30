@@ -1,3 +1,5 @@
+import type { FinishKind } from '../../structure';
+
 /**
  * Room recipes: data-driven layout rules per room role. A recipe lists 2-3 arrangements; the seed picks one per room,
  * plus a mirror (port and starboard swapped) and the alternatives of each step. Directions are in the ship frame:
@@ -89,6 +91,9 @@ export interface CourtPlan {
   fill: number;
   /** The landmark at the court's middle, which the promenades lead to: the first of these that fits. */
   centres?: readonly Vignette[];
+  /** Floor finishes (structure.ts `Finish`): the whole court (its promenades), the landmark, and each zone by its theme
+   *  (index into `zones`, else `zone`). Unset: the plain deck. */
+  finish?: { walk?: FinishKind; centre?: FinishKind; zone?: FinishKind; zones?: readonly (FinishKind | undefined)[] };
 }
 
 export interface VignetteSet {

@@ -1,5 +1,6 @@
 import { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
+import { FINISH_CHARS } from '../structure';
 import { Builder } from './builder';
 import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
@@ -212,12 +213,17 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
       ...(d.vehicles.has(i) ? { vehicle: 'vehicle.shuttle' } : {}),
     };
   });
+  // Floor finishes (courts), as template `floors` rows: only when some tile has one.
+  const fin = d.lay.finish;
+  const code = Object.fromEntries(Object.entries(FINISH_CHARS).map(([c, k]) => [k, c])) as Record<number, string>;
+  const floors = fin.some((k) => k > 0) ? rows.map((r, y) => Array.from(r, (_, x) => code[fin[y * d.lay.w + x] as number] ?? '.').join('')) : null;
   return {
     name: `${f.name} ${role.id} ${factionId.replace(/^faction\./, '').slice(0, 2).toUpperCase()}-${tag}`,
     faction: 'hostile',
     doctrine: f.doctrine.targeting,
     crew: plan.crew,
     rows,
+    ...(floors ? { floors } : {}),
     modules,
     ...(f.doctrine.boarding ? { boarding: { ...f.doctrine.boarding } } : {}),
   };

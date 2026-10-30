@@ -60,6 +60,28 @@ describe('research stations', () => {
   }, 120000);
 });
 
+describe('court floors', () => {
+  it('trading courts pave walkways and market zones, research gardens soil, on floor tiles only', () => {
+    const seen = new Map<string, Set<string>>();
+    for (const id of ['station.trading', 'station.research'] as const) {
+      const got = new Set<string>();
+      for (const seed of [1, 2, 3, 4]) {
+        const g = gen(id, 'station', seed);
+        (g.template.floors ?? []).forEach((r, y) => {
+          for (let x = 0; x < r.length; x++) {
+            if (r[x] === '.') continue;
+            got.add(r[x] as string);
+            expect(g.template.rows[y]?.[x], `${id} ${seed} ${x},${y}`).toBe('_');
+          }
+        });
+      }
+      seen.set(id, got);
+    }
+    expect([...(seen.get('station.trading') ?? [])].sort()).toEqual(expect.arrayContaining(['m', 'w']));
+    expect([...(seen.get('station.research') ?? [])].sort()).toEqual(expect.arrayContaining(['s', 'w']));
+  }, 120000);
+});
+
 describe('station generator', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {
     for (const id of ids) {

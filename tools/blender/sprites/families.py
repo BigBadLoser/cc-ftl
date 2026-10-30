@@ -42,6 +42,7 @@
   starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   decor     station dressing: planters, a bench, deck marks (decor.py)
+  court_floors  the floor finishes the station generator paints courts with: walk, soil, market, tread (floors.py COURT)
   lights    the lamps: tall mast, short cage lamp, floor grate, 4 rotations x lit / unpowered / damage states (lights.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
@@ -189,6 +190,9 @@ def jobs(name):
     if name == "lamp_concepts":
         from . import lamp_concepts
         return lamp_concepts.SPRITES, True
+    if name == "court_floors":
+        from . import floors
+        return floors.SPRITES, False
     if name == "decor":
         from . import decor
         return decor.SPRITES, True
@@ -206,5 +210,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items", "storage_ore", "decor",
-            "lights")
+            "lights", "court_floors")
 ALL = RENDERED + ("sol", "damage_sol")

@@ -13,6 +13,9 @@ export interface ShipTemplate {
   modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w' }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
+  /** Floor finishes, row for row with `rows`: 'w' walkway paving, 's' soil, 'm' market tile, 't' tread plate, anything
+   *  else the plain deck (structure.ts FINISH_CHARS). Absent: every floor plain. */
+  floors?: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
   faction?: Faction;
   /** Role ids of the crew to spawn. */

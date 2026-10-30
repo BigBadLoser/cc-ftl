@@ -4,7 +4,10 @@ are picked by the renderer (a on ~90% of tiles, c and h on ~5% each); the rest a
 Drawn on a 64x64 cell grid (a cell is about 2 px across, 1 px down at the 128x64 tile, so every line and dot is at
 least 2 cells: thinner ones vanish in the downsample): a, c and h are one panel a tile with a soft seam, chamfered
 corners and a light lip (the way RimWorld and Space Haven decks tile); a stays plain, since anything on it repeats on
-every tile, and the occasional c and h carry the wear and detail. The unused variants keep their own plate style. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look."""
+every tile, and the occasional c and h carry the wear and detail. The unused variants keep their own plate style. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look.
+
+Court floors (family court_floors, `court`): finishes the station generator paints a court with, tile by tile (the sim's
+`floor` field): walkway paving, garden soil, market tile, drill-hall tread plate."""
 from . import core
 
 N = 64
@@ -67,8 +70,9 @@ def _hash(i, j, seed):
 
 
 def court(variant, i, j):
-    """Court floors (placed by the station generator, not the hash): walk (promenade paving), soil (garden beds),
-    market (plaza tiles), tread (drill-hall plate). Each tiles seamlessly; its seams sit on the low sides, as a's."""
+    """Court floors (family court_floors; the station generator paints them, not the hash): walk (promenade paving),
+    soil (garden beds), market (plaza tiles), tread (drill-hall diamond plate). Each tiles seamlessly, its seams on the
+    low sides as a's."""
     if variant == "walk":                         # pale composite pavers, two by two, with dark joints and a worn lip
         pi, pj = i % 32, j % 32
         if pi < 2 or pj < 2:
@@ -85,34 +89,26 @@ def court(variant, i, j):
         if r < 0.115:
             return "rkL"
         return "gdD" if _hash(i // 4, j // 4, 9) < 0.55 else "rkDM"
-    if variant in MARKET:                         # small terracotta tiles, a darker one at random, grout
-        lo, hi, grout = MARKET[variant]
+    if variant == "market":                       # small muted terracotta tiles, a darker one at random, dark grout
         ti, tj = i % 16, j % 16
         if ti < 2 or tj < 2:
-            return grout
-        return lo if _hash(i // 16, j // 16, 5) < 0.3 else hi
-    if variant == "tread2":                       # diamond plate: raised bars, two ways in a checker, lit top, shadow
-        if i < 2 or j < 2:
-            return "steelD"
-        bi, bj = i // 16, j // 16
-        u, v = i % 16 - 8, j % 16 - 8
-        a, b = (u + v, u - v) if (bi + bj) % 2 == 0 else (u - v, u + v)
-        if abs(a) <= 7 and -1 <= b <= 1:
-            return "plate" if b < 0 else "steelL"
-        if abs(a) <= 7 and b == 2:
-            return "steelD"
-        return "steel"
-    # tread: diamond plate, raised bars on a darker plate, framed at the tile seam
+            return "c1F4"
+        return "c1T6" if _hash(i // 16, j // 16, 5) < 0.3 else "c1T5"
+    # tread: diamond plate, raised bars two ways in a checker, a lit top and a shadow below, framed at the tile seam
     if i < 2 or j < 2:
         return "steelD"
-    a, b = (i + j) % 12, (i - j) % 12
-    if (a < 2 and (i // 6) % 2 == 0) or (b < 2 and (i // 6) % 2 == 1):
-        return "steelL"
-    return "steelM"
+    bi, bj = i // 16, j // 16
+    u, v = i % 16 - 8, j % 16 - 8
+    a, b = (u + v, u - v) if (bi + bj) % 2 == 0 else (u - v, u + v)
+    if abs(a) <= 7 and -1 <= b <= 1:
+        return "plate" if b < 0 else "steelL"
+    if abs(a) <= 7 and b == 2:
+        return "steelD"
+    return "steel"
 
 
-MARKET = {"market": ("c1T5", "c1T4", "c1H5"), "marketA": ("c1T6", "c1T5", "c1F4"), "marketB": ("cOR", "cOS", "c1F4")}
-COURT = ("walk", "soil", "tread", "tread2", *MARKET)
+COURT = ("walk", "soil", "market", "tread")
+SPRITES = [(f"tile.floor.{v}", (1, 1), "floor", lambda v=v: floor(v)) for v in COURT]
 
 
 def floor(variant):

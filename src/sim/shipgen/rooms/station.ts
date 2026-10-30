@@ -1,3 +1,4 @@
+import { Finish } from '../../structure';
 import type { RoomRecipe, Vignette } from './types';
 
 /**
@@ -165,7 +166,10 @@ export const plaza = {
   arrangements: [
     {
       name: 'market', weight: 2,
-      court: { zones: [[stall, pallets], [bistro, longTable, lounge], [foodStand, bistro], [grove, benchPots]], hedge: 'module.planter', fill: 0.3, centres: [bazaar, marketCross, square] },
+      court: {
+        zones: [[stall, pallets], [bistro, longTable, lounge], [foodStand, bistro], [grove, benchPots]], hedge: 'module.planter', fill: 0.3,
+        centres: [bazaar, marketCross, square], finish: { walk: Finish.Walk, zone: Finish.Market, zones: [undefined, undefined, undefined, Finish.Soil] },
+      },
       vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk, grove, benchPots], gap: 8, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.hydroponics', count: 4, wall: 'any' },
@@ -173,7 +177,10 @@ export const plaza = {
     },
     {
       name: 'food court', weight: 1,
-      court: { zones: [[foodStand, bistro], [longTable, lounge], [grove, benchPots], [stall, kiosk]], hedge: 'module.planter', fill: 0.3, centres: [bazaar, marketCross, square] },
+      court: {
+        zones: [[foodStand, bistro], [longTable, lounge], [grove, benchPots], [stall, kiosk]], hedge: 'module.planter', fill: 0.3,
+        centres: [bazaar, marketCross, square], finish: { walk: Finish.Walk, zone: Finish.Market, zones: [undefined, undefined, Finish.Soil] },
+      },
       vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk, grove, benchPots], gap: 7, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.planter', count: 4, wall: 'any' },
@@ -188,7 +195,10 @@ export const garden = {
   arrangements: [
     {
       name: 'garden', weight: 1,
-      court: { zones: [[grove, benchPots], [labBench, labCluster], [lounge, kiosk]], hedge: 'module.planter', fill: 0.35, centres: [arboretum, grove, square] },
+      court: {
+        zones: [[grove, benchPots], [labBench, labCluster], [lounge, kiosk]], hedge: 'module.planter', fill: 0.35,
+        centres: [arboretum, grove, square], finish: { walk: Finish.Walk, centre: Finish.Soil, zones: [Finish.Soil, Finish.Plain, Finish.Plain] },
+      },
       vignettes: { pieces: [grove, grove, benchPots, labBench, labCluster, kiosk, lounge], gap: 8, upTo: 0.12, centre: arboretum },
       steps: [
         { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
@@ -203,7 +213,7 @@ export const drill = {
   arrangements: [
     {
       name: 'drill hall', weight: 1,
-      court: { zones: [[rackIsland], [briefing]], fill: 0.3, centres: [parade, muster] },
+      court: { zones: [[rackIsland], [briefing]], fill: 0.3, centres: [parade, muster], finish: { zone: Finish.Tread, centre: Finish.Tread } },
       vignettes: { pieces: [rackIsland, briefing], gap: 10, upTo: 0.04, centre: parade },
       steps: [
         { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },

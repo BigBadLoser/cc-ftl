@@ -27,6 +27,8 @@ export class Layout {
   readonly occ: Int16Array;
   /** Tiles crew must be able to stand on (door sides, access tiles, airlock insides). */
   readonly keep: Uint8Array;
+  /** Floor finish per tile (structure.ts `Finish`, 0 plain): courts pave their walkways and zones (rooms/courts.ts). */
+  readonly finish: Uint8Array;
   /** 1 under the blocking part of a solid module (kept by push / pop, so `walkable` is a lookup). */
   private readonly solid: Uint8Array;
   readonly modules: PlacedModule[] = [];
@@ -54,6 +56,7 @@ export class Layout {
     this.defs = defs;
     this.occ = new Int16Array(this.w * this.h).fill(-1);
     this.keep = new Uint8Array(this.w * this.h);
+    this.finish = new Uint8Array(this.w * this.h);
     this.solid = new Uint8Array(this.w * this.h);
     this.besideBed = new Uint8Array(this.w * this.h);
     this.facedBy = new Uint8Array(this.w * this.h);
