@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { KeyBadge } from '../kit';
+  import { KeyBadge, SideTabs } from '../kit';
   import { ACTION_BY_ID, ACTIONS, chordLabel, chordOf, KEY_GROUPS, keymap, SLOTS, type ActionId, type KeyGroup } from '../keymap';
 
   /**
@@ -14,6 +14,9 @@
 
   const labelOf = (id: string) => ACTION_BY_ID.get(id)?.label ?? id;
   const groups = KEY_GROUPS.map((g) => ({ ...g, actions: ACTIONS.filter((a) => a.group === g.id) }));
+  const TABS = groups.map((g) => ({ value: g.id, label: g.label, testId: `keys-tab-${g.id}` }));
+  let tab = $state<KeyGroup>('time');
+  const group = $derived(groups.find((g) => g.id === tab) ?? groups[0]!);
 
   function listen(id: ActionId, slot: number) {
     clash = null;
@@ -55,61 +58,60 @@
   onDestroy(stop);
 </script>
 
-<div class="controls" data-testid="controls">
-  <p class="hint">Click a key to change it, then press the new key. <KeyBadge tone="dim" size="sm">Esc</KeyBadge> cancels, <KeyBadge tone="dim" size="sm">Del</KeyBadge> clears.</p>
-  {#each groups as g (g.id)}
-    <section>
-      <header>
-        <h4>{g.label}</h4>
-        <button class="reset" data-testid="keys-reset-{g.id}" onclick={() => reset(g.id)}>Reset</button>
-      </header>
-      {#each g.actions as a (a.id)}
-        <div class="row" class:clashing={clash?.id === a.id} data-testid="key-{a.id}">
-          <span class="label">{a.label}</span>
-          <span class="slots">
-            {#each Array.from({ length: SLOTS }, (_, i) => i) as i (i)}
-              {@const chord = $keymap[a.id]?.[i]}
-              {@const on = listening?.id === a.id && listening.slot === i}
-              <button
-                class="slot"
-                class:on
-                class:unset={!chord}
-                disabled={a.fixed || (!chord && i > ($keymap[a.id]?.length ?? 0))}
-                title={a.fixed ? 'Esc always opens and closes the menu' : 'Click, then press a key'}
-                onclick={() => listen(a.id, i)}
-              >
-                {#if on}<span class="wait">Press a key…</span>{:else if chord}<KeyBadge tone="light" size="sm">{chordLabel(chord)}</KeyBadge>{:else}<span class="dash">—</span>{/if}
-              </button>
-            {/each}
-          </span>
+<SideTabs options={TABS} value={tab} onChange={(v) => { stop(); clash = null; tab = v as KeyGroup; }} label="Key groups" testId="controls">
+  <div class="page">
+    <header>
+      <h4>{group.label}</h4>
+      <button class="reset" data-testid="keys-reset-{group.id}" onclick={() => reset(group.id)}>Reset {group.label}</button>
+    </header>
+    {#each group.actions as a (a.id)}
+      <div class="row" class:clashing={clash?.id === a.id} data-testid="key-{a.id}">
+        <span class="label">{a.label}</span>
+        <span class="slots">
+          {#each Array.from({ length: SLOTS }, (_, i) => i) as i (i)}
+            {@const chord = $keymap[a.id]?.[i]}
+            {@const on = listening?.id === a.id && listening.slot === i}
+            <button
+              class="slot"
+              class:on
+              class:unset={!chord}
+              disabled={a.fixed || (!chord && i > ($keymap[a.id]?.length ?? 0))}
+              title={a.fixed ? 'Esc always opens and closes this menu' : 'Click, then press a key'}
+              onclick={() => listen(a.id, i)}
+            >
+              {#if on}<span class="wait">Press a key…</span>{:else if chord}<KeyBadge tone="light" size="sm">{chordLabel(chord)}</KeyBadge>{:else}<span class="dash">—</span>{/if}
+            </button>
+          {/each}
+        </span>
+      </div>
+      {#if clash?.id === a.id}
+        <div class="clash" role="alert" data-testid="key-clash">
+          <span><KeyBadge tone="light" size="sm">{chordLabel(clash.chord)}</KeyBadge> is already <b>{clash.with.map(labelOf).join(', ')}</b>.</span>
+          <button onclick={() => (clash = null)}>Cancel</button>
+          <button class="interact" data-testid="key-swap" onclick={swap}>Swap</button>
         </div>
-        {#if clash?.id === a.id}
-          <div class="clash" role="alert" data-testid="key-clash">
-            <span><KeyBadge tone="light" size="sm">{chordLabel(clash.chord)}</KeyBadge> is already <b>{clash.with.map(labelOf).join(', ')}</b>.</span>
-            <button onclick={() => (clash = null)}>Cancel</button>
-            <button class="interact" data-testid="key-swap" onclick={swap}>Swap</button>
-          </div>
-        {/if}
-      {/each}
-    </section>
-  {/each}
-  <footer><button class="interact" data-testid="keys-reset-all" onclick={() => reset()}>Reset all to defaults</button></footer>
-</div>
+      {/if}
+    {/each}
+    <footer>
+      <p class="hint">Click a key, then press the new one. <KeyBadge tone="dim" size="sm">Del</KeyBadge> clears it. <KeyBadge tone="dim" size="sm">Esc</KeyBadge> cancels a tool, aim or selection, then opens this menu; it cannot be changed.</p>
+      <button class="interact" data-testid="keys-reset-all" onclick={() => reset()}>Reset all keys</button>
+    </footer>
+  </div>
+</SideTabs>
 
 <style>
-  .controls {
-    display: grid;
-    gap: var(--sp-3);
-    padding: var(--sp-1) 0;
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 100%;
   }
   .hint {
+    flex: 1;
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.6;
     color: var(--dim);
-  }
-  section {
-    display: grid;
-    gap: 2px;
   }
   header {
     display: flex;
@@ -207,13 +209,17 @@
     text-transform: uppercase;
   }
   footer button {
+    flex: none;
     min-height: 32px;
     font: 600 13px var(--head-font);
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
   footer {
+    margin-top: auto;
+    padding-top: var(--sp-3);
     display: flex;
-    justify-content: flex-end;
+    align-items: flex-end;
+    gap: var(--sp-3);
   }
 </style>

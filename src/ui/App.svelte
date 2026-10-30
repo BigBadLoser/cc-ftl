@@ -247,7 +247,6 @@
       {#each speeds as s (s.speed)}
         <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
       {/each}
-      <button class="tile" class:on={menuOpen} title="Menu (Esc)" aria-label="Menu" data-testid="open-menu" onclick={openMenu}><Icon name="menu" size={18} /></button>
     </span>
   </span>
 {/snippet}
@@ -376,7 +375,7 @@
   .fps { display: block; margin-top: 2px; font-size: 11px; color: var(--text); }
   .tick { white-space: nowrap; flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
   .speeds { display: flex; }
-  .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 33px; height: 36px; }
+  .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
   .speeds :global(button.tile:hover) { background: var(--panel-3); }
   .speeds :global(button.tile.on) { background: var(--panel-3); box-shadow: inset 0 0 0 1px var(--cyan); }
   @media (max-width: 600px) {

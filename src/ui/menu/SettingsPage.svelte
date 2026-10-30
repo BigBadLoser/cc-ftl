@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Segmented, Slider } from '../kit';
+  import { Segmented, SideTabs, Slider } from '../kit';
   import { lessonPrefs } from '../lessons/prefs';
   import { RANGES, settings, type Settings } from '../settings/settings';
 
@@ -13,6 +13,13 @@
   const SPEEDS = [{ value: '0', label: 'Paused' }, { value: '1', label: '1×' }, { value: '2', label: '2×' }, { value: '3', label: '3×' }];
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const set = (patch: Partial<Settings>) => settings.set(patch);
+  const TABS = [
+    { value: 'lessons', label: 'Lessons', testId: 'set-tab-lessons' },
+    { value: 'gameplay', label: 'Gameplay', testId: 'set-tab-gameplay' },
+    { value: 'camera', label: 'Camera and input', testId: 'set-tab-camera' },
+    { value: 'display', label: 'Display', testId: 'set-tab-display' },
+  ];
+  let tab = $state('lessons');
   type Flag = 'pauseOnAlert' | 'pauseOnBlur' | 'edgeScroll' | 'invertDrag' | 'showFps' | 'tooltips';
 </script>
 
@@ -32,64 +39,43 @@
   </div>
 {/snippet}
 
-<div class="settings" data-testid="settings">
-  <section>
-    <h4>Lessons</h4>
-    <div class="row">
-      <span class="label">Lessons<small>Short how-to cards the first time something happens</small></span>
-      <Segmented options={ONOFF} value={lessonsOn ? 'on' : 'off'} label="Lessons" testId="set-lessons" onChange={(v) => { lessonsOn = v === 'on'; lessonPrefs.setEnabled(lessonsOn); }} />
-    </div>
-    <div class="row">
-      <span class="label">Show every lesson again</span>
-      <button class="act" data-testid="set-lessons-reset" onclick={() => { lessonPrefs.reset(); lessonsReset = true; }}>{lessonsReset ? 'Done' : 'Reset lessons'}</button>
-    </div>
-  </section>
-
-  <section>
-    <h4>Game speed and pause</h4>
-    {@render toggle('pauseOnAlert', 'Pause on urgent alerts', 'Fire, breach, combat and the like')}
-    {@render toggle('pauseOnBlur', 'Pause in the background', 'While the window is not in front; resumes when you come back')}
-    <div class="row">
-      <span class="label">Speed when a game loads</span>
-      <Segmented options={SPEEDS} value={String(s.startSpeed)} label="Speed when a game loads" testId="set-startSpeed" onChange={(v) => set({ startSpeed: Number(v) as Settings['startSpeed'] })} />
-    </div>
-  </section>
-
-  <section>
-    <h4>Camera and input</h4>
-    {@render toggle('edgeScroll', 'Edge scrolling', 'Move the mouse to a screen edge to pan')}
-    {@render slider('scrollSpeed', 'Scroll speed')}
-    {@render slider('zoomSpeed', 'Zoom speed')}
-    {@render toggle('invertDrag', 'Invert drag', 'Dragging moves the camera, not the world')}
-  </section>
-
-  <section>
-    <h4>Display</h4>
-    {@render toggle('showFps', 'Show FPS', 'Beside the clock')}
-    {@render toggle('tooltips', 'Tooltips')}
-  </section>
-
-  <footer><button class="plain" data-testid="set-reset" onclick={() => settings.reset()}>Reset settings</button></footer>
-</div>
+<SideTabs options={TABS} value={tab} onChange={(v) => (tab = v)} label="Settings" testId="settings">
+  <div class="page">
+    {#if tab === 'lessons'}
+      <div class="row">
+        <span class="label">Lessons<small>Short how-to cards the first time something happens</small></span>
+        <Segmented options={ONOFF} value={lessonsOn ? 'on' : 'off'} label="Lessons" testId="set-lessons" onChange={(v) => { lessonsOn = v === 'on'; lessonPrefs.setEnabled(lessonsOn); }} />
+      </div>
+      <div class="row">
+        <span class="label">Show every lesson again</span>
+        <button class="act" data-testid="set-lessons-reset" onclick={() => { lessonPrefs.reset(); lessonsReset = true; }}>{lessonsReset ? 'Done' : 'Reset lessons'}</button>
+      </div>
+    {:else if tab === 'gameplay'}
+      {@render toggle('pauseOnAlert', 'Pause on urgent alerts', 'Fire, breach, combat and the like')}
+      {@render toggle('pauseOnBlur', 'Pause in the background', 'While the window is not in front; resumes when you come back')}
+      <div class="row">
+        <span class="label">Speed when a game loads</span>
+        <Segmented options={SPEEDS} value={String(s.startSpeed)} label="Speed when a game loads" testId="set-startSpeed" onChange={(v) => set({ startSpeed: Number(v) as Settings['startSpeed'] })} />
+      </div>
+    {:else if tab === 'camera'}
+      {@render toggle('edgeScroll', 'Edge scrolling', 'Move the mouse to a screen edge to pan')}
+      {@render slider('scrollSpeed', 'Scroll speed')}
+      {@render slider('zoomSpeed', 'Zoom speed')}
+      {@render toggle('invertDrag', 'Invert drag', 'Dragging moves the camera, not the world')}
+    {:else}
+      {@render toggle('showFps', 'Show FPS', 'Under the clock')}
+      {@render toggle('tooltips', 'Tooltips')}
+    {/if}
+    <footer><button class="plain" data-testid="set-reset" onclick={() => settings.reset()}>Reset all settings</button></footer>
+  </div>
+</SideTabs>
 
 <style>
-  .settings {
-    display: grid;
-    gap: var(--sp-3);
-    padding: var(--sp-1) 0;
-  }
-  section {
-    display: grid;
+  .page {
+    display: flex;
+    flex-direction: column;
     gap: var(--sp-1);
-  }
-  h4 {
-    margin: 0 0 2px;
-    padding-bottom: 2px;
-    border-bottom: 1px solid var(--line);
-    font: 600 13px var(--head-font);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--dim);
+    min-height: 100%;
   }
   .row {
     display: flex;
@@ -141,6 +127,8 @@
     text-transform: uppercase;
   }
   footer {
+    margin-top: auto;
+    padding-top: var(--sp-3);
     display: flex;
     justify-content: flex-end;
   }

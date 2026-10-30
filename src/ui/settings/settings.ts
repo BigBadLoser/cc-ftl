@@ -17,8 +17,6 @@ export interface Settings {
   zoomSpeed: number;
   /** Dragging the view moves the camera the other way (grab the camera, not the world). */
   invertDrag: boolean;
-  /** UI scale, 0.9 to 1.25. */
-  uiScale: number;
   showFps: boolean;
   tooltips: boolean;
 }
@@ -31,7 +29,6 @@ export const DEFAULT_SETTINGS: Settings = {
   scrollSpeed: 1,
   zoomSpeed: 1,
   invertDrag: false,
-  uiScale: 1,
   showFps: false,
   tooltips: true,
 };
@@ -40,7 +37,6 @@ export const DEFAULT_SETTINGS: Settings = {
 export const RANGES = {
   scrollSpeed: { min: 0.5, max: 2, step: 0.25 },
   zoomSpeed: { min: 0.5, max: 2, step: 0.25 },
-  uiScale: { min: 0.9, max: 1.25, step: 0.05 },
 } as const;
 
 export const SETTINGS_STORE = 'cc-ftl.settings';

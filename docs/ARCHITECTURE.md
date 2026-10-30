@@ -714,7 +714,7 @@ Small in-house controls for panels, built on [Bits UI](https://bits-ui.com) (hea
 ARIA behaviour and no styling). The game keeps its own look: every kit component is styled here with the tokens in
 `src/ui/theme.css` (sharp dark panels, the global `button.on` state, 40px touch targets, `--focus` ring), not by a styled library.
 
-- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, exported from `src/ui/kit/index.ts`.
+- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, `SideTabs` (left-sidebar tabs), exported from `src/ui/kit/index.ts`.
   Props are plain values plus an `onChange` callback (controlled); options are `KitOption` (`value`, `label`, `sub`, `disabled`, `testId`).
 - **Rule: panels import from `ui/kit` only, never `bits-ui`.** ESLint (`no-restricted-imports`) allows `bits-ui` only under
   `src/ui/kit`, so the library can be swapped by editing the kit alone. Panels still never mutate the sim; a kit control only reports a
@@ -759,7 +759,7 @@ renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the pl
   background, tooltips off), `app/input.ts` (edge scroll, scroll and zoom speed, invert drag), App (FPS), main.ts (start speed).
   Lessons keep their own prefs.
 - **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
-  menu. While it is open `keyModal.open` makes the game's key handlers stand aside; the App pauses the game and restores the speed.
+  menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open `keyModal.open` makes the game's key handlers stand aside; the App pauses the game and restores the speed.
 - **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
   ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
 

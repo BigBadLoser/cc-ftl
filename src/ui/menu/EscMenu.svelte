@@ -104,7 +104,12 @@
     width: 500px;
   }
   .menu.wide {
-    width: 600px;
+    width: 760px;
+  }
+  /* Settings and Controls: one tab at a time in a fixed-height page, so the panel does not jump between tabs. */
+  .menu.wide .body {
+    height: 470px;
+    overflow: hidden;
   }
   .menu > :global(.frame) {
     flex: 1;

@@ -7,7 +7,7 @@ export const KEY_GROUPS = [
   { id: 'time', label: 'Time' },
   { id: 'camera', label: 'Camera' },
   { id: 'screens', label: 'Screens' },
-  { id: 'crew', label: 'Crew and building' },
+  { id: 'crew', label: 'Crew and build' },
   { id: 'combat', label: 'Combat' },
   { id: 'menus', label: 'Menus' },
   { id: 'debug', label: 'Debug' },

@@ -21,7 +21,7 @@ describe('settings', () => {
 
   it('drop values of the wrong type or out of range, and survive blocked storage', () => {
     const { m, s } = memory();
-    m.set(SETTINGS_STORE, JSON.stringify({ zoomSpeed: 9, uiScale: 'big', startSpeed: 7, tooltips: false }));
+    m.set(SETTINGS_STORE, JSON.stringify({ zoomSpeed: 9, scrollSpeed: 'fast', startSpeed: 7, tooltips: false }));
     expect(createSettings(() => s).get()).toEqual({ ...DEFAULT_SETTINGS, tooltips: false });
     const broken = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
     const b = createSettings(() => broken);
