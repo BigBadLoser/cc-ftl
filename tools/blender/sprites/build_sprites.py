@@ -67,7 +67,7 @@ def main():
             sys.exit(f"{mpath} holds {have} px tiles but the pipeline renders {core.TILE_W} px: wrong outdir")
     names = (["crew", "robots", "aliens", "portraits"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
-        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol"):
+        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "damage_sol"):
             continue                                    # (their own caches and renderers: --adopt is for env_build's)
         m = pack.load_manifest(mpath, base())
         if name == "crew":
