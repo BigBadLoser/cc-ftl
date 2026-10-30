@@ -6,6 +6,7 @@ import { pickWeighted } from '../plan';
 import type { Arrangement, Dir, RoomRecipe, Step, Wall } from './types';
 import { withCompanions } from './companions';
 import { planCourt } from './courts';
+import { placeIslands } from './islands';
 import { placeVignettes } from './vignettes';
 
 /** One room's draw from its recipe: the arrangement, the mirror and the module chosen for each step. */
@@ -320,6 +321,8 @@ export function furnish(
   keepDoorApproach(lay, room);
   if (d.arr.court) planCourt(lay, rng, room, d.arr.court, power);
   else if (d.arr.vignettes) placeVignettes(lay, rng, room, d.arr.vignettes, power);
+  // A roomy room uses its middle (rooms/islands.ts): before the extras and fill line the walls and take the floor.
+  if (d.recipe.islands) placeIslands(lay, rng, room, d.recipe.islands, power);
   d.arr.steps.forEach((s, si) => {
     if (s.count === 'spec') {
       // The planned modules are all in: set each one's flush companions (ore bins beside a refinery).

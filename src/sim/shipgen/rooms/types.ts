@@ -112,5 +112,7 @@ export interface VignetteSet {
 export interface RoomRecipe {
   /** Target share of the room's floor under modules (lights excluded) for 'fill' steps. */
   fill: number;
+  /** Groups set in a roomy room's open middle after the steps (rooms/islands.ts). */
+  islands?: readonly Vignette[];
   arrangements: readonly Arrangement[];
 }

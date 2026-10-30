@@ -1,4 +1,5 @@
 import { Finish } from '../../structure';
+import { rackIsland } from './islandSets';
 import type { RoomRecipe, Vignette } from './types';
 
 /**
@@ -39,6 +40,7 @@ export const industry = {
 } as const satisfies RoomRecipe;
 
 export const armoury = {
+  islands: [rackIsland],
   fill: 0.6,
   arrangements: [
     {
@@ -85,10 +87,6 @@ const lounge: Vignette = {
 const kiosk: Vignette = { name: 'kiosk', mods: [{ mod: 'module.console', x: 0, y: 0 }, { mod: 'module.storage_locker', x: 1, y: 0 }] };
 /** A research bench out on the deck: a station and a console side by side, worked from the front. */
 const labBench: Vignette = { name: 'lab bench', mods: [{ mod: 'module.research', x: 0, y: 0 }, { mod: 'module.console', x: 1, y: 0 }] };
-/** A rack island: two racks back to back, a locker at the end. */
-const rackIsland: Vignette = {
-  name: 'rack island', mods: [{ mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 0, y: -1, rot: 2 }, { mod: 'module.storage_locker', x: 2, y: 0 }],
-};
 /** A briefing corner: a console and two rows of seats facing it (a gap between, so the back row sees past the front). */
 const briefing: Vignette = { name: 'briefing', mods: [{ mod: 'module.console', x: 0, y: 0 }, ...chairs([-1, 0, 1], 2), ...chairs([-1, 1], 4)] };
 

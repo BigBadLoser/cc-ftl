@@ -243,12 +243,18 @@ export class Layout {
         if (!served) return 'facesChair';
       }
     }
-    // Covering a tile another piece is used from: fine while that piece keeps another.
+    // Covering a tile another piece is used from: fine while that piece keeps another, or when this piece is what it is
+    // used at (a table under a seat's front, a console whose front the seat stands on).
     const covers = blocksWalk || id === CHAIR || (!def.light && tiles.length > 0);
     if (covers) {
       const mine = new Set(tiles.map(idx));
+      const front = accessTile(def, x, y, rot);
+      const servedBy = (m: number): boolean => {
+        const o = this.modules[m];
+        return !!o && o.def === CHAIR && (TABLE.has(id) || (!!front && o.x === front.x && o.y === front.y));
+      };
       const hit = new Set<number>();
-      for (const i of mine) for (const m of this.neededBy.get(i) ?? []) hit.add(m);
+      for (const i of mine) for (const m of this.neededBy.get(i) ?? []) if (!servedBy(m)) hit.add(m);
       for (const m of hit) if (!(this.needs.get(m) ?? []).some((i) => !mine.has(i) && this.usableFloor(i, -1))) return 'blocksUse';
     }
     const room = this.roomOf[idx(tiles[0] as Tile)] ?? -1;
