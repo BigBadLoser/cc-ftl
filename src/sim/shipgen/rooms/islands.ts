@@ -8,7 +8,7 @@ import { turned } from './vignettes';
 /**
  * Islands: a roomy room uses its middle. After the recipe's steps (which mostly back pieces onto walls), while one of the
  * recipe's islands (the first that fits, in the recipe's order) fits on open floor with clear floor on every side (a reserved walkway may be that floor, never
- * under the island), it goes in at the spot nearest the room's middle (a reactor room's control desk, a hold's rack
+ * under the island), it goes in at the spot nearest the room's middle (a reactor room's battery bank, a hold's rack
  * island): open floor reads as arranged, not left over. A room only as big as its contents has no such spot and stays as
  * it is. At most MAX islands a room, every tile still reachable, every piece still usable (Layout.fitError).
  */

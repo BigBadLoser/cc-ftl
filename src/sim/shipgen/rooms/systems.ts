@@ -1,4 +1,3 @@
-import { consoleSeat, controlDesk } from './islandSets';
 import type { Arrangement, RoomRecipe } from './types';
 
 /**
@@ -25,7 +24,6 @@ export const weapons = {
 } as const satisfies RoomRecipe;
 
 export const shields = {
-  islands: [controlDesk, consoleSeat],
   fill: 0.6,
   arrangements: [
     around('banks', 2, [

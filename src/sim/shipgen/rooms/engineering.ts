@@ -1,16 +1,16 @@
-import { batteryBank, consoleSeat, controlDesk } from './islandSets';
+import { batteryBank } from './islandSets';
 import type { RoomRecipe } from './types';
 
 /** Engineering (reactor rooms): reactors with clear floor around them for access, one or two battery banks, a console, a locker or a rack or two on the walls. */
 export const engineering = {
   fill: 0.5,
-  islands: [controlDesk, batteryBank, consoleSeat],
+  islands: [batteryBank],
   arrangements: [
     {
       name: 'core', weight: 2, steps: [
         { mod: 'module.reactor', count: 'spec', centre: 'y', clear: 1, row: true },
         { mod: 'module.battery', count: 2, wall: 'long', row: true },
-        { mod: 'module.console', count: 1, wall: 'any', unless: 'module.console' },
+        { mod: 'module.console', count: 1, wall: 'any' },
         { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
       ],
     },
