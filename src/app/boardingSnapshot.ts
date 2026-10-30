@@ -85,7 +85,7 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
       const veh = sim.world.get(v, VehicleC);
       return veh?.state === 'docked' && shipIdOf(sim, sim.world.get(veh.dock, ModuleC)) === id && veh.homeShip === home;
     });
-    out.push({ ship: id, party, sabotage, fireOn, canRecall: docked && party.some((p) => p.state !== 'returning' && p.state !== 'down')});
+    out.push({ ship: id, shipName: ship.name, party, sabotage, fireOn, canRecall: docked && party.some((p) => p.state !== 'returning' && p.state !== 'down')});
   }
   return out;
 }

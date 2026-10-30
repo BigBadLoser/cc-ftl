@@ -99,7 +99,8 @@
     e.stopImmediatePropagation();
   }
   function onKey(e: KeyboardEvent) {
-    if (e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
+    // The flee/jump confirmation is a modal: leave the keys (Tab, Enter, Esc) to it.
+    if (leaving || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
     if (e.key === 'Tab') {
       consume(e);
       swap();
@@ -149,7 +150,7 @@
   {#if enemy}
     <div class="top">
       <EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} />
-      {#each boarding.filter((x) => x.ship === enemy.ship) as b (b.ship)}<BoardingCard {api} {b} />{/each}
+      {#each boarding as b (b.ship)}<BoardingCard {api} {b} named={boarding.length > 1} />{/each}
     </div>
   {/if}
   {#if me && insetShip}

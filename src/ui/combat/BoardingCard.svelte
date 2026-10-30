@@ -7,14 +7,14 @@
    * Recall, and the friendly-fire warning (your aim lands where your crew stand).
    * Boarders are ordered with a right-click on an enemy module ("Sabotage ..."), see app/crewOrders.ts.
    */
-  let { api, b }: { api: UiApi; b: UiBoarding } = $props();
+  let { api, b, named = false }: { api: UiApi; b: UiBoarding; named?: boolean } = $props();
   const STATE = { sabotage: 'wrecking', paused: 'fighting', fighting: 'fighting', holding: 'ready', returning: 'returning', down: 'down' } as const;
   const TONE = { sabotage: 'green', paused: 'amber', fighting: 'amber', holding: 'dim', returning: 'neutral', down: 'red' } as const;
   const hpFill = (v: number) => (v < 0.3 ? 'var(--health-bad)' : v < 0.6 ? 'var(--health-warn)' : 'var(--health-good)');
   const recallIds = $derived(b.party.filter((p) => p.state !== 'returning' && p.state !== 'down').map((p) => p.id));
 </script>
 
-<Frame title="Boarding party" style="width:290px; margin-top:9px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
+<Frame title={named ? `Boarding party · ${b.shipName}` : 'Boarding party'} style="width:290px; margin-top:9px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
   {#snippet right()}
     <Pill tone="dim">{b.party.length} aboard</Pill>
   {/snippet}

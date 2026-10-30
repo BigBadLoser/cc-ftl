@@ -627,6 +627,8 @@ export interface UiShipCombat {
 export interface UiBoarding {
   /** The hostile ShipC entity the party is on. */
   ship: number;
+  /** That ship's name, for the card's legend when parties are aboard more than one ship. */
+  shipName: string;
   party: { id: number; name: string; /** 0..1 */ hp: number; state: 'sabotage' | 'paused' | 'fighting' | 'holding' | 'returning' | 'down'; /** The module they were ordered to wreck (0 = none). */ module: number }[];
   /** One row per module being wrecked: 'active' while a boarder works on it, 'paused' once every one of them has broken off to fight. */
   sabotage: { module: number; name: string; hp: number; maxHp: number; state: 'active' | 'paused'; crew: string[]; crewIds: number[] }[];
