@@ -75,8 +75,13 @@ export function liner(rng: Rng, beds: number, lounge: RoomSpec, cabin: [number, 
   return b;
 }
 
-/** Station module: a square of quadrant rooms round a 1-wide cross corridor open on all four faces. */
-export function station(rng: Rng, rooms: RoomSpec[]): Builder | null {
+/**
+ * Station module: a square of quadrant rooms round a 1-wide cross corridor open on all four faces. Each quadrant is as
+ * big as the group's largest room; with `fit`, each room keeps its own size (at least 3 a side), tucked into its
+ * quadrant's corner by the cross, the rest of the quadrant left open (a core grouped with a big hold is not a hold-sized
+ * box with one machine in it).
+ */
+export function station(rng: Rng, rooms: RoomSpec[], fit = false): Builder | null {
   const b = localBuilder(rng);
   const Q = Math.max(3, ...rooms.map((r) => Math.max(r.w, r.h)));
   const hz = b.place({ x: 0, y: Q + 1, w: 2 * Q + 5, h: 3 }, 'hall');
@@ -89,7 +94,14 @@ export function station(rng: Rng, rooms: RoomSpec[]): Builder | null {
   for (let i = 0; i < Math.min(4, rooms.length); i++) {
     const q = quad[i] as (typeof quad)[number];
     const r = rooms[i] as RoomSpec;
-    const p = b.place({ x: q.x, y: q.y, w: Q + 2, h: Q + 2 }, r.role, { ...r, w: Q, h: Q });
+    // A gun bay keeps 5 a side (its gun needs the hull and a clear ring round its turret).
+    const least = r.role === 'weapons' ? 5 : 3;
+    const w = fit ? Math.min(Q, Math.max(least, r.w)) : Q;
+    const h = fit ? Math.min(Q, Math.max(least, r.h)) : Q;
+    // The corner nearest the cross: right of a west quadrant, left of an east one; bottom of a north one, top of a south.
+    const x = q.x === 0 ? Q - w : q.x;
+    const y = q.y === 0 ? Q - h : q.y;
+    const p = b.place({ x, y, w: w + 2, h: h + 2 }, r.role, { ...r, w, h });
     if (!p || (!b.door(q.arm, p) && !b.door(hz, p))) return null;
   }
   return b;
