@@ -79,6 +79,7 @@ export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass } from './a
 export { captureReady, isAiRun } from './capture/control';
 export { RecallC, type Recall } from './boarding/components';
 export { loseStrandedCrew } from './boarding/stranded';
+export { playerReach } from './boarding/reach';
 export { CoreRaiderC, CoreRaidC, coreObjective } from './capture/coreRaid';
 export { neverSurrenders, rogueAlly } from './combat/factions';
 export { crewSubdued } from './combat/subdued';
