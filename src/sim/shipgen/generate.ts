@@ -303,8 +303,9 @@ export function finishLayout(
   const partByKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   // One wall between parts: slabs become floor, spare hull layers and double partitions go (thinWalls.ts).
   // Rooms that never grow: docks, engines and bays keep their fit, shield rooms their square floor (a folded wall stub
-  // would leave a bump the generator grid cannot use; the wall folds into the neighbour instead).
-  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar', 'shields'];
+  // would leave a bump the generator grid cannot use; the wall folds into the neighbour instead). On stations the
+  // reactor, core and gun rooms keep their rectangles too (ships fold them: their hulls stay symmetric and thin-walled).
+  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar', 'shields', ...(opts.immobile ? ['reactor', 'core', 'weapons'] as const : [])];
   const thin = thinWalls(b.cv, {
     canGrow: (i) => {
       const l = labels[i];

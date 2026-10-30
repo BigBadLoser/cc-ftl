@@ -8,8 +8,9 @@ import { CHAIR, SLEEP, bedSides, chairFront } from '../useTiles';
  *
  * - circulation: the walk between a room's entrances against the straight line (1 = straight; Merrell's circulation
  *   term). Rooms with one entrance score 1.
- * - pockets: the share of free floor that is a dead-end pocket (one or no free neighbour) and nobody's use tile (an
- *   access tile, a seat, a bed side): floor left over between pieces, the "chair behind a locker" kind of waste.
+ * - pockets: the share of free floor that is a dead-end pocket (one or no free neighbour), nobody's use tile (an
+ *   access tile, a seat, a bed side) and on no walk from an entrance to one: floor left over between pieces, the
+ *   "chair behind a locker" kind of waste. A tight room's walkway ending at an access tile is not a pocket.
  * - alignment: the share of standing pieces set against a wall or lined up with a neighbour (an edge on the same line,
  *   within three tiles): Merrell's alignment term.
  * - balance: how far the pieces' centre of mass sits off the room's centre, over the room's radius (0 = centred;
@@ -98,14 +99,23 @@ export function roomQuality(v: LayoutView): RoomQuality[] {
     }
     const blocked = tiles.filter((i) => blocks[i] === 1);
     const freeTiles = tiles.filter(free);
-    // Pockets.
-    const pocket = freeTiles.filter((i) => use[i] === 0 && nb(i).filter(free).length <= 1).length;
     // Circulation: entrances are door tiles beside the room, or another room's floor straight across (an archway).
     const entries = new Set<number>();
     for (const i of tiles) for (const n of nb(i)) {
       if (cell(n) === 'D' || (cell(n) === '_' && (v.roomOf[n] ?? -1) !== room)) entries.add(i);
     }
     const ent = [...entries].filter(free);
+    // Pockets: dead-end floor nobody stands on or walks through (off every shortest walk from the entrances to a use tile).
+    const needed = new Set<number>();
+    if (ent.length > 0) {
+      const prev = new Map<number, number>(ent.map((i) => [i, -1]));
+      const q = [...ent];
+      for (let h = 0; h < q.length; h++) for (const n of nb(q[h] as number)) {
+        if (!prev.has(n) && inRoom.has(n) && free(n)) { prev.set(n, q[h] as number); q.push(n); }
+      }
+      for (const i of freeTiles) if (use[i] === 1) for (let c = i; c >= 0 && !needed.has(c); c = prev.get(c) ?? -1) needed.add(c);
+    }
+    const pocket = freeTiles.filter((i) => use[i] === 0 && !needed.has(i) && nb(i).filter(free).length <= 1).length;
     let detour = 0, pairs = 0;
     for (let a = 0; a < ent.length; a++) {
       const dist = new Map<number, number>([[ent[a] as number, 0]]);
