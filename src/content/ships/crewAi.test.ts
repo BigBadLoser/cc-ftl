@@ -6,6 +6,7 @@ import {
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
 import { deriveTask } from '../../sim/ai/task';
+import { killCrew } from '../../sim/crew/death';
 import { explainCrew } from '../../sim/ai/explain';
 import { destroyJob } from '../../sim/items/stacks';
 import { content } from '../index';
@@ -268,5 +269,18 @@ describe('crew AI phase 1', () => {
       }
     }
     expect([...want].filter((m) => !seen.has(m))).toEqual([]);
+  });
+  it('restoring task mirrors on load skips the dead, even one who died mid-meal', () => {
+    const sim = newGame(1, content);
+    const [cook] = sim.world.query(CrewC);
+    sim.world.get(cook!, NeedsC)!.hunger = 5;
+    for (let i = 0; i < 2000 && !sim.world.has(cook!, EatC); i++) run(sim, 1);
+    expect(sim.world.has(cook!, EatC)).toBe(true);
+    killCrew(sim, cook!); // removes the task but leaves the meal on the corpse
+    const data = JSON.parse(serialize(sim)) as { world: { stores: Record<string, unknown> } };
+    for (const k of ['task', 'intent', 'interrupt']) delete data.world.stores[k];
+    const old = deserialize(JSON.stringify(data), content);
+    expect(old.world.has(cook!, TaskC)).toBe(false);
+    expect(auditReservations(old).problems).toEqual([]);
   });
 });

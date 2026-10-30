@@ -1,5 +1,5 @@
 import { releaseBedClaim } from '../crew/beds';
-import { AssignmentC, BedClaimC, CarriedC, CrewC, EatC, JobC, PathC, type Crew, type Job } from '../crew/components';
+import { AssignmentC, BedClaimC, CarriedC, CrewC, DeadC, EatC, JobC, PathC, type Crew, type Job } from '../crew/components';
 import { clearPath } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { isErrand } from '../eva/errands';
@@ -133,7 +133,8 @@ export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
  */
 export function restoreTasks(sim: Sim): void {
   for (const c of sim.world.query(CrewC)) {
-    if (sim.world.has(c, TaskC)) continue;
+    // The dead get no task: a corpse can keep a stale `EatC` (killCrew removes the task, not the meal), and nothing would clear it.
+    if (sim.world.has(c, TaskC) || sim.world.has(c, DeadC)) continue;
     const t = deriveTask(sim, c);
     if (t) sim.world.add(c, TaskC, t);
   }
