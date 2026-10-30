@@ -1,10 +1,12 @@
 import { homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, ShipC, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, ShipC, factionsHostile, type Sim, type SimEvent } from '../sim';
+import type { Ship } from '../sim/combat/components';
+import { isDormant } from '../sim/combat/dormant';
 import { TICK_HZ } from '../sim/time';
 import type { UiFightReport, UiFightLine } from '../ui/api';
 import type { LogEntry } from './logText';
-import { crewSubject, enemyShip, crewTile, shipSubject, tileAt } from './subjects';
+import { crewSubject, crewTile, shipSubject, tileAt } from './subjects';
 
 /** What the fight report is collected from: the events of one fight, with names read from the sim as they happen (UI-side, read-only). */
 interface Tracker {
@@ -66,9 +68,19 @@ export function createFightReporter(sim: Sim): FightReporter {
   const ours = (crew: number) => sim.world.get(crew, AllegianceC)?.faction === 'player';
   const modName = (def: string) => sim.content.modules[def]?.name ?? 'Module';
   const hull = () => sim.world.get(home(), ShipC)?.integrity ?? 0;
+  /** The enemy at the start: a hostile still in the fight by the rule combatStateSystem uses (no wreck, fled ship or dormant den), else 0. */
   const enemyOf = (): number => {
-    const s = enemyShip(sim, home());
-    return s?.kind === 'ship' ? s.id : 0;
+    for (const id of sim.world.query(ShipC)) {
+      const s = sim.world.get(id, ShipC);
+      if (s && (s.state === 'active' || s.state === 'disabled') && !isDormant(s) && factionsHostile(s.faction, 'player')) return id;
+    }
+    return 0;
+  };
+  /** The hull as the fight ends: a jump away has already lifted the ship into the hyperspace packet, so read it there. */
+  const finalHull = (c: Tracker): number => {
+    const p = sim.sector.state === 'hyperspace' ? sim.sector.packet : undefined;
+    const lifted = p?.entities.find((x) => x.id === p.ship)?.c[ShipC.name] as Ship | undefined;
+    return lifted?.integrity ?? (sim.world.has(home(), ShipC) ? hull() : c.hullNow);
   };
   const fresh = (): Tracker => ({
     start: sim.tick, hullBefore: hull(), hullNow: hull(), enemyHull: null, enemyCrew: 0, enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
@@ -149,6 +161,7 @@ export function createFightReporter(sim: Sim): FightReporter {
           // The player's flee ends the fight by jumping out: the sector is in hyperspace when `combat.ended` comes (see sector/jump.ts).
           if (t && t.outcome === 'ended' && sim.sector.state === 'hyperspace') t.outcome = 'youFled';
           if (t) {
+            t.hullNow = finalHull(t);
             const report = finish(t);
             const summary = fightLine(report);
             if (summary) done = { report, summary };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, ModuleC, homeShip, newGame, type SimEvent } from '../sim';
-import { shipIdOf } from '../sim/regions';
+import { CrewC, ModuleC, ShipC, homeShip, newGame, type SimEvent } from '../sim';
+import { shipIdOf, shipIds } from '../sim/regions';
 import { createFightReporter, fightLine } from './fightReport';
 
 describe('fight report', () => {
@@ -47,6 +47,35 @@ describe('fight report', () => {
     const lost = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship) as number;
     reporter.onEvents([{ type: 'module.destroyed', moduleId: lost, def: sim.world.get(lost, ModuleC)!.def, ship }]);
     expect(reporter.onEvents([{ type: 'combat.ended' }])?.summary.text).toBe('Fight over: 1 module lost');
+  });
+
+  it('takes the enemy from ships still in the fight, not an earlier wreck', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const wreck = shipIds(sim)[1] as number;
+    Object.assign(sim.world.get(wreck, ShipC)!, { state: 'wreck', integrity: 0.1 });
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 140, y: 50 });
+    sim.step();
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    const done = reporter.onEvents([{ type: 'crew.died', crew: 999 }, { type: 'combat.ended' }]);
+    expect(done?.report.enemyHull).toBe(1);
+  });
+
+  it('reads the final hull from the jump packet when the ship has left', () => {
+    const sim = newGame(3, content);
+    const ship = homeShip(sim);
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    // Hull lost with no event after it (fire), then a jump away lifts the ship before `combat.ended`.
+    const lifted = { ...sim.world.get(ship, ShipC)!, integrity: 0.6 };
+    sim.world.remove(ship, ShipC);
+    sim.sector.state = 'hyperspace';
+    sim.sector.packet = { ship, w: 1, h: 1, tiles: {}, entities: [{ id: ship, c: { [ShipC.name]: lifted } }] };
+    const done = reporter.onEvents([{ type: 'combat.ended' }]);
+    expect(done?.report).toMatchObject({ outcome: 'youFled', hullAfter: 0.6 });
+    expect(done?.summary.text).toBe('Fight over: hull −40%');
   });
 
   it('says nothing for a fight that cost nothing', () => {
