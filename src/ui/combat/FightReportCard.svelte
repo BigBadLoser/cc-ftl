@@ -1,9 +1,10 @@
 <script lang="ts">
-  import type { UiApi, UiFightLine, UiFightReport } from '../api';
+  import type { UiApi, UiFightReport } from '../api';
   import FloatingWindow from '../FloatingWindow.svelte';
   import Icon from '../Icon.svelte';
   import { centerTop } from '../floatingWindow';
   import { Frame } from '../kit';
+  import { lossRows } from './lossRows';
   import './steel.css';
 
   /**
@@ -34,49 +35,31 @@
   const ammoName = $derived(report.ammo.length === 1 ? (report.ammo[0]?.name ?? 'Ammo') : 'Ammo');
   const crewDead = $derived(report.dead.length);
 
-  interface Row { name: string; n: number; state: string; tone: 'bad' | 'warn'; dot: boolean; subject: UiFightLine['subject'] }
-  /** Your losses: destroyed, damaged, down and dead, the same module (or name) folded into "×2". */
-  const rows = $derived.by((): Row[] => {
-    const out: Row[] = [];
-    const add = (lines: UiFightLine[], state: string, tone: Row['tone'], dot: boolean) => {
-      for (const l of lines) {
-        const hit = out.find((r) => r.name === l.name && r.state === state && JSON.stringify(r.subject) === JSON.stringify(l.subject));
-        if (hit) hit.n++;
-        else out.push({ name: l.name, n: 1, state, tone, dot, subject: l.subject });
-      }
-    };
-    add(report.lost, 'DESTROYED', 'bad', false);
-    add(report.damaged, 'DAMAGED', 'warn', false);
-    add(report.down, 'DOWN', 'warn', true);
-    add(report.dead, 'DEAD', 'bad', true);
-    return out;
-  });
+  const rows = $derived(lossRows(report));
 </script>
 
-<FloatingWindow id="fightReport" title="Fight report" min={{ w: 320, h: 140 }} defaultRect={(b) => centerTop(b, 360, 0, 40)} onClose={() => api.closeFightReport()} testId="fight-report" bare bg={false} pinRight={34} class="fr-card">
+<FloatingWindow id="fightReport" title="Fight report" min={{ w: 320, h: 140 }} defaultRect={(b) => centerTop(b, 360, 0, 40)} onClose={() => api.closeFightReport()} testId="fight-report" bare bg={false} class="fr-card">
   <div class="steel card">
     <Frame title="Fight report">
-      {#snippet right()}
-        <button class="x" aria-label="Close" title="Close (Esc)" data-testid="fight-report-close" onclick={() => api.closeFightReport()}><Icon name="close" size={12} /></button>
-      {/snippet}
       <div class="ph head">
         <h2 class={title.tone}>{title.text}</h2>
         <span class="time" title="How long the fight lasted">{clock(report.seconds)}</span>
+        <button class="x" aria-label="Close" title="Close (Esc)" data-testid="fight-report-close" onclick={() => api.closeFightReport()}><Icon name="close" size={12} /></button>
       </div>
       <div class="cols">
         <div class="col">
           <span class="who">You</span>
           <b class="big">{hullText}<small>Hull</small></b>
-          <div class="kv"><span>Modules lost</span><b>{report.lost.length}</b></div>
-          <div class="kv"><span>Crew down</span><b>{report.down.length}</b></div>
+          {#if report.lost.length}<div class="kv"><span>Modules lost</span><b>{report.lost.length}</b></div>{/if}
+          {#if report.down.length}<div class="kv"><span>Crew down</span><b>{report.down.length}</b></div>{/if}
           {#if crewDead}<div class="kv"><span>Crew dead</span><b>{crewDead}</b></div>{/if}
           {#if ammoTotal}<div class="kv"><span>{ammoName}</span><b>{ammoTotal}</b></div>{/if}
         </div>
         <div class="col foe">
           <span class="who">{report.enemy}</span>
           <b class="big">{enemyHull}<small>Hull</small></b>
-          <div class="kv"><span>Modules lost</span><b>{report.enemyLost.length}</b></div>
-          <div class="kv"><span>Crew</span><b>{report.enemyCrew} dead</b></div>
+          {#if report.enemyLost.length}<div class="kv"><span>Modules lost</span><b>{report.enemyLost.length}</b></div>{/if}
+          {#if report.enemyCrew}<div class="kv"><span>Crew</span><b>{report.enemyCrew} dead</b></div>{/if}
           {#if report.prize}<div class="kv"><span>Prize</span><b>{report.prize}</b></div>{/if}
         </div>
       </div>
@@ -105,22 +88,21 @@
   .card :global(.frame) { padding: 8px 0 0; }
   .ph.head {
     margin: 0;
-    padding: 4px 12px 8px calc(12px);
-    padding-right: 44px;
+    padding: 4px 8px 8px 12px !important; /* the window reserves room for a pin; this card has none */
     background: transparent;
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    gap: 10px;
     min-height: 0;
   }
-  h2 { margin: 0; font: 700 24px/1 var(--head-font); letter-spacing: 0.04em; }
+  h2 { flex: 1; margin: 0; font: 700 24px/1 var(--head-font); letter-spacing: 0.04em; }
   h2.good { color: var(--green); }
   h2.warn { color: var(--amber); }
   h2.bad { color: var(--red); }
   h2.dim { color: var(--dim); }
-  .time { font: 600 13px/1 var(--head-font); color: var(--dim); }
-  .x { flex: none; min-width: 0; min-height: 0; width: 18px; height: 18px; padding: 0; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); color: var(--dim); pointer-events: auto; }
-  .x:hover { border-color: var(--cyan); color: var(--text); }
+  .time { margin-left: auto; font: 600 13px/1 var(--head-font); color: var(--dim); }
+  .x { flex: none; align-self: center; min-width: 0; min-height: 0; width: 20px; height: 20px; padding: 0; display: grid; place-items: center; background: transparent; border: 0; color: var(--dim); }
+  .x:hover { color: var(--text); background: var(--panel-2); }
   .cols { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--frame-line); }
   .col { padding: 8px 12px 10px; display: grid; gap: 3px; align-content: start; min-width: 0; }
   .col + .col { border-left: 1px solid var(--frame-line); }

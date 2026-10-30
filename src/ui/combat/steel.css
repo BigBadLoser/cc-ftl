@@ -55,3 +55,8 @@ section.fw.fr-card .barepin.on {
 .steel .frame h3 {
   color: #727a82;
 }
+/* No pin on the fight report: it closes with Esc, the close button or the next fight. */
+section.fw.fr-card .barepin {
+  display: none;
+}
+section.fw.fr-card { --fw-pin: 8px; }
