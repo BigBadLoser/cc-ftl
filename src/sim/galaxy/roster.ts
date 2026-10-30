@@ -87,7 +87,7 @@ function makeShip(sim: Sim, owner: GalaxyFactionDef, ownerId: string, table: Tab
     seed = s;
     break;
   }
-  const name = shipNameFor((owner.fleet as NonNullable<typeof owner.fleet>).names, key, used);
+  const name = shipNameFor((owner.fleet as NonNullable<typeof owner.fleet>).names, [sim.seed, ...key], used);
   return { id: sim.galaxy.nextFleet++, faction: ownerId, shipgen: cand.shipgen, seed, depth, since: 0, name, size };
 }
 
