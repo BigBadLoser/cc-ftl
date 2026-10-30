@@ -8,6 +8,8 @@ export { scaled, hullChoices } from './plan';
 export { roleOfLetter } from './canvas';
 export { CAGE, LAMP, MAST, isLamp, reachOf } from './fit';
 export { checkUse, type UseBreak, type UseIssue } from './rooms/usage';
+export { roomQuality, type RoomQuality, type LayoutView } from './rooms/quality';
+export { stationQuality, ADJACENCY, DISTRICT, type StationQuality } from './stationQuality';
 export { adjacencyDistance, adjacencySignature, layoutMetrics, meanPairwise, profileDistance, silhouetteDistance, silhouetteMask } from './metrics';
 export { Arranger, mirrorBlock, flipId, type Block, type BlockPort, type AttachOpts } from './arranger';
 export { generateStation, stationFaction, stationProblems, type StationResult } from './stationGen';
