@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, CarriedC, CarryingC, CrewC, DownedC, DraftedC, HealthC, IntentC, InterruptC, ItemStackC, JobC, NeedsC, PositionC,
-  StorageC, Struct, TaskC, deserialize, homeShip, newGame, serialize, shipGrid, storageCount, type Sim, type SimEvent,
+  AssignmentC, CarriedC, CarryingC, CrewC, DownedC, DraftedC, EatC, HealthC, IntentC, InterruptC, ItemStackC, JobC, ModuleC, NeedsC,
+  PositionC, ShipC, StorageC, Struct, TaskC, deserialize, findPath, homeShip, newGame, placementError, removeModule, serialize, shipGrid,
+  spawnModule, storageCount, type Sim, type SimEvent,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
+import { deriveTask } from '../../sim/ai/task';
 import { explainCrew } from '../../sim/ai/explain';
 import { destroyJob } from '../../sim/items/stacks';
 import { content } from '../index';
@@ -203,5 +205,68 @@ describe('crew AI phase 1', () => {
     expect(x).toMatchObject({ policy: 'policy.legacy', drive: 'work', assignment: job, task: { job: { id: job, kind: 'haul' }, holds: [`job ${job}`] } });
     expect(x.task!.path).toMatch(/^haul\/(ToSource|ToDest|Deposit)$/);
     expect(x.scores).toEqual({ recharge: 0, sleep: 0, eat: 0, work: 1000 });
+  });
+
+  /**
+   * A save from before crew AI Phase 1 has the legacy components but no `task`, `intent` or `interrupt` store. Every crew member
+   * holding a job or in a need state must have their `Task` mirror straight after the load and after a tick, whatever branch the
+   * scheduler takes for them (an operator at a console, a sleeper, a robot charging, an eater, a hauler, a crew member suiting up).
+   */
+  it('loading a save made before the task mirror existed derives every missing task', () => {
+    // A busy starter: builds, hauls, an EVA wall on the hull ring, a hungry and a tired crew member, a robot with a flat battery.
+    const sim = haulBoard(1);
+    const ship = homeShip(sim);
+    const s = sim.world.get(ship, ShipC)!;
+    sim.enqueue({ type: 'debug.giveItems', item: 'item.metal', count: 300 });
+    sim.enqueue({ type: 'job.build', ship, x: s.x + 3, y: s.y, struct: Struct.Wall });
+    const g = shipGrid(sim, ship)!;
+    const crew = sim.world.query(CrewC);
+    const at = sim.world.get(crew[0]!, PositionC)!;
+    let placed = false;
+    for (let y = g.y0; y < g.y0 + g.height && !placed; y++) for (let x = g.x0; x < g.x0 + g.width && !placed; x++) {
+      if (placementError(sim, ship, 'module.robotBay', x, y, 0) !== null) continue;
+      const id = spawnModule(sim, 'module.robotBay', x, y, 0);
+      if (findPath(sim, ship, { x: at.x, y: at.y }, { x, y })) placed = true;
+      else removeModule(sim, id);
+    }
+    sim.enqueue({ type: 'debug.spawnCrew', ship, x: at.x, y: at.y, role: 'role.robot_worker' });
+    run(sim, 1);
+    sim.enqueue({ type: 'debug.setCharge', value: 5 });
+    sim.world.get(crew[0]!, NeedsC)!.hunger = 5;
+    sim.world.get(crew[1]!, NeedsC)!.rest = 5;
+    // An operator: drafted and sent to man a console.
+    const console = sim.world.query(ModuleC).find((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.console)!;
+    sim.enqueue({ type: 'crew.draft', id: crew[2]!, drafted: true });
+    run(sim, 1);
+    sim.enqueue({ type: 'crew.man', id: crew[2]!, module: console });
+    const want = new Set(['generic', 'sleep', 'charge', 'eat', 'haul', 'eva']);
+    const seen = new Set<string>();
+    let checks = 0;
+    for (let i = 0; i < 1200 && checks < 12; i++) {
+      run(sim, 1);
+      const states = new Set(sim.world.query(TaskC).map((c) => sim.world.get(c, TaskC)!.machine));
+      for (const m of states) seen.add(m);
+      if (i % 100 !== 99) continue;
+      checks++;
+      // The old save: the crew-AI stores did not exist yet.
+      const data = JSON.parse(serialize(sim)) as { world: { stores: Record<string, unknown> } };
+      for (const k of ['task', 'intent', 'interrupt']) delete data.world.stores[k];
+      const old = deserialize(JSON.stringify(data), content);
+      for (const phase of ['loaded', 'one tick later']) {
+        if (phase !== 'loaded') run(old, 1);
+        const audit = auditReservations(old);
+        expect(audit.problems, `tick ${old.tick}, ${phase}`).toEqual([]);
+        for (const c of old.world.query(CrewC)) {
+          const derived = deriveTask(old, c);
+          const task = old.world.get(c, TaskC);
+          if (old.world.has(c, AssignmentC) || old.world.has(c, EatC) || derived) {
+            expect(task, `crew ${c} at tick ${old.tick}, ${phase}`).toBeDefined();
+            expect(task!.job, `crew ${c} at tick ${old.tick}, ${phase}`).toBe(derived!.job);
+            expect(task!.machine, `crew ${c} at tick ${old.tick}, ${phase}`).toBe(derived!.machine);
+          }
+        }
+      }
+    }
+    expect([...want].filter((m) => !seen.has(m))).toEqual([]);
   });
 });

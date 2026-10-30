@@ -1,6 +1,7 @@
 import type { QueuedCommand } from './commands';
 import type { Sector } from './combat/components';
 import { World, type WorldData } from './ecs';
+import { restoreTasks } from './ai/task';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
@@ -144,5 +145,6 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;
+  restoreTasks(sim); // a save from before the crew-AI task mirror (Phase 1) has none
   return sim;
 }

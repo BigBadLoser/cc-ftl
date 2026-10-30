@@ -124,6 +124,21 @@ export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
   sim.world.add(crew, TaskC, next);
 }
 
+/**
+ * Give every crew member whose legacy components imply a task but who has none its `Task` mirror. Run where entities enter the
+ * world from data: a save loaded (one from before the mirror existed has no `task` store), a ship stamped back from a packet and a
+ * sector restored from its archive (a cut drops a task that referred across it, see sector/refs.ts). Crew that already have a task
+ * are left alone, so for anything saved since Phase 1 this changes nothing. `Intent` and `Interrupt` need no such pass: nothing
+ * reads them, and they are written at the crew member's next scheduler turn and detector pass as for a new crew member.
+ */
+export function restoreTasks(sim: Sim): void {
+  for (const c of sim.world.query(CrewC)) {
+    if (sim.world.has(c, TaskC)) continue;
+    const t = deriveTask(sim, c);
+    if (t) sim.world.add(c, TaskC, t);
+  }
+}
+
 /** Move a task to another state (and its class with it). */
 export function setState(sim: Sim, crew: number, task: Task, state: string, job?: Job): void {
   if (task.state === state) return;
