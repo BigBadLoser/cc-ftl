@@ -30,12 +30,15 @@
 </Dialog>
 
 <style>
+  /* Steel palette (the card itself lives in the dialog portal): graphite panel, amber for the warning, green commit, cyan interact. */
+  :global(.kit-card[data-testid='jump-confirm']) { background: #0b0e11; border-color: #3a424a; border-radius: 0; }
+  :global(.kit-card[data-testid='jump-confirm'] .kit-card-title) { font: 700 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .body { display: grid; gap: 10px; margin-top: 8px; }
   .warn { margin: 0; display: flex; gap: 8px; align-items: center; color: var(--amber); font-size: 14px; }
   .warn b { color: var(--text); font-weight: 600; }
   .take { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--text); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .two button { min-height: 38px; display: flex; gap: 6px; align-items: center; justify-content: center; font: 600 13px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
-  .go { background: var(--go-fill); border-color: var(--go-edge); }
-  .act { border-color: var(--act-edge, var(--cyan)); }
+  .go { background: #11151a; border-color: var(--green); }
+  .act { background: #11151a; border-color: var(--cyan); }
 </style>
