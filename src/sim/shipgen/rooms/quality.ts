@@ -16,6 +16,9 @@ import { CHAIR, SLEEP, bedSides, chairFront } from '../useTiles';
  *   Merrell's visual balance). Rooms with fewer than three pieces score 0.
  * - density and openness, reported only: the share of floor under pieces, and the largest clear rectangle over the
  *   floor (a court wants it high, a hold low).
+ * - rect and ragged, reported only (the room's shape, as the layout handed it over): floor over its bounding box (1 = a
+ *   rectangle), and the floor's edge against walls over its bounding box's perimeter (1 = straight walls; a sawtooth
+ *   diagonal wall runs it up).
  *
  * `score` folds them into 0..100 (weights provisional, for comparing one generator against another over many seeds).
  * Lights, deck marks and other walk-over pieces are not pieces here.
@@ -31,6 +34,8 @@ export interface RoomQuality {
   balance: number;
   density: number;
   openness: number;
+  rect: number;
+  ragged: number;
   score: number;
 }
 
@@ -135,12 +140,22 @@ export function roomQuality(v: LayoutView): RoomQuality[] {
       balance,
       density: blocked.length / tiles.length,
       openness: largestRect(tiles, W, (i) => free(i) && inRoom.has(i)) / tiles.length,
+      ...shape(tiles, W, inRoom),
       score: 0,
     };
     q.score = Math.round(100 * (0.35 * Math.max(0, 1 - 4 * q.pockets) + 0.25 * q.alignment + 0.2 / q.circulation + 0.2 * (1 - q.balance)));
     out.push(q);
   }
   return out.sort((a, b) => a.room - b.room);
+}
+
+/** A room's shape: floor over its bounding box, and its outline's length over the box's perimeter. */
+function shape(tiles: readonly number[], W: number, inRoom: ReadonlySet<number>): { rect: number; ragged: number } {
+  const xs = tiles.map((i) => i % W), ys = tiles.map((i) => Math.floor(i / W));
+  const bw = Math.max(...xs) - Math.min(...xs) + 1, bh = Math.max(...ys) - Math.min(...ys) + 1;
+  let edge = 0;
+  for (const i of tiles) for (const d of [1, -1, W, -W]) if (!inRoom.has(i + d) && !(d === 1 && i % W === W - 1) && !(d === -1 && i % W === 0)) edge++;
+  return { rect: tiles.length / (bw * bh), ragged: edge / (2 * (bw + bh)) };
 }
 
 /** Area of the largest all-`ok` rectangle among `tiles` (histogram method over their bounding box). */
