@@ -137,6 +137,30 @@ describe('sabotage', () => {
     expect(hpOf(sim, core)).toBeLessThan(hp);
   });
 
+  it('an explicit attack order ends the sabotage for good; automatic defence only pauses it', () => {
+    const sim = setup();
+    const { party } = dockParty(sim, 1);
+    const boarder = party[0]!;
+    const core = reactor(sim);
+    sim.world.add(boarder, EquipC, { weapon: 'item.rifle' });
+    sim.enqueue({ type: 'crew.sabotage', ids: party, module: core });
+    run(sim, 2000, () => sim.world.get(boarder, CrewC)!.activity === 'working');
+    const raider = raiderCrew(sim)[0]!;
+    const at = sim.world.get(boarder, PositionC)!;
+    sim.world.remove(raider, StunC);
+    sim.world.add(raider, PositionC, { x: at.x, y: at.y - 1, toX: at.x, toY: at.y - 1, progress: 0, facing: 0 });
+    sim.enqueue({ type: 'crew.attack', id: boarder, target: raider });
+    const out = run(sim, 5);
+    expect(of(out, 'crew.sabotageEnded')).toEqual([{ type: 'crew.sabotageEnded', crew: boarder, module: core, ship: nth(sim, 2), reason: 'interrupted' }]);
+    expect(sim.world.has(boarder, SabotageOrderC)).toBe(false);
+    sim.world.get(raider, HealthC)!.hp = 0; // the target is defeated
+    const hp = hpOf(sim, core);
+    const later = run(sim, 200);
+    expect(of(later, 'crew.sabotageResumed')).toEqual([]);
+    expect(sabotageJobs(sim)).toEqual([]);
+    expect(hpOf(sim, core)).toBe(hp);
+  });
+
   it('stops when the boarder goes down', () => {
     const sim = setup();
     const { party } = dockParty(sim, 1);

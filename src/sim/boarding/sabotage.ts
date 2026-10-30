@@ -113,7 +113,7 @@ function sabotageJobOf(sim: Sim, crew: number): number {
 }
 
 /** Stop the crew member's sabotage order (the job, or the order alone while a fight pauses it) with `reason`. Returns true if there was one. */
-function endSabotage(sim: Sim, crew: number, reason: 'cancelled'): boolean {
+export function endSabotage(sim: Sim, crew: number, reason: 'cancelled' | 'interrupted'): boolean {
   const jobId = sabotageJobOf(sim, crew);
   const job = jobId ? sim.world.get(jobId, JobC) : undefined;
   const order = sim.world.get(crew, SabotageOrderC);
