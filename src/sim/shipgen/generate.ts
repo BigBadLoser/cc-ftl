@@ -16,6 +16,7 @@ import { salvage } from './topoSalvage';
 import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
+import { openArchways } from './archways';
 import { openBareDocks } from './openDocks';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
@@ -320,7 +321,9 @@ export function finishLayout(
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
   const dockTile = new Set(opened.tiles);
-  const fitted = opened.merged > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
+  // Stations: doors between corridors and open rooms (mess, courts) become archways (archways.ts).
+  const arches = d.error || !opts.immobile ? 0 : openArchways(d.lay);
+  const fitted = opened.merged > 0 || arches > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
