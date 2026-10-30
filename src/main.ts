@@ -238,6 +238,12 @@ function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frameSt
   };
   frame(30);
 }
+/** A new or loaded game opens with the ship and the node's station both in the camera (the station is off-screen from the ship's own framing). */
+function frameShipAndStation(tries = 30): void {
+  const station = sim.world.query(ShipC).find((i) => i !== homeShip(sim) && sim.world.get(i, ShipC)?.immobile);
+  if (station) renderer?.frameShips([homeShip(sim), station]);
+  else if (tries > 0) setTimeout(() => frameShipAndStation(tries - 1), 100);
+}
 const stationFlag = params.get('station');
 /**
  * `?scenario=hullplan`: playtest the hull plan brushes. A trading hub (visit cap 100) beside the ship, plenty of credits and metal, the Hull plan
@@ -485,6 +491,7 @@ const api: UiApi = {
         window.addEventListener('resize', () => r.resize());
         loop.start();
         startScenario();
+        if (!scenario && !stationFlag && !sim.sector.inCombat) frameShipAndStation();
         if (stationFlag) {
           const [k, s] = stationFlag.split(':');
           spawnStation(`station.${(k ?? 'trading').replace(/^station\./, '')}`, (s === 'station' || s === 'hub' ? s : 'outpost'));

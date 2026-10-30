@@ -307,7 +307,7 @@
     {#if !narrow}{@render time()}{/if}
   </div>
   <div class="cards">
-    {#if !fightHud}<GoalsCard {api} />
+    {#if !fightHud}<GoalsCard {api} onMap={() => { if (!mapLocked) { focusNode = null; mapOpen = true; } }} onJobs={() => (jobsOpen = true)} />
     <JobsTracker {api} onOpen={() => (jobsOpen = true)} />{/if}
   </div>
   <StrandedBanner {api} />

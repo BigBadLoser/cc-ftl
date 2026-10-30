@@ -10,7 +10,9 @@
    * pays. Collapses to its title line (remembered); the × skips the whole chain for this game after a confirm. When an act is
    * finished it says so for a few seconds before the next act's goals take its place.
    */
-  let { api }: { api: UiApi } = $props();
+  let { api, onMap, onJobs }: { api: UiApi; onMap: () => void; onJobs: () => void } = $props();
+  /** The nearest station in the node (trader entity id), or null: the target of the "Show station" actions. */
+  let station = $state<number | null>(null);
   let goals = $state<UiGoals | null>(null);
   let finished = $state<{ title: string; reward: string } | null>(null);
   let confirmSkip = $state(false);
@@ -32,12 +34,29 @@
     writeCollapsed('goals', collapsedDesk);
   }
 
+  /** What a goal row offers, picked per goal id: a small action that goes where the goal is done. */
+  type Action = { label: string; run: () => void };
+  const showStation = (): Action | null => (station === null ? null : { label: 'Show station', run: () => api.selectShip(station) });
+  function actionFor(id: string): Action | null {
+    switch (id) {
+      case 'goal.first_jump': case 'goal.leave_home': return { label: 'Open starmap', run: onMap };
+      case 'goal.first_trade': case 'goal.take_job': case 'goal.buy_fuel': case 'goal.hire': return showStation();
+      case 'goal.finish_job': case 'goal.bounty': return { label: 'Open jobs', run: onJobs };
+      case 'goal.build': return { label: 'Open build menu', run: () => api.setTool({ tool: 'build', build: 'module' }) };
+      default: return null;
+    }
+  }
+  /** The one-line nudge under a row: how to reach a trader's panel. */
+  const nudge = (id: string): string => (station !== null && (id === 'goal.first_trade' || id === 'goal.take_job') ? 'Select the station, then Hail it.' : '');
+  const doneCount = $derived(goals ? goals.goals.filter((g) => g.done).length : 0);
+
   onMount(() => {
     const mq = window.matchMedia('(max-width: 600px)');
     const onMq = () => (narrow = mq.matches);
     onMq();
     mq.addEventListener('change', onMq);
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const unTrade = api.trade.subscribe((t) => (station = t.partners.find((p) => p.station)?.id ?? null));
     const unsub = api.goals.subscribe((g) => {
       // A new act (or the chain's end) after one was being played: show what was finished first.
       if (goals && !skipped && (!g || g.act !== goals.act)) {
@@ -50,6 +69,7 @@
     return () => {
       mq.removeEventListener('change', onMq);
       unsub();
+      unTrade();
       clearTimeout(timer);
     };
   });
@@ -64,9 +84,9 @@
   <section class="card" class:chip={narrow && collapsed} data-testid="goals">
     <div class="head">
       <button class="title" onclick={toggle} aria-expanded={!collapsed} data-testid="goals-toggle">
-        <span class="act">Goals {goals.act}/{goals.acts}</span>
+        <span class="act">Act {goals.act}/{goals.acts} · {doneCount}/{goals.goals.length} done</span>
         {#if narrow && collapsed}<span class="sep">·</span>{/if}
-        {#if narrow || !collapsed}<span class="name">{goals.title}</span>{/if}
+        {#if narrow}<span class="name">{goals.title}</span>{/if}
         <Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
       </button>
       {#if !(narrow && collapsed)}<button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
@@ -80,11 +100,12 @@
         </div>
       </div>
     {:else if !collapsed}
+      {#if !narrow}<p class="act-name">{goals.title}</p>{/if}
       <ul>
         {#each goals.goals as g (g.id)}
           <li class:done={g.done} title={g.text} data-testid="goal">
             <i class="box">{#if g.done}<Icon name="check" size={12} />{/if}</i>
-            <span><b>{g.title}</b><em>{g.text}</em></span>
+            <span><b>{g.title}</b><em>{g.text}</em>{#if !g.done && nudge(g.id)}<small>{nudge(g.id)}</small>{/if}{#if !g.done}{@const a = actionFor(g.id)}{#if a}<button class="act-btn" data-testid="goal-action" onclick={a.run}>{a.label}</button>{/if}{/if}</span>
           </li>
         {/each}
       </ul>
@@ -102,9 +123,12 @@
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
+  .act-name { margin: 2px 0 0; font: 600 13px var(--head-font); }
   ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; }
   li { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; }
-  li span { display: grid; }
+  li span { display: grid; flex: 1; min-width: 0; }
+  li small { color: var(--ink-accent); font-size: 11px; }
+  .act-btn { justify-self: start; width: max-content; margin-top: 3px; min-height: 22px; min-width: 0; padding: 0 6px; font-size: 11px; white-space: nowrap; }
   li b { color: var(--text); font-weight: 600; }
   li em { color: var(--dim); font-style: normal; }
   li.done b { color: var(--green); }
