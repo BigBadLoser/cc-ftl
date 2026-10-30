@@ -62,6 +62,7 @@ export function orderRecall(sim: Sim, ids: readonly number[]): string | null {
     if (sim.world.get(crew, AllegianceC)?.faction !== 'player' || !ship || ship.faction === 'player') { first ??= 'notAboard'; fail('notAboard', crew); continue; }
     const list = shuttles(shipId);
     if (list.length === 0) { first ??= 'noShuttle'; fail('noShuttle', crew); continue; }
+    // The first docked shuttle this member can really use: it can go home, has a free seat, and its boarding tile is open and reachable.
     let err: string | null = null;
     let seat = 0;
     for (const sid of list) {
@@ -69,17 +70,20 @@ export function orderRecall(sim: Sim, ids: readonly number[]): string | null {
       if (!canGoHome(sim, sid, v)) { err ??= 'noHome'; continue; }
       const free = seats.get(sid) ?? (vehicleDefOf(sim, v)?.capacity ?? 0) + 1 - occupants(v).length;
       seats.set(sid, free);
-      if (free > 0) { seat = sid; break; }
-      err ??= 'full';
+      if (free <= 0) { err ??= 'full'; continue; }
+      const at = boardingTile(sim, sid);
+      if (!at) { err ??= 'notBoardable'; continue; }
+      if (!airlockWorking(sim, v.dock)) { err ??= 'airlockDown'; continue; }
+      const o = origin(pos);
+      if (!(o.x === at.x && o.y === at.y) && !findPath(sim, shipId, o, { x: at.x, y: at.y, adjacent: false })) { err ??= 'unreachable'; continue; }
+      cancelSabotage(sim, [crew]);
+      abortTask(sim, crew, 'order');
+      const refused = sendToEmbark(sim, crew, sid);
+      if (refused) { err ??= refused; continue; }
+      seat = sid;
+      break;
     }
     if (!seat) { first ??= err ?? 'full'; fail(err ?? 'full', crew); continue; }
-    const at = boardingTile(sim, seat);
-    const reach = at && (origin(pos).x === at.x && origin(pos).y === at.y ? [] : findPath(sim, shipId, origin(pos), { x: at.x, y: at.y, adjacent: false }));
-    if (!reach) { first ??= 'unreachable'; fail('unreachable', crew); continue; }
-    cancelSabotage(sim, [crew]);
-    abortTask(sim, crew, 'order');
-    const refused = sendToEmbark(sim, crew, seat);
-    if (refused) { first ??= refused; fail(refused, crew); continue; }
     seats.set(seat, (seats.get(seat) ?? 1) - 1);
     (party.get(seat) ?? party.set(seat, []).get(seat)!).push(crew);
   }
