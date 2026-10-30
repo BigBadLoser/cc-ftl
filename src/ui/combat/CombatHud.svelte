@@ -8,7 +8,7 @@
   import BoardingCard from './BoardingCard.svelte';
   import { TICK_HZ } from '../../sim/time';
   import { nextHeatRate, type HeatSample } from './heatRate';
-  import { weaponForKey } from './weaponKeys';
+  import { keymap, MODE_ACTIONS, WEAPON_ACTIONS, type ActionId } from '../keymap';
   import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
@@ -99,33 +99,37 @@
     e.stopImmediatePropagation();
   }
   function onKey(e: KeyboardEvent) {
-    // The flee/jump confirmation is a modal: leave the keys (Tab, Enter, Esc) to it.
+    // A modal (the Esc menu, the flee/jump confirmation) owns the keys (Tab, Enter, Esc); so does leaving the fight.
     if (leaving || modalOpen() || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
-    if (e.key === 'Tab') {
+    const is = (id: ActionId) => keymap.matches(e, id);
+    if (is('combat.swap')) {
       consume(e);
       swap();
       return;
     }
-    const k = e.key.toLowerCase();
+    const slot = WEAPON_ACTIONS.findIndex(is);
+    const mode = MODE_ACTIONS.findIndex(is);
+    // A slot or mode key counts only with a weapon in that slot, so a shared key (R) still falls through under lockout.
+    const strip = !!me.weapons[slot] || !!me.weapons[mode] || (['combat.volley', 'combat.holdAll', 'combat.flee', 'combat.vent'] as const).some(is);
     // Thermal overload: the strip is locked.
-    if (me.heat.lockout > 0 && /^[qwevhfg]$/.test(k)) return consume(e);
-    // Shift+Q/W/E/R flips that weapon between AUTO and HOLD.
-    if (e.shiftKey && /^[qwer]$/.test(k)) {
-      const w = weaponForKey(k, me.weapons);
-      if (w) api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: w.id, mode: w.mode === 'hold' ? 'auto' : 'hold' });
-      else return; // no weapon in that slot: R falls through to draft as before
+    if (me.heat.lockout > 0 && strip) return consume(e);
+    // A weapon slot's mode key flips it between AUTO and HOLD.
+    if (mode >= 0) {
+      const w = me.weapons[mode];
+      if (!w) return; // no weapon in that slot: the key falls through (Shift+R rotates a module back)
+      api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: w.id, mode: w.mode === 'hold' ? 'auto' : 'hold' });
       return consume(e);
     }
-    // Weapon hotkeys are Q W E R (1-3 stay the game-speed keys). R is also the crew-draft key (controller.ts): in combat it picks weapon 4
-    // only when the ship has a fourth weapon; with three or fewer it falls through to draft as before (see weaponKeys.ts).
-    const w = weaponForKey(k, me.weapons);
-    if (w) select(w.id);
-    else if (/^[qwer]$/.test(k)) return;
-    else if (k === 'v') api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
-    else if (k === 'h') api.dispatch({ type: 'combat.holdAll', ship: me.ship, hold: !me.holdAll });
-    else if (k === 'f') {
+    // A slot key picks its weapon. With no weapon in the slot the key falls through, so R still drafts crew on a ship with three weapons.
+    if (slot >= 0) {
+      const w = me.weapons[slot];
+      if (!w) return;
+      select(w.id);
+    } else if (is('combat.volley')) api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
+    else if (is('combat.holdAll')) api.dispatch({ type: 'combat.holdAll', ship: me.ship, hold: !me.holdAll });
+    else if (is('combat.flee')) {
       if (me.ftl >= me.ftlMax) flee();
-    } else if (k === 'g') vent();
+    } else if (is('combat.vent')) vent();
     else return;
     consume(e);
   }

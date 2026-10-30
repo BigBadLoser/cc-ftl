@@ -69,6 +69,8 @@ export interface Controller {
   focusSubject(subject: UiSubject): void;
   /** Per-frame upkeep: alerts whose condition resolved clear themselves, and credits that arrived without an event get logged. */
   upkeep(): void;
+  /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel (the Esc menu opens). */
+  cancel(): boolean;
   onEvents(events: SimEvent[]): void;
   /** Wire up the renderer once the canvas exists; returns handlers for attachInput. */
   attach(renderer: Renderer): InputHandlers;
@@ -120,7 +122,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     bridge.watchCrew(null);
     pushRings();
   };
+  /** A tile is selected (the inspector shows it). */
+  let tileSel = false;
   const selectTile = (t: Tile | null, ship = homeShipId()) => {
+    tileSel = !!t;
     shipSel.set(null);
     astSel.set(null);
     clearCrew();
@@ -287,6 +292,21 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectCrew,
     focusCrew,
     attack,
+    cancel() {
+      if (menu.get()) {
+        menu.set(null);
+        plan = null;
+        return true;
+      }
+      if (aiming.aiming.get() || tool.get().tool !== 'select') {
+        back();
+        return true;
+      }
+      const selected = tileSel || crewSel.get() !== null || group.get().length > 0 || shuttleSel.get() !== null || modSel.get() !== null
+        || siteSel.get() !== null || shipSel.get() !== null || astSel.get() !== null;
+      if (selected) selectTile(null);
+      return selected;
+    },
     onEvents(events) {
       for (const e of events) {
         if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
@@ -393,16 +413,21 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         paintMode: () => !sim.sector.inCombat && paint.paintMode(),
         pickLift: paint.pickLift,
         onPaint: (phase, t) => (sim.sector.inCombat ? paint.onPaint('cancel', null) : paint.onPaint(phase, t)),
-        onKey(key, shift) {
+        onKey(action) {
+          // An open order menu: the key only dismisses it.
           if (menu.get()) {
             menu.set(null);
             plan = null;
-          } else if (key === 'r') {
-            if (paint.moduleMode()) paint.rotate(shift);
-            else toggleDraft();
+            return true;
           }
-          else if (aiming.aiming.get() || tool.get().tool !== 'select') back();
-          else selectTile(null);
+          if (action === 'rotate' || action === 'rotateBack') {
+            if (!paint.moduleMode()) return false;
+            paint.rotate(action === 'rotateBack');
+            return true;
+          }
+          if (paint.moduleMode()) return false;
+          toggleDraft();
+          return true;
         },
       };
     },
