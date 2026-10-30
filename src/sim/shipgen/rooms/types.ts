@@ -84,8 +84,11 @@ export interface Vignette {
 /** Court zoning: themes for the zones between promenades, the hedge module, the share of a zone its pieces fill. */
 export interface CourtPlan {
   zones: readonly (readonly Vignette[])[];
-  hedge: string;
+  /** Lines each zone where it meets a promenade (none: open). */
+  hedge?: string;
   fill: number;
+  /** The landmark at the court's middle, which the promenades lead to: the first of these that fits. */
+  centres?: readonly Vignette[];
 }
 
 export interface VignetteSet {

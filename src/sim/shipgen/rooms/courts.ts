@@ -6,11 +6,12 @@ import type { CourtPlan, Vignette } from './types';
 import { turned } from './vignettes';
 
 /**
- * Courts laid out as a place, not a scatter: promenades first, two tiles wide, joining every door of the court by the
- * shortest way (a tree: each door to the nearest one already joined); then the floor between them splits into zones,
+ * Courts laid out as a place, not a scatter: the plan's landmark first, as near the middle as it fits with a tile of
+ * clear floor round it; then promenades, two tiles wide, leading from every door to it by the shortest way (a tree:
+ * each door to the nearest tile already joined; door to door when there is no landmark); then the floor between them splits into zones,
  * each given one theme (a seating area, a row of stalls, a grove, a lab corner) whose pieces are set densely in it; a
- * hedge of planters lines each zone where it meets a promenade, with gaps to walk in; a brass inlay marks the court's
- * middle on its promenade. Pieces and planters are the existing modules: the zoning is what is new.
+ * hedge of planters lines each zone where it meets a promenade, with gaps to walk in; with no landmark, a brass
+ * inlay marks the court's middle on its promenade. Pieces and planters are the existing modules: the zoning is what is new.
  */
 
 type T = { x: number; y: number };
@@ -39,31 +40,68 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
   };
   const doorIn: number[] = [];
   for (const i of floor) if (lay.neighbours(i).some((n) => lay.cells[n] === 'D')) doorIn.push(i);
-  // Promenades: a tree of shortest walks between door tiles, widened to two.
-  const walk = new Set<number>();
+  // The court's own promenades replace the walkway reserved for it: lift that (the odd one; a placed piece's use tiles
+  // count in twos and stay), but for the tiles at its doors.
+  const nearDoor = new Set(doorIn.flatMap((i) => [i, ...lay.neighbours(i)]));
+  for (const i of floor) if (!nearDoor.has(i)) lay.keep[i] = (lay.keep[i] as number) - ((lay.keep[i] as number) % 2);
+  const mx = floor.reduce((t, i) => t + (i % W), 0) / floor.length, my = floor.reduce((t, i) => t + Math.floor(i / W), 0) / floor.length;
+  const byMiddle = (p: number, q: number): number => Math.hypot((p % W) - mx, Math.floor(p / W) - my) - Math.hypot((q % W) - mx, Math.floor(q / W) - my);
+  let placed = 0;
+  // The landmark: centred on the floor tile nearest the middle that takes it whole, with a clear ring round it.
+  const solid = new Set<number>();
+  const ring = new Set<number>();
+  if (plan.centres) {
+    const at = [...floor].sort(byMiddle);
+    const fits = (centre: Vignette, a: number, r: number): boolean => {
+      const rel = turned(lay.defs, centre, r);
+      const relTiles = rel.flatMap((m) => footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot));
+      const cx = Math.round((Math.min(...relTiles.map((t) => t.x)) + Math.max(...relTiles.map((t) => t.x))) / 2);
+      const cy = Math.round((Math.min(...relTiles.map((t) => t.y)) + Math.max(...relTiles.map((t) => t.y))) / 2);
+      const dx = (a % W) - cx, dy = Math.floor(a / W) - cy;
+      const own = new Set(relTiles.map((t) => (t.y + dy) * W + t.x + dx));
+      const round = new Set<number>();
+      for (const i of own) for (let ey = -1; ey <= 1; ey++) for (let ex = -1; ex <= 1; ex++) if (!own.has(i + ey * W + ex)) round.add(i + ey * W + ex);
+      if (![...own, ...round].every((i) => inRoom.has(i) && (lay.occ[i] ?? -1) < 0)) return false;
+      const base = lay.unreached();
+      let n = 0;
+      for (const m of rel) {
+        if (lay.fitError(m.def, m.x + dx, m.y + dy, m.rot, room)) break;
+        lay.push({ def: m.def, x: m.x + dx, y: m.y + dy, rot: m.rot });
+        n++;
+      }
+      if (n < rel.length || lay.unreached() > base) { for (let i = 0; i < n; i++) lay.pop(); return false; }
+      for (const i of own) solid.add(i);
+      for (const i of round) ring.add(i);
+      placed += n;
+      return true;
+    };
+    plan.centres.some((v) => at.some((a) => [0, 1, 2, 3].sort(() => rng.next() - 0.5).some((r) => fits(v, a, r))));
+  }
+  // Promenades: a tree of shortest walks from the landmark's ring (or the first door) to every door, widened to two.
+  const walk = new Set<number>(ring);
   const bfs = (from: Set<number>): Map<number, number> => {
     const prev = new Map<number, number>();
     const queue = [...from];
     for (const i of from) prev.set(i, -1);
     for (let q = 0; q < queue.length; q++) {
       const i = queue[q] as number;
-      for (const n of lay.neighbours(i)) if (inRoom.has(n) && !prev.has(n)) { prev.set(n, i); queue.push(n); }
+      for (const n of lay.neighbours(i)) if (inRoom.has(n) && !solid.has(n) && !prev.has(n)) { prev.set(n, i); queue.push(n); }
     }
     return prev;
   };
   if (doorIn.length > 0) {
-    const joined = new Set<number>([doorIn[0] as number]);
-    walk.add(doorIn[0] as number);
-    for (const d of doorIn.slice(1)) {
+    if (walk.size === 0) walk.add(doorIn[0] as number);
+    for (const d of doorIn) {
       const prev = bfs(new Set(walk));
       for (let i = d; i >= 0 && !walk.has(i); i = prev.get(i) ?? -1) walk.add(i);
-      joined.add(d);
     }
   }
-  const wide = new Set(walk);
+  const wide = new Set([...walk, ...solid]);
+  for (const i of walk) lay.keep[i] = (lay.keep[i] as number) + 1;
   for (const i of walk) {
+    if (ring.has(i)) continue;
     const x = i % W, y = Math.floor(i / W);
-    for (const j of [(y + 1) * W + x, y * W + x + 1]) if (inRoom.has(j)) wide.add(j);
+    for (const j of [(y + 1) * W + x, y * W + x + 1]) if (inRoom.has(j) && !solid.has(j)) wide.add(j);
   }
   // Zones: the floor off the promenades, in connected pieces; small scraps stay open floor. A zone over ZONE_MAX tiles is
   // cut in two by a one-tile path across its middle (its longer way), again until none is, so a big court mixes themes.
@@ -89,19 +127,19 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
     for (let q = 0; q < z.length; q++) for (const n of lay.neighbours(z[q] as number)) if (offSet.has(n) && !zoneOf.has(n)) { zoneOf.set(n, zones.length); z.push(n); }
     zones.push(z);
   }
-  let placed = 0;
   const themes = [...plan.zones].sort(() => rng.next() - 0.5);
   zones.filter((z) => z.length >= 16).sort((a, b) => b.length - a.length).forEach((zone, zi) => {
     const theme = themes[zi % themes.length] as readonly Vignette[];
     const zset = new Set(zone);
     // The hedge: zone tiles along a promenade get the hedge module, two in every three.
     let k = 0;
-    for (const i of zone) {
-      if (!lay.neighbours(i).some((n) => wide.has(n))) continue;
+    const hedge = plan.hedge;
+    for (const i of hedge ? zone : []) {
+      if (!hedge || !lay.neighbours(i).some((n) => wide.has(n) && !solid.has(n))) continue;
       if (k++ % 3 === 2) continue; // a gap every third tile to walk in
-      if (!lay.fitError(plan.hedge, i % W, Math.floor(i / W), 0, room)) {
+      if (!lay.fitError(hedge, i % W, Math.floor(i / W), 0, room)) {
         const base = lay.unreached();
-        lay.push({ def: plan.hedge, x: i % W, y: Math.floor(i / W), rot: 0 });
+        lay.push({ def: hedge, x: i % W, y: Math.floor(i / W), rot: 0 });
         if (lay.unreached() > base) lay.pop(); else placed++;
       }
     }
@@ -142,10 +180,9 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
       }
     }
   });
-  // The inlay: on the promenade, nearest the court's middle.
-  if (wide.size > 0) {
-    const mx = floor.reduce((t, i) => t + (i % W), 0) / floor.length, my = floor.reduce((t, i) => t + Math.floor(i / W), 0) / floor.length;
-    const mid = [...walk].sort((p, q) => Math.hypot((p % W) - mx, Math.floor(p / W) - my) - Math.hypot((q % W) - mx, Math.floor(q / W) - my))[0] as number;
+  // No landmark: an inlay on the promenade, nearest the court's middle.
+  if (solid.size === 0 && walk.size > 0) {
+    const mid = [...walk].sort(byMiddle)[0] as number;
     if (!lay.fitError('module.deck_inlay', mid % W, Math.floor(mid / W), 0, room)) { lay.push({ def: 'module.deck_inlay', x: mid % W, y: Math.floor(mid / W), rot: 0 }); placed++; }
   }
   return placed;

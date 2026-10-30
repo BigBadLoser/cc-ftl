@@ -88,8 +88,8 @@ const labBench: Vignette = { name: 'lab bench', mods: [{ mod: 'module.research',
 const rackIsland: Vignette = {
   name: 'rack island', mods: [{ mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 0, y: -1, rot: 2 }, { mod: 'module.storage_locker', x: 2, y: 0 }],
 };
-/** A briefing corner: a console and a row of seats facing it. */
-const briefing: Vignette = { name: 'briefing', mods: [{ mod: 'module.console', x: 0, y: 0 }, ...chairs([-1, 0, 1], 2), ...chairs([-1, 0, 1], 3)] };
+/** A briefing corner: a console and two rows of seats facing it (a gap between, so the back row sees past the front). */
+const briefing: Vignette = { name: 'briefing', mods: [{ mod: 'module.console', x: 0, y: 0 }, ...chairs([-1, 0, 1], 2), ...chairs([-1, 1], 4)] };
 
 /** A grove: a tree bed with a bench on two sides and a potted shrub. */
 const grove: Vignette = {
@@ -126,7 +126,7 @@ const parade: Vignette = {
   name: 'parade', mods: [
     { mod: 'module.storage_rack', x: 0, y: 0 }, { mod: 'module.storage_rack', x: 3, y: 0 }, { mod: 'module.storage_rack', x: 6, y: 0 },
     ...[0, 1, 2, 3, 4, 5, 6, 7].map((x) => ({ mod: 'module.deck_hazard', x, y: 2 })),
-    { mod: 'module.console', x: 4, y: 3 }, ...chairs([2, 3, 4, 5, 6], 5), ...chairs([2, 3, 4, 5, 6], 6),
+    { mod: 'module.console', x: 4, y: 3 }, ...chairs([2, 3, 4, 5, 6], 5), ...chairs([2, 3, 5, 6], 7),
   ],
 };
 /** A lab cluster: two benches of research stations and consoles back to back, a locker at each end. */
@@ -138,13 +138,34 @@ const labCluster: Vignette = {
   ],
 };
 
+/** Smaller landmarks, for courts the big ones do not fit. Two stalls facing across an inlay. */
+const marketCross: Vignette = {
+  name: 'market cross', mods: [
+    { mod: 'module.cargo_container', x: 0, y: 0 }, { mod: 'module.cargo_container', x: 0, y: 5, rot: 2 }, { mod: 'module.deck_inlay', x: 1, y: 3 },
+  ],
+};
+/** A light mast with a potted shrub at each corner. */
+const square: Vignette = {
+  name: 'square', mods: [
+    { mod: 'module.light_mast', x: 0, y: 0 },
+    { mod: 'module.planter', x: -1, y: -1 }, { mod: 'module.planter', x: 1, y: -1 }, { mod: 'module.planter', x: -1, y: 1 }, { mod: 'module.planter', x: 1, y: 1 },
+  ],
+};
+/** A muster point: a light mast, hazard marking at the corners of its square. */
+const muster: Vignette = {
+  name: 'muster', mods: [
+    { mod: 'module.light_mast', x: 0, y: 0 },
+    ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, y]) => ({ mod: 'module.deck_hazard', x: x as number, y: y as number })),
+  ],
+};
+
 /** Concourse (trading courtyards): market stalls and tables in groups round open floor, not a lattice of one table. */
 export const plaza = {
   fill: 0.12,
   arrangements: [
     {
       name: 'market', weight: 2,
-      court: { zones: [[stall, pallets], [bistro, longTable, lounge], [foodStand, bistro], [grove, benchPots]], hedge: 'module.planter', fill: 0.4 },
+      court: { zones: [[stall, pallets], [bistro, longTable, lounge], [foodStand, bistro], [grove, benchPots]], hedge: 'module.planter', fill: 0.3, centres: [bazaar, marketCross, square] },
       vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk, grove, benchPots], gap: 8, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.hydroponics', count: 4, wall: 'any' },
@@ -152,7 +173,7 @@ export const plaza = {
     },
     {
       name: 'food court', weight: 1,
-      court: { zones: [[foodStand, bistro], [longTable, lounge], [grove, benchPots], [stall, kiosk]], hedge: 'module.planter', fill: 0.4 },
+      court: { zones: [[foodStand, bistro], [longTable, lounge], [grove, benchPots], [stall, kiosk]], hedge: 'module.planter', fill: 0.3, centres: [bazaar, marketCross, square] },
       vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk, grove, benchPots], gap: 7, upTo: 0.12, centre: bazaar },
       steps: [
         { mod: 'module.planter', count: 4, wall: 'any' },
@@ -167,7 +188,7 @@ export const garden = {
   arrangements: [
     {
       name: 'garden', weight: 1,
-      court: { zones: [[grove, benchPots], [labBench, labCluster], [lounge, kiosk]], hedge: 'module.planter', fill: 0.35 },
+      court: { zones: [[grove, benchPots], [labBench, labCluster], [lounge, kiosk]], hedge: 'module.planter', fill: 0.35, centres: [arboretum, grove, square] },
       vignettes: { pieces: [grove, grove, benchPots, labBench, labCluster, kiosk, lounge], gap: 8, upTo: 0.12, centre: arboretum },
       steps: [
         { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
@@ -182,7 +203,7 @@ export const drill = {
   arrangements: [
     {
       name: 'drill hall', weight: 1,
-      court: { zones: [[rackIsland], [briefing]], hedge: 'module.deck_hazard', fill: 0.3 },
+      court: { zones: [[rackIsland], [briefing]], fill: 0.3, centres: [parade, muster] },
       vignettes: { pieces: [rackIsland, briefing], gap: 10, upTo: 0.04, centre: parade },
       steps: [
         { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },
