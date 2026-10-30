@@ -21,6 +21,8 @@ export interface Portraits {
   url(id: number): string | null;
   /** A portrait from a look alone (no crew entity): the lessons' instructors. PNG data URL, or null while its sheets load. */
   lookUrl(look: CrewLook): string | null;
+  /** A dedicated portrait asset (manifest key: an instructor's own art) at whole art px, or null while it loads or if there is none. */
+  assetUrl(key: string): string | null;
 }
 
 /**
@@ -68,10 +70,15 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
     setFilterZoom(filter, ART_SCALE); // a camera scale of 1: one art px is ART_SCALE device px
     setFilterTint(filter, 0xffffff);
     root.filters = [filter];
+    const entry = toArtPx(root, size, key);
+    filter.destroy();
+    return entry;
+  }
+
+  /** Read a stacked container back and shrink it to whole art px (the art draws each as an ART_SCALE block); cached under `key`. Destroys `root`. */
+  function toArtPx(root: Container, size: { w: number; h: number }, key: string): { canvas: HTMLCanvasElement; url: string } | null {
     const full = extract.canvas({ target: root, frame: new Rectangle(0, 0, size.w, size.h), resolution: 1, antialias: false }) as HTMLCanvasElement;
     root.destroy({ children: true });
-    filter.destroy();
-    // Down to whole art px: the composed art draws each as an ART_SCALE block.
     const px = artSize(size.w, size.h, ART_SCALE);
     const out = document.createElement('canvas');
     out.width = px.w;
@@ -85,5 +92,20 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
     return entry;
   }
 
-  return { source: (id) => build(id)?.canvas ?? null, url: (id) => build(id)?.url ?? null, lookUrl: (look) => compose(look, undefined)?.url ?? null };
+  function asset(key: string): { canvas: HTMLCanvasElement; url: string } | null {
+    const hit = cache.get(`asset|${key}`);
+    if (hit) return hit;
+    const st = atlas.stat(key);
+    if (!st) return null; // asking queues its sheet; an unknown key stays null and the caller falls back
+    const root = new Container();
+    root.addChild(new Sprite(st.tex));
+    return toArtPx(root, { w: st.tex.width, h: st.tex.height }, `asset|${key}`);
+  }
+
+  return {
+    source: (id) => build(id)?.canvas ?? null,
+    url: (id) => build(id)?.url ?? null,
+    lookUrl: (look) => compose(look, undefined)?.url ?? null,
+    assetUrl: (key) => asset(key)?.url ?? null,
+  };
 }

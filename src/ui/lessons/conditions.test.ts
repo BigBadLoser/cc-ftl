@@ -19,10 +19,11 @@ describe('lesson conditions', () => {
     expect(checkCondition(allOf(onEvent('combat.started'), when((c) => c.combat.inCombat)), f)).toBe(false);
   });
 
-  it('splits key badges out of step text', () => {
-    expect(keyText('Press [Q] or [Shift]+[Q].')).toEqual([
-      { key: false, text: 'Press ' }, { key: true, text: 'Q' }, { key: false, text: ' or ' },
-      { key: true, text: 'Shift' }, { key: false, text: '+' }, { key: true, text: 'Q' }, { key: false, text: '.' },
+  it('splits key badges and strong words out of step text', () => {
+    expect(keyText('Press [Q] or [Shift]+[Q] to **arm**.')).toEqual([
+      { kind: 'text', text: 'Press ' }, { kind: 'key', text: 'Q' }, { kind: 'text', text: ' or ' },
+      { kind: 'key', text: 'Shift' }, { kind: 'text', text: '+' }, { kind: 'key', text: 'Q' }, { kind: 'text', text: ' to ' },
+      { kind: 'strong', text: 'arm' }, { kind: 'text', text: '.' },
     ]);
   });
 });

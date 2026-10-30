@@ -25,8 +25,13 @@ export interface LessonFrame {
 
 export interface StepDef {
   title: string;
-  /** A line or two. `[Q]` renders as a key badge. */
-  text: string;
+  /**
+   * The words. A step with a speaker has `say` (their line, shown in quotes) and `keys` (the mechanics, one short line each); a plain
+   * step has `text`. In all of them `[Q]` renders as a key badge and `**word**` as a strong word.
+   */
+  text?: string;
+  say?: string;
+  keys?: readonly string[];
   /** What the coach mark rings; none centres the card. */
   target?: LessonTarget;
   /** `gotIt`: the player reads and clicks Got it. A condition: a "do" step that advances when it holds (the player did the thing). */

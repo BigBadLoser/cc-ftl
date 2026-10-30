@@ -1255,6 +1255,8 @@ export interface UiApi {
   portrait(id: number): string | null;
   /** The same portrait drawn from a look (species and role ids, appearance seed) with no crew member behind it: a lesson's instructor. */
   lookPortrait(look: UiLook): string | null;
+  /** A dedicated portrait asset (manifest key: an instructor's own art), or null while it loads or if there is none. */
+  portraitArt(key: string): string | null;
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
   moduleThumb(def: string, rot: number): UiThumb | null;
   /** Why the module being placed cannot go at the cursor (a placement error), with its screen position near the ghost, or null. */

@@ -57,7 +57,8 @@
       const r = t ? resolveTarget(t, { ctx, api, doc: document }) : null;
       if (!sameRect(r, rect)) rect = r;
       if (eng.current) obstacles = anchoredOthers(r);
-      const f = speaker ? api.lookPortrait(speaker.look) : null;
+      const sp: SpeakerDef | null = speaker;
+      const f = sp ? ((sp.portrait ? api.portraitArt(sp.portrait) : null) ?? api.lookPortrait(sp.look)) : null;
       if (f !== face) face = f;
     };
     raf = requestAnimationFrame(frame);

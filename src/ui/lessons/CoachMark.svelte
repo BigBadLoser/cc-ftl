@@ -41,10 +41,11 @@
   );
   /**
    * With a speaker: the portrait (72px in a frame, FACE px overall) sits centred on the card's left border, its top level with the step title
-   * (the frame's 12px padding plus the body's 2px), in a real break of the border NOTCH_GAP px above and below.
+   * (the frame's 12px padding plus the body's 8px), in a real break of the border NOTCH_GAP px above and below: the segment above stays
+   * NOTCH_GAP long too, not a stub.
    */
   const FACE = 82;
-  const FACE_TOP = 14;
+  const FACE_TOP = 20;
   const NOTCH_GAP = 10;
   const notch = { top: FACE_TOP - NOTCH_GAP, height: FACE + 2 * NOTCH_GAP };
   let cw = $state(0);
@@ -55,6 +56,8 @@
     return placed ?? { x: (vw - cw) / 2, y: (vh - ch) / 2 };
   });
 </script>
+
+{#snippet line(s: string)}{#each keyText(s) as run, i (i)}{#if run.kind === 'key'}<KeyBadge tone="light" size="sm">{run.text}</KeyBadge>{:else if run.kind === 'strong'}<b>{run.text}</b>{:else}{run.text}{/if}{/each}{/snippet}
 
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 
@@ -79,6 +82,7 @@
 <div
   class="card steel"
   class:spoken={!!speaker}
+  class:wide={!!view.step.keys}
   style:--face="{FACE}px"
   style:--face-top="{FACE_TOP}px"
   role="dialog"
@@ -97,9 +101,14 @@
     {#snippet right()}<span class="count">{#if speaker}<span class="cat">{view.lesson.title}</span> {/if}{view.index + 1}/{view.lesson.steps.length}</span>{/snippet}
     <div class="body">
       <h4>{view.step.title}</h4>
-      <p>
-        {#each keyText(view.step.text) as run, i (i)}{#if run.key}<KeyBadge tone="light" size="sm">{run.text}</KeyBadge>{:else}{run.text}{/if}{/each}
-      </p>
+      {#if view.step.say}<p class="say">“{@render line(view.step.say)}”</p>{/if}
+      {#if view.step.say && view.step.keys}<hr />{/if}
+      {#if view.step.keys}
+        <ul class="keys">
+          {#each view.step.keys as k, i (i)}<li>{@render line(k)}</li>{/each}
+        </ul>
+      {/if}
+      {#if view.step.text}<p>{@render line(view.step.text)}</p>{/if}
       <div class="btns">
         <button class="quiet" data-testid="lesson-dismiss" onclick={onDismiss}>Skip lesson</button>
         <span class="grow"></span>
@@ -150,13 +159,22 @@
   .card :global(.frame) {
     background: var(--panel);
   }
+  /* The lesson card's lines are a step brighter than the HUD's frames (its frame, the portrait's, the divider). */
+  .card {
+    --frame-line: var(--line-hi);
+  }
+  /* Mechanics lines: a wider text column (about 520px) so the longer steps wrap at most once a line. */
+  .card.wide {
+    width: 536px;
+  }
   /* A speaker: the card grows left by half the portrait (so placement counts it) and the body clears the portrait's inner half. */
   .card.spoken {
-    width: 400px;
+    width: calc(520px + var(--face) / 2 + 6px + 2 * var(--sp-2));
     padding-left: calc(var(--face) / 2);
   }
   .card.spoken .body {
-    min-height: calc(var(--face) + 14px);
+    min-height: calc(var(--face) + 18px);
+    padding-top: calc(var(--face-top) - var(--sp-3));
     padding-left: calc(var(--face) / 2 + 6px);
   }
   .face {
@@ -213,8 +231,33 @@
     line-height: 1.5;
     color: var(--rest, var(--text));
   }
-  p :global(kbd) {
+  .body :global(kbd) {
     margin: 0 1px;
+  }
+  .say {
+    font-style: italic;
+    color: var(--rest, var(--text));
+  }
+  hr {
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-top: var(--frame-w) solid var(--frame-line);
+  }
+  .keys {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 5px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--dim);
+  }
+  .keys b,
+  p b {
+    font-weight: 600;
+    color: var(--text);
   }
   .btns {
     display: flex;

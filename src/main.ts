@@ -462,6 +462,7 @@ const api: UiApi = {
   },
   portrait: (id) => renderer?.portrait(id) ?? null,
   lookPortrait: (look) => renderer?.portraitOf(look) ?? null,
+  portraitArt: (key) => renderer?.portraitArt(key) ?? null,
   moduleThumb: (def, rot) => renderer?.moduleThumb(def, rot) ?? null,
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
