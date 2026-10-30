@@ -110,6 +110,36 @@ describe('LessonEngine', () => {
     expect(c.s).toBe(2);
   });
 
+  it('never un-pauses behind a busy screen: a lesson closed under the menu restores once the menu is gone', () => {
+    const { e, c, prefs } = setup([fight], 2);
+    e.update(ctx({ fight: true }), 0);
+    expect(c.s).toBe(0);
+    // The Esc menu opens over the lesson (it finds the game paused, so it has nothing to restore), and lessons are switched off in it.
+    prefs.setEnabled(false);
+    e.update(ctx({ fight: true, busy: true }), 1);
+    expect(e.current).toBeNull();
+    expect(c.s).toBe(0);
+    e.update(ctx({ fight: true, busy: true }), 2);
+    expect(c.s).toBe(0);
+    e.update(ctx({ fight: true }), 3); // the menu closed
+    expect(c.s).toBe(2);
+    e.update(ctx({ fight: true }), 4);
+    expect(c.calls).toEqual([0, 2]);
+  });
+
+  it('restores a deferred speed once the screen is free, before the next lesson takes the pause', () => {
+    const other: LessonDef = { ...evented, id: 'lesson.other', trigger: when((x) => x.combat.inCombat) };
+    const { e, c } = setup([fight, other], 3);
+    e.update(ctx({ fight: true }), 0);
+    e.update(ctx({ fight: true, busy: true }), 1);
+    e.dismiss(); // closed while busy
+    expect(c.s).toBe(0);
+    e.update(ctx({ fight: true }), 5000); // the next lesson opens before anything restored
+    expect(e.current?.lesson.id).toBe('lesson.other');
+    e.dismiss();
+    expect(c.s).toBe(3);
+  });
+
   it('never unpauses a game the player had paused', () => {
     const { e, c } = setup([fight], 0);
     e.update(ctx({ fight: true }), 0);

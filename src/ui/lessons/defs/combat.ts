@@ -24,7 +24,7 @@ export const combatLesson = {
     {
       title: 'Pick a weapon',
       say: 'Guns are yours.',
-      keys: ['[Q] or click a card to select a weapon.'],
+      keys: ['[@combat.weapon1] or click a card to select a weapon.'],
       target: uiTarget('combat.weapons'),
       advance: when((ctx) => ctx.aiming?.weapon != null),
     },
@@ -45,14 +45,14 @@ export const combatLesson = {
     {
       title: 'Firing modes',
       say: "Go easy on the missiles. We don't have many.",
-      keys: ["**AUTO** fires whenever it's charged.", '**HOLD** waits for an aim or a [V] volley.', '[Shift]+[Q] or right-click switches a gun.', '[H] holds them all.', 'Missiles start on **HOLD**.'],
+      keys: ["**AUTO** fires whenever it's charged.", '**HOLD** waits for an aim or a [@combat.volley] volley.', '[@combat.mode1] or right-click switches a gun.', '[@combat.holdAll] holds them all.', 'Missiles start on **HOLD**.'],
       target: uiTarget('combat.weapons'),
       advance: 'gotIt',
     },
     {
       title: 'Heat',
       say: "Run her too hot and we're a sitting duck.",
-      keys: ['Each shot adds heat; it only cools while shields are down.', '**100%** heat locks the ship.', '[G] **Vent**: cools fast, but shields drop.'],
+      keys: ['Each shot adds heat; it only cools while shields are down.', '**100%** heat locks the ship.', '[@combat.vent] **Vent**: cools fast, but shields drop.'],
       target: uiTarget('combat.heat'),
       advance: 'gotIt',
     },
@@ -66,7 +66,7 @@ export const combatLesson = {
     {
       title: 'Flee',
       say: 'Bad fight? We leave.',
-      keys: ['The pilot charges the drive.', "When it's full, [F] jumps out."],
+      keys: ['The pilot charges the drive.', "When it's full, [@combat.flee] jumps out."],
       target: uiTarget('combat.flee'),
       advance: 'gotIt',
     },
