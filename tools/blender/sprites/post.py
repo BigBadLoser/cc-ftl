@@ -44,14 +44,15 @@ BASE = build_palette()
 NB = len(BASE)
 
 
-def _flat():
+def _flat(key="flat"):
     """The flat colours' places in BASE: a tone painted exactly (a fixed polygon colour) keeps it, but the LUT never
-    picks one, so adding one moves no other pixel (a name for a tone anti-aliasing gives elsewhere, painted crisp)."""
+    picks one, so adding one moves no other pixel (a name for a tone anti-aliasing gives elsewhere, painted crisp).
+    key "aa": the flat ones anti-aliasing may still blend among (a blockout's greys)."""
     i, out = 0, []
     for name, v in PAL.items():
         if name == "empty":
             continue
-        if v.get("flat"):
+        if v.get("flat") and v.get(key):
             out.append(i)
         i += 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
     return np.array(out, int)
@@ -178,6 +179,7 @@ def _aa_set():
     p = PALETTE[:NB]
     grey = (p.max(1) - p.min(1) < 48) & (p[:, 2] >= p[:, 0])
     grey[FLAT] = False
+    grey[_flat("aa")] = True                    # (flat tones marked "aa" blend too, among themselves and the rest)
     return np.nonzero(grey)[0]
 
 
@@ -310,6 +312,22 @@ def write_png(path, rgba):
     png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
     png += chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
     Path(path).write_bytes(png)
+
+
+def alpha_px(rgb, op):
+    """The alpha of a sprite whose px include see-through colours (a flat palette entry's "alpha", 0..1: glass), or
+    None if it has none (then every opaque px is solid)."""
+    i, out = 0, None
+    for name, v in PAL.items():
+        if name == "empty":
+            continue
+        if v.get("flat") and "alpha" in v:
+            m = op & (rgb == PALETTE[i]).all(-1)
+            if m.any():
+                out = (op * 255).astype(np.uint8) if out is None else out
+                out[m] = round(v["alpha"] * 255)
+        i += 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
+    return out
 
 
 def to_rgba(rgb, op):

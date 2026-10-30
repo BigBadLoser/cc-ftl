@@ -16,10 +16,12 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
   ghost as tile.hull.ghost.m{6|7|14|15}c2[.r*] (SE diagonal solid: no dip toward it).
 - End faces where a wall butts into a ghost: tile.{fam}.{full.|low.|}end.{s|e}[.c{bits}] (the fills reaching that edge).
 - The belly alone for a door in the near hull (tile.hull.drop.{s|e}); doors, never cut (tile.door.{x|y}[.open])."""
-from .doors import door
+from .door_block import door as door_block   # (preview: the door blockout)
 from .floors import floor
 from .hull import drop, out_block, vert
-from .walls import block, corner_sets, end_face
+from .wall3d import block, end_face              # the relief walls (wall3d.py)
+from .wall3d_variants import PAIRS
+from .walls import corner_sets
 
 FLOORS = "abcdefgh"
 PRE = {"up": "full.", "cut": "", "low": "low."}
@@ -40,6 +42,22 @@ for _m in range(16):
                 continue
             SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
                             lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
+def _variant(fn, tr):
+    """fn built as a straight piece's variant (wall3d.VARIANT = tr)."""
+    def build():
+        from . import wall3d
+        wall3d.VARIANT = tr
+        try:
+            return fn()
+        finally:
+            wall3d.VARIANT = (0, 0)
+    return build
+
+
+for _fam, _m in (("wall", 10), ("wall", 5), ("hull", 10), ("hull", 5)):      # straight runs' variants .a1 .. .a7
+    for _n, _tr in enumerate(PAIRS, 1):                                      # (wall3d_variants; the renderer picks
+        SPRITES.append((f"tile.{_fam}.full.m{_m}.a{_n}", (1, 1), "block",    # one a tile)
+                        _variant(lambda m=_m, f=_fam: block(m, f, level="up"), _tr)))
 OUT_MASK = {1: 4, 2: 2, 3: 6, 4: 0}    # mask bits that must be clear for each outward set (4: concave corner)
 for _o, _clear in OUT_MASK.items():
     for _m in range(16):
@@ -65,5 +83,5 @@ for _s in ("s", "e"):
                                 lambda s=_s, lv=_lv, c=_c: end_face("hull", s, lv, c)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):
-    SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
-                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True))]
+    SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door_block(a, False, leaf="halves", look="metal")),
+                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door_block(a, True, leaf="halves", look="metal"))]

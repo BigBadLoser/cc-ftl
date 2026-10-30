@@ -12,7 +12,7 @@ from . import geom_digest as gd
 SS = core.SS
 SHADOW = (0.5, 0.75)                    # a builder's shadows (core.SHADOWS): a px shaded with this much of it in
                                         # shadow, darkened by this (to the nearest palette tone)
-AA = ("tile.hull.ext.", "tile.hull.belly.")              # sprites coverage anti-aliased (post.downsample aa): their painted seams
+AA = ("tile.hull.ext.", "tile.hull.belly.", "door.", "tile.door.")              # sprites coverage anti-aliased (post.downsample aa): their painted seams
 
 
 def diamond_mask(W, H):
@@ -103,7 +103,7 @@ def render_sprite(sid, kind, objs):
         c, op = post.outline(c, op, True)
     grgb, _ = core.render(W, H, "glow")
     g = _pad1(post.glow_down(grgb, SS, 3))
-    return c, op, g, (W + 2) // 2, (H + 2) // 2, None
+    return c, op, g, (W + 2) // 2, (H + 2) // 2, post.alpha_px(c, op)   # (glass: its px see-through)
 
 
 def crop_item(sid, fp, c, op, g, ox, oy, al=None):

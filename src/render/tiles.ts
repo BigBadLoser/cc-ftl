@@ -1,4 +1,5 @@
 import { Struct } from "../sim/structure";
+import { pickDesign } from "./hullArt";
 
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
@@ -211,7 +212,9 @@ export function wallPieces(
   const fam = hull ? "hull" : kind === Struct.RockWall ? "rockwall" : "wall";
   const pre = `tile.${fam}.${PRE[level]}`;
   const base = `${pre}m${mask}`;
-  const chain = c ? [...new Set([`${base}c${c}${v}`, `${base}c${c}`, base + v, base])] : [base + v, base];
+  // A straight run with the walls up takes one of its relief designs (`.a1` .. `.a7`) on half the tiles (hullArt.pickDesign).
+  const d = level === "up" && !c && (mask === 10 || mask === 5) && fam !== "rockwall" ? pickDesign(x, y, 8, 3) : 0;
+  const chain = c ? [...new Set([`${base}c${c}${v}`, `${base}c${c}`, base + v, base])] : [...(d ? [`${base}.a${d}`] : []), base + v, base];
   const out: Piece[] = [{ chain, order: 0 }];
   const end = (side: string, bits: number) => (bits ? [`${pre}end.${side}.${cs(bits)}`, `${pre}end.${side}`] : [`${pre}end.${side}`]);
   if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: end("s", c & 6), order: 1 });
