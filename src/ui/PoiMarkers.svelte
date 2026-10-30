@@ -3,11 +3,12 @@
   import type { UiApi, UiCombat, UiPrize, UiShuttles, UiTrade } from './api';
   import Icon from './Icon.svelte';
   import { nodeEntries, NODE_ICONS, type NodeEntry } from './nodeList';
+  import { modalOpen } from './keys';
   import { ICON_GAP, markerPlace, measureHud, spread, type Place } from './poiMarkers';
 
   /**
    * Off-screen points of interest: every other ship or station in the node (the node strip's list) whose centre is outside the camera view gets a
-   * marker on the screen edge, on the line from the screen centre toward it, with an arrow at the edge and its icon behind it (the name shows on hover). A click pans the camera to it and
+   * marker on the screen edge, on the line from the screen centre toward it, with an arrow at the edge and its icon behind it (the name shows on hover). They are hidden while a modal holds the gate (`modalOpen`). A click pans the camera to it and
    * selects it, as in the node strip. Positions come from the renderer's screen projection each frame; markers hug the screen edge and slide along it
    * clear of the HUD rectangles measured from the page (top bars, right column, tool dock, build menu).
    */
@@ -31,6 +32,14 @@
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      // A modal (the Esc menu, the jump confirmation, game over) holds the gate: no markers, so none can be clicked under it.
+      if (modalOpen()) {
+        if (placed.length) {
+          raw = [];
+          placed = [];
+        }
+        return;
+      }
       const hud = measureHud(document);
       const next: (Place & NodeEntry)[] = [];
       for (const n of entries) {
