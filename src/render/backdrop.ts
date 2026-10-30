@@ -1,16 +1,31 @@
-import { Container, Sprite, Texture, TilingSprite } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture, TilingSprite } from 'pixi.js';
 import type { Atlas } from './assets/loader';
 
 /**
- * The space behind the ships (issue #217 prototype). Three looks, picked by `?backdrop=a|b|c`:
- *  a  quiet depth: parallax star layers and a faint nebula wash.
- *  b  a plus the node's own star or planet, large, dim, far off to one side.
+ * The space behind the ships (issue #217 prototype). Two looks, picked by `?backdrop=b|c` (default c); both show the node's own
+ * star or planet, large, dim and far off, in a spot clear of the HUD:
+ *  b  quiet depth: parallax star layers and a faint nebula wash.
  *  c  rich: denser coloured clouds, dust and brighter stars.
  * Every layer is a tiling sprite of a small texture made once per node (seeded), shown at a whole number of device px per texel
  * with nearest sampling, and moved by a fraction of the camera pan. Nothing is redrawn per frame; `update` sets a few offsets.
  * PLACEHOLDER art: the final textures come from the Blender sprite pipeline.
  */
-export type BackdropMode = 'a' | 'b' | 'c';
+export type BackdropMode = 'b' | 'c';
+
+/**
+ * The art ids to try for a body kind and variant (0..2), best first. The dedicated backdrop bodies (256 px frame, body radius 80 px,
+ * so a whole-number scale of 4 fits a 1920x950 @2x screen) are not made yet: until they are, the starmap's body sprite stands in.
+ * Both have the same layout (square frame, anchor at the centre, body radius 5/16 of the frame), so only the id changes.
+ */
+export function backdropBodySprite(kind: string, variant: number): string[] {
+  return [`backdrop.body.${kind}.v${variant}`, `backdrop.body.${kind}`, `starmap.body.${kind}.v${variant}`, `starmap.body.${kind}`];
+}
+
+/** Kinds whose starmap sprite carries prominence loops standing off the limb (they read as a pendant when scaled up). */
+const HAS_PROMINENCES = new Set(['star', 'red_dwarf', 'blue_giant']);
+
+/** Spots for the body as fractions of the screen (centre x, y): down the left side, clear of the HUD bars, goals column and tools. */
+const BODY_SPOTS: readonly (readonly [number, number])[] = [[0.08, 0.3], [0.07, 0.55], [0.08, 0.8]];
 
 export interface BackdropSpec {
   /** Per-node seed. */
@@ -141,7 +156,7 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
   root.interactiveChildren = false;
   let layers: Layer[] = [];
   let textures: Texture[] = [];
-  let body: { sprite: Sprite; wantId: string; fx: number; fy: number; factor: number } | null = null;
+  let body: { sprite: Sprite; mask: Graphics; kind: string; variant: number; fx: number; fy: number; factor: number } | null = null;
   let key = '';
   let ref: { x: number; y: number } | null = null;
   let size = { w: 1, h: 1, dpr: 1 };
@@ -150,6 +165,7 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
     for (const l of layers) l.sprite.destroy();
     for (const t of textures) t.destroy(true);
     body?.sprite.destroy();
+    body?.mask.destroy();
     layers = [];
     textures = [];
     body = null;
@@ -182,18 +198,20 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
       add(cloudTile(s + 11, 128, hue, 0.12 + d * 0.5, [0.035, 0.06, 0.09]), 0.03, 8);
       add(starTile(s + 31, 256, 70, [0.25, 0.5], 0), 0.04, 2);
       add(starTile(s + 41, 256, 34, [0.4, 0.75], 4), 0.1, 3);
-      if (mode === 'b') body = null;
     }
-    if (mode === 'b' && spec.body) {
+    if (spec.body) {
       const sprite = new Sprite(Texture.EMPTY);
       sprite.anchor.set(0.5);
-      sprite.alpha = 0.38;
+      sprite.alpha = 0.4;
       sprite.tint = 0x8a94a8;
       sprite.visible = false;
       sprite.eventMode = 'none';
-      root.addChild(sprite);
-      const v = s % 3;
-      body = { sprite, wantId: `starmap.body.${spec.body}.v${v}`, fx: (s & 1 ? 0.8 : 0.2) + ((s >>> 3) % 10) / 100, fy: 0.28 + ((s >>> 8) % 20) / 100, factor: 0.012 };
+      const mask = new Graphics();
+      // Behind every layer: the clouds and stars drift over it, which is what makes it far.
+      root.addChildAt(sprite, 0);
+      root.addChild(mask);
+      const spot = BODY_SPOTS[s % BODY_SPOTS.length]!;
+      body = { sprite, mask, kind: spec.body, variant: (s >>> 4) % 3, fx: spot[0] + ((s >>> 8) % 7) / 100, fy: spot[1] - ((s >>> 12) % 5) / 100, factor: 0.012 };
     }
     layout();
   }
@@ -213,19 +231,28 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
     ref ??= { x: originX, y: originY };
     const sp = body.sprite;
     // Looked up every frame: the sheet is an env sheet the atlas may evict, and a lookup keeps it in use (and says when it is gone).
-    const st = atlas.stat(body.wantId) ?? atlas.stat(body.wantId.replace(/\.v\d$/, ''));
+    const ids = backdropBodySprite(body.kind, body.variant);
+    const st = atlas.firstOf(ids);
     if (!st) {
       sp.visible = false;
       return;
     }
     if (sp.texture !== st.tex) {
       sp.texture = st.tex;
-      // The sphere is 60 of 192 world px across its radius; fit its radius to about a sixth of the view height, in whole texel multiples.
-      const radiusTex = st.tex.width * (60 / 192);
-      sp.scale.set(Math.max(1, Math.round((size.h * 0.17) / radiusTex)));
+      // The sphere's radius is 5/16 of the frame; fit it to about a sixth of the view height, in whole texel multiples.
+      const radiusTex = st.tex.width * (5 / 16);
+      const k = Math.max(1, Math.round((size.h * 0.17) / radiusTex));
+      sp.scale.set(k);
+      // A starmap star's prominence loops stand just off the limb: cut everything past the disc (the glow is a separate sheet, not drawn).
+      body.mask.clear();
+      if (HAS_PROMINENCES.has(body.kind) && !atlas.manifest.assets[ids[0]!]) {
+        body.mask.circle(0, 0, st.tex.width * 0.31 * k).fill(0xffffff);
+        sp.mask = body.mask;
+      } else sp.mask = null;
     }
     sp.visible = true;
     sp.position.set(Math.round(size.w * body.fx + (originX - ref.x) * body.factor), Math.round(size.h * body.fy + (originY - ref.y) * body.factor));
+    body.mask.position.copyFrom(sp.position);
   }
 
   return {

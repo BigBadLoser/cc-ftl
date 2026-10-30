@@ -43,7 +43,7 @@ import { createPortraits } from './portrait';
 import type { CrewLook } from './loadout';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
 import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
-import { createBackdrop, type BackdropMode, type BackdropSpec } from './backdrop';
+import { createBackdrop, type BackdropSpec } from './backdrop';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -202,7 +202,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
   const backdropParam = new URLSearchParams(window.location.search).get('backdrop');
-  const backdrop = createBackdrop(atlas, backdropParam === 'b' || backdropParam === 'c' ? (backdropParam as BackdropMode) : 'a');
+  const backdrop = createBackdrop(atlas, backdropParam === 'b' ? 'b' : 'c');
   stage.addChild(backdrop.root);
   const W = createWorldStack();
   stage.addChild(W.root);
