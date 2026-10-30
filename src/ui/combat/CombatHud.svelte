@@ -109,7 +109,8 @@
     }
     const slot = WEAPON_ACTIONS.findIndex(is);
     const mode = MODE_ACTIONS.findIndex(is);
-    const strip = slot >= 0 || mode >= 0 || (['combat.volley', 'combat.holdAll', 'combat.flee', 'combat.vent'] as const).some(is);
+    // A slot or mode key counts only with a weapon in that slot, so a shared key (R) still falls through under lockout.
+    const strip = !!me.weapons[slot] || !!me.weapons[mode] || (['combat.volley', 'combat.holdAll', 'combat.flee', 'combat.vent'] as const).some(is);
     // Thermal overload: the strip is locked.
     if (me.heat.lockout > 0 && strip) return consume(e);
     // A weapon slot's mode key flips it between AUTO and HOLD.

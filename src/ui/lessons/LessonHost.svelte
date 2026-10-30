@@ -37,6 +37,10 @@
     let aiming: UiAiming | null = null;
     let speed: Speed = 0;
     let storyBusy = false;
+    // The window is in the background: no lesson opens while the player is away (the background pause owns the clock then).
+    let away = false;
+    const onBlur = () => (away = true);
+    const onFocus = () => (away = false);
     const pending: UiSignal[] = [];
     // The game's own time controls: the same path as the pause key.
     const eng = new LessonEngine(LESSONS, { speed: () => speed, setSpeed: (s) => api.setSpeed(s) }, prefs);
@@ -54,7 +58,7 @@
     let raf = 0;
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      const ctx: LessonCtx = { combat, aiming, busy: storyBusy || uiBusy };
+      const ctx: LessonCtx = { combat, aiming, busy: storyBusy || uiBusy || away };
       eng.update(ctx, performance.now(), pending.splice(0));
       const t = eng.current?.step.target;
       const r = t ? resolveTarget(t, { ctx, api, doc: document }) : null;
@@ -81,7 +85,11 @@
       }
     };
     window.addEventListener('keydown', onKey, true);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
     return () => {
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKey, true);
       unsubs.forEach((u) => u());
