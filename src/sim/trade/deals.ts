@@ -3,6 +3,7 @@ import { VehicleC } from '../vehicles/components';
 import { bumpStat } from '../story/goals';
 import { FUEL_ITEM } from '../galaxy/fuel';
 import { settlement, type OfferCheck } from './offers';
+import { unitPrice } from './pricing';
 import { TraderC, type Deal, type Offer, type Trader, type Trip } from './types';
 import type { CourierPlan } from './courier';
 import { releaseRecruits } from './recruitLand';
@@ -75,9 +76,20 @@ export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: Courie
   return deal;
 }
 
+/** Each `get` line's share of the price, fixed now (before the goods leave the trader's stock and move its prices); the shares sum to the balance. */
+function agreedValues(sim: Sim, d: Deal): number[] {
+  const raw = d.get.map((l) => (unitPrice(sim, d.ship, l.item, 'sell') ?? 1) * l.count);
+  const total = raw.reduce((n, v) => n + v, 0);
+  const target = Math.max(0, d.balance);
+  const out = raw.map((v) => (total > 0 ? Math.floor((v * target) / total) : 0));
+  if (out.length > 0) out[out.length - 1] = (out[out.length - 1] as number) + target - out.reduce((n, v) => n + v, 0);
+  return out;
+}
+
 /** Put a deal's current trip in escrow: the payer's credits are held, and the goods the trader sells leave its stock. */
 function holdTrip(sim: Sim, d: Deal, trader: Trader | undefined): void {
   const pay = settlement(d);
+  d.getValue = agreedValues(sim, d);
   if (pay > 0) sim.trade.credits -= pay;
   else if (trader) trader.credits += pay;
   if (trader) for (const l of d.get) takeStock(trader.stock, l.item, l.count);

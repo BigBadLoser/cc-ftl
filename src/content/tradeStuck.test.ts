@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, ModuleC, ShipC, StorageC, TraderC, deserialize, newGame, playerItems, serialize, storageAdd, type Sim } from '../sim';
+import { JobC, ModuleC, ShipC, StorageC, TraderC, deserialize, unitPrice, newGame, playerItems, serialize, storageAdd, type Sim } from '../sim';
 import { cargoCount, cargoTake } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
@@ -248,5 +248,47 @@ describe("a stuck delivery by the trader's own shuttle", () => {
       expect(metalLike(s, 'item.metal')).toBe(before.metal); // the player gained nothing
       expect(s.world.query(JobC).some((id) => s.world.get(id, JobC)!.haul?.src.kind === 'vehicle')).toBe(false);
     }
+  });
+
+  it('a part-delivered two-item order is charged the agreed value of exactly what arrived; survives a reload', () => {
+    const { sim, ship } = withFreighter();
+    sim.enqueue({ type: 'trade.hail', ship });
+    run(sim, 2);
+    // Two goods the trader holds in quantity, whose prices differ and move with its stock.
+    const base = (i: string): number => (content.items as unknown as Record<string, { price: number }>)[i]?.price ?? 0;
+    const items = sim.world.get(ship, TraderC)!.stock.filter((q) => q.count >= 8).map((q) => q.item)
+      .sort((x, y) => base(y) - base(x)).slice(0, 2);
+    expect(items).toHaveLength(2);
+    const [a, b] = items.sort() as [string, string];
+    const t0 = sim.world.get(ship, TraderC)!;
+    // A tracked market: a is scarce against its baseline (dear), b sits at it, so taking the order moves the two prices differently.
+    t0.base = [{ item: a, count: (t0.stock.find((q) => q.item === a)?.count ?? 0) + 40 }, { item: b, count: (t0.stock.find((q) => q.item === b)?.count ?? 0) + 2 }];
+    const agreed = (item: string): number => unitPrice(sim, ship, item, 'sell')!;
+    const pa = agreed(a);
+    const pb = agreed(b);
+    const credits = sim.trade.credits;
+    const theirs = sim.world.get(ship, TraderC)!.credits;
+    sim.enqueue({ type: 'trade.offer', ship, give: [], get: [{ item: a, count: 8 }, { item: b, count: 8 }] });
+    run(sim, 2);
+    const balance = sim.trade.offers[0]!.balance;
+    expect(balance).toBe(pa * 8 + pb * 8);
+    sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
+    run(sim, 2);
+    until(sim, 'unload');
+    for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
+    const d = sim.trade.deals[0]!;
+    const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0])!;
+    storageAdd(sim, crate, a, cargoTake(sim, d.vehicle, a, 8)); // all of a and 3 of b arrived
+    storageAdd(sim, crate, b, cargoTake(sim, d.vehicle, b, 3));
+    run(sim, 3000);
+    const reloaded = deserialize(serialize(sim), content);
+    run(reloaded, 3500);
+    const s = reloaded;
+    expect(s.trade.deals[0]!.phase).toBe('done');
+    expect(pa).toBeGreaterThan(20); // dear enough that stock moves the rounded price
+    const charge = pa * 8 + pb * 3;
+    expect(s.world.get(ship, TraderC)!.credits - theirs).toBe(charge);
+    expect(credits - s.trade.credits).toBe(charge);
+    expect(s.trade.credits + s.world.get(ship, TraderC)!.credits).toBe(credits + theirs);
   });
 });

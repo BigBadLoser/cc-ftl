@@ -8,7 +8,6 @@ import { cargoAdd, cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
 import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, settleDeal, touchMarket } from './deals';
-import { unitPrice } from './pricing';
 import type { ItemQty } from '../registry';
 import { spawnCourier } from './courier';
 import { storagesHolding } from './player';
@@ -208,12 +207,13 @@ function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void 
   const got = delivered.filter((l) => l.count > 0);
   if (got.length === 0) return failDeal(sim, d, reason);
   const left = d.get.map((l, i) => ({ item: l.item, count: l.count - (delivered[i] as ItemQty).count })).filter((l) => l.count > 0);
-  const value = (lines: ItemQty[]): number => lines.reduce((n, l) => n + l.count * (unitPrice(sim, d.ship, l.item, 'sell') ?? 1), 0);
   const trader = sim.world.get(d.ship, TraderC);
   if (left.length > 0) {
     if (trader) for (const l of left) addStock(trader.stock, l.item, l.count);
     if (!d.barter && d.balance > 0) {
-      const pay = Math.min(d.held, Math.round((d.held * value(got)) / value(d.get)));
+      // The agreed value of exactly what was delivered (shares fixed when the trip opened), not today's prices.
+      const share = d.get.reduce((n, l, i) => n + ((d.getValue?.[i] ?? 0) * (delivered[i] as ItemQty).count) / l.count, 0);
+      const pay = Math.min(d.held, Math.round(share));
       sim.trade.credits += d.held - pay; // the undelivered share is refunded
       d.held = pay;
       d.balance = pay;
