@@ -2,14 +2,14 @@
 @font-face { font-family: 'Silkscreen'; src: url('/fonts/Silkscreen-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 /* Design language: sharp corners, near-opaque panels, thin cyan rules, condensed caps headings, icon-first buttons. */
 :root {
-  --bg: #04080e;
-  --panel: rgba(6, 14, 24, 0.96);
-  --panel-2: #0a1828;
-  --panel-3: #0e2236;
-  --line: #17506a;
-  --line-hi: #2a9cc4;
-  --text: #d8f0ff;
-  --dim: #7fa9c0;
+  --bg: #06080a;
+  --panel: #0b0e11;
+  --panel-2: #11151a;
+  --panel-3: #181d23;
+  --line: #2a3036;
+  --line-hi: #3a424a;
+  --text: #e4e9ee;
+  --dim: #8b939a;
   --cyan: #36d4ff;
   --red: #ff5a5a;
   --amber: #f0b13a;
@@ -32,11 +32,11 @@
   --sp-3: 12px;
   --gutter: var(--sp-2);
   /* Thin frames: the line colour and weight shared by every titled frame. */
-  --frame-line: rgba(90, 140, 175, 0.38);
+  --frame-line: #2e353c;
   --frame-w: 1px;
   /* Bars and tags. */
-  --track: #061020;
-  --ok-fill: #0a2233;
+  --track: #080a0c;
+  --ok-fill: #11151a;
   --go: #0e6a80;
   /* Panel bands and muted text used by the combat HUD. */
   --band: #0d4a66;
@@ -45,7 +45,16 @@
   --axis: #56697b;
   --muted: #8fa3b3;
   --light: #a9d8ee;
-  --amber-fill: #2a2210;
+  --amber-fill: #11151a;
+  /* Steel hybrid (see combat/steel.css): neutral stand-ins for cyan where it only meant "fine", and borderless controls. */
+  --hud-ok: #c9ced3;
+  --hud-key: #c9ced3;
+  --hud-bar: #dfe4e8;
+  --hud-dash: #1c2228;
+  --btn-edge: transparent;
+  --btn-go: #11151a;
+  --btn-go-edge: var(--green);
+  --btn-active-edge: var(--amber);
   /* Health tones (hull, heat, charge). */
   --health-good: var(--green);
   --health-warn: var(--amber);
