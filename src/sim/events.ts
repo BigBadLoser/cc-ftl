@@ -167,6 +167,8 @@ export type SimEvent =
   | { type: 'crew.recallStarted'; vehicle: number; ship: number; crew: number[] }
   | { type: 'crew.recalled'; vehicle: number; crew: number[] }
   | { type: 'crew.recallFailed'; vehicle: number; crew: number[]; reason: string }
+  /** Player crew were aboard a ship that left (`fled`: it jumped away; `lifted`: it left the node) and left with it: they are lost. */
+  | { type: 'crew.leftWithShip'; crew: number; ship: number; how: 'fled' | 'lifted' }
   /** The player lost the game; `reason` is a short code ('captured'). */
   | { type: 'game.lost'; reason: string }
   /** EVA: a crew member put on / took off a suit at `airlock` (a module); the tank hit the warning level / ran dry. */

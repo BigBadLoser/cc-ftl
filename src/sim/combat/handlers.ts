@@ -1,3 +1,4 @@
+import { loseStrandedCrew } from '../boarding/stranded';
 import type { Command } from '../commands';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -138,6 +139,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (ship.faction === 'player') return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity));
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
     ship.state = 'fled';
+    loseStrandedCrew(sim, cmd.ship, 'fled'); // player boarders still aboard go with it
     sim.events.emit({ type: 'ship.fled', ship: cmd.ship });
   },
 };
