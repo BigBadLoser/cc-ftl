@@ -31,7 +31,7 @@ import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
-import { modalOpen } from './ui/keys';
+import { isTypingTarget, modalOpen } from './ui/keys';
 import { settings } from './ui/settings/settings';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
@@ -125,7 +125,7 @@ if (!new URLSearchParams(location.search).has('scenario')) bridge.setSpeed(setti
 const perfBoot = (): Promise<import('./app/profiler/install').ProfilerHandle> => import('./app/profiler/install').then((m) => m.installProfiler(setProbe));
 if (new URLSearchParams(location.search).has('perf')) void perfBoot().then((h) => h.api.enable());
 window.addEventListener('keydown', (e) => {
-  if (modalOpen() || !keymap.matches(e, 'debug.profiler')) return;
+  if (modalOpen() || isTypingTarget(e) || !keymap.matches(e, 'debug.profiler')) return;
   e.preventDefault();
   void perfBoot().then((h) => h.togglePanel());
 });
