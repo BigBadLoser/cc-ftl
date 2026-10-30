@@ -40,7 +40,7 @@
     },
   );
   /**
-   * With a speaker: the portrait (72px in a frame, FACE px overall) sits centred on the card's left border, its top level with the step title
+   * With a speaker: the portrait (80px of art filling a 1px frame, FACE px overall) sits centred on the card's left border, its top level with the step title
    * (the frame's 12px padding plus the body's 8px), in a real break of the border NOTCH_GAP px above and below: the segment above stays
    * NOTCH_GAP long too, not a stub.
    */
@@ -185,7 +185,6 @@
     box-sizing: border-box;
     width: var(--face);
     height: var(--face);
-    padding: 4px;
     border: var(--frame-w) solid var(--frame-line);
     background: var(--track);
   }

@@ -19,7 +19,7 @@ export interface Portraits {
   source(id: number): HTMLCanvasElement | null;
   /** The same as a PNG data URL (cached with the canvas), for an <img>. */
   url(id: number): string | null;
-  /** A portrait from a look alone (no crew entity): the lessons' instructors. PNG data URL, or null while its sheets load. */
+  /** A portrait from a look alone (no crew entity): the lessons' instructors, cropped to its opaque pixels. PNG data URL, or null while its sheets load. */
   lookUrl(look: CrewLook): string | null;
   /** A dedicated portrait asset (manifest key: an instructor's own art) at whole art px, or null while it loads or if there is none. */
   assetUrl(key: string): string | null;
@@ -102,10 +102,33 @@ export function createPortraits(extract: ExtractSystem, atlas: Atlas, world: Wor
     return toArtPx(root, { w: st.tex.width, h: st.tex.height }, `asset|${key}`);
   }
 
+  /** The portrait cropped to its opaque pixels, so it fills a frame edge to edge (the instructors' card); cached. */
+  function trimmed(e: { canvas: HTMLCanvasElement; url: string } | null, key: string): string | null {
+    if (!e) return null;
+    const hit = cache.get(`trim|${key}`);
+    if (hit) return hit.url;
+    const { width: w, height: h } = e.canvas;
+    const data = e.canvas.getContext('2d')?.getImageData(0, 0, w, h).data;
+    if (!data) return e.url;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3]! === 0) continue;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    if (x1 < 0) return e.url;
+    const out = document.createElement('canvas');
+    out.width = x1 - x0 + 1;
+    out.height = y1 - y0 + 1;
+    out.getContext('2d')?.drawImage(e.canvas, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    const entry = { canvas: out, url: out.toDataURL() };
+    cache.set(`trim|${key}`, entry);
+    return entry.url;
+  }
+
   return {
     source: (id) => build(id)?.canvas ?? null,
     url: (id) => build(id)?.url ?? null,
-    lookUrl: (look) => compose(look, undefined)?.url ?? null,
-    assetUrl: (key) => asset(key)?.url ?? null,
+    lookUrl: (look) => trimmed(compose(look, undefined), portraitKey(look.species, look.role, look.appearanceSeed, undefined)),
+    assetUrl: (key) => trimmed(asset(key), `asset|${key}`),
   };
 }
