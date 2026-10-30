@@ -36,7 +36,7 @@ type Court = (b: Builder | null) => Builder | null;
 /** The kind's courtyard rule for one block: enclosed centres become an open room (seeded per block, for variety). */
 const courtOf = (c: Ctx, maxCourts?: number): Court => (b) => {
   const a = c.fam.atrium;
-  if (b && a && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role, { band: a.band, ...(a.packed ? { packed: true } : {}), ...(a.deck ? { deck: true } : {}), ...(maxCourts ? { maxCourts } : {}) }) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
+  if (b && a && maxCourts !== 0 && c.rng.chance(a.chance) && courtyards(b, c.rng, a.role, { band: a.band, ...(a.packed ? { packed: true } : {}), ...(a.deck ? { deck: true } : {}), ...(maxCourts ? { maxCourts } : {}) }) > 0 && !c.parts.includes('atrium')) c.parts.push('atrium');
   return b;
 };
 
@@ -187,11 +187,16 @@ function welded(c: Ctx): boolean {
   return true;
 }
 
+/**
+ * Wheel: four spokes, so the inside of the ring is four quarters; none, one or two of them are filled as courts, the
+ * rest stay open to space.
+ */
 function wheel(c: Ctx): boolean {
-  const spokes = cardinal(c, 2);
-  const o = { spokes, extra: c.rng.int(0, 2), centre: spokes.length < 4 ? c.rng.int(0, 2) : 0 };
-  c.parts.push(`spokes ${spokes.join('')}${o.centre ? ` centre ${o.centre}` : ''}`);
-  return placeRoot(c, civil(courtOf(c, 1)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
+  const spokes: Side[] = ['n', 'e', 's', 'w'];
+  const o = { spokes, extra: c.rng.int(0, 2), centre: 0 };
+  const courts = c.rng.int(0, 2);
+  c.parts.push(`spokes nesw courts ${courts}`);
+  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
 }
 
 function concentric(c: Ctx): boolean {
