@@ -4,6 +4,7 @@ import { no, type Ctx } from './navyKit';
 import type { Rng } from '../rng';
 import { allRooms, dockSpec, MK1_REACTOR, type Reactor, type RoomSpec, type ShipPlan } from './plan';
 import type { RoomRole } from './types';
+import { ADJACENCY, DISTRICT } from './stationQuality';
 
 /** Shared helpers of the station grammars (`stationGrammars.ts`, `stationLayouts.ts`). */
 
@@ -34,27 +35,50 @@ export function split(rooms: RoomSpec[], k: number): RoomSpec[][] {
   return out;
 }
 
-/**
- * Districts (docs/LAYOUT_RESEARCH.md, "zones before rooms"): habitation, logistics (stores, docks, hangars), the secure
- * core (command, AI core, armouries, shields) and industry (reactors, workshops, farms).
- */
-export const DISTRICT: Partial<Record<RoomRole, number>> = {
-  quarters: 0, support: 0, cargo: 1, dock: 1, hangar: 1, bridge: 2, core: 2, armoury: 2, shields: 2, reactor: 3, industry: 3, farm: 3,
-};
+/** Districts (docs/LAYOUT_RESEARCH.md, "zones before rooms"): the table the layout quality is measured by. */
+export { DISTRICT };
+
+/** How much two roles want to sit side by side: the adjacency table (near +1, apart -1), +0.5 for one district. */
+function affinity(a: RoomRole, b: RoomRole): number {
+  let v = DISTRICT[a] !== undefined && DISTRICT[a] === DISTRICT[b] ? 0.5 : 0;
+  for (const [x, y, w] of ADJACENCY) if ((x === a && y === b) || (x === b && y === a)) v += w;
+  return v;
+}
 
 /**
- * Rooms in district order: shuffled within each district, the districts in a random order, so builders that lay rooms
- * out in list order (ring bands, spines, lattices) put each district's rooms side by side. Gun bays and other roles with
- * no district keep their places in the shuffle, spread through.
+ * Rooms in a good order for builders that lay them out in list order (ring bands, rim rooms, spines, lattices): rooms
+ * next in the list end up next to each other, so the order is searched for the one whose neighbours (and next but one,
+ * at half weight) score best by `affinity`: districts together, quarters by the mess and away from reactors, docks by
+ * cargo, reactors by shields (Merrell et al. 2010 and Lopes et al. 2010 place rooms by such an adjacency table). The
+ * search starts from a shuffle and keeps any swap or reversed run that does not lower the score (ties drift, so two
+ * seeds rarely settle on the same order).
  */
 export function zoned(rng: Rng, rooms: RoomSpec[]): RoomSpec[] {
-  const order = shuffle(rng, [0, 1, 2, 3]);
-  const mixed = shuffle(rng, rooms);
-  const rank = (r: RoomSpec): number | undefined => { const d = DISTRICT[r.role]; return d === undefined ? undefined : order.indexOf(d); };
-  const placed = mixed.filter((r) => rank(r) !== undefined).sort((a, b) => (rank(a) as number) - (rank(b) as number));
-  // Roles with no district go back into the sequence at their shuffled positions.
-  let i = 0;
-  return mixed.map((r) => (rank(r) === undefined ? r : (placed[i++] as RoomSpec)));
+  const seq = shuffle(rng, rooms);
+  const n = seq.length;
+  if (n < 3) return seq;
+  const score = (s: readonly RoomSpec[]): number => {
+    let v = 0;
+    for (let i = 0; i + 1 < n; i++) {
+      v += affinity((s[i] as RoomSpec).role, (s[i + 1] as RoomSpec).role);
+      if (i + 2 < n) v += 0.5 * affinity((s[i] as RoomSpec).role, (s[i + 2] as RoomSpec).role);
+    }
+    return v;
+  };
+  let best = score(seq);
+  for (let t = 0; t < 40 * n; t++) {
+    const i = rng.int(0, n - 1), j = rng.int(0, n - 1);
+    if (i === j) continue;
+    const lo = Math.min(i, j), hi = Math.max(i, j);
+    const swap = rng.chance(0.5);
+    const undo = seq.slice(lo, hi + 1);
+    if (swap) [seq[lo], seq[hi]] = [seq[hi] as RoomSpec, seq[lo] as RoomSpec];
+    else seq.splice(lo, hi - lo + 1, ...undo.slice().reverse());
+    const v = score(seq);
+    if (v >= best) best = v;
+    else seq.splice(lo, hi - lo + 1, ...undo);
+  }
+  return seq;
 }
 
 /** Cut rooms (in order) into `k` runs of similar floor area: districts stay together (satellites by district). */

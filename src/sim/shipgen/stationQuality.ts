@@ -6,13 +6,12 @@ import type { RoomRole } from './types';
  * 2010's constrained growth from adjacency rules; Shadows of Doubt's public-to-private gradient).
  *
  * - adjacency: for each pair of roles in ADJACENCY present on the layout, the share of rooms of the first whose nearest
- *   room of the second is as the table wants it: within NEAR door steps for a "near" pair, NEAR + 1 or more (and no
- *   shared wall) for an "apart" pair. `adjacency` is the mean over the pairs present (0..1).
+ *   room of the second is as the table wants it: a walk of at most NEAR tiles (out of the room, along corridors, into
+ *   the other) for a "near" pair, more than NEAR and no shared wall for an "apart" pair. `adjacency` is the mean over
+ *   the pairs present (0..1). Walking distance, not door steps: on a ring every room doors onto one corridor.
  * - clustering: districts. Of the room-to-room contacts (a shared wall or a door, corridors aside), the share joining two
  *   rooms of the same DISTRICT, over the share a random arrangement of the same rooms would give (1 = random, higher =
  *   rooms of a kind gather).
- *
- * Door steps count the rooms walked into, corridors included (a room off the same corridor is two steps).
  */
 
 /** Role pairs: +1 want to be near, -1 want to be apart. */
@@ -34,7 +33,8 @@ export const DISTRICT: Readonly<Partial<Record<RoomRole, string>>> = {
   weapons: 'defence', armoury: 'defence', drill: 'defence',
 };
 
-const NEAR = 2;
+/** Tiles of walk that still count as near (about a room's length plus the corridor between). */
+const NEAR = 12;
 
 export interface StationQuality { adjacency: number; pairs: Record<string, number>; clustering: number; contacts: number }
 
@@ -60,10 +60,29 @@ export function stationQuality(rows: readonly string[], roomOf: Int16Array, role
   const present = new Set<number>();
   for (let i = 0; i < roomOf.length; i++) if ((roomOf[i] ?? -1) >= 0 && cell(i % W, Math.floor(i / W)) === '_') present.add(roomOf[i] as number);
   const rooms = [...present];
-  const steps = (from: number): Map<number, number> => {
-    const d = new Map<number, number>([[from, 0]]);
-    const q = [from];
-    for (let h = 0; h < q.length; h++) for (const n of door.get(q[h] as number) ?? []) if (!d.has(n)) { d.set(n, (d.get(q[h] as number) as number) + 1); q.push(n); }
+  const tilesOf = new Map<number, number[]>();
+  for (let i = 0; i < roomOf.length; i++) {
+    const r = roomOf[i] ?? -1;
+    if (r >= 0 && cell(i % W, Math.floor(i / W)) === '_') (tilesOf.get(r) ?? tilesOf.set(r, []).get(r) as number[]).push(i);
+  }
+  /** Walking distance from a room's floor to every tile (floor and doors), in tiles. */
+  const walk = new Map<number, Int32Array>();
+  const from = (room: number): Int32Array => {
+    const hit = walk.get(room);
+    if (hit) return hit;
+    const d = new Int32Array(W * H).fill(-1);
+    const q = [...(tilesOf.get(room) ?? [])];
+    for (const i of q) d[i] = 0;
+    for (let h = 0; h < q.length; h++) {
+      const i = q[h] as number;
+      const x = i % W, y = (i - x) / W;
+      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+        const c = cell(nx, ny);
+        const j = ny * W + nx;
+        if ((c === '_' || c === 'D') && d[j] === -1) { d[j] = (d[i] as number) + 1; q.push(j); }
+      }
+    }
+    walk.set(room, d);
     return d;
   };
   const pairs: Record<string, number> = {};
@@ -72,8 +91,8 @@ export function stationQuality(rows: readonly string[], roomOf: Int16Array, role
     if (as.length === 0 || bs.length === 0) continue;
     let ok = 0;
     for (const r of as) {
-      const d = steps(r);
-      const near = Math.min(...bs.map((o) => d.get(o) ?? Infinity));
+      const d = from(r);
+      const near = Math.min(...bs.map((o) => Math.min(...(tilesOf.get(o) ?? []).map((i) => (d[i] as number) < 0 ? Infinity : (d[i] as number)))));
       const touching = bs.some((o) => wall.get(r)?.has(o) || door.get(r)?.has(o));
       if (want > 0 ? near <= NEAR : near > NEAR && !touching) ok++;
     }
