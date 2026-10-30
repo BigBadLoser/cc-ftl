@@ -19,7 +19,8 @@ interface Tracker {
   enemyName: string;
   outcome: UiFightReport['outcome'];
   lost: UiFightLine[];
-  damaged: Map<number, string>;
+  /** Home modules hit, by id: name and tile as of the hit (a jump away lifts the ship's modules out of the world before the fight ends). */
+  damaged: Map<number, { name: string; x: number; y: number }>;
   down: Map<number, UiFightLine>;
   dead: UiFightLine[];
   enemyLost: UiFightLine[];
@@ -73,6 +74,8 @@ export function createFightReporter(sim: Sim): FightReporter {
     start: sim.tick, hullBefore: hull(), hullNow: hull(), enemyHull: null, enemyCrew: 0, enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
     ammo: new Map(), prize: false,
   });
+  // A save loaded mid-fight: `combat.started` will not come, so track the rest of this one from now.
+  if (sim.sector.inCombat) t = fresh();
 
   function note(e: SimEvent, c: Tracker): void {
     const known = c.enemy;
@@ -90,7 +93,10 @@ export function createFightReporter(sim: Sim): FightReporter {
       }
       case 'projectile.hit':
         if (e.ship !== home() && !mine(e.ship)) c.enemy ||= e.ship;
-        if (e.moduleId > 0 && e.ship === home()) c.damaged.set(e.moduleId, modName(sim.world.get(e.moduleId, ModuleC)?.def ?? ''));
+        if (e.moduleId > 0 && e.ship === home()) {
+          const m = sim.world.get(e.moduleId, ModuleC);
+          if (m) c.damaged.set(e.moduleId, { name: modName(m.def), x: m.x, y: m.y });
+        }
         break;
       case 'weapon.fired': {
         if (!mine(e.ship)) c.enemy ||= e.ship;
@@ -119,10 +125,12 @@ export function createFightReporter(sim: Sim): FightReporter {
     const itemName = (id: string) => sim.content.items[id]?.name ?? id;
     const gone = new Set(c.lost.map((l) => l.name + '|' + (l.subject?.kind === 'tile' ? `${l.subject.x},${l.subject.y}` : '')));
     const damaged: UiFightLine[] = [];
-    for (const [id, name] of c.damaged) {
+    for (const [id, { name, x, y }] of c.damaged) {
+      if (gone.has(name + '|' + `${x},${y}`)) continue;
+      // Not in the world: lifted with the ship by a jump away (a destroyed one is in `gone`), so it stands as recorded.
       const m = sim.world.get(id, ModuleC);
-      if (!m || m.hp <= 0 || shipIdOf(sim, m) !== home() || gone.has(name + '|' + `${m.x},${m.y}`)) continue;
-      damaged.push({ name, subject: tileAt(m.x, m.y) });
+      if (m && (m.hp <= 0 || shipIdOf(sim, m) !== home())) continue;
+      damaged.push({ name, subject: tileAt(x, y) });
     }
     const es = c.enemy ? sim.world.get(c.enemy, ShipC) : undefined;
     return {

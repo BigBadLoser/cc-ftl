@@ -26,6 +26,29 @@ describe('fight report', () => {
     expect(done?.summary.text).toBe('Fight over: 1 module lost, 1 crew down');
   });
 
+  it('keeps damaged modules a jump away lifted out of the world', () => {
+    const sim = newGame(3, content);
+    const ship = homeShip(sim);
+    const reporter = createFightReporter(sim);
+    const hit = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship) as number;
+    const name = sim.content.modules[sim.world.get(hit, ModuleC)!.def]?.name;
+    reporter.onEvents([{ type: 'combat.started' }, { type: 'projectile.hit', projectile: 1, weapon: 'weapon.burstLaser', ship, x: 0, y: 0, moduleId: hit }]);
+    sim.world.remove(hit, ModuleC); // what liftShip does to the fleeing ship's modules before `combat.ended`
+    const done = reporter.onEvents([{ type: 'ship.fled', ship }, { type: 'combat.ended' }]);
+    expect(done?.report.damaged).toMatchObject([{ name }]);
+    expect(done?.summary.text).toBe('Fight over: 1 module damaged');
+  });
+
+  it('tracks a fight already under way when the reporter starts (a save loaded mid-fight)', () => {
+    const sim = newGame(3, content);
+    const ship = homeShip(sim);
+    sim.sector.inCombat = true;
+    const reporter = createFightReporter(sim);
+    const lost = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship) as number;
+    reporter.onEvents([{ type: 'module.destroyed', moduleId: lost, def: sim.world.get(lost, ModuleC)!.def, ship }]);
+    expect(reporter.onEvents([{ type: 'combat.ended' }])?.summary.text).toBe('Fight over: 1 module lost');
+  });
+
   it('says nothing for a fight that cost nothing', () => {
     const sim = newGame(3, content);
     const reporter = createFightReporter(sim);
