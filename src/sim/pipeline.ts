@@ -63,6 +63,8 @@ import { ferrySystem } from './ferry/flow';
 import { logisticsSystem } from './logistics/system';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
+import { recallSystem } from './boarding/recall';
+import { sabotageResumeSystem } from './boarding/resume';
 import { coreRaidSystem } from './capture/coreRaid';
 import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
@@ -122,6 +124,8 @@ export const pipeline: readonly System[] = [
   autoJobsSystem,
   // Console operating jobs (combat): after vitals so downed operators are already released.
   operateJobsSystem,
+  // Sabotage orders a fight paused pick up again once nothing hostile is in sight (after autojobs, which pauses them).
+  sabotageResumeSystem,
   // Economy planners, in dependency order: drop dead hauls (frees reservations), open craft jobs,
   // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
   haulCleanupSystem,
@@ -199,6 +203,8 @@ export const pipeline: readonly System[] = [
   heatAiSystem,
   // The boarding doctrine issues vehicle commands (applied next tick).
   boardingAiSystem,
+  // The player's recall of a boarding party (walk to the shuttle, fly home, step out): vehicle commands, applied next tick.
+  recallSystem,
   // The player's anti-vehicle weapons pick up a hostile shuttle coming for the ship (the AI does it by command above).
   vehicleDefenceSystem,
   targetingSystem,

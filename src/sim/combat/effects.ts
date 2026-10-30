@@ -88,20 +88,28 @@ function modulesNear(sim: Sim, at: Impact, radius: number): number[] {
 }
 
 function moduleDamage(sim: Sim, at: Impact, amount: number, radius: number): void {
-  for (const id of modulesNear(sim, at, radius)) {
-    const m = sim.world.get(id, ModuleC);
-    if (!m || m.hp <= 0) continue;
-    m.hp = Math.max(0, m.hp - amount);
-    const box = sim.world.get(id, ContainerC);
-    if (box) box.hp = m.hp;
-    if (m.hp !== 0) continue;
-    if (m.wrecked) continue; // still a wreck from the last time: no second announcement
-    m.wrecked = true;
-    // A destroyed container's shell is torn open: its stock is lost to space.
-    const store = box && sim.world.get(id, StorageC);
-    if (store) store.stacks = [];
-    sim.events.emit({ type: 'module.destroyed', moduleId: id, def: m.def, ship: at.shipId });
-  }
+  for (const id of modulesNear(sim, at, radius)) damageModule(sim, id, amount, at.shipId);
+}
+
+/**
+ * Take `amount` hp off one module: the single path every module hit goes through (weapon effects and boarders' sabotage), so a
+ * module destroyed either way behaves identically (container stock lost, `module.destroyed` once). Returns true if this hit
+ * destroyed it.
+ */
+export function damageModule(sim: Sim, id: number, amount: number, shipId: number): boolean {
+  const m = sim.world.get(id, ModuleC);
+  if (!m || m.hp <= 0) return false;
+  m.hp = Math.max(0, m.hp - amount);
+  const box = sim.world.get(id, ContainerC);
+  if (box) box.hp = m.hp;
+  if (m.hp !== 0) return false;
+  if (m.wrecked) return false; // still a wreck from the last time: no second announcement
+  m.wrecked = true;
+  // A destroyed container's shell is torn open: its stock is lost to space.
+  const store = box && sim.world.get(id, StorageC);
+  if (store) store.stacks = [];
+  sim.events.emit({ type: 'module.destroyed', moduleId: id, def: m.def, ship: shipId });
+  return true;
 }
 
 function crewDamage(sim: Sim, at: Impact, amount: number, radius: number): void {
