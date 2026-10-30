@@ -120,6 +120,31 @@ describe('fight report', () => {
     expect(done?.report).toMatchObject({ outcome: 'fled', enemyHull: 0.4 });
   });
 
+  it('counts a shot fired in the frame of a jump away', () => {
+    const sim = newGame(3, content);
+    const ship = homeShip(sim);
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    sim.world.detach(ship); // the jump lifts the ship before this frame's events are drained
+    const done = reporter.onEvents([{ type: 'weapon.fired', ship, weapon: 'weapon.missile', weaponId: 1, projectile: 1, targetShip: 0, targetModuleId: 0 }, { type: 'combat.ended' }]);
+    expect(done?.report.ammo).toEqual([{ name: 'Missile', n: 1 }]);
+  });
+
+  it('names the captured ship, not the first enemy, when another one fled', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 140, y: 50 });
+    sim.step();
+    const [, a, b] = shipIds(sim) as [number, number, number];
+    sim.world.get(b, ShipC)!.name = 'Raider B';
+    sim.world.get(b, ShipC)!.integrity = 0.3;
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    const done = reporter.onEvents([{ type: 'ship.fled', ship: a }, { type: 'ship.captured', ship: b, by: 'player', from: 'hostile' }, { type: 'combat.ended' }]);
+    expect(done?.report).toMatchObject({ outcome: 'captured', enemy: 'Raider B', prize: 'Raider B', enemyHull: 0.3 });
+  });
+
   it('says nothing for a fight that cost nothing', () => {
     const sim = newGame(3, content);
     const reporter = createFightReporter(sim);

@@ -32,6 +32,8 @@ interface Tracker {
   ours: Set<number>;
   /** The player's crew seen during the fight, with names: a jump away detaches them before the frame's last deaths are read. */
   crew: Map<number, string>;
+  /** The player's home ship as the fight began: a jump away detaches it before the frame's last shots are read. */
+  home: number;
 }
 
 export interface FightReporter {
@@ -87,12 +89,12 @@ export function createFightReporter(sim: Sim): FightReporter {
   const finalHull = (c: Tracker): number => {
     const p = sim.sector.state === 'hyperspace' ? sim.sector.packet : undefined;
     const lifted = p?.entities.find((x) => x.id === p.ship)?.c[ShipC.name] as Ship | undefined;
-    return lifted?.integrity ?? (sim.world.has(home(), ShipC) ? hull() : c.hullNow);
+    return lifted?.integrity ?? sim.world.get(c.home, ShipC)?.integrity ?? c.hullNow;
   };
   const fresh = (): Tracker => {
     const c: Tracker = {
       start: sim.tick, hullBefore: hull(), hullNow: hull(), enemyHull: null, enemyCrew: 0, enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
-      ammo: new Map(), prize: false, ours: new Set(sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction === 'player')), crew: new Map(),
+      ammo: new Map(), prize: false, ours: new Set(sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction === 'player')), crew: new Map(), home: home(),
     };
     seeCrew(c);
     return c;
@@ -103,7 +105,12 @@ export function createFightReporter(sim: Sim): FightReporter {
   function note(e: SimEvent, c: Tracker): void {
     const known = c.enemy;
     noteEvent(e, c);
-    if (c.enemy && (c.enemy !== known || !c.enemyName)) c.enemyName = sim.world.get(c.enemy, ShipC)?.name ?? c.enemyName;
+    if (c.enemy && c.enemy !== known) {
+      // Another ship is now the one the report is about (the one an outcome names): its name and hull replace the last one's.
+      const s = sim.world.get(c.enemy, ShipC);
+      c.enemyName = s?.name ?? '';
+      c.enemyHull = s?.integrity ?? null;
+    } else if (c.enemy && !c.enemyName) c.enemyName = sim.world.get(c.enemy, ShipC)?.name ?? '';
   }
 
   function noteEvent(e: SimEvent, c: Tracker): void {
@@ -115,15 +122,15 @@ export function createFightReporter(sim: Sim): FightReporter {
         break;
       }
       case 'projectile.hit':
-        if (e.ship !== home() && !c.ours.has(e.ship)) c.enemy ||= e.ship;
-        if (e.moduleId > 0 && e.ship === home()) {
+        if (!c.ours.has(e.ship)) c.enemy ||= e.ship;
+        if (e.moduleId > 0 && e.ship === c.home) {
           const m = sim.world.get(e.moduleId, ModuleC);
           if (m) c.damaged.set(e.moduleId, { name: modName(m.def), x: m.x, y: m.y });
         }
         break;
       case 'weapon.fired': {
         if (!c.ours.has(e.ship)) c.enemy ||= e.ship;
-        const item = e.ship === home() ? sim.content.weapons?.[e.weapon]?.ammo : undefined;
+        const item = e.ship === c.home ? sim.content.weapons?.[e.weapon]?.ammo : undefined;
         if (item) c.ammo.set(item, (c.ammo.get(item) ?? 0) + 1);
         break;
       }
@@ -136,10 +143,10 @@ export function createFightReporter(sim: Sim): FightReporter {
           c.dead.push({ name: crewName(c, e.crew), subject: crewTile(sim, e.crew) });
         } else c.enemyCrew++;
         break;
-      case 'ship.destroyed': if (c.ours.has(e.ship)) c.outcome = 'lost'; else { c.enemy ||= e.ship; c.outcome = 'destroyed'; } break;
-      case 'ship.fled': c.enemy ||= c.ours.has(e.ship) ? 0 : e.ship; c.outcome = c.ours.has(e.ship) ? 'youFled' : 'fled'; break;
-      case 'ship.captured': if (e.by === 'player') { c.enemy ||= e.ship; c.outcome = 'captured'; c.prize = true; } break;
-      case 'ship.disabled': if (!c.ours.has(e.ship) && c.outcome === 'ended') { c.enemy ||= e.ship; c.outcome = 'disabled'; } break;
+      case 'ship.destroyed': if (c.ours.has(e.ship)) c.outcome = 'lost'; else { c.enemy = e.ship; c.outcome = 'destroyed'; } break;
+      case 'ship.fled': if (!c.ours.has(e.ship)) c.enemy = e.ship; c.outcome = c.ours.has(e.ship) ? 'youFled' : 'fled'; break;
+      case 'ship.captured': if (e.by === 'player') { c.enemy = e.ship; c.outcome = 'captured'; c.prize = true; } break;
+      case 'ship.disabled': if (!c.ours.has(e.ship) && c.outcome === 'ended') { c.enemy = e.ship; c.outcome = 'disabled'; } break;
       default: break;
     }
   }
@@ -152,7 +159,7 @@ export function createFightReporter(sim: Sim): FightReporter {
       if (gone.has(name + '|' + `${x},${y}`)) continue;
       // Not in the world: lifted with the ship by a jump away (a destroyed one is in `gone`), so it stands as recorded.
       const m = sim.world.get(id, ModuleC);
-      if (m && (m.hp <= 0 || shipIdOf(sim, m) !== home())) continue;
+      if (m && (m.hp <= 0 || shipIdOf(sim, m) !== c.home)) continue;
       damaged.push({ name, subject: tileAt(x, y) });
     }
     const es = c.enemy ? sim.world.get(c.enemy, ShipC) : undefined;
