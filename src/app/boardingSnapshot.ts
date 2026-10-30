@@ -1,5 +1,6 @@
 import { AssignmentC, CombatC, CrewC, DeadC, DownedC, HealthC, JobC, ModuleC, PositionC, ShipC, WeaponC, type Sim } from '../sim';
 import { footprintTiles } from '../sim/modules/footprint';
+import { targetableVehicle, weaponAntiVehicle } from '../sim/combat/targets';
 import { playerCrewAboard } from '../sim/boarding/aboard';
 import { RecallC, SabotageOrderC } from '../sim/boarding/components';
 import { FighterC } from '../sim/fight/components';
@@ -89,11 +90,17 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
         fireOn.push(row);
       }
     };
-    const mine = sim.world.get(home, CombatC);
-    aim(mine?.target, 'Your guns');
+    // Each weapon's effective target, in `resolveTarget`'s order: its own aim (a shuttle only for anti-vehicle guns), then the ship's
+    // shuttle target (anti-vehicle guns), then the ship-wide target it inherits.
+    const combat = sim.world.get(home, CombatC);
     for (const w of sim.world.query(WeaponC, ModuleC)) {
       const m = sim.world.get(w, ModuleC);
-      if (m && shipIdOf(sim, m) === home) aim(sim.world.get(w, WeaponC)?.target, sim.content.modules[m.def]?.name ?? 'Weapon');
+      if (!m || shipIdOf(sim, m) !== home) continue;
+      const anti = weaponAntiVehicle(sim, w);
+      const t = sim.world.get(w, WeaponC)?.target;
+      const own = t && (anti || !t.vehicle) ? t : null;
+      if (own) aim(own, sim.content.modules[m.def]?.name ?? 'Weapon');
+      else if (!(anti && combat?.vehicleTarget && targetableVehicle(sim, combat.vehicleTarget))) aim(combat?.target, 'Your guns');
     }
     const docked = sim.world.query(VehicleC).some((v) => {
       const veh = sim.world.get(v, VehicleC);
