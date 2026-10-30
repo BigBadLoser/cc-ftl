@@ -101,6 +101,31 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const weapon = sim.world.get(cmd.weaponId, WeaponC);
     if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
     weapon.target = target;
+    // Aiming a held weapon is the order to shoot: it fires once when charged, then stays on hold.
+    if (weapon.mode === 'hold') weapon.once = true;
+  },
+  'combat.setWeaponMode': (sim, cmd) => {
+    const weapon = sim.world.get(cmd.weaponId, WeaponC);
+    if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
+    if (cmd.mode !== 'auto' && cmd.mode !== 'hold') return reject(sim, cmd.type, 'badValue');
+    weapon.mode = cmd.mode;
+    weapon.once = false;
+    delete weapon.restore; // an explicit choice, so hold-all no longer owns this weapon
+  },
+  'combat.holdAll': (sim, cmd) => {
+    if (!sim.world.get(cmd.ship, CombatC)) return reject(sim, cmd.type, 'noShip');
+    for (const id of sim.world.query(WeaponC, ModuleC)) {
+      const w = sim.world.get(id, WeaponC);
+      if (!w || !moduleOnGrid(sim, id, cmd.ship)) continue;
+      if (cmd.hold) {
+        if (w.restore === undefined) w.restore = w.mode;
+        w.mode = 'hold';
+      } else if (w.restore !== undefined) {
+        w.mode = w.restore;
+        delete w.restore;
+      }
+      w.once = false;
+    }
   },
   'combat.setHold': (sim, cmd) => {
     const combat = sim.world.get(cmd.ship, CombatC);

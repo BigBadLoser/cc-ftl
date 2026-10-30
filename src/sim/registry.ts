@@ -182,6 +182,8 @@ export type Effect =
 /** A weapon: how it charges, flies and what it does. Power draw is on the carrying ModuleDef. */
 export interface WeaponDef {
   name: string;
+  /** One-line name for the combat HUD's weapon cards ("Missiles"); the module's own name is the tooltip. Defaults to the module name. */
+  shortName?: string;
   /** Render asset id of the projectile. */
   projectileAsset: string;
   /** Shots per volley. */

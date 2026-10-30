@@ -53,8 +53,12 @@ function legacyWorld(sim: Sim): unknown {
   });
   // The telegraph's `commit` on weapons came with the incoming-fire marker (#180): not part of the legacy shape.
   stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
-    const { commit, ...rest } = raw as Record<string, unknown>;
+    // `mode`, `restore` and `once` (per-weapon fire modes, #169) are new fields too.
+    const { commit, mode, restore, once, ...rest } = raw as Record<string, unknown>;
     void commit;
+    void mode;
+    void restore;
+    void once;
     return [id, rest];
   });
   // `freeSince` on operate jobs came with station relief: not part of the legacy shape.

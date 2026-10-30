@@ -47,7 +47,7 @@
   .dim { color: var(--dim); }
   .result { color: var(--red); }
   button { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
+  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
   .go.flee { border-color: var(--red); }
   @media (max-width: 600px) { .card { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; border-width: 1px 0 0; padding-bottom: calc(10px + var(--sab)); } }
 </style>

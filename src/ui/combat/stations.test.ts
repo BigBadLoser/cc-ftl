@@ -3,7 +3,7 @@ import type { UiConsole, UiShipModule } from '../api';
 import { stationTags } from './stations';
 
 const con = (kind: UiConsole['kind'], operator: string | null, powered = true): UiConsole => ({
-  id: 1, kind, name: kind, operator, powered,
+  id: 1, kind, name: kind, operator, enRoute: null, powered,
 });
 const eng = (powered: boolean, hp = 10): UiShipModule => ({
   id: 2, name: 'Engine', kind: 'engine', hp, maxHp: 10, ion: false, powered,
@@ -37,5 +37,10 @@ describe('stationTags', () => {
     expect(stationTags([], [eng(false)])[3]).toMatchObject({ ok: false, status: 'OFFLINE' });
     expect(stationTags([], [eng(true, 0)])[3]?.ok).toBe(false);
     expect(stationTags([], [])[3]?.tip).toBe('No engines installed: no evasion');
+  });
+
+  it('shows EN ROUTE (warn) while a crew member walks to the console', () => {
+    const [w] = stationTags([{ ...con('weapons', null), enRoute: 'Ada' }], []);
+    expect(w).toMatchObject({ ok: false, warn: true, status: 'EN ROUTE', tip: 'Ada is on the way to the weapons console' });
   });
 });

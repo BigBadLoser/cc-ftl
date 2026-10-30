@@ -6,7 +6,8 @@
 
   let { api, onNode }: { api: UiApi; onNode?: (node: string) => void } = $props();
   const jump = (a: UiAlert) => {
-    if (a.subject?.kind === 'node') onNode?.(a.subject.id);
+    if (a.report) api.openFightReport(a.id);
+    else if (a.subject?.kind === 'node') onNode?.(a.subject.id);
     else api.focusAlert(a.id);
   };
   let list = $state<UiAlert[]>([]);
@@ -29,7 +30,7 @@
   const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile']);
   const icon: Record<UiAlertKind, IconName> = {
     'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.downed': 'downed',
-    'crew.starving': 'food', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list',
+    'crew.starving': 'food', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list',
   };
 </script>
 
@@ -42,7 +43,7 @@
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
     {:else}
-      <button class="go" disabled={toast ? false : !a.subject} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+      <button class="go" disabled={toast ? false : !a.subject && !a.report} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
     <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
   </div>

@@ -90,7 +90,7 @@
 
 <svelte:window onpointerdown={(e) => { if (pop && !(e.target as Element).closest?.('[data-testid="build-popover"], .card')) dismiss(); }} />
 
-<div class="cat" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
+<div class="cat legacy" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}

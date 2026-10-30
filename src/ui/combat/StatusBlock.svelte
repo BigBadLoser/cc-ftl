@@ -21,7 +21,7 @@
     </div>
     <div class="line" title="Shield layers">
       <span class="lbl">Shields</span>
-      <span class="grow"><Pips total={me.shield.max} on={me.shield.layers} width={22} height={12} /></span>
+      <span class="grow"><Pips total={me.shield.max} on={me.shield.layers} height={12} fill /></span>
       <b>{me.shield.layers}/{me.shield.max}</b>
     </div>
     <div class="line" title="Chance an incoming shot misses">
@@ -41,7 +41,7 @@
     display: flex;
     align-items: center;
     gap: var(--sp-2);
-    color: var(--cyan);
+    color: var(--hud-ok, var(--cyan));
     height: 20px;
   }
   .grow {

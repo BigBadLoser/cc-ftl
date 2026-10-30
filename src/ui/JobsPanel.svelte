@@ -32,7 +32,7 @@
 </FloatingWindow>
 
 <style>
-  h3 { display: flex; justify-content: space-between; margin: 10px 0 4px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
+  h3 { display: flex; justify-content: space-between; margin: 10px 0 4px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); }
   h3 span { color: var(--dim); text-transform: none; letter-spacing: 0; }
   .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
   .note { margin-top: 10px; }

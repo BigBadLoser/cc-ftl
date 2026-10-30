@@ -41,7 +41,11 @@ export function firingSystem(sim: Sim): void {
       else if (sim.tick >= w.nextShotTick) launchNext(sim, id, w, weaponId as string, def, shipIdOf(sim, m));
       continue;
     }
-    const held = combat.hold && !combat.volley;
+    // The player's weapons have a mode: a held one waits for a volley or for the player to aim it (`once`). Shooting down a hostile shuttle with an
+    // ammo weapon stays automatic. AI ships only know `Combat.hold`.
+    const shuttleShot = !!def.ammo && (!!w.target?.vehicle || (!!def.antiVehicle && !!combat.vehicleTarget && !w.target));
+    const modeHold = !isAiFaction(ship.faction) && w.mode === 'hold' && !w.once && !shuttleShot;
+    const held = (combat.hold || modeHold) && !combat.volley;
     // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
     const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && (!def.ammo || ammoCount(sim, shipId, def.ammo) > 0)));
     const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;
@@ -53,6 +57,7 @@ export function firingSystem(sim: Sim): void {
     addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
+    w.once = false;
     w.volleyTarget = target;
     w.commit = null;
     launchNext(sim, id, w, weaponId as string, def, shipIdOf(sim, m));

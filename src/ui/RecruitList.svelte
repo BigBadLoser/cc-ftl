@@ -24,7 +24,7 @@
           {#if poor}<div class="warn">Not enough credits</div>
           {:else if busy}<div class="warn">The station has a run open</div>
           {:else if partner.hireError}<div class="warn">{REASONS[partner.hireError] ?? partner.hireError}</div>{/if}
-          <button data-testid="recruit-hire" disabled={poor || busy || !!partner.hireError} onclick={() => api.dispatch({ type: 'crew.hire', key: r.key })}>Hire</button>
+          <button class="commit" data-testid="recruit-hire" disabled={poor || busy || !!partner.hireError} onclick={() => api.dispatch({ type: 'crew.hire', key: r.key })}>Hire</button>
         {/if}
       </li>
     {/each}
@@ -42,7 +42,7 @@
   .pay { color: #ffd77a; font-weight: 600; white-space: nowrap; }
   .d { color: var(--dim); font-size: 12px; }
   .warn { color: var(--red); font-size: 12px; }
-  .way { color: var(--cyan); font-size: 12px; }
+  .way { color: var(--ink-accent); font-size: 12px; }
   li button { justify-self: end; min-height: 30px; padding: 0 12px; }
   .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
   .note { margin-top: 8px; }

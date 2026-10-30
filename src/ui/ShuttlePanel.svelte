@@ -67,7 +67,7 @@
 
       <div class="btns">
         {#if s.state === 'stowed'}
-          <button disabled={!s.pilot} data-testid="shuttle-launch" onclick={() => api.dispatch({ type: 'vehicle.launch', vehicle: s.id })}>Launch</button>
+          <button class="commit" disabled={!s.pilot} data-testid="shuttle-launch" onclick={() => api.dispatch({ type: 'vehicle.launch', vehicle: s.id })}>Launch</button>
         {/if}
         {#if s.state === 'docked'}
           <button disabled={!s.pilot} data-testid="shuttle-undock" onclick={() => api.dispatch({ type: 'vehicle.undock', vehicle: s.id })}>Undock</button>
