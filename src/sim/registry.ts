@@ -393,6 +393,8 @@ export interface ModuleDef {
   description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */
   asset: string;
+  /** Wears its ship's livery: the art has a key-colour mask per roof emblem (`<asset>.r{n}.lv.<emblem>`), recoloured. Looks only. */
+  livery?: true;
   footprint: readonly [number, number];
   /** Solid modules block walking on their tiles. */
   solid: boolean;

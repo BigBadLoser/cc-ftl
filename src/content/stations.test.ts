@@ -82,6 +82,18 @@ describe('court floors', () => {
   }, 120000);
 });
 
+describe('court landmarks', () => {
+  it('trading plazas raise a holo column and research gardens a great tree, most of the time', () => {
+    let holo = 0, tree = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      holo += count(gen('station.trading', 'station', seed), 'module.holo_sign');
+      tree += count(gen('station.research', 'station', seed), 'module.tree_large');
+    }
+    expect(holo).toBeGreaterThanOrEqual(4);
+    expect(tree).toBeGreaterThanOrEqual(4);
+  }, 120000);
+});
+
 describe('station generator', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {
     for (const id of ids) {

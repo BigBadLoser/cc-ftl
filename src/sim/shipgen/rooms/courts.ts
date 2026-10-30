@@ -52,9 +52,12 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
   // The landmark: centred on the floor tile nearest the middle that takes it whole, with a clear ring round it.
   const solid = new Set<number>();
   const ring = new Set<number>();
+  /** The power a piece draws (a holo column's light). */
+  const drawOf = (v: Vignette): number => v.mods.reduce((t, m) => t + Math.max(0, -((lay.defs[m.mod] as ModuleDef | undefined)?.power ?? 0)), 0);
   if (plan.centres) {
     const at = [...floor].sort(byMiddle);
     const fits = (centre: Vignette, a: number, r: number): boolean => {
+      if (drawOf(centre) > power.spare) return false;
       const rel = turned(lay.defs, centre, r);
       const relTiles = rel.flatMap((m) => footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot));
       const cx = Math.round((Math.min(...relTiles.map((t) => t.x)) + Math.max(...relTiles.map((t) => t.x))) / 2);
@@ -74,6 +77,7 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
       if (n < rel.length || lay.unreached() > base) { for (let i = 0; i < n; i++) lay.pop(); return false; }
       for (const i of own) solid.add(i);
       for (const i of round) ring.add(i);
+      power.spare -= drawOf(centre);
       placed += n;
       return true;
     };
@@ -161,7 +165,7 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
     for (const a of anchors) {
       if (covered >= target) break;
       const v = theme[Math.floor(rng.next() * theme.length)] as Vignette;
-      const draw = v.mods.reduce((t, m) => t + Math.max(0, -((lay.defs[m.mod] as ModuleDef | undefined)?.power ?? 0)), 0);
+      const draw = drawOf(v);
       if (draw > power.spare) continue;
       for (const r of [0, 1, 2, 3].sort(() => rng.next() - 0.5)) {
         const mods = turned(lay.defs, v, r).map((m) => ({ ...m, x: m.x + (a % W), y: m.y + Math.floor(a / W) }));

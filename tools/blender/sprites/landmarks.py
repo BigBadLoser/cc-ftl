@@ -1,12 +1,14 @@
-"""Court landmarks (family `decor`): one signature piece per court kind, set at the court's middle by the station
-generator. Local frame and placement: modkit.K (front = +v). Four rotations each.
+"""Court landmarks (family `landmarks`): signature pieces the station generator sets at a court's middle. Local frame
+and placement: modkit.K (front = +v). Four rotations each.
 
 - module.holo_sign: a 2x2 plaza holo-column: a stepped plinth, a steel column with brass bands, a slatted band of
   magenta and cyan light round its head (an advert drum), an emitter dish on top.
 - module.tree_large: a 3x3 garden tree: an octagonal raised bed with a seat ledge, a tall tree whose crown clears the
   walls, ground cover round the trunk.
-- module.podium: a 2x2 drill-hall dais: a raised plate with a hazard-striped front edge and a step, a lectern with a lit
-  screen, a mast with the navy banner at the back."""
+- module.banner: a 1x1 banner post: the banner hangs from a crossbar on a post up the middle of its back, in the ship's
+  livery with its roof emblem (roof_livery._emblem) on both faces. The livery is a key-colour mask overlay per emblem,
+  module.banner.r{n}.lv.<dot | delta | cross | star | diamond | plain>, recoloured by the renderer like a container's trim.
+  A row of them marks a drill hall; any faction's room can fly them."""
 import math
 import random
 
@@ -60,35 +62,7 @@ def tree_large(rot):
     return k.build()
 
 
-def podium(rot):
-    k = K(f"podium_{rot}", (2, 2), rot)
-    k.box(0, -0.1, 0.0, 1.8, 1.6, 0.22, "gm", top="gmD", bevel=0.02)                      # the dais
-    k.box(0, 0.78, 0.0, 1.3, 0.24, 0.11, "gm", top="gmD", bevel=0.01)                     # a step at the front
-    for i in range(-4, 5):                                                             # hazard stripes on the front edge
-        k.box(i * 0.2, 0.69, 0.2, 0.1, 0.03, 0.022, "hazY" if i % 2 == 0 else "hazK")
-    k.box(0, 0.05, 0.22, 0.56, 0.4, 0.78, "navy", top="gmD", taper=0.82, bevel=0.015)     # lectern
-    k.box(0, 0.18, 1.0, 0.62, 0.36, 0.04, "steelD", top="steel", rx=-0.35)               # its sloped top
-    k.box(0, 0.2, 1.03, 0.4, 0.2, 0.012, "cyan", rx=-0.35)                               # the lit screen
-    k.box(0, 0.26, 0.45, 0.4, 0.012, 0.16, "plate")                                      # a crest plate on its front
-    k.cyl(0.66, -0.66, 0.22, 0.05, 1.95, "steelL", top="steel", sides=8)                # the mast
-    k.cyl(0.66, -0.66, 2.17, 0.08, 0.06, "ochD", top="ochM", sides=8)                    # finial
-    k.box(0.36, -0.66, 1.45, 0.58, 0.025, 0.66, "navy")                                  # the banner
-    k.box(0.36, -0.65, 1.66, 0.58, 0.03, 0.08, "plate")                                  # its stripe
-    k.box(0.36, -0.65, 1.52, 0.18, 0.03, 0.12, "hazY")                                   # its badge
-    return k.build()
-
-
-SPRITES = []
-for _r in range(4):
-    _flip = _r % 2 == 1
-    for _name, _fp, _fn in (("holo_sign", (2, 2), holo_sign), ("tree_large", (3, 3), tree_large), ("podium", (2, 2), podium)):
-        fp = (_fp[1], _fp[0]) if _flip else _fp
-        SPRITES.append((f"module.{_name}.r{_r}", fp, "prop", lambda r=_r, fn=_fn: fn(r)))
-        if _r == 0:
-            SPRITES.append((f"module.{_name}", fp, "prop", lambda fn=_fn: fn(0)))
-
-
-# ---- variations under review (round 2) ------------------------------------------------------------------------------
+# ---- holo column variations under review -------------------------------------------------------------------------
 
 def _plinth(k):
     k.cyl(0, 0, 0.0, 0.84, 0.1, "steelD", top="steel", sides=8)
@@ -162,60 +136,6 @@ def holo_globe(rot):
     return k.build()
 
 
-def ring_post(k, u, v):
-    k.cyl(u, v, 0.12, 0.07, 0.9, "steelL", top="hazY", sides=8)
-    k.cyl(u, v, 0.98, 0.09, 0.05, "hazY", sides=8)
-
-
-def sparring(rot):
-    """Drill A: a sparring ring: a raised mat, corner posts, three ropes a side."""
-    k = K(f"sparring_{rot}", (3, 3), rot)
-    k.box(0, 0, 0.0, 2.8, 2.8, 0.12, "gmD", top="gm", bevel=0.02)
-    k.box(0, 0, 0.12, 2.5, 2.5, 0.02, "navy", top="hbM")                                 # the mat
-    k.box(0, 0, 0.14, 0.9, 0.9, 0.005, "hbL")                                            # its centre mark
-    c = 1.25
-    for u, v in ((-c, -c), (c, -c), (-c, c), (c, c)):
-        ring_post(k, u, v)
-    for z in (0.42, 0.62, 0.82):                                                       # ropes
-        for u, v, su, sv in ((0, -c, 2.5, 0.03), (0, c, 2.5, 0.03), (-c, 0, 0.03, 2.5), (c, 0, 0.03, 2.5)):
-            k.box(u, v, z, su, sv, 0.03, "rH" if z == 0.62 else "lvR")
-    return k.build()
-
-
-def targets(rot):
-    """Drill B: a target stand: three man-shaped targets on posts in a striped bay, a sandbag wall behind."""
-    k = K(f"targets_{rot}", (3, 2), rot)
-    k.box(0, 0, 0.0, 2.8, 1.8, 0.04, "dark", top="dark")
-    for i in range(-6, 7):                                                             # hazard stripes on the bay's front edge
-        k.box(i * 0.2, 0.86, 0.04, 0.1, 0.08, 0.01, "hazY")
-    for u in (-0.9, 0.0, 0.9):
-        k.box(u, -0.1, 0.04, 0.05, 0.05, 0.75, "steel")
-        k.box(u, -0.1, 0.8, 0.4, 0.04, 0.55, "lvW", top="lvW2")                          # the body
-        k.cyl(u, -0.1, 1.35, 0.11, 0.05, "lvW", sides=10)
-        k.box(u, -0.08, 1.37, 0.2, 0.03, 0.2, "lvW")                                     # the head
-        k.box(u, -0.07, 1.0, 0.16, 0.02, 0.16, "lvR")                                    # bullseye
-    for u in (-1.1, -0.55, 0.0, 0.55, 1.1):                                            # sandbags
-        k.box(u, -0.72, 0.04, 0.5, 0.3, 0.22, "gdM", top="gd", bevel=0.05)
-        k.box(u + 0.27, -0.72, 0.26, 0.5, 0.3, 0.2, "gdM", top="gd", bevel=0.05)
-    return k.build()
-
-
-def memorial(rot):
-    """Drill C: a memorial: a stepped stone plinth, a helmet on a planted rifle, two lamps, a brass plaque."""
-    k = K(f"memorial_{rot}", (2, 2), rot)
-    k.box(0, 0, 0.0, 1.8, 1.8, 0.1, "steelD", top="steel")
-    k.box(0, 0, 0.1, 1.3, 1.3, 0.12, "c4F3", top="c4F1")
-    k.box(0, 0, 0.22, 0.8, 0.8, 0.5, "c4F2", top="c4F0", bevel=0.02)
-    k.box(0, 0.41, 0.36, 0.44, 0.012, 0.2, "ochM")                                       # plaque
-    k.box(0, 0, 0.72, 0.05, 0.05, 0.75, "gm")                                            # the rifle, muzzle down
-    k.box(0, 0.02, 1.2, 0.07, 0.12, 0.25, "gmD")                                         # its stock
-    k.cyl(0, 0, 1.42, 0.17, 0.12, "jacketD", top="jacket", sides=10, rtop=0.12)          # the helmet
-    for u in (-0.75, 0.75):                                                            # two lamps
-        k.cyl(u, 0.75, 0.1, 0.06, 0.45, "steel", sides=8)
-        k.box(u, 0.75, 0.55, 0.1, 0.1, 0.1, "lampY")
-    return k.build()
-
-
 EMBLEMS = ("dot", "delta", "cross", "star", "diamond")
 
 
@@ -273,11 +193,17 @@ def banner(rot, emblem=None, keyed=False):
     return objs + faces
 
 
-VARIANTS = (("holo_ring", (2, 2), holo_ring), ("holo_pylon", (2, 2), holo_pylon), ("holo_globe", (2, 2), holo_globe),
-            ("sparring", (3, 3), sparring), ("targets", (3, 2), targets), ("memorial", (2, 2), memorial),
-            ("banner", (1, 1), banner),
-            *((f"banner.lv.{e or 'plain'}", (1, 1), lambda r, e=e: banner(r, e, True)) for e in (*EMBLEMS, None)))
-for _r in range(4):
-    for _name, _fp, _fn in VARIANTS:
-        fp = (_fp[1], _fp[0]) if _r % 2 == 1 else _fp
-        SPRITES.append((f"module.{_name}.r{_r}", fp, "prop", lambda r=_r, fn=_fn: fn(r)))
+def _rots(name, fp, fn):
+    out = []
+    for r in range(4):
+        f = (fp[1], fp[0]) if r % 2 == 1 else fp
+        out.append((f"module.{name}.r{r}", f, "prop", lambda r=r: fn(r)))
+    return out + [(f"module.{name}", fp, "prop", lambda: fn(0))]
+
+
+# The family `landmarks`: the chosen pieces, the banner's livery masks (module.banner.r{n}.lv.<emblem | plain>).
+SPRITES = [*_rots("holo_sign", (2, 2), holo_sign), *_rots("tree_large", (3, 3), tree_large), *_rots("banner", (1, 1), banner),
+           *((f"module.banner.r{r}.lv.{e or 'plain'}", (1, 1), "prop", lambda r=r, e=e: banner(r, e, True))
+             for r in range(4) for e in (*EMBLEMS, None))]
+# Holo column variations still under review (not built with the family): build them by name for a contact sheet.
+REVIEW = [*_rots("holo_ring", (2, 2), holo_ring), *_rots("holo_pylon", (2, 2), holo_pylon), *_rots("holo_globe", (2, 2), holo_globe)]

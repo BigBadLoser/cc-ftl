@@ -113,6 +113,12 @@ const arboretum: Vignette = {
   ],
 };
 
+/** Signature landmarks (rooms/courts.ts sets them at a court's middle): a plaza's holo column, a garden's great tree, a
+ *  drill hall's row of banner posts in the station's livery. */
+const holoColumn: Vignette = { name: 'holo column', mods: [{ mod: 'module.holo_sign', x: 0, y: 0 }] };
+const greatTree: Vignette = { name: 'great tree', mods: [{ mod: 'module.tree_large', x: 0, y: 0 }] };
+const banners: Vignette = { name: 'banners', mods: [0, 2, 4].map((x) => ({ mod: 'module.banner', x, y: 0 })) };
+
 /** Landmarks, set at the middle of a big court (rooms/vignettes.ts). A bazaar: four stalls round a table. */
 const bazaar: Vignette = {
   name: 'bazaar', mods: [
@@ -168,7 +174,7 @@ export const plaza = {
       name: 'market', weight: 2,
       court: {
         zones: [[stall, pallets], [bistro, longTable, lounge], [foodStand, bistro], [grove, benchPots]], hedge: 'module.planter', fill: 0.3,
-        centres: [bazaar, marketCross, square], finish: { walk: Finish.Walk, zone: Finish.Market, zones: [undefined, undefined, undefined, Finish.Soil] },
+        centres: [holoColumn, marketCross, square], finish: { walk: Finish.Walk, zone: Finish.Market, zones: [undefined, undefined, undefined, Finish.Soil] },
       },
       vignettes: { pieces: [stall, stall, stall, pallets, pallets, bistro, foodStand, kiosk, grove, benchPots], gap: 8, upTo: 0.12, centre: bazaar },
       steps: [
@@ -179,7 +185,7 @@ export const plaza = {
       name: 'food court', weight: 1,
       court: {
         zones: [[foodStand, bistro], [longTable, lounge], [grove, benchPots], [stall, kiosk]], hedge: 'module.planter', fill: 0.3,
-        centres: [bazaar, marketCross, square], finish: { walk: Finish.Walk, zone: Finish.Market, zones: [undefined, undefined, Finish.Soil] },
+        centres: [holoColumn, marketCross, square], finish: { walk: Finish.Walk, zone: Finish.Market, zones: [undefined, undefined, Finish.Soil] },
       },
       vignettes: { pieces: [foodStand, foodStand, longTable, bistro, lounge, stall, pallets, kiosk, grove, benchPots], gap: 7, upTo: 0.12, centre: bazaar },
       steps: [
@@ -197,7 +203,7 @@ export const garden = {
       name: 'garden', weight: 1,
       court: {
         zones: [[grove, benchPots], [labBench, labCluster], [lounge, kiosk]], hedge: 'module.planter', fill: 0.35,
-        centres: [arboretum, grove, square], finish: { walk: Finish.Walk, centre: Finish.Soil, zones: [Finish.Soil, Finish.Plain, Finish.Plain] },
+        centres: [greatTree, arboretum, grove, square], finish: { walk: Finish.Walk, centre: Finish.Soil, zones: [Finish.Soil, Finish.Plain, Finish.Plain] },
       },
       vignettes: { pieces: [grove, grove, benchPots, labBench, labCluster, kiosk, lounge], gap: 8, upTo: 0.12, centre: arboretum },
       steps: [
@@ -213,7 +219,7 @@ export const drill = {
   arrangements: [
     {
       name: 'drill hall', weight: 1,
-      court: { zones: [[rackIsland], [briefing]], fill: 0.3, centres: [parade, muster], finish: { zone: Finish.Tread, centre: Finish.Tread } },
+      court: { zones: [[rackIsland], [briefing]], fill: 0.3, centres: [banners, parade, muster], finish: { zone: Finish.Tread, centre: Finish.Tread } },
       vignettes: { pieces: [rackIsland, briefing], gap: 10, upTo: 0.04, centre: parade },
       steps: [
         { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },
