@@ -201,8 +201,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let lastFrame = animNow();
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
-  const backdropParam = new URLSearchParams(window.location.search).get('backdrop');
-  const backdrop = createBackdrop(atlas, backdropParam === 'b' ? 'b' : 'c');
+  const backdrop = createBackdrop(atlas);
   stage.addChild(backdrop.root);
   const W = createWorldStack();
   stage.addChild(W.root);

@@ -1,18 +1,12 @@
 import { currentNode, galaxyIndex, type Sim } from '../sim';
 import type { BackdropSpec } from '../render/backdrop';
+import { strHash } from '../render/backdropPlan';
 import { NEBULA_SAMPLES, nebulaAround } from './starmapNebula';
-
-/** A small stable string hash (FNV-1a). */
-function hash(s: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
-  return h;
-}
 
 /** What the space behind the ships is made of at the current node: a seed, the galaxy's nebula density here, the sector's central body. */
 export function backdropSpecOf(sim: Sim): BackdropSpec {
   const node = currentNode(sim);
-  const seed = hash(`${sim.seed}:${node?.id ?? 'none'}`);
+  const seed = strHash(`${sim.seed}:${node?.id ?? 'none'}`);
   let density = 0;
   if (node) {
     const tiles = nebulaAround(sim, node.x, node.y);
@@ -32,5 +26,5 @@ export function backdropSpecOf(sim: Sim): BackdropSpec {
     }
   }
   const body = node ? galaxyIndex(sim.galaxy).sectors.get(node.sector)?.body?.kind ?? null : null;
-  return { seed, density, body };
+  return { seed, density, body, bodyHash: strHash(node?.sector ?? '') };
 }

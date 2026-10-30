@@ -1,31 +1,14 @@
 import { Container, Graphics, Sprite, Texture, TilingSprite } from 'pixi.js';
 import type { Atlas } from './assets/loader';
+import { backdropBodySprite, bodySpot, HAS_PROMINENCES } from './backdropPlan';
 
 /**
- * The space behind the ships (issue #217 prototype). Two looks, picked by `?backdrop=b|c` (default c); both show the node's own
- * star or planet, large, dim and far off, in a spot clear of the HUD:
- *  b  quiet depth: parallax star layers and a faint nebula wash.
- *  c  rich: denser coloured clouds, dust and brighter stars.
+ * The space behind the ships (issue #217): parallax star layers, a faint nebula wash tinted by the galaxy nebula at the node, and the
+ * node's own star or planet, large, dim and far off the left side, clear of the HUD.
  * Every layer is a tiling sprite of a small texture made once per node (seeded), shown at a whole number of device px per texel
  * with nearest sampling, and moved by a fraction of the camera pan. Nothing is redrawn per frame; `update` sets a few offsets.
  * PLACEHOLDER art: the final textures come from the Blender sprite pipeline.
  */
-export type BackdropMode = 'b' | 'c';
-
-/**
- * The art ids to try for a body kind and variant (0..2), best first. The dedicated backdrop bodies (256 px frame, body radius 80 px,
- * so a whole-number scale of 4 fits a 1920x950 @2x screen) are not made yet: until they are, the starmap's body sprite stands in.
- * Both have the same layout (square frame, anchor at the centre, body radius 5/16 of the frame), so only the id changes.
- */
-export function backdropBodySprite(kind: string, variant: number): string[] {
-  return [`backdrop.body.${kind}.v${variant}`, `backdrop.body.${kind}`, `starmap.body.${kind}.v${variant}`, `starmap.body.${kind}`];
-}
-
-/** Kinds whose starmap sprite carries prominence loops standing off the limb (they read as a pendant when scaled up). */
-const HAS_PROMINENCES = new Set(['star', 'red_dwarf', 'blue_giant']);
-
-/** Spots for the body as fractions of the screen (centre x, y): down the left side, clear of the HUD bars, goals column and tools. */
-const BODY_SPOTS: readonly (readonly [number, number])[] = [[0.08, 0.3], [0.07, 0.55], [0.08, 0.8]];
 
 export interface BackdropSpec {
   /** Per-node seed. */
@@ -34,6 +17,8 @@ export interface BackdropSpec {
   density: number;
   /** The sector's central body kind (`star`, `gas_giant`, ...), or null. */
   body: string | null;
+  /** Hash of the sector id: picks the body's variant as the starmap does. */
+  bodyHash: number;
 }
 
 export interface Backdrop {
@@ -150,13 +135,13 @@ interface Layer {
   px: number;
 }
 
-export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
+export function createBackdrop(atlas: Atlas): Backdrop {
   const root = new Container();
   root.eventMode = 'none';
   root.interactiveChildren = false;
   let layers: Layer[] = [];
   let textures: Texture[] = [];
-  let body: { sprite: Sprite; mask: Graphics; kind: string; variant: number; fx: number; fy: number; factor: number } | null = null;
+  let body: { sprite: Sprite; mask: Graphics; kind: string; hash: number; fx: number; fy: number; factor: number } | null = null;
   let key = '';
   let ref: { x: number; y: number } | null = null;
   let size = { w: 1, h: 1, dpr: 1 };
@@ -184,21 +169,11 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
   function build(spec: BackdropSpec): void {
     const s = spec.seed;
     const hue = NEBULA_HUES[s % NEBULA_HUES.length]!;
-    const hue2 = NEBULA_HUES[(s >>> 5) % NEBULA_HUES.length]!;
     const d = Math.max(0, Math.min(1, spec.density));
     // Order is back to front.
-    if (mode === 'c') {
-      add(cloudTile(s + 11, 128, hue2, 0.4 + d * 0.4, [0.04, 0.07, 0.10], 0.9), 0.025, 9);
-      add(cloudTile(s + 23, 128, hue, 0.45 + d * 0.4, [0.06, 0.11, 0.16]), 0.05, 6);
-      add(starTile(s + 31, 256, 90, [0.3, 0.6], 0), 0.04, 2);
-      add(starTile(s + 37, 256, 300, [0.12, 0.3], 0, [hue, hue2, [255, 255, 255]]), 0.08, 2);
-      add(starTile(s + 41, 256, 40, [0.5, 0.85], 6), 0.12, 3);
-      add(starTile(s + 43, 256, 14, [0.7, 1], 14), 0.2, 3);
-    } else {
-      add(cloudTile(s + 11, 128, hue, 0.12 + d * 0.5, [0.035, 0.06, 0.09]), 0.03, 8);
-      add(starTile(s + 31, 256, 70, [0.25, 0.5], 0), 0.04, 2);
-      add(starTile(s + 41, 256, 34, [0.4, 0.75], 4), 0.1, 3);
-    }
+    add(cloudTile(s + 11, 128, hue, 0.12 + d * 0.5, [0.035, 0.06, 0.09]), 0.03, 8);
+    add(starTile(s + 31, 256, 70, [0.25, 0.5], 0), 0.04, 2);
+    add(starTile(s + 41, 256, 34, [0.4, 0.75], 4), 0.1, 3);
     if (spec.body) {
       const sprite = new Sprite(Texture.EMPTY);
       sprite.anchor.set(0.5);
@@ -210,8 +185,7 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
       // Behind every layer: the clouds and stars drift over it, which is what makes it far.
       root.addChildAt(sprite, 0);
       root.addChild(mask);
-      const spot = BODY_SPOTS[s % BODY_SPOTS.length]!;
-      body = { sprite, mask, kind: spec.body, variant: (s >>> 4) % 3, fx: spot[0] + ((s >>> 8) % 7) / 100, fy: spot[1] - ((s >>> 12) % 5) / 100, factor: 0.012 };
+      body = { sprite, mask, kind: spec.body, hash: spec.bodyHash, ...bodySpot(s), factor: 0.012 };
     }
     layout();
   }
@@ -231,7 +205,7 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
     ref ??= { x: originX, y: originY };
     const sp = body.sprite;
     // Looked up every frame: the sheet is an env sheet the atlas may evict, and a lookup keeps it in use (and says when it is gone).
-    const ids = backdropBodySprite(body.kind, body.variant);
+    const ids = backdropBodySprite((id) => !!atlas.manifest.assets[id], body.kind, body.hash);
     const st = atlas.firstOf(ids);
     if (!st) {
       sp.visible = false;
@@ -258,7 +232,7 @@ export function createBackdrop(atlas: Atlas, mode: BackdropMode): Backdrop {
   return {
     root,
     setSpec(spec) {
-      const k = `${spec.seed}|${spec.density.toFixed(2)}|${spec.body}`;
+      const k = `${spec.seed}|${spec.density.toFixed(2)}|${spec.body}|${spec.bodyHash}`;
       if (k === key) return;
       key = k;
       clear();
