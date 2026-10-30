@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
 
   /** A small state tag: caps text in a thin outline of its own colour. */
-  let { tone = 'dim', children }: { tone?: 'red' | 'amber' | 'green' | 'dim'; children: Snippet } = $props();
+  let { tone = 'dim', children }: { tone?: 'red' | 'amber' | 'green' | 'cyan' | 'dim'; children: Snippet } = $props();
 </script>
 
 <span class="pill {tone}">{@render children()}</span>
@@ -21,5 +21,6 @@
   .red { color: var(--hostile); }
   .amber { color: var(--amber); }
   .green { color: var(--green); }
+  .cyan { color: var(--cyan); }
   .dim { color: var(--dim); }
 </style>

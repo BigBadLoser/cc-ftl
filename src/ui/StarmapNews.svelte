@@ -12,7 +12,7 @@
   const age = (n: UiNews): string => (turn - n.turn <= 0 ? 'now' : `${turn - n.turn} turn${turn - n.turn > 1 ? 's' : ''} ago`);
 </script>
 
-<aside class="sheet news" data-testid="starmap-news">
+<aside class="sheet news steel-tokens" data-testid="starmap-news">
   <PanelHead icon="list" title="News" sub={news.length ? `${news.length} recent` : 'quiet'} onBack={onClose} backIcon="close" backTitle="Close news" backTestId="starmap-news-close" />
   {#if news.length}
     <ul>

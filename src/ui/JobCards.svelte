@@ -67,7 +67,7 @@
         {@render head(j)}
         {@render strength(j)}
         <div class="act">
-          <button data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
+          <button class="commit" data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
         </div>
       </li>
     {/each}

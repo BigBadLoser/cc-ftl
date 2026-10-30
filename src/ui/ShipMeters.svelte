@@ -38,13 +38,13 @@
   .state { font-weight: 400; font-size: 11px; color: var(--dim); }
   .state.bad { color: var(--amber); }
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-  .m { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); }
+  .m { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-accent); }
   .m b { color: var(--text); font-weight: 600; min-width: 2.6em; text-align: right; }
   .hu { flex: 1; min-width: 110px; }
   .hu.low { color: var(--red); } .hu.low .bar > i { background: var(--red); }
   .pips { display: inline-flex; gap: 3px; }
-  .pips i { width: 10px; height: 10px; border: 1px solid #3a6f86; background: transparent; }
-  .pips i.on { background: #5fe0ff; border-color: #bff3ff; }
+  .pips i { width: 10px; height: 10px; border: 1px solid var(--dim); background: transparent; }
+  .pips i.on { background: var(--hud-ok); border-color: var(--hud-ok); }
   .pips em { color: var(--dim); font-style: normal; }
   .mini { width: 30px; height: 4px; }
   .grow { flex: 1; min-width: 40px; }

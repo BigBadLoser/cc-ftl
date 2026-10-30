@@ -77,7 +77,7 @@ export function capturePrize(sim: Sim, entity: number): void {
   stockLoot(sim, entity, hullValue);
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
-    if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
+    if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { once: false, charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
   }
   const combat = sim.world.get(entity, CombatC);
   if (combat) Object.assign(combat, { target: null, volley: false, hold: true });

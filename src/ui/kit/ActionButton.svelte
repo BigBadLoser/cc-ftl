@@ -46,17 +46,20 @@
     opacity: 1;
     cursor: default;
   }
+  .plain {
+    border-color: var(--btn-edge, var(--line));
+  }
   .btn.off .content {
     opacity: 0.4;
   }
   .go:not(:disabled) {
-    background: var(--go);
-    border-color: var(--cyan);
+    background: var(--btn-go, var(--go));
+    border-color: var(--btn-go-edge, var(--cyan));
     color: #fff;
   }
   .active {
     background: var(--panel-3);
-    border-color: var(--cyan);
+    border-color: var(--btn-active-edge, var(--cyan));
     color: #fff;
   }
   .amber {

@@ -22,7 +22,7 @@
   }
 </script>
 
-<div class="veil" class:fixed data-testid={scan ? 'scan-modal' : 'interdict-modal'}>
+<div class="veil steel-tokens" class:fixed data-testid={scan ? 'scan-modal' : 'interdict-modal'}>
   <div class="card" role="dialog" aria-modal="true" aria-label={encounter.title}>
     <PanelHead icon={scan ? 'target' : 'alert'} title={encounter.title} sub={encounter.node} foe />
     <div class="body">
@@ -68,8 +68,9 @@
   .chip.warn { color: var(--red); }
   .choices { display: grid; gap: 6px; }
   .choices button { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; font: 600 16px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
+  .choices button:not(.fight) { border-color: var(--act-edge); }
   .lbl { display: inline-flex; align-items: center; gap: 8px; }
-  .choices button small { font: 600 14px var(--head-font); letter-spacing: 0.04em; text-transform: none; color: var(--cyan); text-align: right; }
+  .choices button small { font: 600 14px var(--head-font); letter-spacing: 0.04em; text-transform: none; color: var(--ink-accent); text-align: right; }
   .choices button:disabled small { color: var(--red); }
   .choices button.fight { border-color: var(--red); }
   @media (max-width: 600px) {

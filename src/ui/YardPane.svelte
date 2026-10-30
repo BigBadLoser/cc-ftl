@@ -83,7 +83,7 @@
   .bar { height: 8px; background: var(--bg); border: 1px solid var(--line); }
   .bar i { display: block; height: 100%; background: var(--cyan); }
   button { min-height: 32px; font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
+  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
   .go:disabled { opacity: 0.4; }
   .stop { border-color: var(--red); color: var(--red); }
   .sub { color: var(--dim); font-weight: 400; font-size: 11px; }

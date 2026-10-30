@@ -10,6 +10,7 @@
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
   import { isTypingTarget } from '../keys';
+  import './steel.css';
 
   /**
    * The combat view (issue #186): while in combat this replaces the colony panels. Enemy card top left, your ship's strip along the bottom.
@@ -48,7 +49,7 @@
     if (enemy.state === 'disabled') return { text: 'Disabled', tone: 'amber' };
     if (enemy.state !== 'active') return { text: enemy.state, tone: 'dim' };
     if (enemy.heat.lockout > 0) return { text: 'Overheated', tone: 'green' };
-    if (me?.hold) return { text: 'You hold fire', tone: 'amber' };
+    if (me?.hold || me?.holdAll) return { text: 'You hold fire', tone: 'amber' };
     if (enemy.shield.max > 0 && enemy.shield.layers === 0) return { text: 'Shields down', tone: 'green' };
     return { text: 'Hostile', tone: 'red' };
   });
@@ -95,13 +96,20 @@
     const k = e.key.toLowerCase();
     // Thermal overload: the strip is locked.
     if (me.heat.lockout > 0 && /^[qwevhfg]$/.test(k)) return consume(e);
+    // Shift+Q/W/E/R flips that weapon between AUTO and HOLD.
+    if (e.shiftKey && /^[qwer]$/.test(k)) {
+      const w = weaponForKey(k, me.weapons);
+      if (w) api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: w.id, mode: w.mode === 'hold' ? 'auto' : 'hold' });
+      else return; // no weapon in that slot: R falls through to draft as before
+      return consume(e);
+    }
     // Weapon hotkeys are Q W E R (1-3 stay the game-speed keys). R is also the crew-draft key (controller.ts): in combat it picks weapon 4
     // only when the ship has a fourth weapon; with three or fewer it falls through to draft as before (see weaponKeys.ts).
     const w = weaponForKey(k, me.weapons);
     if (w) select(w.id);
     else if (/^[qwer]$/.test(k)) return;
     else if (k === 'v') api.dispatch({ type: 'combat.fireVolley', ship: me.ship });
-    else if (k === 'h') api.dispatch({ type: 'combat.setHold', ship: me.ship, hold: !me.hold });
+    else if (k === 'h') api.dispatch({ type: 'combat.holdAll', ship: me.ship, hold: !me.holdAll });
     else if (k === 'f') {
       if (me.ftl >= me.ftlMax) flee();
     } else if (k === 'g') vent();

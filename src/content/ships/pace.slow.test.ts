@@ -3,7 +3,8 @@ import { CrewC, DeadC, DownedC, PositionC, newGame, type SimEvent } from '../../
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
-import { CombatC } from '../../sim';
+import { CombatC, ModuleC } from '../../sim';
+import { WeaponC } from '../../sim/combat/components';
 import { ventError } from '../../sim/combat/heat';
 import { HEAT_MAX } from '../../sim/combat/heatTuning';
 import { shotAboutToLand } from '../../sim/systems/heatAi';
@@ -14,8 +15,8 @@ const CRITICAL = ['module.reactor', 'module.lifeSupport', 'module.shieldGen', 'm
 interface Pace { seconds: number; winner: 'player' | 'raider' | 'none'; down: number; dead: number; critical: number }
 
 /**
- * Starter ship vs one raider, default crew behaviour, default targeting. The player is a scripted *basic player*: weapons on auto (the panel's
- * whole-ship target, nothing else), and the one heat habit a player must have: vent when the meter is at 70% or more and no enemy shot is about
+ * Starter ship vs one raider, default crew behaviour, default targeting. The player is a scripted *basic player*: every weapon on auto (the
+ * missile launcher starts on hold, so this is one Shift+E; the user's call) at the panel's whole-ship target, nothing else, and the one heat habit a player must have: vent when the meter is at 70% or more and no enemy shot is about
  * to land (the same "shot soon" rule the enemy AI uses). It never overcharges. The ship does nothing about heat by itself, so without this habit
  * it would overheat; the test models a player who plays the basics and nothing clever.
  */
@@ -26,6 +27,9 @@ function paceFight(seed: number, maxMinutes = 12): Pace {
   sim.step();
   // What the combat panel does on its own when a hostile appears: the whole ship is the target.
   sim.enqueue({ type: 'combat.setTarget', ship: mine, weaponId: null, targetShip: shipIds(sim)[1] as number, targetModuleId: 0 });
+  for (const w of sim.world.query(WeaponC, ModuleC)) {
+    if (shipIdOf(sim, sim.world.get(w, ModuleC)) === mine) sim.enqueue({ type: 'combat.setWeaponMode', ship: mine, weaponId: w, mode: 'auto' });
+  }
   const critical = new Set<number>();
   let seconds = maxMinutes * 60;
   let winner: Pace['winner'] = 'none';

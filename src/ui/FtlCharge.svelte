@@ -29,10 +29,10 @@
 <style>
   .ftl { display: grid; gap: 4px; }
   .line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .state { display: inline-flex; align-items: center; gap: 6px; color: var(--cyan); font-size: 13px; min-width: 0; }
+  .state { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-accent); font-size: 13px; min-width: 0; }
   .state.ready { color: var(--green); }
   button { font: 600 13px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; white-space: nowrap; }
-  .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
+  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
   .go:disabled { opacity: 0.4; }
   .note { font-size: 11px; color: var(--dim); } .note.bad { color: var(--red); }
 </style>

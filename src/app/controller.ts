@@ -2,11 +2,12 @@ import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
-import type { UiSubject, UiToolState } from '../ui/api';
+import type { UiFightReport, UiSubject, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
 import type { InputHandlers, Tile } from './input';
 import { createPaintTools } from './paintTools';
 import { createAlerts, type Alerts } from './alerts';
+import { createFightReporter } from './fightReport';
 import { createEventLog, type EventLog } from './eventLog';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
@@ -50,6 +51,8 @@ export interface Controller {
   /** "Target in view": the armed aim and how to arm it. */
   aiming: Aiming;
   alerts: Alerts;
+  /** The post-fight breakdown card: `open` holds its data while it is showing. */
+  fightReport: { open: Readable<UiFightReport | null>; show(alertId?: number): void; close(): void };
   log: EventLog;
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
@@ -82,6 +85,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
   const log = createEventLog(sim);
+  const reporter = createFightReporter(sim);
+  let lastReport: UiFightReport | null = null;
+  const reportOpen = createStore<UiFightReport | null>(null);
   const crewSel = createStore<number | null>(null);
   const group = createStore<number[]>([]);
   const shuttleSel = createStore<number | null>(null);
@@ -230,6 +236,18 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     tool,
     placeHint,
     alerts,
+    fightReport: {
+      open: reportOpen,
+      show(alertId) {
+        if (alertId !== undefined) alerts.dismiss(alertId);
+        else alerts.clear('fr');
+        reportOpen.set(lastReport);
+      },
+      close() {
+        alerts.clear('fr');
+        reportOpen.set(null);
+      },
+    },
     log,
     selectedModule: modSel,
     selectedShip: shipSel,
@@ -274,9 +292,20 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
         else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
+      if (events.some((e) => e.type === 'combat.started')) {
+        // The next fight closes the last one's card and its alert.
+        alerts.clear('fr');
+        reportOpen.set(null);
+      }
+      const done = reporter.onEvents(events);
+      if (done) {
+        lastReport = done.report;
+        alerts.post({ kind: 'fight.report', key: 'fr', text: done.summary.text, report: true });
+      }
       alerts.onEvents(events);
       alerts.syncIncoming();
       log.onEvents(events);
+      if (done) log.note(done.summary); // after the per-module lines, so the summary reads last
     },
     attach(renderer) {
       r = renderer;

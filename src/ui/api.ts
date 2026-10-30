@@ -480,7 +480,7 @@ export type UiSubject =
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.starving'
-  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead';
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -503,18 +503,25 @@ export interface UiLogEntry {
   amount?: number;
   /** Wall-clock ms when the entry was added or last folded into; drives the brief highlight. */
   born: number;
+  /** Destructions on one ship that fold into this line (module names), so more can join while the window is open. */
+  fold?: { ship: number; enemy: boolean; names: string[] };
 }
 
 /** A weapon module of the player's ship. */
 export interface UiWeapon {
   id: number;
+  /** The module's full name (the card's tooltip). */
   name: string;
+  /** One-line display name for the card (WeaponDef.shortName, else the module name). */
+  short: string;
   /** 0..1. */
   charge: number;
   /** Missiles in stock for ammo weapons, null for weapons that use none. */
   ammo: number | null;
   ion: boolean;
   powered: boolean;
+  /** `auto` fires when charged; `hold` waits for a volley or for the player to aim it (then it fires once and stays on hold). */
+  mode: 'auto' | 'hold';
   /** Own target label, or null when it uses the ship-wide one. */
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */
@@ -529,6 +536,8 @@ export interface UiConsole {
   kind: 'weapons' | 'shields' | 'helm';
   name: string;
   operator: string | null;
+  /** Crew member who took the console job and is walking there (null when nobody is on the way). */
+  enRoute: string | null;
   powered: boolean;
 }
 
@@ -638,7 +647,7 @@ export interface UiAiming {
 
 export interface UiCombat {
   inCombat: boolean;
-  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ idle: string | null; /** Enemy shots committed to or flying at your ship, soonest first. */ incoming: UiIncoming[] }) | null;
+  player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ holdAll: boolean; idle: string | null; /** Enemy shots committed to or flying at your ship, soonest first. */ incoming: UiIncoming[] }) | null;
   /** Hostile ships (not fled), nearest first. */
   enemies: UiShipCombat[];
 }
@@ -992,6 +1001,33 @@ export interface UiAlert {
   subject: UiSubject | null;
   /** Event notices: the sim notice id (tap opens its lead when `lead`), and a title shown above the text. */
   notice?: { id: number; lead: boolean; title: string };
+  /** A click opens the fight breakdown card (api.openFightReport) instead of moving the camera. */
+  report?: boolean;
+}
+
+/** One module or crew member in a fight report; a click jumps to `subject` when it has one. */
+export interface UiFightLine { name: string; subject: UiSubject | null }
+
+/** What a finished fight cost, collected from its events (see app/fightReport.ts). Hull figures are 0..1 integrity. */
+export interface UiFightReport {
+  outcome: 'destroyed' | 'fled' | 'youFled' | 'captured' | 'disabled' | 'lost' | 'ended';
+  enemy: string;
+  seconds: number;
+  hullBefore: number;
+  hullAfter: number;
+  /** The enemy's hull as of the last tick it was seen (0..1), or null when it was never seen. */
+  enemyHull: number | null;
+  /** Enemy crew killed (deaths off your ship). */
+  enemyCrew: number;
+  lost: UiFightLine[];
+  /** Hit but still standing. */
+  damaged: UiFightLine[];
+  down: UiFightLine[];
+  dead: UiFightLine[];
+  enemyLost: UiFightLine[];
+  ammo: { name: string; n: number }[];
+  /** The captured ship's name, when the fight ended in a capture. */
+  prize: string | null;
 }
 
 export interface UiLegend {
@@ -1194,6 +1230,10 @@ export interface UiApi {
   overlayList: { id: string; label: string }[];
   overlayLegend(id: string): UiLegend | null;
   dismissAlert(id: number): void;
+  /** The open post-fight breakdown card's data (null while closed). Opening it clears its alert; the next fight starting closes it. */
+  fightReport: Subscribable<UiFightReport | null>;
+  openFightReport(alertId?: number): void;
+  closeFightReport(): void;
   /** Move the camera to an alert's location. */
   focusAlert(id: number): void;
   /** Jump to a log entry's subject: a tile, crew member or ship (a node is the UI's to open on the starmap). */

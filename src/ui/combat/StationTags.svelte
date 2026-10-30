@@ -12,7 +12,7 @@
 <Frame title="Stations" {style}>
   <div class="tags">
     {#each tags as t (t.tag)}
-      <StatusTag tag={t.tag} status={t.status} ok={t.ok} title={t.tip} />
+      <StatusTag tag={t.tag} status={t.status} ok={t.ok} warn={t.warn} title={t.tip} />
     {/each}
   </div>
 </Frame>
@@ -22,6 +22,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
-    height: 42px;
+    flex: 1;
+    min-height: 42px;
   }
 </style>

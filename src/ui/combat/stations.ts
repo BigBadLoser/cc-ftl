@@ -6,6 +6,8 @@ export interface StationTag {
   label: string;
   /** Manned and powered (consoles), or online (engines). */
   ok: boolean;
+  /** Someone is on the way: shown amber between NO CREW and MANNED. */
+  warn?: boolean;
   status: string;
   tip: string;
 }
@@ -32,6 +34,9 @@ function consoleTag(consoles: readonly UiConsole[], def: (typeof CONSOLES)[numbe
   if (c && ok) tip = `${def.label} manned by ${c.operator}`;
   else if (!c) tip = `${def.label}: no console installed. ${bad}`;
   else if (!c.powered) tip = `${def.label} console unpowered. ${bad}`;
+  if (!ok && c?.powered && c.enRoute) {
+    return { tag: def.tag, label: def.label, ok: false, warn: true, status: 'EN ROUTE', tip: `${c.enRoute} is on the way to the ${def.label.toLowerCase()} console` };
+  }
   return { tag: def.tag, label: def.label, ok, status: ok ? 'MANNED' : 'NO CREW', tip };
 }
 

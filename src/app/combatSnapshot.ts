@@ -1,5 +1,5 @@
 import {
-  CombatC, CrewC, IonC, ModuleC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
+  CombatC, CrewC, IonC, ModuleC, JobC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
   type Combat, type Sim, type Target,
 } from '../sim';
 import type { UiIncoming, UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
@@ -130,8 +130,8 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
         if (w && def.weapon) {
           const ammo = sim.content.weapons?.[def.weapon]?.ammo;
           weapons.push({
-            id: mid, name: def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
-            ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
+            id: mid, name: def.name, short: sim.content.weapons?.[def.weapon]?.shortName ?? def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
+            mode: w.mode ?? 'auto', ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
           });
         }
         if (def.console) {
@@ -139,10 +139,12 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           consoles.push({
             id: mid, kind: def.console, name: def.name, powered: m.powered && m.enabled && m.hp > 0,
             operator: op ? (sim.world.get(op, CrewC)?.name ?? null) : null,
+            enRoute: op ? null : crewOnTheWay(sim, mid),
           });
         }
       }
-      player = { ...base, weapons, consoles, idle: weaponsIdleReason(sim, playerGrid), incoming: incomingShots(sim, playerGrid) };
+      const holdAll = [...sim.world.query(WeaponC, ModuleC)].some((id) => sim.world.get(id, WeaponC)?.restore !== undefined && shipIdOf(sim, sim.world.get(id, ModuleC)) === playerGrid);
+      player = { ...base, weapons, consoles, holdAll, idle: weaponsIdleReason(sim, playerGrid), incoming: incomingShots(sim, playerGrid) };
     } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.
@@ -158,4 +160,13 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
 function dist(sim: Sim, me: { x: number; y: number }, ship: number): number {
   const s = sim.world.get(ship, ShipC);
   return s ? Math.hypot(s.x - me.x, s.y - me.y) : Infinity;
+}
+
+/** Name of the crew member who has taken the operate job of a console but is not at it yet (walking over), or null. */
+function crewOnTheWay(sim: Sim, moduleId: number): string | null {
+  for (const jobId of sim.world.query(JobC)) {
+    const job = sim.world.get(jobId, JobC);
+    if (job?.kind === 'operate' && job.target === moduleId && job.reservedBy !== 0) return sim.world.get(job.reservedBy, CrewC)?.name ?? null;
+  }
+  return null;
 }

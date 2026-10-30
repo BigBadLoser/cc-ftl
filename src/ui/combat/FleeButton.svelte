@@ -45,9 +45,9 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text);
-    background: var(--panel);
-    border: 1px solid var(--line-hi);
-    border-left: 0;
+    background: var(--panel-2);
+    box-sizing: border-box;
+    border: 1px solid var(--frame-line);
   }
   .lab {
     position: relative;
@@ -61,21 +61,22 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(54, 212, 255, 0.26);
-    box-shadow: inset 0 2px 0 var(--cyan);
+    background: rgba(223, 228, 232, 0.05);
+    box-shadow: inset 0 1px 0 rgba(223, 228, 232, 0.4);
   }
   .ready {
     color: #fff;
   }
+  /* Ready is the green bar along the top edge alone: no green fill. */
   .ready .fill {
-    background: rgba(71, 224, 160, 0.3);
+    background: transparent;
     box-shadow: inset 0 2px 0 var(--green);
   }
   .flee:disabled {
     opacity: 1;
   }
   .flee:disabled:not(.ready) .lab {
-    opacity: 0.55;
+    opacity: 0.8;
   }
   .flee.ready:disabled {
     color: #fff;

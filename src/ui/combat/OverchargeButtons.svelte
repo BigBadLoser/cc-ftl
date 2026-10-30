@@ -73,14 +73,15 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
-    height: 42px;
+    flex: 1;
+    min-height: 42px;
   }
   .nm {
     font: 700 12px/1 var(--head-font);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     white-space: nowrap;
-    color: var(--cyan);
+    color: var(--text);
   }
   .fx {
     font: 600 11px/1 var(--head-font);
