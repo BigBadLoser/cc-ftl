@@ -296,7 +296,7 @@
 {#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
-<LessonHost {api} />
+<LessonHost {api} busy={reporting} />
 <ErrorOverlay {api} />
 <GameSession {api} />
 

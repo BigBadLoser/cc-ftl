@@ -16,7 +16,8 @@
    * since the last one, and shows the open step as a coach mark. `?lessons=reset` forgets the seen lessons on load; `?lessons=off` turns them
    * off for this page load (headless screenshots).
    */
-  let { api }: { api: UiApi } = $props();
+  /** `busy`: something the App shows over the game (the bug report) that owns the speed; lessons wait until it closes. */
+  let { api, busy: uiBusy = false }: { api: UiApi; busy?: boolean } = $props();
   let view = $state<LessonView | null>(null);
   let rect = $state<ScreenRect | null>(null);
   let obstacles = $state<Rect[]>([]);
@@ -34,7 +35,7 @@
     let combat: UiCombat = { inCombat: false, player: null, enemies: [] };
     let aiming: UiAiming | null = null;
     let speed: Speed = 0;
-    let busy = false;
+    let storyBusy = false;
     const pending: UiSignal[] = [];
     // The game's own time controls: the same path as the pause key.
     const eng = new LessonEngine(LESSONS, { speed: () => speed, setSpeed: (s) => api.setSpeed(s) }, prefs);
@@ -44,7 +45,7 @@
       api.combat.subscribe((c) => (combat = c)),
       api.aiming.subscribe((a) => (aiming = a)),
       api.snapshot.subscribe((s) => (speed = s.speed)),
-      api.story.subscribe((s) => (busy = !!s.active)),
+      api.story.subscribe((s) => (storyBusy = !!s.active)),
       api.onSignal((s) => pending.push(s)),
       eng.subscribe((v) => (view = v)),
     ];
@@ -52,7 +53,7 @@
     let raf = 0;
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      const ctx: LessonCtx = { combat, aiming, busy };
+      const ctx: LessonCtx = { combat, aiming, busy: storyBusy || uiBusy };
       eng.update(ctx, performance.now(), pending.splice(0));
       const t = eng.current?.step.target;
       const r = t ? resolveTarget(t, { ctx, api, doc: document }) : null;
