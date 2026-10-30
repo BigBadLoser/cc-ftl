@@ -11,7 +11,10 @@
   const STATE = { sabotage: 'wrecking', paused: 'fighting', fighting: 'fighting', holding: 'ready', returning: 'returning', down: 'down' } as const;
   const TONE = { sabotage: 'green', paused: 'amber', fighting: 'amber', holding: 'dim', returning: 'neutral', down: 'red' } as const;
   const hpFill = (v: number) => (v < 0.3 ? 'var(--health-bad)' : v < 0.6 ? 'var(--health-warn)' : 'var(--health-good)');
-  const recallIds = $derived(b.party.filter((p) => p.state !== 'returning' && p.state !== 'down').map((p) => p.id));
+  /** Boarders who can still be ordered; at least one is needed to recall. */
+  const mobileIds = $derived(b.party.filter((p) => p.state !== 'returning' && p.state !== 'down').map((p) => p.id));
+  /** The recall names the downed too, so the sim reports them as left behind (the stranded alert) instead of dropping them silently. */
+  const recallIds = $derived(b.party.filter((p) => p.state !== 'returning').map((p) => p.id));
 </script>
 
 <Frame title={named ? `Boarding party · ${b.shipName}` : 'Boarding party'} style="width:290px; margin-top:9px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
@@ -49,9 +52,9 @@
         </div>
       </div>
     {:else}
-      {#if recallIds.length}<p class="hint">Select boarders and right-click an enemy module to sabotage it.</p>{/if}
+      {#if mobileIds.length}<p class="hint">Select boarders and right-click an enemy module to sabotage it.</p>{/if}
     {/each}
-    <button class="go" data-testid="boarding-recall" disabled={!b.canRecall || recallIds.length === 0} title={b.canRecall ? 'Walk the party back to the shuttle and fly home' : 'No shuttle is docked here'} onclick={() => api.dispatch({ type: 'crew.recall', ids: recallIds })}>Recall party</button>
+    <button class="go" data-testid="boarding-recall" disabled={!b.canRecall || mobileIds.length === 0} title={b.canRecall ? 'Walk the party back to the shuttle and fly home' : 'No shuttle is docked here'} onclick={() => api.dispatch({ type: 'crew.recall', ids: recallIds })}>Recall party</button>
   </div>
 </Frame>
 
