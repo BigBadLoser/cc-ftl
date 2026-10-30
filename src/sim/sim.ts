@@ -16,6 +16,7 @@ import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
 import { newYard, type YardState } from './yard/types';
 import { TICK_HZ } from './time';
+import { newAiLog, type AiLog } from './ai/log';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
 export { TICK_HZ };
@@ -39,6 +40,8 @@ export class Sim {
   archives: SectorArchive[] = [];
   /** Shipyard hull-expansion orders (yard/). */
   yard: YardState = newYard();
+  /** Crew-AI diagnostics (ai/log.ts): not saved, never read by the sim. */
+  aiLog: AiLog = newAiLog();
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */

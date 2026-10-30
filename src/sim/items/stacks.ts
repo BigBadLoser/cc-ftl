@@ -1,6 +1,6 @@
 import { shipIdAt, shipGrid } from '../regions';
+import { abortTask } from '../ai/task';
 import { CrewC, JobC, PositionC } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
@@ -117,7 +117,7 @@ export function destroyJob(sim: Sim, jobId: number): void {
   if (!job) return;
   for (const q of job.delivered ?? []) spillItems(sim, shipIdOf(sim, job), job.x, job.y, q.item, q.count);
   job.delivered = [];
-  if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
+  if (job.reservedBy) abortTask(sim, job.reservedBy, 'cancelled');
   sim.world.destroyEntity(jobId);
 }
 

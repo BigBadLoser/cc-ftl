@@ -1,12 +1,11 @@
-import { AssignmentC, JobC, PathC, type Job, type Position } from '../crew/components';
+import type { Job, Position } from '../crew/components';
 import { origin } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { ModuleC } from '../modules/components';
 import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
-import { TICK_HZ } from '../time';
 import { planWalk } from './route';
-import { airlockUsable, freeSuits, isThin, suitDef, suitTile } from './suit';
+import { airlockUsable, freeSuits, isThin, suitTile } from './suit';
 import { shipIdOf, shipGrid } from '../regions';
 
 /** An airlock to fit or stow a suit at, with the walk to its suit tile. */
@@ -51,46 +50,4 @@ export function findSuitStow(sim: Sim, crew: number, pos: Position): SuitSource 
     if (plan && (!best || plan.steps.length < best.steps.length)) best = { airlock: id, steps: plan.steps };
   }
   return best;
-}
-
-/**
- * Start a suit errand for a crew member: a personal job at the airlock's suit tile that becomes their assignment.
- * `resume` is a job they already reserved; it stays theirs and is picked up again when the suit is on. Does not touch
- * the crew member's other assignment (callers release it first when they want to).
- */
-export function startErrand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', src: SuitSource, shipId: number, resume?: number): number {
-  const at = suitTile(sim, src.airlock) as Tile;
-  const def = suitDef(sim);
-  const id = sim.world.createEntity();
-  sim.world.add(id, JobC, {
-    category: 'operating', kind, x: at.x, y: at.y, struct: 0, progress: 0, reservedBy: crew,
-    work: Math.max(1, Math.round((kind === 'suitUp' ? def.donSec : def.doffSec) * TICK_HZ)),
-    target: src.airlock, errandFor: crew, ...(resume ? { resume } : {}),
-  });
-  sim.world.add(crew, AssignmentC, { jobId: id });
-  (sim.world.get(crew, PathC) as { steps: Tile[] }).steps = [...src.steps];
-  return id;
-}
-
-/** When a suit errand ends, the crew member goes back to the job it interrupted (if it is still theirs). */
-export function resumeAfter(sim: Sim, crew: number, job: Job): void {
-  const next = job.resume ? sim.world.get(job.resume, JobC) : undefined;
-  if (job.resume && next && next.reservedBy === crew && !sim.world.has(crew, AssignmentC)) sim.world.add(crew, AssignmentC, { jobId: job.resume });
-}
-
-/**
- * Drop errands whose crew member no longer carries them (the assignment was released, they slept, died or were
- * drafted away) and free the job they had set aside.
- */
-export function sweepErrands(sim: Sim): void {
-  for (const id of [...sim.world.query(JobC)]) {
-    const job = sim.world.get(id, JobC) as Job;
-    if (!isErrand(job)) continue;
-    const who = job.errandFor ?? 0;
-    if (who && sim.world.has(who, AssignmentC) && sim.world.get(who, AssignmentC)?.jobId === id) continue;
-    const parked = job.resume ? sim.world.get(job.resume, JobC) : undefined;
-    if (parked && parked.reservedBy === who && sim.world.get(who, AssignmentC)?.jobId !== job.resume) parked.reservedBy = 0;
-    job.reservedBy = 0;
-    sim.world.destroyEntity(id);
-  }
 }

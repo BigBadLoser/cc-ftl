@@ -1,9 +1,8 @@
 import { CoreRaiderC, besideBox, coreObjective } from '../capture/coreRaid';
-import { releaseBedClaim } from '../crew/beds';
-import { AssignmentC, CarriedC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
-import { clearPath, facingOf, isSettled, origin, releaseAssignment } from '../crew/helpers';
+import { abortTask, isCarrying } from '../ai/task';
+import { AssignmentC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
+import { clearPath, facingOf, isSettled, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
-import { dropCarried } from '../items/stacks';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
@@ -50,22 +49,11 @@ function fighterOf(sim: Sim, id: number): Fighter {
   return f;
 }
 
-/** True while the crew member carries a patient on a rescue job: they finish it rather than flee or fight. */
-function carryingPatient(sim: Sim, id: number): boolean {
-  const a = sim.world.get(id, AssignmentC);
-  const job = a && sim.world.get(a.jobId, JobC);
-  return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === id;
-}
-
 /** Enter or leave a fighting mode. Leaving idle drops the colony chores; leaving a fight forgets the chase path. */
 function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void {
   if (f.mode === mode) return;
   if (f.mode === 'idle') {
-    releaseAssignment(sim, id);
-    releaseBedClaim(sim, id);
-    dropCarried(sim, id);
-    const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') crew.activity = 'idle';
+    abortTask(sim, id, 'fight');
   } else if (mode === 'idle' && !sim.world.get(id, DraftedC)?.target) clearPath(sim, id);
   f.mode = mode;
   if (mode === 'idle') {
@@ -141,7 +129,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   }
   const faction0 = sim.world.get(id, AllegianceC)?.faction;
   if (!controlled && wantsToSurrender(sim, id, units.filter((o) => sim.world.get(o, AllegianceC)?.faction === faction0), foes.map((o) => o.id))) return surrender(sim, id);
-  if (carryingPatient(sim, id)) return;
+  if (isCarrying(sim, id)) return; // carrying a patient: they finish the rescue rather than flee or fight
 
   const crew = sim.world.get(id, CrewC) as Crew;
   const role = sim.content.roles[crew.role];

@@ -1,6 +1,7 @@
 import type { Job } from '../crew/components';
+import { abortTask } from '../ai/task';
 import { AssignmentC, CrewC, DraftedC, JobC, PositionC, PrioritiesC } from '../crew/components';
-import { isIncapacitated, releaseAssignment } from '../crew/helpers';
+import { isIncapacitated } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { CombatC, IonC } from '../combat/components';
 
@@ -41,7 +42,7 @@ export function operateJobsSystem(sim: Sim): void {
       }
       continue;
     }
-    if (job.reservedBy) releaseAssignment(sim, job.reservedBy);
+    if (job.reservedBy) abortTask(sim, job.reservedBy, 'cancelled');
     sim.world.destroyEntity(jobId);
   }
   // Nothing to open outside combat unless a charge order stands.
@@ -93,11 +94,11 @@ function yieldToOperator(sim: Sim, holder: number): void {
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
     const level = j ? prio[j.category] : 0;
-    if (j && j.reservedBy === 0 && j.kind !== 'operate' && level >= 1 && level < prio.operating && jobTakeable(sim, holder, pos, j)) return void releaseAssignment(sim, holder);
+    if (j && j.reservedBy === 0 && j.kind !== 'operate' && level >= 1 && level < prio.operating && jobTakeable(sim, holder, pos, j)) return void abortTask(sim, holder, 'relieved');
   }
   // an operator by choice of this ship with nothing to do takes the console back
   const job = sim.world.get(sim.world.get(holder, AssignmentC)?.jobId ?? 0, JobC);
-  if (job && freeOperatorFor(sim, ship, job)) releaseAssignment(sim, holder);
+  if (job && freeOperatorFor(sim, ship, job)) abortTask(sim, holder, 'relieved');
 }
 
 /** True for an undrafted crew member whose operating priority is below the operators' (a stand-in, not an operator by choice). */
@@ -109,7 +110,7 @@ function isRelief(sim: Sim, crew: number): boolean {
 /**
  * An empty console in a fight calls the crew member who operates by choice (operating priority 1 or 2, the best skill first) away from a
  * chore they rank lower, so a gunner busy with repairs goes back to the weapons console instead of leaving it empty. The release only frees
- * them: `decideSystem` then picks the best job, which is the console.
+ * them: the scheduler (`scheduleSystem`) then picks the best job, which is the console.
  */
 function callOperator(sim: Sim, job: Job): void {
   if (!sim.sector.inCombat) return;
@@ -134,5 +135,5 @@ function callOperator(sim: Sim, job: Job): void {
       bestSkill = skill;
     }
   }
-  if (best) releaseAssignment(sim, best);
+  if (best) abortTask(sim, best, 'preempt');
 }

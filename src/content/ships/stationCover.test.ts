@@ -3,7 +3,7 @@ import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, newGame, operatorO
 import { operateJobsSystem } from '../../sim/systems/operateJobs';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
-import { releaseAssignment } from '../../sim/crew/helpers';
+import { abortTask } from '../../sim/ai/task';
 
 /** A crewless raider never fires back: nothing of ours breaks unless a test breaks it, so no repair job appears by itself. */
 const dummy = { ...content.ships['ship.raider'], crew: [] };
@@ -51,7 +51,7 @@ describe('covering an empty console', () => {
     run(sim, 5);
     const repair = repairJob(sim);
     expect(repair).toBeDefined();
-    releaseAssignment(sim, gunner);
+    abortTask(sim, gunner, 'debug');
     sim.world.get(repair!, JobC)!.reservedBy = gunner;
     sim.world.add(gunner, AssignmentC, { jobId: repair! });
     sim.world.add(gunner, PathC, { steps: [] });
@@ -110,7 +110,7 @@ describe('covering a console with two ships in the fight', () => {
     const gunner = enemyGunner(sim);
     for (const role of ['role.gunner', 'role.pilot', 'role.engineer', 'role.medic']) priority(sim, role, 'operating', 0);
     run(sim, 2);
-    for (const c of sim.world.query(CrewC)) if (shipIdOf(sim, sim.world.get(c, PositionC)!) === shipIds(sim)[0]) releaseAssignment(sim, c);
+    for (const c of sim.world.query(CrewC)) if (shipIdOf(sim, sim.world.get(c, PositionC)!) === shipIds(sim)[0]) abortTask(sim, c, 'debug');
     // his own ship has a repair job he is busy with
     const enemyModule = sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)!) === shipIds(sim)[1] && (sim.content.modules[sim.world.get(i, ModuleC)!.def]?.maxHp ?? 0) > 20) as number;
     sim.world.get(enemyModule, ModuleC)!.hp = 5;
@@ -128,7 +128,7 @@ describe('covering a console with two ships in the fight', () => {
     priority(sim, 'role.gunner', 'operating', 0);
     priority(sim, 'role.medic', 'operating', 0);
     const gunner = enemyGunner(sim);
-    releaseAssignment(sim, gunner);
+    abortTask(sim, gunner, 'debug');
     run(sim, 1500, () => operatorOf(sim, console) === engineer);
     expect(operatorOf(sim, console)).toBe(engineer);
     run(sim, 100);

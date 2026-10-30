@@ -1,6 +1,6 @@
 import { shipIdOf, shipGrid } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
-import { sweepErrands } from '../eva/errands';
+import { sweepErrands } from '../ai/machines/eva';
 import { isThin, suitAir, suitDef } from '../eva/suit';
 import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';

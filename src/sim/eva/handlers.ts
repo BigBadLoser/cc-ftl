@@ -1,6 +1,7 @@
 import type { Command } from '../commands';
+import { abortTask } from '../ai/task';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
-import { isIncapacitated, releaseAssignment } from '../crew/helpers';
+import { isIncapacitated } from '../crew/helpers';
 import { BodyC } from '../body';
 
 import type { Sim } from '../sim';
@@ -10,7 +11,8 @@ import { VehicleC } from '../vehicles/components';
 import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { EvaFloatC } from './components';
 import { floatTicks, nearestExterior, tileCentre, tileFrame, vehicleSuits } from './shuttle';
-import { startErrand, findSuitStow } from './errands';
+import { findSuitStow } from './errands';
+import { startErrand } from '../ai/machines/eva';
 import { planWalk } from './route';
 import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from './suit';
 import { ModuleC } from '../modules/components';
@@ -110,7 +112,7 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     const at = tileCentre(sim, shipIdOf(sim, pos), pos.x, pos.y);
     const d = at ? Math.hypot(body.x - at.x, body.y - at.y) : Infinity;
     if (!at || d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
-    releaseAssignment(sim, cmd.crew);
+    abortTask(sim, cmd.crew, 'order');
     const drafted = sim.world.get(cmd.crew, DraftedC)!;
     drafted.target = null;
     delete drafted.planned;
@@ -122,7 +124,7 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
 
 /** Replace whatever the drafted crew member was doing with a suit errand (their move order is dropped). */
 function errand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', airlock: number, steps: { x: number; y: number }[], shipId: number): void {
-  releaseAssignment(sim, crew);
+  abortTask(sim, crew, 'order');
   const drafted = sim.world.get(crew, DraftedC)!;
   drafted.target = null;
   delete drafted.planned;
