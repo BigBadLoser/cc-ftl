@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
+  import { anchor } from '../lessons/anchors';
   import { Frame, FrameGap, Meter, Pill, Pips } from '../kit';
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
@@ -34,6 +35,7 @@
   tone="hostile"
   style="width:290px; pointer-events:auto; background: var(--panel)"
   testid="enemy-card"
+  lesson={anchor('combat.enemy')}
 >
   {#snippet right()}
     <Pill {tone}>{pill.text}</Pill>

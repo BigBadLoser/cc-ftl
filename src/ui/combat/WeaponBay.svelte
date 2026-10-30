@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Frame } from '../kit';
+  import { anchor } from '../lessons/anchors';
   import type { UiAiming, UiCombat } from '../api';
   import WeaponCard from './WeaponCard.svelte';
   import { weaponLabels } from './weaponNames';
@@ -20,7 +21,7 @@
   const dense = $derived(me.weapons.length > 4);
 </script>
 
-<Frame title="Weapons" {style}>
+<Frame title="Weapons" {style} lesson={anchor('combat.weapons')}>
   <div class="cards" class:dense style:--cols={Math.ceil(me.weapons.length / 2)} data-testid="weapon-cards">
     {#each Array.from({ length: Math.max(4, me.weapons.length) }, (_, k) => k) as i (i)}
       {@const w = me.weapons[i]}

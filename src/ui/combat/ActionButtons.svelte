@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { ActionButton, Frame, KeyBadge } from '../kit';
+  import { anchor } from '../lessons/anchors';
 
   /** The ACTIONS frame: fire the charged weapons now, or put every weapon on hold (H; again to restore). */
   let { canVolley, holding, onVolley, onHold, style = '' }: {
@@ -12,7 +13,7 @@
   } = $props();
 </script>
 
-<Frame title="Actions" {style}>
+<Frame title="Actions" {style} lesson={anchor('combat.actions')}>
   <div class="acts">
     <span class="wide">
       <ActionButton tone="go" disabled={!canVolley} title="Fire every charged weapon now (V)" testid="combat-volley" onclick={onVolley}>

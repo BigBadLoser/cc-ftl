@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { KeyBadge } from '../kit';
+  import { anchor } from '../lessons/anchors';
 
   /**
    * Flee with its drive charge: a vertical tab docked to the right edge of the ship strip, the charge filling upward (cyan, green when
@@ -21,7 +22,7 @@
   );
 </script>
 
-<button class="flee" class:ready disabled={!ready} title={tip} aria-label="Flee" data-testid="combat-flee" onclick={onFlee}>
+<button class="flee" class:ready disabled={!ready} title={tip} aria-label="Flee" data-testid="combat-flee" data-lesson={anchor('combat.flee')} onclick={onFlee}>
   <span class="fill" style="height:{pct}%"></span>
   <span class="lab">
     <Icon name="fast" size={22} />
