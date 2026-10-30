@@ -23,7 +23,8 @@ export interface InputHandlers {
   /** Right-click at canvas-relative px: back out of the current tool, or give an order to the selection. */
   onContext(screenX: number, screenY: number, shift: boolean): void;
   /** Non-camera world hotkeys (keymap actions): rotate the module being placed (either way), or draft the selected crew. */
-  onKey(action: 'rotate' | 'rotateBack' | 'draft'): void;
+  /** Returns true when the key was used, so a key bound to several actions (R) runs only the first that applies. */
+  onKey(action: 'rotate' | 'rotateBack' | 'draft'): boolean;
   /** Mouse hover tile (null when off-grid or pointer left). */
   onHover(tile: Tile | null): void;
   /** Mouse position in canvas px (the "Target in view" preview reads the ship tile under it). */
@@ -203,7 +204,7 @@ export function attachInput(canvas: HTMLCanvasElement, renderer: Renderer, h: In
       run();
       return;
     }
-    for (const [id, action] of WORLD_KEYS) if (keymap.matches(e, id)) h.onKey(action);
+    for (const [id, action] of WORLD_KEYS) if (keymap.matches(e, id) && h.onKey(action)) break;
     const zin = keymap.matches(e, 'cam.zoomIn');
     if (zin || keymap.matches(e, 'cam.zoomOut')) {
       const r = canvas.getBoundingClientRect();

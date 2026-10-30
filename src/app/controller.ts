@@ -414,12 +414,20 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         pickLift: paint.pickLift,
         onPaint: (phase, t) => (sim.sector.inCombat ? paint.onPaint('cancel', null) : paint.onPaint(phase, t)),
         onKey(action) {
+          // An open order menu: the key only dismisses it.
           if (menu.get()) {
             menu.set(null);
             plan = null;
-          } else if (action === 'rotate' || action === 'rotateBack') {
-            if (paint.moduleMode()) paint.rotate(action === 'rotateBack');
-          } else if (action === 'draft' && !paint.moduleMode()) toggleDraft();
+            return true;
+          }
+          if (action === 'rotate' || action === 'rotateBack') {
+            if (!paint.moduleMode()) return false;
+            paint.rotate(action === 'rotateBack');
+            return true;
+          }
+          if (paint.moduleMode()) return false;
+          toggleDraft();
+          return true;
         },
       };
     },
