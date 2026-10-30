@@ -200,11 +200,19 @@
   ];
   const outside = outsideTap(() => closeOutside(panels));
 
+  /**
+   * Was a modal open when this Esc started? Read in the capture phase, before the modal's own handler closes it (the jump confirmation
+   * closes on Esc and releases the modal gate before this bubble handler runs): that Esc belonged to the modal and must not open the menu.
+   */
+  let escHeld = false;
+  const onKeyCapture = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') escHeld = menuOpen || modalOpen();
+  };
   /** Keys from the key map (keymap/actions.ts). The Esc menu, when open, takes every key itself. */
   function onKey(e: KeyboardEvent) {
     if (isTypingTarget(e) || menuOpen || modalOpen()) return;
     if (reporting && !keymap.matches(e, 'debug.panel')) return; // the bug report keeps the game paused and handles its own keys
-    if (e.key === 'Escape') return escape();
+    if (e.key === 'Escape') return escHeld ? undefined : escape();
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (keymap.matches(e, 'game.pause')) {
       e.preventDefault();
@@ -253,7 +261,7 @@
   </span>
 {/snippet}
 
-<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
+<svelte:window onkeydown={onKey} onkeydowncapture={onKeyCapture} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas} data-world></canvas>
 <SelectBox {api} />
