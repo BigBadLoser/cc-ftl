@@ -8,6 +8,32 @@ import type { CourierPlan } from './courier';
 import { releaseRecruits } from './recruitLand';
 import { canStart } from './trips';
 import { undock } from '../vehicles/lifecycle';
+import { destroyJob } from '../items/stacks';
+import { JobC } from '../crew/components';
+
+/**
+ * Stop crew taking anything more out of a trader's shuttle: remove every haul job that still has to pick up from it (a crew member already
+ * carrying a stack keeps it: those goods have left the hold). Call it before any accounting of what was delivered.
+ */
+export function cancelCourierHauls(sim: Sim, d: Deal): void {
+  if (!d.vehicle) return;
+  for (const id of [...sim.world.query(JobC)]) {
+    const h = sim.world.get(id, JobC)?.haul;
+    if (h && h.phase === 'pickup' && h.src.kind === 'vehicle' && h.src.id === d.vehicle) destroyJob(sim, id);
+  }
+}
+
+/**
+ * Tear down a trader's shuttle when its deal ends early, the one place for it: cancel the pending pickups, then empty the hold (what was
+ * delivered is already out; the rest goes back to the trader's stock in the caller's accounting, and the shuttle is dismissed next tick).
+ * Nothing later in the same tick (the crew work step runs after trade) can take from it. The player's own shuttle keeps its hold.
+ */
+export function closeCourier(sim: Sim, d: Deal): void {
+  if (d.courier !== 'them' || !d.vehicle) return;
+  cancelCourierHauls(sim, d);
+  const v = sim.world.get(d.vehicle, VehicleC);
+  if (v) v.cargo = [];
+}
 
 /** Finished deals kept for the UI's history. */
 export const DEAL_HISTORY = 8;
@@ -126,6 +152,7 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
  * the shuttle already flew them (`lost`: shot down after the exchange; the payer is refunded but the goods are gone).
  */
 export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void {
+  closeCourier(sim, d);
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) sim.trade.credits += d.held;
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;

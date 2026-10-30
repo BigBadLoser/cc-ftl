@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, StorageC, TraderC, deserialize, newGame, playerItems, serialize, storageAdd, type Sim } from '../sim';
+import { JobC, ModuleC, ShipC, StorageC, TraderC, deserialize, newGame, playerItems, serialize, storageAdd, type Sim } from '../sim';
 import { cargoCount, cargoTake } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
@@ -215,5 +215,38 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     expect(sim.trade.credits).toBe(before.credits - held);
     expect(metalLike(sim, 'item.metal')).toBe(before.metal + 12);
     expect(stock(sim)).toBe(before.stock - 12);
+  });
+
+  it('a timeout with zero picked up and an unload haul already reserved: the haul is cancelled with the cargo, nothing is taken after the refund; survives a reload', () => {
+    // A first run finds the tick a crew member takes the first stack off the shuttle; the second stops one tick before it, with that
+    // pickup haul reserved, and times the deal out there.
+    const probe = order();
+    until(probe.sim, 'unload');
+    const hold = (s: Sim): number => cargoCount(s.world.get(s.trade.deals[0]!.vehicle, VehicleC)!);
+    let pickupTick = 0;
+    for (let i = 0; i < 3000 && !pickupTick; i++) {
+      probe.sim.step();
+      if (hold(probe.sim) < 12) pickupTick = probe.sim.tick;
+    }
+    expect(pickupTick).toBeGreaterThan(0);
+    const { sim, ship, before, stock } = order();
+    until(sim, 'unload');
+    while (sim.tick < pickupTick - 1) sim.step();
+    expect(sim.world.query(JobC).some((id) => { const j = sim.world.get(id, JobC)!; return j.haul?.phase === 'pickup' && j.haul.src.kind === 'vehicle' && j.reservedBy > 0; })).toBe(true);
+    const d = sim.trade.deals[0]!;
+    expect(cargoCount(sim.world.get(d.vehicle, VehicleC)!)).toBe(12); // nothing picked up yet
+    d.timer = 300 * 20; // the next tick's deal step gives up, before the crew's work step
+    sim.step();
+    expect(d.phase).toBe('failed');
+    const reloaded = deserialize(serialize(sim), content);
+    run(reloaded, 200);
+    for (const s of [sim, reloaded]) {
+      if (s === sim) run(sim, 200);
+      expect(s.trade.credits).toBe(before.credits);
+      expect(s.world.get(ship, TraderC)!.credits).toBe(before.theirs);
+      expect(stock(s)).toBe(before.stock); // restored once
+      expect(metalLike(s, 'item.metal')).toBe(before.metal); // the player gained nothing
+      expect(s.world.query(JobC).some((id) => s.world.get(id, JobC)!.haul?.src.kind === 'vehicle')).toBe(false);
+    }
   });
 });

@@ -7,7 +7,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoAdd, cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
-import { addStock, failDeal, isLive, settleDeal, touchMarket } from './deals';
+import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, settleDeal, touchMarket } from './deals';
 import { unitPrice } from './pricing';
 import type { ItemQty } from '../registry';
 import { spawnCourier } from './courier';
@@ -51,7 +51,11 @@ function step(sim: Sim, d: Deal): void {
   }
   const v = sim.world.get(d.vehicle, VehicleC);
   if (!v) return failDeal(sim, d, 'lost', d.phase === 'back' || d.phase === 'unload' || d.phase === 'exchange');
-  if (!sim.world.get(d.ship, TraderC) && !(d.crew && (d.phase === 'back' || d.phase === 'unload'))) return failDeal(sim, d, 'traderGone');
+  if (!sim.world.get(d.ship, TraderC) && !(d.crew && (d.phase === 'back' || d.phase === 'unload'))) {
+    // The seller vanished: what already reached the player is settled like any stuck delivery, never refunded on top of keeping it.
+    if (d.courier === 'them' && (d.phase === 'back' || d.phase === 'unload')) return reconcileDelivery(sim, d, v, 'traderGone');
+    return failDeal(sim, d, 'traderGone');
+  }
   if (d.crew && (d.phase === 'out' || d.phase === 'dockStation' || d.phase === 'stationWork') && lostRecruit(sim, d)) return failDeal(sim, d, 'recruitGone');
   switch (d.phase) {
     case 'dispatch': return dispatch(sim, d, v);
@@ -199,6 +203,7 @@ const exchanged = (sim: Sim, d: Deal): boolean => d.courier === 'you' && (!d.cre
  * the unpaid share is refunded and only the undelivered goods go back to the trader's stock. Nothing delivered is a plain failure.
  */
 function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
+  cancelCourierHauls(sim, d); // before reading the hold: nothing more can leave it this tick
   const delivered = d.get.map((l) => ({ item: l.item, count: l.count - Math.min(l.count, cargoOf(sim, d.vehicle, l.item)) }));
   const got = delivered.filter((l) => l.count > 0);
   if (got.length === 0) return failDeal(sim, d, reason);
@@ -217,7 +222,7 @@ function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void 
     touchMarket(sim, trader);
   }
   if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; }
-  v.cargo = []; // what is left leaves with the shuttle (it went back to the trader's stock above)
+  closeCourier(sim, d); // what is left leaves with the shuttle (it went back to the trader's stock above)
   settleDeal(sim, d);
 }
 
