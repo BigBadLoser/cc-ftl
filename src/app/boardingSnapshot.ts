@@ -24,18 +24,22 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
     }
     if (!aboard.crew.length && !flying.length) continue;
     const name = (c: number): string => sim.world.get(c, CrewC)?.name ?? 'Crew';
+    // Health as a 0..1 fraction; it is kept while the crew member rides the shuttle (only the position goes).
+    const hpOf = (c: number): number => {
+      const h = sim.world.get(c, HealthC);
+      return h ? Math.round((h.hp / Math.max(1, h.max)) * 100) / 100 : 1;
+    };
     const returning = new Set<number>();
     for (const v of sim.world.query(VehicleC)) for (const c of sim.world.get(v, RecallC)?.crew ?? []) returning.add(c);
     const party: UiBoarding['party'] = aboard.crew.map((c) => {
       const jobId = sim.world.get(c, AssignmentC)?.jobId;
       const job = jobId ? sim.world.get(jobId, JobC) : undefined;
       const order = sim.world.get(c, SabotageOrderC);
-      const h = sim.world.get(c, HealthC);
       const state = sim.world.has(c, DownedC) ? 'down' : returning.has(c) ? 'returning' : job?.kind === 'sabotage' ? 'sabotage'
         : order ? 'paused' : (sim.world.get(c, FighterC)?.mode ?? 'idle') !== 'idle' ? 'fighting' : 'holding';
-      return { id: c, name: name(c), hp: h ? Math.round((h.hp / Math.max(1, h.max)) * 100) / 100 : 1, state, module: order?.module ?? job?.target ?? 0 };
+      return { id: c, name: name(c), hp: hpOf(c), state, module: order?.module ?? job?.target ?? 0 };
     });
-    for (const c of flying) party.push({ id: c, name: name(c), hp: 1, state: 'returning', module: 0 });
+    for (const c of flying) party.push({ id: c, name: name(c), hp: hpOf(c), state: 'returning', module: 0 });
     // One row per module under attack: it is "active" while any boarder works on it, "paused" when all of them have broken off.
     const sabotage: UiBoarding['sabotage'] = [];
     for (const p of party) {
