@@ -9,13 +9,14 @@ SCALE times and rendered with DETAIL times the sphere and ring faces, so it stay
 
   star, red_dwarf, blue_giant, black_hole           v0..v2    (starmap_bodies)
   gas_giant                                         v0..v5    v0..v2 ringed, v3..v5 without a ring
-  binary_star, white_dwarf, pulsar, protostar       v0..v2    (starmap_stars; not spawned yet)
+  binary_star, white_dwarf, pulsar, protostar       v0..v2    (starmap_stars; not spawned yet; the pulsar is rebuilt with
+                                                              soft beams in backdrop_pulsar.py)
   ice_giant, lava_world, ocean_world                v0..v2    (starmap_planets; not spawned yet)
 
 The nebula is left out: the backdrop draws its own."""
 import bpy
 
-from . import starmap_bodies, starmap_kit, starmap_planets, starmap_stars
+from . import backdrop_pulsar, starmap_bodies, starmap_kit, starmap_planets, starmap_stars
 from .starmap_kit import frame_item
 
 FRAME = 320                     # frame side, 1x px (640 world px)
@@ -49,7 +50,12 @@ def body_items(kind, v):
     """Variant v of a body kind, built by its starmap module at DETAIL and scaled up about the frame centre."""
     starmap_kit.DETAIL, starmap_bodies.SOFTEN = DETAIL, smooth_star      # every star: a soft halo, finer granulation
     try:
-        halo, outlined = SOURCES[kind].scene(kind, v)
+        if kind == "pulsar":                            # its own build: the starmap one's stepped beams break up at this size
+            starmap_kit.start()
+            _, halo = backdrop_pulsar.pulsar(starmap_stars.seed_of(kind, v), starmap_stars.PULSARS[v])
+            outlined = False
+        else:
+            halo, outlined = SOURCES[kind].scene(kind, v)
     finally:
         starmap_kit.DETAIL, starmap_bodies.SOFTEN = 1, None
     for ob in bpy.context.scene.objects:

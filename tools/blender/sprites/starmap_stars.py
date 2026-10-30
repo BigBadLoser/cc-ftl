@@ -189,11 +189,15 @@ def star_items(kind, v):
     return items(kind, v, *scene(kind, v))
 
 
+def seed_of(kind, v):
+    return 12001 + 37 * KINDS.index(kind) + v
+
+
 def scene(kind, v):
     """Build variant v of a star kind in a fresh scene; -> (halo objects, outlined?)."""
     start()
     fn, specs = BUILD[kind]
-    objs, halo = fn(12001 + 37 * KINDS.index(kind) + v, specs[v])
+    objs, halo = fn(seed_of(kind, v), specs[v])
     return halo, False
 
 
