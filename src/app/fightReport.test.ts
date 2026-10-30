@@ -78,6 +78,20 @@ describe('fight report', () => {
     expect(done?.summary.text).toBe('Fight over: hull −40%');
   });
 
+  it('counts a module the prize lost before its capture as an enemy loss', () => {
+    const sim = newGame(3, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
+    const prize = shipIds(sim)[1] as number;
+    const reporter = createFightReporter(sim);
+    reporter.onEvents([{ type: 'combat.started' }]);
+    // The capture lands in the same frame as the destruction, so by the time the events are read the prize is already the player's.
+    sim.world.get(prize, ShipC)!.faction = 'player';
+    const mod = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === prize) as number;
+    const done = reporter.onEvents([{ type: 'module.destroyed', moduleId: mod, def: sim.world.get(mod, ModuleC)!.def, ship: prize }, { type: 'ship.captured', ship: prize, by: 'player', from: 'hostile' }, { type: 'combat.ended' }]);
+    expect(done?.report).toMatchObject({ outcome: 'captured', lost: [], enemyLost: [{}] });
+  });
+
   it('says nothing for a fight that cost nothing', () => {
     const sim = newGame(3, content);
     const reporter = createFightReporter(sim);

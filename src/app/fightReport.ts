@@ -28,6 +28,8 @@ interface Tracker {
   enemyLost: UiFightLine[];
   ammo: Map<string, number>;
   prize: boolean;
+  /** The player's ships as the fight began: a capture flips the prize's faction before this frame's events are read. */
+  ours: Set<number>;
 }
 
 export interface FightReporter {
@@ -64,7 +66,6 @@ export function fightLine(r: UiFightReport): LogEntry | null {
 export function createFightReporter(sim: Sim): FightReporter {
   let t: Tracker | null = null;
   const home = () => homeShip(sim);
-  const mine = (ship: number) => sim.world.get(ship, ShipC)?.faction === 'player';
   const ours = (crew: number) => sim.world.get(crew, AllegianceC)?.faction === 'player';
   const modName = (def: string) => sim.content.modules[def]?.name ?? 'Module';
   const hull = () => sim.world.get(home(), ShipC)?.integrity ?? 0;
@@ -84,7 +85,7 @@ export function createFightReporter(sim: Sim): FightReporter {
   };
   const fresh = (): Tracker => ({
     start: sim.tick, hullBefore: hull(), hullNow: hull(), enemyHull: null, enemyCrew: 0, enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
-    ammo: new Map(), prize: false,
+    ammo: new Map(), prize: false, ours: new Set(sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction === 'player')),
   });
   // A save loaded mid-fight: `combat.started` will not come, so track the rest of this one from now.
   if (sim.sector.inCombat) t = fresh();
@@ -99,19 +100,19 @@ export function createFightReporter(sim: Sim): FightReporter {
     switch (e.type) {
       case 'module.destroyed': {
         const m = sim.world.get(e.moduleId, ModuleC);
-        if (mine(e.ship)) c.lost.push({ name: modName(e.def), subject: m ? tileAt(m.x, m.y) : shipSubject(sim, e.ship) });
+        if (c.ours.has(e.ship)) c.lost.push({ name: modName(e.def), subject: m ? tileAt(m.x, m.y) : shipSubject(sim, e.ship) });
         else { c.enemy ||= e.ship; c.enemyLost.push({ name: modName(e.def), subject: shipSubject(sim, e.ship) }); }
         break;
       }
       case 'projectile.hit':
-        if (e.ship !== home() && !mine(e.ship)) c.enemy ||= e.ship;
+        if (e.ship !== home() && !c.ours.has(e.ship)) c.enemy ||= e.ship;
         if (e.moduleId > 0 && e.ship === home()) {
           const m = sim.world.get(e.moduleId, ModuleC);
           if (m) c.damaged.set(e.moduleId, { name: modName(m.def), x: m.x, y: m.y });
         }
         break;
       case 'weapon.fired': {
-        if (!mine(e.ship)) c.enemy ||= e.ship;
+        if (!c.ours.has(e.ship)) c.enemy ||= e.ship;
         const item = e.ship === home() ? sim.content.weapons?.[e.weapon]?.ammo : undefined;
         if (item) c.ammo.set(item, (c.ammo.get(item) ?? 0) + 1);
         break;
@@ -125,10 +126,10 @@ export function createFightReporter(sim: Sim): FightReporter {
           c.dead.push({ name: sim.world.get(e.crew, CrewC)?.name ?? 'Crew', subject: crewTile(sim, e.crew) });
         } else c.enemyCrew++;
         break;
-      case 'ship.destroyed': if (mine(e.ship)) c.outcome = 'lost'; else { c.enemy ||= e.ship; c.outcome = 'destroyed'; } break;
-      case 'ship.fled': c.enemy ||= mine(e.ship) ? 0 : e.ship; c.outcome = mine(e.ship) ? 'youFled' : 'fled'; break;
+      case 'ship.destroyed': if (c.ours.has(e.ship)) c.outcome = 'lost'; else { c.enemy ||= e.ship; c.outcome = 'destroyed'; } break;
+      case 'ship.fled': c.enemy ||= c.ours.has(e.ship) ? 0 : e.ship; c.outcome = c.ours.has(e.ship) ? 'youFled' : 'fled'; break;
       case 'ship.captured': if (e.by === 'player') { c.enemy ||= e.ship; c.outcome = 'captured'; c.prize = true; } break;
-      case 'ship.disabled': if (!mine(e.ship) && c.outcome === 'ended') { c.enemy ||= e.ship; c.outcome = 'disabled'; } break;
+      case 'ship.disabled': if (!c.ours.has(e.ship) && c.outcome === 'ended') { c.enemy ||= e.ship; c.outcome = 'disabled'; } break;
       default: break;
     }
   }
