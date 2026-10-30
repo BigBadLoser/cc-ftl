@@ -13,6 +13,12 @@ import numpy as np
 from .crew_cache import ROOT, digest, files_digest  # noqa: F401  (re-exported)
 
 SRC = Path(__file__).resolve().parent
+RENDER_VERSION = 1
+"""The render code's version. The cache keys on it instead of hashing the engine's files (ENGINE), so a change to them
+that leaves every sprite's pixels as they were re-renders nothing. Bump it in any change to ENGINE that can change a
+sprite's pixels (lighting, sampling, quantisation, cropping, the key's own inputs): a missed bump serves stale
+sprites until the cache is cleared."""
+ENGINE = ("core.py", "post.py", "env_build.py", "scale.py", "geom_digest.py", "sprite_cache.py", "crew_cache.py")
 BL = SRC.parent
 PREVIEW = os.environ.get("SPRITE_PREVIEW") == "1"
 
@@ -31,7 +37,8 @@ _CLOSURE = {}
 
 def closure_files(module):
     """Source files of a sprites module and of every sprites module it imports, directly or in a function (static AST scan,
-    so it is the same in every process). `module` is a dotted name such as 'sprites.consoles'."""
+    so it is the same in every process), less the engine's (ENGINE: RENDER_VERSION stands for them). `module` is a dotted
+    name such as 'sprites.consoles'."""
     if module not in _CLOSURE:
         seen, todo = set(), [module.split(".")[-1]]
         while todo:
@@ -49,8 +56,21 @@ def closure_files(module):
                     todo += [a.name for a in n.names]
                 elif n.module and n.module.startswith("sprites."):               # from sprites.x import y
                     todo.append(n.module.split(".")[1])
-        _CLOSURE[module] = sorted(SRC / f"{m}.py" for m in seen)
+        _CLOSURE[module] = sorted(SRC / f"{m}.py" for m in seen if f"{m}.py" not in ENGINE)   # (RENDER_VERSION)
     return _CLOSURE[module]
+
+
+def adopt(family, stem, path):
+    """Keep a job's existing entry under its new key (`path`) without rendering: after a change to how keys are made
+    (not to what they cover), so a cache current with the sources before it carries over. True if there was one."""
+    if not root(family).exists():
+        return False
+    pat = re.compile(re.escape(stem) + r"\.[0-9a-f]{20}\.npz")
+    old = [f for f in root(family).iterdir() if pat.fullmatch(f.name) and f != path]
+    if not old:
+        return False
+    os.replace(old[0], path)
+    return True
 
 
 def store(path, items):
