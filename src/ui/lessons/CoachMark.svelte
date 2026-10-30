@@ -19,14 +19,24 @@
     onDismiss: () => void;
   } = $props();
 
-  const PAD = 6;
-  const doStep = $derived(view.step.advance !== 'gotIt');
-  const last = $derived(view.index + 1 >= view.lesson.steps.length);
-  const ring = $derived(rect && { x0: rect.x0 - PAD, y0: rect.y0 - PAD, x1: rect.x1 + PAD, y1: rect.y1 + PAD });
-  let cw = $state(0);
-  let ch = $state(0);
+  /** Space between the target and the ring's inner edge, plus the ring's 2px stroke. */
+  const PAD = 9 + 2;
+  /** The ring stays this far inside the viewport (a target at the screen edge keeps a whole ring). */
+  const EDGE = 2;
   let vw = $state(innerWidth);
   let vh = $state(innerHeight);
+  const doStep = $derived(view.step.advance !== 'gotIt');
+  const last = $derived(view.index + 1 >= view.lesson.steps.length);
+  const ring = $derived(
+    rect && {
+      x0: Math.max(EDGE, rect.x0 - PAD),
+      y0: Math.max(EDGE, rect.y0 - PAD),
+      x1: Math.min(vw - EDGE, rect.x1 + PAD),
+      y1: Math.min(vh - EDGE, rect.y1 + PAD),
+    },
+  );
+  let cw = $state(0);
+  let ch = $state(0);
   const at = $derived.by(() => {
     if (!cw || !ch) return null;
     const placed = ring ? placePanel(ring, { w: cw, h: ch }, { w: vw, h: vh }, obstacles, 14) : null;
