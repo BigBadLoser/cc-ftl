@@ -14,7 +14,7 @@ import type { Vignette, VignetteSet } from './types';
 type Tile = { x: number; y: number };
 
 /** A piece's modules turned `k` quarter turns clockwise about its origin, as (x, y, rot) of each footprint's corner. */
-function turned(defs: Record<string, ModuleDef>, v: Vignette, k: number): { def: string; x: number; y: number; rot: number }[] {
+export function turned(defs: Record<string, ModuleDef>, v: Vignette, k: number): { def: string; x: number; y: number; rot: number }[] {
   const turn = (t: Tile): Tile => {
     let { x, y } = t;
     for (let i = 0; i < k; i++) [x, y] = [-y, x];

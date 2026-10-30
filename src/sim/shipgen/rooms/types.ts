@@ -70,6 +70,8 @@ export interface Arrangement {
   walkway?: 'long' | 'cross';
   /** Hand-made furniture groups set into the open floor first (rooms/vignettes.ts). */
   vignettes?: VignetteSet;
+  /** A court laid out by zones (rooms/courts.ts) instead of scattered vignettes. */
+  court?: CourtPlan;
   steps: readonly Step[];
 }
 
@@ -77,6 +79,13 @@ export interface Arrangement {
 export interface Vignette {
   name: string;
   mods: readonly { mod: string; x: number; y: number; rot?: number }[];
+}
+
+/** Court zoning: themes for the zones between promenades, the hedge module, the share of a zone its pieces fill. */
+export interface CourtPlan {
+  zones: readonly (readonly Vignette[])[];
+  hedge: string;
+  fill: number;
 }
 
 export interface VignetteSet {

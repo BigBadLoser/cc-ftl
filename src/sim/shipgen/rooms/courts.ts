@@ -1,0 +1,152 @@
+import type { Rng } from '../../rng';
+import { footprintTiles } from '../../modules/footprint';
+import type { ModuleDef } from '../../registry';
+import type { Layout } from '../layout';
+import type { CourtPlan, Vignette } from './types';
+import { turned } from './vignettes';
+
+/**
+ * Courts laid out as a place, not a scatter: promenades first, two tiles wide, joining every door of the court by the
+ * shortest way (a tree: each door to the nearest one already joined); then the floor between them splits into zones,
+ * each given one theme (a seating area, a row of stalls, a grove, a lab corner) whose pieces are set densely in it; a
+ * hedge of planters lines each zone where it meets a promenade, with gaps to walk in; a brass inlay marks the court's
+ * middle on its promenade. Pieces and planters are the existing modules: the zoning is what is new.
+ */
+
+type T = { x: number; y: number };
+
+/** Zones bigger than this are cut in two. */
+const ZONE_MAX = 80;
+
+export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, power: { spare: number }): number {
+  const floor = lay.roomTiles(room);
+  if (floor.length < 60) return 0;
+  const W = lay.w;
+  const inRoom = new Set(floor);
+  /** Connected pieces of a set of tiles. */
+  const pieces = (tiles: number[]): number[][] => {
+    const set = new Set(tiles);
+    const seen = new Set<number>();
+    const out: number[][] = [];
+    for (const t of tiles) {
+      if (seen.has(t)) continue;
+      const z = [t];
+      seen.add(t);
+      for (let q = 0; q < z.length; q++) for (const n of lay.neighbours(z[q] as number)) if (set.has(n) && !seen.has(n)) { seen.add(n); z.push(n); }
+      out.push(z);
+    }
+    return out;
+  };
+  const doorIn: number[] = [];
+  for (const i of floor) if (lay.neighbours(i).some((n) => lay.cells[n] === 'D')) doorIn.push(i);
+  // Promenades: a tree of shortest walks between door tiles, widened to two.
+  const walk = new Set<number>();
+  const bfs = (from: Set<number>): Map<number, number> => {
+    const prev = new Map<number, number>();
+    const queue = [...from];
+    for (const i of from) prev.set(i, -1);
+    for (let q = 0; q < queue.length; q++) {
+      const i = queue[q] as number;
+      for (const n of lay.neighbours(i)) if (inRoom.has(n) && !prev.has(n)) { prev.set(n, i); queue.push(n); }
+    }
+    return prev;
+  };
+  if (doorIn.length > 0) {
+    const joined = new Set<number>([doorIn[0] as number]);
+    walk.add(doorIn[0] as number);
+    for (const d of doorIn.slice(1)) {
+      const prev = bfs(new Set(walk));
+      for (let i = d; i >= 0 && !walk.has(i); i = prev.get(i) ?? -1) walk.add(i);
+      joined.add(d);
+    }
+  }
+  const wide = new Set(walk);
+  for (const i of walk) {
+    const x = i % W, y = Math.floor(i / W);
+    for (const j of [(y + 1) * W + x, y * W + x + 1]) if (inRoom.has(j)) wide.add(j);
+  }
+  // Zones: the floor off the promenades, in connected pieces; small scraps stay open floor. A zone over ZONE_MAX tiles is
+  // cut in two by a one-tile path across its middle (its longer way), again until none is, so a big court mixes themes.
+  for (let pass = 0; pass < 6; pass++) {
+    const parts = pieces(floor.filter((i) => !wide.has(i)));
+    const big = parts.filter((z) => z.length > ZONE_MAX);
+    if (big.length === 0) break;
+    for (const z of big) {
+      const xs = z.map((i) => i % W), ys = z.map((i) => Math.floor(i / W));
+      const alongX = Math.max(...xs) - Math.min(...xs) >= Math.max(...ys) - Math.min(...ys);
+      const mid = Math.round(alongX ? (Math.min(...xs) + Math.max(...xs)) / 2 : (Math.min(...ys) + Math.max(...ys)) / 2);
+      for (const i of z) if ((alongX ? i % W : Math.floor(i / W)) === mid) wide.add(i);
+    }
+  }
+  const off = floor.filter((i) => !wide.has(i));
+  const offSet = new Set(off);
+  const zoneOf = new Map<number, number>();
+  const zones: number[][] = [];
+  for (const i of off) {
+    if (zoneOf.has(i)) continue;
+    const z: number[] = [i];
+    zoneOf.set(i, zones.length);
+    for (let q = 0; q < z.length; q++) for (const n of lay.neighbours(z[q] as number)) if (offSet.has(n) && !zoneOf.has(n)) { zoneOf.set(n, zones.length); z.push(n); }
+    zones.push(z);
+  }
+  let placed = 0;
+  const themes = [...plan.zones].sort(() => rng.next() - 0.5);
+  zones.filter((z) => z.length >= 16).sort((a, b) => b.length - a.length).forEach((zone, zi) => {
+    const theme = themes[zi % themes.length] as readonly Vignette[];
+    const zset = new Set(zone);
+    // The hedge: zone tiles along a promenade get the hedge module, two in every three.
+    let k = 0;
+    for (const i of zone) {
+      if (!lay.neighbours(i).some((n) => wide.has(n))) continue;
+      if (k++ % 3 === 2) continue; // a gap every third tile to walk in
+      if (!lay.fitError(plan.hedge, i % W, Math.floor(i / W), 0, room)) {
+        const base = lay.unreached();
+        lay.push({ def: plan.hedge, x: i % W, y: Math.floor(i / W), rot: 0 });
+        if (lay.unreached() > base) lay.pop(); else placed++;
+      }
+    }
+    // The theme's pieces, densely: anchors in reading order, each piece where it fits whole inside the zone.
+    let covered = 0;
+    const target = zone.length * plan.fill;
+    const anchors = [...zone].sort((a, b) => a - b);
+    for (const a of anchors) {
+      if (covered >= target) break;
+      const v = theme[Math.floor(rng.next() * theme.length)] as Vignette;
+      const draw = v.mods.reduce((t, m) => t + Math.max(0, -((lay.defs[m.mod] as ModuleDef | undefined)?.power ?? 0)), 0);
+      if (draw > power.spare) continue;
+      for (const r of [0, 1, 2, 3].sort(() => rng.next() - 0.5)) {
+        const mods = turned(lay.defs, v, r).map((m) => ({ ...m, x: m.x + (a % W), y: m.y + Math.floor(a / W) }));
+        const tiles = mods.flatMap((m) => footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot));
+        if (!tiles.every((t: T) => zset.has(t.y * W + t.x))) continue;
+        // A tile of clear floor round the piece (hedge and lamps aside), so pieces read as groups, not one mass.
+        const own = new Set(tiles.map((t) => t.y * W + t.x));
+        const crowded = tiles.some((t) => [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]].some(([dx, dy]) => {
+          const j = (t.y + (dy as number)) * W + t.x + (dx as number);
+          const o = lay.occ[j] ?? -1;
+          const od = o >= 0 ? lay.modules[o]?.def : undefined;
+          return !own.has(j) && !!od && od !== plan.hedge && !lay.defs[od]?.light;
+        }));
+        if (crowded) continue;
+        const base = lay.unreached();
+        let n = 0;
+        for (const m of mods) {
+          if (lay.fitError(m.def, m.x, m.y, m.rot, room)) break;
+          lay.push({ def: m.def, x: m.x, y: m.y, rot: m.rot });
+          n++;
+        }
+        if (n < mods.length || lay.unreached() > base) { for (let i = 0; i < n; i++) lay.pop(); continue; }
+        power.spare -= draw;
+        covered += tiles.length;
+        placed += n;
+        break;
+      }
+    }
+  });
+  // The inlay: on the promenade, nearest the court's middle.
+  if (wide.size > 0) {
+    const mx = floor.reduce((t, i) => t + (i % W), 0) / floor.length, my = floor.reduce((t, i) => t + Math.floor(i / W), 0) / floor.length;
+    const mid = [...walk].sort((p, q) => Math.hypot((p % W) - mx, Math.floor(p / W) - my) - Math.hypot((q % W) - mx, Math.floor(q / W) - my))[0] as number;
+    if (!lay.fitError('module.deck_inlay', mid % W, Math.floor(mid / W), 0, room)) { lay.push({ def: 'module.deck_inlay', x: mid % W, y: Math.floor(mid / W), rot: 0 }); placed++; }
+  }
+  return placed;
+}

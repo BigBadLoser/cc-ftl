@@ -7,7 +7,8 @@ import { accessTile, footprintTiles, hullRow, rotatedSize, type Tile } from '../
  */
 
 export const SLEEP = new Set(['module.bed', 'module.med_bed']);
-export const TABLE = new Set(['module.mess_table', 'module.bench']);
+/** Tables (a bench is a seat: it needs a free side, like any other piece). */
+export const TABLE = new Set(['module.mess_table']);
 export const CHAIR = 'module.chair';
 /** The tile a seated crew member faces: r0 -y, r1 +x, r2 +y, r3 -x. */
 export const FACING: readonly Tile[] = [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }];
