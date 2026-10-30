@@ -45,7 +45,7 @@ export const combatLesson = {
     {
       title: 'Firing modes',
       say: "Go easy on the missiles. We don't have many.",
-      keys: ["**AUTO** fires whenever it's charged.", '**HOLD** waits for an aim or a [V] volley.', '[Shift]+[Q] or right-click switches a gun. [H] holds them all.', 'Missiles start on **HOLD**.'],
+      keys: ["**AUTO** fires whenever it's charged.", '**HOLD** waits for an aim or a [V] volley.', '[Shift]+[Q] or right-click switches a gun.', '[H] holds them all.', 'Missiles start on **HOLD**.'],
       target: uiTarget('combat.weapons'),
       advance: 'gotIt',
     },
