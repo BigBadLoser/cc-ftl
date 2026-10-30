@@ -12,7 +12,7 @@
   import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
-  import { isTypingTarget } from '../keys';
+  import { isTypingTarget, modalOpen } from '../keys';
   import './steel.css';
 
   /**
@@ -100,7 +100,7 @@
   }
   function onKey(e: KeyboardEvent) {
     // The flee/jump confirmation is a modal: leave the keys (Tab, Enter, Esc) to it.
-    if (leaving || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
+    if (leaving || modalOpen() || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
     if (e.key === 'Tab') {
       consume(e);
       swap();

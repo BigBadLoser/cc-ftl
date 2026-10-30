@@ -2,6 +2,7 @@
   import Icon from './Icon.svelte';
   import { Dialog } from './kit';
   import type { UiJumpWarnings } from './starmapApi';
+  import { holdModal } from './keys';
 
   /**
    * The one "before you jump" confirmation, for every way the player commits a jump (the starmap's Jump and Flee). It opens only when
@@ -11,6 +12,10 @@
   let { warnings, taking = new Set<number>(), onToggle = () => {}, onConfirm, onCancel }: {
     warnings: UiJumpWarnings | null; taking?: Set<number>; onToggle?: (id: number) => void; onConfirm: () => void; onCancel: () => void;
   } = $props();
+  // While open, game shortcuts (the combat HUD's Tab, weapon keys and so on) stand aside.
+  $effect(() => {
+    if (warnings) return holdModal();
+  });
 </script>
 
 <Dialog open={!!warnings} onOpenChange={(o) => { if (!o) onCancel(); }} title="Before you jump" testId="jump-confirm">
