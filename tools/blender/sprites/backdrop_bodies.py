@@ -22,6 +22,18 @@ FRAME = 320                     # frame side, 1x px (640 world px)
 BODY = 100                      # body radius, 1x px (200 world px)
 SCALE = BODY / starmap_bodies.BODY
 DETAIL = 3                      # sphere / ring face multiplier at this size
+HALO_BANDS = 20                 # a star's halo: this many glow bands on the starmap's falloff, so it reads as a soft glow
+GFREQ = 9.0                     # a star's granulation frequency (starmap: 5): finer mottling at this size
+
+
+def smooth_star(spec):
+    """A starmap star spec with a soft halo (HALO_BANDS bands halving every quarter of the reach from the starmap's first
+    band, tapered to nothing at the frame's edge) and finer granulation."""
+    b0 = spec["bands"][0]
+    hues = spec["halo"] if isinstance(spec["halo"], str) else spec["halo"][0]
+    xs = [(k + 0.5) / HALO_BANDS for k in range(HALO_BANDS)]
+    return {**spec, "bands": tuple(b0 * 0.5 ** (4 * x) * (1 - x) ** 1.5 for x in xs), "halo": hues, "gfreq": GFREQ}
+
 
 SOURCES = {**{k: starmap_bodies for k in ("star", "red_dwarf", "blue_giant", "gas_giant", "black_hole")},
            **{k: starmap_stars for k in starmap_stars.KINDS}, **{k: starmap_planets for k in starmap_planets.KINDS}}
@@ -35,7 +47,13 @@ def body_items(kind, v):
     """Variant v of a body kind, built by its starmap module at DETAIL and scaled up about the frame centre."""
     starmap_kit.DETAIL = DETAIL
     try:
-        halo, outlined = SOURCES[kind].scene(kind, v)
+        if kind in starmap_bodies.STARS:                # the same star, with a soft halo and finer granulation
+            starmap_kit.start()
+            spec = smooth_star(starmap_bodies.STARS[kind])
+            _, halo = starmap_bodies.star(kind, starmap_bodies.seed_of(kind, v), spec=spec)
+            outlined = False
+        else:
+            halo, outlined = SOURCES[kind].scene(kind, v)
     finally:
         starmap_kit.DETAIL = 1
     for ob in bpy.context.scene.objects:
