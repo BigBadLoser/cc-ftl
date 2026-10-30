@@ -3,13 +3,13 @@
   import type { UiApi, UiCombat, UiPrize, UiShuttles, UiTrade } from './api';
   import Icon from './Icon.svelte';
   import { nodeEntries, NODE_ICONS, type NodeEntry } from './nodeList';
-  import { markerPlace, spread, type Place } from './poiMarkers';
+  import { markerPlace, measureHud, spread, type Place } from './poiMarkers';
 
   /**
    * Off-screen points of interest: every other ship or station in the node (the node strip's list) whose centre is outside the camera view gets a
    * marker on the screen edge, on the line from the screen centre toward it, with an arrow, its icon and its name. A click pans the camera to it and
-   * selects it, as in the node strip. Positions come from the renderer's screen projection each frame; markers sit inside a safe rectangle that
-   * keeps clear of the HUD (the top bars, the right column, the bottom dock).
+   * selects it, as in the node strip. Positions come from the renderer's screen projection each frame; markers hug the screen edge and slide along it
+   * clear of the HUD rectangles measured from the page (top bars, right column, tool dock, build menu).
    */
   let { api }: { api: UiApi } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
@@ -31,16 +31,17 @@
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      const hud = measureHud(document);
       const next: (Place & NodeEntry)[] = [];
       for (const n of entries) {
         const at = api.shipScreen(n.ship);
-        const p = at && markerPlace(at, innerWidth, innerHeight);
+        const p = at && markerPlace(at, innerWidth, innerHeight, hud);
         if (p) next.push({ ...n, ...p });
       }
-      const same = next.length === raw.length && next.every((m, i) => m.ship === raw[i]?.ship && m.x === raw[i].x && m.y === raw[i].y && m.angle === raw[i].angle);
+      const same = next.length === raw.length && next.every((m, i) => m.ship === raw[i]?.ship && m.x === raw[i].x && m.y === raw[i].y && m.angle === raw[i].angle && m.edge === raw[i].edge);
       if (!same) {
         raw = next;
-        placed = spread(next, innerHeight);
+        placed = spread(next, innerWidth, innerHeight);
       }
     };
     raf = requestAnimationFrame(tick);
@@ -53,8 +54,8 @@
 
 <div class="pois" data-testid="pois">
   {#each placed as m (m.ship)}
-    <button class="poi" class:foe={m.kind === 'hostile'} style="left:{m.x}px; top:{m.y}px" data-testid="poi-{m.ship}" data-kind={m.kind} aria-label="{m.name}: off screen, go to" onclick={() => api.selectShip(m.ship)}>
-      <i class="arrow" style="transform: rotate({m.angle}deg)"></i>
+    <button class="poi" class:foe={m.kind === 'hostile'} class:after={m.edge === 'r'} style="left:{m.x}px; top:{m.y}px; transform: translate({m.tx}%, {m.ty}%)" data-testid="poi-{m.ship}" data-kind={m.kind} data-edge={m.edge} aria-label="{m.name}: off screen, go to" onclick={() => api.selectShip(m.ship)}>
+      <svg class="arrow" width="12" height="12" viewBox="-6 -6 12 12" style="transform: rotate({m.angle}deg)" aria-hidden="true"><path d="M-5 0 H4 M0 -4.5 L4.5 0 L0 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
       <Icon name={NODE_ICONS[m.kind]} size={18} />
       <span class="name">{m.name}</span>
     </button>
@@ -63,10 +64,12 @@
 
 <style>
   .pois { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-  .poi { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 4px; min-height: 0; min-width: 0; height: 28px; max-width: 180px; padding: 0 8px 0 4px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--cyan); pointer-events: auto; font-size: 12px; }
+  .poi { position: absolute; display: flex; align-items: center; gap: 4px; min-height: 0; min-width: 0; height: 28px; max-width: 180px; padding: 0 8px 0 4px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--cyan); pointer-events: auto; font-size: 12px; }
   .poi:hover { background: var(--panel-3); border-color: var(--cyan); }
   .poi.foe { color: var(--red); border-color: #7a2a2a; }
-  /* A small triangle that points along the marker's direction (rotated by its angle; 0 = right). */
-  .arrow { flex: none; width: 0; height: 0; margin: 0 2px; border-left: 8px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+  /* A small arrow drawn pointing right (angle 0) and rotated by the direction to the target. */
+  .arrow { flex: none; }
+  /* The arrow sits on the side that faces the target: after the name on the right edge, before it otherwise. */
+  .poi.after .arrow { order: 3; }
   .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 </style>
