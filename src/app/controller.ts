@@ -292,6 +292,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
         else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
+      // Arriving at a node: the old node's tile, ship and crew selection means nothing there.
+      if (events.some((e) => e.type === 'sector.deployed')) selectTile(null);
       if (events.some((e) => e.type === 'combat.started')) {
         // The next fight closes the last one's card and its alert.
         alerts.clear('fr');
