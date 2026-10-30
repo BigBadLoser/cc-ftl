@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { UiAiming, UiApi, UiCombat, UiShipCombat } from '../api';
+  import type { UiAiming, UiApi, UiBoarding, UiCombat, UiShipCombat } from '../api';
   import InsetFrame from './InsetFrame.svelte';
   import EnemyCard from './EnemyCard.svelte';
+  import BoardingCard from './BoardingCard.svelte';
   import { TICK_HZ } from '../../sim/time';
   import { nextHeatRate, type HeatSample } from './heatRate';
   import { weaponForKey } from './weaponKeys';
@@ -20,6 +21,7 @@
 
   type System = 'weapons' | 'shields' | 'engines';
   let aiming = $state<UiAiming | null>(null);
+  let boarding = $state<UiBoarding[]>([]);
   const enemy = $derived<UiShipCombat | undefined>(
     combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0],
   );
@@ -118,6 +120,7 @@
   }
   onMount(() => {
     const un = api.aiming.subscribe((a) => (aiming = a));
+    const un3 = api.boarding.subscribe((b) => (boarding = b));
     const un2 = api.snapshot.subscribe((x) => {
       tick = x.tick;
     });
@@ -125,6 +128,7 @@
     return () => {
       un();
       un2();
+      un3();
       window.removeEventListener('keydown', onKey, true);
     };
   });
@@ -133,7 +137,10 @@
 
 <div class="hud" data-testid="combat-hud">
   {#if enemy}
-    <div class="top"><EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} /></div>
+    <div class="top">
+      <EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} />
+      {#each boarding.filter((x) => x.ship === enemy.ship) as b (b.ship)}<BoardingCard {api} {b} />{/each}
+    </div>
   {/if}
   {#if me && insetShip}
     <div class="insetdock">
@@ -164,6 +171,8 @@
     position: absolute;
     left: calc(var(--gutter) + var(--sal));
     top: calc(34px + var(--sat));
+    display: grid;
+    gap: 10px;
   }
   /* Clear of the strip (182px tall, 8px off the bottom) with a gutter between. */
   .insetdock {

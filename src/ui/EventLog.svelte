@@ -31,7 +31,7 @@
     fire: 'fire', breach: 'alert', 'crew.downed': 'downed', 'crew.died': 'skull', 'crew.rescued': 'person', 'module.destroyed': 'module',
     combat: 'combat', 'ship.disabled': 'ship', 'ship.destroyed': 'prize', 'ship.fled': 'fast', 'ship.captured': 'flag', hail: 'hail',
     trade: 'credits', production: 'wrench', container: 'stock', story: 'list', lost: 'skull',
-    payout: 'credits', kill: 'skull', warning: 'alert', job: 'stock', mining: 'pick', transfer: 'stock', galaxy: 'ship', outpost: 'station', creatures: 'combat', crew: 'person',
+    payout: 'credits', kill: 'skull', warning: 'alert', job: 'stock', mining: 'pick', transfer: 'stock', galaxy: 'ship', outpost: 'station', creatures: 'combat', crew: 'person', boarding: 'combat',
   };
   const shown = $derived(open ? list : list.slice(0, 1));
 </script>

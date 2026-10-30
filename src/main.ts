@@ -1,3 +1,4 @@
+import { startBoardingScenario } from './app/boardingScenario';
 import { mount } from 'svelte';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
@@ -261,7 +262,7 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
-  if (scenario === 'fight') {
+  if (scenario === 'fight' || scenario === 'boarding') {
     // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
     const g = sim.galaxy;
     const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
@@ -272,6 +273,7 @@ function startScenario(): void {
       if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
       setTimeout(() => {
         spawnRaider();
+        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'), spawnRaider);
         if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
       }, 400);
     }, 400);
@@ -370,6 +372,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  boarding: bridge.boarding,
   ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,

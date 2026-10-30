@@ -4,6 +4,7 @@ import { CrewC, DeadC, DownedC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, S
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
+import { recallReason } from './boardingText';
 import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
 import { createStore, type Readable } from './store';
 
@@ -18,6 +19,7 @@ const EXPIRE_MS = 45000;
 export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> = {
   'combat.started': 'urgent', 'fire.started': 'urgent', 'hull.breach': 'urgent', 'o2.low': 'urgent', 'power.shortage': 'urgent',
   'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
+  'crew.recallStarted': 'urgent', 'crew.recallFailed': 'urgent', // a party member left on the enemy ship (the rest of the boarding events are log-only)
   'story.started': 'urgent', // only a notice with a lead you can open; plain notices are log-only (see describe)
   'crew.died': 'log', 'crew.rescued': 'log', 'crew.moodLow': 'log', 'job.missingMaterials': 'log', 'storage.full': 'log', 'production.done': 'log',
   'mining.waiting': 'log', 'mining.done': 'log', 'transfer.queued': 'log', 'transfer.delivered': 'log', 'transfer.blocked': 'log',
@@ -134,6 +136,17 @@ export function createAlerts(sim: Sim): Alerts {
       case 'eggsac.hatched': {
         const aliens = e.aliens;
         return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Creatures aboard: ${sim.world.get(e.ship, ShipC)?.name ?? 'wreck'}`, subject: tileAt(e.x, e.y), resolved: () => !aliens.some(alive) };
+      }
+      case 'crew.recallStarted': case 'crew.recallFailed': {
+        // Boarders who could not be brought home are still on the enemy ship: urgent while they stand there.
+        const stuck = e.type === 'crew.recallStarted' ? e.left : e.crew.map((crew) => ({ crew, reason: e.reason }));
+        const first = stuck[0];
+        if (!first) return null;
+        const ids = stuck.map((l) => l.crew);
+        const reasons = [...new Set(stuck.map((l) => recallReason(l.reason)))].join(', ');
+        const text = `Left behind: ${ids.map(crewName).join(', ')} (${reasons})`;
+        const aboard = (id: number) => alive(id) && shipIdOf(sim, sim.world.get(id, PositionC)) !== home();
+        return { kind: 'boarders.stranded', key: `rl${first.crew}`, text, subject: crewSubject(sim, first.crew), resolved: () => !ids.some(aboard) };
       }
       case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !sim.sector.inCombat };
       default: return null;

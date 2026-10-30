@@ -1,6 +1,6 @@
 /** What a right-click can mean at one spot, and how the choices are offered. */
 
-export type OrderId = 'attack' | 'man' | 'board' | 'walk';
+export type OrderId = 'attack' | 'man' | 'board' | 'sabotage' | 'walk';
 
 /** What is under the cursor, as the controller found it. */
 export interface OrderProbe {
@@ -10,6 +10,8 @@ export interface OrderProbe {
   station?: { module: number; name: string };
   /** One of the player's shuttles (or its docked airlock) that crew can climb into. */
   shuttle?: { vehicle: number; name: string };
+  /** A working module of a hostile ship that boarders stand on. */
+  sabotage?: { module: number; name: string };
   /** A floor tile the selection could walk to. */
   walk?: boolean;
 }
@@ -25,6 +27,7 @@ export function orderChoices(p: OrderProbe): OrderChoice[] {
   if (p.foe) out.push({ id: 'attack', label: `Attack ${p.foe.name}` });
   if (p.station) out.push({ id: 'man', label: `Man ${p.station.name}` });
   if (p.shuttle) out.push({ id: 'board', label: `Board ${p.shuttle.name}` });
+  if (p.sabotage) out.push({ id: 'sabotage', label: `Sabotage ${p.sabotage.name}` });
   if (p.walk) out.push({ id: 'walk', label: 'Walk here' });
   return out;
 }

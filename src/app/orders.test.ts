@@ -29,4 +29,11 @@ describe('order choices', () => {
   it('nothing under the cursor offers nothing', () => {
     expect(orderChoices({})).toEqual([]);
   });
+
+  it('a hostile module offers sabotage before walking', () => {
+    const c = orderChoices({ sabotage: { module: 9, name: 'reactor' }, walk: true });
+    expect(c.map((x) => x.id)).toEqual(['sabotage', 'walk']);
+    expect(c[0]?.label).toBe('Sabotage reactor');
+    expect(needsMenu(c)).toBe(true);
+  });
 });
