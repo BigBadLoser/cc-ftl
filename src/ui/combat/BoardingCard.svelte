@@ -9,12 +9,12 @@
    */
   let { api, b }: { api: UiApi; b: UiBoarding } = $props();
   const STATE = { sabotage: 'wrecking', paused: 'fighting', fighting: 'fighting', holding: 'ready', returning: 'returning', down: 'down' } as const;
-  const TONE = { sabotage: 'green', paused: 'amber', fighting: 'amber', holding: 'dim', returning: 'cyan', down: 'red' } as const;
+  const TONE = { sabotage: 'green', paused: 'amber', fighting: 'amber', holding: 'dim', returning: 'neutral', down: 'red' } as const;
   const hpFill = (v: number) => (v < 0.3 ? 'var(--health-bad)' : v < 0.6 ? 'var(--health-warn)' : 'var(--health-good)');
   const recallIds = $derived(b.party.filter((p) => p.state !== 'returning' && p.state !== 'down').map((p) => p.id));
 </script>
 
-<Frame title="Boarding party" style="width:290px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
+<Frame title="Boarding party" style="width:290px; margin-top:9px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
   {#snippet right()}
     <Pill tone="dim">{b.party.length} aboard</Pill>
   {/snippet}
@@ -49,7 +49,7 @@
         </div>
       </div>
     {:else}
-      <p class="hint">Select boarders and right-click an enemy module to sabotage it.</p>
+      {#if recallIds.length}<p class="hint">Select boarders and right-click an enemy module to sabotage it.</p>{/if}
     {/each}
     <button class="go" data-testid="boarding-recall" disabled={!b.canRecall || recallIds.length === 0} title={b.canRecall ? 'Walk the party back to the shuttle and fly home' : 'No shuttle is docked here'} onclick={() => api.dispatch({ type: 'crew.recall', ids: recallIds })}>Recall party</button>
   </div>
@@ -62,7 +62,7 @@
   .nm { all: unset; cursor: pointer; color: var(--text); font: 600 13px var(--head-font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nm:hover, .nm:focus-visible { color: var(--cyan); }
   .st { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; text-align: right; }
-  .st.green { color: var(--green); } .st.amber { color: var(--amber); } .st.red { color: var(--red); } .st.cyan { color: var(--cyan); } .st.dim { color: var(--dim); }
+  .st.green { color: var(--green); } .st.amber { color: var(--amber); } .st.red { color: var(--red); } .st.neutral { color: var(--text); } .st.dim { color: var(--dim); }
   .sab { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 6px; }
   .line { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .line b { font: 600 13px var(--head-font); letter-spacing: 0.03em; }
