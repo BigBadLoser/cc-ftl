@@ -57,6 +57,11 @@ export function boardingTile(sim: Sim, vehicle: number): { shipId: number; x: nu
     return p ? { shipId: p.shipId, ...p.inside } : null;
   }
   if (v.state !== 'stowed') return null;
+  return bayAccessTile(sim, v);
+}
+
+/** The tile in front of a vehicle's home bay (where those aboard step out once it is stowed), or null when it has no bay. */
+export function bayAccessTile(sim: Sim, v: { home: number }): { shipId: number; x: number; y: number } | null {
   const m = sim.world.get(v.home, ModuleC);
   const def = m && sim.content.modules[m.def];
   const t = m && def && accessTile(def, m.x, m.y, m.rot);

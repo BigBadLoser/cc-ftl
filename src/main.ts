@@ -21,7 +21,7 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
+import { createSaver, lostReason, reloadLastSave, restartNewGame, startGame } from './app/saves';
 import { content } from './content';
 import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
@@ -125,10 +125,13 @@ window.addEventListener('keydown', (e) => {
  */
 const AUTOSAVE_MS = 30_000;
 const session = createStore<UiSession>({ notice: start.notice, lost: null });
-const save = (): void => {
-  // Read the loss from the sim, not the session: the poll below lags by up to a second.
-  if (!session.get().lost && !lostReason(sim)) writeSave(sim);
-};
+// Read the loss from the sim too, not only the session: the poll below lags by up to a second. A `?seed=` game never saves.
+const SAVE_FAILED = 'Saving failed: the browser refused the write (storage full or blocked). Your progress since the last save is not stored.';
+const save = createSaver(sim, start.persist, () => session.get().lost !== null, (ok) => {
+  const cur = session.get();
+  if (!ok && cur.notice !== SAVE_FAILED) session.set({ ...cur, notice: SAVE_FAILED });
+  else if (ok && cur.notice === SAVE_FAILED) session.set({ ...cur, notice: null });
+});
 setInterval(save, AUTOSAVE_MS);
 setInterval(() => {
   if (session.get().lost) return;
