@@ -3,7 +3,7 @@ import { AirlockC, airlockWorking } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
 import { clearPath, isIncapacitated, origin } from '../crew/helpers';
-import { findPath } from '../crew/pathfind';
+import { planWalk } from '../eva/route';
 import { abortTask } from '../ai/task';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
@@ -79,7 +79,7 @@ export function orderRecall(sim: Sim, ids: readonly number[]): string | null {
       if (!at) { err ??= 'notBoardable'; continue; }
       if (!airlockWorking(sim, v.dock)) { err ??= 'airlockDown'; continue; }
       const o = origin(pos);
-      if (!(o.x === at.x && o.y === at.y) && !findPath(sim, shipId, o, { x: at.x, y: at.y, adjacent: false })) { err ??= 'unreachable'; continue; }
+      if (!(o.x === at.x && o.y === at.y) && !planWalk(sim, crew, shipId, o, { x: at.x, y: at.y, adjacent: false })) { err ??= 'unreachable'; continue; }
       cancelSabotage(sim, [crew]);
       abortTask(sim, crew, 'order');
       const refused = sendToEmbark(sim, crew, sid);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, DraftedC, EmbarkOrderC, ModuleC, PathC, PositionC, RecallC, VehicleC, deserialize, placementError, serialize, spawnModule, stampShip, type Sim } from '../../sim';
+import { SuitC, AboardC, DraftedC, EmbarkOrderC, ModuleC, PathC, PositionC, RecallC, VehicleC, deserialize, placementError, serialize, spawnModule, stampShip, type Sim } from '../../sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { crewOn, dockParty, modulesOf, nth, of, run, setup, shuttleOf } from './boardingFixture';
@@ -144,5 +144,30 @@ describe('recall with several docked shuttles', () => {
     expect(of(out, 'crew.recallStarted').map((e) => e.vehicle)).toEqual([shuttles[1]]);
     expect(sim.world.has(shuttles[0]!, RecallC)).toBe(false);
     for (const c of crew) expect(sim.world.get(c, EmbarkOrderC)?.vehicle).toBe(shuttles[1]);
+  });
+  /** Crew member 0 in a suit on the outside of the ring (only a suit can stand or walk there, so the only route to a hatch or a module is across the hull). */
+  function suitedOutside(): { sim: Sim; crew: number; store: number } {
+    const { sim, crew } = twoDocks();
+    const c = crew[0]!;
+    sim.world.add(c, PositionC, { x: 205, y: 200, toX: 205, toY: 200, progress: 0, facing: 0 });
+    sim.world.add(c, SuitC, { worn: true });
+    for (const a of sim.world.query(ModuleC)) if (sim.world.get(a, ModuleC)!.def === 'module.airlock') sim.world.get(a, ModuleC)!.powered = true;
+    return { sim, crew: c, store: spawnModule(sim, 'module.storage', 207, 207, 0) };
+  }
+
+  it('recalls a suited boarder whose only route is across the hull', () => {
+    const { sim, crew } = suitedOutside();
+    sim.enqueue({ type: 'crew.recall', ids: [crew] });
+    const out = run(sim, 1);
+    expect(of(out, 'command.rejected')).toEqual([]);
+    expect(of(out, 'crew.recallStarted')).toHaveLength(1);
+  });
+
+  it('sends a suited boarder to sabotage a module the same way', () => {
+    const { sim, crew, store } = suitedOutside();
+    sim.enqueue({ type: 'crew.sabotage', ids: [crew], module: store });
+    const out = run(sim, 1);
+    expect(of(out, 'command.rejected')).toEqual([]);
+    expect(of(out, 'crew.sabotageStarted')).toHaveLength(1);
   });
 });

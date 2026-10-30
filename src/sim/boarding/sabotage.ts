@@ -5,7 +5,7 @@ import { shipById } from '../combat/ships';
 import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, JobC, PathC, PositionC, type Job, type Path } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
 import { isIncapacitated, origin } from '../crew/helpers';
-import { findPath } from '../crew/pathfind';
+import { planWalk } from '../eva/route';
 import { AllegianceC, FighterC } from '../fight/components';
 import { destroyJob } from '../items/stacks';
 import { ModuleC } from '../modules/components';
@@ -51,7 +51,7 @@ export function planSabotage(sim: Sim, crew: number, module: number): { x: numbe
   if (!pos || !m || !def) return null;
   let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
   for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
-    const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true });
+    const steps = planWalk(sim, crew, shipIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true })?.steps; // the route the walk will take (a suited boarder may cross the hull)
     if (steps && (!plan || steps.length < plan.steps.length)) plan = { x: t.x, y: t.y, steps };
   }
   return plan;
