@@ -225,7 +225,7 @@ def _banner_face(emblem, nu, nv, keyed):
     the key colours (mkP / mkS) of the livery mask; else the base sprite's neutral cloth under it."""
     from .roof_livery import _emblem
     P, S = ("mkP", "mkS") if keyed else ("plate", "steelL")
-    sc = 60 / nu                                                                       # emblem cells per banner cell
+    sc = 66 / nu                                                                       # emblem cells per banner cell (the ring clears the hem)
     cy = nv - nu / 2 - 1
 
     def fn(i, j):
@@ -247,13 +247,16 @@ def _banner_face(emblem, nu, nv, keyed):
 
 
 def banner(rot, emblem=None, keyed=False):
-    """A hanging banner (1x1): a mast on a weighted foot, an arm at the top, the banner hung from it in the ship's
-    livery with its roof emblem on both faces (livery mask <id>.lv.<emblem>; plain bars without one)."""
+    """A banner post (1x1): a post on a weighted foot up the middle of the banner's back, a crossbar at the top, the banner
+    hung from it in the ship's livery with its roof emblem on both faces (livery mask <id>.lv.<emblem>; plain bars
+    without one)."""
     k = K(f"banner_{rot}", (1, 1), rot)
-    k.box(-0.32, 0, 0.0, 0.3, 0.3, 0.07, "steelD", top="steel", bevel=0.02)             # weighted foot
-    k.cyl(-0.32, 0, 0.07, 0.04, 2.05, "steelL", top="steel", sides=8)                  # mast
-    k.cyl(-0.32, 0, 2.12, 0.065, 0.05, "ochD", top="ochM", sides=8)                    # finial
-    k.box(0.02, 0, 2.0, 0.72, 0.04, 0.04, "steel", top="steelL")                         # arm
+    k.box(0, -0.06, 0.0, 0.34, 0.3, 0.07, "steelD", top="steel", bevel=0.02)             # weighted foot
+    k.cyl(0, -0.06, 0.07, 0.04, 2.08, "steelL", top="steel", sides=8)                  # the post, behind the banner
+    k.cyl(0, -0.06, 2.15, 0.065, 0.05, "ochD", top="ochM", sides=8)                    # finial
+    k.box(0, -0.03, 2.0, 0.72, 0.04, 0.04, "steel", top="steelL")                        # crossbar
+    for u in (-0.35, 0.35):                                                            # crossbar end caps
+        k.box(u, -0.03, 1.99, 0.05, 0.06, 0.06, "ochD", top="ochM")
     objs = k.build()
     f = K(f"banner_{rot}_face{'_lv' if keyed else ''}", (1, 1), rot)
     f.m.flat = True
@@ -261,7 +264,7 @@ def banner(rot, emblem=None, keyed=False):
     nu, nv = round(w * 32), round(h * 32)
     fn = _banner_face(emblem, nu, nv, keyed)
     for sv in (1, -1):                                                                 # both faces
-        a, b = f.p(0.05 - sv * w / 2, sv * 0.012), f.p(0.05 + sv * w / 2, sv * 0.012)
+        a, b = f.p(-sv * w / 2, sv * 0.012), f.p(sv * w / 2, sv * 0.012)
         f.m.pattern((a[0], a[1], z0), (b[0] - a[0], b[1] - a[1], 0), (0, 0, h), nu, nv, fn)
     faces = f.build()
     if keyed:                                                                          # the mask: the face alone, the rest a holdout
