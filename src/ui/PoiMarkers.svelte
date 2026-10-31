@@ -20,6 +20,8 @@
   let placed = $state<(Place & NodeEntry)[]>([]);
   /** The markers before spreading, to tell whether anything moved. */
   let raw: (Place & NodeEntry)[] = [];
+  /** The HUD geometry `placed` was spread against: a panel that grows or moves re-spreads the markers even when no raw placement changed. */
+  let hudKey = '';
   const entries = $derived(nodeEntries({ trade, prizes, combat, shuttles }));
 
   onMount(() => {
@@ -47,9 +49,11 @@
         const p = at && markerPlace(at, innerWidth, innerHeight, hud);
         if (p) next.push({ ...n, ...p });
       }
-      const same = next.length === raw.length && next.every((m, i) => m.ship === raw[i]?.ship && m.x === raw[i].x && m.y === raw[i].y && m.angle === raw[i].angle && m.edge === raw[i].edge && m.room === raw[i].room);
+      const key = hud.map((r) => `${Math.round(r.l)},${Math.round(r.t)},${Math.round(r.r)},${Math.round(r.b)}`).join(';');
+      const same = key === hudKey && next.length === raw.length && next.every((m, i) => m.ship === raw[i]?.ship && m.x === raw[i].x && m.y === raw[i].y && m.angle === raw[i].angle && m.edge === raw[i].edge && m.room === raw[i].room);
       if (!same) {
         raw = next;
+        hudKey = key;
         placed = spread(next, innerWidth, innerHeight, hud);
       }
     };
