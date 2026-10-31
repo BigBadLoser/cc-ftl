@@ -73,7 +73,8 @@
   /* Thermal overload: covers the whole strip and blocks it. */
   .lock {
     position: absolute;
-    inset: 0;
+    /* Reaches 7px above the strip so it covers the top row's frame rails whole (their lines and titles sit on the strip's top edge), not half. */
+    inset: -7px 0 0 0;
     z-index: 2;
     display: grid;
     place-content: center;

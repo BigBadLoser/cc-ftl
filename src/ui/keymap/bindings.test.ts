@@ -38,10 +38,10 @@ describe('key map', () => {
   it('rebinds, persists only the changes, and resets per group or all', () => {
     const { m, s } = memory();
     const km = createKeymap(() => s);
-    km.bind('combat.volley', 0, 'KeyB');
-    expect(km.keys('combat.volley')).toEqual(['KeyB']);
-    expect(JSON.parse(m.get(KEYS_STORE)!)).toEqual({ 'combat.volley': ['KeyB'] });
-    expect(createKeymap(() => s).keys('combat.volley')).toEqual(['KeyB']);
+    km.bind('combat.volley', 0, 'KeyJ');
+    expect(km.keys('combat.volley')).toEqual(['KeyJ']);
+    expect(JSON.parse(m.get(KEYS_STORE)!)).toEqual({ 'combat.volley': ['KeyJ'] });
+    expect(createKeymap(() => s).keys('combat.volley')).toEqual(['KeyJ']);
     km.bind('game.pause', 1, 'KeyP');
     km.reset('combat');
     expect(km.keys('combat.volley')).toEqual(['KeyV']);
@@ -122,7 +122,7 @@ describe('key map', () => {
       seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
       return seed % n;
     };
-    const chords = [...new Set(ACTIONS.flatMap((a) => a.keys))].concat(['KeyB', 'KeyP', 'Shift+KeyV', 'Digit4']);
+    const chords = [...new Set(ACTIONS.flatMap((a) => a.keys))].concat(['KeyJ', 'KeyP', 'Shift+KeyV', 'Digit4']);
     const ids = ACTIONS.map((a) => a.id as ActionId);
     const groups = [...new Set(ACTIONS.map((a) => a.group))];
     for (let run = 0; run < 40; run++) {

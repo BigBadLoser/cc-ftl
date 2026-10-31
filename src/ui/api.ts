@@ -697,6 +697,10 @@ export interface UiShuttleCrew {
   boarding: number;
   /** The ship (ShipC entity) the crew member stands on, 0 while aboard a vehicle. */
   ship: number;
+  /** Health 0..1. */
+  hp: number;
+  /** Downed, stunned, carried or otherwise unable to act. */
+  down: boolean;
 }
 
 export interface UiShuttle {

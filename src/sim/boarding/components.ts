@@ -27,3 +27,28 @@ export interface SabotageOrder {
   module: number;
 }
 export const SabotageOrderC = defineComponent<SabotageOrder>('sabotageOrder');
+
+/**
+ * On a player shuttle sent to board an enemy ship (`boarding.launch`): the party and the airlock it will dock at. 'pilot': the
+ * pilot walks to the bay; 'loading': the passengers walk to it; 'flying': the shuttle is on its way; once docked the passengers step
+ * out and the order ends. Plain data, so a save in the middle resumes the launch.
+ */
+export interface BoardLaunch {
+  crew: number[];
+  airlock: number;
+  /** `returning`: called off on the approach, flying the party home to step out in the bay. */
+  state: 'pilot' | 'loading' | 'flying' | 'returning';
+  /** Tick the current state began (the walk to the bay gives up after LAUNCH_WALK_TICKS). */
+  since: number;
+}
+export const BoardLaunchC = defineComponent<BoardLaunch>('boardLaunch');
+
+/**
+ * On a party member a boarding launch drafted to hold them (the walk to the shuttle drafts the pilot; crew the player had drafted
+ * get none): the shuttle whose launch holds them. Kept on the crew, not the launch, so they are let go back to work however the
+ * launch ends, the shuttle destroyed with it included (launchSystem sweeps holds whose launch is gone).
+ */
+export interface BoardHold {
+  vehicle: number;
+}
+export const BoardHoldC = defineComponent<BoardHold>('boardHold');
