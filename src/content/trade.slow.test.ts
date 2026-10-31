@@ -300,6 +300,7 @@ describe('trade state', () => {
     const raw = JSON.parse(serialize(sim)) as Record<string, unknown>;
     delete raw['trade'];
     const loaded = deserialize(JSON.stringify(raw), content);
-    expect(loaded.trade).toEqual({ credits: 0, hails: [], offers: [], deals: [], nextId: 1 });
+    // Loading sets the high-water mark (#166) from what the save holds: none here.
+    expect(loaded.trade).toEqual({ credits: 0, bestCredits: 0, hails: [], offers: [], deals: [], nextId: 1 });
   });
 });
