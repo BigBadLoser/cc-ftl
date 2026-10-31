@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
+import { AboardC, DraftedC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
 import { BoardLaunchC } from '../../sim/boarding/components';
 import { launchOf, orderLaunch } from '../../sim/boarding/launch';
 import { pickPilot } from '../../sim/mining/pilot';
@@ -63,10 +63,29 @@ describe('boarding.launch', () => {
     const events = run(sim, 2);
     expect(of(events, 'command.rejected').map((e) => e.reason)).toEqual(['noPilot']);
     for (const c of party) expect(sim.world.has(c, EmbarkOrderC)).toBe(false);
+    for (const c of party) expect(sim.world.has(c, DraftedC)).toBe(false); // the launch let go of them: back to work
     run(sim, 600);
     const v = sim.world.get(shuttle, VehicleC)!;
     expect(v.pilot).toBe(0);
     expect(v.passengers).toEqual([]);
+  });
+
+  it('a passenger too slow to reach the shuttle stays home: walk stopped, back to work, and the player hears of it', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 3);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 3000, () => sim.world.get(shuttle, BoardLaunchC)?.state === 'loading');
+    const late = party.filter((c) => !sim.world.has(c, AboardC));
+    expect(late.length).toBeGreaterThan(0); // the passengers have only just been sent
+    sim.world.get(shuttle, BoardLaunchC)!.since = sim.tick - 10_000; // the walk has stalled
+    const events = run(sim, 2);
+    expect(sim.world.get(shuttle, BoardLaunchC)?.state).toBe('flying');
+    expect(of(events, 'command.rejected').map((e) => e.reason)).toEqual(['leftBehind']);
+    for (const c of late) {
+      expect(sim.world.has(c, EmbarkOrderC)).toBe(false);
+      expect(sim.world.has(c, DraftedC)).toBe(false);
+    }
   });
 
   it('a shuttle has one owner: a launching shuttle is not free for cargo runs or trade, and a ferrying one cannot launch', () => {
@@ -83,7 +102,7 @@ describe('boarding.launch', () => {
     const other = setup();
     const s2 = shuttleOf(other, 1);
     other.world.add(s2, FerryC, { phase: 'load' } as never); // only its presence matters here; no tick runs
-    expect(orderLaunch(other, s2, crewOn(other, 1).slice(0, 1), airlockOf(other, 2))).toBe('busy');
+    expect(orderLaunch(other, s2, crewOn(other, 1).slice(0, 1), airlockOf(other, 2))).toBe('shuttleBusy');
   });
 
   it('the whole party is reserved once a launch is accepted: no crew member can be picked for a second launch', () => {

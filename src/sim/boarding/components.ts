@@ -40,5 +40,7 @@ export interface BoardLaunch {
   state: 'pilot' | 'loading' | 'flying' | 'returning';
   /** Tick the current state began (the walk to the bay gives up after LAUNCH_WALK_TICKS). */
   since: number;
+  /** Party members the launch drafted (the walk to the shuttle drafts the pilot) (they go back to work if they don't fly); crew the player had drafted are not listed. */
+  held?: number[];
 }
 export const BoardLaunchC = defineComponent<BoardLaunch>('boardLaunch');
