@@ -181,5 +181,5 @@ export interface TradeState {
 }
 
 export function newTrade(credits = 0): TradeState {
-  return { credits, hails: [], offers: [], deals: [], nextId: 1 };
+  return { credits, bestCredits: credits, hails: [], offers: [], deals: [], nextId: 1 };
 }
