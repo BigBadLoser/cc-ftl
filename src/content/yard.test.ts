@@ -354,7 +354,7 @@ describe('shipyard: cost of a big plan', () => {
   it('quotes a very large plan in well under 50 ms (the Shipyard tab re-quotes while it is open)', () => {
     const { sim, station, me } = yardGame();
     planHull(sim, me, outline(sim, me, -20, -20, 60, 40)); // 196 tiles of outline round 1700 floor
-    const times = [0, 1, 2].map(() => {
+    const times = [0, 1, 2, 3, 4, 5, 6].map(() => { // best of 7: this is a wall-clock bound, and the box is shared by parallel workers
       const t = performance.now();
       const q = quoteYard(sim, station, me);
       expect(q.walls.length + q.floor.length).toBeLessThanOrEqual(40);
