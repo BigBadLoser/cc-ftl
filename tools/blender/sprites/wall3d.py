@@ -733,12 +733,17 @@ def end_face(fam, side, level="up", corners=0):
                   style().toe, 3, base=2 * PAINT)
         k.side = ax
     edges = [(a, b) for a, b, _ in spans]
+    ft = style().foot                               # the skirts' profile: the look's (an upright foot under its slope,
+    run = math.ceil(run_ * W.GN - 1e-6) / W.GN if ft else run_     # its run on the cells) or the plain slope
     n = 64
-    for c in range(n):                                                       # the skirts' cut sections
-        u0, u1 = c / n, (c + 1) / n
+    us = sorted({c / n for c in range(n + 1)} | {u for a, b in edges for u in (a - run, b + run) if 0 < u < 1})
+    for u0, u1 in zip(us, us[1:]):                                           # the skirts' cut sections
         if any(a <= (u0 + u1) / 2 < b for a, b in edges):
             continue
-        zt = [zs * max(0.0, 1.0 - min(max(a - u, u - b) for a, b in edges) / run_) for u in (u0, u1)]
+        dist = lambda u: min(max(a - u, u - b) for a, b in edges)           # noqa: E731
+        if dist((u0 + u1) / 2) > run:                                       # (past the toe: no skirt; a column
+            continue                                                        # is split where the foot stands)
+        zt = [ft + (zs - ft) * max(0.0, 1.0 - dist(u) / run) for u in (u0, u1)]
         if max(zt) <= 1e-6:
             continue
         lip = [max(0.0, z - 0.026) for z in zt]
