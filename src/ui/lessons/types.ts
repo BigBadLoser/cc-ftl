@@ -1,5 +1,5 @@
 import type { Command, SimEvent } from '../../sim';
-import type { UiAiming, UiCombat } from '../api';
+import type { UiAiming, UiCombat, UiGoals, UiTrade } from '../api';
 import type { Condition } from './conditions';
 import type { SpeakerId } from './speakers';
 import type { LessonTarget } from './targets';
@@ -11,6 +11,12 @@ import type { LessonTarget } from './targets';
 export interface LessonCtx {
   combat: UiCombat;
   aiming: UiAiming | null;
+  /** Hailable ships and stations in the node (the station lesson reads who is a station and who has been hailed). */
+  trade: UiTrade;
+  /** The ship or station picked in the selection panel. */
+  selectedShip: number | null;
+  /** The goal chain (null when finished or skipped). */
+  goals: UiGoals | null;
   busy: boolean;
 }
 

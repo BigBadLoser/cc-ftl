@@ -7,6 +7,9 @@ import type { LessonCtx, LessonDef, LessonSignal } from './types';
 const ctx = (over: Partial<LessonCtx> & { fight?: boolean } = {}): LessonCtx => ({
   combat: { inCombat: !!over.fight, player: null, enemies: [] },
   aiming: null,
+  trade: { credits: 0, partners: [], deals: [] },
+  selectedShip: null,
+  goals: null,
   busy: false,
   ...over,
 });

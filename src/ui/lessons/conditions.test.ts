@@ -4,7 +4,7 @@ import { keyText } from './keyText';
 import type { LessonFrame } from './types';
 
 const frame = (signals: LessonFrame['signals'], inCombat = false): LessonFrame => ({
-  ctx: { combat: { inCombat, player: null, enemies: [] }, aiming: null, busy: false },
+  ctx: { combat: { inCombat, player: null, enemies: [] }, aiming: null, trade: { credits: 0, partners: [], deals: [] }, selectedShip: null, goals: null, busy: false },
   signals,
 });
 

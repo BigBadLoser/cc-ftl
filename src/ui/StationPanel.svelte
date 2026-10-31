@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { anchor } from './lessons/anchors';
   import type { UiApi, UiJobs, UiTrade } from './api';
   import BlueprintList from './BlueprintList.svelte';
   import FloatingWindow from './FloatingWindow.svelte';
@@ -34,7 +35,7 @@
     <small class="role">{p?.role ?? ''}</small>
     <span class="chip" data-testid="station-credits" title="Your credits">₵ {trade.credits}</span>
   {/snippet}
-  <div class="tabs" role="tablist">
+  <div class="tabs" role="tablist" data-lesson={anchor('station.tabs')}>
     {#each tabs as t (t.id)}
       <button role="tab" aria-selected={tab === t.id} class:on={tab === t.id} data-testid="station-tab-{t.id}" onclick={() => (tab = t.id)}>{t.label}{#if t.n}<span class="n">{t.n}</span>{/if}</button>
     {/each}

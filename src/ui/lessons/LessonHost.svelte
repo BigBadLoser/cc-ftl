@@ -2,7 +2,7 @@
   import { keymap } from '../keymap';
   import { isTypingTarget, modalOpen } from '../keys';
   import { onMount } from 'svelte';
-  import type { UiAiming, UiApi, UiCombat, UiSignal } from '../api';
+  import type { UiAiming, UiApi, UiCombat, UiGoals, UiSignal, UiTrade } from '../api';
   import type { Rect } from '../combat/panelPlace';
   import CoachMark from './CoachMark.svelte';
   import { LESSONS } from './defs';
@@ -35,6 +35,9 @@
 
     let combat: UiCombat = { inCombat: false, player: null, enemies: [] };
     let aiming: UiAiming | null = null;
+    let trade: UiTrade = { credits: 0, partners: [], deals: [] };
+    let selectedShip: number | null = null;
+    let goals: UiGoals | null = null;
     let speed: Speed = 0;
     let storyBusy = false;
     // The window is in the background: no lesson opens while the player is away (the background pause owns the clock then).
@@ -49,6 +52,9 @@
     const unsubs = [
       api.combat.subscribe((c) => (combat = c)),
       api.aiming.subscribe((a) => (aiming = a)),
+      api.trade.subscribe((t) => (trade = t)),
+      api.selectedShip.subscribe((s) => (selectedShip = s)),
+      api.goals.subscribe((g) => (goals = g)),
       api.snapshot.subscribe((s) => (speed = s.speed)),
       api.story.subscribe((s) => (storyBusy = !!s.active)),
       api.onSignal((s) => pending.push(s)),
@@ -58,7 +64,7 @@
     let raf = 0;
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      const ctx: LessonCtx = { combat, aiming, busy: storyBusy || uiBusy || away };
+      const ctx: LessonCtx = { combat, aiming, trade, selectedShip, goals, busy: storyBusy || uiBusy || away };
       eng.update(ctx, performance.now(), pending.splice(0));
       const t = eng.current?.step.target;
       const r = t ? resolveTarget(t, { ctx, api, doc: document }) : null;
