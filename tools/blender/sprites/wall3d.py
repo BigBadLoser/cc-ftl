@@ -81,10 +81,28 @@ class Relief:
         m.poly([core.G(*p) for p in pts], col, flip=n.dot((pts[1] - pts[0]).cross(pts[2] - pts[0])) < 0)
 
     def drop_below(self, z):
-        """Leave out every polygon lying wholly at or under height z."""
+        """Cut every polygon off at height z: what lies over it stays (a part running from the floor up past it too)."""
         for m in (self.m, self.ns):
-            if m is not None:
-                m.f = [f for f in m.f if max(m.v[i][2] for i in f[0]) > z + 1e-6]
+            if m is None:
+                continue
+            out = []
+            for f in m.f:
+                pts = [m.v[i] for i in f[0]]
+                if min(p[2] for p in pts) >= z - 1e-6:
+                    out.append(f)
+                    continue
+                kept = []
+                for p, q in zip(pts, pts[1:] + pts[:1]):                    # (Sutherland-Hodgman, one plane)
+                    if p[2] >= z:
+                        kept.append(p)
+                    if (p[2] >= z) != (q[2] >= z):
+                        t = (z - p[2]) / (q[2] - p[2])
+                        kept.append(tuple(a + (b - a) * t for a, b in zip(p, q)))
+                if len(kept) >= 3 and max(p[2] for p in kept) > z + 1e-6:
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in kept]
+                    out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
+            m.f = out
 
     def build(self):
         """Its objects: the mesh, and the one casting no shadow if any (flagged "noshadow")."""
@@ -571,8 +589,9 @@ def _in_top(sp, ax, plane, u, side):
 def hull_cap(mask, deco=None, corners=0):
     """The far hull over the partitions' height, to draw over the partition piece of the same mask (the far hull's
     inside face is the partitions'): its face's band over their height a black cut, its top's armour plates and cut
-    band. "wide": (its own objects, with the partition piece's), so its px are where it stands in front of the
-    partition, which covers the rest."""
+    band. env_build "over": (its own objects, with the partition piece's), so its px are where it stands in front of
+    the partition, which covers the rest, in its own colours (its edges blend with nothing of the partition's, so it
+    sits on any of the partition's designs and looks)."""
     own = block(mask, "hull", deco, level="up", corners=corners, above=W.HF)
     return own, own + block(mask, "wall", level="up", corners=corners)
 
@@ -643,7 +662,7 @@ def _end_spans(fam, side, level, corners):
 
 def hull_cap_end(side, corners=0):
     """The far hull's end section over the partition's (end_face("wall"), drawn under it): the hull behind the
-    partition, its section in the partition's tone, and all of it over the partitions' height a black cut. "wide", as
+    partition, its section in the partition's tone, and all of it over the partitions' height a black cut. "over", as
     hull_cap."""
     hs, ws = _end_spans("hull", side, "up", corners), _end_spans("wall", side, "up", corners)
     ax = "y" if side == "s" else "x"

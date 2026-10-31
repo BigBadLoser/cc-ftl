@@ -66,7 +66,7 @@ def render_sprite(sid, kind, objs):
         c, al = _pad1(c), np.pad(al, 1)
         z = np.zeros((H + 2, W + 2, 4), np.uint8)
         return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
-    own, wide = objs if kind == "wide" else (objs, None)
+    own, wide = objs if kind in ("wide", "over") else (objs, None)
     xmin, xmax, ymin, ymax = core.extent_px(own)
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
@@ -78,9 +78,9 @@ def render_sprite(sid, kind, objs):
             o.is_holdout = cut                          # design they are; a wide of its own, its px all its own's)
             o.hide_render = not cut
         _, a = core.render(W, H, "color")
-        for o in extra:
-            o.is_holdout, o.hide_render = False, False
-        _show(only, False)
+        for o in extra:                                 # ("over": its px where it is in front of the others, its
+            o.is_holdout, o.hide_render = False, kind == "over"     # colours its own: drawn over them, its edges
+        _show(only, False)                                          # blend with nothing of theirs)
         rgb, aw = core.render(W, H, "color")
         _show(only, True)
         _show(extra, False)
@@ -98,7 +98,7 @@ def render_sprite(sid, kind, objs):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
-    elif kind in ("block", "wide", "fx", "ghost"):
+    elif kind in ("block", "wide", "over", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)

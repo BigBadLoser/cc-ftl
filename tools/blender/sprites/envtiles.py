@@ -40,7 +40,7 @@ for _m in range(16):
                 SPRITES.append((f"tile.hull.{PRE[_lv]}{_id}{'.v1' if _v else ''}", (1, 1), "block",
                                 lambda m=_m, lv=_lv, v=_v, c=_c: block(m, "hull", v, level=lv, corners=c)))
         for _v in (0, 1):                           # the far hull over a partition (wall3d.hull_cap: the renderer
-            SPRITES.append((f"tile.hull.cap.{_id}{'.v1' if _v else ''}", (1, 1), "wide",    # draws it over
+            SPRITES.append((f"tile.hull.cap.{_id}{'.v1' if _v else ''}", (1, 1), "over",    # draws it over
                             lambda m=_m, v=_v, c=_c: hull_cap(m, v, corners=c)))         # tile.wall.full.m*)
     for _c in ((0, 2) if _m & 6 == 6 else (0,)):   # rear ghost: c2 = the SE diagonal is solid (no dip toward it)
         for _r in (0, 1, 8, 9):                    # ... and which unconnected N / W sides face a room
@@ -96,7 +96,7 @@ for _s in ("s", "e"):
             if _lv != "low":
                 SPRITES.append((f"tile.hull.{_pre}end.{_s}{_cs}", (1, 1), "block",
                                 lambda s=_s, lv=_lv, c=_c: end_face("hull", s, lv, c)))
-        SPRITES.append((f"tile.hull.cap.end.{_s}{_cs}", (1, 1), "wide",      # (over tile.wall.full.end.*)
+        SPRITES.append((f"tile.hull.cap.end.{_s}{_cs}", (1, 1), "over",      # (over tile.wall.full.end.*)
                         lambda s=_s, c=_c: hull_cap_end(s, c)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):
