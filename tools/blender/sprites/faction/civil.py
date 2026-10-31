@@ -156,7 +156,8 @@ class Civil(Faction):
 
     def relief(self, sprite):
         return _style(civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66, foot=DRONE_FOOT,
-                      face_holes=civil_holes, outline_lvl=1, outline_round=True, shell=LookShell,
+                      face_holes=civil_holes, outline_lvl=1, outline_round=True, ramp_solid=True,
+                      shell=LookShell,
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone("ochre", 2), FaceHoles(),
                                 PlateTones()))
 

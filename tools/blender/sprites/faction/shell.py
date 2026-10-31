@@ -152,11 +152,14 @@ class LookShell(T.Shell):
         mt = {"cont": 0.0, "end": 0.0, "out": 1.0, "in": -1.0}
         holes = sorted(h[2:] for h in self.holes if h[0] == ax and abs(h[1] - plane) < 1e-6 and a < h[3] and h[2] < b)
         cuts = [a] + [u for h in holes for u in h[:2]] + [b]
+        ox = "x" if ax == "y" else "y"                  # (at a wall's free end the cap is the end face's section:
+        endc = T.tone(fam, 2, T.OUT(ox), ox)            # in its tone, as shell._end_section paints it there)
+        ec = (endc if lo_t == "end" else R[0], endc if hi_t == "end" else R[0])
         for n in range(len(cuts) - 1):
             u0, u1 = cuts[n], cuts[n + 1]
             m = (mt[lo_t] if n == 0 else 0.0, mt[hi_t] if n == len(cuts) - 2 else 0.0)
-            caps = (T.tone(fam, 1, -al, ax) if n > 0 else R[0],              # (beside a hole: its sides)
-                    T.tone(fam, 1, al, ax) if n < len(cuts) - 2 else R[0])
+            caps = (T.tone(fam, 1, -al, ax) if n > 0 else ec[0],             # (beside a hole: its sides)
+                    T.tone(fam, 1, al, ax) if n < len(cuts) - 2 else ec[1])
             if n % 2 == 0:
                 pieces = [(0.0, self.run, None)]
             else:                                       # (in a hole: before it, under its floor, after it)
@@ -167,9 +170,66 @@ class LookShell(T.Shell):
                 pts, parts = self._prof(d0, d1, top)
                 prism(k, ax, plane, u0, u1, pts, fam, 2, cols=[col[q] for q in parts], cap=caps, mitre=m)
 
+    def _back_faces(self):
+        """The wall's faces turned from the camera (-x / -y; wall3d's faces are the +x / +y ones): (axis, plane, u0,
+        u1) with the axis as wall3d's, joined where an arm and the post beside it make one face."""
+        out = []
+        for r in self.rects:
+            x0, x1, y0, y1 = r[0]
+            for ax, plane, a, b in (("y", y0, x0, x1), ("x", x0, y0, y1)):
+                if plane < -0.5 + 1e-6 or ("-" + ("y" if ax == "y" else "x"), T.snap(plane)) in self.end_sides:
+                    continue                            # (the arm runs on into the next tile; a free end: no ramp)
+                seg, n = None, int(round((b - a) * 64))
+                for i in range(n):
+                    u = a + (i + 0.5) / 64
+                    free = self._rect_at(*((u, plane - 1e-3) if ax == "y" else (plane - 1e-3, u)), 0.0) is None
+                    if free and seg is None:
+                        seg = a + i / 64
+                    if not free and seg is not None:
+                        out.append([ax, plane, seg, a + i / 64])
+                        seg = None
+                if seg is not None:
+                    out.append([ax, plane, seg, b])
+        merged = []
+        for f in sorted(out, key=lambda f: (f[0], round(f[1], 6), f[2])):
+            m = merged[-1] if merged else None
+            if m and m[0] == f[0] and abs(m[1] - f[1]) < 1e-6 and abs(m[3] - f[2]) < 1e-6:
+                m[3] = f[3]
+            else:
+                merged.append(f)
+        return merged
+
+    def _back_end(self, ax, plane, u, side):
+        """How a back face ends at u (side -1: its low end): on into the next tile, at a wall's free end, round an
+        outer corner, or short at an inner one (an arm off its side)."""
+        if abs(u) > 0.5 - 1e-6:
+            return "cont"
+        sd = ("+" if side > 0 else "-") + ("x" if ax == "y" else "y")
+        if any(s == sd and abs(p - u) < 1e-6 for s, p in self.end_sides):
+            return "end"
+        e = 1e-3
+        q = (u + side * e, plane - e) if ax == "y" else (plane - e, u + side * e)
+        return "in" if self._rect_at(*q, 0.0) is not None else "out"
+
     def solid_extra(self, k):
-        """Under a solid ramp: the top of a cut corner's open half, at the ramp's top (CornerCut sets cut)."""
-        if self.solid and self.cut:
+        """Under a solid ramp: the ramps on the wall's back faces (out of the camera's sight, but the piece is a closed
+        body and a free end's section sits on them), and the top of a cut corner's open half (CornerCut's cut)."""
+        if not self.solid:
+            return
+        from .parts import prism
+        for ax, plane, a, b in self._back_faces():
+            r = self._rect_at(*(((a + b) / 2, plane + 1e-3) if ax == "y" else (plane + 1e-3, (a + b) / 2)), 0.0)
+            fam = "blue" if r and r[1] == "hull" else "wall"
+            R = T.RAMPS[fam][1 if ax == "x" else 0]
+            pts, parts = self._prof(0.0, self.run, None)
+            pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)
+            mt = {"cont": 0.0, "end": 0.0, "out": -1.0, "in": 1.0}
+            lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
+            ox = "x" if ax == "y" else "y"
+            endc = T.tone(fam, 2, T.OUT(ox), ox)
+            prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=[R[0]] * len(parts),
+                  cap=(endc if lo == "end" else R[0], endc if hi == "end" else R[0]), mitre=(mt[lo], mt[hi]))
+        if self.cut:
             X, Y, c = self.cut
             R = T.RAMPS["wall"][0]
             k.poly([Vector((X - c, Y, self.zs)), Vector((X, Y - c, self.zs)), Vector((X, Y, self.zs))], "wall",
