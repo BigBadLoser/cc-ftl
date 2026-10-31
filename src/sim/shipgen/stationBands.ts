@@ -12,7 +12,7 @@ import type { RoomSpec } from './plan';
  */
 
 /** Floor a band cabin should keep: a bed, its locker, a clear side, and the stair-stepped partitions of a diagonal slice. */
-const CABIN = 24;
+const CABIN = 16;
 
 /** A quarters room marked for cabins as one cabin spec a bed (the first with the room's other modules). */
 function cabinsOf(r: RoomSpec): RoomSpec[] {
