@@ -185,7 +185,7 @@ export function createBackdrop(atlas: Atlas): Backdrop {
       // The glow twin of the dedicated art (halos), added over the body at low strength.
       const glow = new Sprite(Texture.EMPTY);
       glow.anchor.set(0.5);
-      glow.alpha = 0.3;
+      glow.alpha = 0.2;
       glow.blendMode = 'add';
       glow.visible = false;
       glow.eventMode = 'none';
