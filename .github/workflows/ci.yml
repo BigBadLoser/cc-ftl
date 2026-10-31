@@ -6,6 +6,8 @@ name: CI
 #   config changes. This checks the merge result on a clean install. Draft PRs don't run CI: open a PR as a draft while
 #   review fixes go back and forth (comment `@codex review` for a Codex review, which skips drafts), and mark it ready
 #   when it is; CI then runs on that and on every later push.
+#   Lint, typecheck, build and the tests run as parallel jobs (the repo is public, so minutes are free; wall time matters), and
+#   the tests are sharded across a matrix. To make PR CI run the full suite instead, make the pull_request branch of TEST_ARGS empty.
 #   The full suite is the author's job: `npm run check` after the last merge of main, pasted into the PR.
 # - Pushes to main don't run CI: everything reaching main is a PR merge CI already checked, or a markdown-only change.
 # - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
@@ -20,45 +22,86 @@ on:
     - cron: '17 6 * * *'
   workflow_dispatch:
 
+env:
+  # What PR runs test: the fast tests the change can affect. One line to switch (see above); the nightly and manual runs always run everything.
+  TEST_ARGS: ${{ github.event_name == 'pull_request' && '--changed HEAD~1 --passWithNoTests --exclude=**/*.slow.test.ts' || '' }}
+
 concurrency:
   group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
+  gate:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    outputs:
+      run: ${{ steps.fresh.outputs.run }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
       # The daily run skips itself when main has no commit from the last 24 hours.
-      - name: Daily run needed?
+      - name: Needed?
         id: fresh
         run: |
           if [ "${{ github.event_name }}" = schedule ] && [ $(( $(date +%s) - $(git log -1 --format=%ct) )) -gt 86400 ]; then
-            echo "main unchanged for a day: skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "main unchanged for a day: skipping"; echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
           fi
+
+  lint:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        if: steps.fresh.outputs.skip != 'true'
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+
+  build:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+
+  test:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
         with:
-          node-version: 22
-          cache: npm
-      - if: steps.fresh.outputs.skip != 'true'
-        run: npm ci
-      - name: Lint
-        if: steps.fresh.outputs.skip != 'true'
-        run: npm run lint
-      - name: Typecheck
-        if: steps.fresh.outputs.skip != 'true'
-        run: npm run typecheck
-      - name: Test (affected fast tests)
-        if: github.event_name == 'pull_request'
-        run: npx vitest run --changed HEAD~1 --passWithNoTests --exclude '**/*.slow.test.ts'
-      - name: Test (every test, slow tier included)
-        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.fresh.outputs.skip != 'true'
-        run: npm test
-      - name: Build
-        if: steps.fresh.outputs.skip != 'true'
-        run: npm run build
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # --changed compares against the first parent (the base branch for the PR's merge commit); the shards split whatever it selects.
+      - name: Test (shard ${{ matrix.shard }}/4)
+        run: npx vitest run --shard=${{ matrix.shard }}/4 --passWithNoTests $TEST_ARGS
