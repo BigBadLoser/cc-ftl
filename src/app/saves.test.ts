@@ -211,6 +211,44 @@ describe('moving old localStorage saves into IndexedDB', () => {
   });
 });
 
+describe('migration when a copy fails', () => {
+  it('keeps the label of a save that did not move, and moves it with its label on a later start', async () => {
+    const local = fakeStorage();
+    vi.stubGlobal('localStorage', local);
+    vi.stubGlobal('sessionStorage', fakeStorage());
+    local.setItem('cc.save', '{"a":1}');
+    local.setItem('cc.save.slot1', '{"s":1}');
+    local.setItem('cc.saves', JSON.stringify({
+      auto: { id: 'auto', name: 'Autosave', savedAt: 9, turn: 4, node: 'A' },
+      slot1: { id: 'slot1', name: 'Mine', savedAt: 5, turn: 3, node: 'Ixion' },
+    }));
+    const idb = new IDBFactory();
+    // The slot's copy is refused (a write of its data fails), the autosave's goes through.
+    const real = IDBDatabase.prototype.transaction;
+    const spy = vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, ...a: Parameters<typeof real>) {
+      const tx = real.apply(this, a);
+      if (a[1] === 'readwrite' && Array.isArray(a[0])) {
+        const st = tx.objectStore('data');
+        const put = st.put.bind(st);
+        st.put = ((v: unknown, k?: IDBValidKey) => { if (k === 'slot1') throw new DOMException('full', 'QuotaExceededError'); return put(v, k); }) as typeof st.put;
+      }
+      return tx;
+    });
+    setSaveStore(createIdbSaveStore(() => idb, () => local));
+    await saveStore.ready();
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto']);
+    expect(local.getItem('cc.save')).toBeNull();
+    expect(local.getItem('cc.save.slot1')).toBe('{"s":1}');
+    expect(Object.keys(JSON.parse(local.getItem('cc.saves')!))).toEqual(['slot1']); // its label stays
+
+    spy.mockRestore();
+    setSaveStore(createIdbSaveStore(() => idb, () => local));
+    await saveStore.ready();
+    expect(saveStore.list().map((m) => [m.id, m.name, m.turn, m.node])).toEqual([['auto', 'Autosave', 4, 'A'], ['slot1', 'Mine', 3, 'Ixion']]);
+    expect(local.getItem('cc.saves')).toBeNull();
+  });
+});
+
 describe('rotating autosaves and the pre-combat snapshot', () => {
   const setup = async () => {
     browser();

@@ -127,10 +127,14 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       try { json = ls.getItem(lsKey(id)); } catch { /* blocked storage: nothing to move */ }
       if (json === null) continue;
       if (metas.has(id) || (await put(index[id] ?? label(id), json))) {
-        try { ls.removeItem(lsKey(id)); } catch { /* it stays; the copy in IndexedDB wins next time */ }
+        try { ls.removeItem(lsKey(id)); delete index[id]; } catch { /* it stays; the copy in IndexedDB wins next time */ }
       }
     }
-    try { ls.removeItem(LS_INDEX); } catch { /* ignore */ }
+    // The index goes only when every save it labels has moved; the labels of the ones that stayed are kept for the next start.
+    try {
+      if (Object.keys(index).length) ls.setItem(LS_INDEX, JSON.stringify(index));
+      else ls.removeItem(LS_INDEX);
+    } catch { /* ignore */ }
   }
 
   function put(meta: SaveMeta, json: string, shift: readonly string[] = [], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
