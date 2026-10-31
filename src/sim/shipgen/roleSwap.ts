@@ -35,7 +35,7 @@ export function swapRoles(rng: Rng, rows: readonly string[], roomOf: Int16Array,
     if (r >= 0 && rows[Math.floor(i / W)]?.[i % W] === '_') floor.set(r, (floor.get(r) ?? 0) + 1);
   }
   const classOf = (r: number): number => {
-    if (specs[r]?.sealed) return -1;
+    if (specs[r]?.sealed || specs[r]?.pinned) return -1;
     const role = roles[r] as RoomRole;
     return SOFT.includes(role) ? 0 : CORE.includes(role) ? 1 : -1;
   };

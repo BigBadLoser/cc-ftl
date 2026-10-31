@@ -196,14 +196,29 @@ function wheel(c: Ctx): boolean {
   const o = { spokes, extra: c.rng.int(0, 2), centre: 0 };
   const courts = c.rng.int(0, 2);
   c.parts.push(`spokes nesw courts ${courts}`);
-  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
+  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, null, office(c), o)), 'command', 'wheel station'), 'wheel');
 }
 
 /** Hub spokes always include north and south: the concourse runs dock bank to hub to dock bank. */
 const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sides])];
 
+/**
+ * The rooms of a round civil station with its bridge among them: the bridge is the station's administration, beside
+ * the main dock (stationDistricts.ts), and a rotunda takes the centre.
+ */
+const office = (c: Ctx): RoomSpec[] => [{ ...c.plan.command, pinned: true }, ...fullRooms(c)];
+
+/**
+ * Concentric: civil stations put a rotunda at the centre and the bridge by the docks; military ones keep the bridge at
+ * the heart, entered by the north spoke only (a guard post beside it), the concourse ending at its door.
+ */
 function concentric(c: Ctx): boolean {
-  return placeRoot(c, civil(courtOf(c, 1)(concentricStation(c.rng, c.plan.command, fullRooms(c), concourse(cardinal(c, 2)))), 'command', 'concentric station'), 'concentric');
+  const heart = c.fam.command === 'heart';
+  c.parts.push(heart ? 'command heart' : 'rotunda');
+  const b = heart
+    ? concentricStation(c.rng, c.plan.command, fullRooms(c), ['n'])
+    : concentricStation(c.rng, null, office(c), concourse(cardinal(c, 2)));
+  return placeRoot(c, civil(courtOf(c, 1)(b), 'command', 'concentric station'), 'concentric');
 }
 
 function arc(c: Ctx): boolean {

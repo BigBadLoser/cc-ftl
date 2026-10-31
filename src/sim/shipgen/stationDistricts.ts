@@ -14,7 +14,7 @@ import type { RoomRole } from './types';
 
 /** Pull towards the docks: high stands beside a bank, low stays far from it. */
 const PULL: Partial<Record<RoomRole, number>> = {
-  armoury: 4, cargo: 3, hangar: 3, plaza: 3, industry: 2, farm: 1, drill: 0, garden: -1, support: -1, quarters: -2,
+  bridge: 5, armoury: 4, cargo: 3, hangar: 3, plaza: 3, industry: 2, farm: 1, drill: 0, garden: -1, support: -1, quarters: -2,
 };
 export const pullOf = (r: RoomSpec): number => PULL[r.role] ?? 0;
 
@@ -28,14 +28,15 @@ export const byPull = (rooms: readonly RoomSpec[]): RoomSpec[] => [...rooms].sor
  * ends, quietest in the middle. The strongest rooms are dealt round the arcs first, so every bank gets its share of
  * customs and cargo.
  */
-export function organPipes(rooms: readonly RoomSpec[], lengths: readonly number[]): RoomSpec[][] {
+export function organPipes(rooms: readonly RoomSpec[], lengths: readonly number[], first = 0): RoomSpec[][] {
   const total = lengths.reduce((t, l) => t + l, 0) || 1;
   const sum = rooms.reduce((t, r) => t + area(r), 0);
   const groups: RoomSpec[][] = lengths.map(() => []);
   const load = lengths.map(() => 0);
   // Each room to the arc furthest below its share (by area); short arcs that can hold nothing get nothing.
-  for (const r of byPull(rooms)) {
-    let best = 0, gap = -Infinity;
+  for (const [n, r] of byPull(rooms).entries()) {
+    // The strongest room (the bridge's office, else the customs post) opens arc `first`: beside the main bank.
+    let best = n === 0 ? first : 0, gap = n === 0 ? Infinity : -Infinity;
     for (let i = 0; i < lengths.length; i++) {
       const g = ((lengths[i] as number) / total) * sum - (load[i] as number);
       if (g > gap) { gap = g; best = i; }

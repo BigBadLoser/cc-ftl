@@ -152,6 +152,11 @@ export interface HullFamilyDef {
   cages?: number;
   /** Stations: enclosed centres become open rooms of this role, with this chance per station. */
   atrium?: { role: RoomRole; chance: number; band: readonly RoomRole[]; packed?: boolean; deck?: boolean };
+  /**
+   * Stations: where the bridge goes on round stations. 'heart': at the centre, one guarded way in (military command).
+   * 'office': beside the main dock as the station's administration, a rotunda at the centre (civil stations).
+   */
+  command?: 'heart' | 'office';
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
