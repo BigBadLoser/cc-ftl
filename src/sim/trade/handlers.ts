@@ -11,6 +11,7 @@ import { spawnStation } from '../stations/spawn';
 import { unwindStation } from './stationDock';
 import { VehicleC } from '../vehicles/components';
 import { TraderC } from './types';
+import { addCredits } from './credits';
 
 type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits' | 'debug.giveItems'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -96,7 +97,7 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
   },
   'debug.setCredits': (sim, cmd) => {
     if (!Number.isFinite(cmd.value)) return reject(sim, cmd.type, 'badValue');
-    sim.trade.credits = Math.max(0, Math.round(cmd.value));
+    addCredits(sim, Math.max(0, Math.round(cmd.value)) - sim.trade.credits);
   },
   'debug.giveItems': (sim, cmd) => {
     if (!sim.content.items[cmd.item] || !Number.isFinite(cmd.count) || cmd.count <= 0) return reject(sim, cmd.type, 'badValue');

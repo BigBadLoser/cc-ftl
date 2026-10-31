@@ -17,6 +17,8 @@ export interface SaveMeta {
   version?: number;
   /** The game was in combat when it was saved. */
   fight?: boolean;
+  /** An autosave chain head: when this head was started (the last time the chain moved). Overwrites keep it, so the head's age is known. */
+  since?: number;
 }
 
 export interface SaveStore {
@@ -29,7 +31,8 @@ export interface SaveStore {
    * Store a save. False when the browser refuses (full, blocked, no IndexedDB): the save that was there stays (one transaction).
    * `shift`: a chain of ids starting with `meta.id`; the entries already in it move one place down (the last drops off) in the same
    * transaction, before this one is stored. `due` decides at that moment, from the newest entry's label (undefined: none yet), whether the
-   * chain moves at all; the default is always.
+   * chain moves at all; the default is always. The stored label's `since` is set then: `meta.savedAt` when the chain moves or starts, else the
+   * entry's earlier `since`.
    * Writes and removes run one after another (each starts once the previous settled, so `due` sees its label). When none is pending the
    * transaction starts before this returns, so it is safe in a `pagehide` handler.
    */
@@ -136,7 +139,10 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       const tx = db.transaction([META, DATA], 'readwrite');
       const m = tx.objectStore(META);
       const d = tx.objectStore(DATA);
-      const chain = shift.length && (!due || due(metas.get(meta.id))) ? shift : [meta.id];
+      const cur = metas.get(meta.id);
+      const moving = shift.length > 0 && (!due || due(cur));
+      const chain = moving ? shift : [meta.id];
+      if (shift.length) meta = { ...meta, since: moving || !cur ? meta.savedAt : (cur.since ?? cur.savedAt) };
       const moved: Array<[string, SaveMeta]> = [];
       // Queue the reads of the old entries before this write, so they see the old values; the copies go in once they are read.
       for (let i = chain.length - 1; i > 0; i--) {

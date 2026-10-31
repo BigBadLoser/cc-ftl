@@ -120,16 +120,16 @@ export function createSaver(sim: Sim, persist: boolean, isLost: () => boolean, o
   };
 }
 
-/** The newest autosave is pushed down the chain (`auto` to `auto2` to `auto3`) once it is this old; younger ones are overwritten in place. */
+/** The newest autosave is pushed down the chain (`auto` to `auto2` to `auto3`) once its head has been this long in place (`SaveMeta.since`, not the last write: autosaves overwrite it every 30 s); younger ones are overwritten. */
 export const ROTATE_MS = 3 * 60_000;
 
 /**
- * The periodic autosave: writes `auto`, first keeping the previous one as `auto2` (and that as `auto3`) when it is at least ROTATE_MS old.
+ * The periodic autosave: writes `auto`, first keeping the previous one as `auto2` (and that as `auto3`) when it was started at least ROTATE_MS ago.
  * Never rotates during a fight, so the older autosaves stay calm ones to go back to. A write that fails leaves the chain as it was.
  */
 export function writeAutosave(sim: Sim, now = Date.now()): Promise<boolean> {
   // Whether the chain moves is decided by the store when this write's turn comes, from the label the writes before it left.
-  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && now - newest.savedAt >= ROTATE_MS && !sim.sector.inCombat;
+  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && now - (newest.since ?? newest.savedAt) >= ROTATE_MS && !sim.sector.inCombat;
   return writeSave(sim, AUTO_ID, 'Autosave', now, AUTO_IDS, due);
 }
 

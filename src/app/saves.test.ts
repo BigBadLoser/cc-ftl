@@ -241,6 +241,20 @@ describe('rotating autosaves and the pre-combat snapshot', () => {
     expect([await tickOf('auto'), await tickOf('auto2')]).toEqual([20, 0]); // auto2 is the one the single rotation pushed down
   });
 
+  it('rotates in normal play: 30 s autosaves over seven minutes leave three autosaves about three minutes apart', async () => {
+    const sim = await setup();
+    const t0 = 1_000_000;
+    for (let i = 0; i <= 14; i++) {
+      sim.tick = i;
+      await writeAutosave(sim, t0 + i * 30_000);
+    }
+    expect(ids()).toEqual(['auto', 'auto2', 'auto3']);
+    // auto holds the last write (7:00); the heads of the older two were started 3:00 and 6:00 into the run and last written just before the next rotation
+    expect([await tickOf('auto'), await tickOf('auto2'), await tickOf('auto3')]).toEqual([14, 11, 5]);
+    const m = saveStore.list();
+    expect(m.map((x) => x.since)).toEqual([t0 + 12 * 30_000, t0 + 6 * 30_000, t0]);
+  });
+
   it('does not rotate during a fight, so the older autosaves stay calm ones', async () => {
     const sim = await setup();
     await writeAutosave(sim, 1_000_000);

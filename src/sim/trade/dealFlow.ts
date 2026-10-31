@@ -17,6 +17,7 @@ import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
 import { stepHandover } from '../galaxy/handover';
 import { boardRecruits, landRecruits, lostRecruit, recruitsAboard } from './recruitLand';
+import { addCredits } from './credits';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
 const REPEAT = 20;
@@ -214,7 +215,7 @@ function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void 
       // The agreed value of exactly what was delivered (shares fixed when the trip opened), not today's prices.
       const share = d.get.reduce((n, l, i) => n + ((d.getValue?.[i] ?? 0) * (delivered[i] as ItemQty).count) / l.count, 0);
       const pay = Math.min(d.held, Math.round(share));
-      sim.trade.credits += d.held - pay; // the undelivered share is refunded
+      addCredits(sim, d.held - pay); // the undelivered share is refunded
       d.held = pay;
       d.balance = pay;
     }
