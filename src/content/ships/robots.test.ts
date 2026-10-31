@@ -4,6 +4,8 @@ import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
+import { roomTiles } from '../../sim/roomIndex';
+import { setRoomTemp } from '../../sim/roomTemp';
 import { shipIds } from '../../sim/regions';
 
 /** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
@@ -54,16 +56,16 @@ function spawnRobot(sim: Sim, role = 'role.robot_worker', shipId = 1, at = playe
   run(sim, 1);
   return Math.max(...sim.world.query(CrewC));
 }
-/** Every tile of a grid to vacuum (no air, deep cold). */
+/** Every tile of a grid to vacuum (no air) and every room to deep cold. */
 function vent(sim: Sim, shipId: number): void {
   const g = shipGrid(sim, nth(sim, shipId))!;
   for (let y = g.y0; y < g.y0 + g.height; y++) {
     for (let x = g.x0; x < g.x0 + g.width; x++) {
       g.set('o2', x, y, 0);
       g.set('co2', x, y, 0);
-      g.set('temp', x, y, -150);
     }
   }
+  for (const room of roomTiles(g).keys()) setRoomTemp(sim, nth(sim, shipId), room, -150);
 }
 
 describe('robot species', () => {

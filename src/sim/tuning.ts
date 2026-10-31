@@ -20,8 +20,10 @@ export const GAS_VENT = 0.25;
 export const GAS_EPSILON = 1e-4;
 
 // --- Temperature ---
-export const TEMP_DIFFUSION = 0.04;
-export const TEMP_VENT = 0.02;
+/** A room with a tile holding less O2 than this (kPa), or touching Space, is open to vacuum: it cools toward SPACE_TEMP. */
+export const TEMP_VACUUM_O2 = 1;
+/** A breached room's cooling toward SPACE_TEMP: fraction of the gap lost per second is this divided by the room's tile count (a 42-tile room loses 0.6% a second). */
+export const TEMP_BREACH_COOL = 0.25;
 /** Passive radiators: fraction of (temp - NORMAL_TEMP) lost per tick. */
 export const TEMP_AMBIENT_LOSS = 0.0008;
 

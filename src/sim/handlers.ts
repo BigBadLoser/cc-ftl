@@ -96,7 +96,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
 
 /** Fields debug.setField may write: [min, max, integer]. */
 const DEBUG_FIELDS: Record<string, readonly [number, number, boolean]> = {
-  o2: [0, 100, false], co2: [0, 100, false], temp: [-273, 2000, false],
+  o2: [0, 100, false], co2: [0, 100, false],
   fire: [0, 255, true], smoke: [0, 255, true], light: [0, 255, true], door: [0, 255, true],
 };
 

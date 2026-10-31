@@ -61,7 +61,6 @@ Every ship, station, derelict and wreck is a `Grid` with:
   - structure: floor, wall or hull type, door
   - flags: solid, walkable, breach
   - gases (O2, CO2)
-  - temperature
   - fire
   - smoke
   - light
@@ -81,7 +80,12 @@ solvers against cold-cache full solves.
 **Systems interact through these fields.** For example:
 - Fire reads O2 and material flammability, and writes heat and smoke while using up O2.
 - Atmosphere diffuses gas across open tiles and vents through breaches.
-- Crew health reads gases and heat on the crew member's tile.
+- Temperature is one value per room (`Ship.roomTemp`, by room id; absent = NORMAL_TEMP; `roomTemp.ts`), not a grid field. Fire and
+  reactors add heat to their room (divided by its tile count), every room relaxes toward NORMAL_TEMP, and a room that touches Space or
+  holds a vacuum tile also cools toward SPACE_TEMP (`systems/temperature.ts`). `systems/rooms.ts` re-keys the map when the room
+  labels change (a split keeps the temperature, a merge averages by tile count). A tile in no room (a door) reads NORMAL_TEMP, an
+  airless tile SPACE_TEMP. Crew harm, mood and the heat overlay read the room's value.
+- Crew health reads gases on the crew member's tile and the temperature of their room.
 
 New interactions should come from new field reads and writes, not new calls between systems.
 
@@ -1379,7 +1383,7 @@ and about 270 in 30 test files.
   arrays, plus one revision counter per field and a count of non-Space tiles.
 - Directory: `Map<number, Chunk>` keyed by `(cy + 32768) * 65536 + (cx + 32768)`, so coordinates may be negative and a sector
   can reach ±500k tiles with no fixed size. Empty space has no chunk at all.
-- Each field gets an **empty value** in the spec (`struct` Space, `o2`/`co2` 0, `temp` SPACE_TEMP, others 0).
+- Each field gets an **empty value** in the spec (`struct` Space, `o2`/`co2` 0, others 0).
   `get` on a missing chunk returns it. `set` of the empty value on a missing chunk is a no-op; any other `set` allocates the
   chunk filled with empty values. A chunk whose non-Space count drops to 0 after a lift is released.
 - Memory: 13 fields plus `ship` come to about 32 B a tile, so 8 KB a chunk. A 30x20 ship touches 6–9 chunks (about 70 KB).

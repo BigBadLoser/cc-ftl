@@ -7,6 +7,7 @@ import {
 } from '../crew/components';
 import { killCrew } from '../crew/death';
 import type { Grid } from '../grid';
+import { tempAt } from '../roomTemp';
 import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
 import { skillOf } from '../combat/operators';
@@ -20,11 +21,11 @@ import {
 } from '../tuning';
 
 /** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (with air in the tank) or airless skips thin air and CO2; a suit also insulates against cold. */
-function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
+function harmPerSec(sim: Sim, ship: number, grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
   let harm = 0;
   const o2 = grid.get('o2', x, y);
   const co2 = grid.get('co2', x, y);
-  const temp = grid.get('temp', x, y);
+  const temp = tempAt(sim, ship, grid, x, y);
   if (!suited && !airless && o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
   if (!suited && !airless && co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
   if (temp > HOT_ABOVE) harm += (temp - HOT_ABOVE) * TEMP_HARM_PER_SEC;
@@ -72,7 +73,7 @@ export function vitalsSystem(sim: Sim): void {
       grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);
     }
 
-    const harm = harmPerSec(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
+    const harm = harmPerSec(sim, shipIdOf(sim, pos), grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
     if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.

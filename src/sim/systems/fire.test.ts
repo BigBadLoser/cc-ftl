@@ -18,6 +18,7 @@ import type { ShipTemplate } from '../registry';
 import { CREW_MAX_HP } from '../tuning';
 
 import { shipGrid } from '../regions';
+import { roomTemp } from '../roomTemp';
 
 
 /** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
@@ -83,7 +84,7 @@ describe('fire', () => {
     expect(burning(sim)).toBeGreaterThan(1);
     expect(meanO2(sim)).toBeLessThan(20);
     expect(g.get('smoke', 3, 2)).toBeGreaterThan(0);
-    expect(g.get('temp', 3, 2)).toBeGreaterThan(30);
+    expect(roomTemp(sim, 1, g.get('room', 3, 2))).toBeGreaterThan(30);
     const hp = sim.world.query(ModuleC).map((i) => sim.world.get(i, ModuleC)!.hp);
     expect(Math.min(...hp)).toBeLessThan(60);
     expect(events.filter((e) => e.type === 'fire.started')).toHaveLength(1);

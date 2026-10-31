@@ -1,6 +1,7 @@
 import { footprintTiles } from '../modules/footprint';
 import { ModuleC } from '../modules/components';
 import { roomTiles } from '../roomIndex';
+import { addRoomHeat } from '../roomTemp';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { GAS_EPSILON, NORMAL_O2 } from '../tuning';
@@ -60,9 +61,9 @@ export function modulesSystem(sim: Sim): void {
     }
 
     if (def.heatPerSec) {
-      const tiles = footprintTiles(def, m.x, m.y, m.rot);
-      const heat = def.heatPerSec / TICK_HZ / tiles.length;
-      for (const t of tiles) grid.set('temp', t.x, t.y, grid.get('temp', t.x, t.y) + heat);
+      // The whole output goes to the room the module stands in (its first footprint tile in a room).
+      const room = footprintTiles(def, m.x, m.y, m.rot).map((t) => grid.get('room', t.x, t.y)).find((r) => r > 0);
+      if (room) addRoomHeat(sim, shipIdOf(sim, m), grid, room, def.heatPerSec / TICK_HZ);
     }
   }
 }

@@ -14,7 +14,7 @@ const gridIdAt = (sim: Sim, x: number, y: number): number => ordinal(sim, shipId
 const gridOfShip = (sim: Sim, ship: number): number => ordinal(sim, ship);
 
 /** Grid fields that existed before the sector refactor (the `ship` owner layer is new and left out). */
-const FIELDS = ['struct', 'room', 'o2', 'co2', 'temp', 'fire', 'smoke', 'light', 'door', 'module', 'item', 'hp'];
+const FIELDS = ['struct', 'room', 'o2', 'co2', 'fire', 'smoke', 'light', 'door', 'module', 'item', 'hp'];
 
 /** FNV-1a over a string, as 8 hex digits. */
 function fnv(s: string, h = 0x811c9dc5): number {
@@ -279,4 +279,6 @@ describe('sector refactor equivalence', () => {
 // Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
 // draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run. On the
 // pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
-const EXPECTED = { combat: '694a0569', disaster: '2cf7530b' };
+// Repinned for room temperature (#236), both hashes: temperature moved off the grid, so the hashed fields changed (`temp` is no longer a grid field, and is
+// dropped from FIELDS) and the ship component now carries `roomTemp` (the per-room values) and `roomVacuum` (the rooms the last vacuum scan found). Nothing else changed: previously 694a0569 and 2cf7530b.
+const EXPECTED = { combat: 'bdf817ec', disaster: 'aaa28215' };

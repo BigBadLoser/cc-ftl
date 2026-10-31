@@ -2,6 +2,7 @@ import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import type { Grid } from '../grid';
 import { regions } from '../regions';
+import { addRoomHeat } from '../roomTemp';
 import type { Sim } from '../sim';
 import { stochasticRound } from '../stochastic';
 import { TICK_HZ } from '../time';
@@ -34,7 +35,7 @@ const o2Factor = (o2: number): number => Math.max(0, Math.min(1, (o2 - FIRE_MIN_
  * intensity x fuel x oxygen. Without oxygen the fire collapses. Crew damage is in vitals.
  */
 export function fireSystem(sim: Sim): void {
-  for (const { grid } of regions(sim)) {
+  for (const { grid, ship } of regions(sim)) {
     if (!grid.has('fire') || !grid.has('o2')) continue;
     const { width, height, x0, y0 } = grid;
     // A snapshot: this loop only writes the tile it is on, and spreads are applied after it.
@@ -54,7 +55,7 @@ export function fireSystem(sim: Sim): void {
       const fuel = fuelAt(sim, grid, x, y);
       const of = o2Factor(o2);
       const delta = of > 0 ? (fuel * FIRE_GROWTH_PER_SEC * of - FIRE_DECAY_PER_SEC) / TICK_HZ : -FIRE_STARVE_PER_SEC / TICK_HZ;
-      burn(sim, grid, x, y, f / 255);
+      burn(sim, ship, grid, x, y, f / 255);
       const next = Math.max(0, Math.min(255, f + stochasticRound(sim, Math.abs(delta)) * Math.sign(delta)));
       if (next !== f) grid.set('fire', x, y, next);
       if (next === 0) continue;
@@ -77,11 +78,11 @@ export function fireSystem(sim: Sim): void {
 }
 
 /** Per-tick effects of a burning tile at `level` (0..1 of full intensity). */
-function burn(sim: Sim, grid: Grid, x: number, y: number, level: number): void {
+function burn(sim: Sim, ship: number, grid: Grid, x: number, y: number, level: number): void {
   const o2 = grid.get('o2', x, y);
   grid.set('o2', x, y, Math.max(0, o2 - (FIRE_O2_USE * level) / TICK_HZ));
   grid.set('co2', x, y, grid.get('co2', x, y) + (FIRE_CO2_MAKE * level) / TICK_HZ);
-  grid.set('temp', x, y, grid.get('temp', x, y) + (FIRE_HEAT * level) / TICK_HZ);
+  addRoomHeat(sim, ship, grid, grid.get('room', x, y), (FIRE_HEAT * level) / TICK_HZ);
   const smoke = grid.get('smoke', x, y);
   const addSmoke = stochasticRound(sim, (FIRE_SMOKE * level) / TICK_HZ);
   if (addSmoke > 0 && smoke < 255) grid.set('smoke', x, y, Math.min(255, smoke + addSmoke));

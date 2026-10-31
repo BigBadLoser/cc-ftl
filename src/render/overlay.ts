@@ -1,9 +1,11 @@
 import { Container, Sprite } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
+import { ShipC } from '../sim/combat/components';
 import { ModuleC } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { Struct } from '../sim/structure';
+import { NORMAL_TEMP } from '../sim/tuning';
 import { diamondTextures } from './diamonds';
 import { iso } from './iso';
 import { regionTiles } from './regionTiles';
@@ -69,6 +71,11 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
     return k;
   }
 
+  /** The ship's room temperatures (by room id; absent is normal). Per room, so the temperature overlay shades whole rooms. */
+  const roomTemps = (): Readonly<Record<number, number>> => ow.world.get(grid.id, ShipC)?.roomTemp ?? {};
+  /** Changes whenever a room's temperature moves by half a degree. */
+  const tempKey = (): string => Object.entries(roomTemps()).map(([r, t]) => `${r}:${Math.round(t * 2)}`).join(',');
+
   function paint(d: OverlayDef): void {
     const used = new Set<number>();
     const put = (i: number, color: number) => {
@@ -89,13 +96,15 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
       }, true);
     } else {
       const room = d.special === 'room';
-      const field = room ? 'room' : d.id;
+      const byRoom = d.id === 'temp';
+      const temps = byRoom ? roomTemps() : {};
+      const field = room || byRoom ? 'room' : d.id;
       tiles.scan((_x, _y, i, ci, c) => {
         const s = tiles.data('struct', c)?.[ci];
         if (s !== Struct.Floor && s !== Struct.Door) return;
         const v = (tiles.data(field, c)?.[ci] ?? 0) as number;
         if (room ? v === 0 : d.hideZero && v <= 0) return;
-        put(i, room ? roomColor(v) : rampAt(d, v));
+        put(i, room ? roomColor(v) : rampAt(d, byRoom ? (temps[v] ?? NORMAL_TEMP) : v));
       });
     }
     for (let i = 0; i < pool.length; i++) {
@@ -116,6 +125,7 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
       if (now - lastAt < MIN_INTERVAL_MS) return;
       let k: string;
       if (def.special === 'power') k = `p:${grid.revision('module')}:${powerKey()}`;
+      else if (def.id === 'temp') k = `t:${grid.revision('room')}:${grid.revision('struct')}:${tempKey()}`;
       else k = `${def.id}:${grid.revision(def.special === 'room' ? 'room' : def.id)}:${grid.revision('struct')}`;
       if (k === key) return;
       key = k;

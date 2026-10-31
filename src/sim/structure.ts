@@ -1,5 +1,4 @@
 import type { FieldSpec, GridLike } from './grid';
-import { SPACE_TEMP } from './tuning';
 
 /** Structural kind of a tile, stored in the `struct` field. Materials/variants come later. */
 export const Struct = {
@@ -42,8 +41,6 @@ export const SHIP_FIELDS = {
   o2: 'f32',
   /** Carbon dioxide partial pressure in kPa (normal 0.04). */
   co2: 'f32',
-  /** Temperature in degrees C (normal 20). Space tiles are fixed at SPACE_TEMP. */
-  temp: 'f32',
   /** Fire intensity 0..255 (0 = no fire). */
   fire: 'u8',
   /** Smoke density 0..255. */
@@ -77,7 +74,6 @@ export const SHIP_EMPTY = {
   room: 0,
   o2: 0,
   co2: 0,
-  temp: SPACE_TEMP,
   fire: 0,
   smoke: 0,
   light: 0,

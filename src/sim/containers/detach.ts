@@ -4,7 +4,6 @@ import { ModuleC } from '../modules/components';
 import { footprintTiles, rotatedSize } from '../modules/footprint';
 import { shipGrid, shipIdOf } from '../regions';
 import { StorageC } from '../items/components';
-import { SPACE_TEMP } from '../tuning';
 import type { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
 import { ContainerC, type ClampSide } from './components';
@@ -43,7 +42,6 @@ export function detachContainer(sim: Sim, id: number): boolean {
     if (grid.get('struct', t.x, t.y) !== Struct.Space) writeStruct(grid, t.x, t.y, Struct.Space);
     grid.set('o2', t.x, t.y, 0);
     grid.set('co2', t.x, t.y, 0);
-    grid.set('temp', t.x, t.y, SPACE_TEMP);
   }
   const [w, h] = rotatedSize(def, m.rot);
   const x = m.x + w / 2;

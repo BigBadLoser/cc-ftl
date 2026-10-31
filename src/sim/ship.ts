@@ -8,14 +8,14 @@ import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
 import { spawnVehicle } from './vehicles/lifecycle';
 import { SHIP_FIELDS, Struct, writeStruct } from './structure';
-import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
+import { NORMAL_CO2, NORMAL_O2 } from './tuning';
 
 const CHARS: Record<string, number> = { '.': Struct.Space, '#': Struct.Wall, _: Struct.Floor, D: Struct.Door, '=': Struct.Beam };
 
 /**
  * Build a dense ship grid from an ASCII template (local coordinates; `stampGrid` places it in the sector).
  * Throws on unknown characters, naming row/col (0-based).
- * Floors and doors start with normal air and temperature; space is vacuum at SPACE_TEMP.
+ * Floors and doors start with normal air; space is vacuum. Temperature is per room (roomTemp.ts).
  */
 export function gridFromTemplate(t: ShipTemplate): DenseGrid {
   const width = Math.max(1, ...t.rows.map((r) => r.length));
@@ -36,13 +36,12 @@ export function gridFromTemplate(t: ShipTemplate): DenseGrid {
   return grid;
 }
 
-/** Set a tile's gas and temperature to the normal value for its struct kind. */
+/** Set a tile's gas to the normal value for its struct kind. */
 export function initAtmosphere(grid: GridLike, x: number, y: number): void {
   const kind = grid.get('struct', x, y);
   const air = kind === Struct.Floor || kind === Struct.Door;
   grid.set('o2', x, y, air ? NORMAL_O2 : 0);
   grid.set('co2', x, y, air ? NORMAL_CO2 : 0);
-  grid.set('temp', x, y, kind === Struct.Space ? SPACE_TEMP : NORMAL_TEMP);
 }
 
 /** Place a template's modules on a ship that is already stamped: its ShipC says where its top-left tile is. */

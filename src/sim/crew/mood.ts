@@ -1,4 +1,5 @@
 import { shipIdOf, shipGrid } from '../regions';
+import { tempAt } from '../roomTemp';
 import { hasSuitAir } from '../eva/suit';
 import { AllegianceC } from '../fight/components';
 import type { Modifier, ModifierSource } from '../stats';
@@ -75,7 +76,7 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
       else if (o2 < O2_ALERT_BELOW) add('staleAir', -8);
     }
     if (grid.get('smoke', pos.x, pos.y) > 40) add('smoky', -6);
-    const temp = grid.get('temp', pos.x, pos.y);
+    const temp = tempAt(sim, shipIdOf(sim, pos), grid, pos.x, pos.y);
     if (temp > 40 || temp < 5) add('temperature', -6);
   }
   if (m.alone >= MOOD_LONELY_SEC) add('lonely', -4);

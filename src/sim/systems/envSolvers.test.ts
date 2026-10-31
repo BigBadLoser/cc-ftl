@@ -12,7 +12,6 @@ import { atmosphereSystem } from './atmosphere';
 import { lightingSystem } from './lighting';
 import { roomsSystem } from './rooms';
 import { smokeSystem } from './smoke';
-import { temperatureSystem } from './temperature';
 
 /**
  * Change tracking of the environment solvers: once a region has settled, a solve is skipped, and every kind of edit to what
@@ -63,7 +62,6 @@ afterEach(() => vi.restoreAllMocks());
 describe('diffusion solvers skip a settled region and wake on every input', () => {
   const cases = [
     { system: atmosphereSystem, field: 'o2', edits: ['o2', 'co2', 'struct', 'door'] },
-    { system: temperatureSystem, field: 'temp', edits: ['temp', 'struct', 'door'] },
   ] as const;
   for (const { system, field, edits } of cases) {
     for (const edit of edits) {

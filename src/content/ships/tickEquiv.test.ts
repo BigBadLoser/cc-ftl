@@ -222,9 +222,11 @@ function refModules(sim: Sim): void {
       }
     }
     if (def.heatPerSec) {
-      const tiles = footprintTiles(def, m.x, m.y, m.rot);
-      const heat = def.heatPerSec / TICK_HZ / tiles.length;
-      for (const t of tiles) grid.set('temp', t.x, t.y, grid.get('temp', t.x, t.y) + heat);
+      // All of the output into the room of the first footprint tile that has one: that room's temperature rises by heat / its tiles.
+      const room = footprintTiles(def, m.x, m.y, m.rot).map((t) => grid.get('room', t.x, t.y)).find((r) => r > 0);
+      const ship = sim.world.get(shipIdOf(sim, m), ShipC);
+      const n = room ? roomTiles(grid).get(room)?.length : 0;
+      if (room && n && ship) (ship.roomTemp ??= {})[room] = (ship.roomTemp[room] ?? 20) + def.heatPerSec / TICK_HZ / n;
     }
   }
 }

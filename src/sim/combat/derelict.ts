@@ -1,6 +1,8 @@
 import { ModuleC } from '../modules/components';
 import type { ShipTemplate } from '../registry';
 import type { Sim } from '../sim';
+import { recomputeRooms } from '../systems/rooms';
+import { setRoomTemp } from '../roomTemp';
 import { spillItems } from '../items/stacks';
 import type { RuinMeta } from '../shipgen/ruinTypes';
 import { placeAt, placementGapError, shipGrid, shipIdOf, type Place } from '../regions';
@@ -44,14 +46,19 @@ export function applyRuin(sim: Sim, shipId: number, template: ShipTemplate, meta
     else if (def.power < 0) m.enabled = meta.power === 'emergency' && (m.def === 'module.light' || m.def === 'module.lifeSupport');
   }
   const w = Math.max(1, ...template.rows.map((r) => r.length));
+  // Label the wreck's rooms now, so the starting temperatures land on room ids (the first rooms pass finds them already labelled).
+  recomputeRooms(grid);
+  const sum = new Map<number, [number, number]>();
   for (const room of meta.rooms) {
     for (const i of room.tiles) {
       const x = ox + (i % w), y = oy + Math.floor(i / w);
       grid.set('o2', x, y, room.o2);
       grid.set('co2', x, y, room.co2);
-      grid.set('temp', x, y, room.temp);
+      const label = grid.get('room', x, y);
+      if (label) sum.set(label, [(sum.get(label)?.[0] ?? 0) + room.temp, (sum.get(label)?.[1] ?? 0) + 1]);
     }
   }
+  for (const [label, [total, n]] of sum) setRoomTemp(sim, shipId, label, total / n);
   for (const f of meta.fires) grid.set('fire', ox + f.x, oy + f.y, f.level);
   for (const d of meta.doors) {
     if (d.state === 'free') continue;

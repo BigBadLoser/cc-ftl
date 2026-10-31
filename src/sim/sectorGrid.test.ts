@@ -3,7 +3,9 @@ import { SectorGrid } from './sectorGrid';
 import { SHIP_EMPTY, SHIP_FIELDS, Struct } from './structure';
 import { SPACE_TEMP } from './tuning';
 
-const mk = () => new SectorGrid(1, SHIP_FIELDS, SHIP_EMPTY);
+// The game has no field whose empty value is non-zero any more (temperature moved to rooms), so these tests add a `temp` field
+// that is -100 where empty, to keep covering empty values of missing chunks, allocation and release.
+const mk = () => new SectorGrid(1, { ...SHIP_FIELDS, temp: 'f32' }, { ...SHIP_EMPTY, temp: SPACE_TEMP });
 
 describe('SectorGrid get/set', () => {
   it('reads empty values from missing chunks', () => {

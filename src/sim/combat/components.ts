@@ -88,6 +88,10 @@ export interface Ship {
   outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; dock?: number };
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
+  /** Temperature of each room that is not at NORMAL_TEMP, by room id (`room` field label; rooms.ts re-keys it when the labels change). See roomTemp.ts. */
+  roomTemp?: Record<number, number>;
+  /** Room ids found with a vacuum tile by the last scan of the temperature system (they cool toward space); cleared when the labels change. Derived, but kept so a load continues exactly. */
+  roomVacuum?: number[];
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
   immobile?: true;
   /**

@@ -8,7 +8,7 @@ import { spawnStation } from '../../sim/stations/spawn';
 import { content } from '../index';
 
 /**
- * The environment solvers (atmosphere, temperature, smoke, lighting) skip regions whose inputs are unchanged since a solve
+ * The environment solvers (atmosphere, smoke, lighting) skip regions whose inputs are unchanged since a solve
  * that changed nothing, and reuse cached link lists, conductance and lamp light. Those caches hang off the grid objects, so a
  * sim rebuilt from its save every tick never has a warm one: it does every solve in full. Both runs must stay byte-identical
  * (grids, components, rng) through a scripted scenario that touches every input. Each edit lands on its own inert prize
