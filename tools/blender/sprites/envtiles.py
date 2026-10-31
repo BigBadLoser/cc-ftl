@@ -96,7 +96,8 @@ for _s in ("s", "e"):
             if _lv != "low":
                 SPRITES.append((f"tile.hull.{_pre}end.{_s}{_cs}", (1, 1), "block",
                                 lambda s=_s, lv=_lv, c=_c: end_face("hull", s, lv, c)))
-        SPRITES.append((f"tile.hull.cap.end.{_s}{_cs}", (1, 1), "over",      # (over tile.wall.full.end.*)
+    for _c in END_CORNERS[_s]:                      # the far hull's end over tile.wall.full.end.* (wall3d.hull_cap_end)
+        SPRITES.append((f"tile.hull.cap.end.{_s}{f'.c{_c}' if _c else ''}", (1, 1), "block",
                         lambda s=_s, c=_c: hull_cap_end(s, c)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):

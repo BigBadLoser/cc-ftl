@@ -662,8 +662,9 @@ def _end_spans(fam, side, level, corners):
 
 def hull_cap_end(side, corners=0):
     """The far hull's end section over the partition's (end_face("wall"), drawn under it): the hull behind the
-    partition, its section in the partition's tone, and all of it over the partitions' height a black cut. "over", as
-    hull_cap."""
+    partition, its section in the partition's tone, and all of it over the partitions' height a black cut. A plain
+    block: it lies beside the partition's section, over only the cut of its hidden back skirt, which the hull's
+    section covers (as a holdout, coplanar with it, that cut came through in specks)."""
     hs, ws = _end_spans("hull", side, "up", corners), _end_spans("wall", side, "up", corners)
     ax = "y" if side == "s" else "x"
     k = Relief(f"wall3d_hullcap_end_{side}_{corners}")
@@ -677,8 +678,7 @@ def hull_cap_end(side, corners=0):
             if z1 > z0 + 1e-6:
                 k.poly([P(ax, 0.5, u - 0.5, z, 0.0) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "wall", 2,
                        OUT(ax), fixed=col)
-    own = k.build()
-    return own, own + end_face("wall", side, "up", corners)
+    return k.build()
 
 
 def end_face(fam, side, level="up", corners=0):
