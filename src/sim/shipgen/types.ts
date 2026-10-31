@@ -15,7 +15,9 @@ export type RoomRole =
   /** Station rooms: hydroponics farms, ore refining and processing, the armoury (weapon lockers). */
   | 'farm' | 'industry' | 'armoury'
   /** Station courtyards (open rooms filling enclosed centres): a concourse, a garden deck, a drill hall. */
-  | 'plaza' | 'garden' | 'drill';
+  | 'plaza' | 'garden' | 'drill'
+  /** Station shops (decorative): the market street and the market ring. */
+  | 'shop';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =
@@ -157,6 +159,8 @@ export interface HullFamilyDef {
    * 'office': beside the main dock as the station's administration, a rotunda at the centre (civil stations).
    */
   command?: 'heart' | 'office';
+  /** Stations: a market (trading): shops line the south concourse, and concentric stations ring the rotunda with them. */
+  market?: boolean;
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 

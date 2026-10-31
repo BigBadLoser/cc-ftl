@@ -2,7 +2,7 @@ import { localBuilder } from './blocks';
 import type { Builder, Part, Rect } from './builder';
 import { letterOf } from './canvas';
 import { bandArcs, bandDepth, bandGroups, bandRadius, bandRooms } from './stationBands';
-import { concentricBands, organPipes } from './stationDistricts';
+import { concentricBands, marketBands, organPipes } from './stationDistricts';
 import { planRing, quadrantOf, quadrantRooms } from './stationDepartments';
 import { arcsBetween, dockBanks, without } from './stationDocks';
 import type { RoomSpec } from './plan';
@@ -222,6 +222,8 @@ export interface WheelOpts {
   extra: number;
   /** Rooms beside the hub, inside the ring (a filled centre). */
   centre: number;
+  /** A market: shops line the south concourse. */
+  market?: boolean;
 }
 
 const isDock = (r: RoomSpec): boolean => r.role === 'dock';
@@ -272,7 +274,7 @@ export function wheelStation(rng: Rng, hub: RoomSpec | null, rooms: RoomSpec[], 
     const ok = f && h ? b.attach(h, f, f === 'e' || f === 'w' ? { ...r, w: r.h, h: r.w } : r, 0) : null;
     if (!ok) band.push(r);
   });
-  return outerBand(b, R, ring.label, band, sys, docks, depth) ? b : null;
+  return outerBand(b, R, ring.label, band, sys, docks, depth, !!o.market) ? b : null;
 }
 
 /** Widest court between a concentric station's inner band and its outer ring. */
@@ -334,6 +336,30 @@ function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
   return [...out.entries()];
 }
 
+/** Shop units along the market street: floor across the concourse (depth) and along it (width). */
+const SHOP = { depth: 5, width: 4 };
+
+/**
+ * The market street: shop units both sides of the south concourse (the spoke from the centre to the ring of radius R,
+ * floor x -1..1, walls at x -2 and 2), from the ring inward until something is in the way, each opening onto the
+ * concourse through its middle (an archway at fit-out: shops are open rooms). Straight geometry, so the units are
+ * rectangles of one width, a row of identical fronts.
+ */
+function street(b: Builder, R: number): number {
+  const { depth: D, width: U } = SHOP;
+  let n = 0;
+  for (const side of [-1, 1] as const) {
+    for (let y = R - 3 - (U + 1); y > 0; y -= U + 1) {
+      const rect: Rect = { x: side < 0 ? -2 - (D + 1) : 2, y, w: D + 2, h: U + 2 };
+      if (!free(b, rect)) break;
+      if (!b.place(rect, 'shop', { role: 'shop', mods: [], w: D, h: U, dept: 'commons' })) break;
+      b.cv.setDoor(side < 0 ? -2 : 2, y + ((U + 2) >> 1));
+      n++;
+    }
+  }
+  return n;
+}
+
 /** A warehouse in two, each with half its crates and floor (the second take on a crowded ring). */
 function halves(r: RoomSpec): RoomSpec[] {
   if (!r.warehouse || r.mods.length < 8) return [r];
@@ -356,12 +382,12 @@ const rimRadius = (sys: RoomSpec[], docks: RoomSpec[]): number =>
  * The outboard band of a full round ring with its docks reserved first (dock banks on the north and south faces), the
  * band cut round them, then the system rooms on the rim beyond the band, clear of the banks.
  */
-function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number): boolean {
+function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number, market = false): boolean {
   const banks = dockBanks(b, R, ring, docks, R + depth + 2);
   if (!banks) return false;
   // Departments (stationDepartments.ts): a small search places the secure core, the warehouses and habitation.
   const westDocks = banks.splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);
-  const plan = planRing(b.rng, [...band, ...sys], westDocks);
+  const plan = planRing(b.rng, [...band, ...sys], westDocks, market);
   // The band in quadrants (cut at the dock banks and the east and west spokes), dealt by department.
   const arcs = arcsBetween([...new Set([...banks.splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
   // The groups run on round the ring as one list, so every quadrant fills to its length (no quadrant left with two
@@ -372,6 +398,8 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const turn = <T>(xs: T[]): T[] => [...xs.slice(n0), ...xs.slice(0, n0)];
   if (!bandArcs(b, R, ring, turn(groups).flat(), depth, turn(arcs))) return false;
   const rim = without([[0, TAU]], banks.keep);
+  // A market's street first: shop units both sides of the south concourse, from the ring inward.
+  if (market) street(b, R);
   // Rooms that need no hull face go inboard of the corridor, doored straight onto it (never through a band room).
   // The secure core either side of its spoke (east or west, where no dock faces).
   const inner = sys.filter((r) => r.role !== 'weapons');
@@ -408,14 +436,14 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
  * outer ring one band outboard with its docks reserved first as banks on the north and south faces. System rooms stay
  * rectangles on the outer rim, beyond the band. The space between the inner band and the outer ring is the court.
  */
-export function concentricStation(rng: Rng, hub: RoomSpec | null, roomsIn: RoomSpec[], spokes: ('n' | 's' | 'e' | 'w')[]): Builder | null {
+export function concentricStation(rng: Rng, hub: RoomSpec | null, roomsIn: RoomSpec[], spokes: ('n' | 's' | 'e' | 'w')[], market = false): Builder | null {
   const b = localBuilder(rng);
   const docks = roomsIn.filter(isDock);
   const sys = roomsIn.filter(isSystem);
   const rest = roomsIn.filter((r) => !isDock(r) && !isSystem(r));
   // Shares by floor area: about a fifth round the hub, a third outside the inner ring, the rest on the outer ring.
   // Districts: the quiet rooms (quarters, messes) on the inner rings, the dock district on the outer ring.
-  const { iIn, iOut, oBand } = concentricBands(rest);
+  const { iIn, iOut, oBand } = market ? marketBands(rest) : concentricBands(rest);
   // Military command: the armoury is the guard post at the bridge's one way in (the inner band beside its spoke).
   if (hub && spokes.length === 1) for (const r of oBand.filter((q) => q.role === 'armoury').slice(0, 1)) { oBand.splice(oBand.indexOf(r), 1); iIn.unshift({ ...r, pinned: true }); }
   const hw = hub ? Math.max(hub.w, hub.h) : 2 * ROTUNDA + 1;
@@ -443,7 +471,7 @@ export function concentricStation(rng: Rng, hub: RoomSpec | null, roomsIn: RoomS
   // Organ pipes round the hub too: a guard post stands beside the spoke into the bridge.
   if (!bandGroups(b, R1, r1.label, organPipes(iIn, inArcs.map(([a, z]) => z - a)), dI, inArcs, -1, true)) return null;
   if (!bandArcs(b, R1, r1.label, iOut, dO, arcsBetween([0, 1, 2, 3].map((q) => (q * TAU) / 4)), 1, true)) return null;
-  return outerBand(b, R2, r2.label, oBand, sys, docks, dB) ? b : null;
+  return outerBand(b, R2, r2.label, oBand, sys, docks, dB, market) ? b : null;
 }
 
 /** Arc: a partial round ring (a crescent) of `span` radians: a room band outside it, system rooms and docks beyond. */

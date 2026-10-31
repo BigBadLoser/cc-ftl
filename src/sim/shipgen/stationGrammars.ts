@@ -197,7 +197,7 @@ function wheel(c: Ctx): boolean {
   const o = { spokes, extra: c.rng.int(0, 2), centre: 0 };
   const courts = c.rng.int(0, 2);
   c.parts.push(`spokes nesw courts ${courts}`);
-  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, null, office(c), o)), 'command', 'wheel station'), 'wheel');
+  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, null, office(c), { ...o, ...(c.fam.market ? { market: true } : {}) })), 'command', 'wheel station'), 'wheel');
 }
 
 /** Hub spokes always include north and south: the concourse runs dock bank to hub to dock bank. */
@@ -224,7 +224,7 @@ function concentric(c: Ctx): boolean {
   c.parts.push(heart ? 'command heart' : 'rotunda');
   const b = heart
     ? concentricStation(c.rng, c.plan.command, tagged(warehoused(fullRooms(c))), ['n'])
-    : concentricStation(c.rng, null, office(c), concourse(cardinal(c, 2)));
+    : concentricStation(c.rng, null, office(c), concourse(cardinal(c, 2)), !!c.fam.market);
   return placeRoot(c, civil(courtOf(c, 1)(b), 'command', 'concentric station'), 'concentric');
 }
 

@@ -2,7 +2,7 @@ import type { Layout } from './layout';
 import type { RoomRole } from './types';
 
 /** Rooms open to passers-by: a door between two of these (not two corridors) becomes an archway. */
-const OPEN: readonly RoomRole[] = ['hall', 'support', 'plaza', 'garden', 'drill'];
+const OPEN: readonly RoomRole[] = ['hall', 'support', 'plaza', 'garden', 'drill', 'shop'];
 
 /**
  * Archways (stations): a door that joins a corridor to a mess or courtyard, or two such rooms, is taken out and left

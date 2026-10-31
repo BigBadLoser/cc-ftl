@@ -23,6 +23,7 @@ export function stationFaction(def: StationDef, size: StationSize): FactionDef {
     id: size, weight: { base: 1, perDepth: 0, max: 1 }, grammars: def.tiers[size].grammars, aspect: [0.7, 1.5], depth: {},
     batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'], ...(def.tiers[size].cages ? { cages: def.tiers[size].cages } : {}), ...(def.atrium ? { atrium: def.atrium } : {}),
     command: def.kind === 'military' ? 'heart' : 'office',
+    ...(def.kind === 'trading' ? { market: true } : {}),
   };
   return {
     name: def.name, side: def.side, motif: def.motif, ...(def.berths ? { berths: def.berths } : {}),

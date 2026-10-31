@@ -68,3 +68,18 @@ export function concentricBands(rest: readonly RoomSpec[]): { iIn: RoomSpec[]; i
   }
   return { iIn, iOut, oBand };
 }
+
+/**
+ * Concentric bands round a market (trading): the inner ring is the market ring round the rotunda, shops and the commons
+ * (messes, lounges) on both faces; the outer ring is home, the harbour and habitation. Shops are added (one a quarters
+ * room, two at least), decorative units like the market street's.
+ */
+export function marketBands(rest: readonly RoomSpec[]): { iIn: RoomSpec[]; iOut: RoomSpec[]; oBand: RoomSpec[] } {
+  const commons = rest.filter((r) => r.role === 'support' || r.role === 'plaza' || r.role === 'garden');
+  const shops: RoomSpec[] = Array.from({ length: Math.max(2, rest.filter((r) => r.role === 'quarters').length) }, () => ({ role: 'shop', mods: [], w: 4, h: 4, dept: 'commons' }));
+  const ring = [...shops, ...commons];
+  const iIn: RoomSpec[] = [], iOut: RoomSpec[] = [];
+  // About two fifths round the rotunda, the rest outboard; shops spread through both.
+  ring.forEach((r, i) => ((i % 5) < 2 ? iIn : iOut).push(r));
+  return { iIn, iOut, oBand: rest.filter((r) => !commons.includes(r)) };
+}

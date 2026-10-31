@@ -68,7 +68,7 @@ export function outfitStation(sim: Sim, id: number, kind: string, size: StationS
   settleIn(sim, id, gen, x, y);
 }
 
-const COURT_ROLES: readonly string[] = ['plaza', 'garden', 'drill', 'support'];
+const COURT_ROLES: readonly string[] = ['plaza', 'garden', 'drill', 'support', 'shop'];
 const POST_ROLES: readonly string[] = ['armoury', 'dock', 'plaza', 'garden', 'drill', 'bridge'];
 
 /**

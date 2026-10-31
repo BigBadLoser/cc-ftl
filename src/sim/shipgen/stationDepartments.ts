@@ -58,7 +58,7 @@ export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => rooms.map((r) 
  *   freight  the dock spokes its warehouses stand beside;
  *   quiet    the quadrants habitation takes in the outer band.
  */
-export interface RingPlan { secure: 'e' | 'w'; freight: ('n' | 's')[]; quiet: number[] }
+export interface RingPlan { secure: 'e' | 'w'; freight: ('n' | 's')[]; quiet: number[]; market: boolean }
 
 /** Quadrants beside a spoke: north 0 and 3, south 1 and 2, east 0 and 1, west 2 and 3. */
 const SIDE: Record<'n' | 's' | 'e' | 'w', number[]> = { n: [0, 3], s: [1, 2], e: [0, 1], w: [2, 3] };
@@ -68,10 +68,11 @@ const SIDE: Record<'n' | 's' | 'e' | 'w', number[]> = { n: [0, 3], s: [1, 2], e:
  * dock bank's spoke, warehouses beside a dock spoke. Preferred: the secure core on the stern (east), freight at the main
  * (north) dock, habitation away from the secure core and the warehouses. A little noise, so stations of a kind differ.
  */
-export function planRing(rng: Rng, rooms: readonly RoomSpec[], westDocks: boolean): RingPlan {
+export function planRing(rng: Rng, rooms: readonly RoomSpec[], westDocks: boolean, market = false): RingPlan {
   const houses = rooms.filter((r) => r.warehouse).length;
   const secures: ('e' | 'w')[] = westDocks ? ['e'] : ['e', 'w'];
-  const freights: ('n' | 's')[][] = houses === 0 ? [[]] : houses === 1 ? [['n'], ['s']] : [['n', 's']];
+  // A market takes the south concourse: freight stays at the north (trade) dock, with the office and the customs post.
+  const freights: ('n' | 's')[][] = houses === 0 ? [[]] : market ? [['n']] : houses === 1 ? [['n'], ['s']] : [['n', 's']];
   const pairs = [[0, 1], [1, 2], [2, 3], [3, 0]];
   let best: RingPlan | null = null, top = -Infinity;
   for (const secure of secures) for (const freight of freights) for (const quiet of pairs) {
@@ -80,7 +81,7 @@ export function planRing(rng: Rng, rooms: readonly RoomSpec[], westDocks: boolea
     // Habitation away from the secure core, the warehouses and the main (north) dock, where the harbour stands.
     for (const q of quiet) v -= near(q, [secure]) + 0.5 * near(q, freight) + 0.5 * near(q, ['n']);
     v += rng.next() * 0.8;
-    if (v > top) { top = v; best = { secure, freight, quiet }; }
+    if (v > top) { top = v; best = { secure, freight, quiet, market }; }
   }
   return best as RingPlan;
 }

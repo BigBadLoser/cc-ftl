@@ -53,7 +53,7 @@ const GLYPHS: Record<string, string> = Object.fromEntries(Object.entries({
 export const ROLE_TINT: Record<RoomRole, RGB> = {
   bridge: [52, 92, 140], engine: [120, 70, 40], reactor: [120, 110, 40], weapons: [120, 50, 70], shields: [40, 110, 120],
   cargo: [88, 80, 60], quarters: [70, 100, 60], core: [100, 60, 130], hangar: [70, 70, 90], hall: [58, 60, 66],
-  dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40], plaza: [110, 96, 70], garden: [70, 130, 70], drill: [90, 80, 90],
+  dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40], plaza: [110, 96, 70], garden: [70, 130, 70], drill: [90, 80, 90], shop: [170, 120, 160],
 };
 
 /** Short labels and colours per module. */
@@ -84,7 +84,7 @@ const COURTS = new Set<RoomRole>(['plaza', 'garden', 'drill']);
 const LEGEND_ROLES: [RoomRole, string][] = [
   ['bridge', 'bridge'], ['hall', 'corridor'], ['quarters', 'quarters'], ['support', 'mess'], ['cargo', 'hold'], ['reactor', 'reactor'],
   ['weapons', 'gun bay'], ['shields', 'shields'], ['core', 'ai core'], ['dock', 'dock'], ['farm', 'farm'], ['industry', 'refinery'],
-  ['armoury', 'armoury'], ['plaza', 'plaza (concourse)'], ['garden', 'garden deck'], ['drill', 'drill hall'],
+  ['armoury', 'armoury'], ['plaza', 'plaza (concourse)'], ['garden', 'garden deck'], ['drill', 'drill hall'], ['shop', 'shop'],
 ];
 const LEGEND_MODS: [string, string][] = [
   ['module.cargo_container', 'stall/container'], ['module.storage_pallet', 'pallet'], ['module.mess_table', 'bench/table'], ['module.chair', 'seat'],
