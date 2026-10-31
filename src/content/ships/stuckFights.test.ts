@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, PositionC, ShipC, newGame, type ModuleDef, type Sim, type SimEvent } from '../../sim';
+import { BoarderC, CrewC, ModuleC, PositionC, ShipC, Struct, newGame, type ModuleDef, type Sim, type SimEvent } from '../../sim';
 import { SurrenderedC } from '../../sim/fight/components';
-import { shipIdOf, shipIds } from '../../sim/regions';
+import { shipGrid, shipIdOf, shipIds } from '../../sim/regions';
 import { HOPELESS_HULL, WRECK_BELOW } from '../../sim/tuning';
 import { content } from '../index';
 
@@ -82,5 +82,25 @@ describe('hopeless enemies surrender (issue #225)', () => {
     const events = run(sim, 40);
     expect(sim.world.get(them, ShipC)!.integrity).toBeGreaterThanOrEqual(HOPELESS_HULL);
     expect(events.some((e) => e.type === 'ship.surrendered')).toBe(false);
+  });
+
+  it('does not give up while its boarding party still fights aboard the player ship (Codex on #231)', () => {
+    const { sim, them } = crippled();
+    const me = shipIds(sim)[0]!;
+    // One of its crew is out: standing on a floor tile of the player's ship, as a landed boarding party.
+    const [boarder] = enemyCrew(sim, them);
+    const g = shipGrid(sim, me)!;
+    let at: { x: number; y: number } | null = null;
+    for (let y = g.y0; y < g.y0 + g.height && !at; y++) for (let x = g.x0; x < g.x0 + g.width && !at; x++) if (g.get('struct', x, y) === Struct.Floor && !g.get('module', x, y)) at = { x, y };
+    const pos = sim.world.get(boarder!, PositionC)!;
+    pos.x = at!.x;
+    pos.y = at!.y;
+    const b = sim.world.get(them, BoarderC);
+    if (b) b.crew = [boarder!];
+    else sim.world.add(them, BoarderC, { party: 1, afterTicks: 0, losingBelow: 0, state: 'landed', timer: 0, vehicle: 0, crew: [boarder!] });
+    const events = run(sim, 40);
+    expect(events.some((e) => e.type === 'ship.surrendered')).toBe(false);
+    expect(sim.world.get(them, ShipC)!.state).not.toBe('wreck');
+    expect(sim.sector.inCombat).toBe(true); // the fight goes on, so the party can still take the ship (captureSystem runs only in combat)
   });
 });
