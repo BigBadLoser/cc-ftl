@@ -33,7 +33,7 @@ export const DISTRICT: Readonly<Partial<Record<RoomRole, string>>> = {
   weapons: 'defence', armoury: 'defence', drill: 'defence',
 };
 
-/** Tiles of walk that still count as near (about a room's length plus the corridor between). */
+/** Tiles of walk that still count as near between two small rooms (about a room's length plus the corridor); larger rooms add half the side of each (scoreRoles). */
 const NEAR = 12;
 
 export interface StationQuality { adjacency: number; pairs: Record<string, number>; clustering: number; contacts: number }
@@ -43,7 +43,7 @@ export interface StationQuality { adjacency: number; pairs: Record<string, numbe
  * between every two (tiles from one's floor to the other's). Fixed by the geometry: roles can be swapped over it and
  * re-scored cheaply (`scoreRoles`).
  */
-export interface RoomGraph { rooms: number[]; touch: Map<number, Set<number>>; door: Map<number, Set<number>>; walk: Map<number, Map<number, number>> }
+export interface RoomGraph { rooms: number[]; touch: Map<number, Set<number>>; door: Map<number, Set<number>>; walk: Map<number, Map<number, number>>; floor: Map<number, number> }
 
 export function roomGraph(rows: readonly string[], roomOf: Int16Array): RoomGraph {
   const H = rows.length;
@@ -92,7 +92,8 @@ export function roomGraph(rows: readonly string[], roomOf: Int16Array): RoomGrap
     }
     walk.set(r, best);
   }
-  return { rooms, touch, door, walk };
+  const floor = new Map(rooms.map((r) => [r, (tilesOf.get(r) as number[]).length]));
+  return { rooms, touch, door, walk, floor };
 }
 
 /** Quality of a layout's room arrangement: rows (as in a ShipTemplate), the room of each tile and each room's role. */
@@ -110,9 +111,12 @@ export function scoreRoles(g: RoomGraph, roles: readonly RoomRole[]): StationQua
     let ok = 0;
     for (const r of as) {
       const w = walk.get(r);
-      const near = Math.min(...bs.map((o) => w?.get(o) ?? Infinity));
+      // Near grows with the two rooms' size: big rooms (a warehouse, the office beside a dock) stand further apart door
+      // to door while still side by side.
+      const within = (o: number): number => NEAR + 0.5 * (Math.sqrt(g.floor.get(r) ?? 0) + Math.sqrt(g.floor.get(o) ?? 0));
+      const near = bs.some((o) => (w?.get(o) ?? Infinity) <= within(o));
       const touching = bs.some((o) => touch.get(r)?.has(o));
-      if (want > 0 ? near <= NEAR : near > NEAR && !touching) ok++;
+      if (want > 0 ? near : !near && !touching) ok++;
     }
     pairs[`${a}${want > 0 ? '~' : '/'}${b}`] = ok / as.length;
   }
