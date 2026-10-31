@@ -15,10 +15,13 @@ function commit(): string {
 /**
  * Test files that change global state: module mocks, spies on globals, fake timers, environment variables. Each runs in a
  * fresh module graph. Every other file shares its worker's loaded modules (`isolate: false`), which saves re-importing the
- * whole sim and content for each of the ~280 files. A new test that mocks or stubs something goes in this list.
+ * whole sim and content for each of the ~280 files. A new test that mocks or stubs something, or changes data the sim
+ * caches per seed (generated galaxy nodes), goes in this list.
  */
 const ISOLATED = [
   'src/app/saves.test.ts',
+  'src/app/stockHints.test.ts', // these two set `danger` on generated nodes, which are cached per seed
+  'src/content/standing.test.ts',
   'src/content/derelictFailure.test.ts',
   'src/content/jobs.test.ts',
   'src/content/ships/envSkip.test.ts',
