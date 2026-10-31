@@ -36,6 +36,8 @@ class Style:
                                           # default's dark joints (level 1, the shade side black)
     toe: Optional[str] = None             # a family for a band along the ramp's toe
     toe_at: float = 0.72                  # where down the ramp the toe band starts (a fraction of its run)
+    toe_lvl: Optional[int] = None         # the solid ramp's last cell over its foot (the step's lip) in this level of
+                                          # the ramp; None: its darkest (the joint the plates leave)
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
     ramp_solid: bool = False              # the ramp built as one solid along each face
                                           # (faction.shell.LookShell.ramp) instead of the shell's height grid

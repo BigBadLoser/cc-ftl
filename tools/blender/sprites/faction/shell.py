@@ -149,8 +149,9 @@ class LookShell(T.Shell):
         mid = (um, plane + e) if ax == "y" else (plane + e, um)
         o, al = T.OUT(ax), T.P(ax, 0.0, 1.0, 0.0, 0.0) - T.P(ax, 0.0, 0.0, 0.0, 0.0)
         flr = (o * (self._zsurf(0) - self._zsurf(1)) + Vector((0, 0, 1))).normalized()
+        tl = T.style().toe_lvl
         col = {"bottom": False, "back": False,          # (on the floor / against the wall: no camera sees them)
-               "toe": R[0], "hole_back": R[0],          # (a hole's walls and floor as
+               "toe": R[0 if tl is None else tl], "hole_back": R[0],    # (a hole's walls and floor as
                "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
                "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}

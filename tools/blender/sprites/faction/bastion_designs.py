@@ -150,20 +150,22 @@ def bastion_module(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back
     lamp(k, ax, fp, a + 0.36, b - 0.03, c + 0.03, c + 0.11, dl, "red")
 
 
-BAST_SLOT = (0.15, 0.12)            # the ramp's slot: its back (a fraction of the run down it), its floor's height
+BAST_PANEL = (0.15, 0.70)           # the ramp's panel (the base design's outline) and the slot cut where it lies:
+                                    # its top and bottom down the run (fractions of it)
 
 
 def bastion_hole():
     """Where a bastion ramp design opens the ramp (B1-2, B1-3): over its slot, from the slot's back to where its floor
     meets the slope; set in from the stretch's sides as the outlined panel (the cover the base design keeps on it)."""
-    return (BAST_SLOT[0], 1.0 - BAST_SLOT[1] / T.W.skirt_top(), -0.08)
+    return (BAST_PANEL[0], BAST_PANEL[1], -0.08)
 
 
 def _slot(k, P, run_, zs, hole, fam):
     """The ramp's slot opened (the hole the shell leaves: o0..o1 along, d0..d1 out): its floor, back and sides."""
     o0, o1, d0, d1 = hole
-    zat = lambda d: zs * (1 - d / run_)                # noqa: E731   the slope's height d out
-    zb = BAST_SLOT[1]
+    ft = T.style().foot
+    zat = lambda d: ft + (zs - ft) * (1 - d / run_)    # noqa: E731   the slope's height d out (over its foot)
+    zb = zat(d1)                                       # (the floor level, meeting the slope where the slot ends)
     up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
     k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zb, d1), P(o0, zb, d1)], fam, 2, up)                 # its floor,
     k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], fam, 1, out_)     # back
@@ -186,8 +188,9 @@ def bastion_machinery(plate, u0, u1, run_, k=None, P=None, zs=0.0, hole=None, fa
     from ..wall3d_variants import lamp
     _slot(k, P, run_, zs, hole, fam)
     o0, o1, d0, d1 = hole
-    zat = lambda d: zs * (1 - d / run_)                # noqa: E731
-    zb = BAST_SLOT[1]
+    ft = T.style().foot
+    zat = lambda d: ft + (zs - ft) * (1 - d / run_)    # noqa: E731
+    zb = zat(d1)
     df, zt = d1, zat(d0)                            # the box: the slot's floor deep, its back's height
     a, b = o0 + 0.02, o1 - 0.02
     prism(k, ax, plane, a, b, [(d0, zb), (df, zb), (df, zt), (d0, zt)], fam, 3)

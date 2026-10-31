@@ -4,9 +4,11 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from .base import Faction, _style
-from .bastion_designs import BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood
+from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood
 from .parts import PAINT, body, corner_piece, prism
-from .shell import Feature, FloorDrop, FreeEnds, LookShell, RampHoles, _end_section, _ends
+from .shell import Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
+
+BAST_FOOT = 4 / 39                  # the ramp ends in an upright step this high at the floor (set 8), its lip lit
 
 BAST_L = 2 / 32                     # the lip: the wall below the cornice stands this far back from the ramp's edge
 
@@ -108,7 +110,7 @@ class RecessTones(Feature):
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R = T.RAMPS[fam][0]
-        return [(sp.run - 1 / 32, R[1]), (sp.run, R[0])]
+        return [(sp.run - 1 / 32, R[1]), (sp.run, R[T.style().toe_lvl or 0])]     # (its last cell the step's lip)
 
 
 def _arm(ax, plane, u, top, i, side):
@@ -209,6 +211,7 @@ class Bastion(Faction):
 
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
-                      tops=BAST_TOPS, ramps=BAST_RAMPS, outline_lvl=1, ramp_solid=True,
-                      hole_tone=lambda part, fam, ax, n: T.tone(fam, 1, n, ax), shell=LookShell,
-                      features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), RecessTones()))
+                      tops=BAST_TOPS, ramps=BAST_RAMPS, outline_lvl=1, outline_d=BAST_PANEL, ramp_solid=True,
+                      foot=BAST_FOOT, toe_lvl=4, hole_tone=lambda part, fam, ax, n: T.tone(fam, 1, n, ax),
+                      shell=LookShell,
+                      features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), FootTone("wall", 2), RecessTones()))
