@@ -42,6 +42,8 @@ export interface StepDef {
   target?: LessonTarget;
   /** `gotIt`: the player reads and clicks Got it. A condition: a "do" step that advances when it holds (the player did the thing). */
   advance: 'gotIt' | Condition;
+  /** A "do" step only: when this holds the lesson steps back to the previous step (the player undid what it needs). */
+  back?: Condition;
   /** Overrides the lesson's speaker for this step. */
   speaker?: SpeakerId;
   /** Time runs during this step (the game resumes at the player's speed); otherwise the game stays paused. */

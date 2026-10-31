@@ -27,3 +27,12 @@ describe('hail lesson trigger', () => {
   });
   it('not without a station', () => expect(fires(ctx({ trade: { credits: 0, partners: [], deals: [] } }))).toBe(false));
 });
+
+describe('hail lesson while', () => {
+  const open = (c: LessonCtx) => checkCondition(hailLesson.while, { ctx: c, signals: [] });
+  it('holds while a trade goal is open, closes in a fight or when both are done', () => {
+    expect(open(ctx())).toBe(true);
+    expect(open(ctx({ fight: true }))).toBe(false);
+    expect(open(ctx({ goals: goals(true) }))).toBe(false);
+  });
+});

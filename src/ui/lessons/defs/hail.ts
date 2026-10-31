@@ -9,9 +9,9 @@ const stationOf = (ctx: LessonCtx): number | null => {
 };
 /** The first act's trade goals are still open and the player has not hailed any station yet. */
 const firstContact = (ctx: LessonCtx) => {
-  const open = ctx.goals?.goals.some((g) => (g.id === 'goal.first_trade' || g.id === 'goal.take_job') && !g.done);
-  return !!open && !ctx.combat.inCombat && stationOf(ctx) !== null && !ctx.trade.partners.some((p) => p.station && p.hail !== 'none');
+  return tradeGoalsOpen(ctx) && !ctx.combat.inCombat && stationOf(ctx) !== null && !ctx.trade.partners.some((p) => p.station && p.hail !== 'none');
 };
+const tradeGoalsOpen = (ctx: LessonCtx) => !!ctx.goals?.goals.some((g) => (g.id === 'goal.first_trade' || g.id === 'goal.take_job') && !g.done);
 const hailed = (ctx: LessonCtx) => ctx.trade.partners.some((p) => p.station && p.hail !== 'none');
 
 /** The first station visit: select a station, hail it, glance at what it offers. */
@@ -21,8 +21,8 @@ export const hailLesson = {
   speaker: 'speaker.marguerite',
   trigger: when(firstContact),
   delay: 1500,
-  // A fight makes it moot (the combat lesson owns the screen).
-  while: when((ctx) => !ctx.combat.inCombat),
+  // A fight makes it moot (the combat lesson owns the screen), and so does finishing both trade goals.
+  while: when((ctx) => !ctx.combat.inCombat && tradeGoalsOpen(ctx)),
   steps: [
     {
       title: 'Find the station',
@@ -36,12 +36,19 @@ export const hailLesson = {
       say: 'Always say hello first. It costs nothing.',
       keys: ['Press **Hail station** in the selection panel.'],
       target: uiTarget('station.hail'),
+      // Deselected the station: back to pointing at it.
+      back: when((ctx) => ctx.selectedShip !== stationOf(ctx)),
       advance: anyOf(onCommand('trade.hail', (c, ctx) => c.ship === stationOf(ctx)), when(hailed)),
     },
     {
       title: 'Trade and jobs',
       say: 'Count everything twice.',
-      keys: ['**Trade** buys and sells goods.', '**Jobs** lists contracts to accept.', '**Crew** is for hire.'],
+      keys: [
+        '**Trade**: buy and sell goods. Prices differ by station, and your shuttle ferries them over. Fuel is here too: **Refuel** tops you up.',
+        '**Jobs**: contracts such as deliveries and bounties. **Accept** adds one to your jobs list; it pays on completion.',
+        '**Crew**: people for hire. Your shuttle fetches them.',
+        '**Shipyard** (some stations): a yard builds the hull plan you drew.',
+      ],
       target: uiTarget('station.tabs'),
       advance: 'gotIt',
     },

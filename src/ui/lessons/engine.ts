@@ -82,6 +82,11 @@ export class LessonEngine {
       const step = o.def.steps[o.index];
       if (o.def.while && !checkCondition(o.def.while, f)) this.close(false);
       else if (step && step.advance !== 'gotIt' && checkCondition(step.advance, f)) this.next();
+      else if (step?.back && o.index > 0 && checkCondition(step.back, f)) {
+        o.index--;
+        this.applySpeed();
+        this.emit();
+      }
     }
     for (const def of this.defs) {
       if (this.prefs.isSeen(def.id) || this.open?.def === def || this.queue.some((q) => q.def === def)) continue;

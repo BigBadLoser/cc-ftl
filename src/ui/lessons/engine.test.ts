@@ -174,4 +174,19 @@ describe('LessonEngine', () => {
     e.update(ctx(), 0);
     expect(e.current?.lesson.id).toBe('lesson.ev');
   });
+  it('steps back when a do step\'s back condition holds', () => {
+    const def: LessonDef = {
+      id: 'lesson.back', title: 'Back', trigger: when(() => true),
+      steps: [
+        { title: 'one', text: 'a', advance: when((c) => c.selectedShip === 1) },
+        { title: 'two', text: 'b', back: when((c) => c.selectedShip !== 1), advance: onCommand('combat.vent') },
+      ],
+    };
+    const { e } = setup([def]);
+    e.update(ctx({ selectedShip: 1 }), 0);
+    e.update(ctx({ selectedShip: 1 }), 1);
+    expect(e.current?.index).toBe(1);
+    e.update(ctx({ selectedShip: null }), 2);
+    expect(e.current?.index).toBe(0);
+  });
 });
