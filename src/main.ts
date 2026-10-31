@@ -8,6 +8,7 @@ import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
+import { backdropSpecOf } from './app/backdropSpec';
 import { loadStarmapArt } from './app/starmapArt';
 import { createStarmapGpu } from './render/starmap';
 import { createStore } from './app/store';
@@ -98,6 +99,7 @@ const loop = createLoop({
       if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace' || e.type === 'galaxy.eventLeft') {
         renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
         renderer?.resetWorld();
+        renderer?.setBackdrop(backdropSpecOf(sim));
       }
       else if (e.type === 'sector.deployed') {
         const grid = shipGrid(sim, e.ship);
@@ -499,6 +501,7 @@ const api: UiApi = {
         r.setProbe(probe);
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);
+        r.setBackdrop(backdropSpecOf(sim));
         const grid = shipGrid(sim, homeShip(sim));
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));
