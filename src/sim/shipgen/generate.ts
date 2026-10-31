@@ -106,6 +106,9 @@ function fitOut(
   specs.forEach((spec, room) => {
     const d = spec ? drawOf(room) : null;
     if (!spec || !d?.arr.plan) return;
+    // The door approach is kept clear while the plan lays the room out; a design that does not fit gives it back, so
+    // the room's own placer (mounts first, then the steps) sees the room as it would without a plan.
+    const kept = lay.roomTiles(room).map((i) => [i, lay.keep[i] as number] as const);
     keepDoorApproach(lay, room);
     const n = (id: string): number => spec.mods.filter((m) => m === id).length;
     const plan = d.arr.plan;
@@ -116,6 +119,7 @@ function fitOut(
       const got = planDesign(lay, rng, room, new Map([...new Set(spec.mods)].map((id) => [id, n(id)])), plan.designs);
       d.planned = !!got;
       if (got) d.plannedDefs = got;
+      else for (const [i, k] of kept) lay.keep[i] = k;
     } else {
       // A farm's planned beds are its row piece (at least that many); a hold's planned crates go in first.
       const farm = plan.piece === 'module.hydroponics';

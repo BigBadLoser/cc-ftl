@@ -11,6 +11,11 @@ const around = (name: string, weight: number, steps: Arrangement['steps']): Arra
 export const weapons = {
   fill: 0.6,
   arrangements: [
+    // Laid out whole from a design (rooms/designs.ts); the steps furnish round the mounts where it does not fit.
+    { name: 'gallery', weight: 10, plan: { kind: 'design', designs: ['gunGallery'] }, steps: [
+      { mod: 'module.storage_rack', count: 2, wall: 'any', row: true },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+    ] },
     around('loader', 2, [
       { mod: 'module.storage_rack', count: 2, wall: 'any', row: true },
       { mod: 'module.battery', count: 1, wall: 'any' },
@@ -26,6 +31,10 @@ export const weapons = {
 export const shields = {
   fill: 0.6,
   arrangements: [
+    { name: 'core', weight: 10, plan: { kind: 'design', designs: ['shieldCore'] }, steps: [
+      { mod: 'module.battery', count: 2, wall: 'any', row: true },
+      { mod: 'module.console', count: 1, wall: 'any' },
+    ] },
     around('banks', 2, [
       { mod: 'module.battery', count: 2, wall: 'any', row: true },
       { mod: 'module.console', count: 1, wall: 'any' },

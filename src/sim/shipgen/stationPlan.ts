@@ -1,6 +1,7 @@
 import type { Rng } from '../rng';
 import type { ModuleDef } from '../registry';
 import { allRooms, cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
+import { designSize, type DesignName } from './rooms/designs';
 import type { StationDef, StationSize } from './stationTypes';
 import type { ShipRoleDef } from './types';
 
@@ -45,14 +46,19 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
     const heavy = def.weapons.heavy.length > 0 && rng.int(0, 99) < t.heavyPct;
     guns.push(pickWeighted(rng, heavy ? def.weapons.heavy : def.weapons.light));
   }
-  // Light guns in pairs (one bay, two mounts), heavy ones alone.
-  const weapons: RoomSpec[] = guns.filter(big).map((g) => weaponSpec(defs, [g]));
+  // Light guns in pairs (one bay, two mounts), heavy ones alone. A station that is not tight sizes its gun bays and shield
+  // rooms by their design (rooms/designs.ts): a gallery with racks and a duty console, not a mount and a walkway.
+  const sized = (r: RoomSpec, design: DesignName): RoomSpec => {
+    const d = space >= 0.95 ? designSize(design, r.mods, defs) : null;
+    return d ? { ...r, w: d[0], h: d[1] } : r;
+  };
+  const weapons: RoomSpec[] = guns.filter(big).map((g) => sized(weaponSpec(defs, [g]), 'gunGallery'));
   const light = guns.filter((g) => !big(g));
-  for (let i = 0; i < light.length; i += 2) weapons.push(weaponSpec(defs, light.slice(i, i + 2)));
+  for (let i = 0; i < light.length; i += 2) weapons.push(sized(weaponSpec(defs, light.slice(i, i + 2)), 'gunGallery'));
   const shields: RoomSpec[] = Array.from({ length: t.shields }, () => {
     const g = pickWeighted(rng, def.shields);
     // 4x4 whatever the tier: room for a Mk III generator (3x3) and the walkway to it, so stations can be upgraded.
-    return { role: 'shields' as const, mods: [g], w: 4, h: 4 };
+    return sized({ role: 'shields' as const, mods: [g], w: 4, h: 4 }, 'shieldCore');
   });
   const consoles = ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 ? ['module.shieldConsole'] : [])];
   const command: RoomSpec = { role: 'bridge', mods: consoles, w: size === 'hub' ? 9 : 7, h: size === 'outpost' ? 4 : 5 };

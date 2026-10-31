@@ -50,8 +50,8 @@ function reactorsOf(spec: Spec): { def: string; n: number } | null {
   return null;
 }
 
-/** n reactors side by side along u, centred (their gap widened by one where that makes them exactly central), at row v. */
-function reactorRow(lay: Layout, f: Frame, def: string, n: number, v: number, t: number): { puts: Put[]; u0: number; span: number } {
+/** n pieces side by side along u, centred (their gap widened by one where that makes them exactly central), at row v. */
+function centreRow(lay: Layout, f: Frame, def: string, n: number, v: number, t: number): { puts: Put[]; u0: number; span: number } {
   const [du] = frameSize(fpOf(lay, def), t);
   let gap = n > 1 ? 1 : 0;
   if (n > 1 && (f.L - (n * du + (n - 1) * gap)) % 2 !== 0) gap++;
@@ -69,7 +69,7 @@ const plantRow: Design = (f, spec, lay, t) => {
   const r = reactorsOf(spec);
   if (!r) return null;
   const [, dv] = frameSize(fpOf(lay, r.def), t);
-  const row = reactorRow(lay, f, r.def, r.n, 0, t);
+  const row = centreRow(lay, f, r.def, r.n, 0, t);
   if (f.D < dv + 3 || row.u0 < 1) return null;
   return [
     { puts: row.puts },
@@ -113,7 +113,7 @@ const plinth: Design = (f, spec, lay, t) => {
   const [, dv] = frameSize(fpOf(lay, r.def), t);
   if (f.D < dv + 4) return null;
   const v = Math.floor((f.D - dv) / 2);
-  const row = reactorRow(lay, f, r.def, r.n, v, t);
+  const row = centreRow(lay, f, r.def, r.n, v, t);
   if (row.u0 < 2) return null;
   return [
     { puts: row.puts },
@@ -124,9 +124,67 @@ const plinth: Design = (f, spec, lay, t) => {
   ];
 };
 
+/** The mounts of a gun bay (weapons and point defence), one def per mount, the largest first. */
+function mountsOf(lay: Layout, spec: Spec): string[] {
+  const out = [...spec].filter(([k]) => lay.defs[k]?.weapon || lay.defs[k]?.pointDefense).flatMap(([k, c]) => Array<string>(c).fill(k));
+  return out.sort((x, y) => fpOf(lay, y)[0] - fpOf(lay, x)[0]);
+}
+
+/**
+ * Gun gallery: the mounts stand centred on the back wall, a tile apart; an ammunition rack at each end of the wall, a
+ * battery in each front corner, the duty console centred on the front wall facing the guns. Mirror-symmetric.
+ */
+const gunGallery: Design = (f, spec, lay) => {
+  const mounts = mountsOf(lay, spec);
+  const big = mounts[0];
+  if (!big) return null;
+  const [, dv] = frameSize(fpOf(lay, big), 0);
+  const row = centreRow(lay, f, big, mounts.length, 0, 0);
+  if (f.D < dv + 2 || row.u0 < 1) return null;
+  return [
+    // Each mount by its own def in the row's places (a bay may mix two light guns).
+    { puts: row.puts.map((p, i) => ({ ...p, def: mounts[i] ?? p.def })) },
+    { puts: row.u0 >= 3 ? pair(lay, f, { def: 'module.storage_rack', u: row.u0 - 3, v: 0, t: 0 }) : [], opt: true },
+    { puts: f.D >= dv + 3 ? pair(lay, f, { def: 'module.battery', u: 0, v: f.D - 1, t: 3 }) : [], opt: true },
+    { puts: f.D >= dv + 3 ? centred(lay, f, 'module.console', f.D - 1, 2) : [], opt: true },
+  ];
+};
+
+/**
+ * Shield core: the generator centred on the back wall, a battery either side of it, the console centred on the front
+ * wall facing it, a rack in each front corner. Mirror-symmetric.
+ */
+const shieldCore: Design = (f, spec, lay) => {
+  const g = [...spec.keys()].find((k) => lay.defs[k]?.shieldGen);
+  if (!g) return null;
+  const [, dv] = frameSize(fpOf(lay, g), 0);
+  const row = centreRow(lay, f, g, 1, 0, 0);
+  if (f.D < dv + 2 || row.u0 < 2) return null;
+  return [
+    { puts: row.puts },
+    { puts: pair(lay, f, { def: 'module.battery', u: row.u0 - 2, v: 0, t: 0 }), opt: true },
+    { puts: f.D >= dv + 3 ? centred(lay, f, 'module.console', f.D - 1, 2) : [], opt: true },
+    { puts: f.D >= dv + 3 && f.L >= 7 ? pair(lay, f, { def: 'module.storage_rack', u: 0, v: f.D - 1, t: 0 }) : [], opt: true },
+  ];
+};
+
 /** Designs by name, for recipes to list. */
-export const DESIGNS = { plantRow, twinFlank, plinth } as const satisfies Record<string, Design>;
+export const DESIGNS = { plantRow, twinFlank, plinth, gunGallery, shieldCore } as const satisfies Record<string, Design>;
 export type DesignName = keyof typeof DESIGNS;
+
+/**
+ * The room size (long side, short side) a design wants for these modules, for planners that size rooms by their
+ * design (rooms tell the station how big they should be): gun galleries and shield cores. Null for the rest.
+ */
+export function designSize(name: DesignName, mods: readonly string[], defs: Record<string, { footprint: readonly [number, number] }>): [number, number] | null {
+  const fp = (id: string): readonly [number, number] => defs[id]?.footprint ?? [2, 2];
+  if (name === 'gunGallery') {
+    const s = Math.max(...mods.map((m) => fp(m)[0])), n = mods.length;
+    return [n * s + (n - 1) + 6, s + 3];
+  }
+  if (name === 'shieldCore') return [Math.max(3, fp(mods[0] ?? '')[0]) + 4, Math.max(3, fp(mods[0] ?? '')[1]) + 3];
+  return null;
+}
 
 /**
  * Lay `room` out from the first of `names` (tried in an order the seed shuffles) that fits in some turn of the room.
