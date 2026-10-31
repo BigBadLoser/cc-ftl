@@ -11,7 +11,7 @@ export interface ScreenRect { x0: number; y0: number; x1: number; y1: number }
 export interface TargetEnv {
   ctx: LessonCtx;
   api: Pick<UiApi, 'moduleScreenRect' | 'shipScreen'>;
-  doc: Pick<Document, 'querySelector'>;
+  doc: Pick<Document, 'querySelector' | 'querySelectorAll'>;
 }
 
 /**
@@ -41,8 +41,9 @@ export const TARGET_KINDS: { [K in keyof TargetKinds]: Resolver<K> } = {
   ship: (t, env) => {
     const id = t.pick(env.ctx);
     if (id == null) return null;
-    const m = env.doc.querySelector(`[data-testid="poi-${id}"]`)?.getBoundingClientRect();
-    if (m && m.width > 0 && m.height > 0) return { x0: m.left, y0: m.top, x1: m.right, y1: m.bottom };
+    // The marker button has no box of its own (arrow and icon are positioned out of it): ring the two together.
+    const parts = [...env.doc.querySelectorAll(`[data-testid="poi-${id}"] .arrow, [data-testid="poi-${id}"] .ico`)].map((n) => n.getBoundingClientRect()).filter((r) => r.width > 0);
+    if (parts.length) return { x0: Math.min(...parts.map((r) => r.left)), y0: Math.min(...parts.map((r) => r.top)), x1: Math.max(...parts.map((r) => r.right)), y1: Math.max(...parts.map((r) => r.bottom)) };
     const at = env.api.shipScreen(id);
     return at ? { x0: at.x - WORLD_BOX, y0: at.y - WORLD_BOX, x1: at.x + WORLD_BOX, y1: at.y + WORLD_BOX } : null;
   },
