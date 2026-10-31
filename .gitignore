@@ -10,3 +10,4 @@ shots/
 
 profile.json
 profile-sim.json
+.vitest-report.json

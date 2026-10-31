@@ -11,6 +11,7 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["vite/client", "svelte"]
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "tools/profile/**/*.ts"]

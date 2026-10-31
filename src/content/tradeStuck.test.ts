@@ -33,6 +33,12 @@ function until(sim: Sim, phase: string): void {
   expect(sim.trade.deals[0]?.phase).toBe(phase);
 }
 const run = (sim: Sim, ticks: number): void => { for (let i = 0; i < ticks; i++) sim.step(); };
+/** Run until no deal is live (or `max` ticks pass: the failure case), then a settling tail so refunds, jobs and the like finish. */
+function runOut(sim: Sim, max: number, tail = 150): void {
+  let i = 0;
+  while (i < max && sim.trade.deals.some(isLive)) { sim.step(); i++; }
+  run(sim, Math.min(tail, Math.max(0, max - i)));
+}
 
 describe('a delivery that cannot finish', () => {
   it('return flight to a lost airlock is called off, settles escrow once, and travel is free again', () => {
@@ -42,7 +48,7 @@ describe('a delivery that cannot finish', () => {
     sim.trade.deals[0]!.airlock = 999_999; // the destination airlock is gone: the shuttle can never dock
     run(sim, 1500);
     const mid = deserialize(serialize(sim), content); // the blocked stage survives a save and load
-    run(mid, 4000); // only the reloaded game runs on: the deadline is in the saved deal timer
+    runOut(mid, 4000); // only the reloaded game runs on: the deadline is in the saved deal timer
     for (const s of [mid]) {
       const d = s.trade.deals[0]!;
       expect(isLive(d), `${s === sim ? 'live' : 'live after reload'} ${JSON.stringify(d)}`).toBe(false);
@@ -58,7 +64,7 @@ describe('a delivery that cannot finish', () => {
     const { sim, start: before } = buying();
     until(sim, 'unload');
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id); // nobody left to haul
-    run(sim, 8000);
+    runOut(sim, 8000);
     const d = sim.trade.deals[0]!;
     expect(isLive(d), JSON.stringify(d)).toBe(false);
     expect(d.phase).toBe('done');
@@ -95,7 +101,7 @@ describe('a delivery that cannot finish', () => {
     sim.trade.deals[0]!.airlock = 999_999;
     run(sim, 2000);
     const reloaded = deserialize(serialize(sim), content); // save/load in the middle of the blocked stage
-    run(reloaded, 3200);
+    runOut(reloaded, 3200);
     for (const s of [reloaded]) {
       expect(s.trade.deals[0]!.phase).toBe('done');
       // The player's side is exact (what they gave is gone, what they got is theirs, none duplicated). Credits between the two sides are conserved.
@@ -112,15 +118,16 @@ function metalLike(sim: Sim, item: string): number {
 }
 
 /** A started game with a generated freighter (it has its own shuttle) in the node. */
+let freighterSeed = 1; // the first seed with a freighter is the same every time, so later calls skip the ones before it
 function withFreighter(): { sim: Sim; ship: number } {
-  for (let seed = 1; seed < 80; seed++) {
+  for (let seed = freighterSeed; seed < 80; seed++) {
     const sim = newGame(1, content);
     sim.galaxy.fleets = [];
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.civilian', seed, depth: 2, cx: 130, cy: 70 });
     sim.step();
     sim.events.drain();
     const ship = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.gen?.role === 'freighter');
-    if (ship) return { sim, ship };
+    if (ship) { freighterSeed = seed; return { sim, ship }; }
   }
   throw new Error('no freighter found');
 }
@@ -147,7 +154,7 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     sim.world.destroyEntity(sim.trade.deals[0]!.airlock); // the destination airlock is destroyed with the shuttle on its way
     run(sim, 2000);
     const reloaded = deserialize(serialize(sim), content);
-    run(reloaded, 3000);
+    runOut(reloaded, 3000);
     for (const s of [reloaded]) {
       expect(s.trade.deals[0]!.phase).toBe('failed');
       expect(s.trade.credits).toBe(before.credits);
@@ -164,7 +171,7 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
     run(sim, 3000);
     const reloaded = deserialize(serialize(sim), content);
-    run(reloaded, 3500);
+    runOut(reloaded, 3500);
     for (const s of [reloaded]) {
       expect(s.trade.deals[0]!.phase).toBe('failed');
       expect(s.trade.credits).toBe(before.credits);
@@ -189,7 +196,7 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     unloadSome(sim, d.vehicle, 5);
     run(sim, 3000);
     const reloaded = deserialize(serialize(sim), content);
-    run(reloaded, 3500);
+    runOut(reloaded, 3500);
     const s = reloaded;
     expect(s.trade.deals[0]!.phase).toBe('done');
     const paid = s.world.get(ship, TraderC)!.credits - before.theirs;
@@ -282,7 +289,7 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     storageAdd(sim, crate, b, cargoTake(sim, d.vehicle, b, 3));
     run(sim, 3000);
     const reloaded = deserialize(serialize(sim), content);
-    run(reloaded, 3500);
+    runOut(reloaded, 3500);
     const s = reloaded;
     expect(s.trade.deals[0]!.phase).toBe('done');
     expect(pa).toBeGreaterThan(20); // dear enough that stock moves the rounded price
