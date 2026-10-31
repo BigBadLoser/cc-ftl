@@ -5,9 +5,13 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from ..relief_style import Design
-from .parts import LINE, PAINT, prism
+from .parts import LINE, PAINT, PZ, prism
 
 CIVIL_D = 3 / 32                                        # how deep a shelf is let into the wall
+
+
+SEAM = 1                                                # the seams' level on the face (outlines, shelf mouths,
+                                                        # handle recesses; a handle's lip a step under)
 
 
 def civil_field(s0, s1, zs, zh):
@@ -27,16 +31,17 @@ def rbox(k, ax, plane, u0, u1, z0, z1, fam, lvl):
 
 
 def civil_drawers(k, ax, plane, f0, f1, g0, g1, F):
-    """The base: two drawers, centred between the foot strip and the band, each its own outline with rounded corners,
-    a handle recess under its top."""
-    n = 2
-    h, gap = (g1 - g0) / n, 0.035
+    """The base: two drawers in one outline with rounded corners (a seam across its middle parts them), from 2 px
+    under the field's foot up to the face detail's top (detail_top), a handle recess under each drawer's top."""
+    z0, z1 = g0 - 2 * PZ, detail_top(g0, g1)
+    zm, t = (z0 + z1) / 2, 0.026                        # (the parting seam: one art px tall)
     uc = (f0 + f1) / 2
-    for i in range(n):
-        z0, z1 = g0 + i * h + (gap / 2 if i else 0.0), g0 + (i + 1) * h - (gap / 2 if i < n - 1 else 0.0)
-        rbox(k, ax, plane, f0, f1, z0, z1, F, 2)
-        T.paint(k, ax, plane, uc - 0.08, uc + 0.08, z1 - 0.15, z1 - 0.09, 0.0, F, 2)     # a handle recess in the
-        T.paint(k, ax, plane, uc - 0.08, uc + 0.08, z1 - 0.115, z1 - 0.09, PAINT, F, 1)  # seams' tone, its lip
+    rbox(k, ax, plane, f0, f1, z0, z1, F, SEAM)
+    T.paint(k, ax, plane, f0 + LINE, f1 - LINE, zm - t / 2, zm + t / 2, 0.0, F, SEAM)
+    for top in (z1, zm - t / 2):
+        T.paint(k, ax, plane, uc - 0.08, uc + 0.08, top - 0.15, top - 0.09, 0.0, F, SEAM)       # a handle recess in
+        T.paint(k, ax, plane, uc - 0.08, uc + 0.08, top - 0.115, top - 0.09, PAINT, F, SEAM - 1)  # the seams' tone,
+                                                                                                    # its lip
 
 
 def _shelf_h(g0, g1):
@@ -44,10 +49,10 @@ def _shelf_h(g0, g1):
 
 
 def two_shelves(g0, g1):
-    """Two shelves (z0, z1), a thick board between, centred; the lower one let down."""
+    """Two shelves (z0, z1), a thick board between, centred; the lower one let down, the upper a px."""
     h, gap = _shelf_h(g0, g1), 0.1
     z0 = (g0 + g1 - 2 * h - gap) / 2
-    return [(z0 - 0.06, z0 + h - 0.06), (z0 + h + gap, z0 + 2 * h + gap)]
+    return [(z0 - 0.06, z0 + h - 0.06), (z0 + h + gap - PZ, z0 + 2 * h + gap - PZ)]   # (the upper one 1 px down)
 
 
 def one_shelf(g0, g1):
@@ -55,12 +60,28 @@ def one_shelf(g0, g1):
     return [(g0, g0 + _shelf_h(g0, g1))]
 
 
+MOUTH_T = 0.026                                         # the seam round a shelf's mouth: one art px tall
+SHELF_TRIM = 2 * PZ                                     # a shelf's mouth this much shorter (its top let down)
+SHELF_DROP = 2 * PZ                                     # ... and the whole of it this much lower, toward the ramp
+
+
+def _mouth(z0, z1):
+    """A shelf's mouth (z0, z1) as a layout gives it, trimmed and dropped (SHELF_TRIM, SHELF_DROP)."""
+    return z0 - SHELF_DROP, z1 - SHELF_DROP - SHELF_TRIM
+
+
+def detail_top(g0, g1):
+    """Where every design's face detail tops out in a field: the top of the upper of two shelves (civil_open), its
+    mouth's seam included."""
+    return _mouth(*two_shelves(g0, g1)[-1])[1] + MOUTH_T
+
+
 def _shelves(f0, f1, g0, g1, layout):
     """A layout's open shelves in a field, (u0, u1, z0, z1) each, their sides on the face's cell edges (the shell
     opens whole cells), a cell in from the field's: seen from the right a shelf's far side shows its depth past its
     mouth, and so stays inside the tile."""
     c = 1 / T.W.GN
-    return [(T.snap(f0) + c, T.snap(f1) - c, z0, z1) for z0, z1 in layout(g0, g1)]
+    return [(T.snap(f0) + c, T.snap(f1) - c) + _mouth(z0, z1) for z0, z1 in layout(g0, g1)]
 
 
 def shelf_holes(layout):
@@ -87,27 +108,27 @@ def _cavity(k, ax, plane, u0, u1, z0, z1, D, F):
 def _shelf(k, ax, plane, u0, u1, z0, z1, F):
     """An open shelf let into the face (its opening, civil_holes), a seam round its mouth."""
     _cavity(k, ax, plane, u0, u1, z0, z1, CIVIL_D, F)
-    t = 0.026                                                                                    # its mouth's seam
+    t = MOUTH_T                                                                                  # its mouth's seam
     for q in ((u0 - LINE, u1 + LINE, z1, z1 + t), (u0 - LINE, u1 + LINE, z0 - t, z0), (u0 - LINE, u0, z0, z1),
               (u1, u1 + LINE, z0, z1)):
-        T.paint(k, ax, plane, *q, 0.0, F, 2)
+        T.paint(k, ax, plane, *q, 0.0, F, SEAM)
 
 
 def _shelf(k, ax, plane, u0, u1, z0, z1, F):
     """An open shelf let into the face (its opening, shelf_holes), a seam round its mouth."""
     _cavity(k, ax, plane, u0, u1, z0, z1, CIVIL_D, F)
-    t = 0.026                                                                                    # its mouth's seam
+    t = MOUTH_T                                                                                  # its mouth's seam
     for q in ((u0 - LINE, u1 + LINE, z1, z1 + t), (u0 - LINE, u1 + LINE, z0 - t, z0), (u0 - LINE, u0, z0, z1),
               (u1, u1 + LINE, z0, z1)):
-        T.paint(k, ax, plane, *q, 0.0, F, 2)
+        T.paint(k, ax, plane, *q, 0.0, F, SEAM)
 
 
 def _doors(k, ax, plane, u0, u1, z0, z1, F, hz):
     """Two doors side by side, each a seam outline (rounded corners), a short handle recess by the middle at hz."""
     uc = (u0 + u1) / 2
     for a, b, hu in ((u0, uc - 0.01, uc - 0.1), (uc + 0.01, u1, uc + 0.1)):
-        rbox(k, ax, plane, a, b, z0, z1, F, 2)
-        T.paint(k, ax, plane, hu - 0.035, hu + 0.035, hz, hz + 0.026, 0.0, F, 2)
+        rbox(k, ax, plane, a, b, z0, z1, F, SEAM)
+        T.paint(k, ax, plane, hu - 0.035, hu + 0.035, hz, hz + 0.026, 0.0, F, SEAM)
 
 
 def civil_open(k, ax, plane, f0, f1, g0, g1, F):
@@ -117,16 +138,17 @@ def civil_open(k, ax, plane, f0, f1, g0, g1, F):
 
 
 def civil_cupboard(k, ax, plane, f0, f1, g0, g1, F):
-    """Two small doors over an open shelf."""
-    for h in _shelves(f0, f1, g0, g1, one_shelf):
+    """Two small doors over an open shelf, up to the face detail's top."""
+    shelves = _shelves(f0, f1, g0, g1, one_shelf)
+    for h in shelves:
         _shelf(k, ax, plane, *h, F)
-    zm = g0 + _shelf_h(g0, g1) + 0.06                                                               # over its shelf
-    _doors(k, ax, plane, f0, f1, zm, g1, F, zm + 0.07)
+    zm = shelves[-1][3] + 0.06                                                                      # over its shelf
+    _doors(k, ax, plane, f0, f1, zm, detail_top(g0, g1), F, zm + 0.07)
 
 
 def civil_table(k, ax, plane, f0, f1, g0, g1, F):
-    """Tall double doors with a table dropped down in front of them."""
-    _doors(k, ax, plane, f0, f1, g0 + 0.06, g1, F, g0 + 0.2)
+    """Tall double doors (up to the face detail's top) with a table dropped down in front of them."""
+    _doors(k, ax, plane, f0, f1, g0 + 0.06, detail_top(g0, g1), F, g0 + 0.2)
     z, d = g0 + 0.03, 0.16                                                                          # the table,
     T.slab(k, ax, plane, f0 - 0.02, f1 + 0.02, z, z + 0.05, d, F, 3, ends=(True, True))
     for u in (f0 + 0.04, f1 - 0.04 - 2 * LINE):                                                     # its two stays

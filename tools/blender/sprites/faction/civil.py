@@ -1,9 +1,11 @@
 """Civil (set 6): white drawers flush with the wall, only their seams cut in; a colour band under the cap and an upright
 foot in it at the ramp's toe; its straight-run designs (shelves, doors)."""
 
+import math
+
 from .. import wall3d as T
 from .base import Faction, _style
-from .civil_designs import CIVIL_TOPS, civil_drawers, civil_field
+from .civil_designs import CIVIL_TOPS, SEAM, civil_drawers, civil_field
 from .drone import DRONE_FOOT
 from .navy import PlateTones
 from .parts import PAINT, PX, _slab, body, corner_piece
@@ -43,6 +45,14 @@ def civil(hull):
     return face
 
 
+def civil_panel(h=0.47):
+    """The ramp's outlined panel (its top and bottom down the run, as fractions of it), h of the run tall, centred on
+    the light slope: from the wall down to the foot's lit edge (0.03 above the toe; the shell's run, on its grid)."""
+    run = math.ceil(T.W.skirt_run() * T.W.GN - 1e-6) / T.W.GN
+    light = 1.0 - 0.03 / run
+    return ((light - h) / 2, (light + h) / 2)
+
+
 class Civil(Faction):
     def __init__(self, v):
         self.pre = f"fC{v}"
@@ -50,7 +60,7 @@ class Civil(Faction):
 
     def relief(self, sprite):
         return _style(civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66, foot=DRONE_FOOT,
-                      tops=CIVIL_TOPS, outline_lvl=1, outline_round=True, ramp_solid=True,
-                      shell=LookShell,
+                      tops=CIVIL_TOPS, outline_lvl=SEAM - 1, outline_round=True, outline_d=civil_panel(),
+                      ramp_solid=True, shell=LookShell,
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone("ochre", 2), FaceHoles(),
                                 PlateTones()))
