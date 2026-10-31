@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, EmbarkOrderC, ModuleC, PositionC, VehicleC } from '../../sim';
+import { AboardC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
 import { BoardLaunchC } from '../../sim/boarding/components';
+import { orderLaunch } from '../../sim/boarding/launch';
 import { shipIdOf } from '../../sim/regions';
 import { airlockOf, crewOn, nth, of, run, setup, shuttleOf } from './boardingFixture';
 
@@ -62,6 +63,21 @@ describe('boarding.launch', () => {
     const v = sim.world.get(shuttle, VehicleC)!;
     expect(v.pilot).toBe(0);
     expect(v.passengers).toEqual([]);
+  });
+
+  it('a shuttle has one owner: a launching shuttle is not free for cargo runs, and a ferrying one cannot launch', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    expect(sim.world.has(shuttle, BoardLaunchC)).toBe(true);
+    expect(ferryFree(sim, shuttle)).toBe(false);
+
+    const other = setup();
+    const s2 = shuttleOf(other, 1);
+    other.world.add(s2, FerryC, { phase: 'load' } as never); // only its presence matters here; no tick runs
+    expect(orderLaunch(other, s2, crewOn(other, 1).slice(0, 1), airlockOf(other, 2))).toBe('busy');
   });
 
   it('rejects an empty party and a friendly airlock', () => {

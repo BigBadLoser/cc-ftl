@@ -14,7 +14,7 @@ export interface BoardPlan {
 }
 
 const shuttleReason = (s: UiShuttles['shuttles'][number]): string | null =>
-  s.state !== 'stowed' ? (s.state === 'docked' ? 'Away: docked' : 'Away') : s.pilot || s.passengers.length ? 'Crew already aboard' : null;
+  s.state !== 'stowed' ? (s.state === 'docked' ? 'Away: docked' : 'Away') : s.ferry ? 'On a cargo run' : s.pilot || s.passengers.length ? 'Crew already aboard' : null;
 const crewReason = (c: UiShuttleCrew): string | null => (c.down ? 'Down' : c.boarding ? 'Heading to a shuttle' : null);
 
 /** Pure: the picker's options from the shuttle snapshot and the enemy's ship id. */

@@ -10,6 +10,8 @@ import { sendToEmbark } from '../vehicles/embark';
 import { bayWorking, boardingTile } from '../vehicles/geometry';
 import { dockError, launch } from '../vehicles/handlers';
 import { occupants, unboardCrew, vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
+import { FerryC } from '../ferry/components';
+import { isLive } from '../trade/deals';
 import { BoardLaunchC } from './components';
 
 /** Ticks the party gets to reach the bay before the launch is called off (the crew who made it stay aboard). */
@@ -23,7 +25,8 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   const v = sim.world.get(vehicle, VehicleC);
   if (!v) return 'noVehicle';
   if (vehicleFaction(sim, v) !== 'player') return 'badVehicle';
-  if (sim.world.has(vehicle, BoardLaunchC)) return 'busy';
+  // One owner at a time: not while it's on a cargo run, a trade deal or an outbound trip.
+  if (sim.world.has(vehicle, BoardLaunchC) || sim.world.has(vehicle, FerryC) || v.outbound || sim.trade.deals.some((d) => d.vehicle === vehicle && isLive(d))) return 'busy';
   if (v.state !== 'stowed' || occupants(v).length > 0) return 'notStowed';
   const ids = [...new Set(crew)];
   if (ids.length < 1) return 'noCrew';
