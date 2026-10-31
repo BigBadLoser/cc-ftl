@@ -54,6 +54,12 @@ export interface StationDef {
   berths?: 'rows' | 'apart';
   /** Share (0..1) of the crew who are security (armed fighters, `role.security`). */
   security: number;
+  /**
+   * Spaciousness, rolled per station between these (default [1, 1]): how far rooms grow past what their contents need.
+   * Under 1 tight (a navy depot, a pirate den), over 1 roomy (a trade station's halls); rooms with spare floor fill their
+   * middle (rooms/islands.ts), so roomy reads as open, not empty.
+   */
+  space?: readonly [number, number];
   /** Role ids of the non-security crew, weighted; the first `required` always come aboard. */
   crew: { required: readonly string[]; pool: readonly Weighted<string>[]; species: readonly string[] };
   weapons: { light: readonly Weighted<string>[]; heavy: readonly Weighted<string>[] };

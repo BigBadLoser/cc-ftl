@@ -15,8 +15,9 @@ export function reactorRooms(k0: number, r: Reactor = MK1_REACTOR): RoomSpec[] {
   const out: RoomSpec[] = [];
   for (let k = k0; k > 0; k -= 2) {
     const m = Math.min(2, k);
-    // A tile of floor round the reactors, more than a walkway, so the room reads as a plant room.
-    out.push({ role: 'reactor', mods: Array<string>(m).fill(r.mod), w: r.fp[0] * m + 3, h: r.fp[1] + 3 });
+    // A tile of floor round the reactors, more than a walkway, so the room reads as a plant room (more on roomy stations).
+    const g = r.margin ?? 3;
+    out.push({ role: 'reactor', mods: Array<string>(m).fill(r.mod), w: r.fp[0] * m + g, h: r.fp[1] + g });
   }
   return out;
 }

@@ -14,11 +14,12 @@ export const SECURITY_ROLE = 'role.security';
 
 /**
  * A room grown past its planned size, which stays its floor (some rooms should be small): most gain one to three
- * tiles along their long side and up to two across; a quarter keep the planned size.
+ * tiles along their long side and up to two across, scaled by the station's spaciousness `s`; a quarter (more on a
+ * tight station, fewer on a roomy one) keep the planned size.
  */
-function grown(rng: Rng, r: RoomSpec): RoomSpec {
-  if (rng.chance(0.25)) return r;
-  const along = rng.int(1, 3), across = rng.int(0, 2);
+function grown(rng: Rng, r: RoomSpec, s = 1): RoomSpec {
+  if (rng.chance(Math.min(0.9, 0.25 / s))) return r;
+  const along = Math.round(rng.int(1, 3) * s), across = Math.round(rng.int(0, 2) * s);
   return r.w >= r.h ? { ...r, w: r.w + along, h: r.h + across } : { ...r, w: r.w + across, h: r.h + along };
 }
 
@@ -37,6 +38,7 @@ export function stationCrew(rng: Rng, def: StationDef, size: StationSize): strin
 
 export function planStation(rng: Rng, def: StationDef, size: StationSize, role: ShipRoleDef, defs: Record<string, ModuleDef>, extraReactors = 0): ShipPlan {
   const t = def.tiers[size];
+  const space = def.space ? def.space[0] + rng.next() * (def.space[1] - def.space[0]) : 1;
   const big = (id: string): boolean => (defs[id]?.footprint[0] ?? 2) > 2;
   const guns: string[] = [];
   for (let i = 0; i < Math.max(1, t.guns); i++) {
@@ -71,21 +73,21 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
     // Barracks are a bunk room; elsewhere a block of one-bed cabins off a hallway (rooms/cabins.ts): 2 wide each and a
     // dividing wall between, 3 deep behind a wall, and the hallway.
     const cabins = def.berths !== 'rows' && beds > 1;
-    quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }));
+    quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }, space));
   }
   const support: RoomSpec[] = [];
   for (let i = 0; i < 1 + Math.floor(crew.length / 10); i++) {
-    support.push(grown(rng, { role: 'support', mods: ['module.lifeSupport', ...(i === 0 ? ['module.fabricator'] : [])], w: 5, h: 3 }));
+    support.push(grown(rng, { role: 'support', mods: ['module.lifeSupport', ...(i === 0 ? ['module.fabricator'] : [])], w: 5, h: 3 }, space));
   }
   for (const r of def.rooms) {
     for (let i = 0; i < r.count[size]; i++) {
-      support.push(grown(rng, { role: r.role, mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) }));
+      support.push(grown(rng, { role: r.role, mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) }, space));
     }
   }
   // Two docks come with every ring and lattice; the rest are planned here.
   for (let i = 2; i < t.docks; i++) support.push(dockSpec());
   const cargo: RoomSpec[] = [];
-  for (let left = t.crates; left > 0; left -= 6) cargo.push(grown(rng, cargoSpec(Math.min(6, left))));
+  for (let left = t.crates; left > 0; left -= 6) cargo.push(grown(rng, cargoSpec(Math.min(6, left)), space));
   // Shuttle bays, as on boarding ships (a court may take them over as the hangar deck: stationCourts.ts).
   const hangars: RoomSpec[] = Array.from({ length: t.bays ?? 0 }, () => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
   const plan: ShipPlan = {
@@ -105,7 +107,7 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   const out = (id: string): number => defs[id]?.power ?? 50;
   const id = tiers.find((t) => Math.ceil(demand / out(t)) <= 2) ?? tiers[tiers.length - 1] ?? 'module.reactor';
   const fp = defs[id]?.footprint ?? [2, 2];
-  plan.reactor = { mod: id, fp: [fp[0], fp[1]] };
+  plan.reactor = { mod: id, fp: [fp[0], fp[1]], margin: Math.max(2, Math.round(3 * space)) };
   plan.reactors = Math.max(1, Math.ceil(demand / out(id)) + extraReactors);
   return plan;
 }

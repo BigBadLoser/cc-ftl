@@ -91,7 +91,12 @@ export function weaponSpec(defs: Record<string, ModuleDef>, mods: string[]): Roo
 }
 
 /** A reactor module and its footprint. */
-export interface Reactor { mod: string; fp: readonly [number, number] }
+export interface Reactor {
+  mod: string;
+  fp: readonly [number, number];
+  /** Tiles of floor beyond the reactors' footprint in a station's reactor room (default 3): its spaciousness. */
+  margin?: number;
+}
 export const MK1_REACTOR: Reactor = { mod: 'module.reactor', fp: [2, 2] };
 /** Reactor room for k reactors side by side, a walkway row in front. */
 export const reactorSpec = (k: number, r: Reactor = MK1_REACTOR): RoomSpec =>
