@@ -141,7 +141,7 @@ export function createBackdrop(atlas: Atlas): Backdrop {
   root.interactiveChildren = false;
   let layers: Layer[] = [];
   let textures: Texture[] = [];
-  let body: { sprite: Sprite; mask: Graphics; kind: string; hash: number; fx: number; fy: number; factor: number } | null = null;
+  let body: { sprite: Sprite; glow: Sprite; mask: Graphics; fitH: number; kind: string; hash: number; fx: number; fy: number; factor: number } | null = null;
   let key = '';
   let ref: { x: number; y: number } | null = null;
   let size = { w: 1, h: 1, dpr: 1 };
@@ -150,6 +150,7 @@ export function createBackdrop(atlas: Atlas): Backdrop {
     for (const l of layers) l.sprite.destroy();
     for (const t of textures) t.destroy(true);
     body?.sprite.destroy();
+    body?.glow.destroy();
     body?.mask.destroy();
     layers = [];
     textures = [];
@@ -181,11 +182,19 @@ export function createBackdrop(atlas: Atlas): Backdrop {
       sprite.tint = 0x8a94a8;
       sprite.visible = false;
       sprite.eventMode = 'none';
+      // The glow twin of the dedicated art (halos), added over the body at low strength.
+      const glow = new Sprite(Texture.EMPTY);
+      glow.anchor.set(0.5);
+      glow.alpha = 0.3;
+      glow.blendMode = 'add';
+      glow.visible = false;
+      glow.eventMode = 'none';
       const mask = new Graphics();
       // Behind every layer: the clouds and stars drift over it, which is what makes it far.
       root.addChildAt(sprite, 0);
+      root.addChildAt(glow, 1);
       root.addChild(mask);
-      body = { sprite, mask, kind: spec.body, hash: spec.bodyHash, ...bodySpot(s), factor: 0.012 };
+      body = { sprite, glow, mask, fitH: 0, kind: spec.body, hash: spec.bodyHash, ...bodySpot(s), factor: 0.012 };
     }
     layout();
   }
@@ -209,24 +218,30 @@ export function createBackdrop(atlas: Atlas): Backdrop {
     const st = atlas.firstOf(ids);
     if (!st) {
       sp.visible = false;
+      body.glow.visible = false;
       return;
     }
-    if (sp.texture !== st.tex) {
+    if (sp.texture !== st.tex || body.fitH !== size.h) {
+      body.fitH = size.h;
       sp.texture = st.tex;
       // The sphere's radius is 5/16 of the frame; fit it to about a sixth of the view height, in whole texel multiples.
       const radiusTex = st.tex.width * (5 / 16);
       const k = Math.max(1, Math.round((size.h * 0.17) / radiusTex));
       sp.scale.set(k);
-      // A starmap star's prominence loops stand just off the limb: cut everything past the disc (the glow is a separate sheet, not drawn).
+      // A starmap star's prominence loops stand just off the limb: cut everything past the disc (only the stand-in has them; the dedicated art has none).
       body.mask.clear();
       if (HAS_PROMINENCES.has(body.kind) && !atlas.manifest.assets[ids[0]!]) {
         body.mask.circle(0, 0, st.tex.width * 0.31 * k).fill(0xffffff);
         sp.mask = body.mask;
       } else sp.mask = null;
+      body.glow.texture = st.glow ?? Texture.EMPTY;
+      body.glow.scale.set(k);
     }
     sp.visible = true;
+    body.glow.visible = !sp.mask && !!st.glow;
     sp.position.set(Math.round(size.w * body.fx + (originX - ref.x) * body.factor), Math.round(size.h * body.fy + (originY - ref.y) * body.factor));
     body.mask.position.copyFrom(sp.position);
+    body.glow.position.copyFrom(sp.position);
   }
 
   return {
