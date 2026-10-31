@@ -69,6 +69,9 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `civilFrames.ts` | civil frames: container frames, ore cages, truss bridges, rig booms, the liner's 2D hull |
 | `civilStations.ts` | ring and lattice stations (also the station generator's building blocks) |
 | `stationTypes.ts`, `stationPlan.ts`, `stationGrammars.ts`, `stationGen.ts` | the station generator: kinds and tiers, room plan, ring / lattice / hub / welded grammars, generation and station rules (`docs/STATUS.md`, Stations) |
+| `stationQuality.ts`, `roleSwap.ts`, `stationKit.ts` | station score (adjacency, districts), role swaps after the structure, room order by district ([STATIONGEN.md](STATIONGEN.md)) |
+| `rooms/designs.ts`, `rooms/frame.ts`, `rooms/doorSlide.ts` | designed machine rooms, the room frame, doors that slide for a design |
+| `rooms/quality.ts`, `rooms/islands.ts`, `rooms/courts.ts`, `archways.ts` | room quality score, islands, court promenades, zones, floors and landmarks, archways |
 | `civilKit.ts` | civil joins, drive, `beside`, variant picks |
 | `civilShips.ts` | civil freighters, mining ships, crew bodies |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |

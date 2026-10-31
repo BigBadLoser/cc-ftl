@@ -183,6 +183,8 @@ everything was built at once. Ideas, best payoff first.
 
 ## Plan
 
+What came of this plan, and what was tried and dropped, is in [STATIONGEN.md](STATIONGEN.md).
+
 1. Courts: constrained growth on the band, rectangles first, L-growth last, room seeds sized from the plan, a court
    seed in the middle; split strips along long straight runs. (Prototype in progress on `shipgen-stations-1`.)
 2. Audit: space syntax depth and integration; a two-routes metric for key rooms.
