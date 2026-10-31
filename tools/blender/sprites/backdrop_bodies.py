@@ -28,14 +28,15 @@ GFREQ = 9.0                     # a star's granulation frequency (starmap: 5): f
 
 
 def smooth_star(spec):
-    """A starmap star spec with a soft halo and finer granulation: HALO_BANDS bands from the starmap's first band level,
-    halving every seventh of the reach and tapered to nothing at its end, so it reads as a glow and not a second disc.
-    A halo with a hue per band keeps its hues by position."""
+    """A starmap star spec with a soft halo, finer granulation and no prominences (the flare loops): HALO_BANDS bands from
+    the starmap's first band level, halving every seventh of the reach and tapered to nothing at its end, so it reads as
+    a glow and not a second disc. A halo with a hue per band keeps its hues by position."""
     b0, n = spec["bands"][0], len(spec["bands"])
     xs = [(k + 0.5) / HALO_BANDS for k in range(HALO_BANDS)]
     h = spec["halo"]
     halo = h if isinstance(h, str) else tuple(h[min(n - 1, int(x * n))] for x in xs)
-    return {**spec, "bands": tuple(b0 * 0.5 ** (7 * x) * (1 - x) ** 2 for x in xs), "halo": halo, "gfreq": GFREQ}
+    return {**spec, "bands": tuple(b0 * 0.5 ** (7 * x) * (1 - x) ** 2 for x in xs), "halo": halo, "gfreq": GFREQ,
+            "flares": 0}
 
 
 SOURCES = {**{k: starmap_bodies for k in ("star", "red_dwarf", "blue_giant", "gas_giant", "black_hole")},
