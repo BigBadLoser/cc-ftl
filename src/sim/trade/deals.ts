@@ -11,6 +11,7 @@ import { canStart } from './trips';
 import { undock } from '../vehicles/lifecycle';
 import { destroyJob } from '../items/stacks';
 import { JobC } from '../crew/components';
+import { addCredits } from './credits';
 
 /**
  * Stop crew taking anything more out of a trader's shuttle: remove every haul job that still has to pick up from it (a crew member already
@@ -118,7 +119,7 @@ export function settleDeal(sim: Sim, d: Deal): boolean {
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) {
     if (trader) trader.credits += d.held;
-  } else if (d.balance < 0 && !d.barter) sim.trade.credits += d.held;
+  } else if (d.balance < 0 && !d.barter) addCredits(sim, d.held);
   const amount = d.barter ? 0 : d.balance;
   d.held = 0;
   sim.events.emit({ type: 'trade.settled', deal: d.id, ship: d.ship, credits: amount });
@@ -166,7 +167,7 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
 export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void {
   closeCourier(sim, d);
   const trader = sim.world.get(d.ship, TraderC);
-  if (d.balance > 0 && !d.barter) sim.trade.credits += d.held;
+  if (d.balance > 0 && !d.barter) addCredits(sim, d.held);
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;
   if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count);
   touchMarket(sim, trader);

@@ -2,7 +2,7 @@ import { startBoardingScenario } from './app/boardingScenario';
 import { mount } from 'svelte';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
-import type { UiApi, UiIcon, UiSession } from './ui/api';
+import type { UiApi, UiIcon, UiSaveSlot, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
@@ -23,10 +23,10 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
-import { AUTO_ID, SLOT_IDS, saveStore } from './app/saveStore';
+import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, inThisCampaign, writePrecombat, writeSave } from './app/saves';
+import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
-import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
+import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
@@ -48,7 +48,7 @@ const errorLog = createErrorLog();
 const consoleRing = installConsoleRing();
 let gameCanvas: HTMLCanvasElement | undefined;
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
-const start = startGame(new URLSearchParams(location.search).get('seed'));
+const start = await startGame(new URLSearchParams(location.search).get('seed'));
 const sim = start.sim;
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
@@ -92,6 +92,8 @@ const loop = createLoop({
   onEvents: (events) => {
     probe.begin('ui/events');
     controller.onEvents(events);
+    // A fight just began: keep this moment, so a fight that goes wrong can be undone (the autosave is overwritten as it goes on).
+    if (start.persist && session.get().lost === null && events.some((e) => e.type === 'combat.started')) void writePrecombat(sim);
     renderer?.onEvents(events);
     probe.end('ui/events');
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
@@ -154,7 +156,8 @@ setInterval(() => {
   // The world stops behind the game-over screen for good: no speed key or button can start it again.
   bridge.setSpeed(0);
   loop.stop();
-  session.set({ ...session.get(), lost });
+  const summary = { ...runSummary(sim), hasPrecombat: saveStore.list().some((m) => m.id === PRECOMBAT_ID && inThisCampaign(sim, m)) };
+  session.set({ ...session.get(), lost, summary });
 }, 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 window.addEventListener('pagehide', save);
@@ -347,14 +350,20 @@ const api: UiApi = {
   saves: {
     list: () => {
       const metas = new Map(saveStore.list().map((m) => [m.id, m]));
-      return [AUTO_ID, ...SLOT_IDS].map((id) => ({ id, auto: id === AUTO_ID, meta: metas.get(id) ?? null }));
+      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].filter((id) => start.showAll || !metas.has(id) || inThisCampaign(sim, metas.get(id)!)).map((id) => {
+        const meta = metas.get(id) ?? null;
+        return {
+          id, auto: !SLOT_IDS.includes(id as never), meta, kind: isAutoId(id) ? 'auto' : id === PRECOMBAT_ID ? 'precombat' : 'slot',
+          loadable: !meta || meta.version === undefined || meta.version === SAVE_VERSION,
+        } satisfies UiSaveSlot;
+      });
     },
-    save: (id, name) => id !== AUTO_ID && writeSave(sim, id, name),
+    save: (id, name) => (SLOT_IDS.includes(id as never) ? writeSave(sim, id, name) : Promise.resolve(false)),
     load: loadSlot,
-    remove: (id) => id !== AUTO_ID && saveStore.remove(id),
+    remove: (id) => (SLOT_IDS.includes(id as never) ? saveStore.remove(id) : Promise.resolve(false)),
   },
   cancel: () => controller.cancel(),
-  newGame: restartNewGame,
+  newGame: () => void restartNewGame(),
   loadLastSave: reloadLastSave,
   dismissNotice: () => session.set({ ...session.get(), notice: null }),
   inspect: bridge.inspect,

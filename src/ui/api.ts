@@ -34,6 +34,18 @@ export interface UiSnapshot {
 export interface UiSession {
   notice: string | null;
   lost: string | null;
+  /** How the run went, filled in with `lost` (the game-over screen). */
+  summary?: UiRunSummary | null;
+}
+
+/** The game-over screen's numbers: game time survived (seconds), jumps, the most credits held at once and the credits at the end. */
+export interface UiRunSummary {
+  seconds: number;
+  jumps: number;
+  bestCredits: number;
+  credits: number;
+  /** The Load list has a snapshot from before the last fight (offered on the game-over screen). */
+  hasPrecombat: boolean;
 }
 
 /** The tutorial goal chain: act `act` of `acts`, its title, what finishing it pays (a short line), and its goals. */
@@ -1141,18 +1153,23 @@ export interface UiError {
 /** A save in the Save / Load list: the autosave or a named slot, with its label (null: the slot is empty). */
 export interface UiSaveSlot {
   id: string;
+  /** Not a named slot: an autosave or the pre-combat snapshot (the game writes these, the player cannot save or delete them). */
   auto: boolean;
-  meta: { name: string; savedAt: number; turn: number; node: string } | null;
+  /** 'auto' (rotating autosaves), 'precombat' (as the last fight started) or 'slot'. */
+  kind: 'auto' | 'precombat' | 'slot';
+  meta: { name: string; savedAt: number; turn: number; node: string; fight?: boolean } | null;
+  /** False for a save from another version of the game: it is listed but cannot be loaded. */
+  loadable: boolean;
 }
 
 /** Everything the UI may call or observe; built in main.ts. */
 export interface UiApi {
-  /** The saves: the autosave and the named slots. `save` writes this game to a slot (false: the browser refused); `load` reloads the page into one. */
+  /** The saves: the rotating autosaves, the pre-combat snapshot and the named slots. `save` writes this game to a slot (resolves false: the browser refused); `load` reloads the page into one. */
   saves: {
     list(): UiSaveSlot[];
-    save(id: string, name: string): boolean;
+    save(id: string, name: string): Promise<boolean>;
     load(id: string): void;
-    remove(id: string): boolean;
+    remove(id: string): Promise<boolean>;
   };
   /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel. */
   cancel(): boolean;
