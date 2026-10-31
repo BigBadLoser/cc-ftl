@@ -13,6 +13,10 @@ import { playerCrew } from '../sim/story/world';
 const NEW_GAME = 'cc.newGame';
 /** Set before a reload to load this save slot instead of the autosave. */
 const LOAD_SLOT = 'cc.loadSlot';
+/** Set before a reload that must go straight into a game (Continue, a loaded save, a new game): the title screen is skipped once. */
+const SKIP_TITLE = 'cc.skipTitle';
+/** Set with NEW_GAME: the ship template the new game starts with (the title screen's pick). */
+const NEW_SHIP = 'cc.newShip';
 /** A save is being loaded: the reload's pagehide must not write this game over the autosave first. */
 let loading = false;
 
@@ -52,11 +56,14 @@ export interface Start {
  * (no migrations while this is a prototype): it is dropped, with a notice.
  */
 export async function startGame(seedParam: string | null): Promise<Start> {
-  const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true);
+  const fresh = (seed: number, ship?: string) => newGame(seed >>> 0, content, ship, true);
   const random = () => (Math.random() * 0x100000000) >>> 0;
   await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
-  if (take(NEW_GAME)) return { sim: fresh(random()), notice: null, persist: true };
+  if (take(NEW_GAME)) {
+    const ship = take(NEW_SHIP) ?? undefined;
+    return { sim: fresh(random(), ship && (content.ships as Record<string, unknown>)[ship] ? ship : undefined), notice: null, persist: true };
+  }
   const slot = take(LOAD_SLOT);
   if (slot && slot !== AUTO_ID) {
     const picked = await saveStore.read(slot);
@@ -191,6 +198,34 @@ export function saveMeta(sim: Sim, id: string, name: string, now = Date.now()): 
   return { id, name, savedAt: now, turn: sim.galaxy.turn, node: nodeOf(sim, sim.galaxy.current)?.name ?? '', version: SAVE_VERSION, fight: sim.sector.inCombat, campaign: sim.seed };
 }
 
+/**
+ * Whether the page opens on the title screen: not for a debug start (`?scenario=`, `?seed=`), nor right after a reload that goes into a game
+ * (the flag is read once). A plain page load shows it.
+ */
+export function titleWanted(params: URLSearchParams): boolean {
+  const skip = take(SKIP_TITLE) !== null;
+  return !skip && !params.has('scenario') && !params.has('seed');
+}
+
+function skipTitleOnce(): void {
+  try {
+    sessionStorage.setItem(SKIP_TITLE, '1');
+  } catch {
+    /* without the flag the reload shows the title again */
+  }
+}
+
+/** Title screen: the newest autosave, if any (null: none). */
+export function newestAutosave(): SaveMeta | null {
+  return saveStore.list().filter((m) => isAutoId(m.id) && (m.version === undefined || m.version === SAVE_VERSION)).sort((a, b) => b.savedAt - a.savedAt)[0] ?? null;
+}
+
+/** Title screen: play the autosave (a reload that skips the title). */
+export function continueGame(): void {
+  skipTitleOnce();
+  location.assign(location.pathname);
+}
+
 export function clearSave(): Promise<boolean> {
   return saveStore.remove(AUTO_ID);
 }
@@ -198,6 +233,7 @@ export function clearSave(): Promise<boolean> {
 /** Load a save slot (a reload: the game is rebuilt around it). Progress since the last save is lost. The page drops its debug query. */
 export function loadSlot(id: string): void {
   loading = true;
+  skipTitleOnce();
   try {
     sessionStorage.setItem(LOAD_SLOT, id);
   } catch {
@@ -208,9 +244,11 @@ export function loadSlot(id: string): void {
 }
 
 /** Throw this game away and start a new one (a reload). */
-export async function restartNewGame(): Promise<void> {
+export async function restartNewGame(ship?: string): Promise<void> {
+  skipTitleOnce();
   try {
     sessionStorage.setItem(NEW_GAME, '1');
+    if (ship) sessionStorage.setItem(NEW_SHIP, ship);
   } catch {
     /* without it the reload loads the save; clear it so it starts fresh anyway */
   }
@@ -221,6 +259,7 @@ export async function restartNewGame(): Promise<void> {
 
 /** Go back to the last save (a reload: the save on disk is the one before the loss). */
 export function reloadLastSave(): void {
+  skipTitleOnce();
   location.reload();
 }
 
