@@ -62,6 +62,23 @@ function slide(c: number, lo: number, hi: number, half: number, rects: readonly 
 }
 
 /**
+ * Which side the name opens to for a marker whose arrow is at (x, y) pointing along (ux, uy), and how wide it can be there: the icon sits behind the
+ * arrow, so the name opens away from the arrow (to the left for a target on the right), up to the screen margin or the nearest HUD rectangle.
+ */
+export function nameSide(x: number, y: number, ux: number, uy: number, w: number, h: number, hud: readonly Rect[]): { grow: 'l' | 'r'; room: number } {
+  const l = EDGE, r = w - EDGE;
+  const ix = x - ux * ICON_GAP, iy = y - uy * ICON_GAP;
+  const x0 = ix - ICON_R, x1 = ix + ICON_R, y0 = iy - ICON_R, y1 = iy + ICON_R;
+  const roomTo = (dir: 'l' | 'r'): number => {
+    const lim = dir === 'r' ? r - x1 : x0 - l;
+    const hits = hud.filter((q) => q.b > y0 - GAP && q.t < y1 + GAP && (dir === 'r' ? q.l >= x1 - 1 : q.r <= x0 + 1)).map((q) => (dir === 'r' ? q.l - GAP - x1 : x0 - (q.r + GAP)));
+    return Math.max(0, Math.min(lim, ...hits));
+  };
+  const grow: 'l' | 'r' = Math.abs(ux) < 0.2 ? (roomTo('r') >= roomTo('l') ? 'r' : 'l') : ux > 0 ? 'l' : 'r';
+  return { grow, room: Math.max(0, Math.round(Math.min(NAME_MAX, roomTo(grow) - 4))) };
+}
+
+/**
  * The marker for a target at screen point `at`, or null when the target is on screen and not behind the HUD. The marker lies on the line from the
  * screen centre toward the target, on the edge of the screen rectangle inset by `EDGE`; along that edge it slides clear of the HUD rectangles.
  */
@@ -77,19 +94,7 @@ export function markerPlace(at: { x: number; y: number }, w: number, h: number, 
   const angle = Math.round((Math.atan2(dy, dx) * 180) / Math.PI);
   const px = cx + dx * k, py = cy + dy * k;
   const ux = dx / Math.hypot(dx, dy), uy = dy / Math.hypot(dx, dy);
-  /** The width free beside a box [x0, x1] x [y0, y1], toward `dir`: up to the screen margin or the nearest HUD rectangle in the way. */
-  const roomTo = (dir: 'l' | 'r', x0: number, x1: number, y0: number, y1: number): number => {
-    const lim = dir === 'r' ? r - x1 : x0 - l;
-    const hits = hud.filter((q) => q.b > y0 - GAP && q.t < y1 + GAP && (dir === 'r' ? q.l >= x1 - 1 : q.r <= x0 + 1)).map((q) => (dir === 'r' ? q.l - GAP - x1 : x0 - (q.r + GAP)));
-    return Math.max(0, Math.min(lim, ...hits));
-  };
-  const finish = (edge: Place['edge'], x: number, y: number): Place => {
-    // The name opens away from the arrow: the icon is behind the arrow, so a target to the right puts the icon (and the name) to the left.
-    const ix = x - ux * ICON_GAP, iy = y - uy * ICON_GAP;
-    const grow: 'l' | 'r' = Math.abs(ux) < 0.2 ? (roomTo('r', ix - ICON_R, ix + ICON_R, iy - ICON_R, iy + ICON_R) >= roomTo('l', ix - ICON_R, ix + ICON_R, iy - ICON_R, iy + ICON_R) ? 'r' : 'l') : ux > 0 ? 'l' : 'r';
-    const room = Math.min(NAME_MAX, roomTo(grow, ix - ICON_R, ix + ICON_R, iy - ICON_R, iy + ICON_R) - 4);
-    return { x: Math.round(x), y: Math.round(y), edge, angle, ux: Math.round(ux * 1000) / 1000, uy: Math.round(uy * 1000) / 1000, grow, room: Math.max(0, Math.round(room)) };
-  };
+  const finish = (edge: Place['edge'], x: number, y: number): Place => ({ x: Math.round(x), y: Math.round(y), edge, angle, ux: Math.round(ux * 1000) / 1000, uy: Math.round(uy * 1000) / 1000, ...nameSide(x, y, ux, uy, w, h, hud) });
   if (tx < ty) {
     // Left or right edge: slide along y; the arrow and icon fill [edge, edge + DEPTH] across.
     const edge = dx > 0 ? 'r' : 'l';
@@ -117,7 +122,10 @@ export function spread<T extends Place>(places: readonly T[], w: number, h: numb
     // Candidate slots: where it is, one step either side of each earlier marker, and just clear of each HUD span. The nearest free one wins.
     const cand = [along, ...out.flatMap((o) => { const c = vertical ? o.y : o.x; return [c - step, c + step]; }), ...spans.flatMap((q) => [q.from - FOOT / 2 - GAP, q.to + FOOT / 2 + GAP])];
     const at = cand.filter(free).reduce<number | null>((best, c) => (best === null || Math.abs(c - along) < Math.abs(best - along) ? c : best), null);
-    if (at !== null) out.push(vertical ? { ...p, y: at } : { ...p, x: at });
+    if (at === null) continue;
+    // Measure the name's room where the marker finally sits, not where it was first placed.
+    const moved = vertical ? { ...p, y: at } : { ...p, x: at };
+    out.push({ ...moved, ...nameSide(moved.x, moved.y, p.ux, p.uy, w, h, hud) });
   }
   return out;
 }

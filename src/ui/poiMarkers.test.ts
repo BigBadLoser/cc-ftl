@@ -60,4 +60,15 @@ describe('spread', () => {
     const out = spread([a!, { ...a!, ship: 2 } as typeof a & object], 1920, 950, hud);
     expect(out.length).toBeLessThan(2);
   });
+  it('measures the name room at the slot a marker was moved to', () => {
+    // A HUD box beside the upper slot: the second marker is pushed up one step into its range, so its room shrinks there while the first keeps the full width.
+    const hud = [{ l: 1500, t: 330, r: 1700, b: 420 }];
+    const a = markerPlace({ x: 5000, y: 475 }, 1920, 950, hud)!;
+    expect(a.room).toBe(170);
+    const out = spread([a, { ...a }], 1920, 950, hud);
+    expect(out).toHaveLength(2);
+    expect(out[0]!.room).toBe(170);
+    expect(out[1]!.y).toBe(a.y - 74);
+    expect(out[1]!.room).toBeLessThan(170);
+  });
 });
