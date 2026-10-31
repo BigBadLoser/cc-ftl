@@ -1,0 +1,10 @@
+{
+  // Type-checks the generators against the game's real content types (`npm run check`). tsx runs them unchecked.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
+  },
+  "include": ["./*.ts"]
+}
