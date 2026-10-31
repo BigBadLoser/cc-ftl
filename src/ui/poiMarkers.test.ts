@@ -36,10 +36,28 @@ describe('icon and name', () => {
 });
 
 describe('spread', () => {
-  it('moves a marker that would overlap an earlier one along the edge', () => {
+  it('moves a marker that would overlap an earlier one to the nearest free slot along the edge', () => {
     const a = { x: 1896, y: 800, edge: 'r' as const, angle: 0, ux: 1, uy: 0, grow: 'l' as const, room: 100 };
     const out = spread([a, { ...a, y: 805 }], 1920, 950);
     expect(out[0]!.y).toBe(800);
-    expect(out[1]!.y).toBeLessThan(800 - 40);
+    expect(Math.abs(out[1]!.y - 800)).toBeGreaterThanOrEqual(74);
+    expect(out[1]!.y + 34).toBeLessThanOrEqual(950 - 24);
+  });
+  it('does not push a marker back under the HUD (two targets at the same spot beside the right column)', () => {
+    const hud = [{ l: 1652, t: 8, r: 1912, b: 450 }];
+    const a = markerPlace({ x: 5000, y: 100 }, 1920, 950, hud)!;
+    const b = markerPlace({ x: 5000, y: 150 }, 1920, 950, hud)!;
+    expect(a.y).toBe(b.y);
+    const out = spread([a, b], 1920, 950, hud);
+    expect(out).toHaveLength(2);
+    for (const m of out) expect(m.y - 34 > 450 || m.y + 34 < 8).toBe(true);
+    expect(Math.abs(out[0]!.y - out[1]!.y)).toBeGreaterThanOrEqual(68);
+    for (const m of out) expect(m.y + 34).toBeLessThanOrEqual(950 - 24 + 1);
+  });
+  it('drops a marker when no slot along the edge is clear', () => {
+    const hud = [{ l: 1652, t: 8, r: 1912, b: 900 }];
+    const a = markerPlace({ x: 5000, y: 475 }, 1920, 950, hud);
+    const out = spread([a!, { ...a!, ship: 2 } as typeof a & object], 1920, 950, hud);
+    expect(out.length).toBeLessThan(2);
   });
 });

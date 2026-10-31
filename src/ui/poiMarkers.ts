@@ -34,6 +34,17 @@ export function measureHud(doc: Pick<Document, 'querySelectorAll'>): Rect[] {
   return out;
 }
 
+/** The HUD rectangles in the way of a marker on `edge`, as spans along that edge: those overlapping the band the arrow and icon fill across it. */
+function edgeSpans(edge: Place['edge'], w: number, h: number, hud: readonly Rect[]): { from: number; to: number }[] {
+  const l = EDGE, r = w - EDGE, t = EDGE, b = h - EDGE;
+  if (edge === 'l' || edge === 'r') {
+    const bx0 = edge === 'l' ? l - 12 : r - DEPTH + 12, bx1 = edge === 'l' ? l - 12 + DEPTH : r + 12;
+    return hud.filter((q) => q.r > bx0 && q.l < bx1).map((q) => ({ from: q.t, to: q.b }));
+  }
+  const by0 = edge === 't' ? t - 12 : b - DEPTH + 12, by1 = edge === 't' ? t - 12 + DEPTH : b + 12;
+  return hud.filter((q) => q.b > by0 && q.t < by1).map((q) => ({ from: q.l, to: q.r }));
+}
+
 const inside = (p: { x: number; y: number }, r: Rect) => p.x >= r.l && p.x <= r.r && p.y >= r.t && p.y <= r.b;
 
 /** Slide a marker's centre `c` along an edge (range lo..hi) until its box (`half` each side, plus the gap) clears every rect that overlaps it; `across` tests overlap on the other axis. */
@@ -82,29 +93,31 @@ export function markerPlace(at: { x: number; y: number }, w: number, h: number, 
   if (tx < ty) {
     // Left or right edge: slide along y; the arrow and icon fill [edge, edge + DEPTH] across.
     const edge = dx > 0 ? 'r' : 'l';
-    const bx0 = edge === 'l' ? l - 12 : r - DEPTH + 12, bx1 = edge === 'l' ? l - 12 + DEPTH : r + 12;
-    const rects = hud.filter((q) => q.r > bx0 && q.l < bx1).map((q) => ({ from: q.t, to: q.b }));
-    return finish(edge, edge === 'l' ? l : r, slide(py, t + FOOT / 2, b - FOOT / 2, FOOT / 2, rects));
+    return finish(edge, edge === 'l' ? l : r, slide(py, t + FOOT / 2, b - FOOT / 2, FOOT / 2, edgeSpans(edge, w, h, hud)));
   }
   const edge = dy > 0 ? 'b' : 't';
-  const by0 = edge === 't' ? t - 12 : b - DEPTH + 12, by1 = edge === 't' ? t - 12 + DEPTH : b + 12;
-  const rects = hud.filter((q) => q.b > by0 && q.t < by1).map((q) => ({ from: q.l, to: q.r }));
-  return finish(edge, slide(px, l + FOOT / 2, r - FOOT / 2, FOOT / 2, rects), edge === 't' ? t : b);
+  return finish(edge, slide(px, l + FOOT / 2, r - FOOT / 2, FOOT / 2, edgeSpans(edge, w, h, hud)), edge === 't' ? t : b);
 }
 
-/** Move a marker that would overlap an earlier one along its edge (away from the screen's corner side) in steps of its footprint. */
-export function spread<T extends Place>(places: readonly T[], w: number, h: number): T[] {
+/**
+ * Keep markers from overlapping each other. A marker that collides with an earlier one moves along its edge to the nearest slot (trying both directions,
+ * a footprint at a time) that stays inside the edge's range, clear of every HUD rectangle and clear of the earlier markers. When no slot fits, the marker
+ * is dropped rather than left under the HUD or off the screen.
+ */
+export function spread<T extends Place>(places: readonly T[], w: number, h: number, hud: readonly Rect[] = []): T[] {
   const out: T[] = [];
+  const step = FOOT + GAP;
   for (const p of places) {
-    let { x, y } = p;
     const vertical = p.edge === 'l' || p.edge === 'r';
-    const dir = vertical ? (y > h / 2 ? -1 : 1) : (x > w / 2 ? -1 : 1);
-    const hit = () => out.some((o) => Math.abs(o.x - x) < FOOT + GAP && Math.abs(o.y - y) < FOOT + GAP);
-    while (hit()) {
-      if (vertical) y += dir * (FOOT + GAP);
-      else x += dir * (FOOT + GAP);
-    }
-    out.push({ ...p, x, y });
+    const along = vertical ? p.y : p.x;
+    const lo = EDGE + FOOT / 2, hi = (vertical ? h : w) - EDGE - FOOT / 2;
+    const spans = edgeSpans(p.edge, w, h, hud);
+    const clearOfHud = (c: number) => !spans.some((q) => c + FOOT / 2 + GAP > q.from && c - FOOT / 2 - GAP < q.to);
+    const free = (c: number) => c >= lo && c <= hi && clearOfHud(c) && !out.some((o) => (vertical ? Math.abs(o.x - p.x) < step && Math.abs(o.y - c) < step : Math.abs(o.y - p.y) < step && Math.abs(o.x - c) < step));
+    // Candidate slots: where it is, one step either side of each earlier marker, and just clear of each HUD span. The nearest free one wins.
+    const cand = [along, ...out.flatMap((o) => { const c = vertical ? o.y : o.x; return [c - step, c + step]; }), ...spans.flatMap((q) => [q.from - FOOT / 2 - GAP, q.to + FOOT / 2 + GAP])];
+    const at = cand.filter(free).reduce<number | null>((best, c) => (best === null || Math.abs(c - along) < Math.abs(best - along) ? c : best), null);
+    if (at !== null) out.push(vertical ? { ...p, y: at } : { ...p, x: at });
   }
   return out;
 }

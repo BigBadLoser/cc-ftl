@@ -50,7 +50,7 @@
       const same = next.length === raw.length && next.every((m, i) => m.ship === raw[i]?.ship && m.x === raw[i].x && m.y === raw[i].y && m.angle === raw[i].angle && m.edge === raw[i].edge && m.room === raw[i].room);
       if (!same) {
         raw = next;
-        placed = spread(next, innerWidth, innerHeight);
+        placed = spread(next, innerWidth, innerHeight, hud);
       }
     };
     raf = requestAnimationFrame(tick);
