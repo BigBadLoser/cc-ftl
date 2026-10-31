@@ -122,6 +122,10 @@ const REASONS: Record<string, string> = {
   overweight: 'Too much hull for the engines: overcharge to jump',
   notHere: "Can't do that here",
   tooMany: 'Too many already',
+  shuttleBusy: 'That shuttle is busy with another job',
+  crewBusy: 'Someone in that party is already picked for another launch',
+  aborted: 'Boarding called off: the shuttle lost its target or its pilot',
+  leftBehind: 'The shuttle left without crew who were too slow to reach it',
   courierBusy: 'Your shuttle is busy: it needs an empty hold and no other job',
 };
 

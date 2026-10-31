@@ -40,7 +40,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'sabotageOrder']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     // `heat` (combat heat, #185) is a new empty field in the same way.
@@ -273,8 +273,10 @@ describe('sector refactor equivalence', () => {
 // disaster hash (no fight) is unchanged.
 // Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks; on main alone it pinned b0b4e040.
 // Merged with combat round 1 it is e65e90fe; the disaster hash is unchanged by the bed owners.
-// Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it.
+// Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it (and by the empty `boardHold` store).
+// Repinned for mining as income (#222): the starter crate now carries water and oxygen (the hashed world holds storage, so both hashes change by that
+// alone), the galley's rations take water, and life support burns bottled oxygen to refill a room short of air (the breach run).
 // Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
-// draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run.
-// The disaster run has no fight and is unchanged.
-const EXPECTED = { combat: 'd2b2f525', disaster: '6317c54b' };
+// draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run. On the
+// pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
+const EXPECTED = { combat: '694a0569', disaster: '2cf7530b' };

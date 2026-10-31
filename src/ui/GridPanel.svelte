@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { anchor } from './lessons/anchors';
   import type { UiApi, UiCombat, UiPrize, UiShuttles, UiTrade } from './api';
   import PanelHead from './PanelHead.svelte';
   import PrizePanel from './PrizePanel.svelte';
@@ -46,7 +47,7 @@
   {#if prize}<PrizePanel {api} {ship} />{/if}
   {#if partner && !foe && partner.station}
     {#if partner.info}<StationInfo info={partner.info} />{/if}
-    <button class="go" data-testid="open-station" onclick={() => { if (partner.hail === 'none') api.dispatch({ type: 'trade.hail', ship }); onStation(ship); }}>Hail station</button>
+    <button class="go" data-testid="open-station" data-lesson={anchor('station.hail')} onclick={() => { if (partner.hail === 'none') api.dispatch({ type: 'trade.hail', ship }); onStation(ship); }}>Hail station</button>
   {:else if partner && !foe}<TradeList {api} {ship} onOpen={onTrade} />{/if}
   {#if !foe && !prize && !partner && !derelict}<p class="dim">Nothing to do here.</p>{/if}
   {#if foe && !prize}<button class="fight" data-testid="grid-focus-fight" onclick={() => api.focusFight(ship)}>Frame fight</button>{/if}

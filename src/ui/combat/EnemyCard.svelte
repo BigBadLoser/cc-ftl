@@ -1,7 +1,8 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { anchor } from '../lessons/anchors';
-  import { Frame, FrameGap, Meter, Pill, Pips } from '../kit';
+  import { ActionButton, Frame, FrameGap, KeyBadge, Meter, Pill, Pips } from '../kit';
+  import { keyLabel, keymap } from '../keymap';
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
   import { hullTone } from './hullTone';
@@ -9,10 +10,13 @@
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
    */
-  let { enemy, state: pill, onFrame }: {
+  let { enemy, state: pill, onFrame, onBoard, boardBlocker }: {
     enemy: UiShipCombat;
     state: { text: string; tone: string };
     onFrame: () => void;
+    onBoard: () => void;
+    /** Why Board is disabled (null = it opens the party picker). */
+    boardBlocker: string | null;
   } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
@@ -92,6 +96,12 @@
         {/each}
       </div>
     {/if}
+    <div class="board">
+      <ActionButton tone="plain" disabled={!!boardBlocker} title={boardBlocker ?? `Send a boarding party in a shuttle (${keyLabel($keymap, 'combat.board')})`} testid="combat-board" onclick={onBoard}>
+        <Icon name="shuttle" size={16} />Board<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'combat.board')}</KeyBadge>
+      </ActionButton>
+      {#if boardBlocker}<span class="why" data-testid="board-blocker">{boardBlocker}</span>{/if}
+    </div>
   </div>
 </Frame>
 
@@ -100,6 +110,9 @@
     display: grid;
     gap: 10px;
   }
+  .board { display: flex; align-items: center; gap: var(--sp-2); height: 28px; }
+  .board :global(.btn) { width: 120px; }
+  .why { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
   .fr {
     min-height: 0;
     min-width: 0;

@@ -158,6 +158,8 @@ export type Command =
   | { type: 'crew.hack'; id: number; module: number }
   /** Boarders (player crew on a hostile ship) walk to `module` of that ship and wreck it over time, until it falls, they are interrupted or cancelled. */
   | { type: 'crew.sabotage'; ids: number[]; module: number }
+  /** Launch a boarding party: `crew` (the first flies the shuttle) walk to the stowed `vehicle`, climb in, fly to the enemy `airlock`, dock, and everyone aboard (the pilot too) steps out onto the enemy ship; the shuttle stays docked for `crew.recall`. */
+  | { type: 'boarding.launch'; vehicle: number; crew: number[]; airlock: number }
   /** Drop the members' sabotage orders. */
   | { type: 'crew.cancelSabotage'; ids: number[] }
   /** Send player crew on a hostile ship back to the shuttle docked there; it flies them home and they disembark. Fails (reason event, crew stay) with no reachable shuttle. */

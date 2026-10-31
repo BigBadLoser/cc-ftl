@@ -1,5 +1,5 @@
 import type { Command, SimEvent } from '../../sim';
-import type { UiAiming, UiCombat } from '../api';
+import type { UiAiming, UiCombat, UiGoals, UiTrade } from '../api';
 import type { Condition } from './conditions';
 import type { SpeakerId } from './speakers';
 import type { LessonTarget } from './targets';
@@ -11,6 +11,12 @@ import type { LessonTarget } from './targets';
 export interface LessonCtx {
   combat: UiCombat;
   aiming: UiAiming | null;
+  /** Hailable ships and stations in the node (the station lesson reads who is a station and who has been hailed). */
+  trade: UiTrade;
+  /** The ship or station picked in the selection panel. */
+  selectedShip: number | null;
+  /** The goal chain (null when finished or skipped). */
+  goals: UiGoals | null;
   busy: boolean;
 }
 
@@ -36,6 +42,8 @@ export interface StepDef {
   target?: LessonTarget;
   /** `gotIt`: the player reads and clicks Got it. A condition: a "do" step that advances when it holds (the player did the thing). */
   advance: 'gotIt' | Condition;
+  /** A "do" step only: when this holds the lesson steps back to the previous step (the player undid what it needs). */
+  back?: Condition;
   /** Overrides the lesson's speaker for this step. */
   speaker?: SpeakerId;
   /** Time runs during this step (the game resumes at the player's speed); otherwise the game stays paused. */

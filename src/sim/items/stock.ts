@@ -5,7 +5,7 @@ import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { ItemStackC, StorageC, type HaulRef } from './components';
-import { storageCount, storageSpace } from './storage';
+import { storageCount, storageSpace, storageTake } from './storage';
 
 /**
  * The item index: where stock is, how much of it is spoken for. Not a system; planners call it.
@@ -117,4 +117,30 @@ export function totalStock(sim: Sim, item: string): number {
     if (m && ours(shipIdOf(sim, m))) n += storageCount(sim, id, item);
   }
   return n;
+}
+
+/** Storage modules of one ship crew can reach (not sealed containers), ascending id. */
+function shipStorages(sim: Sim, shipId: number): number[] {
+  return sim.world.query(StorageC, ModuleC).filter((id) => {
+    const m = sim.world.get(id, ModuleC);
+    return !!m && shipIdOf(sim, m) === shipId && !sim.world.has(id, ContainerC);
+  }).sort((a, b) => a - b);
+}
+
+/** Units of an item in one ship's stores (storage modules, not floor stacks). */
+export function shipStoreCount(sim: Sim, shipId: number, item: string): number {
+  return shipStorages(sim, shipId).reduce((n, id) => n + storageCount(sim, id, item), 0);
+}
+
+/**
+ * Draw units of an item straight out of one ship's stores, as a module piped to them would (life support's bottled oxygen): no haul.
+ * Returns how many came out.
+ */
+export function drawFromStores(sim: Sim, shipId: number, item: string, count: number): number {
+  let got = 0;
+  for (const id of shipStorages(sim, shipId)) {
+    if (got >= count) break;
+    got += storageTake(sim, id, item, count - got);
+  }
+  return got;
 }

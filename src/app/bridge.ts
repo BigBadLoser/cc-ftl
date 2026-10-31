@@ -1,3 +1,4 @@
+import { whereToSell } from './sellSnapshot';
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiBoarding, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
@@ -21,7 +22,7 @@ import { warmOutlines } from './starmapClusters';
 import { warmNebula } from './starmapNebula';
 import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
 import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
-import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from '../ui/starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute, UiSellGood } from '../ui/starmapApi';
 import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
 import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
@@ -101,6 +102,7 @@ export interface Bridge {
   /** The generated starmap (geometry rebuilt when the galaxy changes; fuel and charge kept fresh). */
   starmap: Readable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  whereToSell(): UiSellGood[];
   /** The deploy picker's data while the ship waits to be placed (null otherwise), the gap-rule check of a spot, and the jump confirm's list. */
   deploy: Readable<UiDeploy | null>;
   deployCheck(x: number, y: number): string | null;
@@ -463,6 +465,7 @@ export function createBridge(sim: Sim): Bridge {
     story,
     starmap,
     planRoute: (to) => planStarmapRoute(sim, to),
+    whereToSell: () => whereToSell(sim),
     deploy,
     deployCheck: (x, y) => deployError(sim, x, y),
     jumpWarnings: (ship) => buildJumpWarnings(sim, ship),
