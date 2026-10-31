@@ -37,10 +37,12 @@
   // While open, the live plan changes (damage, crew hurt or busy): keep the player's choices and only drop the ones no longer valid.
   $effect(() => {
     if (!open) return;
-    const ok = (id: number) => plan.crew.some((c) => c.id === id && !c.reason);
+    // Read the plan here (tracked) so every availability change reruns this; only the writes are untracked.
+    const { crew, shuttles, airlocks } = plan;
+    const ok = (id: number) => crew.some((c) => c.id === id && !c.reason);
     untrack(() => {
-      if (!plan.shuttles.some((s) => s.id === shuttle && !s.reason)) shuttle = plan.shuttles.find((s) => !s.reason)?.id ?? 0;
-      if (!plan.airlocks.some((a) => a.id === airlock)) airlock = plan.airlocks[0]?.id ?? 0;
+      if (!shuttles.some((s) => s.id === shuttle && !s.reason)) shuttle = shuttles.find((s) => !s.reason)?.id ?? 0;
+      if (!airlocks.some((a) => a.id === airlock)) airlock = airlocks[0]?.id ?? 0;
       if (!picked.every(ok)) picked = picked.filter(ok);
     });
   });
