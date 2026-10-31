@@ -84,6 +84,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 - `cli.js`: renders contact sheets as PNG, plus a `.txt` summary with ASCII dumps.
 - `draw.ts`: sheet layout, the detail view, diversity metrics, and the `faction:family` filter.
 - `views.ts`: the silhouette, assembly and structure views.
+- `labels.ts`: the labelled view (one layout a image, rooms named, furniture coded, a key).
 - `live.ts`, `index.html`: the browser viewer.
 
 ## How to iterate
@@ -94,6 +95,8 @@ Run all commands from the repository root.
 # One faction, one depth, seeds 1..12, every view, into a folder of your choice
 node tools/shipgen/cli.js faction.navy --depth 9 --count 12 --views all --out /tmp/sheets/after
 # Views: detail | silhouette | assembly | structure (comma list) or all. Seeds: --from 13 --count 24
+# Labelled view (one image a seed: rooms named, furniture coded, a key): --views labels
+node tools/shipgen/cli.js station.trading --size station --layout stationWheel --views labels --count 2 --out /tmp/sheets/labels
 # One hull family only:
 node tools/shipgen/cli.js faction.drones:picket --depth 9 --count 12 --views structure,silhouette --out /tmp/sheets/after
 # Live viewer: npm run dev, then open /tools/shipgen/
