@@ -6,7 +6,7 @@ Rendered as the exterior's runs: coverage anti-aliased (env_build.AA) and "wide"
 import bmesh
 
 from . import core
-from . import factions_relief as FR
+from .faction import parts as FR
 from . import wall3d as T
 from . import wall3d_belly_bay as BAY
 from . import wall3d_ext_t3 as T3

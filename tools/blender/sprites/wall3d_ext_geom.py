@@ -150,7 +150,7 @@ class Face:
         """A part over [u0, u1] with a (d, z) section; at the face's b end (end: whether it reaches it, by default
         when u1 is b; a detail placed beside the corner says not) it is mitred, and at an outer corner it stops at
         the chamfer (or `short` of it) and (wrap) runs on round it."""
-        from .factions_relief import corner_piece, prism
+        from .faction.parts import corner_piece, prism
         cols, cap = self._cols(cols, cap, len(prof))
         m0 = self.mt[0] if abs(u0 - self.a) < 1e-6 else 0.0
         end = abs(u1 - self.b) < 1e-6 if end is None else end
@@ -219,7 +219,7 @@ class Face:
     def edge_line(self, z0, z1, col, inset=0, w=1.0):
         """A painted band w px wide along the outer corner's chamfer edge on this face (each face its own), inset px
         in from it (under a px: coverage anti-aliasing tones it)."""
-        from .factions_relief import prism
+        from .faction.parts import prism
         if self.ch:
             ch, pf = self.ch, self.on(z0, z1, -0.01, 0.001)
             cols, cap = self._cols([col] * len(pf), col, len(pf))
@@ -256,7 +256,7 @@ class Face:
 
     def on_chamfer(self, t0, t1, pf, cols, cap=None, fam=F, lvl=3):
         """A part on the outer corner's chamfer over [t0, t1] of its width (built by the y face, once)."""
-        from .factions_relief import corner_piece
+        from .faction.parts import corner_piece
         if self.ch and self.ax == "y":
             cols, cap = self._cols(cols, cap, len(pf))
             corner_piece(self.k, self.b, self.plane, self.ch, pf, fam, lvl, cols, cap, t=(t0, t1))

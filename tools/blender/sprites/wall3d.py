@@ -100,7 +100,7 @@ SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) 
                         # (seams, panel outlines, plates' shading) draw in it, everything else near black
 SEAM_DARK = "hsXK"
 CLIP = None             # a breach (wallbreach.py) sets this: f(u) -> the tear's height on the face being dressed
-STYLE = None            # a faction's relief (factions.py): {"wall": face fn, "hull": face fn, "skirt": "panel" | "outline"
+STYLE = None            # a faction's relief (faction/):   {"wall": face fn, "hull": face fn, "skirt": "panel" | "outline"
                         # | None (the panel under each field), "toe": a family for a band along the skirt's foot, "seam": the
                         # skirt plates' seams in from each tile edge (0: one plate a tile), "slot": a handle slot in
                         # the outlined panel, "joint": the ramp level of the skirt's plate joints (1 dark), "toe_at":

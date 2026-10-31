@@ -1,5 +1,5 @@
 """Faction structure sets (family `structure`): every default wall, hull and floor tile (envtiles.SPRITES) rebuilt
-through a faction look (factions.py: its own relief on the walls and far hull, its own colours through restyle), under
+through a faction look (faction/: its own relief on the walls and far hull, its own colours through restyle), under
 the same id with a faction segment after the family:
 
   tile.<fam>.<look>.<rest of the default id>      e.g. tile.hull.navy.full.m10.v1, tile.wall.civil.v2.end.s,
@@ -13,7 +13,7 @@ import re
 
 from . import wall3d
 from .envtiles import SPRITES as DEFAULT, _variant
-from .factions import look
+from .faction import look
 from .restyle import restyled
 
 

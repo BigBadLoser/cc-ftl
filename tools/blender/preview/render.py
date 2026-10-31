@@ -28,8 +28,8 @@ for k in want:
     kind, fn = JOBS[k]
     core.clear_scene_meshes()
     post.select(True)
-    objs = fn()
     try:
+        objs = fn()
         it = env_build.crop_item(k, (1, 1), *env_build.render_sprite(k, kind, objs)) if objs else None
     except Exception as e:                          # (one failing job reported, the rest go on)
         print("FAIL", k, repr(e), flush=True)

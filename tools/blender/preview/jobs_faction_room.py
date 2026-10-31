@@ -1,10 +1,10 @@
-"""The walls-up pieces of every mask, per look (structure.py / factions.py; "default" the default walls), and the
+"""The walls-up pieces of every mask, per look (structure.py / faction/; "default" the default walls), and the
 straight runs' designs: env STRUCT_LOOKS narrows the looks. For the open-corner and room previews."""
 import os
 
 from sprites import structure as ST
 from sprites.envtiles import SPRITES, _variant
-from sprites.factions import look
+from sprites.faction import look
 
 IDS = [f"tile.wall.full.m{m}" for m in range(16)]
 BY = {sid: (kind, fn) for sid, fp, kind, fn in SPRITES}

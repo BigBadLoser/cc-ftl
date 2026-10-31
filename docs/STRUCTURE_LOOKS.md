@@ -5,7 +5,7 @@ Status: the art side is built, but the game does not use it yet. This note is th
 ## What the sheets carry
 
 `tools/blender/sprites/structure.py` rebuilds every default wall, hull and floor tile through a faction look
-(`factions.py`, `factions_relief.py`). Each rebuilt tile keeps the default id, with a look segment added after the family:
+(`tools/blender/sprites/faction/`: one module a look). Each rebuilt tile keeps the default id, with a look segment added after the family:
 
 ```
 tile.<fam>.<look>.<rest of the default id>
@@ -105,4 +105,4 @@ Option 1 also gives breach-adjacent scorch and battle damage on any ship.
 - [ ] `structLookFor(gen)` for navy, drone and civil (seeded `vN`).
 - [ ] Shipgen: a per-tile look record from the donors (`generate.ts`). Renderer: read it on scrapper ships.
 - [ ] Wear overlay set and placement (a follow-up).
-- [ ] Corner fills in the look sets (`structure.CORNER`). This needs `factions_relief` corner handling.
+- [ ] Corner fills in the look sets (`structure.CORNER`). This needs corner handling in the looks' modules (`faction/`).
