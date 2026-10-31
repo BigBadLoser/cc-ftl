@@ -15,8 +15,16 @@
     const a = api.inspect.subscribe((i) => (info = i));
     const b = api.modules.subscribe((m) => (mods = m));
     const c = api.combat.subscribe((v) => (foes = v.enemies));
-    return () => (a(), b(), c());
+    // A refused debug command (e.g. "Spawn raider" beside a station: too close) is shown here too, where the clicker is looking.
+    const d = api.toast.subscribe((t) => {
+      if (!t) return;
+      clearTimeout(note);
+      toast = t;
+      note = setTimeout(() => (toast = ''), 4000);
+    });
+    return () => (a(), b(), c(), d(), clearTimeout(note));
   });
+  let note: ReturnType<typeof setTimeout> | undefined;
   let roofed = $state(true);
   const toggleRoof = () => {
     roofed = !roofed;
