@@ -13,7 +13,7 @@
 </script>
 
 <aside class="sheet sell steel-tokens" data-testid="starmap-sell">
-  <PanelHead icon="trade" title="Where to sell" sub={goods.length ? `${goods.length} good${goods.length > 1 ? 's' : ''} aboard` : 'nothing to sell'} onBack={onClose} backIcon="close" backTitle="Close" backTestId="starmap-sell-close" />
+  <PanelHead icon="trade" title="Where to sell" sub={goods.length ? `${goods.length} goods` : 'nothing'} onBack={onClose} backIcon="close" backTitle="Close" backTestId="starmap-sell-close" />
   {#if goods.length}
     <ul>
       {#each goods as g (g.item)}
@@ -40,8 +40,9 @@
 </aside>
 
 <style>
-  .sell { position: absolute; z-index: 12; display: grid; gap: 6px; align-content: start; overflow-y: auto; box-sizing: border-box; left: 8px; top: 54px; width: 300px; max-height: min(70%, 560px); }
-  ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  /* The panel itself never scrolls (a scrolled layer over the map's GPU canvas left a blank box below it); the list inside does. */
+  .sell { position: absolute; z-index: 12; display: flex; flex-direction: column; gap: 6px; overflow: hidden; box-sizing: border-box; left: 8px; top: 54px; width: 300px; max-height: min(70%, 560px); }
+  ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
   li { display: grid; gap: 2px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); }
   .good { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 2px; }
   .good b { font: 600 14px var(--head-font); letter-spacing: 0.04em; }

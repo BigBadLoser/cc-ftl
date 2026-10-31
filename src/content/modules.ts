@@ -27,13 +27,15 @@ export const modules = {
   'module.lifeSupport': {
     name: 'Life support',
     category: 'life',
-    description: "Makes breathable air and scrubs CO2 for the room it sits in.",
+    description: "Makes breathable air and scrubs CO2 for the room it sits in. Oxygen in the stores doubles the air while a room refills.",
     asset: 'module.life_support',
     footprint: [1, 2],
     solid: true,
     power: -6,
     powerPriority: 1,
     o2PerSec: 3,
+    // Bottled oxygen (split from ice at a refinery) doubles the air while a room refills: one unit per 20 s of it.
+    o2Supply: { item: 'item.oxygen', mult: 2, secPerUnit: 20 },
     co2ScrubPerSec: 1,
     flammability: 0.2,
     maxHp: 100,

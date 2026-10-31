@@ -16,7 +16,7 @@ export const market = {
       consume: { 'item.ration': 1, 'item.parts': 0.2 },
     },
     'trader.station.farming': {
-      produce: { 'item.ration': 3, 'item.ice': 0.5, 'item.fuel': 0.3 },
+      produce: { 'item.ration': 3, 'item.ice': 0.5, 'item.fuel': 0.3, 'item.water': 1 },
       consume: { 'item.polymer': 0.3, 'item.parts': 0.2, 'item.metal': 0.3 },
     },
     'trader.station.trading': {

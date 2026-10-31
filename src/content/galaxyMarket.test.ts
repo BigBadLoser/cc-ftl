@@ -6,7 +6,7 @@ import {
 import type { Port } from '../sim';
 import { onDock, onWork } from '../sim/galaxy/dock';
 import { liveTrader } from '../sim/galaxy/market';
-import { MARKET_DRIFT, MINER_ORE } from '../sim/galaxy/tuning';
+import { MARKET_DRIFT, MARKET_START_SPREAD, MINER_ORE } from '../sim/galaxy/tuning';
 import { syncFleets } from '../sim/galaxy/fleets';
 import { onTurn } from '../sim/galaxy/turn';
 import type { Fleet } from '../sim/galaxy/types';
@@ -56,17 +56,33 @@ describe('port markets', () => {
     const at = (n: number) => advance(mine, { turn: 0, stock: {} }, n);
     expect(mine.net['item.iron_ore']).toBeGreaterThan(0);
     expect(mine.net['item.ration']).toBeLessThan(0);
-    // One turn moves a share of the way to the level (baseline + net / drift): up for what it digs, down for what it eats.
-    expect(at(1)['item.iron_ore']).toBeGreaterThan(mine.base['item.iron_ore'] as number);
-    expect(at(1)['item.ration']).toBeLessThan(mine.base['item.ration'] as number);
+    // One turn moves a share of the way from the starting stock to the level (baseline + net / drift): up for what it digs, down for what it eats.
+    const start = (item: string) => mine.start[item] as number;
+    expect(at(0)['item.iron_ore']).toBe(start('item.iron_ore'));
+    const levelOf = (item: string) => Math.max(0, (mine.base[item] as number) + (mine.net[item] as number) / MARKET_DRIFT);
+    for (const item of ['item.iron_ore', 'item.ration']) expect(Math.sign(at(1)[item]! - start(item)), item).toBe(Math.sign(levelOf(item) - start(item)));
+    expect(levelOf('item.iron_ore')).toBeGreaterThan(mine.base['item.iron_ore'] as number); // it digs ore: its level sits above the baseline
+    expect(levelOf('item.ration')).toBeLessThan(mine.base['item.ration'] as number); // it eats rations: below
     const level = (mine.base['item.iron_ore'] as number) + (mine.net['item.iron_ore'] as number) / MARKET_DRIFT;
-    expect(at(1)['item.iron_ore']).toBeCloseTo((mine.base['item.iron_ore'] as number) + (level - (mine.base['item.iron_ore'] as number)) * MARKET_DRIFT, 6);
+    expect(at(1)['item.iron_ore']).toBeCloseTo(start('item.iron_ore') + (level - start('item.iron_ore')) * MARKET_DRIFT, 6);
     // Sizes scale the rates: a size 3 port nets three times a size 1 port.
     const a = homes(sim).find((p) => econOf(sim, p)?.profile === 'trader.station.mining' && p.size === 1);
     const b = homes(sim).find((p) => econOf(sim, p)?.profile === 'trader.station.mining' && p.size > 1);
     if (a && b) expect((econOf(sim, b)!.net['item.metal'] as number) / (econOf(sim, a)!.net['item.metal'] as number)).toBeCloseTo(b.size, 6);
     // Trading stations eat; farms feed; dens scrap and eat.
     expect(econ(sim, 'trader.station.trading').net['item.metal']).toBeLessThan(0);
+  });
+
+  it('ports start off their baseline by a seeded share, so prices differ from the first turn', () => {
+    const sim = parked(SEED);
+    const e = econ(sim, 'trader.station.trading');
+    const off = e.items.filter((i) => (e.base[i] ?? 0) > 0 && e.start[i] !== e.base[i]);
+    expect(off.length).toBeGreaterThan(0);
+    for (const i of e.items) {
+      const b = e.base[i] ?? 0;
+      expect(Math.abs((e.start[i] ?? 0) - b), i).toBeLessThanOrEqual(Math.ceil(b * MARKET_START_SPREAD));
+    }
+    expect(econ(parked(SEED), 'trader.station.trading').start).toEqual(e.start); // the same seed, the same start
   });
 
   it('prices follow stock against the baseline: cheap when plentiful, dear when scarce, 1 at the baseline', () => {
@@ -109,7 +125,7 @@ describe('port markets', () => {
     const e = econ(sim, 'trader.station.mining');
     moveStock(sim, e, 0, 'item.metal', -50);
     const st = structuredClone(sim.galaxy.markets[e.id]!);
-    let walked = Object.fromEntries(e.items.map((i) => [i, st.stock[i] ?? e.base[i] ?? 0]));
+    let walked = Object.fromEntries(e.items.map((i) => [i, st.stock[i] ?? e.start[i] ?? e.base[i] ?? 0]));
     for (let t = st.turn + 1; t <= st.turn + 80; t++) walked = advance(e, { turn: t - 1, stock: walked }, t);
     const jumped = advance(e, st, st.turn + 80);
     for (const item of e.items) expect(jumped[item], item).toBeCloseTo(walked[item] as number, 6);

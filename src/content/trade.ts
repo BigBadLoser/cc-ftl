@@ -87,7 +87,7 @@ export const trade = {
     },
     'trader.station.farming': {
       name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],
-      stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }, { item: 'item.fuel', min: 15, max: 40 }],
+      stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }, { item: 'item.fuel', min: 15, max: 40 }, { item: 'item.water', min: 20, max: 60 }],
     },
     'trader.station.research': {
       name: 'Research station', match: { faction: 'station.research' }, shuttle: false, credits: [1500, 4000],

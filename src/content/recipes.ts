@@ -37,7 +37,7 @@ export const recipes = {
     name: 'Refine iron ore',
     station: 'module.refinery',
     inputs: [{ item: 'item.iron_ore', count: 24 }],
-    outputs: [{ item: 'item.metal', count: 18 }],
+    outputs: [{ item: 'item.metal', count: 20 }],
     work: 300,
   },
   'recipe.refine_rare': {
@@ -57,11 +57,11 @@ export const recipes = {
     outputs: [{ item: 'item.water', count: 8 }, { item: 'item.oxygen', count: 8 }],
     work: 240,
   },
-  // The galley's recipe: reclaimed scrap becomes nutrient paste bars.
+  // The galley's recipe: reclaimed scrap and water become nutrient paste bars (water: issue #222; the starter ship carries 30, for 90 rations).
   'recipe.ration': {
     name: 'Print rations',
     station: 'module.galley',
-    inputs: [{ item: 'item.scrap', count: 2 }],
+    inputs: [{ item: 'item.scrap', count: 2 }, { item: 'item.water', count: 1 }],
     outputs: [{ item: 'item.ration', count: 3 }],
     work: 40,
   },
