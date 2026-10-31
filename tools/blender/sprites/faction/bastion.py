@@ -112,6 +112,10 @@ class RecessTones(Feature):
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
 
+    def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
+        R = T.RAMPS[fam][0]
+        return [(sp.run - 1 / 32, R[1]), (sp.run, R[0])]
+
 
 def _arm(ax, plane, u, top, i, side):
     """How far a face's cornice runs on past its end at u (side -1: its low end; i: its index in END_TOPS) over the
@@ -386,7 +390,8 @@ class Bastion(Faction):
 
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
-                      ramp_var=bastion_ramp, ramp_hole=bastion_hole, outline_lvl=1, shell=LookShell,
+                      ramp_var=bastion_ramp, ramp_hole=bastion_hole, outline_lvl=1, ramp_solid=True,
+                      hole_tone=lambda part, fam, ax, n: T.tone(fam, 1, n, ax), shell=LookShell,
                       features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), RecessTones()))
 
     pairs = BAST_PAIRS

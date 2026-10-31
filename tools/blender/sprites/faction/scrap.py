@@ -48,5 +48,5 @@ class Scrap(Faction):
 
     def relief(self, sprite):
         seed = f"{sprite}|{self.p}"
-        return Style(wall=scrap(False, seed), hull=scrap(True, seed), shell=LookShell,
+        return Style(wall=scrap(False, seed), hull=scrap(True, seed), ramp_solid=True, shell=LookShell,
                      features=(FreeEnds(),))   # (its corners stay square)

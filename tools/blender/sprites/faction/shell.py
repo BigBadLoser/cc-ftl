@@ -37,6 +37,9 @@ class Feature:
     def col_face(self, sp, face, x, y, z):
         return NO
 
+    def band(self, sp, fam):
+        return NO
+
 
 class LookShell(T.Shell):
     """wall3d.Shell built from the current look's features. What features may set on it: end_sides (free ends),
@@ -54,6 +57,7 @@ class LookShell(T.Shell):
             self.run = math.ceil(self.run * T.W.GN - 1e-6) / T.W.GN
         self.end_sides, self.holes, self.face_holes = [], [], []
         self.solid, self.cut = T.style().ramp_solid, None
+        self.hole_floor, self.hole_tone = False, T.style().hole_tone
         for f in self.features:
             f.setup(self)
 
@@ -145,27 +149,39 @@ class LookShell(T.Shell):
         mid = (um, plane + e) if ax == "y" else (plane + e, um)
         o, al = T.OUT(ax), T.P(ax, 0.0, 1.0, 0.0, 0.0) - T.P(ax, 0.0, 0.0, 0.0, 0.0)
         flr = (o * (self._zsurf(0) - self._zsurf(1)) + Vector((0, 0, 1))).normalized()
-        col = {"bottom": R[0], "back": R[0], "toe": R[0], "hole_back": R[0],      # (a hole's walls and floor as
+        col = {"bottom": False, "back": False,          # (on the floor / against the wall: no camera sees them)
+               "toe": R[0], "hole_back": R[0],          # (a hole's walls and floor as
                "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
                "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}
         mt = {"cont": 0.0, "end": 0.0, "out": 1.0, "in": -1.0}
+        if self.hole_tone:                              # (a ramp design draws its hole's inside: its walls' tones)
+            col["hole_back"] = self.hole_tone("back", fam, ax, o)
+        line = None if self.line is None else self.line[0] if ax == "y" else self.line[1]
+        if self.line is not None and self.band and hi_t == "out" and abs(b - line) < 1e-6:
+            b, hi_t = b - self.band, "chamfer"          # (an outer corner chamfered: the ramp turns it on the band)
+            mt["chamfer"] = 1.0
+            if ax == "y":
+                self._band(k, fam, R, col)
         holes = sorted(h[2:] for h in self.holes if h[0] == ax and abs(h[1] - plane) < 1e-6 and a < h[3] and h[2] < b)
         cuts = [a] + [u for h in holes for u in h[:2]] + [b]
         ox = "x" if ax == "y" else "y"                  # (at a wall's free end the cap is the end face's section:
         endc = T.tone(fam, 2, T.OUT(ox), ox)            # in its tone, as shell._end_section paints it there)
-        ec = (endc if lo_t == "end" else R[0], endc if hi_t == "end" else R[0])
+        ec = tuple(endc if t == "end" else False if t == "cont" else R[0] for t in (lo_t, hi_t))   # (on into the
+                                                                                          # next tile: open)
+        side = (lambda sg: self.hole_tone("side", fam, ax, al * sg)) if self.hole_tone else \
+            (lambda sg: T.tone(fam, 1, al * sg, ax))
         for n in range(len(cuts) - 1):
             u0, u1 = cuts[n], cuts[n + 1]
             m = (mt[lo_t] if n == 0 else 0.0, mt[hi_t] if n == len(cuts) - 2 else 0.0)
-            caps = (T.tone(fam, 1, -al, ax) if n > 0 else ec[0],             # (beside a hole: its sides)
-                    T.tone(fam, 1, al, ax) if n < len(cuts) - 2 else ec[1])
+            caps = (side(-1) if n > 0 else ec[0], side(1) if n < len(cuts) - 2 else ec[1])   # (beside a hole: its
+                                                                                              # sides)
             if n % 2 == 0:
                 pieces = [(0.0, self.run, None)]
             else:                                       # (in a hole: before it, under its floor, after it)
                 h = holes[n // 2]
                 fl = lambda d: self._zsurf(d) - T.SLOT_DEPTH                        # noqa: E731
-                pieces = [(0.0, h[2], None), (h[2], h[3], fl), (h[3], self.run, None)]
+                pieces = [(0.0, h[2], None), (h[3], self.run, None)] + ([(h[2], h[3], fl)] if self.hole_floor else [])
             for d0, d1, top in pieces:
                 pts, parts = self._prof(d0, d1, top)
                 prism(k, ax, plane, u0, u1, pts, fam, 2, cols=[col[q] for q in parts], cap=caps, mitre=m)
@@ -211,9 +227,28 @@ class LookShell(T.Shell):
         q = (u + side * e, plane - e) if ax == "y" else (plane - e, u + side * e)
         return "in" if self._rect_at(*q, 0.0) is not None else "out"
 
+    def _band(self, k, fam, R, col):
+        """An outer corner's chamfer (line, band) on a solid ramp: the ramp's section carried round it (a corner
+        piece), its slope in the tones the look gives the band by distance out (its features' band hook)."""
+        from .parts import corner_piece
+        tones = self._ask("band", fam) if self.features else NO
+        tones = [(self.run, col["slope"])] if tones is NO else tones   # [(up to d, tone)] out from the wall's line
+        run, ft = self.run, self.foot
+        pts, cols = [(0.0, 0.0), (run, 0.0)], [R[0]]
+        if ft:
+            pts.append((run, ft))
+            cols.append(col["foot"])
+        for (d1, c), d0 in zip(reversed(tones), [d for d, _ in reversed(tones[:-1])] + [0.0]):
+            if d0 > 1e-9:
+                pts.append((d0, self._zsurf(d0)))
+            cols.append(c)
+        pts.append((0.0, self.zs))
+        cols.append(R[0])
+        corner_piece(k, self.line[0], self.line[1], self.band, pts, fam, 2, cols=cols, cap=R[0])
+
     def solid_extra(self, k):
         """Under a solid ramp: the ramps on the wall's back faces (out of the camera's sight, but the piece is a closed
-        body and a free end's section sits on them), and the top of a cut corner's open half (CornerCut's cut)."""
+        body and a free end's section sits on them)."""
         if not self.solid:
             return
         from .parts import prism
@@ -227,21 +262,21 @@ class LookShell(T.Shell):
             lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
             ox = "x" if ax == "y" else "y"
             endc = T.tone(fam, 2, T.OUT(ox), ox)
-            prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=[R[0]] * len(parts),
-                  cap=(endc if lo == "end" else R[0], endc if hi == "end" else R[0]), mitre=(mt[lo], mt[hi]))
-        if self.cut:
-            X, Y, c = self.cut
-            R = T.RAMPS["wall"][0]
-            k.poly([Vector((X - c, Y, self.zs)), Vector((X, Y - c, self.zs)), Vector((X, Y, self.zs))], "wall",
-                   1, Vector((0, 0, 1)), fixed=R[1])
+            cols = [False if q in ("bottom", "back") else R[0] for q in parts]
+            prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=cols,
+                  cap=tuple(endc if t == "end" else False if t == "cont" else R[0] for t in (lo, hi)),
+                  mitre=(mt[lo], mt[hi]))
+
 
     def cap_clip(self, q):                              # the far hull's armour plates cut on the corner's chamfer
         return self.line[0] + self.line[1] - self.clip - q[0] - q[1]
 
     # -- the hooks --
     def skip_skirt(self, i, j):                         # no ramp past a wall's end, nor over a hole cut in it
-        if self.solid:
-            return True                                 # (the ramp is built as solids: ramp)
+        if self.solid:                                  # (the ramp is built as solids: ramp; the grid keeps only
+            x, y = (i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5    # what lies in the footprint: a recessed
+            d, r, band = self._cdist(x, y)                               # lip, a cut corner's open half, not the
+            return d > 1e-9 or band                                      # chamfer's band (its corner piece))
         c = {"x": (i + 0.5) / T.W.GN - 0.5, "y": (j + 0.5) / T.W.GN - 0.5}
         if any((c[s[1]] - p) * (1 if s[0] == "+" else -1) > 0 for s, p in self.end_sides):
             return True
@@ -310,6 +345,7 @@ class SlotHoles(Feature):
     its run, half width), centred on each field, on the shell's grid."""
     def setup(self, sp):
         sh = T.style().slot_hole
+        sp.hole_floor = True                            # (the shell builds the slot's floor; a design draws a hole's)
         if sh and not T.VARIANT[1]:
             g = 1 / T.W.GN
             sn = lambda v: round(v / g) * g                                 # noqa: E731

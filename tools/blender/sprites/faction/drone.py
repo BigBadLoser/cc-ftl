@@ -7,7 +7,7 @@ from mathutils import Vector
 from .. import wall3d as T
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, PZ, bezier, body, corner_piece, flat, glow, pipe, prism
-from .shell import NO, Feature, FloorDrop, FootTone, LookShell, SlotHoles
+from .shell import NO, Feature, FloorDrop, FootTone, FreeEnds, LookShell, SlotHoles, _end_section, _ends
 
 
 def handle(k, ax, plane, u0, u1, zc, d, r=0.045):
@@ -47,6 +47,8 @@ class CornerCut(Feature):
         for (x0, x1, y0, y1), fam, t, top in sp.rects:
             adj_x = any(abs(o[0][0] - x1) < 1e-9 and o[0][2] < y1 and o[0][3] > y0 for o in sp.rects)
             adj_y = any(abs(o[0][2] - y1) < 1e-9 and o[0][0] < x1 and o[0][1] > x0 for o in sp.rects)
+            if any(sd[0] == "+" for sd, _ in sp.end_sides):
+                break                                   # (a wall's free end is no corner)
             if not adj_x and not adj_y and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9 and sp.keep is None:   # (a
                 # partition's outer corner or the far hull's)
                 lim = T.snap(x1) + T.snap(y1) - DRONE_S + 1e-9     # (where the faces really stand)
@@ -122,7 +124,8 @@ def drone(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
         zb = zs + 0.02
-        corner = full and ends[1] == "out"
+        endf, end1, corner, back = _ends(ax, plane, b, ends)    # (a free end stops square: no channel there; its
+        corner = full and corner                                # end face shows the section, no block on it)
         D, c, e = 2.5 * PX, 2.5 * PX, DRONE_E               # the block's depth, its slopes' run, the channel's reach
         # how each end's parts meet the next face: an outer corner on its diagonal (1), an inner corner on its own
         # diagonal (-1: a part runs short by its depth, so the two faces' blocks and rails meet in a clean mitre)
@@ -159,7 +162,9 @@ def drone(hull):
         prism(k, ax, plane, ra, rb, rail, F, 1, cols=rcol, mitre=tuple(rm))
         if corner and ax == "y":                                                                 # (on round the cut)
             corner_piece(k, b + e, plane, e, [(-0.02, rl)] + rail[1:4] + [(-0.02, rail[4][1])], F, 1, cols=rcol)
-        for s0, s1 in T.spans(a, b):
+        if endf:
+            _end_section(k, ax, plane, a, b, zs, rl, F)
+        for s0, s1 in ([] if endf else T.spans(a, b)):
             uc = (s0 + s1) / 2
             at0, at1 = abs(s0 - a) < 1e-6 and ends[0] != "cont", abs(s1 - b) < 1e-6 and ends[1] != "cont"
             in0, in1 = at0 and ends[0] == "in", at1 and ends[1] == "in" and not corner
@@ -279,6 +284,7 @@ class Drone(Faction):
     def relief(self, sprite):
         return _style(drone, skirt="outline", slot=True, seam=0, ramp_var=drone_ramp, outline_d=(0.1, 0.84),
                       slot_hole=(0.55, 0.72, 0.15), foot=DRONE_FOOT, ramp_solid=True, shell=LookShell,
-                      features=(SlotHoles(), CornerCut(), FloorDrop(), DiagTone(), FootTone("wall", 3)))
+                      features=(FreeEnds(), SlotHoles(), CornerCut(), FloorDrop(), DiagTone(),
+                                FootTone("wall", 3)))
 
     pairs = DRONE_PAIRS

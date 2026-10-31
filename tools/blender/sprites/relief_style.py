@@ -30,7 +30,8 @@ class Style:
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
     ramp_solid: bool = False              # the ramp built as one solid along each face
                                           # (faction.shell.LookShell.ramp) instead of the shell's height grid
-    chamfer: Optional[float] = None       # an outer corner's chamfer along each axis (the shell must match); None: square
+    chamfer: Optional[float] = None       # an outer corner's chamfer along each axis (the shell must match); None:
+                                          # square
     outline_lvl: int = 0                  # the outlined panel's seam level (skirt "outline")
     outline_round: bool = False           # ... its corners softened (each corner pixel left out)
     outline_d: tuple = (0.15, 0.62)       # ... its top and bottom down the ramp (fractions of the run)
@@ -39,6 +40,8 @@ class Style:
     slot_hole: Optional[tuple] = None     # ... cut into the ramp instead (the shell's holes): (top, bottom, half width)
     ramp_var: Optional[Callable] = None   # the look's own ramp designs (in place of its panel): wall3d.skirt's rv
     ramp_hole: Optional[Callable] = None  # (ramp design) -> the hole it opens in the ramp, or None
+    hole_tone: Optional[Callable] = None  # (part "back" | "side", family, face axis, outward normal) -> the tone
+                                          # a ramp design gives its hole's walls (the solid ramp's faces there)
 
 
 DEFAULT = Style()

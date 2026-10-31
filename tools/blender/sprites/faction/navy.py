@@ -48,6 +48,13 @@ class PlateTones(Feature):
             return T.RAMPS["ochre"][0][4]
         return T.RAMPS[fam][0][3]
 
+    def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
+        R, jt, ta = T.RAMPS[fam][0], T.style().joint, T.style().toe_at * sp.run
+        joint = R[1 if jt is None else jt]
+        if sp.foot:
+            return [(0.02, joint), (sp.run, R[3])]
+        return [(0.02, joint), (ta, R[3]), (sp.run - 0.03, T.RAMPS["ochre"][0][4]), (sp.run, R[3])]
+
     def col_face(self, sp, face, x, y, z):
         c = T.Shell.col_face(sp, face, x, y, z)
         e = 0.5 / T.W.GN
@@ -253,12 +260,17 @@ def navy_ramp(plate, u0, u1, run_, r, k=None, pt=None, P=None, zs=0.0, hole=None
             plate([(p0, 0.04), (p1, 0.04), (p1, 0.66 * run_), (p0, 0.66 * run_)], PAINT, 1, 0.0)
 
 
+def navy_hole_tone(part, fam, ax, n):
+    """The open ramp's walls as navy_ramp draws them (its back in the wall's dark, its sides the second tone)."""
+    return T.tone("wall", 0, n, ax) if part == "back" else T.tone("rose", 2, n, ax)
+
+
 class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
         return _style(navy, skirt=None, toe="ochre", seam=NAVY_SEAM, joint=4, chamfer=NAVY_C, ramp_var=navy_ramp,
-                      ramp_hole=navy_hole, shell=LookShell,
+                      ramp_hole=navy_hole, ramp_solid=True, hole_tone=navy_hole_tone, shell=LookShell,
                       features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("ochre", 2),
                                 FaceHoles(), PlateTones()))
 
