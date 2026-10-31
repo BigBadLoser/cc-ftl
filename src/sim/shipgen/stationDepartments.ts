@@ -115,7 +115,22 @@ export function quadrantRooms(rooms: readonly RoomSpec[], plan: RingPlan, length
   return groups.map((g, i) => {
     // Quadrants 0 and 2 start at their dock face, 1 and 3 end at it.
     const dockFirst = (quadOf[i] as number) % 2 === 0;
-    const sorted = byPull(g).map((r) => (pullOf(r) > 0 ? { ...r, doorLean: (dockFirst ? -1 : 1) as -1 | 1 } : r));
+    const busy = byPull(g.filter((r) => pullOf(r) > 0)).map((r) => ({ ...r, doorLean: (dockFirst ? -1 : 1) as -1 | 1 }));
+    const sorted = [...busy, ...interleave(g.filter((r) => pullOf(r) <= 0))];
     return dockFirst ? sorted : sorted.reverse();
   });
+}
+
+/** Quiet rooms with the messes and other rooms spaced evenly among the quarters, so no cabin is far from one. */
+function interleave(quiet: readonly RoomSpec[]): RoomSpec[] {
+  const q = quiet.filter((r) => r.role === 'quarters'), o = quiet.filter((r) => r.role !== 'quarters');
+  if (o.length === 0 || q.length === 0) return [...o, ...q];
+  const out: RoomSpec[] = [];
+  const step = q.length / (o.length + 1);
+  let k = 0;
+  q.forEach((r, i) => {
+    out.push(r);
+    while (k < o.length && i + 1 >= step * (k + 1)) out.push(o[k++] as RoomSpec);
+  });
+  return [...out, ...o.slice(k)];
 }

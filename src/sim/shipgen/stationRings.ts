@@ -353,8 +353,10 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const plan = planRing(b.rng, [...band, ...sys], westDocks);
   // The band in quadrants (cut at the dock banks and the east and west spokes), dealt by department.
   const arcs = arcsBetween([...new Set([...banks.splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
+  // The groups run on round the ring as one list, so every quadrant fills to its length (no quadrant left with two
+  // rooms stretched over it) while each department keeps its place in the order.
   const groups = quadrantRooms(band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
-  if (!bandGroups(b, R, ring, groups, depth, arcs)) return false;
+  if (!bandArcs(b, R, ring, groups.flat(), depth, arcs)) return false;
   const rim = without([[0, TAU]], banks.keep);
   // Rooms that need no hull face go inboard of the corridor, doored straight onto it (never through a band room).
   // The secure core either side of its spoke (east or west, where no dock faces).
