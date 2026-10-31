@@ -44,9 +44,11 @@ describe('boarding.launch', () => {
     run(sim, 3000, () => sim.world.get(shuttle, BoardLaunchC)?.state === 'flying');
     expect(sim.world.get(shuttle, BoardLaunchC)?.state).toBe('flying');
     sim.world.get(lock, ModuleC)!.hp = 0; // shot out before the shuttle latches on
-    const events = run(sim, 4000, () => sim.world.get(shuttle, VehicleC)!.state === 'stowed');
+    const home = (c: number) => !sim.world.has(c, AboardC) && sim.world.has(c, PositionC) && shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 1);
+    const events = run(sim, 6000, () => party.every(home));
     expect(of(events, 'command.rejected').map((e) => e.reason)).toContain('aborted');
-    expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
+    expect(party.every(home)).toBe(true); // flown back and stepped out in the bay, not left in the shuttle
+    expect(sim.world.has(shuttle, BoardLaunchC)).toBe(false);
   });
 
   it('a launch called off before take-off leaves no one walking to or sitting in the shuttle', () => {

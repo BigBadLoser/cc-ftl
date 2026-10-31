@@ -36,7 +36,8 @@ export const SabotageOrderC = defineComponent<SabotageOrder>('sabotageOrder');
 export interface BoardLaunch {
   crew: number[];
   airlock: number;
-  state: 'pilot' | 'loading' | 'flying';
+  /** `returning`: called off on the approach, flying the party home to step out in the bay. */
+  state: 'pilot' | 'loading' | 'flying' | 'returning';
   /** Tick the current state began (the walk to the bay gives up after LAUNCH_WALK_TICKS). */
   since: number;
 }

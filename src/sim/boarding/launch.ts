@@ -16,6 +16,8 @@ import { BoardLaunchC } from './components';
 
 /** Ticks the party gets to reach the bay before the launch is called off (the crew who made it stay aboard). */
 const LAUNCH_WALK_TICKS = 1500;
+/** Ticks an aborted launch gets to fly home before it lets go of the shuttle. */
+const RETURN_TICKS = 6000;
 
 /**
  * `boarding.launch`: send `crew` (the first flies, the rest are passengers) to the stowed shuttle, then to the enemy airlock.
@@ -82,13 +84,24 @@ export function launchSystem(sim: Sim): void {
         if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at); // the pilot lands too: the shuttle stays docked for the recall
         sim.world.remove(id, BoardLaunchC);
       } else if (!v.pilot || v.dest?.type !== 'dock' || v.dest.airlock !== o.airlock) {
-        // The pilot fell, or the target airlock was lost on the way: fly the party home rather than leave it hovering in space.
+        // The target airlock was lost on the way (or the pilot fell): fly the party home and step them out in the bay, rather than leave
+        // them hovering or shut in the shuttle. With no pilot or no working bay the launch just ends and the shuttle panel takes over.
         if (v.pilot && v.state !== 'docked' && bayWorking(sim, v.home)) {
           v.hover = 0;
           v.dest = { type: 'bay' };
-        }
-        call('aborted');
+          o.state = 'returning';
+          o.since = sim.tick;
+          sim.events.emit({ type: 'command.rejected', command: 'boarding.launch', reason: 'aborted' });
+        } else call('aborted');
       }
+      continue;
+    }
+    if (o.state === 'returning') {
+      if (v.state === 'stowed') {
+        const at = boardingTile(sim, id);
+        if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at);
+        sim.world.remove(id, BoardLaunchC);
+      } else if (v.dest?.type !== 'bay' || sim.tick - o.since > RETURN_TICKS) sim.world.remove(id, BoardLaunchC); // lost its way home: the panel takes over
       continue;
     }
     const stalled = sim.tick - o.since > LAUNCH_WALK_TICKS;
