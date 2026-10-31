@@ -82,12 +82,14 @@ async function loadAuto(fresh: (seed: number) => Sim, random: () => number): Pro
       return { sim: deserialize(json, content), notice: null, persist: true };
     } catch (e) {
       why = e;
-      kept = await keepBroken(json);
+      kept = await keepBroken(json, head?.campaign);
     }
   }
   // The newest autosave is gone or unloadable: the older autosaves and the pre-combat snapshot of the same campaign are the way back, newest
   // first (a save without a campaign matches only a head without one). Another campaign's saves stay listed for the player to pick.
-  const rest = saveStore.list().filter((m) => m.id !== AUTO_ID && (isAutoId(m.id) || m.id === PRECOMBAT_ID) && (!head || m.campaign === head.campaign)).sort((x, y) => y.savedAt - x.savedAt);
+  // Whose saves may stand in: the failed head's campaign, or (a reload before the new game's first autosave) the one recorded on the set-aside save.
+  const scope = head ?? saveStore.meta(BROKEN_ID);
+  const rest = saveStore.list().filter((m) => m.id !== AUTO_ID && (isAutoId(m.id) || m.id === PRECOMBAT_ID) && (!scope || m.campaign === scope.campaign)).sort((x, y) => y.savedAt - x.savedAt);
   for (const m of rest) {
     const alt = await saveStore.read(m.id);
     if (!alt) continue;
@@ -125,8 +127,9 @@ function unloadableWhy(e: unknown): string {
 /** Message prefix `migrate` throws for a save of another SAVE_VERSION (as opposed to a corrupt payload). */
 const VERSION_MISMATCH = 'Save version';
 /** Move an unloadable save out of the main slot, keeping it. False when it could not be copied (it then stays in the main slot). */
-async function keepBroken(json: string): Promise<boolean> {
-  if (!(await saveStore.write({ id: BROKEN_ID, name: 'Unloadable save', savedAt: Date.now(), turn: 0, node: '' }, json))) return false;
+async function keepBroken(json: string, campaign?: number): Promise<boolean> {
+  // The label keeps the failed campaign's id: a reload before the fresh game autosaves must not recover another campaign's saves. Once an `auto` exists again its own label rules.
+  if (!(await saveStore.write({ id: BROKEN_ID, name: 'Unloadable save', savedAt: Date.now(), turn: 0, node: '', campaign }, json))) return false;
   await clearSave();
   return true;
 }

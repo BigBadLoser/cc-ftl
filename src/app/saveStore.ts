@@ -28,6 +28,8 @@ export interface SaveStore {
   ready(): Promise<void>;
   /** Every save that exists: the autosaves (newest first), the pre-combat snapshot, then the named slots. Read from memory; call after `ready()`. */
   list(): SaveMeta[];
+  /** The label of any entry, listed or not (the set-aside `broken` save, which records the campaign of the head that failed). */
+  meta(id: string): SaveMeta | undefined;
   read(id: string): Promise<string | null>;
   /**
    * Store a save. False when the browser refuses (full, blocked, no IndexedDB): the save that was there stays (one transaction).
@@ -256,6 +258,7 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       opening ??= open().then(loadMetas).then(migrate);
       return opening;
     },
+    meta: (id) => legacy.get(id) ?? metas.get(id),
     list: () => LISTED.filter((id) => legacy.has(id) || metas.has(id)).map((id) => legacy.get(id) ?? metas.get(id) ?? label(id)),
     read(id) {
       if (legacy.has(id)) {
@@ -313,6 +316,7 @@ export function setSaveStore(s: SaveStore): void {
 export const saveStore: SaveStore = {
   ready: () => current.ready(),
   list: () => current.list(),
+  meta: (id) => current.meta(id),
   read: (id) => current.read(id),
   write: (meta, json, shift, due) => current.write(meta, json, shift, due),
   remove: (id) => current.remove(id),

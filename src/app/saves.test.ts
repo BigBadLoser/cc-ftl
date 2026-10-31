@@ -350,6 +350,19 @@ describe('falling back from an unloadable latest autosave', () => {
     expect(yes.sim.tick).toBe(8);
   });
 
+  it("a reload before the fresh game's first autosave still keeps out another campaign's recovery saves", async () => {
+    browser();
+    await saveStore.ready();
+    await writeSave(newGame(11, content), 'auto2', 'Autosave', Date.now() - 2 * 60_000); // campaign A, valid
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '', campaign: 22 }, 'garbage'); // B, corrupt
+    const first = await startGame(null);
+    expect(first.sim.seed).not.toBe(11);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto2']); // auto was set aside, nothing written yet
+    const second = await startGame(null); // the page reloaded before any autosave
+    expect(second.sim.seed).not.toBe(11); // still not A's autosave
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto2']);
+  });
+
   it('falls back to the pre-combat snapshot when it is all there is', async () => {
     browser();
     await saveStore.ready();
