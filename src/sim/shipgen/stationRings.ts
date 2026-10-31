@@ -353,11 +353,10 @@ function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => 
   const xy = (u: number, v: number): [number, number] => (d === 's' ? [v, u] : d === 'n' ? [v, -u] : d === 'e' ? [u, v] : [-u, v]);
   const out: RoomSpec[] = [];
   // A unit that did not fit on one side tries the other.
-  let carry: Unit | null = null;
+  let unit: Unit | null = next();
   for (const side of [-1, 1] as const) {
     let u = R - 3;
-    for (let unit: Unit | null = carry ?? next(); unit; unit = next()) {
-      carry = unit;
+    while (unit) {
       const { along: A, across: C } = unit;
       const u0 = u - (A + 1);
       if (u0 <= 0) break;
@@ -368,8 +367,8 @@ function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => 
       const [dx, dy] = xy(u0 + ((A + 2) >> 1), side < 0 ? -2 : 2);
       b.cv.setDoor(dx, dy);
       out.push(unit.spec);
-      carry = null;
       u = u0;
+      unit = next();
     }
   }
   return out;
@@ -448,8 +447,14 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   // The secure core either side of its spoke (east or west, where no dock faces).
   const inner = sys.filter((r) => r.role !== 'weapons');
   const axis = plan.secure === 'e' ? 0 : Math.PI;
-  const [upper, lower] = secureSides(inner.filter(isSecure));
-  const missed = [...fitAlong(b, R, ring, upper, besideSpoke(upper, R, axis, -1), -1), ...fitAlong(b, R, ring, lower, besideSpoke(lower, R, axis, 1), -1)];
+  // Gun bays join the secure core's rows (dealt to the two sides after it), a battery beside the reactors and shields;
+  // those that do not fit there stand as mirrored bastions.
+  const guns = sys.filter((r) => r.role === 'weapons');
+  const [upper0, lower0] = secureSides(inner.filter(isSecure));
+  const [upper, lower] = [[...upper0, ...guns.filter((_, i) => i % 2 === 0)], [...lower0, ...guns.filter((_, i) => i % 2 === 1)]];
+  const missedAll = [...fitAlong(b, R, ring, upper, besideSpoke(upper, R, axis, -1), -1), ...fitAlong(b, R, ring, lower, besideSpoke(lower, R, axis, 1), -1)];
+  const gunsLeft = missedAll.filter((r) => r.role === 'weapons');
+  const missed = missedAll.filter((r) => r.role !== 'weapons');
   // Warehouses beside the dock spokes the plan picked, either side, doors towards the spoke.
   const houses = inner.filter((r) => r.warehouse);
   const slots: [number, -1 | 1][] = plan.freight.flatMap((f): [number, -1 | 1][] => (f === 'n' ? [[-Math.PI / 2, 1], [-Math.PI / 2, -1]] : [[Math.PI / 2, -1], [Math.PI / 2, 1]]));
@@ -461,9 +466,8 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   const ALL: [number, -1 | 1][] = [[-Math.PI / 2, 1], [-Math.PI / 2, -1], [Math.PI / 2, -1], [Math.PI / 2, 1]];
   const retry = (rs: RoomSpec[]): RoomSpec[] => ALL.reduce((left, slot) => beside(left, slot), rs);
   const housed = retry(retry(first).flatMap(halves));
-  // Gun bays as bastions at mirrored places, inboard (roof-mounted: no hull face needed), so the rim keeps the docks.
-  const guns = sys.filter((r) => r.role === 'weapons');
-  const unguarded = bastions(guns).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R)], -1));
+  // Gun bays left over stand as bastions at mirrored places, inboard (roof-mounted: no hull face needed).
+  const unguarded = bastions(gunsLeft).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R)], -1));
   // Works rooms in the quadrants habitation does not take; then whatever missed its place anywhere inboard; the rim
   // takes what is left.
   const busy = QUARTERS.filter((_, q) => !plan.quiet.includes(quadrantOf(((q + 1) * TAU) / 4 - TAU / 8)));

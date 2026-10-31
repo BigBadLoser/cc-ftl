@@ -52,9 +52,10 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
     const d = space >= 0.95 ? designSize(design, r.mods, defs) : null;
     return d ? { ...r, w: d[0], h: d[1] } : r;
   };
-  const weapons: RoomSpec[] = guns.filter(big).map((g) => sized(weaponSpec(defs, [g]), 'gunGallery'));
+  // Gun bays keep the plain mount size (the gallery design's size read as oversized on stations: user).
+  const weapons: RoomSpec[] = guns.filter(big).map((g) => weaponSpec(defs, [g]));
   const light = guns.filter((g) => !big(g));
-  for (let i = 0; i < light.length; i += 2) weapons.push(sized(weaponSpec(defs, light.slice(i, i + 2)), 'gunGallery'));
+  for (let i = 0; i < light.length; i += 2) weapons.push(weaponSpec(defs, light.slice(i, i + 2)));
   const shields: RoomSpec[] = Array.from({ length: t.shields }, () => {
     const g = pickWeighted(rng, def.shields);
     // 4x4 whatever the tier: room for a Mk III generator (3x3) and the walkway to it, so stations can be upgraded.

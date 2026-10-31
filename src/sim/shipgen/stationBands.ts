@@ -301,7 +301,8 @@ function spared(rooms: RoomSpec[], arc: [number, number], R: number, depth: numb
   if (planned >= floor * 0.45) return rooms;
   const n = Math.floor((floor * 0.6 - planned) / LOUNGE);
   if (n < 1) return rooms;
-  const lounge: RoomSpec = { role: 'support', mods: [], w: Math.max(3, Math.round(LOUNGE / depth)), h: depth };
+  // Stores (racks on the walls), not lounges: messes already come with every cabin run.
+  const lounge: RoomSpec = { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: Math.max(3, Math.round(LOUNGE / depth)), h: depth };
   const out: RoomSpec[] = [];
   // Every room keeps its place; the lounges go between them, the first after the first room (a dock end stays the room's).
   // Never between two pinned rooms (the office and the customs post stand together); their share goes further on.

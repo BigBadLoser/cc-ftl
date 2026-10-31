@@ -87,7 +87,8 @@ export const stations = {
     stock: [{ item: 'item.metal', min: 2, max: 8 }, { item: 'item.electronics', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }, { item: 'item.ration', min: 0, max: 4 }],
     tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8), shapes: SHAPES.trading }),
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
-    atrium: { role: 'plaza', chance: 0.8, band: ['cargo', 'support', 'cargo'] },
+    // The court's own band: shops facing it (storefronts) and a cafe-mess, not more holds (the warehouses keep the cargo).
+    atrium: { role: 'plaza', chance: 0.8, band: ['shop', 'shop', 'support'] },
   },
   // Research: consoles and fabricator benches round a quiet ring, stores of parts and electronics; lightly armed, calm space.
   'station.research': {

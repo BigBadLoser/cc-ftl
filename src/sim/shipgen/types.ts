@@ -19,7 +19,9 @@ export type RoomRole =
   /** Station shops (decorative): the market street and the market ring. */
   | 'shop'
   /** Station medbays: sickbay cots at a habitation run's busy end. */
-  | 'medbay';
+  | 'medbay'
+  /** Station plant rooms: life support, batteries, radiators (the engineering band by the secure core). */
+  | 'plant';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =

@@ -41,15 +41,25 @@ export function deptOf(r: RoomSpec): Dept {
   switch (r.role) {
     case 'bridge': case 'armoury': case 'dock': return 'harbour';
     case 'quarters': case 'support': case 'medbay': return 'habitation';
-    case 'reactor': case 'shields': case 'core': return 'secure';
+    case 'reactor': case 'shields': case 'core': case 'plant': return 'secure';
     case 'weapons': return 'defence';
     case 'industry': case 'farm': case 'hangar': return 'works';
     default: return 'commons';
   }
 }
 
-/** Rooms tagged with their department (role swaps keep to it: roleSwap.ts), with the station's medbays added. */
-export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => withMedbays(rooms).map((r) => ({ ...r, dept: deptOf(r) }));
+/** Rooms tagged with their department (role swaps keep to it: roleSwap.ts), with medbays and plant rooms added. */
+export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => withPlant(withMedbays(rooms)).map((r) => ({ ...r, dept: deptOf(r) }));
+
+/**
+ * Plant rooms: the engineering band on the secure core's side of the outer ring (one for every reactor room, two at
+ * least), so the core's district has working rooms round it rather than cabins.
+ */
+function withPlant(rooms: readonly RoomSpec[]): RoomSpec[] {
+  const reactors = rooms.filter((r) => r.role === 'reactor').length;
+  if (reactors === 0) return [...rooms];
+  return [...rooms, ...Array.from({ length: Math.max(2, reactors) }, (): RoomSpec => ({ role: 'plant', mods: ['module.lifeSupport'], w: 5, h: 4, pinned: true }))];
+}
 
 /**
  * Medbays: one for every five crew quarters rooms (at least one where there are quarters), two to four cots each; pinned,
@@ -120,9 +130,10 @@ export function quadrantRooms(rooms: readonly RoomSpec[], plan: RingPlan, length
   const quadOf = starts.map(quadrantOf);
   const rank = (r: RoomSpec): number[] => {
     const quiet = deptOf(r) === 'habitation';
-    // Harbour rooms take the main (north) bank's quadrants whatever else is there.
+    // Harbour rooms take the main (north) bank's quadrants whatever else is there; plant rooms the secure core's side.
     const score = (i: number): number => (quiet === plan.quiet.includes(quadOf[i] as number) ? 2 : 0)
-      + (deptOf(r) === 'harbour' && SIDE.n.includes(quadOf[i] as number) ? 3 : 0);
+      + (deptOf(r) === 'harbour' && SIDE.n.includes(quadOf[i] as number) ? 3 : 0)
+      + (r.role === 'plant' && SIDE[plan.secure].includes(quadOf[i] as number) ? 3 : 0);
     return lengths.map((_, i) => i).sort((a, b) => score(b) - score(a) || a - b);
   };
   let office = -1;

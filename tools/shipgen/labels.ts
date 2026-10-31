@@ -16,7 +16,7 @@ const defs = content.modules as Record<string, ModuleDef>;
 const NAMES: Partial<Record<RoomRole, string>> = {
   quarters: 'cabin', support: 'mess', cargo: 'cargo', dock: 'dock', bridge: 'office', armoury: 'armoury', plaza: 'court',
   garden: 'garden', drill: 'drill hall', shop: 'shop', medbay: 'medbay', reactor: 'reactor', shields: 'shields', core: 'ai core',
-  weapons: 'gun bay', industry: 'industry', farm: 'farm', hangar: 'hangar', engine: 'engine',
+  weapons: 'gun bay', plant: 'plant', industry: 'industry', farm: 'farm', hangar: 'hangar', engine: 'engine',
 };
 
 /** Two-letter codes for furniture by module name; anything else takes its name's first two letters. */
