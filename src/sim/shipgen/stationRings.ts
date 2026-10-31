@@ -386,7 +386,8 @@ const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.
  * band cut round them, then the system rooms on the rim beyond the band, clear of the banks.
  */
 function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number, market = false): boolean {
-  const banks = dockBanks(b, R, ring, docks, R + depth + 2);
+  // Docks reach at least 6 past the corridor whatever the band (an airlock and its unloaders need the length).
+  const banks = dockBanks(b, R, ring, docks, R + Math.max(depth, 6) + 2);
   if (!banks) return false;
   // Departments (stationDepartments.ts): a small search places the secure core, the warehouses and habitation.
   const westDocks = banks.splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);

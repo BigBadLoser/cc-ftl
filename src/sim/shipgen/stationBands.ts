@@ -28,7 +28,7 @@ const TAU = Math.PI * 2;
 export const bandDepth = (rooms: RoomSpec[]): number => {
   // A band of mostly cabins is as deep as a cabin: one-bed cabins cut across it, no deeper than they need.
   const area = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + r.w * r.h, 0);
-  if (area(rooms.filter((r) => r.cabins)) >= 0.6 * area(rooms)) return 5;
+  if (area(rooms.filter((r) => r.cabins)) >= 0.6 * area(rooms)) return 6;
   return Math.max(4, Math.min(7, Math.round(Math.sqrt(area(rooms) / Math.max(1, rooms.length)))));
 };
 
