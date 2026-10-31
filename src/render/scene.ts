@@ -418,6 +418,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe.begin('render/fx');
       fx.update(dt, alpha);
       sectorParticles.update(dt);
+      // Before the census settles: the body's texture lookup marks its sheet in use, so it is never evicted while on screen.
+      backdrop.update(cam.w, cam.h, cam.originX, cam.originY, ratio());
       art.settle();
       probe.end('render/fx');
       probe.begin('render/inset');
