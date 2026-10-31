@@ -1,4 +1,6 @@
+import type { Rng } from '../rng';
 import type { RoomSpec } from './plan';
+import { byPull, pullOf } from './stationDistricts';
 
 /**
  * Departments on round stations ([docs/STATIONFLOWS.md](../../../docs/STATIONFLOWS.md), step 1): the station plan's rooms
@@ -27,4 +29,93 @@ export function warehoused(rooms: readonly RoomSpec[]): RoomSpec[] {
     out.push({ role: 'cargo', mods: mine, w, h, stock: true, warehouse: true, ...(items.length > 0 ? { items } : {}) });
   }
   return out;
+}
+
+const area = (r: RoomSpec): number => r.w * r.h + 4;
+
+/** A room's department on a round station. */
+export type Dept = 'harbour' | 'habitation' | 'commons' | 'freight' | 'secure' | 'defence' | 'works';
+
+export function deptOf(r: RoomSpec): Dept {
+  if (r.warehouse || r.role === 'cargo') return 'freight';
+  switch (r.role) {
+    case 'bridge': case 'armoury': case 'dock': return 'harbour';
+    case 'quarters': case 'support': return 'habitation';
+    case 'reactor': case 'shields': case 'core': return 'secure';
+    case 'weapons': return 'defence';
+    case 'industry': case 'farm': case 'hangar': return 'works';
+    default: return 'commons';
+  }
+}
+
+/** Rooms tagged with their department (role swaps keep to it: roleSwap.ts). */
+export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => rooms.map((r) => ({ ...r, dept: deptOf(r) }));
+
+/**
+ * Where departments go on a round station with dock banks north and south, as quadrants (0 north-east, 1 south-east,
+ * 2 south-west, 3 north-west; each touches one dock face and one of the east and west spokes):
+ *   secure   the side of the east or west spoke its rooms stand either side of (west only with no west dock bank);
+ *   freight  the dock spokes its warehouses stand beside;
+ *   quiet    the quadrants habitation takes in the outer band.
+ */
+export interface RingPlan { secure: 'e' | 'w'; freight: ('n' | 's')[]; quiet: number[] }
+
+/** Quadrants beside a spoke: north 0 and 3, south 1 and 2, east 0 and 1, west 2 and 3. */
+const SIDE: Record<'n' | 's' | 'e' | 'w', number[]> = { n: [0, 3], s: [1, 2], e: [0, 1], w: [2, 3] };
+
+/**
+ * A small search over the department placements (docs/STATIONFLOWS.md, step 2). Hard: the secure core never beside a
+ * dock bank's spoke, warehouses beside a dock spoke. Preferred: the secure core on the stern (east), freight at the main
+ * (north) dock, habitation away from the secure core and the warehouses. A little noise, so stations of a kind differ.
+ */
+export function planRing(rng: Rng, rooms: readonly RoomSpec[], westDocks: boolean): RingPlan {
+  const houses = rooms.filter((r) => r.warehouse).length;
+  const secures: ('e' | 'w')[] = westDocks ? ['e'] : ['e', 'w'];
+  const freights: ('n' | 's')[][] = houses === 0 ? [[]] : houses === 1 ? [['n'], ['s']] : [['n', 's']];
+  const pairs = [[0, 1], [1, 2], [2, 3], [3, 0]];
+  let best: RingPlan | null = null, top = -Infinity;
+  for (const secure of secures) for (const freight of freights) for (const quiet of pairs) {
+    const near = (q: number, sides: readonly ('n' | 's' | 'e' | 'w')[]): number => sides.filter((s) => SIDE[s].includes(q)).length;
+    let v = (secure === 'e' ? 1 : 0) + (freight.includes('n') ? 0.5 : 0);
+    for (const q of quiet) v -= near(q, [secure]) + 0.5 * near(q, freight);
+    v += rng.next() * 0.8;
+    if (v > top) { top = v; best = { secure, freight, quiet }; }
+  }
+  return best as RingPlan;
+}
+
+/** The quadrant of an angle (0 north-east ... 3 north-west; north is -pi/2, angles grow clockwise on screen). */
+export const quadrantOf = (a: number): number => Math.floor(((((a + Math.PI / 2) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) / (Math.PI / 2));
+
+/**
+ * Band rooms dealt to the four quadrant arcs by department: habitation to the quiet quadrants, the rest (harbour first)
+ * to the others, each quadrant filled to about its share of the band's floor before the next best takes over. Inside a
+ * quadrant, rooms that want the docks stand at its dock end (with doors towards it), the quiet ones at its spoke end.
+ */
+export function quadrantRooms(rooms: readonly RoomSpec[], plan: RingPlan, lengths: readonly number[], starts: readonly number[]): RoomSpec[][] {
+  const total = lengths.reduce((t, l) => t + l, 0) || 1;
+  const sum = rooms.reduce((t, r) => t + area(r), 0);
+  const cap = lengths.map((l) => (l / total) * sum * 1.1);
+  const load = lengths.map(() => 0);
+  const groups: RoomSpec[][] = lengths.map(() => []);
+  const quadOf = starts.map(quadrantOf);
+  const rank = (r: RoomSpec): number[] => {
+    const quiet = deptOf(r) === 'habitation';
+    // Harbour rooms want the main (north) bank's quadrants, then any.
+    const score = (i: number): number => (quiet === plan.quiet.includes(quadOf[i] as number) ? 2 : 0)
+      + (deptOf(r) === 'harbour' && SIDE.n.includes(quadOf[i] as number) ? 1 : 0);
+    return lengths.map((_, i) => i).sort((a, b) => score(b) - score(a) || a - b);
+  };
+  for (const r of byPull(rooms)) {
+    const order = rank(r);
+    const i = order.find((k) => (load[k] as number) + area(r) <= (cap[k] as number)) ?? (order[0] as number);
+    (groups[i] as RoomSpec[]).push(r);
+    load[i] = (load[i] as number) + area(r);
+  }
+  return groups.map((g, i) => {
+    // Quadrants 0 and 2 start at their dock face, 1 and 3 end at it.
+    const dockFirst = (quadOf[i] as number) % 2 === 0;
+    const sorted = byPull(g).map((r) => (pullOf(r) > 0 ? { ...r, doorLean: (dockFirst ? -1 : 1) as -1 | 1 } : r));
+    return dockFirst ? sorted : sorted.reverse();
+  });
 }

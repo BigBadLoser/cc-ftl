@@ -51,6 +51,8 @@ export interface RoomSpec {
   pinned?: boolean;
   /** A warehouse (merged crate rooms): stands between the rings as a rectangle, not as a band segment. */
   warehouse?: boolean;
+  /** Its department on a round station (stationDepartments.ts): role swaps keep to it. */
+  dept?: string;
   /**
    * Quarters to be one-bed cabins (off the navy): a ring band cuts them as one segment a bed (stationBands.ts); other
    * layouts divide the room off a hallway at fit-out (rooms/cabins.ts).

@@ -3,6 +3,7 @@ import type { Builder, Part, Rect } from './builder';
 import { letterOf } from './canvas';
 import { bandArcs, bandDepth, bandGroups, bandRadius, bandRooms } from './stationBands';
 import { concentricBands, organPipes } from './stationDistricts';
+import { planRing, quadrantOf, quadrantRooms } from './stationDepartments';
 import { arcsBetween, dockBanks, without } from './stationDocks';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
@@ -279,11 +280,6 @@ const COURT = 14;
 
 /** The secure core's arcs: the stern (east) face, either side of the east spoke. */
 const isSecure = (r: RoomSpec): boolean => r.role === 'reactor' || r.role === 'shields' || r.role === 'core';
-function stern(rooms: RoomSpec[], R: number, side: -1 | 1): [number, number][] {
-  // Just long enough for the rooms side by side, so they pack instead of spreading along the arc.
-  const span = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0) / Math.max(1, R);
-  return [side < 0 ? [-0.14 - span, -0.14] : [0.14, 0.14 + span]];
-}
 /** Depth the secure core needs inboard of a ring: its deepest room (either way round) and its walls. */
 const secureDepth = (rooms: RoomSpec[]): number => Math.max(0, ...rooms.filter((r) => isSecure(r) || !!r.warehouse || r.role === 'weapons').map((r) => Math.min(r.w, r.h) + 3));
 
@@ -352,35 +348,37 @@ const rimRadius = (sys: RoomSpec[], docks: RoomSpec[]): number =>
 function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number): boolean {
   const banks = dockBanks(b, R, ring, docks, R + depth + 2);
   if (!banks) return false;
-  // Districts: each arc runs bank to bank, so customs and cargo stand at its ends and quarters in its middle.
-  const arcs = arcsBetween(banks.splits);
-  // The main bank is the north one (it takes the odd dock): the arc that starts there gets the strongest room.
-  const north = Math.max(0, arcs.findIndex(([a]) => Math.abs(Math.cos(a)) < 0.01 && Math.sin(a) < 0));
-  if (!bandGroups(b, R, ring, organPipes(band, arcs.map(([a, z]) => z - a), north), depth, arcs)) return false;
+  // Departments (stationDepartments.ts): a small search places the secure core, the warehouses and habitation.
+  const westDocks = banks.splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);
+  const plan = planRing(b.rng, [...band, ...sys], westDocks);
+  // The band in quadrants (cut at the dock banks and the east and west spokes), dealt by department.
+  const arcs = arcsBetween([...new Set([...banks.splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
+  const groups = quadrantRooms(band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
+  if (!bandGroups(b, R, ring, groups, depth, arcs)) return false;
   const rim = without([[0, TAU]], banks.keep);
-  // Rooms that need no hull face (reactors, shields, the core) go inboard of the corridor first, doored straight onto
-  // it: on the rim they could only door onto a band room, so crew would walk through quarters or a mess to reach them.
-  // The secure core first: reactors, shields and the AI core side by side on the stern (east, where no dock faces),
-  // either side of the east spoke; what does not fit there, and the works rooms, go round the quarters as before.
+  // Rooms that need no hull face go inboard of the corridor, doored straight onto it (never through a band room).
+  // The secure core either side of its spoke (east or west, where no dock faces).
   const inner = sys.filter((r) => r.role !== 'weapons');
+  const axis = plan.secure === 'e' ? 0 : Math.PI;
   const [upper, lower] = secureSides(inner.filter(isSecure));
-  const missed = [...fitAlong(b, R, ring, upper, stern(upper, R, -1), -1), ...fitAlong(b, R, ring, lower, stern(lower, R, 1), -1)];
-  // Warehouses beside the dock spokes (north and south, either side), inboard: freight next to the docks it serves.
+  const missed = [...fitAlong(b, R, ring, upper, besideSpoke(upper, R, axis, -1), -1), ...fitAlong(b, R, ring, lower, besideSpoke(lower, R, axis, 1), -1)];
+  // Warehouses beside the dock spokes the plan picked, either side, doors towards the spoke.
   const houses = inner.filter((r) => r.warehouse);
-  const slots: [number, -1 | 1][] = [[-Math.PI / 2, 1], [Math.PI / 2, -1], [-Math.PI / 2, -1], [Math.PI / 2, 1]];
-  const housed = slots.flatMap(([axis, side], i) => {
-    // Doors towards the spoke: the warehouse opens on the dock's side.
+  const slots: [number, -1 | 1][] = plan.freight.flatMap((f): [number, -1 | 1][] => (f === 'n' ? [[-Math.PI / 2, 1], [-Math.PI / 2, -1]] : [[Math.PI / 2, -1], [Math.PI / 2, 1]]));
+  const housed = slots.length === 0 ? houses : slots.flatMap(([at, side], i) => {
     const mine = houses.filter((_, j) => j % slots.length === i).map((r): RoomSpec => ({ ...r, doorLean: side > 0 ? -1 : 1 }));
-    return mine.length > 0 ? fitAlong(b, R, ring, mine, besideSpoke(mine, R, axis, side), -1) : [];
+    return mine.length > 0 ? fitAlong(b, R, ring, mine, besideSpoke(mine, R, at, side), -1) : [];
   });
-  // Gun bays as bastions at mirrored places, inboard (they are roof-mounted: no hull face needed), so the rim keeps only
-  // the docks.
+  // Gun bays as bastions at mirrored places, inboard (roof-mounted: no hull face needed), so the rim keeps the docks.
   const guns = sys.filter((r) => r.role === 'weapons');
   const unguarded = bastions(guns).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R)], -1));
-  // Then the works rooms and whatever missed its place, round the quarters; the rim takes what is left.
-  const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...inner.filter((r) => !isSecure(r) && !r.warehouse)], QUARTERS, -1);
+  // Works rooms in the quadrants habitation does not take; then whatever missed its place anywhere inboard; the rim
+  // takes what is left.
+  const busy = QUARTERS.filter((_, q) => !plan.quiet.includes(quadrantOf(((q + 1) * TAU) / 4 - TAU / 8)));
+  const works = fitAlong(b, R, ring, inner.filter((r) => !isSecure(r) && !r.warehouse), busy, -1);
+  const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...works], QUARTERS, -1);
   const left = fitAlong(b, R, ring, inboard, rim, 1, depth + 1, banks.labels);
-  // Crowded rims: guns get a second pass on their own (fresh spots between the first ones).
+  // Crowded rims: a second pass on their own (fresh spots between the first ones).
   return fitAlong(b, R, ring, left, rim, 1, depth + 1, banks.labels).length === 0;
 }
 

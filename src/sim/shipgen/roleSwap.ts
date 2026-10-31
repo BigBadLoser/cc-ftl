@@ -51,7 +51,7 @@ export function swapRoles(rng: Rng, rows: readonly string[], roomOf: Int16Array,
   if (pool.length >= 2) {
     for (let t = 0; t < 30 * pool.length; t++) {
       const a = pool[rng.int(0, pool.length - 1)] as number, b = pool[rng.int(0, pool.length - 1)] as number;
-      if (a === b || classOf(a) !== classOf(b) || roles[a] === roles[b] || !fits(a, b)) continue;
+      if (a === b || classOf(a) !== classOf(b) || roles[a] === roles[b] || specs[a]?.dept !== specs[b]?.dept || !fits(a, b)) continue;
       const swap = (): void => {
         [roles[a], roles[b]] = [roles[b] as RoomRole, roles[a] as RoomRole];
         [specs[a], specs[b]] = [specs[b], specs[a]];

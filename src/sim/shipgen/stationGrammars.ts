@@ -6,7 +6,7 @@ import { latticeStation, ringStation } from './civilStations';
 import type { Builder } from './builder';
 import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
-import { warehoused } from './stationDepartments';
+import { tagged, warehoused } from './stationDepartments';
 import { dockSpec, MK1_REACTOR, type Reactor, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
@@ -207,7 +207,7 @@ const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sid
  * The rooms of a round civil station with its bridge among them: the bridge is the station's administration, beside
  * the main dock (stationDistricts.ts), and a rotunda takes the centre.
  */
-const office = (c: Ctx): RoomSpec[] => warehoused([{ ...c.plan.command, pinned: true }, ...fullRooms(c)]);
+const office = (c: Ctx): RoomSpec[] => tagged(warehoused([{ ...c.plan.command, pinned: true }, ...fullRooms(c)]));
 
 /**
  * Concentric: civil stations put a rotunda at the centre and the bridge by the docks; military ones keep the bridge at
@@ -217,7 +217,7 @@ function concentric(c: Ctx): boolean {
   const heart = c.fam.command === 'heart';
   c.parts.push(heart ? 'command heart' : 'rotunda');
   const b = heart
-    ? concentricStation(c.rng, c.plan.command, warehoused(fullRooms(c)), ['n'])
+    ? concentricStation(c.rng, c.plan.command, tagged(warehoused(fullRooms(c))), ['n'])
     : concentricStation(c.rng, null, office(c), concourse(cardinal(c, 2)));
   return placeRoot(c, civil(courtOf(c, 1)(b), 'command', 'concentric station'), 'concentric');
 }
