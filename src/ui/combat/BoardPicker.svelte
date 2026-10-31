@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import Icon from '../Icon.svelte';
   import { ActionButton, Chips, Dialog, KeyBadge } from '../kit';
   import { holdModal } from '../keys';
@@ -20,12 +21,28 @@
   let shuttle = $state(0);
   let airlock = $state(0);
   let picked = $state<number[]>([]);
-  // Fresh each time it opens: the first free shuttle and airlock, and the first able crew (up to three) in roster order.
+  // Defaults once, when it opens: the first free shuttle and airlock, and the first able crew (up to three) in roster order.
+  let wasOpen = false;
+  $effect(() => {
+    const now = open;
+    if (now && !wasOpen) {
+      untrack(() => {
+        shuttle = plan.shuttles.find((s) => !s.reason)?.id ?? 0;
+        airlock = plan.airlocks[0]?.id ?? 0;
+        picked = plan.crew.filter((c) => !c.reason).slice(0, 3).map((c) => c.id);
+      });
+    }
+    wasOpen = now;
+  });
+  // While open, the live plan changes (damage, crew hurt or busy): keep the player's choices and only drop the ones no longer valid.
   $effect(() => {
     if (!open) return;
-    shuttle = plan.shuttles.find((s) => !s.reason)?.id ?? 0;
-    airlock = plan.airlocks[0]?.id ?? 0;
-    picked = plan.crew.filter((c) => !c.reason).slice(0, 3).map((c) => c.id);
+    const ok = (id: number) => plan.crew.some((c) => c.id === id && !c.reason);
+    untrack(() => {
+      if (!plan.shuttles.some((s) => s.id === shuttle && !s.reason)) shuttle = plan.shuttles.find((s) => !s.reason)?.id ?? 0;
+      if (!plan.airlocks.some((a) => a.id === airlock)) airlock = plan.airlocks[0]?.id ?? 0;
+      if (!picked.every(ok)) picked = picked.filter(ok);
+    });
   });
   const chosen = $derived(plan.shuttles.find((s) => s.id === shuttle));
   const seats = $derived(chosen?.seats ?? 0);
