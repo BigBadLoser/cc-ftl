@@ -160,7 +160,14 @@ def bastion_hole():
     return (BAST_PANEL[0], BAST_PANEL[1], -0.08)
 
 
-SLOT_TONES = (2, 1)                 # the open slot's floor and back wall: their ramp levels (M over D)
+SLOT_TONE = {"wall": "fBW3", "blue": "fBH3"}    # the open slot's floor and back wall (step 3), a 2 px shadow along
+SLOT_FOLD = {"wall": "fBW5", "blue": "fBH5"}    # the fold between them (step 5), its sides (step 5: the ramp's own
+SLOT_SIDE = {"wall": "fBW5", "blue": "fBH5"}    # cut faces there too, bastion.Bastion's hole_tone)
+
+
+def slot_tone(part, fam, ax, n):
+    """The open slot's walls as the solid ramp cuts them (Style.hole_tone): its back and its sides."""
+    return (SLOT_TONE if part == "back" else SLOT_SIDE).get(fam) or T.tone(fam, 1, n, ax)
 
 
 def _slot(k, P, run_, zs, hole, fam):
@@ -170,12 +177,15 @@ def _slot(k, P, run_, zs, hole, fam):
     zat = lambda d: ft + (zs - ft) * (1 - d / run_)    # noqa: E731   the slope's height d out (over its foot)
     zb = zat(d1)                                       # (the floor level, meeting the slope where the slot ends)
     up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
-    R = T.RAMPS[fam][0]                                 # (the floor a step over the back: SLOT_TONES)
-    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zb, d1), P(o0, zb, d1)], fam, 2, up, fixed=R[SLOT_TONES[0]])  # floor,
-    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], fam, 1, out_,
-           fixed=R[SLOT_TONES[1]])                                                                     # back
+    R = T.RAMPS[fam][0]                                 # (SLOT_TONE)
+    c = SLOT_TONE.get(fam, R[2])
+    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zb, d1), P(o0, zb, d1)], fam, 2, up, fixed=c)          # floor,
+    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], fam, 1, out_, fixed=c)  # back
+    zf = zb + 2 * PZ                                                        # (2 px of shadow along their fold)
+    k.poly([P(o0, zb, d0 + PAINT), P(o1, zb, d0 + PAINT), P(o1, zf, d0 + PAINT), P(o0, zf, d0 + PAINT)],
+           fam, 1, out_, fixed=SLOT_FOLD.get(fam, R[0]))
     for u, sg in ((o0, 1), (o1, -1)):                                                                # and sides
-        k.poly([P(u, zb, d0), P(u, zat(d0), d0), P(u, zb, d1)], fam, 1, along * sg)
+        k.poly([P(u, zb, d0), P(u, zat(d0), d0), P(u, zb, d1)], fam, 1, along * sg, fixed=SLOT_SIDE.get(fam))
 
 
 def bastion_open(plate, u0, u1, run_, k=None, P=None, zs=0.0, hole=None, fam="wall", **_):

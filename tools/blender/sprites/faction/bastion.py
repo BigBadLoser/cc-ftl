@@ -4,7 +4,7 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from .base import Faction, _style
-from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood
+from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood, slot_tone
 from .parts import PAINT, body, corner_piece, prism
 from .shell import Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
 
@@ -212,6 +212,6 @@ class Bastion(Faction):
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
                       tops=BAST_TOPS, ramps=BAST_RAMPS, outline_lvl=1, outline_d=BAST_PANEL, ramp_solid=True,
-                      foot=BAST_FOOT, toe_lvl=4, hole_tone=lambda part, fam, ax, n: T.tone(fam, 1, n, ax),
+                      foot=BAST_FOOT, toe_lvl=4, hole_tone=slot_tone,
                       shell=LookShell,
                       features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), FootTone("wall", 2), RecessTones()))
