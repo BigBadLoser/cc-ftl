@@ -371,12 +371,15 @@ function halves(r: RoomSpec): RoomSpec[] {
   return [half(0), half(1)];
 }
 
+/** One room inboard of the ring at the first angle (in steps round the circle) where it lands clear; false if none. */
+function sweep(b: Builder, R: number, ring: number, r: RoomSpec): boolean {
+  const step = Math.max(0.05, 2 / Math.max(1, R));
+  for (let a = 0; a < TAU; a += step) if (fitAlong(b, R, ring, [r], [[a, a + step]], -1).length === 0) return true;
+  return false;
+}
+
 /** The four quarter arcs between cardinal spokes. */
 const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.3, (q + 1) * (TAU / 4) - 0.3]);
-
-/** Radius whose circumference carries the rim rooms side by side (rectangles beyond the band), clear of the docks. */
-const rimRadius = (sys: RoomSpec[], docks: RoomSpec[]): number =>
-  Math.ceil((sys.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) * 1.2 + (docks.length * 4 + 24)) / TAU);
 
 /**
  * The outboard band of a full round ring with its docks reserved first (dock banks on the north and south faces), the
@@ -425,7 +428,9 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const busy = QUARTERS.filter((_, q) => !plan.quiet.includes(quadrantOf(((q + 1) * TAU) / 4 - TAU / 8)));
   const works = fitAlong(b, R, ring, inner.filter((r) => !isSecure(r) && !r.warehouse), busy, -1);
   const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...works], QUARTERS, -1);
-  const left = fitAlong(b, R, ring, inboard, rim, 1, depth + 1, banks.labels);
+  // Before the rim, a sweep: each room left over tries every angle inboard in turn, wherever there is space.
+  const swept = inboard.filter((r) => !sweep(b, R, ring, r));
+  const left = fitAlong(b, R, ring, swept, rim, 1, depth + 1, banks.labels);
   // Crowded rims: a second pass on their own (fresh spots between the first ones).
   return fitAlong(b, R, ring, left, rim, 1, depth + 1, banks.labels).length === 0;
 }
@@ -452,11 +457,17 @@ export function concentricStation(rng: Rng, hub: RoomSpec | null, roomsIn: RoomS
   const dO = bandDepth(iOut);
   const dB = bandDepth(oBand);
   const R1a = Math.max(hubR + (iIn.length > 0 ? dI + 4 : 4), bandRadius(iIn, dI, 1, -1), bandRadius(iOut, dO));
-  // The gap between the inner band and the outer ring holds the secure core (stern) and the court.
-  const R2 = Math.max(R1a + dO + 2 + Math.max(6, secureDepth(sys)), bandRadius([...oBand, ...sys, ...docks], dB), rimRadius(sys, docks) - dB - 2);
-  // A rim-driven outer ring (many guns) would leave a vast court: the inner ring grows to keep the court at most
-  // COURT tiles across, its segments longer.
-  const R1 = Math.max(R1a, R2 - dO - 2 - COURT);
+  // The gap between the inner band and the outer ring holds the rooms that stand between the rings (secure core,
+  // warehouses, gun bays, works) and a market's street: its area is sized for their floor and walls with room to pack
+  // them, the court taking what is left. The outer band holds only the band rooms and the docks.
+  const inner = sys.reduce((t, r) => t + (r.w + 2) * (r.h + 2), 0) * 1.7 + (market ? 2 * (SHOP.depth + 2) * 14 : 0);
+  const R1o = R1a + dO + 1;
+  const gapR = Math.ceil(Math.sqrt(R1o * R1o + inner / Math.PI)) + 2;
+  const R2 = Math.max(R1a + dO + 2 + Math.max(6, secureDepth(sys)), bandRadius([...oBand, ...docks], dB), gapR);
+  // An outer ring sized by something else would leave a vast court: the inner ring grows to keep the court at most
+  // COURT tiles across beyond what the gap's rooms need. A market's inner ring keeps its own size (its shops would
+  // stretch), the gap its rooms and court.
+  const R1 = market ? R1a : Math.max(R1a, R2 - dO - 2 - COURT - secureDepth(sys));
   const r1 = corridor(b, R1, 'inner');
   const r2 = corridor(b, R2, 'outer');
   if (!r1 || !r2) return null;
