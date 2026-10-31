@@ -164,36 +164,85 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
 
   function put(meta: SaveMeta, json: string, shift: readonly string[] = [], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
     if (!db) return Promise.resolve(false);
+    if (shift.length > 1) return putChain(meta, json, shift, due);
     try {
       const tx = db.transaction([META, DATA], 'readwrite');
-      const m = tx.objectStore(META);
-      const d = tx.objectStore(DATA);
-      const cur = metas.get(meta.id);
-      const moving = shift.length > 0 && (!due || due(cur));
-      const chain = moving ? shift : [meta.id];
-      if (shift.length) meta = { ...meta, since: moving || !cur ? meta.savedAt : (cur.since ?? cur.savedAt) };
-      const moved: Array<[string, SaveMeta]> = [];
-      // Queue the reads of the old entries before this write, so they see the old values; the copies go in once they are read.
-      for (let i = chain.length - 1; i > 0; i--) {
-        const from = chain[i - 1]!;
-        const to = chain[i]!;
-        const old = metas.get(from);
-        if (!old) continue;
-        moved.push([to, { ...old, id: to }]);
-        const rd = d.get(from);
-        rd.onsuccess = () => {
-          if (rd.result === undefined) return;
-          d.put(rd.result, to);
-          m.put({ ...old, id: to }, to);
-        };
-      }
-      m.put(meta, meta.id);
-      d.put(json, meta.id);
+      tx.objectStore(META).put(meta, meta.id);
+      tx.objectStore(DATA).put(json, meta.id);
       return done(tx).then((ok) => {
         if (ok) {
-          for (const [to, mm] of moved) metas.set(to, mm);
           metas.set(meta.id, meta);
-          for (const id of [meta.id, ...moved.map(([to]) => to)]) dropLegacy(id);
+          dropLegacy(meta.id);
+        }
+        return ok;
+      });
+    } catch {
+      return Promise.resolve(false);
+    }
+  }
+
+  /**
+   * Store the head of a chain, moving the entries down first when `due` says so. The labels and data it moves, and the label `due` sees,
+   * are read in this same transaction, not taken from the in-memory cache: another tab may have written since the cache was filled.
+   */
+  function putChain(meta: SaveMeta, json: string, chain: readonly string[], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
+    try {
+      const tx = db!.transaction([META, DATA], 'readwrite');
+      const m = tx.objectStore(META);
+      const d = tx.objectStore(DATA);
+      const read = new Map<string, { meta?: SaveMeta; data?: string }>();
+      const applied = new Map<string, SaveMeta>();
+      const putHead = (moving: boolean, cur: SaveMeta | undefined): void => {
+        const head = { ...meta, since: moving || !cur ? meta.savedAt : (cur.since ?? cur.savedAt) };
+        m.put(head, head.id);
+        d.put(json, head.id);
+        applied.set(head.id, head);
+      };
+      // First the labels (small): they say whether the chain moves. Only then are the data read, and only when it does.
+      const shiftDown = (): void => {
+        let left = 0;
+        const copy = (): void => {
+          for (let i = chain.length - 1; i > 0; i--) {
+            const from = read.get(chain[i - 1]!);
+            if (!from?.meta || from.data === undefined) continue;
+            const to = { ...from.meta, id: chain[i]! };
+            d.put(from.data, to.id);
+            m.put(to, to.id);
+            applied.set(to.id, to);
+          }
+          putHead(true, read.get(chain[0]!)?.meta);
+        };
+        for (const id of chain.slice(0, -1)) {
+          const slot = read.get(id)!;
+          if (!slot.meta) continue;
+          left++;
+          const rd = d.get(id);
+          rd.onsuccess = () => { slot.data = typeof rd.result === 'string' ? rd.result : undefined; if (--left === 0) copy(); };
+        }
+        if (left === 0) copy();
+      };
+      let metaLeft = chain.length - 1;
+      for (const id of chain.slice(0, -1)) {
+        const slot: { meta?: SaveMeta; data?: string } = {};
+        read.set(id, slot);
+        const rm = m.get(id);
+        rm.onsuccess = () => {
+          slot.meta = rm.result as SaveMeta | undefined;
+          if (--metaLeft > 0) return;
+          const cur = read.get(chain[0]!)?.meta;
+          if (!due || due(cur)) shiftDown(); else putHead(false, cur);
+        };
+      }
+      return done(tx).then((ok) => {
+        if (ok) {
+          for (const id of chain.slice(0, -1)) {
+            const now = applied.get(id) ?? read.get(id)?.meta; // what the transaction left there
+            if (now) metas.set(id, now); else metas.delete(id);
+          }
+          metas.set(chain[0]!, applied.get(chain[0]!)!);
+          const last = applied.get(chain[chain.length - 1]!);
+          if (last) metas.set(last.id, last);
+          for (const id of applied.keys()) dropLegacy(id);
         }
         return ok;
       });

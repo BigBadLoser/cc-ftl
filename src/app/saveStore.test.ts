@@ -51,4 +51,23 @@ describe('save store', () => {
     expect(await st.write(meta('auto'), '{}')).toBe(false);
     expect(await st.read('auto')).toBeNull();
   });
+
+  it('rotates from what the transaction reads, not from a stale cache (two tabs on one database)', async () => {
+    const idb = new IDBFactory();
+    const a = createIdbSaveStore(() => idb, () => null);
+    const b = createIdbSaveStore(() => idb, () => null);
+    await a.ready();
+    const chain = ['auto', 'auto2', 'auto3'];
+    await a.write({ ...meta('auto'), savedAt: 1, campaign: 1 }, 'A-data');
+    await b.ready();
+    await b.write({ ...meta('auto'), savedAt: 2, campaign: 2 }, 'B-data'); // another tab: A's cache still says campaign 1
+    const seen: Array<number | undefined> = [];
+    await a.write({ ...meta('auto'), savedAt: 3, campaign: 1 }, 'A-data-2', chain, (cur) => { seen.push(cur?.campaign); return true; });
+    expect(seen).toEqual([2]); // the decision saw what is stored
+    expect(await a.read('auto2')).toBe('B-data');
+    expect(a.list().map((m) => [m.id, m.campaign])).toEqual([['auto', 1], ['auto2', 2]]); // the label matches its data
+    const again = createIdbSaveStore(() => idb, () => null);
+    await again.ready();
+    expect(again.list().map((m) => [m.id, m.campaign])).toEqual([['auto', 1], ['auto2', 2]]);
+  });
 });
