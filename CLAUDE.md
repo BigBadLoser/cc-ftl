@@ -13,10 +13,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
   skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
-- `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round, after the last
-  merge of `main` into the branch, and paste its result (pass, test count, any load timeouts rerun alone) into the PR
-  body. Affected-only or partial runs don't count. The repo is public, so CI minutes are free; CI time is what counts. On
-  ready PRs CI runs lint, typecheck, the build and the full test suite, slow tier included, in 8 parallel shards (about
+- `npm run check`: lint, typecheck and every test, slow tier included (about 6 minutes on the 4-core dev box). Optional: CI
+  runs the same full suite on every ready PR, and that run is the record. Use it locally to chase a failure CI found.
+- CI: the repo is public, so CI minutes are free; CI time is what counts. On ready PRs CI runs lint, typecheck, the build and the full test suite, slow tier included, in 8 parallel shards (about
   3 minutes; `PR_TESTS: affected` in `ci.yml` switches PRs back to affected fast tests). Drafts, pushes to `main` and
   markdown-only changes don't run it; the full suite also runs once a day on `main` when it changed. Batch fixes into one
   push rather than pushing every commit to an open PR.
@@ -53,11 +52,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - Flow for every piece of work:
   1. Iterate on a work branch until the user is happy. Commit often with `check:fast` and push the branch freely (a push to
      a branch is a backup, not a release).
-  2. Then one round of testing and bug fixes: merge `main` in, run the full `npm run check`, and fix whatever it finds.
-  3. Then open the PR, with the `npm run check` result in its body, as a draft while it still expects fixes (draft PRs
-     don't run CI). Codex skips drafts too, so comment `@codex review` to get its review. Mark the PR ready once the fixes
-     are batched in; CI (and another Codex review) runs from then on. CI and Codex review it, and only
-     the user merges it to `main`. Nothing reaches `main` any other way.
+  2. Then open the PR as a draft while it still expects fixes (draft PRs don't run CI). Merge `main` in first. Codex skips
+     drafts too, so comment `@codex review` to get its review.
+  3. Mark the PR ready once the fixes are batched in. That is the testing round: CI runs the full suite (and another Codex
+     review runs). Fix whatever it finds; after a later merge of `main`, CI runs again on the push. CI and Codex review
+     it, and only the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - GitHub issues track the work. Every bug or piece of work gets an issue (create one if none exists), and every PR
   links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
