@@ -19,7 +19,7 @@ onto a ring structure and is scored against it.
 | `rooms` | room specs from the station plan (`planStation`), grouped; sizes come from the plan, not from the arc |
 | `access` | `open` (rooms door straight onto a ring corridor or court), `clustered` (rooms share an internal hall with one or two entrances), `controlled` (one entrance, a guard post or checkpoint on it) |
 | `layout` | the layout strategy (section 4): `storefront`, `cabins`, `warehouse`, `machine`, `office`, `plain` |
-| `needs` | geometric needs the layout must meet: `dockFace`, `hullFace` (guns, observation), `centre`, `largeFloor` (warehouse, refinery) |
+| `needs` | geometric needs the layout must meet: `dockFace` (docks on the outer hull), `centre`, `largeFloor` (warehouse, refinery), `window` (an observation gallery) |
 
 ### Edges
 
@@ -30,15 +30,20 @@ corridors), `adjacent(a, b)` (share a wall or a short corridor run), `entrance(a
 ### Hard constraints and preferences
 
 - **Hard** (a layout that breaks one is repaired or rejected): every room reachable; required facilities present
-  (docks, bridge, life support per the plan); `needs`; `guarded` routes; the existing station rules (docks on north,
-  south or west faces only, everything inside `STATION_MAX`, the 3-tile hull width rule).
+  (docks, bridge, life support per the plan); `needs`; `guarded` routes; the existing station rules (everything inside
+  `STATION_MAX`, the 3-tile hull width rule, clear roof space round roof-mounted guns).
 - **Preferences** (scored, traded off): `adjacent`, `entrance`, district clustering, symmetry, room proportions, short
   walks from the docks to public departments, depth of private ones.
 
-Pushback on "no compass positions": a few spatial facts are real and should stay in the vocabulary, as needs rather
-than positions. Airlocks cannot face east (the camera-facing stern), so `dockFace` resolves to north, south or west;
-gun bays need a hull face; the rotunda and the command heart need the centre. The flow names the need, the layout finds
-where it can be met.
+A few spatial facts stay in the vocabulary as needs, not positions: docks sit on the outer hull, the rotunda and the
+command heart take the centre. The flow names the need, the layout finds where it can be met.
+
+Checked and dropped (revision 2 had them wrong): **gun bays do not need a hull face.** Weapons and point defence are
+roof-mounted (`roofMounted` in `layout.ts`); the only rule is clear roof space round them, so a gun bay can stand anywhere,
+inner rings included. **Airlocks may face east.** The sim and the art support all four rotations (the airlock sheet has
+r0-r3, docking in `vehicles/geometry.ts` works on any hull side); "never east" in `stationDocks.ts` is a convention
+carried over from ships, where the east end is the stern with the engines. Stations have no engines, so docks on any face
+are allowed unless the user wants the camera-facing side kept clear of docked shuttles.
 
 ## 2. Access types
 
@@ -96,8 +101,9 @@ strategy:
 - **cabins:** today's cabin bands, along the ring corridor, the mess in the middle of the run.
 - **warehouse:** one large contiguous floor per department, merged from the plan's crate rooms, laid out by the aisles
   plan; a cargo office at its door.
-- **machine:** rectangular rooms for designs (reactor, shields, AI core), set inside the arc; the leftovers at the curved
-  edges become a plant room, store or service passage instead of being glued on.
+- **machine:** rectangular rooms for designs (reactor, shields, AI core, gun bays), set inside the arc; the leftovers at
+  the curved edges become a plant room, store or service passage instead of being glued on. Gun bays need no hull face,
+  so they need not sit on the rim at all.
 - **office:** small rectangular rooms off a short hall (clustered).
 - **plain:** today's band segments.
 
@@ -133,7 +139,8 @@ user's judgment (a rated sheet of rooms) would make every number above more trus
 | `planStation` | flat room lists by role; crates split into rooms of 6 | add a grouping step that turns the plan into departments; warehouses merge crate rooms |
 | `concentricStation`, `wheelStation` | ring radii come from room areas per band; bands are filled in list order | radii from departments' floor needs; bands filled per department arc |
 | `cutBand` / `bandRooms` | segments sized by share of arc, so rooms stretch to fill the arc (the cargo slivers); no internal halls | department cutter: rooms keep their planned floor, the remainder goes to circulation, stores or the next department; a hall option for clustered departments |
-| `fitAlong` rim rooms | rectangles pushed beyond the band, the "glued on" look | machine and bastion strategies own their rim rooms |
+| `fitAlong` rim rooms | rectangles pushed beyond the band, the "glued on" look; guns put there for a hull face they do not need | machine strategy places guns and machine rooms inside department arcs; the rim keeps only what wants it (docks, a gallery) |
+| `dockBanks` | docks on north, south and west faces only | any face (a station has no stern); keep the rule only if the user wants the camera-facing side clear |
 | `courtyards` | runs after the structure and turns any enclosed pocket into a court, adding band rooms the plan never listed | courts become flow nodes (market, drill hall, garden); the court pass fills only what the flow assigns |
 | `swapRoles` | swaps rooms across the whole station, breaking departments | swaps only within a department, or off for flow stations |
 | `pruneDoors` | keeps one door per room (two for big ones) and may keep a door that breaks a controlled entrance | respects department access: storefronts keep their fronts, controlled departments keep only their entrance |
