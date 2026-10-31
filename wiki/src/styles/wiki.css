@@ -13,7 +13,8 @@
   --wiki-accent-soft: #1b8fb3;
   --wiki-accent-deep: #146b87;
   --wiki-amber: #f0b13a;
-  --wiki-art-bg: #06080a;
+  /* The module previews' own background (scripts/render-module-previews.ts), so art areas blend into the renders. */
+  --wiki-art-bg: #070b11;
   /* Square corners, like the game UI (src/ui/theme.css --kit-dialog-radius: 0). */
   --wiki-radius: 0;
 }
@@ -27,13 +28,13 @@ h1, h2, h3, h4, .gradient-title, .wiki-reference-title, .wiki-module-info strong
 /* Applied to everything, the theme's own pills, search box and cards included, so no rounded corner slips through. */
 *, *::before, *::after { border-radius: var(--wiki-radius) !important; }
 :root.dark {
-  /* The game's steel palette (src/ui/theme.css): --panel-2, --text, --line-hi, --line, --dim, --cyan. */
+  /* The game's steel palette (src/ui/theme.css): --panel-2, --text, --axis, --line-hi, --dim, --cyan. */
   --wiki-input-bg: #11151a;
   --wiki-input-color: #e4e9ee;
-  --wiki-input-border: #3a424a;
+  --wiki-input-border: #4a525a;
   --wiki-card-bg: #11151a;
   --wiki-card-color: #e4e9ee;
-  --wiki-card-border: #2a3036;
+  --wiki-card-border: #3a424a;
   --wiki-subtle: #8b939a;
   --wiki-accent: #36d4ff;
   --wiki-accent-soft: #8fe6ff;
@@ -249,7 +250,7 @@ h1, h2, h3, h4, .gradient-title, .wiki-reference-title, .wiki-module-info strong
   justify-content: center;
   aspect-ratio: 4 / 3;
   padding: 0.75rem;
-  background: linear-gradient(160deg, rgba(88,153,205,.055), transparent);
+  background: var(--wiki-art-bg);
   border-bottom: 1px solid var(--wiki-card-border);
 }
 .wiki-module-art img {
@@ -446,7 +447,7 @@ h1, h2, h3, h4, .gradient-title, .wiki-reference-title, .wiki-module-info strong
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #080e16;
+  background: var(--wiki-art-bg);
   border-bottom: 1px solid var(--wiki-card-border);
 }
 .wiki-reference-art img {
