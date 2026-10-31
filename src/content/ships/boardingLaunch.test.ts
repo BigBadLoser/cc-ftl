@@ -3,6 +3,7 @@ import { AboardC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree 
 import { BoardLaunchC } from '../../sim/boarding/components';
 import { launchOf, orderLaunch } from '../../sim/boarding/launch';
 import { pickPilot } from '../../sim/mining/pilot';
+import { playerCourier } from '../../sim/trade/courier';
 import { shipIdOf } from '../../sim/regions';
 import { airlockOf, crewOn, nth, of, run, setup, shuttleOf } from './boardingFixture';
 
@@ -68,14 +69,16 @@ describe('boarding.launch', () => {
     expect(v.passengers).toEqual([]);
   });
 
-  it('a shuttle has one owner: a launching shuttle is not free for cargo runs, and a ferrying one cannot launch', () => {
+  it('a shuttle has one owner: a launching shuttle is not free for cargo runs or trade, and a ferrying one cannot launch', () => {
     const sim = setup();
     const shuttle = shuttleOf(sim, 1);
+    expect((playerCourier(sim) as { vehicle?: number }).vehicle).toBe(shuttle); // free before the launch
     const party = crewOn(sim, 1).slice(0, 2);
     sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
     run(sim, 2);
     expect(sim.world.has(shuttle, BoardLaunchC)).toBe(true);
     expect(ferryFree(sim, shuttle)).toBe(false);
+    expect((playerCourier(sim) as { vehicle?: number }).vehicle).not.toBe(shuttle);
 
     const other = setup();
     const s2 = shuttleOf(other, 1);

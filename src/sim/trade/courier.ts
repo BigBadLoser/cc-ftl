@@ -1,4 +1,5 @@
 import { BodyC, ALT } from '../body';
+import { BoardLaunchC } from '../boarding/components';
 import { ShipC } from '../combat/components';
 import type { ItemQty, VehicleDef } from '../registry';
 import type { Sim } from '../sim';
@@ -43,7 +44,8 @@ export function playerCourier(sim: Sim): { vehicle: number; cap: number } | { er
     const v = sim.world.get(id, VehicleC) as Vehicle;
     const cap = vehicleDefOf(sim, v)?.cargo ?? 0;
     if (v.homeShip !== me || cap <= 0 || vehicleDefOf(sim, v)?.class === 'pod') continue;
-    if (busy.has(id) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound) {
+    // A shuttle held for a boarding launch (the party still walking or loading) is not free either.
+    if (busy.has(id) || sim.world.has(id, BoardLaunchC) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound) {
       error = 'courierBusy';
       continue;
     }
