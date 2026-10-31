@@ -9,6 +9,7 @@
   import StarmapStats from './StarmapStats.svelte';
   import StarmapInfo from './StarmapInfo.svelte';
   import StarmapNews from './StarmapNews.svelte';
+  import { isTypingTarget } from './keys';
   import { jumpCommand, toggleTake } from './starmapJump';
   import { toneColor } from './starmapStyle';
   import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
@@ -396,7 +397,7 @@
     zoomAt(p.x, p.y, wheelFactor(e.deltaY, e.deltaMode));
   }
   function key(e: KeyboardEvent) {
-    if (e.key === 'Escape' && !locked) onClose();
+    if (e.key === 'Escape' && !locked && !isTypingTarget(e)) onClose();
   }
 
   /**

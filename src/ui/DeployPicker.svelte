@@ -6,7 +6,7 @@
    * that cell's origin, and the gap rule is still checked at tile level (`api.deployCheck`).
    */
   import { keymap } from './keymap';
-  import { modalOpen } from './keys';
+  import { isTypingTarget, modalOpen } from './keys';
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
@@ -72,7 +72,7 @@
     if (best) cell = best;
   };
   function key(e: KeyboardEvent) {
-    if (!modalOpen() && keymap.matches(e, 'ui.confirm')) go();
+    if (!modalOpen() && !isTypingTarget(e) && keymap.matches(e, 'ui.confirm')) go();
   }
 </script>
 
