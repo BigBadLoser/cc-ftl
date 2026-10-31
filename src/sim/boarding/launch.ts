@@ -1,5 +1,5 @@
 import { shipById } from '../combat/ships';
-import { CrewC, DeadC } from '../crew/components';
+import { CrewC, DeadC, DraftedC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { AllegianceC } from '../fight/components';
 import { ModuleC } from '../modules/components';
@@ -7,7 +7,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { sendToEmbark } from '../vehicles/embark';
-import { boardingTile } from '../vehicles/geometry';
+import { bayWorking, boardingTile } from '../vehicles/geometry';
 import { dockError, launch } from '../vehicles/handlers';
 import { occupants, unboardCrew, vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 import { BoardLaunchC } from './components';
@@ -59,6 +59,18 @@ export function launchSystem(sim: Sim): void {
     }
     const call = (reason: string): void => {
       sim.world.remove(id, BoardLaunchC);
+      // Nothing of a called-off launch carries on: crew still walking to the bay stop, and anyone already in the stowed shuttle
+      // climbs back out, so the shuttle is free for the next launch.
+      for (const c of o.crew) {
+        if (sim.world.get(c, EmbarkOrderC)?.vehicle !== id) continue;
+        sim.world.remove(c, EmbarkOrderC);
+        const d = sim.world.get(c, DraftedC);
+        if (d) d.target = null;
+      }
+      if (v.state === 'stowed') {
+        const at = boardingTile(sim, id);
+        if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at);
+      }
       sim.events.emit({ type: 'command.rejected', command: 'boarding.launch', reason });
     };
     if (o.state === 'flying') {
@@ -66,7 +78,14 @@ export function launchSystem(sim: Sim): void {
         const at = boardingTile(sim, id);
         if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at); // the pilot lands too: the shuttle stays docked for the recall
         sim.world.remove(id, BoardLaunchC);
-      } else if (!v.pilot || v.dest?.type !== 'dock' || v.dest.airlock !== o.airlock) call('aborted'); // the pilot fell, or the target was lost
+      } else if (!v.pilot || v.dest?.type !== 'dock' || v.dest.airlock !== o.airlock) {
+        // The pilot fell, or the target airlock was lost on the way: fly the party home rather than leave it hovering in space.
+        if (v.pilot && v.state !== 'docked' && bayWorking(sim, v.home)) {
+          v.hover = 0;
+          v.dest = { type: 'bay' };
+        }
+        call('aborted');
+      }
       continue;
     }
     const stalled = sim.tick - o.since > LAUNCH_WALK_TICKS;

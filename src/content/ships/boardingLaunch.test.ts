@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, PositionC, VehicleC } from '../../sim';
+import { AboardC, EmbarkOrderC, ModuleC, PositionC, VehicleC } from '../../sim';
+import { BoardLaunchC } from '../../sim/boarding/components';
 import { shipIdOf } from '../../sim/regions';
 import { airlockOf, crewOn, nth, of, run, setup, shuttleOf } from './boardingFixture';
 
@@ -31,6 +32,36 @@ describe('boarding.launch', () => {
     expect(of(events, 'crew.recallFailed')).toEqual([]);
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
     for (const c of party) expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(nth(sim, 1));
+  });
+
+  it('flies the party home when the target airlock is lost on the approach', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    const lock = airlockOf(sim, 2);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: lock });
+    run(sim, 3000, () => sim.world.get(shuttle, BoardLaunchC)?.state === 'flying');
+    expect(sim.world.get(shuttle, BoardLaunchC)?.state).toBe('flying');
+    sim.world.get(lock, ModuleC)!.hp = 0; // shot out before the shuttle latches on
+    const events = run(sim, 4000, () => sim.world.get(shuttle, VehicleC)!.state === 'stowed');
+    expect(of(events, 'command.rejected').map((e) => e.reason)).toContain('aborted');
+    expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
+  });
+
+  it('a launch called off before take-off leaves no one walking to or sitting in the shuttle', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    sim.world.get(shuttle, BoardLaunchC)!.since = sim.tick - 10_000; // the pilot's walk has stalled
+    const events = run(sim, 2);
+    expect(of(events, 'command.rejected').map((e) => e.reason)).toEqual(['noPilot']);
+    for (const c of party) expect(sim.world.has(c, EmbarkOrderC)).toBe(false);
+    run(sim, 600);
+    const v = sim.world.get(shuttle, VehicleC)!;
+    expect(v.pilot).toBe(0);
+    expect(v.passengers).toEqual([]);
   });
 
   it('rejects an empty party and a friendly airlock', () => {
