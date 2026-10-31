@@ -49,8 +49,9 @@ are allowed unless the user wants the camera-facing side kept clear of docked sh
 
 - **Open:** rooms door straight onto a ring corridor or a court (shops, the mess, cabins). Cheapest, and what most
   departments should be. This is today's band.
-- **Clustered:** a short internal hall inside the department's arc, parallel to the ring, rooms between it and the hull
-  or the inner edge; one or two entrances. For departments with many small rooms (a medbay with treatment rooms, offices).
+- **Clustered:** a short internal hall with one or two entrances, for departments with many small rooms (a medbay with
+  treatment rooms, offices). Only where the geometry is straight: beside a spoke, round a court, or a short radial hall
+  cut into the band. A hall parallel to a curved ring would be a second stair-stepped strip inside the band.
 - **Controlled:** one entrance with a guard post or checkpoint room on it (secure core, armoury, command heart, brig).
   Enforced structurally: other doors are not drawn, and door pruning may not open new ones.
 
@@ -108,8 +109,9 @@ strategy:
 - **plain:** today's band segments.
 
 **Boundaries:** a department's outer edge follows the ring (stepped where the circle is), while partitions between its
-rooms are straight. Rooms that need rectangles (machines, warehouses' aisles) are rectangles inside the department;
-the stepped margin goes to circulation, stores or service, never to a machine room.
+rooms are straight. Only machine rooms and warehouse aisles must be rectangles; cabins, shops, the mess and stores may
+stay curved band segments, as now. Floor left beside a rectangle joins the neighbouring curved room unless it is big
+enough to be a useful room of its own, so the curve does not leave a scatter of one- to three-tile slivers.
 
 ## 6. Validation
 
@@ -121,6 +123,7 @@ on the only route between two others (it would block the station).
 - connectivity: every room reachable, `guarded` routes really pass their checkpoint;
 - required facilities and `needs` met;
 - accessibility: public departments within a walk budget of the docks, private ones deeper (space syntax depth);
+  budgets relative to the station's size (an outpost and a hub differ several times over);
 - department adjacency: share of `adjacent` and `entrance` preferences met;
 - floor use: the share of floor inside the hull that is rooms or circulation in use, and the share of each room's
   floor its job uses.
@@ -129,7 +132,11 @@ Pushback on floor-area utilisation as a target: optimising it drives towards cra
 stations asked for. Report it, and flag only waste (unreachable or unused pockets, slivers), not low density.
 
 **Visual comparison:** fixed seed sheets (current system against the flow system, same seeds, every round station
-kind), sent for review at each phase. The room score's weights are still provisional; calibrating them against the
+kind), sent for review at each phase. Sheets are enough for layout work (user): obvious problems show on them, and
+non-hostile stations show no roof in game anyway.
+
+**Time budget:** about 300 ms a layout now; the section search and repair (and later best-of-a-few candidates) stay
+under about 1 s a station, measured each phase with the profiler. The room score's weights are still provisional; calibrating them against the
 user's judgment (a rated sheet of rooms) would make every number above more trustworthy.
 
 ## 7. Conflicts with the existing generator
@@ -151,20 +158,29 @@ user's judgment (a rated sheet of rooms) would make every number above more trus
 
 ## 8. Implementation plan (incremental)
 
-Each phase ends with seed sheets (current against new) and the quality report; nothing replaces the current path until
-a phase beats it.
+Each step ends with seed sheets (current against new) and the quality report; nothing replaces the current path until
+a step beats it. The order puts the visible fixes first (user review of revision 2): the problems on the sheets are the
+cargo slivers, the glued-on rim rooms and the empty space between rings, and the department layouts fix them, so the
+graph model comes after the look is proven.
 
-1. **Baseline and validation.** Freeze a seed set for round stations; add the layout checks (section 6) to the quality
-   report and run them on today's generator. No behaviour change.
-2. **Departments from the plan (trading only).** Types for departments and flows; the trading archetype; grouping the
-   plan into departments; graph checks; tests. The existing band filler orders rooms by department (contiguous runs)
-   instead of by pull. Small visual change, a check that the model holds.
-3. **Department-to-section assignment** on concentric and wheel trading stations: sections from the spokes, the search,
-   hard constraints, preferences, room swaps limited to a department.
-4. **Department layout strategies:** warehouse and machine first (they fix the cargo slivers and the glued-on rim
-   rooms), then storefront and cabins, then clustered halls.
-5. **Access and circulation:** controlled entrances, department-aware door pruning and archways, partial service routes.
-6. **Transformations and set pieces** for trading.
-7. **Military** (archetype "keep"), then research, farming and mining; courts as flow nodes.
+1. **Departments and the first strategies (trading).** Group the plan into departments (a plain list, no graph yet);
+   **warehouse** (merged crate rooms, aisles) and **machine** (reactors, shields, AI core and gun bays as rectangles inside
+   department arcs, guns off the rim) on the existing concentric and wheel pipeline. Baseline checks (section 6) added
+   to the quality report and run on today's generator first. First visible change.
+2. **Section assignment:** departments to sections of the ring by a small search, hard constraints first, room swaps
+   limited to a department.
+3. **Storefront and cabins** strategies; **clustered** departments where the geometry is straight.
+4. **Access and circulation:** controlled entrances, department-aware door pruning and archways, partial service routes.
+5. **The flow graph:** types, graph checks, **transformations and set pieces**. Players meet a lot of stations over a
+   long game (user), so transformations are worth their cost: variety has to come from more than one archetype.
+6. **Military** (archetype "keep"), then research, farming and mining; courts as flow nodes.
 
-Phases 1-3 are small; phase 4 is the bulk of the work and where the look changes.
+## Notes
+
+- **Saves:** a station is generated once and stamped into its node as tiles (`stations/spawn.ts`), so saves keep the
+  stations they have; only new stations change. No save version bump.
+- **Docks on the east face:** allowed (section 1), but a station spawns east of everything else in its node, so its west
+  face looks towards the node's traffic and its east face towards empty space. Prefer north, south and west; don't
+  forbid east.
+- **The bastion prototype** (gun bays in mirrored groups on the rim) rests on gun bays needing a hull face, which they do
+  not. It stays as a stopgap until step 1 moves guns into departments; no further tuning.
