@@ -1,6 +1,6 @@
 import type { Block, BlockPort } from './arranger';
 import { Builder } from './builder';
-import { roleOfLetter } from './canvas';
+import { releaseCanvas, roleOfLetter } from './canvas';
 import type { Rng } from '../rng';
 import type { RoomSpec } from './plan';
 import type { AccessKind, RoomRole } from './types';
@@ -56,11 +56,12 @@ export function blockFrom(b: Builder, kind: string, label: string, access: Acces
     }
   }
   const faceE = b.parts.filter((p) => p.role === 'engine').map((p) => ({ x: p.x + p.w - 1 - ox, y0: p.y + 1 - oy, y1: p.y + p.h - 2 - oy }));
+  if (b.pooled) releaseCanvas(b.cv);
   return { kind, label, access, rows: out, legend, ports: ports.map((p) => ({ ...p, x: p.x - ox, y: p.y - oy })), faceE, origin: { x: ox, y: oy }, exposed };
 }
 
 /** A local builder for one block (axis on rows -1 / 0, like the ship). */
-export const localBuilder = (rng: Rng): Builder => new Builder(rng, -1);
+export const localBuilder = (rng: Rng): Builder => new Builder(rng, -1, true);
 
 /** A corridor block: ports at both ends and along both long sides. */
 export function hallBlock(rng: Rng, len: number, width: number, horiz: boolean, access: AccessKind = 'human'): Block {

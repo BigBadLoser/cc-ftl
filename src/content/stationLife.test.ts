@@ -69,7 +69,8 @@ describe('station life and security', () => {
       for (let i = 0; i < 900 && !calmed; i++) calmed = types(run(sim, 1)).includes('station.calm');
       const forgotten = calmed && sim.world.get(st, StationAlarmC)?.state === 'calm' && sim.world.query(WantedC).length === 0;
       // The intruder was only downed: when they get up, still aboard and uninvited, the alarm goes off again.
-      const again = types(run(sim, 1500)).includes('station.alarm');
+      let again = false;
+      for (let i = 0; i < 1500 && !again; i++) again = types(run(sim, 1)).includes('station.alarm'); // stop at the alarm; 1500 ticks is the failure bound
       return { seed, alarmed, wanted, engaged, fled, downed, forgotten, again };
     });
     const count = (k: 'alarmed' | 'wanted' | 'engaged' | 'fled' | 'downed' | 'forgotten' | 'again'): number => runs.filter((r) => r[k]).length;
