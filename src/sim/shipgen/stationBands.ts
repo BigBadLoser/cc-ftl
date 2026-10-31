@@ -78,7 +78,12 @@ export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec
         const cs = cabinsOf(q);
         // The mess in the middle of its cabin run, so every cabin is a short walk from it.
         const h = cs.length >> 1;
-        return cs.length === 1 ? cs : [...cs.slice(0, h), { role: 'support' as const, mods: [], w: Math.max(2, Math.round((share - 4) / depth)), h: depth }, ...cs.slice(h)];
+        if (cs.length === 1) return cs;
+        // A mess keeps at most MESS tiles; the rest of the run's spare floor goes to stores (racks) at the run's end.
+        const mess = Math.min(share, MESS);
+        const stores = Math.floor((share - mess) / LOUNGE);
+        const store: RoomSpec = { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: Math.max(3, Math.round(LOUNGE / depth)), h: depth };
+        return [...cs.slice(0, h), { role: 'support' as const, mods: [], w: Math.max(2, Math.round((mess - 4) / depth)), h: depth }, ...cs.slice(h), ...Array.from({ length: stores }, () => ({ ...store }))];
       });
       const again = cutBand(b, R, ring, withMess, depth, arcs, side);
       if (again) { cabins = withMess; cut = again; break; }
@@ -284,8 +289,10 @@ export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[],
   return true;
 }
 
-/** Floor a lounge takes when it fills spare band floor. */
+/** Floor a store takes when it fills spare band floor. */
 const LOUNGE = 24;
+/** Floor a cabin run's mess keeps at most. */
+const MESS = 36;
 
 /**
  * An arc with much more floor than its rooms plan (a ring sized by something else, such as the court or the rooms between

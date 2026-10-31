@@ -349,8 +349,10 @@ interface Unit { spec: RoomSpec; along: number; across: number }
  * shops, a clinic's ward and treatment rooms. Returns the units placed.
  */
 function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => Unit | null): RoomSpec[] {
-  // (u along the spoke from the centre, v across it) to canvas (x, y).
+  // (u along the spoke from the centre, v across it) to canvas (x, y); the spoke's walls stand `hw` either side of its
+  // axis (2 for the 3-wide concourse, 1 for a narrow spoke).
   const xy = (u: number, v: number): [number, number] => (d === 's' ? [v, u] : d === 'n' ? [v, -u] : d === 'e' ? [u, v] : [-u, v]);
+  const hw = (widthOf(d) >> 1) + 1;
   const out: RoomSpec[] = [];
   // A unit that did not fit on one side tries the other.
   let unit: Unit | null = next();
@@ -358,13 +360,15 @@ function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => 
     let u = R - 3;
     while (unit) {
       const { along: A, across: C } = unit;
-      const u0 = u - (A + 1);
+      // A deep unit starts further in: the ring curves in towards the spoke at the unit's far side.
+      const reach = Math.floor(Math.sqrt(Math.max(0, (R - 2) ** 2 - (C + hw + 2) ** 2))) - 1;
+      const u0 = Math.min(u, reach) - (A + 1);
       if (u0 <= 0) break;
-      const v0 = side < 0 ? -2 - (C + 1) : 2;
+      const v0 = side < 0 ? -hw - (C + 1) : hw;
       const [ax, ay] = xy(u0, v0), [bx, by] = xy(u0 + A + 1, v0 + C + 1);
       const rect: Rect = { x: Math.min(ax, bx), y: Math.min(ay, by), w: Math.abs(bx - ax) + 1, h: Math.abs(by - ay) + 1 };
       if (!free(b, rect) || !b.place(rect, unit.spec.role, unit.spec)) break;
-      const [dx, dy] = xy(u0 + ((A + 2) >> 1), side < 0 ? -2 : 2);
+      const [dx, dy] = xy(u0 + ((A + 2) >> 1), side < 0 ? -hw : hw);
       b.cv.setDoor(dx, dy);
       out.push(unit.spec);
       u = u0;
@@ -447,11 +451,18 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   // The secure core either side of its spoke (east or west, where no dock faces).
   const inner = sys.filter((r) => r.role !== 'weapons');
   const axis = plan.secure === 'e' ? 0 : Math.PI;
-  // Gun bays join the secure core's rows (dealt to the two sides after it), a battery beside the reactors and shields;
-  // those that do not fit there stand as mirrored bastions.
+  // The secure compound: the core's spoke is its spine, and the reactors, shield rooms, the AI core and the gun bays line
+  // both sides of it as plain rectangles (reactor and shield rooms in pairs), one block beside the plant rooms of the
+  // outer band. Rooms that do not fit along the spine stand in rows beside it, then as bastions or anywhere inboard.
   const guns = sys.filter((r) => r.role === 'weapons');
   const [upper0, lower0] = secureSides(inner.filter(isSecure));
-  const [upper, lower] = [[...upper0, ...guns.filter((_, i) => i % 2 === 0)], [...lower0, ...guns.filter((_, i) => i % 2 === 1)]];
+  const queue = [...upper0, ...lower0, ...guns];
+  const lined = lineSpoke(b, R, plan.secure, () => {
+    const r = queue.shift();
+    return r ? { spec: r, along: Math.min(r.w, r.h), across: Math.max(r.w, r.h) } : null;
+  });
+  const unlined = [...upper0, ...lower0, ...guns].filter((r) => !lined.includes(r));
+  const upper = unlined.filter((_, i) => i % 2 === 0), lower = unlined.filter((_, i) => i % 2 === 1);
   const missedAll = [...fitAlong(b, R, ring, upper, besideSpoke(upper, R, axis, -1), -1), ...fitAlong(b, R, ring, lower, besideSpoke(lower, R, axis, 1), -1)];
   const gunsLeft = missedAll.filter((r) => r.role === 'weapons');
   const missed = missedAll.filter((r) => r.role !== 'weapons');
