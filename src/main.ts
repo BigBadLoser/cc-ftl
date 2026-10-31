@@ -23,7 +23,7 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, writePrecombat, writeSave } from './app/saves';
+import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, inThisCampaign, writePrecombat, writeSave } from './app/saves';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
 import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
@@ -156,7 +156,7 @@ setInterval(() => {
   // The world stops behind the game-over screen for good: no speed key or button can start it again.
   bridge.setSpeed(0);
   loop.stop();
-  const summary = { ...runSummary(sim), hasPrecombat: saveStore.list().some((m) => m.id === PRECOMBAT_ID) };
+  const summary = { ...runSummary(sim), hasPrecombat: saveStore.list().some((m) => m.id === PRECOMBAT_ID && inThisCampaign(sim, m)) };
   session.set({ ...session.get(), lost, summary });
 }, 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
@@ -350,7 +350,7 @@ const api: UiApi = {
   saves: {
     list: () => {
       const metas = new Map(saveStore.list().map((m) => [m.id, m]));
-      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].map((id) => {
+      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].filter((id) => !metas.has(id) || inThisCampaign(sim, metas.get(id)!)).map((id) => {
         const meta = metas.get(id) ?? null;
         return {
           id, auto: !SLOT_IDS.includes(id as never), meta, kind: isAutoId(id) ? 'auto' : id === PRECOMBAT_ID ? 'precombat' : 'slot',

@@ -15,6 +15,8 @@ export interface SaveMeta {
   node: string;
   /** SAVE_VERSION it was written with (absent on saves from before this field). */
   version?: number;
+  /** The campaign it belongs to: the sim seed, which a campaign keeps through every save and load (absent on older saves). */
+  campaign?: number;
   /** The game was in combat when it was saved. */
   fight?: boolean;
   /** An autosave chain head: when this head was started (the last time the chain moved). Overwrites keep it, so the head's age is known. */

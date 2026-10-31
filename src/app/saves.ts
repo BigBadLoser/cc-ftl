@@ -129,13 +129,23 @@ export const ROTATE_MS = 3 * 60_000;
  */
 export function writeAutosave(sim: Sim, now = Date.now()): Promise<boolean> {
   // Whether the chain moves is decided by the store when this write's turn comes, from the label the writes before it left.
-  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && !newest.fight && now - (newest.since ?? newest.savedAt) >= ROTATE_MS && !sim.sector.inCombat;
+  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && !newest.fight && (newest.campaign ?? sim.seed) === sim.seed && now - (newest.since ?? newest.savedAt) >= ROTATE_MS && !sim.sector.inCombat;
   return writeSave(sim, AUTO_ID, 'Autosave', now, AUTO_IDS, due);
 }
 
 /** The snapshot taken as a fight starts (overwritten by the next fight). */
 export function writePrecombat(sim: Sim, now = Date.now()): Promise<boolean> {
   return writeSave(sim, PRECOMBAT_ID, 'Before combat', now);
+}
+
+/**
+ * Whether a save in the list belongs to this game's campaign. The pre-combat snapshot must (an older one has no campaign and never does);
+ * the older autosaves must not be another campaign's; the newest autosave and the named slots are always the player's to pick.
+ */
+export function inThisCampaign(sim: Sim, m: Pick<SaveMeta, 'id' | 'campaign'>): boolean {
+  if (m.id === PRECOMBAT_ID) return m.campaign === sim.seed;
+  if (AUTO_IDS.includes(m.id as never) && m.id !== AUTO_ID) return (m.campaign ?? sim.seed) === sim.seed;
+  return true;
 }
 
 /** Write the save (async; the write is started at once). False when the browser refuses (storage full or blocked). */
@@ -152,7 +162,7 @@ export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.
 
 /** The list label of a save of this game now. */
 export function saveMeta(sim: Sim, id: string, name: string, now = Date.now()): SaveMeta {
-  return { id, name, savedAt: now, turn: sim.galaxy.turn, node: nodeOf(sim, sim.galaxy.current)?.name ?? '', version: SAVE_VERSION, fight: sim.sector.inCombat };
+  return { id, name, savedAt: now, turn: sim.galaxy.turn, node: nodeOf(sim, sim.galaxy.current)?.name ?? '', version: SAVE_VERSION, fight: sim.sector.inCombat, campaign: sim.seed };
 }
 
 export function clearSave(): Promise<boolean> {
@@ -179,7 +189,7 @@ export async function restartNewGame(): Promise<void> {
     /* without it the reload loads the save; clear it so it starts fresh anyway */
   }
   loading = true; // the reload's pagehide must not write the old game back
-  await clearSave();
+  await Promise.all([...AUTO_IDS, PRECOMBAT_ID].map((id) => saveStore.remove(id))); // nothing of the old campaign is left to load into the new one
   location.reload();
 }
 

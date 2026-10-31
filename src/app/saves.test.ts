@@ -4,7 +4,7 @@ import { content } from '../content';
 import { deserialize, homeShip, newGame, SAVE_VERSION, serialize, ShipC } from '../sim';
 import { DeadC } from '../sim/crew/components';
 import { playerCrew } from '../sim/story/world';
-import { createSaver, incompatibleSaves, lostReason, ROTATE_MS, startGame, unloadableNotice, writeAutosave, writePrecombat, writeSave } from './saves';
+import { createSaver, inThisCampaign, incompatibleSaves, restartNewGame, lostReason, ROTATE_MS, startGame, unloadableNotice, writeAutosave, writePrecombat, writeSave } from './saves';
 import { createIdbSaveStore, saveStore, setSaveStore } from './saveStore';
 
 describe('game over', () => {
@@ -309,6 +309,45 @@ describe('a legacy save that could not be copied stays first-class', () => {
     await later.ready(); // next start, storage fine: the newer one is copied over the older IndexedDB entry
     expect(await later.read('auto')).toBe('legacy-newer');
     expect(local.getItem('cc.save')).toBeNull();
+  });
+});
+
+describe('campaigns', () => {
+  it("another campaign's pre-combat snapshot and autosave history are not this game's", async () => {
+    browser();
+    await saveStore.ready();
+    const a = newGame(11, content);
+    const b = newGame(22, content);
+    await writeAutosave(a, 1_000_000);
+    await writePrecombat(a);
+    const [auto, pre] = saveStore.list();
+    expect(inThisCampaign(a, pre!)).toBe(true);
+    expect(inThisCampaign(b, pre!)).toBe(false); // a new game (or a load of campaign B) is not offered A's "Before combat"
+    expect(inThisCampaign(b, auto!)).toBe(true); // the newest autosave is always loadable
+    expect(inThisCampaign(b, { id: 'auto2', campaign: 11 })).toBe(false);
+    expect(inThisCampaign(b, { id: 'slot1', campaign: 11 })).toBe(true);
+    expect(inThisCampaign(a, { id: 'precombat' })).toBe(false); // an older snapshot has no campaign
+  });
+
+  it('a new game clears the old autosaves and the snapshot', async () => {
+    browser();
+    vi.stubGlobal('location', { reload: vi.fn(), assign: vi.fn(), pathname: '/' });
+    await saveStore.ready();
+    const a = newGame(11, content);
+    await writeAutosave(a, 1_000_000);
+    await writeAutosave(a, 1_000_000 + ROTATE_MS);
+    await writePrecombat(a);
+    await writeSave(a, 'slot1', 'Mine');
+    await restartNewGame();
+    expect(saveStore.list().map((m) => m.id)).toEqual(['slot1']);
+  });
+
+  it("does not push another campaign's autosave into the history", async () => {
+    browser();
+    await saveStore.ready();
+    await writeAutosave(newGame(11, content), 1_000_000);
+    await writeAutosave(newGame(22, content), 1_000_000 + 2 * ROTATE_MS);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto']);
   });
 });
 
