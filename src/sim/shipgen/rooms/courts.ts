@@ -57,7 +57,8 @@ export function planCourt(lay: Layout, rng: Rng, room: number, plan: CourtPlan, 
   if (plan.centres) {
     const at = [...floor].sort(byMiddle);
     const fits = (centre: Vignette, a: number, r: number): boolean => {
-      if (drawOf(centre) > power.spare) return false;
+      // The landmark goes in even on a station short of power: it is the court's centrepiece, and the lowest priority
+      // load (the sim sheds it first). Its draw still counts against the spare.
       const rel = turned(lay.defs, centre, r);
       const relTiles = rel.flatMap((m) => footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot));
       const cx = Math.round((Math.min(...relTiles.map((t) => t.x)) + Math.max(...relTiles.map((t) => t.x))) / 2);

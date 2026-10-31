@@ -47,7 +47,9 @@ export function ringStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], engines:
   const east: RoomSpec[] = [];
   for (let i = 0; i < engines; i++) east.push(engineSpec(1, 'w'));
   const rx = o.reactor ?? MK1_REACTOR;
-  for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k), rx), w: rx.fp[0] + 1, h: rx.fp[1] * Math.min(2, k) + 1 });
+  // Reactor rooms stacked down the east run, with the floor round the reactors their designs need (the station's
+  // spaciousness: Reactor.margin).
+  for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k), rx), w: rx.fp[0] + (rx.margin ?? 3), h: rx.fp[1] * Math.min(2, k) + (rx.margin ?? 3) });
   // East-side rooms stand outboard like the west ones: turned so their long side runs along the ring.
   for (const r of est ?? []) east.push(r.w > r.h ? { ...r, w: r.h, h: r.w } : r);
   const along = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.h + 1, 1);
