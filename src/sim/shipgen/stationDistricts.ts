@@ -76,7 +76,7 @@ export function concentricBands(rest: readonly RoomSpec[]): { iIn: RoomSpec[]; i
  */
 export function marketBands(rest: readonly RoomSpec[]): { iIn: RoomSpec[]; iOut: RoomSpec[]; oBand: RoomSpec[] } {
   const commons = rest.filter((r) => r.role === 'support' || r.role === 'plaza' || r.role === 'garden');
-  const shops: RoomSpec[] = Array.from({ length: Math.max(2, rest.filter((r) => r.role === 'quarters').length) }, () => ({ role: 'shop', mods: [], w: 4, h: 4, dept: 'commons' }));
+  const shops: RoomSpec[] = Array.from({ length: Math.max(6, 3 * rest.filter((r) => r.role === 'quarters').length) }, () => ({ role: 'shop', mods: [], w: 4, h: 4, dept: 'commons' }));
   const ring = [...shops, ...commons];
   const iIn: RoomSpec[] = [], iOut: RoomSpec[] = [];
   // About two fifths round the rotunda, the rest outboard; shops spread through both.
