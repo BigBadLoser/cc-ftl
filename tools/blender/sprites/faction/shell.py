@@ -391,7 +391,8 @@ class Chamfer(Feature):
                 sp.band = sp.clip = self.c
                 lim = sp.line[0] + sp.line[1] - self.c + 1e-9
                 sp.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
-                sp.diag = sp.skirt_halves = True
+                sp.diag = True
+                sp.skirt_halves = not sp.solid          # (a solid ramp's band covers the cut cells' open halves)
 
 
 class FloorDrop(Feature):
