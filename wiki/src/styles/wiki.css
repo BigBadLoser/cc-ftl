@@ -590,3 +590,71 @@ kbd {
 
 /* Dark text on the bright cyan primary button, as the game puts dark ink on its bright accents. */
 :root.dark .svp-action--primary, :root.dark .svp-action--primary .label { color: #06080a !important; }
+
+/* Titles cut into the top border, like the game UI's Frame (src/ui/kit/Frame.svelte): the card has no top border, and its
+ * title is a rail along the top edge built from segments (a 9px line, the title, a line filling the rest), so the break
+ * around the title is a real gap and works over transparent backgrounds such as the home page's starfield.
+ *   .wiki-cut-card    the bordered card (--cut-line and --cut-style set the edge)
+ *   .wiki-cut-title   its title, drawn as the rail
+ *   .wiki-cut-rail    a title rail with more than one item: put a .wiki-cut-gap between them */
+.wiki-cut-card {
+  --cut-line: var(--wiki-card-border);
+  --cut-style: solid;
+  position: relative;
+  overflow: visible !important;
+  border-top-color: transparent !important;
+}
+.wiki-cut-card:hover { --cut-line: var(--wiki-accent); }
+.wiki-cut-title {
+  position: absolute !important;
+  left: -1px;
+  right: -1px;
+  top: -7px;
+  height: 13px;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  font: 700 13px/13px var(--wiki-head-font) !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--wiki-card-color);
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  z-index: 1;
+}
+.wiki-cut-title::before, .wiki-cut-title::after, .wiki-cut-gap {
+  content: '';
+  display: block;
+  height: 0;
+  border-top: 1px var(--cut-style) var(--cut-line);
+}
+.wiki-cut-title::before { flex: none; width: 9px; margin-right: 5px; }
+.wiki-cut-title::after { flex: 1 1 0; min-width: 6px; margin-left: 5px; }
+.wiki-cut-rail::after { flex: none; width: 12px; }
+.wiki-cut-gap { flex: 1 1 0; min-width: 6px; margin: 0 5px; }
+:root:not(.dark) .wiki-cut-title { text-shadow: none; }
+
+/* The theme's home feature cards take the same frame through their own classes: the game's panel over the starfield,
+ * edged in its brighter --line-hi so the frame reads against space. */
+.feature-item { --cut-line: var(--wiki-card-border); --cut-style: solid; border-top-color: transparent !important; }
+:root.dark .feature-item {
+  --cut-line: #3a424a;
+  background: rgba(11, 14, 17, .85) !important;
+  border-color: #3a424a !important;
+  border-top-color: transparent !important;
+}
+.feature-item:hover { --cut-line: var(--wiki-accent); }
+.feature-item .feature-title {
+  position: absolute; left: -1px; right: -1px; top: -7px; height: 13px; margin: 0 !important; padding: 0 !important;
+  display: flex; align-items: center;
+  font: 700 13px/13px var(--wiki-head-font) !important; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+  color: var(--wiki-card-color); text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.feature-item .feature-title::before, .feature-item .feature-title::after {
+  content: ''; display: block; height: 0; border-top: 1px var(--cut-style) var(--cut-line);
+}
+.feature-item .feature-title::before { flex: none; width: 9px; margin-right: 5px; }
+.feature-item .feature-title::after { flex: 1 1 0; min-width: 6px; margin-left: 5px; }
+/* Titles rise 7px above their cards, so card grids need a little more room between rows. */
+.wiki-reference-grid, .wiki-module-grid { row-gap: 1.25rem !important; }

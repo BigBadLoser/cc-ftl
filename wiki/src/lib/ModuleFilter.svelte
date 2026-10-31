@@ -35,7 +35,7 @@
 <p class="wiki-category-summary" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'module' : 'modules'}</p>
 <ul class="wiki-module-grid">
   {#each filtered as module (module.id)}
-    <li class="wiki-module-card">
+    <li class="wiki-module-card wiki-cut-card">
       <a href={resolve('reference/modules/') + module.slug + '/'}>
         <div class="wiki-module-art">
           {#if module.image}
@@ -51,7 +51,7 @@
           {/if}
         </div>
         <div class="wiki-module-info">
-          <strong>{module.name}</strong>
+          <strong class="wiki-cut-title">{module.name}</strong>
           <span>{module.footprint[0]} × {module.footprint[1]} tiles</span>
         </div>
       </a>

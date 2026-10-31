@@ -8,12 +8,12 @@
   const stationName = $derived(recipe.facts.find(([name]) => name === 'Station')?.[1] ?? recipe.station);
 </script>
 
-<article class="wiki-reference-card wiki-recipe-card">
-  <div class="wiki-recipe-heading">
+<article class="wiki-reference-card wiki-recipe-card wiki-cut-card">
+  <div class="wiki-recipe-heading wiki-cut-title wiki-cut-rail">
     <strong class="wiki-reference-title">
       <a href={resolve('reference/recipes/') + recipe.slug + '/'}>{recipe.name}</a>
     </strong>
-    {#if work}<span class="wiki-recipe-work" title="Production work">{work} work</span>{/if}
+    {#if work}<i class="wiki-cut-gap"></i><span class="wiki-recipe-work" title="Production work">{work} work</span>{/if}
   </div>
   {#if showStation && recipe.stationSlug}
     <span class="wiki-recipe-station">

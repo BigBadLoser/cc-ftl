@@ -51,14 +51,14 @@
     {#if kind === 'recipes'}
       <RecipeCard recipe={item} />
     {:else}
-      <a class="wiki-reference-card" class:wiki-reference-item-card={kind === 'items'} href={paths[kind] + item.slug + '/'}>
+      <a class="wiki-reference-card wiki-cut-card" class:wiki-reference-item-card={kind === 'items'} href={paths[kind] + item.slug + '/'}>
         {#if showArtwork && item.image}
           <div class="wiki-reference-art">
             <img src={item.image} loading="lazy" width="300" height="190" alt="" />
           </div>
         {/if}
         <div class="wiki-reference-info">
-          <strong class="wiki-reference-title">{item.name}</strong>
+          <strong class="wiki-reference-title wiki-cut-title">{item.name}</strong>
           <span class="wiki-reference-subtitle">{item.subtitle}</span>
           {#if item.facts.length}
             <dl class="wiki-reference-facts">
