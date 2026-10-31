@@ -439,8 +439,8 @@ def _ramp_chamfer(k, X, Y, C, zs, F):
 
 def _end_section(k, ax, plane, a, b, zs, zt, F):
     """A wall's end face, under its face parts: the section of its foot and its two ramps down to the floor (each
-    ending in an upright foot where the shell's ramps do), with edge highlights up its two edges (to zt) and down the
-    ramps' slopes."""
+    ending in an upright foot where the shell's ramps do), with edge highlights up its front edge (to zt) and down the
+    front ramp's slope (b: the face's side; a, the wall's back, none)."""
     sh = T.SHELL
     run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
     sec = [(a - run, 0.0035), (b + run, 0.0035), (b + run, ft), (b, zs), (a, zs), (a - run, ft)]
@@ -449,8 +449,7 @@ def _end_section(k, ax, plane, a, b, zs, zt, F):
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],
                T.style().toe or F, 2, T.OUT(ax))
-    hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)], [(a, zs), (a + LINE, zs), (a + LINE, zt), (a, zt)],
-          [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)],
-          [(a, zs), (a, zs - 0.035), (a - run + 0.06, ft), (a - run, ft)]]
+    hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],                   # (the front's: the back, the wall's
+          [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)]]      # far side, takes none)
     for q in hl:
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))
