@@ -160,6 +160,9 @@ def bastion_hole():
     return (BAST_PANEL[0], BAST_PANEL[1], -0.08)
 
 
+SLOT_TONES = (2, 1)                 # the open slot's floor and back wall: their ramp levels (M over D)
+
+
 def _slot(k, P, run_, zs, hole, fam):
     """The ramp's slot opened (the hole the shell leaves: o0..o1 along, d0..d1 out): its floor, back and sides."""
     o0, o1, d0, d1 = hole
@@ -167,8 +170,10 @@ def _slot(k, P, run_, zs, hole, fam):
     zat = lambda d: ft + (zs - ft) * (1 - d / run_)    # noqa: E731   the slope's height d out (over its foot)
     zb = zat(d1)                                       # (the floor level, meeting the slope where the slot ends)
     up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
-    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zb, d1), P(o0, zb, d1)], fam, 2, up)                 # its floor,
-    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], fam, 1, out_)     # back
+    R = T.RAMPS[fam][0]                                 # (the floor a step over the back: SLOT_TONES)
+    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zb, d1), P(o0, zb, d1)], fam, 2, up, fixed=R[SLOT_TONES[0]])  # floor,
+    k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], fam, 1, out_,
+           fixed=R[SLOT_TONES[1]])                                                                     # back
     for u, sg in ((o0, 1), (o1, -1)):                                                                # and sides
         k.poly([P(u, zb, d0), P(u, zat(d0), d0), P(u, zb, d1)], fam, 1, along * sg)
 
