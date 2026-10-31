@@ -113,8 +113,9 @@ def _shelf(k, ax, plane, u0, u1, z0, z1, F):
     _cavity(k, ax, plane, u0, u1, z0, z1, CIVIL_D, F)
     L, t = LINE, MOUTH_T
     o, dark = T.OUT(ax), T.RAMPS[F][0][0]
-    for i in (1, 2, 3):                             # three seams up its back, evenly spaced, in its sides' tone
-        u = round((u0 + (u1 - u0) * i / 4) / L) * L                  # (each on one px column)
+    n = round((u1 - u0 - CIVIL_D) / L)              # (the px of it that show: the mouth's far edge hides its depth)
+    for i in (1, 2, 3):                             # three seams up its back, a px each, quartering what shows of it
+        u = u0 + (round((n - 3) * i / 4) + i - 1) * L        # in its sides' tone
         k.poly([T.P(ax, plane, a, z, PAINT - CIVIL_D) for a, z in ((u, z0), (u + L, z0), (u + L, z1), (u, z1))], F, 0,
                o, fixed=dark)
     for q in ((u0, u1, z1, z1 + t), (u0, u1, z0 - t, z0), (u0 - L, u0, z0, z1), (u1, u1 + L, z0, z1)):
