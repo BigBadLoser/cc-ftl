@@ -121,7 +121,8 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
     }
     const nx = Math.cos(a);
     const ny = Math.sin(a);
-    const flat = Math.abs(ny) >= Math.abs(nx);
+    // On a diagonal (within rounding) rooms lie flat, so mirrored bastions turn the same way.
+    const flat = Math.abs(ny) >= Math.abs(nx) - 1e-6;
     let done = false;
     for (const doorTo of doorTos) for (const rot of [flat, !flat]) {
       if (done) break;
@@ -303,6 +304,31 @@ function secureSides(rooms: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
   return sides;
 }
 
+/** The arc centred on `at` just long enough for `rooms` side by side at radius R (each a little clear of the next). */
+function span(rooms: RoomSpec[], at: number, R: number): [number, number] {
+  const half = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) / 2 / Math.max(1, R);
+  return [at - half, at + half];
+}
+
+/**
+ * Gun bays dealt to bastions at mirrored places on the rim (Palmanova's bastions: one plan, repeated at equal angles),
+ * never on the north and south faces (the dock banks): the four diagonals take an equal share; a remainder of one stands
+ * on the stern axis (east), of two on the east-west axis, of three on the axis and one more on two opposite diagonals.
+ * Bays go round in order of size, so mirrored bastions get matching rooms.
+ */
+function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
+  const q = Math.PI / 4;
+  const sorted = [...guns].sort((a, b) => b.w * b.h - a.w * a.h);
+  const diag = Math.floor(sorted.length / 4) * 4;
+  const out = new Map<number, RoomSpec[]>();
+  const put = (at: number, r: RoomSpec): void => { out.set(at, [...(out.get(at) ?? []), r]); };
+  sorted.slice(0, diag).forEach((r, i) => put([-q, q, 3 * q, 5 * q][i % 4] as number, r));
+  const rest = sorted.slice(diag);
+  const axis = rest.length === 2 ? [0, Math.PI] : rest.length === 3 ? [0, -q, 5 * q] : [0];
+  rest.forEach((r, i) => put(axis[i % axis.length] as number, r));
+  return [...out.entries()];
+}
+
 /** The four quarter arcs between cardinal spokes. */
 const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.3, (q + 1) * (TAU / 4) - 0.3]);
 
@@ -331,7 +357,10 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const [upper, lower] = secureSides(inner.filter(isSecure));
   const missed = [...fitAlong(b, R, ring, upper, stern(upper, R, -1), -1), ...fitAlong(b, R, ring, lower, stern(lower, R, 1), -1)];
   const inboard = fitAlong(b, R, ring, [...missed, ...inner.filter((r) => !isSecure(r))], QUARTERS, -1);
-  const left = fitAlong(b, R, ring, [...sys.filter((r) => r.role === 'weapons'), ...inboard], rim, 1, depth + 1, banks.labels);
+  // Gun bays as bastions at mirrored places on the rim, packed side by side; what does not fit falls back to the rim.
+  const guns = sys.filter((r) => r.role === 'weapons');
+  const unplaced = bastions(guns).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R + depth + 2)], 1, depth + 1, banks.labels));
+  const left = fitAlong(b, R, ring, [...unplaced, ...inboard], rim, 1, depth + 1, banks.labels);
   // Crowded rims: guns get a second pass on their own (fresh spots between the first ones).
   return fitAlong(b, R, ring, left, rim, 1, depth + 1, banks.labels).length === 0;
 }
