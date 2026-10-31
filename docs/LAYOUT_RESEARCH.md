@@ -181,6 +181,78 @@ everything was built at once. Ideas, best payoff first.
    generated content matters when it connects to mechanics. A dock checkpoint where security stands and the alarm
    starts; armouries near the entrances so defenders arm on the way; hangar decks that launch boarding shuttles.
 
+## Stations as built and designed (second pass, October 2026)
+
+A second literature pass, on station layouts people have designed by hand or for real, and on other generators. No
+published method generates round station interiors; Space Haven's derelicts and Barotrauma's outposts are not documented.
+
+### Space Station 13 and 14 maps
+
+Hand-made station maps, refined by players over about 20 years: the largest body of station-layout experience there is.
+[Paradise design guide](https://devdocs.paradisestation.org/mapping/design/),
+[Paradise wiki, Guide to Mapping](https://paradisestation.org/wiki/Guide_to_Mapping).
+
+- Hallway hierarchy: primary halls 3 wide, arterial halls 2 wide, halls inside a department 1-2 wide.
+- Departments (medbay, engineering, cargo) are clusters with a front door off the main hall and a back or side door into
+  maintenance. Maintenance wraps round the departments, so security can flank intruders and there are loops.
+- "Big Room Disease": rooms as large as their purpose and occupancy need, "but no larger"; consistent scale (a freezer
+  never outsizes its kitchen).
+- Public areas should be interesting (windows to space, decoration, floor finishes); every maintenance area gets a
+  distinctive feature so players know where they are.
+
+**For us:** ring corridors 2 wide under a 3-wide concourse; departments instead of every room doored onto the ring; a
+service passage for loops; rooms sized by their job, not by the arc they were given.
+
+### Heat Signature: sectors, locks and keys
+
+Tom Francis, [sectors](https://pentadact.com/2015-11-14-teaching-heat-signatures-ship-generator-to-think-in-sectors),
+[locks and keys](https://pentadact.com/2015-11-28-generating-locks-and-keys-in-heat-signatures-ships).
+
+- Ships felt like random, empty mazes until the generator placed sectors: clusters of 3-6 rooms as one unit, each
+  attached outward from the last, so every room is reachable.
+- Door security rises towards the objective (the cockpit); the key lies in the sector before.
+- Small leftover pockets read as natural when spread out, not clustered.
+
+**For us:** departments as the placement unit; security that deepens from the docks to the secure core and the bridge.
+
+### Shadows of Doubt: shells and partitions
+
+ColePowered, [DevBlog #13](https://colepowered.com/2019/02/),
+[#22 Doors Galore](https://colepowered.itch.io/shadows/devlog/164492/shadows-of-doubt-devblog-22-doors-galore).
+
+- Hand-designed building outlines; the generator places the dividing walls inside them.
+- Rooms are scored on shape and windows; only some room types may connect; a room may "steal" floor from a neighbour
+  when it needs more.
+
+**For us:** band segments that trade floor with their neighbours until each fits its job, and connection rules
+(quarters never open onto cargo).
+
+### Habitat zoning (NASA, ESA)
+
+[SAE 881119, Space Station habitat baseline](https://saemobilus.sae.org/papers/a-baseline-design-space-station-habitat-881119),
+[NASA privacy guidelines (1988)](https://ntrs.nasa.gov/api/citations/19880011858/downloads/19880011858.pdf),
+[Liquifer, Gateway I-HAB interior (IAC 2019)](https://liquifer.com/wp-content/uploads/2020/03/2019_Interior_IAC-Paper-Liquifer-2019_v3.pdf).
+
+- Three zones: quiet (crew quarters), a buffer for noise (stowage, medical, hygiene), then the active areas.
+- Hygiene away from food; work areas away from living quarters.
+
+**For us:** room order quarters, then buffer (medbay, lockers, storage), then mess and galley, then works.
+
+### Radial plans: Palmanova and the Stanford Torus
+
+[Palmanova](https://en.wikipedia.org/wiki/Palmanova), [Third Venetia](https://thirdvenetia.substack.com/p/the-star-fortress-of-palmanova);
+[Stanford Torus](https://en.wikipedia.org/wiki/Stanford_torus), [NSS](https://nss.org/stanford-torus-space-settlement/).
+
+- Palmanova: one number drives the plan (multiples of three: nine bastions, three gates, eighteen radial streets). Radial
+  streets run from the central square towards the bastions, crossing concentric ring roads; the bastions stand at regular
+  angles so their fields of fire overlap.
+- Stanford Torus: the ring is cut into six equal sections with a spoke to the centre of each; housing and agriculture
+  take whole sections; industry is moved off the ring.
+
+**For us:** each round station picks a symmetry number (4, 6 or 8) that sets its spokes, rim rooms and dock banks, with
+each rim room at the end of a line from the centre: rim rooms read as bastions, not as boxes glued on. The ring cut into
+equal sections, one district each, its spoke at the section's centre.
+
 ## Plan
 
 What came of this plan, and what was tried and dropped, is in [STATIONGEN.md](STATIONGEN.md).

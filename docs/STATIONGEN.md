@@ -158,6 +158,9 @@ Scores over seeds 1–6, every faction and station kind (84 layouts):
 
 ## Tried and dropped
 
+- **Octagon and chamfered-square ring outlines** (twice). Straight sides keep ring rooms rectangular, but the user wants
+  round stations round: the circle is what makes them interesting. The second attempt is kept as a fallback on branch
+  `shipgen-stations-octagon` in case round rooms can't be made to work.
 - **Placeholder consoles and seated consoles as islands.** Rejected by the user: consoles are working pieces with real
   mechanics, not decoration.
 - **Drill-hall-specific landmarks** (sparring ring, targets, memorial). Rejected as against "more with less": too
