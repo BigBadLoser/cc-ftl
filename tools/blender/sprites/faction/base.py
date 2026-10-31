@@ -51,10 +51,10 @@ class Faction(Look):
             return f"{self.pre}F{max(0, min(6, s))}" if s is not None else P.name
         if ".cap." in P.sprite and P.name == T.CUT:                   # the far hull's cap (wall3d.hull_cap): its cuts
             return T.CUT                                                # black, as the partitions' caps
-        if P.kind == "top" and P.sprite.startswith("tile.wall."):      # a partition's top (cap or cut): black, as
-            lv = "up" if ".full." in P.sprite else "low" if ".low." in P.sprite else "cut"   # the default walls'
-            if P.z >= W.wall_top("wall", lv) - 0.03:            # (the header's top, 0.02 under the cap, too)
-                return T.CUT
+        if (P.kind == "top" or P.name == T.CUT) and P.sprite.startswith("tile.wall."):   # a partition's top (cap or
+            lv = "up" if ".full." in P.sprite else "low" if ".low." in P.sprite else "cut"   # cut) and the dark line
+            if P.z >= W.wall_top("wall", lv) - 0.03:            # under it: black, as the default walls' (the
+                return T.CUT                                    # header's top, 0.02 under the cap, too)
         end = P.sprite.partition(".end.")[2][:1]                       # s / e: the end piece's section faces y / x
         if (self.shaded and end and P.kind == ("y" if end == "s" else "x") and P.fam in ("wall", "hull")
                 and P.role in STEP["x"]):
