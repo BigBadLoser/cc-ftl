@@ -23,7 +23,7 @@ function reject(sim: Sim, command: string, reason: string): void {
 }
 
 /** Start a stowed vehicle's flight at its bay. Returns a reject reason, or null. */
-function launch(sim: Sim, id: number, v: Vehicle): string | null {
+export function launch(sim: Sim, id: number, v: Vehicle): string | null {
   if (v.state !== 'stowed') return 'notStowed';
   if (!v.pilot && !v.autopilot) return 'noPilot';
   if (!bayWorking(sim, v.home)) return 'bayDown';

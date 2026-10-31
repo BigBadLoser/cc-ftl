@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { UiJumpWarnings } from '../starmapApi';
-  import type { UiAiming, UiApi, UiBoarding, UiCombat, UiShipCombat } from '../api';
+  import type { UiAiming, UiApi, UiBoarding, UiCombat, UiShipCombat, UiShuttles } from '../api';
   import InsetFrame from './InsetFrame.svelte';
   import EnemyCard from './EnemyCard.svelte';
   import JumpConfirm from '../JumpConfirm.svelte';
   import BoardingCard from './BoardingCard.svelte';
+  import BoardPicker from './BoardPicker.svelte';
+  import { boardPlan } from './boardPlan';
   import { TICK_HZ } from '../../sim/time';
   import { nextHeatRate, type HeatSample } from './heatRate';
   import { keymap, MODE_ACTIONS, WEAPON_ACTIONS, type ActionId } from '../keymap';
@@ -24,10 +26,15 @@
   type System = 'weapons' | 'shields' | 'engines';
   let aiming = $state<UiAiming | null>(null);
   let boarding = $state<UiBoarding[]>([]);
+  let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
+  let picking = $state(false);
   const enemy = $derived<UiShipCombat | undefined>(
     combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0],
   );
   const me = $derived(combat.player);
+  // BOARD: only a live hostile ship can be boarded; the plan says what the picker can offer and why not.
+  const plan = $derived(boardPlan(shuttles, enemy?.ship ?? 0, me?.ship ?? 0));
+  const boardBlocker = $derived(!enemy || enemy.state === 'wreck' ? 'No target' : plan.blocker);
 
   const vent = () => me && api.dispatch({ type: 'combat.vent', ship: me.ship });
   const overcharge = (system: System) => me && api.dispatch({ type: 'combat.overcharge', ship: me.ship, system });
@@ -100,8 +107,13 @@
   }
   function onKey(e: KeyboardEvent) {
     // A modal (the Esc menu, the flee/jump confirmation) owns the keys (Tab, Enter, Esc); so does leaving the fight.
-    if (leaving || modalOpen() || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
+    if (leaving || picking || modalOpen() || e.ctrlKey || e.metaKey || e.altKey || !me || isTypingTarget(e)) return;
     const is = (id: ActionId) => keymap.matches(e, id);
+    if (is('combat.board')) {
+      consume(e);
+      if (!boardBlocker) picking = true;
+      return;
+    }
     if (is('combat.swap')) {
       consume(e);
       swap();
@@ -136,6 +148,7 @@
   onMount(() => {
     const un = api.aiming.subscribe((a) => (aiming = a));
     const un3 = api.boarding.subscribe((b) => (boarding = b));
+    const un4 = api.shuttles.subscribe((s) => (shuttles = s));
     const un2 = api.snapshot.subscribe((x) => {
       tick = x.tick;
     });
@@ -144,6 +157,7 @@
       un();
       un2();
       un3();
+      un4();
       window.removeEventListener('keydown', onKey, true);
     };
   });
@@ -153,7 +167,7 @@
 <div class="hud" data-testid="combat-hud">
   {#if enemy}
     <div class="top">
-      <EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} />
+      <EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} onBoard={() => (picking = true)} {boardBlocker} />
       {#each boarding as b (b.ship)}<BoardingCard {api} {b} named={boarding.length > 1} />{/each}
     </div>
   {/if}
@@ -173,6 +187,7 @@
       <PlayerStrip {api} {me} {flee} {drive} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
     </div>
   {/if}
+  {#if enemy}<BoardPicker {api} {plan} enemyName={enemy.name} open={picking} onClose={() => (picking = false)} />{/if}
   <JumpConfirm warnings={leaving} onConfirm={doFlee} onCancel={() => (leaving = null)} />
 </div>
 

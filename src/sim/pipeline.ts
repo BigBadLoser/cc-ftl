@@ -64,6 +64,7 @@ import { logisticsSystem } from './logistics/system';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { recallSystem } from './boarding/recall';
+import { launchSystem } from './boarding/launch';
 import { sabotageResumeSystem } from './boarding/resume';
 import { coreRaidSystem } from './capture/coreRaid';
 import { captureSystem } from './systems/capture';
@@ -205,6 +206,8 @@ export const pipeline: readonly System[] = [
   boardingAiSystem,
   // The player's recall of a boarding party (walk to the shuttle, fly home, step out): vehicle commands, applied next tick.
   recallSystem,
+  // The player's launch of a boarding party (walk to the bay, fly to the airlock, step out): vehicle commands' effects, applied here.
+  launchSystem,
   // The player's anti-vehicle weapons pick up a hostile shuttle coming for the ship (the AI does it by command above).
   vehicleDefenceSystem,
   targetingSystem,

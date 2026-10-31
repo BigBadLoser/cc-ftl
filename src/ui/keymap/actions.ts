@@ -72,6 +72,7 @@ export const ACTIONS = [
   a('combat.holdAll', 'combat', 'Hold all weapons', ['KeyH'], 'combat'),
   a('combat.vent', 'combat', 'Vent heat', ['KeyG'], 'combat'),
   a('combat.flee', 'combat', 'Flee', ['KeyF'], 'combat'),
+  a('combat.board', 'combat', 'Board the enemy ship (party picker)', ['KeyB'], 'combat'),
   a('combat.swap', 'combat', 'Swap main view and inset', ['Tab'], 'combat'),
 
   a('ui.confirm', 'menus', 'Confirm (Got it, Deploy)', ['Enter']),

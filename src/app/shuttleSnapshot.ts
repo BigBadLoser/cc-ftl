@@ -1,9 +1,10 @@
-import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
 import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
+import { isIncapacitated } from '../sim/crew/helpers';
 
 
 /** The live trade deal this shuttle is flying, as a status line. */
@@ -63,9 +64,14 @@ function regionList(sim: Sim, home: number): UiShuttles['regions'] {
   });
 }
 
+function hpFrac(sim: Sim, id: number): number {
+  const h = sim.world.get(id, HealthC);
+  return h ? Math.round((h.hp / Math.max(1, h.max)) * 100) / 100 : 1;
+}
+
 function crewRef(sim: Sim, id: number): UiShuttleCrew | null {
   const c = id ? sim.world.get(id, CrewC) : undefined;
-  return c ? { id, name: c.name, role: sim.content.roles[c.role]?.name ?? c.role, boarding: sim.world.get(id, EmbarkOrderC)?.vehicle ?? 0, ship: sim.world.has(id, PositionC) ? shipIdOf(sim, sim.world.get(id, PositionC)) : 0 } : null;
+  return c ? { id, name: c.name, role: sim.content.roles[c.role]?.name ?? c.role, boarding: sim.world.get(id, EmbarkOrderC)?.vehicle ?? 0, ship: sim.world.has(id, PositionC) ? shipIdOf(sim, sim.world.get(id, PositionC)) : 0, hp: hpFrac(sim, id), down: isIncapacitated(sim, id) } : null;
 }
 
 function shipName(sim: Sim, shipId: number): string {
