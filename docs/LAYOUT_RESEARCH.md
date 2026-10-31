@@ -253,6 +253,74 @@ ColePowered, [DevBlog #13](https://colepowered.com/2019/02/),
 each rim room at the end of a line from the centre: rim rooms read as bastions, not as boxes glued on. The ring cut into
 equal sections, one district each, its spoke at the section's centre.
 
+## Round plans and non-rectangular rooms (third pass, October 2026)
+
+A broader pass beyond stations: radial buildings, radial layout algorithms, rooms that are not rectangles, and drawing
+curved walls on a tile grid.
+
+### Radial buildings
+
+- **The Pentagon:** five concentric rings joined by ten radial corridors; the courts between the rings are light wells
+  (more windows); the outer ring is the long way round, so people cut across by the radials.
+  [Wikipedia](https://en.wikipedia.org/wiki/The_Pentagon), [Defense Media Network](https://defensemedianetwork.com/stories/lost-and-found-in-the-pentagon).
+- **Fujian tulou:** an outer ring of identical units, lower inner rings for kitchens and stores, the ancestral hall at the
+  centre, one gate. [Wikipedia](https://en.wikipedia.org/wiki/Fujian_tulou),
+  [Studio Matrx](https://www.studiomatrx.org/architecture-canon/tulou-hakka-roundhouses).
+- **Eastern State Penitentiary:** a central rotunda with no partitions and a sightline down the axis of every cellblock;
+  when later blocks broke the radial plan, mirrors were fitted to keep the view.
+  [Eastern State](https://www.easternstate.org/node/722).
+
+**For us:** the gaps between rings become deliberate courts with windows to space, not leftover void; more radial
+corridors (one per section) so nobody walks the long way round; repetition is a strength (a habitation ring of identical
+cabins reads as designed); one main gate; the rotunda keeps a clear sightline down every spoke.
+
+### Radial partition (sunburst)
+
+The sunburst is a treemap drawn radially (d3 `partition`): each node gets an angle in proportion to its size within its
+parent's angle, and its depth in the tree sets its ring; a "parallel" variant stacks children radially instead.
+[Protovis](https://graphics.stanford.edu/~mbostock/protovis-jsdoc/symbols/src/layout_Sunburst.js.html),
+[TanStack](https://tanstack.com/charts/latest/docs/reference/marks/sunburst).
+
+**For us:** the station as a tree (station, district, department, room) laid out as a sunburst: districts take sections
+of the ring, departments take arcs within them, rooms take arcs within those. One algorithm for districts, departments
+and room order, replacing the ordered list wrapped round the ring.
+
+### Non-rectangular floor plans
+
+- Lerm, ["Floor Plan Generation for Simple Polygons with Support for Holes"](https://dl.gi.de/bitstreams/85753577-65cb-4080-939e-dce4d2304bf3/download):
+  rooms grow walls outward from seed points inside any polygon outline (a ring is a polygon with a hole), then the walls
+  are straightened and simplified until the plan looks credible.
+- Dahl and Rinde, ["Procedural Generation of Indoor Environments"](https://www.cse.chalmers.se/~uffe/xjobb/Lars%20Rinde%20o%20Alexander%20Dahl-Procedural%20Generation%20of%20Indoor%20Environments.pdf):
+  Voronoi splits of irregular polygons; ring-shaped node structures.
+- Shape grammars in cylindrical coordinates (procedural modelling of round geometry, Cyberworlds 2016,
+  DOI 10.1109/CW.2016.19): split operations on curved surfaces. Our band cut is a simple version of this.
+
+**For us:** wall straightening after the band cut (Lerm) could remove the one-tile notches and ragged partitions.
+
+### Furniture in irregular rooms
+
+- AnyHome ([arXiv 2312.06644](https://arxiv.org/pdf/2312.06644)): anchor pieces first, then a free-space mask updated
+  after each placement; rules for corners, wall sections and the centre of what is left.
+- Svobodová and Janků (2021): simulated annealing divides a room into functional zones, then a genetic algorithm places
+  furniture within each zone; not limited to rectangular rooms.
+
+**For us:** designs already lay out a rectangular core; zones first, then pieces, would suit the curved leftovers.
+
+### Curved walls on a tile grid (rendering)
+
+- **Dual grid:** tiles drawn half a cell offset from the map grid, chosen by marching squares from the four cells under
+  their corners; Oskar Stålberg's scheme needs 15-16 tiles instead of 47 and gives rounded corners.
+  [Boris the Brave, Quarter-Tile Autotiling](https://www.boristhebrave.com/2023/05/31/quarter-tile-autotiling/),
+  [TileMapDual](https://github.com/pablogila/TileMapDual).
+- **45-degree wall pieces:** dedicated diagonal tiles that still fit the grid
+  ([RPG Maker](https://www.rpgmakerweb.com/blog/make-your-own-diagonal-walls)).
+- Townscaper's relaxed irregular quad grid ([Boris the Brave](https://boristhebrave.com/docs/sylves/1/articles/tutorials/townscaper.html))
+  gives organic shapes but needs a non-square map; it does not fit our square tile sim.
+
+**For us:** the stair-stepped look of round walls can be fixed where it is drawn, not where it is generated: diagonal or
+dual-grid wall pieces from the Blender pipeline would make a round hull read as round, with the sim grid unchanged. This
+is an art and render task, outside the generator.
+
 ## Plan
 
 What came of this plan, and what was tried and dropped, is in [STATIONGEN.md](STATIONGEN.md).
