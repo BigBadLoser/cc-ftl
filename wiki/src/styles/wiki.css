@@ -549,13 +549,11 @@ kbd {
 }
 :root:not(.dark) kbd { background: #f2f5f9; color: #1d2733; border-color: #b8c4d2; }
 
-/* Home hero: the game's own space backdrop (static/guides/home/backdrop.webp, from `npm run capture`) behind the
- * starter ship, full width and fading into the page below. Dark theme only: the light theme's text needs a light page. */
-:root.dark main:has(.home-page) {
-  /* Anchored left and raised: the node's planet (at the backdrop's left edge, as in the game) sits beside the title. */
-  background:
-    linear-gradient(to bottom, rgba(27, 27, 31, .05) 0, rgba(27, 27, 31, .2) 380px, rgb(27, 27, 31) 680px),
-    url('/cc-ftl/wiki/guides/home/backdrop.webp') left -230px / max(100%, 1600px) auto no-repeat;
+/* Home page: the game's own space backdrop (static/guides/home/backdrop.webp, from `npm run capture`) behind the whole
+ * page, fixed like space behind the ships, with no fade at the bottom. Dark theme only: the light theme's text needs a
+ * light page. */
+:root.dark body:has(.home-page) {
+  background: url('/cc-ftl/wiki/guides/home/backdrop.webp') left center / cover fixed no-repeat;
   image-rendering: pixelated;
 }
 /* The theme's red and amber glow would tint the game's own colours. */
