@@ -30,12 +30,25 @@ The game remains at `/cc-ftl/` and the wiki lives at `/cc-ftl/wiki/`.
 The two sites must never be published independently into the same GitHub Pages
 artifact, as either would replace the other.
 
-## Next stages
+## Generated pages and live data
 
-Generate thumbnail images from the game's sprite manifest; expand reference
-coverage; add verified game screenshots and guides. Keep market-dependent
-values separate from fixed item base values.
+`npm run generate` (run by `dev`, `check` and `build`) writes, from the game's own definitions:
 
-Reference generation includes sprite crops from `../public/assets/1x/manifest.json` and the source PNG sheets. Generated transparent thumbnails are written under `static/generated/sprites/` with nearest-neighbor scaling. Entries without suitable static sprites omit the image; they never borrow an unrelated illustration.
+- the reference catalogs and entry pages under `src/routes/reference/` (all but the hand-written modules index),
+- `src/routes/guides/controls/` from the keymap (`src/ui/keymap/actions.ts`),
+- `src/data/generated/game-data.json`, which guides read through `<Stat>`, `<ModuleTable>` and `<GoalActs>`, so their
+  numbers follow rebalances,
+- sprite crops and module placement previews under `static/generated/`.
 
-`render-module-previews.ts` generates fixed 600×400 placement views using the same `previewGeometry()` as the game's construction UI; the sprite layer chains come from the game's `layersOf()` selector and atlas. Missing artwork remains visibly marked instead of substituting fabricated art. The previews are static for fast GitHub Pages delivery and are used for catalog cards and module details.
+All of it is git-ignored; never edit it by hand. `npm run check` also type-checks the generators against the game's
+content types, so a renamed field fails the check instead of printing "undefined".
+
+Hand-written guides live in `src/routes/guides/` and `src/routes/mechanics/`. Mark behaviour that is planned but not
+built with `<ComingLater>`.
+
+## Guide screenshots
+
+`npm run capture` starts the game's dev server, runs every recipe in `scripts/guide-shots.mjs` in headless Chromium and
+writes `static/guides/<name>.webp`, plus callout positions for `<GuideShot>` in `src/data/guide-shots/`. Re-run it
+after art or UI changes and commit the results; `npm run capture -- hud` runs only shots whose name contains `hud`. The
+home page's ship and backdrop come from the same recipes.

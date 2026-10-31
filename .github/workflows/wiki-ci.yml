@@ -47,43 +47,12 @@ jobs:
           test -f wiki/dist/reference/research/index.html
           test -f wiki/dist/reference/modules/reactor/index.html
           test -f wiki/dist/reference/modules/fabricator/index.html
+          test -f wiki/dist/guides/first-hour/index.html
+          grep -q 'Pause / resume' wiki/dist/guides/controls/index.html
           grep -q 'Smelt metal' wiki/dist/reference/modules/fabricator/index.html
           grep -q 'Refine iron ore' wiki/dist/reference/modules/refinery/index.html
           test -s wiki/dist/generated/previews/module-reactor.png
           test -s wiki/dist/generated/previews/module-engine-mk2.png
-      - name: Render actual wiki screenshots (manual preview only)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          set -euo pipefail
-          chrome="$(command -v google-chrome || command -v chromium || true)"
-          if [ -z "$chrome" ]; then echo "No Chrome/Chromium found on runner" >&2; exit 1; fi
-          mkdir -p .preview-root/cc-ftl/wiki wiki-preview
-          cp -a wiki/dist/. .preview-root/cc-ftl/wiki/
-          python3 -m http.server 8765 --bind 127.0.0.1 --directory .preview-root >/tmp/wiki-preview-http.log 2>&1 &
-          server=$!
-          trap 'kill "$server" 2>/dev/null || true' EXIT
-          for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            if curl -fsS -o /dev/null http://127.0.0.1:8765/cc-ftl/wiki/; then break; fi
-            sleep 1
-          done
-          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/modules.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/
-          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/reactor.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/reactor/
-          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/airlock.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/airlock/
-          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/engine-mk2.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/engine-mk2/
-          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/freight-container.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/modules/cargo-container/
-          timeout --signal=TERM --kill-after=3s 45s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=3500 --window-size=1440,1000 --screenshot="$PWD/wiki-preview/mass-driver.png" http://127.0.0.1:8765/cc-ftl/wiki/reference/weapons/mass-driver/
-          test -s wiki-preview/modules.png
-          test -s wiki-preview/reactor.png
-          test -s wiki-preview/airlock.png
-          test -s wiki-preview/engine-mk2.png
-          test -s wiki-preview/freight-container.png
-          test -s wiki-preview/mass-driver.png
-      - uses: actions/upload-artifact@v4
-        if: github.event_name == 'workflow_dispatch' && success()
-        with:
-          name: cc-ftl-wiki-preview
-          path: wiki-preview/
-          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: success()
         with:
