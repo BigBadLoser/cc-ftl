@@ -694,6 +694,19 @@ palette.json    the single palette, read by Blender scripts and the game
     becomes the owner's colour on the shade ramp `MULT`, 0.42 .. 1.22). Asteroids and derelicts carry no key colour.
   - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
     `screen`).
+- **Backdrop bodies (`backdrop` family, sheet `backdrop`; `sprites/backdrop_bodies.py`, `backdrop_pulsar.py`):** the
+  node's central body drawn large and dim behind the main view.
+  - Ids: `backdrop.body.<kind>.v<n>`, and `backdrop.body.<kind>` (= v0), as `starmap.body.*`. Kinds and variants match the
+    starmap bodies: `star`, `red_dwarf`, `blue_giant`, `black_hole` v0..v2; `gas_giant` v0..v5 (v0..v2 ringed); and,
+    not spawned yet, `binary_star`, `white_dwarf`, `pulsar`, `protostar`, `ice_giant`, `lava_world`, `ocean_world`
+    v0..v2. No nebula: the backdrop draws its own. Pick the variant by node with the same index as the starmap, so a
+    node's backdrop body matches its starmap body.
+  - Frame: 640 px square (320 in the 1x file), anchor at the centre, body radius 200 px (100), halos, rings and discs
+    within 1.6 r. Rendered at full value and colour (the game dims and tints it); glow on the `.glow` twin.
+  - Built by each kind's own starmap builder and seed, scaled up 10/3 with `starmap_kit.DETAIL = 3` times the sphere
+    and ring faces. Stars go through `starmap_bodies.SOFTEN` for a soft, quickly fading halo and finer granulation;
+    the pulsar has its own build (`backdrop_pulsar.py`, soft layered beams). Starmap renders are unchanged (`DETAIL` 1,
+    no `SOFTEN`).
 
 ## Crew AI
 
