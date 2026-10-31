@@ -52,8 +52,8 @@ export interface Start {
 export async function startGame(seedParam: string | null): Promise<Start> {
   const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true);
   const random = () => (Math.random() * 0x100000000) >>> 0;
+  await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
-  await saveStore.ready();
   if (take(NEW_GAME)) return { sim: fresh(random()), notice: null, persist: true };
   const slot = take(LOAD_SLOT);
   if (slot && slot !== AUTO_ID) {
@@ -125,11 +125,11 @@ export const ROTATE_MS = 3 * 60_000;
 
 /**
  * The periodic autosave: writes `auto`, first keeping the previous one as `auto2` (and that as `auto3`) when it was started at least ROTATE_MS ago.
- * Never rotates during a fight, so the older autosaves stay calm ones to go back to. A write that fails leaves the chain as it was.
+ * Never rotates during a fight, and never moves a head that was saved in one (it is overwritten, keeping its age), so the older autosaves stay calm ones to go back to. A write that fails leaves the chain as it was.
  */
 export function writeAutosave(sim: Sim, now = Date.now()): Promise<boolean> {
   // Whether the chain moves is decided by the store when this write's turn comes, from the label the writes before it left.
-  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && now - (newest.since ?? newest.savedAt) >= ROTATE_MS && !sim.sector.inCombat;
+  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && !newest.fight && now - (newest.since ?? newest.savedAt) >= ROTATE_MS && !sim.sector.inCombat;
   return writeSave(sim, AUTO_ID, 'Autosave', now, AUTO_IDS, due);
 }
 

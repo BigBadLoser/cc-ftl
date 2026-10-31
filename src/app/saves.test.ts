@@ -82,6 +82,19 @@ describe('seeded debug sessions', () => {
   });
 });
 
+describe('debug sessions and the store', () => {
+  it('a ?seed= game still opens the store, so Load and named slots work, and still never autosaves', async () => {
+    browser();
+    const start = await startGame('77');
+    expect(start.persist).toBe(false);
+    expect(await writeSave(start.sim, 'slot1', 'Mine')).toBe(true);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['slot1']);
+    createSaver(start.sim, start.persist, () => false, () => undefined)();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(await saveStore.read('auto')).toBeNull();
+  });
+});
+
 describe('save failures and recovery', () => {
   /** Make IndexedDB refuse writes (a full disk, a blocked store) while `on.v` is true. */
   function refuseWrites(on: { v: boolean }) {
@@ -253,6 +266,26 @@ describe('rotating autosaves and the pre-combat snapshot', () => {
     expect([await tickOf('auto'), await tickOf('auto2'), await tickOf('auto3')]).toEqual([14, 11, 5]);
     const m = saveStore.list();
     expect(m.map((x) => x.since)).toEqual([t0 + 12 * 30_000, t0 + 6 * 30_000, t0]);
+  });
+
+  it('keeps combat saves out of the history: a fight past the deadline, then calm autosaves', async () => {
+    const sim = await setup();
+    const t0 = 1_000_000;
+    sim.tick = 1;
+    await writeAutosave(sim, t0); // calm
+    sim.sector.inCombat = true;
+    for (let i = 1; i <= 8; i++) { sim.tick = 100 + i; await writeAutosave(sim, t0 + i * 30_000); } // 4 min of fighting
+    expect(ids()).toEqual(['auto']);
+    sim.sector.inCombat = false;
+    sim.tick = 200;
+    await writeAutosave(sim, t0 + 9 * 30_000); // the head was a fight save: overwritten, not pushed down
+    expect(ids()).toEqual(['auto']);
+    expect(saveStore.list()[0]!.fight).toBe(false);
+    sim.tick = 201;
+    await writeAutosave(sim, t0 + 10 * 30_000); // now a calm head past its age: it moves
+    expect(ids()).toEqual(['auto', 'auto2']);
+    expect(await tickOf('auto2')).toBe(200);
+    expect(saveStore.list().every((m) => !m.fight)).toBe(true);
   });
 
   it('does not rotate during a fight, so the older autosaves stay calm ones', async () => {
