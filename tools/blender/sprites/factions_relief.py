@@ -345,7 +345,7 @@ def navy(hull):
 # the outer corner a narrow 45-degree channel cut in between the two blocks' ends, with a status-light column. The
 # handles are dark pipes on stand-offs. ------------------------------------------------------------------------------
 
-def handle(k, ax, plane, u0, u1, zc, d, r=0.03):
+def handle(k, ax, plane, u0, u1, zc, d, r=0.045):
     """A pull handle: one smooth round bar out of the wall at u0, along d out, and back in at u1, its bends curved."""
     rr = min(d, 0.06)
 
@@ -362,6 +362,7 @@ DRONE_H = 0.006                     # the corner panel sits on the cut (just pro
 
 
 DRONE_FOOT = 4 / 39                 # the drone ramp ends in an upright face this high at the floor (set 5)
+DRONE_SW = 0.15 + 3 / 32            # the drone block's side strips (T1, T1-4)
 DRONE_HD = 4 / 39                   # the header's foot this far under its old place (dropped 2 art px, then 2 px
                                     # deeper); the handle above the block and the block's top move down with it
 
@@ -528,9 +529,10 @@ def drone(hull):
         rt = min(top, T.W.wall_top("wall", "up"))       # the rail at a partition's top on every wall; the far
         if top > rt + 0.03:                             # hull's extra height above it a plain plate
             T.run(k, ax, plane, a, b, ends, rt, top - 0.02, PAINT, F, 2, 0)
+        RD = 0.5 * PX                                   # the rail's depth (the centre block's a PX more)
         rl, rh = rt - 0.12 - DRONE_HD, rt - 0.02 - 3 * PZ            # the rail's foot and front top; its top slopes
         T.run(k, ax, plane, a, b, ends, z1, rl, PAINT, "rose", 1, 0)  # up to the wall 2 art px under the cap (the
-        rail = [(0.0, rl), (PX, rl), (PX, rh - PZ), (PX, rh), (0.0, rt - 2 * PZ)]    # machinery band under it)
+        rail = [(0.0, rl), (RD, rl), (RD, rh - PZ), (RD, rh), (0.0, rt - 2 * PZ)]    # machinery band under it)
         T.run(k, ax, plane, a, b, ends, rt - 2 * PZ - 0.01, rt, PAINT, F, 2, 0)   # the wall over it in its steel
         cl = rt - 0.15 - DRONE_HD - PZ                  # the centre block's foot
         RR = T.RAMPS[F][0 if ax == "y" else 1]          # the rail two steps darker than the wall (the shade face's
@@ -553,8 +555,8 @@ def drone(hull):
             in0, in1 = at0 and ends[0] == "in", at1 and ends[1] == "in" and not corner
             if s1 - s0 > 0.3:
                 if not (in0 and uc - 0.1 < a + 0.25) and not (in1 and uc + 0.1 > b - 0.25):   # (clear of the
-                    prism(k, ax, plane, uc - 0.1, uc + 0.1, [(0.0, cl), (2 * PX, cl),               # other face)
-                          (2 * PX, rt - 0.01 - 3 * PZ), (0.0, rt - PZ)], F, 4)       # its centre block, its top
+                    prism(k, ax, plane, uc - 0.1, uc + 0.1, [(0.0, cl), (RD + PX, cl),              # other face)
+                          (RD + PX, rt - 0.01 - 3 * PZ), (0.0, rt - PZ)], F, 4)      # its centre block, its top
                                                                                  # sloping up to the wall 1 art px
                                                                                  # under the cap
 
@@ -565,36 +567,42 @@ def drone(hull):
             m0, m1 = (mit[0] if at0 else 0.0), (mit[1] if at1 and not corner else 0.0)
             sides = T.RAMPS[F][1 if ax == "y" else 0]               # its ends a shade darker than they'd light
             tv = T.VARIANT[0]                                       # (a straight piece's variant: factions_variants)
-            if tv == 3:                                 # a red block, set back and shorter, between the columns
-                Dr, cr, ri = D - PX, c * (D - PX) / D, 0.1  # only (under them it poked through their sides)
-                prism(k, ax, plane, h0 + 0.12, h1 - 0.12,
-                      [(0.0, z0 + ri), (Dr, z0 + ri + cr), (Dr, z1 - ri - cr), (0.0, z1 - ri)],
-                      F, 2, cols=["lvR2", "lvR", "drM", "lvR2"], cap="lvR2")
-            elif tv not in (1, 2):
-                prism(k, ax, plane, h0, h1, [(0.0, z0), (D, z0 + c), (D, z1 - c), (0.0, z1)], F, 2,
-                      mitre=(m0, m1), cap=sides[1])                                              # the block
-            else:                                                                                # ... or its bay
+            f0 = z0 + c                                                                          # its front's foot
+            if tv in (1, 2):                            # a bay opened in the block, between proud columns (set back)
                 FV.drone_open(k, ax, plane, h0 + 0.12, h1 - 0.12, z0, z1, F, tv)
-            Dc = D + 0.5 * PX if tv not in (1, 2) else D - PX     # (an open bay's columns stand back)
-            lift = 0.5 * PX * math.hypot(c, D) / D          # the columns stand proud of the block's front and of its
-            col = [(0.0, z0 - lift), (Dc, z0 - lift + c * Dc / D),         # sloped top and foot alike (raised
-                   (Dc, z1 + lift - c * Dc / D), (0.0, z1 + lift)]          # strips carried up the slopes)
-            o0, o1 = (Dc if m0 < 0 else 0.0), (Dc if m1 < 0 else 0.0)   # an inner mitre eats a part's depth: the
-            for u0, u1, mt in ((h0, h0 + 0.12 + o0, (m0, 0.0)), (h1 - 0.12 - o1, h1, (0.0, m1))):   # columns widen
-                prism(k, ax, plane, u0, u1, col, F, 3, mitre=mt, cap=sides[1])                   # its two columns
-            f0, f1 = z0 + c, z1 - c                                                              # its front
-            q0, q1 = h0 + o0, h1 - o1                           # (the front clear of the other face there)
-            if tv == 3:                                                                          # a seam across it
-                FV.flat(k, ax, plane, q0 + 0.14, q1 - 0.14, f0 + 0.14, f0 + 0.166, D - PX + PAINT, "lvR2")
-            elif not tv:
-                T.paint(k, ax, plane, q0 + 0.14, q1 - 0.14, f1 - 0.16, f1 - 0.04, D, "rose", 1)  # a dark recess ...
-                for u in (q0 + 0.18, (q0 + q1) / 2 - 0.04, q1 - 0.26):
-                    T.slab(k, ax, plane, u, u + 0.08, f1 - 0.13, f1 - 0.07, Dc, F, 3)            # ... with parts in it
+                Dc = D - PX
+                lift = 0.5 * PX * math.hypot(c, D) / D      # (the columns stand proud of the bay's sloped top and
+                col = [(0.0, z0 - lift), (Dc, z0 - lift + c * Dc / D),     # foot alike: raised strips carried up
+                       (Dc, z1 + lift - c * Dc / D), (0.0, z1 + lift)]      # the slopes)
+                o0, o1 = (Dc if m0 < 0 else 0.0), (Dc if m1 < 0 else 0.0)   # an inner mitre eats a part's depth: the
+                for u0, u1, mt in ((h0, h0 + 0.12 + o0, (m0, 0.0)), (h1 - 0.12 - o1, h1, (0.0, m1))):   # columns widen
+                    prism(k, ax, plane, u0, u1, col, F, 3, mitre=mt, cap=sides[1])               # its two columns
+                q0, q1 = h0 + o0, h1 - o1                   # (the front clear of the other face there)
+            else:                                       # the block (set 5 T1): a lighter strip either side, flush with
+                Dc, sw = D, DRONE_SW                    # its front, a groove down each near its inner edge, and the
+                o0, o1 = (D if m0 < 0 else 0.0), (D if m1 < 0 else 0.0)     # middle between them darker, its front
+                q0, q1 = h0 + o0, h1 - o1                                   # flush, its slopes a px in (T1-4: the
+                                                                            # red block there)
+                zt = z1 + 4 * PZ                        # (the strips' top: 4 art px over the block's old top)
+                for u0, u1, mt in ((h0, q0 + sw, (m0, 0.0)), (q1 - sw, h1, (0.0, m1))):
+                    prism(k, ax, plane, u0, u1, [(0.0, z0), (D, z0 + c), (D, zt - c), (0.0, zt)], F, 3, mitre=mt,
+                          cap=sides[1])
+                for u in (q0 + sw - 0.05, q1 - sw + 0.05 - LINE):
+                    T.paint(k, ax, plane, u, u + LINE, f0 + 0.03, zt - c - 0.03, D + PAINT, F, 1)   # the grooves
+                if tv == 3:                             # the red block, set back and shorter
+                    Dr, cr, ri = D - PX, c * (D - PX) / D, 0.1
+                    prism(k, ax, plane, q0 + sw, q1 - sw,
+                          [(0.0, z0 + ri), (Dr, z0 + ri + cr), (Dr, z1 - ri - cr), (0.0, z1 - ri)],
+                          F, 2, cols=["lvR2", "lvR", "drM", "lvR2"], cap="lvR2")
+                    FV.flat(k, ax, plane, q0 + 0.14, q1 - 0.14, f0 + 0.14, f0 + 0.166, D - PX + PAINT, "lvR2")
+                else:                                   # (its front flush with theirs, its slopes a px in)
+                    prism(k, ax, plane, q0 + sw, q1 - sw,
+                          [(0.0, z0 + PZ), (D, z0 + c + PZ), (D, zt - c - PZ), (0.0, zt - PZ)], F, 2)
             hw = (h1 - h0) / 2 - 0.07
             g0 = max(hc - hw, a + Dc + 0.05) if at0 and ends[0] == "in" else hc - hw     # (clear of the other
             g1 = min(hc + hw, b - Dc - 0.05) if at1 and ends[1] == "in" and not corner else hc + hw   # face's block)
             if not (corner and abs(s1 - b) < 1e-6) and g1 - g0 > 0.15:  # (none on the corner's tile)
-                handle(k, ax, plane, g0, g1, z1 + 0.12, 2 * PX)                                  # pull handles above
+                handle(k, ax, plane, g0, g1, z1 + 0.12 + 2 * PZ, 2 * PX)                         # pull handles above
                 handle(k, ax, plane, g0, g1, z0 - 0.065, 2 * PX)                                 # and below it
             if hull and variant:                                # the variant: a small recessed status panel
                 pc, pw, r0, r1 = (q0 + q1) / 2, 0.13, f0 + 0.05, f0 + 0.19
