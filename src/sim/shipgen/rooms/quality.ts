@@ -74,8 +74,8 @@ export function occupancy(v: LayoutView): { W: number; H: number; cell: (i: numb
   return { W, H, cell, occ, blocks, use };
 }
 
-/** Quality of every room with floor (rooms crew never enter included: callers filter by role). */
-export function roomQuality(v: LayoutView): RoomQuality[] {
+/** Quality of every room with floor (rooms crew never enter included: callers filter by role), or of room `only`. */
+export function roomQuality(v: LayoutView, only?: number): RoomQuality[] {
   const { W, H, cell, occ, blocks, use } = occupancy(v);
   const free = (i: number): boolean => (cell(i) === '_' || cell(i) === 'D') && blocks[i] === 0;
   const nb = (i: number): number[] => {
@@ -89,6 +89,7 @@ export function roomQuality(v: LayoutView): RoomQuality[] {
   }
   const out: RoomQuality[] = [];
   for (const [room, tiles] of byRoom) {
+    if (only !== undefined && room !== only) continue;
     const inRoom = new Set(tiles);
     // Pieces: standing modules with a tile in the room.
     const pieces = new Map<number, Tile[]>();

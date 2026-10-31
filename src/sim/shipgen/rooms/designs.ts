@@ -1,14 +1,15 @@
 import type { Rng } from '../../rng';
 import type { Layout, PlacedModule } from '../layout';
 import { backDoors, frame, framed, frameSize, roomRect, type Frame } from './frame';
+import { roomQuality } from './quality';
 
 /**
  * Room designs: a room laid out whole from a design, as an architect would draw it, instead of piece by piece (the
  * berths and aisles plans do this for quarters and holds). A design is written in a room frame (rooms/frame.ts: u along
  * the back wall, v into the room) and stretches to the room: it says where each piece goes relative to the walls and
  * the room's middle, so a big room spreads it out and a small one packs it. Each design is tried in each of the room's
- * turns (back walls without doors first, the long side as the back); the first that places all its required groups,
- * keeps every piece usable (Layout.fitError) and every tile reachable wins. Designs are mirror-symmetric, their
+ * turns; every layout that places all its required groups, keeps every piece usable (Layout.fitError) and every tile
+ * reachable is scored (planDesign) and the best is kept. Designs are mirror-symmetric, their
  * pieces in groups placed whole (a lamp at each end of the reactors, a locker in each corner), so a door that blocks one
  * of a pair drops both and the room stays symmetric. A room that fits none (not a rectangle, too small) falls back to
  * its recipe's steps.
@@ -220,33 +221,43 @@ export function designSize(name: DesignName, mods: readonly string[], defs: Reco
 export function planDesign(lay: Layout, rng: Rng, room: number, spec: Spec, names: readonly DesignName[]): Set<string> | null {
   const rect = roomRect(lay, room);
   if (!rect) return null;
-  const turns = [0, 1, 2, 3].map((o) => frame(rect, o))
-    .map((f) => ({ f, s: (backDoors(lay, f) > 0 ? 10 : 0) + (f.L < f.D ? 2 : 0) + rng.next() }))
-    .sort((a, b) => a.s - b.s).map((x) => x.f);
-  const order = [...names].sort(() => rng.next() - 0.5);
+  const rows = Array.from({ length: lay.h }, (_, y) => lay.cells.slice(y * lay.w, (y + 1) * lay.w).join(''));
   const base = lay.unreached();
   const n0 = lay.modules.length;
-  for (const name of order) {
-    // Each turn of the room, each turn of the design's main piece (broadside or end on to the wall).
-    for (const f of turns) for (const t of rng.chance(0.5) ? [0, 1] : [1, 0]) {
-      const groups = DESIGNS[name](f, spec, lay, t);
-      if (!groups) continue;
-      let ok = true;
-      for (const g of groups) {
-        const k0 = lay.modules.length;
-        let fits = true;
-        for (const p of g.puts) {
-          const pm: PlacedModule = framed(lay, f, p.def, p.u, p.v, p.t);
-          if (lay.fitError(pm.def, pm.x, pm.y, pm.rot, room)) { fits = false; break; }
-          lay.push(pm);
+  // Score and pick (rather than take the first that fits): every design in every turn of the room and of its main piece
+  // is laid out and scored by the room's quality (rooms/quality.ts), plus a little for each optional group it kept (a
+  // design whole, not missing its batteries), less for a door in its back wall; the best is kept.
+  let best: { mods: PlacedModule[]; defs: Set<string>; score: number } | null = null;
+  for (const name of names) {
+    for (const o of [0, 1, 2, 3]) {
+      const f = frame(rect, o);
+      for (const t of [0, 1]) {
+        const groups = DESIGNS[name](f, spec, lay, t);
+        if (!groups) continue;
+        let ok = true, kept = 0;
+        for (const g of groups) {
+          const k0 = lay.modules.length;
+          let fits = true;
+          for (const p of g.puts) {
+            const pm: PlacedModule = framed(lay, f, p.def, p.u, p.v, p.t);
+            if (lay.fitError(pm.def, pm.x, pm.y, pm.rot, room)) { fits = false; break; }
+            lay.push(pm);
+          }
+          if (fits && lay.unreached() <= base) { if (g.opt && g.puts.length > 0) kept++; continue; }
+          while (lay.modules.length > k0) lay.pop();
+          if (!g.opt) { ok = false; break; }
         }
-        if (fits && lay.unreached() <= base) continue;
-        while (lay.modules.length > k0) lay.pop();
-        if (!g.opt) { ok = false; break; }
+        if (ok) {
+          const mods = lay.modules.slice(n0);
+          const q = roomQuality({ rows, modules: lay.modules, roomOf: lay.roomOf, defs: lay.defs }, room)[0]?.score ?? 0;
+          const score = q + kept * 3 - (backDoors(lay, f) > 0 ? 5 : 0) + rng.next() * 0.5;
+          if (!best || score > best.score) best = { mods: mods.map((m) => ({ ...m })), defs: new Set(groups.flatMap((g) => g.puts).filter((p) => spec.has(p.def)).map((p) => p.def)), score };
+        }
+        while (lay.modules.length > n0) lay.pop();
       }
-      if (ok) return new Set(groups.flatMap((g) => g.puts).filter((p) => spec.has(p.def)).map((p) => p.def));
-      while (lay.modules.length > n0) lay.pop();
     }
   }
-  return null;
+  if (!best) return null;
+  for (const m of best.mods) lay.push(m);
+  return best.defs;
 }
