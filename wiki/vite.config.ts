@@ -43,13 +43,14 @@ export default defineConfig({
             { title: 'Research', to: '/reference/research/' },
           ],
         },
+        // The game's cyan accent (src/ui/theme.css --cyan; --heat-low as the deep shade) and steel near-blacks.
         themeColor: {
-          primary: '#5899cd',
-          primaryDeep: '#2c6699',
-          hover: '#89c5ed',
-          light: '#e5eaf2',
-          dark: '#111825',
-          gradient: { start: '#568dc6', end: '#82b1ce' },
+          primary: '#36d4ff',
+          primaryDeep: '#1b8fb3',
+          hover: '#8fe6ff',
+          light: '#e4e9ee',
+          dark: '#06080a',
+          gradient: { start: '#36d4ff', end: '#8fe6ff' },
         },
       }),
       svelteKitOptions: {

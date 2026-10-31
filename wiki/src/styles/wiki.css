@@ -7,20 +7,42 @@
   --wiki-card-color: #1c2941;
   --wiki-card-border: #cfd9e6;
   --wiki-subtle: #52637a;
+  /* Accents from the game's palette (src/ui/theme.css): its cyan is too light on white, so light mode uses the
+   * deeper teal (--heat-low). */
+  --wiki-accent: #1b8fb3;
+  --wiki-accent-soft: #1b8fb3;
+  --wiki-accent-deep: #146b87;
+  --wiki-amber: #f0b13a;
+  --wiki-art-bg: #06080a;
   /* Square corners, like the game UI (src/ui/theme.css --kit-dialog-radius: 0). */
   --wiki-radius: 0;
+}
+/* Headings in the game UI's condensed face, with the same fallbacks the game names. */
+:root { --wiki-head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif; }
+h1, h2, h3, h4, .gradient-title, .wiki-reference-title, .wiki-module-info strong, .wiki-category-tabs button {
+  font-family: var(--wiki-head-font);
+  font-weight: 700;
+  letter-spacing: .01em;
 }
 /* Applied to everything, the theme's own pills, search box and cards included, so no rounded corner slips through. */
 *, *::before, *::after { border-radius: var(--wiki-radius) !important; }
 :root.dark {
-  --wiki-input-bg: #172337;
-  --wiki-input-color: #e8f1fb;
-  --wiki-input-border: #42546b;
-  --wiki-card-bg: #18253b;
-  --wiki-card-color: #edf3fb;
-  --wiki-card-border: #394b63;
-  --wiki-subtle: #b0c2d7;
+  /* The game's steel palette (src/ui/theme.css): --panel-2, --text, --line-hi, --line, --dim, --cyan. */
+  --wiki-input-bg: #11151a;
+  --wiki-input-color: #e4e9ee;
+  --wiki-input-border: #3a424a;
+  --wiki-card-bg: #11151a;
+  --wiki-card-color: #e4e9ee;
+  --wiki-card-border: #2a3036;
+  --wiki-subtle: #8b939a;
+  --wiki-accent: #36d4ff;
+  --wiki-accent-soft: #8fe6ff;
+  --wiki-accent-deep: #1b8fb3;
 }
+/* The theme's zinc greys swapped for the game's near-blacks: --bg for the page, --panel for the header and sidebar. */
+:root.dark body, :root.dark .header { background-color: #06080a; }
+:root.dark .theme-default-sidebar, :root.dark .sidebar-logo { background-color: #0b0e11; }
+:root.dark .local-search-trigger { background-color: #11151a; border-color: #2a3036; }
 .home-page .intro {
   grid-column: 1 / -1;
   max-width: 920px;
@@ -54,7 +76,7 @@
   color: var(--wiki-card-color);
 }
 .wiki-ref-list li a { font-weight: 600; color: #2970ae; }
-:root.dark .wiki-ref-list li a { color: #9acff6; }
+:root.dark .wiki-ref-list li a { color: var(--wiki-accent-soft); }
 .wiki-ref-list li small { display: block; color: var(--wiki-subtle); margin-top: 0.15rem; }
 
 
@@ -175,13 +197,13 @@
 }
 .wiki-category-tabs button.active {
   color: var(--wiki-card-color);
-  border-color: #5899cd;
+  border-color: var(--wiki-accent);
   background: var(--wiki-card-bg);
-  box-shadow: inset 0 -2px #5899cd;
+  box-shadow: inset 0 -2px var(--wiki-accent);
   font-weight: 650;
 }
 .wiki-category-tabs button:focus-visible {
-  outline: 2px solid #5899cd;
+  outline: 2px solid var(--wiki-accent);
   outline-offset: 2px;
 }
 .wiki-category-count {
@@ -219,8 +241,8 @@
   text-decoration: none;
   color: var(--wiki-card-color);
 }
-.wiki-module-card:hover { border-color: #5899cd; }
-.wiki-module-card > a:focus-visible { outline: 2px solid #5899cd; outline-offset: -3px; }
+.wiki-module-card:hover { border-color: var(--wiki-accent); }
+.wiki-module-card > a:focus-visible { outline: 2px solid var(--wiki-accent); outline-offset: -3px; }
 .wiki-module-art {
   display: flex;
   align-items: center;
@@ -272,7 +294,7 @@
   border-radius: 0.6rem;
   border: 1px solid var(--wiki-card-border);
   overflow: hidden;
-  background: #070b11;
+  background: var(--wiki-art-bg);
 }
 .wiki-placement-figure img {
   display: block;
@@ -283,10 +305,10 @@
 .wiki-placement-figure figcaption {
   padding: 0.65rem 0.9rem;
   font-size: 0.83rem;
-  color: #a3b4c8;
-  border-top: 1px solid #283548;
+  color: var(--wiki-subtle);
+  border-top: 1px solid var(--wiki-card-border);
 }
-.wiki-module-art { background: #070b11; }
+.wiki-module-art { background: var(--wiki-art-bg); }
 .wiki-module-art img { max-width: none; width: 100%; object-fit: cover; }
 
 /* With two columns on small screens, center the final odd tab at the same size. */
@@ -330,7 +352,7 @@
     transition: left .18s ease, background-color .18s ease;
   }
   .wiki-sidebar-toggle:hover { background: var(--wiki-input-bg); }
-  .wiki-sidebar-toggle:focus-visible { outline: 2px solid #5899cd; outline-offset: 2px; }
+  .wiki-sidebar-toggle:focus-visible { outline: 2px solid var(--wiki-accent); outline-offset: 2px; }
   .wiki-sidebar-toggle svg { width: 16px; height: 16px; }
   html.wiki-sidebar-hidden .theme-default-sidebar {
     transform: translateX(-100%) !important;
@@ -388,14 +410,14 @@
 }
 .wiki-reference-tabs button.active {
   background: var(--wiki-card-bg);
-  border-color: #5899cd;
-  box-shadow: inset 0 -2px #5899cd;
+  border-color: var(--wiki-accent);
+  box-shadow: inset 0 -2px var(--wiki-accent);
   color: var(--wiki-card-color);
   font-weight: 650;
 }
 .wiki-reference-tabs button:focus-visible,
 .wiki-reference-card:focus-visible {
-  outline: 2px solid #5899cd;
+  outline: 2px solid var(--wiki-accent);
   outline-offset: 2px;
 }
 .wiki-reference-grid {
@@ -418,7 +440,7 @@
   text-decoration: none;
   transition: border-color .12s ease, background-color .12s ease;
 }
-.wiki-reference-card:hover { border-color: #5899cd; }
+.wiki-reference-card:hover { border-color: var(--wiki-accent); }
 .wiki-reference-art {
   height: 145px;
   display: flex;
@@ -475,12 +497,12 @@
 }
 .wiki-recipe-card .wiki-reference-facts { margin-top: auto; }
 .wiki-recipe-card a { color: var(--wiki-card-color); text-decoration: none; }
-.wiki-recipe-card a:hover { color: #5899cd; text-decoration: underline; }
-.wiki-recipe-card a:focus-visible { outline: 2px solid #5899cd; outline-offset: 2px; }
+.wiki-recipe-card a:hover { color: var(--wiki-accent); text-decoration: underline; }
+.wiki-recipe-card a:focus-visible { outline: 2px solid var(--wiki-accent); outline-offset: 2px; }
 .wiki-recipe-card .wiki-reference-subtitle a,
-.wiki-recipe-card .recipe-material { color: #5899cd; }
+.wiki-recipe-card .recipe-material { color: var(--wiki-accent); }
 :root.dark .wiki-recipe-card .wiki-reference-subtitle a,
-:root.dark .wiki-recipe-card .recipe-material { color: #9acff6; }
+:root.dark .wiki-recipe-card .recipe-material { color: var(--wiki-accent-soft); }
 @media (max-width: 1100px) {
   .wiki-reference-grid.wiki-reference-with-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -543,11 +565,11 @@ kbd {
   display: inline-block;
   min-width: 1.6em;
   padding: .05em .45em;
-  border: 1px solid #3a4a60;
+  border: 1px solid #3a424a;
   border-bottom-width: 2px;
   border-radius: 4px;
-  background: #1a2433;
-  color: #dce6f2;
+  background: #11151a;
+  color: #e4e9ee;
   font: 600 .82em/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
   text-align: center;
 }
@@ -562,3 +584,9 @@ kbd {
 }
 /* The theme's red and amber glow would tint the game's own colours. */
 :root.dark .home-page::before { background: none !important; }
+
+/* Card grids are lists: the theme's prose spacing (li + li { margin-top }) pushed every card after the first down. */
+.wiki-module-grid > li, .wiki-reference-grid > li { margin: 0; }
+
+/* Dark text on the bright cyan primary button, as the game puts dark ink on its bright accents. */
+:root.dark .svp-action--primary, :root.dark .svp-action--primary .label { color: #06080a !important; }

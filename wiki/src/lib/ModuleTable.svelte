@@ -64,8 +64,8 @@
 <style>
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .draw { color: var(--wiki-subtle, #8a9bb0); font-variant-numeric: tabular-nums; }
-  a { color: #2c6699; text-decoration: underline; text-underline-offset: 2px; }
-  :global(:root.dark) a { color: #9acff6; }
+  a { color: var(--wiki-accent-deep); text-decoration: underline; text-underline-offset: 2px; }
+  :global(:root.dark) a { color: var(--wiki-accent-soft); }
   a.plain { text-decoration: none; }
   a.plain:hover { text-decoration: underline; }
 </style>

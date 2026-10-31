@@ -93,7 +93,7 @@
     /* Into the 24px arrow column, stopping 5px short of the outputs. */
     margin-right: -19px;
     overflow: visible;
-    color: #5899cd;
+    color: var(--wiki-accent);
   }
   .recipe-extra-inputs, .recipe-extra-outputs {
     list-style: none;

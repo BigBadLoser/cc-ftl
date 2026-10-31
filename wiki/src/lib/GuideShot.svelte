@@ -28,14 +28,14 @@
 
 <style>
   .wiki-guide-shot { margin: 1.1rem 0 1.4rem; }
-  .frame { position: relative; border-radius: .5rem; overflow: hidden; border: 1px solid var(--wiki-card-border, #283548); }
+  .frame { position: relative; border-radius: .5rem; overflow: hidden; border: 1px solid var(--wiki-card-border, var(--wiki-card-border)); }
   img { display: block; width: 100%; height: auto; }
-  .box { position: absolute; border: 2px solid #f0b43c; border-radius: 4px; pointer-events: none; }
+  .box { position: absolute; border: 2px solid var(--wiki-amber); border-radius: 4px; pointer-events: none; }
   .badge {
     position: absolute;
     min-width: 1.5rem; height: 1.5rem; padding: 0 .3rem; border-radius: 999px;
     display: grid; place-items: center;
-    background: #f0b43c; color: #14100a; font-weight: 800; font-size: .8rem;
+    background: var(--wiki-amber); color: #14100a; font-weight: 800; font-size: .8rem;
     box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
   }
   figcaption { margin-top: .45rem; font-size: .83rem; color: var(--wiki-subtle, #8a9bb0); }
