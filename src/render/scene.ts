@@ -141,6 +141,8 @@ export interface Renderer {
   insetSize(shipId: number): { w: number; h: number } | null;
   /** The space behind the ships: this node's seed, nebula density and central body. */
   setBackdrop(spec: BackdropSpec): void;
+  /** Show or hide the space backdrop (screenshot tooling: a flat background lets a script cut ships out). */
+  showBackdrop(on: boolean): void;
   /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
   setCommitEta(fn: (weaponId: number) => number | null): void;
   /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
@@ -203,6 +205,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
   const backdrop = createBackdrop(atlas);
   stage.addChild(backdrop.root);
+  let backdropOn = true;
   const W = createWorldStack();
   stage.addChild(W.root);
   // The air layer: combat fx and flying bodies above every ship and roof, in the same frame.
@@ -425,7 +428,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe.begin('render/inset');
       backdrop.root.visible = false; // the combat panel has its own flat background
       inset.render(gl, stage, () => threatMarks.update());
-      backdrop.root.visible = true;
+      backdrop.root.visible = backdropOn;
       probe.end('render/inset');
       probe.begin('render/gl');
       place(cam, null);
@@ -445,6 +448,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setBackdrop(spec) {
       backdrop.setSpec(spec);
+    },
+    showBackdrop(on) {
+      backdropOn = on;
+      backdrop.root.visible = on;
     },
     setSector(g) {
       sector = g;
