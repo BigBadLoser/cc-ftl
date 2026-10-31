@@ -7,6 +7,7 @@
 //   marks     [[label, selector, anchor?], ...]: numbered callouts <GuideShot> draws over those elements; the badge
 //             sits on the box's top-left corner, or with anchor 'left' just outside the middle of its left edge
 //   keyOut    make the flat space background transparent and trim to the ship (for HUD-less shots)
+//   quality   lossy WebP quality (default lossless)
 // A fixed ?seed keeps the crew names, ship and start node the same between runs.
 // The start node's trade station (the node strip tags it kind="ship", so match its name).
 const station = '[data-testid^="node-"][aria-label^="Trade station"]';
@@ -27,6 +28,13 @@ async function openStation(h, tab) {
 }
 
 export const shots = [
+  // The home page hero's background: the start node's own backdrop (stars, nebula, its planet), away from the ships.
+  {
+    name: 'home/backdrop',
+    query: '?seed=3',
+    steps: async (h) => { await h.key('Space'); await h.hideHud(); await h.page.evaluate(() => window.__cc.focus(20, 110)); await h.wait(800); },
+    quality: 82,
+  },
   {
     name: 'first-hour/hud',
     query: '?seed=3',

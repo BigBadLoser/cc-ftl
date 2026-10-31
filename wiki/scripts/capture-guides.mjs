@@ -51,6 +51,10 @@ function helpers(page) {
     /** Hide the HUD and the space backdrop, so only the ships show on a flat background (for keyOut). */
     async hideUi() {
       await page.evaluate(() => window.__cc?.backdrop(false));
+      await this.hideHud();
+    },
+    /** Hide the HUD only: the game canvas, backdrop included, is all that shows. */
+    async hideHud() {
       await page.evaluate(() => {
         const canvases = [...document.querySelectorAll('canvas')];
         canvases.sort((a, b) => b.width * b.height - a.width * a.height);
@@ -123,7 +127,8 @@ try {
     if (shot.keyOut) png = await keyOutBackground(png);
     const file = join(out, shot.name + '.webp');
     await mkdir(dirname(file), { recursive: true });
-    await sharp(png).webp({ lossless: true }).toFile(file);
+    // Starfields compress poorly losslessly; a shot can ask for lossy quality instead.
+    await sharp(png).webp(shot.quality ? { quality: shot.quality } : { lossless: true }).toFile(file);
     console.log('Captured ' + shot.name + '.webp');
     await page.close();
   }
