@@ -26,7 +26,7 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   if (sim.world.has(vehicle, BoardLaunchC)) return 'busy';
   if (v.state !== 'stowed' || occupants(v).length > 0) return 'notStowed';
   const ids = [...new Set(crew)];
-  if (ids.length < 2) return 'noPassengers';
+  if (ids.length < 1) return 'noCrew';
   if (ids.length > (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return 'full';
   const host = shipById(sim, shipIdOf(sim, sim.world.get(airlock, ModuleC)));
   if (!host || host.faction === 'player') return 'badTarget';
@@ -46,8 +46,8 @@ const fit = (sim: Sim, c: number): boolean => sim.world.has(c, CrewC) && !sim.wo
 
 /**
  * Carries out `boarding.launch`: the pilot walks to the bay first (so the first one picked flies it), then the passengers; once they
- * are aboard (or have dropped out) the shuttle launches and docks at the airlock; when it latches on, the passengers step out onto the
- * enemy ship (drafted, as every landing on another faction's ship is) and the pilot stays at the controls for the recall.
+ * are aboard (or have dropped out) the shuttle launches and docks at the airlock; when it latches on, everyone aboard (the pilot too) steps out onto the
+ * enemy ship (drafted, as every landing on another faction's ship is). The shuttle stays docked; `crew.recall` flies the first one back home.
  */
 export function launchSystem(sim: Sim): void {
   for (const id of sim.world.query(BoardLaunchC)) {
@@ -64,7 +64,7 @@ export function launchSystem(sim: Sim): void {
     if (o.state === 'flying') {
       if (v.state === 'docked' && v.dock === o.airlock) {
         const at = boardingTile(sim, id);
-        if (at) for (const c of [...v.passengers]) unboardCrew(sim, c, id, at);
+        if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at); // the pilot lands too: the shuttle stays docked for the recall
         sim.world.remove(id, BoardLaunchC);
       } else if (!v.pilot || v.dest?.type !== 'dock' || v.dest.airlock !== o.airlock) call('aborted'); // the pilot fell, or the target was lost
       continue;
@@ -83,8 +83,8 @@ export function launchSystem(sim: Sim): void {
     const rest = o.crew.slice(1);
     const waiting = rest.some((c) => fit(sim, c) && sim.world.has(c, EmbarkOrderC));
     if (waiting && !stalled) continue;
-    if (v.passengers.length === 0) {
-      call('noPassengers');
+    if (occupants(v).length === 0) {
+      call('noCrew');
       continue;
     }
     const err = dockError(sim, id, o.airlock) ?? launch(sim, id, v);

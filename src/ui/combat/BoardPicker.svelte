@@ -33,7 +33,7 @@
   const why = $derived(
     !chosen || chosen.reason ? 'Pick a shuttle'
       : !airlock ? 'Pick an airlock'
-        : picked.length < 2 ? 'Pick a pilot and at least one boarder'
+        : picked.length < 1 ? 'Pick at least one crew member'
           : picked.length > seats ? 'Too many for the seats' : null,
   );
   const go = () => {
@@ -53,7 +53,7 @@
       <p class="one"><Icon name="shuttle" size={16} /><b>{chosen.name}</b><span>{chosen.reason ?? `${seats} seats`}</span></p>
     {/if}
 
-    <div class="sec">Party <span class="n" data-testid="board-seats">{picked.length}/{seats}</span><small>first picked flies</small></div>
+    <div class="sec">Party <span class="n" data-testid="board-seats">{picked.length}/{seats}</span><small>first picked flies it over</small></div>
     <ul class="crew" data-testid="board-crew">
       {#each plan.crew as c (c.id)}
         {@const at = picked.indexOf(c.id)}

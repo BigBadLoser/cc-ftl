@@ -19,7 +19,7 @@ describe('boardPlan', () => {
     expect(boardPlan(data({ shuttles: [] }), 2, 1).blocker).toBe('No shuttle');
     expect(boardPlan(data({ shuttles: [shuttle({ state: 'flying' })] }), 2, 1).blocker).toBe('No shuttle in the bay');
     expect(boardPlan(data({ airlocks: [lock(5, { busy: true }), lock(6, { working: false }), lock(7, { shipId: 3 })] }), 2, 1).blocker).toBe('No reachable airlock');
-    expect(boardPlan(data({ roster: [crew(1), crew(2, { down: true })] }), 2, 1).blocker).toBe('Needs a pilot and a boarder');
+    expect(boardPlan(data({ roster: [crew(1, { down: true }), crew(2, { down: true })] }), 2, 1).blocker).toBe('No crew free to go');
   });
   it('lists only the home ship crew, with busy ones disabled', () => {
     const p = boardPlan(data({ roster: [crew(1), crew(2, { boarding: 9 }), crew(3, { ship: 2 })] }), 2, 1);

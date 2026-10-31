@@ -24,6 +24,6 @@ export function boardPlan(data: UiShuttles, enemy: number, home: number): BoardP
   const crew = data.roster.filter((c) => c.ship === home).map((c) => ({ id: c.id, name: c.name, role: c.role, hp: c.hp, reason: crewReason(c) }));
   const ready = shuttles.some((s) => !s.reason);
   const able = crew.filter((c) => !c.reason).length;
-  const blocker = shuttles.length === 0 ? 'No shuttle' : !ready ? 'No shuttle in the bay' : airlocks.length === 0 ? 'No reachable airlock' : able < 2 ? 'Needs a pilot and a boarder' : null;
+  const blocker = shuttles.length === 0 ? 'No shuttle' : !ready ? 'No shuttle in the bay' : airlocks.length === 0 ? 'No reachable airlock' : able < 1 ? 'No crew free to go' : null;
   return { shuttles, airlocks, crew, blocker };
 }
