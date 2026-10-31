@@ -91,6 +91,8 @@ export type SimEvent =
   | { type: 'container.detached'; container: number; ship: number; x: number; y: number }
   /** Ship state changes. 'destroyed' = became a wreck. */
   | { type: 'ship.disabled'; ship: number }
+  /** A hostile ship's crew gave up: hull failing, weapons dead, cut off or outnumbered (combat/hopeless.ts). */
+  | { type: 'ship.surrendered'; ship: number }
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }

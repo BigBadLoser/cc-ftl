@@ -169,6 +169,10 @@ export const PD_CHANCE = 0.35;
 export const PD_WINDOW = 0.6;
 /** Hull integrity below which a ship is a wreck / below which the AI tries to flee. */
 export const WRECK_BELOW = 0.15;
+/** Below this integrity a hostile ship with dead weapons and crew cut off or outnumbered surrenders (combat/hopeless.ts, issue #225). */
+export const HOPELESS_HULL = 0.5;
+/** One wall tile's weight in the integrity score, relative to one module hp (a full wall tile counts as 1.3). */
+export const WALL_WEIGHT = 0.005;
 export const FLEE_BELOW = 0.3;
 /** Ticks between ship-state and AI re-evaluations. */
 export const SHIP_STATE_INTERVAL = 10;

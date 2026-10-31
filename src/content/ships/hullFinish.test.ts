@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ModuleC, ShipC, WeaponC, newGame, weaponsIdleReason, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
-import { shipIdOf, shipIds } from '../../sim/regions';
+import { shipGrid, shipIdOf, shipIds } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
 import { resolveTarget } from '../../sim/combat/targets';
 
@@ -35,7 +35,13 @@ describe('a fight against a ship whose listed modules are all destroyed', () => 
     aim(sim);
     const w = sim.world.query(WeaponC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, 1))!;
     sim.step();
-    for (let n = 0; n < 20; n++) expect(sim.world.get(resolveTarget(sim, w, sim.world.get(nth(sim, 1), CombatC)!)!.moduleId, ModuleC)!.hp).toBeGreaterThan(0);
+    // Every pick is something that still stands: an intact module, or a wall tile with hp (ship-wide aim, issue #225).
+    const g = shipGrid(sim, enemy)!;
+    for (let n = 0; n < 20; n++) {
+      const t = resolveTarget(sim, w, sim.world.get(nth(sim, 1), CombatC)!)!;
+      const hp = t.tile ? g.get('hp', t.tile.x, t.tile.y) : sim.world.get(t.moduleId, ModuleC)!.hp;
+      expect(hp).toBeGreaterThan(0);
+    }
     let fired = 0;
     for (let t = 0; t < 2500; t++) {
       sim.step();
