@@ -230,7 +230,7 @@ const isDock = (r: RoomSpec): boolean => r.role === 'dock';
  * open space (gun bays need it).
  */
 const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'hangar', 'industry', 'farm'];
-const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role);
+const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role) || !!r.warehouse;
 /**
  * Rim rooms beyond a band: docks first, near the top and bottom of the ring (airlocks face north or south), then the
  * system rooms anywhere along `arcs`.
@@ -285,7 +285,16 @@ function stern(rooms: RoomSpec[], R: number, side: -1 | 1): [number, number][] {
   return [side < 0 ? [-0.14 - span, -0.14] : [0.14, 0.14 + span]];
 }
 /** Depth the secure core needs inboard of a ring: its deepest room (either way round) and its walls. */
-const secureDepth = (rooms: RoomSpec[]): number => Math.max(0, ...rooms.filter(isSecure).map((r) => Math.min(r.w, r.h) + 3));
+const secureDepth = (rooms: RoomSpec[]): number => Math.max(0, ...rooms.filter((r) => isSecure(r) || !!r.warehouse || r.role === 'weapons').map((r) => Math.min(r.w, r.h) + 3));
+
+/**
+ * Rooms inboard of a ring beside a cardinal spoke at angle `axis`, packed from the spoke outward on side `side` (1:
+ * clockwise): warehouses beside the dock spokes.
+ */
+function besideSpoke(rooms: RoomSpec[], R: number, axis: number, side: -1 | 1): [number, number][] {
+  const span = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0) / Math.max(1, R);
+  return [side < 0 ? [axis - 0.14 - span, axis - 0.14] : [axis + 0.14, axis + 0.14 + span]];
+}
 /**
  * The secure core split either side of the east spoke: reactor and shield pairs dealt to the shorter side, the AI core
  * whole on one side. In each pair the doors lean towards each other (a reactor and its shield room share a door end).
@@ -356,11 +365,21 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const inner = sys.filter((r) => r.role !== 'weapons');
   const [upper, lower] = secureSides(inner.filter(isSecure));
   const missed = [...fitAlong(b, R, ring, upper, stern(upper, R, -1), -1), ...fitAlong(b, R, ring, lower, stern(lower, R, 1), -1)];
-  const inboard = fitAlong(b, R, ring, [...missed, ...inner.filter((r) => !isSecure(r))], QUARTERS, -1);
-  // Gun bays as bastions at mirrored places on the rim, packed side by side; what does not fit falls back to the rim.
+  // Warehouses beside the dock spokes (north and south, either side), inboard: freight next to the docks it serves.
+  const houses = inner.filter((r) => r.warehouse);
+  const slots: [number, -1 | 1][] = [[-Math.PI / 2, 1], [Math.PI / 2, -1], [-Math.PI / 2, -1], [Math.PI / 2, 1]];
+  const housed = slots.flatMap(([axis, side], i) => {
+    // Doors towards the spoke: the warehouse opens on the dock's side.
+    const mine = houses.filter((_, j) => j % slots.length === i).map((r): RoomSpec => ({ ...r, doorLean: side > 0 ? -1 : 1 }));
+    return mine.length > 0 ? fitAlong(b, R, ring, mine, besideSpoke(mine, R, axis, side), -1) : [];
+  });
+  // Gun bays as bastions at mirrored places, inboard (they are roof-mounted: no hull face needed), so the rim keeps only
+  // the docks.
   const guns = sys.filter((r) => r.role === 'weapons');
-  const unplaced = bastions(guns).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R + depth + 2)], 1, depth + 1, banks.labels));
-  const left = fitAlong(b, R, ring, [...unplaced, ...inboard], rim, 1, depth + 1, banks.labels);
+  const unguarded = bastions(guns).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R)], -1));
+  // Then the works rooms and whatever missed its place, round the quarters; the rim takes what is left.
+  const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...inner.filter((r) => !isSecure(r) && !r.warehouse)], QUARTERS, -1);
+  const left = fitAlong(b, R, ring, inboard, rim, 1, depth + 1, banks.labels);
   // Crowded rims: guns get a second pass on their own (fresh spots between the first ones).
   return fitAlong(b, R, ring, left, rim, 1, depth + 1, banks.labels).length === 0;
 }

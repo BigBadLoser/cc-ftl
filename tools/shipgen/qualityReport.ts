@@ -19,7 +19,12 @@ export interface QualityTally {
   byFamily: Record<string, Sum>;
   /** Rooms (corridors aside) by shape: a rectangle (rect >= 0.95), near one (>= 0.8), or not. */
   byShape: Record<string, Sum>;
-  bySpec: Record<string, { layouts: number; room: number; adjacency: number; clustering: number }>;
+  /**
+   * Per spec: room score, adjacency and clustering means; `voids`, empty space enclosed by the hull as a share of its
+   * floor (the gaps between rings); `thin`, the share of rooms (corridors aside) that are far from a rectangle (rect < 0.6:
+   * slivers and stretched segments).
+   */
+  bySpec: Record<string, { layouts: number; room: number; adjacency: number; clustering: number; voids: number; thin: number }>;
   pairs: Record<string, { sum: number; n: number }>;
   ms: number;
 }
@@ -39,7 +44,7 @@ export function qualityReport(from: number, count: number, specs = [...factionId
       const roles = g.rooms.map((r) => r.role);
       const mods = (g.template.modules ?? []).map((m) => ({ ...m, rot: m.rot ?? 0 }));
       const rq = roomQuality({ rows: g.template.rows, modules: mods, roomOf: g.roomOf, defs });
-      let roomSum = 0, roomN = 0;
+      let roomSum = 0, roomN = 0, thin = 0;
       for (const q of rq) {
         const role = roles[q.room] ?? '?';
         add(t.byRole[role] ??= zero(), q);
@@ -48,12 +53,41 @@ export function qualityReport(from: number, count: number, specs = [...factionId
         add(t.byFamily[/\((\w+)/.exec(g.topology)?.[1] ?? g.topology.split(' ')[0] ?? '?'] ??= zero(), q);
         add(t.byShape[q.rect >= 0.95 ? 'rectangle' : q.rect >= 0.8 ? 'near' : 'irregular'] ??= zero(), q);
         roomSum += q.score; roomN++;
+        if (q.rect < 0.6) thin++;
       }
       const sq = stationQuality(g.template.rows, g.roomOf, roles);
-      const s = (t.bySpec[spec] ??= { layouts: 0, room: 0, adjacency: 0, clustering: 0 });
+      const s = (t.bySpec[spec] ??= { layouts: 0, room: 0, adjacency: 0, clustering: 0, voids: 0, thin: 0 });
       s.layouts++; s.room += roomN > 0 ? roomSum / roomN : 0; s.adjacency += sq.adjacency; s.clustering += sq.clustering;
+      s.voids += voids(g.template.rows); s.thin += roomN > 0 ? thin / roomN : 0;
       for (const [k, v] of Object.entries(sq.pairs)) { const p = (t.pairs[k] ??= { sum: 0, n: 0 }); p.sum += v; p.n++; }
     }
   }
   return t;
+}
+
+/** Empty cells the hull encloses (not reachable from the template's edge through empty space), as a share of floor. */
+export function voids(rows: readonly string[]): number {
+  const H = rows.length, W = Math.max(...rows.map((r) => r.length));
+  const at = (x: number, y: number): string => rows[y]?.[x] ?? '.';
+  const seen = new Uint8Array(W * H);
+  const stack: number[] = [];
+  for (let x = 0; x < W; x++) stack.push(x, (H - 1) * W + x);
+  for (let y = 0; y < H; y++) stack.push(y * W, y * W + W - 1);
+  while (stack.length > 0) {
+    const i = stack.pop() as number;
+    const x = i % W, y = (i - x) / W;
+    if (seen[i] || at(x, y) !== '.') continue;
+    seen[i] = 1;
+    if (x > 0) stack.push(i - 1);
+    if (x < W - 1) stack.push(i + 1);
+    if (y > 0) stack.push(i - W);
+    if (y < H - 1) stack.push(i + W);
+  }
+  let enclosed = 0, floor = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = at(x, y);
+    if (c === '.' && !seen[y * W + x]) enclosed++;
+    else if (c !== '.' && c !== '#') floor++;
+  }
+  return floor > 0 ? enclosed / floor : 0;
 }
