@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, DraftedC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
-import { BoardLaunchC } from '../../sim/boarding/components';
+import { BoardHoldC, BoardLaunchC } from '../../sim/boarding/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { launchOf, orderLaunch } from '../../sim/boarding/launch';
 import { pickPilot } from '../../sim/mining/pilot';
 import { playerCourier } from '../../sim/trade/courier';
@@ -85,6 +86,22 @@ describe('boarding.launch', () => {
     for (const c of late) {
       expect(sim.world.has(c, EmbarkOrderC)).toBe(false);
       expect(sim.world.has(c, DraftedC)).toBe(false);
+    }
+  });
+
+  it('a party whose shuttle is destroyed before take-off is let go: no one stays drafted or walking', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 3);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    for (const c of party) expect(sim.world.has(c, DraftedC)).toBe(true);
+    destroyVehicle(sim, shuttle); // e.g. its bay blown up: the launch order goes with it
+    run(sim, 2);
+    for (const c of party) {
+      expect(sim.world.has(c, DraftedC)).toBe(false);
+      expect(sim.world.has(c, EmbarkOrderC)).toBe(false);
+      expect(sim.world.has(c, BoardHoldC)).toBe(false);
     }
   });
 

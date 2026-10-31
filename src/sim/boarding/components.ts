@@ -40,7 +40,15 @@ export interface BoardLaunch {
   state: 'pilot' | 'loading' | 'flying' | 'returning';
   /** Tick the current state began (the walk to the bay gives up after LAUNCH_WALK_TICKS). */
   since: number;
-  /** Party members the launch drafted (the walk to the shuttle drafts the pilot) (they go back to work if they don't fly); crew the player had drafted are not listed. */
-  held?: number[];
 }
 export const BoardLaunchC = defineComponent<BoardLaunch>('boardLaunch');
+
+/**
+ * On a party member a boarding launch drafted to hold them (the walk to the shuttle drafts the pilot; crew the player had drafted
+ * get none): the shuttle whose launch holds them. Kept on the crew, not the launch, so they are let go back to work however the
+ * launch ends, the shuttle destroyed with it included (launchSystem sweeps holds whose launch is gone).
+ */
+export interface BoardHold {
+  vehicle: number;
+}
+export const BoardHoldC = defineComponent<BoardHold>('boardHold');

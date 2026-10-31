@@ -13,7 +13,7 @@ import { dockError, launch } from '../vehicles/handlers';
 import { occupants, unboardCrew, vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 import { FerryC } from '../ferry/components';
 import { isLive } from '../trade/deals';
-import { BoardLaunchC, type BoardLaunch } from './components';
+import { BoardHoldC, BoardLaunchC } from './components';
 
 /** Ticks the party gets to reach the bay before the launch is called off (the crew who made it stay aboard). */
 const LAUNCH_WALK_TICKS = 1500;
@@ -46,17 +46,17 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   const first = sendToEmbark(sim, ids[0] as number, vehicle);
   if (first) return first;
   // The rest of the party is called off their work and held (drafted, standing by) until their turn to walk: no job, mining pod
-  // or cargo run picks them meanwhile, since every automated selector skips drafted crew. `held` remembers whom the launch drafted,
+  // or cargo run picks them meanwhile, since every automated selector skips drafted crew. A BoardHold marks whom the launch drafted,
   // so it lets go of exactly those (and not crew the player had drafted) when they don't fly.
-  const held: number[] = pilotDrafted ? [] : [ids[0] as number];
+  if (!pilotDrafted) sim.world.add(ids[0] as number, BoardHoldC, { vehicle });
   for (const c of ids.slice(1)) {
     if (sim.world.has(c, DraftedC)) continue;
     abortTask(sim, c, 'drafted');
     sim.world.add(c, DraftedC, { target: null });
     (sim.world.get(c, CrewC) as { activity: string }).activity = 'drafted';
-    held.push(c);
+    sim.world.add(c, BoardHoldC, { vehicle });
   }
-  sim.world.add(vehicle, BoardLaunchC, { crew: ids, airlock, state: 'pilot', since: sim.tick, held });
+  sim.world.add(vehicle, BoardLaunchC, { crew: ids, airlock, state: 'pilot', since: sim.tick });
   return null;
 }
 
@@ -73,13 +73,15 @@ const fit = (sim: Sim, c: number): boolean => sim.world.has(c, CrewC) && !sim.wo
  * Let go of a party member who is not flying (left behind, or the launch is over): their walk to the shuttle stops, and crew the
  * launch drafted go back to work. Crew still aboard, or drafted by the player, stay as they are (standing by, for the latter).
  */
-function release(sim: Sim, o: BoardLaunch, vehicle: number, c: number): void {
+function release(sim: Sim, vehicle: number, c: number): void {
+  const held = sim.world.get(c, BoardHoldC)?.vehicle === vehicle;
+  if (held) sim.world.remove(c, BoardHoldC);
   if (sim.world.has(c, AboardC)) return;
   if (sim.world.get(c, EmbarkOrderC)?.vehicle === vehicle) sim.world.remove(c, EmbarkOrderC);
   const d = sim.world.get(c, DraftedC);
   if (!d) return;
   clearPath(sim, c);
-  if (o.held?.includes(c) && !sim.world.has(c, DeadC)) {
+  if (held && !sim.world.has(c, DeadC)) {
     sim.world.remove(c, DraftedC);
     const crew = sim.world.get(c, CrewC) as { activity: string } | undefined;
     if (crew) crew.activity = 'idle';
@@ -92,6 +94,11 @@ function release(sim: Sim, o: BoardLaunch, vehicle: number, c: number): void {
  * enemy ship (drafted, as every landing on another faction's ship is). The shuttle stays docked; `crew.recall` flies the first one back home.
  */
 export function launchSystem(sim: Sim): void {
+  // A launch that ended without letting go of its party (the shuttle destroyed with its order, or a lost flight given up): let go now.
+  for (const c of [...sim.world.query(BoardHoldC)]) {
+    const vehicle = (sim.world.get(c, BoardHoldC) as { vehicle: number }).vehicle;
+    if (!sim.world.has(vehicle, BoardLaunchC)) release(sim, vehicle, c);
+  }
   for (const id of sim.world.query(BoardLaunchC)) {
     const o = sim.world.get(id, BoardLaunchC);
     const v = sim.world.get(id, VehicleC) as Vehicle | undefined;
@@ -107,13 +114,14 @@ export function launchSystem(sim: Sim): void {
         const at = boardingTile(sim, id);
         if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at);
       }
-      for (const c of o.crew) release(sim, o, id, c);
+      for (const c of o.crew) release(sim, id, c);
       sim.events.emit({ type: 'command.rejected', command: 'boarding.launch', reason });
     };
     if (o.state === 'flying') {
       if (v.state === 'docked' && v.dock === o.airlock) {
         const at = boardingTile(sim, id);
         if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at); // the pilot lands too: the shuttle stays docked for the recall
+        for (const c of o.crew) sim.world.remove(c, BoardHoldC); // landed on the enemy ship: drafted as boarders now, not held
         sim.world.remove(id, BoardLaunchC);
       } else if (!v.pilot || v.dest?.type !== 'dock' || v.dest.airlock !== o.airlock) {
         // The target airlock was lost on the way (or the pilot fell): fly the party home and step them out in the bay, rather than leave
@@ -132,7 +140,7 @@ export function launchSystem(sim: Sim): void {
       if (v.state === 'stowed') {
         const at = boardingTile(sim, id);
         if (at) for (const c of occupants(v)) unboardCrew(sim, c, id, at);
-        for (const c of o.crew) release(sim, o, id, c);
+        for (const c of o.crew) release(sim, id, c);
         sim.world.remove(id, BoardLaunchC);
       } else if (v.dest?.type !== 'bay' || sim.tick - o.since > RETURN_TICKS) sim.world.remove(id, BoardLaunchC); // lost its way home: the panel takes over
       continue;
@@ -162,7 +170,7 @@ export function launchSystem(sim: Sim): void {
     }
     // Whoever didn't make it aboard in time stays home: their walk stops and they go back to work, and the player hears of it.
     const late = rest.filter((c) => !sim.world.has(c, AboardC));
-    for (const c of late) release(sim, o, id, c);
+    for (const c of late) release(sim, id, c);
     if (late.some((c) => fit(sim, c))) sim.events.emit({ type: 'command.rejected', command: 'boarding.launch', reason: 'leftBehind' });
     v.hover = 0;
     v.dest = { type: 'dock', airlock: o.airlock };
