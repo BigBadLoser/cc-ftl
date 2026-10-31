@@ -7,7 +7,7 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from ..relief_style import Design
-from .parts import LINE, PAINT, prism
+from .parts import LINE, PAINT, PZ, prism
 
 BAST_R = 2 / 32                     # how far the recess is cut in behind the lip (two of the shell's cells)
 
@@ -69,15 +69,19 @@ def bastion_readout(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), bac
     zf = zlo + 0.1                                  # the angled floor, raised: zf at the wall's line, rising
     zb = zf + 0.55 * R                              # gently to the back
     prism(k, ax, plane, f0, f1, [(0.0, zlo), (R, zlo), (R, zf), (0.0, zb)], F, 3)
-    a, b, q0, q1 = uc - 0.36 * w, uc + 0.36 * w, zb + 0.05, zb + 0.35
-    T.paint(k, ax, plane, a - LINE, b + LINE, q0, q1, 0.0, F, 0)                                 # the readout
-    nd = min(5, int((b - a - 0.04 + 2 * LINE) / (5 * LINE)))                                   # digits: each an
-    u0 = T.snap(uc - (5 * nd - 2) * LINE / 2)       # outline 3 px wide, 2 px apart, on the px grid (read as 0s)
-    for i in range(nd):
-        u, v = u0 + 5 * i * LINE, u0 + (5 * i + 3) * LINE
-        for q in ((u, v, q0 + 0.03, q0 + 0.056), (u, v, q1 - 0.056, q1 - 0.03), (u, u + LINE, q0 + 0.03, q1 - 0.03),
-                  (v - LINE, v, q0 + 0.03, q1 - 0.03)):
-            lamp(k, ax, plane, *q, dl, "emR")                                     # (dim: a glow fills the gaps)
+    a, b = uc - 0.36 * w, uc + 0.36 * w
+    ra, rb = a - R / 2, b - R / 2                   # (the readout centred on what shows of the back: the cut's far
+    rc = (ra + rb) / 2                              # side hides as much of it as it is deep)
+    q0 = zb + 0.05                                  # the readout: a dark frame snug round its digits
+    d0, d1 = q0 + 0.05, q0 + 0.05 + 5 * PZ          # (the digits 5 px tall)
+    q1 = d1 + 0.05
+    T.paint(k, ax, plane, ra - LINE, rb + LINE, q0, q1, 0.0, F, 0)
+    nd = min(4, int((rb - ra + LINE) / (5 * LINE)))                                            # digits: each an
+    u0 = T.snap(rc - (5 * nd - 1) * LINE / 2)       # outline 4 px wide, a px apart, on the px grid (read as 0s), in
+    for i in range(nd):                             # a dim red that does not glow (a glow filled them in)
+        u, v = u0 + 5 * i * LINE, u0 + (5 * i + 4) * LINE
+        for q in ((u, v, d0, d0 + PZ), (u, v, d1 - PZ, d1), (u, u + LINE, d0, d1), (v - LINE, v, d0, d1)):
+            lamp(k, ax, plane, *q, dl, "lvR2")
     zr = q1 + 0.04                                  # over it, a face sloping out to the cut's top edge from a
     prism(k, ax, plane, f0, f1, [(0.0, zr), (1 / 32, zr), (R, z1), (0.0, z1)], F, 3)            # px lip
     o, up = T.OUT(ax), Vector((0, 0, 1))
