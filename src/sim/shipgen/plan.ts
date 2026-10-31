@@ -45,6 +45,8 @@ export interface RoomSpec {
   vehicle?: boolean;
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
+  /** A ring band segment's door at the start (-1) or end (1) of its arc instead of the middle: towards a dock bank. */
+  doorLean?: -1 | 1;
   /**
    * Quarters to be one-bed cabins (off the navy): a ring band cuts them as one segment a bed (stationBands.ts); other
    * layouts divide the room off a hallway at fit-out (rooms/cabins.ts).

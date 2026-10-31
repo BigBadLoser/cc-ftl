@@ -1,7 +1,8 @@
 import { localBuilder } from './blocks';
 import type { Builder, Part, Rect } from './builder';
 import { letterOf } from './canvas';
-import { bandArcs, bandDepth, bandRadius, bandRooms } from './stationBands';
+import { bandArcs, bandDepth, bandGroups, bandRadius, bandRooms } from './stationBands';
+import { concentricBands, organPipes } from './stationDistricts';
 import { arcsBetween, dockBanks, without } from './stationDocks';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
@@ -158,20 +159,32 @@ function corridor(b: Builder, R: number, key: string, a0 = 0, a1 = TAU): { rect:
   return rect ? { rect, label: b.cv.labelAt(c.x, c.y) } : null;
 }
 
-/** A straight 3-wide spoke on a cardinal axis from distance `a` to `z` (its end walls), doored to both labels. */
-function spoke(b: Builder, d: 'n' | 's' | 'e' | 'w', a: number, z: number, inner: number, outer: number): boolean {
+/**
+ * A straight spoke on a cardinal axis from distance `a` to `z` (its end walls), `width` floor wide, doored to both
+ * labels. A wide spoke (the concourse) gets a door as wide as its floor at each end, where the ring meets it square.
+ */
+function spoke(b: Builder, d: 'n' | 's' | 'e' | 'w', a: number, z: number, inner: number, outer: number, width = 1): boolean {
   const len = z - a + 1;
   if (len < 3) return false;
-  const r: Rect = d === 'n' ? { x: -1, y: -z, w: 3, h: len } : d === 's' ? { x: -1, y: a, w: 3, h: len } : d === 'w' ? { x: -z, y: -1, w: len, h: 3 } : { x: a, y: -1, w: len, h: 3 };
+  const W = width + 2, o = -(width >> 1) - 1;
+  const r: Rect = d === 'n' ? { x: o, y: -z, w: W, h: len } : d === 's' ? { x: o, y: a, w: W, h: len } : d === 'w' ? { x: -z, y: o, w: len, h: W } : { x: a, y: o, w: len, h: W };
   const p = b.place(r, 'hall');
   if (!p) return false;
-  const ends = doorSpots(b, p, outer);
-  const starts = doorSpots(b, p, inner);
+  // Door spots on an end wall only (the axis coordinate of that wall), not the side walls the ring curves past.
+  const axial = (c: Cell): number => (d === 'n' || d === 's' ? c.y : c.x);
+  const endAt = (v: number) => (c: Cell): boolean => axial(c) === v;
+  const near = d === 'n' ? p.y + p.h - 1 : d === 's' ? p.y : d === 'w' ? p.x + p.w - 1 : p.x;
+  const far = d === 'n' ? p.y : d === 's' ? p.y + p.h - 1 : d === 'w' ? p.x : p.x + p.w - 1;
+  const ends = doorSpots(b, p, outer).filter(endAt(far));
+  const starts = doorSpots(b, p, inner).filter(endAt(near));
   if (ends.length === 0 || starts.length === 0) return false;
-  b.cv.setDoor(mid(ends).x, mid(ends).y);
-  b.cv.setDoor(mid(starts).x, mid(starts).y);
+  for (const set of [ends, starts]) for (const c of width > 1 ? set : [mid(set)]) b.cv.setDoor(c.x, c.y);
   return true;
 }
+
+/** The concourse: the north-south spokes (dock bank to hub to dock bank) are the station's main street. */
+const CONCOURSE = 3;
+const widthOf = (d: 'n' | 's' | 'e' | 'w'): number => (d === 'n' || d === 's' ? CONCOURSE : 1);
 
 /** Distance from the centre to a hub's wall on a face. */
 const face = (h: Part, d: 'n' | 's' | 'e' | 'w'): number => ({ n: -h.y, s: h.y + h.h - 1, w: -h.x, e: h.x + h.w - 1 })[d];
@@ -224,7 +237,7 @@ export function wheelStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: Whee
   const h = b.place({ x: -(hw >> 1) - 1, y: -(hub.h >> 1) - 1, w: hw + 2, h: hub.h + 2 }, hub.role, { ...hub, w: hw });
   if (!h) return null;
   const hubLabel = b.cv.labelAt(h.x + 1, h.y + 1);
-  for (const d of o.spokes) if (!spoke(b, d, face(h, d), R - 1, hubLabel, ring.label)) return null;
+  for (const d of o.spokes) if (!spoke(b, d, face(h, d), R - 1, hubLabel, ring.label, widthOf(d))) return null;
   // Centre rooms on the hub's free faces; any that do not fit join the band.
   const faces = (['e', 'w', 'n', 's'] as const).filter((d) => !o.spokes.includes(d));
   inside.forEach((r, i) => {
@@ -252,7 +265,9 @@ const rimRadius = (sys: RoomSpec[], docks: RoomSpec[]): number =>
 function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number): boolean {
   const banks = dockBanks(b, R, ring, docks, R + depth + 2);
   if (!banks) return false;
-  if (!bandArcs(b, R, ring, band, depth, arcsBetween(banks.splits))) return false;
+  // Districts: each arc runs bank to bank, so customs and cargo stand at its ends and quarters in its middle.
+  const arcs = arcsBetween(banks.splits);
+  if (!bandGroups(b, R, ring, organPipes(band, arcs.map(([a, z]) => z - a)), depth, arcs)) return false;
   const rim = without([[0, TAU]], banks.keep);
   // Rooms that need no hull face (reactors, shields, the core) go inboard of the corridor first, doored straight onto
   // it: on the rim they could only door onto a band room, so crew would walk through quarters or a mess to reach them.
@@ -273,11 +288,9 @@ export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], 
   const docks = roomsIn.filter(isDock);
   const sys = roomsIn.filter(isSystem);
   const rest = roomsIn.filter((r) => !isDock(r) && !isSystem(r));
-  const area = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + r.w * r.h, 0);
   // Shares by floor area: about a fifth round the hub, a third outside the inner ring, the rest on the outer ring.
-  const total = area(rest);
-  const iIn: RoomSpec[] = [], iOut: RoomSpec[] = [], oBand: RoomSpec[] = [];
-  for (const r of rest) (area(iIn) < total * 0.2 ? iIn : area(iOut) < total * 0.33 ? iOut : oBand).push(r);
+  // Districts: the quiet rooms (quarters, messes) on the inner rings, the dock district on the outer ring.
+  const { iIn, iOut, oBand } = concentricBands(rest);
   const hw = Math.max(hub.w, hub.h);
   const hubR = Math.ceil(Math.hypot(hw / 2 + 1, hub.h / 2 + 1));
   const dI = bandDepth(iIn);
@@ -294,8 +307,8 @@ export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], 
   const h = b.place({ x: -(hw >> 1) - 1, y: -(hub.h >> 1) - 1, w: hw + 2, h: hub.h + 2 }, hub.role, { ...hub, w: hw });
   if (!h) return null;
   const hubLabel = b.cv.labelAt(h.x + 1, h.y + 1);
-  for (const d of spokes) if (!spoke(b, d, face(h, d), R1 - 1, hubLabel, r1.label)) return null;
-  for (const d of ['n', 's', 'e', 'w'] as const) if (!spoke(b, d, R1 + 1, R2 - 1, r1.label, r2.label)) return null;
+  for (const d of spokes) if (!spoke(b, d, face(h, d), R1 - 1, hubLabel, r1.label, widthOf(d))) return null;
+  for (const d of ['n', 's', 'e', 'w'] as const) if (!spoke(b, d, R1 + 1, R2 - 1, r1.label, r2.label, widthOf(d))) return null;
   const ANGLE = { e: 0, s: Math.PI / 2, w: Math.PI, n: -Math.PI / 2 } as const;
   // Spokes cut the inner bands into arcs: the hub's spokes inboard, the four cardinal ones outboard.
   // The inner bands have nothing beyond them (the hub's room, the court): they thin when the ring has floor to spare.

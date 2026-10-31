@@ -199,8 +199,11 @@ function wheel(c: Ctx): boolean {
   return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
 }
 
+/** Hub spokes always include north and south: the concourse runs dock bank to hub to dock bank. */
+const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sides])];
+
 function concentric(c: Ctx): boolean {
-  return placeRoot(c, civil(courtOf(c, 1)(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2))), 'command', 'concentric station'), 'concentric');
+  return placeRoot(c, civil(courtOf(c, 1)(concentricStation(c.rng, c.plan.command, fullRooms(c), concourse(cardinal(c, 2)))), 'command', 'concentric station'), 'concentric');
 }
 
 function arc(c: Ctx): boolean {

@@ -72,7 +72,9 @@ export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec
       const share = (want * k) / runs;
       const withMess = roomsIn.flatMap((q) => {
         const cs = cabinsOf(q);
-        return cs.length === 1 ? cs : [...cs, { role: 'support' as const, mods: [], w: Math.max(2, Math.round((share - 4) / depth)), h: depth }];
+        // The mess in the middle of its cabin run, so every cabin is a short walk from it.
+        const h = cs.length >> 1;
+        return cs.length === 1 ? cs : [...cs.slice(0, h), { role: 'support' as const, mods: [], w: Math.max(2, Math.round((share - 4) / depth)), h: depth }, ...cs.slice(h)];
       });
       const again = cutBand(b, R, ring, withMess, depth, arcs, side);
       if (again) { cabins = withMess; cut = again; break; }
@@ -121,7 +123,11 @@ export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec
       const best = spots.filter((p) => p[2]);
       const pick = best.length > 0 ? best : spots;
       if (pick.length === 0) { next.push(s); continue; }
-      const d = pick[pick.length >> 1] as [number, number, boolean];
+      // A leaning door goes to the end of the segment nearest its arc's start or end (a dock bank); else the middle.
+      const lean = (rooms[s] as RoomSpec).doorLean;
+      const a0 = (arcs[0] as [number, number])[0];
+      const pos = (p: [number, number, boolean]): number => (((Math.atan2(p[1], p[0]) - a0) % TAU) + TAU) % TAU;
+      const d = (lean ? [...pick].sort((p, q) => lean * (pos(q) - pos(p)))[0] : pick[pick.length >> 1]) as [number, number, boolean];
       cv.setDoor(d[0], d[1]);
       joined.add(me);
     }
@@ -223,6 +229,11 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   while (stack.length > 0) for (const t of links.get(stack.pop() as number) ?? []) if (!reached.has(t)) { reached.add(t); stack.push(t); }
   if (reached.size < rooms.length) return null;
   return { floor, isFloor };
+}
+
+/** A band over separate arcs with its rooms already grouped by arc (`stationDistricts.ts` `organPipes`), in order. */
+export function bandGroups(b: Builder, R: number, ring: number, groups: RoomSpec[][], depth: number, arcs: [number, number][], side: 1 | -1 = 1, flex = false): boolean {
+  return arcs.every((arc, k) => bandRooms(b, R, ring, groups[k] ?? [], depth, [arc], side, `${side > 0 ? 'o' : 'i'}${k}`, flex));
 }
 
 /**
