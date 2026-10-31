@@ -6,7 +6,7 @@ import { latticeStation, ringStation } from './civilStations';
 import type { Builder } from './builder';
 import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
-import { dockSpec, MK1_REACTOR, type Reactor, type RoomSpec } from './plan';
+import { dockSpec, MK1_REACTOR, pickWeighted, type Reactor, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
 import { cardinal, fullRooms, placeRoot, reactorOf, reactorRooms, roomsOf, runs, split, zoned } from './stationKit';
@@ -191,22 +191,29 @@ function welded(c: Ctx): boolean {
  * Wheel: four spokes, so the inside of the ring is four quarters; none, one or two of them are filled as courts, the
  * rest stay open to space.
  */
+/** Ring outline (`stationOutline.ts`): a chamfered square or an octagon keeps ring rooms rectangular; a few stay round. */
+function outline(c: Ctx): number {
+  const k = pickWeighted(c.rng, [{ value: 0, weight: 1 }, { value: Math.SQRT2, weight: 2 }, { value: 1.75, weight: 2 }]);
+  c.parts.push(k === 0 ? 'round' : k < 1.5 ? 'octagon' : 'chamfered');
+  return k;
+}
+
 function wheel(c: Ctx): boolean {
   const spokes: Side[] = ['n', 'e', 's', 'w'];
   const o = { spokes, extra: c.rng.int(0, 2), centre: 0 };
   const courts = c.rng.int(0, 2);
   c.parts.push(`spokes nesw courts ${courts}`);
-  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, c.plan.command, fullRooms(c), o)), 'command', 'wheel station'), 'wheel');
+  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, c.plan.command, fullRooms(c), o, outline(c))), 'command', 'wheel station'), 'wheel');
 }
 
 function concentric(c: Ctx): boolean {
-  return placeRoot(c, civil(courtOf(c, 1)(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2))), 'command', 'concentric station'), 'concentric');
+  return placeRoot(c, civil(courtOf(c, 1)(concentricStation(c.rng, c.plan.command, fullRooms(c), cardinal(c, 2), outline(c))), 'command', 'concentric station'), 'concentric');
 }
 
 function arc(c: Ctx): boolean {
   const span = c.rng.pick([Math.PI, Math.PI * 1.25, Math.PI * 1.5]);
   c.parts.push(`span ${Math.round((span * 180) / Math.PI)}`);
-  return placeRoot(c, civil(arcStation(c.rng, c.plan.command, fullRooms(c), span), 'command', 'arc station'), 'arc');
+  return placeRoot(c, civil(arcStation(c.rng, c.plan.command, fullRooms(c), span, outline(c)), 'command', 'arc station'), 'arc');
 }
 
 /** Ore cages (mining): rows of ore holds on a rail, hung below or above any placed module. */

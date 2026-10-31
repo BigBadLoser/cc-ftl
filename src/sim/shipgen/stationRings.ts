@@ -5,6 +5,7 @@ import { bandArcs, bandDepth, bandRadius, bandRooms } from './stationBands';
 import { arcsBetween, dockBanks, without } from './stationDocks';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
+import { normalAt, perimeter, reachAt } from './stationOutline';
 
 /**
  * Round station rings: a 1-wide corridor on a rasterised circle (4-connected, so the outline is stair-stepped). Its
@@ -19,19 +20,20 @@ const TAU = Math.PI * 2;
 type Cell = { x: number; y: number };
 
 /** A 4-connected chain of cells on a circle of radius R round (0, 0), angles a0..a1 (0 = east, clockwise on screen). */
-export function circleCells(R: number, a0 = 0, a1 = TAU): Cell[] {
+export function circleCells(R: number, a0 = 0, a1 = TAU, k = 0): Cell[] {
   const out: Cell[] = [];
   const seen = new Set<string>();
   const add = (x: number, y: number): void => {
     const k = `${x},${y}`;
     if (!seen.has(k)) { seen.add(k); out.push({ x, y }); }
   };
-  const steps = Math.ceil(R * 12 * ((a1 - a0) / TAU)) + 8;
+  const steps = Math.ceil(R * 16 * ((a1 - a0) / TAU)) + 8;
   let last: Cell | null = null;
   for (let i = 0; i <= steps; i++) {
     const a = a0 + ((a1 - a0) * i) / steps;
-    const x = Math.round(R * Math.cos(a));
-    const y = Math.round(R * Math.sin(a));
+    const r = R * reachAt(a, k);
+    const x = Math.round(r * Math.cos(a));
+    const y = Math.round(r * Math.sin(a));
     if (last && last.x !== x && last.y !== y) add(x, last.y);
     add(x, y);
     last = { x, y };
@@ -118,8 +120,11 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
       acc += a1 - a0;
       a = a1;
     }
-    const nx = Math.cos(a);
-    const ny = Math.sin(a);
+    // Rooms push out along the outline's normal from the corridor's point at angle a (radially when round).
+    const k = b.ringK;
+    const Ra = R * reachAt(a, k);
+    const { nx, ny } = normalAt(a, k);
+    const ox = Ra * Math.cos(a) - R * nx, oy = Ra * Math.sin(a) - R * ny;
     const flat = Math.abs(ny) >= Math.abs(nx);
     let done = false;
     for (const doorTo of doorTos) for (const rot of [flat, !flat]) {
@@ -128,8 +133,8 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
       const H = (rot ? r.h : r.w) + 2;
       for (let d = (side > 0 ? R - 1 : R + 1) + side * reach; !done && Math.abs(d - R) < 2 + reach + Math.max(W, H); d += side * 0.5) {
         for (const s of [0, 1, -1, 2, -2]) {
-          const cx = Math.round(nx * d - ny * s);
-          const cy = Math.round(ny * d + nx * s);
+          const cx = Math.round(ox + nx * d - ny * s);
+          const cy = Math.round(oy + ny * d + nx * s);
           const rect = { x: cx - (W >> 1), y: cy - (H >> 1), w: W, h: H };
           if (!free(b, rect)) continue;
           const spots = doorSpots(b, rect, doorTo);
@@ -152,7 +157,7 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
 
 /** The round corridor of radius R stamped onto `b`; its rect and room label. */
 function corridor(b: Builder, R: number, key: string, a0 = 0, a1 = TAU): { rect: Rect; label: number } | null {
-  const cells = circleCells(R, a0, a1);
+  const cells = circleCells(R, a0, a1, b.ringK);
   const rect = stampCells(b, cells, key);
   const c = cells[0] as Cell;
   return rect ? { rect, label: b.cv.labelAt(c.x, c.y) } : null;
@@ -209,8 +214,9 @@ function rim(b: Builder, R: number, label: number, sys: RoomSpec[], docks: RoomS
 }
 
 /** Wheel: one round ring, its rooms a band of segments outboard, docks beyond them, the hub at the centre on spokes. */
-export function wheelStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: WheelOpts): Builder | null {
+export function wheelStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: WheelOpts, k = 0): Builder | null {
   const b = localBuilder(rng);
+  b.ringK = k;
   const hw = Math.max(hub.w, hub.h);
   const docks = rooms.filter(isDock);
   const sys = rooms.filter(isSystem);
@@ -218,7 +224,7 @@ export function wheelStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: Whee
   const inside = rest.slice(0, o.centre);
   const band = rest.slice(o.centre);
   const depth = bandDepth(band);
-  const R = Math.max(bandRadius([...band, ...sys, ...docks], depth), Math.ceil(hw / 2) + 6 + (inside.length > 0 ? Math.max(0, ...inside.map((r) => r.w)) + 2 : 0)) + o.extra;
+  const R = Math.max(bandRadius([...band, ...sys, ...docks], depth, 1, 1, k), Math.ceil(hw / 2) + 6 + (inside.length > 0 ? Math.max(0, ...inside.map((r) => r.w)) + 2 : 0)) + o.extra;
   const ring = corridor(b, R, 'wheel');
   if (!ring) return null;
   const h = b.place({ x: -(hw >> 1) - 1, y: -(hub.h >> 1) - 1, w: hw + 2, h: hub.h + 2 }, hub.role, { ...hub, w: hw });
@@ -242,8 +248,8 @@ const COURT = 14;
 const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.3, (q + 1) * (TAU / 4) - 0.3]);
 
 /** Radius whose circumference carries the rim rooms side by side (rectangles beyond the band), clear of the docks. */
-const rimRadius = (sys: RoomSpec[], docks: RoomSpec[]): number =>
-  Math.ceil((sys.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) * 1.2 + (docks.length * 4 + 24)) / TAU);
+const rimRadius = (sys: RoomSpec[], docks: RoomSpec[], k = 0): number =>
+  Math.ceil((sys.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) * 1.2 + (docks.length * 4 + 24)) / perimeter(k));
 
 /**
  * The outboard band of a full round ring with its docks reserved first (dock banks on the north and south faces), the
@@ -268,8 +274,9 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
  * outer ring one band outboard with its docks reserved first as banks on the north and south faces. System rooms stay
  * rectangles on the outer rim, beyond the band. The space between the inner band and the outer ring is the court.
  */
-export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], spokes: ('n' | 's' | 'e' | 'w')[]): Builder | null {
+export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], spokes: ('n' | 's' | 'e' | 'w')[], k = 0): Builder | null {
   const b = localBuilder(rng);
+  b.ringK = k;
   const docks = roomsIn.filter(isDock);
   const sys = roomsIn.filter(isSystem);
   const rest = roomsIn.filter((r) => !isDock(r) && !isSystem(r));
@@ -283,8 +290,8 @@ export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], 
   const dI = bandDepth(iIn);
   const dO = bandDepth(iOut);
   const dB = bandDepth(oBand);
-  const R1a = Math.max(hubR + (iIn.length > 0 ? dI + 4 : 4), bandRadius(iIn, dI, 1, -1), bandRadius(iOut, dO));
-  const R2 = Math.max(R1a + dO + 8, bandRadius([...oBand, ...sys, ...docks], dB), rimRadius(sys, docks) - dB - 2);
+  const R1a = Math.max(hubR + (iIn.length > 0 ? dI + 4 : 4), bandRadius(iIn, dI, 1, -1, k), bandRadius(iOut, dO, 1, 1, k));
+  const R2 = Math.max(R1a + dO + 8, bandRadius([...oBand, ...sys, ...docks], dB, 1, 1, k), rimRadius(sys, docks, k) - dB - 2);
   // A rim-driven outer ring (many guns) would leave a vast court: the inner ring grows to keep the court at most
   // COURT tiles across, its segments longer.
   const R1 = Math.max(R1a, R2 - dO - 2 - COURT);
@@ -305,13 +312,14 @@ export function concentricStation(rng: Rng, hub: RoomSpec, roomsIn: RoomSpec[], 
 }
 
 /** Arc: a partial round ring (a crescent) of `span` radians: a room band outside it, system rooms and docks beyond. */
-export function arcStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], span: number): Builder | null {
+export function arcStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], span: number, k = 0): Builder | null {
   const b = localBuilder(rng);
+  b.ringK = k;
   const docks = rooms.filter(isDock);
   const inn = [hub, ...rooms.filter(isSystem)];
   const out = rooms.filter((r) => !isDock(r) && !isSystem(r));
   const dO = bandDepth(out);
-  const R = Math.max(8, bandRadius([...out, ...inn], dO, span / TAU));
+  const R = Math.max(8, bandRadius([...out, ...inn], dO, span / TAU, 1, k));
   const a0 = -Math.PI / 2 - span / 2;
   const ring = corridor(b, R, 'arc', a0, a0 + span);
   if (!ring) return null;

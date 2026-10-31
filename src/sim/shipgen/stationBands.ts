@@ -1,6 +1,7 @@
 import type { Builder } from './builder';
 import { letterOf } from './canvas';
 import type { RoomSpec } from './plan';
+import { along as outlineAt, angleAlong, arcLength, perimeter, reachAt, ringNorm } from './stationOutline';
 
 /**
  * Ring-band rooms: the rooms of a round ring fill the band outside (or inside) its corridor as ring segments cut by
@@ -29,9 +30,9 @@ export const bandDepth = (rooms: RoomSpec[]): number =>
   Math.max(4, Math.min(7, Math.round(Math.sqrt(rooms.reduce((t, r) => t + r.w * r.h, 0) / Math.max(1, rooms.length)))));
 
 /** Corridor radius at which a band `depth` deep holds `rooms` over `share` of the circle (side 1 outboard). */
-export function bandRadius(rooms: RoomSpec[], depth: number, share = 1, side: 1 | -1 = 1): number {
+export function bandRadius(rooms: RoomSpec[], depth: number, share = 1, side: 1 | -1 = 1, k = 0): number {
   const area = rooms.reduce((t, r) => t + (r.w + 1) * (r.h + 1), 0) * 1.1;
-  return Math.ceil(area / (TAU * share * depth) - (side * (depth + 2)) / 2);
+  return Math.ceil(area / (perimeter(k) * share * depth) - (side * (depth + 2)) / 2);
 }
 
 /** Floor a band may give its rooms over their planned area before a flexible band is made shallower. */
@@ -137,7 +138,9 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   const lo = side > 0 ? R + 0.5 : R - depth - 1.5;
   const hi = side > 0 ? R + depth + 1.5 : R - 0.5;
   const M = Math.ceil(R + depth + 3);
-  const total = arcs.reduce((t, [a, z]) => t + (z - a), 0);
+  const rk = b.ringK;
+  // Positions along the band are outline length (unit outline), so segments get floor by share whatever the shape.
+  const total = arcs.reduce((t, [a, z]) => t + arcLength(a, z, rk), 0);
   const weights = rooms.map((r) => r.w * r.h + 4);
   const sum = weights.reduce((t, w) => t + w, 0);
   // Arc position (0..total) where each segment ends.
@@ -148,14 +151,14 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
     let t = 0;
     for (const [a0, a1] of arcs) {
       const x = ((a - a0) % TAU + TAU) % TAU;
-      if (x <= a1 - a0) return t + x;
-      t += a1 - a0;
+      if (x <= a1 - a0) return t + (outlineAt(a0 + x, rk) - outlineAt(a0, rk));
+      t += arcLength(a0, a1, rk);
     }
     return -1;
   };
   const angleAt = (pos: number): number => {
     let t = pos;
-    for (const [a0, a1] of arcs) { if (t <= a1 - a0) return a0 + t; t -= a1 - a0; }
+    for (const [a0, a1] of arcs) { const L = arcLength(a0, a1, rk); if (t <= L) return angleAlong(a0, a1, t, rk); t -= L; }
     return (arcs[arcs.length - 1] as [number, number])[1];
   };
   // Partitions are straight walls, not radial staircases: each crosses the band at its angle along the grid axis nearer
@@ -166,7 +169,8 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   const cuts = ends.slice(0, -1).map((pos) => {
     const a = angleAt(pos);
     const vertical = Math.abs(Math.sin(a)) >= Math.abs(Math.cos(a));
-    return { pos, a, vertical, px: rm * Math.cos(a), py: rm * Math.sin(a), sign: vertical ? Math.sign(-Math.sin(a)) : Math.sign(Math.cos(a)) };
+    const r = rm * reachAt(a, rk);
+    return { pos, a, vertical, px: r * Math.cos(a), py: r * Math.sin(a), sign: vertical ? Math.sign(-Math.sin(a)) : Math.sign(Math.cos(a)) };
   });
   const passed = (c: (typeof cuts)[number], x: number, y: number, ang: number, t: number): boolean => {
     const da = Math.atan2(Math.sin(ang - c.a), Math.cos(ang - c.a));
@@ -177,7 +181,7 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   const key = (x: number, y: number): string => `${x},${y}`;
   for (let y = -M; y <= M; y++) {
     for (let x = -M; x <= M; x++) {
-      const d = Math.hypot(x, y);
+      const d = ringNorm(x, y, rk);
       if (d < lo || d > hi || cv.at(x, y) !== '.') continue;
       const ang = Math.atan2(y, x);
       const t = along(ang);
@@ -189,7 +193,7 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   const floor = new Map<number, [number, number][]>();
   for (const [k, s] of seg) {
     const [x, y] = k.split(',').map(Number) as [number, number];
-    const d = Math.hypot(x, y);
+    const d = ringNorm(x, y, rk);
     const edge = side > 0 ? d > hi - 1 : d < lo + 1;
     // One wall per partition: the cell on the lower segment's side of it.
     const part = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seg.get(key(x + (dx as number), y + (dy as number))) === (s + 1) % rooms.length && rooms.length > 1);
@@ -230,13 +234,13 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
  * banded on its own so no segment straddles a gap. Arcs too short for one room get none.
  */
 export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: number, arcs: [number, number][], side: 1 | -1 = 1, flex = false): boolean {
-  const total = arcs.reduce((t, [a, z]) => t + (z - a), 0);
+  const total = arcs.reduce((t, [a, z]) => t + arcLength(a, z, b.ringK), 0);
   const area = rooms.reduce((t, r) => t + r.w * r.h + 4, 0);
   let i = 0;
   let acc = 0;
   let want = 0;
   for (const [k, arc] of arcs.entries()) {
-    want += ((arc[1] - arc[0]) / total) * area;
+    want += (arcLength(arc[0], arc[1], b.ringK) / total) * area;
     const mine: RoomSpec[] = [];
     while (i < rooms.length && (k === arcs.length - 1 || acc + ((rooms[i] as RoomSpec).w * (rooms[i] as RoomSpec).h + 4) / 2 <= want)) {
       const r = rooms[i++] as RoomSpec;

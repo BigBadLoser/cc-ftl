@@ -31,6 +31,8 @@ export class Builder {
   cv = new Canvas();
   parts: Part[] = [];
   private n = 0;
+  /** Ring outline of round stations (`stationOutline.ts`): 0 round, else the octagon norm's k. */
+  ringK = 0;
 
   /** `axis2`: twice the y of the mirror axis (rows y and axis2 - y mirror each other). */
   constructor(readonly rng: Rng, public axis2 = 0) {}
