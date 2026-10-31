@@ -7,32 +7,42 @@ import { backDoors, frame, framed, frameSize, roomRect, type Frame } from './fra
  * berths and aisles plans do this for quarters and holds). A design is written in a room frame (rooms/frame.ts: u along
  * the back wall, v into the room) and stretches to the room: it says where each piece goes relative to the walls and
  * the room's middle, so a big room spreads it out and a small one packs it. Each design is tried in each of the room's
- * turns (back walls without doors first, the long side as the back); the first that places every piece, keeps every
- * piece usable (Layout.fitError) and every tile reachable wins. A room that fits none (not a rectangle, too small)
- * falls back to its recipe's steps.
+ * turns (back walls without doors first, the long side as the back); the first that places all its required groups,
+ * keeps every piece usable (Layout.fitError) and every tile reachable wins. Designs are mirror-symmetric, their
+ * pieces in groups placed whole (a lamp at each end of the reactors, a locker in each corner), so a door that blocks one
+ * of a pair drops both and the room stays symmetric. A room that fits none (not a rectangle, too small) falls back to
+ * its recipe's steps.
  */
 
-/** One piece of a design: a module at frame tile (u, v) with frame turn t; `opt` pieces are left out where they do not fit. */
-interface Put { def: string; u: number; v: number; t: number; opt?: boolean }
+/** One piece of a design: a module at frame tile (u, v) with frame turn t. */
+interface Put { def: string; u: number; v: number; t: number }
+/**
+ * A group of pieces placed together or not at all (a mirrored pair keeps the room symmetric when a door blocks one of
+ * them); `opt` groups are left out where they do not fit, the rest must.
+ */
+interface Group { puts: Put[]; opt?: boolean }
 
-/** A design: the pieces for a room of frame size L x D holding the spec's modules, or null when it cannot fit. */
-type Design = (f: Frame, spec: Spec, lay: Layout, t: number) => Put[] | null;
+/** A design: the groups for a room of frame size L x D holding the spec's modules (main piece turned t), or null. */
+type Design = (f: Frame, spec: Spec, lay: Layout, t: number) => Group[] | null;
 
 /** What a room must hold: its planned modules by def. */
 export type Spec = ReadonlyMap<string, number>;
 
+const CAGE = 'module.light_cage';
 const fpOf = (lay: Layout, def: string): readonly [number, number] => lay.defs[def]?.footprint ?? [1, 1];
 
-/** A run of n pieces of `def` side by side along u, centred on `mid`, `gap` tiles apart, at row v, turn t. */
-function run(lay: Layout, def: string, n: number, mid: number, v: number, t: number, gap = 0): Put[] {
-  const [du] = frameSize(fpOf(lay, def), t);
-  const span = n * du + (n - 1) * gap;
-  const u0 = Math.round(mid - span / 2);
-  return Array.from({ length: n }, (_, i) => ({ def, u: u0 + i * (du + gap), v, t }));
+/** A piece and its mirror image across the room's centre line (u -> L - u - du; a piece facing along u turns round). */
+function pair(lay: Layout, f: Frame, p: Put): Put[] {
+  const [du] = frameSize(fpOf(lay, p.def), p.t);
+  const m = { ...p, u: f.L - p.u - du, t: p.t === 1 ? 3 : p.t === 3 ? 1 : p.t };
+  return m.u === p.u ? [p] : [p, m];
 }
 
-/** Mark pieces optional: the design keeps its shape without them where a door or a neighbour is in the way. */
-const opt = (ps: Put[]): Put[] => ps.map((p) => ({ ...p, opt: true }));
+/** What stands at the middle of a wall row v: one piece on an odd wall, a mirrored pair on an even one. */
+function centred(lay: Layout, f: Frame, def: string, v: number, t: number): Put[] {
+  const [du] = frameSize(fpOf(lay, def), t);
+  return (f.L - du) % 2 === 0 ? [{ def, u: (f.L - du) / 2, v, t }] : pair(lay, f, { def, u: Math.floor((f.L - du) / 2), v, t });
+}
 
 /** The reactors of a reactor room: their def and count. */
 function reactorsOf(spec: Spec): { def: string; n: number } | null {
@@ -40,63 +50,77 @@ function reactorsOf(spec: Spec): { def: string; n: number } | null {
   return null;
 }
 
+/** n reactors side by side along u, centred (their gap widened by one where that makes them exactly central), at row v. */
+function reactorRow(lay: Layout, f: Frame, def: string, n: number, v: number, t: number): { puts: Put[]; u0: number; span: number } {
+  const [du] = frameSize(fpOf(lay, def), t);
+  let gap = n > 1 ? 1 : 0;
+  if (n > 1 && (f.L - (n * du + (n - 1) * gap)) % 2 !== 0) gap++;
+  const span = n * du + (n - 1) * gap;
+  const u0 = Math.floor((f.L - span) / 2);
+  return { puts: Array.from({ length: n }, (_, i) => ({ def, u: u0 + i * (du + gap), v, t })), u0, span };
+}
+
 /**
- * Plant row: the reactors stand against the back wall, broadside on, a tile apart; an aisle runs in front of them; the
- * batteries and the console line the front wall facing them, the lockers stand at the two ends. Needs the reactors'
- * depth plus an aisle of two and the front row.
+ * Plant row: the reactors stand against the back wall, centred, a lamp at each end of the row; an aisle of two or more
+ * runs in front of them; the console faces them from the middle of the front wall, lockers in the front corners, the
+ * batteries on the side walls by the reactors. Mirror-symmetric.
  */
 const plantRow: Design = (f, spec, lay, t) => {
   const r = reactorsOf(spec);
   if (!r) return null;
-  const fp = fpOf(lay, r.def);
-  const [du, dv] = frameSize(fp, t);
-  if (f.D < dv + 3 || f.L < r.n * du + (r.n - 1) + 2) return null;
-  const mid = f.L / 2;
+  const [, dv] = frameSize(fpOf(lay, r.def), t);
+  const row = reactorRow(lay, f, r.def, r.n, 0, t);
+  if (f.D < dv + 3 || row.u0 < 1) return null;
   return [
-    ...run(lay, r.def, r.n, mid, 0, t, 1),
-    ...opt(run(lay, 'module.battery', 2, mid - 1, f.D - 1, 2)),
-    ...opt([{ def: 'module.console', u: Math.round(mid + 1), v: f.D - 1, t: 2 }]),
-    ...opt([{ def: 'module.storage_locker', u: 0, v: f.D - 2, t: 3 }, { def: 'module.storage_locker', u: f.L - 1, v: f.D - 2, t: 1 }]),
+    { puts: row.puts },
+    { puts: row.u0 >= 2 ? pair(lay, f, { def: CAGE, u: row.u0 - 2, v: 0, t: 0 }) : [], opt: true },
+    { puts: pair(lay, f, { def: 'module.battery', u: 0, v: dv, t: 3 }), opt: true },
+    { puts: centred(lay, f, 'module.console', f.D - 1, 2), opt: true },
+    { puts: pair(lay, f, { def: 'module.storage_locker', u: 0, v: f.D - 1, t: 3 }), opt: true },
   ];
 };
 
 /**
- * Twin flank (two reactors): one reactor at each end wall, end on, with the floor between them open; the batteries
- * stand at the middle of the back wall, the console faces them from the front wall, lockers flank the batteries.
+ * Twin flank (two reactors): one reactor against each end wall, end on, the floor between them open; a battery bank
+ * centred on the back wall between two lamps, the console centred on the front wall facing it, a locker beside each
+ * reactor on the front wall. Mirror-symmetric.
  */
 const twinFlank: Design = (f, spec, lay, t) => {
   const r = reactorsOf(spec);
   if (!r || r.n !== 2) return null;
-  const fp = fpOf(lay, r.def);
-  const [du, dv] = frameSize(fp, t);
+  const [du, dv] = frameSize(fpOf(lay, r.def), t);
   if (f.L < 2 * du + 3 || f.D < Math.max(dv, 4)) return null;
-  const vm = Math.round((f.D - dv) / 2), mid = f.L / 2;
+  const v = Math.floor((f.D - dv) / 2);
+  const bank = centred(lay, f, 'module.battery', 0, 0);
+  const lo = Math.min(...bank.map((p) => p.u));
   return [
-    { def: r.def, u: 0, v: vm, t },
-    { def: r.def, u: f.L - du, v: vm, t },
-    ...opt(run(lay, 'module.battery', 2, mid, 0, 0)),
-    ...opt([{ def: 'module.storage_locker', u: Math.round(mid) - 2, v: 0, t: 0 }, { def: 'module.storage_locker', u: Math.round(mid) + 1, v: 0, t: 0 }]),
-    ...opt([{ def: 'module.console', u: Math.round(mid - 0.5), v: f.D - 1, t: 2 }]),
+    { puts: pair(lay, f, { def: r.def, u: 0, v, t }) },
+    { puts: bank, opt: true },
+    { puts: lo >= du + 2 ? pair(lay, f, { def: CAGE, u: lo - 1, v: 0, t: 0 }) : [], opt: true },
+    { puts: centred(lay, f, 'module.console', f.D - 1, 2), opt: true },
+    { puts: pair(lay, f, { def: 'module.storage_locker', u: du, v: f.D - 1, t: 2 }), opt: true },
   ];
 };
 
 /**
- * Plinth: the reactors side by side in the middle of the room with clear floor all round, the batteries and lockers on
- * the back wall behind them, the console on the front wall facing them.
+ * Plinth: the reactors side by side in the middle of the room with clear floor all round, a lamp either side of them;
+ * batteries in the back corners, the console centred on the front wall facing them, lockers in the front corners.
+ * Mirror-symmetric.
  */
 const plinth: Design = (f, spec, lay, t) => {
   const r = reactorsOf(spec);
   if (!r) return null;
-  const fp = fpOf(lay, r.def);
-  const [du, dv] = frameSize(fp, t);
-  if (f.D < dv + 4 || f.L < r.n * du + 4) return null;
-  const mid = f.L / 2;
-  const v = Math.round((f.D - dv) / 2);
+  const [, dv] = frameSize(fpOf(lay, r.def), t);
+  if (f.D < dv + 4) return null;
+  const v = Math.floor((f.D - dv) / 2);
+  const row = reactorRow(lay, f, r.def, r.n, v, t);
+  if (row.u0 < 2) return null;
   return [
-    ...run(lay, r.def, r.n, mid, v, t, 0),
-    ...opt(run(lay, 'module.battery', 2, mid, 0, 0, 1)),
-    ...opt([{ def: 'module.storage_locker', u: 0, v: 0, t: 0 }, { def: 'module.storage_locker', u: f.L - 1, v: 0, t: 0 }]),
-    ...opt([{ def: 'module.console', u: Math.round(mid - 0.5), v: f.D - 1, t: 2 }]),
+    { puts: row.puts },
+    { puts: row.u0 >= 3 ? pair(lay, f, { def: CAGE, u: row.u0 - 2, v: v + Math.floor(dv / 2), t: 0 }) : [], opt: true },
+    { puts: pair(lay, f, { def: 'module.battery', u: 0, v: 0, t: 0 }), opt: true },
+    { puts: centred(lay, f, 'module.console', f.D - 1, 2), opt: true },
+    { puts: pair(lay, f, { def: 'module.storage_locker', u: 0, v: f.D - 1, t: 3 }), opt: true },
   ];
 };
 
@@ -120,17 +144,22 @@ export function planDesign(lay: Layout, rng: Rng, room: number, spec: Spec, name
   for (const name of order) {
     // Each turn of the room, each turn of the design's main piece (broadside or end on to the wall).
     for (const f of turns) for (const t of rng.chance(0.5) ? [0, 1] : [1, 0]) {
-      const puts = DESIGNS[name](f, spec, lay, t);
-      if (!puts) continue;
+      const groups = DESIGNS[name](f, spec, lay, t);
+      if (!groups) continue;
       let ok = true;
-      for (const p of puts) {
-        const pm: PlacedModule = framed(lay, f, p.def, p.u, p.v, p.t);
-        if (lay.fitError(pm.def, pm.x, pm.y, pm.rot, room)) { if (p.opt) continue; ok = false; break; }
-        lay.push(pm);
-        // An optional piece that cuts floor off is left out.
-        if (p.opt && lay.unreached() > base) lay.pop();
+      for (const g of groups) {
+        const k0 = lay.modules.length;
+        let fits = true;
+        for (const p of g.puts) {
+          const pm: PlacedModule = framed(lay, f, p.def, p.u, p.v, p.t);
+          if (lay.fitError(pm.def, pm.x, pm.y, pm.rot, room)) { fits = false; break; }
+          lay.push(pm);
+        }
+        if (fits && lay.unreached() <= base) continue;
+        while (lay.modules.length > k0) lay.pop();
+        if (!g.opt) { ok = false; break; }
       }
-      if (ok && lay.unreached() <= base) return new Set(puts.filter((p) => spec.has(p.def)).map((p) => p.def));
+      if (ok) return new Set(groups.flatMap((g) => g.puts).filter((p) => spec.has(p.def)).map((p) => p.def));
       while (lay.modules.length > n0) lay.pop();
     }
   }
