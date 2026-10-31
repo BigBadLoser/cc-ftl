@@ -23,6 +23,7 @@ const content = {
   roles: {
     'role.engineer': role(ROLES.engineer), 'role.gunner': role(ROLES.gunner),
     'role.bot': { name: 'Bot', priorities: {} as RoleDef['priorities'], species: 'species.robot' },
+    'role.secbot': { name: 'Security bot', priorities: {} as RoleDef['priorities'], species: 'species.robot', skills: { melee: 2, gunnery: 1 } },
   },
   species: {
     'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, mood: true },
@@ -124,5 +125,7 @@ describe('crew members (section 1)', () => {
     expect(bot.skills).toBeNull();
     expect(bot.traits).toEqual([]);
     expect(bot.rest).toBe(100);
+    // A robot role with fixed skills keeps them: no rolled snapshot replaces the role's skills.
+    expect(rollCrewMember(5, 0, 0, 'role.secbot', content).skills).toBeNull();
   });
 });

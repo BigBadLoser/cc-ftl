@@ -130,7 +130,8 @@ export function rollCrewWith(rng: Rng, roleId: string, content: ContentRegistry)
     : (content.crewNames[rng.int(0, Math.max(0, content.crewNames.length - 1))] ?? 'Crew');
   const appearanceSeed = rng.int(0, 0x7fffffff);
   const rest = species && species.restDecay > 0 ? rng.int(60, 100) : 100;
-  const skills = rollSkills(rng, role?.skills);
+  // Only crew with moods (people) roll skills and traits; robots and other fixed bodies keep their role's skills.
+  const skills = species?.mood ? rollSkills(rng, role?.skills) : null;
   const traits = species?.mood ? rollTraits(rng, content.traits) : [];
   return { role: roleId, name, appearanceSeed, rest, skills, traits, label: skillLabel(skills, role?.skills) };
 }
