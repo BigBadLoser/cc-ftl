@@ -13,10 +13,14 @@ export interface SaveMeta {
   /** Starmap turn and the node's name, for the list. */
   turn: number;
   node: string;
+  /** SAVE_VERSION it was written with (absent on saves from before this field). */
+  version?: number;
+  /** The game was in combat when it was saved. */
+  fight?: boolean;
 }
 
 export interface SaveStore {
-  /** Every save that exists, autosave first. */
+  /** Every save that exists: the autosaves (newest first), the pre-combat snapshot, then the named slots. */
   list(): SaveMeta[];
   read(id: string): string | null;
   /** False when the browser refuses the write (full or blocked): the save that was there stays. */
@@ -25,6 +29,11 @@ export interface SaveStore {
 }
 
 export const AUTO_ID = 'auto';
+/** The rotating autosaves, newest first: `auto` is written every time, the older ones are the autosaves that came before it. */
+export const AUTO_IDS = [AUTO_ID, 'auto2', 'auto3'] as const;
+/** The snapshot taken as combat starts: the way back to a fight that went wrong. */
+export const PRECOMBAT_ID = 'precombat';
+export const isAutoId = (id: string): boolean => (AUTO_IDS as readonly string[]).includes(id);
 /** The named slots, in order. */
 export const SLOT_IDS = ['slot1', 'slot2', 'slot3'] as const;
 const INDEX = 'cc.saves';
@@ -48,7 +57,7 @@ export function createLocalSaveStore(storage: () => Store | null): SaveStore {
   return {
     list() {
       const idx = index();
-      return [AUTO_ID, ...SLOT_IDS].filter(has).map((id) => idx[id] ?? { id, name: id === AUTO_ID ? 'Autosave' : id, savedAt: 0, turn: 0, node: '' });
+      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].filter(has).map((id) => idx[id] ?? { id, name: isAutoId(id) ? 'Autosave' : id, savedAt: 0, turn: 0, node: '' });
     },
     read(id) {
       try { return storage()?.getItem(keyOf(id)) ?? null; } catch { return null; }
