@@ -7,7 +7,11 @@
   --wiki-card-color: #1c2941;
   --wiki-card-border: #cfd9e6;
   --wiki-subtle: #52637a;
+  /* Square corners, like the game UI (src/ui/theme.css --kit-dialog-radius: 0). */
+  --wiki-radius: 0;
 }
+/* Applied to everything, the theme's own pills, search box and cards included, so no rounded corner slips through. */
+*, *::before, *::after { border-radius: var(--wiki-radius) !important; }
 :root.dark {
   --wiki-input-bg: #172337;
   --wiki-input-color: #e8f1fb;
