@@ -178,8 +178,8 @@ export function createBackdrop(atlas: Atlas): Backdrop {
     if (spec.body) {
       const sprite = new Sprite(Texture.EMPTY);
       sprite.anchor.set(0.5);
-      sprite.alpha = 0.4;
-      sprite.tint = 0x8a94a8;
+      // Opaque, dimmed by a dark tint instead of alpha (about what 0.4 alpha of 0x8a94a8 over the clear colour gave), so no star shows through the disc.
+      sprite.tint = 0x383c44;
       sprite.visible = false;
       sprite.eventMode = 'none';
       // The glow twin of the dedicated art (halos), added over the body at low strength.
@@ -190,9 +190,8 @@ export function createBackdrop(atlas: Atlas): Backdrop {
       glow.visible = false;
       glow.eventMode = 'none';
       const mask = new Graphics();
-      // Behind every layer: the clouds and stars drift over it, which is what makes it far.
-      root.addChildAt(sprite, 0);
-      root.addChildAt(glow, 1);
+      // Above the star and nebula layers (it hides what lies behind it), under every ship; its halo is soft and additive.
+      root.addChild(sprite, glow);
       root.addChild(mask);
       body = { sprite, glow, mask, fitH: 0, kind: spec.body, hash: spec.bodyHash, ...bodySpot(s), factor: 0.012 };
     }
