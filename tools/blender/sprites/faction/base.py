@@ -14,16 +14,21 @@ BASES = {
     "fC2": dict(wall="#c9d1d1", hull="#bec6c7", trim="#3d74c4", second="#8e989c", shade="#3d5a7c", floor="#50565b"),
     "fC3": dict(wall="#cfcdc5", hull="#c3c0b7", trim="#d39a2e", second="#948f85", shade="#46526e", floor="#57534b"),
     "fC4": dict(wall="#c8d0ca", hull="#bcc5be", trim="#3f9a66", second="#8a968d", shade="#3b5d6a", floor="#4b544c"),
-    "fB": dict(wall="#4a5469", hull="#404a5e", trim="#7585a0", second="#262c3d", shade="#363e55", floor="#2f3440"),
+    "fB": dict(wall="#2f3542", hull="#272d3a", trim="#5c6c86", second="#1e2330", shade="#262c3c", floor="#2f3440"),
     "fS": dict(wall="#736c60", hull="#5d5b55", trim="#9a5a2c", second="#4a463f", shade="#2e2c29", floor="#46443f"),
 }
+
+
+# a look's own lightness steps (restyle.LIGHT's, spread): bastion's set 8 is dark charcoal-slate with strong
+# highlights against it
+OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16)}
 
 
 def palette_entries():
     out = {}
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
-            out.update(ramp(f"{pre}{tag}", b[key]))
+            out.update(ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {})))
         out.update(ramp(f"{pre}F", b["floor"], offsets=(0.16, 0.1, 0.05, 0.0, -0.05, -0.1, -0.16)))
     return out
 
