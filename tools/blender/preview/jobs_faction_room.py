@@ -20,6 +20,6 @@ for name in LOOKS:
         kind, fn = BY[sid]
         fid = ST.faction_id(sid, name)
         JOBS[fid] = (kind, ST._wrap(lk, fid, fn))
-        if sid.endswith("m10"):
+        if sid.endswith(("m10", "m5")):
             for n, tr in enumerate(getattr(lk, "pairs", ()), 1):
                 JOBS[f"{fid}.a{n}"] = (kind, ST._wrap(lk, f"{fid}.a{n}", _variant(fn, tr)))

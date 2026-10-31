@@ -246,6 +246,10 @@ def emit(m, sp):
                     continue
                 for poly in _skirt_polys(Pz, sp.skirtz((x0 + x1) / 2, (y0 + y1) / 2)):
                     m.poly([core.G(*p) for p in poly], sp.col_skirt(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
+                for face, a, b, last in (("y", P[3], P[2], j == GN - 1), ("x", P[2], P[1], i == GN - 1)):
+                    za, zb = sp.skirtz(*a), sp.skirtz(*b)       # a skirt ending at the tile's edge above the floor
+                    if last and za > 1e-6 and abs(za - zb) < 1e-6:          # (an upright foot): its face
+                        _face(m, sp, face, a, b, (0.0, 0.0), (za, zb))
     for j in range(GN):
         for i in range(GN):
             cv = cov[i][j]

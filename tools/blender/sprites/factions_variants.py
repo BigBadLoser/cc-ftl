@@ -49,9 +49,9 @@ def drone_open(k, ax, plane, u0, u1, z0, z1, F, t):
 
 
 def drone_ramp(plate, u0, u1, run_, r, **_):
-    """The drone ramp's second design (set 5 B1-2): no outlined panel, two seams straight down it."""
-    w = u1 - u0
-    for u in (u0 + 0.3 * w, u1 - 0.3 * w):
+    """The drone ramp's second design (set 5 B1-2): no outlined panel, two seams straight down it where the base
+    design's panel has its sides (wall3d.skirt's outline, 0.08 in)."""
+    for u in (u0 + 0.08 + LINE / 2, u1 - 0.08 - LINE / 2):
         plate([(u - LINE / 2, 0.02), (u + LINE / 2, 0.02), (u + LINE / 2, run_ - 0.05), (u - LINE / 2, run_ - 0.05)],
               PAINT, 0, 0.0)
 

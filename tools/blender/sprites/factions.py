@@ -87,7 +87,8 @@ class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        return _style(R.drone, skirt="outline", slot=True, seam=0, shell=R.CornerCut, ramp_var=FV.drone_ramp)
+        return _style(R.drone, skirt="outline", slot=True, seam=0, shell=R.CornerCut, ramp_var=FV.drone_ramp,
+                      outline_d=(0.1, 0.84), slot_hole=(0.55, 0.72, 0.15), foot=R.DRONE_FOOT)
 
     pairs = FV.DRONE_PAIRS
 

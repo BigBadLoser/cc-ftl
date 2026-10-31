@@ -311,8 +311,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     with a panel (a raised frame, a lighter plate sunk in it and a dark slot under it), on the shell's dark joints,
     mitred round corners."""
     run_, zs = sp.run, sp.zs
+    ft = getattr(sp, "foot", 0.0)               # (a look whose ramp ends in an upright face this high)
     o = OUT(ax)
-    nrm = (o * zs / run_ + Vector((0, 0, 1))).normalized()
+    nrm = (o * (zs - ft) / run_ + Vector((0, 0, 1))).normalized()
+    zsurf = lambda dd: ft + (zs - ft) * (1 - dd / run_)               # noqa: E731
     if getattr(sp, "end_face", None) and sp.end_face(ax, plane):
         return                                  # a look's wall end: no ramp across it
     lo_t, hi_t = ends or (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))
@@ -328,9 +330,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     ub = b - cr if cr else b
 
     def pt(u, dd, rise):
-        return P(ax, plane, u, zs * (1 - dd / run_), dd) + nrm * rise
+        return P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise = LINE / 2, PAINT
-    d0, d1 = 0.02, run_ - 0.045
+    d0, d1 = 0.02, run_ - (0.03 if ft else 0.045)
     off = (STYLE or {}).get("seam", STILE)     # the plates' seams this far in from each tile edge (0: one plate)
     segs = []                                   # the face's posts and fields (posts()), run on past a face end so
     for s0, s1 in spans(a, b):                  # the mitre clips them
@@ -361,7 +363,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane, fam=fam)
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
-            fd0, fd1 = 0.15 * run_, 0.62 * run_
+            fd0, fd1 = (f * run_ for f in (STYLE or {}).get("outline_d", (0.15, 0.62)))
             L, t = LINE, 0.03
             if (STYLE or {}).get("outline_round"):                         # its corners softened (each corner
                 qs = [(fu0 + L, fu1 - L, fd0, fd0 + t), (fu0 + L, fu1 - L, fd1 - t, fd1),   # pixel left out)
@@ -372,10 +374,13 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             for q in qs:
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam,
                       (STYLE or {}).get("outline_lvl", 0), base=rise)
-            if (STYLE or {}).get("slot") and not VARIANT[1]:                # a dark handle slot in it
+            if (STYLE or {}).get("slot") and not VARIANT[1] and hole:        # a handle slot cut into it
+                slot_cut(k, ax, plane, hole, zsurf, fam)
+            elif (STYLE or {}).get("slot") and not VARIANT[1]:              # a dark handle slot painted on it
                 uc = (fu0 + fu1) / 2
-                plate(k, [(uc - 0.1, 0.5 * run_), (uc + 0.1, 0.5 * run_), (uc + 0.1, 0.57 * run_),
-                          (uc - 0.1, 0.57 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
+                sd0, sd1, sw = (STYLE or {}).get("slot_d", (0.5, 0.57, 0.1))
+                plate(k, [(uc - sw, sd0 * run_), (uc + sw, sd0 * run_), (uc + sw, sd1 * run_),
+                          (uc - sw, sd1 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
         if field and w >= 0.36 and sk == "panel" and VARIANT[1] and not rv:
             from . import wall3d_variants as V
             V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
@@ -407,9 +412,34 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             if len(poly) >= 3:                  # under it the foot line, a strip of the ramp in the plates' tone
                 plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
         return
+    if ft:                                      # an upright foot: its top edge lit
+        for u0, u1, _ in segs:
+            poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
+            if len(poly) >= 3:
+                plate(k, poly, pt, nrm, 0.0, rise, fam, 3)
+        return
     tb = b - cr + run_ if cr else b
     toe = [P(ax, plane, u, 0.0035, dd) for u, dd in ((a, run_ - 0.03), (tb, run_ - 0.03), (tb, run_), (a, run_))]
     k.poly(toe, fam, 1, Vector((0, 0, 1)))
+
+
+SLOT_DEPTH = 3 / 39                             # a ramp slot's floor under the slope (art px up)
+
+
+def slot_cut(k, ax, plane, hole, zsurf, fam):
+    """The inside of a slot cut into the ramp (the shell leaves its cells out: skip_skirt): a floor SLOT_DEPTH under the
+    slope, upright walls round it from there up to the slope."""
+    u0, u1, d0, d1 = hole
+    zf = lambda dd: zsurf(dd) - SLOT_DEPTH                                     # noqa: E731
+    o, al = OUT(ax), P(ax, 0.0, 1.0, 0.0, 0.0) - P(ax, 0.0, 0.0, 0.0, 0.0)
+    q = lambda u, z, dd: P(ax, plane, u, z, dd)                                # noqa: E731
+    k.poly([q(u0, zf(d0), d0), q(u1, zf(d0), d0), q(u1, zf(d1), d1), q(u0, zf(d1), d1)], fam, 0,
+           (o * (zsurf(0) - zsurf(1)) + Vector((0, 0, 1))).normalized())     # its floor
+    k.poly([q(u0, zf(d0), d0), q(u1, zf(d0), d0), q(u1, zsurf(d0), d0), q(u0, zsurf(d0), d0)], fam, 0, o,
+           fixed=RAMPS[fam][0 if ax == "y" else 1][0])                                                    # back (dark)
+    k.poly([q(u0, zf(d1), d1), q(u1, zf(d1), d1), q(u1, zsurf(d1), d1), q(u0, zsurf(d1), d1)], fam, 1, -o)   # front
+    for u, sg in ((u0, 1), (u1, -1)):                                                                     # sides
+        k.poly([q(u, zf(d0), d0), q(u, zf(d1), d1), q(u, zsurf(d1), d1), q(u, zsurf(d0), d0)], fam, 1, al * sg)
 
 
 def plate(k, poly, pt, nrm, ch, rise, fam, lvl, base=0.0):
