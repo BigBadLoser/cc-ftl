@@ -3,15 +3,15 @@
  * (jobs by kind, reserved jobs, crew, entities, item stacks). Loaded through Vite's SSR loader by tools/profile/windows.js. Reads the sim only.
  */
 import { content } from '../../src/content';
-import { newGame, type Probe } from '../../src/sim';
+import { deserialize, newGame, type Probe, type Sim } from '../../src/sim';
 import { JobC, CrewC } from '../../src/sim/crew/components';
 import { buildScenario } from './scenarios';
 
 export interface WindowRow { tick: number; mean: number; p95: number; max: number; jobs: number; reserved: number; crew: number; entities: number; byKind: Record<string, number> }
 
-export function profileWindows(opts: { ticks: number; seed: number; window: number; scenario?: string; label?: string }): WindowRow[] {
+export function profileWindows(opts: { ticks: number; seed: number; window: number; scenario?: string; label?: string; saveJson?: string; labels?: string[] }): WindowRow[] {
   const label = opts.label ?? 'sim/schedule';
-  const sim = opts.scenario ? buildScenario(opts.scenario, opts.seed) : newGame(opts.seed, content, undefined, true);
+  const sim: Sim = opts.saveJson ? deserialize(opts.saveJson, content) : opts.scenario ? buildScenario(opts.scenario, opts.seed) : newGame(opts.seed, content, undefined, true);
   let t0 = 0;
   let acc = 0;
   const probe: Probe = {

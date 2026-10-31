@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
 import { Sim } from '../sim';
+import { shipGrid } from '../regions';
+import { Struct, writeStruct } from '../structure';
 import { findPath } from './pathfind';
 
 function sim(rows: string[]): Sim {
@@ -49,5 +51,15 @@ describe('findPath', () => {
     const a = findPath(s, 1, { x: 0, y: 0 }, { x: 5, y: 2 });
     const b = findPath(s, 1, { x: 0, y: 0 }, { x: 5, y: 2 });
     expect(a).toEqual(b);
+  });
+  it('forgets an unreachable result when the map changes (a remembered failure never outlives a wall, a door or a jam)', () => {
+    const s = sim(['_#_', '_#_']);
+    const grid = shipGrid(s, 1)!;
+    expect(findPath(s, 1, { x: 0, y: 0 }, { x: 2, y: 0 })).toBeNull();
+    expect(findPath(s, 1, { x: 0, y: 0 }, { x: 2, y: 0 })).toBeNull(); // answered from memory
+    writeStruct(grid, 1, 0, Struct.Floor);
+    expect(findPath(s, 1, { x: 0, y: 0 }, { x: 2, y: 0 })).toHaveLength(2);
+    writeStruct(grid, 1, 0, Struct.Wall);
+    expect(findPath(s, 1, { x: 0, y: 0 }, { x: 2, y: 0 })).toBeNull();
   });
 });
