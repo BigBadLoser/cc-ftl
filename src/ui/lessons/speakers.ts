@@ -19,6 +19,8 @@ export interface SpeakerDef {
 export const SPEAKERS = {
   // Vash: cocky, restless, loves a fast exit. Teaches combat (and navigation later). Pilot kit; seed 22 is short blond hair, orange flight vest.
   'speaker.vash': { id: 'speaker.vash', name: 'Vash', role: 'Pilot', look: { species: 'species.human', role: 'role.pilot', appearanceSeed: 22 } },
+  // Marguerite Sol: shrewd, counts everything twice. Teaches trade and stations. Stand-in look until her portrait art exists (no quartermaster kit yet).
+  'speaker.marguerite': { id: 'speaker.marguerite', name: 'Marguerite Sol', role: 'Quartermaster', look: { species: 'species.human', role: 'role.engineer', appearanceSeed: 41 } },
 } as const satisfies Record<string, SpeakerDef>;
 
 export type SpeakerId = keyof typeof SPEAKERS;

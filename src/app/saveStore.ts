@@ -1,8 +1,8 @@
 /**
  * Where saves live: a small store interface (list, read, write, remove, with metadata) so the menu and the loader never touch the storage
- * itself. Today it is localStorage; issue #204 swaps in IndexedDB behind the same interface.
- *
- * The autosave keeps its old key (`cc.save`), so existing saves still load; named slots get their own keys; one index key holds the metadata.
+ * itself. The data is in IndexedDB (a save is over a megabyte; localStorage's quota held about four). Labels are also kept in memory after
+ * `ready()`, so the menu lists saves without waiting. Saves an older build left in localStorage (`cc.save`, `cc.save.slotN`, index
+ * `cc.saves`) are moved into IndexedDB on first run and removed from localStorage once they are safely stored.
  */
 export interface SaveMeta {
   /** 'auto' for the autosave, 'slot1'... for the named slots. */
@@ -13,76 +13,311 @@ export interface SaveMeta {
   /** Starmap turn and the node's name, for the list. */
   turn: number;
   node: string;
+  /** SAVE_VERSION it was written with (absent on saves from before this field). */
+  version?: number;
+  /** The campaign it belongs to: the sim seed, which a campaign keeps through every save and load (absent on older saves). */
+  campaign?: number;
+  /** The game was in combat when it was saved. */
+  fight?: boolean;
+  /** An autosave chain head: when this head was started (the last time the chain moved). Overwrites keep it, so the head's age is known. */
+  since?: number;
 }
 
 export interface SaveStore {
-  /** Every save that exists, autosave first. */
+  /** Open the database and move old localStorage saves into it. Resolves either way (a store that cannot open lists nothing and refuses writes). */
+  ready(): Promise<void>;
+  /** Every save that exists: the autosaves (newest first), the pre-combat snapshot, then the named slots. Read from memory; call after `ready()`. */
   list(): SaveMeta[];
-  read(id: string): string | null;
-  /** False when the browser refuses the write (full or blocked): the save that was there stays. */
-  write(meta: SaveMeta, json: string): boolean;
-  remove(id: string): boolean;
+  /** The label of any entry, listed or not (the set-aside `broken` save, which records the campaign of the head that failed). */
+  meta(id: string): SaveMeta | undefined;
+  read(id: string): Promise<string | null>;
+  /**
+   * Store a save. False when the browser refuses (full, blocked, no IndexedDB): the save that was there stays (one transaction).
+   * `shift`: a chain of ids starting with `meta.id`; the entries already in it move one place down (the last drops off) in the same
+   * transaction, before this one is stored. `due` decides at that moment, from the newest entry's label (undefined: none yet), whether the
+   * chain moves at all; the default is always. The stored label's `since` is set then: `meta.savedAt` when the chain moves or starts, else the
+   * entry's earlier `since`.
+   * Writes and removes run one after another (each starts once the previous settled, so `due` sees its label). When none is pending the
+   * transaction starts before this returns, so it is safe in a `pagehide` handler.
+   */
+  write(meta: SaveMeta, json: string, shift?: readonly string[], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean>;
+  remove(id: string): Promise<boolean>;
 }
 
 export const AUTO_ID = 'auto';
+/** The rotating autosaves, newest first: `auto` is written every time, the older ones are the autosaves that came before it. */
+export const AUTO_IDS = [AUTO_ID, 'auto2', 'auto3'] as const;
+/** The snapshot taken as combat starts: the way back to a fight that went wrong. */
+export const PRECOMBAT_ID = 'precombat';
+/** Where a save that could not be loaded is kept (never listed), so a failed load never deletes the only copy. */
+export const BROKEN_ID = 'broken';
+export const isAutoId = (id: string): boolean => (AUTO_IDS as readonly string[]).includes(id);
 /** The named slots, in order. */
 export const SLOT_IDS = ['slot1', 'slot2', 'slot3'] as const;
-const INDEX = 'cc.saves';
-const keyOf = (id: string): string => (id === AUTO_ID ? 'cc.save' : `cc.save.${id}`);
+const LISTED: readonly string[] = [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS];
 
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+const META = 'meta';
+const DATA = 'data';
+const LS_INDEX = 'cc.saves';
+const lsKey = (id: string): string => (id === AUTO_ID ? 'cc.save' : id === BROKEN_ID ? 'cc.save.broken' : `cc.save.${id}`);
+const done = (tx: IDBTransaction): Promise<boolean> =>
+  new Promise((res) => {
+    tx.oncomplete = () => res(true);
+    tx.onerror = tx.onabort = () => res(false);
+  });
+const label = (id: string): SaveMeta => ({ id, name: isAutoId(id) ? 'Autosave' : id, savedAt: 0, turn: 0, node: '' });
 
-export function createLocalSaveStore(storage: () => Store | null): SaveStore {
-  const index = (): Record<string, SaveMeta> => {
+export function createIdbSaveStore(factory: () => IDBFactory | null, local: () => Store | null, dbName = 'cc-saves'): SaveStore {
+  let db: IDBDatabase | null = null;
+  let opening: Promise<void> | null = null;
+  const metas = new Map<string, SaveMeta>();
+  /** Writes and removes in order: a later one runs after the earlier one settled and its labels are in `metas`. */
+  let pending = 0;
+  let tail: Promise<void> = Promise.resolve();
+  function enqueue<T>(job: () => Promise<T>): Promise<T> {
+    const run = pending === 0 ? job() : tail.then(job);
+    pending++;
+    tail = run.then(() => undefined, () => undefined).then(() => { pending--; });
+    return run;
+  }
+
+  const open = (): Promise<void> =>
+    new Promise((res) => {
+      try {
+        const req = factory()?.open(dbName, 1);
+        if (!req) return res();
+        req.onupgradeneeded = () => {
+          req.result.createObjectStore(META);
+          req.result.createObjectStore(DATA);
+        };
+        req.onsuccess = () => {
+          db = req.result;
+          res();
+        };
+        req.onerror = req.onblocked = () => res();
+      } catch {
+        res();
+      }
+    });
+
+  const loadMetas = (): Promise<void> =>
+    new Promise((res) => {
+      if (!db) return res();
+      try {
+        const tx = db.transaction(META, 'readonly');
+        const req = tx.objectStore(META).getAll();
+        req.onsuccess = () => {
+          for (const m of req.result as SaveMeta[]) metas.set(m.id, m);
+          res();
+        };
+        tx.onerror = tx.onabort = () => res();
+      } catch {
+        res();
+      }
+    });
+
+  /**
+   * Saves an older build left in localStorage that could not be copied (IndexedDB full or missing). They stay first-class until they are:
+   * listed with their old labels, read from localStorage, removed there too. Once a write of the same id succeeds (it is newer) the old copy goes.
+   */
+  const legacy = new Map<string, SaveMeta>();
+  const saveIndex = (ls: Store): void => {
     try {
-      const raw = storage()?.getItem(INDEX);
-      const v = raw ? (JSON.parse(raw) as Record<string, SaveMeta>) : {};
-      return v && typeof v === 'object' ? v : {};
-    } catch {
-      return {};
+      if (legacy.size) ls.setItem(LS_INDEX, JSON.stringify(Object.fromEntries(legacy)));
+      else ls.removeItem(LS_INDEX);
+    } catch { /* ignore */ }
+  };
+  function dropLegacy(id: string): void {
+    const ls = local();
+    if (!ls || !legacy.delete(id)) return;
+    try { ls.removeItem(lsKey(id)); } catch { /* it stays; the newer copy in IndexedDB shadows it */ }
+    saveIndex(ls);
+  }
+
+  /**
+   * Move what the old localStorage store held into IndexedDB; each entry leaves localStorage only after its copy is stored. One that is
+   * already in IndexedDB is dropped only if that copy is at least as new as the old one; a newer, never-copied save is copied over it.
+   */
+  async function migrate(): Promise<void> {
+    const ls = local();
+    if (!ls) return;
+    let index: Record<string, SaveMeta> = {};
+    try {
+      const raw = ls.getItem(LS_INDEX);
+      index = raw ? (JSON.parse(raw) as Record<string, SaveMeta>) ?? {} : {};
+    } catch { /* an unreadable index only loses the labels */ }
+    for (const id of [...LISTED, BROKEN_ID]) {
+      let json: string | null = null;
+      try { json = ls.getItem(lsKey(id)); } catch { /* blocked storage: nothing to move */ }
+      if (json === null) continue;
+      const old = index[id] ?? label(id);
+      const there = metas.get(id);
+      const moved = there && there.savedAt >= old.savedAt ? true : await put(old, json);
+      if (moved) {
+        try { ls.removeItem(lsKey(id)); } catch { /* it stays; the copy in IndexedDB wins next time */ }
+      } else {
+        legacy.set(id, old);
+      }
     }
-  };
-  const has = (id: string): boolean => {
-    try { return storage()?.getItem(keyOf(id)) != null; } catch { return false; }
-  };
+    // The index goes only when every save it labels has moved; the labels of the ones that stayed are kept for the next start.
+    saveIndex(ls);
+  }
+
+  function put(meta: SaveMeta, json: string, shift: readonly string[] = [], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
+    if (!db) return Promise.resolve(false);
+    if (shift.length > 1) return putChain(meta, json, shift, due);
+    try {
+      const tx = db.transaction([META, DATA], 'readwrite');
+      tx.objectStore(META).put(meta, meta.id);
+      tx.objectStore(DATA).put(json, meta.id);
+      return done(tx).then((ok) => {
+        if (ok) {
+          metas.set(meta.id, meta);
+          dropLegacy(meta.id);
+        }
+        return ok;
+      });
+    } catch {
+      return Promise.resolve(false);
+    }
+  }
+
+  /**
+   * Store the head of a chain, moving the entries down first when `due` says so. The labels and data it moves, and the label `due` sees,
+   * are read in this same transaction, not taken from the in-memory cache: another tab may have written since the cache was filled.
+   */
+  function putChain(meta: SaveMeta, json: string, chain: readonly string[], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
+    try {
+      const tx = db!.transaction([META, DATA], 'readwrite');
+      const m = tx.objectStore(META);
+      const d = tx.objectStore(DATA);
+      const read = new Map<string, { meta?: SaveMeta; data?: string }>();
+      const applied = new Map<string, SaveMeta>();
+      const putHead = (moving: boolean, cur: SaveMeta | undefined): void => {
+        const head = { ...meta, since: moving || !cur ? meta.savedAt : (cur.since ?? cur.savedAt) };
+        m.put(head, head.id);
+        d.put(json, head.id);
+        applied.set(head.id, head);
+      };
+      // First the labels (small): they say whether the chain moves. Only then are the data read, and only when it does.
+      const shiftDown = (): void => {
+        let left = 0;
+        const copy = (): void => {
+          for (let i = chain.length - 1; i > 0; i--) {
+            const from = read.get(chain[i - 1]!);
+            if (!from?.meta || from.data === undefined) continue;
+            const to = { ...from.meta, id: chain[i]! };
+            d.put(from.data, to.id);
+            m.put(to, to.id);
+            applied.set(to.id, to);
+          }
+          putHead(true, read.get(chain[0]!)?.meta);
+        };
+        for (const id of chain.slice(0, -1)) {
+          const slot = read.get(id)!;
+          if (!slot.meta) continue;
+          left++;
+          const rd = d.get(id);
+          rd.onsuccess = () => { slot.data = typeof rd.result === 'string' ? rd.result : undefined; if (--left === 0) copy(); };
+        }
+        if (left === 0) copy();
+      };
+      let metaLeft = chain.length - 1;
+      for (const id of chain.slice(0, -1)) {
+        const slot: { meta?: SaveMeta; data?: string } = {};
+        read.set(id, slot);
+        const rm = m.get(id);
+        rm.onsuccess = () => {
+          slot.meta = rm.result as SaveMeta | undefined;
+          if (--metaLeft > 0) return;
+          const cur = read.get(chain[0]!)?.meta;
+          if (!due || due(cur)) shiftDown(); else putHead(false, cur);
+        };
+      }
+      return done(tx).then((ok) => {
+        if (ok) {
+          for (const id of chain.slice(0, -1)) {
+            const now = applied.get(id) ?? read.get(id)?.meta; // what the transaction left there
+            if (now) metas.set(id, now); else metas.delete(id);
+          }
+          metas.set(chain[0]!, applied.get(chain[0]!)!);
+          const last = applied.get(chain[chain.length - 1]!);
+          if (last) metas.set(last.id, last);
+          for (const id of applied.keys()) dropLegacy(id);
+        }
+        return ok;
+      });
+    } catch {
+      return Promise.resolve(false);
+    }
+  }
+
   return {
-    list() {
-      const idx = index();
-      return [AUTO_ID, ...SLOT_IDS].filter(has).map((id) => idx[id] ?? { id, name: id === AUTO_ID ? 'Autosave' : id, savedAt: 0, turn: 0, node: '' });
+    ready() {
+      opening ??= open().then(loadMetas).then(migrate);
+      return opening;
     },
+    meta: (id) => legacy.get(id) ?? metas.get(id),
+    list: () => LISTED.filter((id) => legacy.has(id) || metas.has(id)).map((id) => legacy.get(id) ?? metas.get(id) ?? label(id)),
     read(id) {
-      try { return storage()?.getItem(keyOf(id)) ?? null; } catch { return null; }
-    },
-    write(meta, json) {
-      const s = storage();
-      if (!s) return false;
-      try {
-        s.setItem(keyOf(meta.id), json);
-      } catch {
-        return false;
+      if (legacy.has(id)) {
+        try { return Promise.resolve(local()?.getItem(lsKey(id)) ?? null); } catch { return Promise.resolve(null); }
       }
-      try { s.setItem(INDEX, JSON.stringify({ ...index(), [meta.id]: meta })); } catch { /* the save is written; only its label is missing */ }
-      return true;
+      return new Promise((res) => {
+        if (!db) return res(null);
+        try {
+          const req = db.transaction(DATA, 'readonly').objectStore(DATA).get(id);
+          req.onsuccess = () => res(typeof req.result === 'string' ? req.result : null);
+          req.onerror = () => res(null);
+        } catch {
+          res(null);
+        }
+      });
     },
-    remove(id) {
-      const s = storage();
-      if (!s) return false;
-      try {
-        s.removeItem(keyOf(id));
-        const idx = index();
-        delete idx[id];
-        s.setItem(INDEX, JSON.stringify(idx));
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    write: (meta, json, shift, due) => enqueue(() => put(meta, json, shift, due)),
+    remove: (id) => enqueue(() => drop(id)),
   };
+
+  function drop(id: string): Promise<boolean> {
+      if (!db) {
+        const had = legacy.has(id);
+        dropLegacy(id);
+        return Promise.resolve(had);
+      }
+      try {
+        const tx = db.transaction([META, DATA], 'readwrite');
+        tx.objectStore(META).delete(id);
+        tx.objectStore(DATA).delete(id);
+        return done(tx).then((ok) => {
+          if (ok) {
+            metas.delete(id);
+            dropLegacy(id);
+          }
+          return ok;
+        });
+      } catch {
+        return Promise.resolve(false);
+      }
+  }
 }
 
 const browserStorage = (): Store | null => {
   try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; }
 };
+const browserIdb = (): IDBFactory | null => (typeof indexedDB === 'undefined' ? null : indexedDB);
 
+let current: SaveStore = createIdbSaveStore(browserIdb, browserStorage);
+/** Swap the backing store (tests). */
+export function setSaveStore(s: SaveStore): void {
+  current = s;
+}
 /** The browser's saves. */
-export const saveStore: SaveStore = createLocalSaveStore(browserStorage);
+export const saveStore: SaveStore = {
+  ready: () => current.ready(),
+  list: () => current.list(),
+  meta: (id) => current.meta(id),
+  read: (id) => current.read(id),
+  write: (meta, json, shift, due) => current.write(meta, json, shift, due),
+  remove: (id) => current.remove(id),
+};

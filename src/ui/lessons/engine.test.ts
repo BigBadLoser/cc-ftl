@@ -7,6 +7,9 @@ import type { LessonCtx, LessonDef, LessonSignal } from './types';
 const ctx = (over: Partial<LessonCtx> & { fight?: boolean } = {}): LessonCtx => ({
   combat: { inCombat: !!over.fight, player: null, enemies: [] },
   aiming: null,
+  trade: { credits: 0, partners: [], deals: [] },
+  selectedShip: null,
+  goals: null,
   busy: false,
   ...over,
 });
@@ -170,5 +173,35 @@ describe('LessonEngine', () => {
     e.replay('lesson.ev');
     e.update(ctx(), 0);
     expect(e.current?.lesson.id).toBe('lesson.ev');
+  });
+  it('steps back when a do step\'s back condition holds', () => {
+    const def: LessonDef = {
+      id: 'lesson.back', title: 'Back', trigger: when(() => true),
+      steps: [
+        { title: 'one', text: 'a', advance: when((c) => c.selectedShip === 1) },
+        { title: 'two', text: 'b', back: when((c) => c.selectedShip !== 1), advance: onCommand('combat.vent') },
+      ],
+    };
+    const { e } = setup([def]);
+    e.update(ctx({ selectedShip: 1 }), 0);
+    e.update(ctx({ selectedShip: 1 }), 1);
+    expect(e.current?.index).toBe(1);
+    e.update(ctx({ selectedShip: null }), 2);
+    expect(e.current?.index).toBe(0);
+  });
+  it('a step reached by Skip step does not step back: the player chose to move on', () => {
+    const def: LessonDef = {
+      id: 'lesson.skipback', title: 'Skip', trigger: when(() => true),
+      steps: [
+        { title: 'one', text: 'a', advance: when((c) => c.selectedShip === 1) },
+        { title: 'two', text: 'b', back: when((c) => c.selectedShip !== 1), advance: onCommand('combat.vent') },
+      ],
+    };
+    const { e } = setup([def]);
+    e.update(ctx({ selectedShip: null }), 0);
+    expect(e.current?.index).toBe(0);
+    e.gotIt(); // Skip step, never having selected
+    e.update(ctx({ selectedShip: null }), 1);
+    expect(e.current?.index).toBe(1);
   });
 });

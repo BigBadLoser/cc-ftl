@@ -1,0 +1,661 @@
+/* The default SveltePress layout is retained, with CC-FTL reference styling. */
+:root {
+  --wiki-input-bg: #ffffff;
+  --wiki-input-color: #172337;
+  --wiki-input-border: #cbd5e1;
+  --wiki-card-bg: #f4f7fb;
+  --wiki-card-color: #1c2941;
+  --wiki-card-border: #cfd9e6;
+  --wiki-subtle: #52637a;
+  /* Accents from the game's palette (src/ui/theme.css): its cyan is too light on white, so light mode uses the
+   * deeper teal (--heat-low). */
+  --wiki-accent: #1b8fb3;
+  --wiki-accent-soft: #1b8fb3;
+  --wiki-accent-deep: #146b87;
+  --wiki-amber: #f0b13a;
+  /* The module previews' own background (scripts/render-module-previews.ts), so art areas blend into the renders. */
+  --wiki-art-bg: #070b11;
+  /* Square corners, like the game UI (src/ui/theme.css --kit-dialog-radius: 0). */
+  --wiki-radius: 0;
+}
+/* Headings in the game UI's condensed face, with the same fallbacks the game names. */
+:root { --wiki-head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif; }
+h1, h2, h3, h4, .gradient-title, .wiki-reference-title, .wiki-module-info strong, .wiki-category-tabs button {
+  font-family: var(--wiki-head-font);
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+/* Applied to everything, the theme's own pills, search box and cards included, so no rounded corner slips through. */
+*, *::before, *::after { border-radius: var(--wiki-radius) !important; }
+:root.dark {
+  /* The game's steel palette (src/ui/theme.css): --panel-2, --text, --axis, --line-hi, --dim, --cyan. */
+  --wiki-input-bg: #11151a;
+  --wiki-input-color: #e4e9ee;
+  --wiki-input-border: #4a525a;
+  --wiki-card-bg: #11151a;
+  --wiki-card-color: #e4e9ee;
+  --wiki-card-border: #4a525a;
+  --wiki-subtle: #8b939a;
+  --wiki-accent: #36d4ff;
+  --wiki-accent-soft: #8fe6ff;
+  --wiki-accent-deep: #1b8fb3;
+}
+/* The theme's zinc greys swapped for the game's near-blacks: --bg for the page, --panel for the header and sidebar. */
+:root.dark body, :root.dark .header { background-color: #06080a; }
+:root.dark .theme-default-sidebar, :root.dark .sidebar-logo { background-color: #0b0e11; }
+:root.dark .local-search-trigger { background-color: #11151a; border-color: #2a3036; }
+.home-page .intro {
+  grid-column: 1 / -1;
+  max-width: 920px;
+}
+.wiki-ref-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+}
+.wiki-ref-controls input,
+.wiki-ref-controls select {
+  min-width: 10rem;
+  padding: 0.55rem 0.7rem;
+  color: var(--wiki-input-color);
+  background: var(--wiki-input-bg);
+  border: 1px solid var(--wiki-input-border);
+  border-radius: 0.35rem;
+}
+.wiki-ref-controls input:focus-visible,
+.wiki-ref-controls select:focus-visible {
+  outline: 2px solid #81bcec;
+  outline-offset: 2px;
+}
+.wiki-ref-list { list-style: none; padding: 0; display: grid; gap: 0.5rem; }
+.wiki-ref-list li {
+  border: 1px solid var(--wiki-card-border);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--wiki-card-bg);
+  color: var(--wiki-card-color);
+}
+.wiki-ref-list li a { font-weight: 600; color: #2970ae; }
+:root.dark .wiki-ref-list li a { color: var(--wiki-accent-soft); }
+.wiki-ref-list li small { display: block; color: var(--wiki-subtle); margin-top: 0.15rem; }
+
+
+/* Desktop header: the searchable content is central, navigation is right.
+ * Leave mobile and compact navigation to SveltePress. The visual ordering
+ * follows the existing keyboard focus order (search precedes links). */
+@media (min-width: 1200px) {
+  body .header-inner.header-inner {
+    display: grid;
+    grid-template-columns: minmax(185px, 1fr) minmax(210px, 280px) minmax(0, 1fr);
+    align-items: stretch;
+    column-gap: 1rem;
+  }
+  body .header-inner.header-inner.has-sidebar { padding-left: 1rem; }
+  body .header-inner > .left { grid-column: 1; grid-row: 1; min-width: 0; }
+  body .header-inner > .doc-search,
+  body .header-inner > .doc-search.move {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: stretch;
+    align-self: center;
+    flex-grow: 0;
+    width: 100%;
+    margin-left: 0;
+  }
+  body .header-inner > .doc-search .local-search-trigger {
+    width: 100%;
+    max-width: 100%;
+  }
+  body .header-inner > .nav-links {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    align-items: stretch;
+  }
+  body .header-inner > .nav-links .desktop-nav-items { display: flex; }
+}
+@media (min-width: 950px) and (max-width: 1199px) {
+  body .header-inner > .doc-search,
+  body .header-inner > .doc-search.move {
+    flex: 1 1 220px;
+    max-width: 300px;
+    margin-left: auto;
+  }
+  body .header-inner > .nav-links { flex: 0 0 auto; }
+}
+
+/* Native SveltePress cards put their link arrow in an otherwise empty
+ * heading row. Place it alongside the title instead of reserving a row. */
+.home-page .feature-item.clickable {
+  position: relative;
+}
+.home-page .feature-item.clickable .feature-header {
+  position: absolute;
+  top: 1.55rem;
+  right: 1.5rem;
+  width: auto;
+  margin: 0;
+}
+.home-page .feature-item.clickable .feature-header-left:empty {
+  display: none;
+}
+.home-page .feature-item.clickable .feature-title {
+  padding-right: 2rem;
+}
+
+/* Static game sprites: cropped at build time from the actual atlas frames. */
+.wiki-sprite {
+  display: block;
+  width: min(100%, 384px);
+  max-height: 260px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  margin: 1rem 0 1.35rem;
+  padding: 0.6rem;
+  border: 1px solid var(--wiki-card-border);
+  border-radius: 0.5rem;
+  background: var(--wiki-card-bg);
+}
+.wiki-ref-list .wiki-ref-entry { display: flex; align-items: center; gap: 0.7rem; }
+.wiki-ref-thumb {
+  width: 78px;
+  height: 60px;
+  flex: none;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Category selection uses equal-width, full-row grid cells. */
+.wiki-category-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1.35rem 0 0;
+}
+.wiki-category-tabs button {
+  appearance: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--wiki-card-border);
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--wiki-subtle);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+.wiki-category-tabs button:hover {
+  color: var(--wiki-card-color);
+  background: var(--wiki-card-bg);
+}
+.wiki-category-tabs button.active {
+  color: var(--wiki-card-color);
+  border-color: var(--wiki-accent);
+  background: var(--wiki-card-bg);
+  box-shadow: inset 0 -2px var(--wiki-accent);
+  font-weight: 650;
+}
+.wiki-category-tabs button:focus-visible {
+  outline: 2px solid var(--wiki-accent);
+  outline-offset: 2px;
+}
+.wiki-category-count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.76;
+}
+.wiki-category-summary {
+  color: var(--wiki-subtle);
+  font-size: 0.875rem;
+  margin: 0.85rem 0 0.6rem;
+}
+
+/* Three-column artwork-first module catalog; two columns on narrower
+ * pages. The card is one large link rather than a row with a tiny target. */
+.wiki-module-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 1.8rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.wiki-module-card {
+  min-width: 0;
+  border: 1px solid var(--wiki-card-border);
+  background: var(--wiki-card-bg);
+  border-radius: 0.55rem;
+  overflow: hidden;
+}
+.wiki-module-card > a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: var(--wiki-card-color);
+}
+.wiki-module-card:hover { border-color: var(--wiki-accent); }
+.wiki-module-card > a:focus-visible { outline: 2px solid var(--wiki-accent); outline-offset: -3px; }
+.wiki-module-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  padding: 0.75rem;
+  background: var(--wiki-art-bg);
+  border-bottom: 1px solid var(--wiki-card-border);
+}
+.wiki-module-art img {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.wiki-module-art-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--wiki-subtle);
+  opacity: 0.7;
+}
+.wiki-module-art-missing small { font-size: 0.75rem; }
+.wiki-module-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.8rem 0.9rem;
+}
+.wiki-module-info strong { line-height: 1.35; font-size: 0.95rem; }
+.wiki-module-info span { color: var(--wiki-subtle); font-size: 0.8rem; }
+@media (max-width: 1060px) {
+  .wiki-module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 570px) {
+  .wiki-module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+  .wiki-module-info { padding: 0.65rem; }
+  .wiki-category-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The documentation hero uses the same grid/footprint geometry as the game's
+ * construction preview, pre-rendered for GitHub Pages without hydration. */
+.wiki-placement-figure {
+  margin: 1.15rem 0 1.5rem;
+  width: min(100%, 600px);
+  border-radius: 0.6rem;
+  border: 1px solid var(--wiki-card-border);
+  overflow: hidden;
+  background: var(--wiki-art-bg);
+}
+.wiki-placement-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+.wiki-placement-figure figcaption {
+  padding: 0.65rem 0.9rem;
+  font-size: 0.83rem;
+  color: var(--wiki-subtle);
+  border-top: 1px solid var(--wiki-card-border);
+}
+.wiki-module-art { background: var(--wiki-art-bg); }
+.wiki-module-art img { max-width: none; width: 100%; object-fit: cover; }
+
+/* With two columns on small screens, center the final odd tab at the same size. */
+@media (max-width: 570px) {
+  .wiki-category-tabs button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc(50% - 0.25rem);
+    justify-self: center;
+  }
+}
+
+
+/* Reference pages use the space between the navigation and page outline.
+ * Keep a comfortable text measure on explanations, but let catalog grids grow. */
+@media (min-width: 950px) {
+  .theme-default--page-layout.theme-default--page-layout .content {
+    width: min(960px, calc(100vw - min(25vw, 288px) - 46px));
+    max-width: 960px;
+    margin-left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) + 24px);
+    margin-right: 22px;
+  }
+  body:has(.toc) .theme-default--page-layout.theme-default--page-layout .content {
+    width: min(850px, calc(100vw - min(25vw, 288px) - 220px));
+  }
+  .wiki-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    /* Align with the brand in the sidebar's 73px title row. */
+    top: 20px;
+    left: calc(max(0px, (100vw - 1440px) / 2) + min(25vw, 288px) - 48px);
+    z-index: 1002;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--wiki-card-border);
+    border-radius: 0.4rem;
+    background: var(--wiki-card-bg);
+    color: var(--wiki-card-color);
+    cursor: pointer;
+    transition: left .18s ease, background-color .18s ease;
+  }
+  .wiki-sidebar-toggle:hover { background: var(--wiki-input-bg); }
+  .wiki-sidebar-toggle:focus-visible { outline: 2px solid var(--wiki-accent); outline-offset: 2px; }
+  .wiki-sidebar-toggle svg { width: 16px; height: 16px; }
+  html.wiki-sidebar-hidden .theme-default-sidebar {
+    transform: translateX(-100%) !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  /* Keep the toggle in the same header position after collapsing;
+   * the wordmark moves into the navbar, and the control stays beside it. */
+  html.wiki-sidebar-hidden .theme-default--page-layout .content {
+    width: min(1220px, calc(100vw - 64px));
+    max-width: 1220px;
+    margin-left: 32px;
+    margin-right: 32px;
+  }
+  html.wiki-sidebar-hidden body:has(.toc) .theme-default--page-layout .content {
+    width: min(1140px, calc(100vw - 64px));
+  }
+  /* When collapsed, the brand returns to the header; put the toggle beside it. */
+  html.wiki-sidebar-hidden .wiki-sidebar-toggle { left: 136px; }
+  html.wiki-sidebar-hidden .header-inner.has-sidebar { padding-left: 1rem; }
+  /* The theme normally places the wordmark in the desktop sidebar.
+   * Restore it to the header when the sidebar has been collapsed. */
+  html.wiki-sidebar-hidden .header-inner .logo-container,
+  html.wiki-sidebar-hidden .header-inner .logo-container:not(.desktop-visible) {
+    display: flex !important;
+    align-items: center;
+  }
+  html.wiki-sidebar-hidden .header-inner .logo-container .title {
+    display: inline !important;
+  }
+}
+/* SveltePress already provides its own mobile navigation drawer. */
+@media (max-width: 949px) {
+  .wiki-sidebar-toggle { display: none; }
+}
+
+/* Shared generated-reference presentation. The same components are used for
+ * equipment, vehicles, crafting, factions and research, not one-off lists. */
+.wiki-reference-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.wiki-reference-tabs button {
+  min-height: 42px;
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 500;
+  border: 1px solid var(--wiki-card-border);
+  border-radius: .45rem;
+  color: var(--wiki-subtle);
+  background: transparent;
+  cursor: pointer;
+}
+.wiki-reference-tabs button.active {
+  background: var(--wiki-card-bg);
+  border-color: var(--wiki-accent);
+  box-shadow: inset 0 -2px var(--wiki-accent);
+  color: var(--wiki-card-color);
+  font-weight: 650;
+}
+.wiki-reference-tabs button:focus-visible,
+.wiki-reference-card:focus-visible {
+  outline: 2px solid var(--wiki-accent);
+  outline-offset: 2px;
+}
+.wiki-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+.wiki-reference-grid.wiki-reference-with-art {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.wiki-reference-card {
+  min-width: 0;
+  display: block;
+  border: 1px solid var(--wiki-card-border);
+  border-radius: .55rem;
+  overflow: hidden;
+  color: var(--wiki-card-color);
+  background: var(--wiki-card-bg);
+  text-decoration: none;
+  transition: border-color .12s ease, background-color .12s ease;
+}
+.wiki-reference-card:hover { border-color: var(--wiki-accent); }
+.wiki-reference-art {
+  height: 145px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wiki-art-bg);
+  border-bottom: 1px solid var(--wiki-card-border);
+}
+.wiki-reference-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.wiki-reference-info {
+  display: grid;
+  gap: .4rem;
+  padding: .85rem .95rem;
+}
+.wiki-reference-title { line-height: 1.35; font-size: 1rem; }
+.wiki-reference-subtitle {
+  font-size: .79rem;
+  color: var(--wiki-subtle);
+  line-height: 1.45;
+}
+.wiki-reference-facts {
+  margin: .35rem 0 0;
+  padding: .5rem 0 0;
+  display: grid;
+  gap: .3rem;
+  border-top: 1px solid var(--wiki-card-border);
+}
+.wiki-reference-facts div {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: .78rem;
+}
+.wiki-reference-facts dt { color: var(--wiki-subtle); flex: none; }
+.wiki-reference-facts dd {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+.wiki-recipe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wiki-recipe-card .wiki-reference-info {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+.wiki-recipe-card .wiki-reference-facts { margin-top: auto; }
+.wiki-recipe-card a { color: var(--wiki-card-color); text-decoration: none; }
+.wiki-recipe-card a:hover { color: var(--wiki-accent); text-decoration: underline; }
+.wiki-recipe-card a:focus-visible { outline: 2px solid var(--wiki-accent); outline-offset: 2px; }
+.wiki-recipe-card .wiki-reference-subtitle a,
+.wiki-recipe-card .recipe-material { color: var(--wiki-accent); }
+:root.dark .wiki-recipe-card .wiki-reference-subtitle a,
+:root.dark .wiki-recipe-card .recipe-material { color: var(--wiki-accent-soft); }
+@media (max-width: 1100px) {
+  .wiki-reference-grid.wiki-reference-with-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+  .wiki-reference-grid, .wiki-reference-grid.wiki-reference-with-art, .wiki-recipe-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wiki-reference-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
+
+/* Compact icon-forward production cards: the same card appears in the
+ * recipe catalog and on the owning production module. */
+.wiki-recipe-card { padding: .65rem .8rem .7rem; }
+.wiki-recipe-heading { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.wiki-recipe-heading .wiki-reference-title { font-size: .9rem; min-width: 0; }
+.wiki-recipe-work { color: var(--wiki-subtle); font-size: .7rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wiki-recipe-station { font-size: .73rem; line-height: 1.35; color: var(--wiki-subtle); }
+.wiki-material-icon { display: inline-block; width: 32px; height: 32px; vertical-align: middle; image-rendering: pixelated; object-fit: contain; margin-right: .2rem; }
+.wiki-reference-item-card { display: flex; flex-direction: row; align-items: stretch; }
+.wiki-reference-item-card .wiki-reference-art {
+  width: 84px;
+  min-width: 84px;
+  height: auto;
+  min-height: 92px;
+  padding: .6rem;
+  box-sizing: border-box;
+  border-bottom: 0;
+  border-right: 1px solid var(--wiki-card-border);
+  background: transparent;
+}
+.wiki-reference-item-card .wiki-reference-art img { width: 100%; height: 72px; object-fit: contain; }
+.wiki-reference-item-card .wiki-reference-info { flex: 1; min-width: 0; padding: .65rem .7rem; }
+.wiki-reference-item-card .wiki-reference-title { font-size: .9rem; }
+.wiki-reference-item-card .wiki-reference-facts { margin-top: .15rem; padding-top: .4rem; }
+@media (max-width: 650px) {
+  .wiki-reference-item-card .wiki-reference-art { width: 72px; min-width: 72px; }
+}
+
+/* Grid rows track the tallest recipe, but short cards should not inherit its empty height. */
+.wiki-recipe-grid { align-items: start; }
+
+/* Home hero: the starter ship, captured from the game with its UI hidden and the
+ * background keyed out. Wider than the theme's square logo slot, and unframed. */
+html .hero-image {
+  grid-column: 7 / span 6;
+}
+html .hero-image img {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+}
+
+/* Keycaps on the generated Controls page and in guides. */
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: .05em .45em;
+  border: 1px solid #3a424a;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #11151a;
+  color: #e4e9ee;
+  font: 600 .82em/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+:root:not(.dark) kbd { background: #f2f5f9; color: #1d2733; border-color: #b8c4d2; }
+
+/* Home page: the game's own space backdrop (static/guides/home/backdrop.webp, from `npm run capture`) behind the whole
+ * page, fixed like space behind the ships, with no fade at the bottom. Dark theme only: the light theme's text needs a
+ * light page. */
+:root.dark body:has(.home-page) {
+  background: url('/cc-ftl/wiki/guides/home/backdrop.webp') left center / cover fixed no-repeat;
+  image-rendering: pixelated;
+}
+/* The theme's red and amber glow would tint the game's own colours. */
+:root.dark .home-page::before { background: none !important; }
+
+/* Card grids are lists: the theme's prose spacing (li + li { margin-top }) pushed every card after the first down. */
+.wiki-module-grid > li, .wiki-reference-grid > li { margin: 0; }
+
+/* Dark text on the bright cyan primary button, as the game puts dark ink on its bright accents. */
+:root.dark .svp-action--primary, :root.dark .svp-action--primary .label { color: #06080a !important; }
+
+/* Titles cut into the top border, like the game UI's Frame (src/ui/kit/Frame.svelte): the card has no top border, and its
+ * title is a rail along the top edge built from segments (a 9px line, the title, a line filling the rest), so the break
+ * around the title is a real gap and works over transparent backgrounds such as the home page's starfield.
+ *   .wiki-cut-card    the bordered card (--cut-line and --cut-style set the edge)
+ *   .wiki-cut-title   its title, drawn as the rail
+ *   .wiki-cut-rail    a title rail with more than one item: put a .wiki-cut-gap between them */
+.wiki-cut-card {
+  --cut-line: var(--wiki-card-border);
+  --cut-style: solid;
+  position: relative;
+  overflow: visible !important;
+  border-top-color: transparent !important;
+}
+.wiki-cut-card:hover { --cut-line: var(--wiki-accent); }
+.wiki-cut-title {
+  position: absolute !important;
+  left: -1px;
+  right: -1px;
+  top: -7px;
+  height: 13px;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  font: 700 13px/13px var(--wiki-head-font) !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--wiki-card-color);
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  z-index: 1;
+}
+.wiki-cut-title::before, .wiki-cut-title::after, .wiki-cut-gap {
+  content: '';
+  display: block;
+  height: 0;
+  border-top: 1px var(--cut-style) var(--cut-line);
+}
+.wiki-cut-title::before { flex: none; width: 9px; margin-right: 5px; }
+.wiki-cut-title::after { flex: 1 1 0; min-width: 6px; margin-left: 5px; }
+.wiki-cut-rail::after { flex: none; width: 12px; }
+.wiki-cut-gap { flex: 1 1 0; min-width: 6px; margin: 0 5px; }
+:root:not(.dark) .wiki-cut-title { text-shadow: none; }
+
+/* The theme's home feature cards take the same frame through their own classes: the game's panel over the starfield,
+ * edged in its brighter --line-hi so the frame reads against space. */
+.feature-item { --cut-line: var(--wiki-card-border); --cut-style: solid; border-top-color: transparent !important; }
+:root.dark .feature-item {
+  --cut-line: #4a525a;
+  background: rgba(11, 14, 17, .85) !important;
+  border-color: #4a525a !important;
+  border-top-color: transparent !important;
+}
+.feature-item:hover { --cut-line: var(--wiki-accent); }
+.feature-item .feature-title {
+  position: absolute; left: -1px; right: -1px; top: -7px; height: 13px; margin: 0 !important; padding: 0 !important;
+  display: flex; align-items: center;
+  font: 700 13px/13px var(--wiki-head-font) !important; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+  color: var(--wiki-card-color); text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.feature-item .feature-title::before, .feature-item .feature-title::after {
+  content: ''; display: block; height: 0; border-top: 1px var(--cut-style) var(--cut-line);
+}
+.feature-item .feature-title::before { flex: none; width: 9px; margin-right: 5px; }
+.feature-item .feature-title::after { flex: 1 1 0; min-width: 6px; margin-left: 5px; }
+/* Titles rise 7px above their cards, so card grids need a little more room between rows. */
+.wiki-reference-grid, .wiki-module-grid { row-gap: 1.25rem !important; }

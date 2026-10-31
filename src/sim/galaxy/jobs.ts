@@ -14,6 +14,7 @@ import { planStarRoute } from './route';
 import { ShipC } from '../combat/components';
 import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS, RIVAL_REPUTATION } from './tuningJobs';
 import type { StationJob } from './types';
+import { addCredits } from '../trade/credits';
 
 /**
  * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node), `jobs.abandon`,
@@ -94,7 +95,7 @@ export function acceptJob(sim: Sim, key: string): boolean {
 
 /** Pay a finished job: credits, standing with the issuer and the stats the goals read. */
 function pay(sim: Sim, job: StationJob): void {
-  sim.trade.credits += job.reward;
+  addCredits(sim, job.reward);
   bumpStat(sim, 'jobsDone');
   if (job.kind === 'bounty') bumpStat(sim, 'bountiesDone');
   if (job.kind === 'survey') bumpStat(sim, 'surveysDone');

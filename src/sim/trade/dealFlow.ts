@@ -10,13 +10,14 @@ import { undock } from '../vehicles/lifecycle';
 import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, settleDeal, touchMarket } from './deals';
 import type { ItemQty } from '../registry';
 import { spawnCourier } from './courier';
-import { storagesHolding } from './player';
+import { holding } from './player';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
 import { bayAccessTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
 import { stepHandover } from '../galaxy/handover';
 import { boardRecruits, landRecruits, lostRecruit, recruitsAboard } from './recruitLand';
+import { addCredits } from './credits';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
 const REPEAT = 20;
@@ -83,7 +84,7 @@ function dispatch(sim: Sim, d: Deal, v: Vehicle): void {
   if (due(d) && v.dest?.type !== 'dock') sim.enqueue({ type: 'vehicle.dock', vehicle: d.vehicle, airlock: d.airlock });
 }
 
-/** Step 2: crew haul the goods from storage into the docked shuttle through the airlock's unloaders. */
+/** Step 2: crew haul the goods from storage and floor stacks into the docked shuttle through the airlock's unloaders. */
 function load(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer > LOAD_SEC * TICK_HZ) return failDeal(sim, d, 'loadTimeout');
   if (d.give.every((l) => cargoOf(sim, d.vehicle, l.item) >= l.count)) return go(d, 'out');
@@ -91,11 +92,11 @@ function load(sim: Sim, d: Deal, v: Vehicle): void {
   const res = reservations(sim);
   for (const l of d.give) {
     let need = l.count - cargoOf(sim, d.vehicle, l.item) - (res.incoming.get(refKey('vehicle', d.vehicle, l.item)) ?? 0);
-    for (const s of storagesHolding(sim, l.item)) {
-      const avail = s.count - (res.out.get(refKey('storage', s.id, l.item)) ?? 0);
+    for (const s of holding(sim, l.item)) {
+      const avail = s.count - (res.out.get(refKey(s.kind, s.id, l.item)) ?? 0);
       const n = Math.min(need, avail, DEFAULT_CARRY_CAPACITY);
       if (n <= 0) continue;
-      makeHaul(sim, res, 'hauling', s.shipId, { ref: { kind: 'storage', id: s.id }, x: s.x, y: s.y, avail }, { kind: 'vehicle', id: d.vehicle }, l.item, n);
+      makeHaul(sim, res, 'hauling', s.shipId, { ref: { kind: s.kind, id: s.id }, x: s.x, y: s.y, avail }, { kind: 'vehicle', id: d.vehicle }, l.item, n);
       need -= n;
     }
   }
@@ -214,7 +215,7 @@ function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void 
       // The agreed value of exactly what was delivered (shares fixed when the trip opened), not today's prices.
       const share = d.get.reduce((n, l, i) => n + ((d.getValue?.[i] ?? 0) * (delivered[i] as ItemQty).count) / l.count, 0);
       const pay = Math.min(d.held, Math.round(share));
-      sim.trade.credits += d.held - pay; // the undelivered share is refunded
+      addCredits(sim, d.held - pay); // the undelivered share is refunded
       d.held = pay;
       d.balance = pay;
     }

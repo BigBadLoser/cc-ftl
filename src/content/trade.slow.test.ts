@@ -94,8 +94,9 @@ describe('pricing', () => {
     const { sim, station } = withStation();
     const t = sim.world.get(station, TraderC)!;
     // Station, civilian: spread only.
-    expect(unitPrice(sim, station, 'item.metal', 'sell')).toBe(Math.round(6 * 1.25));
-    expect(unitPrice(sim, station, 'item.metal', 'buy')).toBe(Math.round(6 * 0.6));
+    const metal = sim.content.items['item.metal']!.price!; // the base price (8 since the mining economy, #222)
+    expect(unitPrice(sim, station, 'item.metal', 'sell')).toBe(Math.round(metal * 1.25));
+    expect(unitPrice(sim, station, 'item.metal', 'buy')).toBe(Math.round(metal * 0.6));
     // Trader kind: the liner pays more for food (tag mod) and sells it cheaper.
     t.profile = 'trader.liner';
     expect(unitPrice(sim, station, 'item.ration', 'buy')).toBe(Math.round(5 * 0.6 * 1.25));

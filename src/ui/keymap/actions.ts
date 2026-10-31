@@ -80,6 +80,7 @@ export const ACTIONS = [
 
   a('debug.panel', 'debug', 'Debug panel', ['Backquote']),
   a('debug.profiler', 'debug', 'Profiler panel', ['F3']),
+  a('debug.report', 'debug', 'Report a bug', ['F8']),
 ] as const satisfies readonly ActionDef[];
 
 export type ActionId = (typeof ACTIONS)[number]['id'];

@@ -9,6 +9,8 @@
   import StarmapStats from './StarmapStats.svelte';
   import StarmapInfo from './StarmapInfo.svelte';
   import StarmapNews from './StarmapNews.svelte';
+  import StarmapSell from './StarmapSell.svelte';
+  import type { UiSellGood } from './starmapApi';
   import { isTypingTarget } from './keys';
   import { jumpCommand, toggleTake } from './starmapJump';
   import { toneColor } from './starmapStyle';
@@ -127,6 +129,21 @@
     };
   });
   let newsOpen = $state(false);
+  /** The "where to sell" panel: built when it opens and again each starmap turn (prices move as ships trade). */
+  let sellOpen = $state(false);
+  let sellGoods = $state<UiSellGood[]>([]);
+  $effect(() => {
+    if (sellOpen && map) {
+      void map.turn;
+      sellGoods = api.whereToSell();
+    }
+  });
+  const pickNode = (id: string) => {
+    selected = id;
+    confirming = null;
+    const n = nodeById.get(id);
+    if (n) flyTo(n.x, n.y, s, 300);
+  };
   /** News the player has not looked at: ids above the newest one seen when the panel was last open (the panel starts closed, so the map stays clear). */
   let newsSeen = $state(0);
   const newestNews = $derived(map?.news.reduce((m, n) => Math.max(m, n.id), 0) ?? 0);
@@ -464,9 +481,10 @@
       <button class="tile" title="Zoom in" aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
       <button class="tile" title="Zoom out" aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
       <button class="tile" title="Centre on your ship" aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
-      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => (newsOpen = !newsOpen)} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
+      <button class="tile" class:on={sellOpen} title="Where to sell what is aboard" aria-label="Where to sell" aria-pressed={sellOpen} onclick={() => { sellOpen = !sellOpen; if (sellOpen) newsOpen = false; }} data-testid="starmap-sell-toggle"><Icon name="trade" size={22} /></button>
+      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => { newsOpen = !newsOpen; if (newsOpen) sellOpen = false; }} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
     </div>
-    {#if seenFactions.length && !cardOpen && !newsOpen}
+    {#if seenFactions.length && !cardOpen && !newsOpen && !sellOpen}
       <ul class="legend" aria-label="Territory">
         {#if map && (map.heat.notoriety > 0 || map.heat.hunters.length)}
           <li class="heat" class:wanted={map.heat.wanted} data-testid="starmap-heat">Notoriety {map.heat.notoriety}{#if map.heat.wanted}&nbsp;· wanted{/if}{#if map.heat.hunters.length}<br />Hunted by {map.heat.hunters.join(', ')}{/if}</li>
@@ -477,6 +495,7 @@
         {/each}
       </ul>
     {/if}
+  {#if map && sellOpen}<StarmapSell goods={sellGoods} current={map.current} onPick={pickNode} onClose={() => (sellOpen = false)} />{/if}
   {#if map && newsOpen && !drawerOpen}<StarmapNews news={map.news} turn={map.turn} onClose={() => (newsOpen = false)} />{/if}
   {#if interdiction}<InterdictModal encounter={interdiction} onChoose={respond} />{/if}
   {#if map && drawerOpen}

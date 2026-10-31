@@ -93,10 +93,10 @@
         {#each node.jobs ?? [] as j, i (i)}<div class="row job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job">{j.label}</div>{/each}
         {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" title="Notable stock here"><span class="dim">Stock</span>{#each node.hints as h (h)}<span class="chip">{h}</span>{/each}</div>{/if}
         {#if node.market}
-          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce">
+          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce. Cheap goods show what they sell for, wanted goods what they pay.">
             <span class="dim">Market</span>
-            {#each node.market.cheap as g (g)}<span class="good cheap"><Icon name="chevDown" size={11} />{g}</span>{/each}
-            {#each node.market.dear as g (g)}<span class="good dear"><Icon name="chevUp" size={11} />{g}</span>{/each}
+            {#each node.market.cheap as g (g.name)}<span class="good cheap" title="{g.name}: sells for {g.price} ₵"><Icon name="chevDown" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
+            {#each node.market.dear as g (g.name)}<span class="good dear" title="{g.name}: pays {g.price} ₵"><Icon name="chevUp" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
             {#if !node.market.cheap.length && !node.market.dear.length}<span class="dim">prices steady</span>{/if}
           </div>
         {/if}

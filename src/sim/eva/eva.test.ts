@@ -41,7 +41,7 @@ import { isEvaWalkable } from '../structure';
 
 import { airlockSuits, suitAir } from './suit';
 
-import { planWalk } from './route';
+import { planSiteWalk, planWalk } from './route';
 
 import { shipIdOf } from '../regions';
 
@@ -260,6 +260,18 @@ describe('pathing', () => {
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
     run(sim, 1);
     expect(planWalk(sim, c, 1, { x: 3, y: 6 }, { x: 10, y: 6 })!.thin).toBe(false);
+  });
+
+  it('a caller with no use for a thin-air plan gets none, and no search is spent on it (#224)', () => {
+    const sim = world();
+    const c = crew(sim, 1, 3, 6);
+    vent(sim, 7, 2, 7, 11); // a vented band with no gap: the far side is reachable only through thin air
+    run(sim, 2);
+    const goal = { x: 10, y: 6 };
+    expect(planWalk(sim, c, 1, { x: 3, y: 6 }, goal)!.thin).toBe(true);
+    expect(planWalk(sim, c, 1, { x: 3, y: 6 }, goal, () => false)).toBeNull();
+    expect(planSiteWalk(sim, c, 1, { x: 3, y: 6 }, goal, () => false)).toBeNull();
+    expect(planSiteWalk(sim, c, 1, { x: 3, y: 6 }, goal, () => true)!.thin).toBe(true);
   });
 
   it('crew suit up on their own for a job in a vented room, do it, and put the suit back', () => {

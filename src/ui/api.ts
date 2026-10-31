@@ -1,4 +1,4 @@
-import type { UiDeploy, UiJumpWarnings, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiSellGood, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
 import type { Command, SimEvent, WorkCategory } from '../sim';
 
@@ -34,6 +34,18 @@ export interface UiSnapshot {
 export interface UiSession {
   notice: string | null;
   lost: string | null;
+  /** How the run went, filled in with `lost` (the game-over screen). */
+  summary?: UiRunSummary | null;
+}
+
+/** The game-over screen's numbers: game time survived (seconds), jumps, the most credits held at once and the credits at the end. */
+export interface UiRunSummary {
+  seconds: number;
+  jumps: number;
+  bestCredits: number;
+  credits: number;
+  /** The Load list has a snapshot from before the last fight (offered on the game-over screen). */
+  hasPrecombat: boolean;
 }
 
 /** The tutorial goal chain: act `act` of `acts`, its title, what finishing it pays (a short line), and its goals. */
@@ -828,6 +840,11 @@ export interface UiStationInfo {
   /** The port id `blueprint.buy` takes (empty without a port). */
   blueprintPort: string;
   market: UiStarMarket | null;
+  /**
+   * The port's price list (issue #222): each good it trades, what it pays for one ('buy') and asks for one ('sell'), and whether that is cheap or
+   * dear for it now. Empty without a trading port.
+   */
+  prices: { name: string; buy: number; sell: number; tone: 'cheap' | 'dear' | '' }[];
   /** Notable stock in a few words ("Mk II shield gens", "Cheap fuel"). */
   hints: string[];
   /** Working airlocks to dock at. */
@@ -1140,18 +1157,23 @@ export interface UiError {
 /** A save in the Save / Load list: the autosave or a named slot, with its label (null: the slot is empty). */
 export interface UiSaveSlot {
   id: string;
+  /** Not a named slot: an autosave or the pre-combat snapshot (the game writes these, the player cannot save or delete them). */
   auto: boolean;
-  meta: { name: string; savedAt: number; turn: number; node: string } | null;
+  /** 'auto' (rotating autosaves), 'precombat' (as the last fight started) or 'slot'. */
+  kind: 'auto' | 'precombat' | 'slot';
+  meta: { name: string; savedAt: number; turn: number; node: string; fight?: boolean } | null;
+  /** False for a save from another version of the game: it is listed but cannot be loaded. */
+  loadable: boolean;
 }
 
 /** Everything the UI may call or observe; built in main.ts. */
 export interface UiApi {
-  /** The saves: the autosave and the named slots. `save` writes this game to a slot (false: the browser refused); `load` reloads the page into one. */
+  /** The saves: the rotating autosaves, the pre-combat snapshot and the named slots. `save` writes this game to a slot (resolves false: the browser refused); `load` reloads the page into one. */
   saves: {
     list(): UiSaveSlot[];
-    save(id: string, name: string): boolean;
+    save(id: string, name: string): Promise<boolean>;
     load(id: string): void;
-    remove(id: string): boolean;
+    remove(id: string): Promise<boolean>;
   };
   /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel. */
   cancel(): boolean;
@@ -1223,6 +1245,8 @@ export interface UiApi {
   /** The starmap view's data, and a route preview to a node (path, fuel, next jump's charge, blocker). */
   starmap: Subscribable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  /** Where the goods aboard sell best: per good, the known ports in sensor range that pay most now (the starmap's Sell panel). */
+  whereToSell(): UiSellGood[];
   /** The starmap screen opened or closed: it builds its data then, and the world view stops rendering behind it. */
   setStarmapOpen(open: boolean): void;
   /** The deploy picker's data while the ship waits to be placed, a spot's gap-rule error (null = valid), and what a jump would leave behind. */
