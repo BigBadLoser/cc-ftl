@@ -236,7 +236,8 @@ describe('migration when a copy fails', () => {
     });
     setSaveStore(createIdbSaveStore(() => idb, () => local));
     await saveStore.ready();
-    expect(saveStore.list().map((m) => m.id)).toEqual(['auto']);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto', 'slot1']); // the one that stayed is still listed (from its old label)
+    expect(await saveStore.read('slot1')).toBe('{"s":1}'); // and read from localStorage
     expect(local.getItem('cc.save')).toBeNull();
     expect(local.getItem('cc.save.slot1')).toBe('{"s":1}');
     expect(Object.keys(JSON.parse(local.getItem('cc.saves')!))).toEqual(['slot1']); // its label stays
@@ -246,6 +247,68 @@ describe('migration when a copy fails', () => {
     await saveStore.ready();
     expect(saveStore.list().map((m) => [m.id, m.name, m.turn, m.node])).toEqual([['auto', 'Autosave', 4, 'A'], ['slot1', 'Mine', 3, 'Ixion']]);
     expect(local.getItem('cc.saves')).toBeNull();
+  });
+});
+
+describe('a legacy save that could not be copied stays first-class', () => {
+  const refuse = (on: { v: boolean }) => {
+    const real = IDBDatabase.prototype.transaction;
+    vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, ...a: Parameters<typeof real>) {
+      if (on.v && a[1] === 'readwrite') throw new DOMException('full', 'QuotaExceededError');
+      return real.apply(this, a);
+    });
+  };
+  const campaign = (tick: number) => { const s = newGame(4, content); s.tick = tick; return serialize(s); };
+
+  it('loads the old campaign (not a fresh game), and a later good autosave leaves one correct save and no leftovers', async () => {
+    const { local } = browser();
+    const idb = new IDBFactory();
+    setSaveStore(createIdbSaveStore(() => idb, () => local));
+    const off = { v: true };
+    refuse(off);
+    local.setItem('cc.save', campaign(321));
+    local.setItem('cc.saves', JSON.stringify({ auto: { id: 'auto', name: 'Autosave', savedAt: 9, turn: 6, node: 'Ixion' } }));
+    const start = await startGame(null);
+    expect(start.sim.tick).toBe(321);
+    expect(start.notice).toBeNull();
+    expect(saveStore.list().map((m) => [m.id, m.turn])).toEqual([['auto', 6]]);
+    expect(local.getItem('cc.save')).not.toBeNull();
+
+    off.v = false; // storage works again: the autosave of this same campaign
+    start.sim.tick = 400;
+    expect(await writeAutosave(start.sim)).toBe(true);
+    expect(local.getItem('cc.save')).toBeNull();
+    expect(local.getItem('cc.saves')).toBeNull();
+    setSaveStore(createIdbSaveStore(() => idb, () => local));
+    const again = await startGame(null);
+    expect(again.sim.tick).toBe(400);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto']);
+  });
+
+  it('never deletes a newer, never-copied legacy save; an older one yields to what IndexedDB holds', async () => {
+    const { local } = browser();
+    const idb = new IDBFactory();
+    const first = createIdbSaveStore(() => idb, () => null);
+    await first.ready();
+    await first.write({ id: 'auto', name: 'Autosave', savedAt: 5, turn: 1, node: 'x' }, 'in-idb');
+    await first.write({ id: 'slot1', name: 'S', savedAt: 5, turn: 1, node: 'x' }, 'slot-in-idb');
+    local.setItem('cc.save', 'legacy-newer');
+    local.setItem('cc.save.slot1', 'legacy-older');
+    local.setItem('cc.saves', JSON.stringify({ auto: { id: 'auto', name: 'Autosave', savedAt: 9, turn: 2, node: 'x' }, slot1: { id: 'slot1', name: 'S', savedAt: 1, turn: 1, node: 'x' } }));
+    const off = { v: true };
+    refuse(off);
+    const st = createIdbSaveStore(() => idb, () => local);
+    setSaveStore(st);
+    await st.ready();
+    expect(await st.read('auto')).toBe('legacy-newer'); // copy refused: the newer legacy save is what is read
+    expect(local.getItem('cc.save')).toBe('legacy-newer'); // and it is still there
+    expect(await st.read('slot1')).toBe('slot-in-idb'); // the older legacy save gave way
+    expect(local.getItem('cc.save.slot1')).toBeNull();
+    off.v = false;
+    const later = createIdbSaveStore(() => idb, () => local);
+    await later.ready(); // next start, storage fine: the newer one is copied over the older IndexedDB entry
+    expect(await later.read('auto')).toBe('legacy-newer');
+    expect(local.getItem('cc.save')).toBeNull();
   });
 });
 

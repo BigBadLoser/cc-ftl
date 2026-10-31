@@ -113,10 +113,31 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       }
     });
 
-  /** Move what the old localStorage store held into IndexedDB; each entry leaves localStorage only after its transaction completed. */
+  /**
+   * Saves an older build left in localStorage that could not be copied (IndexedDB full or missing). They stay first-class until they are:
+   * listed with their old labels, read from localStorage, removed there too. Once a write of the same id succeeds (it is newer) the old copy goes.
+   */
+  const legacy = new Map<string, SaveMeta>();
+  const saveIndex = (ls: Store): void => {
+    try {
+      if (legacy.size) ls.setItem(LS_INDEX, JSON.stringify(Object.fromEntries(legacy)));
+      else ls.removeItem(LS_INDEX);
+    } catch { /* ignore */ }
+  };
+  function dropLegacy(id: string): void {
+    const ls = local();
+    if (!ls || !legacy.delete(id)) return;
+    try { ls.removeItem(lsKey(id)); } catch { /* it stays; the newer copy in IndexedDB shadows it */ }
+    saveIndex(ls);
+  }
+
+  /**
+   * Move what the old localStorage store held into IndexedDB; each entry leaves localStorage only after its copy is stored. One that is
+   * already in IndexedDB is dropped only if that copy is at least as new as the old one; a newer, never-copied save is copied over it.
+   */
   async function migrate(): Promise<void> {
     const ls = local();
-    if (!ls || !db) return;
+    if (!ls) return;
     let index: Record<string, SaveMeta> = {};
     try {
       const raw = ls.getItem(LS_INDEX);
@@ -126,15 +147,17 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       let json: string | null = null;
       try { json = ls.getItem(lsKey(id)); } catch { /* blocked storage: nothing to move */ }
       if (json === null) continue;
-      if (metas.has(id) || (await put(index[id] ?? label(id), json))) {
-        try { ls.removeItem(lsKey(id)); delete index[id]; } catch { /* it stays; the copy in IndexedDB wins next time */ }
+      const old = index[id] ?? label(id);
+      const there = metas.get(id);
+      const moved = there && there.savedAt >= old.savedAt ? true : await put(old, json);
+      if (moved) {
+        try { ls.removeItem(lsKey(id)); } catch { /* it stays; the copy in IndexedDB wins next time */ }
+      } else {
+        legacy.set(id, old);
       }
     }
     // The index goes only when every save it labels has moved; the labels of the ones that stayed are kept for the next start.
-    try {
-      if (Object.keys(index).length) ls.setItem(LS_INDEX, JSON.stringify(index));
-      else ls.removeItem(LS_INDEX);
-    } catch { /* ignore */ }
+    saveIndex(ls);
   }
 
   function put(meta: SaveMeta, json: string, shift: readonly string[] = [], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
@@ -168,6 +191,7 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
         if (ok) {
           for (const [to, mm] of moved) metas.set(to, mm);
           metas.set(meta.id, meta);
+          for (const id of [meta.id, ...moved.map(([to]) => to)]) dropLegacy(id);
         }
         return ok;
       });
@@ -181,8 +205,11 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       opening ??= open().then(loadMetas).then(migrate);
       return opening;
     },
-    list: () => LISTED.filter((id) => metas.has(id)).map((id) => metas.get(id) ?? label(id)),
+    list: () => LISTED.filter((id) => legacy.has(id) || metas.has(id)).map((id) => legacy.get(id) ?? metas.get(id) ?? label(id)),
     read(id) {
+      if (legacy.has(id)) {
+        try { return Promise.resolve(local()?.getItem(lsKey(id)) ?? null); } catch { return Promise.resolve(null); }
+      }
       return new Promise((res) => {
         if (!db) return res(null);
         try {
@@ -199,13 +226,20 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
   };
 
   function drop(id: string): Promise<boolean> {
-      if (!db) return Promise.resolve(false);
+      if (!db) {
+        const had = legacy.has(id);
+        dropLegacy(id);
+        return Promise.resolve(had);
+      }
       try {
         const tx = db.transaction([META, DATA], 'readwrite');
         tx.objectStore(META).delete(id);
         tx.objectStore(DATA).delete(id);
         return done(tx).then((ok) => {
-          if (ok) metas.delete(id);
+          if (ok) {
+            metas.delete(id);
+            dropLegacy(id);
+          }
           return ok;
         });
       } catch {
