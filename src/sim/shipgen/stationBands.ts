@@ -25,8 +25,12 @@ function cabinsOf(r: RoomSpec): RoomSpec[] {
 const TAU = Math.PI * 2;
 
 /** Band depth that suits a set of rooms (about the side of the average room). */
-export const bandDepth = (rooms: RoomSpec[]): number =>
-  Math.max(4, Math.min(7, Math.round(Math.sqrt(rooms.reduce((t, r) => t + r.w * r.h, 0) / Math.max(1, rooms.length)))));
+export const bandDepth = (rooms: RoomSpec[]): number => {
+  // A band of mostly cabins is as deep as a cabin: one-bed cabins cut across it, no deeper than they need.
+  const area = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + r.w * r.h, 0);
+  if (area(rooms.filter((r) => r.cabins)) >= 0.6 * area(rooms)) return 5;
+  return Math.max(4, Math.min(7, Math.round(Math.sqrt(area(rooms) / Math.max(1, rooms.length)))));
+};
 
 /** Corridor radius at which a band `depth` deep holds `rooms` over `share` of the circle (side 1 outboard). */
 export function bandRadius(rooms: RoomSpec[], depth: number, share = 1, side: 1 | -1 = 1): number {

@@ -3,6 +3,7 @@ import { bridge } from './bridge';
 import { engineering } from './engineering';
 import { mess } from './mess';
 import { quarters } from './quarters';
+import { medbay } from './medbay';
 import { shop } from './shop';
 import { storage } from './storage';
 import { armoury, drill, farm, garden, hangarDeck, industry, plaza } from './station';
@@ -11,7 +12,7 @@ import type { RoomRecipe } from './types';
 
 /** Room recipes by role. Halls and AI cores have none. Mount rooms keep the generic placer for their mounts. */
 export const RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
-  bridge, quarters, cargo: storage, support: mess, reactor: engineering, weapons, shields, engine: engines, dock, hangar, farm, industry, armoury, plaza, garden, drill, shop,
+  bridge, quarters, cargo: storage, support: mess, reactor: engineering, weapons, shields, engine: engines, dock, hangar, farm, industry, armoury, plaza, garden, drill, shop, medbay,
 };
 
 /**

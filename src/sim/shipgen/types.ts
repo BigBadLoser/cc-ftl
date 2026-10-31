@@ -17,7 +17,9 @@ export type RoomRole =
   /** Station courtyards (open rooms filling enclosed centres): a concourse, a garden deck, a drill hall. */
   | 'plaza' | 'garden' | 'drill'
   /** Station shops (decorative): the market street and the market ring. */
-  | 'shop';
+  | 'shop'
+  /** Station medbays: sickbay cots at a habitation run's busy end. */
+  | 'medbay';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =

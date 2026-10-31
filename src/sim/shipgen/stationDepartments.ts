@@ -40,7 +40,7 @@ export function deptOf(r: RoomSpec): Dept {
   if (r.warehouse || r.role === 'cargo') return 'freight';
   switch (r.role) {
     case 'bridge': case 'armoury': case 'dock': return 'harbour';
-    case 'quarters': case 'support': return 'habitation';
+    case 'quarters': case 'support': case 'medbay': return 'habitation';
     case 'reactor': case 'shields': case 'core': return 'secure';
     case 'weapons': return 'defence';
     case 'industry': case 'farm': case 'hangar': return 'works';
@@ -48,8 +48,20 @@ export function deptOf(r: RoomSpec): Dept {
   }
 }
 
-/** Rooms tagged with their department (role swaps keep to it: roleSwap.ts). */
-export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => rooms.map((r) => ({ ...r, dept: deptOf(r) }));
+/** Rooms tagged with their department (role swaps keep to it: roleSwap.ts), with the station's medbays added. */
+export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => withMedbays(rooms).map((r) => ({ ...r, dept: deptOf(r) }));
+
+/**
+ * Medbays: one for every five crew quarters rooms (at least one where there are quarters), two to four cots each; pinned,
+ * so they keep their planned size in a cabin band with floor to spare.
+ */
+function withMedbays(rooms: readonly RoomSpec[]): RoomSpec[] {
+  const quarters = rooms.filter((r) => r.role === 'quarters').length;
+  if (quarters === 0 || rooms.some((r) => r.role === 'medbay')) return [...rooms];
+  const n = Math.max(1, Math.round(quarters / 5));
+  const cots = Math.min(4, 1 + Math.ceil(quarters / n / 2));
+  return [...rooms, ...Array.from({ length: n }, (): RoomSpec => ({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4, pinned: true }))];
+}
 
 /**
  * Where departments go on a round station with dock banks north and south, as quadrants (0 north-east, 1 south-east,
@@ -132,8 +144,10 @@ export function quadrantRooms(rooms: readonly RoomSpec[], plan: RingPlan, length
 
 /** Quiet rooms with the messes and other rooms spaced evenly among the quarters, so no cabin is far from one. */
 function interleave(quiet: readonly RoomSpec[]): RoomSpec[] {
-  const q = quiet.filter((r) => r.role === 'quarters'), o = quiet.filter((r) => r.role !== 'quarters');
-  if (o.length === 0 || q.length === 0) return [...o, ...q];
+  // A medbay opens the run (its busy end: the buffer between the cabins and the rest).
+  const med = quiet.filter((r) => r.role === 'medbay');
+  const q = quiet.filter((r) => r.role === 'quarters'), o = quiet.filter((r) => r.role !== 'quarters' && r.role !== 'medbay');
+  if (o.length === 0 || q.length === 0) return [...med, ...o, ...q];
   const out: RoomSpec[] = [];
   const step = q.length / (o.length + 1);
   let k = 0;
@@ -141,5 +155,5 @@ function interleave(quiet: readonly RoomSpec[]): RoomSpec[] {
     out.push(r);
     while (k < o.length && i + 1 >= step * (k + 1)) out.push(o[k++] as RoomSpec);
   });
-  return [...out, ...o.slice(k)];
+  return [...med, ...out, ...o.slice(k)];
 }
