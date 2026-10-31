@@ -43,7 +43,7 @@ export default defineConfig({
   define: { __COMMIT__: JSON.stringify(commit()) },
   plugins: [svelte()],
   test: {
-    testTimeout: 30000, // full-size ships make the combat scenarios slow under parallel load
+    testTimeout: 60000, // a failure bound only: full-size ships make the combat scenarios slow under parallel load, and CI runners are slower than the dev box
     maxWorkers: 4, // the whole box: the default leaves a core idle
     sequence: { sequencer: WeightedSequencer },
     projects: [
