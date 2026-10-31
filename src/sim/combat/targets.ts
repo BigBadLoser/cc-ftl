@@ -100,3 +100,4 @@ export function randomModule(sim: Sim, shipId: number, filter?: (id: number) => 
   const pool = intact.length > 0 ? intact : all;
   return pool.length > 0 ? sim.rng.pick(pool) : 0;
 }
+// x
