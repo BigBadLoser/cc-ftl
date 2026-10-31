@@ -48,8 +48,9 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
   // remember the failure for as long as nothing the search reads has changed.
   const key = `${shipId}|${from.x},${from.y}|${goal.x},${goal.y},${goal.adjacent ? 1 : 0},${goal.w ?? 1},${goal.h ?? 1}|${opts.avoidThin ? 1 : 0}${opts.suited ? 1 : 0}`;
   const sig = walkSignature(sim, grid, !!opts.avoidThin);
-  let memo = NO_PATH.get(sim);
-  if (!memo) NO_PATH.set(sim, (memo = new Map()));
+  // Keyed by the sector grid instance, not the sim: a restored archive brings a new grid whose revisions start again at zero.
+  let memo = NO_PATH.get(sim.sector.grid);
+  if (!memo) NO_PATH.set(sim.sector.grid, (memo = new Map()));
   if (memo.get(key) === sig) return null;
   const steps = searchPath(sim, grid, from, goal, opts);
   if (steps === null) {
@@ -59,10 +60,10 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
   return steps;
 }
 
-/** Failed searches per sim: key -> the walk signature they failed under. Derived data, never saved. */
-const NO_PATH = new WeakMap<Sim, Map<string, string>>();
+/** Failed searches per sector grid instance: key -> the walk signature they failed under. Derived data, never saved. */
+const NO_PATH = new WeakMap<object, Map<string, string>>();
 const NO_PATH_MAX = 4096;
-const THIN_MASK = new WeakMap<Sim, Map<string, { rev: number; h: number }>>();
+const THIN_MASK = new WeakMap<object, Map<string, { rev: number; h: number }>>();
 
 /**
  * Everything a search reads, as one string: the sector-wide revisions of the fields it walks (struct, door jams, modules), the module count (a
@@ -75,8 +76,8 @@ function walkSignature(sim: Sim, grid: ShipGrid, avoidThin: boolean): string {
     // Hashing the mask walks the whole ship, so it is kept for as long as the o2 field is unchanged (many searches per tick share it).
     const rev = g.revision('o2');
     const id = `${grid.x0},${grid.y0},${grid.width},${grid.height}`;
-    let masks = THIN_MASK.get(sim);
-    if (!masks) THIN_MASK.set(sim, (masks = new Map()));
+    let masks = THIN_MASK.get(g);
+    if (!masks) THIN_MASK.set(g, (masks = new Map()));
     let hit = masks.get(id);
     if (!hit || hit.rev !== rev) {
       const o2 = grid.load('o2');
