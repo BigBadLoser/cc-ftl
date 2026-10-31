@@ -76,6 +76,7 @@ async function loadAuto(fresh: (seed: number) => Sim, random: () => number): Pro
   const json = await saveStore.read(AUTO_ID);
   let why: unknown = null;
   let kept = false;
+  const head = saveStore.list().find((m) => m.id === AUTO_ID); // its label, read before keepBroken moves it
   if (json) {
     try {
       return { sim: deserialize(json, content), notice: null, persist: true };
@@ -84,8 +85,9 @@ async function loadAuto(fresh: (seed: number) => Sim, random: () => number): Pro
       kept = await keepBroken(json);
     }
   }
-  // The newest autosave is gone or unloadable: the older autosaves and the pre-combat snapshot are the way back, newest first.
-  const rest = saveStore.list().filter((m) => m.id !== AUTO_ID && (isAutoId(m.id) || m.id === PRECOMBAT_ID)).sort((x, y) => y.savedAt - x.savedAt);
+  // The newest autosave is gone or unloadable: the older autosaves and the pre-combat snapshot of the same campaign are the way back, newest
+  // first (a save without a campaign matches only a head without one). Another campaign's saves stay listed for the player to pick.
+  const rest = saveStore.list().filter((m) => m.id !== AUTO_ID && (isAutoId(m.id) || m.id === PRECOMBAT_ID) && (!head || m.campaign === head.campaign)).sort((x, y) => y.savedAt - x.savedAt);
   for (const m of rest) {
     const alt = await saveStore.read(m.id);
     if (!alt) continue;

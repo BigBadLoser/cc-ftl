@@ -321,7 +321,7 @@ describe('falling back from an unloadable latest autosave', () => {
     await writeSave(sim, 'auto2', 'Autosave', Date.now() - 5 * 60_000);
     sim.tick = 33;
     await writeSave(sim, 'auto3', 'Autosave', Date.now() - 9 * 60_000);
-    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '' }, '{"version": 71, "trunc');
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '', campaign: 11 }, '{"version": 71, "trunc');
     const start = await startGame(null);
     expect(start.sim.tick).toBe(77); // the newer of the two valid ones
     expect(start.sim.seed).toBe(11);
@@ -330,13 +330,33 @@ describe('falling back from an unloadable latest autosave', () => {
     expect(local.getItem('cc.save')).toBeNull();
   });
 
+  it("recovers only from the failed autosave's own campaign", async () => {
+    browser();
+    await saveStore.ready();
+    const a = newGame(11, content);
+    const b = newGame(22, content);
+    b.tick = 8;
+    await writeSave(a, 'auto2', 'Autosave', Date.now() - 2 * 60_000); // campaign A
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '', campaign: 22 }, 'garbage'); // B, corrupt
+    const none = await startGame(null);
+    expect(none.sim.seed).not.toBe(11); // not A's autosave
+    expect(none.showAll).toBe(true);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto2']); // still listed to pick by hand
+
+    await writeSave(b, 'auto3', 'Autosave', Date.now() - 9 * 60_000);
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '', campaign: 22 }, 'garbage');
+    const yes = await startGame(null);
+    expect(yes.sim.seed).toBe(22);
+    expect(yes.sim.tick).toBe(8);
+  });
+
   it('falls back to the pre-combat snapshot when it is all there is', async () => {
     browser();
     await saveStore.ready();
     const sim = newGame(11, content);
     sim.tick = 5;
     await writePrecombat(sim);
-    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '' }, 'garbage');
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '', campaign: 11 }, 'garbage');
     const start = await startGame(null);
     expect(start.sim.tick).toBe(5);
     expect(start.notice).toMatch(/from before combat/);
