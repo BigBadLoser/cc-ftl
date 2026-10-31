@@ -263,7 +263,35 @@ export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[],
       acc += r.w * r.h + 4;
       mine.push(r);
     }
-    if (!bandRooms(b, R, ring, mine, depth, [arc], side, `${side > 0 ? 'o' : 'i'}${k}`, flex)) return false;
+    if (!bandRooms(b, R, ring, (flex ? mine : spared(mine, arc, R, depth, side)), depth, [arc], side, `${side > 0 ? 'o' : 'i'}${k}`, flex)) return false;
   }
   return true;
+}
+
+/** Floor a lounge takes when it fills spare band floor. */
+const LOUNGE = 24;
+
+/**
+ * An arc with much more floor than its rooms plan (a ring sized by something else, such as the court or the rooms between
+ * the rings) would stretch them into slivers: lounges (empty support rooms, furnished at fit-out) take the spare floor,
+ * spread between the rooms. Arcs of cabins already put a mess in their spare floor (`bandRooms`); flexible bands get
+ * shallower instead.
+ */
+function spared(rooms: RoomSpec[], arc: [number, number], R: number, depth: number, side: 1 | -1): RoomSpec[] {
+  if (rooms.length === 0 || rooms.some((r) => r.cabins)) return rooms;
+  const floor = (arc[1] - arc[0]) * (R + (side * (depth + 2)) / 2) * depth * 0.65;
+  const planned = rooms.reduce((t, r) => t + r.w * r.h + 4, 0);
+  // Conservative: dock banks and partitions take more of an arc than the estimate knows.
+  if (planned >= floor * 0.45) return rooms;
+  const n = Math.floor((floor * 0.6 - planned) / LOUNGE);
+  if (n < 1) return rooms;
+  const lounge: RoomSpec = { role: 'support', mods: [], w: Math.max(3, Math.round(LOUNGE / depth)), h: depth };
+  const out: RoomSpec[] = [];
+  // Every room keeps its place; the lounges go between them, the first after the first room (a dock end stays the room's).
+  rooms.forEach((r, i) => {
+    out.push(r);
+    const due = Math.round(((i + 1) * n) / rooms.length) - Math.round((i * n) / rooms.length);
+    for (let j = 0; j < due; j++) out.push({ ...lounge });
+  });
+  return out;
 }
