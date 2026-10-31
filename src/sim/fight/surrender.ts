@@ -1,9 +1,12 @@
 import { CrewC, DraftedC, HealthC, PositionC, type Crew } from '../crew/components';
 import { abortTask } from '../ai/task';
 import type { Sim } from '../sim';
-import { COWARD_SURRENDER_BELOW, SURRENDER_HP_FRAC, SURRENDER_RADIUS } from '../tuning';
+import { COWARD_SURRENDER_BELOW, RALLY_AFTER_TICKS, SURRENDER_HP_FRAC, SURRENDER_RADIUS } from '../tuning';
 import { traitFlag } from '../crew/traits';
-import { AllegianceC, FighterC, SurrenderedC } from './components';
+import { DeadC, DownedC } from '../crew/components';
+import { shipIdOf } from '../regions';
+import { AllegianceC, FighterC, PrisonerC, SurrenderedC } from './components';
+import { isHostile } from './relations';
 import { dropWeapon } from './equip';
 
 const near = (a: { x: number; y: number }, b: { x: number; y: number }): boolean =>
@@ -45,4 +48,27 @@ export function surrender(sim: Sim, id: number): void {
   sim.world.add(id, SurrenderedC, { tick: sim.tick });
   (sim.world.get(id, CrewC) as Crew).activity = 'idle';
   sim.events.emit({ type: 'crew.surrendered', crew: id });
+}
+
+/**
+ * Player crew who gave up (a Coward below their threshold) are not prisoners of war for good: once no combat-ready hostile
+ * is left on their ship, and RALLY_AFTER_TICKS have passed since they surrendered, they pick themselves up
+ * and are back on duty (drafting and jobs work again). A captured crew member (PrisonerC) stays held. `units` are the
+ * combat-ready crew per ship grid (combatReadyUnits).
+ */
+export function rallySurrendered(sim: Sim, units: ReadonlyMap<number, readonly number[]>): void {
+  for (const id of [...sim.world.query(SurrenderedC)]) {
+    if (sim.world.get(id, AllegianceC)?.faction !== 'player' || sim.world.has(id, PrisonerC)) continue;
+    if (sim.world.has(id, DeadC) || sim.world.has(id, DownedC)) continue;
+    const since = sim.world.get(id, SurrenderedC)?.tick ?? 0;
+    if (sim.tick - since < RALLY_AFTER_TICKS) continue;
+    const pos = sim.world.get(id, PositionC);
+    if (!pos) continue;
+    // Any combat-ready hostile left on the same ship keeps them down (boarders holding the helm included).
+    const threat = (units.get(shipIdOf(sim, pos)) ?? []).some((o) => isHostile(sim, id, o));
+    if (threat) continue;
+    sim.world.remove(id, SurrenderedC);
+    (sim.world.get(id, CrewC) as Crew).activity = 'idle';
+    sim.events.emit({ type: 'crew.rallied', crew: id });
+  }
 }

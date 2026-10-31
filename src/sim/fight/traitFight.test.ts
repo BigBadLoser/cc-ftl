@@ -6,7 +6,7 @@ import { TraitsC } from '../crew/traits';
 import type { ContentRegistry } from '../registry';
 import { Sim } from '../sim';
 import { CREW_MAX_HP } from '../tuning';
-import { AllegianceC, EquipC, FighterC } from './components';
+import { AllegianceC, EquipC, FighterC, SurrenderedC } from './components';
 
 const trait = (o: Partial<TraitDef>): TraitDef => ({ name: 'T', flavour: '', kind: 'behaviour', effect: '', weight: 5, rollable: true, ...o });
 const content: ContentRegistry = {
@@ -70,5 +70,21 @@ describe('Brave and Coward in a fight', () => {
     run(sim, 20);
     expect(sim.world.get(coward, FighterC)?.mode).toBe('flee');
     expect(sim.world.get(plain, FighterC)?.mode).toBe('engage');
+  });
+
+  it('a Coward who surrendered gets back up once no hostile is left on the ship, and stays down while one is', () => {
+    const sim = make();
+    const coward = person(sim, 8, 'player', undefined, ['trait.coward']);
+    sim.world.get(coward, HealthC)!.hp = CREW_MAX_HP * 0.2;
+    const raiders = [person(sim, 7, 'hostile'), person(sim, 9, 'hostile')]; // outnumbered: two foes against one
+    for (const r of raiders) sim.world.get(r, HealthC)!.hp = 1e9;
+    run(sim, 5);
+    expect(sim.world.has(coward, SurrenderedC)).toBe(true);
+    run(sim, 200); // the raiders are still beside them: they stay down
+    expect(sim.world.has(coward, SurrenderedC)).toBe(true);
+    for (const r of raiders) sim.world.destroyEntity(r);
+    run(sim, 5);
+    expect(sim.world.has(coward, SurrenderedC)).toBe(false);
+    expect(sim.world.get(coward, CrewC)?.activity).not.toBe('surrendered');
   });
 });

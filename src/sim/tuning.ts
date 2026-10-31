@@ -261,6 +261,8 @@ export const COWARD_FLEE_BELOW = 0.5;
 export const COWARD_SURRENDER_BELOW = 0.3;
 export const SURRENDER_HP_FRAC = 0.3;
 export const SURRENDER_RADIUS = 12;
+/** Ticks a surrendered player crew member stays down before rallying, once no hostile is left on their ship (5 s). */
+export const RALLY_AFTER_TICKS = 100;
 
 // --- Capture ---
 /** Default seconds player-side crew must hold a ship's bridge, unopposed, to capture it. A bridge module's `bridge.holdSec` overrides. */
