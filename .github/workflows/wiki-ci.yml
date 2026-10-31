@@ -1,0 +1,61 @@
+name: Wiki static build
+
+on:
+  workflow_dispatch:
+  # Draft PRs skip the build (Actions minutes are billed on this private
+  # repo); it runs when the PR is marked ready for review and on later pushes.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'wiki/**'
+      - 'src/content/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/wiki-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - 'src/content/**'
+      - '.github/workflows/pages.yml'
+      - '.github/workflows/wiki-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm --prefix wiki install --no-audit --no-fund
+      - run: npm --prefix wiki run check
+      - run: npm --prefix wiki run build
+      - name: Verify wiki output
+        run: |
+          test -f wiki/dist/index.html
+          test -f wiki/dist/reference/modules/index.html
+          test -f wiki/dist/reference/items/index.html
+          test -f wiki/dist/reference/weapons/index.html
+          test -f wiki/dist/reference/vehicles/index.html
+          test -f wiki/dist/reference/recipes/index.html
+          test -f wiki/dist/reference/factions/index.html
+          test -f wiki/dist/reference/research/index.html
+          test -f wiki/dist/reference/modules/reactor/index.html
+          test -f wiki/dist/reference/modules/fabricator/index.html
+          test -f wiki/dist/guides/first-hour/index.html
+          grep -q 'Pause / resume' wiki/dist/guides/controls/index.html
+          grep -q 'Smelt metal' wiki/dist/reference/modules/fabricator/index.html
+          grep -q 'Refine iron ore' wiki/dist/reference/modules/refinery/index.html
+          test -s wiki/dist/generated/previews/module-reactor.png
+          test -s wiki/dist/generated/previews/module-engine-mk2.png
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: cc-ftl-wiki-static-site
+          path: wiki/dist/
+          retention-days: 14

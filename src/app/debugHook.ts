@@ -19,6 +19,8 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
   const seen: string[] = [];
   (window as unknown as { __cc: unknown }).__cc = {
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
+    /** Show or hide the space backdrop (screenshot scripts cut ships out against a flat background). */
+    backdrop: (on: boolean) => r.showBackdrop(on),
     /** Centre the camera on a sector position in tiles (screenshot scripts). */
     focus: (x: number, y: number) => r.focusSector(x, y),
     /** Step the camera to the zoom level nearest `z` (screenshot scripts); returns the zoom reached. */
