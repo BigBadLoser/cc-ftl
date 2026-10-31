@@ -12,6 +12,9 @@ ramps). Floors, caps and ghosts keep the default geometry and take the faction's
   scrap.pN  the default layout with mismatched bolted patch plates, rusty colours (see docs/STRUCTURE_LOOKS.md for
             scrapper ships built from donor looks)
 
+A look's straight-run designs sit beside it (<look>_designs.py): each a relief_style.Design filling named slots its
+faces ask for (wall3d.fill), the look's pairs every top with every ramp design.
+
 Shared: base.py (the Look every faction is, its palette ramps), parts.py (the parts a face is built from), shell.py
 (shell features several looks use). Both faces of a wall are lit, as in the Space Haven sets (the +x face only a
 step darker); the dark navy-slate is the wall's cut end (the end pieces' section), in the look's own shade ramp.

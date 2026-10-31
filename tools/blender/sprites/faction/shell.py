@@ -327,10 +327,10 @@ class FreeEnds(Feature):
 
 
 class RampHoles(Feature):
-    """A ramp design's hole (its look's ramp_hole): (ax, plane, u0, u1, d0, d1), one per stretch."""
+    """A ramp design's hole (its "ramp_hole" slot): (ax, plane, u0, u1, d0, d1), one per stretch."""
     def setup(self, sp):
-        rh = T.style().ramp_hole
-        hd = rh(T.VARIANT[1]) if rh and T.VARIANT[1] else None
+        hd = T.fill("ramp_hole")
+        hd = hd() if callable(hd) else hd               # (one that depends on the shell: worked out as it builds)
         if hd:
             off = T.seam()
             for ax, plane, a, b, _ in T.faces(sp):
@@ -341,12 +341,12 @@ class RampHoles(Feature):
 
 
 class SlotHoles(Feature):
-    """The base design's handle slot cut into the ramp (its look's slot_hole: from, to down the slope as fractions of
+    """A ramp design's handle slot cut into the ramp (its "slot_hole" slot: from, to down the slope as fractions of
     its run, half width), centred on each field, on the shell's grid."""
     def setup(self, sp):
-        sh = T.style().slot_hole
+        sh = T.fill("slot_hole")
         sp.hole_floor = True                            # (the shell builds the slot's floor; a design draws a hole's)
-        if sh and not T.VARIANT[1]:
+        if sh:
             g = 1 / T.W.GN
             sn = lambda v: round(v / g) * g                                 # noqa: E731
             for ax, plane, a, b, _ in T.faces(sp):
@@ -358,13 +358,13 @@ class SlotHoles(Feature):
 
 
 class FaceHoles(Feature):
-    """A top design's openings in the face (its look's face_holes): no shell face there (the design builds the
+    """A top design's openings in the face (its "face_holes" slot): no shell face there (the design builds the
     opening's inside)."""
     def setup(self, sp):
-        fh = T.style().face_holes
-        if fh and T.VARIANT[0]:
+        fh = T.fill("face_holes")
+        if fh:
             for ax, plane, a, b, top in T.faces(sp):
-                sp.face_holes += [(ax, T.snap(plane)) + h for h in fh(a, b, sp.zs, top, T.VARIANT[0])]
+                sp.face_holes += [(ax, T.snap(plane)) + h for h in fh(a, b, sp.zs, top)]
 
     def col_face(self, sp, face, x, y, z):
         for ax, plane, u0, u1, z0, z1 in sp.face_holes:

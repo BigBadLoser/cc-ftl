@@ -5,6 +5,17 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 
+class Design:
+    """One of a look's straight-run designs (a top or a ramp): its name and what it puts in the look's slots, by slot
+    name. A slot it leaves alone keeps the look's base there; the faces ask for slots (wall3d.fill), never for a
+    design."""
+    def __init__(self, name, **slots):
+        self.name, self.slots = name, slots
+
+    def __repr__(self):
+        return f"Design({self.name!r})"
+
+
 @dataclass(frozen=True)
 class Style:
     # the faces and the shell
@@ -17,8 +28,6 @@ class Style:
     shade: Optional[int] = None           # how many ramp levels darker the +x side sits; None: wall3d.SHADE
     end_out: Optional[float] = None       # how far an end piece's section runs past the face's line (< 0: stops short
                                           # of it); None: wall3d.PX
-    face_holes: Optional[Callable] = None  # (a, b, zs, top, top design) -> the openings cut in a face
-                                           # [(u0, u1, z0, z1)]
     # the ramp
     skirt: Optional[str] = "panel"        # the dressing under each field: "panel" | "outline" | None (bare plates)
     seam: Optional[float] = None          # the plates' seams this far in from each tile edge (0: one plate a tile);
@@ -37,11 +46,23 @@ class Style:
     outline_d: tuple = (0.15, 0.62)       # ... its top and bottom down the ramp (fractions of the run)
     slot: bool = False                    # a dark handle slot in the outlined panel (the base design)
     slot_d: tuple = (0.5, 0.57, 0.1)      # ... painted: its top and bottom (fractions of the run) and half width
-    slot_hole: Optional[tuple] = None     # ... cut into the ramp instead (the shell's holes): (top, bottom, half width)
-    ramp_var: Optional[Callable] = None   # the look's own ramp designs (in place of its panel): wall3d.skirt's rv
-    ramp_hole: Optional[Callable] = None  # (ramp design) -> the hole it opens in the ramp, or None
     hole_tone: Optional[Callable] = None  # (part "back" | "side", family, face axis, outward normal) -> the tone
                                           # a ramp design gives its hole's walls (the solid ramp's faces there)
+    # the straight runs' designs (wall3d.VARIANT picks one of each; the look's pairs are every top with every ramp)
+    tops: tuple = ()                      # its top designs (Design), the base first
+    ramps: tuple = ()                     # its ramp designs, the base first
+
+    def fill(self, slot, variant, base=None):
+        """What the designs variant (top, ramp) put in slot: the top's, else the ramp's; base if neither fills it.
+        The shared slots: "ramp" (wall3d.skirt: in place of the ramp's panel), "ramp_hole" (the hole it opens in the
+        ramp: (from, to) down it as fractions of the run, how far past the field it reaches), "slot_hole" (the base
+        design's handle slot cut into the ramp: from, to down it, half width; faction.shell.SlotHoles) and
+        "face_holes" ((a, b, zs, top) -> the openings cut in a face [(u0, u1, z0, z1)]); a look's faces have their
+        own."""
+        for designs, i in zip((self.tops, self.ramps), variant):
+            if i < len(designs) and slot in designs[i].slots:
+                return designs[i].slots[slot]
+        return base
 
 
 DEFAULT = Style()

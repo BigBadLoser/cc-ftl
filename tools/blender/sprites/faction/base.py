@@ -38,6 +38,13 @@ class Faction(Look):
     def relief(self, sprite):
         return None
 
+    @property
+    def pairs(self):
+        """Its straight runs' designs (.a1 ..): every top design with every ramp design but the base pair, tops
+        first."""
+        st = self.relief(None)
+        return [(t, r) for t in range(len(st.tops)) for r in range(max(1, len(st.ramps))) if t or r]
+
     def paint(self, P):
         if P.sprite.startswith("tile.floor"):
             s = FLOOR_STEP.get(P.name)

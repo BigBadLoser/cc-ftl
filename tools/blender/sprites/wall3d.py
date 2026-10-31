@@ -360,10 +360,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             continue
         w = u1 - u0
         sk = style().skirt
-        rv = style().ramp_var                              # a look's own ramp variant (in place
-        if field and w >= 0.36 and VARIANT[1] and rv:                  # of its panel, whatever its style)
+        rv = fill("ramp")                                  # a look's ramp design (in place of its
+        if field and w >= 0.36 and rv:                                  # panel, whatever its style)
             rv(lambda q, rr, lvl, bb, f=None: plate(k, q, pt, nrm, 0.0, rise + rr, f or fam, lvl, base=rise + bb),
-               max(u0, a), min(u1, ub), run_, VARIANT[1], k=k, pt=lambda u, dd, h: pt(u, dd, rise + h),
+               max(u0, a), min(u1, ub), run_, k=k, pt=lambda u, dd, h: pt(u, dd, rise + h),
                P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane, fam=fam)
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
@@ -390,7 +390,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             from . import wall3d_variants as V
             V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
                          u0 + 0.06, u1 - 0.06, run_, VARIANT[1])
-        elif field and w >= 0.36 and sk == "panel" and not (VARIANT[1] and rv):   # a panel under each field
+        elif field and w >= 0.36 and sk == "panel" and not rv:          # a panel under each field
                                                             # (insets scale down on a short field)
             im = 0.2 * min(1.0, w / 0.76)
             fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_, 0.88 * run_
@@ -545,6 +545,11 @@ class Shell(W.Strip):
 
 
 VARIANT = (0, 0)          # a straight piece's variant while it is built: (top design, ramp design), 0 the base
+
+
+def fill(slot, base=None):
+    """What the straight piece's designs put in slot (its look's Style.fill); base if they leave it alone."""
+    return style().fill(slot, VARIANT, base)
                           # (wall3d_variants)
 SHELL = None              # while a face is dressed: its shell (a look's shell may tell its parts where a wall ends)
 END_TOPS = (None, None)   # while a face is dressed: the top of the wall that meets each of its "in" ends (a face

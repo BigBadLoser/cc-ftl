@@ -6,7 +6,8 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from .base import Faction, _style
-from .parts import LINE, PAINT, PX, PZ, bezier, body, corner_piece, flat, glow, pipe, prism
+from .drone_designs import DRONE_D, DRONE_TOPS, DRONE_RAMPS, drone_middle
+from .parts import PAINT, PX, PZ, bezier, body, corner_piece, glow, pipe, prism
 from .shell import NO, Feature, FloorDrop, FootTone, FreeEnds, LookShell, SlotHoles, _end_section, _ends
 
 
@@ -126,7 +127,7 @@ def drone(hull):
         zb = zs + 0.02
         endf, end1, corner, back = _ends(ax, plane, b, ends)    # (a free end stops square: no channel there; its
         corner = full and corner                                # end face shows the section, no block on it)
-        D, c, e = 2.5 * PX, 2.5 * PX, DRONE_E               # the block's depth, its slopes' run, the channel's reach
+        D, c, e = DRONE_D, DRONE_D, DRONE_E                 # the block's depth, its slopes' run, the channel's reach
         # how each end's parts meet the next face: an outer corner on its diagonal (1), an inner corner on its own
         # diagonal (-1: a part runs short by its depth, so the two faces' blocks and rails meet in a clean mitre)
         mit = [{"out": 1.0, "in": -1.0}.get(x, 0.0) for x in ends]
@@ -181,10 +182,10 @@ def drone(hull):
             hc = (h0 + h1) / 2
             m0, m1 = (mit[0] if at0 else 0.0), (mit[1] if at1 and not corner else 0.0)
             sides = T.RAMPS[F][1 if ax == "y" else 0]               # its ends a shade darker than they'd light
-            tv = T.VARIANT[0]                                       # (a straight piece's variant: DRONE_PAIRS)
             f0 = z0 + c                                                                          # its front's foot
-            if tv in (1, 2):                            # a bay opened in the block, between proud columns (set back)
-                drone_open(k, ax, plane, h0 + 0.12, h1 - 0.12, z0, z1, F, tv)
+            bay = T.fill("bay")
+            if bay:                                     # a design's bay opened in the block, between proud columns
+                bay(k, ax, plane, h0 + 0.12, h1 - 0.12, z0, z1, F)                                  # (set back)
                 Dc = D - PX
                 lift = 0.5 * PX * math.hypot(c, D) / D      # (the columns stand proud of the bay's sloped top and
                 col = [(0.0, z0 - lift), (Dc, z0 - lift + c * Dc / D),     # foot alike: raised strips carried up
@@ -194,10 +195,9 @@ def drone(hull):
                     prism(k, ax, plane, u0, u1, col, F, 3, mitre=mt, cap=sides[1])               # its two columns
                 q0, q1 = h0 + o0, h1 - o1                   # (the front clear of the other face there)
             else:                                       # the block (set 5 T1): a lighter strip either side, flush with
-                Dc, sw = D, DRONE_SW                    # its front, and the
-                o0, o1 = (D if m0 < 0 else 0.0), (D if m1 < 0 else 0.0)     # middle between them darker, its front
-                q0, q1 = h0 + o0, h1 - o1                                   # flush, its slopes a px in (T1-4: the
-                                                                            # red block there)
+                Dc, sw = D, DRONE_SW                    # its front, and the middle between them (its design's)
+                o0, o1 = (D if m0 < 0 else 0.0), (D if m1 < 0 else 0.0)
+                q0, q1 = h0 + o0, h1 - o1
                 zt = z1 + 4 * PZ                        # (the strips' top: 4 art px over the block's old top)
                 fc = T.RAMPS[F][1][4] if ax == "y" else T.RAMPS[F][0][1]    # (their inner ends in their front's
                                                                             # tone: the other face's ramp's name
@@ -206,16 +206,7 @@ def drone(hull):
                                        (q1 - sw, s1 if not at1 else h1, (0.0, m1), (fc, sides[1]))):  # tile's edge)
                     prism(k, ax, plane, u0, u1, [(0.0, z0), (D, z0 + c), (D, zt - c), (0.0, zt)], F, 3, mitre=mt,
                           cap=cp)
-                mid = [(0.0, z0 + PZ), (D, z0 + c + PZ), (D, zt - c - PZ), (0.0, zt - PZ)]   # (its front flush with
-                if tv == 3:                                                                 # theirs, its slopes a
-                    Dr = D - 0.5 * PX                                                       # (set back a px)
-                    red = [(0.0, z0 + 2 * PZ), (Dr, z0 + 2 * PZ + c * Dr / D), (Dr, zt - 2 * PZ - c * Dr / D),
-                           (0.0, zt - 2 * PZ)]
-                    prism(k, ax, plane, q0 + sw, q1 - sw, red, F, 2,                       # px in): the red block,
-                          cols=["lvRS", "lvR2", "lvR", "lvRS"], cap="lvRS")                # its slopes 2 px in
-                    flat(k, ax, plane, q0 + sw, q1 - sw, f0 + 0.14 + 3 * PZ, f0 + 0.166 + 3 * PZ, Dr + PAINT, "lvRS")
-                else:
-                    prism(k, ax, plane, q0 + sw, q1 - sw, mid, F, 2)
+                T.fill("middle", drone_middle)(k, ax, plane, q0 + sw, q1 - sw, z0, zt, f0, F)
             hw = (h1 - h0) / 2 - 0.07
             g0 = max(hc - hw, a + Dc + 0.05) if at0 and ends[0] == "in" else hc - hw     # (clear of the other
             g1 = min(hc + hw, b - Dc - 0.05) if at1 and ends[1] == "in" and not corner else hc + hw   # face's block)
@@ -238,53 +229,12 @@ def drone(hull):
     return face
 
 
-DRONE_PAIRS = [(0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]  # set 5: four tops x two ramps
-
-
-def drone_open(k, ax, plane, u0, u1, z0, z1, F, t):
-    """The drone block's place between its columns (u0..u1 x z0..z1), opened: t 1 a dark rack of red-lit bars
-    (set 5 T1-2), t 2 machinery with a status light (T1-3)."""
-    fam, lvl = ("rose", 0) if t == 1 else (F, 1)                                                     # its back: dark,
-    T.paint(k, ax, plane, u0, u1, z0, z1, PAINT, fam, lvl)                                           # or grey
-    T.slab(k, ax, plane, u0, u1, z1 - 0.04, z1, PX, F, 2, ends=(False, False))                     # its lintel and
-    T.slab(k, ax, plane, u0, u1, z0, z0 + 0.04, PX, F, 3, ends=(False, False))                     # sill
-    if t == 1:
-        nr, nc = 5, 3
-        w = (u1 - u0 - 0.08) / nc
-        for i in range(nr):
-            z = z0 + 0.1 + i * (z1 - z0 - 0.2) / (nr - 1)
-            for j in range(nc):
-                a = u0 + 0.04 + j * w
-                flat(k, ax, plane, a + LINE, a + w - LINE, z - 0.013, z + 0.013, 2 * PAINT, "emR")
-    elif t == 2:
-        uc = (u0 + u1) / 2
-        for a, b, za, zb_, lvl in ((u0 + 0.03, uc - 0.08, z1 - 0.24, z1 - 0.1, 4),       # parts in the bay
-                                   (uc + 0.08, u1 - 0.03, z1 - 0.3, z1 - 0.1, 3),
-                                   (u0 + 0.05, u1 - 0.05, z0 + 0.08, z0 + 0.13, 4)):
-            T.slab(k, ax, plane, a, b, za, zb_, PX, F, lvl)
-        for i, col in enumerate(("green", "flameY", "red")):                                    # the status light
-            z = z1 - 0.12 - i * 0.06
-            flat(k, ax, plane, uc - LINE, uc + LINE, z - 0.025, z + 0.025, PX, col)
-        for z in (z0 + 0.19, z0 + 0.26, z0 + 0.33):                                     # a row of pipes under it
-            pipe(k, [T.P(ax, plane, u, z, PX) for u in (u0 + 0.02, u1 - 0.02)], 0.03, "rose", 2, n=4,
-                 flat=(T.RAMPS["rose"][0][4], T.RAMPS["rose"][0][2]))
-
-
-def drone_ramp(plate, u0, u1, run_, r, **_):
-    """The drone ramp's second design (set 5 B1-2): no outlined panel, two seams straight down it where the base
-    design's panel has its sides (wall3d.skirt's outline, 0.08 in)."""
-    for u in (u0 + 0.08 + LINE / 2, u1 - 0.08 - LINE / 2):
-        plate([(u - LINE / 2, 0.02), (u + LINE / 2, 0.02), (u + LINE / 2, run_ - 0.05), (u - LINE / 2, run_ - 0.05)],
-              PAINT, 0, 0.0)
-
-
 class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        return _style(drone, skirt="outline", slot=True, seam=0, ramp_var=drone_ramp, outline_d=(0.1, 0.84),
-                      slot_hole=(0.55, 0.72, 0.15), foot=DRONE_FOOT, ramp_solid=True, shell=LookShell,
+        return _style(drone, skirt="outline", slot=True, seam=0, outline_d=(0.1, 0.84), tops=DRONE_TOPS,
+                      ramps=DRONE_RAMPS, foot=DRONE_FOOT, ramp_solid=True,
+                      shell=LookShell,
                       features=(FreeEnds(), SlotHoles(), CornerCut(), FloorDrop(), DiagTone(),
                                 FootTone("wall", 3)))
-
-    pairs = DRONE_PAIRS
