@@ -45,6 +45,11 @@ export class Layout {
   roles: RoomRole[];
   /** Rooms crew never enter (a drone's machinery bays): their pieces need no use tiles. */
   readonly sealed = new Set<number>();
+  /**
+   * Weapons may stand away from the hull (stations). The sim only needs clear roof space round a roof-mounted gun; the
+   * hull rule is a ship convention (guns on the hull edge), kept for ships.
+   */
+  gunsAnywhere = false;
 
   constructor(rows: string[], roomOf: Int16Array, roles: RoomRole[], defs: Record<string, ModuleDef>) {
     this.h = rows.length;
@@ -129,7 +134,7 @@ export class Layout {
       if (this.at(ins.x, ins.y) !== '_' || this.occ[ins.y * this.w + ins.x] !== -1) return 'noAccess';
       if (room >= 0 && this.roomOf[ins.y * this.w + ins.x] !== room) return 'otherRoom';
     }
-    if (def.weapon && !tiles.some((t) => this.besideHull(t.x, t.y))) return 'offHull';
+    if (def.weapon && !this.gunsAnywhere && !tiles.some((t) => this.besideHull(t.x, t.y))) return 'offHull';
     const useErr = this.useError(defId, def, x, y, rot, tiles);
     if (useErr) return useErr;
     if (roofMounted(def)) {

@@ -70,6 +70,8 @@ function fitOut(
   slide = false,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
+  // Stations (the only callers that slide doors) may stand guns away from the hull.
+  lay.gunsAnywhere = slide;
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), slid: 0 };
   specs.forEach((spec, room) => { if (spec?.sealed) lay.sealed.add(room); });
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];

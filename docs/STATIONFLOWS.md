@@ -38,9 +38,10 @@ corridors), `adjacent(a, b)` (share a wall or a short corridor run), `entrance(a
 A few spatial facts stay in the vocabulary as needs, not positions: docks sit on the outer hull, the rotunda and the
 command heart take the centre. The flow names the need, the layout finds where it can be met.
 
-Checked and dropped (revision 2 had them wrong): **gun bays do not need a hull face.** Weapons and point defence are
-roof-mounted (`roofMounted` in `layout.ts`); the only rule is clear roof space round them, so a gun bay can stand anywhere,
-inner rings included. **Airlocks may face east.** The sim and the art support all four rotations (the airlock sheet has
+Checked and dropped (revision 2 had them wrong): **gun bays do not need a hull face.** The sim places weapons anywhere
+with clear roof space round them (only modules with a `hullEdge`, engines and airlocks, must sit on the hull:
+`modules/spawn.ts`). The generator's fit-out had its own rule, guns beside the hull (`offHull` in `layout.ts`), a ship
+convention; stations now skip it (`Layout.gunsAnywhere`), ships keep it. **Airlocks may face east.** The sim and the art support all four rotations (the airlock sheet has
 r0-r3, docking in `vehicles/geometry.ts` works on any hull side); "never east" in `stationDocks.ts` is a convention
 carried over from ships, where the east end is the stern with the engines. Stations have no engines, so docks on any face
 are allowed unless the user wants the camera-facing side kept clear of docked shuttles.
