@@ -669,15 +669,24 @@ def hull_cap_end(side, corners=0):
     ax = "y" if side == "s" else "x"
     k = Relief(f"wall3d_hullcap_end_{side}_{corners}")
     k.side = ax
+    def quad(u0, u1, z0, z1, lvl, d=0.0, col=None):
+        k.poly([P(ax, 0.5, u - 0.5, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "wall", lvl, OUT(ax),
+               fixed=col)
     us = sorted({u for a, b, _ in hs + ws for u in (a, b)})
+    starts = {a for a, _, _ in ws}
     for u0, u1 in zip(us, us[1:]):
         m = (u0 + u1) / 2
         h = max([zt for a, b, zt in hs if a <= m < b], default=0.0)
         w = max([zt for a, b, zt in ws if a <= m < b], default=0.0)
-        for z0, z1, col in ((w, min(h, W.HF), None), (max(w, W.HF), h, CUT)):
-            if z1 > z0 + 1e-6:
-                k.poly([P(ax, 0.5, u - 0.5, z, 0.0) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "wall", 2,
-                       OUT(ax), fixed=col)
+        z1 = min(h, W.HF)
+        if z1 > w + 1e-6:                               # the hull's section beside the partition's: over the outline
+            ue = u1 + LINE if any(abs(u1 - a) < 1e-9 for a in starts) else u1   # down the partition's back edge,
+            quad(u0, ue, w, z1, 2)                                              # its own down its back edge and its
+            if u0 < 1e-9:                                                       # lit lip along the top, on into
+                quad(0.0, LINE, w, z1, 1, PAINT)                                # the partition's
+            quad(u0, ue, z1 - 0.026, z1, 4, PAINT)
+        if h > max(w, W.HF) + 1e-6:
+            quad(u0, u1, max(w, W.HF), h, 2, col=CUT)                           # (over their height: a black cut)
     return k.build()
 
 
