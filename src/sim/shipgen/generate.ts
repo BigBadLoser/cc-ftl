@@ -21,6 +21,7 @@ import { extractContainers } from './containerCells';
 import { openArchways } from './archways';
 import { swapRoles } from './roleSwap';
 import { openBareDocks } from './openDocks';
+import { withSlide } from './rooms/doorSlide';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
@@ -58,15 +59,18 @@ interface Fitted {
   lay: Layout;
   stock: Map<number, { item: string; count: number }[]>;
   vehicles: Set<number>;
+  /** Doors slid along their walls for a room's design (stations). */
+  slid: number;
 }
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
   recipes = RECIPES,
+  slide = false,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
-  const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
+  const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), slid: 0 };
   specs.forEach((spec, room) => { if (spec?.sealed) lay.sealed.add(room); });
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
@@ -116,10 +120,16 @@ function fitOut(
       d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style: f.berths ?? 'apart', lounge: !!plan.lounge });
       if (d.planned) d.plannedDefs = new Set(['module.bed', 'module.lifeSupport']);
     } else if (plan.kind === 'design') {
-      const got = planDesign(lay, rng, room, new Map([...new Set(spec.mods)].map((id) => [id, n(id)])), plan.designs);
+      const want = new Map([...new Set(spec.mods)].map((id) => [id, n(id)]));
+      let got = planDesign(lay, rng, room, want, plan.designs);
+      if (!got) for (const [i, k] of kept) lay.keep[i] = k;
+      // Stations: a door whose approach blocks every design may slide along its wall (rooms/doorSlide.ts).
+      if (!got && slide) {
+        got = withSlide(lay, room, () => { keepDoorApproach(lay, room); return planDesign(lay, rng, room, want, plan.designs); });
+        if (got) out.slid++;
+      }
       d.planned = !!got;
       if (got) d.plannedDefs = got;
-      else for (const [i, k] of kept) lay.keep[i] = k;
     } else {
       // A farm's planned beds are its row piece (at least that many); a hold's planned crates go in first.
       const farm = plan.piece === 'module.hydroponics';
@@ -337,14 +347,14 @@ export function finishLayout(
   const sw = opts.immobile ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
   // Off the navy, bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts). Metrics read the rooms as planned.
   const cab = f.berths === 'rows' ? { rows, roomOf, roles: sw.roles, specs: sw.specs } : splitCabins(rows, roomOf, width, sw.roles, sw.specs, rng);
-  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
+  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, !!opts.immobile);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
   const dockTile = new Set(opened.tiles);
   // Stations: doors between corridors and open rooms (mess, courts) become archways (archways.ts).
   const arches = d.error || !opts.immobile ? 0 : openArchways(d.lay);
-  const fitted = opened.merged > 0 || arches > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
+  const fitted = opened.merged > 0 || arches > 0 || d.slid > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
