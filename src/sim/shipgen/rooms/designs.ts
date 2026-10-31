@@ -168,8 +168,31 @@ const shieldCore: Design = (f, spec, lay) => {
   ];
 };
 
+/**
+ * Core vault: the AI core centred on the back wall, its point-defence mounts in a row either side of it (split evenly, a
+ * tile apart), batteries in the front corners and the console centred on the front wall facing the core.
+ */
+const coreVault: Design = (f, spec, lay) => {
+  const core = [...spec.keys()].find((k) => lay.defs[k]?.aiCore);
+  if (!core) return null;
+  const pds = [...spec].filter(([k]) => lay.defs[k]?.pointDefense).flatMap(([k, c]) => Array<string>(c).fill(k));
+  const row = centreRow(lay, f, core, 1, 0, 0);
+  const [cu] = frameSize(fpOf(lay, core), 0);
+  const left = pds.slice(0, Math.ceil(pds.length / 2)), right = pds.slice(left.length);
+  const puts: Put[] = [...row.puts];
+  let lu = row.u0, ru = row.u0 + cu + 1;
+  for (const d of left) { const [du] = frameSize(fpOf(lay, d), 0); lu -= du + 1; puts.push({ def: d, u: lu, v: 0, t: 0 }); }
+  for (const d of right) { const [du] = frameSize(fpOf(lay, d), 0); puts.push({ def: d, u: ru, v: 0, t: 0 }); ru += du + 1; }
+  if (lu < 0 || ru - 1 > f.L || f.D < 3) return null;
+  return [
+    { puts },
+    { puts: f.D >= 4 ? pair(lay, f, { def: 'module.battery', u: 0, v: f.D - 1, t: 3 }) : [], opt: true },
+    { puts: f.D >= 4 ? centred(lay, f, 'module.console', f.D - 1, 2) : [], opt: true },
+  ];
+};
+
 /** Designs by name, for recipes to list. */
-export const DESIGNS = { plantRow, twinFlank, plinth, gunGallery, shieldCore } as const satisfies Record<string, Design>;
+export const DESIGNS = { plantRow, twinFlank, plinth, gunGallery, shieldCore, coreVault } as const satisfies Record<string, Design>;
 export type DesignName = keyof typeof DESIGNS;
 
 /**
@@ -181,6 +204,10 @@ export function designSize(name: DesignName, mods: readonly string[], defs: Reco
   if (name === 'gunGallery') {
     const s = Math.max(...mods.map((m) => fp(m)[0])), n = mods.length;
     return [n * s + (n - 1) + 6, s + 3];
+  }
+  if (name === 'coreVault') {
+    const w = mods.reduce((t, m) => t + fp(m)[0] + 1, 0) - 1;
+    return [w + 4, 5];
   }
   if (name === 'shieldCore') return [Math.max(3, fp(mods[0] ?? '')[0]) + 4, Math.max(3, fp(mods[0] ?? '')[1]) + 3];
   return null;

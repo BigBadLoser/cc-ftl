@@ -62,7 +62,7 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
   });
   const consoles = ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 ? ['module.shieldConsole'] : [])];
   const command: RoomSpec = { role: 'bridge', mods: consoles, w: size === 'hub' ? 9 : 7, h: size === 'outpost' ? 4 : 5 };
-  const core: RoomSpec = { role: 'core', mods: ['module.aiCore', ...Array<string>(t.pointDefense).fill('module.pointDefense')], w: 3 + 3 * t.pointDefense, h: 3 };
+  const core: RoomSpec = sized({ role: 'core', mods: ['module.aiCore', ...Array<string>(t.pointDefense).fill('module.pointDefense')], w: 3 + 3 * t.pointDefense, h: 3 }, 'coreVault');
   // Long PD rows split into separate core-side rooms so no room outgrows a ring side.
   if (core.w > 12) {
     core.mods = ['module.aiCore', ...Array<string>(3).fill('module.pointDefense')];

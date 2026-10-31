@@ -5,7 +5,7 @@ import { mess } from './mess';
 import { quarters } from './quarters';
 import { storage } from './storage';
 import { armoury, drill, farm, garden, hangarDeck, industry, plaza } from './station';
-import { dock, engines, hangar, shields, weapons } from './systems';
+import { core, dock, engines, hangar, shields, weapons } from './systems';
 import type { RoomRecipe } from './types';
 
 /** Room recipes by role. Halls and AI cores have none. Mount rooms keep the generic placer for their mounts. */
@@ -40,6 +40,7 @@ export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
   // Station hangars are hangar decks: shuttle bays out on the floor, not against a wall.
   hangar: hangarDeck,
   farm,
+  core,
 };
 
 export { pruneDoors } from './doors';

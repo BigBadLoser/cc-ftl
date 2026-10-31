@@ -47,6 +47,14 @@ export const shields = {
   ],
 } as const satisfies RoomRecipe;
 
+/** The AI core's vault (stations' core rooms; no recipe on ships): laid out whole from a design, nothing else in it otherwise. */
+export const core = {
+  fill: 0.4,
+  arrangements: [
+    { name: 'vault', weight: 1, plan: { kind: 'design', designs: ['coreVault'] }, steps: [] },
+  ],
+} as const satisfies RoomRecipe;
+
 export const engines = {
   fill: 0.6,
   arrangements: [
