@@ -337,7 +337,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const showBar = !dead && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;
         if (showBar) {
-          const frac = downed ? Math.max(0, downed.bleed / BLEED_OUT_SECONDS) : hp ? hp.hp / hp.max : 1;
+          // Tough crew last longer downed: their bar stays full until the usual bleed-out time is left.
+          const frac = downed ? Math.max(0, Math.min(1, downed.bleed / BLEED_OUT_SECONDS)) : hp ? hp.hp / hp.max : 1;
           const w = 22 * S;
           const by = s.lying ? -34 * S : -s.height - 10 * S;
           s.barBg.position.set(-w / 2 - S, by - S);

@@ -5,6 +5,7 @@ import { isSuited } from '../../eva/suit';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
+import { traitMult } from '../../crew/traits';
 import { StationC, StationCrewC } from '../../stations/components';
 import { TaskC } from '../components';
 import type { Task } from '../types';
@@ -41,7 +42,7 @@ function wander(sim: Sim, id: number, pos: Position, crew: Crew, task: Task | un
   if (!path || path.steps.length > 0 || !isSettled(pos)) return; // still walking: the walk's task goes on
   if (task) clearJoblessTask(sim, id);
   if (crew.activity !== 'idle') crew.activity = 'idle';
-  if (!sim.rng.chance(WANDER_CHANCE)) return;
+  if (!sim.rng.chance(WANDER_CHANCE * traitMult(sim, id, 'wanderMult'))) return; // Lazy wanders more
   const grid = shipGrid(sim, shipIdOf(sim, pos));
   if (!grid?.has('room')) return;
   const room = grid.get('room', pos.x, pos.y);

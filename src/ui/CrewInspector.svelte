@@ -3,7 +3,7 @@
   import type { UiApi, UiCrew, UiShuttles } from './api';
   import Icon, { type IconName } from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
-  import { Chips } from './kit';
+  import { Chips, Tooltip } from './kit';
 
   let { api, onPriorities, onBack }: { api: UiApi; onPriorities: () => void; onBack: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
@@ -14,6 +14,7 @@
   const enemy = $derived(c?.side === 'enemy');
 
   const moodWord = (v: number) => (v < 20 ? 'miserable' : v < 35 ? 'unhappy' : v < 65 ? 'content' : 'happy');
+  const skillName = (s: string) => s[0]!.toUpperCase() + s.slice(1);
   const airText = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
   onMount(() => {
@@ -46,6 +47,22 @@
       {/if}
       {#if c.fight && c.fight.cooldown > 0}<div class="bar cd"><i style:width="{Math.round((c.fight.cooldown / Math.max(0.1, c.fight.cooldownMax)) * 100)}%"></i></div>{/if}
     </div>
+    {#if !enemy && c.traits.length}
+      <div class="traits" data-testid="crew-traits">
+        {#each c.traits as t (t.id)}
+          <Tooltip text="{t.effect} {t.flavour}" label="{t.name}: {t.effect}"><span class="trait {t.kind}" data-testid="trait-{t.id}">{t.name}</span></Tooltip>
+        {/each}
+      </div>
+    {/if}
+    {#if !enemy && c.skills.length}
+      <ul class="skills" data-testid="crew-skills">
+        {#each c.skills as s (s.skill)}
+          <li class:up={s.value > s.base} class:down={s.value < s.base} title={s.value === s.base ? `${skillName(s.skill)} ${s.value}: the role's level` : `${skillName(s.skill)} ${s.value} (role ${s.base})`} data-testid="skill-{s.skill}">
+            <span>{skillName(s.skill)}</span><b>{s.value}</b>{#if s.value !== s.base}<em>{s.value > s.base ? '+' : '\u2212'}{Math.abs(s.value - s.base)}</em>{/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
     <dl>
       <dt>Where</dt><dd data-testid="crew-where">{c.where}</dd>
       <dt>Activity</dt><dd data-testid="crew-activity" class:plain={c.activity === 'knocked down'}>{c.drafted ? 'drafted' : c.activity}{c.job ? ` · ${c.job}` : ''}</dd>
@@ -109,6 +126,15 @@
 
 <style>
   .bad { color: #ff9a9a; }
+  .traits { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
+  .trait { display: inline-block; font: 600 11px/1 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; padding: 4px 6px; border: 1px solid currentColor; background: var(--panel); color: var(--dim); cursor: help; }
+  .trait.behaviour { color: var(--cyan); } .trait.tradeoff { color: var(--green); } .trait.phobia, .trait.habit { color: var(--amber); }
+  .skills { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1px 12px; font-size: 12px; }
+  .skills li { display: flex; gap: 6px; align-items: baseline; color: var(--dim); }
+  .skills li span { flex: 1; }
+  .skills li b { color: var(--text); font-weight: 600; }
+  .skills li em { font-style: normal; font-size: 11px; min-width: 18px; text-align: right; }
+  .skills li.up em { color: #9fe0a8; } .skills li.down em { color: #ff9a9a; }
   .meters { display: grid; gap: 4px; margin-bottom: 8px; }
   .m { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 8px; color: var(--dim); }
   .mv { min-width: 74px; text-align: right; color: var(--text); font-size: 12px; text-transform: capitalize; }

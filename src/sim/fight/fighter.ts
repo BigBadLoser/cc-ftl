@@ -10,6 +10,8 @@ import type { Sim } from '../sim';
 import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_REPLAN_TICKS } from '../tuning';
 import { AllegianceC, EquipOrderC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
+import { traitFlag } from '../crew/traits';
+import { COWARD_FLEE_BELOW } from '../tuning';
 import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
@@ -135,8 +137,8 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const role = sim.content.roles[crew.role];
   const weapon = wielded(sim, id);
   const faction = sim.world.get(id, AllegianceC)?.faction;
-  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do.
-  const canFight = isArmed(sim, id) || !!role?.fighter || (faction !== 'player' && !sim.world.has(id, StationCrewC));
+  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do. A Brave crew member fights bare-handed.
+  const canFight = isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && !sim.world.has(id, StationCrewC));
   // Armed undrafted crew of the player's own ship hunt intruders they have not seen yet (onboarding: no draft needed).
   const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id);
   const hunter = invader || !!role?.fighter || defender;
@@ -149,6 +151,11 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
       seen = o;
       break;
     }
+  }
+
+  // A Coward on their own runs from the foes they see once hurt, armed or not (a draft keeps them in line).
+  if (!controlled && seen && traitFlag(sim, id, 'coward') && hurtBelow(sim, id, COWARD_FLEE_BELOW)) {
+    return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
   }
 
   let target: (typeof foes)[number] | undefined;
@@ -261,6 +268,12 @@ function attack(
     haltCrew(sim, targetId);
     sim.events.emit({ type: 'crew.knockedDown', crew: targetId, by: id, until });
   }
+}
+
+/** True when the crew member's hp is below `frac` of their max. */
+function hurtBelow(sim: Sim, id: number, frac: number): boolean {
+  const hp = sim.world.get(id, HealthC);
+  return !!hp && hp.hp < hp.max * frac;
 }
 
 /** Unarmed non-fighters run from hostiles they can see: replan every FLEE_REPLAN_TICKS or when the path runs out. */

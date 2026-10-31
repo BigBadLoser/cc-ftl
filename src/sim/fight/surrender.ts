@@ -1,7 +1,8 @@
 import { CrewC, DraftedC, HealthC, PositionC, type Crew } from '../crew/components';
 import { abortTask } from '../ai/task';
 import type { Sim } from '../sim';
-import { SURRENDER_HP_FRAC, SURRENDER_RADIUS } from '../tuning';
+import { COWARD_SURRENDER_BELOW, SURRENDER_HP_FRAC, SURRENDER_RADIUS } from '../tuning';
+import { traitFlag } from '../crew/traits';
 import { AllegianceC, FighterC, SurrenderedC } from './components';
 import { dropWeapon } from './equip';
 
@@ -10,16 +11,17 @@ const near = (a: { x: number; y: number }, b: { x: number; y: number }): boolean
 
 /**
  * Should this crew member give up? Yes when hurt below their morale threshold (role `surrenderBelow`, default
- * SURRENDER_HP_FRAC; player crew default to never; fearless species never) while more hostiles than friends (themselves included) stand
+ * SURRENDER_HP_FRAC; player crew default to never, a Coward below COWARD_SURRENDER_BELOW; fearless species and Brave crew never) while more hostiles than friends (themselves included) stand
  * within SURRENDER_RADIUS. Pure thresholds, no dice. `friends` and `foes` are the combat-ready units on the grid.
  */
 export function wantsToSurrender(sim: Sim, id: number, friends: readonly number[], foes: readonly number[]): boolean {
   const crew = sim.world.get(id, CrewC);
   const hp = sim.world.get(id, HealthC);
   const pos = sim.world.get(id, PositionC);
-  if (!crew || !hp || !pos || sim.content.species[crew.species]?.fearless) return false;
+  if (!crew || !hp || !pos || sim.content.species[crew.species]?.fearless || traitFlag(sim, id, 'brave')) return false;
   const faction = sim.world.get(id, AllegianceC)?.faction;
-  const limit = sim.content.roles[crew.role]?.surrenderBelow ?? (faction === 'player' ? 0 : SURRENDER_HP_FRAC);
+  const role = sim.content.roles[crew.role]?.surrenderBelow ?? (faction === 'player' ? 0 : SURRENDER_HP_FRAC);
+  const limit = traitFlag(sim, id, 'coward') ? Math.max(role, COWARD_SURRENDER_BELOW) : role;
   if (limit <= 0 || hp.hp / hp.max >= limit) return false;
   const count = (ids: readonly number[]): number => ids.filter((o) => {
     const p = sim.world.get(o, PositionC);

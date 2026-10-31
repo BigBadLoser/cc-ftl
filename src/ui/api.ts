@@ -152,6 +152,26 @@ export interface UiCrew {
   suit: { air: number; max: number; low: boolean; outside: boolean } | null;
   /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
   suitAt: { id: number; free: number } | null;
+  /** Traits (docs/TRAITS.md): name, kind, flavour and the exact effect (for the hover). */
+  traits: UiTrait[];
+  /** Skills worth showing (above 0 now, or in the role): current level against the role's baseline. */
+  skills: UiSkill[];
+}
+
+export interface UiTrait {
+  id: string;
+  name: string;
+  kind: 'behaviour' | 'phobia' | 'habit' | 'tradeoff' | 'texture';
+  flavour: string;
+  effect: string;
+}
+
+export interface UiSkill {
+  skill: string;
+  /** Current level (rolled start, XP and traits). */
+  value: number;
+  /** The role's level (0 for an off-role skill). */
+  base: number;
 }
 
 export interface UiFight {

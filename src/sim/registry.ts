@@ -41,6 +41,7 @@ import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
 import type { BlackMarketDef } from './blackmarket/defs';
+import type { TraitDef } from './crew/traitDef';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -53,6 +54,8 @@ export interface ContentRegistry {
   modules: Record<string, ModuleDef>;
   /** Pool of first names for generated crew. */
   crewNames: string[];
+  /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
+  traits?: Record<string, TraitDef>;
   /** Item content id (e.g. 'item.metal') to definition. */
   items: Record<string, ItemDef>;
   /** Recipe content id to definition. */

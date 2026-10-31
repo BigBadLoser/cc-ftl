@@ -52,6 +52,8 @@ export const FIRE_MODULE_DAMAGE = 8;
 // --- Modules / power ---
 export const DEFAULT_POWER_PRIORITY = 3;
 export const LIGHT_DARK_BELOW = 40;
+/** A Dark-adapted crew member (trait) feels the glare on tiles at least this bright (a lamp's own spot is 230). */
+export const LIGHT_GLARE_ABOVE = 180;
 /** Light falloff: level is scaled by (1 - FALLOFF * dist / radius). */
 export const LIGHT_FALLOFF = 0.55;
 /** A wreck's lights run on emergency power: their level is scaled by this (a wreck with no power has none). */
@@ -101,6 +103,12 @@ export const HUNGER_SLEEP_MULT = 0.5;
 /** Mood is 0..100 from a neutral base plus named factors. */
 export const MOOD_BASE = 50;
 /** Ticks between mood recomputes per crew member (staggered by id). */
+/** A Loner (trait) feels crowded with this many crew within MOOD_COMPANY_RADIUS. */
+export const MOOD_CROWD = 3;
+/** A Thrill-seeker (trait) gets bored after this many seconds without combat or EVA. */
+export const TRAIT_BORED_SEC = 900;
+/** A Void-born crew member (trait) feels cooped up after this many seconds without EVA. */
+export const TRAIT_COOPED_SEC = 1800;
 export const MOOD_INTERVAL = 10;
 /** Below this mood work slows (x MOOD_LOW_WORK_MULT); below MOOD_VERY_LOW it slows more and an alert fires. */
 export const MOOD_LOW = 35;
@@ -247,6 +255,10 @@ export const FLEE_HOLD_DIST = 5;
 /** Ticks between path replans while closing in on a target. */
 export const CHASE_REPLAN_TICKS = 6;
 /** Surrender: hp fraction under which a non-player crew member gives up when outnumbered within this many tiles. */
+/** Hp fraction under which a Coward (trait) runs from the foes they see, armed or not. */
+export const COWARD_FLEE_BELOW = 0.5;
+/** Hp fraction under which a Coward surrenders when outnumbered (player crew otherwise never do). */
+export const COWARD_SURRENDER_BELOW = 0.3;
 export const SURRENDER_HP_FRAC = 0.3;
 export const SURRENDER_RADIUS = 12;
 
