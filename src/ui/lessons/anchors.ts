@@ -9,6 +9,8 @@ export const LESSON_ANCHORS = [
   'combat.status',
   'combat.flee',
   'combat.enemy',
+  'station.hail',
+  'station.tabs',
 ] as const;
 
 export type LessonAnchor = (typeof LESSON_ANCHORS)[number];
