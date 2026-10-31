@@ -207,7 +207,13 @@ const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sid
  * The rooms of a round civil station with its bridge among them: the bridge is the station's administration, beside
  * the main dock (stationDistricts.ts), and a rotunda takes the centre.
  */
-const office = (c: Ctx): RoomSpec[] => tagged(warehoused([{ ...c.plan.command, pinned: true }, ...fullRooms(c)]));
+const office = (c: Ctx): RoomSpec[] => tagged(warehoused(customs([{ ...c.plan.command, pinned: true }, ...fullRooms(c)])));
+
+/** The first armoury is the customs post: pinned (role swaps leave it), so it stays beside the office at the main dock. */
+function customs(rooms: RoomSpec[]): RoomSpec[] {
+  const i = rooms.findIndex((r) => r.role === 'armoury');
+  return i < 0 ? rooms : rooms.map((r, j) => (j === i ? { ...r, pinned: true } : r));
+}
 
 /**
  * Concentric: civil stations put a rotunda at the centre and the bridge by the docks; military ones keep the bridge at

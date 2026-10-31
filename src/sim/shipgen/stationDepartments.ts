@@ -77,7 +77,8 @@ export function planRing(rng: Rng, rooms: readonly RoomSpec[], westDocks: boolea
   for (const secure of secures) for (const freight of freights) for (const quiet of pairs) {
     const near = (q: number, sides: readonly ('n' | 's' | 'e' | 'w')[]): number => sides.filter((s) => SIDE[s].includes(q)).length;
     let v = (secure === 'e' ? 1 : 0) + (freight.includes('n') ? 0.5 : 0);
-    for (const q of quiet) v -= near(q, [secure]) + 0.5 * near(q, freight);
+    // Habitation away from the secure core, the warehouses and the main (north) dock, where the harbour stands.
+    for (const q of quiet) v -= near(q, [secure]) + 0.5 * near(q, freight) + 0.5 * near(q, ['n']);
     v += rng.next() * 0.8;
     if (v > top) { top = v; best = { secure, freight, quiet }; }
   }
@@ -101,14 +102,21 @@ export function quadrantRooms(rooms: readonly RoomSpec[], plan: RingPlan, length
   const quadOf = starts.map(quadrantOf);
   const rank = (r: RoomSpec): number[] => {
     const quiet = deptOf(r) === 'habitation';
-    // Harbour rooms want the main (north) bank's quadrants, then any.
+    // Harbour rooms take the main (north) bank's quadrants whatever else is there.
     const score = (i: number): number => (quiet === plan.quiet.includes(quadOf[i] as number) ? 2 : 0)
-      + (deptOf(r) === 'harbour' && SIDE.n.includes(quadOf[i] as number) ? 1 : 0);
+      + (deptOf(r) === 'harbour' && SIDE.n.includes(quadOf[i] as number) ? 3 : 0);
     return lengths.map((_, i) => i).sort((a, b) => score(b) - score(a) || a - b);
   };
+  let office = -1;
   for (const r of byPull(rooms)) {
     const order = rank(r);
-    const i = order.find((k) => (load[k] as number) + area(r) <= (cap[k] as number)) ?? (order[0] as number);
+    // Pinned harbour rooms (the office, the customs post) stand together, in the office's quadrant.
+    const pinnedHarbour = r.pinned && deptOf(r) === 'harbour';
+    // The office opens the north-east quadrant: the run of band rooms starts there, at the main bank.
+    const ne = quadOf.indexOf(0);
+    const i = pinnedHarbour ? (office >= 0 ? office : ne >= 0 ? ne : (order[0] as number))
+      : order.find((k) => (load[k] as number) + area(r) <= (cap[k] as number)) ?? (order[0] as number);
+    if (pinnedHarbour && office < 0) office = i;
     (groups[i] as RoomSpec[]).push(r);
     load[i] = (load[i] as number) + area(r);
   }

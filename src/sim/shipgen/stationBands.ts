@@ -288,10 +288,13 @@ function spared(rooms: RoomSpec[], arc: [number, number], R: number, depth: numb
   const lounge: RoomSpec = { role: 'support', mods: [], w: Math.max(3, Math.round(LOUNGE / depth)), h: depth };
   const out: RoomSpec[] = [];
   // Every room keeps its place; the lounges go between them, the first after the first room (a dock end stays the room's).
+  // Never between two pinned rooms (the office and the customs post stand together); their share goes further on.
+  let owed = 0;
   rooms.forEach((r, i) => {
     out.push(r);
-    const due = Math.round(((i + 1) * n) / rooms.length) - Math.round((i * n) / rooms.length);
-    for (let j = 0; j < due; j++) out.push({ ...lounge });
+    owed += Math.round(((i + 1) * n) / rooms.length) - Math.round((i * n) / rooms.length);
+    if (r.pinned && rooms[i + 1]?.pinned) return;
+    for (; owed > 0; owed--) out.push({ ...lounge });
   });
   return out;
 }

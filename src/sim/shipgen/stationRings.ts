@@ -334,6 +334,17 @@ function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
   return [...out.entries()];
 }
 
+/** A warehouse in two, each with half its crates and floor (the second take on a crowded ring). */
+function halves(r: RoomSpec): RoomSpec[] {
+  if (!r.warehouse || r.mods.length < 8) return [r];
+  const half = (k: number): RoomSpec => {
+    const mods = r.mods.filter((_, j) => j % 2 === k);
+    const h = Math.max(5, Math.round(r.h * 0.8));
+    return { ...r, mods, h, w: Math.max(h, Math.ceil((r.w * r.h) / 2 / h)), ...(r.items ? { items: r.items.filter((_, j) => j % 2 === k) } : {}) };
+  };
+  return [half(0), half(1)];
+}
+
 /** The four quarter arcs between cardinal spokes. */
 const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.3, (q + 1) * (TAU / 4) - 0.3]);
 
@@ -356,7 +367,10 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   // The groups run on round the ring as one list, so every quadrant fills to its length (no quadrant left with two
   // rooms stretched over it) while each department keeps its place in the order.
   const groups = quadrantRooms(band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
-  if (!bandArcs(b, R, ring, groups.flat(), depth, arcs)) return false;
+  // The run starts at the main (north) bank, so the office and the customs post are always the first rooms after it.
+  const n0 = Math.max(0, arcs.findIndex(([a]) => quadrantOf(a + 1e-6) === 0));
+  const turn = <T>(xs: T[]): T[] => [...xs.slice(n0), ...xs.slice(0, n0)];
+  if (!bandArcs(b, R, ring, turn(groups).flat(), depth, turn(arcs))) return false;
   const rim = without([[0, TAU]], banks.keep);
   // Rooms that need no hull face go inboard of the corridor, doored straight onto it (never through a band room).
   // The secure core either side of its spoke (east or west, where no dock faces).
@@ -367,10 +381,14 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   // Warehouses beside the dock spokes the plan picked, either side, doors towards the spoke.
   const houses = inner.filter((r) => r.warehouse);
   const slots: [number, -1 | 1][] = plan.freight.flatMap((f): [number, -1 | 1][] => (f === 'n' ? [[-Math.PI / 2, 1], [-Math.PI / 2, -1]] : [[Math.PI / 2, -1], [Math.PI / 2, 1]]));
-  const housed = slots.length === 0 ? houses : slots.flatMap(([at, side], i) => {
-    const mine = houses.filter((_, j) => j % slots.length === i).map((r): RoomSpec => ({ ...r, doorLean: side > 0 ? -1 : 1 }));
-    return mine.length > 0 ? fitAlong(b, R, ring, mine, besideSpoke(mine, R, at, side), -1) : [];
-  });
+  const beside = (rs: RoomSpec[], [at, side]: [number, -1 | 1]): RoomSpec[] =>
+    rs.length > 0 ? fitAlong(b, R, ring, rs.map((r): RoomSpec => ({ ...r, doorLean: side > 0 ? -1 : 1 })), besideSpoke(rs, R, at, side), -1) : [];
+  const first = slots.length === 0 ? houses : slots.flatMap((slot, i) => beside(houses.filter((_, j) => j % slots.length === i), slot));
+  // A warehouse that missed its slot tries the other dock-spoke sides, then splits in two smaller ones that try again,
+  // before it may fall back anywhere inboard (never straight to the rim).
+  const ALL: [number, -1 | 1][] = [[-Math.PI / 2, 1], [-Math.PI / 2, -1], [Math.PI / 2, -1], [Math.PI / 2, 1]];
+  const retry = (rs: RoomSpec[]): RoomSpec[] => ALL.reduce((left, slot) => beside(left, slot), rs);
+  const housed = retry(retry(first).flatMap(halves));
   // Gun bays as bastions at mirrored places, inboard (roof-mounted: no hull face needed), so the rim keeps the docks.
   const guns = sys.filter((r) => r.role === 'weapons');
   const unguarded = bastions(guns).flatMap(([at, rs]) => fitAlong(b, R, ring, rs, [span(rs, at, R)], -1));
