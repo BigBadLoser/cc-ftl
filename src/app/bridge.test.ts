@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../sim';
+import { homeShip, newGame } from '../sim';
+import { shipGrid } from '../sim/regions';
+import { addRoomHeat } from '../sim/roomTemp';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { createBridge } from './bridge';
@@ -40,5 +42,24 @@ describe('UI commands while paused', () => {
     expect(buildJobs(sim).active).toEqual([]);
     sim.step();
     expect(buildJobs(sim).active.map((j) => j.key)).toEqual([offer.key]);
+  });
+});
+
+describe('tile inspector', () => {
+  it('reads the temperature of the hovered tile from its room', () => {
+    const sim = newGame(3, content);
+    sim.step();
+    const ship = homeShip(sim);
+    const g = shipGrid(sim, ship)!;
+    let tile: { x: number; y: number } | undefined;
+    for (let y = g.y0; y < g.y0 + g.height && !tile; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('room', x, y) > 0) { tile = { x, y }; break; }
+    addRoomHeat(sim, ship, g, g.get('room', tile!.x, tile!.y), 600);
+    const bridge = createBridge(sim);
+    let snap: { fields: { name: string; value: number }[] } | null = null;
+    bridge.inspect.subscribe((v) => (snap = v));
+    bridge.setHovered({ ship, x: tile!.x, y: tile!.y });
+    const temp = (snap as { fields: { name: string; value: number }[] } | null)?.fields.find((f) => f.name === 'temp');
+    expect(temp).toBeDefined();
+    expect(temp!.value).toBeGreaterThan(30);
   });
 });

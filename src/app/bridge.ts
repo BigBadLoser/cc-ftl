@@ -26,6 +26,7 @@ import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute, UiSellGood } fro
 import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
 import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
+import { tempAt } from '../sim/roomTemp';
 import { findJobAt } from '../sim/crew/helpers';
 import { crateInfo } from './jobsSnapshot';
 import { buildResearch } from './researchSnapshot';
@@ -210,6 +211,8 @@ export function createBridge(sim: Sim): Bridge {
     let snap: InspectSnapshot | null = null;
     if (ref && grid?.inBounds(ref.x, ref.y)) {
       const fields = grid.fieldNames().map((name) => ({ name, value: grid.get(name, ref.x, ref.y) }));
+      // Temperature is per room, not a grid field: the readout keeps its name and unit, with the room's value (after co2, where the field used to be).
+      fields.splice(fields.findIndex((f) => f.name === 'co2') + 1, 0, { name: 'temp', value: tempAt(sim, shipId, grid, ref.x, ref.y) });
       const struct = fields.find((f) => f.name === 'struct')?.value ?? 0;
       const sid = stackAt(sim, shipId, ref.x, ref.y);
       const st = sid ? sim.world.get(sid, ItemStackC) : undefined;
