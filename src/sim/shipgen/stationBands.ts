@@ -147,11 +147,13 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   // Segments share the arc by planned floor; pinned rooms (the harbour office, a guard post) keep about their planned
   // floor instead of stretching with the rest when the arc has floor to spare: the others take the slack.
   const planned = (r: RoomSpec): number => r.w * r.h + 4;
-  const floorAll = total * ((lo + hi) / 2) * depth;
+  // Usable floor: the band's area less its far wall and partitions (about two thirds of it).
+  const floorAll = total * ((lo + hi) / 2) * depth * 0.65;
   const fixedFloor = rooms.filter((r) => r.pinned).reduce((t, r) => t + planned(r), 0);
   const flexW = rooms.filter((r) => !r.pinned).reduce((t, r) => t + planned(r), 0);
   const stretch = flexW > 0 && floorAll > fixedFloor + flexW;
-  const weights = rooms.map((r) => (stretch && r.pinned ? (planned(r) * flexW) / (floorAll - fixedFloor) : planned(r)));
+  // Half as much again as planned: the estimate is rough, and a segment under half its plan is rejected.
+  const weights = rooms.map((r) => (stretch && r.pinned ? Math.min(planned(r), (1.5 * planned(r) * flexW) / (floorAll - fixedFloor)) : planned(r)));
   const sum = weights.reduce((t, w) => t + w, 0);
   // Arc position (0..total) where each segment ends.
   const ends: number[] = [];
