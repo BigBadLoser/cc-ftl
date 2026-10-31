@@ -28,6 +28,8 @@ class Style:
     toe: Optional[str] = None             # a family for a band along the ramp's toe
     toe_at: float = 0.72                  # where down the ramp the toe band starts (a fraction of its run)
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
+    ramp_solid: bool = False              # the ramp built as one solid along each face
+                                          # (faction.shell.LookShell.ramp) instead of the shell's height grid
     chamfer: Optional[float] = None       # an outer corner's chamfer along each axis (the shell must match); None: square
     outline_lvl: int = 0                  # the outlined panel's seam level (skirt "outline")
     outline_round: bool = False           # ... its corners softened (each corner pixel left out)

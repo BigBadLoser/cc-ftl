@@ -326,6 +326,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
           "end": lambda p: p[0] - a}[lo_t]
     hi = {"cont": lambda p: b - p[0], "in": lambda p: (b - p[1]) - p[0], "out": lambda p: (b + p[1]) - p[0],
           "end": lambda p: b - p[0]}[hi_t]
+    if getattr(sp, "solid", False):             # (a shell that builds its ramp as solids: this face's)
+        sp.ramp(k, ax, plane, a, b, fam, lo_t, hi_t)
     cr = style().chamfer if hi_t == "out" and getattr(sp, "line", None) else None
     if cr:          # a look whose shell chamfers a partition's outer corner: the plates stop at the chamfer's edge, which
         hi = lambda p: (b - cr + p[1]) - p[0]                          # noqa: E731  runs straight down the corner
@@ -376,8 +378,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             for q in qs:
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam,
                       style().outline_lvl, base=rise)
-            if style().slot and not VARIANT[1] and hole:        # a handle slot cut into it
-                slot_cut(k, ax, plane, hole, zsurf, fam)
+            if style().slot and not VARIANT[1] and hole:        # a handle slot cut into it (the solid ramp
+                if not getattr(sp, "solid", False):                    # builds its own)
+                    slot_cut(k, ax, plane, hole, zsurf, fam)
             elif style().slot and not VARIANT[1]:              # a dark handle slot painted on it
                 uc = (fu0 + fu1) / 2
                 sd0, sd1, sw = style().slot_d
@@ -568,6 +571,8 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
     sp = SHELL = (shell or style().shell or Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     W.emit(k.m, sp)
+    if getattr(sp, "solid_extra", None):
+        sp.solid_extra(k)
     if not getattr(sp, "no_cap", False):
         cap(k, sp)
     for ax, plane, a, b, top in faces(sp):

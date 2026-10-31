@@ -52,6 +52,7 @@ class CornerCut(Feature):
                 lim = T.snap(x1) + T.snap(y1) - DRONE_S + 1e-9     # (where the faces really stand)
                 sp.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
                 sp.diag = sp.skirt_halves = True
+                sp.cut = (T.snap(x1), T.snap(y1), DRONE_S)
 
 
 class DiagTone(Feature):
@@ -277,7 +278,7 @@ class Drone(Faction):
 
     def relief(self, sprite):
         return _style(drone, skirt="outline", slot=True, seam=0, ramp_var=drone_ramp, outline_d=(0.1, 0.84),
-                      slot_hole=(0.55, 0.72, 0.15), foot=DRONE_FOOT, shell=LookShell,
+                      slot_hole=(0.55, 0.72, 0.15), foot=DRONE_FOOT, ramp_solid=True, shell=LookShell,
                       features=(SlotHoles(), CornerCut(), FloorDrop(), DiagTone(), FootTone("wall", 3)))
 
     pairs = DRONE_PAIRS

@@ -53,6 +53,7 @@ class LookShell(T.Shell):
         if self.foot:                                   # (its toe on a cell line, where the upright foot is drawn)
             self.run = math.ceil(self.run * T.W.GN - 1e-6) / T.W.GN
         self.end_sides, self.holes, self.face_holes = [], [], []
+        self.solid, self.cut = T.style().ramp_solid, None
         for f in self.features:
             f.setup(self)
 
@@ -102,11 +103,85 @@ class LookShell(T.Shell):
             return self.foot + (self.zs - self.foot) * (1.0 - d / self.run) if d <= self.run + 1e-9 else 0.0
         return self.zs * max(0.0, 1.0 - d / self.run)
 
+    # -- the ramp built as solids (Style.ramp_solid): one profile along each face, mitred where faces meet --
+    def _zsurf(self, d):
+        return self.foot + (self.zs - self.foot) * (1.0 - d / self.run)
+
+    def _prof(self, d0, d1, top):
+        """The ramp's section from d0 to d1 out (its slope down to the toe, the foot under that), its top cut down to
+        top(d) where given (a hole's floor): ((d, z) points, the name of each edge's part)."""
+        run, ft = self.run, self.foot
+        e = run - 1 / 32                                # (the toe's last cell: the dark joint the plates leave)
+        zt = top or self._zsurf
+        pts = [(d0, 0.0), (d1, 0.0)]
+        parts = ["bottom"]
+        if d1 >= run - 1e-9:
+            if ft:
+                pts.append((run, ft))
+                parts.append("foot")
+            if top is None and d0 < e:
+                pts.append((e, zt(e)))
+                parts.append("toe")
+        else:
+            pts.append((d1, zt(d1)))
+            parts.append("hole_front")
+        pts.append((d0, zt(d0)))
+        parts.append("slope" if top is None else "floor")
+        if d0 > 0:
+            parts.append("hole_back")
+        else:
+            parts.append("back")
+        return pts, parts
+
+    def ramp(self, k, ax, plane, a, b, fam, lo_t, hi_t):
+        """This face's ramp as solids (the shell's grid leaves it out): its section (_prof) along a..b, mitred at
+        its ends as the face's parts are (an outer corner on the diagonal, an inner one short by its depth, square
+        at a tile edge or a free end); a hole cut in it (a slot) splits it, the solid under the hole's floor and the
+        ramp before and after it each their own."""
+        from .parts import prism
+        R = T.RAMPS[fam][1 if ax == "x" else 0]
+        jt = T.style().joint
+        um, e = (a + b) / 2, 1e-3
+        mid = (um, plane + e) if ax == "y" else (plane + e, um)
+        o, al = T.OUT(ax), T.P(ax, 0.0, 1.0, 0.0, 0.0) - T.P(ax, 0.0, 0.0, 0.0, 0.0)
+        flr = (o * (self._zsurf(0) - self._zsurf(1)) + Vector((0, 0, 1))).normalized()
+        col = {"bottom": R[0], "back": R[0], "toe": R[0], "hole_back": R[0],      # (a hole's walls and floor as
+               "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
+               "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
+               "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}
+        mt = {"cont": 0.0, "end": 0.0, "out": 1.0, "in": -1.0}
+        holes = sorted(h[2:] for h in self.holes if h[0] == ax and abs(h[1] - plane) < 1e-6 and a < h[3] and h[2] < b)
+        cuts = [a] + [u for h in holes for u in h[:2]] + [b]
+        for n in range(len(cuts) - 1):
+            u0, u1 = cuts[n], cuts[n + 1]
+            m = (mt[lo_t] if n == 0 else 0.0, mt[hi_t] if n == len(cuts) - 2 else 0.0)
+            caps = (T.tone(fam, 1, -al, ax) if n > 0 else R[0],              # (beside a hole: its sides)
+                    T.tone(fam, 1, al, ax) if n < len(cuts) - 2 else R[0])
+            if n % 2 == 0:
+                pieces = [(0.0, self.run, None)]
+            else:                                       # (in a hole: before it, under its floor, after it)
+                h = holes[n // 2]
+                fl = lambda d: self._zsurf(d) - T.SLOT_DEPTH                        # noqa: E731
+                pieces = [(0.0, h[2], None), (h[2], h[3], fl), (h[3], self.run, None)]
+            for d0, d1, top in pieces:
+                pts, parts = self._prof(d0, d1, top)
+                prism(k, ax, plane, u0, u1, pts, fam, 2, cols=[col[q] for q in parts], cap=caps, mitre=m)
+
+    def solid_extra(self, k):
+        """Under a solid ramp: the top of a cut corner's open half, at the ramp's top (CornerCut sets cut)."""
+        if self.solid and self.cut:
+            X, Y, c = self.cut
+            R = T.RAMPS["wall"][0]
+            k.poly([Vector((X - c, Y, self.zs)), Vector((X, Y - c, self.zs)), Vector((X, Y, self.zs))], "wall",
+                   1, Vector((0, 0, 1)), fixed=R[1])
+
     def cap_clip(self, q):                              # the far hull's armour plates cut on the corner's chamfer
         return self.line[0] + self.line[1] - self.clip - q[0] - q[1]
 
     # -- the hooks --
     def skip_skirt(self, i, j):                         # no ramp past a wall's end, nor over a hole cut in it
+        if self.solid:
+            return True                                 # (the ramp is built as solids: ramp)
         c = {"x": (i + 0.5) / T.W.GN - 0.5, "y": (j + 0.5) / T.W.GN - 0.5}
         if any((c[s[1]] - p) * (1 if s[0] == "+" else -1) > 0 for s, p in self.end_sides):
             return True
