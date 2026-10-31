@@ -321,6 +321,66 @@ and room order, replacing the ordered list wrapped round the ring.
 dual-grid wall pieces from the Blender pipeline would make a round hull read as round, with the sim grid unchanged. This
 is an art and render task, outside the generator.
 
+## Generator techniques (fourth pass, October 2026)
+
+A pass on procedural generation methods only, from games and papers.
+
+### Flow graph first, geometry second
+
+- **Enter the Gungeon** ([Boris the Brave](https://www.boristhebrave.com/2019/07/28/dungeon-generation-in-enter-the-gungeon)):
+  each floor starts from one of a handful of hand-made flows (4 to 8 per stage), graphs with no positions, each built
+  round a notable feature (a big loop, a many-way fork, a route through the shop). Rooms are then injected by rule
+  (type, placement rule, chance, preconditions: secret rooms at dead ends, jails, extra vendors). Hand-made room templates
+  are assigned to nodes, loops are laid out first and trees after, and failures fall back to path-found corridors.
+  Lessons: generate the most important parts first; plan pacing on the abstract graph, not the tile map.
+- **Dormans, mission and space grammars** ([Karavolos, Bouwer, Bidarra 2015](https://graphics.tudelft.nl/Publications-new/2015/KBB15)):
+  a graph grammar writes the mission (tasks, locks and keys), then a shape grammar turns it into space. Cyclic generation
+  ([Boris the Brave on Unexplored](https://www.boristhebrave.com/2021/04/10/dungeon-generation-in-unexplored/)) builds
+  round loops instead of trees.
+- **Ma et al., "Game Level Layout from Design Specification"** (Eurographics 2014,
+  [HAL](https://hal-univ-tlse3.archives-ouvertes.fr/INRIA/hal-00927311)) and its successor **Edgar**
+  ([Nepožitek](https://github.com/OndrejNepozitek/Edgar-DotNet)): a connectivity graph plus room templates (an outline
+  polygon and door positions) become a layout; configuration spaces give where two templates can meet, and the graph is
+  laid out chain by chain. Edgar recommends fewer than 30 rooms.
+
+**For us:** a few hand-made flows per station kind (a market loop, a military keep with one way in, a works spine),
+with set pieces injected by rule; the important parts placed first (heart, concourse, docks, secure core), the rest
+fitted round them. Chain-by-chain layout suits departments (a few rooms each), not whole stations.
+
+### Set pieces after analysis (Brogue machines)
+
+[Brogue wiki](https://brogue.wiki/wiki/Level_generation): the level is dug, then analysed for loops and chokepoints, and
+only then are "machines" placed: set pieces that build themselves (vaults, traps, guarded treasure) where the analysis
+says they fit, with connectivity checked so nothing is cut off.
+
+**For us:** a station analysis pass (chokepoints, loops, depth from the docks), then set pieces placed by it: customs at
+the chokepoint between the docks and the concourse, the guard post at the heart's one way in, a brig at a dead end.
+
+### Rotational symmetry
+
+Symmetric generators build part of a level and join rotated copies (a half rotated 180 degrees, in CTF and puzzle
+generators); radial modes remain rare ([dungeongen](https://github.com/benjcooley/dungeongen) lists them as planned).
+
+**For us:** build one section of a round station (its spoke, rim bastions and band cut) and copy it round the centre,
+then vary only what fills it. Quarter turns are exact on the tile grid.
+
+### Quality diversity
+
+MAP-Elites keeps the best layout per niche of a few measures instead of one best overall
+([constrained MAP-Elites for dungeons](https://arxiv.org/pdf/1906.05175), [FI-MAP-Elites](https://github.com/konsfik/FI-MAP-Elites)).
+
+**For us:** a few candidates per station, keeping the best by score, would lift quality at about 300 ms each; niches
+(layout family, openness, district mix) would keep stations from converging on one look.
+
+### History in passes (Caves of Qud)
+
+[GDC 2018](https://gdcvault.com/play/1024990/Procedurally-Generating-History-in-Caves),
+[Grinblat and Bucklew, FDG 2017](https://pcgworkshop.com/archive/grinblat2017subverting.pdf): ruins are generated in
+several passes from the cultures that occupied them, each pass adding finer detail.
+
+**For us:** a station in passes: its builders' layout, a later owner's changes (rooms given new roles, a wing added in
+another style), then wear.
+
 ## Plan
 
 What came of this plan, and what was tried and dropped, is in [STATIONGEN.md](STATIONGEN.md).
