@@ -15,10 +15,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
 - `npm run check`: lint, typecheck and every test, slow tier included (about 6 minutes on the 4-core dev box). Optional: CI
   runs the same full suite on every ready PR, and that run is the record. Use it locally to chase a failure CI found.
-- CI: the repo is public, so CI minutes are free; CI time is what counts. On ready PRs CI runs lint, typecheck, the build and the full test suite, slow tier included, in 8 parallel shards (about
-  3 minutes; `PR_TESTS: affected` in `ci.yml` switches PRs back to affected fast tests). Drafts, pushes to `main` and
-  markdown-only changes don't run it; the full suite also runs once a day on `main` when it changed. Batch fixes into one
-  push rather than pushing every commit to an open PR.
+- CI: the repo is public, so CI minutes are free; CI time is what counts. On ready PRs CI runs lint, typecheck, the
+  build and the full test suite, slow tier included, in 8 parallel shards (about 3 minutes; `PR_TESTS: affected` in
+  `ci.yml` switches PRs back to affected fast tests). Drafts, pushes to `main` and markdown-only changes don't run it;
+  the full suite also runs once a day on `main` when it changed. Batch fixes into one push rather than pushing every
+  commit to an open PR.
 - `npm run test:weights`: refresh `tools/testWeights.json` (per-file times that order the run and balance the CI shards)
   after adding or reshaping heavy tests.
 - Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
