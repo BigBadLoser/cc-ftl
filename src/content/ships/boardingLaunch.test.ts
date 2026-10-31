@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AboardC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
 import { BoardLaunchC } from '../../sim/boarding/components';
 import { launchOf, orderLaunch } from '../../sim/boarding/launch';
+import { pickPilot } from '../../sim/mining/pilot';
 import { shipIdOf } from '../../sim/regions';
 import { airlockOf, crewOn, nth, of, run, setup, shuttleOf } from './boardingFixture';
 
@@ -91,6 +92,8 @@ describe('boarding.launch', () => {
     // The passenger (not yet walking) is already taken: a second launch naming them is refused.
     expect(orderLaunch(sim, shuttle, [party[1] as number], airlockOf(sim, 2))).not.toBeNull();
     expect(launchOf(sim, party[1] as number)).toBe(shuttle);
+    // Held for the launch: automated pilot selection (mining pods, cargo runs) skips them.
+    expect(pickPilot(sim, sim.world.get(shuttle, VehicleC)!, new Set([party[0] as number]))).not.toBe(party[1]);
   });
 
   it('rejects an empty party and a friendly airlock', () => {

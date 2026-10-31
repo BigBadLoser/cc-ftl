@@ -1,6 +1,7 @@
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC, DraftedC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
+import { abortTask } from '../ai/task';
 import { AllegianceC } from '../fight/components';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
@@ -43,6 +44,14 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   if (ids.some((c) => launchOf(sim, c))) return 'crewBusy'; // already picked for another launch
   const first = sendToEmbark(sim, ids[0] as number, vehicle);
   if (first) return first;
+  // The rest of the party is called off their work and held (drafted, standing by) until their turn to walk: no job, mining pod
+  // or cargo run picks them meanwhile, since every automated selector skips drafted crew.
+  for (const c of ids.slice(1)) {
+    if (sim.world.has(c, DraftedC)) continue;
+    abortTask(sim, c, 'drafted');
+    sim.world.add(c, DraftedC, { target: null });
+    (sim.world.get(c, CrewC) as { activity: string }).activity = 'drafted';
+  }
   sim.world.add(vehicle, BoardLaunchC, { crew: ids, airlock, state: 'pilot', since: sim.tick });
   return null;
 }
