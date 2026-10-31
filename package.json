@@ -23,6 +23,8 @@
     "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs",
     "profile": "node tools/profile/cli.js",
     "profile:sim": "node tools/profile/sim.js",
+    "profile:windows": "node tools/profile/windows.js",
+    "profile:dump": "node tools/profile/dump.js",
     "profile:baseline": "node tools/profile/baseline.js",
     "ai:diff": "node tools/profile/aiDiff.js"
   },
