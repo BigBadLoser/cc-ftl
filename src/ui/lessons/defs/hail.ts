@@ -27,14 +27,14 @@ export const hailLesson = {
     {
       title: 'Find the station',
       say: 'Credits do not earn themselves. Find a station.',
-      keys: ['Click the station, or its edge marker if it is off screen.'],
+      keys: ['Click the station to select it.', 'Off screen? Click its marker on the screen edge instead.', 'Stations are where you trade, take contracts and hire crew.'],
       target: shipTarget(stationOf),
       advance: when((ctx) => ctx.selectedShip !== null && ctx.selectedShip === stationOf(ctx)),
     },
     {
       title: 'Hail it',
       say: 'Always say hello first. It costs nothing.',
-      keys: ['Press **Hail station** in the selection panel.'],
+      keys: ['Press **Hail station** in the selection panel.', 'Hailing opens the station\'s own panel.'],
       target: uiTarget('station.hail'),
       // Deselected the station: back to pointing at it.
       back: when((ctx) => ctx.selectedShip !== stationOf(ctx)),
