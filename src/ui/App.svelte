@@ -222,6 +222,10 @@
     else if (keymap.matches(e, 'game.speed2')) api.setSpeed(2);
     else if (keymap.matches(e, 'game.speed3')) api.setSpeed(3);
     else if (keymap.matches(e, 'debug.panel')) debug = !debug;
+    else if (keymap.matches(e, 'debug.report')) {
+      e.preventDefault();
+      openReport(); // the toolbar's bug button is hidden during a fight; the key always works
+    }
     else if (keymap.matches(e, 'view.starmap')) { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
   }
   /** Esc: close the top panel, else cancel the tool, aim or selection, else open the menu. A pinned window ignores Esc. */
