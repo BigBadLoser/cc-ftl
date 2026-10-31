@@ -10,6 +10,7 @@ from . import wall3d as T
 from .restyle import hashf
 
 PX, PAINT, LINE = T.PX, T.PAINT, T.LINE
+PZ = 1 / 39                         # one art px up
 
 
 def body(hull):
@@ -361,6 +362,8 @@ DRONE_H = 0.006                     # the corner panel sits on the cut (just pro
 
 
 DRONE_FOOT = 4 / 39                 # the drone ramp ends in an upright face this high at the floor (set 5)
+DRONE_HD = 4 / 39                   # the header's foot this far under its old place (dropped 2 art px, then 2 px
+                                    # deeper); the handle above the block and the block's top move down with it
 
 
 class CornerCut(T.Shell):
@@ -519,33 +522,41 @@ def drone(hull):
         if not full:
             return
         H = T.W.wall_top("wall", "up") - zs              # laid out on a partition's height, on every wall (the far
-        z0, z1 = zs + 0.11 * H, zs + 0.68 * H           # hull's extra height goes to its band under the rail), so
+        z0, z1 = zs + 0.11 * H, zs + 0.68 * H - DRONE_HD    # hull's extra height goes to its band under the rail), so
                                                         # blocks, handles and bands line up where walls meet
         T.run(k, ax, plane, a, b, ends, zb + 0.05, z0, PAINT, "rose", 2, 0)                     # the short dark band
         rt = min(top, T.W.wall_top("wall", "up"))       # the rail at a partition's top on every wall; the far
         if top > rt + 0.03:                             # hull's extra height above it a plain plate
             T.run(k, ax, plane, a, b, ends, rt, top - 0.02, PAINT, F, 2, 0)
-        T.run(k, ax, plane, a, b, ends, z1, rt - 0.12, PAINT, "rose", 1, 0)                     # the machinery band
-        rail = [(0.0, rt - 0.12), (2 * PX, rt - 0.12), (2 * PX, rt - 0.02), (0.0, rt - 0.02)]
+        rl, rh = rt - 0.12 - DRONE_HD, rt - 0.02 - 3 * PZ            # the rail's foot and front top; its top slopes
+        T.run(k, ax, plane, a, b, ends, z1, rl, PAINT, "rose", 1, 0)  # up to the wall 2 art px under the cap (the
+        rail = [(0.0, rl), (PX, rl), (PX, rh - PZ), (PX, rh), (0.0, rt - 2 * PZ)]    # machinery band under it)
+        T.run(k, ax, plane, a, b, ends, rt - 2 * PZ - 0.01, rt, PAINT, F, 2, 0)   # the wall over it in its steel
+        cl = rt - 0.15 - DRONE_HD - PZ                  # the centre block's foot
+        RR = T.RAMPS[F][0 if ax == "y" else 1]          # the rail two steps darker than the wall (the shade face's
+        dk = T.RAMPS[F][1][2 if ax == "y" else 1]       # mid tone; that face's own darkest), lit along its front's
+        rcol = [RR[0], dk, RR[4], dk, RR[0]]            # top edge (per edge of its section)
         ra, rb, rm = a, b, list(mit)                    # the top rail; over a lower wall meeting an inner end (a
         for i, tt in enumerate(T.END_TOPS):             # partition at the far hull) it runs on over its top to meet
-            if tt is not None and tt < rt - 0.12 - 1e-6 and not (i == 1 and corner):    # the rail from the other side
+            if tt is not None and tt < rl - 1e-6 and not (i == 1 and corner):           # the rail from the other side
                 rm[i] = 0.0
                 if i == 0:
                     ra -= T.W.TW / 2
                 else:
                     rb += T.W.TW / 2
-        prism(k, ax, plane, ra, rb, rail, F, 3, mitre=tuple(rm))
+        prism(k, ax, plane, ra, rb, rail, F, 1, cols=rcol, mitre=tuple(rm))
         if corner and ax == "y":                                                                 # (on round the cut)
-            corner_piece(k, b + e, plane, e, [(-0.02, rt - 0.12)] + rail[1:3] + [(-0.02, rt - 0.02)], F, 3)
+            corner_piece(k, b + e, plane, e, [(-0.02, rl)] + rail[1:4] + [(-0.02, rail[4][1])], F, 1, cols=rcol)
         for s0, s1 in T.spans(a, b):
             uc = (s0 + s1) / 2
             at0, at1 = abs(s0 - a) < 1e-6 and ends[0] != "cont", abs(s1 - b) < 1e-6 and ends[1] != "cont"
             in0, in1 = at0 and ends[0] == "in", at1 and ends[1] == "in" and not corner
             if s1 - s0 > 0.3:
                 if not (in0 and uc - 0.1 < a + 0.25) and not (in1 and uc + 0.1 > b - 0.25):   # (clear of the
-                    T.slab(k, ax, plane, uc - 0.1, uc + 0.1, rt - 0.15, rt - 0.01, 3 * PX, F, 4)     # other face) its
-                                                                                         # centre block
+                    prism(k, ax, plane, uc - 0.1, uc + 0.1, [(0.0, cl), (2 * PX, cl),               # other face)
+                          (2 * PX, rt - 0.01 - 3 * PZ), (0.0, rt - PZ)], F, 4)       # its centre block, its top
+                                                                                 # sloping up to the wall 1 art px
+                                                                                 # under the cap
 
             h0, h1 = s0 + (0.0 if at0 else 0.03), s1 - (0.0 if at1 else 0.03)
             if h1 - h0 < 0.25:
