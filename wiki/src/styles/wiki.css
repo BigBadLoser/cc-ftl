@@ -34,7 +34,7 @@ h1, h2, h3, h4, .gradient-title, .wiki-reference-title, .wiki-module-info strong
   --wiki-input-border: #4a525a;
   --wiki-card-bg: #11151a;
   --wiki-card-color: #e4e9ee;
-  --wiki-card-border: #3a424a;
+  --wiki-card-border: #4a525a;
   --wiki-subtle: #8b939a;
   --wiki-accent: #36d4ff;
   --wiki-accent-soft: #8fe6ff;
@@ -640,9 +640,9 @@ kbd {
  * edged in its brighter --line-hi so the frame reads against space. */
 .feature-item { --cut-line: var(--wiki-card-border); --cut-style: solid; border-top-color: transparent !important; }
 :root.dark .feature-item {
-  --cut-line: #3a424a;
+  --cut-line: #4a525a;
   background: rgba(11, 14, 17, .85) !important;
-  border-color: #3a424a !important;
+  border-color: #4a525a !important;
   border-top-color: transparent !important;
 }
 .feature-item:hover { --cut-line: var(--wiki-accent); }
