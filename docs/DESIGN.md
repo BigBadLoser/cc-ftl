@@ -540,7 +540,7 @@ drafts) and only gains visibility: an alert when boarders dock and intruder mark
 - **Fix:** a near-capture must not turn into a wreck when boarders step off before the bridge hold completes.
 - **Later:** a teleporter module, rarer, using the same picker with no flight and a cooldown.
 
-### Lessons: the tutorial system (user decisions, 2026-10-29; not built yet)
+### Lessons: the tutorial system (user decisions, 2026-10-29)
 
 The goal chain (`src/sim/story/goals.ts`) says **what** to do next; lessons teach **how** a feature works. They are a
 UI-layer system: they read the sim and its events, never change it, and are not part of the game save.
@@ -550,6 +550,9 @@ UI-layer system: they read the sim and its events, never change it, and are not 
   to a lesson ("Show me how").
 - **Coach marks.** Each step is a short callout pointing at the real thing: a UI element or an object in the world (a
   module, a station). A lesson is a few steps, a few lines each.
+- **Step text** (user decisions, 2026-10-30 and 2026-10-31). One line of the instructor's dialogue, then plain lines
+  that say what to do and what each thing is for, with keys from the key map. The text is as concise as it can be while
+  still giving the player everything they need: don't cut useful information to save words, and don't pad.
 - **Pause.** The game pauses while a lesson is open and resumes when it closes. A step that needs time to pass (watching
   shields recharge) says so and runs the game during that step.
 - **Completion per step.** A step either waits for the player to do the thing ("Press Q to arm a weapon", done when they
