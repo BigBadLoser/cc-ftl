@@ -108,10 +108,17 @@ def _cavity(k, ax, plane, u0, u1, z0, z1, D, F):
 
 
 def _shelf(k, ax, plane, u0, u1, z0, z1, F):
-    """An open shelf let into the face (its opening, shelf_holes), a seam round its mouth with rounded corners (its
-    corner steps cover the opening's corner pixels)."""
+    """An open shelf let into the face (its opening, shelf_holes), a seam round its mouth, its corners softened (each
+    corner pixel of the seam left out; the drawers' fuller rounding read too round on an opening)."""
     _cavity(k, ax, plane, u0, u1, z0, z1, CIVIL_D, F)
-    rbox(k, ax, plane, u0 - LINE, u1 + LINE, z0 - MOUTH_T, z1 + MOUTH_T, F, SEAM)
+    L, t = LINE, MOUTH_T
+    o, dark = T.OUT(ax), T.RAMPS[F][0][0]
+    for i in (1, 2, 3):                             # three seams up its back, evenly spaced, in its sides' tone
+        u = round((u0 + (u1 - u0) * i / 4) / L) * L                  # (each on one px column)
+        k.poly([T.P(ax, plane, a, z, PAINT - CIVIL_D) for a, z in ((u, z0), (u + L, z0), (u + L, z1), (u, z1))], F, 0,
+               o, fixed=dark)
+    for q in ((u0, u1, z1, z1 + t), (u0, u1, z0 - t, z0), (u0 - L, u0, z0, z1), (u1, u1 + L, z0, z1)):
+        T.paint(k, ax, plane, *q, 0.0, F, SEAM)
 
 
 def _door_spans(u0, u1):
