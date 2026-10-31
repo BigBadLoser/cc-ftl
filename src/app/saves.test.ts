@@ -229,6 +229,18 @@ describe('rotating autosaves and the pre-combat snapshot', () => {
     expect(saveStore.list().map((m) => m.savedAt)).toEqual([t0 + 4 * ROTATE_MS + 120_000, t0 + 3 * ROTATE_MS + 90_000, t0 + 2 * ROTATE_MS + 60_000]);
   });
 
+  it('two autosaves fired back to back rotate once, in order', async () => {
+    const sim = await setup();
+    await writeAutosave(sim, 1_000_000);
+    sim.tick = 10;
+    const a = writeAutosave(sim, 1_000_000 + ROTATE_MS);
+    sim.tick = 20;
+    const b = writeAutosave(sim, 1_000_000 + ROTATE_MS + 1_000); // fired before the first settled
+    expect(await Promise.all([a, b])).toEqual([true, true]);
+    expect(ids()).toEqual(['auto', 'auto2']); // one rotation, not two
+    expect([await tickOf('auto'), await tickOf('auto2')]).toEqual([20, 0]); // auto2 is the one the single rotation pushed down
+  });
+
   it('does not rotate during a fight, so the older autosaves stay calm ones', async () => {
     const sim = await setup();
     await writeAutosave(sim, 1_000_000);

@@ -28,9 +28,12 @@ export interface SaveStore {
   /**
    * Store a save. False when the browser refuses (full, blocked, no IndexedDB): the save that was there stays (one transaction).
    * `shift`: a chain of ids starting with `meta.id`; the entries already in it move one place down (the last drops off) in the same
-   * transaction, before this one is stored. The transaction starts before this returns, so it is safe in a `pagehide` handler.
+   * transaction, before this one is stored. `due` decides at that moment, from the newest entry's label (undefined: none yet), whether the
+   * chain moves at all; the default is always.
+   * Writes and removes run one after another (each starts once the previous settled, so `due` sees its label). When none is pending the
+   * transaction starts before this returns, so it is safe in a `pagehide` handler.
    */
-  write(meta: SaveMeta, json: string, shift?: readonly string[]): Promise<boolean>;
+  write(meta: SaveMeta, json: string, shift?: readonly string[], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean>;
   remove(id: string): Promise<boolean>;
 }
 
@@ -62,6 +65,15 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
   let db: IDBDatabase | null = null;
   let opening: Promise<void> | null = null;
   const metas = new Map<string, SaveMeta>();
+  /** Writes and removes in order: a later one runs after the earlier one settled and its labels are in `metas`. */
+  let pending = 0;
+  let tail: Promise<void> = Promise.resolve();
+  function enqueue<T>(job: () => Promise<T>): Promise<T> {
+    const run = pending === 0 ? job() : tail.then(job);
+    pending++;
+    tail = run.then(() => undefined, () => undefined).then(() => { pending--; });
+    return run;
+  }
 
   const open = (): Promise<void> =>
     new Promise((res) => {
@@ -118,13 +130,13 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
     try { ls.removeItem(LS_INDEX); } catch { /* ignore */ }
   }
 
-  function put(meta: SaveMeta, json: string, shift: readonly string[] = []): Promise<boolean> {
+  function put(meta: SaveMeta, json: string, shift: readonly string[] = [], due?: (current: SaveMeta | undefined) => boolean): Promise<boolean> {
     if (!db) return Promise.resolve(false);
     try {
       const tx = db.transaction([META, DATA], 'readwrite');
       const m = tx.objectStore(META);
       const d = tx.objectStore(DATA);
-      const chain = shift.length ? shift : [meta.id];
+      const chain = shift.length && (!due || due(metas.get(meta.id))) ? shift : [meta.id];
       const moved: Array<[string, SaveMeta]> = [];
       // Queue the reads of the old entries before this write, so they see the old values; the copies go in once they are read.
       for (let i = chain.length - 1; i > 0; i--) {
@@ -172,8 +184,11 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
         }
       });
     },
-    write: (meta, json, shift) => put(meta, json, shift),
-    remove(id) {
+    write: (meta, json, shift, due) => enqueue(() => put(meta, json, shift, due)),
+    remove: (id) => enqueue(() => drop(id)),
+  };
+
+  function drop(id: string): Promise<boolean> {
       if (!db) return Promise.resolve(false);
       try {
         const tx = db.transaction([META, DATA], 'readwrite');
@@ -186,8 +201,7 @@ export function createIdbSaveStore(factory: () => IDBFactory | null, local: () =
       } catch {
         return Promise.resolve(false);
       }
-    },
-  };
+  }
 }
 
 const browserStorage = (): Store | null => {
@@ -205,6 +219,6 @@ export const saveStore: SaveStore = {
   ready: () => current.ready(),
   list: () => current.list(),
   read: (id) => current.read(id),
-  write: (meta, json, shift) => current.write(meta, json, shift),
+  write: (meta, json, shift, due) => current.write(meta, json, shift, due),
   remove: (id) => current.remove(id),
 };

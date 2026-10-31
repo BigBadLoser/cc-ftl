@@ -128,9 +128,9 @@ export const ROTATE_MS = 3 * 60_000;
  * Never rotates during a fight, so the older autosaves stay calm ones to go back to. A write that fails leaves the chain as it was.
  */
 export function writeAutosave(sim: Sim, now = Date.now()): Promise<boolean> {
-  const newest = saveStore.list().find((m) => m.id === AUTO_ID);
-  const rotate = !!newest && newest.savedAt > 0 && now - newest.savedAt >= ROTATE_MS && !sim.sector.inCombat;
-  return writeSave(sim, AUTO_ID, 'Autosave', now, rotate ? AUTO_IDS : undefined);
+  // Whether the chain moves is decided by the store when this write's turn comes, from the label the writes before it left.
+  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && now - newest.savedAt >= ROTATE_MS && !sim.sector.inCombat;
+  return writeSave(sim, AUTO_ID, 'Autosave', now, AUTO_IDS, due);
 }
 
 /** The snapshot taken as a fight starts (overwritten by the next fight). */
@@ -139,7 +139,7 @@ export function writePrecombat(sim: Sim, now = Date.now()): Promise<boolean> {
 }
 
 /** Write the save (async; the write is started at once). False when the browser refuses (storage full or blocked). */
-export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.now(), shift?: readonly string[]): Promise<boolean> {
+export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.now(), shift?: readonly string[], due?: (newest: SaveMeta | undefined) => boolean): Promise<boolean> {
   let json: string;
   try {
     json = serialize(sim);
@@ -147,7 +147,7 @@ export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.
     return Promise.resolve(false);
   }
   // The store starts its transaction before this returns, so a save made in a `pagehide` handler is already under way.
-  return saveStore.write(saveMeta(sim, id, name, now), json, shift);
+  return saveStore.write(saveMeta(sim, id, name, now), json, shift, due);
 }
 
 /** The list label of a save of this game now. */
