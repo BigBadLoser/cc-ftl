@@ -18,7 +18,7 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
 const content: ContentRegistry = {
   ships: {}, roles: {},
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
-  modules: { reactor: mod({ heatPerSec: 40 }) },
+  modules: { reactor: mod({ heatPerSec: 40 }), trickle: mod({ heatPerSec: 4 }) },
   crewNames: [], items: {}, recipes: {}, structCosts: {},
 };
 
@@ -78,6 +78,19 @@ describe('room temperature', () => {
     expect(roomTemp(sim, ship, room(sim, ship, WEST))).toBe(NORMAL_TEMP);
   });
 
+  it('a weak heat source in a big room still warms it (small inputs accumulate instead of being dropped)', () => {
+    const sim = new Sim(5, content);
+    const w = 26;
+    const big = ['.'.repeat(w + 2), `.${'#'.repeat(w)}.`, ...Array.from({ length: 16 }, () => `.#${'_'.repeat(w - 2)}#.`), `.${'#'.repeat(w)}.`, '.'.repeat(w + 2)];
+    const ship = stampShip(sim, { name: 'big', rows: big }, { faction: 'player', state: 'active', x: 0, y: 0 });
+    sim.step();
+    const id = spawnModule(sim, 'trickle', 5, 5, 0);
+    (sim.world.get(id, ModuleC) as Module).powered = true;
+    run(sim, 2000);
+    // 4 degrees/s over 416 tiles is under 0.0005 a tick, below the old drop threshold; its equilibrium is 0.6 degrees up.
+    expect(roomTemp(sim, ship, shipGrid(sim, ship)!.get('room', 5, 5))).toBeGreaterThan(NORMAL_TEMP + 0.2);
+  });
+
   it('relaxes toward normal and settles at normal (the entry is dropped)', () => {
     const { sim, ship } = make();
     const a = room(sim, ship, WEST);
@@ -87,7 +100,7 @@ describe('room temperature', () => {
     const later = roomTemp(sim, ship, a);
     expect(later).toBeLessThan(hot);
     expect(later).toBeGreaterThan(NORMAL_TEMP);
-    run(sim, 20000);
+    run(sim, 40000);
     expect(roomTemp(sim, ship, a)).toBe(NORMAL_TEMP);
     expect(sim.world.get(ship, ShipC)!.roomTemp?.[a]).toBeUndefined();
   });

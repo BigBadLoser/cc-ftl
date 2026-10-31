@@ -5,8 +5,8 @@ import type { Sim } from './sim';
 import { isAirless } from './structure';
 import { NORMAL_TEMP, SPACE_TEMP } from './tuning';
 
-/** A stored room temperature this close to NORMAL_TEMP is dropped (absent means normal), so settled rooms cost nothing to save. Far below one tick of heat, so small inputs accumulate. */
-export const ROOM_TEMP_EPSILON = 1e-3;
+/** A stored room temperature this close to NORMAL_TEMP is dropped (absent means normal), so settled rooms cost nothing to save. Far below any real tick of heat (a weak source in a big room adds under 1e-3 a tick), so small inputs accumulate. */
+export const ROOM_TEMP_EPSILON = 1e-6;
 
 /** Temperature of room `room` on ship `ship`: absent entries are NORMAL_TEMP. */
 export function roomTemp(sim: Sim, ship: number, room: number): number {
