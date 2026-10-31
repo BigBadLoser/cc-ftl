@@ -312,6 +312,49 @@ describe('a legacy save that could not be copied stays first-class', () => {
   });
 });
 
+describe('falling back from an unloadable latest autosave', () => {
+  it('loads the newest older autosave that works, and says so', async () => {
+    const { local } = browser();
+    await saveStore.ready();
+    const sim = newGame(11, content);
+    sim.tick = 77;
+    await writeSave(sim, 'auto2', 'Autosave', Date.now() - 5 * 60_000);
+    sim.tick = 33;
+    await writeSave(sim, 'auto3', 'Autosave', Date.now() - 9 * 60_000);
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '' }, '{"version": 71, "trunc');
+    const start = await startGame(null);
+    expect(start.sim.tick).toBe(77); // the newer of the two valid ones
+    expect(start.sim.seed).toBe(11);
+    expect(start.notice).toMatch(/latest autosave is damaged.*Loaded the autosave from 5 min ago/);
+    expect(await saveStore.read('broken')).toBe('{"version": 71, "trunc');
+    expect(local.getItem('cc.save')).toBeNull();
+  });
+
+  it('falls back to the pre-combat snapshot when it is all there is', async () => {
+    browser();
+    await saveStore.ready();
+    const sim = newGame(11, content);
+    sim.tick = 5;
+    await writePrecombat(sim);
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: Date.now(), turn: 0, node: '' }, 'garbage');
+    const start = await startGame(null);
+    expect(start.sim.tick).toBe(5);
+    expect(start.notice).toMatch(/from before combat/);
+  });
+
+  it('with nothing loadable it starts fresh and the failed campaign stays listed', async () => {
+    browser();
+    await saveStore.ready();
+    await saveStore.write({ id: 'auto', name: 'Autosave', savedAt: 9, turn: 0, node: '', campaign: 11 }, 'garbage');
+    await saveStore.write({ id: 'auto2', name: 'Autosave', savedAt: 8, turn: 0, node: '', campaign: 11 }, 'garbage2');
+    const start = await startGame(null);
+    expect(start.showAll).toBe(true);
+    expect(start.notice).toMatch(/damaged/);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto2']); // auto is set aside as before; the older one is still there to see
+    expect(inThisCampaign(start.sim, saveStore.list()[0]!)).toBe(false); // the campaign filter would hide it; showAll turns that off
+  });
+});
+
 describe('campaigns', () => {
   it("another campaign's pre-combat snapshot and autosave history are not this game's", async () => {
     browser();

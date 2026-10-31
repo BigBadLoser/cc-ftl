@@ -1,6 +1,6 @@
 import { content } from '../content';
 import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, type Sim } from '../sim';
-import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, saveStore, type SaveMeta } from './saveStore';
+import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, isAutoId, saveStore, type SaveMeta } from './saveStore';
 import { playerCrew } from '../sim/story/world';
 
 /**
@@ -42,6 +42,8 @@ export interface Start {
   notice: string | null;
   /** False for a `?seed=` debug game: it must never write over the player's campaign save. */
   persist: boolean;
+  /** A new game started because the saved campaign could not be loaded: list every autosave, whatever campaign it belongs to. */
+  showAll?: boolean;
 }
 
 /**
@@ -72,15 +74,31 @@ export async function startGame(seedParam: string | null): Promise<Start> {
 
 async function loadAuto(fresh: (seed: number) => Sim, random: () => number): Promise<Start> {
   const json = await saveStore.read(AUTO_ID);
+  let why: unknown = null;
+  let kept = false;
   if (json) {
     try {
       return { sim: deserialize(json, content), notice: null, persist: true };
     } catch (e) {
-      const kept = await keepBroken(json);
-      return { sim: fresh(random()), notice: unloadableNotice(e, kept, saveStore.list()), persist: true };
+      why = e;
+      kept = await keepBroken(json);
     }
   }
-  return { sim: fresh(random()), notice: null, persist: true };
+  // The newest autosave is gone or unloadable: the older autosaves and the pre-combat snapshot are the way back, newest first.
+  const rest = saveStore.list().filter((m) => m.id !== AUTO_ID && (isAutoId(m.id) || m.id === PRECOMBAT_ID)).sort((x, y) => y.savedAt - x.savedAt);
+  for (const m of rest) {
+    const alt = await saveStore.read(m.id);
+    if (!alt) continue;
+    try {
+      const sim = deserialize(alt, content);
+      const min = Math.max(1, Math.round((Date.now() - m.savedAt) / 60_000));
+      const was = why ? `The latest autosave ${unloadableWhy(why)} and couldn't be loaded.` : 'The latest autosave is missing.';
+      return { sim, notice: `${was} Loaded ${m.id === PRECOMBAT_ID ? 'the snapshot from before combat' : 'the autosave'} from ${m.savedAt ? `${min} min ago` : 'earlier'} instead.${kept ? ' The broken one was kept in the browser.' : ''}`, persist: true };
+    } catch { /* the next one */ }
+  }
+  if (!json) return { sim: fresh(random()), notice: null, persist: true };
+  // A new game, and the old campaign's saves stay listed: they are the only way back to it.
+  return { sim: fresh(random()), notice: unloadableNotice(why, kept, saveStore.list()), persist: true, showAll: true };
 }
 
 /** Saves written by another SAVE_VERSION than this build's (a save without the version in its label is not counted: it may well load). */
@@ -90,13 +108,16 @@ export function incompatibleSaves(metas: readonly SaveMeta[]): SaveMeta[] {
 
 /** The start-up notice for a save that would not load, saying why, what was kept, and how many other saves are in the same state. */
 export function unloadableNotice(e: unknown, kept: boolean, metas: readonly SaveMeta[]): string {
-  const msg = e instanceof Error ? e.message : '';
-  const old = msg.startsWith(VERSION_MISMATCH);
-  const was = /^Save version (\S+) is not/.exec(msg)?.[1];
-  const why = old ? `is from another version of the game${was && was !== 'undefined' ? ` (v${was}; this is v${SAVE_VERSION})` : ''}` : 'is damaged';
   const others = incompatibleSaves(metas).length;
-  return `Your saved game ${why} and could not be loaded. A new game has started.${kept ? ' The old save was kept in the browser.' : ''}`
+  return `Your saved game ${unloadableWhy(e)} and could not be loaded. A new game has started.${kept ? ' The old save was kept in the browser.' : ''}`
     + (others ? ` ${others} other save${others === 1 ? '' : 's'} in the Load list ${others === 1 ? 'is' : 'are'} from another version too and cannot be loaded.` : '');
+}
+
+/** Why a save would not load: another version (naming both), or damaged. */
+function unloadableWhy(e: unknown): string {
+  const msg = e instanceof Error ? e.message : '';
+  const was = /^Save version (\S+) is not/.exec(msg)?.[1];
+  return msg.startsWith(VERSION_MISMATCH) ? `is from another version of the game${was && was !== 'undefined' ? ` (v${was}; this is v${SAVE_VERSION})` : ''}` : 'is damaged';
 }
 
 /** Message prefix `migrate` throws for a save of another SAVE_VERSION (as opposed to a corrupt payload). */

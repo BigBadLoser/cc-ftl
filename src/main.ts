@@ -350,7 +350,7 @@ const api: UiApi = {
   saves: {
     list: () => {
       const metas = new Map(saveStore.list().map((m) => [m.id, m]));
-      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].filter((id) => !metas.has(id) || inThisCampaign(sim, metas.get(id)!)).map((id) => {
+      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].filter((id) => start.showAll || !metas.has(id) || inThisCampaign(sim, metas.get(id)!)).map((id) => {
         const meta = metas.get(id) ?? null;
         return {
           id, auto: !SLOT_IDS.includes(id as never), meta, kind: isAutoId(id) ? 'auto' : id === PRECOMBAT_ID ? 'precombat' : 'slot',
