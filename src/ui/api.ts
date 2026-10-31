@@ -1159,12 +1159,12 @@ export interface UiSaveSlot {
 
 /** Everything the UI may call or observe; built in main.ts. */
 export interface UiApi {
-  /** The saves: the rotating autosaves, the pre-combat snapshot and the named slots. `save` writes this game to a slot (false: the browser refused); `load` reloads the page into one. */
+  /** The saves: the rotating autosaves, the pre-combat snapshot and the named slots. `save` writes this game to a slot (resolves false: the browser refused); `load` reloads the page into one. */
   saves: {
     list(): UiSaveSlot[];
-    save(id: string, name: string): boolean;
+    save(id: string, name: string): Promise<boolean>;
     load(id: string): void;
-    remove(id: string): boolean;
+    remove(id: string): Promise<boolean>;
   };
   /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel. */
   cancel(): boolean;

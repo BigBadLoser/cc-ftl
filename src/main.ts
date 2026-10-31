@@ -48,7 +48,7 @@ const errorLog = createErrorLog();
 const consoleRing = installConsoleRing();
 let gameCanvas: HTMLCanvasElement | undefined;
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
-const start = startGame(new URLSearchParams(location.search).get('seed'));
+const start = await startGame(new URLSearchParams(location.search).get('seed'));
 const sim = start.sim;
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
@@ -93,7 +93,7 @@ const loop = createLoop({
     probe.begin('ui/events');
     controller.onEvents(events);
     // A fight just began: keep this moment, so a fight that goes wrong can be undone (the autosave is overwritten as it goes on).
-    if (start.persist && session.get().lost === null && events.some((e) => e.type === 'combat.started')) writePrecombat(sim);
+    if (start.persist && session.get().lost === null && events.some((e) => e.type === 'combat.started')) void writePrecombat(sim);
     renderer?.onEvents(events);
     probe.end('ui/events');
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
@@ -358,12 +358,12 @@ const api: UiApi = {
         } satisfies UiSaveSlot;
       });
     },
-    save: (id, name) => SLOT_IDS.includes(id as never) && writeSave(sim, id, name),
+    save: (id, name) => (SLOT_IDS.includes(id as never) ? writeSave(sim, id, name) : Promise.resolve(false)),
     load: loadSlot,
-    remove: (id) => SLOT_IDS.includes(id as never) && saveStore.remove(id),
+    remove: (id) => (SLOT_IDS.includes(id as never) ? saveStore.remove(id) : Promise.resolve(false)),
   },
   cancel: () => controller.cancel(),
-  newGame: restartNewGame,
+  newGame: () => void restartNewGame(),
   loadLastSave: reloadLastSave,
   dismissNotice: () => session.set({ ...session.get(), notice: null }),
   inspect: bridge.inspect,

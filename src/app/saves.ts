@@ -1,6 +1,6 @@
 import { content } from '../content';
 import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, type Sim } from '../sim';
-import { AUTO_ID, AUTO_IDS, PRECOMBAT_ID, saveStore, type SaveMeta } from './saveStore';
+import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, saveStore, type SaveMeta } from './saveStore';
 import { playerCrew } from '../sim/story/world';
 
 /**
@@ -49,33 +49,34 @@ export interface Start {
  * fresh random seed; otherwise the saved game, else a new one. A save from another SAVE_VERSION cannot be loaded
  * (no migrations while this is a prototype): it is dropped, with a notice.
  */
-export function startGame(seedParam: string | null): Start {
+export async function startGame(seedParam: string | null): Promise<Start> {
   const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true);
   const random = () => (Math.random() * 0x100000000) >>> 0;
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
+  await saveStore.ready();
   if (take(NEW_GAME)) return { sim: fresh(random()), notice: null, persist: true };
   const slot = take(LOAD_SLOT);
   if (slot && slot !== AUTO_ID) {
-    const picked = saveStore.read(slot);
+    const picked = await saveStore.read(slot);
     try {
       if (picked) return { sim: deserialize(picked, content), notice: null, persist: true };
     } catch {
       /* falls through to the autosave below; the slot itself is left as it is */
     }
-    const auto = loadAuto(fresh, random);
+    const auto = await loadAuto(fresh, random);
     const why = 'The save you picked could not be loaded (it may be from another version of the game). It was kept; you are playing your autosave instead.';
     return { ...auto, notice: auto.notice ?? why };
   }
   return loadAuto(fresh, random);
 }
 
-function loadAuto(fresh: (seed: number) => Sim, random: () => number): Start {
-  const json = saveStore.read(AUTO_ID);
+async function loadAuto(fresh: (seed: number) => Sim, random: () => number): Promise<Start> {
+  const json = await saveStore.read(AUTO_ID);
   if (json) {
     try {
       return { sim: deserialize(json, content), notice: null, persist: true };
     } catch (e) {
-      const kept = keepBroken(json);
+      const kept = await keepBroken(json);
       return { sim: fresh(random()), notice: unloadableNotice(e, kept, saveStore.list()), persist: true };
     }
   }
@@ -100,17 +101,10 @@ export function unloadableNotice(e: unknown, kept: boolean, metas: readonly Save
 
 /** Message prefix `migrate` throws for a save of another SAVE_VERSION (as opposed to a corrupt payload). */
 const VERSION_MISMATCH = 'Save version';
-/** Where a save that could not be loaded is kept, so a failed load never deletes the only copy. */
-export const BROKEN_SLOT = 'cc.save.broken';
-
 /** Move an unloadable save out of the main slot, keeping it. False when it could not be copied (it then stays in the main slot). */
-function keepBroken(json: string): boolean {
-  try {
-    localStorage.setItem(BROKEN_SLOT, json);
-  } catch {
-    return false;
-  }
-  clearSave();
+async function keepBroken(json: string): Promise<boolean> {
+  if (!(await saveStore.write({ id: BROKEN_ID, name: 'Unloadable save', savedAt: Date.now(), turn: 0, node: '' }, json))) return false;
+  await clearSave();
   return true;
 }
 
@@ -122,7 +116,7 @@ function keepBroken(json: string): boolean {
 export function createSaver(sim: Sim, persist: boolean, isLost: () => boolean, onResult: (ok: boolean) => void): () => void {
   return () => {
     if (!persist || loading || isLost() || lostReason(sim)) return;
-    onResult(writeAutosave(sim));
+    void writeAutosave(sim).then(onResult);
   };
 }
 
@@ -133,34 +127,27 @@ export const ROTATE_MS = 3 * 60_000;
  * The periodic autosave: writes `auto`, first keeping the previous one as `auto2` (and that as `auto3`) when it is at least ROTATE_MS old.
  * Never rotates during a fight, so the older autosaves stay calm ones to go back to. A write that fails leaves the chain as it was.
  */
-export function writeAutosave(sim: Sim, now = Date.now()): boolean {
-  const metas = new Map(saveStore.list().map((m) => [m.id, m]));
-  const newest = metas.get(AUTO_ID);
-  if (newest && newest.savedAt > 0 && now - newest.savedAt >= ROTATE_MS && !sim.sector.inCombat) {
-    for (let i = AUTO_IDS.length - 1; i > 0; i--) {
-      const from = AUTO_IDS[i - 1]!;
-      const meta = metas.get(from);
-      const json = saveStore.read(from);
-      if (meta && json !== null) saveStore.write({ ...meta, id: AUTO_IDS[i]! }, json);
-    }
-  }
-  return writeSave(sim, AUTO_ID, 'Autosave', now);
+export function writeAutosave(sim: Sim, now = Date.now()): Promise<boolean> {
+  const newest = saveStore.list().find((m) => m.id === AUTO_ID);
+  const rotate = !!newest && newest.savedAt > 0 && now - newest.savedAt >= ROTATE_MS && !sim.sector.inCombat;
+  return writeSave(sim, AUTO_ID, 'Autosave', now, rotate ? AUTO_IDS : undefined);
 }
 
 /** The snapshot taken as a fight starts (overwritten by the next fight). */
-export function writePrecombat(sim: Sim, now = Date.now()): boolean {
+export function writePrecombat(sim: Sim, now = Date.now()): Promise<boolean> {
   return writeSave(sim, PRECOMBAT_ID, 'Before combat', now);
 }
 
-/** Write the save. False when the browser refuses (storage full or blocked). */
-export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.now()): boolean {
+/** Write the save (async; the write is started at once). False when the browser refuses (storage full or blocked). */
+export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.now(), shift?: readonly string[]): Promise<boolean> {
   let json: string;
   try {
     json = serialize(sim);
   } catch {
-    return false;
+    return Promise.resolve(false);
   }
-  return saveStore.write(saveMeta(sim, id, name, now), json);
+  // The store starts its transaction before this returns, so a save made in a `pagehide` handler is already under way.
+  return saveStore.write(saveMeta(sim, id, name, now), json, shift);
 }
 
 /** The list label of a save of this game now. */
@@ -168,8 +155,8 @@ export function saveMeta(sim: Sim, id: string, name: string, now = Date.now()): 
   return { id, name, savedAt: now, turn: sim.galaxy.turn, node: nodeOf(sim, sim.galaxy.current)?.name ?? '', version: SAVE_VERSION, fight: sim.sector.inCombat };
 }
 
-export function clearSave(): void {
-  saveStore.remove(AUTO_ID);
+export function clearSave(): Promise<boolean> {
+  return saveStore.remove(AUTO_ID);
 }
 
 /** Load a save slot (a reload: the game is rebuilt around it). Progress since the last save is lost. The page drops its debug query. */
@@ -185,13 +172,14 @@ export function loadSlot(id: string): void {
 }
 
 /** Throw this game away and start a new one (a reload). */
-export function restartNewGame(): void {
+export async function restartNewGame(): Promise<void> {
   try {
     sessionStorage.setItem(NEW_GAME, '1');
   } catch {
     /* without it the reload loads the save; clear it so it starts fresh anyway */
   }
-  clearSave();
+  loading = true; // the reload's pagehide must not write the old game back
+  await clearSave();
   location.reload();
 }
 

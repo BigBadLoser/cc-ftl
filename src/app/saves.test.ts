@@ -1,10 +1,11 @@
+import { IDBDatabase, IDBFactory } from 'fake-indexeddb';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { content } from '../content';
 import { deserialize, homeShip, newGame, SAVE_VERSION, serialize, ShipC } from '../sim';
 import { DeadC } from '../sim/crew/components';
 import { playerCrew } from '../sim/story/world';
 import { createSaver, incompatibleSaves, lostReason, ROTATE_MS, startGame, unloadableNotice, writeAutosave, writePrecombat, writeSave } from './saves';
-import { saveStore } from './saveStore';
+import { createIdbSaveStore, saveStore, setSaveStore } from './saveStore';
 
 describe('game over', () => {
   it('is not lost at the start, and is lost when the ship is wrecked or the crew is all dead', () => {
@@ -26,8 +27,8 @@ describe('game over', () => {
   });
 });
 
-/** A minimal in-memory Storage; `failWrites` makes setItem throw like a full or blocked store. */
-function fakeStorage(failWrites = { on: false }): Storage {
+/** A minimal in-memory Storage (the old saves' home, and the session flags). */
+function fakeStorage(): Storage {
   const m = new Map<string, string>();
   return {
     get length() { return m.size; },
@@ -35,86 +36,110 @@ function fakeStorage(failWrites = { on: false }): Storage {
     getItem: (k: string) => m.get(k) ?? null,
     key: (i: number) => [...m.keys()][i] ?? null,
     removeItem: (k: string) => { m.delete(k); },
-    setItem: (k: string, v: string) => {
-      if (failWrites.on) throw new DOMException('full', 'QuotaExceededError');
-      m.set(k, v);
-    },
+    setItem: (k: string, v: string) => { m.set(k, v); },
   };
 }
 
-afterEach(() => vi.unstubAllGlobals());
+/** A clean browser: empty localStorage and sessionStorage, a fresh IndexedDB behind the save store. */
+function browser() {
+  const local = fakeStorage();
+  const session = fakeStorage();
+  vi.stubGlobal('localStorage', local);
+  vi.stubGlobal('sessionStorage', session);
+  setSaveStore(createIdbSaveStore(() => new IDBFactory(), () => local));
+  return { local, session };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('seeded debug sessions', () => {
-  it('never overwrite the saved campaign, on a periodic save or a tab-hide save', () => {
-    const local = fakeStorage();
-    vi.stubGlobal('localStorage', local);
-    vi.stubGlobal('sessionStorage', fakeStorage());
-    writeSave(newGame(1, content));
-    const campaign = local.getItem('cc.save');
+  it('never overwrite the saved campaign, on a periodic save or a tab-hide save', async () => {
+    browser();
+    await saveStore.ready();
+    await writeSave(newGame(1, content));
+    const campaign = await saveStore.read('auto');
     expect(campaign).not.toBeNull();
 
-    const start = startGame('12345');
+    const start = await startGame('12345');
     expect(start.persist).toBe(false);
     const save = createSaver(start.sim, start.persist, () => false, () => undefined);
     save(); // the autosave timer
     save(); // visibilitychange: hidden / pagehide use the same function
-    expect(local.getItem('cc.save')).toBe(campaign);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(await saveStore.read('auto')).toBe(campaign);
   });
 
-  it('a normal session still saves', () => {
-    const local = fakeStorage();
-    vi.stubGlobal('localStorage', local);
-    vi.stubGlobal('sessionStorage', fakeStorage());
-    const start = startGame(null);
+  it('a normal session still saves', async () => {
+    browser();
+    const start = await startGame(null);
     expect(start.persist).toBe(true);
-    createSaver(start.sim, start.persist, () => false, () => undefined)();
-    expect(local.getItem('cc.save')).not.toBeNull();
+    const ok = new Promise<boolean>((res) => createSaver(start.sim, start.persist, () => false, res)());
+    expect(await ok).toBe(true);
+    expect(await saveStore.read('auto')).not.toBeNull();
   });
 });
 
 describe('save failures and recovery', () => {
-  it('reports a refused write, keeps the previous save, and recovers when storage works again', () => {
-    const switchF = { on: false };
-    const local = fakeStorage(switchF);
-    vi.stubGlobal('localStorage', local);
-    vi.stubGlobal('sessionStorage', fakeStorage());
+  /** Make IndexedDB refuse writes (a full disk, a blocked store) while `on.v` is true. */
+  function refuseWrites(on: { v: boolean }) {
+    const real = IDBDatabase.prototype.transaction;
+    vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, ...a: Parameters<typeof real>) {
+      if (on.v && a[1] === 'readwrite') throw new DOMException('full', 'QuotaExceededError');
+      return real.apply(this, a);
+    });
+  }
+
+  it('reports a refused write, keeps the previous save, and recovers when storage works again', async () => {
+    browser();
+    const off = { v: false };
+    refuseWrites(off);
+    await saveStore.ready();
     const sim = newGame(3, content);
     const results: boolean[] = [];
-    const save = createSaver(sim, true, () => false, (ok) => results.push(ok));
-    save();
-    const good = local.getItem('cc.save');
+    const run = () => new Promise<void>((res) => createSaver(sim, true, () => false, (ok) => { results.push(ok); res(); })());
+    await run();
+    const good = await saveStore.read('auto');
     sim.tick = 99;
-    switchF.on = true;
-    save();
+    off.v = true;
+    await run();
     expect(results).toEqual([true, false]);
-    expect(local.getItem('cc.save')).toBe(good);
-    expect(startGame(null).sim.tick).toBe(0); // the last good save still loads
-    switchF.on = false;
-    save();
+    expect(await saveStore.read('auto')).toBe(good);
+    expect((await startGame(null)).sim.tick).toBe(0); // the last good save still loads
+    off.v = false;
+    await run();
     expect(results).toEqual([true, false, true]);
-    expect(startGame(null).sim.tick).toBe(99);
+    expect((await startGame(null)).sim.tick).toBe(99);
   });
 
-  it('keeps a corrupted save instead of deleting it, and says it is damaged', () => {
+  it('reports a store that is not there at all (no IndexedDB)', async () => {
     const local = fakeStorage();
     vi.stubGlobal('localStorage', local);
     vi.stubGlobal('sessionStorage', fakeStorage());
+    setSaveStore(createIdbSaveStore(() => null, () => local));
+    await saveStore.ready();
+    expect(await writeSave(newGame(3, content))).toBe(false);
+    expect((await startGame(null)).sim.tick).toBe(0);
+  });
+
+  it('keeps a corrupted save instead of deleting it, and says it is damaged', async () => {
+    const { local } = browser();
     local.setItem('cc.save', '{"version": 68, "trunc');
-    const start = startGame(null);
+    const start = await startGame(null);
     expect(start.notice).toMatch(/damaged/);
-    expect(local.getItem('cc.save')).toBeNull();
-    expect(local.getItem('cc.save.broken')).toBe('{"version": 68, "trunc');
+    expect(await saveStore.read('auto')).toBeNull();
+    expect(await saveStore.read('broken')).toBe('{"version": 68, "trunc');
   });
 
-  it('keeps a save of another version and says so', () => {
-    const local = fakeStorage();
-    vi.stubGlobal('localStorage', local);
-    vi.stubGlobal('sessionStorage', fakeStorage());
+  it('keeps a save of another version and says so', async () => {
+    const { local } = browser();
     const old = JSON.stringify({ ...JSON.parse(serialize(newGame(1, content))), version: 1 });
     local.setItem('cc.save', old);
-    const start = startGame(null);
+    const start = await startGame(null);
     expect(start.notice).toMatch(/another version/);
-    expect(local.getItem('cc.save.broken')).toBe(old);
+    expect(await saveStore.read('broken')).toBe(old);
   });
 
   it('round-trips a save with many archived sectors', () => {
@@ -125,82 +150,134 @@ describe('save failures and recovery', () => {
     expect(back.archives.map((a) => a.node)).toEqual(sim.archives.map((a) => a.node));
   });
 
-  it('loads a picked slot; an unloadable one is kept and the autosave plays instead', () => {
-    const local = fakeStorage();
-    const session = fakeStorage();
-    vi.stubGlobal('localStorage', local);
-    vi.stubGlobal('sessionStorage', session);
+  it('loads a picked slot; an unloadable one is kept and the autosave plays instead', async () => {
+    const { local, session } = browser();
+    await saveStore.ready();
     const a = newGame(3, content);
     a.tick = 42;
-    writeSave(a, 'slot1', 'Mine');
-    writeSave(newGame(3, content));
+    await writeSave(a, 'slot1', 'Mine');
+    await writeSave(newGame(3, content));
     session.setItem('cc.loadSlot', 'slot1');
-    expect(startGame(null).sim.tick).toBe(42);
+    expect((await startGame(null)).sim.tick).toBe(42);
     expect(session.getItem('cc.loadSlot')).toBeNull();
-    local.setItem('cc.save.slot2', '{"trunc');
+    await saveStore.write({ id: 'slot2', name: 'Bad', savedAt: 1, turn: 0, node: '' }, '{"trunc');
     session.setItem('cc.loadSlot', 'slot2');
-    const start = startGame(null);
+    const start = await startGame(null);
     expect(start.sim.tick).toBe(0);
     expect(start.notice).toMatch(/could not be loaded/);
-    expect(saveStore.read('slot2')).toBe('{"trunc');
+    expect(await saveStore.read('slot2')).toBe('{"trunc');
+    expect(local.getItem('cc.save')).toBeNull();
+  });
+});
+
+describe('moving old localStorage saves into IndexedDB', () => {
+  it('moves the autosave, the slots, their labels and a kept broken save, then empties localStorage; a second start changes nothing', async () => {
+    const { local } = browser();
+    const auto = serialize(newGame(2, content));
+    local.setItem('cc.save', auto);
+    local.setItem('cc.save.slot2', '{"s":2}');
+    local.setItem('cc.save.broken', '{"b":1}');
+    local.setItem('cc.saves', JSON.stringify({ slot2: { id: 'slot2', name: 'Mine', savedAt: 5, turn: 3, node: 'Ixion' } }));
+    const start = await startGame(null);
+    expect(start.notice).toBeNull();
+    expect(serialize(start.sim)).toBe(auto);
+    expect(saveStore.list().map((m) => [m.id, m.name, m.turn])).toEqual([['auto', 'Autosave', 0], ['slot2', 'Mine', 3]]);
+    expect(await saveStore.read('slot2')).toBe('{"s":2}');
+    expect(await saveStore.read('broken')).toBe('{"b":1}');
+    for (const k of ['cc.save', 'cc.save.slot2', 'cc.save.broken', 'cc.saves']) expect(local.getItem(k)).toBeNull();
+  });
+
+  it('leaves old saves in localStorage when IndexedDB cannot store them', async () => {
+    const local = fakeStorage();
+    vi.stubGlobal('localStorage', local);
+    vi.stubGlobal('sessionStorage', fakeStorage());
+    local.setItem('cc.save', '{"x":1}');
+    setSaveStore(createIdbSaveStore(() => null, () => local));
+    await saveStore.ready();
+    expect(local.getItem('cc.save')).toBe('{"x":1}');
   });
 });
 
 describe('rotating autosaves and the pre-combat snapshot', () => {
-  const setup = () => {
-    vi.stubGlobal('localStorage', fakeStorage());
-    vi.stubGlobal('sessionStorage', fakeStorage());
+  const setup = async () => {
+    browser();
+    await saveStore.ready();
     return newGame(5, content);
   };
   const ids = () => saveStore.list().map((m) => m.id);
+  const tickOf = async (id: string) => deserialize((await saveStore.read(id))!, content).tick;
 
-  it('overwrites a young autosave in place, and pushes it down the chain once it is old', () => {
-    const sim = setup();
+  it('overwrites a young autosave in place, and pushes it down the chain once it is old', async () => {
+    const sim = await setup();
     const t0 = 1_000_000;
-    writeAutosave(sim, t0);
-    writeAutosave(sim, t0 + 30_000);
+    await writeAutosave(sim, t0);
+    await writeAutosave(sim, t0 + 30_000);
     expect(ids()).toEqual(['auto']);
     sim.tick = 100;
-    writeAutosave(sim, t0 + ROTATE_MS + 30_000);
+    await writeAutosave(sim, t0 + ROTATE_MS + 30_000);
     expect(ids()).toEqual(['auto', 'auto2']);
-    expect(deserialize(saveStore.read('auto2')!, content).tick).toBe(0);
-    expect(deserialize(saveStore.read('auto')!, content).tick).toBe(100);
+    expect(await tickOf('auto2')).toBe(0);
+    expect(await tickOf('auto')).toBe(100);
     sim.tick = 200;
-    writeAutosave(sim, t0 + 2 * ROTATE_MS + 60_000);
+    await writeAutosave(sim, t0 + 2 * ROTATE_MS + 60_000);
     sim.tick = 300;
-    writeAutosave(sim, t0 + 3 * ROTATE_MS + 90_000);
+    await writeAutosave(sim, t0 + 3 * ROTATE_MS + 90_000);
     sim.tick = 400;
-    writeAutosave(sim, t0 + 4 * ROTATE_MS + 120_000);
+    await writeAutosave(sim, t0 + 4 * ROTATE_MS + 120_000);
     expect(ids()).toEqual(['auto', 'auto2', 'auto3']); // three at most
-    expect([...['auto', 'auto2', 'auto3']].map((id) => deserialize(saveStore.read(id)!, content).tick)).toEqual([400, 300, 200]);
+    expect([await tickOf('auto'), await tickOf('auto2'), await tickOf('auto3')]).toEqual([400, 300, 200]);
+    expect(saveStore.list().map((m) => m.savedAt)).toEqual([t0 + 4 * ROTATE_MS + 120_000, t0 + 3 * ROTATE_MS + 90_000, t0 + 2 * ROTATE_MS + 60_000]);
   });
 
-  it('does not rotate during a fight, so the older autosaves stay calm ones', () => {
-    const sim = setup();
-    writeAutosave(sim, 1_000_000);
+  it('does not rotate during a fight, so the older autosaves stay calm ones', async () => {
+    const sim = await setup();
+    await writeAutosave(sim, 1_000_000);
     sim.sector.inCombat = true;
     sim.tick = 50;
-    writeAutosave(sim, 1_000_000 + 2 * ROTATE_MS);
+    await writeAutosave(sim, 1_000_000 + 2 * ROTATE_MS);
     expect(ids()).toEqual(['auto']);
     expect(saveStore.list()[0]!.fight).toBe(true);
   });
 
-  it('keeps one pre-combat snapshot, listed after the autosaves and labelled', () => {
-    const sim = setup();
-    writeAutosave(sim);
-    expect(writePrecombat(sim)).toBe(true);
-    writePrecombat(sim);
+  it('keeps one pre-combat snapshot, listed after the autosaves and labelled', async () => {
+    const sim = await setup();
+    await writeAutosave(sim);
+    expect(await writePrecombat(sim)).toBe(true);
+    await writePrecombat(sim);
     expect(saveStore.list().map((m) => [m.id, m.name])).toEqual([['auto', 'Autosave'], ['precombat', 'Before combat']]);
   });
 
-  it('survives the Load flow: a rotated autosave loads by id', () => {
-    const sim = setup();
-    writeAutosave(sim, 1_000_000);
-    writeAutosave(sim, 1_000_000 + ROTATE_MS);
+  it('a failed rotating write changes nothing, not even the chain', async () => {
+    const sim = await setup();
+    await writeAutosave(sim, 1_000_000);
+    const before = await saveStore.read('auto');
+    const real = IDBDatabase.prototype.transaction;
+    vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, ...a: Parameters<typeof real>) {
+      if (a[1] === 'readwrite') throw new DOMException('full', 'QuotaExceededError');
+      return real.apply(this, a);
+    });
+    sim.tick = 7;
+    expect(await writeAutosave(sim, 1_000_000 + ROTATE_MS)).toBe(false);
+    expect(ids()).toEqual(['auto']);
+    expect(await saveStore.read('auto')).toBe(before);
+  });
+
+  it('starts the write before returning, so a save in a pagehide handler is under way', async () => {
+    const sim = await setup();
+    const spy = vi.spyOn(IDBDatabase.prototype, 'transaction');
+    const p = writeAutosave(sim);
+    expect(spy).toHaveBeenCalledWith(['meta', 'data'], 'readwrite'); // before any await
+    await p;
+  });
+
+  it('survives the Load flow: a rotated autosave loads by id', async () => {
+    const sim = await setup();
+    await writeAutosave(sim, 1_000_000);
+    await writeAutosave(sim, 1_000_000 + ROTATE_MS);
     sessionStorage.setItem('cc.loadSlot', 'auto2');
-    const start = startGame(null);
+    const start = await startGame(null);
     expect(start.notice).toBeNull();
-    expect(serialize(start.sim)).toBe(saveStore.read('auto2'));
+    expect(serialize(start.sim)).toBe(await saveStore.read('auto2'));
   });
 });
 

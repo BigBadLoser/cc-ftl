@@ -31,15 +31,15 @@
     return s.meta.name;
   };
 
-  function save(s: UiSaveSlot) {
+  async function save(s: UiSaveSlot) {
     const name = nameOf(s).trim() || `Slot ${slotNo(s.id)}`;
-    const ok = api.saves.save(s.id, name);
+    const ok = await api.saves.save(s.id, name);
     note = ok ? { text: `Saved to “${name}”.`, bad: false } : { text: 'Saving failed: the browser refused the write (storage full or blocked).', bad: true };
     ask = null;
     slots = api.saves.list();
   }
-  function remove(s: UiSaveSlot) {
-    const ok = api.saves.remove(s.id);
+  async function remove(s: UiSaveSlot) {
+    const ok = await api.saves.remove(s.id);
     note = ok ? { text: 'Save deleted.', bad: false } : { text: 'Could not delete the save.', bad: true };
     ask = null;
     slots = api.saves.list();
