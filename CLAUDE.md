@@ -12,12 +12,18 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
-  skipping `*.slow.test.ts`. Run it before every commit and before pushing a work branch.
+  skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
 - `npm run check`: lint, typecheck and every test, slow tier included. Run it in the testing round, after the last
   merge of `main` into the branch, and paste its result (pass, test count, any load timeouts rerun alone) into the PR
-  body. Affected-only or partial runs don't count. CI minutes cost money: CI runs only lint, typecheck, the build and
-  the fast tests the change affects (on ready PRs only: drafts and pushes to `main` don't run it, nor do markdown-only
-  changes), plus the full suite once a day on `main` when it changed. Batch fixes into one push rather than pushing every commit to an open PR.
+  body. Affected-only or partial runs don't count. The repo is public, so CI minutes are free; CI time is what counts. On
+  ready PRs CI runs lint, typecheck, the build and the full test suite, slow tier included, in 8 parallel shards (about
+  3 minutes; `PR_TESTS: affected` in `ci.yml` switches PRs back to affected fast tests). Drafts, pushes to `main` and
+  markdown-only changes don't run it; the full suite also runs once a day on `main` when it changed. Batch fixes into one
+  push rather than pushing every commit to an open PR.
+- `npm run test:weights`: refresh `tools/testWeights.json` (per-file times that order the run and balance the CI shards)
+  after adding or reshaping heavy tests.
+- Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
+  mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run profile` / `npm run profile:sim`: performance profiler for agents (headless game / sim only). See `docs/PROFILING.md`.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
