@@ -22,6 +22,9 @@ describe('boarding.launch', () => {
     expect(v.state).toBe('docked');
     expect(v.pilot).toBe(0);
     expect(v.passengers).toEqual([]);
+    // Waiting at the enemy for the party's recall: no cargo run or trade takes it away meanwhile.
+    expect(ferryFree(sim, shuttle)).toBe(false);
+    expect((playerCourier(sim) as { vehicle?: number }).vehicle).not.toBe(shuttle);
   });
 
   it('the landed party can be recalled and the first one back flies the shuttle home', () => {
