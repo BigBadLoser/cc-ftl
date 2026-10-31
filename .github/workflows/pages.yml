@@ -1,8 +1,6 @@
-name: Deploy to GitHub Pages
+name: Deploy game and wiki to GitHub Pages
 
-# Publishes main to https://bigbadloser.github.io/cc-ftl/. Manual only (Actions tab, "Run workflow"): main is not
-# deployed on every push. Needs Settings > Pages > Source: GitHub Actions. The build passes --base /cc-ftl/ so the
-# site serves from the project path; local dev and the CI build stay at /.
+# Keep manual publication: playable game and wiki must describe the same commit.
 on:
   workflow_dispatch:
 
@@ -18,17 +16,28 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npx vite build --base /cc-ftl/
+      - name: Build playable game
+        run: npx vite build --base /cc-ftl/
+      - name: Install wiki dependencies
+        run: npm --prefix wiki install --no-audit --no-fund
+      - name: Build gameplay wiki
+        run: npm --prefix wiki run build
+      - name: Merge static websites
+        run: |
+          mkdir -p dist/wiki
+          cp -a wiki/dist/. dist/wiki/
+          test -f dist/index.html
+          test -f dist/wiki/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

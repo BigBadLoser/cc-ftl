@@ -6,6 +6,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TraderC } from '../trade/types';
 import { addStock } from '../trade/deals';
+import { addCredits } from '../trade/credits';
 import type { YardMoney, YardOrder } from './types';
 
 const METAL = 'item.metal';
@@ -39,7 +40,7 @@ export function refund(sim: Sim, o: YardOrder, share: YardMoney): YardMoney {
   const metal = Math.min(o.held.metal, share.metal);
   o.held.credits -= credits;
   o.held.metal -= metal;
-  sim.trade.credits += credits;
+  addCredits(sim, credits);
   if (metal > 0) returnMetal(sim, o.ship, metal);
   return { credits, metal };
 }

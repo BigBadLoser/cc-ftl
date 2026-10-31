@@ -1,12 +1,14 @@
+import { startBoardingScenario } from './app/boardingScenario';
 import { mount } from 'svelte';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
-import type { UiApi, UiIcon, UiSession } from './ui/api';
+import type { UiApi, UiIcon, UiSaveSlot, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
+import { backdropSpecOf } from './app/backdropSpec';
 import { loadStarmapArt } from './app/starmapArt';
 import { createStarmapGpu } from './render/starmap';
 import { createStore } from './app/store';
@@ -21,12 +23,17 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { createSaver, lostReason, reloadLastSave, restartNewGame, startGame } from './app/saves';
+import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, inThisCampaign, writePrecombat, writeSave } from './app/saves';
+import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
-import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
+import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
+import { createSignalFeed } from './app/signals';
+import { keymap } from './ui/keymap';
+import { isTypingTarget, modalOpen } from './ui/keys';
+import { settings } from './ui/settings/settings';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -41,7 +48,7 @@ const errorLog = createErrorLog();
 const consoleRing = installConsoleRing();
 let gameCanvas: HTMLCanvasElement | undefined;
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
-const start = startGame(new URLSearchParams(location.search).get('seed'));
+const start = await startGame(new URLSearchParams(location.search).get('seed'));
 const sim = start.sim;
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);
@@ -61,6 +68,8 @@ const setProbe = (p: Probe | null): void => {
   renderer?.setProbe(probe);
 };
 
+/** Sim events and issued commands for the lessons engine (ui/lessons). */
+const signals = createSignalFeed(sim.commands);
 let upkeepFrame = 0;
 const loop = createLoop({
   sim,
@@ -83,6 +92,8 @@ const loop = createLoop({
   onEvents: (events) => {
     probe.begin('ui/events');
     controller.onEvents(events);
+    // A fight just began: keep this moment, so a fight that goes wrong can be undone (the autosave is overwritten as it goes on).
+    if (start.persist && session.get().lost === null && events.some((e) => e.type === 'combat.started')) void writePrecombat(sim);
     renderer?.onEvents(events);
     probe.end('ui/events');
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
@@ -90,6 +101,7 @@ const loop = createLoop({
       if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace' || e.type === 'galaxy.eventLeft') {
         renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
         renderer?.resetWorld();
+        renderer?.setBackdrop(backdropSpecOf(sim));
       }
       else if (e.type === 'sector.deployed') {
         const grid = shipGrid(sim, e.ship);
@@ -97,6 +109,7 @@ const loop = createLoop({
         setTimeout(save, 0); // after a jump lands: the new node is in the save
       }
     }
+    signals.events(events);
     hook?.onEvents(events.map((e) => e.type));
   },
   onFrame: (stats) => {
@@ -104,16 +117,19 @@ const loop = createLoop({
     const info = renderer?.info();
     if (info) probe.count('render/sprites', info.sprites);
     bridge.update(stats, info);
+    signals.poll();
     probe.end('ui/bridge');
   },
 });
 bridge.attachLoop(loop);
+// The player's start speed (Settings); a debug scenario sets its own once it is set up.
+if (!new URLSearchParams(location.search).has('scenario')) bridge.setSpeed(settings.get().startSpeed);
 
 // Profiler (debug only, loaded on demand): `?perf` turns it on at start, F3 toggles its panel. See docs/PROFILING.md.
 const perfBoot = (): Promise<import('./app/profiler/install').ProfilerHandle> => import('./app/profiler/install').then((m) => m.installProfiler(setProbe));
 if (new URLSearchParams(location.search).has('perf')) void perfBoot().then((h) => h.api.enable());
 window.addEventListener('keydown', (e) => {
-  if (e.key !== 'F3') return;
+  if (modalOpen() || isTypingTarget(e) || !keymap.matches(e, 'debug.profiler')) return;
   e.preventDefault();
   void perfBoot().then((h) => h.togglePanel());
 });
@@ -140,7 +156,8 @@ setInterval(() => {
   // The world stops behind the game-over screen for good: no speed key or button can start it again.
   bridge.setSpeed(0);
   loop.stop();
-  session.set({ ...session.get(), lost });
+  const summary = { ...runSummary(sim), hasPrecombat: saveStore.list().some((m) => m.id === PRECOMBAT_ID && inThisCampaign(sim, m)) };
+  session.set({ ...session.get(), lost, summary });
 }, 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 window.addEventListener('pagehide', save);
@@ -261,7 +278,7 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
-  if (scenario === 'fight') {
+  if (scenario === 'fight' || scenario === 'boarding') {
     // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
     const g = sim.galaxy;
     const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
@@ -272,6 +289,7 @@ function startScenario(): void {
       if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
       setTimeout(() => {
         spawnRaider();
+        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'));
         if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
       }, 400);
     }, 400);
@@ -329,7 +347,23 @@ function reportInfo(): ReportInfo {
 const api: UiApi = {
   snapshot: bridge.snapshot,
   session,
-  newGame: restartNewGame,
+  saves: {
+    list: () => {
+      const metas = new Map(saveStore.list().map((m) => [m.id, m]));
+      return [...AUTO_IDS, PRECOMBAT_ID, ...SLOT_IDS].filter((id) => start.showAll || !metas.has(id) || inThisCampaign(sim, metas.get(id)!)).map((id) => {
+        const meta = metas.get(id) ?? null;
+        return {
+          id, auto: !SLOT_IDS.includes(id as never), meta, kind: isAutoId(id) ? 'auto' : id === PRECOMBAT_ID ? 'precombat' : 'slot',
+          loadable: !meta || meta.version === undefined || meta.version === SAVE_VERSION,
+        } satisfies UiSaveSlot;
+      });
+    },
+    save: (id, name) => (SLOT_IDS.includes(id as never) ? writeSave(sim, id, name) : Promise.resolve(false)),
+    load: loadSlot,
+    remove: (id) => (SLOT_IDS.includes(id as never) ? saveStore.remove(id) : Promise.resolve(false)),
+  },
+  cancel: () => controller.cancel(),
+  newGame: () => void restartNewGame(),
   loadLastSave: reloadLastSave,
   dismissNotice: () => session.set({ ...session.get(), notice: null }),
   inspect: bridge.inspect,
@@ -370,6 +404,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  boarding: bridge.boarding,
   ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
@@ -384,6 +419,7 @@ const api: UiApi = {
   story: bridge.story,
   starmap: bridge.starmap,
   planRoute: bridge.planRoute,
+  whereToSell: bridge.whereToSell,
   deploy: bridge.deploy,
   deployCheck: bridge.deployCheck,
   jumpWarnings: bridge.jumpWarnings,
@@ -400,6 +436,10 @@ const api: UiApi = {
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
   insetSize: (ship) => renderer?.insetSize(ship) ?? null,
+  shipScreen: (id) => {
+    const s = sim.world.get(id, ShipC);
+    return renderer && s ? renderer.screenOf(0, s.x + s.width / 2, s.y + s.height / 2) : null;
+  },
   moduleScreenRect: (id) => {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
@@ -434,6 +474,7 @@ const api: UiApi = {
   setTool: controller.setTool,
   selectCrew: controller.selectCrew,
   dispatch: bridge.dispatch,
+  onSignal: signals.listen,
   setSpeed: bridge.setSpeed,
   togglePause: bridge.togglePause,
   clearErrors: errorLog.clear,
@@ -455,6 +496,8 @@ const api: UiApi = {
     }, 0);
   },
   portrait: (id) => renderer?.portrait(id) ?? null,
+  lookPortrait: (look) => renderer?.portraitOf(look) ?? null,
+  portraitArt: (key) => renderer?.portraitArt(key) ?? null,
   moduleThumb: (def, rot) => renderer?.moduleThumb(def, rot) ?? null,
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
@@ -468,6 +511,7 @@ const api: UiApi = {
         r.setProbe(probe);
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);
+        r.setBackdrop(backdropSpecOf(sim));
         const grid = shipGrid(sim, homeShip(sim));
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));

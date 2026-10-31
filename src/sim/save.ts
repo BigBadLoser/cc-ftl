@@ -83,9 +83,11 @@ import { newYard, type YardState } from './yard/types';
  * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
  * v69 (trade): optional `Deal.getValue` (each get line's agreed share of the escrow, for settling a part-delivered run).
  * v70 (weapon modes, merged after trade): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
- * v71 (court floors): the `floor` grid field (a floor tile's finish: plain deck, walkway, soil, market tile, tread plate).
+ * v71 (boarding, merged after weapon modes): `RecallC` (a player boarding party's recall, on the shuttle), the 'sabotage' job kind and
+ *   `SabotageOrderC` (a boarder's sabotage order, kept while a fight pauses it).
+ * v72 (court floors, merged after boarding): the `floor` grid field (a floor tile's finish: plain deck, walkway, soil, market tile, tread plate).
  */
-export const SAVE_VERSION = 71;
+export const SAVE_VERSION = 72;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -144,6 +146,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
+  sim.trade.bestCredits = Math.max(sim.trade.bestCredits ?? 0, sim.trade.credits); // a save from before the field starts at what it holds
   sim.yard = { ...newYard(), ...data.yard };
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);

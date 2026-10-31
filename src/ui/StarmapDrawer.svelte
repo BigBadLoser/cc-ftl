@@ -5,6 +5,7 @@
    * the progress along the route and "Drop from hyperspace".
    */
   import FtlCharge from './FtlCharge.svelte';
+  import JumpConfirm from './JumpConfirm.svelte';
   import Icon from './Icon.svelte';
   import type { UiFtl } from './api';
   import PanelHead from './PanelHead.svelte';
@@ -92,10 +93,10 @@
         {#each node.jobs ?? [] as j, i (i)}<div class="row job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job">{j.label}</div>{/each}
         {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" title="Notable stock here"><span class="dim">Stock</span>{#each node.hints as h (h)}<span class="chip">{h}</span>{/each}</div>{/if}
         {#if node.market}
-          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce">
+          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce. Cheap goods show what they sell for, wanted goods what they pay.">
             <span class="dim">Market</span>
-            {#each node.market.cheap as g (g)}<span class="good cheap"><Icon name="chevDown" size={11} />{g}</span>{/each}
-            {#each node.market.dear as g (g)}<span class="good dear"><Icon name="chevUp" size={11} />{g}</span>{/each}
+            {#each node.market.cheap as g (g.name)}<span class="good cheap" title="{g.name}: sells for {g.price} ₵"><Icon name="chevDown" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
+            {#each node.market.dear as g (g.name)}<span class="good dear" title="{g.name}: pays {g.price} ₵"><Icon name="chevUp" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
             {#if !node.market.cheap.length && !node.market.dear.length}<span class="dim">prices steady</span>{/if}
           </div>
         {/if}
@@ -140,20 +141,6 @@
           {/each}
         </ol>
       </section>
-      {#if warnings}
-        <section class="confirm" data-testid="starmap-confirm">
-          <h4>Before you jump</h4>
-          {#if warnings.crew.length}<p class="note warn"><Icon name="person" size={14} />Left behind: {warnings.crew.join(', ')}.</p>{/if}
-          {#if warnings.vehicles.length}<p class="note warn"><Icon name="shuttle" size={14} />Not aboard: {warnings.vehicles.join(', ')}.</p>{/if}
-          {#each warnings.hostileDocked as d (d.id)}
-            <label class="take"><input type="checkbox" checked={taking.has(d.id)} onchange={() => onToggle(d.id)} data-testid="starmap-take" />Take docked {d.name} along (else it is cut loose)</label>
-          {/each}
-          <div class="two">
-            <button onclick={onCancel}>Cancel</button>
-            <button class="go" onclick={onConfirm} data-testid="starmap-confirm-go"><Icon name="fast" size={18} />Confirm</button>
-          </div>
-        </section>
-      {:else}
         <button class="go" disabled={!!route.blocker || !!route.overweight} onclick={onGo} data-testid="starmap-jump"><Icon name="fast" size={18} />{label}</button>
         {#if route.blocker}<p class="note dim">{route.blocker}</p>{:else if !route.overweight}<p class="note dim">Tap the node again to go.</p>{/if}
         {#if route.overweight}
@@ -165,7 +152,7 @@
           <button class="queue" disabled={!!ftl?.blocker} onclick={onQueue} data-testid="starmap-queue"><Icon name="bolt" size={18} />Jump when charged</button>
         {/if}
         <FtlCharge {ftl} testid="starmap-ftl" {onCharge} onCancel={onCancelCharge} />
-      {/if}
+      <JumpConfirm {warnings} {taking} {onToggle} {onConfirm} {onCancel} />
     {:else if node.known}
       <p class="note dim">No known route.</p>
     {/if}
@@ -211,11 +198,6 @@
   .traffic span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .traffic small { color: var(--dim); font-size: 11px; }
   .n { font: 600 12px var(--head-font); color: var(--cyan); min-width: 12px; }
-  .confirm { padding: 8px; border: 1px solid var(--amber); background: var(--panel-2); }
-  .take { display: flex; gap: 8px; align-items: center; font-size: 13px; min-height: 32px; }
-  .take input { width: 20px; height: 20px; accent-color: var(--cyan); }
-  .two { display: flex; gap: 6px; }
-  .two button { flex: 1; }
   button { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
   .go:disabled, .queue:disabled { opacity: 0.4; }

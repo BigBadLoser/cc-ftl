@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { keyLabel, keymap } from '../keymap';
   import Icon from '../Icon.svelte';
   import { ActionButton, Frame, KeyBadge } from '../kit';
+  import { anchor } from '../lessons/anchors';
   import { VENT_MIN_HEAT } from '../../sim/combat/heatTuning';
   import type { UiShipCombat } from '../api';
 
@@ -23,7 +25,7 @@
   const canVent = $derived(!locked && heat.venting === 0 && heat.value >= VENT_MIN_HEAT);
 </script>
 
-<Frame title="Heat" {style} testid="heat-gauge">
+<Frame title="Heat" {style} testid="heat-gauge" lesson={anchor('combat.heat')}>
   <div class="hh">
     <div class="top">
       <b class={tone}>{pct}%</b>
@@ -40,13 +42,13 @@
         <ActionButton
           tone={heat.venting > 0 ? 'active' : 'plain'}
           disabled={!canVent}
-          title="Vent: dump heat fast, but shields drop and weapons hold fire (G)"
+          title="Vent: dump heat fast, but shields drop and weapons hold fire ({keyLabel($keymap, 'combat.vent')})"
           onclick={onVent}
         >
           <span class="ventin">
             <Icon name="wind" size={15} />
             {heat.venting > 0 ? `${heat.venting.toFixed(1)}s` : 'Vent'}
-            <KeyBadge tone="dim" size="sm" padX={3}>G</KeyBadge>
+            <KeyBadge tone="dim" size="sm" padX={3}>{keyLabel($keymap, 'combat.vent')}</KeyBadge>
           </span>
         </ActionButton>
       </span>

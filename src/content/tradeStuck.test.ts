@@ -4,7 +4,7 @@ import { cargoCount, cargoTake } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
 import { playerCrew } from '../sim/story/world';
-import { storagesHolding } from '../sim/trade/player';
+import { holding } from '../sim/trade/player';
 import { shipIdOf, shipIds } from '../sim/regions';
 import { content } from './index';
 
@@ -25,7 +25,7 @@ function buying(): { sim: Sim; station: number; start: number } {
 }
 /** Metal the player physically has: in the stores plus anything in a shuttle's hold. */
 function metal(sim: Sim): number {
-  const held = storagesHolding(sim, 'item.metal').reduce((n, s) => n + s.count, 0);
+  const held = holding(sim, 'item.metal').reduce((n, s) => n + s.count, 0);
   return held + sim.world.query(VehicleC).reduce((n, id) => n + (sim.world.get(id, VehicleC)!.cargo.find((c) => c.item === 'item.metal')?.count ?? 0), 0);
 }
 function until(sim: Sim, phase: string): void {

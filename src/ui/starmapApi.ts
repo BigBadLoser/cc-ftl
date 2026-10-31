@@ -84,9 +84,23 @@ export interface UiStarLink {
 }
 
 /** A port's market in a few words: the goods that are cheap and the goods that are dear there right now. */
+/** A good and a price in credits per unit: what the port sells it for (cheap goods) or pays for it (wanted goods). */
+export interface UiGoodPrice {
+  name: string;
+  price: number;
+}
+
 export interface UiStarMarket {
-  cheap: string[];
-  dear: string[];
+  cheap: UiGoodPrice[];
+  dear: UiGoodPrice[];
+}
+
+/** A good aboard and the known ports that pay most for it now (dearest first): the starmap's "where to sell" view. */
+export interface UiSellGood {
+  item: string;
+  name: string;
+  count: number;
+  best: { node: string; name: string; hops: number; price: number }[];
 }
 
 /** A held station job that ends at a node: a delivery's destination or a bounty's target. */

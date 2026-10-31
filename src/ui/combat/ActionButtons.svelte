@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { keyLabel, keymap } from '../keymap';
   import Icon from '../Icon.svelte';
   import { ActionButton, Frame, KeyBadge } from '../kit';
+  import { anchor } from '../lessons/anchors';
 
   /** The ACTIONS frame: fire the charged weapons now, or put every weapon on hold (H; again to restore). */
   let { canVolley, holding, onVolley, onHold, style = '' }: {
@@ -12,21 +14,21 @@
   } = $props();
 </script>
 
-<Frame title="Actions" {style}>
+<Frame title="Actions" {style} lesson={anchor('combat.actions')}>
   <div class="acts">
     <span class="wide">
-      <ActionButton tone="go" disabled={!canVolley} title="Fire every charged weapon now (V)" testid="combat-volley" onclick={onVolley}>
-        <Icon name="volley" size={18} />Volley<KeyBadge tone="dim" size="sm" padX={5}>V</KeyBadge>
+      <ActionButton tone="go" disabled={!canVolley} title="Fire every charged weapon now ({keyLabel($keymap, 'combat.volley')})" testid="combat-volley" onclick={onVolley}>
+        <Icon name="volley" size={18} />Volley<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'combat.volley')}</KeyBadge>
       </ActionButton>
     </span>
     <span class="wide">
       <ActionButton
         tone={holding ? 'active' : 'plain'}
-        title={holding ? 'Restore every weapon to the mode it had (H)' : 'Put every weapon on hold: they charge but wait for a volley or an aim (H)'}
+        title={`${holding ? 'Restore every weapon to the mode it had' : 'Put every weapon on hold: they charge but wait for a volley or an aim'} (${keyLabel($keymap, 'combat.holdAll')})`}
         testid="combat-hold"
         onclick={onHold}
       >
-        <Icon name="hold" size={18} />{holding ? 'Held' : 'Hold all'}<KeyBadge tone="dim" size="sm" padX={5}>H</KeyBadge>
+        <Icon name="hold" size={18} />{holding ? 'Held' : 'Hold all'}<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'combat.holdAll')}</KeyBadge>
       </ActionButton>
     </span>
   </div>

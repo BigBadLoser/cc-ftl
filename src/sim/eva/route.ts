@@ -38,7 +38,7 @@ function gridHasThinAir(sim: Sim, grid: Grid): boolean {
  * anywhere. Everyone else first looks for a path that keeps out of thin air (the prefer-no-EVA rule); if only a thin-air
  * path exists they get it with `thin` set, so the caller can send them for a suit or let a player's order stand.
  */
-export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal): WalkPlan | null {
+export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal, thinOk: () => boolean = () => true): WalkPlan | null {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return null;
   const suited = hasSuitAir(sim, crew);
@@ -48,6 +48,7 @@ export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goa
   }
   const clean = findPath(sim, shipId, from, goal, { avoidThin: true });
   if (clean) return { steps: clean, thin: false };
+  if (!thinOk()) return null; // the caller would drop a thin plan anyway: skip the search for it
   const steps = findPath(sim, shipId, from, goal);
   return steps && { steps, thin: true };
 }
@@ -55,10 +56,11 @@ export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goa
 /**
  * `planWalk` for a work site: a site only the hull ring reaches (building out on the hull, the shipyard's tiles) is still on offer to a crew member
  * who breathes, as an EVA job: the plan is `thin`, so the caller sends them for a suit first. Sites inside the ship are planned as before.
+ * `thinOk` is asked before any search for a thin plan; a caller that has no use for one (no suit to be had) answers false and gets null for those.
  */
-export function planSiteWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal): WalkPlan | null {
-  const plan = planWalk(sim, crew, shipId, from, goal);
-  if (plan || hasSuitAir(sim, crew) || !needsAir(sim, crew)) return plan;
+export function planSiteWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal, thinOk: () => boolean = () => true): WalkPlan | null {
+  const plan = planWalk(sim, crew, shipId, from, goal, thinOk);
+  if (plan || hasSuitAir(sim, crew) || !needsAir(sim, crew) || !thinOk()) return plan;
   const steps = findPath(sim, shipId, from, goal, { suited: true });
   return steps && { steps, thin: true };
 }

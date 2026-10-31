@@ -40,8 +40,10 @@ import { createWorldGrid } from './worldGrid';
 import { createCutLine } from './cutLine';
 import { createPodView } from './podView';
 import { createPortraits } from './portrait';
+import type { CrewLook } from './loadout';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
 import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
+import { createBackdrop, type BackdropSpec } from './backdrop';
 import { createShipScene, type ShipScene } from './shipScene';
 
 export type { CutawayMode };
@@ -95,6 +97,10 @@ export interface Renderer {
   info(): RenderInfo;
   /** Head-and-shoulders portrait of a crew member (a PNG data URL, cached per look), or null while its sheets load. */
   portrait(id: number): string | null;
+  /** The same for a look with no crew entity behind it (a lesson's instructor). */
+  portraitOf(look: CrewLook): string | null;
+  /** A dedicated portrait asset by manifest key, or null while it loads or if it does not exist. */
+  portraitArt(key: string): string | null;
   /** A module def's art as an image at a rotation (the build catalog's thumbnail), or null while its sheets load. */
   moduleThumb(def: string, rot: number): ModuleThumb | null;
   /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
@@ -133,6 +139,10 @@ export interface Renderer {
   setInset(view: { shipId: number; view: HTMLElement } | null): void;
   /** The inset window's size in CSS px for a ship (sized to the ship at a pixel-perfect zoom), or null. */
   insetSize(shipId: number): { w: number; h: number } | null;
+  /** The space behind the ships: this node's seed, nebula density and central body. */
+  setBackdrop(spec: BackdropSpec): void;
+  /** Show or hide the space backdrop (screenshot tooling: a flat background lets a script cut ships out). */
+  showBackdrop(on: boolean): void;
   /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
   setCommitEta(fn: (weaponId: number) => number | null): void;
   /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
@@ -193,6 +203,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let lastFrame = animNow();
 
   // One world layer stack for every region (ship), in the sector frame: art origin = sector tile (0, 0).
+  const backdrop = createBackdrop(atlas);
+  stage.addChild(backdrop.root);
+  let backdropOn = true;
   const W = createWorldStack();
   stage.addChild(W.root);
   // The air layer: combat fx and flying bodies above every ship and roof, in the same frame.
@@ -408,13 +421,18 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe.begin('render/fx');
       fx.update(dt, alpha);
       sectorParticles.update(dt);
+      // Before the census settles: the body's texture lookup marks its sheet in use, so it is never evicted while on screen.
+      backdrop.update(cam.w, cam.h, cam.originX, cam.originY, ratio());
       art.settle();
       probe.end('render/fx');
       probe.begin('render/inset');
+      backdrop.root.visible = false; // the combat panel has its own flat background
       inset.render(gl, stage, () => threatMarks.update());
+      backdrop.root.visible = backdropOn;
       probe.end('render/inset');
       probe.begin('render/gl');
       place(cam, null);
+      backdrop.update(cam.w, cam.h, cam.originX, cam.originY, ratio());
       threatMarks.update();
       gl.render({ container: stage });
       probe.end('render/gl');
@@ -427,6 +445,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     resetWorld() {
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
+    },
+    setBackdrop(spec) {
+      backdrop.setSpec(spec);
+    },
+    showBackdrop(on) {
+      backdropOn = on;
+      backdrop.root.visible = on;
     },
     setSector(g) {
       sector = g;
@@ -503,6 +528,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return { sprites, zoom: cam.zoom };
     },
     portrait: (id) => portraits.url(id),
+    portraitOf: (look) => portraits.lookUrl(look),
+    portraitArt: (key) => portraits.assetUrl(key),
     moduleThumb: (def, rot) => thumbs.get(def, rot),
     art: () => ({ ...atlas.stats(), rebuilds: art.rebuilds() }),
     pan: (dx, dy) => cam.pan(dx, dy),
@@ -565,6 +592,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       crewMarks.dispose();
       orderFx.dispose();
       fx.dispose();
+      backdrop.dispose();
       sectorParticles.dispose();
       inset.dispose();
       for (const sc of scenes.values()) sc.dispose();

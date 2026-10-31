@@ -86,6 +86,18 @@ export function marketValue(sim: Sim, t: Trader, item: string, stock: number, ba
   return p === undefined ? 0 : applyMods(sim, t, item, 'sell', p) * stockFactor(stock, base);
 }
 
+/**
+ * A market's price for one unit on a side, without a trader entity or the player's reputation: what the starmap and station info show for a
+ * port (issue #222). The same rules as `unitPrice` (spread, kind and tag mods, scarcity; a buy never above the sell); contraband is not quoted.
+ */
+export function marketQuote(sim: Sim, t: Trader, item: string, stock: number, base: number | undefined, side: PriceSide): number | null {
+  const cfg = sim.content.trade;
+  const p = sim.content.items[item]?.price;
+  if (!cfg || p === undefined || isContraband(sim, item)) return null;
+  const at = (s: PriceSide): number => Math.max(1, Math.round(applyMods(sim, t, item, s, p * (s === 'sell' ? cfg.spread.sell : cfg.spread.buy)) * stockFactor(stock, base)));
+  return side === 'sell' ? at('sell') : Math.min(at('buy'), at('sell'));
+}
+
 /** Total credits of item lines at the trader's price on one side, or null if any line has no price. */
 export function linesValue(sim: Sim, trader: number, lines: readonly ItemQty[], side: PriceSide): number | null {
   let total = 0;

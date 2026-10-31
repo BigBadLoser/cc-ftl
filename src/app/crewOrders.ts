@@ -1,6 +1,7 @@
 import { AllegianceC, CrewC, DeadC, DraftedC, ModuleC, PositionC, Struct, VehicleC, boardingTile, isCombatReady, isHostile, rotatedSize, type Sim } from '../sim';
 import { EggSacC } from '../sim/aliens/components';
 import { sacAlive } from '../sim/aliens/target';
+import { factionsHostile } from '../sim/combat/factions';
 import { shipById } from '../sim/combat/ships';
 import { isTileWalkable } from '../sim/modules/walk';
 import { accessTile } from '../sim/modules/footprint';
@@ -93,6 +94,15 @@ export function planOrders(sim: Sim, r: Renderer, sx: number, sy: number, select
       }).sort((a, b) => a.d - b.d || a.c - b.c)[0];
       if (near) sim.enqueue({ type: 'crew.man', id: near.c, module });
       if (at) r.addOrderMarker(at.x, at.y, 'station');
+    };
+  }
+
+  // Boarders on a hostile ship can wreck one of its modules from inside (the sim walks them over; a fight pauses it, and it resumes).
+  if (mod && def && mod.hp > 0 && on(shipIdOf(sim, mod)).length && factionsHostile(shipById(sim, shipIdOf(sim, mod))?.faction, 'player')) {
+    probe.sabotage = { module, name: def.name.toLowerCase() };
+    act.sabotage = () => {
+      sim.enqueue({ type: 'crew.sabotage', ids: on(shipIdOf(sim, mod)), module });
+      r.addOrderMarker(mod.x, mod.y, 'attack');
     };
   }
 

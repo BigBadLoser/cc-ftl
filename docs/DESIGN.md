@@ -540,7 +540,7 @@ drafts) and only gains visibility: an alert when boarders dock and intruder mark
 - **Fix:** a near-capture must not turn into a wreck when boarders step off before the bridge hold completes.
 - **Later:** a teleporter module, rarer, using the same picker with no flight and a cooldown.
 
-### Lessons: the tutorial system (user decisions, 2026-10-29; not built yet)
+### Lessons: the tutorial system (user decisions, 2026-10-29)
 
 The goal chain (`src/sim/story/goals.ts`) says **what** to do next; lessons teach **how** a feature works. They are a
 UI-layer system: they read the sim and its events, never change it, and are not part of the game save.
@@ -550,6 +550,9 @@ UI-layer system: they read the sim and its events, never change it, and are not 
   to a lesson ("Show me how").
 - **Coach marks.** Each step is a short callout pointing at the real thing: a UI element or an object in the world (a
   module, a station). A lesson is a few steps, a few lines each.
+- **Step text** (user decisions, 2026-10-30 and 2026-10-31). One line of the instructor's dialogue, then plain lines
+  that say what to do and what each thing is for, with keys from the key map. The text is as concise as it can be while
+  still giving the player everything they need: don't cut useful information to save words, and don't pad.
 - **Pause.** The game pauses while a lesson is open and resumes when it closes. A step that needs time to pass (watching
   shields recharge) says so and runs the game during that step.
 - **Completion per step.** A step either waits for the player to do the thing ("Press Q to arm a weapon", done when they
@@ -560,6 +563,19 @@ UI-layer system: they read the sim and its events, never change it, and are not 
 - **Content, like everything else.** Lessons are TS objects (`satisfies LessonDef`) referenced by string ID. UI elements
   carry a `data-lesson` anchor from a typed list, so a missing or renamed anchor fails the typecheck. World anchors use
   the screen projection the module quick panel uses.
+- **Instructors** (user decisions, 2026-10-30). Lessons are spoken in character by a fixed instructor per category, not
+  by the player's crew. The card shows the instructor's portrait on its left edge (the frame's left border breaks around
+  it) with "NAME · ROLE" in the top label and the lesson name and step count on the right. Each instructor gets custom
+  portrait art from the Blender pipeline; until it exists the portrait is drawn from a stand-in look.
+
+  | Category | Instructor | Voice | Look |
+  |---|---|---|---|
+  | Combat, navigation (weapons, heat, flee, starmap, jumps, fuel) | **Vash**, Pilot | Cocky, restless, loves a fast exit | Buzz cut, headset, aviator jacket |
+  | Engineering (power, building, repairs) | **Okafor**, Chief Engineer | Patient, proud of the ship, talks to machines | Grey beard, goggles pushed up, orange coveralls |
+  | Crew care (needs, beds, food, medical) | **Dr. Lin Hale**, Medic | Warm but blunt about neglect | Tied-back hair, white coat over a ship suit |
+  | Trade and stations (deals, hiring, markets) | **Marguerite Sol**, Quartermaster | Shrewd, counts everything twice | Sharp bob, glasses on a chain, high collar |
+  | Boarding and EVA (suits, shuttles, sabotage) | **Kade**, Boarding Lead | Loud, fearless, a little reckless | Shaved head, heavy suit with a cracked visor at the neck |
+  | Factions and the black market | **"Ghost"**, Fixer | Quiet, wry, never answers a direct question | Hooded, half-shadowed face, one cybernetic eye |
 
 ## Open questions
 

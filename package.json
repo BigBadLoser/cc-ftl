@@ -23,6 +23,8 @@
     "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs",
     "profile": "node tools/profile/cli.js",
     "profile:sim": "node tools/profile/sim.js",
+    "profile:windows": "node tools/profile/windows.js",
+    "profile:dump": "node tools/profile/dump.js",
     "profile:baseline": "node tools/profile/baseline.js",
     "ai:diff": "node tools/profile/aiDiff.js"
   },
@@ -37,6 +39,7 @@
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "eslint": "^9.39.5",
     "eslint-plugin-svelte": "^3.23.1",
+    "fake-indexeddb": "^6.2.7",
     "globals": "^17.13.0",
     "playwright-core": "^1.56.1",
     "svelte-check": "^4.7.6",

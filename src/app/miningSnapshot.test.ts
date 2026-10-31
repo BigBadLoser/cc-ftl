@@ -24,7 +24,7 @@ describe('mining snapshot', () => {
     expect(a.kind).toBe('field');
     expect(a.ore.length).toBeGreaterThan(0);
     expect(a.ore.every((o) => o.units > 0 && /^#[0-9a-f]{6}$/.test(o.color))).toBe(true);
-    expect(m.pods).toEqual([expect.objectContaining({ id: pod, state: 'stowed', phase: null, hold: 0, cap: 24, trips: 0 })]);
+    expect(m.pods).toEqual([expect.objectContaining({ id: pod, state: 'stowed', phase: null, hold: 0, cap: content.vehicles['vehicle.mining_pod'].cargo, trips: 0 })]);
     sim.enqueue({ type: 'mining.order', pod, asteroid });
     for (let i = 0; i < 2000 && buildMining(sim).pods[0]!.phase !== 'mining'; i++) sim.step();
     m = buildMining(sim);

@@ -157,7 +157,7 @@
           </span>
         </div>
       {:else}
-        <p class="none">Nothing in storage they would buy.</p>
+        <p class="none">Nothing aboard they would buy.</p>
       {/each}
     </section>
     <section class="col" class:hide={tab !== 'theirs'} data-testid="trade-theirs">

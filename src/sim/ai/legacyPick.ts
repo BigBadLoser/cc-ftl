@@ -86,9 +86,9 @@ export function pickJob(sim: Sim, crewId: number, pos: Position): boolean {
       if (!job || !cats.includes(job.category) || !jobFits(sim, crewId, pos, job)) continue;
       // Operating is a high-priority job, except in a fight: a console left empty a while is relieved by crew of a role that relieves stations, with nothing better to do (disabled, 0, stays off).
       if (job.kind === 'operate' && level > OPERATE_MAX_LEVEL && !canRelieve(sim, crewId, job)) continue;
-      const plan = planSiteWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job));
-      // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it.
-      if (!plan || (plan.thin && !(source ??= findSuitSource(sim, crewId, pos) ?? false))) continue;
+      // Prefer jobs that need no EVA; a thin-air job is only on offer when a suit can be had for it (without one, don't even search for the thin way).
+      const plan = planSiteWalk(sim, crewId, shipIdOf(sim, pos), origin(pos), jobGoal(job), () => !!(source ??= findSuitSource(sim, crewId, pos) ?? false));
+      if (!plan) continue;
       // a relief takes the console only when nothing else of their rank is waiting
       const score = plan.steps.length - repairUrgency(sim, job) - operateAffinity(sim, crewId, job) + (plan.thin ? EVA_JOB_PENALTY : 0) + (job.kind === 'operate' && level > OPERATE_MAX_LEVEL ? RELIEF_PENALTY : 0);
       if (!best || score < best.score) best = { id: jobId, steps: plan.steps, score, thin: plan.thin };

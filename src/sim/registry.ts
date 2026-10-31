@@ -416,6 +416,11 @@ export interface ModuleDef {
   powerPriority?: number;
   /** Oxygen added per second, spread over the module's room. */
   o2PerSec?: number;
+  /**
+   * Bottled supply that speeds the air up (issue #222): while the room is short of air and the ship's stores hold `item`, the module adds
+   * `mult` times its oxygen, burning one unit per `secPerUnit` seconds of boosted running. A room at normal air burns nothing.
+   */
+  o2Supply?: { item: string; mult: number; secPerUnit: number };
   /** CO2 removed per second, spread over the module's room. */
   co2ScrubPerSec?: number;
   /** Degrees C x tiles added per second, spread over the footprint. */

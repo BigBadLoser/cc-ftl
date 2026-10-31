@@ -24,6 +24,7 @@ U = Vector(core._U.tolist())
 N = Vector((0.6123724, -0.6123724, 0.5))
 UPW = Vector((0.0, 0.0, 1.0))                       # world up
 PX = 1.0 / (64 / math.sqrt(2))                       # world units per 1x art px
+DETAIL = 1                                           # face-count multiplier of spheres and annuli (backdrop bodies raise it)
 
 
 def px(n):
@@ -91,6 +92,7 @@ def sphere(m, c, r, paint, axis=U, segs=96, rings=64):
     noise and banding are computed for every face at once); None leaves that face out."""
     a = Vector(axis).normalized()
     e1, e2 = basis(a)
+    segs, rings = segs * DETAIL, rings * DETAIL
     lat = np.linspace(-math.pi / 2, math.pi / 2, rings + 1)
     lon = np.linspace(0, math.tau, segs + 1)
     E = np.array([e1, e2, a], float)
@@ -121,6 +123,7 @@ def annulus(m, c, axis, r0, r1, paint, segs=96, rings=1, a0=0.0, a1=math.tau, e=
     from e, default the first basis vector). paint(radius fraction (k,), angle (k,), centre points (k,3)) -> k looks (None leaves
     that face out)."""
     e1, e2 = basis(axis) if e is None else (Vector(e).normalized(), Vector(axis).normalized().cross(Vector(e)).normalized())
+    segs = segs * DETAIL
     rs = np.linspace(r0, r1, rings + 1)
     an = np.linspace(a0, a1, segs + 1)
     cv = Vector(c)

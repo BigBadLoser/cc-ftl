@@ -25,6 +25,7 @@
   import BuildCatalog from './BuildCatalog.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
+  import PoiMarkers from './PoiMarkers.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
   import ResearchOverlay from './ResearchOverlay.svelte';
@@ -35,8 +36,13 @@
   import InterdictModal from './InterdictModal.svelte';
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
+  import LessonHost from './lessons/LessonHost.svelte';
+  import EscMenu from './menu/EscMenu.svelte';
+  import { keymap } from './keymap';
+  import { settings } from './settings/settings';
+  import { applySettings } from './settings/apply';
   import Icon, { type IconName } from './Icon.svelte';
-  import { isTypingTarget } from './keys';
+  import { isTypingTarget, modalOpen } from './keys';
   import { isPinned } from './floatingWindow';
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
@@ -60,6 +66,23 @@
     if (speedBeforeReport !== null) api.setSpeed(speedBeforeReport);
     speedBeforeReport = null;
   }
+  /** The Esc menu: the game pauses while it is open and goes back to its speed on close (as the bug report). */
+  let menuOpen = $state(false);
+  let speedBeforeMenu: 1 | 2 | 3 | null = null;
+  function openMenu() {
+    if (menuOpen) return;
+    const s = snap?.speed ?? 0;
+    speedBeforeMenu = s === 0 ? null : s;
+    api.setSpeed(0);
+    (document.activeElement as HTMLElement | null)?.blur?.(); // nothing behind the menu keeps focus (Enter must not press a speed button)
+    menuOpen = true;
+  }
+  function closeMenu() {
+    menuOpen = false;
+    if (speedBeforeMenu !== null && snap?.speed === 0) api.setSpeed(speedBeforeMenu);
+    speedBeforeMenu = null;
+  }
+  let showFps = $state(settings.get().showFps);
   let stockOpen = $state(false);
   let fightReport = $state<UiFightReport | null>(null);
   let jobsOpen = $state(false);
@@ -154,6 +177,8 @@
       api.combat.subscribe((c) => {
         combat = c;
       }),
+      settings.subscribe((s) => (showFps = s.showFps)),
+      applySettings(api),
     ];
     api.attachCanvas(canvas);
     return () => unsubs.forEach((u) => u());
@@ -176,24 +201,43 @@
   ];
   const outside = outsideTap(() => closeOutside(panels));
 
+  /**
+   * Was a modal open when this Esc started? Read in the capture phase, before the modal's own handler closes it (the jump confirmation
+   * closes on Esc and releases the modal gate before this bubble handler runs): that Esc belonged to the modal and must not open the menu.
+   */
+  let escHeld = false;
+  const onKeyCapture = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') escHeld = menuOpen || modalOpen();
+  };
+  /** Keys from the key map (keymap/actions.ts). The Esc menu, when open, takes every key itself. */
   function onKey(e: KeyboardEvent) {
-    if (isTypingTarget(e)) return;
-    if (reporting && e.key !== '`') return; // the bug report keeps the game paused and handles its own keys
-    if (e.key === ' ') {
+    if (isTypingTarget(e) || menuOpen || modalOpen()) return;
+    if (reporting && !keymap.matches(e, 'debug.panel')) return; // the bug report keeps the game paused and handles its own keys
+    if (e.key === 'Escape') return escHeld ? undefined : escape();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (keymap.matches(e, 'game.pause')) {
       e.preventDefault();
       api.togglePause();
-    } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
-    else if (e.key === '`') debug = !debug;
-    else if (e.key === 'm') { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
-    else if (e.key === 'Escape') {
-      // A pinned window ignores Esc.
-      if (fightReport && !isPinned('fightReport')) api.closeFightReport();
-      else if (researchOpen) researchOpen = false;
-      else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
-      else if (stockOpen && !isPinned('stock')) stockOpen = false;
-      else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
-      else api.selectCrew(null);
+    } else if (keymap.matches(e, 'game.speed1')) api.setSpeed(1);
+    else if (keymap.matches(e, 'game.speed2')) api.setSpeed(2);
+    else if (keymap.matches(e, 'game.speed3')) api.setSpeed(3);
+    else if (keymap.matches(e, 'debug.panel')) debug = !debug;
+    else if (keymap.matches(e, 'debug.report')) {
+      e.preventDefault();
+      openReport(); // the toolbar's bug button is hidden during a fight; the key always works
     }
+    else if (keymap.matches(e, 'view.starmap')) { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
+  }
+  /** Esc: close the top panel, else cancel the tool, aim or selection, else open the menu. A pinned window ignores Esc. */
+  function escape() {
+    if (fightReport && !isPinned('fightReport')) api.closeFightReport();
+    else if (researchOpen) researchOpen = false;
+    else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
+    else if (stockOpen && !isPinned('stock')) stockOpen = false;
+    else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
+    else if (mapOpen && !mapLocked && !deploy) return; // the starmap closes itself on Esc (StarmapView)
+    // Over the deploy picker or the locked hyperspace map nothing else answers Esc: it opens the menu (the only way in).
+    else if (deploy || mapOpen || !api.cancel()) openMenu();
   }
 
   const speeds: { label: string; icon: IconName; speed: 0 | 1 | 2 | 3 }[] = [
@@ -213,7 +257,7 @@
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}</span>
+    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
     <span class="speeds">
       {#each speeds as s (s.speed)}
         <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
@@ -222,7 +266,7 @@
   </span>
 {/snippet}
 
-<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
+<svelte:window onkeydown={onKey} onkeydowncapture={onKeyCapture} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas} data-world></canvas>
 <SelectBox {api} />
@@ -245,6 +289,8 @@
   </span>
   {#if narrow}{@render time()}{/if}
 </header>
+
+{#if !fightHud && !mapOpen}<PoiMarkers {api} />{/if}
 
 {#if overviewOpen && !fightHud}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
@@ -295,6 +341,8 @@
 {#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
+<LessonHost {api} busy={reporting || menuOpen} />
+{#if menuOpen}<EscMenu {api} onClose={closeMenu} />{/if}
 <ErrorOverlay {api} />
 <GameSession {api} />
 
@@ -341,7 +389,8 @@
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }
-  .tick { flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
+  .fps { display: block; margin-top: 2px; font-size: 11px; color: var(--text); }
+  .tick { white-space: nowrap; flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
   .speeds { display: flex; }
   .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
   .speeds :global(button.tile:hover) { background: var(--panel-3); }

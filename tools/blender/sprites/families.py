@@ -40,6 +40,8 @@
   mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
   starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
+  backdrop  the node's central body drawn large behind the main view: backdrop.body.<kind>.v<n>, 320 px frame (backdrop_bodies.py,
+            backdrop_pulsar.py)
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   decor     station dressing: planters, a bench, deck marks (decor.py)
   landmarks court landmarks: the holo column, the big tree, the banner post and its livery masks (landmarks.py)
@@ -180,6 +182,9 @@ def jobs(name):
     if name == "starmap":
         from . import starmap
         return starmap.jobs(), True
+    if name == "backdrop":
+        from . import backdrop_bodies
+        return backdrop_bodies.jobs(), True
     if name == "cargo":
         from . import cargo
         return cargo.SPRITES, True
@@ -213,6 +218,6 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "cargo", "items", "storage_ore", "decor",
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "storage_ore", "decor",
             "lights", "court_floors", "landmarks")
 ALL = RENDERED + ("sol", "damage_sol")

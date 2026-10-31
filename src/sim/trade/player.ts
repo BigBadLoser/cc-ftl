@@ -1,12 +1,12 @@
 import { ShipC } from '../combat/components';
-import { StorageC } from '../items/components';
+import { ItemStackC, StorageC } from '../items/components';
 import { storageCount } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../modules/airlock';
 import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { dockError } from '../vehicles/handlers';
-import { shipIdOf } from '../regions';
+import { shipIdAt, shipIdOf } from '../regions';
 
 /** The player's ship (ShipC entity): the lowest-id live ship of the player faction, or 0. */
 export function playerShip(sim: Sim): number {
@@ -23,18 +23,31 @@ function playerStorages(sim: Sim): number[] {
   return [...sim.world.query(StorageC, ModuleC)].filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === grid).sort((a, b) => a - b);
 }
 
-/** Units of an item in the player's storage. */
-export function playerItems(sim: Sim, item: string): number {
-  return playerStorages(sim).reduce((n, id) => n + storageCount(sim, id, item), 0);
+/** Loose stacks of an item on the player's ship's floor (mined ore at the pod bay, spilled cargo), ascending id. */
+function playerFloorStacks(sim: Sim, item: string): number[] {
+  const grid = playerShip(sim);
+  return [...sim.world.query(ItemStackC)].filter((id) => {
+    const s = sim.world.get(id, ItemStackC);
+    return !!s && s.item === item && shipIdAt(sim, s.x, s.y) === grid;
+  }).sort((a, b) => a - b);
 }
 
-/** Storage modules of the player's ship that hold an item, with how much (loading hauls take from these). */
-export function storagesHolding(sim: Sim, item: string): { id: number; shipId: number; x: number; y: number; count: number }[] {
-  const out = [];
+/** Units of an item the player can trade away: in the ship's storage and in loose stacks on its floor (issue #222). */
+export function playerItems(sim: Sim, item: string): number {
+  return holding(sim, item).reduce((n, s) => n + s.count, 0);
+}
+
+/** Where the player's ship holds an item, storage first then floor stacks, with how much (loading hauls take from these). */
+export function holding(sim: Sim, item: string): { kind: 'storage' | 'floor'; id: number; shipId: number; x: number; y: number; count: number }[] {
+  const out: { kind: 'storage' | 'floor'; id: number; shipId: number; x: number; y: number; count: number }[] = [];
   for (const id of playerStorages(sim)) {
     const m = sim.world.get(id, ModuleC);
     const count = storageCount(sim, id, item);
-    if (m && count > 0) out.push({ id, shipId: shipIdOf(sim, m), x: m.x, y: m.y, count });
+    if (m && count > 0) out.push({ kind: 'storage', id, shipId: shipIdOf(sim, m), x: m.x, y: m.y, count });
+  }
+  for (const id of playerFloorStacks(sim, item)) {
+    const s = sim.world.get(id, ItemStackC)!;
+    out.push({ kind: 'floor', id, shipId: shipIdAt(sim, s.x, s.y), x: s.x, y: s.y, count: s.count });
   }
   return out;
 }

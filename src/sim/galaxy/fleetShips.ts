@@ -1,3 +1,4 @@
+import { loseStrandedCrew } from '../boarding/stranded';
 import { ShipC } from '../combat/components';
 import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
@@ -93,6 +94,7 @@ export function liftFleet(sim: Sim, f: Fleet): void {
   const gone = new Set<number>(fled.map((c) => c.id));
   for (const c of f.ships) {
     if (c.ship === undefined) continue;
+    loseStrandedCrew(sim, c.ship, 'lifted'); // a boarding party left aboard goes with the ship
     liftShip(sim, c.ship);
     gone.add(c.ship);
     c.ship = undefined;

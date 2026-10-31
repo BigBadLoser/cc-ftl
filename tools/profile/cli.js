@@ -83,6 +83,7 @@ try {
   if (scenarioParam) q.set('scenario', scenarioParam);
   q.set('perf', '');
   q.set('seed', seed);
+  q.set('lessons', 'off'); // a tutorial card would pause the game mid-profile (e.g. ?scenario=fight)
   await page.goto(`${base}?${q.toString().replace('perf=', 'perf')}`);
   await page.waitForFunction(() => window.__perf && window.__perf.summary().frames > 5, null, { timeout: 60000, polling: 500 });
   if (speed) await page.keyboard.press(speed);
