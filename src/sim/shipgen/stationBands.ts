@@ -159,10 +159,9 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
   // Half as much again as planned: the estimate is rough, and a segment under half its plan is rejected.
   const weights = rooms.map((r) => (stretch && r.pinned ? Math.min(planned(r), (1.5 * planned(r) * flexW) / (floorAll - fixedFloor)) : planned(r)));
   const sum = weights.reduce((t, w) => t + w, 0);
-  // Arc position (0..total) where each segment ends.
+  // Arc position (0..total) where each segment ends: by shares of the band's free floor, not of its angle, so a stretch
+  // already taken (a dock bank at the arc's end) does not swallow a small room's share.
   const ends: number[] = [];
-  let acc = 0;
-  for (const w of weights) { acc += (w / sum) * total; ends.push(acc); }
   const along = (a: number): number => {
     let t = 0;
     for (const [a0, a1] of arcs) {
@@ -177,6 +176,19 @@ function cutBand(b: Builder, R: number, ring: number, rooms: RoomSpec[], depth: 
     for (const [a0, a1] of arcs) { if (t <= a1 - a0) return a0 + t; t -= a1 - a0; }
     return (arcs[arcs.length - 1] as [number, number])[1];
   };
+  const free: number[] = [];
+  for (let y = -M; y <= M; y++) for (let x = -M; x <= M; x++) {
+    const d = Math.hypot(x, y);
+    if (d < lo || d > hi || cv.at(x, y) !== '.') continue;
+    const t = along(Math.atan2(y, x));
+    if (t >= 0) free.push(t);
+  }
+  free.sort((p, q) => p - q);
+  let acc = 0;
+  for (const w of weights) {
+    acc += w / sum;
+    ends.push(free.length > 0 ? (free[Math.min(free.length - 1, Math.floor(acc * free.length))] as number) : acc * total);
+  }
   // Partitions are straight walls, not radial staircases: each crosses the band at its angle along the grid axis nearer
   // the radius there (a vertical wall where the radius runs north-south, a horizontal one where it runs east-west), so a
   // segment off the axes is a straight-sided quadrilateral. Away from a partition, the angle alone decides the side.
