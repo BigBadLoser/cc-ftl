@@ -35,6 +35,7 @@ import t_ghost from '@tabler/icons/outline/ghost.svg?raw';
 import t_hand_stop from '@tabler/icons/outline/hand-stop.svg?raw';
 import t_heart from '@tabler/icons/outline/heart.svg?raw';
 import t_heart_broken from '@tabler/icons/outline/heart-broken.svg?raw';
+import t_polygon from '@tabler/icons/outline/polygon.svg?raw';
 import t_hexagon from '@tabler/icons/outline/hexagon.svg?raw';
 import t_home from '@tabler/icons/outline/home.svg?raw';
 import t_layout_board from '@tabler/icons/outline/layout-board.svg?raw';
@@ -132,6 +133,7 @@ export const FILES = {
   grid: 'layout-grid',
   room: 'layout-board',
   hull: 'hexagon',
+  hullPlan: 'polygon',
   station: 'planet',
   derelict: 'ghost',
   alert: 'alert-triangle',
@@ -194,6 +196,7 @@ const RAW: Record<string, string> = {
   'heart': t_heart,
   'heart-broken': t_heart_broken,
   'hexagon': t_hexagon,
+  'polygon': t_polygon,
   'home': t_home,
   'layout-board': t_layout_board,
   'layout-grid': t_layout_grid,

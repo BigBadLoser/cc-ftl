@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCombat, UiMining, UiPrize, UiShuttles, UiTrade } from './api';
-  import Icon, { type IconName } from './Icon.svelte';
+  import { TipButton } from './kit';
+  import Icon from './Icon.svelte';
+  import { nodeEntries, NODE_ICONS as icons } from './nodeList';
 
   let { api, selected }: { api: UiApi; selected: number | null } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
@@ -22,29 +24,14 @@
     return () => u.forEach((f) => f());
   });
 
-  type Kind = 'hostile' | 'prize' | 'station' | 'ship' | 'derelict';
-  const icons: Record<Kind, IconName> = { hostile: 'skull', prize: 'prize', station: 'station', ship: 'ship', derelict: 'derelict' };
-  /** Every other ship or station in the node, once, with the most specific kind winning. Keyed by entity id (a station's is its trader's). */
-  const nodes = $derived.by(() => {
-    const out: { ship: number; name: string; kind: Kind }[] = [];
-    const home = combat.player?.ship ?? 0;
-    const add = (ship: number, name: string, kind: Kind) => {
-      if (ship !== home && ship !== 0 && !out.some((o) => o.ship === ship)) out.push({ ship, name, kind });
-    };
-    for (const t of shuttles.targets) if (t.derelict) add(t.ship, t.name, 'derelict');
-    for (const p of prizes) add(p.ship, p.name, 'prize');
-    for (const e of combat.enemies) add(e.ship, e.name, 'hostile');
-    for (const p of trade.partners) add(p.id, p.name, p.kind);
-    for (const t of shuttles.targets) add(t.ship, t.name, 'ship');
-    return out;
-  });
+  const nodes = $derived(nodeEntries({ trade, prizes, combat, shuttles }));
 </script>
 
 <!-- What else is in this node. Click to jump the camera to it and open its panel. -->
 {#if nodes.length || mining.asteroids.length}
   <span class="nodes" data-testid="nodes">
     {#each nodes as n (n.ship)}
-      <button class="tile" class:on={selected === n.ship} class:foe={n.kind === 'hostile'} title="{n.name} ({n.kind})" aria-label={n.name} data-testid="node-{n.ship}" data-kind={n.kind} onclick={() => api.selectShip(n.ship)}><Icon name={icons[n.kind]} size={20} /></button>
+      <TipButton text={n.kind === 'station' ? n.name : `${n.name} (${n.kind})`} label={n.name} class="tile{selected === n.ship ? ' on' : ''}{n.kind === 'hostile' ? ' foe' : ''}" data-testid="node-{n.ship}" data-kind={n.kind} onclick={() => api.selectShip(n.ship)}><Icon name={icons[n.kind]} size={20} /></TipButton>
     {/each}
     {#each mining.asteroids as a (a.id)}
       <button class="tile rock" class:on={selAst === a.id} title="{a.name} ({a.ore.reduce((n, o) => n + o.units, 0)} ore)" aria-label={a.name} data-testid="node-asteroid-{a.id}" onclick={() => api.selectAsteroid(a.id)}><Icon name="grid" size={20} /></button>
@@ -54,9 +41,9 @@
 
 <style>
   .nodes { display: grid; grid-template-rows: repeat(2, 37px); grid-auto-flow: column; grid-auto-columns: 37px; gap: 2px; }
-  .nodes button.tile { width: 37px; height: 37px; background: var(--panel); }
-  .nodes button.tile.on { background: var(--panel-3); border-color: var(--cyan); }
-  .nodes button.tile.foe { color: var(--red); border-color: #7a2a2a; }
-  .nodes button.tile.rock { color: #b4a48c; }
-  @media (max-width: 600px) { .nodes { grid-template-rows: 34px; grid-auto-columns: 34px; } .nodes button.tile { width: 34px; height: 34px; } }
+  .nodes :global(button.tile) { width: 37px; height: 37px; background: var(--panel); }
+  .nodes :global(button.tile.on) { background: var(--panel-3); border-color: var(--cyan); }
+  .nodes :global(button.tile.foe) { color: var(--red); border-color: #7a2a2a; }
+  .nodes :global(button.tile.rock) { color: #b4a48c; }
+  @media (max-width: 600px) { .nodes { grid-template-rows: 34px; grid-auto-columns: 34px; } .nodes :global(button.tile) { width: 34px; height: 34px; } }
 </style>

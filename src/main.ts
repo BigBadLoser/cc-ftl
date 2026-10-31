@@ -424,6 +424,10 @@ const api: UiApi = {
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
   insetSize: (ship) => renderer?.insetSize(ship) ?? null,
+  shipScreen: (id) => {
+    const s = sim.world.get(id, ShipC);
+    return renderer && s ? renderer.screenOf(0, s.x + s.width / 2, s.y + s.height / 2) : null;
+  },
   moduleScreenRect: (id) => {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];

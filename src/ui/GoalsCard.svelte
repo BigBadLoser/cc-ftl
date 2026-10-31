@@ -32,6 +32,8 @@
     writeCollapsed('goals', collapsedDesk);
   }
 
+  const doneCount = $derived(goals ? goals.goals.filter((g) => g.done).length : 0);
+
   onMount(() => {
     const mq = window.matchMedia('(max-width: 600px)');
     const onMq = () => (narrow = mq.matches);
@@ -64,9 +66,9 @@
   <section class="card" class:chip={narrow && collapsed} data-testid="goals">
     <div class="head">
       <button class="title" onclick={toggle} aria-expanded={!collapsed} data-testid="goals-toggle">
-        <span class="act">Goals {goals.act}/{goals.acts}</span>
+        <span class="act">Act {goals.act}/{goals.acts} · {doneCount}/{goals.goals.length} done</span>
         {#if narrow && collapsed}<span class="sep">·</span>{/if}
-        {#if narrow || !collapsed}<span class="name">{goals.title}</span>{/if}
+        {#if narrow}<span class="name">{goals.title}</span>{/if}
         <Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
       </button>
       {#if !(narrow && collapsed)}<button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
@@ -80,6 +82,7 @@
         </div>
       </div>
     {:else if !collapsed}
+      {#if !narrow}<p class="act-name">{goals.title}</p>{/if}
       <ul>
         {#each goals.goals as g (g.id)}
           <li class:done={g.done} title={g.text} data-testid="goal">
@@ -102,6 +105,7 @@
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
+  .act-name { margin: 2px 0 0; font: 600 13px var(--head-font); }
   ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; }
   li { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; }
   li span { display: grid; }

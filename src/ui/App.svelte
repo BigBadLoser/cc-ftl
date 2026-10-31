@@ -25,6 +25,7 @@
   import BuildCatalog from './BuildCatalog.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
+  import PoiMarkers from './PoiMarkers.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
   import ResearchOverlay from './ResearchOverlay.svelte';
@@ -284,6 +285,8 @@
   </span>
   {#if narrow}{@render time()}{/if}
 </header>
+
+{#if !fightHud && !mapOpen}<PoiMarkers {api} />{/if}
 
 {#if overviewOpen && !fightHud}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />

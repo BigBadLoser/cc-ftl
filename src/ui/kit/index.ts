@@ -17,3 +17,4 @@ export { default as ActionButton } from './ActionButton.svelte';
 export { default as StatusTag } from './StatusTag.svelte';
 export type { KitOption } from './types';
 export type { StepSpec } from './numberStepper';
+export { default as TipButton } from './TipButton.svelte';
