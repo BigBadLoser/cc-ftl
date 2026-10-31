@@ -95,38 +95,48 @@ def shelf_holes(layout):
 
 
 def _cavity(k, ax, plane, u0, u1, z0, z1, D, F):
-    """The inside of an opening in the face, D deep: its back, ceiling, floor and sides."""
+    """The inside of an opening in the face, D deep: its back, ceiling, floor and sides. Its floor lit as a ledge; its
+    back a shade darker, its sides two darker again, whichever way they face (the face's own ramp: K, D)."""
     o, al, up = T.OUT(ax), T.P(ax, 0, 1, 0, 0) - T.P(ax, 0, 0, 0, 0), Vector((0, 0, 1))
     Q = lambda u, z, d: T.P(ax, plane, u, z, d)        # noqa: E731
-    k.poly([Q(u0, z0, -D), Q(u1, z0, -D), Q(u1, z1, -D), Q(u0, z1, -D)], F, 0, o)               # back
+    dark, back = T.RAMPS[F][0][0], T.RAMPS[F][0][1]
+    k.poly([Q(u0, z0, -D), Q(u1, z0, -D), Q(u1, z1, -D), Q(u0, z1, -D)], F, 0, o, fixed=back)   # back
     k.poly([Q(u0, z1, 0), Q(u1, z1, 0), Q(u1, z1, -D), Q(u0, z1, -D)], F, 0, -up)               # ceiling
     k.poly([Q(u0, z0, 0), Q(u1, z0, 0), Q(u1, z0, -D), Q(u0, z0, -D)], F, 1, up)                # floor
     for u, sg in ((u0, 1), (u1, -1)):                                                            # sides
-        k.poly([Q(u, z0, 0), Q(u, z1, 0), Q(u, z1, -D), Q(u, z0, -D)], F, 1, al * sg)
+        k.poly([Q(u, z0, 0), Q(u, z1, 0), Q(u, z1, -D), Q(u, z0, -D)], F, 1, al * sg, fixed=dark)
 
 
 def _shelf(k, ax, plane, u0, u1, z0, z1, F):
-    """An open shelf let into the face (its opening, civil_holes), a seam round its mouth."""
+    """An open shelf let into the face (its opening, shelf_holes), a seam round its mouth with rounded corners (its
+    corner steps cover the opening's corner pixels)."""
     _cavity(k, ax, plane, u0, u1, z0, z1, CIVIL_D, F)
-    t = MOUTH_T                                                                                  # its mouth's seam
-    for q in ((u0 - LINE, u1 + LINE, z1, z1 + t), (u0 - LINE, u1 + LINE, z0 - t, z0), (u0 - LINE, u0, z0, z1),
-              (u1, u1 + LINE, z0, z1)):
-        T.paint(k, ax, plane, *q, 0.0, F, SEAM)
+    rbox(k, ax, plane, u0 - LINE, u1 + LINE, z0 - MOUTH_T, z1 + MOUTH_T, F, SEAM)
 
 
-def _shelf(k, ax, plane, u0, u1, z0, z1, F):
-    """An open shelf let into the face (its opening, shelf_holes), a seam round its mouth."""
-    _cavity(k, ax, plane, u0, u1, z0, z1, CIVIL_D, F)
-    t = MOUTH_T                                                                                  # its mouth's seam
-    for q in ((u0 - LINE, u1 + LINE, z1, z1 + t), (u0 - LINE, u1 + LINE, z0 - t, z0), (u0 - LINE, u0, z0, z1),
-              (u1, u1 + LINE, z0, z1)):
-        T.paint(k, ax, plane, *q, 0.0, F, SEAM)
+def _door_spans(u0, u1):
+    """Two doors side by side over u0..u1: (a, b) each."""
+    uc = (u0 + u1) / 2
+    return (u0, uc - 0.01), (uc + 0.01, u1)
+
+
+def cupboard_seam_gap(f0, f1):
+    """Where the cupboard opens the face's top seam (the "seam_gap" slot: it turns up to the band at both sides): from
+    2 px in from the left door's middle to 2 px in from the right door's."""
+    (a0, b0), (a1, b1) = _door_spans(f0, f1)
+    return (a0 + b0) / 2 + 2 * LINE, (a1 + b1) / 2 - 2 * LINE
+
+
+def shelves_band_split(f0, f1):
+    """The open shelves' seam up from the top seam through the band, at the field's middle (the "band_split" slot),
+    on one px column (the middle is a px edge: centred on it, the seam came out two px wide)."""
+    return [round((f0 + f1) / 2 / LINE) * LINE + LINE / 2]
 
 
 def _doors(k, ax, plane, u0, u1, z0, z1, F, hz):
     """Two doors side by side, each a seam outline (rounded corners), a short handle recess by the middle at hz."""
     uc = (u0 + u1) / 2
-    for a, b, hu in ((u0, uc - 0.01, uc - 0.1), (uc + 0.01, u1, uc + 0.1)):
+    for (a, b), hu in zip(_door_spans(u0, u1), (uc - 0.1, uc + 0.1)):
         rbox(k, ax, plane, a, b, z0, z1, F, SEAM)
         T.paint(k, ax, plane, hu - 0.035, hu + 0.035, hz, hz + 0.026, 0.0, F, SEAM)
 
@@ -156,6 +166,8 @@ def civil_table(k, ax, plane, f0, f1, g0, g1, F):
 
 
 CIVIL_TOPS = (Design("drawers", field=civil_drawers),
-              Design("open shelves", field=civil_open, face_holes=shelf_holes(two_shelves)),
-              Design("cupboard", field=civil_cupboard, face_holes=shelf_holes(one_shelf)),
+              Design("open shelves", field=civil_open, face_holes=shelf_holes(two_shelves),
+                     band_split=shelves_band_split),
+              Design("cupboard", field=civil_cupboard, face_holes=shelf_holes(one_shelf),
+                     seam_gap=cupboard_seam_gap),
               Design("table", field=civil_table))

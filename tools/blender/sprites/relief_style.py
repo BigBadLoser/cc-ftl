@@ -44,6 +44,7 @@ class Style:
     outline_lvl: int = 0                  # the outlined panel's seam level (skirt "outline")
     outline_round: bool = False           # ... its corners softened (each corner pixel left out)
     outline_d: tuple = (0.15, 0.62)       # ... its top and bottom down the ramp (fractions of the run)
+    outline_t: float = 0.03               # ... its top and bottom lines' depth down the ramp
     slot: bool = False                    # a dark handle slot in the outlined panel (the base design)
     slot_d: tuple = (0.5, 0.57, 0.1)      # ... painted: its top and bottom (fractions of the run) and half width
     hole_tone: Optional[Callable] = None  # (part "back" | "side", family, face axis, outward normal) -> the tone

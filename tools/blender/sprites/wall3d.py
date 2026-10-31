@@ -368,7 +368,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
             fd0, fd1 = (f * run_ for f in style().outline_d)
-            L, t = LINE, 0.03
+            L, t = LINE, style().outline_t
             if style().outline_round:                         # its corners softened (each corner
                 qs = [(fu0 + L, fu1 - L, fd0, fd0 + t), (fu0 + L, fu1 - L, fd1 - t, fd1),   # pixel left out)
                       (fu0, fu0 + L, fd0 + t, fd1 - t), (fu1 - L, fu1, fd0 + t, fd1 - t)]
