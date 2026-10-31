@@ -8,7 +8,8 @@ const S = Struct.Space;
 const D = Struct.Door;
 const grid = (rows: number[][]) => (x: number, y: number) => rows[y]?.[x] ?? S;
 
-/** wallPieces before the corner fills (walls pass 10), kept verbatim as the non-regression reference. */
+/** wallPieces before the corner fills (walls pass 10), the non-regression reference (the far hull since composed of
+ * the partition piece and its cap). */
 function legacyPieces(kindAt: KindAt, x: number, y: number, kind: number, mode: CutawayMode, ghosts = true, gap: (x: number, y: number) => boolean = () => false): Piece[] {
   const solidish = (k: number) => k === Struct.Wall || k === Struct.Door;
   const level = mode === "up" ? "up" : mode === "down" ? "low" : "cut";
@@ -35,11 +36,20 @@ function legacyPieces(kindAt: KindAt, x: number, y: number, kind: number, mode: 
     const id = `tile.hull.ghost.m${mask}`;
     return [{ chain: room ? [`${id}.r${room}`, id] : [id], order: 0 }];
   }
-  const fam = hull ? "hull" : "wall";
-  const base = `tile.${fam}.${PRE}m${mask}`;
+  const endS = mask & 4 && ((ghosts && ghostAt(x, y + 1)) || gap(x, y + 1));
+  const endE = mask & 2 && ((ghosts && ghostAt(x + 1, y)) || gap(x + 1, y));
+  if (hull) {                                   // (the far hull: the full partition piece with the hull's cap on it)
+    const wall = `tile.wall.full.m${mask}`;
+    const cap = `tile.hull.cap.m${mask}`;
+    const out: Piece[] = [{ chain: [wall, wall], order: 0 }, { chain: [cap + v, cap], order: 1 }];
+    if (endS) out.push({ chain: ["tile.wall.full.end.s"], order: 2 }, { chain: ["tile.hull.cap.end.s"], order: 3 });
+    if (endE) out.push({ chain: ["tile.wall.full.end.e"], order: 2 }, { chain: ["tile.hull.cap.end.e"], order: 3 });
+    return out;
+  }
+  const base = `tile.wall.${PRE}m${mask}`;
   const out: Piece[] = [{ chain: [base + v, base], order: 0 }];
-  if (mask & 4 && ((ghosts && ghostAt(x, y + 1)) || gap(x, y + 1))) out.push({ chain: [`tile.${fam}.${PRE}end.s`], order: 1 });
-  if (mask & 2 && ((ghosts && ghostAt(x + 1, y)) || gap(x + 1, y))) out.push({ chain: [`tile.${fam}.${PRE}end.e`], order: 1 });
+  if (endS) out.push({ chain: [`tile.wall.${PRE}end.s`], order: 1 });
+  if (endE) out.push({ chain: [`tile.wall.${PRE}end.e`], order: 1 });
   return out;
 }
 
@@ -105,7 +115,8 @@ describe("wall corner fills", () => {
       [S, S, S, S, S],
     ]);
     expect(wallPieces(k, 2, 2, W, "up")[0]?.chain).toEqual(["tile.wall.full.m15c13", "tile.wall.full.m15"]);
-    expect(wallPieces(k, 1, 1, W, "auto")[0]?.chain).toEqual(["tile.hull.m6c2", "tile.hull.m6"]);
+    expect(wallPieces(k, 1, 1, W, "auto")[0]?.chain).toEqual(["tile.wall.full.m6c2", "tile.wall.full.m6"]);
+    expect(wallPieces(k, 1, 1, W, "auto")[1]?.chain).toEqual(["tile.hull.cap.m6c2", "tile.hull.cap.m6"]);
     expect(wallPieces(k, 1, 1, W, "down")[0]?.chain).toEqual(["tile.hull.ghost.m6c2", "tile.hull.ghost.m6"]);
     expect(wallPieces(k, 2, 3, W, "auto").map((p) => p.chain)).toEqual([
       ["tile.wall.m13c12", "tile.wall.m13"],

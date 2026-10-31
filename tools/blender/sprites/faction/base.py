@@ -49,6 +49,8 @@ class Faction(Look):
         if P.sprite.startswith("tile.floor"):
             s = FLOOR_STEP.get(P.name)
             return f"{self.pre}F{max(0, min(6, s))}" if s is not None else P.name
+        if ".cap." in P.sprite and P.name == T.CUT:                   # the far hull's cap (wall3d.hull_cap): its cuts
+            return T.CUT                                                # black, as the partitions' caps
         if P.kind == "top" and P.sprite.startswith("tile.wall."):      # a partition's top (cap or cut): black, as
             lv = "up" if ".full." in P.sprite else "low" if ".low." in P.sprite else "cut"   # the default walls'
             if P.z >= W.wall_top("wall", lv) - 0.03:            # (the header's top, 0.02 under the cap, too)

@@ -55,8 +55,9 @@ def skirt_run(level="up"):
 
 
 def hull_thick():
-    """The far hull stands at the tile's far edge; its skirt toe reaches the near edge (Space Haven)."""
-    return max(TW, 1.0 - skirt_run())
+    """The far hull stands at the tile's far edge, its face where a partition's is (wall_back() + TW: the same cell, so
+    its inside face is the partitions' and their pieces line up); its skirt toe reaches the near edge (Space Haven)."""
+    return wall_back() + TW
 
 
 def wall_back():

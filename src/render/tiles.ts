@@ -163,7 +163,10 @@ export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: Cutawa
  *  - The near hull (a hull tile with space at +x / +y / the +x+y diagonal) is a ghost in every level:
  *    `tile.hull.o<outward>.m<mask>` (a flat rim with a lit crest), plus its belly below the deck
  *    `tile.hull.belly.o<outward>.m<mask>` (not for concave corners), drawn under the floor layer (`under`).
- *  - A wall or far hull tile butting into a ghost gets an end face (`tile.<fam>.<pre>end.s|e`).
+ *  - The far hull is the full-height partition piece with the hull's cap over it (`tile.wall.full.m<mask>` +
+ *    `tile.hull.cap.m<mask>`): its inside face is the partitions'.
+ *  - A wall or far hull tile butting into a ghost gets an end face (`tile.<fam>.<pre>end.s|e`; the far hull's:
+ *    `tile.wall.full.end.s|e` + `tile.hull.cap.end.s|e`).
  *  - Doors are never cut (`tile.door.x|y`); a door in the near hull hangs the belly under it (`tile.hull.drop.s|e`, under).
  *  - Hull plating and bellies use the ochre `.v1` variant on every third diagonal.
  * `ghosts` false (blueprints, roofed ships) draws plain blocks instead of ghosts. `gap(x, y)` marks hull tiles that are
@@ -208,14 +211,29 @@ export function wallPieces(
   }
   // Corner fills (wallCorners): `m<mask>c<bits>` first, today's `m<mask>` last, so partial art falls back cleanly.
   const c = wallCorners(kindAt, x, y, mask);
-  const fam = hull ? "hull" : kind === Struct.RockWall ? "rockwall" : "wall";
+  const chainOf = (base: string, sfx = "") =>
+    c ? [...new Set([`${base}c${c}${sfx}`, `${base}c${c}`, base + sfx, base])] : [base + sfx, base];
+  const end = (pre: string, side: string, bits: number) =>
+    bits ? [`${pre}end.${side}.${cs(bits)}`, `${pre}end.${side}`] : [`${pre}end.${side}`];
+  const endS = mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1));
+  const endE = mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y));
+  if (hull) {
+    // The far hull's inside face is the partitions': the full-height wall piece (the hull stays full in the
+    // cutaway), with the hull over the partitions' height drawn on it (`tile.hull.cap.*`: the black band and the
+    // roof plating), and at a run's end the wall's end section with the hull's on it.
+    const wall = "tile.wall.full.";
+    const out: Piece[] = [{ chain: chainOf(`${wall}m${mask}`), order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
+    for (const [on, side, bits] of [[endS, "s", c & 6], [endE, "e", c & 3]] as const) {
+      if (!on) continue;
+      out.push({ chain: end(wall, side, bits), order: 2 }, { chain: end("tile.hull.cap.", side, bits), order: 3 });
+    }
+    return out;
+  }
+  const fam = kind === Struct.RockWall ? "rockwall" : "wall";
   const pre = `tile.${fam}.${PRE[level]}`;
-  const base = `${pre}m${mask}`;
-  const chain = c ? [...new Set([`${base}c${c}${v}`, `${base}c${c}`, base + v, base])] : [base + v, base];
-  const out: Piece[] = [{ chain, order: 0 }];
-  const end = (side: string, bits: number) => (bits ? [`${pre}end.${side}.${cs(bits)}`, `${pre}end.${side}`] : [`${pre}end.${side}`]);
-  if (mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1))) out.push({ chain: end("s", c & 6), order: 1 });
-  if (mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y))) out.push({ chain: end("e", c & 3), order: 1 });
+  const out: Piece[] = [{ chain: chainOf(`${pre}m${mask}`), order: 0 }];
+  if (endS) out.push({ chain: end(pre, "s", c & 6), order: 1 });
+  if (endE) out.push({ chain: end(pre, "e", c & 3), order: 1 });
   return out;
 }
 

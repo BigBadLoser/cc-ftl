@@ -80,6 +80,12 @@ class Relief:
         m = self.ns if self.no_shadow else self.m
         m.poly([core.G(*p) for p in pts], col, flip=n.dot((pts[1] - pts[0]).cross(pts[2] - pts[0])) < 0)
 
+    def drop_below(self, z):
+        """Leave out every polygon lying wholly at or under height z."""
+        for m in (self.m, self.ns):
+            if m is not None:
+                m.f = [f for f in m.f if max(m.v[i][2] for i in f[0]) > z + 1e-6]
+
     def build(self):
         """Its objects: the mesh, and the one casting no shadow if any (flagged "noshadow")."""
         obs = [self.m.build()]
@@ -562,24 +568,39 @@ def _in_top(sp, ax, plane, u, side):
     return r[3] if r else None
 
 
+def hull_cap(mask, deco=None, corners=0):
+    """The far hull over the partitions' height, to draw over the partition piece of the same mask (the far hull's
+    inside face is the partitions'): its face's band over their height a black cut, its top's armour plates and cut
+    band. "wide": (its own objects, with the partition piece's), so its px are where it stands in front of the
+    partition, which covers the rest."""
+    own = block(mask, "hull", deco, level="up", corners=corners, above=W.HF)
+    return own, own + block(mask, "wall", level="up", corners=corners)
+
+
 def snap(plane):
     """Where the shell's face really is: walls.emit covers whole cells (a cell is in when its centre is inside the
     body), so a face off the 1/32 grid (the far hull's thickness) stands at the next cell boundary out."""
     return math.floor((plane + 0.5) * W.GN + 0.5) / W.GN - 0.5
 
 
-def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, dress=None):
+def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, dress=None, above=None):
     """walls.block in relief. shell: a Shell class to build on instead of the look's; dress: the hull faces'
     dressing instead of the look's (the exterior hull, wall3d_ext); a shell with no_skirt has no skirt plates, one with
-    no_cap no cap plates."""
+    no_cap no cap plates. above: only what stands over that height (hull_cap), its faces there a black cut."""
     global END_TOPS, SHELL
     sp = SHELL = (shell or style().shell or Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
+    if above is not None:                               # (its faces over the height black, whatever the look says)
+        face_col = sp.col_face
+        sp.col_face = lambda face, x, y, z: CUT if z > above else face_col(face, x, y, z)     # noqa: E731
     W.emit(k.m, sp)
     if getattr(sp, "solid_extra", None):
         sp.solid_extra(k)
     if not getattr(sp, "no_cap", False):
         cap(k, sp)
+    if above is not None:
+        k.drop_below(above)
+        return k.build()
     for ax, plane, a, b, top in faces(sp):
         e = 1e-3
         um = (a + b) / 2
@@ -604,14 +625,9 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
     return k.build()
 
 
-def end_face(fam, side, level="up", corners=0):
-    """walls.end_face in relief: the wall's section where it butts into the low hull ghost (+y end of an S arm: side
-    s; +x end of an E arm: e). It reaches the floor: the ghost is see-through, so a section stopping at its rim (as
-    walls.end_face does) left the floor showing through the wall's open end. It takes in the raised frame on the
-    wall's visible face: one smooth face with a lit lip under the cap and a dark outline round its silhouette, down
-    the wall's edges and on along the slope of the skirts' cut sections (in the plates' tone)."""
+def _end_spans(fam, side, level, corners):
+    """An end face's section: [(u0, u1, top)] across the tile (0 its far edge), from the floor up."""
     t, top, zs = W.profile(fam, level)
-    run_ = W.skirt_run()
     lo, hi = (0.0, t) if fam == "hull" else (W.wall_back(), W.wall_back() + W.TW)
     p0, p1 = W.wall_back(), W.wall_back() + W.TW
     fz = W.fill_top(fam, level)
@@ -622,6 +638,41 @@ def end_face(fam, side, level="up", corners=0):
         spans.append((0.0, p0, fz))
     if corners & hi_bit:
         spans.append((p1, 1.0, fz))
+    return spans
+
+
+def hull_cap_end(side, corners=0):
+    """The far hull's end section over the partition's (end_face("wall"), drawn under it): the hull behind the
+    partition, its section in the partition's tone, and all of it over the partitions' height a black cut. "wide", as
+    hull_cap."""
+    hs, ws = _end_spans("hull", side, "up", corners), _end_spans("wall", side, "up", corners)
+    ax = "y" if side == "s" else "x"
+    k = Relief(f"wall3d_hullcap_end_{side}_{corners}")
+    k.side = ax
+    us = sorted({u for a, b, _ in hs + ws for u in (a, b)})
+    for u0, u1 in zip(us, us[1:]):
+        m = (u0 + u1) / 2
+        h = max([zt for a, b, zt in hs if a <= m < b], default=0.0)
+        w = max([zt for a, b, zt in ws if a <= m < b], default=0.0)
+        for z0, z1, col in ((w, min(h, W.HF), None), (max(w, W.HF), h, CUT)):
+            if z1 > z0 + 1e-6:
+                k.poly([P(ax, 0.5, u - 0.5, z, 0.0) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "wall", 2,
+                       OUT(ax), fixed=col)
+    own = k.build()
+    return own, own + end_face("wall", side, "up", corners)
+
+
+def end_face(fam, side, level="up", corners=0):
+    """walls.end_face in relief: the wall's section where it butts into the low hull ghost (+y end of an S arm: side
+    s; +x end of an E arm: e). It reaches the floor: the ghost is see-through, so a section stopping at its rim (as
+    walls.end_face does) left the floor showing through the wall's open end. It takes in the raised frame on the
+    wall's visible face: one smooth face with a lit lip under the cap and a dark outline round its silhouette, down
+    the wall's edges and on along the slope of the skirts' cut sections (in the plates' tone)."""
+    t, top, zs = W.profile(fam, level)
+    run_ = W.skirt_run()
+    hi = W.wall_back() + W.TW
+    hi_bit = 2
+    spans = _end_spans(fam, side, level, corners)
     ax = "y" if side == "s" else "x"
     F = "blue" if fam == "hull" else "wall"
     k = Relief(f"wall3d_end_{fam}_{side}_{level}_{corners}")
