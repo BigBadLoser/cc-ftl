@@ -6,7 +6,7 @@
  * The module exports `variants: { name: string; note?: string; template: ShipTemplate }[]`.
  */
 import { content } from '../../src/content';
-import { footprintTiles, validateTemplate, type GenResult, type ModuleDef, type RoomRole, type ShipTemplate } from '../../src/sim';
+import { footprintTiles, openTilesOf, validateTemplate, type GenResult, type ModuleDef, type RoomRole, type ShipTemplate } from '../../src/sim';
 import { Raster, drawShip } from './draw';
 import { drawSilhouette, drawStructure } from './views';
 
@@ -14,6 +14,8 @@ type RGB = [number, number, number];
 export interface Variant {
   name: string;
   note?: string;
+  /** Shown in the label: the current favourite, a riff on it, or a new concept. */
+  kind?: 'favourite' | 'riff' | 'new' | 'shipped';
   template: ShipTemplate;
 }
 export type TemplateView = 'detail' | 'structure' | 'silhouette' | 'iso';
@@ -77,6 +79,41 @@ export function templateResult(name: string, t: ShipTemplate): GenResult {
     template: t, rooms, roomOf, width, height, role: name, archetype: 'starter' as GenResult['archetype'], topology: '', attempts: 1,
     problems: validateTemplate(t, defs), failures: [],
   };
+}
+
+/**
+ * Walkable tiles (floor or door, not under a solid module) that a crew member cannot reach from the largest walkable
+ * region: the coordinates behind validateTemplate's "unreachable: N walkable tiles" problem.
+ */
+export function unreachableTiles(t: ShipTemplate): string[] {
+  const h = t.rows.length; const w = Math.max(...t.rows.map((r) => r.length));
+  const solid = new Uint8Array(w * h);
+  for (const m of t.modules ?? []) {
+    const d = defs[m.def];
+    if (!d?.solid) continue;
+    const open = openTilesOf(d, m.x, m.y, m.rot);
+    for (const tile of footprintTiles(d, m.x, m.y, m.rot)) if (!open.some((o) => o.x === tile.x && o.y === tile.y)) solid[tile.y * w + tile.x] = 1;
+  }
+  const walk = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h && '_D'.includes(t.rows[y]?.[x] ?? '.') && !solid[y * w + x];
+  const region = new Int32Array(w * h).fill(-1);
+  const sizes: number[] = [];
+  for (let s = 0; s < w * h; s++) {
+    if (region[s] !== -1 || !walk(s % w, Math.floor(s / w))) continue;
+    const id = sizes.length; let n = 0; const st = [s]; region[s] = id;
+    while (st.length) {
+      const i = st.pop() as number; n++;
+      const x = i % w; const y = Math.floor(i / w);
+      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+        const j = ny * w + nx;
+        if (walk(nx, ny) && region[j] === -1) { region[j] = id; st.push(j); }
+      }
+    }
+    sizes.push(n);
+  }
+  const main = sizes.indexOf(Math.max(...sizes));
+  const out: string[] = [];
+  for (let i = 0; i < w * h; i++) if (region[i] >= 0 && region[i] !== main) out.push(`${i % w},${Math.floor(i / w)}`);
+  return out;
 }
 
 // --- iso view ---------------------------------------------------------------------------------------------------------
@@ -195,7 +232,51 @@ export function templateSheet(title: string, variants: Variant[], view: Template
     const y0 = oy + 20 + noteLines * 13;
     if (view === 'iso') drawIso(r, g.template, ox, y0, s);
     else (view === 'silhouette' ? drawSilhouette : view === 'structure' ? drawStructure : drawShip)(r, g, ox, y0, s);
-    text.push(`${v.name}: ${g.width}x${g.height}, ${tiles} tiles${g.problems.length ? `\n  ${g.problems.join('\n  ')}` : ''}`);
+    const lost = g.problems.some((p) => p.startsWith('unreachable')) ? `\n  unreachable at ${unreachableTiles(v.template).join(' ')}` : '';
+    text.push(`${v.name}: ${g.width}x${g.height}, ${tiles} tiles${g.problems.length ? `\n  ${[...new Set(g.problems)].join('\n  ')}` : ''}${lost}`);
+  });
+  return { raster: r, text: text.join('\n') };
+}
+
+const VIEW_SCALE: Record<TemplateView, number> = { iso: 9, silhouette: 7, structure: 7, detail: 12 };
+
+/**
+ * One board per ship: a column per variant, a row per view (default iso, silhouette, structure, detail), a small label under
+ * every cell (name, kind, tile count; red when the template has problems) and the variant's one-line note under its column.
+ */
+export function templateBoard(title: string, variants: Variant[], views: TemplateView[] = ['iso', 'silhouette', 'structure', 'detail']): { raster: Raster; text: string } {
+  const gs = variants.map((v) => templateResult(v.name, v.template));
+  const cellSize = (view: TemplateView, g: GenResult): { w: number; h: number } =>
+    view === 'iso' ? drawIso(new Raster(1, 1), g.template, 0, 0, VIEW_SCALE.iso, true) : { w: g.width * VIEW_SCALE[view], h: g.height * VIEW_SCALE[view] };
+  const LABEL = 22;
+  const colW = Math.max(...views.flatMap((v) => gs.map((g) => cellSize(v, g).w))) + 28;
+  const rowH = views.map((v) => Math.max(...gs.map((g) => cellSize(v, g).h)) + LABEL + 14);
+  const perLine = Math.floor((colW - 20) / 8);
+  const wrap = (t: string): string[] => t.split(' ').reduce<string[]>((ls, w) => {
+    const last = ls[ls.length - 1];
+    if (last !== undefined && `${last} ${w}`.length <= perLine) ls[ls.length - 1] = `${last} ${w}`;
+    else ls.push(w);
+    return ls;
+  }, []);
+  const noteH = Math.max(0, ...variants.map((v) => (v.note ? wrap(v.note).length : 0))) * 13 + 10;
+  const r = new Raster(variants.length * colW + 16, 44 + rowH.reduce((a, b) => a + b, 0) + noteH);
+  r.text(`${title}  ${views.join(' / ')}`, 8, 8, [235, 235, 235], 3);
+  const text: string[] = [];
+  gs.forEach((g, i) => {
+    const v = variants[i] as Variant;
+    const ox = 8 + i * colW;
+    const tiles = v.template.rows.join('').replace(/[.=]/g, '').length;
+    const bad = g.problems.length > 0;
+    let oy = 44;
+    views.forEach((view, k) => {
+      if (view === 'iso') drawIso(r, g.template, ox, oy, VIEW_SCALE.iso);
+      else (view === 'silhouette' ? drawSilhouette : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy, VIEW_SCALE[view]);
+      r.text(`${v.name}${v.kind ? `  ${v.kind}` : ''}  ${tiles} TILES${bad ? '  BAD' : ''}`, ox, oy + (rowH[k] as number) - LABEL - 6, bad ? [255, 90, 90] : [225, 225, 225], 2);
+      oy += rowH[k] as number;
+    });
+    if (v.note) wrap(v.note).forEach((l, k) => r.text(l, ox, oy + k * 13, [150, 170, 200], 2));
+    const lost = g.problems.some((p) => p.startsWith('unreachable')) ? `\n  unreachable at ${unreachableTiles(v.template).join(' ')}` : '';
+    text.push(`${v.name}: ${g.width}x${g.height}, ${tiles} tiles${bad ? `\n  ${[...new Set(g.problems)].join('\n  ')}` : ''}${lost}`);
   });
   return { raster: r, text: text.join('\n') };
 }
