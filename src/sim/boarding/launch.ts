@@ -40,10 +40,17 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   for (const c of ids) {
     if (sim.world.get(c, AllegianceC)?.faction !== 'player') return 'noCrew';
   }
+  if (ids.some((c) => launchOf(sim, c))) return 'crewBusy'; // already picked for another launch
   const first = sendToEmbark(sim, ids[0] as number, vehicle);
   if (first) return first;
   sim.world.add(vehicle, BoardLaunchC, { crew: ids, airlock, state: 'pilot', since: sim.tick });
   return null;
+}
+
+/** The shuttle whose pending launch has picked `crew` (0 if none): the whole party is reserved from the moment the launch is accepted. */
+export function launchOf(sim: Sim, crew: number): number {
+  for (const id of sim.world.query(BoardLaunchC)) if (sim.world.get(id, BoardLaunchC)?.crew.includes(crew)) return id;
+  return 0;
 }
 
 /** The party member still on its way: alive and able. */

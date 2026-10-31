@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, EmbarkOrderC, FerryC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
 import { BoardLaunchC } from '../../sim/boarding/components';
-import { orderLaunch } from '../../sim/boarding/launch';
+import { launchOf, orderLaunch } from '../../sim/boarding/launch';
 import { shipIdOf } from '../../sim/regions';
 import { airlockOf, crewOn, nth, of, run, setup, shuttleOf } from './boardingFixture';
 
@@ -80,6 +80,17 @@ describe('boarding.launch', () => {
     const s2 = shuttleOf(other, 1);
     other.world.add(s2, FerryC, { phase: 'load' } as never); // only its presence matters here; no tick runs
     expect(orderLaunch(other, s2, crewOn(other, 1).slice(0, 1), airlockOf(other, 2))).toBe('busy');
+  });
+
+  it('the whole party is reserved once a launch is accepted: no crew member can be picked for a second launch', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    // The passenger (not yet walking) is already taken: a second launch naming them is refused.
+    expect(orderLaunch(sim, shuttle, [party[1] as number], airlockOf(sim, 2))).not.toBeNull();
+    expect(launchOf(sim, party[1] as number)).toBe(shuttle);
   });
 
   it('rejects an empty party and a friendly airlock', () => {
