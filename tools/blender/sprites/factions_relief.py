@@ -579,25 +579,28 @@ def drone(hull):
                     prism(k, ax, plane, u0, u1, col, F, 3, mitre=mt, cap=sides[1])               # its two columns
                 q0, q1 = h0 + o0, h1 - o1                   # (the front clear of the other face there)
             else:                                       # the block (set 5 T1): a lighter strip either side, flush with
-                Dc, sw = D, DRONE_SW                    # its front, a groove down each near its inner edge, and the
+                Dc, sw = D, DRONE_SW                    # its front, and the
                 o0, o1 = (D if m0 < 0 else 0.0), (D if m1 < 0 else 0.0)     # middle between them darker, its front
                 q0, q1 = h0 + o0, h1 - o1                                   # flush, its slopes a px in (T1-4: the
                                                                             # red block there)
                 zt = z1 + 4 * PZ                        # (the strips' top: 4 art px over the block's old top)
-                for u0, u1, mt in ((h0, q0 + sw, (m0, 0.0)), (q1 - sw, h1, (0.0, m1))):
+                fc = T.RAMPS[F][1][4] if ax == "y" else T.RAMPS[F][0][1]    # (their inner ends in their front's
+                                                                            # tone: the other face's ramp's name
+                                                                            # for it, as they face across)
+                for u0, u1, mt, cp in ((s0 if not at0 else h0, q0 + sw, (m0, 0.0), (sides[1], fc)),   # (on to the
+                                       (q1 - sw, s1 if not at1 else h1, (0.0, m1), (fc, sides[1]))):  # tile's edge)
                     prism(k, ax, plane, u0, u1, [(0.0, z0), (D, z0 + c), (D, zt - c), (0.0, zt)], F, 3, mitre=mt,
-                          cap=sides[1])
-                for u in (q0 + sw - 0.05, q1 - sw + 0.05 - LINE):
-                    T.paint(k, ax, plane, u, u + LINE, f0 + 0.03, zt - c - 0.03, D + PAINT, F, 1)   # the grooves
-                if tv == 3:                             # the red block, set back and shorter
-                    Dr, cr, ri = D - PX, c * (D - PX) / D, 0.1
-                    prism(k, ax, plane, q0 + sw, q1 - sw,
-                          [(0.0, z0 + ri), (Dr, z0 + ri + cr), (Dr, z1 - ri - cr), (0.0, z1 - ri)],
-                          F, 2, cols=["lvR2", "lvR", "drM", "lvR2"], cap="lvR2")
-                    FV.flat(k, ax, plane, q0 + 0.14, q1 - 0.14, f0 + 0.14, f0 + 0.166, D - PX + PAINT, "lvR2")
-                else:                                   # (its front flush with theirs, its slopes a px in)
-                    prism(k, ax, plane, q0 + sw, q1 - sw,
-                          [(0.0, z0 + PZ), (D, z0 + c + PZ), (D, zt - c - PZ), (0.0, zt - PZ)], F, 2)
+                          cap=cp)
+                mid = [(0.0, z0 + PZ), (D, z0 + c + PZ), (D, zt - c - PZ), (0.0, zt - PZ)]   # (its front flush with
+                if tv == 3:                                                                 # theirs, its slopes a
+                    Dr = D - 0.5 * PX                                                       # (set back a px)
+                    red = [(0.0, z0 + 2 * PZ), (Dr, z0 + 2 * PZ + c * Dr / D), (Dr, zt - 2 * PZ - c * Dr / D),
+                           (0.0, zt - 2 * PZ)]
+                    prism(k, ax, plane, q0 + sw, q1 - sw, red, F, 2,                       # px in): the red block,
+                          cols=["lvRS", "lvR2", "lvR", "lvRS"], cap="lvRS")                # its slopes 2 px in
+                    FV.flat(k, ax, plane, q0 + sw, q1 - sw, f0 + 0.14 + 3 * PZ, f0 + 0.166 + 3 * PZ, Dr + PAINT, "lvRS")
+                else:
+                    prism(k, ax, plane, q0 + sw, q1 - sw, mid, F, 2)
             hw = (h1 - h0) / 2 - 0.07
             g0 = max(hc - hw, a + Dc + 0.05) if at0 and ends[0] == "in" else hc - hw     # (clear of the other
             g1 = min(hc + hw, b - Dc - 0.05) if at1 and ends[1] == "in" and not corner else hc + hw   # face's block)
