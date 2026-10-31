@@ -7,6 +7,15 @@ export const engineering = {
   islands: [batteryBank],
   arrangements: [
     {
+      // Laid out whole from a design (rooms/designs.ts); the steps are its fallback in a room no design fits.
+      // The fallback is the most forgiving arrangement (reactors against a wall): rooms no design fits are the tight ones.
+      name: 'designed', weight: 6, plan: { kind: 'design', designs: ['plantRow', 'twinFlank', 'plinth'] }, steps: [
+        { mod: 'module.reactor', count: 'spec', wall: 'long', row: true },
+        { mod: 'module.battery', count: 1, wall: 'any' },
+        { mod: ['module.storage_locker', 'module.storage_rack'], count: 2, wall: 'any', row: true },
+      ],
+    },
+    {
       name: 'core', weight: 2, steps: [
         { mod: 'module.reactor', count: 'spec', centre: 'y', clear: 1, row: true },
         { mod: 'module.battery', count: 2, wall: 'long', row: true },

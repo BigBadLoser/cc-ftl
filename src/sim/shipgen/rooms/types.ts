@@ -1,4 +1,5 @@
 import type { FinishKind } from '../../structure';
+import type { DesignName } from './designs';
 
 /**
  * Room recipes: data-driven layout rules per room role. A recipe lists 2-3 arrangements; the seed picks one per room,
@@ -62,7 +63,8 @@ export interface Step {
 
 export interface Arrangement {
   /** Lay the room out at once from a repeating unit (rooms/plans.ts); its steps are the fallback when the plan does not fit. */
-  plan?: { kind: 'berths'; lounge?: boolean } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' };
+  plan?: { kind: 'berths'; lounge?: boolean } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' }
+    | { kind: 'design'; designs: readonly DesignName[] };
   name: string;
   weight: number;
   /**
