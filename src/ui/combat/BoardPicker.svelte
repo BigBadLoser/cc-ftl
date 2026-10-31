@@ -60,7 +60,17 @@
     api.dispatch({ type: 'boarding.launch', vehicle: shuttle, crew: picked, airlock });
     onClose();
   };
+  // The confirm key (Enter by default) launches from anywhere in the picker, as its badge says; the combat keys stand aside while it's open.
+  function onKey(e: KeyboardEvent) {
+    if (!open || !keymap.matches(e, 'ui.confirm')) return;
+    if (e.target instanceof HTMLButtonElement) return; // a focused button (Cancel, a chip) answers its own Enter
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    go();
+  }
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <Dialog {open} onOpenChange={(o) => { if (!o) onClose(); }} title="Board {enemyName}" testId="board-picker">
   <div class="body steel">
