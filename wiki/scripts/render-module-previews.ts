@@ -14,6 +14,7 @@ import { AirlockC } from '../../src/sim/modules/airlock.ts';
 import { TICK_HZ } from '../../src/sim/time.ts';
 import { modules as baseModules } from '../../src/content/modules.ts';
 import { tierModules } from '../../src/content/tiers.ts';
+import type { ModuleDef } from '../../src/sim/registry.ts';
 import { layersOf } from '../../src/render/layerPick.ts';
 import { layerKey } from '../../src/render/moduleArt.ts';
 import { steady } from '../../src/render/vehicleBayArt.ts';
@@ -23,7 +24,7 @@ import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts'
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = resolve(root, '../public/assets/1x');
 const manifest = JSON.parse(await readFile(join(assetRoot, 'manifest.json'), 'utf8')) as Manifest;
-const mods = { ...baseModules, ...tierModules };
+const mods: Record<string, ModuleDef> = { ...baseModules, ...tierModules };
 const dest = join(root, 'static/generated/previews');
 const urlPrefix = '/cc-ftl/wiki/generated/previews/';
 const world = new World();

@@ -10,8 +10,12 @@ import { recipes as sourceRecipes } from '../../src/content/recipes.ts';
 import { factions as sourceFactions } from '../../src/content/factions/index.ts';
 import { research as sourceResearch } from '../../src/content/research.ts';
 import * as tuning from '../../src/sim/tuning.ts';
+import type { Effect, ItemDef, ItemQty, ModuleDef, RecipeDef, ResearchDef, VehicleDef, WeaponDef } from '../../src/sim/registry.ts';
+import type { FactionDef } from '../../src/sim/shipgen/types.ts';
 import * as tuningJobs from '../../src/sim/galaxy/tuningJobs.ts';
 import { goals } from '../../src/content/goals.ts';
+import { ACTIONS, KEY_GROUPS } from '../../src/ui/keymap/actions.ts';
+import { chordLabel } from '../../src/ui/keymap/chords.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const generated = join(root, 'src/data/generated');
@@ -19,16 +23,16 @@ const routes = join(root, 'src/routes/reference');
 const sprites = JSON.parse(await readFile(join(generated, 'sprites.json'), 'utf8')) as Record<string, string>;
 const previews = JSON.parse(await readFile(join(generated, 'previews.json'), 'utf8')) as Record<string, {url:string;art:boolean;layers:number;placeholder:boolean;gameFallback?:boolean}>;
 
-// Data only: never import the runtime simulation, renderer or UI.
-type Material = { item: string; count: number };
-type Module = { name: string; description?: string; asset?: string; tierArt?: unknown; category?: string; footprint: [number, number]; power: number; maxHp?: number; buildWork?: number; cost?: Material[]; weapon?: string };
-type Item = { name: string; description?: string; tags?: string[]; stackSize: number; price?: number };
-type WeaponEffect = { type: string; amount?: number; layers?: number; seconds?: number; radius?: number; ifNoDrain?: boolean };
-type Weapon = { name: string; shots: number; shotDelaySec: number; chargeSec: number; speed: number; spread: number; ammo?: string; shield: { damage: number; pierce: number; bypass?: boolean }; effects: WeaponEffect[] };
-type Vehicle = { name: string; asset?: string; class: string; speed: number; maxHp: number; capacity: number; evasion: number; cargo: number; mining?: { unitsPerSec: number } };
-type Recipe = { name: string; category?: string; station: string; inputs: Material[]; outputs: Material[]; work: number };
-type Faction = { name: string; art?: { signature?: string[] } };
-type Research = { name: string; category?: string; cost: Material[]; work: number; requires?: string[]; unlocks?: string[] };
+// Data only: never import the runtime simulation, renderer or UI. The game's own definition types (type-only imports)
+// make `npm run check` fail when content fields are renamed, instead of the pages quietly printing "undefined".
+type Material = ItemQty;
+type Module = ModuleDef;
+type Item = ItemDef;
+type Weapon = WeaponDef;
+type Vehicle = VehicleDef;
+type Recipe = RecipeDef;
+type Faction = FactionDef;
+type Research = ResearchDef;
 
 const modules = { ...baseModules, ...tierModules } as Record<string, Module>;
 const items = sourceItems as Record<string, Item>;
@@ -210,7 +214,6 @@ for (const [id, def] of Object.entries(items).sort()) {
   entry('items', id, id === 'item.ai_core' ? 'Machine · Bazaar trade good' : (def.tags ?? []).map(label).join(' · ') || 'Resource', [['Stack limit', String(def.stackSize)], ['Base value', def.price === undefined ? '—' : String(def.price)]], img, def.tags?.[0]);
   await writeEntry('items', id, [
     image(img, def.name), '',
-    def.description ? text(def.description) : '', '',
     ...(id === 'item.ai_core'
       ? ['**Trade good, not a ship module.** This inventory item is sold by the machine bazaar. The separately defined [AI core module](../../modules/ai-core/) is a placeable ship system for automation.', '']
       : []),
@@ -225,13 +228,18 @@ for (const [id, def] of Object.entries(items).sort()) {
 await saveJson('items', itemCatalog);
 await writeIndex('items', 'Items and resources', 'Item limits, tags, and base values. Prices at individual stations may differ.');
 
+/** A numeric field of an effect, if that kind of effect has it (effects are a tagged union). */
+function effectField(effect: Effect, key: 'amount' | 'layers' | 'seconds' | 'radius'): number | undefined {
+  return key in effect ? (effect as Record<string, unknown>)[key] as number | undefined : undefined;
+}
 function effectTotal(def: Weapon, type: string): number {
-  return def.effects.filter(effect => effect.type === type).reduce((sum, effect) => sum + (effect.amount ?? 0), 0);
+  return def.effects.filter(effect => effect.type === type).reduce((sum, effect) => sum + (effectField(effect, 'amount') ?? 0), 0);
 }
 // Ship-mounted weapons, not crew hand weapons (those are defined as items).
 for (const [id, def] of Object.entries(weapons).sort()) {
   const effectRows = def.effects.map(effect => {
-    const detail = [effect.amount !== undefined ? String(effect.amount) : '', effect.layers !== undefined ? effect.layers + ' layers' : '', effect.seconds !== undefined ? effect.seconds + ' seconds' : '', effect.radius !== undefined ? 'radius ' + effect.radius : ''].filter(Boolean).join(', ');
+    const [amount, layers, seconds, radius] = (['amount', 'layers', 'seconds', 'radius'] as const).map(k => effectField(effect, k));
+    const detail = [amount !== undefined ? String(amount) : '', layers !== undefined ? layers + ' layers' : '', seconds !== undefined ? seconds + ' seconds' : '', radius !== undefined ? 'radius ' + radius : ''].filter(Boolean).join(', ');
     return '| ' + text(label(effect.type.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase())) + ' | ' + text(detail || '—') + ' |';
   });
   const related = Object.entries(modules).filter(([, m]) => m.weapon === id);
@@ -268,7 +276,7 @@ for (const [id, def] of Object.entries(vehicles).sort()) {
     ...stats([
       ['Class', def.class], ['Speed at piloting 0', def.speed + ' tiles/s'],
       ['Durability', def.maxHp + ' HP'], ['Passenger capacity', def.capacity],
-      ['Cargo capacity', def.cargo], ['Evasion', def.evasion],
+      ['Cargo capacity', def.cargo ?? 0], ['Evasion', def.evasion],
       ...(def.mining ? [['Mining rate', def.mining.unitsPerSec + ' units/s'] as [string,string]] : []),
     ]),
   ]);
@@ -328,6 +336,13 @@ await saveJson('game-data', {
   modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({ powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY })),
   items: liveKind('items'), weapons: liveKind('weapons'), vehicles: liveKind('vehicles'), research: liveKind('research'),
   tuning: { ...scalars(tuning), ...scalars(tuningJobs) },
+  // Default key bindings by group, labelled the way the game shows them (src/ui/keymap). Debug keys are for development.
+  controls: KEY_GROUPS.filter((g) => g.id !== 'debug').map((g) => ({
+    id: g.id, label: g.label,
+    actions: ACTIONS.filter((x) => x.group === g.id).map((x) => ({
+      id: x.id, label: x.label, keys: x.keys.map(chordLabel), context: x.context, fixed: 'fixed' in x && !!x.fixed,
+    })),
+  })),
   goals: goals.map((act) => ({
     title: act.title,
     goals: act.goals.map((g) => ({ title: g.title, text: g.text })),
@@ -338,5 +353,37 @@ await saveJson('game-data', {
     ],
   })),
 });
+
+// The Controls page is generated whole from the game's keymap (src/ui/keymap/actions.ts), so a new or rebound default
+// key shows up on the next build.
+const WHEN: Record<string, string> = { global: 'Any time', world: 'On the ship view', build: 'While building', combat: 'In a fight' };
+// One keycap per key: only a leading Shift is split off, since labels such as "Num +" contain a plus of their own.
+const kbd = (keys: string[]) => keys.map((k) => (k.startsWith('Shift+') ? ['Shift', k.slice(6)] : [k])
+  .map((part) => '<kbd>' + html(part) + '</kbd>').join('+')).join(' or ');
+const controlsPage = [
+  '---', 'title: Controls', 'order: 2', '---', '',
+  'Every key the game answers to, with its default binding. Change any of them in the **Esc** menu under **Controls**:',
+  'click a key slot and press the new key. **Esc** cancels and **Delete** clears the slot. If the key is already taken,',
+  'the game offers to swap the two. You can reset one group or all keys at once.', '',
+  'Keys are physical positions, so they stay in the same place on any keyboard layout. Some keys do different things',
+  'depending on what you are doing: **' + chordLabel(ACTIONS.find((x) => x.id === 'crew.draft')!.keys[0]!) + '** drafts crew on the',
+  'ship view, rotates a module while building and picks the fourth weapon in a fight.', '',
+  ...KEY_GROUPS.filter((g) => g.id !== 'debug').flatMap((g) => [
+    '## ' + g.label, '',
+    '| Action | Keys | When |', '|---|---|---|',
+    ...ACTIONS.filter((x) => x.group === g.id).map((x) =>
+      '| ' + text(x.label) + ' | ' + kbd(x.keys.map(chordLabel)) + ('fixed' in x && x.fixed ? ' (fixed)' : '') + ' | ' + (WHEN[x.context] ?? x.context) + ' |'),
+    '',
+  ]),
+  '## Mouse', '',
+  '| Action | Mouse |', '|---|---|',
+  '| Select crew, a module, a ship or a station | Left-click (Shift adds or removes crew) |',
+  '| Box-select drafted crew | Left-drag |',
+  '| Order drafted crew; back out of a tool | Right-click |',
+  '| Pan the camera | Middle-drag |',
+  '| Zoom | Mouse wheel |', '',
+];
+await mkdir(join(root, 'src/routes/guides/controls'), { recursive: true });
+await writeFile(join(root, 'src/routes/guides/controls/+page.md'), controlsPage.join('\n'), 'utf8');
 
 console.log('Generated reference pages: ' + Object.entries(seenSlugs).map(([kind, entries]) => kind + '=' + entries.size).join(', '));
