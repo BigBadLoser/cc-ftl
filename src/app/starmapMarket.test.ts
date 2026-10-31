@@ -23,7 +23,7 @@ describe('starmap market line follows player trades', () => {
     t.stock = t.stock.filter((l) => l.item !== 'item.metal');
     sim.galaxy.rev++;
     const before = buildStarmap(sim);
-    expect(before.nodes.find((n) => n.current)?.market?.dear).toContain('Metal');
+    expect(before.nodes.find((n) => n.current)?.market?.dear.map((g) => g.name)).toContain('Metal');
     const rev = sim.galaxy.rev;
     // The deal flow writes the live station's stock: opening a deal that takes goods, then failing it, returns them.
     sim.enqueue({ type: 'trade.hail', ship: station });
@@ -42,6 +42,6 @@ describe('starmap market line follows player trades', () => {
     expect(sim.galaxy.rev).toBe(rev2 + 1);
     const after = buildStarmap(sim);
     expect(after.rev).toBe(sim.galaxy.rev);
-    expect(after.nodes.find((n) => n.current)?.market?.cheap).toContain('Metal');
+    expect(after.nodes.find((n) => n.current)?.market?.cheap.map((g) => g.name)).toContain('Metal');
   }, 60000);
 });

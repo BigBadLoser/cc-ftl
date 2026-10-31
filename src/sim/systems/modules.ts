@@ -5,12 +5,16 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { GAS_EPSILON, NORMAL_O2 } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
+import { drawFromStores, shipStoreCount } from '../items/stock';
 
 /**
  * Running modules act on the grid fields: life support adds oxygen and scrubs CO2 across its
- * room (or just its own tile if it somehow has none), reactors heat their footprint. Only
- * powered modules act; lights are handled by the lighting system.
+ * room (or just its own tile if it somehow has none), faster with bottled oxygen in the ship's stores while the room is short of air
+ * (`ModuleDef.o2Supply`), and reactors heat their footprint. Only powered modules act; lights are handled by the lighting system.
  */
+/** A room counts as short of air below this share of normal oxygen: bottled oxygen boosts the refill only then. */
+const O2_SHORT = 0.9;
+
 export function modulesSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
@@ -24,7 +28,26 @@ export function modulesSystem(sim: Sim): void {
       const room = grid.get('room', m.x, m.y);
       const tiles = room ? roomTiles(grid).get(room) : undefined;
       const idx = tiles ?? [(m.y - grid.y0) * grid.width + (m.x - grid.x0)];
-      const addO2 = ((def.o2PerSec ?? 0) / TICK_HZ) / idx.length;
+      // Bottled oxygen in the stores speeds the air up while the room is short of it; a full room burns none.
+      let boost = 1;
+      const supply = def.o2Supply;
+      if (supply && def.o2PerSec) {
+        // Short of air: the room's average below O2_SHORT of normal (a breach, a fire, a fresh room), not the small dips of everyday mixing.
+        let sum = 0;
+        for (const i of idx) sum += grid.get('o2', grid.x0 + (i % grid.width), grid.y0 + Math.floor(i / grid.width));
+        const short = sum / idx.length < NORMAL_O2 * O2_SHORT;
+        const ship = shipIdOf(sim, m);
+        if (short && ((m.o2Burn ?? 0) > 0 || shipStoreCount(sim, ship, supply.item) > 0)) {
+          boost = supply.mult;
+          // A unit is burned when the boost starts and covers `secPerUnit` seconds.
+          if ((m.o2Burn ?? 0) <= 0) {
+            if (drawFromStores(sim, ship, supply.item, 1) < 1) boost = 1;
+            else m.o2Burn = supply.secPerUnit;
+          }
+          if (boost > 1) m.o2Burn = Math.max(0, (m.o2Burn ?? 0) - 1 / TICK_HZ);
+        }
+      }
+      const addO2 = (((def.o2PerSec ?? 0) * boost) / TICK_HZ) / idx.length;
       const scrub = ((def.co2ScrubPerSec ?? 0) / TICK_HZ) / idx.length;
       for (const i of idx) {
         const x = grid.x0 + (i % grid.width);

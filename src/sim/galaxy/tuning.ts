@@ -262,6 +262,8 @@ export const MARKET_CAP_MULT = 3;
 export const MARKET_WANT_TURNS = 20;
 /** Deviations smaller than this from the baseline are not stored. */
 export const MARKET_EPS = 0.05;
+/** A port's goods start up to this share above or below their baseline (seeded per port and good), so prices differ from the first turn. */
+export const MARKET_START_SPREAD = 0.4;
 /** Units one hull of a size class hauls. */
 export const CARGO_BY_SIZE = { small: 20, medium: 40, heavy: 80 } as const;
 /** A trader only buys a good for the next stop when the price there beats the price here by this fraction, and takes at most this share of the stock. */

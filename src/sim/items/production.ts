@@ -16,3 +16,24 @@ export function activeOrder(sim: Sim, moduleId: number): ProductionOrder | null 
   for (const o of sim.world.get(moduleId, ProductionC)?.orders ?? []) if (orderWantsMore(sim, o)) return o;
   return null;
 }
+
+/** The recipe's inputs are all in the player's stock now (so a craft of it can be supplied). */
+export function inputsInStock(sim: Sim, recipeId: string): boolean {
+  const recipe = sim.content.recipes[recipeId];
+  return !!recipe && recipe.inputs.every((l) => totalStock(sim, l.item) >= l.count);
+}
+
+/** The first order on the module, other than `except`, that wants a batch and whose inputs are in stock now: one that can really be supplied. */
+export function suppliableOrder(sim: Sim, moduleId: number, except?: string): ProductionOrder | null {
+  const orders = sim.world.get(moduleId, ProductionC)?.orders ?? [];
+  return orders.find((o) => o.recipe !== except && orderWantsMore(sim, o) && inputsInStock(sim, o.recipe)) ?? null;
+}
+
+/**
+ * The order a crafting module should work on next: the first wanting a batch whose inputs are in stock, else the first wanting one (its job
+ * waits for materials). A refinery queued for every ore refines whatever ore there is instead of stalling on the first.
+ */
+export function nextOrder(sim: Sim, moduleId: number): ProductionOrder | null {
+  const orders = sim.world.get(moduleId, ProductionC)?.orders ?? [];
+  return orders.find((o) => orderWantsMore(sim, o) && inputsInStock(sim, o.recipe)) ?? activeOrder(sim, moduleId);
+}

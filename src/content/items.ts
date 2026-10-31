@@ -3,16 +3,19 @@ import type { ItemDef } from '../sim';
 /** Raw and refined resources. Stack sizes are units per floor stack or storage slot. */
 export const items = {
   'item.scrap': { name: 'Scrap', tags: ['raw', 'salvage'], stackSize: 100, price: 2 },
-  'item.metal': { name: 'Metal', tags: ['refined', 'building'], stackSize: 100, price: 6 },
+  'item.metal': { name: 'Metal', tags: ['refined', 'building'], stackSize: 100, price: 8 },
   'item.electronics': { name: 'Electronics', tags: ['refined', 'components'], stackSize: 50, price: 16 },
   // Flammable: loose polymer on a burning tile burns and feeds the fire.
   'item.polymer': { name: 'Polymer', tags: ['refined', 'building'], stackSize: 50, price: 9, flammability: 0.6 },
   // Robot spare parts: mend robots (25 hp each), salvaged from robot wrecks.
   'item.parts': { name: 'Spare parts', tags: ['refined', 'components'], stackSize: 50, price: 12 },
   // Raw ores from asteroid rock: refined at a refinery (metal, electronics). Ice is used as is.
-  'item.iron_ore': { name: 'Iron ore', tags: ['raw', 'ore'], stackSize: 100, price: 3 },
+  'item.iron_ore': { name: 'Iron ore', tags: ['raw', 'ore'], stackSize: 100, price: 4 },
   'item.rare_ore': { name: 'Rare ore', tags: ['raw', 'ore'], stackSize: 50, price: 12 },
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50, price: 3 },
+  // Split from ice at a refinery.
+  'item.water': { name: 'Water', tags: ['refined', 'life'], stackSize: 50, price: 4 },
+  'item.oxygen': { name: 'Oxygen', tags: ['refined', 'life'], stackSize: 50, price: 5 },
   // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley from scrap. Flammable packaging.
   'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, price: 5, flammability: 0.2, food: { nutrition: 50 } },
   // Ammo for missile launchers. Explosive: loose missiles fuel fires.
