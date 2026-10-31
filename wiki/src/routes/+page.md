@@ -1,6 +1,6 @@
 ---
 title: Wiki
-heroImage: /home-ship.webp
+heroImage: /guides/first-hour/ship.webp
 tagline: A field guide to ship systems, survival, strategy, and equipment.
 actions:
   - label: Start here

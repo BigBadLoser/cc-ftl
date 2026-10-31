@@ -91,8 +91,8 @@ Reactors burning fuel rods. For now a reactor runs for as long as it is switched
 
 - A destroyed reactor stops supplying power at once, so expect a shortage right after a reactor hit.
 - **Ion weapons** knock modules out for a while. An ionised module neither draws nor supplies power.
-- A ship whose power sources are all off is **disabled**, and a ship whose power sources are all destroyed becomes a
-  **wreck**. That applies to enemies too.
+- A ship whose power sources are all off (or whose crew can't act) is **disabled**. A ship whose power sources are all
+  destroyed, or that has taken too much damage overall, becomes a **wreck**. That applies to enemies too.
 
 Derelicts you find adrift may have their reactors off, or be running on emergency power for lights and life support
 only. Once aboard, you can switch modules back on.

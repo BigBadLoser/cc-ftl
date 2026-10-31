@@ -27,6 +27,7 @@ export default defineConfig({
         sidebar: {
           '/guides/': [
             { title: 'Your first hour', to: '/guides/first-hour/' },
+            { title: 'Controls', to: '/guides/controls/' },
           ],
           '/mechanics/': [
             { title: 'Power and reactors', to: '/mechanics/power/' },

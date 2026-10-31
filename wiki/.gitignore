@@ -11,3 +11,4 @@ src/routes/reference/recipes/*/
 src/routes/reference/factions/*/
 src/routes/reference/research/*/
 static/generated/previews/
+src/routes/guides/controls/

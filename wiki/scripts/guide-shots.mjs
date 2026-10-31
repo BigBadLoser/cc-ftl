@@ -3,7 +3,7 @@
 //   query     the game URL's query string (debug starts such as ?seed= or ?scenario=)
 //   settle    ms to wait after load before the steps (default 6000)
 //   steps     async (h) => { ... } using the helpers in capture-guides.mjs (click, testid, key, zoom, pan, hideUi)
-//   selector  screenshot just this element; or clip: { x, y, width, height }; or the whole viewport
+//   selector  screenshot just this element (pad: px of margin around it); or clip: { x, y, width, height }; or the whole viewport
 //   marks     [[label, selector, anchor?], ...]: numbered callouts <GuideShot> draws over those elements; the badge
 //             sits on the box's top-left corner, or with anchor 'left' just outside the middle of its left edge
 //   keyOut    make the flat space background transparent and trim to the ship (for HUD-less shots)
@@ -39,6 +39,14 @@ export const shots = [
       ['5', '[data-testid="toolbar"]'],
     ],
   },
+  {
+    name: 'first-hour/menu',
+    query: '?seed=3',
+    steps: async (h) => { await h.key('Escape'); await h.wait(600); },
+    selector: '[data-testid="esc-menu"]',
+    pad: 24,
+  },
+  // Also the home page's hero image.
   {
     name: 'first-hour/ship',
     query: '?seed=3',

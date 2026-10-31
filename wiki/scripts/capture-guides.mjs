@@ -48,8 +48,9 @@ function helpers(page) {
       for (let i = 1; i <= 10; i++) await page.mouse.move(x + (toX - x) * i / 10, y + (toY - y) * i / 10);
       await page.mouse.up({ button: 'middle' });
     },
-    /** Hide the HUD so only the game canvas shows. */
+    /** Hide the HUD and the space backdrop, so only the ships show on a flat background (for keyOut). */
     async hideUi() {
+      await page.evaluate(() => window.__cc?.backdrop(false));
       await page.evaluate(() => {
         const canvases = [...document.querySelectorAll('canvas')];
         canvases.sort((a, b) => b.width * b.height - a.width * a.height);
@@ -59,6 +60,13 @@ function helpers(page) {
       await page.waitForTimeout(300);
     },
   };
+}
+
+/** An element's box grown by `pad` px on every side, kept inside the 1600x1000 viewport. */
+function padded(box, pad) {
+  if (!box) throw Error('Shot selector is not on screen');
+  const x = Math.max(0, box.x - pad), y = Math.max(0, box.y - pad);
+  return { x, y, width: Math.min(1600, box.x + box.width + pad) - x, height: Math.min(1000, box.y + box.height + pad) - y };
 }
 
 /** Make the game's flat background transparent, flood-filling from the edges, then trim to the content. */
@@ -94,11 +102,13 @@ try {
   });
   for (const shot of shots.filter((s) => !only || s.name.includes(only))) {
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
-    await page.goto(base + (shot.query ?? ''), { waitUntil: 'load' });
+    // ?hook installs the screenshot helpers (window.__cc); lessons stay off so tutorial cards don't cover the shot.
+    const query = shot.query ?? '';
+    await page.goto(base + query + (query ? '&' : '?') + 'hook&lessons=off', { waitUntil: 'load' });
     await page.waitForTimeout(shot.settle ?? 6000);
     const h = helpers(page);
     await shot.steps?.(h);
-    const area = shot.selector ? await page.locator(shot.selector).first().boundingBox() : shot.clip ?? { x: 0, y: 0, width: 1600, height: 1000 };
+    const area = shot.selector ? padded(await page.locator(shot.selector).first().boundingBox(), shot.pad ?? 0) : shot.clip ?? { x: 0, y: 0, width: 1600, height: 1000 };
     if (shot.marks) {
       const marks = [];
       for (const [label, selector, anchor] of shot.marks) {
@@ -109,9 +119,7 @@ try {
       await mkdir(marksOut, { recursive: true });
       await writeFile(join(marksOut, shot.name.replaceAll('/', '__') + '.json'), JSON.stringify(marks, null, 2) + '\n');
     }
-    let png = shot.selector
-      ? await page.locator(shot.selector).first().screenshot()
-      : await page.screenshot({ clip: shot.clip });
+    let png = await page.screenshot({ clip: area });
     if (shot.keyOut) png = await keyOutBackground(png);
     const file = join(out, shot.name + '.webp');
     await mkdir(dirname(file), { recursive: true });

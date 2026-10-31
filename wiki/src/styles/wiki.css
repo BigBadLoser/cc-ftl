@@ -533,3 +533,18 @@ html .hero-image img {
   border-radius: 0 !important;
   background: none !important;
 }
+
+/* Keycaps on the generated Controls page and in guides. */
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: .05em .45em;
+  border: 1px solid #3a4a60;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #1a2433;
+  color: #dce6f2;
+  font: 600 .82em/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+:root:not(.dark) kbd { background: #f2f5f9; color: #1d2733; border-color: #b8c4d2; }
