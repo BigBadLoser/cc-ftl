@@ -2,7 +2,8 @@ import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import { ProductionC } from '../items/components';
 import { needsFrom } from '../items/materials';
-import { inputsInStock, nextOrder, orderWantsMore } from '../items/production';
+import { nextOrder, orderWantsMore, suppliableOrder } from '../items/production';
+import { refKey, reservations, totalStock, type Reservations } from '../items/stock';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
@@ -19,13 +20,15 @@ export function craftJobsSystem(sim: Sim): void {
     const j = sim.world.get(id, JobC);
     if (j?.kind === 'craft') existing.set(j.target ?? 0, id);
   }
+  let res: Reservations | undefined;
   for (const [moduleId, jobId] of existing) {
     const job = sim.world.get(jobId, JobC);
     const orders = sim.world.get(moduleId, ProductionC)?.orders ?? [];
     const live = orders.some((o) => o.recipe === job?.craft?.recipe && orderWantsMore(sim, o));
-    // A job still waiting for inputs that are not in stock gives way to an order whose inputs are (nothing delivered yet, so nothing to drop).
-    const starved = !!job?.craft && job.progress === 0 && !job.delivered?.length && !inputsInStock(sim, job.craft.recipe)
-      && nextOrder(sim, moduleId)?.recipe !== job.craft.recipe;
+    // A job whose inputs can no longer come (not in stock, not delivered, not on their way: an ore carried to it still counts) gives way to an
+    // order that can really be supplied now. Never to one that cannot: that would only swap one waiting job for another.
+    const starved = !!job?.craft && job.progress === 0 && !job.delivered?.length && !inputsComing(sim, jobId, job.craft.recipe, (res ??= reservations(sim)))
+      && suppliableOrder(sim, moduleId, job.craft.recipe) !== null;
     if (!job || !sim.world.has(moduleId, ModuleC) || (job.progress === 0 && !live) || starved) {
       destroyJob(sim, jobId);
       existing.delete(moduleId);
@@ -43,4 +46,16 @@ export function craftJobsSystem(sim: Sim): void {
       reservedBy: 0, target: moduleId, needs: needsFrom(recipe.inputs), delivered: [], craft: { recipe: order.recipe },
     });
   }
+}
+
+/** Can the job's inputs still all arrive: delivered, in hauls on their way to it (picked up or not), or in the player's stock? */
+function inputsComing(sim: Sim, jobId: number, recipeId: string, res: Reservations): boolean {
+  const recipe = sim.content.recipes[recipeId];
+  const job = sim.world.get(jobId, JobC);
+  if (!recipe || !job) return false;
+  return recipe.inputs.every((l) => {
+    const delivered = job.delivered?.find((d) => d.item === l.item)?.count ?? 0;
+    const coming = res.incoming.get(refKey('job', jobId, l.item)) ?? 0;
+    return delivered + coming + totalStock(sim, l.item) >= l.count;
+  });
 }

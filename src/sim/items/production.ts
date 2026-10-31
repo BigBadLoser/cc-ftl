@@ -23,6 +23,12 @@ export function inputsInStock(sim: Sim, recipeId: string): boolean {
   return !!recipe && recipe.inputs.every((l) => totalStock(sim, l.item) >= l.count);
 }
 
+/** The first order on the module, other than `except`, that wants a batch and whose inputs are in stock now: one that can really be supplied. */
+export function suppliableOrder(sim: Sim, moduleId: number, except?: string): ProductionOrder | null {
+  const orders = sim.world.get(moduleId, ProductionC)?.orders ?? [];
+  return orders.find((o) => o.recipe !== except && orderWantsMore(sim, o) && inputsInStock(sim, o.recipe)) ?? null;
+}
+
 /**
  * The order a crafting module should work on next: the first wanting a batch whose inputs are in stock, else the first wanting one (its job
  * waits for materials). A refinery queued for every ore refines whatever ore there is instead of stalling on the first.

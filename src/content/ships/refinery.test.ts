@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, Struct, footprintTiles, ProductionC, StorageC, homeShip, newGame, placementError, shipGrid, spawnModule, storageAdd, totalStock, type Sim } from '../../sim';
+import { JobC, ModuleC, Struct, footprintTiles, ProductionC, StorageC, homeShip, newGame, placementError, shipGrid, spawnModule, storageAdd, totalStock, type Sim } from '../../sim';
 import { content } from '../index';
 
 /** True if the refinery would stand against a door tile (it could seal the room, and its access tile with it). */
@@ -63,5 +63,29 @@ describe('ore refinery', () => {
     const iron = () => sim.world.get(id, ProductionC)?.orders.find((o) => o.recipe === 'recipe.refine_iron')?.done ?? 0;
     for (let i = 0; i < 6000 && iron() < 1; i++) { sim.step(); sim.events.drain(); }
     expect(iron()).toBe(1);
+  });
+
+  it('the iron job survives its ore being picked up: one job, no cancel and recreate cycle (Codex on #229)', { timeout: 60000 }, () => {
+    const sim = newGame(4, content);
+    const ship = homeShip(sim);
+    const at = spot(sim, ship);
+    const id = spawnModule(sim, 'module.refinery', at.x, at.y, at.rot);
+    const crate = [...sim.world.query(StorageC)].sort((a, b) => a - b)[0]!;
+    const r = content.recipes['recipe.refine_iron'];
+    storageAdd(sim, crate, 'item.iron_ore', r.inputs[0]!.count); // exactly one batch: carrying it leaves none in stock
+    sim.enqueue({ type: 'production.add', moduleId: id, recipe: 'recipe.refine_rare', mode: 'count', target: 5 }); // no rare ore aboard
+    sim.enqueue({ type: 'production.add', moduleId: id, recipe: 'recipe.refine_iron', mode: 'count', target: 1 });
+    const iron = () => sim.world.get(id, ProductionC)?.orders.find((o) => o.recipe === 'recipe.refine_iron')?.done ?? 0;
+    const jobs = new Map<number, string>();
+    for (let i = 0; i < 6000 && iron() < 1; i++) {
+      sim.step();
+      sim.events.drain();
+      for (const j of sim.world.query(JobC)) {
+        const c = sim.world.get(j, JobC)!;
+        if (c.kind === 'craft' && c.target === id && !jobs.has(j)) jobs.set(j, c.craft!.recipe);
+      }
+    }
+    expect(iron()).toBe(1);
+    expect([...jobs.values()]).toEqual(['recipe.refine_iron']);
   });
 });
