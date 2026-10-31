@@ -171,6 +171,9 @@ class NavyShell(FreeEnds, T.Shell):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
+        self.foot = (T.STYLE or {}).get("foot", 0.0)  # (STYLE foot: the ramp ends in an upright face, as CornerCut's)
+        if self.foot:
+            self.run = math.ceil(self.run * T.W.GN - 1e-6) / T.W.GN
         self.find_ends()
         self.find_holes()
         fh = (T.STYLE or {}).get("face_holes")                  # a top variant's openings in the face: (ax, plane,
@@ -183,7 +186,7 @@ class NavyShell(FreeEnds, T.Shell):
             if any(sd[0] == "+" for sd, _ in self.end_sides):
                 break                                   # (a wall's end is not a corner)
             if (not self._adj(r, "+x") and not self._adj(r, "+y") and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9
-                    and self.keep is None):
+                    and self.keep is None and (T.STYLE or {}).get("chamfer")):     # (a look without: square)
                 self.line = (T.snap(x1), T.snap(y1))
                 lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
                 self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
@@ -203,7 +206,10 @@ class NavyShell(FreeEnds, T.Shell):
         return (c, r, True) if c > d + 1e-9 else (d, r, False)
 
     def skirtz(self, x, y):
-        return self.zs * max(0.0, 1.0 - self._cdist(x, y)[0] / self.run)
+        d = self._cdist(x, y)[0]
+        if self.foot:
+            return self.foot + (self.zs - self.foot) * (1.0 - d / self.run) if d <= self.run + 1e-9 else 0.0
+        return self.zs * max(0.0, 1.0 - d / self.run)
 
     def col_skirt(self, i, j, kind, x, y):
         d, r = self._dist(x, y)
@@ -212,13 +218,17 @@ class NavyShell(FreeEnds, T.Shell):
         d = max(d, (x - self.line[0] + y - self.line[1] + NAVY_C) / 2)   # (the cells along its edges too: they reach
         fam = "blue" if r[1] == "hull" else "wall"                       # past the plates, so in the joints' tone they
                                                                          # dotted the edges)
+        if self.foot and d > self.run - 1 / T.W.GN:                      # (the chamfer's toe crosses cells: their
+            return self.col_face("y", x, y, 0.0)                         # drop is the upright foot's, in its colour)
         if d < 0.02:                                                     # the line where the ramp meets the wall
             return T.RAMPS[fam][0][(T.STYLE or {}).get("joint", 1)]
-        if self.run - 0.03 > d >= (T.STYLE or {}).get("toe_at", 0.72) * self.run:
+        if self.run - 0.03 > d >= (T.STYLE or {}).get("toe_at", 0.72) * self.run and not self.foot:
             return T.RAMPS["ochre"][0][4]
         return T.RAMPS[fam][0][3]
 
     def col_face(self, face, x, y, z):
+        if z < self.foot - 1e-6:                        # the ramp's upright foot, in the toe band's colour
+            return T.RAMPS[(T.STYLE or {}).get("toe") or "wall"][0 if face == "y" else 1][2]
         for ax, plane, u0, u1, z0, z1 in self.face_holes:
             if face == ax and abs((y if ax == "y" else x) - plane) < 1e-6 and u0 < (x if ax == "y" else y) < u1 \
                     and z0 < z < z1:
@@ -260,14 +270,20 @@ def _ramp_chamfer(k, X, Y, C, zs, F):
 
 
 def _end_section(k, ax, plane, a, b, zs, zt, F):
-    """A wall's end face, under its face parts: the section of its foot and its two ramps down to the floor, with
-    edge highlights up its two edges (to zt) and down the ramps' slopes."""
-    run = T.W.skirt_run()
-    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b, zs), (a, zs))],
-           F, 2, T.OUT(ax))
+    """A wall's end face, under its face parts: the section of its foot and its two ramps down to the floor (each
+    ending in an upright foot where the shell's ramps do), with edge highlights up its two edges (to zt) and down the
+    ramps' slopes."""
+    sh = T.SHELL
+    run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
+    sec = [(a - run, 0.0035), (b + run, 0.0035), (b + run, ft), (b, zs), (a, zs), (a - run, ft)]
+    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in (sec if ft > 0.0035 else sec[:2] + sec[3:5])], F, 2, T.OUT(ax))
+    if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
+        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
+                                                           (a - run, ft))],
+               (T.STYLE or {}).get("toe") or F, 2, T.OUT(ax))
     hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)], [(a, zs), (a + LINE, zs), (a + LINE, zt), (a, zt)],
-          [(b, zs), (b + run, 0.0035), (b + run - 0.06, 0.0035), (b, zs - 0.035)],
-          [(a, zs), (a, zs - 0.035), (a - run + 0.06, 0.0035), (a - run, 0.0035)]]
+          [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)],
+          [(a, zs), (a, zs - 0.035), (a - run + 0.06, ft), (a - run, ft)]]
     for q in hl:
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))
 
@@ -640,18 +656,18 @@ def rbox(k, ax, plane, u0, u1, z0, z1, fam, lvl):
 def civil(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
-        X, C = b, NAVY_C                                # (the corners and wall ends as navy's)
-        endf, end1, corner, back = _ends(ax, plane, b, ends)
-        if corner:
+        X, C = b, (T.STYLE or {}).get("chamfer", 0.0)  # (the wall ends as navy's; its corner chamfered only if the
+        endf, end1, corner, back = _ends(ax, plane, b, ends)    # look says so)
+        if corner and C:
             b -= C
-        cp = corner and ax == "y"
+        cp = corner and ax == "y" and C > 0
         pe = ("in" if back else ends[0], ends[1])
         zh = top - 0.13 * (top - zs) if full else top
         parts = [(zs - 0.03, zs + 0.05, PAINT, F, 4)]
         if full:
-            parts += [(zh, top - 0.02, PX, "ochre", 3),                                         # the colour band ...
-                      (top - 0.045, top - 0.02, PX + PAINT, "ochre", 4),                        # ... lit on top,
-                      (zh, zh + 0.025, PX + PAINT, "ochre", 2)]                                 # ... dark below
+            parts += [(zh, top - 0.02, PX, "ochre", 2),                                         # the colour band ...
+                      (top - 0.045, top - 0.02, PX + PAINT, "ochre", 3),                        # ... lit on top,
+                      (zh, zh + 0.025, PX + PAINT, "ochre", 1)]                                 # ... dark below
         for z0, z1, d, fam, lvl in parts:
             T.run(k, ax, plane, a, b, pe, z0, z1, d, fam, lvl, 0)
             if cp:
@@ -751,7 +767,10 @@ class Recessed(FreeEnds, T.Shell):
         return (c, r, True) if c > d + 1e-9 else (d, r, False)
 
     def skirtz(self, x, y):
-        return self.zs * max(0.0, 1.0 - self._cdist(x, y)[0] / self.run)
+        d = self._cdist(x, y)[0]
+        if self.foot:
+            return self.foot + (self.zs - self.foot) * (1.0 - d / self.run) if d <= self.run + 1e-9 else 0.0
+        return self.zs * max(0.0, 1.0 - d / self.run)
 
     def _body_at(self, x, y):
         """The body: the footprint less a band R deep behind every camera-facing face, so the recess runs along the

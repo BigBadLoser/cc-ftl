@@ -402,7 +402,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + PX + PAINT, fam, 0,
                   base=rise + PX)                                              # a dark slot on the frame
     toe_fam, toe_at = (STYLE or {}).get("toe"), (STYLE or {}).get("toe_at", 0.72)
-    if toe_fam:                                 # a faction's colour band along the skirt's foot, mitred like the plates
+    if toe_fam and not ft:                      # a faction's colour band along the skirt's foot, mitred like the plates
         for u0, u1, _ in segs:
             for q in _minus((u0, u1, toe_at * run_, run_ - 0.03), holes):     # (on down to the foot line)
                 poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)

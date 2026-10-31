@@ -220,6 +220,29 @@ def _face(m, sp, face, a, b, za, zt):
         m.poly([core.G(a[0], a[1], p0), core.G(b[0], b[1], p1), core.G(b[0], b[1], q1), core.G(a[0], a[1], q0)], col)
 
 
+def _foot_faces(m, sp, cov, i, j, P, ft):
+    """A skirt ending in an upright foot ft high (Spec.foot): the faces closing skirt cell (i, j) off where its toe
+    is (the next cell has no skirt, or the tile ends there, at the foot's height), and where the tile's back edges cut
+    a ramp short of its toe (out of the camera's sight, but so the piece is a closed body)."""
+    def empty(ci, cj):
+        if not (0 <= ci < GN and 0 <= cj < GN):
+            return True
+        if cov[ci][cj] is not None or sp.skip_skirt(ci, cj):
+            return False
+        x0, y0 = ci / GN - 0.5, cj / GN - 0.5
+        return all(sp.skirtz(x, y) < 1e-9 for x, y in ((x0, y0), (x0 + 1 / GN, y0), (x0, y0 + 1 / GN),
+                                                         (x0 + 1 / GN, y0 + 1 / GN)))
+    for face, a, b, nb, back in (("y", P[3], P[2], (i, j + 1), False), ("x", P[2], P[1], (i + 1, j), False),
+                                 ("y", P[1], P[0], (i, j - 1), True), ("x", P[0], P[3], (i - 1, j), True)):
+        za, zb = sp.skirtz(*a), sp.skirtz(*b)
+        if za < 1e-6 or zb < 1e-6 or not empty(*nb):
+            continue
+        at_toe = abs(za - ft) < 1e-6 and abs(zb - ft) < 1e-6
+        off = not (0 <= nb[0] < GN and 0 <= nb[1] < GN)
+        if at_toe or (back and off):
+            _face(m, sp, face, a, b, (0.0, 0.0), (za, zb))
+
+
 def emit(m, sp):
     """Add a Spec's surfaces to mesh m."""
     cov = [[sp.cover(i, j) for j in range(GN)] for i in range(GN)]
@@ -246,10 +269,9 @@ def emit(m, sp):
                     continue
                 for poly in _skirt_polys(Pz, sp.skirtz((x0 + x1) / 2, (y0 + y1) / 2)):
                     m.poly([core.G(*p) for p in poly], sp.col_skirt(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
-                for face, a, b, last in (("y", P[3], P[2], j == GN - 1), ("x", P[2], P[1], i == GN - 1)):
-                    za, zb = sp.skirtz(*a), sp.skirtz(*b)       # a skirt ending at the tile's edge above the floor
-                    if last and za > 1e-6 and abs(za - zb) < 1e-6:          # (an upright foot): its face
-                        _face(m, sp, face, a, b, (0.0, 0.0), (za, zb))
+                ft = getattr(sp, "foot", 0.0)
+                if ft:
+                    _foot_faces(m, sp, cov, i, j, P, ft)
     for j in range(GN):
         for i in range(GN):
             cv = cov[i][j]
