@@ -3,7 +3,7 @@ import { StationAlarmC } from '../sim/stations/components';
 import { portOffers } from '../sim/galaxy/jobOffers';
 import { portRecruits } from '../sim/galaxy/recruit';
 import type { UiBlueprint, UiStationInfo } from '../ui/api';
-import { marketAt } from './marketSnapshot';
+import { marketAt, pricesAt } from './marketSnapshot';
 import { portHints } from './stockHints';
 import { yardOf } from './yardSnapshot';
 
@@ -67,6 +67,7 @@ export function stationInfo(sim: Sim, station: number, portId: string | undefine
     hire: port ? portRecruits(sim, port).length : 0,
     blueprints: port ? blueprintsOf(sim, port) : [], blueprintPort: port?.id ?? '',
     market: port?.trade ? marketAt(sim, port) : null,
+    prices: port?.trade ? pricesAt(sim, port) : [],
     hints: port ? portHints(sim, port) : [],
     docks: h?.docks ?? 0, guns: h?.guns ?? 0, shields: sim.world.get(station, CombatC)?.shield.max ?? 0,
     alarm: alarm?.state === 'alarm' ? alarm.reason || 'alarm' : null,

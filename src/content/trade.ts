@@ -74,10 +74,14 @@ export const trade = {
         { item: 'item.missile', min: 4, max: 16, chance: 0.7 }, { item: 'item.sidearm', min: 1, max: 4, chance: 0.6 },
         { item: 'item.rifle', min: 1, max: 2, chance: 0.35 }, { item: 'item.shuttle', min: 1, max: 1, chance: 0.2 },
         { item: 'item.fuel', min: 40, max: 90 },
+        // Ore and life-support stores the station's industry and habitat eat (galaxyMarket.ts): small, so it pays more as they run low.
+        { item: 'item.iron_ore', min: 10, max: 40 }, { item: 'item.rare_ore', min: 2, max: 8 }, { item: 'item.water', min: 5, max: 20 }, { item: 'item.oxygen', min: 5, max: 20 },
       ],
     },
     'trader.station.mining': {
+      // Ore is cheap where it is dug; parts and electronics are dear out on the rocks (issue #222).
       name: 'Mining station', match: { faction: 'station.mining' }, shuttle: false, sell: 0.9, credits: [1200, 3500],
+      tagMods: { ore: { sell: 0.8, buy: 0.85 }, components: { buy: 1.3 } },
       stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 },
         { item: 'item.iron_ore', min: 60, max: 180 }, { item: 'item.rare_ore', min: 6, max: 24 }, { item: 'item.fuel', min: 20, max: 60 }],
     },

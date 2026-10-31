@@ -1,6 +1,6 @@
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
-import { marketValue, stockFactor } from '../trade/pricing';
+import { marketQuote, marketValue, stockFactor, type PriceSide } from '../trade/pricing';
 import { rollTrader } from '../trade/traders';
 import { TraderC, type Trader } from '../trade/types';
 import { strHash, unit } from './hash';
@@ -137,6 +137,9 @@ export function stockAt(sim: Sim, e: Econ, at: number): Record<string, number> {
   }
   return advance(e, sim.galaxy.markets[e.id] ?? { turn: 0, stock: {} }, at);
 }
+
+/** The port's price for one unit on a side with this much on the shelf (what the player pays, 'sell', or is paid, 'buy'), or null. */
+export const quoteAt = (sim: Sim, e: Econ, item: string, stock: number, side: PriceSide): number | null => marketQuote(sim, e.trader, item, stock, e.base[item], side);
 
 /** What one unit is worth at the port with this much on the shelf. */
 export const valueAt = (sim: Sim, e: Econ, item: string, stock: number): number => marketValue(sim, e.trader, item, stock, e.base[item]);

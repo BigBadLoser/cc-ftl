@@ -2,14 +2,14 @@ import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import { ProductionC } from '../items/components';
 import { needsFrom } from '../items/materials';
-import { activeOrder, orderWantsMore } from '../items/production';
+import { inputsInStock, nextOrder, orderWantsMore } from '../items/production';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
 
 /**
- * Keeps one craft job per crafting module that has an order wanting a batch. The job starts in
- * 'needsMaterials' (inputs are fetched by the supply planner). A job that has not started is
+ * Keeps one craft job per crafting module that has an order wanting a batch, preferring an order whose inputs are in stock (`nextOrder`). The
+ * job starts in 'needsMaterials' (inputs are fetched by the supply planner). A job that has not started is
  * dropped when its order is removed or satisfied, returning delivered inputs to the floor.
  */
 export function craftJobsSystem(sim: Sim): void {
@@ -23,7 +23,10 @@ export function craftJobsSystem(sim: Sim): void {
     const job = sim.world.get(jobId, JobC);
     const orders = sim.world.get(moduleId, ProductionC)?.orders ?? [];
     const live = orders.some((o) => o.recipe === job?.craft?.recipe && orderWantsMore(sim, o));
-    if (!job || !sim.world.has(moduleId, ModuleC) || (job.progress === 0 && !live)) {
+    // A job still waiting for inputs that are not in stock gives way to an order whose inputs are (nothing delivered yet, so nothing to drop).
+    const starved = !!job?.craft && job.progress === 0 && !job.delivered?.length && !inputsInStock(sim, job.craft.recipe)
+      && nextOrder(sim, moduleId)?.recipe !== job.craft.recipe;
+    if (!job || !sim.world.has(moduleId, ModuleC) || (job.progress === 0 && !live) || starved) {
       destroyJob(sim, jobId);
       existing.delete(moduleId);
     }
@@ -31,7 +34,7 @@ export function craftJobsSystem(sim: Sim): void {
   for (const moduleId of sim.world.query(ProductionC, ModuleC)) {
     const m = sim.world.get(moduleId, ModuleC);
     if (!m || existing.has(moduleId) || !m.enabled || m.hp <= 0) continue;
-    const order = activeOrder(sim, moduleId);
+    const order = nextOrder(sim, moduleId);
     const recipe = order && sim.content.recipes[order.recipe];
     if (!order || !recipe || recipe.station !== m.def) continue;
     const id = sim.world.createEntity();

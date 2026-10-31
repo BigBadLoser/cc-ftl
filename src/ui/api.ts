@@ -1,4 +1,4 @@
-import type { UiDeploy, UiJumpWarnings, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiSellGood, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
 import type { Command, SimEvent, WorkCategory } from '../sim';
 
@@ -824,6 +824,11 @@ export interface UiStationInfo {
   /** The port id `blueprint.buy` takes (empty without a port). */
   blueprintPort: string;
   market: UiStarMarket | null;
+  /**
+   * The port's price list (issue #222): each good it trades, what it pays for one ('buy') and asks for one ('sell'), and whether that is cheap or
+   * dear for it now. Empty without a trading port.
+   */
+  prices: { name: string; buy: number; sell: number; tone: 'cheap' | 'dear' | '' }[];
   /** Notable stock in a few words ("Mk II shield gens", "Cheap fuel"). */
   hints: string[];
   /** Working airlocks to dock at. */
@@ -1219,6 +1224,8 @@ export interface UiApi {
   /** The starmap view's data, and a route preview to a node (path, fuel, next jump's charge, blocker). */
   starmap: Subscribable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  /** Where the goods aboard sell best: per good, the known ports in sensor range that pay most now (the starmap's Sell panel). */
+  whereToSell(): UiSellGood[];
   /** The starmap screen opened or closed: it builds its data then, and the world view stops rendering behind it. */
   setStarmapOpen(open: boolean): void;
   /** The deploy picker's data while the ship waits to be placed, a spot's gap-rule error (null = valid), and what a jump would leave behind. */

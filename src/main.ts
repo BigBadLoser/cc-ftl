@@ -410,6 +410,7 @@ const api: UiApi = {
   story: bridge.story,
   starmap: bridge.starmap,
   planRoute: bridge.planRoute,
+  whereToSell: bridge.whereToSell,
   deploy: bridge.deploy,
   deployCheck: bridge.deployCheck,
   jumpWarnings: bridge.jumpWarnings,

@@ -39,13 +39,29 @@ describe('ore refinery', () => {
     const at = spot(sim, ship);
     const id = spawnModule(sim, 'module.refinery', at.x, at.y, at.rot);
     const crate = [...sim.world.query(StorageC)].sort((a, b) => a - b)[0]!;
-    storageAdd(sim, crate, 'item.iron_ore', 6);
+    const r = content.recipes['recipe.refine_iron'];
+    storageAdd(sim, crate, 'item.iron_ore', r.inputs[0]!.count * 2);
     const metal = totalStock(sim, 'item.metal');
     sim.enqueue({ type: 'production.add', moduleId: id, recipe: 'recipe.refine_iron', mode: 'count', target: 2 });
     for (let i = 0; i < 6000 && (sim.world.get(id, ProductionC)?.orders[0]?.done ?? 0) < 2; i++) { sim.step(); sim.events.drain(); }
     expect(sim.world.get(id, ProductionC)?.orders[0]?.done).toBe(2);
     for (let i = 0; i < 1500; i++) sim.step();
     expect(totalStock(sim, 'item.iron_ore')).toBe(0);
-    expect(totalStock(sim, 'item.metal')).toBe(metal + 4);
+    expect(totalStock(sim, 'item.metal')).toBe(metal + r.outputs[0]!.count * 2);
+  });
+
+  it('queued for every ore, it refines the ore there is instead of waiting on the first order', { timeout: 30000 }, () => {
+    const sim = newGame(4, content);
+    const ship = homeShip(sim);
+    const at = spot(sim, ship);
+    const id = spawnModule(sim, 'module.refinery', at.x, at.y, at.rot);
+    const crate = [...sim.world.query(StorageC)].sort((a, b) => a - b)[0]!;
+    const r = content.recipes['recipe.refine_iron'];
+    storageAdd(sim, crate, 'item.iron_ore', r.inputs[0]!.count);
+    sim.enqueue({ type: 'production.add', moduleId: id, recipe: 'recipe.refine_rare', mode: 'count', target: 5 }); // no rare ore aboard
+    sim.enqueue({ type: 'production.add', moduleId: id, recipe: 'recipe.refine_iron', mode: 'count', target: 1 });
+    const iron = () => sim.world.get(id, ProductionC)?.orders.find((o) => o.recipe === 'recipe.refine_iron')?.done ?? 0;
+    for (let i = 0; i < 6000 && iron() < 1; i++) { sim.step(); sim.events.drain(); }
+    expect(iron()).toBe(1);
   });
 });
