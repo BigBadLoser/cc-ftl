@@ -138,7 +138,9 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
           const p = b.place(rect, r.role, r);
           if (!p) continue;
           // A dock's door goes to one side: the airlock takes the middle of its far wall and the floor in front of it.
-          const dp = r.role === 'dock' ? (spots[0] as Cell) : mid(spots);
+          // A leaning door goes to the end of the wall that is further along the arc (1) or back along it (-1).
+          const along = (c: Cell): number => Math.atan2(c.y, c.x);
+          const dp = r.role === 'dock' ? (spots[0] as Cell) : r.doorLean ? ([...spots].sort((p, q) => (r.doorLean as number) * (along(q) - along(p)))[0] as Cell) : mid(spots);
           b.cv.setDoor(dp.x, dp.y);
           done = true;
           break;
@@ -274,6 +276,33 @@ export function wheelStation(rng: Rng, hub: RoomSpec | null, rooms: RoomSpec[], 
 /** Widest court between a concentric station's inner band and its outer ring. */
 const COURT = 14;
 
+/** The secure core's arcs: the stern (east) face, either side of the east spoke. */
+const isSecure = (r: RoomSpec): boolean => r.role === 'reactor' || r.role === 'shields' || r.role === 'core';
+function stern(rooms: RoomSpec[], R: number, side: -1 | 1): [number, number][] {
+  // Just long enough for the rooms side by side, so they pack instead of spreading along the arc.
+  const span = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0) / Math.max(1, R);
+  return [side < 0 ? [-0.14 - span, -0.14] : [0.14, 0.14 + span]];
+}
+/** Depth the secure core needs inboard of a ring: its deepest room (either way round) and its walls. */
+const secureDepth = (rooms: RoomSpec[]): number => Math.max(0, ...rooms.filter(isSecure).map((r) => Math.min(r.w, r.h) + 3));
+/**
+ * The secure core split either side of the east spoke: reactor and shield pairs dealt to the shorter side, the AI core
+ * whole on one side. In each pair the doors lean towards each other (a reactor and its shield room share a door end).
+ */
+function secureSides(rooms: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
+  const of = (role: string): RoomSpec[] => rooms.filter((r) => r.role === role);
+  const reactors = of('reactor'), shields = of('shields');
+  const sides: [RoomSpec[], RoomSpec[]] = [[], []];
+  const len = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0);
+  const add = (rs: RoomSpec[]): void => { (len(sides[0]) <= len(sides[1]) ? sides[0] : sides[1]).push(...rs); };
+  add(of('core'));
+  for (let i = 0; i < Math.max(reactors.length, shields.length); i++) {
+    const r = reactors[i], q = shields[i];
+    add(r && q ? [{ ...r, doorLean: 1 }, { ...q, doorLean: -1 }] : [r ?? q].filter((x): x is RoomSpec => !!x));
+  }
+  return sides;
+}
+
 /** The four quarter arcs between cardinal spokes. */
 const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.3, (q + 1) * (TAU / 4) - 0.3]);
 
@@ -296,7 +325,12 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const rim = without([[0, TAU]], banks.keep);
   // Rooms that need no hull face (reactors, shields, the core) go inboard of the corridor first, doored straight onto
   // it: on the rim they could only door onto a band room, so crew would walk through quarters or a mess to reach them.
-  const inboard = fitAlong(b, R, ring, sys.filter((r) => r.role !== 'weapons'), QUARTERS, -1);
+  // The secure core first: reactors, shields and the AI core side by side on the stern (east, where no dock faces),
+  // either side of the east spoke; what does not fit there, and the works rooms, go round the quarters as before.
+  const inner = sys.filter((r) => r.role !== 'weapons');
+  const [upper, lower] = secureSides(inner.filter(isSecure));
+  const missed = [...fitAlong(b, R, ring, upper, stern(upper, R, -1), -1), ...fitAlong(b, R, ring, lower, stern(lower, R, 1), -1)];
+  const inboard = fitAlong(b, R, ring, [...missed, ...inner.filter((r) => !isSecure(r))], QUARTERS, -1);
   const left = fitAlong(b, R, ring, [...sys.filter((r) => r.role === 'weapons'), ...inboard], rim, 1, depth + 1, banks.labels);
   // Crowded rims: guns get a second pass on their own (fresh spots between the first ones).
   return fitAlong(b, R, ring, left, rim, 1, depth + 1, banks.labels).length === 0;
@@ -324,7 +358,8 @@ export function concentricStation(rng: Rng, hub: RoomSpec | null, roomsIn: RoomS
   const dO = bandDepth(iOut);
   const dB = bandDepth(oBand);
   const R1a = Math.max(hubR + (iIn.length > 0 ? dI + 4 : 4), bandRadius(iIn, dI, 1, -1), bandRadius(iOut, dO));
-  const R2 = Math.max(R1a + dO + 8, bandRadius([...oBand, ...sys, ...docks], dB), rimRadius(sys, docks) - dB - 2);
+  // The gap between the inner band and the outer ring holds the secure core (stern) and the court.
+  const R2 = Math.max(R1a + dO + 2 + Math.max(6, secureDepth(sys)), bandRadius([...oBand, ...sys, ...docks], dB), rimRadius(sys, docks) - dB - 2);
   // A rim-driven outer ring (many guns) would leave a vast court: the inner ring grows to keep the court at most
   // COURT tiles across, its segments longer.
   const R1 = Math.max(R1a, R2 - dO - 2 - COURT);
