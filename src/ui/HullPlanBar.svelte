@@ -16,7 +16,7 @@
   const narrow = $derived(plan?.bad.length ?? 0);
 </script>
 
-<div class="planbar" data-testid="hull-plan-bar">
+<div class="planbar legacy" data-testid="hull-plan-bar">
   <b class="t">Hull plan</b>
   <div class="seg" role="group" aria-label="Brush">
     <button class:on={hull.brush === 'rect'} onclick={() => set({ brush: 'rect' })} title="Drag a rectangle (at least 3 × 3)" data-testid="hull-rect">Rectangle</button>

@@ -1,6 +1,6 @@
 import type { Sim } from '../sim';
 import {
-  AssignmentC, CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
+  CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
 } from './components';
 
 import { InertC, StunC } from '../robots/components';
@@ -42,17 +42,6 @@ export function clearPath(sim: Sim, crew: number): void {
 export function hasRoute(sim: Sim, crew: number): boolean {
   const path = sim.world.get(crew, PathC);
   return !!path && (path.steps.length > 0);
-}
-
-/** Drop a crew member's job: free the reservation, remove the Assignment, clear the path. */
-export function releaseAssignment(sim: Sim, crew: number): void {
-  const a = sim.world.get(crew, AssignmentC);
-  if (a) {
-    const job = sim.world.get(a.jobId, JobC);
-    if (job && job.reservedBy === crew) job.reservedBy = 0;
-    sim.world.remove(crew, AssignmentC);
-  }
-  clearPath(sim, crew);
 }
 
 /** True if the crew member cannot act: downed, dead, being carried, or a robot that is inert or stunned. */

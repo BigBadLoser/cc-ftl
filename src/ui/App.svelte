@@ -6,8 +6,8 @@
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
-  import type { UiApi, UiCombat, UiCrew, UiCutaway, UiPrize, UiSnapshot, UiToolState } from './api';
-  import CombatPanel from './CombatPanel.svelte';
+  import type { UiApi, UiCombat, UiCutaway, UiFightReport, UiPrize, UiSnapshot, UiToolState } from './api';
+  import CombatHud from './combat/CombatHud.svelte';
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
   import TradeWindow from './TradeWindow.svelte';
@@ -19,11 +19,13 @@
   import PriorityGrid from './PriorityGrid.svelte';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
+  import FightReportCard from './combat/FightReportCard.svelte';
   import StrandedBanner from './StrandedBanner.svelte';
   import EventLog from './EventLog.svelte';
   import BuildCatalog from './BuildCatalog.svelte';
   import OverlayPicker from './OverlayPicker.svelte';
   import NodeStrip from './NodeStrip.svelte';
+  import PoiMarkers from './PoiMarkers.svelte';
   import StockDrawer from './StockDrawer.svelte';
   import JobsPanel from './JobsPanel.svelte';
   import ResearchOverlay from './ResearchOverlay.svelte';
@@ -34,7 +36,13 @@
   import InterdictModal from './InterdictModal.svelte';
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
+  import LessonHost from './lessons/LessonHost.svelte';
+  import EscMenu from './menu/EscMenu.svelte';
+  import { keymap } from './keymap';
+  import { settings } from './settings/settings';
+  import { applySettings } from './settings/apply';
   import Icon, { type IconName } from './Icon.svelte';
+  import { isTypingTarget, modalOpen } from './keys';
   import { isPinned } from './floatingWindow';
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
@@ -58,7 +66,25 @@
     if (speedBeforeReport !== null) api.setSpeed(speedBeforeReport);
     speedBeforeReport = null;
   }
+  /** The Esc menu: the game pauses while it is open and goes back to its speed on close (as the bug report). */
+  let menuOpen = $state(false);
+  let speedBeforeMenu: 1 | 2 | 3 | null = null;
+  function openMenu() {
+    if (menuOpen) return;
+    const s = snap?.speed ?? 0;
+    speedBeforeMenu = s === 0 ? null : s;
+    api.setSpeed(0);
+    (document.activeElement as HTMLElement | null)?.blur?.(); // nothing behind the menu keeps focus (Enter must not press a speed button)
+    menuOpen = true;
+  }
+  function closeMenu() {
+    menuOpen = false;
+    if (speedBeforeMenu !== null && snap?.speed === 0) api.setSpeed(speedBeforeMenu);
+    speedBeforeMenu = null;
+  }
+  let showFps = $state(settings.get().showFps);
   let stockOpen = $state(false);
+  let fightReport = $state<UiFightReport | null>(null);
   let jobsOpen = $state(false);
   let researchOpen = $state(false);
   /** The home ship has a research module: the nav strip shows the research button. */
@@ -68,25 +94,25 @@
   let toast = $state<string | null>(null);
   let snap = $state<UiSnapshot | undefined>(undefined);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
-  let foes = $state<UiCrew[]>([]);
-  let combatOpen = $state(false);
-  let wasInCombat = false;
   let overviewOpen = $state(false);
   let mapOpen = $state(false);
-  /** The ship fleeing: the starmap was opened from the combat panel to pick the target. */
-  let fleeShip = $state<number | null>(null);
   let sliding = $state(false);
   /** A log entry or alert about a starmap node: open the map. */
   let focusNode = $state<string | null>(null);
-  const openNode = (id: string) => { if (!mapLocked) { fleeShip = null; focusNode = id; mapOpen = true; } };
+  const openNode = (id: string) => { if (!mapLocked) { focusNode = id; mapOpen = true; } };
   /** The starmap's status (hyperspace trip) and the deploy picker's data, kept fresh even while the map is closed. */
   let star = $state<UiStarmap | null>(null);
   let deploy = $state<UiDeploy | null>(null);
+  /** Adrift (a flee with no route yet): the map opens when the ship goes adrift, then can be closed and reopened; the ship stays adrift. */
+  const adrift = $derived(star?.state === 'hyperspace' && star.travel?.phase === 'adrift');
+  let wasAdrift = false;
   $effect(() => {
     if (deploy) mapOpen = false; // dropped out: the picker takes over, and the map stays closed once deployed
-    else if (star?.state === 'hyperspace') mapOpen = true; // in hyperspace the map is the view
+    else if (star?.state === 'hyperspace' && !adrift) mapOpen = true; // in hyperspace the map is the view
+    else if (adrift && !wasAdrift) mapOpen = true;
+    wasAdrift = adrift;
   });
-  const mapLocked = $derived(star?.state === 'hyperspace');
+  const mapLocked = $derived(star?.state === 'hyperspace' && !adrift);
   /** A scan that found contraband aboard waits for the player's answer: shown over the game when the map is not open. */
   const scanning = $derived(star?.encounters.find((e) => !!e.contraband) ?? null);
   let selShip = $state<number | null>(null);
@@ -100,19 +126,17 @@
     if (stationOpen !== null && (selShip !== stationOpen || !stations.includes(stationOpen))) stationOpen = null;
   });
 
+  /** The combat view (#186) replaces the colony panels while a fight is on. */
+  const fightHud = $derived(combat.inCombat);
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */
   let roofOn = $state(false);
   let tool = $state<UiToolState>({ tool: 'select', build: 'module', moduleDef: null, rot: 0 });
-  $effect(() => {
-    document.documentElement.toggleAttribute('data-combat', combat.inCombat && combatOpen);
-  });
   let narrow = $state(window.matchMedia('(max-width: 600px)').matches);
   let rcolH = $state(0);
   $effect(() => {
     document.documentElement.style.setProperty('--rcol-h', `${rcolH}px`);
   });
-  const phone = () => window.matchMedia('(max-width: 600px)').matches;
   const cutLabel: Record<UiCutaway, string> = { auto: 'Cutaway', up: 'Up', down: 'Low' };
   const cutNext: Record<UiCutaway, UiCutaway> = { auto: 'up', up: 'down', down: 'auto' };
   function toggleRoof() {
@@ -134,6 +158,7 @@
       api.jobs.subscribe((j) => (jobCount = j.active.length)),
       api.research.subscribe((r) => { hasLab = r.labs > 0; if (!hasLab) researchOpen = false; }),
       api.toast.subscribe((t) => (toast = t)),
+      api.fightReport.subscribe((r) => (fightReport = r)),
       api.starmap.subscribe((m) => (star = m)),
       api.deploy.subscribe((d) => (deploy = d)),
       api.selectedShip.subscribe((g) => (selShip = g)),
@@ -149,14 +174,11 @@
         prizes = v;
       }),
       api.tool.subscribe((t) => (tool = t)),
-      // Hostile crew where the player's crew are (boarders, aliens on a derelict) light the combat button too.
-      api.hostiles.subscribe((v) => (foes = v)),
       api.combat.subscribe((c) => {
         combat = c;
-        // The overlay opens by itself when a fight starts; closing it is the player's call until the next fight.
-        if (c.inCombat && !wasInCombat) combatOpen = true;
-        wasInCombat = c.inCombat;
       }),
+      settings.subscribe((s) => (showFps = s.showFps)),
+      applySettings(api),
     ];
     api.attachCanvas(canvas);
     return () => unsubs.forEach((u) => u());
@@ -164,7 +186,7 @@
 
   /**
    * Panels the outside click knows about. A click on the world (or a modal's backdrop) closes every open one that is not `sticky`:
-   * combat and the build catalog (while in build mode) stay, as do the goals card, alerts, top bars and toolbar (never listed).
+   * the build catalog (while in build mode) stays, as do the goals card, alerts, top bars and toolbar (never listed).
    * A pinned window (floatingWindow.ts) stays open too. The selection inspector is not here: the world tap itself selects or deselects, in the same click;
    * a pinned inspector just stays up, empty, when the selection clears.
    */
@@ -175,28 +197,43 @@
     { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
     { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
     { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
-    { id: 'combat', sticky: true, isOpen: () => combat.inCombat && combatOpen, close: () => (combatOpen = false) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
   ];
   const outside = outsideTap(() => closeOutside(panels));
 
+  /**
+   * Was a modal open when this Esc started? Read in the capture phase, before the modal's own handler closes it (the jump confirmation
+   * closes on Esc and releases the modal gate before this bubble handler runs): that Esc belonged to the modal and must not open the menu.
+   */
+  let escHeld = false;
+  const onKeyCapture = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') escHeld = menuOpen || modalOpen();
+  };
+  /** Keys from the key map (keymap/actions.ts). The Esc menu, when open, takes every key itself. */
   function onKey(e: KeyboardEvent) {
-    if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
-    if (reporting && e.key !== '`') return; // the bug report keeps the game paused and handles its own keys
-    if (e.key === ' ') {
+    if (isTypingTarget(e) || menuOpen || modalOpen()) return;
+    if (reporting && !keymap.matches(e, 'debug.panel')) return; // the bug report keeps the game paused and handles its own keys
+    if (e.key === 'Escape') return escHeld ? undefined : escape();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (keymap.matches(e, 'game.pause')) {
       e.preventDefault();
       api.togglePause();
-    } else if (e.key === '1' || e.key === '2' || e.key === '3') api.setSpeed(Number(e.key) as 1 | 2 | 3);
-    else if (e.key === '`') debug = !debug;
-    else if (e.key === 'm') { if (!mapLocked) { fleeShip = null; focusNode = null; mapOpen = !mapOpen; } }
-    else if (e.key === 'Escape') {
-      // A pinned window ignores Esc.
-      if (researchOpen) researchOpen = false;
-      else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
-      else if (stockOpen && !isPinned('stock')) stockOpen = false;
-      else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
-      else api.selectCrew(null);
-    }
+    } else if (keymap.matches(e, 'game.speed1')) api.setSpeed(1);
+    else if (keymap.matches(e, 'game.speed2')) api.setSpeed(2);
+    else if (keymap.matches(e, 'game.speed3')) api.setSpeed(3);
+    else if (keymap.matches(e, 'debug.panel')) debug = !debug;
+    else if (keymap.matches(e, 'view.starmap')) { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
+  }
+  /** Esc: close the top panel, else cancel the tool, aim or selection, else open the menu. A pinned window ignores Esc. */
+  function escape() {
+    if (fightReport && !isPinned('fightReport')) api.closeFightReport();
+    else if (researchOpen) researchOpen = false;
+    else if (jobsOpen && !isPinned('jobs')) jobsOpen = false;
+    else if (stockOpen && !isPinned('stock')) stockOpen = false;
+    else if (overviewOpen && !isPinned('overview')) overviewOpen = false;
+    else if (mapOpen && !mapLocked && !deploy) return; // the starmap closes itself on Esc (StarmapView)
+    // Over the deploy picker or the locked hyperspace map nothing else answers Esc: it opens the menu (the only way in).
+    else if (deploy || mapOpen || !api.cancel()) openMenu();
   }
 
   const speeds: { label: string; icon: IconName; speed: 0 | 1 | 2 | 3 }[] = [
@@ -216,7 +253,7 @@
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}</span>
+    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
     <span class="speeds">
       {#each speeds as s (s.speed)}
         <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
@@ -225,7 +262,7 @@
   </span>
 {/snippet}
 
-<svelte:window onkeydown={onKey} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
+<svelte:window onkeydown={onKey} onkeydowncapture={onKeyCapture} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas} data-world></canvas>
 <SelectBox {api} />
@@ -233,34 +270,38 @@
 
 <header>
   <!-- Left: global screens. Centre: crew and what else is in the node. Right: the event log, then time, then notifications. -->
-  <NavStrip
-    {mapOpen} {mapLocked} onMap={() => { fleeShip = null; focusNode = null; mapOpen = !mapOpen; }}
-    {overviewOpen} {stockOpen} prioritiesOpen={priorities} hostile={combat.enemies.some((e) => !e.dormant) || foes.length > 0} combatOpen={combat.inCombat && combatOpen}
+  {#if !fightHud}<NavStrip
+    {mapOpen} {mapLocked} onMap={() => { focusNode = null; mapOpen = !mapOpen; }}
+    {overviewOpen} {stockOpen} prioritiesOpen={priorities}
     {jobsOpen} {jobCount} onJobs={() => (jobsOpen = !jobsOpen)}
     {hasLab} {researchOpen} onResearch={() => (researchOpen = !researchOpen)}
     onOverview={() => (overviewOpen = !overviewOpen)}
     onCrew={() => (priorities = !priorities)}
     onStock={() => (stockOpen = !stockOpen)}
-    onCombat={() => { if (combat.inCombat) { combatOpen = !combatOpen; if (phone()) priorities = false; } }}
-  />
+  />{/if}
   <span class="mid">
-    <CrewBar {api} />
-    <NodeStrip {api} selected={selShip} />
+    <CrewBar {api} compact={fightHud} />
+    {#if !fightHud}<NodeStrip {api} selected={selShip} />{/if}
   </span>
   {#if narrow}{@render time()}{/if}
 </header>
 
-{#if overviewOpen}
+{#if !fightHud && !mapOpen}<PoiMarkers {api} />{/if}
+
+{#if overviewOpen && !fightHud}
   <ShipOverview {api} {stockOpen} onStock={() => (stockOpen = !stockOpen)} onClose={() => (overviewOpen = false)} />
 {/if}
-{#if researchOpen}
+{#if researchOpen && !fightHud}
   <ResearchOverlay {api} onClose={() => (researchOpen = false)} />
 {/if}
-{#if jobsOpen}
+{#if jobsOpen && !fightHud}
   <JobsPanel {api} onClose={() => (jobsOpen = false)} />
 {/if}
-{#if stockOpen}
+{#if stockOpen && !fightHud}
   <StockDrawer {api} onClose={() => (stockOpen = false)} />
+{/if}
+{#if fightReport}
+  <FightReportCard {api} report={fightReport} />
 {/if}
 {#if reporting}
   <BugReport {api} onClose={closeReport} />
@@ -268,16 +309,16 @@
 {#if debug && snap}
   <DebugPanel {api} {snap} />
 {/if}
-{#if combat.inCombat && combatOpen}
-  <CombatPanel {api} {combat} onClose={() => (combatOpen = false)} onFlee={(ship) => { if (star?.event) api.dispatch({ type: 'combat.flee', ship }); else { fleeShip = ship; mapOpen = true; } }} onHail={(ship) => { tradeWith = ship; }} />
-{/if}
-<ToolBar {api}>
+{#if fightHud}<CombatHud {api} {combat} />{/if}
+{#if !fightHud}<ToolBar {api}>
     <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
     <button class="tile" class:on={roofOn} aria-pressed={roofOn} title="Roof: {roofOn ? 'on (outside view)' : 'off'}" aria-label="Roof" data-testid="toggle-roof" onclick={toggleRoof}><Icon name="roof" size={18} /></button>
     <OverlayPicker {api} />
     <button class="tile" class:on={reporting} title="Report a bug" aria-label="Report a bug" data-testid="report-bug" onclick={openReport}><Icon name="debug" size={18} /></button>
-</ToolBar>
-{#if priorities}
+</ToolBar>{/if}
+{#if fightHud}
+  <!-- the colony inspector and build tools give way to the combat HUD -->
+{:else if priorities}
   <PriorityGrid {api} onClose={() => (priorities = false)} />
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
@@ -294,8 +335,10 @@
 {/if}
 {#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
 {#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
-{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} flee={fleeShip} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; fleeShip = null; }} onSlide={(on) => (sliding = on)} />{/if}
+{#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
+<LessonHost {api} busy={reporting || menuOpen} />
+{#if menuOpen}<EscMenu {api} onClose={closeMenu} />{/if}
 <ErrorOverlay {api} />
 <GameSession {api} />
 
@@ -306,8 +349,8 @@
     {#if !narrow}{@render time()}{/if}
   </div>
   <div class="cards">
-    <GoalsCard {api} />
-    <JobsTracker {api} onOpen={() => (jobsOpen = true)} />
+    {#if !fightHud}<GoalsCard {api} />
+    <JobsTracker {api} onOpen={() => (jobsOpen = true)} />{/if}
   </div>
   <StrandedBanner {api} />
   <AlertList {api} onNode={openNode} />
@@ -331,8 +374,6 @@
   }
   header > :global(*) { pointer-events: auto; }
   .toast { position: fixed; left: 50%; top: calc(var(--hdr) + 100px + var(--sat)); transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 8px 14px; background: var(--panel); border: 1px solid var(--cyan); pointer-events: none; z-index: 9; }
-  /* The phone sheet leaves a transparent window for the enemy view; keep other overlays out of it. */
-  @media (max-width: 600px) { :global(html[data-combat] .alerts), :global(html[data-combat] .tools), :global(html[data-combat] nav) { display: none; } }
   header > :global(.strip) { grid-column: 1; justify-self: start; }
   .mid { grid-column: 2; justify-self: start; max-width: 100%; display: flex; gap: 6px; align-items: start; min-width: 0; }
   /* The top-right frame: log and time in a single box divided by a hairline; alerts hang below it. */
@@ -344,7 +385,8 @@
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; align-items: center; gap: 0; }
-  .tick { flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
+  .fps { display: block; margin-top: 2px; font-size: 11px; color: var(--text); }
+  .tick { white-space: nowrap; flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
   .speeds { display: flex; }
   .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
   .speeds :global(button.tile:hover) { background: var(--panel-3); }

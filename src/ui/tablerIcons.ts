@@ -5,6 +5,9 @@ import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
+import t_settings from '@tabler/icons/outline/settings.svg?raw';
+import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
+import t_device_floppy from '@tabler/icons/outline/device-floppy.svg?raw';
 import t_broadcast from '@tabler/icons/outline/broadcast.svg?raw';
 import t_bug from '@tabler/icons/outline/bug.svg?raw';
 import t_download from '@tabler/icons/outline/download.svg?raw';
@@ -32,6 +35,7 @@ import t_ghost from '@tabler/icons/outline/ghost.svg?raw';
 import t_hand_stop from '@tabler/icons/outline/hand-stop.svg?raw';
 import t_heart from '@tabler/icons/outline/heart.svg?raw';
 import t_heart_broken from '@tabler/icons/outline/heart-broken.svg?raw';
+import t_polygon from '@tabler/icons/outline/polygon.svg?raw';
 import t_hexagon from '@tabler/icons/outline/hexagon.svg?raw';
 import t_home from '@tabler/icons/outline/home.svg?raw';
 import t_layout_board from '@tabler/icons/outline/layout-board.svg?raw';
@@ -69,6 +73,8 @@ import t_wall from '@tabler/icons/outline/wall.svg?raw';
 import t_x from '@tabler/icons/outline/x.svg?raw';
 import t_zoom_in from '@tabler/icons/outline/zoom-in.svg?raw';
 import t_zoom_out from '@tabler/icons/outline/zoom-out.svg?raw';
+import t_wind from '@tabler/icons/outline/wind.svg?raw';
+import t_steering_wheel from '@tabler/icons/outline/steering-wheel.svg?raw';
 import t_zzz from '@tabler/icons/outline/zzz.svg?raw';
 
 /** The drawing inside Tabler's <svg> (24-unit grid, stroke from the component): the outer tag and the empty bounding path are dropped. */
@@ -106,6 +112,9 @@ export const FILES = {
   fast: 'player-track-next',
   faster: 'player-skip-forward',
   draft: 'shield-chevron',
+  settings: 'settings',
+  keyboard: 'keyboard',
+  save: 'device-floppy',
   downed: 'heart-broken',
   back: 'chevron-left',
   list: 'list',
@@ -124,6 +133,7 @@ export const FILES = {
   grid: 'layout-grid',
   room: 'layout-board',
   hull: 'hexagon',
+  hullPlan: 'polygon',
   station: 'planet',
   derelict: 'ghost',
   alert: 'alert-triangle',
@@ -146,9 +156,14 @@ export const FILES = {
   unpin: 'pinned-off',
   lock: 'lock',
   research: 'flask-2',
+  wind: 'wind',
+  helm: 'steering-wheel',
 } as const;
 
 const RAW: Record<string, string> = {
+  'settings': t_settings,
+  'keyboard': t_keyboard,
+  'device-floppy': t_device_floppy,
   'alert-triangle': t_alert_triangle,
   'arrow-curve-right': t_arrow_curve_right,
   'arrows-exchange': t_arrows_exchange,
@@ -181,6 +196,7 @@ const RAW: Record<string, string> = {
   'heart': t_heart,
   'heart-broken': t_heart_broken,
   'hexagon': t_hexagon,
+  'polygon': t_polygon,
   'home': t_home,
   'layout-board': t_layout_board,
   'layout-grid': t_layout_grid,
@@ -217,6 +233,8 @@ const RAW: Record<string, string> = {
   'x': t_x,
   'zoom-in': t_zoom_in,
   'zoom-out': t_zoom_out,
+  'wind': t_wind,
+  'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
 };
 

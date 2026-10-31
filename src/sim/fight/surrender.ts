@@ -1,6 +1,5 @@
-import { releaseBedClaim } from '../crew/beds';
 import { CrewC, DraftedC, HealthC, PositionC, type Crew } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
+import { abortTask } from '../ai/task';
 import type { Sim } from '../sim';
 import { SURRENDER_HP_FRAC, SURRENDER_RADIUS } from '../tuning';
 import { AllegianceC, FighterC, SurrenderedC } from './components';
@@ -31,8 +30,7 @@ export function wantsToSurrender(sim: Sim, id: number, friends: readonly number[
 
 /** Lay down arms: drop the weapon, stop fighting and working. The crew member stays put as a prisoner. */
 export function surrender(sim: Sim, id: number): void {
-  releaseAssignment(sim, id);
-  releaseBedClaim(sim, id);
+  abortTask(sim, id, 'surrendered');
   sim.world.remove(id, DraftedC);
   const f = sim.world.get(id, FighterC);
   if (f) {

@@ -1,10 +1,11 @@
 import { factionsHostile } from '../combat/factions';
+import { abortTask, attachJob } from '../ai/task';
 
 
 import { skillOf } from '../combat/operators';
 import type { Command } from '../commands';
-import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
-import { isIncapacitated, origin, releaseAssignment } from '../crew/helpers';
+import { CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
+import { isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { createCrew } from '../crew/spawn';
 import { AllegianceC, FighterC } from '../fight/components';
@@ -46,7 +47,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     }
     if (!plan) return reject(sim, cmd.type, 'unreachable');
     // A hack is a drafted order: the hacker stands by (no move target) and works until done or pulled away.
-    releaseAssignment(sim, cmd.id);
+    abortTask(sim, cmd.id, 'order');
     const drafted = sim.world.get(cmd.id, DraftedC);
     if (drafted) {
       drafted.target = null;
@@ -60,7 +61,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
       category: 'operating', kind: 'hack', x: plan.x, y: plan.y, struct: 0,
       work: Math.round(HACK_SEC * TICK_HZ), progress: 0, reservedBy: cmd.id, target: cmd.module,
     });
-    sim.world.add(cmd.id, AssignmentC, { jobId: job });
+    attachJob(sim, cmd.id, job);
     (sim.world.get(cmd.id, PathC) as Path).steps = plan.steps;
   },
   'module.assembleRobot': (sim, cmd) => {

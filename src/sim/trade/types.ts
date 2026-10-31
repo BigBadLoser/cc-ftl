@@ -145,6 +145,8 @@ export interface Deal {
   timer: number;
   /** Tick the deal was made. */
   tick: number;
+  /** The agreed value of each `get` line (aligned with `get`, summing to the escrow), fixed when the trip opens: a part-delivered run is settled by it, not by later prices. */
+  getValue?: number[];
   /** Why a failed deal failed. */
   reason?: string;
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */

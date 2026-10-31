@@ -10,9 +10,9 @@
   onMount(() => api.crew.subscribe((v) => (crew = v)));
 
   const SHORT: Record<WorkCategory, string> = {
-    firefighting: 'Fire', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', refining: 'Refine', crafting: 'Craft', research: 'Sci', cooking: 'Cook', patrol: 'Watch',
+    firefighting: 'Dmg', medical: 'Med', operating: 'Ops', repair: 'Fix', construction: 'Build', hauling: 'Haul', refining: 'Refine', crafting: 'Craft', research: 'Sci', cooking: 'Cook', patrol: 'Watch',
   };
-  const HELP: Partial<Record<WorkCategory, string>> = { refining: 'Refine: raw ore into materials (refinery)', crafting: 'Craft: materials into items (fabricator, workbench, galley)', research: 'Science: work the active research project (research module)' };
+  const HELP: Partial<Record<WorkCategory, string>> = { firefighting: 'Damage control: put out fires and seal hull breaches', refining: 'Refine: raw ore into materials (refinery)', crafting: 'Craft: materials into items (fabricator, workbench, galley)', research: 'Science: work the active research project (research module)' };
   /** Patrols are posted only by NPC ship directors (stations): no column for the player's crew. */
   const SHOWN = WORK_CATEGORIES.filter((c) => c !== 'patrol');
   /** 1 -> 2 -> 3 -> 4 -> off -> 1 */
@@ -59,7 +59,7 @@
   .who { text-align: left; font-size: 13px; color: var(--text); position: sticky; left: 0; background: var(--panel); padding-right: 6px; white-space: nowrap; }
   .cell { width: 42px; padding: 0; font-weight: 700; font-size: 16px; }
   .cell.off { color: var(--dim); }
-  .cell.changed { border: 1px dotted var(--cyan); box-shadow: inset 0 0 0 1px #0e4a56; }
+  .cell.changed { border: 1px dotted var(--cyan); box-shadow: inset 0 0 0 1px var(--go-fill); }
   .reset { font-size: 11px; padding: 0 8px; white-space: nowrap; }
   .hint { margin: 6px 0 0; color: var(--dim); font-size: 12px; }
 </style>

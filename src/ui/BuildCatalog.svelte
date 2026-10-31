@@ -90,7 +90,7 @@
 
 <svelte:window onpointerdown={(e) => { if (pop && !(e.target as Element).closest?.('[data-testid="build-popover"], .card')) dismiss(); }} />
 
-<div class="cat" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
+<div class="cat legacy" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}
@@ -140,10 +140,7 @@
     .search:focus { outline: none; border-color: var(--amber); }
   .hint.ok { border-color: #c8c8c8; color: #fff; }
   .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: #ff9a9a; font-size: 12px; white-space: nowrap; }
-  /* The combat panel (left, 420px) is open: the catalog starts to its right. */
-  @media (min-width: 601px) { :global(html[data-combat]:not([data-combat-free])) .cat { left: calc(var(--combat-right, 436px) + var(--sal)); } }
   @media (max-width: 600px) {
-    :global(html[data-combat]) .cat { display: none; }
     .cat { left: 0; right: calc(var(--tools-w, 0px) + 16px + var(--sar)); bottom: 0; border-width: 1px 1px 0 0; padding-bottom: var(--sab); }
     .strip { height: 146px; }
     .search { width: 84px; }

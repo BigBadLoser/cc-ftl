@@ -121,4 +121,20 @@ describe('alerts clear against the sim state', () => {
     t.alerts.sync();
     expect(t.alerts.get(1)).toBeUndefined();
   });
+
+  it('folds destructions on one ship in a short window into one line, keeping the first module as the target', () => {
+    const t = setup();
+    const ship = homeShip(t.sim);
+    const mods = t.sim.world.query(ModuleC).filter((id) => shipIdOf(t.sim, t.sim.world.get(id, ModuleC)) === ship).slice(0, 3);
+    const first = t.sim.world.get(mods[0] as number, ModuleC)!;
+    const destroyed = (id: number): SimEvent => ({ type: 'module.destroyed', moduleId: id, def: t.sim.world.get(id, ModuleC)!.def, ship });
+    t.feed(destroyed(mods[0] as number));
+    t.feed({ type: 'crew.downed', crew: t.sim.world.query(CrewC)[0] as number });
+    t.feed(destroyed(mods[1] as number), destroyed(mods[2] as number));
+    const lines = t.list().filter((e) => e.kind === 'module.destroyed');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.text).toMatch(/^3 modules destroyed: /);
+    expect(lines[0]?.count).toBe(1);
+    expect(lines[0]?.subject).toEqual({ kind: 'tile', x: first.x, y: first.y });
+  });
 });

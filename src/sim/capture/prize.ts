@@ -1,4 +1,5 @@
 import { CaptureProgressC, CombatC, PrizeC, ShipC, WeaponC, type Faction, type Ship } from '../combat/components';
+import { abortTask } from '../ai/task';
 import { hullSum } from '../combat/hull';
 import { LOOT_GOODS } from '../blackmarket/services';
 import { LOOT_MAX, LOOT_MIN, LOOT_PER_VALUE } from '../blackmarket/tuning';
@@ -8,7 +9,6 @@ import { storageAdd } from '../items/storage';
 
 import { wreckShip } from '../combat/wreck';
 import { CrewC, DeadC, DownedC, DraftedC, PathC, PositionC, type Crew } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
 import { AllegianceC, FighterC, PrisonerC, SurrenderedC } from '../fight/components';
 import { dropWeapon } from '../fight/equip';
 import { ModuleC } from '../modules/components';
@@ -34,7 +34,7 @@ export function prizeValue(sim: Sim, shipId: number): number {
 
 /** Hold a surrendered or downed crew member in place as a prisoner (they stay subdued even if they recover). */
 function imprison(sim: Sim, crew: number, ship: number): void {
-  releaseAssignment(sim, crew);
+  abortTask(sim, crew, 'imprisoned');
   sim.world.remove(crew, DraftedC);
   const f = sim.world.get(crew, FighterC);
   if (f) Object.assign(f, { mode: 'idle', target: 0, ordered: 0 });
@@ -77,7 +77,7 @@ export function capturePrize(sim: Sim, entity: number): void {
   stockLoot(sim, entity, hullValue);
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
-    if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
+    if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { once: false, charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
   }
   const combat = sim.world.get(entity, CombatC);
   if (combat) Object.assign(combat, { target: null, volley: false, hold: true });

@@ -77,18 +77,20 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
     return DIAG * Math.min(dx, dy) + ORTHO * Math.abs(dx - dy);
   };
 
-  const g = new Int32Array(width * height).fill(-1);
-  const parent = new Int32Array(width * height).fill(-1);
-  const closed = new Uint8Array(width * height);
+  const sc = scratchFor(width * height);
+  const { g, parent, seen, done } = sc;
+  const gen = nextGen(sc);
+  const gOf = (i: number): number => (seen[i] === gen ? (g[i] as number) : -1);
   const heap = new MinHeap();
   const start = fromIndex;
   g[start] = 0;
+  seen[start] = gen;
   heap.push(heuristic(from.x, from.y), heuristic(from.x, from.y), start);
 
   while (heap.size > 0) {
     const cur = heap.pop();
-    if (closed[cur]) continue;
-    closed[cur] = 1;
+    if (done[cur] === gen) continue;
+    done[cur] = gen;
     const cx = cur % width;
     const cy = (cur - cx) / width;
     if (isGoal(x0 + cx, y0 + cy)) {
@@ -101,19 +103,49 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
       const ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
       const ni = ny * width + nx;
-      if (closed[ni] || !walk(ni)) continue;
+      if (done[ni] === gen || !walk(ni)) continue;
       const diagonal = dx !== 0 && dy !== 0;
       if (diagonal && (!walk(cy * width + nx) || !walk(ny * width + cx))) continue;
       const step = (diagonal ? DIAG : ORTHO) * (isWalkable(struct[ni] as number) ? 1 : EXTERIOR_COST);
       const ng = (g[cur] as number) + step;
-      if (g[ni] !== -1 && ng >= (g[ni] as number)) continue;
+      const old = gOf(ni);
+      if (old !== -1 && ng >= old) continue;
       g[ni] = ng;
+      seen[ni] = gen;
       parent[ni] = cur;
       const h = heuristic(x0 + nx, y0 + ny);
       heap.push(ng + h, h, ni);
     }
   }
   return null;
+}
+
+/**
+ * Working arrays of one grid size, reused across calls. `seen` / `done` hold the generation of the search that last set a tile's
+ * g / closed flag, so a new search needs no clearing (a tile not stamped with the current generation reads as unvisited).
+ */
+interface Scratch {
+  g: Int32Array;
+  parent: Int32Array;
+  seen: Int32Array;
+  done: Int32Array;
+  gen: number;
+}
+const SCRATCH = new Map<number, Scratch>();
+
+function scratchFor(size: number): Scratch {
+  let sc = SCRATCH.get(size);
+  if (!sc) SCRATCH.set(size, (sc = { g: new Int32Array(size), parent: new Int32Array(size), seen: new Int32Array(size), done: new Int32Array(size), gen: 0 }));
+  return sc;
+}
+
+function nextGen(sc: Scratch): number {
+  if (sc.gen >= 0x7fffffff) {
+    sc.seen.fill(0);
+    sc.done.fill(0);
+    sc.gen = 0;
+  }
+  return ++sc.gen;
 }
 
 /** Binary min-heap of (f, h, index) ordered lexicographically. */

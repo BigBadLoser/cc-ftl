@@ -5,6 +5,19 @@ import { buildStarmap, emptyStarmap, planStarmapRoute } from './starmapSnapshot'
 import { toneOf } from './starmapTone';
 
 describe('starmap snapshot', () => {
+  it('while adrift after a flee the starmap plots a course from the node fled and asks for no charge', () => {
+    const sim = newGame(1, content);
+    const ship = playerShip(sim);
+    (sim.world.get(ship, CombatC) as { ftl: number }).ftl = FTL_CHARGE_SEC;
+    sim.enqueue({ type: 'combat.flee', ship });
+    sim.step();
+    const map = buildStarmap(sim);
+    expect(map).toMatchObject({ state: 'hyperspace', current: START_NODE, travel: { phase: 'adrift', route: [START_NODE] } });
+    const to = map.nodes.find((n) => n.reachable && n.known)!.id;
+    const route = planStarmapRoute(sim, to)!;
+    expect(route).toMatchObject({ blocker: null, chargeOk: true, nextCharge: 0, overweight: null, path: [START_NODE, to] });
+  });
+
   it('builds the sector, cluster and galaxy levels from the generated galaxy', () => {
     const map = buildStarmap(newGame(1, content));
     expect(map.current).toBe(START_NODE);

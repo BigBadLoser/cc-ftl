@@ -5,6 +5,7 @@
    * the progress along the route and "Drop from hyperspace".
    */
   import FtlCharge from './FtlCharge.svelte';
+  import JumpConfirm from './JumpConfirm.svelte';
   import Icon from './Icon.svelte';
   import type { UiFtl } from './api';
   import PanelHead from './PanelHead.svelte';
@@ -12,11 +13,9 @@
   import type { UiEncounterChoice, UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
   import { dangerColor, toneColor } from './starmapStyle';
 
-  let { map, node, sector, cluster, factions, route, nodes, fleeing = false, warnings = null, taking, ftl = null, onGo, onQueue, onOvercharge, onCharge, onCancelCharge, onConfirm, onCancel, onToggle, onDrop, onClear, onRespond }: {
+  let { map, node, sector, cluster, factions, route, nodes, warnings = null, taking, ftl = null, onGo, onQueue, onOvercharge, onCharge, onCancelCharge, onConfirm, onCancel, onToggle, onDrop, onClear, onRespond }: {
     map: UiStarmap; node: UiStarNode | null; sector: UiStarSector | null; cluster: UiStarCluster | null; factions: UiStarFaction[];
     route: UiStarRoute | null; nodes: Map<string, UiStarNode>;
-    /** Flee-target mode: the button flees (a one-hop trip away from the fight) instead of jumping. */
-    fleeing?: boolean;
     /** The confirm step: what the jump would leave behind (null = not confirming) and which docked shuttles come along. */
     warnings?: UiJumpWarnings | null; taking: Set<number>;
     /** The FTL drive and its order; Charge FTL / Cancel; "Jump when charged" queues the plotted route behind the charge. */
@@ -25,6 +24,8 @@
   } = $props();
 
   const travel = $derived(map.travel);
+  /** Adrift (a flee with no route yet): the hyperspace sidebar as usual, and a picked node still plots a course below it. */
+  const adrift = $derived(travel?.phase === 'adrift');
   const owner = $derived(node?.faction ? factions.find((f) => f.id === node.faction) ?? null : null);
   const nameOf = (id: string): string => {
     const n = nodes.get(id);
@@ -36,12 +37,13 @@
   const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
   const title = $derived(travel ? (travel.phase === 'interdicted' ? 'Interdicted' : travel.phase === 'story' ? 'Signal received' : 'In hyperspace') : node ? (node.known ? node.name : 'Unexplored') : 'Course');
   const sub = $derived(travel ? `Turn ${map.turn}` : `Danger ${node?.danger ?? 0}`);
-  const label = $derived(fleeing ? 'Flee here' : route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
+  const label = $derived(route && route.hops > 1 ? `Jump (${route.hops} hops)` : 'Jump');
   const dropNote = $derived(
     travel?.phase === 'noFuel' ? `Out of fuel for the next hop (needs ${travel.need}). Drop here or refuel.`
     : travel?.phase === 'arrived' ? 'You have reached the end of the route.'
     : travel?.phase === 'story' ? 'Travel is held until you answer the signal.'
     : travel?.phase === 'interdicted' ? 'Travel is halted until you answer the interdiction.'
+    : adrift ? 'Pick a node to plot a course, or drop to go back to the node you fled.'
     : travel?.stopping ? `Dropping out at ${nameOf(travel.route[travel.at + 1] as string)} when the hop ends.`
     : 'Mid-hop, you drop out at the next node.',
   );
@@ -74,7 +76,8 @@
     </section>
     <p class="note" class:warn={travel.phase === 'noFuel'}>{dropNote}</p>
     <button class="go" onclick={onDrop} disabled={travel.stopping || blocked} data-testid="starmap-drop">Drop from hyperspace</button>
-  {:else if node}
+  {/if}
+  {#if node && (!travel || adrift)}
     <section>
       <h4>Sector</h4>
       <div class="row"><b>{sector?.known ? sector.name : 'Uncharted sector'}</b>{#if cluster?.revealed}<span class="dim">{cluster.name}, {cluster.typeLabel}</span>{/if}</div>
@@ -138,32 +141,18 @@
           {/each}
         </ol>
       </section>
-      {#if warnings}
-        <section class="confirm" data-testid="starmap-confirm">
-          <h4>Before you jump</h4>
-          {#if warnings.crew.length}<p class="note warn"><Icon name="person" size={14} />Left behind: {warnings.crew.join(', ')}.</p>{/if}
-          {#if warnings.vehicles.length}<p class="note warn"><Icon name="shuttle" size={14} />Not aboard: {warnings.vehicles.join(', ')}.</p>{/if}
-          {#each warnings.hostileDocked as d (d.id)}
-            <label class="take"><input type="checkbox" checked={taking.has(d.id)} onchange={() => onToggle(d.id)} data-testid="starmap-take" />Take docked {d.name} along (else it is cut loose)</label>
-          {/each}
-          <div class="two">
-            <button onclick={onCancel}>Cancel</button>
-            <button class="go" onclick={onConfirm} data-testid="starmap-confirm-go"><Icon name={fleeing ? 'evasion' : 'fast'} size={18} />Confirm</button>
-          </div>
-        </section>
-      {:else}
-        <button class="go" disabled={!!route.blocker || (!!route.overweight && !fleeing)} onclick={onGo} data-testid="starmap-jump"><Icon name={fleeing ? 'evasion' : 'fast'} size={18} />{label}</button>
-        {#if route.blocker}<p class="note dim">{route.blocker}</p>{:else if !route.overweight || fleeing}<p class="note dim">Tap the node again to go.</p>{/if}
-        {#if route.overweight && !fleeing}
+        <button class="go" disabled={!!route.blocker || !!route.overweight} onclick={onGo} data-testid="starmap-jump"><Icon name="fast" size={18} />{label}</button>
+        {#if route.blocker}<p class="note dim">{route.blocker}</p>{:else if !route.overweight}<p class="note dim">Tap the node again to go.</p>{/if}
+        {#if route.overweight}
           <p class="note warn" data-testid="starmap-overweight">Overweight: hull {route.overweight.tiles} / {route.overweight.capacity}. The engines can't jump this much hull.</p>
           <button class="overcharge" disabled={!!route.blocker && route.chargeOk} onclick={onOvercharge} data-testid="starmap-overcharge"><Icon name="bolt" size={18} />Overcharge{route.chargeOk ? '' : ' when charged'}</button>
           <p class="note warn" data-testid="starmap-overcharge-risk">Risks engine damage, a lost engine and fires in the engine room.</p>
         {/if}
-        {#if !route.chargeOk && !fleeing && !ftl?.queued && !route.overweight}
+        {#if !route.chargeOk && !ftl?.queued && !route.overweight}
           <button class="queue" disabled={!!ftl?.blocker} onclick={onQueue} data-testid="starmap-queue"><Icon name="bolt" size={18} />Jump when charged</button>
         {/if}
         <FtlCharge {ftl} testid="starmap-ftl" {onCharge} onCancel={onCancelCharge} />
-      {/if}
+      <JumpConfirm {warnings} {taking} {onToggle} {onConfirm} {onCancel} />
     {:else if node.known}
       <p class="note dim">No known route.</p>
     {/if}
@@ -209,11 +198,6 @@
   .traffic span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .traffic small { color: var(--dim); font-size: 11px; }
   .n { font: 600 12px var(--head-font); color: var(--cyan); min-width: 12px; }
-  .confirm { padding: 8px; border: 1px solid var(--amber); background: var(--panel-2); }
-  .take { display: flex; gap: 8px; align-items: center; font-size: 13px; min-height: 32px; }
-  .take input { width: 20px; height: 20px; accent-color: var(--cyan); }
-  .two { display: flex; gap: 6px; }
-  .two button { flex: 1; }
   button { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
   .go:disabled, .queue:disabled { opacity: 0.4; }

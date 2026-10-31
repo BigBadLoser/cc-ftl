@@ -9,23 +9,23 @@
   import StarmapStats from './StarmapStats.svelte';
   import StarmapInfo from './StarmapInfo.svelte';
   import StarmapNews from './StarmapNews.svelte';
+  import { isTypingTarget } from './keys';
   import { jumpCommand, toggleTake } from './starmapJump';
   import { toneColor } from './starmapStyle';
   import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
 
-  /**
-   * The starmap screen. `flee`: the player's ship id when it was opened from the combat panel to pick where to flee to (only the
-   * nodes one jump away can be picked, the cheapest affordable one is preselected); null for ordinary browsing and jumping.
-   */
-  let { api, flee = null, focusNode = null, onClose, onSlide }: { api: UiApi; flee?: number | null; focusNode?: string | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
+  /** The starmap screen. `focusNode`: a node to centre on when it opens. (Fleeing a fight is the combat panel's flee control, not this map.) */
+  let { api, focusNode = null, onClose, onSlide }: { api: UiApi; focusNode?: string | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
   /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
   let art = $state<UiStarArt | null>(null);
-  /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
   /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
-  const locked = $derived(map?.state === 'hyperspace');
-  const fleeing = $derived(flee !== null && map?.state !== 'hyperspace' && map?.state !== 'deploying');
+  /** Adrift: a flee left the ship in hyperspace with no route. The map is the way to pick one (and can be closed: the ship stays adrift). */
+  const adrift = $derived(map?.travel?.phase === 'adrift');
+  const locked = $derived(map?.state === 'hyperspace' && !adrift);
+  /** The trip under way (not the adrift state, which has no route to draw). */
+  const trip = $derived(map?.travel && !adrift ? map.travel : null);
   let w = $state(800);
   let h = $state(600);
   /**
@@ -46,7 +46,6 @@
   let hover = $state<string | null>(null);
   let dragging = $state(false);
   let placed = false;
-  let preselected = false;
   /** The jump confirm step (what the jump would leave behind) and which docked shuttles come along. */
   let confirming = $state<UiJumpWarnings | null>(null);
   let taking = $state<number[]>([]);
@@ -61,7 +60,7 @@
   const sel = $derived(selected ? nodeById.get(selected) ?? null : null);
   /** Recomputed whenever the map or its fuel/charge figures change. */
   const route = $derived<UiStarRoute | null>(map && sel && sel.known && !sel.current ? api.planRoute(sel.id) : null);
-  const travelPts = $derived(map?.travel ? map.travel.route.slice(map.travel.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
+  const travelPts = $derived(trip ? trip.route.slice(trip.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
   const routePts = $derived(travelPts || (route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : ''));
   const here = $derived(map ? sectorById.get(map.currentSector) ?? null : null);
   /**
@@ -108,7 +107,7 @@
           sec.id === map.currentSector ? 'You are here' : route ? `Route: ${route.hops} jump${route.hops > 1 ? 's' : ''} · ${route.fuel} fuel · ${route.time} d` : 'No known route yet',
         ],
         zoom: () => focusSector(sec.id),
-        action: route && !route.blocker && !route.overweight ? { label: fleeing ? 'Flee' : route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: () => go() } : null,
+        action: route && !route.blocker && !route.overweight ? { label: route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: () => go() } : null,
         warn: route?.blocker ?? (route?.overweight ? `Overweight: hull ${route.overweight.tiles} / ${route.overweight.capacity}.` : null) ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
       };
     }
@@ -178,18 +177,6 @@
     if (map) focusSector(map.currentSector);
   }
 
-  /** The nodes one jump away that can be picked in flee mode (null when browsing). */
-  const only = $derived(fleeing && map ? new Set(map.nodes.filter((n) => n.reachable).map((n) => n.id)) : null);
-  /** Flee preselect: the cheapest target that can go now (least fuel, then charge), else the cheapest of all. */
-  function cheapestTarget(m: UiStarmap): string | null {
-    const options = m.nodes.filter((n) => n.reachable).flatMap((n) => {
-      const r = api.planRoute(n.id);
-      return r ? [{ id: n.id, ok: !r.blocker, fuel: r.fuel, charge: r.nextCharge }] : [];
-    });
-    options.sort((p, q) => Number(q.ok) - Number(p.ok) || p.fuel - q.fuel || p.charge - q.charge || (p.id < q.id ? -1 : 1));
-    return options[0]?.id ?? null;
-  }
-
   onMount(() => {
     api.setStarmapOpen(true);
     const unsub = api.starmap.subscribe((m) => {
@@ -205,10 +192,6 @@
         });
       }
       if (moved && selected === m.current) selected = null;
-      if (fleeing && !preselected && m.nodes.length) {
-        preselected = true;
-        selected = cheapestTarget(m);
-      }
     });
     const unsubFtl = api.ftl.subscribe((f) => (ftl = f));
     const unsubArt = api.starmapArt.subscribe((a) => (art = a));
@@ -241,7 +224,7 @@
   function frame(now: number) {
     const dt = lastFrame ? Math.min(100, now - lastFrame) : 16;
     lastFrame = now;
-    const tr = map?.travel;
+    const tr = trip;
     if (tr) {
       const key = `${tr.route[0]}>${tr.route.length}`;
       if (key !== tripKey && (tripKey === '' || tr.at === 0)) {
@@ -282,7 +265,7 @@
   });
   /** The ship marker on the lane it is gliding along (ends of the lane for the heading). */
   function shipAt(glide: number): StarmapGlide | null {
-    const tr = map?.travel;
+    const tr = trip;
     if (!tr) return null;
     const i = Math.min(tr.route.length - 2, Math.max(0, Math.floor(glide)));
     const a = nodeById.get(tr.route[i] as string);
@@ -375,7 +358,7 @@
     let bd = 24 / s;
     for (const n of map.nodes) {
       const d = Math.hypot(n.x - m.x, n.y - m.y);
-      if (d < bd && (n.known || s > 0.5) && (!only || only.has(n.id) || n.current)) {
+      if (d < bd && (n.known || s > 0.5)) {
         bd = d;
         best = n;
       }
@@ -388,7 +371,7 @@
       picked = hit ? { kind: 'sector', id: hit.id } : null;
       selected = picked ? routeInto(picked.id) : null;
     } else if (level === 3) picked = hit ? { kind: 'cluster', id: hit.id } : null;
-    else if (hit && hit.id === selected && route && !route.blocker && !route.overweight && map?.state === 'active') go();
+    else if (hit && hit.id === selected && route && !route.blocker && !route.overweight && (map?.state === 'active' || adrift)) go();
     else {
       selected = hit?.id ?? null;
       confirming = null;
@@ -414,24 +397,20 @@
     zoomAt(p.x, p.y, wheelFactor(e.deltaY, e.deltaMode));
   }
   function key(e: KeyboardEvent) {
-    if (e.key === 'Escape' && !locked) onClose();
+    if (e.key === 'Escape' && !locked && !isTypingTarget(e)) onClose();
   }
 
   /**
-   * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). Flee goes at once as a one-hop trip;
-   * a jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
+   * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). A jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
    */
   function go(queue = false, overcharge = false) {
-    if (!route || !map || map.state !== 'active') return;
-    if (queue ? route.chargeOk || fleeing : route.blocker) return;
-    // A hull over what the engines carry only goes by the Overcharge button (a flee takes the risk itself).
-    if (route.overweight && !overcharge && !fleeing) return;
+    if (!route || !map || (map.state !== 'active' && !adrift)) return;
+    if (queue ? route.chargeOk : route.blocker) return;
+    // A hull over what the engines carry only goes by the Overcharge button.
+    if (route.overweight && !overcharge) return;
     overcharging = overcharge;
     queueing = queue;
-    if (fleeing) {
-      api.dispatch({ type: 'combat.flee', ship: flee as number, to: route.path[1] });
-      return;
-    }
+    if (adrift) return fly(); // nothing is left behind: the ship has already left the node
     const w = api.jumpWarnings(map.ship);
     if (w.crew.length || w.vehicles.length || w.hostileDocked.length) {
       confirming = w;
@@ -457,7 +436,7 @@
   $effect(() => {
     if (!map || !gpu) return;
     gpu.scene({
-      map, art, level, current, selected, hover, picked: picked?.id ?? null, route, routePts, routeSectors, only,
+      map, art, level, current, selected, hover, picked: picked?.id ?? null, route, routePts, routeSectors,
       inset: drawerOpen && w > 600 ? 340 : 0,
     });
   });
@@ -465,9 +444,9 @@
 
 <svelte:window onkeydown={key} />
 
-<div class="starmap" data-testid="starmap" data-mode={fleeing ? 'flee' : 'browse'}>
+<div class="starmap legacy" data-testid="starmap" data-mode="browse">
   <div class="head">
-    <PanelHead icon="map" title={fleeing ? 'Flee: pick a target' : 'Starmap'} sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+    <PanelHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
       onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
   </div>
   <div class="statbar">
@@ -502,7 +481,7 @@
   {#if interdiction}<InterdictModal encounter={interdiction} onChoose={respond} />{/if}
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
-        factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
+        factions={map.factions} {route} nodes={nodeById} warnings={confirming} taking={new Set(taking)}
         {ftl} onGo={() => go()} onQueue={() => go(true)} onOvercharge={() => go(!!route && !route.chargeOk, true)} onCharge={() => map && api.dispatch({ type: 'ftl.charge', ship: map.ship })} onCancelCharge={() => map && api.dispatch({ type: 'ftl.cancelCharge', ship: map.ship })} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
   {/if}
   </div>

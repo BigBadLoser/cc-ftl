@@ -190,14 +190,17 @@ export interface Travel {
    * 'hop': under way; 'arrived': at the end of the route; 'noFuel': stopped at `route[at]` for want of fuel for the next hop;
    * 'interdicted': halted at `route[at]` by a pending interdiction (resolved by `galaxy.respond`, the ship stays in hyperspace);
    * 'event': the ship is in an event grid (`GalaxyState.event`) and the trip waits;
-   * 'story': a story decision is open (`sim.story.active`) and the trip waits until it is answered.
+   * 'story': a story decision is open (`sim.story.active`) and the trip waits until it is answered;
+   * 'adrift': a flee put the ship in hyperspace with no route (`route` is just the node it fled, `galaxy.current`): it stays until a `galaxy.jump`
+   * starts a route from there (no charge, normal fuel) or `galaxy.drop` puts it back in that node. Nothing happens while adrift (design hook: drift costs,
+   * such as life support or a random event, come later).
    */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story';
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story' | 'adrift';
   /**
    * Set in phase 'event' or 'story': the phase to go back to when the grid is left or the decision answered ('interdicted' resumes the trip after
    * a hop; so does 'hopEnd', a story drawn at the hop just finished; 'hop' goes on with the hop under way).
    */
-  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'hopEnd';
+  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'hopEnd' | 'adrift';
   /** A drop was asked for mid-hop: the route was cut after the hop under way and the ship drops out when it gets there. */
   stopping?: true;
 }

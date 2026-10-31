@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
+  import Icon, { type IconName } from './Icon.svelte';
+
+  const ICON: Record<string, IconName> = { attack: 'combat', man: 'helm', board: 'shuttle', sabotage: 'fire', walk: 'walk' };
 
   let { api }: { api: UiApi } = $props();
   let menu = $state<{ x: number; y: number; items: { id: string; label: string }[] } | null>(null);
@@ -16,13 +19,16 @@
 {#if menu}
   <div class="menu" role="menu" tabindex="-1" data-testid="context-menu" style:left="{left}px" style:top="{top}px" oncontextmenu={(e) => e.preventDefault()}>
     {#each menu.items as it (it.id)}
-      <button role="menuitem" data-testid="order-{it.id}" onclick={() => api.pickContext(it.id)}>{it.label}</button>
+      <button role="menuitem" data-testid="order-{it.id}" onclick={() => api.pickContext(it.id)}>{#if ICON[it.id]}<Icon name={ICON[it.id]!} size={15} />{/if}<span>{it.label}</span></button>
     {/each}
   </div>
 {/if}
 
 <style>
-  .menu { position: fixed; z-index: 8; min-width: 170px; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); box-shadow: 0 6px 24px #000a; display: grid; padding: 3px; }
-  .menu button { text-align: left; min-height: 30px; padding: 0 10px; border-color: transparent; background: transparent; color: var(--text); font-size: 13px; white-space: nowrap; }
-  .menu button:hover, .menu button:focus-visible { background: #2a1e06; border-color: var(--amber); color: #ffe2a6; }
+  /* Steel palette: graphite panel, cyan only on the item under the pointer or focus. */
+  .menu { position: fixed; z-index: 8; min-width: 170px; background: #0b0e11; border: 1px solid #3a424a; box-shadow: 0 6px 24px #000a; display: grid; padding: 3px; }
+  .menu button { display: flex; align-items: center; gap: 8px; text-align: left; min-height: 30px; padding: 0 10px; border-color: transparent; background: transparent; color: #e4e9ee; font-size: 13px; white-space: nowrap; }
+  .menu button :global(.icon) { color: #8a949e; }
+  .menu button:hover :global(.icon), .menu button:focus-visible :global(.icon) { color: inherit; }
+  .menu button:hover, .menu button:focus-visible { background: #11151a; border-color: var(--cyan); color: #fff; }
 </style>

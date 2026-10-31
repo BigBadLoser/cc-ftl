@@ -33,5 +33,5 @@
   .head b { font: 600 14px var(--head-font); color: var(--text); letter-spacing: 0.03em; }
   .have { margin-left: auto; color: var(--dim); font-size: 12px; }
   p { margin: 0; color: var(--dim); line-height: 1.3; }
-  .go { min-height: 34px; background: #0e4a56; border-color: var(--cyan); }
+  .go { min-height: 34px; background: var(--go-fill); border-color: var(--go-edge); }
 </style>

@@ -9,6 +9,7 @@ import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/sp
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
+import { performSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DoorJam, Struct, writeStruct } from '../structure';
@@ -55,6 +56,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
+    case 'sabotage': return performSabotage(sim, crew, job);
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff': return performSuitJob(sim, crew, job, speed);

@@ -79,10 +79,11 @@
   .form { display: grid; gap: 10px; }
   .hint, .note { margin: 0; font-size: 12px; color: var(--dim); }
   .note { color: var(--amber); }
-  label { display: grid; gap: 3px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; color: var(--amber); }
+  label { display: grid; gap: 3px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; color: var(--dim); }
   label small { font-weight: 400; color: var(--dim); text-transform: none; letter-spacing: 0; }
-  input, textarea { box-sizing: border-box; width: 100%; background: #000; color: var(--text); border: 1px solid var(--line); border-radius: 0; padding: 6px 8px; font: 14px/1.4 system-ui, sans-serif; text-transform: none; letter-spacing: 0; user-select: text; -webkit-user-select: text; resize: vertical; }
-  input:focus, textarea:focus { outline: none; border-color: var(--amber); }
+  input, textarea { box-sizing: border-box; width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line-hi); border-radius: 0; padding: 6px 8px; font: 14px/1.4 system-ui, sans-serif; text-transform: none; letter-spacing: 0; user-select: text; -webkit-user-select: text; resize: vertical; }
+  input::placeholder, textarea::placeholder { color: var(--dim); opacity: 1; }
+  input:focus, textarea:focus { outline: none; border-color: var(--cyan); }
   .fold { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px; font-size: 12px; color: var(--dim); background: transparent; border-color: transparent; text-align: left; }
   .chev { display: inline-flex; transition: transform 0.12s; transform: rotate(-90deg); }
   .chev.open { transform: none; }

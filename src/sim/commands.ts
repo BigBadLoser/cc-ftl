@@ -20,8 +20,11 @@ export type Command =
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
+  | { type: 'debug.setModuleHp'; id: number; hp: number }
   | { type: 'debug.ignite'; ship: number; x: number; y: number }
   | { type: 'debug.setField'; ship: number; x: number; y: number; field: string; value: number }
+  /** Put a damaged module at the top of the repair queue (`on`), or take it off again. */
+  | { type: 'module.priorityRepair'; id: number; on: boolean }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
@@ -132,19 +135,33 @@ export type Command =
   | { type: 'debug.spawnDerelict'; faction: string; depth: number; seed?: number; cx: number; cy: number; intensity?: number; cause?: 'combat' | 'decay' }
   /** Set a weapon module's target (`weaponId` null = the ship-wide target). targetShip 0 clears; targetModuleId 0 = any module; `targetVehicle` (with targetShip 0) aims at a shuttle in flight or docked; `targetTile` (with targetModuleId 0) aims blind at one sector tile of the target ship, and the hits land near it. */
   | { type: 'combat.setTarget'; ship: number; weaponId: number | null; targetShip: number; targetModuleId: number; targetVehicle?: number; targetTile?: { x: number; y: number } }
-  /** Hold fire: weapons charge but only fire on combat.fireVolley. */
+  /** Hold fire (AI ships: the raider sparing its prize): weapons charge but only fire on combat.fireVolley. The player's H is `combat.holdAll`. */
   | { type: 'combat.setHold'; ship: number; hold: boolean }
+  /** Set one weapon's fire mode: `auto` fires when charged, `hold` waits for a volley or an aim (the player's ship; AI ships use `combat.setHold`). */
+  | { type: 'combat.setWeaponMode'; ship: number; weaponId: number; mode: 'auto' | 'hold' }
+  /** Put every weapon of the ship on hold, remembering each one's mode; `hold: false` restores them. */
+  | { type: 'combat.holdAll'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
   /**
-   * Flee: leave the node with a charged FTL drive. The player's ship enters hyperspace like `galaxy.jump` with a one-hop route to `to` (an
-   * adjacent node), else to the cheapest connected node it can afford; AI ships just leave (state 'fled').
+   * Flee: leave the node with a fully charged FTL drive. The player's ship spends the charge and enters hyperspace adrift, with no route and no fuel
+   * spent (`Travel.phase` 'adrift'); `galaxy.jump` then picks where to go. In an event grid it just leaves the grid. AI ships just leave (state 'fled').
    */
-  | { type: 'combat.flee'; ship: number; to?: string }
+  | { type: 'combat.flee'; ship: number }
+  /** Vent heat: shields drop and the weapons hold fire for a few seconds while the meter dumps; shields then regenerate. Refused when cool, venting or overheated. */
+  | { type: 'combat.vent'; ship: number }
+  /** Overcharge one system for a few seconds (adds heat per second), then a cooldown. Refused while overheated or on cooldown. */
+  | { type: 'combat.overcharge'; ship: number; system: 'weapons' | 'shields' | 'engines' }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
   | { type: 'crew.hack'; id: number; module: number }
+  /** Boarders (player crew on a hostile ship) walk to `module` of that ship and wreck it over time, until it falls, they are interrupted or cancelled. */
+  | { type: 'crew.sabotage'; ids: number[]; module: number }
+  /** Drop the members' sabotage orders. */
+  | { type: 'crew.cancelSabotage'; ids: number[] }
+  /** Send player crew on a hostile ship back to the shuttle docked there; it flies them home and they disembark. Fails (reason event, crew stay) with no reachable shuttle. */
+  | { type: 'crew.recall'; ids: number[] }
   /** Queue assembly of a robot of `role` (a role with `assemble`) in a free robot bay; the bay becomes its home. */
   | { type: 'module.assembleRobot'; moduleId: number; role: string }
   /** Cancel the assembly running in a robot bay (delivered materials drop to the floor). */

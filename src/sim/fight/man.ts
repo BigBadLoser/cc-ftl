@@ -1,5 +1,5 @@
-import { AssignmentC, DraftedC, JobC, PositionC } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
+import { DraftedC, JobC, PositionC } from '../crew/components';
+import { abortTask, reserveJob } from '../ai/task';
 import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
@@ -26,14 +26,13 @@ export function manStation(sim: Sim, crew: number, module: number): string | nul
   for (const id of sim.world.query(JobC)) if (sim.world.get(id, JobC)?.kind === 'operate' && sim.world.get(id, JobC)?.target === module) jobId = id;
   const old = sim.world.get(jobId, JobC);
   if (old?.reservedBy === crew) return null; // already theirs
-  if (old?.reservedBy) releaseAssignment(sim, old.reservedBy);
-  releaseAssignment(sim, crew);
+  if (old?.reservedBy) abortTask(sim, old.reservedBy, 'replaced');
+  abortTask(sim, crew, 'order');
   if (!old) {
     jobId = sim.world.createEntity();
     sim.world.add(jobId, JobC, { category: 'operating', kind: 'operate', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: module });
   }
-  (sim.world.get(jobId, JobC) as { reservedBy: number }).reservedBy = crew;
-  sim.world.add(crew, AssignmentC, { jobId });
+  reserveJob(sim, crew, jobId);
   const drafted = sim.world.get(crew, DraftedC);
   if (drafted) {
     drafted.target = null; // the station replaces a walk order

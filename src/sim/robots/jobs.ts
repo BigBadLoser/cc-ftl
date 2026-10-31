@@ -79,9 +79,9 @@ export function heldForMend(sim: Sim, robot: number): boolean {
   });
 }
 
-/** May this crew member take this robot job? Mending needs the repair skill and a robot of their own side; hacks are only ever ordered. */
+/** May this crew member take this robot job? Mending needs the repair skill and a robot of their own side; hacks and sabotage are only ever ordered. */
 export function canTakeRobotJob(sim: Sim, crew: number, job: Job): boolean {
-  if (job.kind === 'hack') return false;
+  if (job.kind === 'hack' || job.kind === 'sabotage') return false;
   if (job.kind !== 'mend') return true;
   const mine = sim.world.get(crew, AllegianceC)?.faction;
   return skillOf(sim, crew, 'repair') > 0 && mine === sim.world.get(job.target ?? 0, AllegianceC)?.faction;

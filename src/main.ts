@@ -1,3 +1,4 @@
+import { startBoardingScenario } from './app/boardingScenario';
 import { mount } from 'svelte';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
@@ -7,6 +8,7 @@ import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
+import { backdropSpecOf } from './app/backdropSpec';
 import { loadStarmapArt } from './app/starmapArt';
 import { createStarmapGpu } from './render/starmap';
 import { createStore } from './app/store';
@@ -21,11 +23,17 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
+import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, writeSave } from './app/saves';
+import { AUTO_ID, SLOT_IDS, saveStore } from './app/saveStore';
 import { content } from './content';
-import { BodyC, CrewC, PositionC, SAVE_VERSION, serialize, ShipC } from './sim';
+import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
+import { damageScenarioCommands } from './app/damageScenario';
+import { createSignalFeed } from './app/signals';
+import { keymap } from './ui/keymap';
+import { isTypingTarget, modalOpen } from './ui/keys';
+import { settings } from './ui/settings/settings';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
@@ -53,24 +61,45 @@ loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e
 const starmapArt = createStore<UiStarArt | null>(null);
 loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.push(e));
 
+/** Where the layers report timings: the no-op until the profiler (`?perf` or F3, loaded on demand) swaps itself in. */
+let probe: Probe = NOOP_PROBE;
+const setProbe = (p: Probe | null): void => {
+  probe = p ?? NOOP_PROBE;
+  renderer?.setProbe(probe);
+};
+
+/** Sim events and issued commands for the lessons engine (ui/lessons). */
+const signals = createSignalFeed(sim.commands);
 let upkeepFrame = 0;
 const loop = createLoop({
   sim,
+  probe: () => probe,
   // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
   render: (alpha) => {
     // World animations freeze while the game is paused (speed 0); camera, UI and hover feedback keep running.
     setAnimPaused(loop.getSpeed() === 0);
-    if (upkeepFrame++ % 10 === 0) controller.upkeep();
-    if (!starmapOpen && sim.sector.state === 'active') renderer?.render(alpha);
+    if (upkeepFrame++ % 10 === 0) {
+      probe.begin('ui/upkeep');
+      controller.upkeep();
+      probe.end('ui/upkeep');
+    }
+    if (!starmapOpen && sim.sector.state === 'active') {
+      probe.begin('render/main');
+      renderer?.render(alpha);
+      probe.end('render/main');
+    }
   },
   onEvents: (events) => {
+    probe.begin('ui/events');
     controller.onEvents(events);
     renderer?.onEvents(events);
+    probe.end('ui/events');
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
     for (const e of events) {
       if (e.type === 'sector.jumped' || e.type === 'galaxy.hyperspace' || e.type === 'galaxy.eventLeft') {
         renderer?.setSector(sim.sector.grid); // archiving and restoring swap the sector's grid object
         renderer?.resetWorld();
+        renderer?.setBackdrop(backdropSpecOf(sim));
       }
       else if (e.type === 'sector.deployed') {
         const grid = shipGrid(sim, e.ship);
@@ -78,11 +107,30 @@ const loop = createLoop({
         setTimeout(save, 0); // after a jump lands: the new node is in the save
       }
     }
+    signals.events(events);
     hook?.onEvents(events.map((e) => e.type));
   },
-  onFrame: (stats) => bridge.update(stats, renderer?.info()),
+  onFrame: (stats) => {
+    probe.begin('ui/bridge');
+    const info = renderer?.info();
+    if (info) probe.count('render/sprites', info.sprites);
+    bridge.update(stats, info);
+    signals.poll();
+    probe.end('ui/bridge');
+  },
 });
 bridge.attachLoop(loop);
+// The player's start speed (Settings); a debug scenario sets its own once it is set up.
+if (!new URLSearchParams(location.search).has('scenario')) bridge.setSpeed(settings.get().startSpeed);
+
+// Profiler (debug only, loaded on demand): `?perf` turns it on at start, F3 toggles its panel. See docs/PROFILING.md.
+const perfBoot = (): Promise<import('./app/profiler/install').ProfilerHandle> => import('./app/profiler/install').then((m) => m.installProfiler(setProbe));
+if (new URLSearchParams(location.search).has('perf')) void perfBoot().then((h) => h.api.enable());
+window.addEventListener('keydown', (e) => {
+  if (modalOpen() || isTypingTarget(e) || !keymap.matches(e, 'debug.profiler')) return;
+  e.preventDefault();
+  void perfBoot().then((h) => h.togglePanel());
+});
 
 /**
  * Saving: the game is written every AUTOSAVE_MS, when the page is hidden or closed (a phone killing the tab), and after a
@@ -91,10 +139,13 @@ bridge.attachLoop(loop);
  */
 const AUTOSAVE_MS = 30_000;
 const session = createStore<UiSession>({ notice: start.notice, lost: null });
-const save = (): void => {
-  // Read the loss from the sim, not the session: the poll below lags by up to a second.
-  if (!session.get().lost && !lostReason(sim)) writeSave(sim);
-};
+// Read the loss from the sim too, not only the session: the poll below lags by up to a second. A `?seed=` game never saves.
+const SAVE_FAILED = 'Saving failed: the browser refused the write (storage full or blocked). Your progress since the last save is not stored.';
+const save = createSaver(sim, start.persist, () => session.get().lost !== null, (ok) => {
+  const cur = session.get();
+  if (!ok && cur.notice !== SAVE_FAILED) session.set({ ...cur, notice: SAVE_FAILED });
+  else if (ok && cur.notice === SAVE_FAILED) session.set({ ...cur, notice: null });
+});
 setInterval(save, AUTOSAVE_MS);
 setInterval(() => {
   if (session.get().lost) return;
@@ -108,9 +159,9 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 window.addEventListener('pagehide', save);
 
-/** Frame the player's ship and a hostile one (or only the player's ship) in the camera. */
+/** Frame one ship in the camera (null: the player's), clear of the combat HUD bands while a fight is on. */
 function focusFight(ship: number | null): void {
-  renderer?.frameShips(ship === null ? [1] : [1, ship]);
+  renderer?.frameShips([ship ?? homeShip(sim)], sim.sector.inCombat ? { top: 40, bottom: 170 } : undefined);
 }
 
 /**
@@ -153,7 +204,7 @@ function spawnDerelict(faction?: string): void {
 }
 
 /** Debug: put a raider a fair distance from the player's ship (diagonally, so a fight fits on a phone screen too). */
-function spawnRaider(boarders = false): void {
+function spawnRaider(boarders = false, far = params.has('far')): void {
   const template = boarders ? 'ship.raiderBoarder' : 'ship.raider';
   if (shipgenFlag?.startsWith('derelict')) {
     spawnDerelict(shipgenFlag.split(':')[1]);
@@ -170,8 +221,9 @@ function spawnRaider(boarders = false): void {
   const h = t.rows.length;
   const cy = mine.y + mine.height / 2;
   // Just past the player ship's padded frame plus the minimum gap, level with it, so the placement is never refused as tooClose.
-  const x = Math.min(sim.sector.width - w, mine.x + mine.width + MIN_SHIP_GAP + 2 * REGION_PAD + 4);
-  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2)));
+  // `far`: a typical engagement distance, well past what a camera can frame beside the player's ship (about 55 tiles east, 45 north: the free corner of the start node).
+  const x = Math.min(sim.sector.width - w, mine.x + mine.width + (far ? 55 : MIN_SHIP_GAP + 2 * REGION_PAD + 4));
+  const y = Math.min(sim.sector.height - h, Math.max(0, Math.round(cy - h / 2) - (far ? 45 : 0)));
   bridge.dispatch({ type: 'debug.spawnEnemy', template, x, y });
 }
 
@@ -201,6 +253,9 @@ const stationFlag = params.get('station');
  */
 const scenario = params.get('scenario');
 /**
+ * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
+ * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
+ * `&charged` also fills the FTL drive.
  * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
  * a finished bounty / survey to hand in, and you at the nearest military / research station (drops in by itself). See galaxy/jobsDebug.ts.
  */
@@ -220,6 +275,30 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
+  if (scenario === 'fight' || scenario === 'boarding') {
+    // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
+    const g = sim.galaxy;
+    const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
+      .find((id) => !nodeOf(sim, id)?.structures.length) ?? g.current;
+    const at = homeShipC();
+    if (next !== g.current) bridge.dispatch({ type: 'debug.galaxyTeleport', node: next });
+    setTimeout(() => {
+      if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
+      setTimeout(() => {
+        spawnRaider();
+        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'));
+        if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
+      }, 400);
+    }, 400);
+    loop.setSpeed(1);
+    return;
+  }
+  if (scenario === 'damage') {
+    loop.setSpeed(1);
+    // Rooms exist after the first ticks: set the scene then. Crew answer the fire and the breach on their own.
+    setTimeout(() => { for (const cmd of damageScenarioCommands(sim)) bridge.dispatch(cmd); }, 600);
+    return;
+  }
   if (scenario !== 'hullplan') return;
   spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
   bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
@@ -265,6 +344,16 @@ function reportInfo(): ReportInfo {
 const api: UiApi = {
   snapshot: bridge.snapshot,
   session,
+  saves: {
+    list: () => {
+      const metas = new Map(saveStore.list().map((m) => [m.id, m]));
+      return [AUTO_ID, ...SLOT_IDS].map((id) => ({ id, auto: id === AUTO_ID, meta: metas.get(id) ?? null }));
+    },
+    save: (id, name) => id !== AUTO_ID && writeSave(sim, id, name),
+    load: loadSlot,
+    remove: (id) => id !== AUTO_ID && saveStore.remove(id),
+  },
+  cancel: () => controller.cancel(),
   newGame: restartNewGame,
   loadLastSave: reloadLastSave,
   dismissNotice: () => session.set({ ...session.get(), notice: null }),
@@ -306,6 +395,7 @@ const api: UiApi = {
   alerts: controller.alerts.list,
   log: controller.log.list,
   combat: bridge.combat,
+  boarding: bridge.boarding,
   ftl: bridge.ftl,
   shuttles: bridge.shuttles,
   trade: bridge.trade,
@@ -332,18 +422,40 @@ const api: UiApi = {
     const b = sim.world.get(id, BodyC);
     if (b) renderer?.focusSector(b.x, b.y);
   },
-  setCombatView: (view) => renderer?.setCombatView(view && { shipId: view.ship, canvas: view.canvas }),
-  setCombatMarks: (marks) => renderer?.setCombatMarks(marks),
-  pickCombat: (x, y) => renderer?.pickCombat(x, y) ?? null,
   setRoofEnemies: (on) => renderer?.setRoofEnemies(on),
   setRoofPlayer: (on) => renderer?.setRoofPlayer(on),
   focusFight: (ship) => focusFight(ship),
+  insetSize: (ship) => renderer?.insetSize(ship) ?? null,
+  shipScreen: (id) => {
+    const s = sim.world.get(id, ShipC);
+    return renderer && s ? renderer.screenOf(0, s.x + s.width / 2, s.y + s.height / 2) : null;
+  },
+  moduleScreenRect: (id) => {
+    const m = sim.world.get(id, ModuleC);
+    const def = m && sim.content.modules[m.def];
+    if (!renderer || !m || !def) return null;
+    const tiles = footprintTiles(def, m.x, m.y, m.rot);
+    const o = renderer.screenOf(0, m.x, m.y);
+    const dx = renderer.screenOf(0, m.x + 1, m.y);
+    const half = Math.max(Math.abs(dx.x - o.x), Math.abs(dx.y - o.y)) * 0.75; // a tile's diamond is about this far from its centre
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const t of tiles) {
+      const p = renderer.screenOf(0, t.x, t.y);
+      x0 = Math.min(x0, p.x - half); x1 = Math.max(x1, p.x + half);
+      y0 = Math.min(y0, p.y - half * 1.5); y1 = Math.max(y1, p.y + half * 0.75); // the module stands up from the floor: more room above
+    }
+    return x0 === Infinity ? null : { x0, y0, x1, y1 };
+  },
+  setInset: (view) => renderer?.setInset(view && { shipId: view.ship, view: view.view }),
   spawnRaider: (boarders) => spawnRaider(boarders),
   spawnGenerated: (faction) => spawnGenerated(faction),
   spawnStation: (kind, size) => spawnStation(kind, size),
   overlayList,
   overlayLegend,
   dismissAlert: controller.alerts.dismiss,
+  fightReport: controller.fightReport.open,
+  openFightReport: controller.fightReport.show,
+  closeFightReport: controller.fightReport.close,
   focusAlert: controller.focusAlert,
   focusSubject: controller.focusSubject,
   selectModule: controller.selectModule,
@@ -352,6 +464,7 @@ const api: UiApi = {
   setTool: controller.setTool,
   selectCrew: controller.selectCrew,
   dispatch: bridge.dispatch,
+  onSignal: signals.listen,
   setSpeed: bridge.setSpeed,
   togglePause: bridge.togglePause,
   clearErrors: errorLog.clear,
@@ -373,6 +486,8 @@ const api: UiApi = {
     }, 0);
   },
   portrait: (id) => renderer?.portrait(id) ?? null,
+  lookPortrait: (look) => renderer?.portraitOf(look) ?? null,
+  portraitArt: (key) => renderer?.portraitArt(key) ?? null,
   moduleThumb: (def, rot) => renderer?.moduleThumb(def, rot) ?? null,
   setCutaway: (mode) => renderer?.setCutaway(mode),
   setOverlay: (field) => renderer?.setOverlay(field),
@@ -381,8 +496,12 @@ const api: UiApi = {
     createRenderer(canvas, matchMedia('(max-width: 600px)').matches ? 'low' : 'high', sim.world, content)
       .then((r) => {
         renderer = r;
+        r.setCommitEta((id) => commitEtaSec(sim, id));
+        r.setShotColor((id) => shotColor(shotSlot(sim, id)));
+        r.setProbe(probe);
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
         r.setSector(sim.sector.grid);
+        r.setBackdrop(backdropSpecOf(sim));
         const grid = shipGrid(sim, homeShip(sim));
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));

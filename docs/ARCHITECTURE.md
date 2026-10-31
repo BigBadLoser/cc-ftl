@@ -694,6 +694,25 @@ palette.json    the single palette, read by Blender scripts and the game
     becomes the owner's colour on the shade ramp `MULT`, 0.42 .. 1.22). Asteroids and derelicts carry no key colour.
   - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
     `screen`).
+- **Backdrop bodies (`backdrop` family, sheet `backdrop`; `sprites/backdrop_bodies.py`, `backdrop_pulsar.py`):** the
+  node's central body drawn large and dim behind the main view.
+  - Ids: `backdrop.body.<kind>.v<n>`, and `backdrop.body.<kind>` (= v0), as `starmap.body.*`. Kinds and variants match the
+    starmap bodies: `star`, `red_dwarf`, `blue_giant`, `black_hole` v0..v2; `gas_giant` v0..v5 (v0..v2 ringed); and,
+    not spawned yet, `binary_star`, `white_dwarf`, `pulsar`, `protostar`, `ice_giant`, `lava_world`, `ocean_world`
+    v0..v2. No nebula: the backdrop draws its own. Pick the variant by node with the same index as the starmap, so a
+    node's backdrop body matches its starmap body.
+  - Frame: 640 px square (320 in the 1x file), anchor at the centre, body radius 200 px (100), halos, rings and discs
+    within 1.6 r. Rendered at full value and colour (the game dims and tints it); glow on the `.glow` twin.
+  - Built by each kind's own starmap builder and seed, scaled up 10/3 with `starmap_kit.DETAIL = 3` times the sphere
+    and ring faces. Stars go through `starmap_bodies.SOFTEN` for a soft, quickly fading halo and finer granulation;
+    the pulsar has its own build (`backdrop_pulsar.py`, soft layered beams). Starmap renders are unchanged (`DETAIL` 1,
+    no `SOFTEN`).
+
+## Crew AI
+
+The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in [`docs/CREW_AI.md`](CREW_AI.md), issue #194. It's being implemented in phases.
+
+Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs `policy.legacy`, the need machines and the legacy job picker; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
 
 ## UI
 
@@ -708,7 +727,7 @@ Small in-house controls for panels, built on [Bits UI](https://bits-ui.com) (hea
 ARIA behaviour and no styling). The game keeps its own look: every kit component is styled here with the tokens in
 `src/ui/theme.css` (sharp dark panels, the global `button.on` state, 40px touch targets, `--focus` ring), not by a styled library.
 
-- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, exported from `src/ui/kit/index.ts`.
+- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, `SideTabs` (left-sidebar tabs), exported from `src/ui/kit/index.ts`.
   Props are plain values plus an `onChange` callback (controlled); options are `KitOption` (`value`, `label`, `sub`, `disabled`, `testId`).
 - **Rule: panels import from `ui/kit` only, never `bits-ui`.** ESLint (`no-restricted-imports`) allows `bits-ui` only under
   `src/ui/kit`, so the library can be swapped by editing the kit alone. Panels still never mutate the sim; a kit control only reports a
@@ -717,6 +736,45 @@ ARIA behaviour and no styling). The game keeps its own look: every kit component
   (add a token to `theme.css` rather than a literal), keep it working at 390px wide with a visible focus ring, put pure logic in a
   `<name>.ts` with a `*.test.ts` beside it, and export it from `index.ts`.
 - Portalled parts (Select list, Tooltip, Dialog) render under `body`, so their styles are `:global` and namespaced `kit-*`.
+- **Panel pieces** (combat view and later HUD): `Frame` (titled section frame: the title sits in a real gap in the border via `FrameGap`, so content
+  behind a semi-transparent panel shows through, no background patch), `Meter` (bar with value), `Pips` (shield and charge pips), `Pill` and
+  `StatusTag` (small labelled badges), `KeyBadge` (hotkey cap) and `ActionButton` (button with icon, label and `KeyBadge`). Their look comes from tokens
+  in `theme.css` (`--frame-line`, `--frame-w`, `--track`, `--heat-low`, `--band`, `--health-good` and the other combat tokens). **New panels compose these** and add tokens
+  rather than redrawing borders, bars or badges by hand; a panel component only lays its sections out.
+
+## Lessons (tutorials), `src/ui/lessons/`
+
+UI layer only (design: DESIGN.md, "Lessons"). `LessonHost.svelte` builds a `LessonCtx` from the snapshots and feeds `LessonEngine` (plain TS) every
+frame with the signals since the last one: sim events and every queued command, from `api.onSignal` (`app/signals.ts` reads the command queue, so
+an aim made while paused counts). The engine queues triggered lessons, opens one at a time (cooldown, waits while `ctx.busy`), pauses through
+`api.setSpeed` and restores the player's speed (never unpausing a game they had paused). Seen lessons and the on/off switch are in localStorage
+(`prefs.ts`); reset and the switch are in the debug panel until the Esc menu exists; `?lessons=reset` / `?lessons=off` for scripts.
+
+**Adding a lesson:** write a `LessonDef` in `defs/<name>.ts` (`satisfies LessonDef`) and list it in `defs/index.ts`. A step has a `title`,
+`say` (the speaker's line) and `keys` (short mechanics lines), or plain `text` without a speaker (`[Q]` renders a key badge, `**word**` a strong word), a `target` and `advance: 'gotIt'` or a condition (a "do" step); the lesson's optional `delay` (ms) lets
+the scene settle between the trigger and the card. Conditions (`conditions.ts`): `onEvent`,
+`onCommand` (with a match), `when` (a state of the context), `anyOf` / `allOf`. Targets (`targets.ts`): `uiTarget(anchor)` rings an element
+carrying `data-lesson={anchor('...')}` (names are typed in `anchors.ts`; a kit `Frame` takes `lesson=`), `moduleTarget(pick)` rings a module in the
+world through `api.moduleScreenRect`. A new condition or target kind is one shape in the `...Kinds` interface plus one evaluator or resolver beside
+it; the engine does not change. If a lesson needs more of the game, add the field to `LessonCtx` and fill it in the host.
+A lesson (or a step) names its `speaker` from `speakers.ts`: a fixed instructor (name, role, `look`), whose portrait the crew portrait
+renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the plain card.
+
+## Keys, settings and the Esc menu
+
+- **Key map** (`src/ui/keymap/`): every key the game answers to is an action in `actions.ts` (id, group, label, default chords, context).
+  A chord is an optional `Shift+` and a `KeyboardEvent.code`, so bindings are physical keys. `keymap.matches(e, id)` is the only way a
+  handler reads a key (App, the combat strip, lessons, the deploy picker, `app/input.ts` for camera and R, the profiler's F3); key badges
+  read `keyLabel($keymap, id)`, and lesson text writes `[@combat.volley]` for the bound key. The player's changes live in localStorage
+  (`cc-ftl.keys`, only the differences). Two actions on one key conflict when their contexts overlap, unless one `shares` the other on
+  purpose (R drafts crew, rotates a module and picks weapon 4). Esc is fixed. A new key: add an action, then call `matches` in its handler.
+- **Settings** (`src/ui/settings/`): a store in localStorage (`cc-ftl.settings`), applied live: `apply.ts` (pause on alert or in the
+  background, tooltips off), `app/input.ts` (edge scroll, scroll and zoom speed, invert drag), App (FPS), main.ts (start speed).
+  Lessons keep their own prefs.
+- **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
+  menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open it holds the one modal gate (`holdModal` / `modalOpen` in `ui/keys.ts`, also held by the jump confirmation), and every game key handler stands aside; the App pauses the game and restores the speed.
+- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
+  ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
 
 ## Saves
 
@@ -1575,7 +1633,7 @@ Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch 
 - **Sector frame.** The art origin is sector tile (0, 0). `render/sectorPos.ts` (`regionOrigin`, `sectorPos`, `sectorArt`)
   adds the ShipC origin until step 6, when it becomes the identity. Camera framing, focus, `fightFx`, `crewMarks`,
   `sectorFx` and shuttles use it; the "camera ship's frame" (`ref`) is gone from the fx hosts.
-- **Pass B** (`render/combatPass.ts`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
+- **Pass B** (`render/insetPass.ts, which replaced the old combatPass`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
   and fitted on the target region, renders the stage into a `RenderTexture` the size of `CombatViewRect` (the texture is the
   scissor: a GL scissor would also clip filter passes). The main pass draws that texture in place. `place(cam, target)`
   positions the stack per pass, culls regions by their padded art box, and shows target marks only in pass B and UI layers

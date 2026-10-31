@@ -4,6 +4,7 @@
   import Icon from './Icon.svelte';
   import ResearchSidebar from './ResearchSidebar.svelte';
   import ResearchTree from './ResearchTree.svelte';
+  import { isTypingTarget } from './keys';
   import { layoutResearch } from './researchLayout';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
@@ -37,8 +38,8 @@
   const move = (project: string, to: number) => api.dispatch({ type: 'research.move', ship: rs.ship, project, to });
 </script>
 
-<svelte:window onkeydowncapture={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }} />
-<div class="rt" data-testid="research-panel" role="dialog" aria-label="Research">
+<svelte:window onkeydowncapture={(e) => { if (e.key === 'Escape' && !isTypingTarget(e)) { e.stopPropagation(); onClose(); } }} />
+<div class="rt legacy" data-testid="research-panel" role="dialog" aria-label="Research">
   <div class="top">
     <Icon name="research" size={18} /><b>Research</b>
     <span class="chip" data-testid="research-labs">{rs.labs} {rs.labs === 1 ? 'module' : 'modules'}</span>

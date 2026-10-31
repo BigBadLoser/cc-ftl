@@ -79,7 +79,7 @@ function bounty(sim: Sim, port: Port, key: string, h: (salt: number) => number, 
   const shipgen = pickWeighted(def?.ships ?? [], h(8));
   if (!def?.fleet || !shipgen) return null;
   const danger = nodeOf(sim, at.node)?.danger ?? 0;
-  const name = shipNameFor(def.fleet.names, [strHash(key), 0xb0], usedNames(sim));
+  const name = shipNameFor(def.fleet.names, [sim.seed, strHash(key), 0xb0], usedNames(sim));
   return {
     key, kind: 'bounty', issuer: port.owner, from: port.id, node: at.node, target: name, targetFaction: faction, shipgen,
     seed: hash32(sim.seed, strHash(key), 0xb1) & 0x7fffffff, depth: Math.max(1, danger),

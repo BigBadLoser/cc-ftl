@@ -36,7 +36,6 @@
 
 <style>
   /* With the combat panel open (left, 420px) the card centres in the space between it and the right column (260px). */
-  @media (min-width: 601px) { :global(:root[data-combat]:not([data-combat-free])) .card { left: max(calc(50vw + 56px), calc(var(--combat-right, 436px) + 170px)); } }
   .card { display: grid; gap: 6px; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 8px); left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 16px)); z-index: 6; }
   .who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
   .who i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }
@@ -48,7 +47,7 @@
   .dim { color: var(--dim); }
   .result { color: var(--red); }
   button { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
+  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
   .go.flee { border-color: var(--red); }
   @media (max-width: 600px) { .card { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; border-width: 1px 0 0; padding-bottom: calc(10px + var(--sab)); } }
 </style>

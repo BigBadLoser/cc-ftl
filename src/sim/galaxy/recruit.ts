@@ -1,9 +1,9 @@
 import { setsOf, stationIdentity } from '../blackmarket/services';
+import { abortTask } from '../ai/task';
 import type { Sim } from '../sim';
 import { SkillXpC, XP_PER_LEVEL } from '../story/components';
 import { spawnNamedCrew } from '../combat/ships';
-import { isIncapacitated, releaseAssignment } from '../crew/helpers';
-import { releaseBedClaim } from '../crew/beds';
+import { isIncapacitated } from '../crew/helpers';
 import { CrewC, DeadC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { VehicleC } from '../vehicles/components';
@@ -149,8 +149,7 @@ export function syncRecruits(sim: Sim): void {
     const fh = sim.world.get(id, ForHireC);
     if (!fh || fetching(sim, id)) continue;
     if (here.get(fh.station)?.some((r) => r.key === fh.key)) continue;
-    releaseAssignment(sim, id);
-    releaseBedClaim(sim, id);
+    abortTask(sim, id, 'removed');
     sim.world.destroyEntity(id);
   }
   for (const [station, list] of here) {

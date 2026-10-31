@@ -4,6 +4,7 @@ import { CrewC, DeadC, DownedC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, S
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
+import { recallReason } from './boardingText';
 import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
 import { createStore, type Readable } from './store';
 
@@ -18,6 +19,7 @@ const EXPIRE_MS = 45000;
 export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> = {
   'combat.started': 'urgent', 'fire.started': 'urgent', 'hull.breach': 'urgent', 'o2.low': 'urgent', 'power.shortage': 'urgent',
   'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
+  'crew.recallStarted': 'urgent', 'crew.recallFailed': 'urgent', // a party member left on the enemy ship (the rest of the boarding events are log-only)
   'story.started': 'urgent', // only a notice with a lead you can open; plain notices are log-only (see describe)
   'crew.died': 'log', 'crew.rescued': 'log', 'crew.moodLow': 'log', 'job.missingMaterials': 'log', 'storage.full': 'log', 'production.done': 'log',
   'mining.waiting': 'log', 'mining.done': 'log', 'transfer.queued': 'log', 'transfer.delivered': 'log', 'transfer.blocked': 'log',
@@ -35,6 +37,10 @@ export interface Alerts {
   get(id: number): UiAlert | undefined;
   /** Arrival warnings: bring the "drops from hyperspace" alerts in line with the fleets now on their way to the player's node (state, not events). */
   syncIncoming(): void;
+  /** Raise an alert that is not a reaction to one event (the fight report); it stays until dismissed or `clear`ed. */
+  post(a: { kind: UiAlertKind; key: string; text: string; report?: boolean }): void;
+  /** Remove the alerts raised under a key. */
+  clear(key: string): void;
   /** Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...). Cheap; call it every few frames. */
   sync(): void;
 }
@@ -131,6 +137,17 @@ export function createAlerts(sim: Sim): Alerts {
         const aliens = e.aliens;
         return { kind: 'creatures.aboard', key: `ca${e.ship}`, text: `Creatures aboard: ${sim.world.get(e.ship, ShipC)?.name ?? 'wreck'}`, subject: tileAt(e.x, e.y), resolved: () => !aliens.some(alive) };
       }
+      case 'crew.recallStarted': case 'crew.recallFailed': {
+        // Boarders who could not be brought home are still on the enemy ship: urgent while they stand there.
+        const stuck = e.type === 'crew.recallStarted' ? e.left : e.crew.map((crew) => ({ crew, reason: e.reason }));
+        const first = stuck[0];
+        if (!first) return null;
+        const ids = stuck.map((l) => l.crew);
+        const reasons = [...new Set(stuck.map((l) => recallReason(l.reason)))].join(', ');
+        const text = `Left behind: ${ids.map(crewName).join(', ')} (${reasons})`;
+        const aboard = (id: number) => alive(id) && shipIdOf(sim, sim.world.get(id, PositionC)) !== home();
+        return { kind: 'boarders.stranded', key: `rl${first.crew}`, text, subject: crewSubject(sim, first.crew), resolved: () => !ids.some(aboard) };
+      }
       case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !sim.sector.inCombat };
       default: return null;
     }
@@ -183,6 +200,16 @@ export function createAlerts(sim: Sim): Alerts {
   return {
     list: store,
     syncIncoming,
+    post(a) {
+      for (const [id, k] of keys) if (k === a.key) remove(id);
+      const id = nextId++;
+      keys.set(id, a.key);
+      store.update((l) => [{ id, kind: a.kind, text: a.text, subject: null, ...(a.report ? { report: true } : {}) }, ...l]);
+      for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    },
+    clear(key) {
+      for (const [id, k] of keys) if (k === key) remove(id);
+    },
     get: (id) => store.get().find((a) => a.id === id),
     dismiss(id) {
       const n = store.get().find((a) => a.id === id)?.notice;

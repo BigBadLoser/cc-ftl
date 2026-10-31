@@ -109,16 +109,16 @@ describe('placement tool state', () => {
   it('rotates with R and back with Shift+R', () => {
     const { c, h } = setup();
     c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.fabricator' });
-    h.onKey('r');
+    h.onKey('rotate');
     expect(toolOf(c).rot).toBe(1);
-    h.onKey('r', true);
-    h.onKey('r', true);
+    h.onKey('rotateBack');
+    h.onKey('rotateBack');
     expect(toolOf(c).rot).toBe(3);
   });
 
   it.each(['escape', 'back'])('%s drops the placement first, then leaves build mode', (how) => {
     const { c, h } = setup();
-    const press = () => (how === 'escape' ? h.onKey('escape') : h.onContext(0, 0, false));
+    const press = () => (how === 'escape' ? c.cancel() : h.onContext(0, 0, false));
     c.setTool({ tool: 'build', build: 'module', moduleDef: 'module.fabricator' });
     press();
     expect(toolOf(c)).toMatchObject({ tool: 'build', build: 'module', moduleDef: null });
@@ -139,5 +139,27 @@ describe('placement reasons', () => {
       expect(m.length).toBeGreaterThan(8);
     }
     expect(rejectionMessage('unknownCode')).not.toContain('unknownCode');
+  });
+});
+
+describe('combat start', () => {
+  it('drops an active build tool, and canvas paints no longer reach the tools during the fight', () => {
+    const sim2 = newGame(1, content);
+    const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
+    const c = createController(sim2, bridge);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setCutaway: () => undefined } as unknown as Renderer);
+    c.setTool({ tool: 'deconstruct' });
+    c.upkeep();
+    expect(toolOf(c).tool).toBe('deconstruct'); // no fight: untouched
+    sim2.sector.inCombat = true;
+    expect(h.paintMode()).toBe(false);
+    c.upkeep();
+    expect(toolOf(c).tool).toBe('select');
+    c.setTool({ tool: 'build', build: 'wall' });
+    c.upkeep(); // still the same fight: no further reset (nothing in the UI offers tools, but the edge fires once)
+    expect(toolOf(c).tool).toBe('build');
+    sim2.sector.inCombat = false;
+    c.upkeep();
+    expect(h.paintMode()).toBe(true);
   });
 });

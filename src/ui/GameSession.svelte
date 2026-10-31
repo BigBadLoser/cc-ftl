@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiSession } from './api';
+  import { holdModal } from './keys';
 
   /**
    * The game's lifecycle on screen: the game-over screen when the ship or crew is lost (load the last save, or start over),
@@ -9,6 +10,10 @@
   let { api }: { api: UiApi } = $props();
   let session = $state<UiSession>({ notice: null, lost: null });
   onMount(() => api.session.subscribe((v) => (session = v)));
+  // The game-over screen is modal: game keys stand aside, and Esc does not open the menu under it.
+  $effect(() => {
+    if (session.lost) return holdModal();
+  });
 </script>
 
 {#if session.lost}

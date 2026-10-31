@@ -2,11 +2,12 @@ import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
-import type { UiSubject, UiToolState } from '../ui/api';
+import type { UiFightReport, UiSubject, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
 import type { InputHandlers, Tile } from './input';
 import { createPaintTools } from './paintTools';
 import { createAlerts, type Alerts } from './alerts';
+import { createFightReporter } from './fightReport';
 import { createEventLog, type EventLog } from './eventLog';
 import { rejectionMessage } from './messages';
 import { createStore, type Readable } from './store';
@@ -50,6 +51,8 @@ export interface Controller {
   /** "Target in view": the armed aim and how to arm it. */
   aiming: Aiming;
   alerts: Alerts;
+  /** The post-fight breakdown card: `open` holds its data while it is showing. */
+  fightReport: { open: Readable<UiFightReport | null>; show(alertId?: number): void; close(): void };
   log: EventLog;
   toast: Readable<string | null>;
   setTool(state: Partial<UiToolState>): void;
@@ -66,6 +69,8 @@ export interface Controller {
   focusSubject(subject: UiSubject): void;
   /** Per-frame upkeep: alerts whose condition resolved clear themselves, and credits that arrived without an event get logged. */
   upkeep(): void;
+  /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel (the Esc menu opens). */
+  cancel(): boolean;
   onEvents(events: SimEvent[]): void;
   /** Wire up the renderer once the canvas exists; returns handlers for attachInput. */
   attach(renderer: Renderer): InputHandlers;
@@ -82,6 +87,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
   const log = createEventLog(sim);
+  const reporter = createFightReporter(sim);
+  let lastReport: UiFightReport | null = null;
+  const reportOpen = createStore<UiFightReport | null>(null);
   const crewSel = createStore<number | null>(null);
   const group = createStore<number[]>([]);
   const shuttleSel = createStore<number | null>(null);
@@ -114,7 +122,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     bridge.watchCrew(null);
     pushRings();
   };
+  /** A tile is selected (the inspector shows it). */
+  let tileSel = false;
   const selectTile = (t: Tile | null, ship = homeShipId()) => {
+    tileSel = !!t;
     shipSel.set(null);
     astSel.set(null);
     clearCrew();
@@ -189,6 +200,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const paint = createPaintTools(sim, bridge, { tool, placeHint, renderer: () => r, showToast, homeShipId });
   const { setTool } = paint;
   /** "Target in view" (a weapon armed from the main view): its left-click aim, cancelled by right-click or Esc before anything else. */
+  let wasFighting = sim.sector.inCombat;
   const aiming = createAiming(sim, () => homeShip(sim), () => r?.setAimHover(null));
   const back = () => {
     if (aiming.aiming.get()) return aiming.set(null);
@@ -229,6 +241,18 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     tool,
     placeHint,
     alerts,
+    fightReport: {
+      open: reportOpen,
+      show(alertId) {
+        if (alertId !== undefined) alerts.dismiss(alertId);
+        else alerts.clear('fr');
+        reportOpen.set(lastReport);
+      },
+      close() {
+        alerts.clear('fr');
+        reportOpen.set(null);
+      },
+    },
     log,
     selectedModule: modSel,
     selectedShip: shipSel,
@@ -256,6 +280,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     },
     focusSubject,
     upkeep() {
+      // A fight starting drops any build / deconstruct tool (its UI is hidden), so canvas clicks reach weapon targeting.
+      const fighting = sim.sector.inCombat;
+      if (fighting && !wasFighting && tool.get().tool !== 'select') paint.endTools();
+      wasFighting = fighting;
       alerts.sync();
       log.sync();
     },
@@ -264,14 +292,42 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectCrew,
     focusCrew,
     attack,
+    cancel() {
+      if (menu.get()) {
+        menu.set(null);
+        plan = null;
+        return true;
+      }
+      if (aiming.aiming.get() || tool.get().tool !== 'select') {
+        back();
+        return true;
+      }
+      const selected = tileSel || crewSel.get() !== null || group.get().length > 0 || shuttleSel.get() !== null || modSel.get() !== null
+        || siteSel.get() !== null || shipSel.get() !== null || astSel.get() !== null;
+      if (selected) selectTile(null);
+      return selected;
+    },
     onEvents(events) {
       for (const e of events) {
         if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
         else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
+      // Arriving at a node: the old node's tile, ship and crew selection means nothing there.
+      if (events.some((e) => e.type === 'sector.deployed')) selectTile(null);
+      if (events.some((e) => e.type === 'combat.started')) {
+        // The next fight closes the last one's card and its alert.
+        alerts.clear('fr');
+        reportOpen.set(null);
+      }
+      const done = reporter.onEvents(events);
+      if (done) {
+        lastReport = done.report;
+        alerts.post({ kind: 'fight.report', key: 'fr', text: done.summary.text, report: true });
+      }
       alerts.onEvents(events);
       alerts.syncIncoming();
       log.onEvents(events);
+      if (done) log.note(done.summary); // after the per-module lines, so the summary reads last
     },
     attach(renderer) {
       r = renderer;
@@ -356,19 +412,24 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         },
         onHover: paint.onHover,
         onPointer: (sx, sy) => aiming.hover(renderer, sx, sy),
-        paintMode: paint.paintMode,
+        paintMode: () => !sim.sector.inCombat && paint.paintMode(),
         pickLift: paint.pickLift,
-        onPaint: paint.onPaint,
-        onKey(key, shift) {
+        onPaint: (phase, t) => (sim.sector.inCombat ? paint.onPaint('cancel', null) : paint.onPaint(phase, t)),
+        onKey(action) {
+          // An open order menu: the key only dismisses it.
           if (menu.get()) {
             menu.set(null);
             plan = null;
-          } else if (key === 'r') {
-            if (paint.moduleMode()) paint.rotate(shift);
-            else toggleDraft();
+            return true;
           }
-          else if (aiming.aiming.get() || tool.get().tool !== 'select') back();
-          else selectTile(null);
+          if (action === 'rotate' || action === 'rotateBack') {
+            if (!paint.moduleMode()) return false;
+            paint.rotate(action === 'rotateBack');
+            return true;
+          }
+          if (paint.moduleMode()) return false;
+          toggleDraft();
+          return true;
         },
       };
     },

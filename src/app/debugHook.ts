@@ -1,4 +1,4 @@
-import { PathC, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
+import { StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { ItemStackC } from '../sim/items/components';
@@ -6,6 +6,10 @@ import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
 import { AsteroidC } from '../sim/asteroids/components';
+import { addHeat } from '../sim/combat/heat';
+import { explainAll, explainCrew } from '../sim/ai/explain';
+import { auditReservations } from '../sim/ai/audit';
+import { parkCrew } from './parkCrew';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -27,8 +31,18 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       }
       return r.info().zoom;
     },
+    /** Committed enemy aims (the incoming-fire telegraph): weapon module, target ship, aim area and charge. */
+    commits: () => [...sim.world.query(WeaponC)].flatMap((id) => {
+      const w = sim.world.get(id, WeaponC);
+      return w?.commit ? [{ id, ship: w.commit.target.ship, x: w.commit.x, y: w.commit.y, w: w.commit.w, h: w.commit.h, charge: w.charge }] : [];
+    }),
     /** Sheet streaming: decoded bytes resident (total and per pool), requests, pending, scene rebuilds. */
     art: () => r.art(),
+    /** Crew AI inspector (docs/CREW_AI.md section 11, first cut): a crew member's drive, interrupt, task state path and holds; `dump` for all. */
+    ai: {
+      crew: (id: number) => explainCrew(sim, id),
+      dump: () => ({ crew: explainAll(sim), audit: auditReservations(sim), log: sim.aiLog }),
+    },
     /** Trade and handover deals: phase, shuttle state and position, airlock. */
     deals: () => sim.trade.deals.map((d) => {
       const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
@@ -51,6 +65,19 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
         out.push({ id, shipId: shipIdOf(sim, m), ship: shipIdOf(sim, m), x: m.x, y: m.y, ax: a.x, ay: a.y });
       }
       return out;
+    },
+    /** Burning tiles of a ship, and the floor tiles that touch open space (damage-control screenshots). */
+    hazards(shipId: number) {
+      const grid = shipGrid(sim, shipId);
+      const fires: { x: number; y: number }[] = [];
+      const breaches: { x: number; y: number }[] = [];
+      if (grid)
+        for (let y = grid.y0; y < grid.y0 + grid.height; y++)
+          for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+            if (grid.get('fire', x, y) > 0) fires.push({ x, y });
+            if (grid.get('room', x, y) && ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => grid.inBounds(x + dx, y + dy) && grid.get('struct', x + dx, y + dy) === Struct.Space)) breaches.push({ x, y });
+          }
+      return { fires, breaches };
     },
     /** A ship's modules with their power state and hp, and its ruin dressing counts (for derelict checks). */
     wreck(shipId: number) {
@@ -129,7 +156,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       /** Set the progress of every module construction site to a share of its work (the ghost shots). */
       siteProgress: (frac: number) => { for (const id of sim.world.query(JobC)) { const j = sim.world.get(id, JobC); if (j?.kind === 'module') j.progress = Math.round(j.work * frac); } },
       /** Put every player crew member on a tile and drop their orders (keeps crew out of the ghost shots). */
-      parkCrew: (x: number, y: number) => { let i = 0; for (const id of sim.world.query(CrewC, PositionC)) { const p = sim.world.get(id, PositionC); const path = sim.world.get(id, PathC); if (p && sim.world.get(id, AllegianceC)?.faction === 'player') { p.x = p.toX = x + (i++ % 3); p.y = p.toY = y; p.progress = 0; if (path) path.steps = []; sim.world.remove(id, AssignmentC); } } },
+      parkCrew: (x: number, y: number) => parkCrew(sim, x, y),
       /** Take stored `item` out of every storage until `keep` units are left (the "missing materials" shot). */
       drainStock: (item: string, keep: number) => { for (const id of sim.world.query(StorageC)) { const extra = totalStock(sim, item) - keep; if (extra > 0) storageTake(sim, id, item, extra); } },
       /** Set a suit's tank (the air-warning shot). */
@@ -138,7 +165,11 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
       needs: (crew: number, hunger: number, rest?: number) => { const n = sim.world.get(crew, NeedsC); if (n) { n.hunger = hunger; if (rest !== undefined) n.rest = rest; } },
       /** Fill the player's FTL drive (a fresh game has no pilot at the helm to charge it). */
       chargeFtl: () => { const c = sim.world.get(playerShip(sim), CombatC); if (c) c.ftl = FTL_CHARGE_SEC; },
-      /** Mood readout. */
+      /** Set a ship's integrity 0..1 (screenshots: a battered enemy). */
+    setIntegrity: (ship: number, v: number) => { const sc = sim.world.get(ship, ShipC); if (sc) sc.integrity = v; },
+    /** Add combat heat to a ship (screenshots: force an overheat). */
+    addHeat: (ship: number, amount: number) => addHeat(sim, ship, amount),
+    /** Mood readout. */
       mood: (crew: number) => sim.world.get(crew, MoodC) ?? null,
     },
     /** Module construction sites with their status (progress, materials, block). */

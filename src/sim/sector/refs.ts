@@ -16,8 +16,9 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   const target = (t: Target): Target => (t && (t.vehicle ? gone(t.vehicle) : gone(t.ship)) ? null : t);
   const combat = data.combat as { target: Target } | undefined;
   if (combat) combat.target = target(combat.target);
-  const weapon = data.weapon as { target: Target; volleyTarget: Target; shotsLeft: number } | undefined;
+  const weapon = data.weapon as { target: Target; volleyTarget: Target; shotsLeft: number; commit?: { target: Target } | null } | undefined;
   if (weapon) {
+    if (weapon.commit && !target(weapon.commit.target)) weapon.commit = null; // a telegraphed aim at a ship across the cut would come back with stale coordinates
     weapon.target = target(weapon.target);
     const volley = target(weapon.volleyTarget);
     if (weapon.volleyTarget && !volley) weapon.shotsLeft = 0;
@@ -33,6 +34,10 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   const downed = data.downed as { bed: number } | undefined;
   if (downed && gone(downed.bed)) downed.bed = 0;
   if (gone((data.assignment as { jobId: number } | undefined)?.jobId)) delete data.assignment;
+  // The crew-AI task mirrors the assignment and claims: one that refers across the cut ends (the scheduler re-derives it).
+  const task = data.task as { job: number; holds: { id: number }[]; bb: { target?: number; aux?: number } } | undefined;
+  if (task && (gone(task.job) || task.holds.some((h) => gone(h.id)) || gone(task.bb.target) || gone(task.bb.aux))) delete data.task;
   if (gone((data.bedClaim as { bed: number } | undefined)?.bed)) delete data.bedClaim;
+  if (gone((data.bedOwner as { bed: number } | undefined)?.bed)) delete data.bedOwner;
   return data;
 }

@@ -8,9 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:quick": "vitest run --exclude 'src/**/*.slow.test.ts'",
+    "test:quick": "vitest run --exclude '**/*.slow.test.ts'",
     "test:slow": "vitest run .slow.test",
-    "test:fast": "vitest run --changed --passWithNoTests --exclude 'src/**/*.slow.test.ts'",
+    "test:fast": "vitest run --changed --passWithNoTests --exclude '**/*.slow.test.ts'",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p . && svelte-check --tsconfig ./tsconfig.json",
     "lab:build": "vite build -c spikes/crew-lab/vite.config.ts && node spikes/crew-lab/post.mjs",
@@ -20,7 +20,11 @@
     "assets": "tools/blender/setup.sh && \"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/build.py",
     "assets:preview": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/preview.py -- /tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scratchpad/assets-preview",
     "sprites": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/sprites/build_sprites.py",
-    "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs"
+    "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs",
+    "profile": "node tools/profile/cli.js",
+    "profile:sim": "node tools/profile/sim.js",
+    "profile:baseline": "node tools/profile/baseline.js",
+    "ai:diff": "node tools/profile/aiDiff.js"
   },
   "dependencies": {
     "@tabler/icons": "3.49.0",

@@ -144,6 +144,8 @@ export interface Job {
   yardRank?: number;
   /** The yard's closing wall: only the yard's own crew take it (anyone else might wall themselves in). */
   yardOnly?: true;
+  /** sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them. */
+  holder?: number;
 }
 export const JobC = defineComponent<Job>('job');
 
@@ -151,6 +153,8 @@ export type JobKind =
   | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
+  /** sabotage: a boarder wrecks the hostile ship's module `target` from beside it (boarding/sabotage.ts). */
+  | 'sabotage'
   /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
   | 'assemble'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
@@ -195,6 +199,15 @@ export interface BedClaim {
   bed: number;
 }
 export const BedClaimC = defineComponent<BedClaim>('bedClaim');
+
+/**
+ * The bed module a crew member owns: assigned by the bed-owner pass (nearest unowned bed on their ship) and kept until the
+ * bed is lost or they change ship. Tired crew walk to it first (BedClaim is the temporary reservation for one sleep).
+ */
+export interface BedOwner {
+  bed: number;
+}
+export const BedOwnerC = defineComponent<BedOwner>('bedOwner');
 
 /**
  * A hungry crew member on the way to eat (left = -1) or eating (left = ticks to go). `x, y` is the tile to stand on:

@@ -1,6 +1,7 @@
 import { shipIdOf } from '../regions';
+import { abortTask } from '../ai/task';
 import { AssignmentC, CrewC, DraftedC, JobC, PathC, PositionC, type Drafted, type Path, type Position } from '../crew/components';
-import { atJob, hasRoute, isIncapacitated, jobGoal, origin, releaseAssignment } from '../crew/helpers';
+import { atJob, hasRoute, isIncapacitated, jobGoal, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import type { Sim } from '../sim';
 import { shipIdAt } from '../regions';
@@ -20,7 +21,7 @@ export function draftedSystem(sim: Sim): void {
       if (job && path.steps.length === 0 && !hasRoute(sim, id) && !atJob(origin(pos), job)) {
         const plan = planWalk(sim, id, shipIdOf(sim, pos), origin(pos), jobGoal(job));
         if (plan) path.steps = plan.steps;
-        else releaseAssignment(sim, id);
+        else abortTask(sim, id, 'unreachable');
       }
       continue;
     }
