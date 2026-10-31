@@ -48,7 +48,7 @@ const errorLog = createErrorLog();
 const consoleRing = installConsoleRing();
 let gameCanvas: HTMLCanvasElement | undefined;
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
-const start = await startGame(new URLSearchParams(location.search).get('seed'));
+const start = await startGame(new URLSearchParams(location.search).get('seed'), new URLSearchParams(location.search).get('starter'));
 const sim = start.sim;
 const bridge = createBridge(sim);
 const controller = createController(sim, bridge);

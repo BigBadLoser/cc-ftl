@@ -23,12 +23,13 @@ import { blackMarkets } from './blackMarkets';
 import { creatures } from './creatures';
 import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
+import { starterShips } from './ships/starterShips';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
 
 const modules = { ...baseModules, ...tierModules };
 
 export const content = {
-  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard },
+  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard, ...Object.fromEntries(starterShips.map((s) => [s.id, s.template])) },
   roles,
   modules,
   species,
