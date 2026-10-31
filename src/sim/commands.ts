@@ -1,6 +1,6 @@
 import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
-import type { ItemQty } from './registry';
+import type { ItemQty, SkillName } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
@@ -170,6 +170,8 @@ export type Command =
   | { type: 'module.cancelAssembly'; moduleId: number }
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
   | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
+  /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
+  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number }
   /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */
   | { type: 'debug.spawnModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Set the battery (0..100) of every battery robot (the debug panel). */

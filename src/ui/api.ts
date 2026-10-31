@@ -1,5 +1,7 @@
 import type { UiDeploy, UiJumpWarnings, UiSellGood, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
+import type { UiCrewDetail } from './crewDetailApi';
+export type * from './crewDetailApi';
 import type { Command, SimEvent, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -1209,6 +1211,8 @@ export interface UiApi {
   crew: Subscribable<UiCrew[]>;
   /** Hostile crew on grids the player's crew stand on. */
   hostiles: Subscribable<UiCrew[]>;
+  /** The inspector's Status, Skills and Gear tabs for the selected crew member of the player's (null otherwise). */
+  crewDetail: Subscribable<UiCrewDetail | null>;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
   /** Order the selected drafted crew to attack a hostile crew member. */
