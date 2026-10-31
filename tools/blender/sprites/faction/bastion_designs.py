@@ -150,7 +150,7 @@ def bastion_module(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back
     lamp(k, ax, fp, a + 0.36, b - 0.03, c + 0.03, c + 0.11, dl, "red")
 
 
-BAST_PANEL = (0.15, 0.70)           # the ramp's panel (the base design's outline) and the slot cut where it lies:
+BAST_PANEL = (0.15, 0.79)           # the ramp's panel (the base design's outline) and the slot cut where it lies:
                                     # its top and bottom down the run (fractions of it)
 
 
