@@ -56,6 +56,7 @@ export function createDescriber(sim: Sim) {
       }
       case 'combat.started': return { kind: 'combat', tone: 'warn', text: 'Combat started', ...sub(enemyShip(sim, home())) };
       case 'combat.ended': return { kind: 'combat', tone: 'info', text: 'Combat over' };
+      case 'ship.surrendered': return { kind: 'ship.disabled', tone: 'good', text: `${shipName(e.ship)} surrenders`, ...onShip(e.ship) };
       case 'ship.disabled': return { kind: e.type, tone: mine(e.ship) ? 'bad' : 'good', text: `${shipName(e.ship)} disabled`, ...onShip(e.ship) };
       case 'ship.destroyed': return mine(e.ship) ? { kind: 'lost', tone: 'bad', text: 'Your ship was destroyed' } : { kind: e.type, tone: 'good', text: `${shipName(e.ship)} destroyed` };
       case 'ship.fled': return { kind: e.type, tone: 'info', text: `${shipName(e.ship)} jumped away` };

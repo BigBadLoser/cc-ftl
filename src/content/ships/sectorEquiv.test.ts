@@ -274,4 +274,7 @@ describe('sector refactor equivalence', () => {
 // Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks; on main alone it pinned b0b4e040.
 // Merged with combat round 1 it is e65e90fe; the disaster hash is unchanged by the bed owners.
 // Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it.
-const EXPECTED = { combat: 'e65e90fe', disaster: '6317c54b' };
+// Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
+// draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run.
+// The disaster run has no fight and is unchanged.
+const EXPECTED = { combat: 'd2b2f525', disaster: '6317c54b' };
