@@ -4,11 +4,10 @@ import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { factionsHostile, isAiFaction, rogueAlly } from '../combat/factions';
 import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
-import { CrewC, DeadC, PositionC } from '../crew/components';
-import { shipIdOf } from '../regions';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { AboardC, BoarderC, VehicleC } from '../vehicles/components';
+import { BoarderC, VehicleC } from '../vehicles/components';
+import { partyOut } from '../boarding/partyOut';
 import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 
 /**
@@ -98,11 +97,3 @@ function pick(sim: Sim, combat: Combat, shipId: number): number {
   return randomModule(sim, shipId);
 }
 
-/** Is a boarding party actually away from its ship: a live member riding the shuttle or standing on another ship? A launch that was dropped leaves them home, so no hold. */
-function partyOut(sim: Sim, shipId: number, crew: readonly number[]): boolean {
-  return crew.some((c) => {
-    if (!sim.world.has(c, CrewC) || sim.world.has(c, DeadC)) return false;
-    const pos = sim.world.get(c, PositionC);
-    return pos ? shipIdOf(sim, pos) !== shipId : sim.world.has(c, AboardC);
-  });
-}

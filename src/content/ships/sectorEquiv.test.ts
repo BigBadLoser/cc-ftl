@@ -276,4 +276,7 @@ describe('sector refactor equivalence', () => {
 // Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it (and by the empty `boardHold` store).
 // Repinned for mining as income (#222): the starter crate now carries water and oxygen (the hashed world holds storage, so both hashes change by that
 // alone), the galley's rations take water, and life support burns bottled oxygen to refill a room short of air (the breach run).
-const EXPECTED = { combat: '665e78a2', disaster: '2cf7530b' };
+// Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
+// draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run. On the
+// pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
+const EXPECTED = { combat: '694a0569', disaster: '2cf7530b' };
