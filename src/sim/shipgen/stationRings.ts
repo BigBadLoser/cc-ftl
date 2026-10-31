@@ -339,25 +339,57 @@ function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
 /** Shop units along the market street: floor across the concourse (depth) and along it (width). */
 const SHOP = { depth: 5, width: 4 };
 
+/** A unit lining a spoke: its room, and its floor along the spoke and across it. */
+interface Unit { spec: RoomSpec; along: number; across: number }
+
 /**
- * The market street: shop units both sides of the south concourse (the spoke from the centre to the ring of radius R,
- * floor x -1..1, walls at x -2 and 2), from the ring inward until something is in the way, each opening onto the
- * concourse through its middle (an archway at fit-out: shops are open rooms). Straight geometry, so the units are
- * rectangles of one width, a row of identical fronts.
+ * Rooms lining a straight spoke (from the centre out along direction d to the ring of radius R; floor 3 wide, walls 2
+ * either side of its axis), both sides, from the ring inward until something is in the way or `next` runs out; each
+ * opens onto the spoke through its middle. Straight geometry, so the units are plain rectangles: the market street's
+ * shops, a clinic's ward and treatment rooms. Returns the units placed.
  */
-function street(b: Builder, R: number): number {
-  const { depth: D, width: U } = SHOP;
-  let n = 0;
+function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => Unit | null): RoomSpec[] {
+  // (u along the spoke from the centre, v across it) to canvas (x, y).
+  const xy = (u: number, v: number): [number, number] => (d === 's' ? [v, u] : d === 'n' ? [v, -u] : d === 'e' ? [u, v] : [-u, v]);
+  const out: RoomSpec[] = [];
+  // A unit that did not fit on one side tries the other.
+  let carry: Unit | null = null;
   for (const side of [-1, 1] as const) {
-    for (let y = R - 3 - (U + 1); y > 0; y -= U + 1) {
-      const rect: Rect = { x: side < 0 ? -2 - (D + 1) : 2, y, w: D + 2, h: U + 2 };
-      if (!free(b, rect)) break;
-      if (!b.place(rect, 'shop', { role: 'shop', mods: [], w: D, h: U, dept: 'commons' })) break;
-      b.cv.setDoor(side < 0 ? -2 : 2, y + ((U + 2) >> 1));
-      n++;
+    let u = R - 3;
+    for (let unit: Unit | null = carry ?? next(); unit; unit = next()) {
+      carry = unit;
+      const { along: A, across: C } = unit;
+      const u0 = u - (A + 1);
+      if (u0 <= 0) break;
+      const v0 = side < 0 ? -2 - (C + 1) : 2;
+      const [ax, ay] = xy(u0, v0), [bx, by] = xy(u0 + A + 1, v0 + C + 1);
+      const rect: Rect = { x: Math.min(ax, bx), y: Math.min(ay, by), w: Math.abs(bx - ax) + 1, h: Math.abs(by - ay) + 1 };
+      if (!free(b, rect) || !b.place(rect, unit.spec.role, unit.spec)) break;
+      const [dx, dy] = xy(u0 + ((A + 2) >> 1), side < 0 ? -2 : 2);
+      b.cv.setDoor(dx, dy);
+      out.push(unit.spec);
+      carry = null;
+      u = u0;
     }
   }
-  return n;
+  return out;
+}
+
+/** The market street: identical shop units along the south concourse, as many as fit. */
+const street = (b: Builder, R: number): number =>
+  lineSpoke(b, R, 's', () => ({ spec: { role: 'shop', mods: [], w: SHOP.depth, h: SHOP.width, dept: 'commons' }, along: SHOP.width, across: SHOP.depth })).length;
+
+/**
+ * A clinic (a large station's medbays): the ward and its treatment rooms line the spoke between the two habitation
+ * quadrants, near the ring. Returns the rooms that found no place.
+ */
+function clinic(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', rooms: RoomSpec[]): RoomSpec[] {
+  const queue = [...rooms];
+  const placed = lineSpoke(b, R, d, () => {
+    const r = queue.shift();
+    return r ? { spec: r, along: Math.max(r.w, r.h), across: Math.min(r.w, r.h) } : null;
+  });
+  return rooms.filter((r) => !placed.includes(r));
 }
 
 /** A warehouse in two, each with half its crates and floor (the second take on a crowded ring). */
@@ -385,17 +417,19 @@ const QUARTERS: [number, number][] = [0, 1, 2, 3].map((q) => [q * (TAU / 4) + 0.
  * The outboard band of a full round ring with its docks reserved first (dock banks on the north and south faces), the
  * band cut round them, then the system rooms on the rim beyond the band, clear of the banks.
  */
-function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number, market = false): boolean {
+function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys: RoomSpec[], docks: RoomSpec[], depth: number, market = false): boolean {
   // Docks reach at least 6 past the corridor whatever the band (an airlock and its unloaders need the length).
   const banks = dockBanks(b, R, ring, docks, R + Math.max(depth, 6) + 2);
   if (!banks) return false;
   // Departments (stationDepartments.ts): a small search places the secure core, the warehouses and habitation.
   const westDocks = banks.splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);
-  const plan = planRing(b.rng, [...band, ...sys], westDocks, market);
+  const plan = planRing(b.rng, [...bandIn, ...sys], westDocks, market);
   // The band in quadrants (cut at the dock banks and the east and west spokes), dealt by department.
   const arcs = arcsBetween([...new Set([...banks.splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
   // The groups run on round the ring as one list, so every quadrant fills to its length (no quadrant left with two
   // rooms stretched over it) while each department keeps its place in the order.
+  const clinicRooms = bandIn.filter((r) => r.clinic);
+  const band = bandIn.filter((r) => !r.clinic);
   const groups = quadrantRooms(band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
   // The run starts at the main (north) bank, so the office and the customs post are always the first rooms after it.
   const n0 = Math.max(0, arcs.findIndex(([a]) => quadrantOf(a + 1e-6) === 0));
@@ -404,6 +438,12 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   const rim = without([[0, TAU]], banks.keep);
   // A market's street first: shop units both sides of the south concourse, from the ring inward.
   if (market) street(b, R);
+  // A large station's clinic lines the spoke between the habitation quadrants, if that spoke is free of the docks'
+  // departments and the secure core; else its rooms stand inboard like the other rectangles.
+  const SPOKE: Record<string, 'n' | 's' | 'e' | 'w'> = { '0,1': 'e', '1,2': 's', '2,3': 'w', '0,3': 'n' };
+  const quietSpoke = SPOKE[[...plan.quiet].sort().join(',')];
+  const busySpoke = (d: string): boolean => d === 'n' || (d === 's' && (market || plan.freight.includes('s'))) || d === plan.secure;
+  const clinicLeft = quietSpoke && !busySpoke(quietSpoke) ? clinic(b, R, quietSpoke, clinicRooms) : clinicRooms;
   // Rooms that need no hull face go inboard of the corridor, doored straight onto it (never through a band room).
   // The secure core either side of its spoke (east or west, where no dock faces).
   const inner = sys.filter((r) => r.role !== 'weapons');
@@ -428,7 +468,7 @@ function outerBand(b: Builder, R: number, ring: number, band: RoomSpec[], sys: R
   // takes what is left.
   const busy = QUARTERS.filter((_, q) => !plan.quiet.includes(quadrantOf(((q + 1) * TAU) / 4 - TAU / 8)));
   const works = fitAlong(b, R, ring, inner.filter((r) => !isSecure(r) && !r.warehouse), busy, -1);
-  const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...works], QUARTERS, -1);
+  const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...works, ...clinicLeft], QUARTERS, -1);
   // Before the rim, a sweep: each room left over tries every angle inboard in turn, wherever there is space.
   const swept = inboard.filter((r) => !sweep(b, R, ring, r));
   const left = fitAlong(b, R, ring, swept, rim, 1, depth + 1, banks.labels);

@@ -58,6 +58,11 @@ export const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => withMedbays(ro
 function withMedbays(rooms: readonly RoomSpec[]): RoomSpec[] {
   const quarters = rooms.filter((r) => r.role === 'quarters').length;
   if (quarters === 0 || rooms.some((r) => r.role === 'medbay')) return [...rooms];
+  // A large station has a clinic instead: a ward and two treatment rooms that line a spoke together (stationRings.ts).
+  if (quarters >= 8) {
+    const room = (cots: number): RoomSpec => ({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4, pinned: true, clinic: true });
+    return [...rooms, room(4), room(1), room(1)];
+  }
   const n = Math.max(1, Math.round(quarters / 5));
   const cots = Math.min(4, 1 + Math.ceil(quarters / n / 2));
   return [...rooms, ...Array.from({ length: n }, (): RoomSpec => ({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4, pinned: true }))];

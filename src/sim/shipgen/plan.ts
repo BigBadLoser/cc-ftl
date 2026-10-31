@@ -53,6 +53,8 @@ export interface RoomSpec {
   warehouse?: boolean;
   /** Its department on a round station (stationDepartments.ts): role swaps keep to it. */
   dept?: string;
+  /** One of a clinic's rooms (a large station's medbays): they line a spoke together instead of standing in a band. */
+  clinic?: boolean;
   /**
    * Quarters to be one-bed cabins (off the navy): a ring band cuts them as one segment a bed (stationBands.ts); other
    * layouts divide the room off a hallway at fit-out (rooms/cabins.ts).
