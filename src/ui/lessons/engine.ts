@@ -28,7 +28,8 @@ export const LESSON_COOLDOWN_MS = 1500;
 export class LessonEngine {
   /** Triggered lessons in order, each with the time (ms) it may open: trigger time plus its `delay`. */
   private queue: { def: LessonDef; at: number }[] = [];
-  private open: { def: LessonDef; index: number; held: Speed } | null = null;
+  /** `skipped`: the current step was reached by skipping the one before (Skip step), so its `back` doesn't apply: the player chose to move on. */
+  private open: { def: LessonDef; index: number; held: Speed; skipped?: boolean } | null = null;
   private cooldownUntil = -Infinity;
   private now = 0;
   private frame: LessonFrame | null = null;
@@ -82,7 +83,7 @@ export class LessonEngine {
       const step = o.def.steps[o.index];
       if (o.def.while && !checkCondition(o.def.while, f)) this.close(false);
       else if (step && step.advance !== 'gotIt' && checkCondition(step.advance, f)) this.next();
-      else if (step?.back && o.index > 0 && checkCondition(step.back, f)) {
+      else if (step?.back && o.index > 0 && !o.skipped && checkCondition(step.back, f)) {
         o.index--;
         this.applySpeed();
         this.emit();
@@ -103,7 +104,10 @@ export class LessonEngine {
 
   /** Got it: the current step is read. A "do" step can be passed this way too (the card's Skip step). */
   gotIt(): void {
-    if (this.open) this.next();
+    const o = this.open;
+    if (!o) return;
+    const step = o.def.steps[o.index];
+    this.next(step !== undefined && step.advance !== 'gotIt');
   }
 
   /** Close the lesson and do not show it again. */
@@ -128,11 +132,12 @@ export class LessonEngine {
     if (this.frame) this.update(this.frame.ctx, this.now);
   }
 
-  private next(): void {
+  private next(skipped = false): void {
     const o = this.open;
     if (!o) return;
     if (o.index + 1 >= o.def.steps.length) return this.close(true);
     o.index++;
+    o.skipped = skipped;
     this.applySpeed();
     this.emit();
   }

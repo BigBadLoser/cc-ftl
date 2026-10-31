@@ -189,4 +189,19 @@ describe('LessonEngine', () => {
     e.update(ctx({ selectedShip: null }), 2);
     expect(e.current?.index).toBe(0);
   });
+  it('a step reached by Skip step does not step back: the player chose to move on', () => {
+    const def: LessonDef = {
+      id: 'lesson.skipback', title: 'Skip', trigger: when(() => true),
+      steps: [
+        { title: 'one', text: 'a', advance: when((c) => c.selectedShip === 1) },
+        { title: 'two', text: 'b', back: when((c) => c.selectedShip !== 1), advance: onCommand('combat.vent') },
+      ],
+    };
+    const { e } = setup([def]);
+    e.update(ctx({ selectedShip: null }), 0);
+    expect(e.current?.index).toBe(0);
+    e.gotIt(); // Skip step, never having selected
+    e.update(ctx({ selectedShip: null }), 1);
+    expect(e.current?.index).toBe(1);
+  });
 });
