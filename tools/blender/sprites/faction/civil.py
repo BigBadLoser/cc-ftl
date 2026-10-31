@@ -5,9 +5,9 @@ from mathutils import Vector
 from .. import wall3d as T
 from .base import Faction, _style
 from .drone import DRONE_FOOT
-from .navy import NavyShell
+from .navy import PlateTones
 from .parts import LINE, PAINT, PX, _slab, body, corner_piece, prism
-from .shell import _end_section, _ends, _ramp_chamfer
+from .shell import FaceHoles, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends, _ramp_chamfer
 
 
 def rbox(k, ax, plane, u0, u1, z0, z1, fam, lvl):
@@ -24,7 +24,7 @@ def rbox(k, ax, plane, u0, u1, z0, z1, fam, lvl):
 def civil(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
-        X, C = b, (T.STYLE or {}).get("chamfer", 0.0)  # (the wall ends as navy's; its corner chamfered only if the
+        X, C = b, (T.style().chamfer or 0.0)  # (the wall ends as navy's; its corner chamfered only if the
         endf, end1, corner, back = _ends(ax, plane, b, ends)    # look says so)
         if corner and C:
             b -= C
@@ -97,7 +97,7 @@ def _shelves(f0, f1, g0, g1, t):
 
 
 def civil_holes(a, b, zs, top, t):
-    """Where a civil face is open for top design t's shelves (NavyShell.face_holes), as civil lays them out."""
+    """Where a civil face is open for top design t's shelves (FaceHoles), as civil lays them out."""
     if top <= T.W.skirt_top() + T.W.CUT + 0.05:
         return []
     return [h for s0, s1 in T.spans(a, b) if s1 - s0 >= 0.45
@@ -155,7 +155,9 @@ class Civil(Faction):
         super().__init__()
 
     def relief(self, sprite):
-        return _style(civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66, shell=NavyShell,
-                      foot=DRONE_FOOT, face_holes=civil_holes, outline_lvl=1, outline_round=True)
+        return _style(civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66, foot=DRONE_FOOT,
+                      face_holes=civil_holes, outline_lvl=1, outline_round=True, shell=LookShell,
+                      features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone("ochre", 2), FaceHoles(),
+                                PlateTones()))
 
     pairs = CIVIL_PAIRS

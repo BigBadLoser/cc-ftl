@@ -7,6 +7,7 @@ from mathutils import Vector
 from .. import wall3d as T
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, PZ, bezier, body, corner_piece, flat, glow, pipe, prism
+from .shell import NO, Feature, FloorDrop, FootTone, LookShell, SlotHoles
 
 
 def handle(k, ax, plane, u0, u1, zc, d, r=0.045):
@@ -39,64 +40,24 @@ DRONE_HD = 4 / 39                   # the header's foot this far under its old p
                                     # deeper); the handle above the block and the block's top move down with it
 
 
-class CornerCut(T.Shell):
-    """The shell with an outer corner cut off at 45 degrees (DRONE_S along each axis), for a corner face set back
-    into the wall. The skirt keeps its square corner; STYLE "foot" ends it in an upright face that high, and
-    "slot_hole" (from, to down the slope as fractions of its run, half width) cuts the base design's handle slot
-    into it, centred on each field."""
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.foot = (T.STYLE or {}).get("foot", 0.0)
-        if self.foot:                                   # (its toe on a cell line, where the upright foot is drawn)
-            self.run = math.ceil(self.run * T.W.GN - 1e-6) / T.W.GN
-        self.holes = []
-        sh = (T.STYLE or {}).get("slot_hole")
-        if sh and not T.VARIANT[1]:
-            g = 1 / T.W.GN
-            sn = lambda v: round(v / g) * g                                 # noqa: E731  (on the shell's grid)
-            for ax, plane, a, b, _ in T.faces(self):
-                for s0, s1 in T.spans(a, b):
-                    if s1 - s0 > 0.3:
-                        uc = (s0 + s1) / 2
-                        self.holes.append((ax, T.snap(plane), sn(uc - sh[2]), sn(uc + sh[2]), sn(sh[0] * self.run),
-                                           sn(sh[1] * self.run)))
-        for (x0, x1, y0, y1), fam, t, top in self.rects:
-            adj_x = any(abs(o[0][0] - x1) < 1e-9 and o[0][2] < y1 and o[0][3] > y0 for o in self.rects)
-            adj_y = any(abs(o[0][2] - y1) < 1e-9 and o[0][0] < x1 and o[0][1] > x0 for o in self.rects)
-            if not adj_x and not adj_y and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9 and self.keep is None:   # (a
+class CornerCut(Feature):
+    """An outer corner cut off at 45 degrees (DRONE_S along each axis), for a corner face set back into the wall (its
+    status-light channel); the ramp keeps its square corner."""
+    def setup(self, sp):
+        for (x0, x1, y0, y1), fam, t, top in sp.rects:
+            adj_x = any(abs(o[0][0] - x1) < 1e-9 and o[0][2] < y1 and o[0][3] > y0 for o in sp.rects)
+            adj_y = any(abs(o[0][2] - y1) < 1e-9 and o[0][0] < x1 and o[0][1] > x0 for o in sp.rects)
+            if not adj_x and not adj_y and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9 and sp.keep is None:   # (a
                 # partition's outer corner or the far hull's)
                 lim = T.snap(x1) + T.snap(y1) - DRONE_S + 1e-9     # (where the faces really stand)
-                self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
-                self.diag = self.skirt_halves = True
+                sp.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
+                sp.diag = sp.skirt_halves = True
 
-    def drop_at(self, x, y):
-        return 0.0
 
-    def skirtz(self, x, y):
-        if not self.foot:
-            return super().skirtz(x, y)
-        z = 0.0
-        for r in self.rects:
-            x0, x1, y0, y1 = r[0]
-            d = max(x0 - x, x - x1, y0 - y, y - y1, 0.0)
-            if d <= self.run + 1e-9:
-                z = max(z, self.foot + (self.zs - self.foot) * (1.0 - d / self.run))
-        return z
-
-    def skip_skirt(self, i, j):                         # no ramp over the slot
-        c = {"x": (i + 0.5) / T.W.GN - 0.5, "y": (j + 0.5) / T.W.GN - 0.5}
-        for ax, plane, u0, u1, d0, d1 in self.holes:
-            u, d = (c["x"], c["y"] - plane) if ax == "y" else (c["y"], c["x"] - plane)
-            if u0 < u < u1 and d0 < d < d1:
-                return True
-        return super().skip_skirt(i, j)
-
-    def col_face(self, face, x, y, z):
-        if face == "d":
-            return T.RAMPS["wall"][0][2]
-        if z < self.foot - 1e-6:                        # the ramp's upright foot, lit as its plates' edge
-            return T.RAMPS["wall"][0 if face == "y" else 1][3]
-        return super().col_face(face, x, y, z)
+class DiagTone(Feature):
+    """The cut corner's 45-degree face in the wall's plate tone."""
+    def col_face(self, sp, face, x, y, z):
+        return T.RAMPS["wall"][0][2] if face == "d" else NO
 
 
 def chamfer(k, X, Y, e, h, zb, top, z1, F, D=0.0, zbox=None, black=True):
@@ -315,7 +276,8 @@ class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        return _style(drone, skirt="outline", slot=True, seam=0, shell=CornerCut, ramp_var=drone_ramp,
-                      outline_d=(0.1, 0.84), slot_hole=(0.55, 0.72, 0.15), foot=DRONE_FOOT)
+        return _style(drone, skirt="outline", slot=True, seam=0, ramp_var=drone_ramp, outline_d=(0.1, 0.84),
+                      slot_hole=(0.55, 0.72, 0.15), foot=DRONE_FOOT, shell=LookShell,
+                      features=(SlotHoles(), CornerCut(), FloorDrop(), DiagTone(), FootTone("wall", 3)))
 
     pairs = DRONE_PAIRS

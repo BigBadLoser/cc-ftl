@@ -1,16 +1,10 @@
 """Scrap: the default layout under mismatched bolted patch plates, rusty colours."""
 from .. import wall3d as T
+from ..relief_style import Style
 from ..restyle import hashf
 from .base import Faction
 from .parts import LINE, PAINT, PX, body
-from .shell import FreeEnds, _end_section, _ends
-
-
-class ScrapShell(FreeEnds, T.Shell):
-    """The default shell, with a partition's free ends stopped square (FreeEnds); its corners stay square."""
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.find_ends()
+from .shell import FreeEnds, LookShell, _end_section, _ends
 
 
 def scrap(hull, seed):
@@ -54,4 +48,5 @@ class Scrap(Faction):
 
     def relief(self, sprite):
         seed = f"{sprite}|{self.p}"
-        return {"wall": scrap(False, seed), "hull": scrap(True, seed), "shell": ScrapShell}
+        return Style(wall=scrap(False, seed), hull=scrap(True, seed), shell=LookShell,
+                     features=(FreeEnds(),))   # (its corners stay square)

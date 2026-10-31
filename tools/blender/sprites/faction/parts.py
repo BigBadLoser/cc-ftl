@@ -7,7 +7,6 @@ from mathutils import Vector
 
 from .. import wall3d as T
 
-
 PX, PAINT, LINE = T.PX, T.PAINT, T.LINE
 
 

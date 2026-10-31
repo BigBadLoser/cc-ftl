@@ -63,8 +63,7 @@ def ext_face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
 
 
 def ext_block(mask, o, variant=0):
-    st = T.STYLE or {}
-    return T.block(mask, "hull", variant, level="up", shell=ext_shell(o), dress=st.get("ext", ext_face))
+    return T.block(mask, "hull", variant, level="up", shell=ext_shell(o), dress=T.style().ext or ext_face)
 
 
 STRAIGHT = {(10, 1): (1, 0), (5, 2): (0, 1)}       # (mask, o) of the straight runs: the direction they run (tiles)

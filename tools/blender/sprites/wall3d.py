@@ -18,6 +18,7 @@ from mathutils import Vector
 from . import core
 from . import walls as W
 from .rockwall import faces
+from .relief_style import DEFAULT as DEFAULT_STYLE
 from .rockwall_stone import _clip, _end, _inset
 
 # ramp levels 0 (seam black) .. 5 (highlight), per family, for faces toward +y (lit) and +x (shade)
@@ -45,7 +46,7 @@ def tone(fam, lvl, n, side=None):
     else:
         step = 0
     if (n.x > n.y + 1e-6) if side is None or abs(n.z) < 0.3 else side == "x":   # the shade side: SHADE levels darker (Space Haven's near-black side)
-        sh = (STYLE or {}).get("shade", SHADE)                                   # (a faction look may soften it)
+        sh = SHADE if style().shade is None else style().shade                  # (a faction look may soften it)
         if STYLE is None and fam == "wall":                                      # (the default walls: their own
             t = lvl + step                                                       # ramp SHADE steps darker, its
             return ys[max(min(1, lvl), min(5, t - (1 if t >= 4 else SHADE)))]    # light lines one: one material)
@@ -100,16 +101,17 @@ SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) 
                         # (seams, panel outlines, plates' shading) draw in it, everything else near black
 SEAM_DARK = "hsXK"
 CLIP = None             # a breach (wallbreach.py) sets this: f(u) -> the tear's height on the face being dressed
-STYLE = None            # a faction's relief (faction/):   {"wall": face fn, "hull": face fn, "skirt": "panel" | "outline"
-                        # | None (the panel under each field), "toe": a family for a band along the skirt's foot, "seam": the
-                        # skirt plates' seams in from each tile edge (0: one plate a tile), "slot": a handle slot in
-                        # the outlined panel, "joint": the ramp level of the skirt's plate joints (1 dark), "toe_at":
-                        # where down the slope the toe band starts (0.72), "shade": SHADE for this look, "shell": a
-                        # Shell subclass to build the piece on (a look whose faces are cut into the wall), "end_out":
-                        # how far an end piece's section runs past the face's line (PX; < 0 stops short of it),
-                        # "chamfer": an outer corner's ramp chamfer width at its top edge (the shell must match),
-                        # "outline_lvl": the outlined panel's seam level (0 dark; a level under the face seams'
-                        # matches them, as the slope is a step lighter), "outline_round": its corners softened}
+STYLE = None            # the look's relief_style.Style while one of its pieces builds (None: a default wall)
+
+
+def style():
+    """The current look's settings (relief_style.Style): the defaults while a default wall builds."""
+    return STYLE or DEFAULT_STYLE
+
+
+def seam():
+    """The ramp plates' seams in from each tile edge (0: one plate a tile)."""
+    return STILE if style().seam is None else style().seam
 
 
 def slab(k, ax, plane, u0, u1, z0, z1, d, fam, lvl, ch=0.0, ends=(True, True), chz=None):
@@ -324,7 +326,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
           "end": lambda p: p[0] - a}[lo_t]
     hi = {"cont": lambda p: b - p[0], "in": lambda p: (b - p[1]) - p[0], "out": lambda p: (b + p[1]) - p[0],
           "end": lambda p: b - p[0]}[hi_t]
-    cr = (STYLE or {}).get("chamfer") if hi_t == "out" and getattr(sp, "line", None) else None
+    cr = style().chamfer if hi_t == "out" and getattr(sp, "line", None) else None
     if cr:          # a look whose shell chamfers a partition's outer corner: the plates stop at the chamfer's edge, which
         hi = lambda p: (b - cr + p[1]) - p[0]                          # noqa: E731  runs straight down the corner
     ub = b - cr if cr else b
@@ -333,7 +335,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         return P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise = LINE / 2, PAINT
     d0, d1 = 0.02, run_ - (0.03 if ft else 0.045)
-    off = (STYLE or {}).get("seam", STILE)     # the plates' seams this far in from each tile edge (0: one plate)
+    off = seam()                               # the plates' seams this far in from each tile edge (0: one plate)
     segs = []                                   # the face's posts and fields (posts()), run on past a face end so
     for s0, s1 in spans(a, b):                  # the mitre clips them
         e0, e1 = s0 - (run_ if abs(s0 - a) < 1e-6 else 0.0), s1 + (run_ if abs(s1 - b) < 1e-6 else 0.0)
@@ -355,17 +357,17 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         if len(poly) < 3:
             continue
         w = u1 - u0
-        sk = (STYLE or {}).get("skirt", "panel")
-        rv = (STYLE or {}).get("ramp_var")                              # a look's own ramp variant (in place
+        sk = style().skirt
+        rv = style().ramp_var                              # a look's own ramp variant (in place
         if field and w >= 0.36 and VARIANT[1] and rv:                  # of its panel, whatever its style)
             rv(lambda q, rr, lvl, bb, f=None: plate(k, q, pt, nrm, 0.0, rise + rr, f or fam, lvl, base=rise + bb),
                max(u0, a), min(u1, ub), run_, VARIANT[1], k=k, pt=lambda u, dd, h: pt(u, dd, rise + h),
                P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane, fam=fam)
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
             fu0, fu1 = max(u0, a) + 0.08, min(u1, ub) - 0.08                # (on the face, not the mitred run-on)
-            fd0, fd1 = (f * run_ for f in (STYLE or {}).get("outline_d", (0.15, 0.62)))
+            fd0, fd1 = (f * run_ for f in style().outline_d)
             L, t = LINE, 0.03
-            if (STYLE or {}).get("outline_round"):                         # its corners softened (each corner
+            if style().outline_round:                         # its corners softened (each corner
                 qs = [(fu0 + L, fu1 - L, fd0, fd0 + t), (fu0 + L, fu1 - L, fd1 - t, fd1),   # pixel left out)
                       (fu0, fu0 + L, fd0 + t, fd1 - t), (fu1 - L, fu1, fd0 + t, fd1 - t)]
             else:
@@ -373,12 +375,12 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                       (fu1 - L, fu1, fd0, fd1)]
             for q in qs:
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam,
-                      (STYLE or {}).get("outline_lvl", 0), base=rise)
-            if (STYLE or {}).get("slot") and not VARIANT[1] and hole:        # a handle slot cut into it
+                      style().outline_lvl, base=rise)
+            if style().slot and not VARIANT[1] and hole:        # a handle slot cut into it
                 slot_cut(k, ax, plane, hole, zsurf, fam)
-            elif (STYLE or {}).get("slot") and not VARIANT[1]:              # a dark handle slot painted on it
+            elif style().slot and not VARIANT[1]:              # a dark handle slot painted on it
                 uc = (fu0 + fu1) / 2
-                sd0, sd1, sw = (STYLE or {}).get("slot_d", (0.5, 0.57, 0.1))
+                sd0, sd1, sw = style().slot_d
                 plate(k, [(uc - sw, sd0 * run_), (uc + sw, sd0 * run_), (uc + sw, sd1 * run_),
                           (uc - sw, sd1 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
         if field and w >= 0.36 and sk == "panel" and VARIANT[1] and not rv:
@@ -401,7 +403,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_, 0.74 * run_
             plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + PX + PAINT, fam, 0,
                   base=rise + PX)                                              # a dark slot on the frame
-    toe_fam, toe_at = (STYLE or {}).get("toe"), (STYLE or {}).get("toe_at", 0.72)
+    toe_fam, toe_at = style().toe, style().toe_at
     if toe_fam and not ft:                      # a faction's colour band along the skirt's foot, mitred like the plates
         for u0, u1, _ in segs:
             for q in _minus((u0, u1, toe_at * run_, run_ - 0.03), holes):     # (on down to the foot line)
@@ -527,8 +529,8 @@ class Shell(W.Strip):
     def col_skirt(self, i, j, kind, x, y):
         d, r = self._dist(x, y)
         R = RAMPS["blue" if r[1] == "hull" else "wall"][1 if kind == "x" else 0]
-        j = (STYLE or {}).get("joint", 1)                 # the joints between the plates (a faction may light them:
-        lit = "joint" in (STYLE or {})                    # then on the shade side too, in its own ramp)
+        j = 1 if style().joint is None else style().joint   # the joints between the plates (a faction may light
+        lit = style().joint is not None                     # them: then on the shade side too, in its own ramp)
         return R[j] if d < self.run - 1 / 32 and (kind != "x" or lit) else R[0]
 
     def col_face(self, face, x, y, z):
@@ -563,7 +565,7 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
     dressing instead of the look's (the exterior hull, wall3d_ext); a shell with no_skirt has no skirt plates, one with
     no_cap no cap plates."""
     global END_TOPS, SHELL
-    sp = SHELL = (shell or (STYLE or {}).get("shell", Shell))(mask, fam, level, 1 if deco == 1 else 0, corners)
+    sp = SHELL = (shell or style().shell or Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     W.emit(k.m, sp)
     if not getattr(sp, "no_cap", False):
@@ -585,11 +587,10 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top
-        st = STYLE or {}
         if hull:
-            (dress or st.get("hull", hull_face))(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
+            (dress or style().hull or hull_face)(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
         else:
-            st.get("wall", wall_face)(k, ax, plane, a, b, ends, sp.zs, top, full)
+            (style().wall or wall_face)(k, ax, plane, a, b, ends, sp.zs, top, full)
     return k.build()
 
 
@@ -605,7 +606,7 @@ def end_face(fam, side, level="up", corners=0):
     p0, p1 = W.wall_back(), W.wall_back() + W.TW
     fz = W.fill_top(fam, level)
     lo_bit, hi_bit = (4, 2) if side == "s" else (1, 2)
-    eo = (STYLE or {}).get("end_out", PX)                                     # past the face's line, to cover its parts
+    eo = PX if style().end_out is None else style().end_out     # past the face's line, to cover its parts
     spans = [(lo, hi if corners & hi_bit else hi + eo, top)]
     if corners & lo_bit:
         spans.append((0.0, p0, fz))
@@ -625,7 +626,7 @@ def end_face(fam, side, level="up", corners=0):
         quad(a, a + LINE, zs if a > 1e-6 else 0.0, zt, 1, PAINT)             # its outline, down to the ramp's
         quad(b - LINE, b, zs if b < 1 - 1e-6 else 0.0, zt, 1, PAINT)         # edge where a skirt flanks it ...
         quad(a, b, zt - 0.026, zt, 4, PAINT)                                 # ... and a lit lip under the cap
-    if not corners & hi_bit and (STYLE or {}).get("seam", STILE) > 0:   # the visible face's ramp ends here: one
+    if not corners & hi_bit and seam() > 0:   # the visible face's ramp ends here: one
         fa = "x" if side == "s" else "y"         # whole plate over the last (narrow) plate and its seam, so the ramp
                                                  # does not stop short (one plate a tile has no such seam)
         plane = hi - 0.5
@@ -634,13 +635,13 @@ def end_face(fam, side, level="up", corners=0):
 
         def pt(u, dd, rise):
             return P(fa, plane, u, zs * (1 - dd / run_), dd) + nrm * rise
-        off = (STYLE or {}).get("seam", STILE)
+        off = seam()
         u0, d0, d1 = 0.5 - (max(2 * STILE, off) if off > 0 else 0.15), 0.02, run_ - 0.045
         plate(k, [(u0, d0), (0.5, d0), (0.5, d1), (u0, d1)], pt, nrm, 0.0, 2 * PAINT, F, 2)
-        if (STYLE or {}).get("toe"):                                        # the faction's band runs on to the end
-            ta = STYLE.get("toe_at", 0.72)
+        if style().toe:                                        # the faction's band runs on to the end
+            ta = style().toe_at
             plate(k, [(u0, ta * run_), (0.5, ta * run_), (0.5, d1), (u0, d1)], pt, nrm, 0.0, 3 * PAINT,
-                  STYLE["toe"], 3, base=2 * PAINT)
+                  style().toe, 3, base=2 * PAINT)
         k.side = ax
     edges = [(a, b) for a, b, _ in spans]
     n = 64

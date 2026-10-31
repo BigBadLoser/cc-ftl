@@ -5,8 +5,7 @@ from mathutils import Vector
 from .. import wall3d as T
 from .base import Faction, _style
 from .parts import LINE, PAINT, body, corner_piece, prism
-from .shell import FreeEnds, _end_section, _ends
-
+from .shell import Feature, FloorDrop, FreeEnds, LookShell, RampHoles, _end_section, _ends
 
 BAST_L = 2 / 32                     # the lip: the wall below the cornice stands this far back from the ramp's edge
 
@@ -38,98 +37,79 @@ BAST_CS = BAST_C                    # ... and the ramp's: every chamfer on the c
 EPS = 0.002
 
 
-class Recessed(FreeEnds, T.Shell):
-    """The shell with its camera-facing faces set back by BAST_R: the cornice, posts and lower wall then stand at the
-    wall's line and the face between them is cut in. The skirt, the face planes and the ends keep the wall's line
-    (they read self.rects); only the covered cells (the body and its cap) shrink, and an outer corner of the body is
-    cut off at 45 degrees (BAST_CR along each axis), so the recess turns the corner on a chamfer; the ramp and its lip
-    turn the same corner on their own 45-degree face (BAST_CS)."""
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.find_ends()                                # (a free end is not recessed, nor chamfered)
-        self.find_holes()
+class Recess(Feature):
+    """The camera-facing faces set back by BAST_R: the cornice, posts and lower wall then stand at the wall's line and
+    the face between them is cut in. The skirt, the face planes and the ends keep the wall's line (they read
+    sp.rects); only the covered cells (the body and its cap) shrink, and an outer corner of the body is cut off at 45
+    degrees (BAST_CR along each axis), so the recess turns the corner on a chamfer; the ramp and its lip turn the same
+    corner on their own 45-degree face (BAST_CS). After FreeEnds (a free end is not recessed, nor chamfered)."""
+    def setup(self, sp):
         R = BAST_L + bast_r()
         body = []
         corner = None
-        ends = {sd for sd, _ in self.end_sides}
-        for r in self.rects:
+        ends = {sd for sd, _ in sp.end_sides}
+        for r in sp.rects:
             (x0, x1, y0, y1), fam, t, top = r
-            cx = not self._adj(r, "+x") and x1 < 0.5 - 1e-9 and "+x" not in ends
-            cy = not self._adj(r, "+y") and y1 < 0.5 - 1e-9 and "+y" not in ends
+            cx = not sp._adj(r, "+x") and x1 < 0.5 - 1e-9 and "+x" not in ends
+            cy = not sp._adj(r, "+y") and y1 < 0.5 - 1e-9 and "+y" not in ends
             body.append(((x0, x1 - (R if cx else 0), y0, y1 - (R if cy else 0)), fam, t, top))
             if cx and cy:                               # a partition's outer corner or the far hull's end
-                self.line = (T.snap(x1), T.snap(y1))    # the wall's line at the corner
-                corner = (self.line[0] - R, self.line[1] - R)
-        self.body = body
-        if corner and self.keep is None:
+                sp.line = (T.snap(x1), T.snap(y1))      # the wall's line at the corner
+                sp.band, sp.clip = BAST_CS, BAST_C
+                corner = (sp.line[0] - R, sp.line[1] - R)
+        sp.body = body
+        if corner and sp.keep is None:
             lim = corner[0] + corner[1] - BAST_CR + 1e-9
-            self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
-            self.diag = True
+            sp.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
+            sp.diag = True
 
-    def drop_at(self, x, y):
-        return 0.0
-
-    line = None
-
-    def cap_clip(self, q):                              # the far hull's armour plates cut on the cornice's chamfer
-        return self.line[0] + self.line[1] - BAST_C - q[0] - q[1]
-
-    def _cdist(self, x, y):
-        """(distance from the wall's line with the corner chamfered, its rect, on the chamfer?). The chamfer is a band
-        of constant width running straight out from the corner (its edges parallel, along x = y), so its slope is
-        gentler than the faces' and meets them along those edges: its distance is (dx + dy + a) / 2."""
-        d, r = self._dist(x, y)
-        if self.line is None:
-            return d, r, False
-        c = (x - self.line[0] + y - self.line[1] + BAST_CS) / 2
-        return (c, r, True) if c > d + 1e-9 else (d, r, False)
-
-    def skirtz(self, x, y):
-        return self.zs * max(0.0, 1.0 - self._cdist(x, y)[0] / self.run)
-
-    def _body_at(self, x, y):
+    def _body_at(self, sp, x, y):
         """The body: the footprint less a band R deep behind every camera-facing face, so the recess runs along the
         faces, into an inner corner and round a junction alike (a point is body when the footprint also holds it
         moved R along +x, +y and both; a probe past a tile edge the footprint reaches, or past a free end, counts as
         held). The outer corner's chamfer is the keep predicate's."""
-        r = self._rect_at(x, y, 0.0)
+        r = sp._rect_at(x, y, 0.0)
         if r is None:
             return None
         R = BAST_L + bast_r()
 
         def held(px, py):
             px, py = min(px, 0.5 - 1e-6), min(py, 0.5 - 1e-6)
-            for sd, pl in self.end_sides:
+            for sd, pl in sp.end_sides:
                 if sd == "+x" and px > pl:
                     px = pl - 1e-6
                 if sd == "+y" and py > pl:
                     py = pl - 1e-6
-            return self._rect_at(px, py, 0.0) is not None
+            return sp._rect_at(px, py, 0.0) is not None
         return r if held(x + R, y) and held(x, y + R) and held(x + R, y + R) else None
 
-    def cover(self, i, j):
+    def cover(self, sp, i, j):
         cx, cy = (i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5
-        if not self._body_at(cx, cy):
+        if not self._body_at(sp, cx, cy):
             return None
-        return T.W.half_cell(self.keep, i, j) if self.keep else "f"
+        return T.W.half_cell(sp.keep, i, j) if sp.keep else "f"
 
-    def cell_top(self, i, j):
-        r = self._body_at((i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5)
+    def cell_top(self, sp, i, j):
+        r = self._body_at(sp, (i + 0.5) / T.W.GN - 0.5, (j + 0.5) / T.W.GN - 0.5)
         return r[3] if r else None
 
-    def col_skirt(self, i, j, kind, x, y):              # the lip lit; the joints at the ramp's top the same on both
-        d, r, ch = self._cdist(x, y)                    # faces (the default leaves the +x one black); the chamfer a
-        fam = "blue" if r[1] == "hull" else "wall"      # plain plate (no plates are laid on it)
+
+class RecessTones(Feature):
+    """The lip lit; the joints at the ramp's top the same on both faces (the default leaves the +x one black); the
+    chamfer a plain plate (no plates are laid on it); the cut face in the wall's own tone."""
+    def col_skirt(self, sp, i, j, kind, x, y):
+        d, r, ch = sp._cdist(x, y)
+        fam = "blue" if r[1] == "hull" else "wall"
         if d < 1e-9:
             return T.RAMPS[fam][0][4]
         R = T.RAMPS[fam][1 if kind == "x" else 0]
-        if d >= self.run - 1 / 32:
+        if d >= sp.run - 1 / 32:
             return R[0]
         return R[1]
 
-    def col_face(self, face, x, y, z):                  # the cut face: the wall's own tone
+    def col_face(self, sp, face, x, y, z):
         e = 0.5 / T.W.GN
-        r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
+        r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
 
 
@@ -230,7 +210,7 @@ BAST_PAIRS = [(0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3
 
 def _cells(k, ax, plane, u0, u1, z0, z1, d, nu, nz, cols):
     """A block of nu x nz lit cells over [u0, u1] x [z0, z1], a px apart, coloured cols[(i + j) % len(cols)]."""
-    from .wall3d_variants import lamp
+    from ..wall3d_variants import lamp
     w, h = (u1 - u0) / nu, (z1 - z0) / nz
     for i in range(nu):
         for j in range(nz):
@@ -264,7 +244,7 @@ def bastion_top(k, ax, plane, f0, f1, zlo, z0, z1, top, F, t, m=(0.0, 0.0), back
     out past the wall's line, a keypad and a small readout on it, sloping out from its top to the upper tier's foot,
     further out, two readouts on that;
     3 a module filling the cut, two ribs over a framed indicator panel."""
-    from .wall3d_variants import lamp
+    from ..wall3d_variants import lamp
     R = bast_r()
     uc, w, H = (f0 + f1) / 2, f1 - f0, z1 - z0
     dl = 2 * PAINT                                      # (lamps stand on the glass)
@@ -371,7 +351,7 @@ def bastion_ramp(plate, u0, u1, run_, r, k=None, pt=None, P=None, zs=0.0, hole=N
     front. P(u, z, d) is a point d out from the wall."""
     if not hole:
         return
-    from .wall3d_variants import lamp
+    from ..wall3d_variants import lamp
     o0, o1, d0, d1 = hole
     zat = lambda d: zs * (1 - d / run_)                # noqa: E731   the slope's height d out
     zb = BAST_SLOT[1]
@@ -405,7 +385,8 @@ class Bastion(Faction):
     pre = "fB"
 
     def relief(self, sprite):
-        return _style(bastion, skirt="outline", slot=True, seam=0, shell=Recessed, end_out=-BAST_L,
-                      chamfer=BAST_CS, ramp_var=bastion_ramp, ramp_hole=bastion_hole, outline_lvl=1)
+        return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
+                      ramp_var=bastion_ramp, ramp_hole=bastion_hole, outline_lvl=1, shell=LookShell,
+                      features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), RecessTones()))
 
     pairs = BAST_PAIRS

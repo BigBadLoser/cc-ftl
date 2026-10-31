@@ -7,8 +7,20 @@ from mathutils import Vector
 from .. import wall3d as T
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, _slab, body, bracket, corner_piece, flat, prism, tube, tube_prof
-from .shell import FreeEnds, _end_section, _ends, _ramp_chamfer
-
+from .shell import (
+    NO,
+    Chamfer,
+    FaceHoles,
+    Feature,
+    FloorDrop,
+    FootTone,
+    FreeEnds,
+    LookShell,
+    RampHoles,
+    _end_section,
+    _ends,
+    _ramp_chamfer,
+)
 
 NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up the face and down the ramp (on the px
                                     # grid: a px wide, they fill whole px on both faces)
@@ -17,82 +29,31 @@ NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
 
 
-class NavyShell(FreeEnds, T.Shell):
-    """The shell with its faces in the ramp plates' tone (set 4's wall and ramp are one light grey, its shade side a
-    step darker); the dark outlines at the foot and under the top stay. A partition's outer corner is chamfered
-    (NAVY_C) down the wall and the ramp, the ramp's chamfer a band of constant width (as Recessed's) carrying the
-    plates' tone, the toe band and the foot line."""
-    line = None
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.foot = (T.STYLE or {}).get("foot", 0.0)  # (STYLE foot: the ramp ends in an upright face, as CornerCut's)
-        if self.foot:
-            self.run = math.ceil(self.run * T.W.GN - 1e-6) / T.W.GN
-        self.find_ends()
-        self.find_holes()
-        fh = (T.STYLE or {}).get("face_holes")                  # a top variant's openings in the face: (ax, plane,
-        self.face_holes = []                                    # u0, u1, z0, z1)
-        if fh and T.VARIANT[0]:
-            for ax, plane, a, b, top in T.faces(self):
-                self.face_holes += [(ax, T.snap(plane)) + h for h in fh(a, b, self.zs, top, T.VARIANT[0])]
-        for r in self.rects:
-            x0, x1, y0, y1 = r[0]
-            if any(sd[0] == "+" for sd, _ in self.end_sides):
-                break                                   # (a wall's end is not a corner)
-            if (not self._adj(r, "+x") and not self._adj(r, "+y") and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9
-                    and self.keep is None and (T.STYLE or {}).get("chamfer")):     # (a look without: square)
-                self.line = (T.snap(x1), T.snap(y1))
-                lim = self.line[0] + self.line[1] - NAVY_C + 1e-9
-                self.keep = lambda ci, cj: ci / T.W.GN - 0.5 + cj / T.W.GN - 0.5 <= lim
-                self.diag = self.skirt_halves = True
-
-    def drop_at(self, x, y):
-        return 0.0
-
-    def cap_clip(self, q):                              # the far hull's armour plates cut on the chamfer too
-        return self.line[0] + self.line[1] - NAVY_C - q[0] - q[1]
-
-    def _cdist(self, x, y):
-        d, r = self._dist(x, y)
-        if self.line is None:
-            return d, r, False
-        c = (x - self.line[0] + y - self.line[1] + NAVY_C) / 2
-        return (c, r, True) if c > d + 1e-9 else (d, r, False)
-
-    def skirtz(self, x, y):
-        d = self._cdist(x, y)[0]
-        if self.foot:
-            return self.foot + (self.zs - self.foot) * (1.0 - d / self.run) if d <= self.run + 1e-9 else 0.0
-        return self.zs * max(0.0, 1.0 - d / self.run)
-
-    def col_skirt(self, i, j, kind, x, y):
-        d, r = self._dist(x, y)
-        if self.line is None or (x - self.line[0] + y - self.line[1] + NAVY_C) / 2 < d - 1 / T.W.GN:
-            return super().col_skirt(i, j, kind, x, y)
-        d = max(d, (x - self.line[0] + y - self.line[1] + NAVY_C) / 2)   # (the cells along its edges too: they reach
+class PlateTones(Feature):
+    """The shell's faces in the ramp plates' tone (set 4's wall and ramp are one light grey, its shade side a step
+    darker); the dark outlines at the foot and under the top stay. An outer corner's ramp chamfer (Chamfer) carries
+    the plates' tone, the toe band and the foot line (navy's and civil's)."""
+    def col_skirt(self, sp, i, j, kind, x, y):
+        d, r = sp._dist(x, y)
+        if sp.line is None or (x - sp.line[0] + y - sp.line[1] + sp.band) / 2 < d - 1 / T.W.GN:
+            return NO
+        d = max(d, (x - sp.line[0] + y - sp.line[1] + sp.band) / 2)     # (the cells along its edges too: they reach
         fam = "blue" if r[1] == "hull" else "wall"                       # past the plates, so in the joints' tone they
                                                                          # dotted the edges)
-        if self.foot and d > self.run - 1 / T.W.GN:                      # (the chamfer's toe crosses cells: their
-            return self.col_face("y", x, y, 0.0)                         # drop is the upright foot's, in its colour)
+        if sp.foot and d > sp.run - 1 / T.W.GN:                          # (the chamfer's toe crosses cells: their
+            return sp.col_face("y", x, y, 0.0)                           # drop is the upright foot's, in its colour)
         if d < 0.02:                                                     # the line where the ramp meets the wall
-            return T.RAMPS[fam][0][(T.STYLE or {}).get("joint", 1)]
-        if self.run - 0.03 > d >= (T.STYLE or {}).get("toe_at", 0.72) * self.run and not self.foot:
+            return T.RAMPS[fam][0][1 if T.style().joint is None else T.style().joint]
+        if sp.run - 0.03 > d >= T.style().toe_at * sp.run and not sp.foot:
             return T.RAMPS["ochre"][0][4]
         return T.RAMPS[fam][0][3]
 
-    def col_face(self, face, x, y, z):
-        if z < self.foot - 1e-6:                        # the ramp's upright foot, in the toe band's colour
-            return T.RAMPS[(T.STYLE or {}).get("toe") or "wall"][0 if face == "y" else 1][2]
-        for ax, plane, u0, u1, z0, z1 in self.face_holes:
-            if face == ax and abs((y if ax == "y" else x) - plane) < 1e-6 and u0 < (x if ax == "y" else y) < u1 \
-                    and z0 < z < z1:
-                return None                             # (open: the variant builds the opening's inside)
-        c = super().col_face(face, x, y, z)
+    def col_face(self, sp, face, x, y, z):
+        c = T.Shell.col_face(sp, face, x, y, z)
         e = 0.5 / T.W.GN
-        r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
-        top = r[3] if r else self.top
-        if z < self.zs + 0.02 or z > top - 0.03:
+        r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
+        top = r[3] if r else sp.top
+        if z < sp.zs + 0.02 or z > top - 0.03:
             return c
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][4 if face == "d" else 3]
 
@@ -296,7 +257,9 @@ class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
-        return _style(navy, skirt=None, toe="ochre", seam=NAVY_SEAM, joint=4, shell=NavyShell, chamfer=NAVY_C,
-                      ramp_var=navy_ramp, ramp_hole=navy_hole)
+        return _style(navy, skirt=None, toe="ochre", seam=NAVY_SEAM, joint=4, chamfer=NAVY_C, ramp_var=navy_ramp,
+                      ramp_hole=navy_hole, shell=LookShell,
+                      features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("ochre", 2),
+                                FaceHoles(), PlateTones()))
 
     pairs = NAVY_PAIRS

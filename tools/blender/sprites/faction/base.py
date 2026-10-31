@@ -1,11 +1,9 @@
 """What every faction look is (a restyle.Look with a relief) and the faction palettes' ramps."""
 from .. import wall3d as T
 from .. import walls as W
-from ..restyle import Look
-from ..restyle import STEP
-from ..restyle import ramp
+from ..relief_style import Style
+from ..restyle import STEP, Look, ramp
 from ..structure_looks import FLOOR_STEP
-
 
 # base colours: wall (partitions), hull (far hull, belly), trim (accents), second (a second tone: headers, recesses,
 # frames), shade (faces toward +x), floor
@@ -56,4 +54,4 @@ class Faction(Look):
 
 
 def _style(face, **kw):
-    return dict({"wall": face(False), "hull": face(True), "shade": 0}, **kw)   # the +x faces only a step darker
+    return Style(wall=face(False), hull=face(True), shade=0, **kw)   # (the +x faces only a step darker)
