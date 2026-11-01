@@ -47,9 +47,10 @@ def tone(fam, lvl, n, side=None):
         step = 0
     if (n.x > n.y + 1e-6) if side is None or abs(n.z) < 0.3 else side == "x":   # the shade side: SHADE levels darker (Space Haven's near-black side)
         sh = SHADE if style().shade is None else style().shade                  # (a faction look may soften it)
-        if (STYLE is None or STYLE.plain) and fam == "wall":                     # (the default walls: their own
-            t = lvl + step                                                       # ramp SHADE steps darker, its
-            return ys[max(min(1, lvl), min(5, t - (1 if t >= 4 else SHADE)))]    # light lines one: one material)
+        if (STYLE is None or STYLE.plain) and fam == "wall":                     # (the default walls: their shade
+            return xs[max(min(1, lvl), min(5, lvl + step))]                      # ramp, level for level: each a
+                                                                                 # shade under the lit one's, so the
+                                                                                 # face's depths still read)
         return xs[max(min(1, lvl), min(5, lvl + step - sh))]
     return ys[max(0, min(5, lvl + step))]
 
@@ -564,6 +565,8 @@ class Shell(W.Strip):
         R = RAMPS["blue" if r[1] == "hull" else "wall"][1 if kind == "x" else 0]
         j = 1 if style().joint is None else style().joint   # the joints between the plates (a faction may light
         lit = style().joint is not None                     # them: then on the shade side too, in its own ramp)
+        if style().plain and kind == "x" and d < self.run - 1 / 32:     # (the default walls: the lit side's joint
+            return RAMPS["blue" if r[1] == "hull" else "wall"][0][j]     # tone on the shade side too, not black)
         return R[j] if d < self.run - 1 / 32 and (kind != "x" or lit) else R[0]
 
     def col_face(self, face, x, y, z):
