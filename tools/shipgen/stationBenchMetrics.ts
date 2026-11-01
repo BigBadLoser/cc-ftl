@@ -3,9 +3,11 @@
  * Reads only the public GenResult and its template, so it runs unchanged on any branch with the same draw.ts helpers.
  */
 import { content } from '../../src/content';
-import { airlockTiles, checkUse, footprintTiles, hullOutward, hullSide, openTilesOf, roomQuality, type GenResult, type ModuleDef } from '../../src/sim';
+import { airlockTiles, checkUse, footprintTiles, openTilesOf, roomQuality, type GenResult, type ModuleDef } from '../../src/sim';
 import { audit } from './audit';
 import { ROLE_TINT } from './draw';
+import { classifyVoids } from './stationBenchVoids';
+import { protrusionShare } from './stationBenchHull';
 import { withinExpect } from './stationBenchExpect';
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -22,7 +24,9 @@ export interface Metrics {
   /** Enclosed space as a share of floor: unintended (ragged leftovers) and deliberate (negative space), and how it was told apart. */
   voidUnintended: number;
   voidDeliberate: number;
-  voidMethod: 'field' | 'heuristic';
+  voidMethod: string;
+  /** Regions a `negativeSpace` mask claimed deliberate that failed the geometric test. */
+  maskRejected: number;
   rooms: number;
   /** Share of cargo rooms that are rectangles (NaN: none). Informational. */
   cargoRect: number;
@@ -41,6 +45,10 @@ export interface Metrics {
   /** 16x16 structure-only signature (floor / corridor / wall / space), roles ignored. */
   sigS: string;
   faces: Record<'N' | 'S' | 'E' | 'W', number>;
+  /** Structural parameters of the layout (parsed from the topology string, or the result's own `params`). */
+  params: Record<string, string | number>;
+  /** Design violations (not functional): slivers, non-rectangular machine rooms. */
+  design: string[];
 }
 
 const FACE = (x: number, y: number): 'N' | 'S' | 'E' | 'W' => (y < 0 ? 'N' : y > 0 ? 'S' : x > 0 ? 'E' : 'W');
@@ -98,9 +106,8 @@ export function measure(g: GenResult): Metrics {
     }
     if (d.airlock) {
       docks++;
-      const side = hullSide(d, m.rot);
-      if (side) { const o = hullOutward(side); faces[FACE(o.x, o.y)]++; }
       const a = airlockTiles(d, m);
+      faces[FACE(Math.sign(a.outer.x - a.inner.x), Math.sign(a.outer.y - a.inner.y))]++;
       for (const t of [a.inside, a.inner]) if (cell(t.x, t.y) === '_' || cell(t.x, t.y) === 'D') starts.push(t.y * W + t.x);
     }
   }
@@ -158,13 +165,13 @@ export function measure(g: GenResult): Metrics {
   // Use checks only count rooms the walk reached; checkUse already skips unreachable ones.
   const use = checkUse(rows, mods, defs, g.roomOf);
 
-  // Protrusions: room tiles farther from the template centre than the 90th-percentile corridor distance (docks excluded).
-  const cx = W / 2, cy = H / 2;
-  const dc = (i: number): number => Math.hypot((i % W) + 0.5 - cx, Math.floor(i / W) + 0.5 - cy);
-  const hall = g.rooms.filter((r) => r.role === 'hall').flatMap((r) => r.tiles.map(dc)).sort((a, b) => a - b);
-  const R = hall[Math.floor(hall.length * 0.9)] ?? Infinity;
-  const body = real.filter((r) => r.role !== 'dock').flatMap((r) => r.tiles);
-  const protrusion = body.length ? body.filter((i) => dc(i) > R).length / body.length : 0;
+  // Protrusions against the actual hull (stationBenchHull.ts); airlock footprints do not count as hull.
+  const skip = new Set<number>();
+  for (const m of mods) {
+    const d = defs[m.def];
+    if (d?.airlock) for (const t of footprintTiles(d, m.x, m.y, m.rot)) skip.add(t.y * W + t.x);
+  }
+  const protrusion = protrusionShare(W, H, rows, skip, real.filter((r) => r.role !== 'dock').flatMap((r) => r.tiles));
 
   const floorCount = rows.reduce((t, r) => t + r.split('').filter((c) => c === '_' || c === 'D').length, 0);
   return {
@@ -175,80 +182,23 @@ export function measure(g: GenResult): Metrics {
     slivers, aspects, fills, protrusion, depth,
     viaQuarters: audit(g).viaQuarters.length,
     quality: real.map((r) => rq.get(r.id)?.score).filter((v): v is number => v !== undefined),
-    expect, sig: signature(g), sigS: signature(g, true), faces,
+    expect, params: paramsOf(g, faces), design: [...(slivers ? [`slivers`] : []), ...[...new Set(badRects.map((b) => b.split('#')[0]))].map((r) => `non-rect machine room: ${r}`)], sig: signature(g), sigS: signature(g, true), faces,
   };
 }
 
-/** The result's optional `negativeSpace` (tile indices or a boolean/number mask over the template), read defensively. */
-function negativeMask(g: GenResult): Uint8Array | null {
-  const f = (g as unknown as { negativeSpace?: unknown }).negativeSpace;
-  if (f === undefined || f === null || typeof f !== 'object') return null;
-  const n = g.width * g.height;
-  const out = new Uint8Array(n);
-  const a = Array.isArray(f) || ArrayBuffer.isView(f) ? Array.from(f as ArrayLike<unknown>) : f instanceof Set ? [...f] : [];
-  if (a.length === n && a.every((v) => typeof v === 'boolean' || v === 0 || v === 1)) a.forEach((v, i) => { out[i] = v ? 1 : 0; });
-  else for (const v of a) if (typeof v === 'number' && v >= 0 && v < n) out[v] = 1;
-  return out;
-}
-
-/** Deliberate-void heuristic (no `negativeSpace` field): large, fairly convex, bounded only by corridors and hull wall. */
-const DELIBERATE_MIN = 40, DELIBERATE_FILL = 0.5, DELIBERATE_HALL = 0.9;
-
-/**
- * Enclosed space (not reachable from the template edge through space) split into deliberate and unintended, as shares of
- * floor. With a `negativeSpace` field the field decides; without it each enclosed region is classified by DELIBERATE_*.
- */
-function classifyVoids(g: GenResult, floor: number): Pick<Metrics, 'voidUnintended' | 'voidDeliberate' | 'voidMethod'> {
-  const W = g.width, H = g.height;
-  const at = (x: number, y: number): string => (x < 0 || y < 0 || x >= W || y >= H ? '.' : (g.template.rows[y]?.[x] ?? '.'));
-  const seen = new Uint8Array(W * H);
-  const flood = (start: number[], keep: (i: number) => void): void => {
-    const st = [...start];
-    while (st.length) {
-      const i = st.pop() as number;
-      const x = i % W, y = (i - x) / W;
-      if (seen[i] || at(x, y) !== '.') continue;
-      seen[i] = 1; keep(i);
-      if (x > 0) st.push(i - 1);
-      if (x < W - 1) st.push(i + 1);
-      if (y > 0) st.push(i - W);
-      if (y < H - 1) st.push(i + W);
-    }
+/** Structural parameters: the old generator's topology string ("stationWheel spokes nesw courts 2 atrium"), or `params`. */
+function paramsOf(g: GenResult, faces: Record<string, number>): Record<string, string | number> {
+  const t = g.topology;
+  const own = (g as unknown as { params?: unknown }).params;
+  const p: Record<string, string | number> = {
+    layout: t.split(' ')[0] ?? '?',
+    centre: (t.match(/\b(rotunda|filled|hub|open|plaza)\b/g) ?? ['none']).join('+'),
+    atrium: /atrium/.test(t) ? 'yes' : 'no',
+    courts: Number(/courts (\d+)/.exec(t)?.[1] ?? 0),
+    spokes: /spokes (\w+)/.exec(t)?.[1] ?? '-',
+    rings: /rings? (\d+)/.exec(t)?.[1] ?? '-',
+    docks: Object.entries(faces).filter(([, n]) => n > 0).map(([k, n]) => `${k}${n}`).join(''),
   };
-  const edge: number[] = [];
-  for (let x = 0; x < W; x++) edge.push(x, (H - 1) * W + x);
-  for (let y = 0; y < H; y++) edge.push(y * W, y * W + W - 1);
-  flood(edge, () => undefined);
-  const mask = negativeMask(g);
-  let unintended = 0, deliberate = 0;
-  for (let i0 = 0; i0 < W * H; i0++) {
-    if (seen[i0] || at(i0 % W, Math.floor(i0 / W)) !== '.') continue;
-    const cells: number[] = [];
-    flood([i0], (i) => cells.push(i));
-    let isDeliberate: boolean;
-    if (mask) isDeliberate = cells.filter((i) => mask[i]).length * 2 >= cells.length;
-    else {
-      const xs = cells.map((i) => i % W), ys = cells.map((i) => Math.floor(i / W));
-      const fill = cells.length / ((Math.max(...xs) - Math.min(...xs) + 1) * (Math.max(...ys) - Math.min(...ys) + 1));
-      // Floor tiles touching the region, directly or behind a wall tile: corridors only?
-      let floors = 0, halls = 0;
-      const touch = (x: number, y: number): void => {
-        const c = at(x, y);
-        if (c !== '_' && c !== 'D') return;
-        floors++;
-        if (g.rooms[g.roomOf[y * W + x] ?? -1]?.role === 'hall') halls++;
-      };
-      for (const i of cells) {
-        const x = i % W, y = (i - x) / W;
-        for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
-          const c = at(nx, ny);
-          if (c === '#' || c === '=') { for (const [qx, qy] of [[nx + 1, ny], [nx - 1, ny], [nx, ny + 1], [nx, ny - 1]] as const) if (!(qx === x && qy === y)) touch(qx, qy); }
-          else touch(nx, ny);
-        }
-      }
-      isDeliberate = cells.length >= DELIBERATE_MIN && fill >= DELIBERATE_FILL && floors > 0 && halls / floors >= DELIBERATE_HALL;
-    }
-    if (isDeliberate) deliberate += cells.length; else unintended += cells.length;
-  }
-  return { voidUnintended: floor ? unintended / floor : 0, voidDeliberate: floor ? deliberate / floor : 0, voidMethod: mask ? 'field' : 'heuristic' };
+  if (own && typeof own === 'object') for (const [k, v] of Object.entries(own)) if (typeof v === 'string' || typeof v === 'number') p[`p.${k}`] = v;
+  return p;
 }
