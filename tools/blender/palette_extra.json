@@ -2563,5 +2563,14 @@
   "hex": "#8c3b35",
   "flat": true,
   "aa": true
+ },
+ "fDM1": {
+  "hex": "#6c343c"
+ },
+ "fDM2": {
+  "hex": "#5c2c34"
+ },
+ "fDM3": {
+  "hex": "#4c242c"
  }
 }

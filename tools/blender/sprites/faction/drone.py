@@ -7,7 +7,7 @@ from mathutils import Vector
 from .. import wall3d as T
 from .base import Faction, _style
 from .drone_designs import DRONE_D, DRONE_TOPS, DRONE_RAMPS, drone_middle
-from .parts import PAINT, PX, PZ, bezier, body, corner_piece, glow, pipe, prism
+from .parts import LINE, PAINT, PX, PZ, bezier, body, corner_piece, glow, pipe, prism
 from .shell import NO, Feature, FloorDrop, FootTone, FreeEnds, LookShell, SlotHoles, _end_section, _ends
 
 
@@ -19,7 +19,7 @@ def handle(k, ax, plane, u0, u1, zc, d, r=0.045):
         return T.P(ax, plane, u, zc, dd)
     pts = bezier(W_(u0, -0.01), W_(u0, d), W_(u0 + rr, d), 6)
     pts += bezier(W_(u1 - rr, d), W_(u1, d), W_(u1, -0.01), 6)
-    pipe(k, pts, r, "rose", 3, n=8)
+    pipe(k, pts, r, "rose", 2, n=8)                     # (dark conduits, in their dark bands)
 
 
 DRONE_S = 7 / 32                    # the outer corner is cut off this far along each axis (on the shell's grid)
@@ -34,7 +34,11 @@ DRONE_H = 0.006                     # the corner panel sits on the cut (just pro
 DRONE_FOOT = 4 / 39                 # the drone ramp ends in an upright face this high at the floor (set 5)
 
 
-DRONE_SW = 0.15 + 3 / 32            # the drone block's side strips (T1, T1-4)
+DRONE_OT = 0.4 / 32                 # the ramp panel's top and bottom lines' depth down the slope: one art px on
+                                    # screen (a cell down the slope shows 2.5)
+DRONE_OD = (2 / 11, (9 + 0.4) / 11)  # its top and bottom (the top line on the ramp's 2nd of 11 cells; the bottom
+                                     # line's top on its 9th, where the handle slot ends: drone_designs' DRONE_RAMPS)
+DRONE_SW = 0.15 + 2 / 32            # the drone block's side strips (T1, T1-4)
 
 
 DRONE_HD = 4 / 39                   # the header's foot this far under its old place (dropped 2 art px, then 2 px
@@ -121,6 +125,22 @@ def chamfer(k, X, Y, e, h, zb, top, z1, F, D=0.0, zbox=None, black=True):
         box(-0.22, 0.22, zc - 0.016, zc + 0.016, 2 * PAINT, F, 0, fixed=col)
 
 
+def _column(k, ax, plane, u0, u1, z0, zt, D, c, F, mt, cp, gw):
+    """A side column of the block: sloped top and foot, its front D proud, a groove half a PX deep down its front
+    2 px in from either side, from the front's foot to 2 px under its top (cp: its ends' tones, mt: its mitres, gw:
+    the groove's sides')."""
+    g, dr = 2 * LINE, 0.5 * PX
+    Dr = D - dr
+    zu = zt - c - 2 * PZ                                # (the groove's top)
+    prism(k, ax, plane, u0 + g, u1 - g, [(0.0, z0), (Dr, z0 + c * Dr / D), (Dr, zu), (0.0, zu)], F, 2,
+          cap=False)                                    # between them the groove, its floor a shade darker,
+    prism(k, ax, plane, u0 + g, u1 - g, [(0.0, zu), (D, zu), (D, zt - c), (0.0, zt)], F, 3, cap=False)   # shut over
+    prism(k, ax, plane, u0, u0 + g, [(0.0, z0), (D, z0 + c), (D, zt - c), (0.0, zt)], F, 3, mitre=(mt[0], 0.0),
+          cap=(cp[0], gw))                              # the groove's sides
+    prism(k, ax, plane, u1 - g, u1, [(0.0, z0), (D, z0 + c), (D, zt - c), (0.0, zt)], F, 3, mitre=(0.0, mt[1]),
+          cap=(gw, cp[1]))
+
+
 def drone(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -139,13 +159,13 @@ def drone(hull):
         H = T.W.wall_top("wall", "up") - zs              # laid out on a partition's height, on every wall (the far
         z0, z1 = zs + 0.11 * H, zs + 0.68 * H - DRONE_HD    # hull's extra height goes to its band under the rail), so
                                                         # blocks, handles and bands line up where walls meet
-        T.run(k, ax, plane, a, b, ends, zb + 0.05, z0, PAINT, "rose", 2, 0)                     # the short dark band
+        T.run(k, ax, plane, a, b, ends, zb + 0.05, z0, PAINT, "rose", 0, 0)                     # the short dark band
         rt = min(top, T.W.wall_top("wall", "up"))       # the rail at a partition's top on every wall; the far
         if top > rt + 0.03:                             # hull's extra height above it a plain plate
             T.run(k, ax, plane, a, b, ends, rt, top - 0.02, PAINT, F, 2, 0)
         RD = 0.5 * PX                                   # the rail's depth (the centre block's a PX more)
         rl, rh = rt - 0.12 - DRONE_HD, rt - 0.02 - 3 * PZ            # the rail's foot and front top; its top slopes
-        T.run(k, ax, plane, a, b, ends, z1, rl, PAINT, "rose", 1, 0)  # up to the wall 2 art px under the cap (the
+        T.run(k, ax, plane, a, b, ends, z1, rl, PAINT, "rose", 0, 0)  # up to the wall 2 art px under the cap (the
         rail = [(0.0, rl), (RD, rl), (RD, rh - PZ), (RD, rh), (0.0, rt - 2 * PZ)]    # machinery band under it)
         T.run(k, ax, plane, a, b, ends, rt - 2 * PZ - 0.01, rt, PAINT, F, 2, 0)   # the wall over it in its steel
         cl = rt - 0.15 - DRONE_HD - PZ                  # the centre block's foot
@@ -204,8 +224,7 @@ def drone(hull):
                                                                             # for it, as they face across)
                 for u0, u1, mt, cp in ((s0 if not at0 else h0, q0 + sw, (m0, 0.0), (sides[1], fc)),   # (on to the
                                        (q1 - sw, s1 if not at1 else h1, (0.0, m1), (fc, sides[1]))):  # tile's edge)
-                    prism(k, ax, plane, u0, u1, [(0.0, z0), (D, z0 + c), (D, zt - c), (0.0, zt)], F, 3, mitre=mt,
-                          cap=cp)
+                    _column(k, ax, plane, u0, u1, z0, zt, D, c, F, mt, cp, sides[1])
                 T.fill("middle", drone_middle)(k, ax, plane, q0 + sw, q1 - sw, z0, zt, f0, F)
             hw = (h1 - h0) / 2 - 0.07
             g0 = max(hc - hw, a + Dc + 0.05) if at0 and ends[0] == "in" else hc - hw     # (clear of the other
@@ -233,8 +252,8 @@ class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        return _style(drone, skirt="outline", slot=True, seam=0, outline_d=(0.1, 0.84), tops=DRONE_TOPS,
-                      ramps=DRONE_RAMPS, foot=DRONE_FOOT, ramp_solid=True,
+        return _style(drone, skirt="outline", slot=True, seam=0, outline_d=DRONE_OD, outline_t=DRONE_OT,
+                      tops=DRONE_TOPS, ramps=DRONE_RAMPS, foot=DRONE_FOOT, ramp_solid=True,
                       shell=LookShell,
                       features=(FreeEnds(), SlotHoles(), CornerCut(), FloorDrop(), DiagTone(),
                                 FootTone("wall", 3)))

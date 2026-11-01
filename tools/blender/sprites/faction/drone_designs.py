@@ -10,9 +10,10 @@ DRONE_D = 2.5 * PX                  # the block's depth, and its slopes' run
 
 
 def drone_middle(k, ax, plane, u0, u1, z0, zt, f0, F):
-    """The base: the panel between the strips, darker, its front flush with theirs, its slopes a px in."""
+    """The base: the panel between the strips, darker, its front flush with theirs, its slopes 2 px in."""
     D = c = DRONE_D
-    prism(k, ax, plane, u0, u1, [(0.0, z0 + PZ), (D, z0 + c + PZ), (D, zt - c - PZ), (0.0, zt - PZ)], F, 2)
+    prism(k, ax, plane, u0, u1, [(0.0, z0 + 2 * PZ), (D, z0 + c + 2 * PZ), (D, zt - c - 2 * PZ), (0.0, zt - 2 * PZ)],
+          F, 2)
 
 
 def drone_red(k, ax, plane, u0, u1, z0, zt, f0, F):
@@ -20,8 +21,9 @@ def drone_red(k, ax, plane, u0, u1, z0, zt, f0, F):
     D = c = DRONE_D
     Dr = D - 0.5 * PX
     red = [(0.0, z0 + 2 * PZ), (Dr, z0 + 2 * PZ + c * Dr / D), (Dr, zt - 2 * PZ - c * Dr / D), (0.0, zt - 2 * PZ)]
-    prism(k, ax, plane, u0, u1, red, F, 2, cols=["lvRS", "lvR2", "lvR", "lvRS"], cap="lvRS")
-    flat(k, ax, plane, u0, u1, f0 + 0.14 + 3 * PZ, f0 + 0.166 + 3 * PZ, Dr + PAINT, "lvRS")
+    prism(k, ax, plane, u0, u1, red, F, 2, cols=["fDM3", "fDM2", "fDM1", "fDM3"], cap="fDM3")   # (a muted maroon:
+    flat(k, ax, plane, u0, u1, f0 + 0.14 + 3 * PZ, f0 + 0.166 + 3 * PZ, Dr + PAINT, "fDM3")      # its seam a step
+                                                                                                 # under its front)
 
 
 def _bay(k, ax, plane, u0, u1, z0, z1, F, fam, lvl):
@@ -32,15 +34,20 @@ def _bay(k, ax, plane, u0, u1, z0, z1, F, fam, lvl):
 
 
 def drone_rack(k, ax, plane, u0, u1, z0, z1, F):
-    """T1-2: a dark rack of red-lit bars."""
+    """T1-2: a dark bay behind a fine grid of dull red lines (set 5 T1-2's laser grid): rows 3 px apart right across
+    it, columns 4 px apart, each line under a px thick (so it lands on one px row, not two)."""
     _bay(k, ax, plane, u0, u1, z0, z1, F, "rose", 0)
-    nr, nc = 5, 3
-    w = (u1 - u0 - 0.08) / nc
-    for i in range(nr):
-        z = z0 + 0.1 + i * (z1 - z0 - 0.2) / (nr - 1)
-        for j in range(nc):
-            a = u0 + 0.04 + j * w
-            flat(k, ax, plane, a + LINE, a + w - LINE, z - 0.013, z + 0.013, 2 * PAINT, "emR")
+    a, b = T.snap(u0 + 0.04), T.snap(u1 - 0.04)
+    za, zb = z0 + 0.06, z1 - 0.06
+    th, tw = 0.6 * PZ, 0.6 * LINE
+    nr = int((zb - za) / (3 * PZ))
+    for i in range(nr + 1):                                 # its rows
+        z = za + i * 3 * PZ
+        flat(k, ax, plane, a, b, z, z + th, 3 * PAINT, "lvRS")
+    nc = int((b - a) / (4 * LINE))
+    for j in range(nc + 1):                                 # its columns
+        u = a + j * 4 * LINE + 0.2 * LINE
+        flat(k, ax, plane, u, u + tw, za, za + nr * 3 * PZ + th, 3 * PAINT, "lvRS")
 
 
 def drone_machinery(k, ax, plane, u0, u1, z0, z1, F):
@@ -69,5 +76,7 @@ def drone_seams(plate, u0, u1, run_, **_):
 
 DRONE_TOPS = (Design("block", middle=drone_middle), Design("rack", bay=drone_rack),
               Design("machinery", bay=drone_machinery), Design("red block", middle=drone_red))
-DRONE_RAMPS = (Design("panel", slot_hole=(0.55, 0.72, 0.15)),   # (its handle slot cut into the ramp)
+DRONE_RAMPS = (Design("panel", slot_hole=(7.4 / 11, 9 / 11, 0.15, True)),   # (its handle slot cut into the ramp,
+                                                                    # its top a px under a cell line (a cell shows as
+                                                                    # 2.5 px), on the panel's bottom line: drone.DRONE_OD)
                Design("seams", ramp=drone_seams))

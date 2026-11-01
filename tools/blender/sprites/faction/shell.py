@@ -365,7 +365,7 @@ class RampHoles(Feature):
 
 class SlotHoles(Feature):
     """A ramp design's handle slot cut into the ramp (its "slot_hole" slot: from, to down the slope as fractions of
-    its run, half width), centred on each field, on the shell's grid."""
+    its run, half width[, True: from and to exact, else on the shell's grid]), centred on each field."""
     def setup(self, sp):
         sh = T.fill("slot_hole")
         sp.hole_floor = True                            # (the shell builds the slot's floor; a design draws a hole's)
@@ -376,8 +376,9 @@ class SlotHoles(Feature):
                 for s0, s1 in T.spans(a, b):
                     if s1 - s0 > 0.3:
                         uc = (s0 + s1) / 2
-                        sp.holes.append((ax, T.snap(plane), sn(uc - sh[2]), sn(uc + sh[2]), sn(sh[0] * sp.run),
-                                         sn(sh[1] * sp.run)))
+                        sd = (lambda v: v) if len(sh) > 3 and sh[3] else sn                 # noqa: E731
+                        sp.holes.append((ax, T.snap(plane), sn(uc - sh[2]), sn(uc + sh[2]), sd(sh[0] * sp.run),
+                                         sd(sh[1] * sp.run)))
 
 
 class FaceHoles(Feature):
