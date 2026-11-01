@@ -100,8 +100,11 @@ def bastion_equipment(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), b
     H2 = z1 - zlo                                   # but the lower tier a px under the wall's top, so its top is
     zt, zu = zlo + 0.5 * H2 - PZ, zlo + 0.5 * H2 + (B - A) - PZ                                  # lit) tier 1's top,
     z1 -= PZ
-    prism(k, ax, plane, f0, f1, [(0.0, zlo), (A, zlo), (A, zt), (0.0, zt)], F, 2)               # tier 2's foot
-    prism(k, ax, plane, f0, f1, [(0.0, zt), (A, zt), (B, zu), (B, z1), (0.0, z1)], F, 2)
+    body = {"wall": "fBW9", "blue": "fBH9"}[F]      # (its fronts a shade over the wall's step 3)
+    prism(k, ax, plane, f0, f1, [(0.0, zlo), (A, zlo), (A, zt), (0.0, zt)], F, 2,                # tier 2's foot
+          cols=[None, body if ax == "y" else None, None, None])
+    prism(k, ax, plane, f0, f1, [(0.0, zt), (A, zt), (B, zu), (B, z1), (0.0, z1)], F, 2,
+          cols=[None, None, body if ax == "y" else None, None, None])
     fp = plane + A                                  # tier 1: a keypad and a small readout
     r0, r1 = zt - 0.36, zt - 0.08                    # (high on it, where hands reach)
     a, b = uc - 0.36 * w, uc + 0.36 * w

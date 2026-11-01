@@ -121,7 +121,8 @@ class RecessTones(Feature):
     def col_face(self, sp, face, x, y, z):
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
-        return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
+        fam = "blue" if r and r[1] == "hull" else "wall"
+        return RECESS[fam] if face == "y" else T.RAMPS[fam][1][2]          # (the recess's back: its own step)
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R = T.RAMPS[fam][0]
@@ -230,7 +231,8 @@ def bastion(hull):
                     continue                                     # (nor an inner one)
                 q0, q1 = (max(edge, a), edge + PW) if lo else (edge - PW, min(edge, bb))
                 if q1 - q0 > 1e-6:
-                    band(q0, q1, zlo, zc0, 3, cols=fc)                           # (its inner side shaded as it faces)
+                    band(q0, q1, zlo, zc0, 3, cols=fc, cap=RECESS_SIDE[F] if ax == "y" else None)   # (its inner
+                                                                                        # side the recess's)
                     for i in (1, 2):                                     # small lit blocks stepping out of it
                         zj = zsl + (zc0 - zsl) * i / 3
                         band(q0, q1, zj - 3 * PZ, zj, 4, front=dl + 1 / 32)
@@ -272,6 +274,8 @@ def bastion(hull):
 
 
 FRONT = {"wall": "fBW8", "blue": "fBH8"}           # the main face's front: the ramp's slope's tone (SLOPE_LIFT)
+RECESS = {"wall": "fBW9", "blue": "fBH9"}          # the recess's back (step 9: between 3 and 7)
+RECESS_SIDE = {"wall": "fBW3", "blue": "fBH3"}     # and its side walls
 SEAM = {"wall": "fBW7", "blue": "fBH7"}            # the ledge's seams, down the lower wall too
 SLOPE_LIFT = {"fBW2": "fBW8", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}   # (and its panel's outline 7)     # the floor ramp's slope a step lighter (8: between 2 and 1) than
                                                 # the step its role gives (2, what the open slot's insides keep)
