@@ -101,23 +101,23 @@ get `xpForLevels(shady)`. The user chose a `SAVE_VERSION` bump (73) over a migra
 | Mechanism | `traitModifiers` (new modifier source) for stat effects; flags on `TraitDef` read by the system that owns the behaviour. Systems still never call each other. |
 | Not yet built | A trait whose mechanic hasn't landed has `rollable: false`, so no one rolls a trait that does nothing. |
 
-Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one existing system. **fear**, **bond**,
+Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one existing system. **break**, **bond**,
 **habit** = needs that mechanic (sections 5 to 7).
 
 ### Behaviour traits (the point of the system)
 
 | Trait | Flavour | Effect | Plays as | Weight | Excludes | Hook |
 |---|---|---|---|---|---|---|
-| Brave | Runs toward the shooting. | Fights unarmed like a `fighter` role; never surrenders; never panics (fear capped at 59); volunteers rescues into danger and combat | Saves people, dies more often | 5 | Coward, Battle-shy | small (`canFight`, `wantsToSurrender`, rescue fit) |
-| Coward | Runs away from the shooting. | Flees below 50% hp even armed; player crew surrender below 30% (today: never); fear rises ×1.5 and breaks a draft after 5 s instead of 20 s; won't volunteer a rescue near hostiles | Lives longer, lets others down | 10 | Brave | small, fear |
+| Brave | Runs toward the shooting. | Fights unarmed like a `fighter` role; never surrenders; never breaks from combat (section 5); volunteers rescues into danger and combat | Saves people, dies more often | 5 | Coward, Battle-shy | small (`canFight`, `wantsToSurrender`, rescue fit), break |
+| Coward | Runs away from the shooting. | Flees below 50% hp even armed; player crew surrender below 30% (today: never); combat stress ×1.5 and its breaks lean to hiding and panic (section 5); won't volunteer a rescue near hostiles | Lives longer, lets others down | 10 | Brave | small, break |
 | Loner | Prefers the quiet decks. | No "lonely" (−4); "alone" +3 instead; "crowded" −4 with 3+ crew within 7 tiles; bonds form ×0.5 | Drifts to empty rooms, few friends | 10 | Social | small (mood), bond |
 | Social | Needs someone to talk at. | "company" +6 (not +3); "lonely" −8 (not −4); bonds form ×2 | Knits the crew together, sulks alone | 10 | Loner | small (mood), bond |
 | Hot-headed | Takes it personally. | Rivalry gains ×2; when near a rival with mood < `MOOD_LOW`, 5% per bond check of a shouting match (both −5 mood for 5 min, −5 score, log line) | Grudges and scenes | 10 | Peacemaker | bond |
 | Peacemaker | Everyone's favourite. | Friendship gains ×1.5; rivals within 7 tiles of them get half the rival penalty; no shouting matches near them | Glue, worth protecting | 5 | Hot-headed | bond |
-| Protective | Nobody touches my people. | Shared-danger bond gains ×2; gunnery and melee +1 in a fight within 6 tiles of a friend; fear rise ×0.5 near a friend; "Grieving" ×1.5 | Fierce, then broken by a death | 5 | — | bond |
+| Protective | Nobody touches my people. | Shared-danger bond gains ×2; gunnery and melee +1 in a fight within 6 tiles of a friend; combat stress ×0.5 near a friend; "Grieving" and grief stress ×1.5 | Fierce, then broken by a death | 5 | — | bond, break |
 | Workaholic | One more panel. | workSpeed ×1.15; only sleeps or eats at the urgent thresholds (`policy.legacy`), so stays at the job; "idle" −5 mood after 60 s with no job | Gets it done, burns out | 5 | Lazy | small (`ai/policy.ts`, mood) |
 | Lazy | Will get to it. | workSpeed ×0.9; takes the idle stroll between jobs more often; "relaxed" +3 mood | Slow, never miserable | 10 | Workaholic | small (policy, mood) |
-| Thrill-seeker | Bored when it's quiet. | Mood +6 in combat or on EVA; "bored" −3 after 15 min without either | Volunteers for the dangerous jobs | 5 | Battle-shy, Afraid of the void | small (mood) |
+| Thrill-seeker | Bored when it's quiet. | Mood +6 in combat or on EVA; "bored" −3 after 15 min without either; no combat or decompression stress | Volunteers for the dangerous jobs | 5 | Battle-shy, Space-sick | small (mood), break |
 | Stoic | Seen worse. | All mood factors ×0.5, good and bad | Steady, hard to cheer up | 5 | Sensitive | small (mood) |
 | Sensitive | Feels everything. | All mood factors ×1.5 | Highs and breakdowns | 5 | Stoic | small (mood) |
 | Cheerful | Whistles through red alerts. | Mood +5; crew within 7 tiles "cheered up" +2 | Lifts a room | 10 | Gloomy | small (mood) |
@@ -127,10 +127,10 @@ Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one ex
 
 | Trait | Flavour | Effect | Weight | Excludes | Hook |
 |---|---|---|---|---|---|
-| Pyrophobic | Saw a ship burn once. | Fear trigger: fire (section 5) | 5 | — | fear |
-| Afraid of the void | Hates the hum of the hull. | Fear trigger: vacuum and EVA | 5 | Void-born, Thrill-seeker | fear |
-| Afraid of the dark | Sleeps with the lights on. | Fear trigger: darkness | 5 | Dark-adapted | fear |
-| Battle-shy | Freezes when the shooting starts. | Fear trigger: combat | 5 | Brave, Thrill-seeker | fear |
+| Pyrophobic | Saw a ship burn once. | Avoids firefighting when there's other work; fires nearby hurt mood and raise break odds (section 5) | 5 | — | small, break |
+| Space-sick | Hates the hum of the hull. | Prefers indoor work; −4 mood on EVA; suit emergencies raise break odds | 5 | Void-born, Thrill-seeker | small, break |
+| Afraid of the dark | Sleeps with the lights on. | Dark rooms −10 mood (not −5); long blackouts raise break odds | 5 | Dark-adapted | small, break |
+| Battle-shy | Freezes when the shooting starts. | Combat stress ×4 after 10 s; breaks lean to freezing, hiding, fleeing | 5 | Brave, Thrill-seeker | break |
 | Drinker | Just one to take the edge off. | Habit: `item.spirits` (section 7) | 5 | Stim-hooked | habit |
 | Stim-hooked | Ran double shifts on a mining rig. | Habit: `item.stims`; while dosed workSpeed ×1.1, restDecay ×1.2 | 2 | Drinker | habit |
 
@@ -144,7 +144,7 @@ Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one ex
 | Bookish | Reads the manual. | science, medicine, hacking XP ×1.5 | max hp ×0.85, carryCapacity ×0.75 | 5 | Strong, Tough | small (spawn, xp) |
 | Small appetite | Half a ration is plenty. | hunger ×0.7 | food mood (wellFed, hotMeal) ×0.5 | 5 | Glutton | small (needs, mood) |
 | Glutton | Ate your ration too. | food mood ×2 | hunger ×1.3; eats below 50 instead of `HUNGER_EAT_BELOW` 35 | 10 | Small appetite | small (needs, eating, mood) |
-| Void-born | Spacewalks before breakfast. | suit air (`airSec` 240) ×1.5; no suit move penalty (0.8) | "cooped up" −3 mood after 30 min without EVA | 2 | Afraid of the void | small (suits, mood) |
+| Void-born | Spacewalks before breakfast. | suit air (`airSec` 240) ×1.5; no suit move penalty (0.8); decompression stress ×0.5 | "cooped up" −3 mood after 30 min without EVA | 2 | Space-sick | small (suits, mood) |
 | Dark-adapted | Grew up on a dim station. | Ignores `DARK_MOVE_MULT` / `DARK_WORK_MULT` and "dark" (−5) | "glare" −3 mood on tiles with light ≥ 90 | 5 | Afraid of the dark | small (conditions, mood) |
 | Gifted | Learns it once. | All XP ×1.5 (about a third less time per level) | "restless" −3 mood while idle | 2 | — | small (xp, mood) |
 
@@ -157,74 +157,128 @@ Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one ex
 | Clumsy | Drops tools. Drops guns. | melee −1, gunnery −1, workSpeed ×0.95 | 5 | Marksman | stat |
 
 32 traits: 14 behaviour, 6 phobia/habit, 9 trade-off, 3 texture. 23 are rollable after step 2 (the 9 trade-offs, the 3
-texture traits and 11 behaviour traits on simple hooks; Coward's fear part and Loner/Social's bond part follow
-later). The other 9 wait for fear, bonds or habits.
+texture traits and 11 behaviour traits on simple hooks; their break and bond parts follow later). Pyrophobic,
+Space-sick and Afraid of the dark become rollable at step 5a (avoidance and mood work alone); Battle-shy waits for
+breaks (5b), Hot-headed, Peacemaker and Protective for bonds, Drinker and Stim-hooked for habits.
 
-## 5. Fear and phobias (M, in two halves)
+## 5. Stress and mental breaks (S, then M)
 
-Fear goes through the crew AI's eligibility and interrupt layers (`docs/CREW_AI.md` section 5), not a separate path
-override.
+One framework for psychological failure; no fear meter. Mood sets how fragile a crew member is, acute **stressors**
+(read from world state at check time) can tip anyone into a **break**, and traits change the odds and the kind of break.
+Everything goes through the crew AI's layers (`docs/CREW_AI.md` sections 5 and 6): no movement or path of its own.
 
-### Fear meter
+### Survival is not a break
 
-| Rule | Value |
-|---|---|
-| `FearC { level: 0..100, trigger, sinceMax, broke }` | Updated by `systems/fear.ts` (new) every 10 ticks, staggered by id. |
-| Triggers | Fire: a burning tile (grid `fire`) within 3 tiles. Vacuum: own tile `o2` < `O2_HARM_BELOW` (10), or on EVA. Dark: own tile `light` < `LIGHT_DARK_BELOW` (40). Combat: a hostile (`fight/relations.ts`) in line of sight (`fight/los.ts`) within 8 tiles. |
-| Rise | +10/s while the trigger is present (+20/s if it's on their own tile). Coward ×1.5, Protective near a friend ×0.5. |
-| Decay | −5/s when the trigger is gone. |
-| 30 Uneasy | Mood "uneasy" −5. |
-| 60 Afraid | Mood "terrified" −15; workSpeed ×0.7; gunnery −1, melee −1 (accuracy in `fight/weapons.ts` goes through `stat`). Brave caps at 59. |
-| 100 Panic | Undrafted: panic (below). Drafted: obey with the penalties above; once at 100 for 10 more seconds (about 20 s of trigger in all; Coward 5 s), `broke = true` and they panic anyway. |
-| End | Panic ends when level < 40 and the trigger is out of sight. `broke` clears; a drafted crew member goes back to their orders (`DraftedC` stays). Afterwards "shaken" −5 mood for 2 min. |
+Leaving a lethal tile is the `hazard` interrupt that `CREW_AI.md` already plans for Phase 3, not psychology. Lethal
+means own tile on fire (grid `fire`), or `o2` < `O2_HARM_BELOW` (10) or `co2` > `CO2_HARM_ABOVE` (5) without suit
+air (`hasSuitAir`), or extreme temperature. Everyone, phobic or not, mid-break or not, gets an `escape` task to the
+nearest safe tile. The tolerance flags stay as `CREW_AI.md` lists them (`extinguish`, breach seal, suited work), so a
+Pyrophobic still fights a fire they have chosen to fight. A drafted crew member is moved off a lethal tile when they stop
+on it (a path through one is still obeyed) and keeps the draft.
 
-### Half 1: avoidance through eligibility (buildable now)
-
-| Rule | Where |
-|---|---|
-| A phobic crew member isn't eligible for a job whose site is inside a trigger area: fire within 3 tiles of the site (and `extinguish` jobs) for Pyrophobic; EVA, `suitUp` and vacuum sites for Afraid of the void; sites with light < 40 for Afraid of the dark; sites with a hostile within 8 tiles for Battle-shy. | `crew/jobFit.ts` `jobFits` |
-| Rescue: phobic crew don't volunteer for a `rescue` whose patient lies in a trigger area unless drafted; Brave always will, including near hostiles. | `jobFits`, `fight/rescue.ts` `claimHiddenRescue` |
-| Direct orders (drafted, `man.ts`) skip eligibility, so the player can always send them. | — |
-| Fear meter, mood and penalties all run in this half. At 100 nothing more happens until half 2. | `systems/fear.ts`, `crew/mood.ts`, `traitModifiers` |
-
-### Half 2: panic as an interrupt (blocked on #194)
-
-Panic flee is a new `Interrupt` reason with owner `executor` and a `flee` task built on `fleePath`. It **depends on
-the interrupt layer becoming authoritative** (#194's next phase): today `src/sim/ai/interrupt.ts` is a Phase 1
-read-only detector that aborts nothing, so there's nothing to hook panic onto without a parallel override, which we
-don't want.
-
-Precedence, highest first:
+Interrupt order (`ai/interrupt.ts` `detect`), resolving section 5's old conflict with `CREW_AI.md` (which put `hazard`
+at 7, below `fight`):
 
 | # | Reason | Rule |
 |---|---|---|
-| 1 | dead | — |
-| 2 | downed, carried, inert, stunned | — |
-| 3 | floating (EVA) | — |
-| 4 | emergency escape | Own tile lethal (no O2 without a suit, or on fire unless extinguishing): everyone leaves it, phobia or not |
-| 5 | panic (`broke`) | Severe fear breaks a draft |
-| 6 | drafted | Obeys, with fear penalties |
-| 7 | panic | Undrafted at 100 fear |
-| 8 | heldForMend | — |
-| 9 | fight | — |
+| 1–3 | dead; downed, carried, inert, stunned; floating | Unchanged |
+| 4 | hazard | Survival; overrides drafts and breaks (a break's timer keeps running) |
+| 5 | breakdown, severe | Panic, combat freeze: the only breaks that override a draft |
+| 6 | drafted | Orders obeyed; mild and moderate breaks wait (below) |
+| 7 | breakdown, moderate | Hide, tantrum, despair |
+| 8, 9 | heldForMend, fight | Unchanged |
 
-Two conflicts with `docs/CREW_AI.md` to settle when #194's interrupt phase is designed: it puts `hazard` (our
-emergency escape) at 7, below `fight`, in Phase 3, where this design needs it at 4, above `drafted`; and its hazard
-tolerance list (`extinguish`, breach seal, suited work) has to match "lethal" here.
+Mild breaks (work refusal, isolation) aren't interrupts. They are a drive in L1: `Intent.drive` is `idle` (refusal) or
+`leisure` with a destination (isolation), so the scheduler gives them no job and they still eat, sleep and evacuate.
 
-Log and alerts: "Kel is terrified of the fire." (log, on reaching 60). "Kel panicked and fled the fire." (urgent
-alert, clickable, on panic). "Kel broke ranks: fled the fire against orders." (urgent alert when `broke` sets on a
-drafted crew member). Events `crew.afraid`, `crew.panicked { broke }`, never read by sim logic.
+### The check
 
-| Touches | Change |
+| Rule | Value |
 |---|---|
-| `crew/fear.ts`, `systems/fear.ts` (new), `pipeline.ts` | meter, triggers |
-| `crew/jobFit.ts`, `fight/rescue.ts` | half 1 eligibility |
-| `crew/mood.ts`, `traitModifiers` | factors, penalties |
-| `ai/interrupt.ts`, `ai/types.ts`, `ai/machines/` (flee), `fight/flee.ts` | half 2 |
-| `events.ts`, `app/logText.ts`, alerts | lines above |
+| Who | Mood crew (`hasMood`), not incapacitated, not already in a break, not on cooldown. |
+| Cadence | `systems/breakdown.ts` (new, right after `systems/mood.ts` in `pipeline.ts`) every `BREAK_INTERVAL` = 100 ticks (5 s), staggered by id. |
+| Roll | `unit(hash32(sim.seed, BREAK_SALT, id, floor(tick / BREAK_INTERVAL)))` < p; outcome from a second salt. Never `Math.random`; independent of `sim.rng`, so one crew member's roll doesn't shift anyone else's. |
+| p | `(base(mood) + Σ stressor) × susceptibility`, capped at 4% per check. |
+| base(mood) | ≥ 35: 0. 20–35: 0.1%. 10–20: 0.4%. < 10 (`breakdownRisk()`, `MOOD_BREAKDOWN_BELOW`): 1.5% (about one break per 5–6 min). |
+| Stressor scale | Each stressor term × (1.5 below mood 35, 1 at 35–65, 0.5 above 65): low mood makes the same fire worse; no mood floor is needed for a break. |
+| Drafted | Only severe outcomes can roll, p × 0.5 (a draft steadies). |
 
-Size: half 1 **S/M**, half 2 **M** once the interrupt layer is authoritative.
+Stressors are read from state; duration counters live on `MoodC` beside the trait memory (`idle`, `quiet`, `inside`,
+`crew/traitMood.ts`), optional, reset by a break:
+
+| Stressor | Condition | p per check | Outcome pool (weight) |
+|---|---|---|---|
+| Fire | Burning tile within 3 tiles | 0.3% | panic 5, freeze 2, refusal 2 |
+| Combat | Hostile (`fight/relations.ts`) in sight (`fight/los.ts`) within 8 tiles for ≥ 30 s (counter `m.underFire`) | 0.3% | freeze 3, hide 4, panic 3 |
+| Decompression | Own tile `o2` < `O2_HARM_BELOW` with suit air, or suit air ≤ `EVA_AIR_LOW_FRAC` (25%) | 0.5% | panic 6, freeze 2 |
+| Blackout | Own tile `light` < `LIGHT_DARK_BELOW` (40) for ≥ 3 min (counter `m.dark`) | 0.2% | isolation 3, panic 1, despair 1 |
+| Exhaustion | Rest < 10 or hunger 0 | 0.2% | refusal 4, despair 2 |
+| Grief | A friend died in the last 10 min (section 6) | 0.5% | despair 6, isolation 3, tantrum 1 |
+| Low mood only | No stressor, base > 0 | — | refusal 4, tantrum 3, isolation 3, despair 2 |
+
+Ordinary darkness, ordinary EVA and an ordinary fight cost mood (existing factors and the phobias below) but add no
+break chance until a duration or severity line above is crossed. Even a phobic crew member at a fire for 2 minutes
+breaks with about 25% odds, never surely.
+
+### Outcomes
+
+| Break | Tier | Does | Duration | Log / alert |
+|---|---|---|---|---|
+| Panic | severe | Executor machine `break`, state `Flee` (`fight/flee.ts` `fleePath` away from the stressor's tiles), then `Cower` in place | 30–60 s | Urgent alert, clickable: "Kel panicked and fled the fire." |
+| Freeze | severe in combat, else moderate | `break/Freeze`: stands still, holds nothing (`abortTask` reason `breakdown`) | 10–20 s | Combat: alert. Else log. |
+| Hide | moderate | `break/Hide`: walk to the nearest tile no hostile can see (`fight/rescue.ts` `hiddenFrom`), stay | up to 60 s | Log |
+| Tantrum | moderate | `break/Sulk` in place; crew within 7 tiles get "made a scene" −3 for 5 min (−5 to relations with section 6) | 60–90 s | Log |
+| Despair | moderate | `break/Lie`: lies down where they stand (to their bed if it's within 15 tiles), eats only at `HUNGER_EAT_URGENT` | 3–5 min | Log |
+| Work refusal | mild | L1 drive `idle`: no jobs; needs, survival and drafts work | 2–4 min | Log |
+| Isolation | mild | L1 drive `leisure`: a jobless walk to the reachable room with the fewest crew, then stays | 2–3 min | Log |
+
+Durations roll from the same hash. All interrupt-tier breaks run as one machine, `break` (states above), owner
+`executor`, class `hold` (only hard reasons end it), so the reservation and drop rules of `abortTask` apply as for any
+interrupt.
+
+| Rule | Value |
+|---|---|
+| `BreakdownC { kind, tier, context, until, since }` | One per crew member. Optional component: no `SAVE_VERSION` bump. |
+| End | `until` reached, or the context is gone for 10 s (fire out, hostiles dead), or downed. Survival suspends a break; the timer runs on. |
+| Recovery | Mood "let it out" +5 for 5 min; the stressor counters reset. |
+| Cooldown | No new break for 10 min, and not from the same context for 20 min. Survival is never on cooldown. |
+| Draft | Undrafting during a severe break does nothing; drafting during a moderate one ends it (the player's order wins). |
+| Alerts | At most one urgent break alert per crew member per 10 min; a second severe break on the same ship within 60 s goes to the log only. Every break is logged; alerts clear when the break ends. |
+| Events | `crew.break { kind, context }`, `crew.breakEnded`: output only. |
+
+### Traits
+
+| Trait | Susceptibility and stressors | Outcome weights |
+|---|---|---|
+| Brave | Combat ×0 | panic, freeze, hide ×0 |
+| Coward | Combat ×1.5 (keeps its hp flee and surrender: fight code) | hide, panic ×3 |
+| Protective | Combat ×0.5 with a friend within 6 tiles; grief ×1.5 | — |
+| Thrill-seeker | Combat, decompression ×0 | — |
+| Stoic / Sensitive | All ×0.5 / ×1.5 | — |
+| Cheerful / Gloomy | All ×0.8 / ×1.2 | despair ×2 (Gloomy) |
+| Workaholic / Lazy | Exhaustion ×1.5 / — | refusal ×0 / ×2 |
+| Loner / Social | Grief ×0.75 / ×1.25 | isolation ×2 / ×0.5 |
+| Hot-headed | — | tantrum ×3 |
+| Void-born / Dark-adapted | Decompression ×0.5 / blackout ×0 | — |
+
+### Phobias
+
+A phobia discourages; it never refuses. Avoidance is a pick penalty like `EVA_JOB_PENALTY` (30 tiles,
+`ai/legacyPick.ts` `pickJob`; the cost term in #194 Phase 2's scheduler), so a phobic crew member takes the job when it
+is the only one at that priority level, and in Phase 2 the job goes to someone else when someone else can take it.
+Drafts and `man.ts` orders skip it.
+
+| Trait | Avoids (`PHOBIA_JOB_PENALTY` 30) | Mood | Break |
+|---|---|---|---|
+| Pyrophobic | `extinguish`, and job sites within 3 tiles of fire | "fire nearby" −6 with fire within 6 tiles | Fire ×4, counted within 6 tiles |
+| Space-sick (`trait.space_sick`, was `trait.void_fear`) | Jobs whose walk is thin (`planSiteWalk` `thin`, EVA) | "spacewalk" −4 while suited outside | Decompression ×3; plain EVA adds nothing |
+| Afraid of the dark | — | "dark" −10 (not −5) | Blackout ×3, counted from 1 min |
+| Battle-shy | Job sites with a hostile within 8 tiles | "under fire" −6 with a hostile in sight | Combat ×4, counted from 10 s; freeze, hide ×2 |
+
+Touches: 5a `ai/legacyPick.ts`, `crew/traitMood.ts`, `crew/mood.ts`. 5b `crew/breakdown.ts` and `systems/breakdown.ts`
+(new), `pipeline.ts`, `ai/{interrupt,types,classes,policy}.ts`, `ai/machines/break.ts` (new), `events.ts`,
+`app/logText.ts`, alerts, the crew inspector. Size: 5a **S** (now); 5b **M**, after #194 makes the interrupt layer
+authoritative and adds `hazard` (Phase 3). Mild breaks alone could go through `policy.legacy` earlier.
 
 ## 6. Relationships (L)
 
@@ -255,7 +309,7 @@ friends.
 |---|---|
 | With a friend | Mood +4 within 7 tiles; workSpeed ×1.05 within 3 tiles of a friend who's working |
 | Near a rival | Mood −6 within 7 tiles (halved near a Peacemaker); rivals avoid adjacent beds and the same table |
-| Grief | A friend's `DeadC` (seen by the system, not the event): "grieving" −15 for 10 min (Protective ×1.5) |
+| Grief | A friend's `DeadC` (seen by the system, not the event): "grieving" −15 for 10 min (Protective ×1.5), and the grief stressor (section 5) |
 
 | Touches | Change |
 |---|---|
@@ -286,24 +340,24 @@ Size **M** buy-only; **L** with the still and its art.
 
 | Where | Shows |
 |---|---|
-| Crew card (`src/ui/CrewInspector.svelte`) | Trait chips under the name, coloured by kind (behaviour, phobia/habit, trade-off, texture); hover shows the effect line. Skills: rolled base, `+n` from XP, a thin bar to the next level. Fear bar when > 0. Bonds: friends and rivals with names. Active states (afraid, craving, grieving) are already in the mood breakdown as factors. |
-| Crew bar (`CrewBar.svelte`) | Urgent state only: an icon for panic or withdrawal. |
+| Crew card (`src/ui/CrewInspector.svelte`) | Trait chips under the name, coloured by kind (behaviour, phobia/habit, trade-off, texture); hover shows the effect line. Skills: rolled base, `+n` from XP, a thin bar to the next level. An active break in Status's conditions ("Isolation, 1:20 left"). Bonds: friends and rivals with names. Phobia, craving and grief moods are factors in the mood breakdown. |
+| Crew bar (`CrewBar.svelte`) | Urgent state only: an icon for a break or withdrawal. |
 | Crew screen roll (#238) | Per member: portrait, editable name, fixed role, skill pips against the role baseline (filled = baseline, bright = above, hollow = below), trait chips, Talented or Green. Reroll one or all (section 1). |
-| Ship's log (`app/logText.ts`) | Bonds formed, shouting matches, fear at 60, cravings, habit kicked, level-ups ("Mara's repair is now 4."). |
-| Alerts | Panic, broke ranks, withdrawal. |
+| Ship's log (`app/logText.ts`) | Bonds formed, shouting matches, every break and its end, cravings, habit kicked, level-ups ("Mara's repair is now 4."). |
+| Alerts | Severe breaks only (panic; a combat freeze), throttled (section 5); withdrawal. |
 
 ## 9. Build order
 
 | Step | Piece | Size | Notes |
 |---|---|---|---|
 | 1 | Crew-generation RNG, budget-first skill rolls, `RolledSkillsC` | S | — |
-| 2 | `TraitDef`, `TraitsC`, roll, `traitModifiers`; texture, trade-off and simple-hook behaviour traits (Brave, Coward minus fear, Workaholic, Lazy, Thrill-seeker, Stoic, Sensitive, Cheerful, Gloomy, Loner/Social mood half) | M | others `rollable: false` |
+| 2 | `TraitDef`, `TraitsC`, roll, `traitModifiers`; texture, trade-off and simple-hook behaviour traits (Brave, Coward minus breaks, Workaholic, Lazy, Thrill-seeker, Stoic, Sensitive, Cheerful, Gloomy, Loner/Social mood half) | M | others `rollable: false` |
 | 3 | Crew card and crew screen roll | M | unblocks #238 |
 | 4 | Work-based XP: `grantXp`, curve, grant points, recruit and save handling | S/M | |
-| 5a | Fear meter + eligibility half; phobia traits rollable | S/M | |
-| 5b | Panic interrupt, drafted break, emergency escape precedence | M | after #194's interrupt phase |
+| 5a | Phobia pick penalties and mood factors; Pyrophobic, Space-sick, Afraid of the dark rollable | S | buildable now |
+| 5b | Mental breaks: `BreakdownC`, check and stressors, `break` machine, mild drives, trait weights; Battle-shy rollable; effect lines gain their break parts | M | after #194's `hazard` interrupt (Phase 3) |
 | 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | |
 | 7 | Addictions; Drinker, Stim-hooked rollable | M/L | |
 
-Save: `RolledSkillsC`, `TraitsC`, `FearC`, `RelationsC`, `AddictionC` are new optional components; old saves load with
+Save: `RolledSkillsC`, `TraitsC`, `BreakdownC`, `RelationsC`, `AddictionC` are new optional components (and optional `MoodC` counters); old saves load with
 role skills and no traits. Step 4 changed what `SkillXpC` means (`SAVE_VERSION` 73, no migration).
