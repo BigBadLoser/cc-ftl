@@ -1,11 +1,13 @@
 """Bastion (set 8): slate armour; a heavy cornice, posts at each tile edge, the face between them cut in from a sloped
 foot up to the cornice; slots cut into the ramp for machinery; its shell and its straight-run designs."""
+import colorsys
 import math
 
 from mathutils import Vector
 
 from .. import wall3d as T
 from .. import walls as W
+from ..restyle import STEP
 from .base import Faction, _style
 from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood, slot_tone
 from .parts import PAINT, PZ, body, corner_piece, prism
@@ -125,7 +127,7 @@ class RecessTones(Feature):
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
         fam = "blue" if r and r[1] == "hull" else "wall"
-        return RECESS[fam] if face == "y" else T.RAMPS[fam][1][2]          # (the recess's back: its own step)
+        return RECESS[fam] if face == "y" else darker(RECESS[fam])         # (the recess's back: its own step)
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R = T.RAMPS[fam][0]
@@ -202,7 +204,7 @@ def bastion(hull):
         def band(u0, u1, z0, z1, lvl, cap=None, front=dl, m=(False, False), back=d0, cols=None):
             prism(k, ax, plane, u0, u1, [(back, z0), (front, z0), (front, z1), (back, z1)], F, lvl, cap=cap, mitre=m,
                   cols=cols)
-        fc = [None, FRONT[F], None, None] if ax == "y" else None   # (the main face's front the ramp's tone)
+        fc = [None, FRONT[F] if ax == "y" else darker(FRONT[F]), None, None]   # (the main face's front the ramp's)
         if endf:                                        # a wall's end face: not recessed; its section, and the
             _end_section(k, ax, plane, a, b, zs, top - BAST_HB if full else top, F)   # cornice turned onto it
             if full:
@@ -234,7 +236,7 @@ def bastion(hull):
                     continue                                     # (nor an inner one)
                 q0, q1 = (max(edge, a), edge + PW) if lo else (edge - PW, min(edge, bb))
                 if q1 - q0 > 1e-6:
-                    band(q0, q1, zlo, zc0, 3, cols=fc, cap=RECESS_SIDE[F] if ax == "y" else None)   # (its inner
+                    band(q0, q1, zlo, zc0, 3, cols=fc, cap=RECESS_SIDE[F] if ax == "y" else darker(RECESS_SIDE[F]))   # (its inner
                                                                                         # side the recess's)
                     for i in (1, 2):                                     # small lit blocks stepping out of it
                         zj = zsl + (zc0 - zsl) * i / 3
@@ -284,14 +286,34 @@ SLOPE_LIFT = {"fBW2": "fBW10", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}  
                                                 # the step its role gives (2, what the open slot's insides keep)
 
 
+_ORDER = {}
+
+
+def darker(name):
+    """The bastion tone one shade under name in its ramp (its distinct colours by lightness: the 7 steps and the
+    looks's own between them), the shade side's twin of a lit side's."""
+    pre = name.rstrip("0123456789")
+    if pre not in _ORDER:
+        from .base import palette_entries
+        ent = {k: v for k, v in palette_entries().items() if k.rstrip("0123456789") == pre}
+        lum = lambda h: colorsys.rgb_to_hls(*(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)))[1]   # noqa: E731
+        hexes = sorted(set(ent.values()), key=lum)
+        _ORDER[pre] = (hexes, {h: min(k for k, v in ent.items() if v == h) for h in hexes}, ent)
+    hexes, first, ent = _ORDER[pre]
+    i = hexes.index(ent[name])
+    return first[hexes[max(0, i - 1)]]
+
+
 class Bastion(Faction):
     pre = "fB"
 
     def paint(self, P):
         c = super().paint(P)
-        if P.kind.startswith("slope") and P.z < W.skirt_top() + 0.01 and P.sprite.startswith("tile.wall."):
-            return SLOPE_LIFT.get(c, c)
-        return c
+        low = P.kind.startswith("slope") and P.z < W.skirt_top() + 0.01 and P.sprite.startswith("tile.wall.")
+        if P.face == "x" and P.role in STEP["y"] and c.startswith(("fBW", "fBH")):   # the shade side: the lit
+            y = f"{c[:3]}{STEP['y'][P.role]}"                                       # side's tone, a shade under
+            return darker(SLOPE_LIFT.get(y, y) if low else y)
+        return SLOPE_LIFT.get(c, c) if low else c
 
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
