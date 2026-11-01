@@ -42,7 +42,7 @@
       {#if !enemy}<div class="v" title="Rest" data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
     </div>
   </div>
-  <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<span class="state" data-testid="crew-state">{now.chip}</span>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span>{now.text}</span></p>
+  <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<span class="state" data-testid="crew-state">{now.chip}</span>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>
   {#if c.weapon}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
