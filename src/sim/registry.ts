@@ -278,6 +278,8 @@ export interface RecipeDef {
   station: string;
   inputs: ItemQty[];
   outputs: ItemQty[];
+  /** Rare extra outputs: each is rolled once per finished batch with the sim's seeded rng (deterministic), `chance` 0..1. */
+  extras?: { item: string; count: number; chance: number }[];
   /** Ticks of work at workSpeed 1. */
   work: number;
   /** Work category of the craft job (default 'crafting'; refinery recipes use 'refining'). */

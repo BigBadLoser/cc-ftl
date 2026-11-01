@@ -44,7 +44,7 @@ export const trade = {
       name: 'Freighter', match: { faction: 'faction.civilian', role: 'freighter' }, shuttle: true, sell: 0.92, buy: 0.95,
       tagMods: { raw: { sell: 0.9 }, refined: { sell: 0.95 } }, credits: [300, 900],
       stock: [
-        { item: 'item.metal', min: 20, max: 60 }, { item: 'item.scrap', min: 10, max: 40 }, { item: 'item.polymer', min: 8, max: 30 },
+        { item: 'item.metal', min: 20, max: 60 }, { item: 'item.scrap_hull', min: 10, max: 40 }, { item: 'item.polymer', min: 8, max: 30 },
         { item: 'item.electronics', min: 4, max: 14 }, { item: 'item.ration', min: 6, max: 24, chance: 0.8 }, { item: 'item.parts', min: 2, max: 10, chance: 0.5 },
       ],
     },
@@ -60,7 +60,7 @@ export const trade = {
       name: 'Mining ship', match: { faction: 'faction.civilian', role: 'mining' }, shuttle: false, sell: 0.9, buy: 1,
       tagMods: { raw: { sell: 0.8 }, components: { buy: 1.25 } }, credits: [200, 700],
       stock: [
-        { item: 'item.ice', min: 20, max: 70 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.metal', min: 15, max: 50 },
+        { item: 'item.ice', min: 20, max: 70 }, { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.metal', min: 15, max: 50 },
         { item: 'item.iron_ore', min: 20, max: 80 }, { item: 'item.rare_ore', min: 2, max: 12, chance: 0.6 },
         { item: 'item.parts', min: 0, max: 6, chance: 0.4 },
       ],
@@ -82,7 +82,7 @@ export const trade = {
       // Ore is cheap where it is dug; parts and electronics are dear out on the rocks (issue #222).
       name: 'Mining station', match: { faction: 'station.mining' }, shuttle: false, sell: 0.9, credits: [1200, 3500],
       tagMods: { ore: { sell: 0.8, buy: 0.85 }, components: { buy: 1.3 } },
-      stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 },
+      stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 },
         { item: 'item.iron_ore', min: 60, max: 180 }, { item: 'item.rare_ore', min: 6, max: 24 }, { item: 'item.fuel', min: 20, max: 60 }],
     },
     'trader.station.farming': {
@@ -105,7 +105,7 @@ export const trade = {
     'trader.station.pirate': {
       name: 'Den fence', match: { faction: 'station.pirate' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, salvage: { buy: 1.2 } }, credits: [300, 1200],
       stock: [
-        { item: 'item.scrap', min: 30, max: 100 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.ion_pistol', min: 1, max: 4, chance: 0.7 },
+        { item: 'item.scrap_hull', min: 30, max: 100 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.ion_pistol', min: 1, max: 4, chance: 0.7 },
         { item: 'item.blade', min: 2, max: 6 }, { item: 'item.rifle', min: 1, max: 3, chance: 0.5 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
       ],
     },
@@ -134,7 +134,7 @@ export const trade = {
     'trader.pirate': {
       name: 'Pirate fence', match: { faction: 'faction.scrapper' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, salvage: { buy: 1.2 } }, credits: [100, 600],
       stock: [
-        { item: 'item.scrap', min: 20, max: 80 }, { item: 'item.parts', min: 3, max: 12 }, { item: 'item.ion_pistol', min: 1, max: 3, chance: 0.6 },
+        { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.parts', min: 3, max: 12 }, { item: 'item.ion_pistol', min: 1, max: 3, chance: 0.6 },
         { item: 'item.blade', min: 1, max: 4, chance: 0.6 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
       ],
     },
@@ -142,7 +142,7 @@ export const trade = {
     // Ships from plain templates (raiders and the like) fall back to their side.
     'trader.raider': {
       name: 'Raider', match: { side: 'hostile' }, shuttle: false, credits: [50, 300],
-      stock: [{ item: 'item.scrap', min: 10, max: 40 }, { item: 'item.sidearm', min: 0, max: 2, chance: 0.5 }],
+      stock: [{ item: 'item.scrap_hull', min: 10, max: 40 }, { item: 'item.sidearm', min: 0, max: 2, chance: 0.5 }],
     },
   },
 } satisfies TradeDef;

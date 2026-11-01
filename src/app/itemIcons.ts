@@ -1,3 +1,4 @@
+import { itemArtId } from '../render/itemView';
 import { assetBase, loadComposed } from '../render/assets/loader';
 import type { StaticAsset } from '../render/assets/manifest';
 import type { UiIcon } from '../ui/api';
@@ -19,7 +20,8 @@ export async function loadItemIcons(ids: readonly string[]): Promise<Record<stri
   };
   const out: Record<string, UiIcon> = {};
   for (const id of ids) {
-    const a = [`${id}.m`, `${id}.s`, `${id}.held`].map((k) => manifest.assets[k]).find((x): x is StaticAsset => x?.kind === 'static');
+    const art = itemArtId(id);
+    const a = [`${art}.m`, `${art}.s`, `${art}.held`].map((k) => manifest.assets[k]).find((x): x is StaticAsset => x?.kind === 'static');
     const sheet = a && manifest.sheets[a.sheet];
     if (!a || !sheet) continue;
     const src = base + sheet.image;

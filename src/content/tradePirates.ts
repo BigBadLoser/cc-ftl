@@ -17,7 +17,7 @@ export const pirateTradeFactions = {
 export const pirateTraders = {
   'trader.raider_clan': {
     name: 'Raider clan', match: { faction: 'faction.raider' }, shuttle: false, tagMods: { weapon: { sell: 0.85 } }, credits: [80, 400],
-    stock: [{ item: 'item.scrap', min: 10, max: 40 }, { item: 'item.blade', min: 1, max: 4, chance: 0.7 }, { item: 'item.sidearm', min: 0, max: 3, chance: 0.5 }],
+    stock: [{ item: 'item.scrap_hull', min: 10, max: 40 }, { item: 'item.blade', min: 1, max: 4, chance: 0.7 }, { item: 'item.sidearm', min: 0, max: 3, chance: 0.5 }],
   },
   'trader.cartel': {
     name: 'Cartel hauler', match: { faction: 'faction.cartel' }, shuttle: false, credits: [600, 1800],
@@ -28,7 +28,7 @@ export const pirateTraders = {
   },
   'trader.zealot': {
     name: 'Zealot', match: { faction: 'faction.zealot' }, shuttle: false, tagMods: { components: { sell: 0.9 } }, credits: [200, 900],
-    stock: [{ item: 'item.electronics', min: 4, max: 16 }, { item: 'item.parts', min: 4, max: 16 }, { item: 'item.scrap', min: 5, max: 20, chance: 0.6 }],
+    stock: [{ item: 'item.electronics', min: 4, max: 16 }, { item: 'item.parts', min: 4, max: 16 }, { item: 'item.scrap_hull', min: 5, max: 20, chance: 0.6 }],
   },
   'trader.mercenary': {
     name: 'Mercenary', match: { faction: 'faction.mercenary' }, shuttle: false, credits: [400, 1400],

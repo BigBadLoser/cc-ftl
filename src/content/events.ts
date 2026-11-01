@@ -21,7 +21,7 @@ export const events = {
         check: { skill: 'repair', difficulty: 3 },
         success: {
           text: 'The engines catch. The grateful captain empties a cargo crate into your hold.',
-          effects: [{ type: 'items', item: 'item.parts', count: 6 }, { type: 'items', item: 'item.scrap', count: 20 }, { type: 'skillXp', skill: 'repair', amount: 40, who: 'actor' }, { type: 'reputation', faction: 'traders', delta: 1 }],
+          effects: [{ type: 'items', item: 'item.parts', count: 6 }, { type: 'items', item: 'item.metal', count: 10 }, { type: 'skillXp', skill: 'repair', amount: 40, who: 'actor' }, { type: 'reputation', faction: 'traders', delta: 1 }],
         },
         failure: {
           text: 'A coolant line bursts while your team works. They get out, scorched, and the freighter stays dead.',
@@ -40,10 +40,10 @@ export const events = {
     triggers: [{ kind: 'transit', weight: 5 }],
     cooldownSec: 600,
     choices: [
-      { id: 'swap', label: 'Swap 20 scrap for 5 electronics', cost: [{ item: 'item.scrap', count: 20 }], outcome: { text: 'A fair deal. The skiff peels away.', effects: [{ type: 'items', item: 'item.electronics', count: 5 }] } },
+      { id: 'swap', label: 'Swap 10 metal for 5 electronics', cost: [{ item: 'item.metal', count: 10 }], outcome: { text: 'A fair deal. The skiff peels away.', effects: [{ type: 'items', item: 'item.electronics', count: 5 }] } },
       {
         id: 'friends', label: 'Ask for the friends rate',
-        requires: [{ kind: 'reputation', faction: 'traders', min: 2 }], cost: [{ item: 'item.scrap', count: 10 }],
+        requires: [{ kind: 'reputation', faction: 'traders', min: 2 }], cost: [{ item: 'item.metal', count: 5 }],
         outcome: { text: '"For you? Done." He throws in extra.', effects: [{ type: 'items', item: 'item.electronics', count: 6 }, { type: 'items', item: 'item.parts', count: 2 }] },
       },
       { id: 'decline', label: 'No thanks', outcome: { text: 'The skiff shrugs and leaves.' } },
@@ -78,7 +78,7 @@ export const events = {
     once: true,
     choices: [
       { id: 'spare', label: 'Let him go', hint: 'He may remember this', outcome: { text: 'He salutes, wobbles, and is gone.', effects: [{ type: 'flag', flag: 'spared_pirate' }, { type: 'reputation', faction: 'pirates', delta: 1 }] } },
-      { id: 'strip', label: 'Take his cargo, then go', outcome: { text: 'You take what he has and send him off with a warning.', effects: [{ type: 'items', item: 'item.scrap', count: 30 }, { type: 'reputation', faction: 'pirates', delta: -1 }, { type: 'flag', flag: 'robbed_pirate' }] } },
+      { id: 'strip', label: 'Take his cargo, then go', outcome: { text: 'You take what he has and send him off with a warning.', effects: [{ type: 'items', item: 'item.metal', count: 12 }, { type: 'reputation', faction: 'pirates', delta: -1 }, { type: 'flag', flag: 'robbed_pirate' }] } },
       { id: 'fire', label: 'Open fire', outcome: { text: 'The skiff is gone. His friends will not be happy.', effects: [{ type: 'reputation', faction: 'pirates', delta: -3 }, { type: 'flag', flag: 'killed_pirate' }] } },
     ],
   },
@@ -117,9 +117,9 @@ export const events = {
     factions: ['meridian'],
     cooldownSec: 600,
     choices: [
-      { id: 'pay', label: 'Pay the tariff', cost: [{ item: 'item.scrap', count: 15 }], outcome: { text: 'The cutter logs you as compliant.', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
+      { id: 'pay', label: 'Pay the tariff', cost: [{ item: 'item.metal', count: 6 }], outcome: { text: 'The cutter logs you as compliant.', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
       { id: 'vip', label: 'Show your clearance', requires: [{ kind: 'reputation', faction: 'meridian', min: 3 }], outcome: { text: '"Carry on, captain."', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
-      { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.scrap', count: -10 }] } },
+      { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.metal', count: -5 }] } },
     ],
   },
   /** Module requirement; heal effect. */

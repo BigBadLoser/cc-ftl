@@ -153,7 +153,7 @@ const SCENARIOS: Scenario[] = [
     populate: false,
     setup(sim) {
       const hub = spawnStation(sim, 'hub');
-      const items = ['item.metal', 'item.scrap', 'item.ration'].filter((i) => i in content.items);
+      const items = ['item.metal', 'item.scrap_hull', 'item.ration'].filter((i) => i in content.items);
       const cmds: Command[] = [];
       const floor = (ship: number): Tile[] => {
         const g = shipGrid(sim, ship)!;

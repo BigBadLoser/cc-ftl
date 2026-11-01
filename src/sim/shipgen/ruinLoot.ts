@@ -13,7 +13,7 @@ export function lootStage(c: RuinCtx): void {
     if (!def?.storage) return;
     const state = c.meta.modules.find((r) => r.index === i)?.state;
     const keep = state === 'destroyed' ? 0 : combat ? 0.3 + c.rng.next() * 0.5 : c.rng.next() * 0.35;
-    const stock = (m.stock ?? [{ item: 'item.scrap', count: 10 }, { item: 'item.metal', count: 6 }, { item: 'item.parts', count: 3 }])
+    const stock = (m.stock ?? [{ item: 'item.scrap_hull', count: 6 }, { item: 'item.scrap_tech', count: 4 }, { item: 'item.metal', count: 6 }, { item: 'item.parts', count: 3 }])
       .map((s) => ({ item: s.item, count: Math.floor(s.count * keep) })).filter((s) => s.count > 0);
     if (stock.length) m.stock = stock;
     else delete m.stock;
@@ -32,7 +32,7 @@ export function lootStage(c: RuinCtx): void {
   const n = Math.round(3 + c.intensity * 6);
   for (const i of piles.slice(0, n)) {
     if (!free(i)) continue;
-    const item = c.rng.pick(['item.scrap', 'item.scrap', 'item.metal', 'item.parts', 'item.electronics', 'item.polymer']);
+    const item = c.rng.pick(['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.scrap_comfort', 'item.metal', 'item.parts', 'item.electronics', 'item.polymer']);
     drop(i, item, c.rng.int(2, 12), c.meta.items);
   }
   const guns = combat ? c.rng.int(1, 3) : c.rng.int(0, 1);

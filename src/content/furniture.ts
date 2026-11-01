@@ -8,6 +8,10 @@ import type { ModuleDef } from '../sim';
 /** What an ore bin's sprite shows for each ore (art kind of `module.storage_ore.<kind>.<fill>`). */
 const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': 'rare' };
 
+/** Scrap bins show the iron fill of the ore bin sprite until a scrap fill is rendered (ore_cage.py has a scrap look; no sheet yet). */
+const SCRAP_IDS = ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.scrap_weapons', 'item.scrap_comfort'];
+const SCRAP_ART = Object.fromEntries(SCRAP_IDS.map((i) => [i, 'iron']));
+
 export const furniture = {
   // 2x1 table; crew sit on chairs beside its long sides. Not in the sim yet: eating at a table.
   'module.mess_table': {
@@ -61,6 +65,14 @@ export const furniture = {
     description: "A large ore bin. Takes only ore.",
     asset: 'module.storage_ore_large', footprint: [3, 2], solid: true, access: [1, 2], power: 0,
     flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageAccepts: Object.keys(ORE_ART), storageArt: ORE_ART,
+  },
+  // Scrap bins: where salvaged scrap is stored, beside the scrapper. They take only scrap. Placeholder art: the ore bin's.
+  'module.storage_scrap': {
+    name: 'Scrap bin',
+    category: 'storage',
+    description: "A tip bin that takes only scrap. Feeds the scrapper.",
+    asset: 'module.storage_ore', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
+    flammability: 0.1, maxHp: 120, buildWork: 90, cost: [{ item: 'item.metal', count: 10 }], storage: { capacity: 24 }, storageAccepts: SCRAP_IDS, storageArt: SCRAP_ART,
   },
   // A freight container, opened from the doors on one long side. Cargo holds pack them around their walkway.
   'module.cargo_container': {

@@ -192,10 +192,10 @@ describe('NPC traders and miners', () => {
 
   it('a shelf that is full takes only what fits; the rest is dumped', () => {
     const { sim, a, f } = setup();
-    set(sim, a.e, 'item.scrap', capOf(a.e.base['item.scrap'] ?? 0) - 5);
-    f.cargo = [{ item: 'item.scrap', count: 30 }];
+    set(sim, a.e, 'item.scrap_hull', capOf(a.e.base['item.scrap_hull'] ?? 0) - 5);
+    f.cargo = [{ item: 'item.scrap_hull', count: 30 }];
     onDock(sim, f, a.p, () => []);
-    expect(stockOf(sim, a.e, 'item.scrap')).toBeLessThanOrEqual(capOf(a.e.base['item.scrap'] ?? 0));
+    expect(stockOf(sim, a.e, 'item.scrap_hull')).toBeLessThanOrEqual(capOf(a.e.base['item.scrap_hull'] ?? 0));
     expect(f.cargo).toBeUndefined();
   });
 
@@ -300,9 +300,9 @@ describe('the live station and the world market', () => {
     const metal = t.stock.find((l) => l.item === 'item.metal')!;
     const was = metal.count;
     metal.count -= 7;
-    const scrap = t.stock.find((l) => l.item === 'item.scrap');
+    const scrap = t.stock.find((l) => l.item === 'item.scrap_hull');
     if (scrap) scrap.count += 3;
-    else t.stock.push({ item: 'item.scrap', count: 3 });
+    else t.stock.push({ item: 'item.scrap_hull', count: 3 });
     // While live, an NPC docking moves the trader's own stock (no second copy).
     expect(moveStock(sim, e, sim.galaxy.turn, 'item.metal', -2)).toBe(-2);
     expect(t.stock.find((l) => l.item === 'item.metal')!.count).toBe(was - 9);
@@ -311,7 +311,7 @@ describe('the live station and the world market', () => {
     expect(t.port).toBeUndefined();
     expect(sim.galaxy.markets[e.id]!.turn).toBe(sim.galaxy.turn);
     expect(stockAt(sim, e, sim.galaxy.turn)['item.metal']).toBe(was - 9);
-    expect(stockAt(sim, e, sim.galaxy.turn)['item.scrap']).toBeGreaterThanOrEqual(3);
+    expect(stockAt(sim, e, sim.galaxy.turn)['item.scrap_hull']).toBeGreaterThanOrEqual(3);
     bindMarkets(sim);
     expect(t.stock.find((l) => l.item === 'item.metal')!.count).toBe(was - 9);
   });

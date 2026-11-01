@@ -12,7 +12,7 @@ const robot = {
   mechanical: { items: ['item.parts', 'item.metal'], hpPerItem: 25 },
   ionStunSec: 8,
   fearless: true,
-  wreck: [{ item: 'item.parts', count: 3 }, { item: 'item.scrap', count: 6 }],
+  wreck: [{ item: 'item.parts', count: 3 }, { item: 'item.scrap_tech', count: 6 }],
   coreLinked: true,
   // About 14 minutes idle, 7 working or fighting.
   charge: { drainPerSec: 0.12, busyMult: 2, lowBelow: 20 },
@@ -67,7 +67,7 @@ export const species = {
     maxHp: 200,
     armor: 0.3,
     designation: 'SX',
-    wreck: [{ item: 'item.parts', count: 5 }, { item: 'item.scrap', count: 10 }],
+    wreck: [{ item: 'item.parts', count: 5 }, { item: 'item.scrap_tech', count: 10 }],
   },
   // --- Derelict aliens (hatched from egg sacs; faction 'alien'; art `crew.alien.body.<kind>`). They do not breathe, so
   // they cross vented, airless decks freely (cold and thin air do nothing to them; heat and fire still do).

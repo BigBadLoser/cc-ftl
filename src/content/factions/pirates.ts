@@ -31,7 +31,7 @@ export const raider = {
   architecture: architecture([{ ...role('raider'), weight: { base: 5, perDepth: 0, max: 5 } }, { ...role('gunrunner'), weight: { base: 0, perDepth: 0.3, max: 2 } }]),
   hullFamilies: [{ ...family('raider'), weight: { base: 5, perDepth: 0, max: 5 } }, { ...family('gunrunner'), weight: { base: 0, perDepth: 0.3, max: 2 } }],
   weapons: { light: [{ value: 'module.ionCannon', weight: 3 }, { value: 'module.burstLaser', weight: 2 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
-  stock: [{ item: 'item.scrap', min: 1, max: 4 }, { item: 'item.metal', min: 0, max: 3 }],
+  stock: [{ item: 'item.scrap_hull', min: 1, max: 4 }, { item: 'item.metal', min: 0, max: 3 }],
   crew: {
     required: ['role.pilot', 'role.gunner', 'role.security', 'role.security', 'role.security'],
     pool: [{ value: 'role.security', weight: 4 }, { value: 'role.engineer', weight: 1 }],

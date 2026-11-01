@@ -27,9 +27,12 @@ export function stackClass(count: number, stackSize: number): 's' | 'm' | 'l' {
 }
 
 /** Asset ids for a floor stack of an item, most specific first. Items without art fall back to a plain crate. */
-export const stackAssets = (item: string, count: number, stackSize: number): string[] => [`${item}.${stackClass(count, stackSize)}`, 'prop.crate'];
+/** Placeholder art: every scrap type (`item.scrap_hull` ...) shows the generic scrap pile until each has its own sheet. */
+export const itemArtId = (item: string): string => (item.startsWith('item.scrap_') ? 'item.scrap' : item);
+
+export const stackAssets = (item: string, count: number, stackSize: number): string[] => [`${itemArtId(item)}.${stackClass(count, stackSize)}`, 'prop.crate'];
 /** Asset ids for the small sprite a crew member carries. */
-export const heldAssets = (item: string): string[] => [`${item}.held`, 'prop.crate'];
+export const heldAssets = (item: string): string[] => [`${itemArtId(item)}.held`, 'prop.crate'];
 
 interface Entry {
   spr: Sprite;

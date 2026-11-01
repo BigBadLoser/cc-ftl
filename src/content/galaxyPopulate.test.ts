@@ -232,7 +232,7 @@ describe('node population: the market', () => {
     const was = metal?.count ?? 0;
     // The player's deal takes metal off the shelf and adds scrap.
     if (metal) metal.count -= Math.min(metal.count, 5);
-    t.stock.push({ item: 'item.scrap', count: 9 });
+    t.stock.push({ item: 'item.scrap_hull', count: 9 });
     const now = t.stock.find((l) => l.item === 'item.metal')?.count ?? 0;
     // Leave: the port's market in the galaxy shows the change.
     const other = [...galaxyIndex(sim.galaxy).adjacent.get(node)!].map((x) => (x.a === node ? x.b : x.a)).sort()[0]!;
@@ -240,7 +240,7 @@ describe('node population: the market', () => {
     expect(liveTrader(sim, port.id)).toBeUndefined();
     expect(stockAt(sim, e, sim.galaxy.turn)['item.metal']).toBeCloseTo(now, 0);
     expect(was).toBeGreaterThanOrEqual(now);
-    expect(stockAt(sim, e, sim.galaxy.turn)['item.scrap']).toBeGreaterThanOrEqual(9);
+    expect(stockAt(sim, e, sim.galaxy.turn)['item.scrap_hull']).toBeGreaterThanOrEqual(9);
     // An NPC trader docking there afterwards sees the player's change too (one copy of the economy).
     expect(moveStock(sim, e, sim.galaxy.turn, 'item.metal', -1)).toBeLessThanOrEqual(0);
     expect(portOf(sim, port.id)).toBeDefined();
