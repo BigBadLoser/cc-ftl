@@ -622,6 +622,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       inset.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
+      atlas.dispose();
       gl.destroy();
     },
   };

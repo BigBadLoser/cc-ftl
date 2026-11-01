@@ -109,6 +109,8 @@ export interface Atlas {
   contextRestored(): Promise<void>;
   /** Resolves when no sheet is queued or loading. */
   whenIdle(): Promise<void>;
+  /** Unload every loaded sheet from pixi's global asset cache, so the next atlas (a new renderer) loads and uploads its own copies. */
+  dispose(): void;
   /** Decoded sizes and load counters (the `?hook` debug API shows them). */
   stats(): AtlasStats;
 }
@@ -379,6 +381,16 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     sweepEnv: (before) => (store.over('env') ? store.sweep('env', before) : []),
     envOver: () => store.over('env'),
     whenIdle: () => store.idle(),
+    dispose() {
+      // The sheets are cached by URL across atlases, and their bitmaps were closed after the upload to this renderer's GPU: a
+      // later renderer would be handed those spent textures and draw nothing from them (the title screen's ship switch).
+      store.forEachReady((name) => {
+        const def = manifest.sheets[name];
+        if (!def) return;
+        void Assets.unload(base + def.image);
+        if (def.glow) void Assets.unload(base + def.glow);
+      });
+    },
     stats() {
       const st = store.stats();
       return {
