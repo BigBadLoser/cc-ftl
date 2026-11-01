@@ -3,7 +3,7 @@ import type { Builder, Part, Rect } from './builder';
 import { letterOf } from './canvas';
 import { bandArcs, bandDepth, bandGroups, bandRadius, bandRooms } from './stationBands';
 import { concentricBands, marketBands, organPipes } from './stationDistricts';
-import { planRing, quadrantOf, quadrantRooms } from './stationDepartments';
+import { isDock, isSecure, isSystem, placeDepartments, quadrantOf, ringProgram } from './stationDepartments';
 import { arcsBetween, dockBanks, without } from './stationDocks';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
@@ -226,14 +226,6 @@ export interface WheelOpts {
   market?: boolean;
 }
 
-const isDock = (r: RoomSpec): boolean => r.role === 'dock';
-/**
- * System rooms keep rectangles (gun bays, shield generators, the core, reactors, shuttle bays and refinery floors need
- * square floor: a refinery is 3 x 4 with ore bins flush against it; a farm's bays stand in rows) and stand beyond the band with the docks, facing
- * open space (gun bays need it).
- */
-const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'hangar', 'industry', 'farm'];
-const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role) || !!r.warehouse;
 /**
  * Rim rooms beyond a band: docks first, near the top and bottom of the ring (airlocks face north or south), then the
  * system rooms anywhere along `arcs`.
@@ -280,8 +272,6 @@ export function wheelStation(rng: Rng, hub: RoomSpec | null, rooms: RoomSpec[], 
 /** Widest court between a concentric station's inner band and its outer ring. */
 const COURT = 14;
 
-/** The secure core's arcs: the stern (east) face, either side of the east spoke. */
-const isSecure = (r: RoomSpec): boolean => r.role === 'reactor' || r.role === 'shields' || r.role === 'core';
 /** Depth the secure core needs inboard of a ring: its deepest room (either way round) and its walls. */
 const secureDepth = (rooms: RoomSpec[]): number => Math.max(0, ...rooms.filter((r) => isSecure(r) || !!r.warehouse || r.role === 'weapons').map((r) => Math.min(r.w, r.h) + 3));
 
@@ -293,24 +283,6 @@ function besideSpoke(rooms: RoomSpec[], R: number, axis: number, side: -1 | 1): 
   const span = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0) / Math.max(1, R);
   return [side < 0 ? [axis - 0.14 - span, axis - 0.14] : [axis + 0.14, axis + 0.14 + span]];
 }
-/**
- * The secure core split either side of the east spoke: reactor and shield pairs dealt to the shorter side, the AI core
- * whole on one side. In each pair the doors lean towards each other (a reactor and its shield room share a door end).
- */
-function secureSides(rooms: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
-  const of = (role: string): RoomSpec[] => rooms.filter((r) => r.role === role);
-  const reactors = of('reactor'), shields = of('shields');
-  const sides: [RoomSpec[], RoomSpec[]] = [[], []];
-  const len = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0);
-  const add = (rs: RoomSpec[]): void => { (len(sides[0]) <= len(sides[1]) ? sides[0] : sides[1]).push(...rs); };
-  add(of('core'));
-  for (let i = 0; i < Math.max(reactors.length, shields.length); i++) {
-    const r = reactors[i], q = shields[i];
-    add(r && q ? [{ ...r, doorLean: 1 }, { ...q, doorLean: -1 }] : [r ?? q].filter((x): x is RoomSpec => !!x));
-  }
-  return sides;
-}
-
 /** The arc centred on `at` just long enough for `rooms` side by side at radius R (each a little clear of the next). */
 function span(rooms: RoomSpec[], at: number, R: number): [number, number] {
   const half = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) / 2 / Math.max(1, R);
@@ -424,20 +396,10 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   // Docks reach at least 6 past the corridor whatever the band (an airlock and its unloaders need the length).
   const banks = dockBanks(b, R, ring, docks, R + Math.max(depth, 6) + 2);
   if (!banks) return false;
-  // Departments (stationDepartments.ts): a small search places the secure core, the warehouses and habitation.
-  const westDocks = banks.splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);
-  const plan = planRing(b.rng, [...bandIn, ...sys], westDocks, market);
-  // The band in quadrants (cut at the dock banks and the east and west spokes), dealt by department.
-  const arcs = arcsBetween([...new Set([...banks.splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
-  // The groups run on round the ring as one list, so every quadrant fills to its length (no quadrant left with two
-  // rooms stretched over it) while each department keeps its place in the order.
-  const clinicRooms = bandIn.filter((r) => r.clinic);
-  const band = bandIn.filter((r) => !r.clinic);
-  const groups = quadrantRooms(band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
-  // The run starts at the main (north) bank, so the office and the customs post are always the first rooms after it.
-  const n0 = Math.max(0, arcs.findIndex(([a]) => quadrantOf(a + 1e-6) === 0));
-  const turn = <T>(xs: T[]): T[] => [...xs.slice(n0), ...xs.slice(0, n0)];
-  if (!bandArcs(b, R, ring, turn(groups).flat(), depth, turn(arcs))) return false;
+  // Facility requirements and department placement (stationDepartments.ts), then the structure round them.
+  const prog = ringProgram(bandIn, sys);
+  const { plan, arcs, band } = placeDepartments(b.rng, prog, banks.splits, market);
+  if (!bandArcs(b, R, ring, band, depth, arcs)) return false;
   const rim = without([[0, TAU]], banks.keep);
   // A market's street first: shop units both sides of the south concourse, from the ring inward.
   if (market) street(b, R);
@@ -446,16 +408,15 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   const SPOKE: Record<string, 'n' | 's' | 'e' | 'w'> = { '0,1': 'e', '1,2': 's', '2,3': 'w', '0,3': 'n' };
   const quietSpoke = SPOKE[[...plan.quiet].sort().join(',')];
   const busySpoke = (d: string): boolean => d === 'n' || (d === 's' && (market || plan.freight.includes('s'))) || d === plan.secure;
-  const clinicLeft = quietSpoke && !busySpoke(quietSpoke) ? clinic(b, R, quietSpoke, clinicRooms) : clinicRooms;
+  const clinicLeft = quietSpoke && !busySpoke(quietSpoke) ? clinic(b, R, quietSpoke, prog.clinic) : prog.clinic;
   // Rooms that need no hull face go inboard of the corridor, doored straight onto it (never through a band room).
   // The secure core either side of its spoke (east or west, where no dock faces).
-  const inner = sys.filter((r) => r.role !== 'weapons');
   const axis = plan.secure === 'e' ? 0 : Math.PI;
   // The secure compound: the core's spoke is its spine, and the reactors, shield rooms, the AI core and the gun bays line
   // both sides of it as plain rectangles (reactor and shield rooms in pairs), one block beside the plant rooms of the
   // outer band. Rooms that do not fit along the spine stand in rows beside it, then as bastions or anywhere inboard.
-  const guns = sys.filter((r) => r.role === 'weapons');
-  const [upper0, lower0] = secureSides(inner.filter(isSecure));
+  const { guns, houses } = prog;
+  const [upper0, lower0] = prog.secure;
   const queue = [...upper0, ...lower0, ...guns];
   const lined = lineSpoke(b, R, plan.secure, () => {
     const r = queue.shift();
@@ -467,7 +428,6 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   const gunsLeft = missedAll.filter((r) => r.role === 'weapons');
   const missed = missedAll.filter((r) => r.role !== 'weapons');
   // Warehouses beside the dock spokes the plan picked, either side, doors towards the spoke.
-  const houses = inner.filter((r) => r.warehouse);
   const slots: [number, -1 | 1][] = plan.freight.flatMap((f): [number, -1 | 1][] => (f === 'n' ? [[-Math.PI / 2, 1], [-Math.PI / 2, -1]] : [[Math.PI / 2, -1], [Math.PI / 2, 1]]));
   const beside = (rs: RoomSpec[], [at, side]: [number, -1 | 1]): RoomSpec[] =>
     rs.length > 0 ? fitAlong(b, R, ring, rs.map((r): RoomSpec => ({ ...r, doorLean: side > 0 ? -1 : 1 })), besideSpoke(rs, R, at, side), -1) : [];
@@ -482,7 +442,7 @@ function outerBand(b: Builder, R: number, ring: number, bandIn: RoomSpec[], sys:
   // Works rooms in the quadrants habitation does not take; then whatever missed its place anywhere inboard; the rim
   // takes what is left.
   const busy = QUARTERS.filter((_, q) => !plan.quiet.includes(quadrantOf(((q + 1) * TAU) / 4 - TAU / 8)));
-  const works = fitAlong(b, R, ring, inner.filter((r) => !isSecure(r) && !r.warehouse), busy, -1);
+  const works = fitAlong(b, R, ring, prog.works, busy, -1);
   const inboard = fitAlong(b, R, ring, [...missed, ...housed, ...unguarded, ...works, ...clinicLeft], QUARTERS, -1);
   // Before the rim, a sweep: each room left over tries every angle inboard in turn, wherever there is space.
   const swept = inboard.filter((r) => !sweep(b, R, ring, r));

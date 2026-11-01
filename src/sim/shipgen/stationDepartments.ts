@@ -1,5 +1,6 @@
 import type { Rng } from '../rng';
 import type { RoomSpec } from './plan';
+import { arcsBetween } from './stationDocks';
 import { byPull, pullOf } from './stationDistricts';
 
 /**
@@ -32,6 +33,63 @@ export function warehoused(rooms: readonly RoomSpec[]): RoomSpec[] {
 }
 
 const area = (r: RoomSpec): number => r.w * r.h + 4;
+
+/**
+ * System rooms keep rectangles (gun bays, shield generators, the core, reactors, shuttle bays and refinery floors need
+ * square floor: a refinery is 3 x 4 with ore bins flush against it; a farm's bays stand in rows): they stand off the
+ * band, inboard of the ring or beyond it.
+ */
+const SYSTEM: readonly string[] = ['weapons', 'shields', 'core', 'reactor', 'hangar', 'industry', 'farm'];
+export const isSystem = (r: RoomSpec): boolean => SYSTEM.includes(r.role) || !!r.warehouse;
+export const isDock = (r: RoomSpec): boolean => r.role === 'dock';
+/** The secure core: reactors, shield rooms, the AI core. */
+export const isSecure = (r: RoomSpec): boolean => r.role === 'reactor' || r.role === 'shields' || r.role === 'core';
+
+/**
+ * A round ring's facility requirements (docs/STATIONGEN2.md, "Target stages"): what the outer ring must hold, sorted by
+ * how it stands. Band rooms are ring segments; the rest are rectangles: the clinic lines a spoke, the secure core (in
+ * two sides, see `secureSides`) and the gun bays line the secure spoke, warehouses stand beside the dock spokes, works
+ * rooms in the busy quadrants.
+ */
+export interface RingProgram {
+  band: RoomSpec[];
+  clinic: RoomSpec[];
+  secure: [RoomSpec[], RoomSpec[]];
+  guns: RoomSpec[];
+  houses: RoomSpec[];
+  works: RoomSpec[];
+}
+
+/** The program of an outer ring from its band rooms and its system rooms (docks are reserved apart). */
+export function ringProgram(bandIn: readonly RoomSpec[], sys: readonly RoomSpec[]): RingProgram {
+  const inner = sys.filter((r) => r.role !== 'weapons');
+  return {
+    band: bandIn.filter((r) => !r.clinic),
+    clinic: bandIn.filter((r) => r.clinic),
+    secure: secureSides(inner.filter(isSecure)),
+    guns: sys.filter((r) => r.role === 'weapons'),
+    houses: inner.filter((r) => r.warehouse),
+    works: inner.filter((r) => !isSecure(r) && !r.warehouse),
+  };
+}
+
+/**
+ * The secure core split either side of its spoke: reactor and shield pairs dealt to the shorter side, the AI core
+ * whole on one side. In each pair the doors lean towards each other (a reactor and its shield room share a door end).
+ */
+function secureSides(rooms: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
+  const of = (role: string): RoomSpec[] => rooms.filter((r) => r.role === role);
+  const reactors = of('reactor'), shields = of('shields');
+  const sides: [RoomSpec[], RoomSpec[]] = [[], []];
+  const len = (rs: RoomSpec[]): number => rs.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0);
+  const add = (rs: RoomSpec[]): void => { (len(sides[0]) <= len(sides[1]) ? sides[0] : sides[1]).push(...rs); };
+  add(of('core'));
+  for (let i = 0; i < Math.max(reactors.length, shields.length); i++) {
+    const r = reactors[i], q = shields[i];
+    add(r && q ? [{ ...r, doorLean: 1 }, { ...q, doorLean: -1 }] : [r ?? q].filter((x): x is RoomSpec => !!x));
+  }
+  return sides;
+}
 
 /** A room's department on a round station. */
 export type Dept = 'harbour' | 'habitation' | 'commons' | 'freight' | 'secure' | 'defence' | 'works';
@@ -95,8 +153,7 @@ const SIDE: Record<'n' | 's' | 'e' | 'w', number[]> = { n: [0, 3], s: [1, 2], e:
  * dock bank's spoke, warehouses beside a dock spoke. Preferred: the secure core on the stern (east), freight at the main
  * (north) dock, habitation away from the secure core and the warehouses. A little noise, so stations of a kind differ.
  */
-export function planRing(rng: Rng, rooms: readonly RoomSpec[], westDocks: boolean, market = false): RingPlan {
-  const houses = rooms.filter((r) => r.warehouse).length;
+export function planRing(rng: Rng, houses: number, westDocks: boolean, market = false): RingPlan {
   const secures: ('e' | 'w')[] = westDocks ? ['e'] : ['e', 'w'];
   // A market takes the south concourse: freight stays at the north (trade) dock, with the office and the customs post.
   const freights: ('n' | 's')[][] = houses === 0 ? [[]] : market ? [['n']] : houses === 1 ? [['n'], ['s']] : [['n', 's']];
@@ -172,4 +229,26 @@ function interleave(quiet: readonly RoomSpec[]): RoomSpec[] {
     while (k < o.length && i + 1 >= step * (k + 1)) out.push(o[k++] as RoomSpec);
   });
   return [...med, ...out, ...o.slice(k)];
+}
+
+const TAU = Math.PI * 2;
+
+/** Where the outer ring's departments go: the plan, the band's arcs, and the band rooms in run order round them. */
+export interface RingPlacement { plan: RingPlan; arcs: [number, number][]; band: RoomSpec[] }
+
+/**
+ * Department placement for an outer ring whose dock banks split it at the angles `splits`: the plan (a small search),
+ * then the band rooms dealt to the quadrant arcs (cut at the banks and the east and west spokes) by department. The
+ * groups run on round the ring as one list, so every quadrant fills to its length (no quadrant left with two rooms
+ * stretched over it) while each department keeps its place in the order; the run starts at the main (north) bank, so the
+ * office and the customs post are always the first rooms after it.
+ */
+export function placeDepartments(rng: Rng, prog: RingProgram, splits: readonly number[], market: boolean): RingPlacement {
+  const westDocks = splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);
+  const plan = planRing(rng, prog.houses.length, westDocks, market);
+  const arcs = arcsBetween([...new Set([...splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
+  const groups = quadrantRooms(prog.band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
+  const n0 = Math.max(0, arcs.findIndex(([a]) => quadrantOf(a + 1e-6) === 0));
+  const turn = <T>(xs: T[]): T[] => [...xs.slice(n0), ...xs.slice(0, n0)];
+  return { plan, arcs: turn(arcs), band: turn(groups).flat() };
 }
