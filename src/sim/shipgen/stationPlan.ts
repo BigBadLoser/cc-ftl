@@ -83,7 +83,8 @@ export function planStation(rng: Rng, def: StationDef, size: StationSize, role: 
     quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }, space));
   }
   const support: RoomSpec[] = [];
-  for (let i = 0; i < 1 + Math.floor(crew.length / 10); i++) {
+  // Messes: about one for every 12 crew (they read as far too many at one for every 10 plus one: user).
+  for (let i = 0; i < Math.max(1, Math.round(crew.length / 12)); i++) {
     support.push(grown(rng, { role: 'support', mods: ['module.lifeSupport', ...(i === 0 ? ['module.fabricator'] : [])], w: 5, h: 3 }, space));
   }
   for (const r of def.rooms) {

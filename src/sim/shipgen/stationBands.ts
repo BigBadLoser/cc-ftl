@@ -59,12 +59,12 @@ export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec
     }
   }
   // Cabins where the band is wide enough for them; else the quarters stay whole. A band still with floor to spare would
-  // swell its cabins: a crew mess beside each cabin run takes the excess, so a cabin keeps about CABIN tiles.
+  // swell its cabins: stores in the middle of each cabin run take the excess, so a cabin keeps about CABIN tiles.
   let cabins = roomsIn.flatMap(cabinsOf);
   let cut = cabins.length > roomsIn.length ? cutBand(b, R, ring, cabins, depth, arcs, side) : null;
   if (cut) {
     // Floor goes to segments by weight (w * h + 4): a cabin (weight 12) keeps about CABIN tiles when the band's whole
-    // weight is (its floor) * 12 / CABIN. The messes make up the difference, shared out by cabin run.
+    // weight is (its floor) * 12 / CABIN. The stores make up the difference, shared out by cabin run.
     const cut0 = cut;
     const floorAll = [...cut0.floor.values()].reduce((t, c) => t + c.length, 0);
     const weight = cabins.reduce((t, r) => t + r.w * r.h + 4, 0);
@@ -74,19 +74,19 @@ export function bandRooms(b: Builder, R: number, ring: number, roomsIn: RoomSpec
     for (const k of [1, 0.7, 0.45, 0.25]) {
       if (want * k <= 24 || runs === 0) break;
       const share = (want * k) / runs;
-      const withMess = roomsIn.flatMap((q) => {
+      const withStores = roomsIn.flatMap((q) => {
         const cs = cabinsOf(q);
         // The mess in the middle of its cabin run, so every cabin is a short walk from it.
         const h = cs.length >> 1;
         if (cs.length === 1) return cs;
-        // A mess keeps at most MESS tiles; the rest of the run's spare floor goes to stores (racks) at the run's end.
-        const mess = Math.min(share, MESS);
-        const stores = Math.floor((share - mess) / LOUNGE);
-        const store: RoomSpec = { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: Math.max(3, Math.round(LOUNGE / depth)), h: depth };
-        return [...cs.slice(0, h), { role: 'support' as const, mods: [], w: Math.max(2, Math.round((mess - 4) / depth)), h: depth }, ...cs.slice(h), ...Array.from({ length: stores }, () => ({ ...store }))];
+        // No mess of its own (the station's messes stand among the runs, stationDepartments.ts): the run's spare floor goes
+        // to stores (racks) in its middle.
+        const stores = Math.max(1, Math.floor(share / LOUNGE));
+        const store: RoomSpec = { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: Math.max(3, Math.round(share / stores / depth)), h: depth };
+        return [...cs.slice(0, h), ...Array.from({ length: stores }, () => ({ ...store })), ...cs.slice(h)];
       });
-      const again = cutBand(b, R, ring, withMess, depth, arcs, side);
-      if (again) { cabins = withMess; cut = again; break; }
+      const again = cutBand(b, R, ring, withStores, depth, arcs, side);
+      if (again) { cabins = withStores; cut = again; break; }
     }
   }
   const rooms = cut ? cabins : roomsIn;
@@ -291,8 +291,6 @@ export function bandArcs(b: Builder, R: number, ring: number, rooms: RoomSpec[],
 
 /** Floor a store takes when it fills spare band floor. */
 const LOUNGE = 24;
-/** Floor a cabin run's mess keeps at most. */
-const MESS = 36;
 
 /**
  * An arc with much more floor than its rooms plan (a ring sized by something else, such as the court or the rooms between
