@@ -14,6 +14,7 @@ import { BoarderC, VehicleC } from '../vehicles/components';
 import { newHeat } from './heat';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
 import { hullSum } from './hull';
+import type { RolledCrew } from '../crew/roll';
 
 /** The ship with this ShipC entity id (the ship id), or undefined. */
 export function shipById(sim: Sim, ship: number): Ship | undefined {
@@ -60,23 +61,27 @@ export function spawnNamedCrew(sim: Sim, shipId: number, roleId: string, name: s
   return createCrew(sim, shipId, roleId, tile, { faction: shipById(sim, shipId)?.faction ?? 'player', ...(name ? { name } : {}) });
 }
 
-/** Add crew of the given roles on random free floor tiles of a grid. Returns their ids. */
-export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], rest?: number): number[] {
+/**
+ * Add crew of the given roles on random free floor tiles of a grid. Returns their ids. With `rolls` (one per role, crew/roll.ts)
+ * the name, appearance, skills and traits come from the roll; `sim.rng` then only places them, the same draws whatever was rolled.
+ */
+export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], rest?: number, rolls?: readonly RolledCrew[]): number[] {
   const grid = shipGrid(sim, shipId);
   if (!grid) return [];
   const floor = freeFloor(sim, grid);
   const names = [...sim.content.crewNames];
   const out: number[] = [];
-  for (const roleId of roles) {
+  for (const [i, roleId] of roles.entries()) {
     const role = sim.content.roles[roleId];
+    const rolled = rolls?.[i];
     // Big crews (station hubs) outrun the name pool: names repeat rather than crew going missing.
     if (names.length === 0) names.push(...sim.content.crewNames);
     if (!role || names.length === 0 || floor.length === 0) continue;
     const tile = floor.splice(sim.rng.int(0, floor.length - 1), 1)[0] as { x: number; y: number };
     const designated = !!sim.content.species[role.species ?? 'species.human']?.designation;
-    const name = designated ? undefined : names.splice(sim.rng.int(0, names.length - 1), 1)[0] as string;
+    const name = designated || rolled ? undefined : names.splice(sim.rng.int(0, names.length - 1), 1)[0] as string;
     const id = createCrew(sim, shipId, roleId, tile, {
-      faction: shipById(sim, shipId)?.faction ?? 'player', ...(rest !== undefined ? { rest } : {}), ...(name ? { name } : {}),
+      faction: shipById(sim, shipId)?.faction ?? 'player', ...(rest !== undefined ? { rest } : {}), ...(name ? { name } : {}), ...(rolled ? { rolled } : {}),
     });
     if (id) out.push(id);
   }
@@ -120,7 +125,7 @@ export function stampShip(
  * tiles are owned by the new ShipC. Returns the ship id. Throws like `stampShip`.
  */
 export function spawnShip(
-  sim: Sim, template: ShipTemplate, opts: { faction: Faction; x: number; y: number; rest?: number },
+  sim: Sim, template: ShipTemplate, opts: { faction: Faction; x: number; y: number; rest?: number; rolls?: readonly RolledCrew[] },
 ): number {
   const ship = stampShip(sim, template, opts);
   const layers = shieldCapacity(sim, ship, false);
@@ -138,7 +143,7 @@ export function spawnShip(
       ...(template.boarding.coreRaid ? { coreRaid: true as const } : {}),
     });
   }
-  spawnCrew(sim, ship, template.crew ?? [], opts.rest);
+  spawnCrew(sim, ship, template.crew ?? [], opts.rest, opts.rolls);
   sim.events.emit({ type: 'ship.spawned', ship, faction: opts.faction });
   return ship;
 }

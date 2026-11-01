@@ -4,6 +4,7 @@ import {
   DARK_MOVE_MULT, DARK_WORK_MULT, LIGHT_DARK_BELOW, LOW_O2_WORK_MULT, O2_LOW_WORK_BELOW,
 } from '../tuning';
 import { PositionC } from './components';
+import { traitFlag } from './traits';
 
 const NONE: readonly Modifier[] = [];
 
@@ -16,7 +17,7 @@ export const environmentModifiers: ModifierSource = (sim, entity) => {
   const grid = pos ? shipGrid(sim, shipIdOf(sim, pos)) : undefined;
   if (!pos || !grid?.has('light') || !grid.inBounds(pos.x, pos.y)) return NONE;
   const out: Modifier[] = [];
-  if (grid.get('light', pos.x, pos.y) < LIGHT_DARK_BELOW) {
+  if (grid.get('light', pos.x, pos.y) < LIGHT_DARK_BELOW && !traitFlag(sim, entity, 'darkAdapted')) {
     out.push({ stat: 'moveSpeed', op: 'mul', value: DARK_MOVE_MULT });
     out.push({ stat: 'workSpeed', op: 'mul', value: DARK_WORK_MULT });
   }

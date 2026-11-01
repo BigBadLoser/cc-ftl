@@ -6,6 +6,7 @@ import { heldForMend } from '../robots/jobs';
 import type { Sim } from '../sim';
 import { OPERATOR_EXHAUSTED_BELOW } from '../tuning';
 import { IntentC } from './components';
+import { traitFlag } from '../crew/traits';
 import { SLEEP_BELOW } from './machines/sleep';
 import { isCarrying } from './task';
 import type { DriveId } from './types';
@@ -40,8 +41,10 @@ export function legacyIntent(sim: Sim, id: number, operating: boolean): LegacyWa
   // Only a mechanical body is ever mended (mend jobs are posted for robots alone): skip the job scan for everyone else.
   const mend = !!speciesOf(sim, id)?.mechanical && heldForMend(sim, id);
   const bay = wantsBay(sim, id);
-  const tired = rest < (operating ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW);
-  const hungry = sim.world.has(id, EatC) || wantsToEat(sim, id, operating);
+  // A Workaholic keeps going like an operator at a console: sleeps when exhausted, eats when it is urgent.
+  const driven = operating || traitFlag(sim, id, 'workaholic');
+  const tired = rest < (driven ? OPERATOR_EXHAUSTED_BELOW : SLEEP_BELOW);
+  const hungry = sim.world.has(id, EatC) || wantsToEat(sim, id, driven);
   const free = !((mend || bay || tired || hungry) && isCarrying(sim, id));
   const w: LegacyWants = { mendHold: mend && free, recharge: bay && free, sleep: tired && free, eat: hungry && free };
   writeIntent(sim, id, w);

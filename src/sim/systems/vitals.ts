@@ -12,9 +12,10 @@ import { WreckC } from '../robots/components';
 import { skillOf } from '../combat/operators';
 import { AllegianceC } from '../fight/components';
 import type { Sim } from '../sim';
+import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import {
-  BED_HEAL_PER_SEC, BLEED_OUT_SECONDS, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
+  BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
   COLD_BELOW, FIRE_CREW_DAMAGE, GET_UP_HP, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, REGEN_PER_SEC,
   SKILL_STEP, STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC,
 } from '../tuning';
@@ -102,7 +103,7 @@ function down(sim: Sim, id: number, pos: Position): void {
   pos.toX = pos.x;
   pos.toY = pos.y;
   pos.progress = 0;
-  sim.world.add(id, DownedC, { bleed: BLEED_OUT_SECONDS, stabilized: false, bed: 0 });
+  sim.world.add(id, DownedC, { bleed: bleedOutSec(sim, id), stabilized: false, bed: 0 });
   crew.activity = 'downed';
   sim.events.emit({ type: 'crew.downed', crew: id });
 }

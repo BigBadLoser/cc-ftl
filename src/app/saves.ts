@@ -55,7 +55,7 @@ export interface Start {
 export async function startGame(seedParam: string | null, starterParam: string | null = null): Promise<Start> {
   // `?starter=wayfarer|prospector|lancer` (debug, until the new-game picker lands): a new game with that starter ship, never saved over the campaign.
   const starter = starterParam ? starterShips.find((s) => s.id === `ship.${starterParam}` || s.id === starterParam) : undefined;
-  const fresh = (seed: number) => newGame(seed >>> 0, content, starter?.id, true);
+  const fresh = (seed: number) => newGame(seed >>> 0, content, starter?.id, true, 'rolled');
   const random = () => (Math.random() * 0x100000000) >>> 0;
   await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };

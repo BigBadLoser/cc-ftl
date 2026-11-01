@@ -7,6 +7,7 @@ import { tierModules } from './tiers';
 import { research, researchBands } from './research';
 import { recipes } from './recipes';
 import { roles } from './roles';
+import { traits } from './traits';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
 import { species } from './species';
@@ -34,6 +35,7 @@ export const content = {
   modules,
   species,
   crewNames,
+  traits,
   items,
   recipes,
   structCosts,

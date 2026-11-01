@@ -9,6 +9,7 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { stat } from '../stats';
+import { traitMult } from '../crew/traits';
 import { BED_REST_MULT, HUNGER_SLEEP_MULT } from '../tuning';
 import { StationCrewC } from '../stations/components';
 
@@ -82,6 +83,6 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
     sim.events.emit({ type: 'crew.ate', crew: id, item: eat.item, galley: eat.galley });
   }
   const before = needs.hunger;
-  needs.hunger = Math.max(station ? STATION_HUNGER_FLOOR : 0, before - (def.decayPerSec * (crew.activity === 'sleeping' ? HUNGER_SLEEP_MULT : 1)) / TICK_HZ);
+  needs.hunger = Math.max(station ? STATION_HUNGER_FLOOR : 0, before - (def.decayPerSec * traitMult(sim, id, 'hungerMult') * (crew.activity === 'sleeping' ? HUNGER_SLEEP_MULT : 1)) / TICK_HZ);
   if (before > 0 && needs.hunger <= 0) sim.events.emit({ type: 'crew.starving', crew: id });
 }
