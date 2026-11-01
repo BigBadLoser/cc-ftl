@@ -1,4 +1,4 @@
-import { autoDetectRenderer, Container } from 'pixi.js';
+import { autoDetectRenderer, Container, RenderTexture, Sprite } from 'pixi.js';
 import { animNow } from './animClock';
 import { NOOP_PROBE, type Probe } from '../sim/probe';
 import { ShipC, type Ship } from '../sim/combat/components';
@@ -405,7 +405,6 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
     atlas.setSmooth(c.scale < 1);
-    if (target === null) setRounding(c.scale >= 1 / ART_SCALE); // the inset follows the main view
     W.setUiVisible(target === null);
     W.setMarksVisible(false);
     SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
@@ -415,27 +414,58 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     SL.world.position.set(c.originX, c.originY);
   }
 
+
   /**
-   * Whole-px snapping of sprites (`roundPixels`) is on from the 1:1 level up. A sprite's offsets are whole art px (2 world px), so below
-   * `1 / ART_SCALE` they are fractions of a device px, and rounding each sprite on its own steps neighbouring wall pieces a device px
-   * apart (seams). Below it the sprites keep their exact subpixel positions and the linear filter blends them. Pixi reads the flag
-   * once per sprite when it is first drawn, so a change is pushed to the sprites already known to the pipe.
+   * Below the 1:1 level (1/2) the art px grid cannot be drawn sprite by sprite: offsets fall on fractions of a device px, so rounding
+   * each sprite steps wall pieces apart and not rounding blends tile edges into faint seams. So the world is drawn at 1/2 (every sprite
+   * on whole device px) into a texture k times the canvas on each side, and that image is averaged down by k (in steps of 2, linear
+   * filter on exact texel boundaries = a box filter). Every seam would have to survive averaging a clean image.
    */
-  let rounding = true;
-  function setRounding(on: boolean): void {
-    if (on === rounding) return;
-    rounding = on;
-    const r = gl as unknown as { _roundPixels: number; renderPipes?: { sprite?: { _gpuSpriteHash?: Record<string, { roundPixels: number } | null> } } };
-    r._roundPixels = on ? 1 : 0;
-    const hash = r.renderPipes?.sprite?._gpuSpriteHash;
-    if (!hash) {
-      if (!warnedPixi) console.warn('render: pixi.js no longer has renderPipes.sprite._gpuSpriteHash; sprite rounding cannot follow the zoom level (wall seams below zoom 1/2). Update setRounding in scene.ts.');
-      warnedPixi = true;
-      return;
+  const mini = new Sprite();
+  mini.visible = false;
+  stage.addChildAt(mini, 1);
+  const miniRts: RenderTexture[] = [];
+  const MAX_MINI_PX = 96e6;
+  function miniRt(i: number, w: number, h: number): RenderTexture {
+    let rt = miniRts[i];
+    if (!rt || rt.width !== w || rt.height !== h) {
+      rt?.destroy(true);
+      rt = RenderTexture.create({ width: w, height: h, resolution: 1, scaleMode: 'linear' });
+      miniRts[i] = rt;
     }
-    for (const b of Object.values(hash)) if (b) b.roundPixels = on ? 1 : 0;
+    return rt;
   }
-  let warnedPixi = false;
+  const setArt = (on: boolean): void => {
+    W.setArtVisible(on);
+    for (const c of [SL.under, SL.floor, SL.decal, SL.sorted, SL.fx, SL.fxAdd]) c.visible = on;
+  };
+  /** Draw the world at 1/2 into a texture and average it down to the canvas size; false when it would be too big (drawn directly instead). */
+  function renderMini(k: number, inView: Sprite): boolean {
+    const w = cam.w * k, h = cam.h * k;
+    if (w * h > MAX_MINI_PX || w > 8192 || h > 8192) return false;
+    const vcam = { scale: 0.5, zoom: 0.5, w, h, originX: cam.originX * k, originY: cam.originY * k } as unknown as Camera;
+    place(vcam, null);
+    W.setUiVisible(false);
+    SL.ui.visible = false;
+    threatMarks.update();
+    backdrop.root.visible = false;
+    const insetShown = inView.visible;
+    inView.visible = false;
+    let rt = miniRt(0, w, h);
+    gl.render({ container: stage, target: rt, clear: true, clearColor: [0, 0, 0, 0] });
+    inView.visible = insetShown;
+    let n = 1;
+    for (let f = k; f > 1; f /= 2, n++) {
+      const down = new Sprite(rt);
+      down.scale.set(0.5);
+      const next = miniRt(n, Math.ceil(rt.width / 2), Math.ceil(rt.height / 2));
+      gl.render({ container: down, target: next, clear: true, clearColor: [0, 0, 0, 0] });
+      down.destroy();
+      rt = next;
+      }
+    mini.texture = rt;
+    return true;
+  }
 
   // The combat inset: camera pass B over the same world stack, into a texture shown above the main pass.
   const inset = createInsetPass({ ship: shipOf, origin, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, ratio, place });
@@ -489,10 +519,18 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       backdrop.root.visible = backdropOn;
       probe.end('render/inset');
       probe.begin('render/gl');
+      const k = cam.scale < 0.5 - 1e-9 ? Math.round(0.5 / cam.scale) : 1;
+      const shrunk = k > 1 && renderMini(k, inset.sprite);
+      backdrop.root.visible = backdropOn;
       place(cam, null);
       backdrop.update(cam.w, cam.h, cam.originX, cam.originY, ratio());
       threatMarks.update();
+      // Shrunk: the art is the averaged texture; only the ui layers (one-pixel grid lines, markers) draw directly, at the real scale.
+      mini.visible = shrunk;
+      setArt(!shrunk);
       gl.render({ container: stage });
+      mini.visible = false;
+      setArt(true);
       probe.end('render/gl');
       probe.begin('render/present');
       atlas.tick();
