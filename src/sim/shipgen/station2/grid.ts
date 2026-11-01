@@ -83,7 +83,7 @@ export class Grid {
   }
 
   /** Connected components (4-connected) of the tiles in `set`. */
-  components(set: readonly number[]): number[][] {
+  components(set: readonly number[], dirs: readonly (readonly [number, number])[] = DIRS4): number[][] {
     const mine = new Set(set);
     const seen = new Set<number>();
     const out: number[][] = [];
@@ -95,7 +95,7 @@ export class Grid {
       while (stack.length > 0) {
         const j = stack.pop() as number;
         comp.push(j);
-        for (const n of this.nb(j)) if (mine.has(n) && !seen.has(n)) { seen.add(n); stack.push(n); }
+        for (const n of this.nb(j, dirs)) if (mine.has(n) && !seen.has(n)) { seen.add(n); stack.push(n); }
       }
       out.push(comp);
     }

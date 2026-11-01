@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { DIRS8, K, type Grid } from './grid';
-import { PREC, addRoom, depthFrom, faces, frontLength, nearPublic, slice, type Ctx2, type Door } from './kit';
+import { PREC, addRoom, depthFrom, faces, frontLength, isPublic, nearPublic, slice, sliceAlong, type Ctx2, type Door } from './kit';
 import type { DeptId, Facility } from './program';
 
 /**
@@ -22,7 +22,7 @@ interface Unit { spec: RoomSpec; weight: number }
 /** Slice a row into units, each doored to `door` near the middle of its front. */
 function row(c: Ctx2, dept: DeptId, tiles: number[], units: Unit[], door: Door, front: (i: number) => boolean): number[] {
   if (units.length === 0) units = [{ spec: { ...STORE }, weight: 1 }];
-  const parts = slice(c.g, tiles, units.map((u) => u.weight));
+  const parts = sliceAlong(c.g, tiles, units.map((u) => u.weight), front);
   return units.map((u, k) => {
     const ts = parts[k] ?? [];
     const fr = ts.filter(front);
@@ -54,6 +54,7 @@ function run(cabins: number, extras: Facility[], len: number): Unit[] | null {
 }
 
 interface Row { tiles: number[]; units: Unit[]; front: Set<number>; hall: boolean }
+
 interface HabPlan { rows: Row[]; hall: number[] }
 
 /**
@@ -75,7 +76,9 @@ export function planCabins(g: Grid, tiles: readonly number[], beds: number, extr
     const la = frontLength(g, a, (i) => inner.has(i)), lb = frontLength(g, b, (i) => outer.has(i));
     const na = Math.round((beds * la) / (la + lb));
     const ua = run(na, extras, la), ub = run(beds - na, [], lb);
-    return ua && ub ? { rows: [{ tiles: a, units: ua, front: inner, hall: false }, { tiles: b, units: ub, front: outer, hall: false }], hall: [] } : null;
+    if (!ua || !ub) return null;
+    const rows: Row[] = [{ tiles: a, units: ua, front: inner, hall: false }, { tiles: b, units: ub, front: outer, hall: false }];
+    return { rows, hall: [] };
   }
   if (th >= 9) {
     // The hallway is two wide (three rows with its wall on the corridor side): cabins take the rest of the depth up to
@@ -99,7 +102,8 @@ export function planCabins(g: Grid, tiles: readonly number[], beds: number, extr
     return { rows, hall };
   }
   const units = run(beds, extras, frontLength(g, tiles, (i) => front.has(i)));
-  return units ? { rows: [{ tiles: [...tiles], units, front, hall: false }], hall: [] } : null;
+  const one: Row = { tiles: [...tiles], units: units ?? [], front, hall: false };
+  return units ? { rows: [one], hall: [] } : null;
 }
 
 export function cabinsStrategy(c: Ctx2, tiles: number[], beds: number, extras: Facility[]): boolean {
@@ -114,7 +118,10 @@ export function storefrontStrategy(c: Ctx2, tiles: number[], facilities: Facilit
   const g = c.g;
   const courtSide = tiles.filter((i) => g.nb(i).some((j) => g.pub[j] === 2));
   const { inner, outer } = sides(c, tiles);
-  const front = new Set(courtSide.length >= 6 ? courtSide : inner.length >= outer.length ? inner : outer);
+  // The court's side, else the longer ring face, else (a narrow parcel by a spoke) any public side.
+  const ring = inner.length >= outer.length ? inner : outer;
+  const any = tiles.filter((i) => g.nb(i).some((j) => isPublic(g, j)));
+  const front = new Set(courtSide.length >= 6 ? courtSide : frontLength(g, ring, () => true) >= 8 ? ring : any);
   const d = depthFrom(g, tiles, (i) => front.has(i));
   const th = Math.max(0, ...d.values());
   const deep = th >= 9;
@@ -124,7 +131,10 @@ export function storefrontStrategy(c: Ctx2, tiles: number[], facilities: Facilit
   const others = facilities.filter((f) => f.spec.role !== 'shop');
   // Shops about four to five front tiles each; more shops where the face is long.
   const extraW = others.reduce((t, f) => t + Math.max(2, (f.spec.w * f.spec.h) / 10), 0);
-  const n = Math.max(1, Math.min(shops.length + 3, Math.round((len / 4.5) - extraW)));
+  // Shops about four to five front tiles each, more where the face is long, but no more than the row's floor holds
+  // at their size (a 3 x 4 floor with its walls, about 20 tiles).
+  const room = shopRow.length - others.reduce((t, f) => t + (f.spec.w + 1) * (f.spec.h + 1), 0);
+  const n = Math.max(1, Math.min(shops.length + 3, Math.round((len / 4.5) - extraW), Math.floor(room / 20)));
   if (n + extraW > len / 3) return false;
   const shopSpec = (shops[0]?.spec ?? { role: 'shop', mods: [], w: 3, h: 4 }) as RoomSpec;
   const units: Unit[] = Array.from({ length: n }, () => ({ spec: { ...shopSpec }, weight: 1 }));

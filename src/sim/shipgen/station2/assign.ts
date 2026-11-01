@@ -60,13 +60,15 @@ export const fitsRect = (g: Grid, tiles: ReadonlySet<number>, w: number, h: numb
   rectSpots(g, tiles, w + 2, h + 2).length > 0 || rectSpots(g, tiles, h + 2, w + 2).length > 0;
 
 /** Zones from the outside in: 0 the outer band, 1 the band inside ring 0, 2 the inner zone of a two-ring station. */
-interface Item { key: string; dept: Dept; weight: number; zone: number; sector: number; anchor?: { a: number; span: number }; slot?: { dir: number; hw: number }; gap?: number }
+interface Item { key: string; dept: Dept; weight: number; zone: number; sector: number; anchor?: { a: number; span: number }; slot?: { dir: number; hw: number; from: number }; gap?: number }
 
 const TAU = 2 * Math.PI;
 /** Share of a zone's floor that walls between parcels and spokes leave. */
 const NET = 0.86;
 /** A core station's band depth at the inner ring's corners: two rows of four-deep rooms back to back with their walls. */
 export const DIAG = 11;
+/** A core station's harbour slot: a wing this wide either side of the dock bank, this deep from the face (docks, hall). */
+export const SLOT_WING = 6, SLOT_DEPTH = 12;
 
 /** The spoke angles that cut zone `z` (none for the outer band). */
 function cuts(t: Template, z: number): number[] {
@@ -126,7 +128,12 @@ function depthOf(t: Template, it: Item): number {
  */
 function weightIn(t: Template, it: Item, D: number): number {
   // A core station: the occupant takes its block; the band's departments their floor (its depth is set for them).
-  if (t.block) return it.zone === 2 ? (t.block.w * t.block.h - t.block.spare) * NET : it.weight;
+  if (t.block) {
+    if (it.zone === 2) return (t.block.w * t.block.h - t.block.spare) * NET;
+    // A harbour takes its slot (see SLOT_WING).
+    const h = it.anchor ? t.harbours.find((x) => Math.abs(wrapA(dirAngle(x.dir) - (it.anchor as { a: number }).a)) < 1e-6) : undefined;
+    return h ? (2 * (Math.ceil(bankWidth(h.docks) / 2) + SLOT_WING) + 1) * SLOT_DEPTH * NET : it.weight;
+  }
   const f = it.dept.front;
   if (!f) {
     // A rect department askew to its band loses floor round its rooms in proportion to the extra depth they take.
@@ -438,15 +445,10 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
         for (const it of its.filter((i) => i.anchor)) {
           const f = s.faces[t.harbours.findIndex((h) => dirAngle(h.dir) === it.anchor?.a)];
           if (t.block && f) {
-            // A core station's harbour: a slot with straight sides from the inner ring out to its face, as wide as
-            // its dock bank with its side walls, or wider until it has its floor.
-            const d = f.dir;
-            const off = (i: number): number => Math.abs(d === 0 || d === 4 ? g.y(i) : g.x(i));
-            const mine = r.tiles.filter((i) => (d === 0 ? g.x(i) : d === 2 ? g.y(i) : d === 4 ? -g.x(i) : -g.y(i)) > 0);
-            let hw = f.half + 1;
-            while (hw < f.half + 8 && mine.filter((i) => off(i) <= hw).length < it.weight / NET) hw++;
-            it.slot = { dir: d, hw };
-            (it.anchor as { span: number }).span = 2 * Math.atan(hw / f.line);
+            // A core station's harbour: a slot with straight sides at its face, as wide as the promenade's break
+            // (the dock bank and a wing either side: customs, office) and as deep as the docks and the hall behind.
+            it.slot = { dir: f.dir, hw: f.half + SLOT_WING, from: f.line - SLOT_DEPTH + 1 };
+            (it.anchor as { span: number }).span = 2 * Math.atan(it.slot.hw / f.line);
             continue;
           }
           const least = f ? 2 * Math.atan((f.half + 6) / f.line) : 0;
@@ -536,7 +538,7 @@ const wrapA = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
  * of ring between two breaks with no spoke to it would be cut off, so the two breaks join over it.
  */
 function ringGaps(t: Template, R: number): [number, number][] {
-  let gs = t.harbours.map((h) => { const w = 2 * Math.atan((Math.ceil(bankWidth(h.docks) / 2) + 6) / R); return [norm(dirAngle(h.dir) - w / 2), w] as [number, number]; })
+  let gs = t.harbours.map((h) => { const w = 2 * Math.atan((Math.ceil(bankWidth(h.docks) / 2) + SLOT_WING) / R); return [norm(dirAngle(h.dir) - w / 2), w] as [number, number]; })
     .sort((p, q) => p[0] - q[0]);
   const spokes = t.spokes.map((sp) => norm(dirAngle(sp.dir)));
   for (let k = 0; gs.length > 1 && k < gs.length; ) {

@@ -69,17 +69,19 @@ export function harbourStrategy(c: Ctx2, dept: DeptId, tiles: number[], face: Fa
 }
 
 /**
- * A core station's harbour slot (inner ring out to the face): the dock bank at the face, the hall right behind it (and
- * beside the bank where the slot is wider), and between the hall and the inner ring the gate: the customs post a column
- * from the ring to the hall on one side (the one way between them), the dock office on the other side off the hall,
- * stores behind the office where the slot is deeper.
+ * A core station's harbour slot at its face: the dock bank in the middle, the hall behind it, and a wing either side
+ * where the promenade breaks for the harbour: the customs post on one (the one way between the promenade and the
+ * hall), the dock office on the other (a second harbour, without an office, gets stores there).
  */
 function slotHarbour(c: Ctx2, dept: DeptId, rest: number[], dockRects: { pts: number[]; inner: number[] }[], docks: Facility[], face: Face, facilities: Facility[], along: (i: number) => number, perp: (i: number) => number): boolean {
   const g = c.g;
-  const hallLine = face.line - 7;
-  const hall = rest.filter((i) => along(i) >= hallLine);
-  const gate = rest.filter((i) => along(i) < hallLine);
-  if (gate.length < 20) return false;
+  const lo = Math.min(...dockRects.flatMap((d) => d.pts.map(perp))), hi = Math.max(...dockRects.flatMap((d) => d.pts.map(perp)));
+  const wingA = rest.filter((i) => perp(i) < lo), wingB = rest.filter((i) => perp(i) > hi);
+  // The hall: three rows (its wall included) behind the bank; the floor behind it goes with the office's wing.
+  const mid = rest.filter((i) => perp(i) >= lo && perp(i) <= hi);
+  const hall = mid.filter((i) => along(i) >= face.line - 7);
+  const backMid = mid.filter((i) => along(i) < face.line - 7);
+  if (wingA.length < 12 || wingB.length < 12 || hall.length < 8) return false;
   const hallId = addRoom(c, { tiles: hall, spec: { role: 'hall', mods: [], w: 1, h: 1 }, dept, prec: PREC.inner + c.rooms.length, doors: [] });
   if (dept === 'harbour') c.halls.set('harbour', hallId);
   solid(c, dockRects.flatMap((d) => d.pts.filter((i) => !d.inner.includes(i))));
@@ -88,22 +90,19 @@ function slotHarbour(c: Ctx2, dept: DeptId, rest: number[], dockRects: { pts: nu
   }
   const customs = facilities.find((f) => f.spec.role === 'armoury');
   const office = facilities.find((f) => f.spec.role === 'bridge');
-  // The customs column on the side away from freight (else either), five wide with its wall.
-  const ps = gate.map(perp);
-  const lo = Math.min(...ps), hi = Math.max(...ps);
-  const nbFreight = (side: number): boolean => gate.some((i) => (side < 0 ? perp(i) <= lo + 1 : perp(i) >= hi - 1) && g.nb(i).some((j) => c.owner.get(j) === 'freight'));
-  const side = nbFreight(-1) && !nbFreight(1) ? 1 : nbFreight(1) && !nbFreight(-1) ? -1 : c.rng.chance(0.5) ? -1 : 1;
-  const inPost = (i: number): boolean => (side < 0 ? perp(i) <= lo + 4 : perp(i) >= hi - 4);
-  const post = addRoom(c, { tiles: gate.filter(inPost), spec: { ...(customs?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }) }, dept, prec: PREC.inner + 1e4 + c.rooms.length, doors: ['public', hallId] });
-  const other = gate.filter((i) => !inPost(i));
-  // The office off the hall, as deep as it needs (its floor and a wall); stores behind it, off the post.
+  // Customs on the side away from freight (else either).
+  const fr = (ts: number[]): boolean => ts.some((i) => g.nb(i).some((j) => c.owner.get(j) === 'freight'));
+  const postSide = fr(wingA) && !fr(wingB) ? wingB : fr(wingB) && !fr(wingA) ? wingA : c.rng.chance(0.5) ? wingA : wingB;
+  const other = [...(postSide === wingA ? wingB : wingA), ...backMid];
+  const post = addRoom(c, { tiles: postSide, spec: { ...(customs?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }) }, dept, prec: PREC.inner + 1e4 + c.rooms.length, doors: ['public', hallId] });
+  // The office in that wing and behind the hall; stores where it has more floor than the office needs (twice).
   const need = office ? office.spec.w * office.spec.h : 0;
-  const width = Math.max(1, new Set(other.map(perp)).size - 1);
-  const deep = Math.max(4, Math.ceil(need / width) + 1);
-  const front = office ? other.filter((i) => along(i) >= hallLine - deep) : [];
-  const frontSet = new Set(front);
-  const back = other.filter((i) => !frontSet.has(i));
-  if (office && front.length > 0) addRoom(c, { tiles: front, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
-  if (back.length > 0) leftovers(c, dept, back, [post], () => ({ role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }));
+  if (office && other.length > 2.2 * (need + 12)) {
+    const byHall = other.filter((i) => g.nb(i).some((j) => hall.includes(j)) || along(i) >= face.line - 9);
+    const near = new Set(byHall.length >= need * 1.2 ? byHall : other);
+    addRoom(c, { tiles: [...near], spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
+    leftovers(c, dept, other.filter((i) => !near.has(i)), [hallId, post], () => ({ role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }));
+  } else if (office) addRoom(c, { tiles: other, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
+  else leftovers(c, dept, other, [hallId], () => ({ role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }));
   return true;
 }

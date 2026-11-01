@@ -13,10 +13,10 @@ export interface Cut {
   /** Fixed arc: centre angle and span (radians). */
   anchor?: { a: number; span: number };
   /**
-   * Instead of the arc, a slot with straight sides on a cardinal (0 east .. 6 north as 0, 2, 4, 6): the tiles on that
-   * side of the centre at most `hw` from the axis. The gaps either side then meet at the axis.
+   * Instead of the arc, a slot with straight sides on a cardinal (0 east .. 6 north as 0, 2, 4, 6): the tiles at least
+   * `from` out along that direction and at most `hw` from the axis. The gaps either side then meet at the axis.
    */
-  slot?: { dir: number; hw: number };
+  slot?: { dir: number; hw: number; from: number };
   /** For a free item in a region with anchors: the gap it goes in (the gap after anchor k) and its order there. */
   gap?: number;
 }
@@ -64,7 +64,7 @@ function byWeight(g: Grid, tiles: readonly number[], start: number, items: reado
  * stretch for a door), so each cut becomes the axis line nearest to it (a row or a column through the cut's middle).
  * A tile moves to the neighbouring run when it lies past that line.
  */
-function square(g: Grid, runs: Map<string, number[]>, items: readonly Cut[]): Map<string, number[]> {
+export function square(g: Grid, runs: Map<string, number[]>, items: readonly Cut[]): Map<string, number[]> {
   const keys = items.map((c) => c.key);
   const lists = keys.map((k) => runs.get(k) ?? []);
   if (lists.filter((l) => l.length > 0).length < 2) return runs;
@@ -112,7 +112,7 @@ export function cutRegion(g: Grid, tiles: readonly number[], items: readonly Cut
     if (c.slot) {
       const d = c.slot.dir, x = g.x(i), y = g.y(i);
       const along = d === 0 ? x : d === 2 ? y : d === 4 ? -x : -y;
-      return along > 0 && Math.abs(d === 0 || d === 4 ? y : x) <= c.slot.hw;
+      return along >= c.slot.from && Math.abs(d === 0 || d === 4 ? y : x) <= c.slot.hw;
     }
     const { a: m, span } = c.anchor as { a: number; span: number };
     return Math.abs(wrap(g.a(i) - m)) <= span / 2;

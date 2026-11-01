@@ -53,7 +53,7 @@ export function build(c: Ctx2): Drawn | string {
       dropped.add(id);
       for (const i of tilesOf.get(id) ?? []) { floor[i] = -1; wall[i] = 1; }
       tilesOf.delete(id);
-    } else if (k < (r.spec.role === 'hall' ? 1 : 4)) return `${r.dept} ${r.spec.role}: no floor`;
+    } else if (k < (r.spec.role === 'hall' ? 1 : 4)) return `${r.dept} ${r.spec.role}: no floor (room ${id})`;
   }
   const doors: number[] = [];
   const targets = (d: Door): number[] => (d === 'public' ? c.publics : typeof d === 'number' ? [d] : d.any);
