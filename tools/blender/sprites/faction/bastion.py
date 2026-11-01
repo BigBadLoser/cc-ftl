@@ -1,12 +1,14 @@
 """Bastion (set 8): slate armour; a heavy cornice, posts at each tile edge, the face between them cut in from a sloped
 foot up to the cornice; slots cut into the ramp for machinery; its shell and its straight-run designs."""
+import math
+
 from mathutils import Vector
 
 from .. import wall3d as T
 from .. import walls as W
 from .base import Faction, _style
 from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood, slot_tone
-from .parts import PAINT, body, corner_piece, prism
+from .parts import PAINT, PZ, body, corner_piece, prism
 from .shell import Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
 
 BAST_FOOT = 4 / 39                  # the ramp ends in an upright step this high at the floor (set 8), its lip lit
@@ -16,10 +18,19 @@ BAST_L = 2 / 32                     # the lip: the wall below the cornice stands
 
 
 
-BAST_P = T.STILE + 1 / 32           # a post's width
+BAST_P = 4 / 32                     # a post's front (both posts alike, whatever the cut's depth)
 
 
 BAST_K = 1 / 32                     # how far the cornice stands out past the wall's line
+
+
+BAST_HB, BAST_HT = 0.21 + 1 / 39, 0.02 + 1 / 39     # the cornice (the header): its foot and top under the wall's
+BAST_HD = 2 / 32                                    # its depth behind the lip (less than the cut's)
+BAST_HM = 2 / 39                                    # top; its middle block this much shorter at top and bottom
+BAST_HS = 1 / 32                                    # (its side blocks this much narrower than a third)
+
+
+BAST_LEDGE = 0.15                   # the ledge sloping up into the recess: its rise, a fraction of the wall's
 
 
 BAST_C = 5 / 32                     # the corner chamfer's width along each axis, at the wall's line
@@ -107,11 +118,44 @@ class RecessTones(Feature):
     def col_face(self, sp, face, x, y, z):
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
-        return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
+        return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][1]   # (dark, as the
+                                                                                                    # recess reads)
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R = T.RAMPS[fam][0]
         return [(sp.run - 1 / 32, R[1]), (sp.run, R[T.style().toe_lvl or 0])]     # (its last cell the step's lip)
+
+
+def _cornice(k, ax, plane, a, b, c0, c1, zc0, zh, m, band, F):
+    """The cornice from c0 to c1 (run on past the face's a..b round a corner or over an arm), lit, in blocks a tile:
+    a side block at each tile edge (a third less BAST_HS), with a darker strip along its foot, and a middle block
+    between them BAST_HM shorter at top and bottom."""
+    cuts, mids = [], []
+    for s0, s1 in T.spans(a, b):
+        u0, u1 = s0 + (s1 - s0) / 3 - BAST_HS, s1 - (s1 - s0) / 3 + BAST_HS
+        cuts += [u0, u1]
+        mids.append((u0, u1))
+    us = [c0] + sorted(u for u in cuts if c0 + 1e-6 < u < c1 - 1e-6) + [c1]
+    for i, (u0, u1) in enumerate(zip(us, us[1:])):
+        mt = (m[0] if i == 0 else 0.0, m[1] if i == len(us) - 2 else 0.0)
+        if any(p - 1e-6 <= u0 and u1 <= q + 1e-6 for p, q in mids):
+            band(u0, u1, zc0 + BAST_HM, zh - BAST_HM, 4, front=BAST_K, m=mt)
+        else:
+            band(u0, u1, zc0, zh, 4, front=BAST_K, m=mt)
+            T.paint(k, ax, plane, max(u0, a), min(u1, b), zc0, zc0 + 2 * PZ, BAST_K, F, 3)
+
+
+def _ledge_seams(k, ax, plane, f0, f1, db, dl, zlo, zsl, F):
+    """The ledge (the slope from the lip at dl, zlo back up to db, zsl) cut in three blocks: two dark seams down it."""
+    dd, dz = db - dl, zsl - zlo
+    n = math.hypot(dd, dz)
+    nd, nz = dz / n, -dd / n                            # (its outward normal, in the face's d, z)
+    nrm = T.OUT(ax) * nd + Vector((0, 0, 1)) * nz
+    for i in (1, 2):
+        u = f0 + (f1 - f0) * i / 3
+        k.poly([T.P(ax, plane, uu, z + nz * PAINT, d + nd * PAINT) for uu, (d, z) in
+                ((u - T.LINE / 2, (dl, zlo)), (u + T.LINE / 2, (dl, zlo)), (u + T.LINE / 2, (db, zsl)),
+                 (u - T.LINE / 2, (db, zsl)))], F, 1, nrm)
 
 
 def _arm(ax, plane, u, top, i, side):
@@ -144,45 +188,53 @@ def bastion(hull):
         mt = (-1.0 if ina else 0.0, 1.0 if out else -1.0 if inb else 0.0)    # into the corner, mitred to meet the
                                                                               # other face's (straight at the camera)
 
-        def band(u0, u1, z0, z1, lvl, cap=None, front=dl, m=(False, False)):
-            prism(k, ax, plane, u0, u1, [(d0, z0), (front, z0), (front, z1), (d0, z1)], F, lvl, cap=cap, mitre=m)
+        def band(u0, u1, z0, z1, lvl, cap=None, front=dl, m=(False, False), back=d0):
+            prism(k, ax, plane, u0, u1, [(back, z0), (front, z0), (front, z1), (back, z1)], F, lvl, cap=cap, mitre=m)
         if endf:                                        # a wall's end face: not recessed; its section, and the
-            _end_section(k, ax, plane, a, b, zs, top - 0.21 if full else top, F)    # cornice turned onto it
+            _end_section(k, ax, plane, a, b, zs, top - BAST_HB if full else top, F)   # cornice turned onto it
             if full:
-                band(a, b + BAST_K, top - 0.21, top - 0.02, 3, front=BAST_K)
+                band(a, b + BAST_K, top - BAST_HB, top - BAST_HT, 4, front=BAST_K)
             return
-        zlo = zs + (0.08 if full else 0.3)                                                       # the lower wall's top
-        zlo = min(zlo, top - 0.02)
+        zl0 = zs + (0.08 if full else 0.3)              # the lower wall's top: the ledge's foot, 2 px up from it
+        zlo = min(zl0 + (2 * PZ if full else 0.0), top - 0.02)
         band(a, bb, zs, zlo, 3, m=mt)                                                            # the lower wall
         if not full:
             band(a, bb, zlo, top, 3)
             return
-        zsl = zlo + 0.12 * min(H, T.W.HF - zs)          # the slope's top (a partition's on the hull too, so the cut's
+        zsl = zl0 + BAST_LEDGE * min(H, T.W.HF - zs) - PZ          # the slope's top (a partition's on the hull too, so the cut's
                                                         # parts line up where they meet)
-        zc0 = top - 0.21
+        zc0, zh = top - BAST_HB, top - BAST_HT
         ca, cb = _arm(ax, plane, a, top, 0, -1), _arm(ax, plane, b, top, 1, 1)   # (run on over a lower wall's arm)
-        band(a - (BAST_K if ends[0] == "out" else 0.0) - ca, bb + kb + cb, zc0, top - 0.02, 3, front=BAST_K,
-             m=(0.0 if ca else mt[0], 0.0 if cb else mt[1]))                                     # cornice
+        c0, c1, cm = a - (BAST_K if ends[0] == "out" else 0.0) - ca, bb + kb + cb, (0.0 if ca else mt[0],
+                                                                                    0.0 if cb else mt[1])
+        dc = -(L + BAST_HD) + EPS                       # (the cornice BAST_HD deep behind the lip, whatever
+        _cornice(k, ax, plane, a, bb, c0, c1, zc0, zh, cm, lambda *q, **kw: band(*q, back=dc, **kw), F)  # a design's;
+        if dc - d0 > 1e-6:                              # the cut's depth; the cut's top behind it the wall's, black)
+            band(c0, c1, zc0, top - 0.02, 3, front=dc, m=cm)
         cp = []                                         # (what fills the cut, for the corner to carry round)
         for s0, s1 in T.spans(a, b):
             ia, ib = ina and abs(s0 - a) < 1e-6, inb and abs(s1 - b) < 1e-6
-            for lo, edge in ((True, s0), (False, s1)):           # the posts: the first shows its side too, so
-                if not lo and out and abs(edge - b) < 1e-6:      # it is narrower by the depth, and the two read
-                    continue                                     # the same width; none at a chamfered corner
+            for lo, edge in ((True, s0), (False, s1)):           # the posts, their fronts alike (the first's
+                if not lo and out and abs(edge - b) < 1e-6:      # side shows, dark, as the recess's); none at a
+                    continue                                     # chamfered corner
                 if (lo and ia) or (not lo and ib):
                     continue                                     # (nor an inner one)
-                q0, q1 = (max(edge, a), edge + PW - R) if lo else (edge - PW, min(edge, bb))
+                q0, q1 = (max(edge, a), edge + PW) if lo else (edge - PW, min(edge, bb))
                 if q1 - q0 > 1e-6:
                     band(q0, q1, zlo, zc0, 3, cap="wD")                                          # (dark inner walls)
+                    for i in (1, 2):                                     # small lit blocks stepping out of it
+                        zj = zsl + (zc0 - zsl) * i / 3
+                        band(q0, q1, zj - 3 * PZ, zj, 4, front=dl + 1 / 32)
             corner = out and abs(s1 - b) < 1e-6
-            f0 = s0 if ia else s0 + PW - R
+            f0 = s0 if ia else s0 + PW
             f1 = bb if corner or ib else min(s1 - PW, bb)
             if f1 - f0 < 0.1:
                 continue
             m = (mt[0] if ia else 0.0, mt[1] if corner or ib else 0.0)
             if not T.fill("flat", False):                                                     # the slope into
-                prism(k, ax, plane, f0, f1, [(d0 + EPS, zlo), (dl, zlo), (d0 + EPS, zsl)], F, 3,    # it (a design
-                      mitre=m)                                                                   # may want it flat)
+                prism(k, ax, plane, f0, f1, [(d0 + EPS, zlo), (dl, zlo), (d0 + EPS, zsl)], F, 4,    # it (a design
+                      mitre=m, cols=[None, T.RAMPS[F][0][4], None])                    # (lit, whatever its angle)                                                                   # may want it flat)
+                _ledge_seams(k, ax, plane, f0, f1, d0 + EPS, dl, zlo, zsl, F)                    # in three blocks
             cut = T.fill("cut", bastion_hood)                                                    # (its design's)
             cp = cut(k, ax, plane + d0, f0, f1, zlo, zsl, zc0, top, F, m, d0) or cp
         if out and ax == "y":                           # round the chamfer, once (the corner is the y face's end):
@@ -199,9 +251,9 @@ def bastion(hull):
             T.plate(k, [(0.0, 0.02), (1.0, 0.02), (1.0, run_ - 0.045), (0.0, run_ - 0.045)], pt, nrm, 0.0, PAINT,
                     F, 1)
             corner_piece(k, X, Y, C, [(db, zs), (dl, zs), (dl, zlo), (db, zlo)], F, 3)              # lower wall
-            corner_piece(k, X, Y, C, [(db, zlo), (dl, zlo), (d0 + EPS, zsl), (db, zsl)], F, 3)      # the slope (its
+            corner_piece(k, X, Y, C, [(db, zlo), (dl, zlo), (d0 + EPS, zsl), (db, zsl)], F, 4)      # the slope (its
             # face the faces' own, so its edges meet theirs; only its hidden back is sunk)
-            corner_piece(k, X, Y, C, [(db, zc0), (BAST_K, zc0), (BAST_K, top - 0.02), (db, top - 0.02)], F, 3)
+            corner_piece(k, X, Y, C, [(db, zc0), (BAST_K, zc0), (BAST_K, zh), (db, zh)], F, 4)
             for pr, lvl in cp:
                 corner_piece(k, X, Y, C, [(db if abs(d - d0) < 1e-9 else d, z) for d, z in pr], F, lvl)
     return face

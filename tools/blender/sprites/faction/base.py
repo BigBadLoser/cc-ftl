@@ -36,14 +36,16 @@ TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18))}
 def _snap(h, l, s):
     """The colour (HLS) on a centre of post.quantize's bins (8 a channel, centred at 8n + 4), so the quantiser keeps
     it (not a near tone of another look's): of the 8 round it, the nearest in lightness, saturation and hue (a channel
-    rounded on its own can turn a dark blue green)."""
+    rounded on its own can turn a dark blue green), grey enough to anti-alias where one is."""
     def err(c):
         hh, ll, ss = colorsys.rgb_to_hls(*(v / 255 for v in c))
         dh = (hh - h + 0.5) % 1.0 - 0.5
         return (ll - l) ** 2 + 0.5 * (ss - s) ** 2 + (dh * 3 * s) ** 2
     near = [sorted({min(252, max(4, (int(v * 255 - 4) // 8 + d) * 8 + 4)) for d in (0, 1)})
             for v in colorsys.hls_to_rgb(h, l, s)]
-    return "#%02x%02x%02x" % min(((r, g, b) for r in near[0] for g in near[1] for b in near[2]), key=err)
+    cands = [(r, g, b) for r in near[0] for g in near[1] for b in near[2]]
+    aa = [c for c in cands if max(c) - min(c) < 48] or cands     # (inside post._aa_set's greys: it anti-aliases)
+    return "#%02x%02x%02x" % min(aa, key=err)
 
 
 def _tinted(ramp_, tint):

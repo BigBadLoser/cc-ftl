@@ -9,7 +9,7 @@ from .. import wall3d as T
 from ..relief_style import Design
 from .parts import LINE, PAINT, PZ, prism
 
-BAST_R = 2 / 32                     # how far the recess is cut in behind the lip (two of the shell's cells)
+BAST_R = 3 / 32                     # how far the recess is cut in behind the lip (three of the shell's cells)
 
 
 def bast_r():
@@ -34,28 +34,17 @@ def _frame(k, ax, plane, u0, u1, z0, z1, d, F, lvl, t=0.03):
 
 
 def bastion_hood(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back=0.0):
-    """The base: a hood under the cornice, two slats across the back, panel seams, a vent and bolts under them (all
-    but the hood set from the bottom, so they line up where a partition meets the taller hull). Returns the hood's
-    and slats' profiles, face-relative, for the corner to carry round."""
+    """The base: a hood under the cornice, two slats across the back (set from the bottom, so they line up where a
+    partition meets the taller hull). Returns the hood's and slats' profiles, face-relative, for the corner to carry
+    round."""
     R = bast_r()
-    uc, w = (f0 + f1) / 2, f1 - f0
     # the hood and slats (on the face's own plane, so at a corner their mitres pull back to meet its chamfer)
     profs = [[(0.0, z1 - 0.13), (0.5 * R, z1 - 0.13), (R, z1 - 0.07), (R, z1), (0.0, z1)]]
     profs += [[(0.0, za), (0.7 * R, za), (0.7 * R, za + 0.07), (0.0, za + 0.1)] for za in (z0 + 0.49, z0 + 0.33)]
     profs = [[(d + back, z) for d, z in pr] for pr in profs]
-    for pr in profs:
-        prism(k, ax, plane - back, f0, f1, pr, F, 3, mitre=m)
-    g0, g1 = z0 + 0.06, z0 + 0.25                                                                # under them:
-    for u in (f0 + w / 3, f1 - w / 3):                                                           # panel seams,
-        T.paint(k, ax, plane, u - LINE / 2, u + LINE / 2, g0, g1, 0.0, F, 2)
-    T.paint(k, ax, plane, f0 + 0.03, f1 - 0.03, g1 - 0.026, g1, 0.0, F, 2)
-    for i in range(3):                                                                           # a small vent
-        zz = (g0 + g1) / 2 + 0.03 - i * 0.05
-        T.paint(k, ax, plane, uc - 0.07, uc + 0.07, zz - 0.026, zz, 0.0, F, 1)
-    for u in (f0 + 0.05, f1 - 0.05 - LINE):                                                      # and bolts
-        for zz in (g0 + 0.04, g1 - 0.08):
-            T.paint(k, ax, plane, u, u + LINE, zz, zz + 0.026, PAINT, F, 4)
-    return [(pr, 3) for pr in profs]
+    for i, pr in enumerate(profs):                      # (the slats subdued, as the recess)
+        prism(k, ax, plane - back, f0, f1, pr, F, 3 if i == 0 else 2, mitre=m)
+    return [(pr, 3 if i == 0 else 2) for i, pr in enumerate(profs)]
 
 
 def bastion_readout(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back=0.0):
@@ -68,22 +57,24 @@ def bastion_readout(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), bac
     T.paint(k, ax, plane, f0, f1, zlo, z1, 0.0, F, 1)                                          # (a dark cut)
     zf = zlo + 0.1                                  # the angled floor, raised: zf at the wall's line, rising
     zb = zf + 0.55 * R                              # gently to the back
-    prism(k, ax, plane, f0, f1, [(0.0, zlo), (R, zlo), (R, zf), (0.0, zb)], F, 3)
+    prism(k, ax, plane, f0, f1, [(0.0, zlo), (R, zlo), (R, zf), (0.0, zb)], F, 3, cap=False)   # (its ends the posts')
     a, b = uc - 0.36 * w, uc + 0.36 * w
-    ra, rb = a - R / 2, b - R / 2                   # (the readout centred on what shows of the back: the cut's far
-    rc = (ra + rb) / 2                              # side hides as much of it as it is deep)
+    va, vb = f0, f1 - R                             # (what shows of the back: it sits as far right on screen as
+    rc = (va + vb) / 2                              # the cut is deep, its right end behind the far post)
+    hw = min(0.4 * w, (vb - va) / 2)               # (its frame's edge may tuck behind the posts)
+    ra, rb = rc - hw, rc + hw                       # the readout, centred on it
     q0 = zb + 0.05                                  # the readout: a dark frame snug round its digits
     d0, d1 = q0 + 0.05, q0 + 0.05 + 5 * PZ          # (the digits 5 px tall)
     q1 = d1 + 0.05
-    T.paint(k, ax, plane, ra - LINE, rb + LINE, q0, q1, 0.0, F, 0)
-    nd = min(4, int((rb - ra + LINE) / (5 * LINE)))                                            # digits: each an
+    T.paint(k, ax, plane, ra - LINE, rb + LINE, q0, q1, PAINT / 2, F, 0)    # (over the dark cut, under the digits)
+    nd = min(4, int((rb - ra + LINE) / (5 * LINE) + 1e-6))                                            # digits: each an
     u0 = T.snap(rc - (5 * nd - 1) * LINE / 2)       # outline 4 px wide, a px apart, on the px grid (read as 0s), in
     for i in range(nd):                             # a dim red that does not glow (a glow filled them in)
         u, v = u0 + 5 * i * LINE, u0 + (5 * i + 4) * LINE
         for q in ((u, v, d0, d0 + PZ), (u, v, d1 - PZ, d1), (u, u + LINE, d0, d1), (v - LINE, v, d0, d1)):
             lamp(k, ax, plane, *q, dl, "lvR2")
     zr = q1 + 0.04                                  # over it, a face sloping out to the cut's top edge from a
-    prism(k, ax, plane, f0, f1, [(0.0, zr), (1 / 32, zr), (R, z1), (0.0, z1)], F, 3)            # px lip
+    prism(k, ax, plane, f0, f1, [(0.0, zr), (1 / 32, zr), (R, z1), (0.0, z1)], F, 3, cap=False)  # px lip
     o, up = T.OUT(ax), Vector((0, 0, 1))
     n = (o * (zb - zf) + up * R).normalized()
 
@@ -228,7 +219,7 @@ def bastion_machinery(plate, u0, u1, run_, k=None, P=None, zs=0.0, hole=None, fa
     lamp(k, ax, fp, a + 0.47, a + 0.51, c + 0.03, c + 0.08, dl, "blueN")
 
 
-BAST_TOPS = (Design("hood", cut=bastion_hood), Design("readout", cut=bastion_readout, deep=4 / 32),
+BAST_TOPS = (Design("hood", cut=bastion_hood), Design("readout", cut=bastion_readout, deep=2 / 32),
              Design("equipment", cut=bastion_equipment, flat=True), Design("module", cut=bastion_module))
 BAST_RAMPS = (Design("cover"), Design("open slot", ramp=bastion_open, ramp_hole=bastion_hole),
               Design("machinery", ramp=bastion_machinery, ramp_hole=bastion_hole))
