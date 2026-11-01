@@ -105,7 +105,7 @@ export function sampleTemplate(rng: Rng, kind: Family, docks: number): Template 
       if (i !== filled) open.push([dirAngle(d), ((next - d + 8) % 8 || 8) * (Math.PI / 4)]);
     });
     return {
-      kind, centre: 'hub', rc: rng.int(2, 3), outer: rng.int(9, 10), bands: [], rings: [{ w: rng.pick([2, 3]) }], hollow: rng.int(6, 10),
+      kind, centre: 'hub', rc: rng.int(2, 3), outer: rng.int(9, 10), bands: [], rings: [{ w: 2 }], hollow: rng.int(6, 10),
       spokes: set.map((dir) => ({ dir, hw: 1, reach: 0, from: -1 })), chords: [], harbours: hb, open,
     };
   }
@@ -115,7 +115,7 @@ export function sampleTemplate(rng: Rng, kind: Family, docks: number): Template 
     // The cross street runs through the centre, square to the concourse.
     const cross: Dir8 = horiz ? (side < 0 ? 2 : 6) : (side < 0 ? 0 : 4);
     return {
-      kind, centre: 'hub', rc: 1, outer: rng.int(9, 11), bands: [], rings: [{ w: rng.pick([2, 3]) }],
+      kind, centre: 'hub', rc: 1, outer: rng.int(9, 11), bands: [], rings: [{ w: 2 }],
       spokes: [{ dir: cross, hw: 1, reach: 0, from: -1 }, { dir: opp(cross), hw: 1, reach: 0, from: -1 }],
       chords: [{ horiz, off: side * rng.int(6, 9), hw: rng.chance(0.5) ? 2 : 1, reach: 0 }], harbours: hb, open: [],
     };
@@ -128,7 +128,7 @@ export function sampleTemplate(rng: Rng, kind: Family, docks: number): Template 
   // band runs on in one or two long arcs (a band cut into quarters leaves quarters no department needs).
   const spokes: Spoke[] = set.map((dir) => ({ dir, hw: 1, reach: faces.includes(dir) ? 0 : 1, from: -1 }));
   return {
-    kind, centre: 'rotunda', rc: rng.int(4, 6), outer: rng.int(9, 11), bands: [], rings: [{ w: rng.pick([2, 3]) }, { w: 2 }],
+    kind, centre: 'rotunda', rc: rng.int(4, 6), outer: rng.int(9, 11), bands: [], rings: [{ w: 2 }, { w: 2 }],
     spokes, chords: [], harbours: hb, open: [],
   };
 }

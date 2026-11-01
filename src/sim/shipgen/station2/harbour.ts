@@ -1,6 +1,6 @@
-import { K } from './grid';
 import { PREC, addRoom, depthFrom, nearPublic, solid, type Ctx2 } from './kit';
 import type { DeptId, Facility } from './program';
+import { leftovers } from './machine';
 import type { Face } from './structure';
 import { DIR_V } from './template';
 
@@ -35,9 +35,17 @@ export function harbourStrategy(c: Ctx2, dept: DeptId, tiles: number[], face: Fa
   const freightA = sideA.some((i) => nbDept(i) === 'freight'), freightB = sideB.some((i) => nbDept(i) === 'freight');
   const gate = freightA && !freightB ? sideB : !freightA && freightB ? sideA : c.rng.chance(0.5) ? sideA : sideB;
   const gateSet = new Set(gate);
-  const hall = rest.filter((i) => !gateSet.has(i));
+  const open = rest.filter((i) => !gateSet.has(i));
   if (gate.length < 12) return false;
+  // The hall: behind the dock bank, and along the corridor on the freight side (three rows, its wall included) so the
+  // holds open onto it; the wing's back becomes stores, not hall.
+  const dp = depthFrom(g, open, (i) => nearPublic(g, i));
+  const behind = (i: number): boolean => perp(i) >= p0 - 1 && perp(i) <= p0 + W;
+  const hall = open.filter((i) => behind(i) || (dp.get(i) ?? 99) <= 3);
+  const hallSet = new Set(hall);
+  const back = open.filter((i) => !hallSet.has(i));
   const hallId = addRoom(c, { tiles: hall, spec: { role: 'hall', mods: [], w: 1, h: 1 }, dept, prec: PREC.inner + c.rooms.length, doors: [] });
+  leftovers(c, dept, back, [hallId], () => ({ role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }));
   if (dept === 'harbour') c.halls.set('harbour', hallId);
   solid(c, dockRects.flatMap((d) => d.pts.filter((i) => !d.inner.includes(i))));
   for (const [k, d] of dockRects.entries()) {
@@ -50,11 +58,11 @@ export function harbourStrategy(c: Ctx2, dept: DeptId, tiles: number[], face: Fa
   const maxD = Math.max(...gate.map((i) => d.get(i) ?? 0));
   const cut = office ? Math.max(3, Math.min(5, Math.floor(maxD / 2))) : maxD;
   const front = gate.filter((i) => (d.get(i) ?? 99) <= cut);
-  const back = gate.filter((i) => (d.get(i) ?? 99) > cut);
+  const rear = gate.filter((i) => (d.get(i) ?? 99) > cut);
   const post = addRoom(c, { tiles: front, spec: { ...(customs?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }) }, dept, prec: PREC.inner + 1e4 + c.rooms.length, doors: ['public', hallId] });
-  if (back.length > 0) {
-    if (office) addRoom(c, { tiles: back, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
-    else { for (const i of back) g.set(i, K.Room, hallId); (c.rooms[hallId] as { tiles: number[] }).tiles.push(...back); }
+  if (rear.length > 0) {
+    if (office) addRoom(c, { tiles: rear, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
+    else addRoom(c, { tiles: rear, spec: { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }], optional: true });
   }
   return true;
 }

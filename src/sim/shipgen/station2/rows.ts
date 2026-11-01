@@ -78,9 +78,12 @@ export function planCabins(g: Grid, tiles: readonly number[], beds: number, extr
     return ua && ub ? { rows: [{ tiles: a, units: ua, front: inner, hall: false }, { tiles: b, units: ub, front: outer, hall: false }], hall: [] } : null;
   }
   if (th >= 9) {
-    const cab = tiles.filter((i) => (d.get(i) ?? 0) > th - 6);
-    const hasFront = th - 9 >= 4;
-    const hall = tiles.filter((i) => { const k = d.get(i) ?? 0; return k <= th - 6 && (!hasFront || k > th - 9); });
+    // The hallway is two wide (three rows with its wall on the corridor side): cabins take the rest of the depth up to
+    // six rows; a deeper parcel puts a row of rooms on the corridor in front of the hallway.
+    const hasFront = th >= 13;
+    const cut = hasFront ? th - 6 : 3;
+    const cab = tiles.filter((i) => (d.get(i) ?? 0) > cut);
+    const hall = tiles.filter((i) => { const k = d.get(i) ?? 0; return k <= cut && (!hasFront || k > cut - 2); });
     const hallSet = new Set(hall);
     const onHall = (i: number): boolean => g.nb(i, DIRS8).some((j) => hallSet.has(j));
     const cabFront = new Set(cab.filter(onHall));
@@ -88,7 +91,7 @@ export function planCabins(g: Grid, tiles: readonly number[], beds: number, extr
     if (!units) return null;
     const rows: Row[] = [{ tiles: cab, units, front: cabFront, hall: true }];
     if (hasFront) {
-      const ft = tiles.filter((i) => (d.get(i) ?? 0) <= th - 9);
+      const ft = tiles.filter((i) => (d.get(i) ?? 0) <= cut - 2);
       const fu = run(0, extras, frontLength(g, ft, (i) => front.has(i)));
       if (!fu || fu.length === 0) return null;
       rows.push({ tiles: ft, units: fu, front, hall: false });

@@ -126,7 +126,7 @@ export function leftovers(c: Ctx2, dept: DeptId, back: readonly number[], halls:
         ids.push(addRoom(c, { tiles: ts, spec: spec(), dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [...touch, ...ids] }], optional: true }));
       }
     }
-    else if (touch.length > 0) { const h = touch[0] as number; for (const i of comp) g.set(i, K.Room, h); (c.rooms[h] as { tiles: number[] }).tiles.push(...comp); }
+    // Scraps too small for a room are wall, never hall (halls keep their width).
     else solid(c, comp);
   }
 }

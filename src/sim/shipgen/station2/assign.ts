@@ -5,7 +5,7 @@ import { cutRegion, type Cut } from './parcels';
 import { planCabins } from './rows';
 import type { Dept, DeptId } from './program';
 import { rasterise, type Region, type Structure } from './structure';
-import { dirAngle, type Template } from './template';
+import { dirAngle, type Ring, type Template } from './template';
 
 /**
  * Departments onto the structure (docs/STATIONGEN2.md section 3.3, "Assignment"), and the structure's depths solved
@@ -33,6 +33,8 @@ export interface Assignment {
   why: string;
   /** The department whose parcel failed (for the debug view). */
   bad?: DeptId;
+  /** Public circulation's share of the floor inside the hull. */
+  corridor?: number;
 }
 
 /** Thickness of a tile set: twice the greatest 4-step distance from a tile to the set's edge, less one. */
@@ -168,16 +170,30 @@ function solve(t: Template, items0: readonly Item[]): Solved {
   let waste = 0;
   if (t.kind === 'concentric') {
     const [d0, d1, d2] = D as [number, number, number];
-    // Inner radius of the inner zone (the rotunda's edge), out to whatever the zones outside it need.
-    const a2 = Math.max(hub, req(2, d2), req(1, d1) - d2 - w1, req(0, d0) - d1 - w0 - d2 - w1);
-    waste += Math.PI * (a2 * a2 - hub * hub) * 0.6;
-    t.rc = a2 - 0.5;
-    inner = a2;
-    const a1 = a2 + d2 + w1;
-    a = a1 + d1 + w0;
-    bands.push(d0, d1);
-    t.radii = [a, a1, a2];
-    for (const [z, az, dz] of [[1, a1, d1], [2, a2, d2]] as const) sectors(t, z).forEach((_, s) => { if (dz > 0) waste += Math.max(0, area(z, s, az, dz) - need(z, s)); });
+    if (t.rings.length > 1 && d1 > 0 && d2 > 0) {
+      // Two rings: inner radius of the inner zone (the rotunda's edge), out to whatever the zones outside it need.
+      const a2 = Math.max(hub, req(2, d2), req(1, d1) - d2 - w1, req(0, d0) - d1 - w0 - d2 - w1);
+      waste += Math.PI * (a2 * a2 - hub * hub) * 0.6;
+      t.rc = a2 - 0.5;
+      inner = a2;
+      const a1 = a2 + d2 + w1;
+      a = a1 + d1 + w0;
+      bands.push(d0, d1);
+      t.radii = [a, a1, a2];
+      for (const [z, az, dz] of [[1, a1, d1], [2, a2, d2]] as const) sectors(t, z).forEach((_, s) => { if (dz > 0) waste += Math.max(0, area(z, s, az, dz) - need(z, s)); });
+    } else {
+      // One ring: the inner ring is not built when only one band inside the outer ring has departments; that band runs
+      // from the outer ring to the rotunda.
+      const z = d1 > 0 ? 1 : 2, dz = Math.max(d1, d2);
+      const ai = Math.max(hub, req(z, dz), req(0, d0) - dz - w0);
+      waste += Math.PI * (ai * ai - hub * hub) * 0.6;
+      t.rc = ai - 0.5;
+      inner = ai;
+      a = ai + dz + w0;
+      bands.push(d0);
+      t.radii = [a, ai, ai];
+      if (dz > 0) sectors(t, z).forEach((_, s) => { waste += Math.max(0, area(z, s, ai, dz) - need(z, s)); });
+    }
   } else if (t.kind === 'wheel') {
     const [d0, d1] = D as [number, number];
     // The hollow (open space between hub and rim) grows until the rim holds what it needs.
@@ -310,6 +326,7 @@ function slotOf(t: Template, r: Region): { zone: number; sector: number } {
 export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignment | string {
   const t: Template = JSON.parse(JSON.stringify(t0)) as Template;
   const items = draw(rng, t, depts);
+  justify(t, items);
   const solved = solve(t, items);
   const { R } = solved;
   if (R > 74) return 'too big';
@@ -349,7 +366,9 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
     const want = its.reduce((t2, i) => t2 + i.weight, 0) / NET;
     const extra = tiles.length - want;
     const cuts: Cut[] = [...(its as unknown as Cut[])];
-    if (!outerBand && extra > 0.12 * tiles.length) cuts.push({ key: 'spare#0', weight: extra * NET, gap: 0 });
+    // Spare floor is left open only beside space (the edge of a wheel's hollow); elsewhere the departments take it
+    // (as stores and plant rooms), scored by the waste ratio: a court is never the sink for surplus.
+    if (!outerBand && extra > 0.12 * tiles.length && nearSpace(tiles)) cuts.push({ key: 'spare#0', weight: extra * NET, gap: 0 });
     for (const [key, ts] of cutRegion(g, tiles, cuts, rng.next() * TAU)) {
       const [dept, part] = key.split('#') as [DeptId | 'spare', string];
       if (dept === 'spare') spare(ts); else parcels.push({ dept, part: Number(part), tiles: ts, need: (its.find((i) => i.key === key)?.weight ?? 0) / NET });
@@ -402,6 +421,44 @@ function axisAnchor(t: Template, r: Region, its: Item[]): void {
   for (const o of its) if (o !== it) o.gap = 0;
 }
 
+/**
+ * Build only the circulation the departments use (a concentric station). The inner ring stands only when both bands
+ * either side of it hold departments; without it the band with departments runs from the outer ring to the rotunda
+ * (spokes that only reached the inner ring go, or run on to the outer ring if they bounded that band's sectors). Then a
+ * spoke that only bounds a sector no department took is dropped, merging that sector into its neighbour; the harbour
+ * concourses always stay.
+ */
+function justify(t: Template, items: Item[]): void {
+  if (t.kind !== 'concentric') return;
+  const has = (z: number): boolean => items.some((i) => i.zone === z);
+  if (t.rings.length > 1 && !(has(1) && has(2))) {
+    t.rings = [t.rings[0] as Ring];
+    if (has(2)) {
+      for (const sp of t.spokes) sp.reach = 0;
+      for (const i of items) if (i.zone === 2) i.zone = 1;
+    } else t.spokes = t.spokes.filter((sp) => sp.reach === 0);
+  }
+  const z = t.rings.length > 1 ? 2 : 1;
+  const faces = new Set(t.harbours.map((h) => h.dir as number));
+  for (;;) {
+    const sec = sectors(t, z);
+    if (sec.length < 2) return;
+    const empty = sec.findIndex((_, k) => !items.some((i) => i.zone === z && i.sector === k));
+    if (empty < 0) return;
+    const [a0, span] = sec[empty] as [number, number];
+    const ends = [a0, a0 + span];
+    const drop = t.spokes.find((sp) => !faces.has(sp.dir) && ends.some((e) => Math.abs(wrapA(dirAngle(sp.dir) - e)) < 1e-6));
+    if (!drop) return;
+    // Items keep their place by angle: each moves to the merged sector holding its old sector's middle.
+    const mids = items.filter((i) => i.zone === z).map((i) => { const [b0, sp] = sec[i.sector] as [number, number]; return [i, b0 + sp / 2] as const; });
+    t.spokes = t.spokes.filter((sp) => sp !== drop);
+    const now = sectors(t, z);
+    for (const [i, m] of mids) i.sector = Math.max(0, now.findIndex(([b0, sp]) => norm(m - b0) < sp));
+  }
+}
+
+const wrapA = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
+
 const sumW = (its: readonly Item[] | undefined): number => (its ?? []).reduce((a, i) => a + i.weight, 0);
 
 const centroid = (g: Grid, ts: readonly number[]): [number, number] => {
@@ -449,5 +506,9 @@ function score(s: Structure, depts: readonly Dept[], a: Assignment): Assignment 
   const courtArea = a.courts.reduce((t, c) => t + c.length, 0);
   if (courtArea > free * 0.12) v -= 8 * (courtArea / free - 0.12);
   v -= 0.05 * s.R;
-  return { ...a, score: v };
+  // Public circulation's share of the floor: a soft target of about a fifth (flagged above 0.3).
+  const inside = g.tiles((k) => k !== K.Space && k !== K.Open).length;
+  const corridor = g.tiles((k) => k === K.Hall).length / Math.max(1, inside);
+  v -= 15 * Math.max(0, corridor - 0.22);
+  return { ...a, score: v, corridor };
 }
