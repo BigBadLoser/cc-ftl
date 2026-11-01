@@ -1,6 +1,6 @@
 """Roof livery system (v8 study, pure Python, no bpy): painted motifs as tile masks, recoloured per scheme.
 
-Cost model (78 masks): every motif is a set of 1x1-tile masks (MASKS, 32x32 cells) in two key channels, P (primary,
+Cost model (109 masks): every motif is a set of 1x1-tile masks (MASKS, 32x32 cells) in two key channels, P (primary,
 key colour mkP #ff0000) and S (secondary, mkS #00ff00). They are rendered once as overlay sprites
 (roofs.livery_mask) at the plating height. At runtime a scheme only picks the masks per tile (plan) and its colours;
 one mask set (len(MASKS)) serves every scheme and faction. A 3-colour scheme remaps a motif's P / S channels.
@@ -110,9 +110,65 @@ def _band(lo, hi, slo, shi):
 _dbl, _shaft = _band(4, 12, 14, 16), _band(0, 7, 7, 10)
 
 
-def _emblem(kind, q):
+def _fang(i, j):
+    """The aft edge of a nose block cut into fangs pointing aft (raiders): P forward of a sawtooth, 2 teeth a tile,
+    each nearly a tile long."""
+    t = abs(j % 16 - 7.5) / 7.5                       # 0 at a tooth's point, 1 between teeth
+    return "P" if i >= 2 + 28 * (1 - t) ** 1.4 else None
+
+
+CLAW_W, CLAW_H = 4, 3                                 # claw block, tiles (x along the ship, y across)
+CLAWS = ((-21, 0.86), (0, 1.0), (21, 0.8))            # three gashes: offset across the swipe (cells), relative length
+# paint chips flung beside the gashes (along, across, radius): they also put paint in every tile of the block, so its
+# rows mirror as whole runs (TEXT)
+CHIPS = ((10, -42, 3.2), (-4, -36, 2.2), (24, -37, 2.2), (-10, 42, 3.2), (4, 36, 2.2), (-24, 37, 2.2))
+
+
+def _claw(q):
+    """Tile q of the raiders' claw swipe: three parallel gashes torn diagonally across the spine, each a curved sliver
+    that tapers to a point at both ends, with a ragged edge."""
     def f(i, j):
-        X, Y = (q % 2) * GN + i + 0.5 - GN, (q // 2) * GN + j + 0.5 - GN
+        X = (q % CLAW_W) * GN + i + 0.5 - CLAW_W * GN / 2
+        Y = (q // CLAW_W) * GN + j + 0.5 - CLAW_H * GN / 2
+        ux, uy = 0.62, 0.785                              # swipe direction (from aft-port to fore-starboard)
+        nx, ny = -uy, ux
+        along, across = X * ux + Y * uy, X * nx + Y * ny
+        if any((along - a) ** 2 + (across - c) ** 2 < r * r for a, c, r in CHIPS):
+            return "P"
+        for off, ln in CLAWS:
+            half = 54 * ln
+            t = (along + half) / (2 * half)
+            if not 0 < t < 1:
+                continue
+            bow = 7 * math.sin(math.pi * t)               # the gash curves a little
+            w = 9 * math.sin(math.pi * t) ** 0.8 + 1.5 * math.sin(along * 0.9 + off)   # tapered, ragged
+            if abs(across - off - bow) < w / 2:
+                return "P"
+        return None
+    return f
+
+
+def _trace(n):
+    def f(i, j):                                      # circuit traces along the spine (zealots): a bus line, a
+        d = (GN - 1 - j) if n else j                  # branch off it and a node pad, offset on the two sides
+        b = 6 if n else 20
+        if 3 <= d < 6 or 26 <= d < 28:
+            return "P"
+        if b <= i < b + 3 and 6 <= d < 16:
+            return "P"
+        if b - 3 <= i < b + 6 and 16 <= d < 23:
+            return "P" if not (b <= i < b + 3 and 18 <= d < 21) else None
+        return None
+    return f
+
+
+def _emblem(kind, q, n=2):
+    """Emblem tile q of an n x n block: the design is drawn for 2 x 2 tiles and scaled by n / 2."""
+    k = n / 2
+
+    def f(i, j):
+        X = ((q % n) * GN + i + 0.5 - n * GN / 2) / k
+        Y = ((q // n) * GN + j + 0.5 - n * GN / 2) / k
         r = (X * X + Y * Y) ** 0.5
         if r >= 27:
             return None
@@ -126,6 +182,24 @@ def _emblem(kind, q):
             g = abs(X) < 11 and abs(Y) < 11 and not (abs(X) < 5 and abs(Y) < 5)
         elif kind == "delta":                         # arrowhead pointing at the bow
             g = -11 <= X <= 13 and abs(Y) < (13 - X) * 0.55
+        elif kind == "skull":                         # raider skull, the jaw toward the bow, two dark eye holes
+            eye = min((X + 1) ** 2 + (Y - s5) ** 2 for s5 in (-5.5, 5.5)) < 13
+            g = ((X + 3) ** 2 + Y * Y < 125 or (3 <= X <= 13 and abs(Y) < 7 and not (X >= 9 and abs(Y) % 4 < 1.4))) \
+                and not eye and not (5 <= X < 8 and abs(Y) < 1.6)
+        elif kind == "crest":                         # cartel crest: a heater shield, point aft, a chevron cut in it
+            w = 13 if X >= -2 else 13 * (X + 16) / 14
+            g = -16 <= X <= 14 and abs(Y) < w and not (abs(abs(Y) - (X + 3) * 0.75) < 1.8 and -3 <= X <= 10)
+        elif kind == "rank":                          # mercenary insignia: three stacked rank chevrons, apex to the bow
+            g = abs(Y) < 14 and any(0 <= X - (k * 8 - 9) + abs(Y) * 0.75 < 4.5 for k in range(3))
+        elif kind == "helix":                         # Helix Biosystems: a double helix across the ship, with rungs
+            a = 8.5 * math.sin(Y * 0.26)
+            g = abs(Y) < 18 and (abs(X - a) < 2.3 or abs(X + a) < 2.3 or (abs(X) < abs(a) and abs((Y + 2) % 6 - 3) < 0.9))
+        elif kind == "meridian":                      # Meridian Combine: a globe, its equator and one meridian
+            e = (X / 7) ** 2 + (Y / 14) ** 2
+            g = 12 <= r < 16 or (r < 12 and (abs(e - 1) < 0.22 or abs(X) < 1.6))
+        elif kind == "eye":                           # zealot machine eye: an almond lid round a round iris
+            w = 15 * (1 - (X / 19) ** 2) if abs(X) < 19 else -1
+            g = (w - 4 <= abs(Y) < w) or X * X + Y * Y < 42
         else:                                         # cross
             g = r < 17 and (abs(X) < 4 or abs(Y) < 4)
         return "S" if g else "P"
@@ -142,7 +216,13 @@ MASKS = {
     **{f"aft.{k}": (lambda k: lambda i, j: "P" if any(a <= k * GN + i < b for a, b in AFT) else None)(k)
        for k in range(3)},
     **{f"reg.{c}": _digit(c) for c in DIGITS},
-    **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond") for q in range(4)},
+    **{f"em.{t}.{q}": _emblem(t, q) for t in ("dot", "delta", "cross", "star", "diamond", "skull", "eye", "crest", "helix",
+                                                "meridian", "rank") for q in range(4)},
+    **{f"emL.{t}.{q}": _emblem(t, q, 3) for t in ("skull", "eye", "crest", "helix", "meridian", "delta", "diamond",
+                                                 "rank", "cross")
+       for q in range(9)},                                                                       # large: 3 x 3 tiles
+    "hazard": lambda i, j: "P" if (i + j) // 8 % 2 == 0 else "S",
+    "full.S": lambda i, j: "S",
     # v10
     "full.P": lambda i, j: "P",
     "half.n": lambda i, j: "P" if j < 26 else "S" if 27 <= j < 31 else None,
@@ -151,6 +231,9 @@ MASKS = {
     **{f"arr.{qx}.{qy}": _arrow(qx, qy) for qx in range(2) for qy in range(4)},
     **{f"big.{c}.{k}": _big(c, k) for c in DIGITS for k in range(2)},
     **{f"sten.{k}": _stencil(t) for k, t in enumerate(STENCIL)},
+    # v13 faction motifs
+    "fang": _fang, "trace.n": _trace(True), "trace.s": _trace(False),
+    **{f"claw.{q}": _claw(q) for q in range(CLAW_W * CLAW_H)},
 }
 
 MASKS = {k: f for k, f in MASKS.items() if any(f(i, j) for i in range(GN) for j in range(GN))}   # drop empty ones
@@ -158,7 +241,7 @@ MASKS = {k: f for k, f in MASKS.items() if any(f(i, j) for i in range(GN) for j 
 # Bow at either end: a ship whose bow is at -x takes the plan of its x-mirror, with every direction-dependent mask
 # mirrored (i -> GN - 1 - i, sprites roof.lv.<mask>.m) and text (registry digits, stencils) kept readable: only its
 # placement mirrors (src/render/roofArt.ts liveryPlan, bowWest).
-TEXT = ("reg.", "big.", "sten.")
+TEXT = ("reg.", "big.", "sten.", "claw.")          # text, and the claw swipe, which reads the same either way
 MIRROR = [k for k, f in MASKS.items()
           if not k.startswith(TEXT) and any(f(i, j) != f(GN - 1 - i, j) for i in range(GN) for j in range(GN))]
 
@@ -168,7 +251,7 @@ def mirrored(name):
     return lambda i, j: fn(GN - 1 - i, j)
 
 
-# scheme: motifs (painted in this order), colours P / S (/ T), and per-motif channel remaps for 3-colour schemes
+# scheme: motifs (painted in this order), colours P / S (/ T / U), and per-motif channel remaps for 3- and 4-colour schemes
 SCHEMES = {
     "crimson": dict(motifs=("stripe", "chev", "reg"), P="#b0443a", S="#e2ddd0"),
     "ivory": dict(motifs=("saddle", "pinp", "em.dot"), P="#dcd8cc", S="#25272d"),
@@ -181,6 +264,72 @@ SCHEMES = {
     "ember": dict(motifs=("nose", "bars", "em.diamond", "big"), P="#26282e", S="#d9822b"),
     "tricolour": dict(motifs=("split", "dbl", "em.star", "big", "sten"), P="#24324f", S="#e2ddd0", T="#b0443a",
                       remap={"dbl": ("T", "S"), "em.star": ("T", "S"), "big": ("T", "S")}),
+    # v13 faction schemes: a coat over the whole roof carries the faction colour, its motifs the rest
+    "gash": dict(motifs=("coat", "claw", "fangs", "em.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
+                 remap={"claw": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
+    "scorch": dict(motifs=("coat", "claw", "fangs", "em.skull"), P="#33302c", S="#e07a26", T="#e2dccb",
+                   remap={"claw": ("S", "S"), "fangs": ("S", "S"), "em.skull": ("P", "T")}),
+    "reaver": dict(motifs=("coat", "claw", "fangs", "emL.skull"), P="#2a2d33", S="#c8402e", T="#e2dccb",
+                   remap={"claw": ("S", "S"), "fangs": ("S", "S"), "emL.skull": ("P", "T")}),
+    "litany": dict(motifs=("coat", "trace", "em.eye"), P="#d6cfbd", S="#3fc4d4", T="#2b3440",
+                   remap={"trace": ("S", "S"), "em.eye": ("T", "S")}),
+    "relic": dict(motifs=("coat", "aft", "trace", "em.eye"), P="#c9ccd1", S="#5fd6c0", T="#3a2f4a",
+                  remap={"aft": ("T", "T"), "trace": ("S", "S"), "em.eye": ("T", "S")}),
+    "vigil": dict(motifs=("coat", "trace", "emL.eye"), P="#d6cfbd", S="#3fc4d4", T="#2b3440",
+                  remap={"trace": ("S", "S"), "emL.eye": ("T", "S")}),
+    "velvet": dict(motifs=("coat", "pins", "em.crest"), P="#4a1f2e", S="#c9a64a"),
+    "jade": dict(motifs=("coat", "pins", "em.crest"), P="#1d3b33", S="#c9a64a"),
+    "sable": dict(motifs=("coat", "pins", "emL.crest"), P="#1f2026", S="#c9a64a"),
+    "drab": dict(motifs=("coat", "aft", "big", "em.rank", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
+                 remap={"aft": ("T", "T")}),
+    "khaki": dict(motifs=("coat", "aft", "big", "em.rank", "sten"), P="#7a6e4f", S="#1e2018", T="#3d3a2c",
+                  remap={"aft": ("T", "T")}),
+    "combine": dict(motifs=("coat", "split", "nose", "big", "em.meridian"), P="#2456a0", S="#e8b830", T="#e4e2da",
+                    remap={"coat": ("T", "T"), "nose": ("S", "P"), "big": ("T", "P")}),
+    "helix": dict(motifs=("coat", "stripe", "em.helix", "sten"), P="#e6ebea", S="#2aa59a", T="#8fd3cb",
+                  remap={"stripe": ("S", "T"), "em.helix": ("P", "S"), "sten": ("S", "S")}),
+    "vantor": dict(motifs=("coat", "hazard", "big", "em.delta"), P="#d6a424", S="#1e2018",
+                   remap={"em.delta": ("S", "P")}),
+    "brigade": dict(motifs=("coat", "aft", "big", "emL.rank", "sten"), P="#4d5a3a", S="#d8d4c4", T="#1e2018",
+                    remap={"aft": ("T", "T")}),
+    "freight": dict(motifs=("coat", "split", "nose", "big", "emL.meridian"), P="#2456a0", S="#e8b830", T="#e4e2da",
+                    remap={"coat": ("T", "T"), "nose": ("S", "P"), "big": ("T", "P")}),
+    "clinic": dict(motifs=("coat", "stripe", "emL.helix", "sten"), P="#e6ebea", S="#2aa59a", T="#8fd3cb",
+                   remap={"stripe": ("S", "T"), "emL.helix": ("P", "S"), "sten": ("S", "S")}),
+    "foundry": dict(motifs=("coat", "hazard", "big", "emL.delta"), P="#d6a424", S="#1e2018",
+                    remap={"emL.delta": ("S", "P")}),
+    "rustbucket": dict(motifs=("coat", "patch", "sten"), P="#4a4740", S="#b59a3a", T="#7c4a2c", U="#6e3a33",
+                       remap={"patch": ("T", "U")}),
+    "junker": dict(motifs=("coat", "patch", "aft", "sten"), P="#4a5340", S="#b59a3a", T="#7c4a2c", U="#6a6a66",
+                   remap={"patch": ("T", "U"), "aft": ("T", "T")}),
+    "lattice": dict(motifs=("coat", "split", "trace", "em.dot"), P="#8a929c", S="#d8343a", T="#2a2f36",
+                    remap={"split": ("T", "S"), "trace": ("S", "S"), "em.dot": ("T", "S")}),
+    "node": dict(motifs=("coat", "trace", "emL.cross"), P="#2a2f36", S="#d8343a", T="#8a929c",
+                 remap={"trace": ("S", "S"), "emL.cross": ("P", "S")}),
+    "bazaar": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#2b2830", S="#ff3fa4", T="#8a4a2e", U="#3e6e6a",
+                   remap={"patch": ("T", "U")}),
+    "souk": dict(motifs=("coat", "patch", "em.diamond", "sten"), P="#33302a", S="#39e0d0", T="#6e5a3a", U="#5a3a5e",
+                 remap={"patch": ("T", "U")}),
+    "neon": dict(motifs=("coat", "patch", "emL.diamond", "sten"), P="#2b2830", S="#ff3fa4", T="#8a4a2e", U="#3e6e6a",
+                 remap={"patch": ("T", "U")}),
+}
+
+# A faction's livery (its art def's `livery` id) is the list of schemes its ships pick from by name (roofArt.liveryFor).
+# The navy and civilian liveries split the original ten; an unknown id falls back to all ten.
+CLASSIC = ("crimson", "ivory", "tide", "sovereign", "orchid", "hornet", "glacier", "verdant", "ember", "tricolour")
+LIVERIES = {
+    "livery.navy": ("sovereign", "tricolour", "glacier", "ember"),
+    "livery.civilian": ("crimson", "ivory", "tide", "orchid", "hornet", "verdant"),
+    "livery.scrapper": ("rustbucket", "junker"),
+    "livery.drone": ("lattice", "node"),
+    "livery.raider": ("gash", "scorch", "reaver"),
+    "livery.zealot": ("litany", "relic", "vigil"),
+    "livery.cartel": ("velvet", "jade", "sable"),
+    "livery.merc": ("drab", "khaki", "brigade"),
+    "livery.meridian": ("combine", "freight"),
+    "livery.helix": ("helix", "clinic"),
+    "livery.vantor": ("vantor", "foundry"),
+    "livery.blackmarket": ("bazaar", "souk", "neon"),
 }
 
 
@@ -200,7 +349,34 @@ def plan(ship, scheme, seed=0, level=lambda x, y: 0):
         def add(x, y, k):
             if solid(x, y) and k in MASKS:
                 out.setdefault((x, y), []).append((k, m))
-        if m == "aft":
+        if m == "coat":                               # the whole roof in P
+            for y in range(H):
+                for x in range(W):
+                    add(x, y, "full.P")
+        elif m == "fangs":                            # a toothed nose block: the last two spine columns and the bow
+            for y in range(H):
+                add(xb - 2, y, "fang")
+                for x in range(xb - 1, W):
+                    add(x, y, "full.P")
+        elif m == "claw":                             # the claw swipe over the spine, a quarter of the way from the stern
+            x0 = xs + round(0.25 * L)
+            for q in range(CLAW_W * CLAW_H):
+                add(x0 + q % CLAW_W, yc - 2 + q // CLAW_W, f"claw.{q}")
+        elif m == "hazard":                           # hazard-striped bow (its last two columns on) and stern (two columns)
+            for y in range(H):
+                for x in list(range(xs, xs + 2)) + list(range(xb - 1, W)):
+                    add(x, y, "hazard")
+        elif m == "patch":                            # mismatched paint: whole 3 x 2-tile blocks painted over in P or S
+            for y in range(H):
+                for x in range(W):
+                    k = _h((x + y // 2) // 3, y // 2, seed, 17) % 5         # blocks stagger row to row
+                    if k < 2:
+                        add(x, y, "full.P" if k == 0 else "full.S")
+        elif m == "trace":                            # circuit traces the length of the spine
+            for x in range(xs, xb + 1):
+                add(x, yc - 1, "trace.n")
+                add(x, yc, "trace.s")
+        elif m == "aft":
             for k in range(3):
                 for y in range(H):
                     add(xs + k, y, f"aft.{k}")
@@ -241,6 +417,12 @@ def plan(ship, scheme, seed=0, level=lambda x, y: 0):
             for qx in range(2):
                 for qy in range(4):
                     add(xh + qx, yc - 2 + qy, f"arr.{qx}.{qy}")
+        elif m.startswith("emL."):                    # large emblem: 3 x 3 tiles over the spine at 0.62 L
+            x0 = xs + round(0.62 * L)
+            block = lambda xe: [(xe - 1 + q % 3, yc - 2 + q // 3) for q in range(9)]  # noqa: E731
+            xe = next((x0 + d for d in (0, -1, 1, -2, 2, -3, 3) if all(solid(*t) for t in block(x0 + d))), x0)
+            for q, (x, y) in enumerate(block(xe)):
+                add(x, y, f"{m}.{q}")
         elif m.startswith("em."):
             ye, x0 = yc - 2, xs + round(0.62 * L)       # nearest spot to 0.62 L whose 2x2 tiles share one level
             quad = lambda xe: [(xe - 1 + q % 2, ye - 1 + q // 2) for q in range(4)]  # noqa: E731

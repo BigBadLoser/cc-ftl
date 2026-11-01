@@ -549,7 +549,10 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Roof plating:** the module rule (4x4-tile armour modules, layout and colour by hash, patch and inset
   plates) and the livery plan live in Python (`roof_layout.py`, `roof_variants.py`, `roof_livery.py`)
   and are mirrored in `src/render/roofArt.ts`. Livery masks are key-coloured overlays recoloured by the
-  livery shader (`src/render/livery.ts`); a ship's scheme is picked from its faction and name.
+  livery shader (`src/render/livery.ts`). A faction's `art.livery` id names a list of schemes (`LIVERIES`
+  in `roof_livery.py`, mirrored in `roofArt.ts`, a test keeps the two in sync); a ship picks one from its generating
+  faction's list by name (`liveryFor`). The navy, civilian, scrapper and drone liveries share the classic ten; an
+  unknown id falls back to them. `?livery=<id>` gives every ship that livery (screenshots).
 - **Camera:** orthographic, yaw 45 degrees, 30 degree elevation. One 1x1 tile renders as an exact
   64x32 diamond.
 - **Look:** flat colour bands (about 1.0 / 0.75 / 0.5 for top, left and right faces), muted palette
