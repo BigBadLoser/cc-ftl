@@ -83,7 +83,7 @@ The rescue machine reserves via `reserveFor(patient, bed)`, which sets `Downed.b
 | --- | --- | --- | --- |
 | `vitals`, `needs`, `mood` | Health, Downed, Needs, Mood | env grids | unchanged |
 | job posters (`autojobs`, `operateJobs`, `craftJobs`, `researchJobs`, `supplyJobs`, `haulJobs`, `cargoJobs`, `stationDirector`) | JobC lifecycle, `urgency`, `category` | world | unchanged, plus `urgency` |
-| `interruptSystem` | `Interrupt` | Drafted, Downed, Carried, Inert/Stun, Fighter, Equip/Stow orders, Surrendered, EvaFloat, Embark, env hazards | `isOffDuty`/`isIncapacitated` as a single precedence list |
+| `interruptSystem` | `Interrupt` | Drafted, Downed, Carried, Inert/Stun, Fighter, Equip/Stow orders, Surrendered, EvaFloat, Embark, env hazards, `BreakdownC` | `isOffDuty`/`isIncapacitated` as a single precedence list |
 | `boardIndexSystem` | derived `BoardIndex` (not saved) | JobC, ModuleC beds, stock | new |
 | `utilitySystem` | `Intent` | Needs, Mood, `BoardIndex`, Task presence | the needs part of `decide` |
 | `scheduleSystem` | Job holds, `Task` creation, `yield`/`queued` | Intent, JobC, priorities, nav | `pickJob`, `emergencyWaiting`, `callOperator`, `yieldToOperator` |
@@ -96,7 +96,7 @@ The rescue machine reserves via `reserveFor(patient, bed)`, which sets `Downed.b
 1. *Taking over*: code that takes a crew member's path (`orderEquip`, emergency arming, `crew.draft`, `man.ts`, `setMode` into a fight) calls `abortTask` **first** (which clears the path), then writes its own path. `interruptSystem` runs after `equipSystem`, so it sees this tick's orders and sets `owner`; it only aborts as a safety net, and a late abort of a crew member that still had a Task is counted (`interrupt.lateAbort`, must be 0 in tests) because it would clear the path the origin just wrote.
 2. *Equip order starts*: `equipSystem` (aborts, writes path) then `interruptSystem` (Interrupt `fight`, owner `fight`) then `steerSystem` skips the crew member. *Ends*: the order is removed in `equipSystem`; the Interrupt lapses at the next `interruptSystem` (same tick, later in order), so `utility`, `schedule` and `steer` may take over in that same tick.
 3. *Fight starts*: `crewCombat` runs after `steer`. If `steerSystem` already wrote a path this tick, `setMode(idle to engage)` calls `abortTask` (clears it) then `walkTo` writes the chase path: one effective writer. The Interrupt appears at the next tick's `interruptSystem` with owner `fight`. *Ends*: `setMode(to idle)` clears the chase path; the executor takes over after next tick's `interruptSystem` (one idle tick, no double write).
-4. *Hazard*: `interruptSystem` sets `Interrupt{hazard, owner: executor}` and `steerSystem` does advance crew whose owner is `executor`: the `escape` Task is created and stepped under its own Interrupt, so the interrupt never freezes its own escape. Utility and scheduler still skip the crew member. The Interrupt lapses when the tile is safe; the `escape` Task then completes.
+4. *Hazard*: `interruptSystem` sets `Interrupt{hazard, owner: executor}` and `steerSystem` does advance crew whose owner is `executor`: the `escape` Task is created and stepped under its own Interrupt, so the interrupt never freezes its own escape. Utility and scheduler still skip the crew member. The Interrupt lapses when the tile is safe; the `escape` Task then completes. A `breakdown` Interrupt works the same way with the `break` Task (`TRAITS.md` section 5).
 A test wrapper records `PathC.steps` writes per crew per tick and fails on two effective writers.
 
 ## 4. Tick order and data flow (refinement 1)
@@ -149,10 +149,14 @@ Sequence, a tired worker mid-repair (tick t):
 | 1 | `dead` | `DeadC` | sweep (entity may be gone) |
 | 2 | `downed`, `carried`, `inert`, `stunned` | `DownedC`, `CarriedC`, `InertC`, `StunC` | abort |
 | 3 | `floating` | `EvaFloatC` | hold (task frozen; shuttle EVA transfer) |
-| 4 | `drafted` | `DraftedC` | abort, except a drafted `operate` hold (kept, as `man.ts` does today) |
-| 5 | `heldForMend` | `robots/jobs.heldForMend` | abort (robot stands still) |
-| 6 | `fight` | `FighterC.mode != idle`, `EquipOrderC`, `StowOrderC`, `SurrenderedC`, `isInvader` (`isOffDuty`) | abort, except `finish`-class tasks (below) |
-| 7 | `hazard` (new, Phase 3) | own tile: fire, thin air or CO2 without suit, extreme temp | abort unless the task declares tolerance (`extinguish`, breach seal, suited work) |
+| 4 | `hazard` (new, Phase 3) | own tile: fire, thin air or CO2 without suit, extreme temp | abort unless the task declares tolerance (`extinguish`, breach seal, suited work); overrides drafts and mental breaks (`TRAITS.md` section 5). A drafted crew member is stepped off once stopped on the tile and keeps the draft |
+| 5 | `breakdown` severe (`TRAITS.md` section 5) | `BreakdownC`, tier severe (panic, combat freeze) | abort; owner `executor` (`break` machine); the only break that overrides a draft |
+| 6 | `drafted` | `DraftedC` | abort, except a drafted `operate` hold (kept, as `man.ts` does today) |
+| 7 | `breakdown` moderate | `BreakdownC`, tier moderate (hide, tantrum, despair) | abort; owner `executor` (`break` machine) |
+| 8 | `heldForMend` | `robots/jobs.heldForMend` | abort (robot stands still) |
+| 9 | `fight` | `FighterC.mode != idle`, `EquipOrderC`, `StowOrderC`, `SurrenderedC`, `isInvader` (`isOffDuty`) | abort, except `finish`-class tasks (below) |
+
+Mild breaks (work refusal, isolation) are not interrupts: `BreakdownC` suppresses the work drive in utility (section 8) and isolation steers leisure destinations.
 
 **Interruption class per task state** (`ai/interrupt.ts` table keyed machine, state; the class is copied to `Task.class`):
 
@@ -163,7 +167,7 @@ Sequence, a tired worker mid-repair (tick t):
 | `finish` | complete unless the carrier itself is out | rescue `ToBed`/`Lay` (matches `carryingPatient` today: finish rather than flee or fight) |
 | `hold` | persistent: no end of its own; leaves only by handoff, exhaustion or a hard reason | `operate` held by an operator by choice (a relief's class is `any`) |
 
-Hard reasons (`downed`, `dead`, `drafted`, `inert`, `hazard`) override every class. Soft requests (new better-level job, utility drive change, priority change) respect the class: `any` aborts now; `safe` sets `Task.yield` and the machine ends at its safe point; `finish` ignores the request; `hold` follows the persistent-job rules below. Disabling a category (priority 0) is a soft request: the task ends at its class's safe point, not earlier.
+Hard reasons (`downed`, `dead`, `drafted`, `inert`, `hazard`, `breakdown`) override every class. Soft requests (new better-level job, utility drive change, priority change) respect the class: `any` aborts now; `safe` sets `Task.yield` and the machine ends at its safe point; `finish` ignores the request; `hold` follows the persistent-job rules below. Disabling a category (priority 0) is a soft request: the task ends at its class's safe point, not earlier.
 
 **What abandoning does** (`abortTask`, fixed order; steps 2 and 3 matter):
 1. `clearPath`: stop walking (the step in progress finishes, so position stays valid).
