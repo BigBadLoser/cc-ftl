@@ -12,7 +12,6 @@ export const recipes = {
   // Scrapper recipes (DESIGN.md "Salvaging derelicts"): one per scrap type, 10 scrap a batch. Stripping a part yields scrap worth
   // ~40% of its build cost, and a unit of scrap makes about one unit of material, so salvage never beats mining and trade. Rare extras ~5% a batch.
   'recipe.scrap_hull': {
-    category: 'refining',
     name: 'Reclaim hull scrap',
     station: 'module.scrapper',
     inputs: [{ item: 'item.scrap_hull', count: 10 }],
@@ -20,7 +19,6 @@ export const recipes = {
     work: 120,
   },
   'recipe.scrap_tech': {
-    category: 'refining',
     name: 'Reclaim tech scrap',
     station: 'module.scrapper',
     inputs: [{ item: 'item.scrap_tech', count: 10 }],
@@ -29,7 +27,6 @@ export const recipes = {
     work: 160,
   },
   'recipe.scrap_energy': {
-    category: 'refining',
     name: 'Reclaim energy scrap',
     station: 'module.scrapper',
     inputs: [{ item: 'item.scrap_energy', count: 10 }],
@@ -38,7 +35,6 @@ export const recipes = {
     work: 160,
   },
   'recipe.scrap_weapons': {
-    category: 'refining',
     name: 'Reclaim weapons scrap',
     station: 'module.scrapper',
     inputs: [{ item: 'item.scrap_weapons', count: 10 }],
@@ -47,7 +43,6 @@ export const recipes = {
     work: 160,
   },
   'recipe.scrap_comfort': {
-    category: 'refining',
     name: 'Reclaim comfort scrap',
     station: 'module.scrapper',
     inputs: [{ item: 'item.scrap_comfort', count: 10 }],
@@ -81,12 +76,12 @@ export const recipes = {
     outputs: [{ item: 'item.water', count: 8 }, { item: 'item.oxygen', count: 8 }],
     work: 240,
   },
-  // The galley's recipe: polymer and water become nutrient paste bars (water: issue #222; the starter ship carries 30, for 90 rations).
+  // The galley's recipe: water becomes nutrient paste bars (water: issue #222; the starter ship carries 30, for 90 rations).
   // Interim input: rations will use hydroponics output once hydroponics exists (DESIGN.md "Salvaging derelicts").
   'recipe.ration': {
     name: 'Print rations',
     station: 'module.galley',
-    inputs: [{ item: 'item.polymer', count: 1 }, { item: 'item.water', count: 1 }],
+    inputs: [{ item: 'item.water', count: 2 }],
     outputs: [{ item: 'item.ration', count: 3 }],
     work: 40,
   },

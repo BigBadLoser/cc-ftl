@@ -37,7 +37,7 @@ describe('starter economy', () => {
     run(sim, 3000);
     expect(sim.world.get(find(sim, 'module.fabricator'), ProductionC)?.orders[0]?.done).toBe(3);
     expect(totalStock(sim, 'item.parts')).toBe(6);
-    expect(totalStock(sim, 'item.metal')).toBe(80 + 30 - 3 - 3);
+    expect(totalStock(sim, 'item.metal')).toBe(80 + 30 - 3 - 2); // the parts' inputs and the built struct's metal
     expect(shipGrid(sim, shipIds(sim)[0] as number)?.get('struct', P0.x + 12, P0.y + 6)).toBe(2);
   });
 

@@ -23,7 +23,7 @@ const BIN_FILLS = [0.25, 0.6] as const;
 
 /**
  * Art state of a storage module: `.empty/.partial/.full`, or for a def with `storageArt` (ore bins) `.empty`, else
- * `.<kind>.<fill1|fill2|full>` by the mapped item filling the most slots and the slots in use. Items with no kind are ignored.
+ * `.<kind>.<fill1|fill2|full>` (an empty kind, as the scrap cage has: `.<fill>`) by the mapped item filling the most slots and the slots in use. Items with no kind are ignored.
  */
 export function storageState(world: World, id: number, def: ModuleDef): string {
   const s = def.storageArt ? world.get(id, StorageC) : undefined;
@@ -32,12 +32,12 @@ export function storageState(world: World, id: number, def: ModuleDef): string {
   const by = new Map<string, number>();
   for (const q of s.stacks) {
     const kind = def.storageArt[q.item];
-    if (kind) by.set(kind, (by.get(kind) ?? 0) + 1);
+    if (kind !== undefined) by.set(kind, (by.get(kind) ?? 0) + 1);
   }
   const kind = [...by.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  if (!kind) return storageFill(world, id);
+  if (kind === undefined) return storageFill(world, id);
   const share = s.stacks.length / Math.max(1, s.capacity);
-  return `${kind}.${share <= BIN_FILLS[0] ? 'fill1' : share <= BIN_FILLS[1] ? 'fill2' : 'full'}`;
+  return `${kind ? `${kind}.` : ''}${share <= BIN_FILLS[0] ? 'fill1' : share <= BIN_FILLS[1] ? 'fill2' : 'full'}`;
 }
 
 /** Craft jobs by module id, for the renderer's "is it crafting" test. */
