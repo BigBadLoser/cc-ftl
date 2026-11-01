@@ -194,14 +194,14 @@ also steers the leisure destination (the reachable room with the fewest crew).
 
 | Rule | Value |
 |---|---|
-| Who | Mood crew (`hasMood`), not incapacitated, not already in a break, not on cooldown. |
+| Who | Mood crew (`hasMood`), not incapacitated, not already in a break, not on cooldown, and not under a `hazard` Interrupt: no roll while escaping, so a break never starts mid-escape and never aborts the `escape` Task. Stressor counters keep running. |
 | Cadence | `systems/breakdown.ts` (new, right after `systems/mood.ts` in `pipeline.ts`) every `BREAK_INTERVAL` = 100 ticks (5 s), staggered by id. |
 | Roll | `unit(hash32(sim.seed, BREAK_SALT, id, floor(tick / BREAK_INTERVAL)))` < p. Never `Math.random`; independent of `sim.rng`, so one crew member's roll doesn't shift anyone else's. |
 | Pick | Second salt: the context, weighted by each term's share of p (`base(mood)` is the "low mood" context); third salt: the outcome from that context's pool. |
 | p | `(base(mood) + Σ stressor) × susceptibility`, capped at 4% per check. |
 | base(mood) | ≥ 35: 0. 20–35: 0.1%. 10–20: 0.4%. < 10 (`breakdownRisk()`, `MOOD_BREAKDOWN_BELOW`): 1.5% (about one break per 5–6 min). |
 | Stressor scale | Each stressor term × (1.5 below mood 35, 1 at 35–65, 0.5 above 65): low mood makes the same fire worse; no mood floor is needed for a break. |
-| Drafted | Only severe outcomes can roll, p × 0.5 (a draft steadies). |
+| Drafted | Filter first, then roll: each context's pool keeps only its severe outcomes (panic; freeze only in combat). A context left with an empty pool drops out of p, so p = 0.5 × (sum of the remaining contexts' terms) × susceptibility (a draft steadies). Low mood, exhaustion and grief have no severe outcome, so on their own they can't break a drafted crew member. The pick then runs over the filtered pools. |
 
 Stressors are read from state; duration counters live on `MoodC` beside the trait memory (`idle`, `quiet`, `inside`,
 `crew/traitMood.ts`), optional, reset by a break:
@@ -231,7 +231,7 @@ minutes breaks with about 25% odds, never surely.
 | Work refusal | mild | Work drive scored 0: no jobs; needs, survival and drafts work | 2–4 min | Log |
 | Isolation | mild | Work drive 0; leisure walks go to the reachable room with the fewest crew | 2–3 min | Log |
 
-Durations roll from a fourth salt. AI integration (`CREW_AI.md` sections 4 and 5), with one path writer throughout:
+Durations (maximums) roll from a fourth salt. AI integration (`CREW_AI.md` sections 4 and 5), with one path writer throughout:
 
 | Step | Rule |
 |---|---|
@@ -243,9 +243,9 @@ Durations roll from a fourth salt. AI integration (`CREW_AI.md` sections 4 and 5
 
 | Rule | Value |
 |---|---|
-| `BreakdownC { kind, tier, context, until, since }` | The running break, removed when it ends. Optional component: no `SAVE_VERSION` bump. |
+| `BreakdownC { kind, tier, context, until, since, goneSince }` | The running break, removed when it ends. `goneSince`: the tick its context was last found absent after being present (0 while the context is present). Optional component: no `SAVE_VERSION` bump. |
 | `BreakMemoryC { last, byContext }` | Ticks of the last break and of the last break per context: outlives `BreakdownC`, saved, so cooldowns survive recovery and save/load. |
-| End | `until` reached, or the context is gone for 10 s (fire out, hostiles dead), or downed. A low-mood break runs its full duration. Survival suspends a break; the timer runs on. |
+| End | Durations in the outcome table are maximums: `until` is the latest end. It ends earlier when the context has been absent for 10 s straight (`breakdown.ts` checks the context each check: absent sets `goneSince` if unset, present clears it; end when `tick − goneSince ≥ 200`), or when downed. A low-mood break has no context to lose, so it runs to `until`. Survival suspends a break; the timer runs on. |
 | Recovery | Mood "let it out" +5 for 5 min; the stressor counters reset. |
 | Cooldown | From `BreakMemoryC`: no new break for 10 min, and not from the same context for 20 min. Survival is never on cooldown. |
 | Alerts | At most one urgent break alert per crew member per 10 min; a second severe break on the same ship within 60 s goes to the log only. Every break is logged; alerts clear when the break ends. |
