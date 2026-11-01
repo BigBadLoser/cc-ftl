@@ -221,7 +221,7 @@ def bastion(hull):
                     continue                                     # (nor an inner one)
                 q0, q1 = (max(edge, a), edge + PW) if lo else (edge - PW, min(edge, bb))
                 if q1 - q0 > 1e-6:
-                    band(q0, q1, zlo, zc0, 3, cap="wD")                                          # (dark inner walls)
+                    band(q0, q1, zlo, zc0, 3)                                    # (its inner side shaded as it faces)
                     for i in (1, 2):                                     # small lit blocks stepping out of it
                         zj = zsl + (zc0 - zsl) * i / 3
                         band(q0, q1, zj - 3 * PZ, zj, 4, front=dl + 1 / 32)
