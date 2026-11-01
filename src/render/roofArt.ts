@@ -142,10 +142,10 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     remap: { patch: ['T', 'U'], aft: ['T', 'T'] },
   },
   lattice: {
-    motifs: ['coat', 'split', 'trace', 'em.dot'], P: 0x8a929c, S: 0x3fc4d4, T: 0x2a2f36,
+    motifs: ['coat', 'split', 'trace', 'em.dot'], P: 0x8a929c, S: 0xd8343a, T: 0x2a2f36,
     remap: { split: ['T', 'S'], trace: ['S', 'S'], 'em.dot': ['T', 'S'] },
   },
-  node: { motifs: ['coat', 'trace', 'emL.cross'], P: 0x2a2f36, S: 0x3fc4d4, T: 0x8a929c, remap: { trace: ['S', 'S'], 'emL.cross': ['P', 'S'] } },
+  node: { motifs: ['coat', 'trace', 'emL.cross'], P: 0x2a2f36, S: 0xd8343a, T: 0x8a929c, remap: { trace: ['S', 'S'], 'emL.cross': ['P', 'S'] } },
   bazaar: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
   souk: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x33302a, S: 0x39e0d0, T: 0x6e5a3a, U: 0x5a3a5e, remap: { patch: ['T', 'U'] } },
   neon: { motifs: ['coat', 'patch', 'emL.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
