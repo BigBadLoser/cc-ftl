@@ -1,6 +1,7 @@
 import { CrewC, DraftedC, HealthC, PositionC, type Crew } from '../crew/components';
 import { abortTask } from '../ai/task';
 import type { Sim } from '../sim';
+import type { ContentRegistry } from '../registry';
 import { COWARD_SURRENDER_BELOW, RALLY_AFTER_TICKS, SURRENDER_HP_FRAC, SURRENDER_RADIUS } from '../tuning';
 import { traitFlag } from '../crew/traits';
 import { DeadC, DownedC } from '../crew/components';
@@ -13,6 +14,17 @@ const near = (a: { x: number; y: number }, b: { x: number; y: number }): boolean
   Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= SURRENDER_RADIUS;
 
 /**
+ * The hp share below which a crew member gives up when outnumbered (0: never): fearless species and Brave crew never;
+ * else the role's `surrenderBelow`, defaulting to never for the player's crew and SURRENDER_HP_FRAC for others; a Coward
+ * at least COWARD_SURRENDER_BELOW. Pure: the crew screen reads it before any sim exists.
+ */
+export function surrenderBelow(content: ContentRegistry, role: string, species: string, player: boolean, traits: { brave: boolean; coward: boolean }): number {
+  if (content.species[species]?.fearless || traits.brave) return 0;
+  const base = content.roles[role]?.surrenderBelow ?? (player ? 0 : SURRENDER_HP_FRAC);
+  return traits.coward ? Math.max(base, COWARD_SURRENDER_BELOW) : base;
+}
+
+/**
  * Should this crew member give up? Yes when hurt below their morale threshold (role `surrenderBelow`, default
  * SURRENDER_HP_FRAC; player crew default to never, a Coward below COWARD_SURRENDER_BELOW; fearless species and Brave crew never) while more hostiles than friends (themselves included) stand
  * within SURRENDER_RADIUS. Pure thresholds, no dice. `friends` and `foes` are the combat-ready units on the grid.
@@ -21,10 +33,8 @@ export function wantsToSurrender(sim: Sim, id: number, friends: readonly number[
   const crew = sim.world.get(id, CrewC);
   const hp = sim.world.get(id, HealthC);
   const pos = sim.world.get(id, PositionC);
-  if (!crew || !hp || !pos || sim.content.species[crew.species]?.fearless || traitFlag(sim, id, 'brave')) return false;
-  const faction = sim.world.get(id, AllegianceC)?.faction;
-  const role = sim.content.roles[crew.role]?.surrenderBelow ?? (faction === 'player' ? 0 : SURRENDER_HP_FRAC);
-  const limit = traitFlag(sim, id, 'coward') ? Math.max(role, COWARD_SURRENDER_BELOW) : role;
+  if (!crew || !hp || !pos) return false;
+  const limit = surrenderBelow(sim.content, crew.role, crew.species, sim.world.get(id, AllegianceC)?.faction === 'player', { brave: traitFlag(sim, id, 'brave'), coward: traitFlag(sim, id, 'coward') });
   if (limit <= 0 || hp.hp / hp.max >= limit) return false;
   const count = (ids: readonly number[]): number => ids.filter((o) => {
     const p = sim.world.get(o, PositionC);

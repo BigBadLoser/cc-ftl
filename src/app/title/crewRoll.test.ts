@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content';
-import { AllegianceC, CrewC, RolledSkillsC, TraitsC, newGame, startingRoles } from '../../sim';
+import { AllegianceC, CrewC, RolledSkillsC, TraitsC, newGame, startingRoles, type TraitDef } from '../../sim';
 import { planOf } from '../saves';
 import { previewCrew } from './crewRoll';
 
@@ -46,5 +46,33 @@ describe('the crew screen', () => {
     const p = planOf(JSON.stringify({ seed: 7, picks: roles.map(() => ({ role: 'role.robot_worker', rerolls: -2, name: '  Zed  ' })) }), ship)!;
     expect(p.picks.map((x) => x.role)).toEqual(roles);
     expect(p.picks.every((x) => x.rerolls === 0 && x.name === 'Zed')).toBe(true);
+  });
+
+  /** The first crew member rolled with only `trait` in the pool who has it. */
+  const withTrait = (trait: string) => {
+    const only = { ...content, traits: { [trait]: (content.traits as Record<string, TraitDef>)[trait]! } };
+    for (let seed = 1; seed < 200; seed++) {
+      const c = previewCrew(only, { seed, ship, picks: roles.map((role) => ({ role, rerolls: 0 })) }).find((x) => x.traits.length);
+      if (c) return c;
+    }
+    throw new Error('never rolled');
+  };
+  const stat = (c: ReturnType<typeof withTrait>, label: string) => c.stats.find((s) => s.label === label);
+
+  it('reads fleeing and surrender from what the fight code uses: Coward flees below 50% and gives up below 30%, Brave never', () => {
+    const coward = withTrait('trait.coward');
+    expect(stat(coward, 'Flees below')).toMatchObject({ value: '50% hp', source: 'Coward' });
+    expect(stat(coward, 'Surrenders below')).toMatchObject({ value: '30% hp', source: 'Coward' });
+    const brave = withTrait('trait.brave');
+    expect(stat(brave, 'Flees below')?.value).toBe('never');
+    expect(stat(brave, 'Surrenders below')).toMatchObject({ value: 'never', source: 'Brave' });
+  });
+
+  it('shows the levels a trait takes away (Clumsy) as lost, not as a lower roll', () => {
+    const c = withTrait('trait.clumsy');
+    for (const s of c.skills.filter((x) => x.skill === 'melee' || x.skill === 'gunnery')) {
+      expect(s.lost).toBe(Math.min(1, s.rolled));
+      expect(s.value).toBe(s.rolled - s.lost);
+    }
   });
 });

@@ -2,7 +2,7 @@
   import Icon, { type IconName } from '../Icon.svelte';
   import { Tooltip } from '../kit';
   import { SKILL_ICON } from '../crew/format';
-  import Pips, { type PipKind } from '../inspector/Pips.svelte';
+  import Pips, { pipsOf, type PipKind } from '../inspector/Pips.svelte';
   import Section from '../inspector/Section.svelte';
   import { labelText, labelTip, traitColor } from './crewText';
   import type { UiRollCrew, UiRollSkill } from './titleApi';
@@ -16,10 +16,11 @@
     c: UiRollCrew; pic: string | null; onRename: (name: string) => void; onReroll: () => void; onRoll: (rerolls: number) => void;
   } = $props();
   const MAX = 6;
-  const pips = (s: UiRollSkill): PipKind[] => [
-    ...Array<PipKind>(Math.max(0, s.rolled)).fill('rolled'), ...Array<PipKind>(Math.max(0, s.trait)).fill('trait'),
-    ...Array<PipKind>(Math.max(0, s.role - s.value)).fill('below'),
-  ];
+  /** Rolled and trait pips, red ones a trait took away, then dashed amber up to the role's level. */
+  const pips = (s: UiRollSkill): PipKind[] => {
+    const seq = pipsOf(s.rolled, 0, s.trait, s.lost);
+    return [...seq, ...Array<PipKind>(Math.max(0, s.role - seq.length)).fill('below')];
+  };
   const note = (s: UiRollSkill): { text: string; cls: string } | null => {
     if (s.role > 0) {
       const d = s.value - s.role;
@@ -29,7 +30,7 @@
   };
 </script>
 
-{#snippet legend()}<span class="legend"><span><i class="r"></i>rolled</span><span><i class="t"></i>trait</span><span><i class="b"></i>below role</span></span>{/snippet}
+{#snippet legend()}<span class="legend"><span><i class="r"></i>rolled</span><span><i class="t"></i>trait</span><span><i class="l"></i>trait −</span><span><i class="b"></i>below role</span></span>{/snippet}
 
 <section class="win dossier" data-testid="crew-dossier">
   <div class="ph">{c.name}<small>{c.roleName}</small></div>
@@ -61,7 +62,7 @@
         {@const n = note(s)}
         <div class="sk" class:off={s.role === 0} class:zero={s.value === 0}>
           <span class="si"><Icon name={(SKILL_ICON[s.skill] ?? 'list') as IconName} size={15} /></span><span class="sn">{s.name}</span><b>{s.value}</b>
-          <Pips cells={pips(s)} max={Math.max(MAX, s.value, s.role)} width={22} />
+          <Pips cells={pips(s)} max={Math.max(MAX, s.rolled + s.trait, s.role)} width={22} />
           <span class={n?.cls ?? ''}>{n?.text ?? ''}</span>
         </div>
       {/each}
@@ -105,7 +106,7 @@
   .legend { display: inline-flex; gap: 10px; font-size: 12px; color: var(--dim); }
   .legend span { display: inline-flex; align-items: center; gap: 4px; }
   .legend i { display: inline-block; width: 10px; height: 10px; box-sizing: border-box; }
-  .legend .r { background: #8b939a; } .legend .t { background: var(--green); } .legend .b { border: 1px dashed var(--amber); }
+  .legend .r { background: #8b939a; } .legend .t { background: var(--green); } .legend .l { background: var(--red); } .legend .b { border: 1px dashed var(--amber); }
   .sk { display: grid; grid-template-columns: 16px 84px 18px auto 1fr; align-items: center; column-gap: 8px; min-height: 26px; font-size: 13px; }
   .sk > span:last-child { text-align: right; font-size: 12px; }
   .si { display: inline-flex; color: var(--cyan); }

@@ -1,4 +1,4 @@
-import { CREW_MAX_HP, DEFAULT_CARRY_CAPACITY, MOOD_BASE, SKILLS, rollStartingCrew, type ContentRegistry, type TraitDef } from '../../sim';
+import { COWARD_FLEE_BELOW, CREW_MAX_HP, DEFAULT_CARRY_CAPACITY, MOOD_BASE, SKILLS, rollStartingCrew, surrenderBelow, type ContentRegistry, type TraitDef } from '../../sim';
 import type { UiCrewPlan, UiRollCrew } from '../../ui/title/titleApi';
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
@@ -37,9 +37,14 @@ function statsOf(content: ContentRegistry, role: string, defs: readonly TraitDef
   const moodBy = defs.filter((d) => typeof d.effects?.mood === 'number');
   const mood = MOOD_BASE + moodBy.reduce((n, d) => n + (d.effects?.mood ?? 0), 0);
   row('Mood', `${mood}`, moodBy, mood >= MOOD_BASE);
-  const brave = defs.find((d) => d.effects?.brave);
-  const coward = defs.find((d) => d.effects?.coward);
-  row('In a fight', brave ? 'fights bare-handed' : coward ? 'runs when hurt' : 'grabs a gun', brave ? [brave] : coward ? [coward] : [], !!brave);
+  // What the fight code reads: a Coward flees from the foes it sees below COWARD_FLEE_BELOW hp (no one else flees for
+  // being hurt), and the surrender threshold is the sim's own (`surrenderBelow`: role, Brave, Coward, fearless species).
+  const brave = defs.filter((d) => d.effects?.brave);
+  const coward = defs.filter((d) => d.effects?.coward);
+  const pct = (v: number): string => (v > 0 ? `${Math.round(v * 100)}% hp` : 'never');
+  row('Flees below', pct(coward.length ? COWARD_FLEE_BELOW : 0), coward, false);
+  const give = surrenderBelow(content, role, content.roles[role]?.species ?? 'species.human', true, { brave: brave.length > 0, coward: coward.length > 0 });
+  row('Surrenders below', pct(give), give > 0 ? coward : brave, give <= 0);
   return out;
 }
 
@@ -59,8 +64,10 @@ export function previewCrew(content: ContentRegistry, plan: UiCrewPlan): UiRollC
     const defs = traits.map((t) => t.def);
     const skills = SKILLS.map((skill) => {
       const r = c.skills?.[skill] ?? role?.skills?.[skill] ?? 0;
-      const trait = defs.reduce((n, d) => n + (d.modifiers ?? []).reduce((k, m) => k + (m.stat === skill && m.op === 'add' ? m.value : 0), 0), 0);
-      return { skill, name: cap(skill), rolled: r, trait, role: role?.skills?.[skill] ?? 0, value: Math.max(0, r + trait) };
+      const adds = defs.flatMap((d) => (d.modifiers ?? []).filter((m) => m.stat === skill && m.op === 'add').map((m) => m.value));
+      const trait = adds.filter((v) => v > 0).reduce((n, v) => n + v, 0);
+      const lost = Math.min(r + trait, -adds.filter((v) => v < 0).reduce((n, v) => n + v, 0));
+      return { skill, name: cap(skill), rolled: r, trait, lost, role: role?.skills?.[skill] ?? 0, value: Math.max(0, r + trait - lost) };
     });
     const roleName = role?.name ?? c.role;
     const lead = c.label === 'talented' ? `Talented for a ${roleName.toLowerCase()}.` : c.label === 'green' ? `A rookie ${roleName.toLowerCase()}.` : '';

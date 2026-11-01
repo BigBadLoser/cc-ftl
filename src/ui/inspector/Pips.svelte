@@ -1,9 +1,19 @@
+<script lang="ts" module>
+  export type PipKind = 'rolled' | 'xp' | 'trait' | 'lost' | 'below' | null;
+
+  /** The pips of a level made of rolled, XP and trait levels, `lost` of them taken away by traits (shown red at the end). */
+  export function pipsOf(rolled: number, xp: number, traitUp: number, lost: number): PipKind[] {
+    const seq: PipKind[] = [...Array<PipKind>(Math.max(0, rolled)).fill('rolled'), ...Array<PipKind>(Math.max(0, xp)).fill('xp'), ...Array<PipKind>(Math.max(0, traitUp)).fill('trait')];
+    for (let i = seq.length - 1, n = lost; i >= 0 && n > 0; i--, n--) seq[i] = 'lost';
+    return seq;
+  }
+</script>
+
 <script lang="ts">
   /**
    * A skill level as pips, one per level up to `max`: each filled pip coloured by where that level comes from (rolled, XP,
-   * trait), `below` pips dashed amber (levels the role expects but this one lacks), the rest empty.
+   * trait), `lost` pips red (levels a trait takes away), `below` pips dashed amber (levels the role expects but this one lacks), the rest empty.
    */
-  export type PipKind = 'rolled' | 'xp' | 'trait' | 'below' | null;
   /** `width`: each pip's px; left out, the pips share the row's width. */
   let { cells, max, width, testId }: { cells: PipKind[]; max: number; width?: number; testId?: string } = $props();
 </script>
@@ -19,5 +29,6 @@
   i.rolled { background: #8b939a; border-color: #8b939a; }
   i.xp { background: var(--cyan); border-color: var(--cyan); }
   i.trait { background: var(--green); border-color: var(--green); }
+  i.lost { background: var(--red); border-color: var(--red); }
   i.below { background: transparent; border: 1px dashed var(--amber); }
 </style>

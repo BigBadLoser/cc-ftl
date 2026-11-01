@@ -20,8 +20,8 @@ export interface TitleApi {
   stage(canvas: HTMLCanvasElement, ship: string): Promise<{ dispose(): void }>;
 }
 
-/** One skill of a rolled crew member: the rolled level, what traits add, the role's level (the dashed "below role" pips). */
-export interface UiRollSkill { skill: string; name: string; rolled: number; trait: number; role: number; value: number }
+/** One skill of a rolled crew member: the rolled level, what traits add and take away, the role's level (the dashed "below role" pips). */
+export interface UiRollSkill { skill: string; name: string; rolled: number; trait: number; lost: number; role: number; value: number }
 
 /** One crew-screen slot as rolled (app/title/crewRoll.ts): what the started game will hold. */
 export interface UiRollCrew {

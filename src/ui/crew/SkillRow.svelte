@@ -2,20 +2,16 @@
   import type { UiSkillDetail } from '../crewDetailApi';
   import Icon, { type IconName } from '../Icon.svelte';
   import { SKILL_ICON } from './format';
-  import Pips, { type PipKind } from '../inspector/Pips.svelte';
+  import Pips, { pipsOf } from '../inspector/Pips.svelte';
 
   /**
    * One trained skill: icon, name, level, then a pip per level coloured by where it comes from (rolled, XP, trait) with a thin
    * grey XP bar under the pips and the XP % after them. Hovering the row highlights it and opens its breakdown card.
    */
   let { s, max, role }: { s: UiSkillDetail; max: number; role: string } = $props();
-  const pips = $derived.by(() => {
-    const seq: PipKind[] = [];
-    for (let i = 0; i < s.rolled; i++) seq.push('rolled');
-    for (let i = 0; i < s.xpLevels; i++) seq.push('xp');
-    for (const m of s.mods) if (m.op === 'add' && m.value > 0) for (let i = 0; i < m.value; i++) seq.push('trait');
-    return seq.slice(0, Math.max(0, s.value));
-  });
+  const pips = $derived(pipsOf(s.rolled, s.xpLevels,
+    s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0),
+    s.mods.reduce((n, m) => n + (m.op === 'add' && m.value < 0 ? -m.value : 0), 0)));
   const pct = $derived(Math.round((s.xp / s.per) * 100));
   const sgn = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v)}`;
 </script>
