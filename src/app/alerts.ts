@@ -38,7 +38,12 @@ export interface Alerts {
   /** Arrival warnings: bring the "drops from hyperspace" alerts in line with the fleets now on their way to the player's node (state, not events). */
   syncIncoming(): void;
   /** Raise an alert that is not a reaction to one event (the fight report); it stays until dismissed or `clear`ed. */
-  post(a: { kind: UiAlertKind; key: string; text: string; report?: boolean }): void;
+  post(a: { kind: UiAlertKind; key: string; text: string; report?: boolean; menu?: 'save' }): void;
+  /**
+   * A save write finished. A failure raises the save-failed alert, unless the player dismissed it earlier in this streak of failures; a success
+   * clears it and un-mutes it. Returns true when a new failure streak starts (the caller logs it once).
+   */
+  saveResult(ok: boolean, text: string): boolean;
   /** Remove the alerts raised under a key. */
   clear(key: string): void;
   /** Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...). Cheap; call it every few frames. */
@@ -161,6 +166,8 @@ export function createAlerts(sim: Sim): Alerts {
     return null;
   };
 
+  let saveFailing = false;
+  let saveMuted = false;
   const remove = (id: number) => {
     keys.delete(id);
     resolvers.delete(id);
@@ -204,14 +211,27 @@ export function createAlerts(sim: Sim): Alerts {
       for (const [id, k] of keys) if (k === a.key) remove(id);
       const id = nextId++;
       keys.set(id, a.key);
-      store.update((l) => [{ id, kind: a.kind, text: a.text, subject: null, ...(a.report ? { report: true } : {}) }, ...l]);
+      store.update((l) => [{ id, kind: a.kind, text: a.text, subject: null, ...(a.report ? { report: true } : {}), ...(a.menu ? { menu: a.menu } : {}) }, ...l]);
       for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    },
+    saveResult(ok, text) {
+      if (ok) {
+        saveFailing = false;
+        saveMuted = false;
+        this.clear('save');
+        return false;
+      }
+      const starts = !saveFailing;
+      saveFailing = true;
+      if (!saveMuted) this.post({ kind: 'save.failed', key: 'save', text, menu: 'save' });
+      return starts;
     },
     clear(key) {
       for (const [id, k] of keys) if (k === key) remove(id);
     },
     get: (id) => store.get().find((a) => a.id === id),
     dismiss(id) {
+      if (keys.get(id) === 'save') saveMuted = true; // dismissed: quiet until a write succeeds
       const n = store.get().find((a) => a.id === id)?.notice;
       if (n?.lead) sim.enqueue({ type: 'story.dismissNotice', notice: n.id });
       remove(id);
