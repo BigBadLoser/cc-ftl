@@ -10,7 +10,7 @@ from .. import walls as W
 from ..restyle import STEP
 from .base import Faction, _style
 from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood, slot_tone
-from .parts import PAINT, PZ, body, corner_piece, prism
+from .parts import PAINT, PZ, body, corner_piece, flat, prism
 from .shell import Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
 
 BAST_OT = 0.015                     # the ramp panel's outline: its top and bottom lines 1 px
@@ -147,11 +147,14 @@ def _cornice(k, ax, plane, a, b, c0, c1, zc0, zh, m, band, F):
     us = [c0] + sorted(u for u in cuts if c0 + 1e-6 < u < c1 - 1e-6) + [c1]
     for i, (u0, u1) in enumerate(zip(us, us[1:])):
         mt = (m[0] if i == 0 else 0.0, m[1] if i == len(us) - 2 else 0.0)
-        if any(p - 1e-6 <= u0 and u1 <= q + 1e-6 for p, q in mids):
-            band(u0, u1, zc0 + BAST_HM, zh - BAST_HM, 4, front=BAST_K, m=mt)
-        else:
-            band(u0, u1, zc0, zh, 4, front=BAST_K, m=mt)
+        mid = any(p - 1e-6 <= u0 and u1 <= q + 1e-6 for p, q in mids)
+        z1 = zh - BAST_HM if mid else zh
+        hd = HEAD[F] if ax == "y" else darker(HEAD[F])                     # (a shade under the lit, for its edge)
+        band(u0, u1, zc0 + BAST_HM if mid else zc0, z1, 4, front=BAST_K, m=mt, cols=[None, hd, None, None])
+        if not mid:
             T.paint(k, ax, plane, max(u0, a), min(u1, b), zc0, zc0 + 2 * PZ, BAST_K, F, 3)
+        hl = EDGE[F] if ax == "y" else darker(EDGE[F])                                 # its top edge caught lit
+        flat(k, ax, plane, max(u0, a), min(u1, b), z1 - PZ, z1, BAST_K + PAINT, hl)
 
 
 def _ledge_seams(k, ax, plane, f0, f1, db, dl, zs, zlo, zsl, F):
@@ -208,7 +211,8 @@ def bastion(hull):
         if endf:                                        # a wall's end face: not recessed; its section, and the
             _end_section(k, ax, plane, a, b, zs, top - BAST_HB if full else top, F)   # cornice turned onto it
             if full:
-                band(a, b + BAST_K, top - BAST_HB, top - BAST_HT, 4, front=BAST_K)
+                band(a, b + BAST_K, top - BAST_HB, top - BAST_HT, 4, front=BAST_K,
+                     cols=[None, HEAD[F] if ax == "y" else darker(HEAD[F]), None, None])
             return
         zl0 = zs + (0.08 if full else 0.3)              # the lower wall's top: the ledge's foot, 2 px up from it
         zlo = min(zl0 + (2 * PZ if full else 0.0), top - 0.02)
@@ -252,7 +256,8 @@ def bastion(hull):
                       mitre=m, cols=[None, T.RAMPS[F][0][4], None])                    # (lit, whatever its angle)                                                                   # may want it flat)
                 if T.fill("seams", True):                                                        # in three blocks
                     _ledge_seams(k, ax, plane, f0, f1, d0 + EPS, dl, zs, zlo, zsl, F)            # (a design may not)
-            T.paint(k, ax, plane + d0, f0, f0 + T.LINE, zsl, zc0, 0.75 * PAINT, F, 1)    # a shadow in the corner where
+            sh = SHADOW[F] if ax == "y" else darker(SHADOW[F])
+            flat(k, ax, plane + d0, f0, f0 + T.LINE, zsl, zc0, 1.75 * PAINT, sh)    # a shadow in the corner where
                                                                                         # its first side meets its back
             cut = T.fill("cut", bastion_hood)                                                    # (its design's)
             cp = cut(k, ax, plane + d0, f0, f1, zlo, zsl, zc0, top, F, m, d0) or cp
@@ -282,6 +287,9 @@ FRONT = {"wall": "fBW10", "blue": "fBH8"}           # the main face's front: the
 RECESS = {"wall": "fBW2", "blue": "fBH2"}          # the recess's back (as a3's sloping ceiling)
 RECESS_SIDE = {"wall": "fBW2", "blue": "fBH2"}     # and its side walls
 SEAM = {"wall": "fBW7", "blue": "fBH7"}            # the ledge's seams, down the lower wall too
+SHADOW = {"wall": "fBW3", "blue": "fBH3"}
+HEAD = {"wall": "fBW8", "blue": "fBH8"}            # the header blocks' fronts
+EDGE = {"wall": "fBW0", "blue": "fBH0"}            # and their lit top edges          # the shadow line where the recess's side meets its back
 SLOPE_LIFT = {"fBW2": "fBW10", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}   # (and its panel's outline 7)     # the floor ramp's slope a step lighter (8: between 2 and 1) than
                                                 # the step its role gives (2, what the open slot's insides keep)
 

@@ -7,7 +7,7 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from ..relief_style import Design
-from .parts import LINE, PAINT, PZ, prism
+from .parts import LINE, PAINT, PZ, flat, prism
 
 BAST_R = 3 / 32                     # how far the recess is cut in behind the lip (three of the shell's cells)
 
@@ -34,17 +34,33 @@ def _frame(k, ax, plane, u0, u1, z0, z1, d, F, lvl, t=0.03):
 
 
 def bastion_hood(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back=0.0):
-    """The base: a hood under the cornice, two slats across the back (set from the bottom, so they line up where a
-    partition meets the taller hull). Returns the hood's and slats' profiles, face-relative, for the corner to carry
-    round."""
+    """The base: a hood under the cornice, and across the back two big pipes (set from the bottom, so they line up
+    where a partition meets the taller hull), clamped at the thirds over dark seams down the back. Returns the hood's
+    and the pipes' profiles, face-relative, for the corner to carry round."""
+    from .bastion import FRONT, SEAM, darker
     R = bast_r()
-    # the hood and slats (on the face's own plane, so at a corner their mitres pull back to meet its chamfer)
+    fr = FRONT[F] if ax == "y" else darker(FRONT[F])
+    sm = darker(darker(SEAM[F]))                        # (the seams darker than the ledge's, to read on the back)
+    sm = sm if ax == "y" else darker(sm)
+    # the hood (on the face's own plane, so at a corner its mitre pulls back to meet its chamfer)
     profs = [[(0.0, z1 - 0.13), (0.5 * R, z1 - 0.13), (R, z1 - 0.07), (R, z1), (0.0, z1)]]
-    profs += [[(0.0, za), (0.7 * R, za), (0.7 * R, za + 0.07), (0.0, za + 0.1)] for za in (z0 + 0.49, z0 + 0.33)]
+    out = [(0, 3)]
+    r = 0.075
+    thirds = [T.snap(f0 + (f1 - f0) * i / 3) for i in (1, 2)]          # (on the back wall: plane is its plane)
+    for u in thirds:
+        flat(k, ax, plane, u - LINE / 2, u + LINE / 2, z0, z1 - 0.13, PAINT, sm)
+    for i in (1, 2):                                    # (by the posts' blocks, 3 px tall, topped at the thirds:
+        zc = z0 + (z1 - z0) * i / 3 - 3.5 * PZ          # 2 px under their middles, which reads centred)
+        profs.append([(0.0, zc - r), (0.6 * r, zc - r), (r, zc - 0.4 * r), (r, zc + 0.4 * r), (0.6 * r, zc + r),
+                      (0.0, zc + r)])
+        out.append((len(profs) - 1, 3))
+        for u in thirds:                                # its clamps, a px proud of it
+            prism(k, ax, plane, u - LINE, u + LINE, [(0.0, zc - r - PZ), (r + 1 / 32, zc - r - PZ),
+                  (r + 1 / 32, zc + r + PZ), (0.0, zc + r + PZ)], F, 2, cols=[None, fr, None, None])
     profs = [[(d + back, z) for d, z in pr] for pr in profs]
-    for i, pr in enumerate(profs):                      # (the slats subdued, as the recess)
-        prism(k, ax, plane - back, f0, f1, pr, F, 3 if i == 0 else 2, mitre=m)
-    return [(pr, 3 if i == 0 else 2) for i, pr in enumerate(profs)]
+    for i, pr in enumerate(profs):
+        prism(k, ax, plane - back, f0, f1, pr, F, dict(out)[i], mitre=m)
+    return [(pr, dict(out)[i]) for i, pr in enumerate(profs)]
 
 
 def bastion_readout(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back=0.0):
