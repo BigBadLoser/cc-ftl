@@ -1,4 +1,4 @@
-import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
+import { ImageSource, Rectangle, Texture, type TextureSource } from 'pixi.js';
 import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 import { dropHalo } from '../haloTex';
 import { buildMask, keepMask } from './alphaMask';
@@ -137,7 +137,7 @@ function validate(m: Manifest): void {
 }
 
 async function fetchManifest(url: string): Promise<Manifest> {
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: abort.signal });
   if (!res.ok) throw new Error(`Cannot load ${url} (${res.status})`);
   const m = (await res.json()) as Manifest;
   validate(m);
@@ -149,15 +149,11 @@ export async function loadComposed(base = assetBase()): Promise<Manifest> {
   return composeManifest(await fetchManifest(`${base}${ART_DIR}/manifest.json`), ART_DIR);
 }
 
-/** Counts atlases: each loads its sheets under its own cache key, so two live atlases never share (or unload) each other's textures. */
-let atlasCount = 0;
-
 export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise<Atlas> {
   const manifest = await loadComposed(base);
-  const owner = ++atlasCount;
   let disposed = false;
-  // A per-atlas query makes each atlas's URL its own: pixi's loader and cache are keyed by URL, so an alias alone would still share one texture.
-  const keyOf = (path: string): string => `${base}${path}?atlas=${owner}`;
+  /** Aborts this atlas's downloads when it is disposed: a replaced title stage must not keep fetching and decoding sheets nobody will draw. */
+  const abort = new AbortController();
   /** Texture resolution by image path (0.5 for a 1x sheet: it is drawn at twice its pixel size). */
   const resOf = new Map<string, number>();
   for (const s of Object.values(manifest.sheets)) {
@@ -183,14 +179,24 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     const img = a.kind === 'static' && /^(module|vehicle|container|prop)\./.test(id) ? manifest.sheets[a.sheet]?.image : undefined;
     if (img) pickable.add(img);
   }
+  /** Fetch and decode a sheet image: the same plain URL every time, so the browser's HTTP cache serves repeats. */
+  const decode = async (url: string): Promise<ImageBitmap> => {
+    if (disposed) throw new Error('atlas disposed');
+    const res = await fetch(url, { signal: abort.signal });
+    if (!res.ok) throw new Error(`${url} ${res.status}`);
+    return createImageBitmap(await res.blob());
+  };
   const loadTex = async (path: string, keyed = false, mask = false): Promise<Texture> => {
     const resolution = resOf.get(path) ?? 1;
     // 1x sheets are always nearest: each art pixel must stay a hard 2x2 block (smoothing is for 2x art shrunk below zoom 1).
     const mode = smooth && !keyed && resolution === 1 ? 'linear' : 'nearest';
-    const t = await Assets.load<Texture>({ src: keyOf(path), data: { scaleMode: mode, resolution } });
+    // Each atlas builds its own textures from the plain URL (the browser's HTTP cache dedupes the download), not through pixi's
+    // URL-keyed Assets cache: that would hand one texture to two atlases, and disposing one would destroy it under the other.
+    const bitmap = await decode(base + path);
+    const t = new Texture({ source: new ImageSource({ resource: bitmap, alphaMode: 'premultiply-alpha-on-upload', scaleMode: mode, resolution }) });
     if (disposed) {
       // The atlas was disposed while this sheet was in flight (a stage replaced before its renderer finished): free it, use nothing.
-      void Assets.unload(keyOf(path));
+      t.destroy(true);
       throw new Error('atlas disposed');
     }
     t.source.scaleMode = mode;
@@ -205,9 +211,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     return t;
   };
   const redecode = async (url: string, src: TextureSource): Promise<void> => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`${url} ${res.status}`);
-    src.resource = await createImageBitmap(await res.blob());
+    src.resource = await decode(url);
     hooks?.upload(src);
     (src.resource as { close?: () => void }).close?.();
   };
@@ -223,11 +227,11 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       const [img, gl] = await Promise.all([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null]);
       return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
     },
-    unload(name, _sheet, image, glow) {
+    unload(name, sheet) {
       for (const t of detached.get(name) ?? []) t.destroy(false);
       detached.delete(name);
-      void Assets.unload(keyOf(image));
-      if (glow) void Assets.unload(keyOf(glow));
+      sheet.image.destroy(true);
+      sheet.glow?.destroy(true);
     },
   };
   const store = new SheetStore<Texture>({
@@ -394,14 +398,13 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     envOver: () => store.over('env'),
     whenIdle: () => store.idle(),
     dispose() {
-      // Free this atlas's own textures. They are cached under keys of this atlas only: pixi's URL cache would otherwise hand a
-      // later renderer these spent textures (bitmap closed after the upload, GPU gone) and it would draw nothing (title ship switch).
+      // Free this atlas's own textures (nothing else holds them). Sharing them through pixi's URL cache once handed a later
+      // renderer spent textures (bitmap closed after the upload, GPU gone) that drew nothing (the title screen's ship switch).
       disposed = true;
-      store.forEachReady((name) => {
-        const def = manifest.sheets[name];
-        if (!def) return;
-        void Assets.unload(keyOf(def.image));
-        if (def.glow) void Assets.unload(keyOf(def.glow));
+      abort.abort();
+      store.forEachReady((_name, sheet) => {
+        sheet.image.destroy(true);
+        sheet.glow?.destroy(true);
       });
     },
     stats() {
