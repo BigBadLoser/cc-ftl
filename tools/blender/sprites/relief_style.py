@@ -49,7 +49,7 @@ class Style:
     outline_d: tuple = (0.15, 0.62)       # ... its top and bottom down the ramp (fractions of the run)
     outline_t: float = 0.03               # ... its top and bottom lines' depth down the ramp
     outline_block: Optional[tuple] = None  # ... a block in it: (gap under its top line, gap from its sides, depth down
-                                           # the ramp, level)
+                                           # the ramp, level or {family: palette name})
     slot: bool = False                    # a dark handle slot in the outlined panel (the base design)
     slot_d: tuple = (0.5, 0.57, 0.1)      # ... painted: its top and bottom (fractions of the run) and half width
     hole_tone: Optional[Callable] = None  # (part "back" | "side", family, face axis, outward normal) -> the tone

@@ -403,8 +403,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             if ob:                                            # a block in it, under its top line
                 qs.append((fu0 + L + ob[1], fu1 - L - ob[1], fd0 + t + ob[0], fd0 + t + ob[0] + ob[2], ob[3]))
             for q in qs:
+                lv = q[4] if len(q) > 4 else style().outline_lvl          # (a level, or {family: palette name})
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam,
-                      q[4] if len(q) > 4 else style().outline_lvl, base=rise)
+                      lv if isinstance(lv, int) else 0, base=rise, fixed=lv.get(fam) if isinstance(lv, dict) else None)
             if style().slot and not VARIANT[1] and hole:        # a handle slot cut into it (the solid ramp
                 if not getattr(sp, "solid", False):                    # builds its own)
                     slot_cut(k, ax, plane, hole, zsurf, fam)

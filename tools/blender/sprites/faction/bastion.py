@@ -273,11 +273,11 @@ def bastion(hull):
     return face
 
 
-FRONT = {"wall": "fBW8", "blue": "fBH8"}           # the main face's front: the ramp's slope's tone (SLOPE_LIFT)
+FRONT = {"wall": "fBW10", "blue": "fBH8"}           # the main face's front: the ramp's slope's tone (SLOPE_LIFT)
 RECESS = {"wall": "fBW9", "blue": "fBH9"}          # the recess's back (step 9: between 3 and 7)
 RECESS_SIDE = {"wall": "fBW3", "blue": "fBH3"}     # and its side walls
 SEAM = {"wall": "fBW7", "blue": "fBH7"}            # the ledge's seams, down the lower wall too
-SLOPE_LIFT = {"fBW2": "fBW8", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}   # (and its panel's outline 7)     # the floor ramp's slope a step lighter (8: between 2 and 1) than
+SLOPE_LIFT = {"fBW2": "fBW10", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}   # (and its panel's outline 7)     # the floor ramp's slope a step lighter (8: between 2 and 1) than
                                                 # the step its role gives (2, what the open slot's insides keep)
 
 
@@ -293,6 +293,6 @@ class Bastion(Faction):
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
                       tops=BAST_TOPS, ramps=BAST_RAMPS, outline_lvl=1, outline_t=BAST_OT, outline_d=BAST_PANEL, ramp_solid=True,
-                      foot=BAST_FOOT, toe_lvl=SEAM, outline_block=(0.015, 2 / 32, 0.045, 3), hole_tone=slot_tone,
+                      foot=BAST_FOOT, toe_lvl=SEAM, outline_block=(0.015, 2 / 32, 0.045, {"wall": "fBW8", "blue": "fBH1"}), hole_tone=slot_tone,
                       shell=LookShell,
                       features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), FootTone("wall", 2, front="fBW2"), RecessTones()))

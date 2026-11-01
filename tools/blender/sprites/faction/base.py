@@ -84,8 +84,9 @@ def palette_entries():
 
 
 TONES = {"fB": {"fBG": "#1c2444",      # a look's own single tones, on bin centres: bastion's screen glass, a deep
-               "fBW9": "#34344c", "fBH9": "#34344c"}}   # navy; its recess's back, between steps 3 and 7 (too close
-                                                        # for the ramp's snapping to keep them apart)
+               "fBW9": "#34344c", "fBH9": "#34344c",    # navy; its recess's back, between steps 3 and 7 (too close
+                                                        # for the ramp's snapping to keep them apart);
+               "fBW10": "#44546c"}}                     # its slope and front, between steps 2 and 8
 
 
 class Faction(Look):
