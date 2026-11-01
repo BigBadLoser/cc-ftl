@@ -7,11 +7,22 @@
    * that lost context (pixi then fails compiling shaders: the "null.split" error).
    */
   let { api, ship }: { api: TitleApi; ship: string } = $props();
+  import LoadingVeil from '../LoadingVeil.svelte';
+  let ready = $state<Promise<void> | null>(null);
 
   function stage(canvas: HTMLCanvasElement, of: string) {
     let stop: (() => void) | undefined;
     let gone = false;
-    void api.stage(canvas, of).then((s) => (gone ? s.dispose() : (stop = () => s.dispose())));
+    ready = new Promise<void>((done) => {
+      api.stage(canvas, of).then(
+        (s) => {
+          if (gone) s.dispose();
+          else stop = () => s.dispose();
+          void s.ready.then(done, done);
+        },
+        () => done(),
+      );
+    });
     return {
       destroy() {
         gone = true;
@@ -21,7 +32,7 @@
   }
 </script>
 
-{#key ship}<canvas use:stage={ship} data-testid="title-stage"></canvas>{/key}
+{#key ship}<canvas use:stage={ship} data-testid="title-stage"></canvas>{#if ready}<LoadingVeil until={ready} />{/if}{/key}
 
 <style>
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }

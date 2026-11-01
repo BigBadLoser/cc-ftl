@@ -1368,5 +1368,7 @@ export interface UiApi {
   };
   /** Called once with the game canvas so the app layer can attach the renderer. */
   attachCanvas(canvas: HTMLCanvasElement): void;
+  /** Resolves when the first scene's sprites are in (the loading screen waits on it). Absent in test stubs. */
+  artReady?: Promise<void>;
   throwTestError(): void;
 }

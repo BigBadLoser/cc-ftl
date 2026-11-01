@@ -47,6 +47,7 @@
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
 
+  import LoadingVeil from './LoadingVeil.svelte';
   let { api }: { api: UiApi } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -269,6 +270,7 @@
 <svelte:window onkeydown={onKey} onkeydowncapture={onKeyCapture} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas} data-world></canvas>
+{#if api.artReady}<LoadingVeil until={api.artReady} />{/if}
 <SelectBox {api} />
 <ContextMenu {api} />
 
