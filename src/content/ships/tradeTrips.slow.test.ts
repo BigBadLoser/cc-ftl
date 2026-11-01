@@ -179,7 +179,7 @@ describe('orders on the player shuttle (hold of 40)', () => {
 
 /** Two items (by id order) where the trader pays `lo` < `hi` < 2 x `lo` per unit of the first and sells the second at `hi`, or the mirror, as `want` says. */
 function pricePair(sim: Sim, ship: number, want: 'sellBetweenBuy' | 'buyBetweenSell'): { a: string; b: string } {
-  const ids = ['item.electronics', 'item.ice', 'item.metal', 'item.parts', 'item.polymer', 'item.ration', 'item.scrap']; // bulk goods that stack in a crate
+  const ids = ['item.electronics', 'item.ice', 'item.metal', 'item.parts', 'item.polymer', 'item.ration', 'item.scrap_hull']; // bulk goods that stack in a crate
   for (const a of ids) {
     for (const b of ids) {
       const buyA = unitPrice(sim, ship, a, 'buy');

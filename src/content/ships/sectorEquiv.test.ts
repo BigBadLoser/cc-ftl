@@ -290,4 +290,6 @@ describe('sector refactor equivalence', () => {
 // Repinned `disaster` for the job scheduler (#194 Phase 2): free crew are matched to jobs together, the nearest crew member first (was: each in id order
 // takes their own best job), and a pass is skipped while its inputs are unchanged (at most SCHED_CADENCE ticks), so other crew put out the fire and seal
 // the breach. On the legacy picker it still gives 2cf7530b. The combat run makes the same assignments and is unchanged.
-const EXPECTED = { combat: '3650e115', disaster: '971586b4' };
+// Repinned for salvage items (#268): the starter crate holds metal, electronics and polymer where it held scrap (the hashed world holds storage), and the
+// galley prints rations from polymer and water. Both hashes change by that alone.
+const EXPECTED = { combat: '9ae6c3d8', disaster: 'fe8751b2' };

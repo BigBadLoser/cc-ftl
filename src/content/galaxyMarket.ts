@@ -31,12 +31,12 @@ export const market = {
       consume: { 'item.ration': 1, 'item.metal': 1, 'item.parts': 0.4, 'item.missile': 0.4, 'item.electronics': 0.3, 'item.oxygen': 0.3 },
     },
     'trader.station.pirate': {
-      produce: { 'item.scrap': 1 },
+      produce: { 'item.scrap_weapons': 1 },
       consume: { 'item.ration': 1, 'item.ice': 0.3, 'item.parts': 0.2, 'item.electronics': 0.2 },
     },
   },
   goods: [
-    'item.scrap', 'item.metal', 'item.electronics', 'item.polymer', 'item.parts', 'item.iron_ore', 'item.rare_ore', 'item.ice', 'item.ration', 'item.missile', 'item.fuel',
+    'item.scrap_hull', 'item.scrap_weapons', 'item.metal', 'item.electronics', 'item.polymer', 'item.parts', 'item.iron_ore', 'item.rare_ore', 'item.ice', 'item.ration', 'item.missile', 'item.fuel',
     'item.water', 'item.oxygen',
   ],
 } satisfies MarketContent;

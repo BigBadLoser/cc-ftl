@@ -164,3 +164,17 @@ describe('ruin look merged with the live state', () => {
     expect(mergeRuinChain(chain, 0, [], ['m.damaged'])).toEqual(['m.damaged', ...chain]);
   });
 });
+
+describe('scrap cage art', () => {
+  const cage = content.modules['module.storage_scrap']!;
+  const m = { def: 'module.storage_scrap', x: 4, y: 4, rot: 2 } as unknown as Module;
+  const hold = (stacks: { item: string; count: number }[]): World =>
+    ({ get: (_id: number, c: { name: string }) => (c.name === 'storage' ? { stacks, capacity: 24 } : undefined) }) as unknown as World;
+  const head = (n: number) => moduleAssets(hold(Array.from({ length: n }, () => ({ item: 'item.scrap_hull', count: 10 }))), 1, m, cage, false)[0];
+  it('has no ore kind: the fill is the whole state', () => {
+    expect(head(0)).toBe('module.storage_scrap.r2.empty');
+    expect(head(3)).toBe('module.storage_scrap.r2.fill1');
+    expect(head(12)).toBe('module.storage_scrap.r2.fill2');
+    expect(head(20)).toBe('module.storage_scrap.r2.full');
+  });
+});

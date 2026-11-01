@@ -25,6 +25,7 @@ export function performCraft(sim: Sim, job: Job, speed: number): WorkResult {
   consumeDelivered(job);
   const at = accessTile(def, m.x, m.y, m.rot) ?? { x: m.x, y: m.y };
   for (const out of recipe.outputs) spillItems(sim, shipIdOf(sim, job), at.x, at.y, out.item, out.count);
+  for (const x of recipe.extras ?? []) if (sim.rng.chance(x.chance)) spillItems(sim, shipIdOf(sim, job), at.x, at.y, x.item, x.count);
   const orders = sim.world.get(job.target ?? 0, ProductionC)?.orders ?? [];
   const order = orders.find((o) => o.recipe === job.craft?.recipe && (o.mode === 'keep' || o.done < o.target));
   if (order) order.done++;

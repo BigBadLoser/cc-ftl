@@ -14,8 +14,8 @@ const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((i
 /** A starter ship with a metal order and a few build jobs, so crew haul, supply and craft. */
 function busy(): Sim {
   const sim = newGame(11, content);
-  sim.enqueue({ type: 'production.add', moduleId: find(sim, 'module.fabricator'), recipe: 'recipe.metal', mode: 'count', target: 3 });
-  sim.enqueue({ type: 'debug.spawnItems', ship: nth(sim, 1), x: P0.x + 9, y: P0.y + 10, item: 'item.scrap', count: 30 });
+  sim.enqueue({ type: 'production.add', moduleId: find(sim, 'module.fabricator'), recipe: 'recipe.parts', mode: 'count', target: 3 });
+  sim.enqueue({ type: 'debug.spawnItems', ship: nth(sim, 1), x: P0.x + 9, y: P0.y + 10, item: 'item.metal', count: 30 });
   sim.enqueue({ type: 'job.build', ship: nth(sim, 1), x: P0.x + 12, y: P0.y + 6, struct: 2 });
   return sim;
 }
@@ -24,20 +24,20 @@ describe('starter economy', () => {
   it('starts with stocked storage and a powered fabricator', () => {
     const sim = newGame(1, content);
     run(sim, 40);
-    expect(totalStock(sim, 'item.metal')).toBe(60);
-    expect(totalStock(sim, 'item.electronics')).toBe(20);
-    expect(totalStock(sim, 'item.polymer')).toBe(20);
-    expect(totalStock(sim, 'item.scrap')).toBe(80);
+    expect(totalStock(sim, 'item.metal')).toBe(80);
+    expect(totalStock(sim, 'item.electronics')).toBe(30);
+    expect(totalStock(sim, 'item.polymer')).toBe(30);
     expect(totalStock(sim, 'item.ice')).toBe(10);
     expect(sim.world.get(find(sim, 'module.fabricator'), ModuleC)?.powered).toBe(true);
     expect(sim.world.query(StorageC)).toHaveLength(3);
   });
 
-  it('crafts metal from scrap and hauls it away on the real ship', { timeout: 30000 }, () => {
+  it('crafts spare parts and hauls them away on the real ship', { timeout: 30000 }, () => {
     const sim = busy();
     run(sim, 3000);
     expect(sim.world.get(find(sim, 'module.fabricator'), ProductionC)?.orders[0]?.done).toBe(3);
-    expect(totalStock(sim, 'item.scrap')).toBe(80 + 30 - 6);
+    expect(totalStock(sim, 'item.parts')).toBe(6);
+    expect(totalStock(sim, 'item.metal')).toBe(80 + 30 - 3 - 2); // the parts' inputs and the built struct's metal
     expect(shipGrid(sim, shipIds(sim)[0] as number)?.get('struct', P0.x + 12, P0.y + 6)).toBe(2);
   });
 

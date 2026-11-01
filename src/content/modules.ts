@@ -126,7 +126,26 @@ export const modules = {
     workstation: true,
     crafting: true,
   },
-  // Galley / food printer: prints rations from scrap (crafting) and is where hungry crew eat a hot meal (access tile).
+  // Scrapper: crew reclaim scrap into materials at the front tile (recipes.ts). Buildable from the start; the starter ship has none.
+  // Placeholder art: the fabricator's sprite (a scrapper sheet is still to make).
+  'module.scrapper': {
+    name: 'Scrapper',
+    category: 'production',
+    description: "Reclaims salvaged scrap into metal, electronics, spare parts and more. Crew work it from the front tile.",
+    asset: 'module.fabricator',
+    footprint: [2, 1],
+    solid: true,
+    access: [0, 1],
+    power: -5,
+    powerPriority: 3,
+    flammability: 0.3,
+    maxHp: 120,
+    buildWork: 140,
+    cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 4 }],
+    workstation: true,
+    crafting: true,
+  },
+  // Galley / food printer: prints rations (crafting) and is where hungry crew eat a hot meal (access tile).
   // Placeholder art (fallback.ts): needs a real model, see docs/STATUS.md.
   'module.galley': {
     name: 'Galley',

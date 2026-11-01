@@ -58,7 +58,7 @@ export const scrapper = {
     heavy: [{ value: 'module.massDriver', weight: 1 }],
   },
   shields: [{ value: 'module.shieldGen', weight: 1 }],
-  stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }],
+  stock: [{ item: 'item.scrap_hull', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }],
   living: true,
   aiCore: false,
   crew: {

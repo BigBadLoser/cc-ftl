@@ -70,7 +70,7 @@ export const variants: Variant[] = [
         // Workshop and stores
         { def: 'module.fabricator', x: 9, y: 13, rot: 0 },
         { def: 'module.storage', x: 11, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 12, y: 13, rot: 0, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 12, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 13, y: 13, rot: 0, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 11, y: 17, rot: 0 },
         // Shield and life support
@@ -157,7 +157,7 @@ export const variants: Variant[] = [
         // Hold and workshop
         { def: 'module.fabricator', x: 21, y: 10, rot: 0 },
         { def: 'module.storage', x: 23, y: 10, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 24, y: 10, rot: 0, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 24, y: 10, rot: 0, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 25, y: 10, rot: 0, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 23, y: 14, rot: 0 },
         // Hangar
@@ -246,7 +246,7 @@ export const variants: Variant[] = [
         // Terrace 1: workshop and stores
         { def: 'module.fabricator', x: 9, y: 13, rot: 2 },
         { def: 'module.storage', x: 11, y: 13, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 12, y: 13, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 12, y: 13, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 13, y: 13, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 12, y: 10, rot: 0 },
         // Terrace 2: shield, life support, the airlock
@@ -338,7 +338,7 @@ export const variants: Variant[] = [
         // Stores and workshop
         { def: 'module.fabricator', x: 9, y: 18, rot: 2 },
         { def: 'module.storage', x: 11, y: 18, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 12, y: 18, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 12, y: 18, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 13, y: 18, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 12, y: 16, rot: 0 },
         // Shield and life support
@@ -443,7 +443,7 @@ export const variants: Variant[] = [
         { def: 'module.reactor', x: 17, y: 20, rot: 0 },
         { def: 'module.airlock', x: 15, y: 22, rot: 2 },
         { def: 'module.storage', x: 13, y: 24, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 14, y: 24, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 14, y: 24, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 18, y: 24, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 13, y: 20, rot: 0 },
         { def: 'module.light', x: 18, y: 22, rot: 0 },

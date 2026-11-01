@@ -130,7 +130,7 @@ const structures = {
   'structure.station_trade': { name: 'Trade station', kind: 'station', station: 'trade', badge: 'T', resources: ['item.fuel'], services: ['fuel', 'trade', 'repair', 'recruit'] },
   'structure.station_military': { name: 'Military station', kind: 'station', station: 'military', badge: 'M', resources: [], services: ['fuel', 'repair', 'blueprints'] },
   'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'], chance: 0.1, perDanger: -0.01 },
-  'structure.derelict': { name: 'Old derelict', kind: 'derelict', badge: 'D', resources: ['item.scrap', 'item.parts', 'item.electronics'], chance: 0.05, perDanger: 0.012 },
+  'structure.derelict': { name: 'Old derelict', kind: 'derelict', badge: 'D', resources: ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.parts'], chance: 0.05, perDanger: 0.012 },
 } satisfies Record<string, StructureDef>;
 
 const names = {
