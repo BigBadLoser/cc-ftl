@@ -21,7 +21,7 @@ export interface ArtStream {
   update(): void;
   /** Once a frame, after every view has updated (and so resolved its textures): finishes a census begun in `update`. */
   settle(): void;
-  /** A scene was just built: it stays hidden until the sheets it asked for are in (or `FRESH_MS` pass). */
+  /** A new scene was just built: it stays hidden until the sheets it asked for are in (or `FRESH_MS` pass). A scene re-made by a rebuild keeps its state. */
   built(id: number): void;
   /** True while the scene is waiting for its sheets. */
   waiting(id: number): boolean;
@@ -45,10 +45,17 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
   /** Use-clock mark of a census whose sweep waits for `settle`, or null. */
   let pending: number | null = null;
   const fresh = new Map<number, number>();
+  /** True while our own rebuild re-creates scenes: those were already on screen, so they are never hidden again. */
+  let rebuilding = false;
 
   const rebuild = (t: number): void => {
-    host.rebuild();
-    host.sync();
+    rebuilding = true;
+    try {
+      host.rebuild();
+      host.sync();
+    } finally {
+      rebuilding = false;
+    }
     lastRebuild = t;
     count++;
   };
@@ -79,6 +86,7 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
       builtGen = atlas.generation;
     },
     built(id) {
+      if (rebuilding) return;
       if (atlas.busy() > 0 && !fresh.has(id)) fresh.set(id, now() + FRESH_MS);
     },
     waiting: (id) => fresh.has(id),

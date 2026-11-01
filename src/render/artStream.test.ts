@@ -61,6 +61,19 @@ describe('artStream', () => {
     s.update();
     expect(s.waiting(8)).toBe(false);
   });
+  it('a rebuild while later sheets still load does not hide a scene that was showing', () => {
+    const st = { gen: 0, busy: 0 };
+    const atlas = { get generation() { return st.gen; }, busy: () => st.busy, envOver: () => false } as unknown as Atlas;
+    let t = 0;
+    const s = createArtStream(atlas, { rebuild: () => {}, sync: () => s.built(5) }, () => t);
+    s.built(5); // built with the eager sheets in: shown
+    expect(s.waiting(5)).toBe(false);
+    st.busy = 4; // the scene asked for its module and crew sheets
+    st.gen = 1; // some arrived, the rest still load
+    t = REBUILD_MIN_MS;
+    s.update(); // rebuilds (and so re-builds scene 5) while busy
+    expect(s.waiting(5)).toBe(false);
+  });
   it('does not hide a scene built with everything loaded', () => {
     const { s } = rig();
     s.built(1);
