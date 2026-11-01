@@ -4,7 +4,7 @@ import { legacyIntent } from '../sim/ai/policy';
 import { CrewC, HealthC, NeedsC, PositionC } from '../sim/crew/components';
 import { environmentModifiers } from '../sim/crew/conditions';
 import { wantsToEat } from '../sim/crew/eating';
-import { ensureMood, moodFactors } from '../sim/crew/mood';
+import { ensureMood, MOOD_LABELS, moodFactors } from '../sim/crew/mood';
 import { rollStartingCrew } from '../sim/crew/roll';
 import { createCrew } from '../sim/crew/spawn';
 import { RolledSkillsC, TraitsC, bleedOutSec, traitMult } from '../sim/crew/traits';
@@ -22,7 +22,7 @@ import { suitsSystem } from '../sim/systems/suits';
 import { BLEED_OUT_SECONDS, CREW_MAX_HP } from '../sim/tuning';
 import { traits } from './traits';
 
-const PENDING = ['trait.hot_headed', 'trait.peacemaker', 'trait.protective', 'trait.pyrophobic', 'trait.void_fear', 'trait.dark_fear', 'trait.battle_shy', 'trait.drinker', 'trait.stim_hooked'];
+const PENDING = ['trait.hot_headed', 'trait.peacemaker', 'trait.protective', 'trait.pyrophobic', 'trait.space_sick', 'trait.dark_fear', 'trait.battle_shy', 'trait.drinker', 'trait.stim_hooked'];
 
 /** A plain starter game (role skills, no traits) and its crew. */
 function game(): { sim: Sim; crew: number[] } {
@@ -269,6 +269,51 @@ describe('mood traits', () => {
     expect(factor(sim, d, 'dark')).toBeUndefined();
     setTile(sim, d, 'light', 230);
     expect(factor(sim, d, 'glare')).toBe(-3);
+  });
+
+  it('Pyrophobic, Space-sick and Afraid of the dark each have their mood factor, with their labels, and only with the trait', () => {
+    const { sim, crew } = game();
+    const [a, b, c, d] = crew as [number, number, number, number];
+    give(sim, a, 'trait.pyrophobic');
+    give(sim, b, 'trait.space_sick');
+    give(sim, c, 'trait.dark_fear');
+    const pa = sim.world.get(a, PositionC)!;
+    const fire = (dx: number, v: number): void => shipGrid(sim, shipIdOf(sim, pa))!.set('fire', pa.x + dx, pa.y, v);
+    expect(factor(sim, a, 'fireNearby')).toBeUndefined();
+    fire(7, 80);
+    expect(factor(sim, a, 'fireNearby')).toBeUndefined();
+    fire(7, 0);
+    fire(6, 80);
+    expect(factor(sim, a, 'fireNearby')).toBe(-6);
+    fire(6, 0);
+    expect(factor(sim, a, 'fireNearby')).toBeUndefined();
+    const pd = sim.world.get(d, PositionC)!;
+    shipGrid(sim, shipIdOf(sim, pd))!.set('fire', pd.x, pd.y, 80);
+    expect(factor(sim, d, 'fireNearby')).toBeUndefined();
+
+    expect(factor(sim, b, 'spacewalk')).toBeUndefined();
+    sim.world.add(b, SuitC, { worn: true, air: 100 });
+    expect(factor(sim, b, 'spacewalk')).toBeUndefined(); // suited but inside
+    setTile(sim, b, 'o2', 0);
+    expect(factor(sim, b, 'spacewalk')).toBe(-4);
+    sim.world.add(d, SuitC, { worn: true, air: 100 });
+    setTile(sim, d, 'o2', 0);
+    expect(factor(sim, d, 'spacewalk')).toBeUndefined();
+
+    setTile(sim, c, 'light', 0);
+    setTile(sim, d, 'light', 0);
+    expect(factor(sim, c, 'dark')).toBe(-10);
+    expect(factor(sim, d, 'dark')).toBe(-5);
+    expect(moodFactors(sim, c, ensureMood(sim, c)).filter((f) => f.key === 'dark')).toHaveLength(1);
+
+    expect(MOOD_LABELS.fireNearby).toBe('Fire nearby');
+    expect(MOOD_LABELS.spacewalk).toBe('Spacewalk');
+  });
+
+  it('the renamed Space-sick trait exists and the old id is gone; all three phobias stay unrollable', () => {
+    expect(traits['trait.space_sick'].name).toBe('Space-sick');
+    expect(Object.keys(traits)).not.toContain('trait.void_fear');
+    for (const id of ['trait.pyrophobic', 'trait.space_sick', 'trait.dark_fear']) expect((traits as Record<string, { rollable: boolean }>)[id]!.rollable).toBe(false);
   });
 
   it('the mood system keeps trait memory only for the traits that read it', () => {

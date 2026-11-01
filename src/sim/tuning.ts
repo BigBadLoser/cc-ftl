@@ -51,6 +51,13 @@ export const FIRE_MODULE_DAMAGE = 8;
 
 // --- Modules / power ---
 export const DEFAULT_POWER_PRIORITY = 3;
+/** Pyrophobic: a burning tile within this many tiles gives FIRE_FEAR_MOOD. */
+export const FIRE_FEAR_RADIUS = 6;
+export const FIRE_FEAR_MOOD = -6;
+/** Space-sick: mood while suited and outside the hull. */
+export const SPACE_SICK_MOOD = -4;
+/** Afraid of the dark: the dark room factor (others get -5). */
+export const DARK_FEAR_MOOD = -10;
 export const LIGHT_DARK_BELOW = 40;
 /** A Dark-adapted crew member (trait) feels the glare on tiles at least this bright (a lamp's own spot is 230). */
 export const LIGHT_GLARE_ABOVE = 180;

@@ -43,6 +43,12 @@ export interface TraitEffects {
   wanderMult?: number;
   /** crew/mood.ts: happy in combat or on EVA, bored after a long quiet. */
   thrill?: true;
+  /** crew/traitMood.ts: "fire nearby" mood while a tile burns within FIRE_FEAR_RADIUS. */
+  fireFear?: true;
+  /** crew/traitMood.ts: "spacewalk" mood while suited and outside the hull. */
+  spaceSick?: true;
+  /** crew/traitMood.ts: the dark room factor is DARK_FEAR_MOOD instead of -5. */
+  darkFear?: true;
   /** crew/mood.ts: cooped up after a long time without EVA. */
   voidHome?: true;
   /** crew/mood.ts: mood while idle (no job) for at least `afterSec` seconds. */

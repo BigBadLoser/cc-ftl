@@ -1,10 +1,12 @@
 import type { PathGoal, Tile } from '../crew/pathfind';
-import { DIAG, ORTHO, indexOf, isGoalTile, octileBound, type View } from './navView';
+import { DIAG, ORTHO, indexOf, isFallbackStop, isGoalTile, octileBound, type View } from './navView';
 
 /**
  * Searches on a navigation view (ai/navView.ts) for the scheduler. `astar` is `findPath` on the view: the same expansion order and
  * tie-breaks (f, then h, then tile index), so the same steps. `dijkstraFrom` settles tiles from one walker in cost order until every goal it
- * was given is settled (one search answers all of a crew member's candidate jobs). Costs are `findPath`'s integers (x10, exterior x4).
+ * was given is settled (one search answers all of a crew member's candidate jobs). Costs are `findPath`'s integers (x10, exterior x4). Both
+ * treat a doorway beside an `adjacent` goal as `findPath` does (#248): the first one settled is kept as a fallback and the search goes on
+ * for a proper stop, which wins whatever its cost.
  */
 
 const NEIGHBOURS: readonly (readonly [number, number])[] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]];
@@ -124,11 +126,15 @@ export function astar(v: View, from: Tile, goal: PathGoal): { cost: number; step
     g[start] = 0;
     seen[start] = gen;
     heap.push(hOf(start), hOf(start), start);
+    let doorEnd = -1;
     while (heap.size > 0) {
       const cur = heap.pop();
       if (done[cur] === gen) continue;
       done[cur] = gen;
-      if (isGoalTile(goal, v.x0 + (cur % v.w), v.y0 + Math.floor(cur / v.w))) return { cost: g[cur] as number, steps: trace(v, parent, start, cur) };
+      if (isGoalTile(goal, v.x0 + (cur % v.w), v.y0 + Math.floor(cur / v.w))) {
+        if (!isFallbackStop(v, goal, cur)) return { cost: g[cur] as number, steps: trace(v, parent, start, cur) };
+        if (doorEnd < 0) doorEnd = cur;
+      }
       const gc = g[cur] as number;
       expand(v, cur, (ni, step) => {
         if (done[ni] === gen) return;
@@ -141,19 +147,27 @@ export function astar(v: View, from: Tile, goal: PathGoal): { cost: number; step
         heap.push(ng + h, h, ni);
       });
     }
-    return null;
+    return doorEnd >= 0 ? { cost: g[doorEnd] as number, steps: trace(v, parent, start, doorEnd) } : null;
   });
 }
 
 /**
- * Multi-goal Dijkstra from one walker. `goals` maps a window index to the keys reached there. Returns each key's cost (x10) and a way to
- * trace its steps; a key never reached is absent. Stops once every key is settled.
+ * Multi-goal Dijkstra from one walker. `goals` maps a window index to the keys reached there, `fallbacks` the doorway stops (see above)
+ * likewise. Returns each key's cost (x10) and a way to trace its steps; a key never reached is absent. Stops once every key has a proper stop.
  */
-export function dijkstraFrom(v: View, from: Tile, goals: Map<number, number[]>): { cost: Map<number, number>; steps: (key: number) => Tile[] } {
+export function dijkstraFrom(
+  v: View,
+  from: Tile,
+  goals: Map<number, number[]>,
+  fallbacks: Map<number, number[]> = new Map(),
+): { cost: Map<number, number>; steps: (key: number) => Tile[] } {
   const cost = new Map<number, number>();
   const at = new Map<number, number>();
+  const fbCost = new Map<number, number>();
+  const fbAt = new Map<number, number>();
   const keys = new Set<number>();
   for (const ks of goals.values()) for (const k of ks) keys.add(k);
+  for (const ks of fallbacks.values()) for (const k of ks) keys.add(k);
   let left = keys.size;
   const startI = indexOf(v, from.x, from.y);
   const parent = withStart(v, from, (start) => {
@@ -172,6 +186,11 @@ export function dijkstraFrom(v: View, from: Tile, goals: Map<number, number[]>):
         at.set(k, cur);
         left--;
       }
+      for (const k of fallbacks.get(cur) ?? []) {
+        if (cost.has(k) || fbAt.has(k)) continue;
+        fbCost.set(k, g[cur] as number);
+        fbAt.set(k, cur);
+      }
       const gc = g[cur] as number;
       expand(v, cur, (ni, step) => {
         if (done[ni] === gen) return;
@@ -182,6 +201,11 @@ export function dijkstraFrom(v: View, from: Tile, goals: Map<number, number[]>):
         parent[ni] = cur;
         heap.push(ng, 0, ni);
       });
+    }
+    for (const [k, i] of fbAt) {
+      if (cost.has(k)) continue;
+      cost.set(k, fbCost.get(k) as number);
+      at.set(k, i);
     }
     return at.size > 0 ? Int32Array.from(parent) : parent;
   });

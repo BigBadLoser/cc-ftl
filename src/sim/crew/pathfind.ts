@@ -1,6 +1,6 @@
 import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, Struct, isEvaWalkable, isWalkable } from '../structure';
 import type { Sim } from '../sim';
 import { shipGrid } from '../regions';
 import type { ShipGrid } from '../shipGrid';
@@ -12,7 +12,10 @@ export interface Tile {
 }
 
 export interface PathGoal extends Tile {
-  /** True: stop on any walkable tile 8-adjacent to (x, y) (for working on walls). */
+  /**
+   * True: stop on any walkable tile 8-adjacent to (x, y) (for working on walls). A Door tile is a stop only when no other
+   * tile beside the goal can be reached: standing on a doorway holds it open and idle crew never leave it (#248).
+   */
   adjacent?: boolean;
   /** With `adjacent`: the goal is the w x h box whose top-left is (x, y), and the walker stops beside the box, never inside it. */
   w?: number;
@@ -133,6 +136,12 @@ function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: 
   const gOf = (i: number): number => (seen[i] === gen ? (g[i] as number) : -1);
   const heap = new MinHeap();
   const start = fromIndex;
+  let doorEnd = -1;
+  const pathTo = (end: number): Tile[] => {
+    const out: Tile[] = [];
+    for (let i = end; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
+    return out.reverse();
+  };
   g[start] = 0;
   seen[start] = gen;
   heap.push(heuristic(from.x, from.y), heuristic(from.x, from.y), start);
@@ -144,9 +153,10 @@ function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: 
     const cx = cur % width;
     const cy = (cur - cx) / width;
     if (isGoal(x0 + cx, y0 + cy)) {
-      const out: Tile[] = [];
-      for (let i = cur; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
-      return out.reverse();
+      if (adj && struct[cur] === Struct.Door && cur !== start) {
+        // A doorway beside the goal is only a fallback: keep looking for a proper stand spot (g is final for `cur` once popped).
+        if (doorEnd < 0) doorEnd = cur;
+      } else return pathTo(cur);
     }
     for (const [dx, dy] of NEIGHBOURS) {
       const nx = cx + dx;
@@ -167,7 +177,7 @@ function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: 
       heap.push(ng + h, h, ni);
     }
   }
-  return null;
+  return doorEnd >= 0 ? pathTo(doorEnd) : null;
 }
 
 /**

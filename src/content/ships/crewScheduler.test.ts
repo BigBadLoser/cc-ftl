@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AssignmentC, CrewC, JobC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES, findPath, homeShip, newGame, shipGrid, type Job, type Priorities, type Sim } from '../../sim';
 import { admitLevel, pairCost, repairUrgency } from '../../sim/ai/jobRank';
-import { astar } from '../../sim/ai/navSearch';
-import { reaches, startLabels, viewOf } from '../../sim/ai/navView';
+import { astar, dijkstraFrom } from '../../sim/ai/navSearch';
+import { goalTiles, indexOf, isFallbackStop, reaches, startLabels, viewOf } from '../../sim/ai/navView';
 import { assignJobs } from '../../sim/ai/scheduler';
 import { abortTask } from '../../sim/ai/task';
 import { jobGoal, origin } from '../../sim/crew/helpers';
@@ -150,6 +150,50 @@ describe('crew scheduler: navigation views', () => {
       }
     }
     expect(reached).toBeGreaterThan(400);
+  });
+
+  it('stop beside a doorway only when no other stop is reachable, as findPath does (#248), in A* and Dijkstra alike', () => {
+    const { sim, ship, floor } = board(5);
+    const g = shipGrid(sim, ship)!;
+    const doors: Tile[] = [];
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Door) doors.push({ x, y });
+    expect(doors.length).toBeGreaterThan(0);
+    // Goals whose ring holds a doorway; jam a few tiles at random.
+    const goals = floor.filter((t) => doors.some((d) => Math.max(Math.abs(d.x - t.x), Math.abs(d.y - t.y)) === 1)).map((t) => ({ x: t.x, y: t.y, adjacent: true }));
+    const pick = lcg(5);
+    for (let i = 0; i < 8; i++) {
+      const t = floor[pick(floor.length)]!;
+      g.set('jam', t.x, t.y, DoorJam.Shut);
+    }
+    // Fence three goals so that their doorway is the only reachable stop: shut every other tile of their ring.
+    const fenced = goals.filter((_, i) => i % Math.max(1, Math.floor(goals.length / 3)) === 0).slice(0, 3);
+    for (const t of fenced) {
+      for (let y = t.y - 1; y <= t.y + 1; y++) for (let x = t.x - 1; x <= t.x + 1; x++) {
+        if ((x !== t.x || y !== t.y) && g.get('struct', x, y) !== Struct.Door) g.set('jam', x, y, DoorJam.Shut);
+      }
+    }
+    const v = viewOf(sim, ship, {})!;
+    let onDoor = 0, checked = 0;
+    for (let i = 0; i < 300; i++) {
+      const from = floor[pick(floor.length)]!;
+      const goal = i % 3 === 0 ? fenced[i % fenced.length]! : goals[pick(goals.length)]!;
+      const want = findPath(sim, ship, from, goal, {});
+      const got = astar(v, from, goal);
+      expect(got?.steps ?? null, `${JSON.stringify(from)} -> ${JSON.stringify(goal)}`).toEqual(want);
+      if (!got || got.steps.length === 0) continue;
+      const end = got.steps[got.steps.length - 1]!;
+      if (g.get('struct', end.x, end.y) === Struct.Door) onDoor++;
+      const proper = new Map<number, number[]>(), fb = new Map<number, number[]>();
+      for (const t of goalTiles(v, goal)) (isFallbackStop(v, goal, t) ? fb : proper).set(t, [0]);
+      const r = dijkstraFrom(v, from, proper, fb);
+      expect(r.cost.get(0)).toBe(got.cost);
+      const dEnd = r.steps(0).at(-1)!;
+      expect(isFallbackStop(v, goal, indexOf(v, dEnd.x, dEnd.y))).toBe(g.get('struct', end.x, end.y) === Struct.Door);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(30);
+    expect(onDoor).toBeLessThan(checked);
+    expect(onDoor).toBeGreaterThan(0);
   });
 });
 

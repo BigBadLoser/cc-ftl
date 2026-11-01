@@ -3,7 +3,7 @@ import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { shipGrid } from '../regions';
 import type { ShipGrid } from '../shipGrid';
 import type { Sim } from '../sim';
-import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, Struct, isEvaWalkable, isWalkable } from '../structure';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
 
 /**
@@ -21,6 +21,8 @@ export interface View {
   /** 1 where the tile is blocked only by thin air: the start tile is exempt from that (as in `findPath`). */
   thinOnly: Uint8Array;
   mult: Uint8Array;
+  /** 1 on Door tiles: beside an `adjacent` goal a doorway is only a fallback stop, as in `findPath` (#248). */
+  door: Uint8Array;
   label: Int32Array;
   /** FNV hash of `pass` (the scheduler's pass gate compares it). */
   hash: number;
@@ -52,11 +54,13 @@ export function viewOf(sim: Sim, ship: number, opts: PathOpts): View | null {
   const pass = new Uint8Array(w * h);
   const thinOnly = new Uint8Array(w * h);
   const mult = new Uint8Array(w * h);
+  const door = new Uint8Array(w * h);
   let hash = 0x811c9dc5;
   for (let i = 0; i < w * h; i++) {
     const kind = struct[i] as number;
     const x = x0 + (i % w), y = y0 + Math.floor(i / w);
     mult[i] = isWalkable(kind) ? 1 : EXTERIOR;
+    door[i] = kind === Struct.Door ? 1 : 0;
     pass[i] = walkable(sim, grid, kind, x, y, jam?.[i], mods?.[i], infos, opts) ? 1 : 0;
     if (pass[i] && o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW) {
       pass[i] = 0;
@@ -64,7 +68,7 @@ export function viewOf(sim: Sim, ship: number, opts: PathOpts): View | null {
     }
     hash = Math.imul(hash ^ (pass[i] as number), 0x01000193);
   }
-  const view: View = { x0, y0, w, h, pass, thinOnly, mult, label: labels(pass, w, h), hash: hash >>> 0 };
+  const view: View = { x0, y0, w, h, pass, thinOnly, mult, door, label: labels(pass, w, h), hash: hash >>> 0 };
   views.set(key, { sig, view });
   return view;
 }
@@ -123,6 +127,9 @@ const gapOf = (goal: PathGoal, x: number, y: number): number =>
 
 /** `findPath`'s goal test: the tile itself, or with `adjacent` the ring beside the goal box. */
 export const isGoalTile = (goal: PathGoal, x: number, y: number): boolean => (goal.adjacent ? gapOf(goal, x, y) === 1 : x === goal.x && y === goal.y);
+
+/** True when a goal tile is only a fallback stop: a doorway beside an `adjacent` goal (`findPath` takes it only if no other stop is reachable). */
+export const isFallbackStop = (v: View, goal: PathGoal, i: number): boolean => !!goal.adjacent && v.door[i] === 1;
 
 /** Window indices of the passable goal tiles of `goal`. */
 export function goalTiles(v: View, goal: PathGoal): number[] {

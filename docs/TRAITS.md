@@ -129,7 +129,7 @@ Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one ex
 | Trait | Flavour | Effect | Weight | Excludes | Hook |
 |---|---|---|---|---|---|
 | Pyrophobic | Saw a ship burn once. | Avoids firefighting when there's other work; fires nearby hurt mood and raise break odds (section 5) | 5 | — | small, break |
-| Space-sick (code: `trait.void_fear`) | Hates the hum of the hull. | Prefers indoor work; −4 mood on EVA; suit emergencies raise break odds | 5 | Void-born, Thrill-seeker | small, break |
+| Space-sick | Hates the hum of the hull. | Prefers indoor work; −4 mood on EVA; suit emergencies raise break odds | 5 | Void-born, Thrill-seeker | small, break |
 | Afraid of the dark | Sleeps with the lights on. | Dark rooms −10 mood (not −5); long blackouts raise break odds | 5 | Dark-adapted | small, break |
 | Battle-shy | Freezes when the shooting starts. | Combat stress ×4 after 10 s; breaks lean to freezing, hiding, fleeing | 5 | Brave, Thrill-seeker | break |
 | Drinker | Just one to take the edge off. | Habit: `item.spirits` (section 7) | 5 | Stim-hooked | habit |
@@ -360,7 +360,7 @@ Size **M** buy-only; **L** with the still and its art.
 | 2 | `TraitDef`, `TraitsC`, roll, `traitModifiers`; texture, trade-off and simple-hook behaviour traits (Brave, Coward minus breaks, Workaholic, Lazy, Thrill-seeker, Stoic, Sensitive, Cheerful, Gloomy, Loner/Social mood half) | M | built (#243); others `rollable: false` |
 | 3 | Crew card and crew screen roll | M | built (#246, #249) |
 | 4 | Work-based XP: `grantXp`, curve, grant points, recruit and save handling | S/M | built (#251) |
-| 5a | Phobia pick penalties and mood factors; Pyrophobic, Space-sick, Afraid of the dark rollable; rename `trait.void_fear` ("Afraid of the void", `rollable: false` today) to `trait.space_sick`, with its name and short line | S | buildable now |
+| 5a | Phobia pick penalties and mood factors; Pyrophobic, Space-sick, Afraid of the dark rollable; rename `trait.void_fear` ("Afraid of the void", `rollable: false` today) to `trait.space_sick`, with its name and short line | S | mood part built (#252): the `trait.void_fear` rename to `trait.space_sick` is done, and fire nearby, spacewalk and the −10 dark factor exist; the three stay `rollable: false` until job avoidance lands (#194 Phase 2) |
 | 5b | Mental breaks: `BreakdownC`, `BreakMemoryC`, check and stressors, `break` machine, work-drive suppression, trait weights; Battle-shy rollable; effect lines gain their break parts | M | after #194's `hazard` interrupt (Phase 3) |
 | 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | |
 | 7 | Addictions; Drinker, Stim-hooked rollable | M/L | |

@@ -10,7 +10,7 @@ import { SCHED_CADENCE, SCHED_DIJKSTRA_ABOVE } from '../tuning';
 import { admitLevel, pairCost, repairUrgency } from './jobRank';
 import { startErrand } from './machines/eva';
 import { astar, dijkstraFrom } from './navSearch';
-import { goalTiles, isGoalTile, octileBound, reaches, startLabels, viewOf, type View } from './navView';
+import { goalTiles, isFallbackStop, isGoalTile, octileBound, reaches, startLabels, viewOf, type View } from './navView';
 import { reserveJob } from './task';
 
 /**
@@ -123,13 +123,19 @@ function dijkstraEntries(group: Pair[]): Entry[] {
   const { w, k } = group[0] as Pair;
   const v = w.view(k) as View;
   const goals = new Map<number, number[]>();
+  const fallbacks = new Map<number, number[]>();
   const out: Entry[] = [];
   for (const p of group) {
     if (isGoalTile(p.goal, w.from.x, w.from.y)) out.push({ urgency: p.urgency, key: p.extra, job: p.job, crew: w.id, pair: p, steps: () => [] });
-    else for (const t of goalTiles(v, p.goal)) goals.set(t, [...(goals.get(t) ?? []), p.job]);
+    else {
+      for (const t of goalTiles(v, p.goal)) {
+        const into = isFallbackStop(v, p.goal, t) ? fallbacks : goals;
+        into.set(t, [...(into.get(t) ?? []), p.job]);
+      }
+    }
   }
-  if (goals.size === 0) return out;
-  const r = dijkstraFrom(v, w.from, goals);
+  if (goals.size === 0 && fallbacks.size === 0) return out;
+  const r = dijkstraFrom(v, w.from, goals, fallbacks);
   for (const p of group) {
     const cost = r.cost.get(p.job);
     if (cost !== undefined && !isGoalTile(p.goal, w.from.x, w.from.y)) out.push({ urgency: p.urgency, key: cost + p.extra, job: p.job, crew: w.id, pair: p, steps: () => r.steps(p.job) });

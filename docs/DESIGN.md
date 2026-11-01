@@ -1,5 +1,40 @@
 # Design
 
+## Index
+
+One line per section; read the index, then only the sections your task touches.
+
+- [Pillars](#pillars): Depth from systems interacting. A few simulation systems that multiply each other beat many
+- [Setting](#setting): Gritty industrial with a cyberpunk edge: corporations, salvager clans, augmentation cults, militaries.
+- [Structure](#structure): Persistent sandbox with normal saves. A recoverable-failure mode (escape pods, salvaging back)
+- [Ship & building](#ship--building): Tile grid, full-tile walls, no roof. Walls are low bevelled blocks that autotile by neighbour
+- [Crew](#crew): Roles (engineer, gunner, medic, security, pilot…) give a default priority set; a per-crew
+  - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock. There is no locker module and no suit item. Each airlock holds a few suits (a...
+  - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
+- [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
+- [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
+- [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
+- [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
+- [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
+  - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
+- [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
+  - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
+  - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
+  - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
+  - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
+  - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
+  - [Money](#money): No crew wages. Credits are mostly for buying things: gear, upgrades, materials, fuel, station repairs,...
+  - [After the tutorial: story missions](#after-the-tutorial-story-missions): Self-contained stories, not one overarching plot. Each mission is a short arc with its own setup and...
+- [Art direction](#art-direction): Isometric pixel art in the spirit of Space Haven: 2:1 isometric, 64x32 px tiles, detailed and
+- [UI](#ui): Layout: a full-screen game view with Svelte panels over it.
+  - [Combat view (user decisions, 2026-10-29)](#combat-view-user-decisions-2026-10-29): It replaces the colony HUD during a fight: the nav strip, node strip, drawers, build tools, inspector and...
+  - [UI soft rules (user decisions, 2026-10-28)](#ui-soft-rules-user-decisions-2026-10-28): These are soft rules. They set the default direction. An agent or session should always feel free to suggest
+  - [Boarding in ship combat (user decisions, 2026-10-29; not built yet)](#boarding-in-ship-combat-user-decisions-2026-10-29-not-built-yet): The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to...
+  - [Lessons: the tutorial system (user decisions, 2026-10-29)](#lessons-the-tutorial-system-user-decisions-2026-10-29): The goal chain (src/sim/story/goals.ts) says what to do next; lessons teach how a feature works. They are a
+- [Open questions](#open-questions): Mood and breakdown severity.
+- [Generated ships](#generated-ships): Enemy ships are generated at encounter time from a faction (src/content/factions/.ts, satisfies FactionDef).
+
+
 A persistent, isometric ship-colony game in the browser. Space Haven is the target; FTL supplies the
 tactical combat, weapon variety, crew species, encounters and build variety. The goal is Space Haven
 **with depth**.

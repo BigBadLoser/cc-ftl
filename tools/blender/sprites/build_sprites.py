@@ -38,7 +38,7 @@ def parse_opts(argv):
     pos, opts, k = [], {}, 0
     while k < len(argv):
         a = argv[k]
-        if a in ("--force", "--plan", "--preview", "--no-cache", "--cache-only"):
+        if a in ("--force", "--plan", "--preview", "--no-cache", "--cache-only", "--adopt"):
             opts[a[2:]] = True
         elif a in ("--item", "--clip", "--only") and k + 1 < len(argv):
             k += 1
@@ -67,6 +67,8 @@ def main():
             sys.exit(f"{mpath} holds {have} px tiles but the pipeline renders {core.TILE_W} px: wrong outdir")
     names = (["crew", "robots", "aliens", "portraits"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
+        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "damage_sol"):
+            continue                                    # (their own caches and renderers: --adopt is for env_build's)
         m = pack.load_manifest(mpath, base())
         if name == "crew":
             from sprites import crew_build, crew_pack
@@ -107,8 +109,8 @@ def main():
                     print("FAMILY_PROGRESS", name, done, count, flush=True)
             items = env_build.render_jobs(jobs, extra, only=opts["only"].split(",") if opts.get("only") else None,
                                           family=None if opts.get("no-cache") else name, force=bool(opts.get("force")),
-                                          plan=bool(opts.get("plan")), progress=progress)
-            if opts.get("plan"):
+                                          plan=bool(opts.get("plan")), progress=progress, adopt=bool(opts.get("adopt")))
+            if opts.get("plan") or opts.get("adopt"):
                 continue
             sheets, assets = pack.pack(name, items, out)
             pack.merge(m, name, sheets, assets)
