@@ -4,6 +4,7 @@ import { galaxyIndex, nodeOf } from '../galaxy/state';
 import type { GoalActDef, GoalCheck } from './defs';
 import { giveItems, setFlag } from './effects';
 import { flagValue, reputationOf } from './state';
+import { addCredits } from '../trade/credits';
 
 /**
  * The tutorial goal chain (content `goals`): acts of goals done in any order. Finishing every goal of an act pays its reward
@@ -40,7 +41,7 @@ export function currentAct(sim: Sim): GoalActDef | null {
 
 function payReward(sim: Sim, act: GoalActDef): void {
   const r = act.reward;
-  if (r.credits) sim.trade.credits += r.credits;
+  if (r.credits) addCredits(sim, r.credits);
   for (const q of r.items ?? []) giveItems(sim, q.item, q.count);
   const owner = r.reputation ? nodeOf(sim, sim.galaxy.current)?.faction : null;
   if (r.reputation && owner) {

@@ -24,7 +24,15 @@ export interface ShipTemplate {
    * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
    * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
    */
-  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
+  boarding?: {
+    party: number; afterSec: number; losingBelow: number;
+    /** Hand weapon (item id) issued to the party when it leaves. */
+    weapon?: string;
+    /** Raiders: once the party is on its way the ship stops shooting, so the prize is not wrecked under it. */
+    prefer?: true;
+    /** Zealots: the party heads for the player's AI core (capture/coreRaid.ts) and tears it out if it holds it. */
+    coreRaid?: true;
+  };
 }
 
 import type { EventDef, GoalActDef } from './story/defs';
@@ -32,6 +40,8 @@ import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
+import type { BlackMarketDef } from './blackmarket/defs';
+import type { TraitDef } from './crew/traitDef';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -44,6 +54,8 @@ export interface ContentRegistry {
   modules: Record<string, ModuleDef>;
   /** Pool of first names for generated crew. */
   crewNames: string[];
+  /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
+  traits?: Record<string, TraitDef>;
   /** Item content id (e.g. 'item.metal') to definition. */
   items: Record<string, ItemDef>;
   /** Recipe content id to definition. */
@@ -78,6 +90,8 @@ export interface ContentRegistry {
   researchBands?: { id: string; name: string }[];
   /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
   yard?: YardDef;
+  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */
+  blackMarkets?: Record<string, BlackMarketDef>;
 }
 
 /**
@@ -171,6 +185,8 @@ export type Effect =
 /** A weapon: how it charges, flies and what it does. Power draw is on the carrying ModuleDef. */
 export interface WeaponDef {
   name: string;
+  /** One-line name for the combat HUD's weapon cards ("Missiles"); the module's own name is the tooltip. Defaults to the module name. */
+  shortName?: string;
   /** Render asset id of the projectile. */
   projectileAsset: string;
   /** Shots per volley. */
@@ -194,6 +210,8 @@ export interface WeaponDef {
    * `bypass` skips shields entirely.
    */
   shield: { damage: number; pierce: number; bypass?: boolean };
+  /** Heat the firing ship gains per volley (combat/heat.ts). */
+  heat: number;
   /** Applied (in order) when the shot lands on the hull. */
   effects: Effect[];
 }
@@ -396,6 +414,11 @@ export interface ModuleDef {
   powerPriority?: number;
   /** Oxygen added per second, spread over the module's room. */
   o2PerSec?: number;
+  /**
+   * Bottled supply that speeds the air up (issue #222): while the room is short of air and the ship's stores hold `item`, the module adds
+   * `mult` times its oxygen, burning one unit per `secPerUnit` seconds of boosted running. A room at normal air burns nothing.
+   */
+  o2Supply?: { item: string; mult: number; secPerUnit: number };
   /** CO2 removed per second, spread over the module's room. */
   co2ScrubPerSec?: number;
   /** Degrees C x tiles added per second, spread over the footprint. */
@@ -462,6 +485,8 @@ export interface ModuleDef {
    * `hullCapacity`: how many tiles of ship size (interior area, see `hullArea`) the engine can push through a jump; the ship's capacity is the sum over its engines
    * that still work, and a ship over it cannot make a normal jump (ftl/capacity.ts).
    */
+  /** Cools the ship while its shields are down: heat per second shed (combat/heat.ts). */
+  radiator?: { coolPerSec: number };
   engine?: { evasionPerPower: number; fuelFactor?: number; hullCapacity?: number };
   /**
    * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a

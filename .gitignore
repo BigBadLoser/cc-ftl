@@ -7,3 +7,7 @@ __pycache__/
 tools/shipgen/out/
 .cache/
 shots/
+
+profile.json
+profile-sim.json
+.vitest-report.json

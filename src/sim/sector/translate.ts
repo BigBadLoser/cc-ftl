@@ -38,6 +38,13 @@ export const TRANSLATE: Record<string, Shift | null> = {
   projectile: keys(['x0', 'y0'], ['x1', 'y1'], ['x', 'y']),
   eat: xy,
   fighter: (c, dx, dy) => point(c.goal as Xy | undefined, dx, dy),
+  // Crew AI (sim/ai): a task's blackboards hold tiles, its own and those of the frames it set aside.
+  task: (c, dx, dy) => {
+    for (const bb of [c.bb, ...(c.stack as { bb: unknown }[]).map((f) => f.bb)] as { tile?: Xy; tile2?: Xy }[]) {
+      point(bb.tile, dx, dy);
+      point(bb.tile2, dx, dy);
+    }
+  },
   eggSac: xy,
   nest: xy,
   alien: keys(['homeX', 'homeY']),
@@ -55,11 +62,12 @@ export const TRANSLATE: Record<string, Shift | null> = {
   station: (c, dx, dy) => [...(c.courts as Xy[]), ...(c.posts as Xy[])].forEach((t) => point(t, dx, dy)),
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,
-  container: null, allegiance: null, equip: null, equipOrder: null, emergencyArm: null, stowOrder: null, surrendered: null, prisoner: null, skillXp: null,
+  container: null, allegiance: null, equip: null, equipOrder: null, emergencyArm: null, stowOrder: null, surrendered: null, prisoner: null, skillXp: null, traits: null, rolledSkills: null,
   implants: null, storage: null, carrying: null, production: null, crew: null, priorities: null, needs: null,
-  assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, mood: null, suit: null,
-  trader: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
-  vehicle: null, ferry: null, transfer: null, salvageWatch: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
+  assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, bedOwner: null, mood: null, suit: null,
+  intent: null, interrupt: null,
+  trader: null, coreRaider: null, coreRaid: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
+  vehicle: null, ferry: null, transfer: null, salvageWatch: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, boardLaunch: null, boardHold: null, sabotageOrder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
 };
 
 /** A deep copy of one entity's components with every coordinate moved by (dx, dy). Components are plain JSON data. */

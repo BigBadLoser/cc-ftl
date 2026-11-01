@@ -15,7 +15,7 @@ const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'h
 
 export interface PaintDeps {
   tool: Writable<UiToolState>;
-  placeHint: Writable<{ x: number; y: number; text: string } | null>;
+  placeHint: Writable<{ x: number; y: number; text: string; ok?: boolean } | null>;
   renderer(): Renderer | undefined;
   showToast(msg: string): void;
   homeShipId(): number;
@@ -24,6 +24,8 @@ export interface PaintDeps {
 /** The build, deconstruct, cancel, mine and module-placement tools: previews while hovering and dragging, and the commands they send on release. */
 export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pick<InputHandlers, 'onHover' | 'paintMode' | 'pickLift' | 'onPaint'> & {
   setTool(state: Partial<UiToolState>): void;
+  /** A fight starts: back to the select tool, cancelling any placement in progress. */
+  endTools(): void;
   /** Redraw the hull plan's ghost tiles (the plan or the yard order changed). */
   drawPlan(): void;
   moduleMode(): boolean;
@@ -32,7 +34,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
   back(): void;
 } {
   const { tool, placeHint, showToast, homeShipId } = deps;
-  const hullPlan = createHullPlanTool(bridge, { tool, renderer: deps.renderer, ship: homeShipId });
+  const hullPlan = createHullPlanTool(sim, bridge, { tool, placeHint, renderer: deps.renderer, ship: homeShipId });
   let modPos: Tile | null = null;
   /** The renderer is drawing a placement ghost (so it must be cleared when the mode ends). */
   let ghostOn = false;
@@ -80,7 +82,10 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     return out;
   };
   const refreshPreview = () => {
+    deps.renderer()?.setWorldGrid(tool.get().tool === 'build'); // the world grid shows while the build tools are open
+    if (!hullPlan.active()) deps.renderer()?.setCutLine([]);
     if (hullPlan.active()) {
+      hullPlan.setHover(hover);
       deps.renderer()?.setHover(null);
       deps.renderer()?.setPreview([]);
       placeHint.set(null);
@@ -180,8 +185,15 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     else setTool({ tool: 'select' });
   };
 
+  /** Drop whatever tool is active (a fight starts): back to select, any placement or drag in progress cancelled. */
+  const endTools = () => {
+    modPos = null;
+    setTool({ tool: 'select', build: 'module', moduleDef: null });
+  };
+
   return {
     setTool,
+    endTools,
     drawPlan: () => hullPlan.draw(),
     moduleMode,
     rotate,

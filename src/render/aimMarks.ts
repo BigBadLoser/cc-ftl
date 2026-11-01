@@ -35,8 +35,7 @@ export interface AimMarksHost {
 
 /**
  * Target brackets in the main view: over the enemy tile or module the player's ship (and each of its weapons) is aimed at, and a white
- * preview under the pointer while "Target in view" is armed. Drawn in the sector frame above the roofs; the combat panel has its own
- * (combatPass), so the layer is hidden in that pass.
+ * preview under the pointer while "Target in view" is armed. Drawn in the sector frame above the roofs.
  */
 export interface AimMarks {
   setHover(h: AimHover | null): void;

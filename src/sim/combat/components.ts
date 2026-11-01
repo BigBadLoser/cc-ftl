@@ -96,6 +96,8 @@ export interface Ship {
    * through `wake` (combat/dormant.ts), which removes the field.
    */
   dormant?: number;
+  /** The faction this ship had before a truce breach made it hostile to the player (blackmarket/truce.ts); restored when the ban ends. */
+  banned?: Faction;
 }
 export const ShipC = defineComponent<Ship>('ship');
 
@@ -111,6 +113,26 @@ export interface Target {
 }
 
 export type Doctrine = 'weapons' | 'shields' | 'random';
+
+/** The systems that can be overcharged (`combat.overcharge`). */
+export type OverchargeSystem = 'weapons' | 'shields' | 'engines';
+/** One system's overcharge, in ticks: `left` while it is active, `cooldown` until it can be started again. */
+export interface Overcharge {
+  left: number;
+  cooldown: number;
+}
+/** A ship's combat heat (rules in combat/heat.ts, numbers in combat/heatTuning.ts). */
+export interface Heat {
+  /** 0..HEAT_MAX. */
+  value: number;
+  /** Ticks of overheat lockout left. */
+  lockout: number;
+  /** Ticks of vent left. */
+  vent: number;
+  /** Ticks the running vent was started with (its length depends on the coolant console), for the HUD. */
+  ventLen: number;
+  overcharge: Record<OverchargeSystem, Overcharge>;
+}
 
 /** Per-ship combat state. */
 export interface Combat {
@@ -134,6 +156,7 @@ export interface Combat {
    */
   ftlOrder?: { jump: string[] | null; withDocked?: number[]; overcharge?: true } | null;
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
+  heat: Heat;
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;
   /** Piloting skill of whoever mans the helm (0 when nobody does); with `evasion` it gives the hyperspace evade odds. */
@@ -150,7 +173,18 @@ export interface Combat {
 export const CombatC = defineComponent<Combat>('combat');
 
 /** On weapon modules. */
+export type WeaponMode = 'auto' | 'hold';
+
 export interface Weapon {
+  /**
+   * The player's per-weapon fire mode. `auto` fires when charged; `hold` charges and waits for a volley, or for the player to aim it at a
+   * target (see `once`). Ammo weapons start on `hold`, the rest on `auto`. AI ships ignore it (they use `Combat.hold`).
+   */
+  mode: WeaponMode;
+  /** The mode to go back to when "hold all" is switched off; set only while hold all has put this weapon on hold. */
+  restore?: WeaponMode;
+  /** A held weapon the player aimed: it fires once when charged, then stays on hold. */
+  once?: boolean;
   /** 0..1, full at 1. */
   charge: number;
   /** Own target; null = use the ship-wide one. */
@@ -166,6 +200,22 @@ export interface Weapon {
    * (y grows downward): 1 = +x+y, 2 = +y, 3 = -x+y, 4 = -x, 5 = -x-y, 6 = -y, 7 = +x-y. Renderer-readable.
    */
   aim: number;
+  /**
+   * The telegraphed aim of an enemy weapon in its final charge window (see `commit.ts`): the target it will shoot and the sector rectangle
+   * (the module's footprint, or the one blind tile) the shot lands in, give or take the weapon's scatter. Null/absent outside the window.
+   * Renderer-readable.
+   */
+  commit?: Commit | null;
+}
+/** A weapon's committed aim. `from` is the charge (0..1) at which it committed, so (charge - from) / (1 - from) is the countdown. */
+export interface Commit {
+  target: Target;
+  /** Aim area in sector tiles: top-left and size. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  from: number;
 }
 export const WeaponC = defineComponent<Weapon>('weapon');
 

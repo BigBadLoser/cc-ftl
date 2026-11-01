@@ -6,7 +6,7 @@ import { storageAdd, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { SkillXpC } from './components';
+import { grantXp } from '../crew/xp';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
@@ -110,9 +110,7 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     case 'skillXp': {
       const ids = targets(sim, eff.who, ctx);
       for (const id of ids) {
-        let c = sim.world.get(id, SkillXpC);
-        if (!c) sim.world.add(id, SkillXpC, (c = { xp: {} }));
-        c.xp[eff.skill] = (c.xp[eff.skill] ?? 0) + eff.amount;
+        grantXp(sim, id, eff.skill, eff.amount);
       }
       return `${names(sim, ids)}: ${eff.skill} ${sign(eff.amount)} xp`;
     }

@@ -1,9 +1,12 @@
 import { CombatC, ShipC } from '../combat/components';
+import { fireBlocked, overchargeActive } from '../combat/heat';
+import { OVERCHARGE_SHIELD_REGEN, SHIELD_REGEN_MULT } from '../combat/heatTuning';
 import { mannedConsole, skillOf } from '../combat/operators';
 import { shieldCapacity, shieldRechargeSec } from '../combat/ships';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { SHIELD_OPERATED_BONUS, SKILL_STEP } from '../tuning';
+import { SHIELD_OPERATED_BONUS, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
+import { grantXp } from '../crew/xp';
 
 /**
  * Shield layers: the maximum comes from the running generators (floor(|power| x layersPerPower) each). Layers
@@ -17,12 +20,19 @@ export function shieldSystem(sim: Sim): void {
     if (!ship || !s) continue;
     s.max = ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize' ? 0 : shieldCapacity(sim, id, true);
     if (s.layers > s.max) s.layers = s.max;
+    const combat = sim.world.get(id, CombatC);
+    if (combat && fireBlocked(combat)) {
+      s.layers = 0; // a vent or an overheat holds the shields down
+      s.timer = 0;
+      continue;
+    }
     if (s.layers >= s.max) {
       s.timer = 0;
       continue;
     }
     const op = mannedConsole(sim, id, 'shields');
-    const rate = 1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0);
+    const rate = SHIELD_REGEN_MULT * (1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0)) * (combat && overchargeActive(combat, 'shields') ? OVERCHARGE_SHIELD_REGEN : 1);
+    if (op) grantXp(sim, op.crew, 'shielding', XP_PER_WORK_SEC / TICK_HZ);
     s.timer += rate / TICK_HZ;
     if (s.timer >= shieldRechargeSec(sim, id)) {
       s.layers++;

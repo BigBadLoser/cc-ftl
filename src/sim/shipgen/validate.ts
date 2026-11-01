@@ -1,12 +1,14 @@
 import { airlockTiles } from '../modules/airlock';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf } from '../modules/footprint';
+import { footprintFromTiles, widthViolations } from '../footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { roofMounted } from './layout';
 
 /**
  * Check a ship template the way the layout tests do: modules on floor (hull modules on exterior hull), no overlaps,
  * open chairs and access tiles, every walkable tile reachable from the first door, power balance, a helm, engines on
- * the stern (+x) hull (unless `immobile`: stations), a reactor, doors usable from both sides and clear roof space around roof-mounted modules.
+ * the stern (+x) hull (unless `immobile`: stations), a reactor, doors usable from both sides, clear roof space around roof-mounted modules
+ * and the footprint width rule (no part of the hull narrower than 3 tiles, see footprint.ts).
  * Returns human-readable problems (empty = valid).
  */
 export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef>, opts: { immobile?: boolean } = {}): string[] {
@@ -115,9 +117,22 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off).
   const parts = structureParts(cells, w, h);
   if (parts > 1) problems.push(`disconnected: ${parts} separate structures`);
+  const width = widthProblem(cells, w, h);
+  if (width) problems.push(width);
   const freeFloor = cells.filter((c, i) => c === '_' && !solid[i]).length;
   if ((t.crew ?? []).length > freeFloor) problems.push('no room for the crew');
   return problems;
+}
+
+/**
+ * The footprint width rule on template cells (`.` is space): a problem naming the hull tiles narrower than 3, or null.
+ * Struts (Beam tiles: `=`, which also holds container cells) are exempt: only hull (wall, floor, door) counts.
+ */
+export function widthProblem(cells: string[], w: number, h: number): string | null {
+  const tiles: { x: number; y: number }[] = [];
+  for (let i = 0; i < w * h; i++) if (cells[i] !== undefined && cells[i] !== '.' && cells[i] !== '=') tiles.push({ x: i % w, y: Math.floor(i / w) });
+  const bad = widthViolations(footprintFromTiles(tiles));
+  return bad.length === 0 ? null : `width: ${bad.length} hull tiles in parts narrower than 3 (first at ${bad[0]!.x},${bad[0]!.y})`;
 }
 
 /** Count 4-connected components of non-space cells (`.` is space). */

@@ -1,3 +1,4 @@
+import { newHeat } from '../combat/heat';
 import { describe, expect, it } from 'vitest';
 
 import { CombatC } from '../combat/components';
@@ -40,7 +41,7 @@ import { isEvaWalkable } from '../structure';
 
 import { airlockSuits, suitAir } from './suit';
 
-import { planWalk } from './route';
+import { planSiteWalk, planWalk } from './route';
 
 import { shipIdOf } from '../regions';
 
@@ -88,7 +89,7 @@ function world(ships = 1, gap = 5, at2?: { x: number; y: number }): Sim {
     const origin = g === 1 ? { x: 0, y: 0 } : (at2 ?? { x: (g - 1) * (14 + gap - 1), y: 0 });
     origins.push(origin);
     const ship = stampShip(sim, { name: `s${g}`, rows: ring() }, { faction: 'player', x: origin.x, y: origin.y });
-    sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0 });
+    sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, heat: newHeat(), evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0 });
   }
   for (let g = 1; g <= ships; g++) {
     const origin = origins[g - 1] as { x: number; y: number };
@@ -259,6 +260,18 @@ describe('pathing', () => {
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
     run(sim, 1);
     expect(planWalk(sim, c, 1, { x: 3, y: 6 }, { x: 10, y: 6 })!.thin).toBe(false);
+  });
+
+  it('a caller with no use for a thin-air plan gets none, and no search is spent on it (#224)', () => {
+    const sim = world();
+    const c = crew(sim, 1, 3, 6);
+    vent(sim, 7, 2, 7, 11); // a vented band with no gap: the far side is reachable only through thin air
+    run(sim, 2);
+    const goal = { x: 10, y: 6 };
+    expect(planWalk(sim, c, 1, { x: 3, y: 6 }, goal)!.thin).toBe(true);
+    expect(planWalk(sim, c, 1, { x: 3, y: 6 }, goal, () => false)).toBeNull();
+    expect(planSiteWalk(sim, c, 1, { x: 3, y: 6 }, goal, () => false)).toBeNull();
+    expect(planSiteWalk(sim, c, 1, { x: 3, y: 6 }, goal, () => true)!.thin).toBe(true);
   });
 
   it('crew suit up on their own for a job in a vented room, do it, and put the suit back', () => {

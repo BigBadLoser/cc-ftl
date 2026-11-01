@@ -1,7 +1,7 @@
 import { ALT, BodyC } from '../body';
+import { abortTask } from '../ai/task';
 import { ShipC } from '../combat/components';
 import { CrewC, DeadC, DraftedC, PrioritiesC, WORK_CATEGORIES, type Crew, type Priorities } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
 import { createCrew } from '../crew/spawn';
 import { SuitC } from '../eva/components';
 import { suitDef } from '../eva/suit';
@@ -98,7 +98,7 @@ export function topUpAir(sim: Sim, o: YardOrder): void {
 /** The order's crew and shuttle leave the world (home again, or lost with the order). */
 export function dismiss(sim: Sim, o: YardOrder): void {
   for (const id of o.crew) {
-    if (sim.world.has(id, CrewC)) releaseAssignment(sim, id);
+    if (sim.world.has(id, CrewC)) abortTask(sim, id, 'dismissed');
     sim.world.destroyEntity(id);
   }
   o.crew = [];

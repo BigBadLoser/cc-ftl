@@ -6,7 +6,8 @@ import { commandHandlers } from './handlers';
 import { newSectorGrid } from './stamp';
 import type { Sector } from './combat/components';
 import type { SectorArchive } from './sector/archive';
-import { pipeline } from './pipeline';
+import { runPipeline } from './pipeline';
+import { NOOP_PROBE, type Probe } from './probe';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
 import { advanceTravel } from './galaxy/hyperspace';
@@ -15,6 +16,7 @@ import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
 import { newYard, type YardState } from './yard/types';
 import { TICK_HZ } from './time';
+import { newAiLog, type AiLog } from './ai/log';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
 export { TICK_HZ };
@@ -38,6 +40,8 @@ export class Sim {
   archives: SectorArchive[] = [];
   /** Shipyard hull-expansion orders (yard/). */
   yard: YardState = newYard();
+  /** Crew-AI diagnostics (ai/log.ts): not saved, never read by the sim. */
+  aiLog: AiLog = newAiLog();
 
   constructor(
     /** World seed: drives galaxy generation; saved with the game. */
@@ -55,13 +59,25 @@ export class Sim {
     this.commands.enqueue(cmd, this.tick);
   }
 
-  /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */
-  step(): void {
+  /**
+   * Apply the queued commands now, without running the pipeline or advancing the tick: how a UI command takes effect while the
+   * game is paused. Same queue and order as `step`; the events are left for the caller to drain.
+   */
+  applyCommands(): void {
     this.commands.drain(this.tick, (cmd) => this.apply(cmd));
+  }
+
+  /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */
+  step(probe: Probe = NOOP_PROBE): void {
+    probe.begin('sim/tick');
+    probe.begin('sim/commands');
+    this.commands.drain(this.tick, (cmd) => this.apply(cmd));
+    probe.end('sim/commands');
     // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
-    if (this.sector.state === 'active') for (const system of pipeline) system(this);
+    if (this.sector.state === 'active') runPipeline(this, probe);
     else if (this.sector.state === 'hyperspace') advanceTravel(this);
     this.tick++;
+    probe.end('sim/tick');
   }
 
   private apply(cmd: Command): void {

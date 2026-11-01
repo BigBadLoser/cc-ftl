@@ -32,6 +32,8 @@ export interface TradeFactionDef {
   reputation: string;
   /** Base attitude: >= 0 talks to strangers, < 0 needs reputation first. */
   relation: number;
+  /** Added to the hail score for each heavily augmented crew member of the player (trade/augmentation.ts; the zealots). */
+  augmentBonus?: number;
   /** Price multipliers of the whole faction (default 1). */
   sell?: number;
   buy?: number;
@@ -82,6 +84,10 @@ export interface Trader {
    */
   port?: string;
   base?: ItemQty[];
+  /** Black-market service sets this station carries (`ContentRegistry.blackMarkets` ids; blackmarket/services.ts). */
+  services?: string[];
+  /** The fence's rate (its share of an item's value) when a set gives the station a fence. */
+  fence?: number;
 }
 export const TraderC = defineComponent<Trader>('trader');
 
@@ -139,6 +145,8 @@ export interface Deal {
   timer: number;
   /** Tick the deal was made. */
   tick: number;
+  /** The agreed value of each `get` line (aligned with `get`, summing to the escrow), fixed when the trip opens: a part-delivered run is settled by it, not by later prices. */
+  getValue?: number[];
   /** Why a failed deal failed. */
   reason?: string;
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
@@ -153,12 +161,19 @@ export interface Deal {
   trip?: { n: number; of: number; rest: Trip[]; stopped?: string };
   /** A hiring run: the recruits (crew entities of the station) the shuttle fetches. The escrow is their cost, paid when they arrive. */
   crew?: number[];
+  /**
+   * A delivery handover (galaxy/handover.ts): the station's shuttle comes to the player's airlock for the crate of job `job`. No goods and no escrow; the
+   * deal's `ship` is the station. `retryAt` is the tick after which a called-off run may be tried again.
+   */
+  handover?: { job: number; via: 'station' | 'own'; retryAt?: number };
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */
 export interface TradeState {
   /** The player's credits. NPC wallets live on their `TraderC`. */
   credits: number;
+  /** The most credits the player has held at once (the game-over summary). Optional: older saves start it at 0 and it catches up at once. */
+  bestCredits?: number;
   hails: Hail[];
   offers: Offer[];
   deals: Deal[];
@@ -166,5 +181,5 @@ export interface TradeState {
 }
 
 export function newTrade(credits = 0): TradeState {
-  return { credits, hails: [], offers: [], deals: [], nextId: 1 };
+  return { credits, bestCredits: credits, hails: [], offers: [], deals: [], nextId: 1 };
 }

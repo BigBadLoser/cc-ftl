@@ -5,8 +5,12 @@ import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
+import t_settings from '@tabler/icons/outline/settings.svg?raw';
+import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
+import t_device_floppy from '@tabler/icons/outline/device-floppy.svg?raw';
 import t_broadcast from '@tabler/icons/outline/broadcast.svg?raw';
 import t_bug from '@tabler/icons/outline/bug.svg?raw';
+import t_download from '@tabler/icons/outline/download.svg?raw';
 import t_check from '@tabler/icons/outline/check.svg?raw';
 import t_checklist from '@tabler/icons/outline/checklist.svg?raw';
 import t_chevron_down from '@tabler/icons/outline/chevron-down.svg?raw';
@@ -14,6 +18,14 @@ import t_chevron_left from '@tabler/icons/outline/chevron-left.svg?raw';
 import t_chevron_up from '@tabler/icons/outline/chevron-up.svg?raw';
 import t_clock from '@tabler/icons/outline/clock.svg?raw';
 import t_coin from '@tabler/icons/outline/coin.svg?raw';
+import t_sword from '@tabler/icons/outline/sword.svg?raw';
+import t_code from '@tabler/icons/outline/code.svg?raw';
+import t_first_aid_kit from '@tabler/icons/outline/first-aid-kit.svg?raw';
+import t_backpack from '@tabler/icons/outline/backpack.svg?raw';
+import t_shirt from '@tabler/icons/outline/shirt.svg?raw';
+import t_dice_5 from '@tabler/icons/outline/dice-5.svg?raw';
+import t_pencil from '@tabler/icons/outline/pencil.svg?raw';
+import t_chevron_right from '@tabler/icons/outline/chevron-right.svg?raw';
 import t_cpu from '@tabler/icons/outline/cpu.svg?raw';
 import t_crosshair from '@tabler/icons/outline/crosshair.svg?raw';
 import t_current_location from '@tabler/icons/outline/current-location.svg?raw';
@@ -31,6 +43,7 @@ import t_ghost from '@tabler/icons/outline/ghost.svg?raw';
 import t_hand_stop from '@tabler/icons/outline/hand-stop.svg?raw';
 import t_heart from '@tabler/icons/outline/heart.svg?raw';
 import t_heart_broken from '@tabler/icons/outline/heart-broken.svg?raw';
+import t_polygon from '@tabler/icons/outline/polygon.svg?raw';
 import t_hexagon from '@tabler/icons/outline/hexagon.svg?raw';
 import t_home from '@tabler/icons/outline/home.svg?raw';
 import t_layout_board from '@tabler/icons/outline/layout-board.svg?raw';
@@ -68,6 +81,8 @@ import t_wall from '@tabler/icons/outline/wall.svg?raw';
 import t_x from '@tabler/icons/outline/x.svg?raw';
 import t_zoom_in from '@tabler/icons/outline/zoom-in.svg?raw';
 import t_zoom_out from '@tabler/icons/outline/zoom-out.svg?raw';
+import t_wind from '@tabler/icons/outline/wind.svg?raw';
+import t_steering_wheel from '@tabler/icons/outline/steering-wheel.svg?raw';
 import t_zzz from '@tabler/icons/outline/zzz.svg?raw';
 
 /** The drawing inside Tabler's <svg> (24-unit grid, stroke from the component): the outer tag and the empty bounding path are dropped. */
@@ -99,11 +114,15 @@ export const FILES = {
   roof: 'eye',
   overlay: 'stack',
   debug: 'bug',
+  download: 'download',
   pause: 'player-pause',
   play: 'player-play',
   fast: 'player-track-next',
   faster: 'player-skip-forward',
   draft: 'shield-chevron',
+  settings: 'settings',
+  keyboard: 'keyboard',
+  save: 'device-floppy',
   downed: 'heart-broken',
   back: 'chevron-left',
   list: 'list',
@@ -122,6 +141,7 @@ export const FILES = {
   grid: 'layout-grid',
   room: 'layout-board',
   hull: 'hexagon',
+  hullPlan: 'polygon',
   station: 'planet',
   derelict: 'ghost',
   alert: 'alert-triangle',
@@ -144,15 +164,29 @@ export const FILES = {
   unpin: 'pinned-off',
   lock: 'lock',
   research: 'flask-2',
+  wind: 'wind',
+  helm: 'steering-wheel',
+  sword: 'sword',
+  code: 'code',
+  medkit: 'first-aid-kit',
+  backpack: 'backpack',
+  dice: 'dice-5',
+  pencil: 'pencil',
+  chevRight: 'chevron-right',
+  shirt: 'shirt',
 } as const;
 
 const RAW: Record<string, string> = {
+  'settings': t_settings,
+  'keyboard': t_keyboard,
+  'device-floppy': t_device_floppy,
   'alert-triangle': t_alert_triangle,
   'arrow-curve-right': t_arrow_curve_right,
   'arrows-exchange': t_arrows_exchange,
   'bolt': t_bolt,
   'broadcast': t_broadcast,
   'bug': t_bug,
+  'download': t_download,
   'check': t_check,
   'checklist': t_checklist,
   'chevron-down': t_chevron_down,
@@ -160,6 +194,14 @@ const RAW: Record<string, string> = {
   'chevron-up': t_chevron_up,
   'clock': t_clock,
   'coin': t_coin,
+  'sword': t_sword,
+  'code': t_code,
+  'first-aid-kit': t_first_aid_kit,
+  'backpack': t_backpack,
+  'shirt': t_shirt,
+  'dice-5': t_dice_5,
+  'pencil': t_pencil,
+  'chevron-right': t_chevron_right,
   'cpu': t_cpu,
   'crosshair': t_crosshair,
   'current-location': t_current_location,
@@ -178,6 +220,7 @@ const RAW: Record<string, string> = {
   'heart': t_heart,
   'heart-broken': t_heart_broken,
   'hexagon': t_hexagon,
+  'polygon': t_polygon,
   'home': t_home,
   'layout-board': t_layout_board,
   'layout-grid': t_layout_grid,
@@ -214,6 +257,8 @@ const RAW: Record<string, string> = {
   'x': t_x,
   'zoom-in': t_zoom_in,
   'zoom-out': t_zoom_out,
+  'wind': t_wind,
+  'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
 };
 

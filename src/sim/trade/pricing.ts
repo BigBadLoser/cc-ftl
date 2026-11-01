@@ -1,5 +1,6 @@
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
+import { contrabandRate, isContraband, serviceFactor } from '../blackmarket/services';
 import { reputationOf } from '../story/state';
 import { isSurplus, repKeyOf } from './traders';
 import { TraderC, type Trader } from './types';
@@ -33,13 +34,22 @@ export function unitPrice(sim: Sim, trader: number, item: string, side: PriceSid
   if (!cfg || !t || base === undefined) return null;
   const rep = reputationWith(sim, trader);
   const level = stockFactor(t.stock.find((l) => l.item === item)?.count ?? 0, t.base?.find((l) => l.item === item)?.count);
+  const contra = isContraband(sim, item);
+  const rate = contrabandRate(sim, t);
+  // A legitimate trader does not buy contraband; a black market pays a share of its value, a fence pays its rate for anything.
+  if (contra && side === 'buy' && rate === null) return null;
   const raw = (s: PriceSide): number => {
+    if (contra && s === 'buy') {
+      const shift = clamp(cfg.repStep * rep, -cfg.repMax, cfg.repMax);
+      return Math.max(1, Math.round(base * (rate ?? 0) * (1 + shift)), t.fence !== undefined ? Math.round(base * t.fence) : 0);
+    }
     let p = applyMods(sim, t, item, s, base * (s === 'sell' ? cfg.spread.sell : cfg.spread.buy));
     p *= level;
     // A friend gets better prices: they sell for less and pay more.
     const shift = clamp(cfg.repStep * rep, -cfg.repMax, cfg.repMax);
     p *= s === 'sell' ? 1 - shift : 1 + shift;
-    return Math.max(1, Math.round(p));
+    const fenced = s === 'buy' && t.fence !== undefined ? Math.round(base * t.fence) : 0;
+    return Math.max(1, Math.round(p), fenced);
   };
   const sell = raw('sell');
   return side === 'sell' ? sell : Math.min(raw('buy'), sell);
@@ -54,6 +64,8 @@ function applyMods(sim: Sim, t: Trader, item: string, s: PriceSide, price: numbe
   // What the owner faction sells cheaper (Meridian's fuel): by item id, else by tag.
   const perk = s === 'sell' && t.owner ? sim.content.galaxy?.factions[t.owner]?.specialities?.prices : undefined;
   if (perk) p *= perk[item] ?? (sim.content.items[item]?.tags ?? []).reduce((m, tag) => m * (perk[tag] ?? 1), 1);
+  // A black-market service's own price mods.
+  p *= serviceFactor(sim, t, item, s);
   // Surplus gear sells at the kind's markup.
   if (s === 'sell' && isSurplus(sim, t.profile, item)) p *= kind?.surplus?.markup ?? 1;
   return p;
@@ -72,6 +84,18 @@ export function stockFactor(stock: number, base: number | undefined): number {
 export function marketValue(sim: Sim, t: Trader, item: string, stock: number, base: number | undefined): number {
   const p = sim.content.items[item]?.price;
   return p === undefined ? 0 : applyMods(sim, t, item, 'sell', p) * stockFactor(stock, base);
+}
+
+/**
+ * A market's price for one unit on a side, without a trader entity or the player's reputation: what the starmap and station info show for a
+ * port (issue #222). The same rules as `unitPrice` (spread, kind and tag mods, scarcity; a buy never above the sell); contraband is not quoted.
+ */
+export function marketQuote(sim: Sim, t: Trader, item: string, stock: number, base: number | undefined, side: PriceSide): number | null {
+  const cfg = sim.content.trade;
+  const p = sim.content.items[item]?.price;
+  if (!cfg || p === undefined || isContraband(sim, item)) return null;
+  const at = (s: PriceSide): number => Math.max(1, Math.round(applyMods(sim, t, item, s, p * (s === 'sell' ? cfg.spread.sell : cfg.spread.buy)) * stockFactor(stock, base)));
+  return side === 'sell' ? at('sell') : Math.min(at('buy'), at('sell'));
 }
 
 /** Total credits of item lines at the trader's price on one side, or null if any line has no price. */

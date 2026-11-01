@@ -161,6 +161,8 @@ export const STORY_ANCHOR_CHANCE = 0.5;
 export const PASSING_ENCOUNTER_CHANCE = 0.12;
 /** At most this many ships other than the player's are in a live node when a fleet's ships materialise (the sector is small; the rest wait as descriptors). */
 export const FLEET_NODE_SHIPS = 3;
+/** Fleets this many jumps from the player's node (or routed to it) have their ship generated ahead of arrival (fleetShips.ts `warmFleets`). */
+export const WARM_HOPS = 2;
 /** Turns before the same fleet can meet the player again, and before an unresolved encounter expires (interdictions last longer). */
 export const ENCOUNTER_COOLDOWN = 6;
 export const ENCOUNTER_TTL = { alert: 3, interdict: 6 } as const;
@@ -260,6 +262,8 @@ export const MARKET_CAP_MULT = 3;
 export const MARKET_WANT_TURNS = 20;
 /** Deviations smaller than this from the baseline are not stored. */
 export const MARKET_EPS = 0.05;
+/** A port's goods start up to this share above or below their baseline (seeded per port and good), so prices differ from the first turn. */
+export const MARKET_START_SPREAD = 0.4;
 /** Units one hull of a size class hauls. */
 export const CARGO_BY_SIZE = { small: 20, medium: 40, heavy: 80 } as const;
 /** A trader only buys a good for the next stop when the price there beats the price here by this fraction, and takes at most this share of the stock. */

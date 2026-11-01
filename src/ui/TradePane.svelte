@@ -122,6 +122,13 @@
   <button data-testid="trade-rehail" onclick={() => api.dispatch({ type: 'trade.hail', ship: id })}>Hail again</button>
 {:else}
   <p class="greet" data-testid="trade-answered">"{p.name} here, go ahead." <small>Their purse: ₵ {p.wallet}{p.rep ? ` · standing ${p.rep > 0 ? '+' : ''}${p.rep}` : ''}</small></p>
+  {#if p.market}
+    <div class="market" class:bad={p.market.banned} data-testid="black-market">
+      <b>{p.market.names.join(' · ')}</b>
+      <span data-testid="market-contraband">Contraband bought at {Math.round(p.market.contrabandRate * 100)}% of its value.{p.market.fence !== null ? ` The fence takes anything at ${Math.round(p.market.fence * 100)}%, no questions.` : ''}</span>
+      {#if p.market.truce}<span data-testid="market-truce">{p.market.banned ? 'Truce broken: everyone here fires on you until the ban ends.' : 'Truce: nobody starts a fight here. Firing on or boarding anyone breaks it.'}</span>{/if}
+    </div>
+  {/if}
   {#if refuel}
     <div class="refuel" data-testid="refuel">
       <button class="go" data-testid="refuel-go" disabled={refuel.n <= 0 || refuel.cost > trade.credits || !!deal || !!p.offer || !!p.in.error}
@@ -141,7 +148,7 @@
       {#each lines.filter((l) => l.mine > 0) as l (l.item)}
         <div class="row" class:set={(give[l.item] ?? 0) > 0}>
           <ItemIcon {api} item={l.item} size={26} />
-          <span class="nm">{l.name}<small>{l.mine} held</small></span>
+          <span class="nm">{l.name}<small>{l.mine} held{l.contraband ? ' · contraband' : ''}</small></span>
           <span class="pr">₵{l.buy}</span>
           <span class="step">
             <button aria-label="Fewer {l.name}" disabled={!!p.offer || (give[l.item] ?? 0) === 0} onclick={() => bump('give', l, -1)}>−</button>
@@ -150,7 +157,7 @@
           </span>
         </div>
       {:else}
-        <p class="none">Nothing in storage they would buy.</p>
+        <p class="none">Nothing aboard they would buy.</p>
       {/each}
     </section>
     <section class="col" class:hide={tab !== 'theirs'} data-testid="trade-theirs">
@@ -158,7 +165,7 @@
       {#each lines.filter((l) => l.theirs > 0) as l (l.item)}
         <div class="row" class:set={(get[l.item] ?? 0) > 0}>
           <ItemIcon {api} item={l.item} size={26} />
-          <span class="nm">{l.name}<small>{l.theirs} in stock{l.surplus ? ' · surplus' : ''}</small></span>
+          <span class="nm">{l.name}<small>{l.theirs} in stock{l.surplus ? ' · surplus' : ''}{l.contraband ? ' · contraband' : ''}</small></span>
           <span class="pr">₵{l.sell}</span>
           <span class="step">
             <button aria-label="Fewer {l.name}" disabled={!!p.offer || (get[l.item] ?? 0) === 0} onclick={() => bump('get', l, -1)}>−</button>
@@ -216,14 +223,19 @@
   .greet small { color: var(--dim); font-style: normal; margin-left: 6px; }
   .msg { color: var(--dim); margin: 8px 0; }
   .msg.refused { color: #ff9a9a; }
+  .market { display: grid; gap: 2px; margin-bottom: 8px; padding: 6px 8px; background: var(--bg); border: 1px solid var(--amber); font-size: 12px; }
+  .market b { color: var(--amber); font-size: 13px; }
+  .market span { color: var(--dim); }
+  .market.bad { border-color: var(--red); }
+  .market.bad span:last-child { color: #ff9a9a; }
   .refuel { display: grid; gap: 2px; margin-bottom: 8px; }
-  .refuel .go { background: #0e4a56; border-color: var(--cyan); min-height: 36px; }
+  .refuel .go { background: var(--go-fill); border-color: var(--go-edge); min-height: 36px; }
   .refuel small { color: var(--dim); font-size: 11px; }
   .tabs { display: none; gap: 6px; margin-bottom: 6px; }
   .tabs button { flex: 1; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 10px; flex: 1 1 auto; min-height: 0; }
   .col { background: var(--bg); border: 1px solid var(--line); border-radius: 0; padding: 8px; min-height: 0; overflow-y: auto; }
-  h3 { margin: 0 0 6px; font-size: 13px; color: var(--cyan); }
+  h3 { margin: 0 0 6px; font-size: 13px; color: var(--ink-accent); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 4px; }
   .row { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 0; }
   .row.set { background: #0e2a36; }
@@ -242,10 +254,10 @@
   .note { color: var(--dim); font-size: 12px; }
   .barter { font-size: 13px; display: flex; gap: 6px; align-items: center; }
   .btns { display: flex; gap: 8px; }
-  .btns .go { background: #0e4a56; border-color: var(--cyan); flex: 1; }
+  .btns .go { background: var(--go-fill); border-color: var(--go-edge); flex: 1; }
   .status { display: grid; gap: 4px; }
   .status span { color: var(--dim); font-size: 13px; }
-  .status .trip { display: inline-flex; align-items: center; gap: 4px; color: var(--cyan); }
+  .status .trip { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-accent); }
   .compact .tabs { display: flex; }
   .compact .cols { grid-template-columns: 1fr; }
   .compact .col.hide { display: none; }

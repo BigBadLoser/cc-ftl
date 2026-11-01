@@ -1,18 +1,18 @@
 import { ALT, BodyC } from '../body';
+import { abortTask } from '../ai/task';
 import { shipById } from '../combat/ships';
-import { releaseBedClaim } from '../crew/beds';
 import {
   CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, type Crew,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
-import { releaseAssignment } from '../crew/helpers';
 import { spillItems } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 
 import type { VehicleDef } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
-import { BLEED_OUT_SECONDS, SKILL_STEP } from '../tuning';
+import { SKILL_STEP } from '../tuning';
+import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
@@ -64,8 +64,7 @@ export function spawnVehicle(sim: Sim, defId: string, bay: number): number {
 /** Hide a crew member aboard a vehicle: off the grid, out of every job and route. The first aboard is the pilot. */
 export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'passenger' {
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
-  releaseAssignment(sim, crew);
-  releaseBedClaim(sim, crew);
+  abortTask(sim, crew, 'boarded');
   for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';
@@ -122,7 +121,7 @@ function downCrew(sim: Sim, crew: number): void {
   const hp = sim.world.get(crew, HealthC);
   if (hp) hp.hp = 0;
   sim.world.remove(crew, DraftedC);
-  sim.world.add(crew, DownedC, { bleed: BLEED_OUT_SECONDS, stabilized: false, bed: 0 });
+  sim.world.add(crew, DownedC, { bleed: bleedOutSec(sim, crew), stabilized: false, bed: 0 });
   (sim.world.get(crew, CrewC) as Crew).activity = 'downed';
   sim.events.emit({ type: 'crew.downed', crew });
 }

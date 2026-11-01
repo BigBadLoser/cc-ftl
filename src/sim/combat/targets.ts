@@ -1,11 +1,12 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { WeaponC, type Combat, type Faction, type Target } from './components';
-import { factionsHostile } from './factions';
+import { factionsHostile, rogueAlly } from './factions';
 import { VehicleC } from '../vehicles/components';
 
 import { shipIdOf } from '../regions';
 import { shipById } from './ships';
+import { shipWideAim } from './shipAim';
 
 /** True if the ship can still be shot at (exists, not a fled ship or a prize). Wrecks stay targetable but are not worth it for the AI. */
 export function targetableShip(sim: Sim, shipId: number): boolean {
@@ -29,6 +30,7 @@ export function weaponAntiVehicle(sim: Sim, weaponId: number): boolean {
 /** True if a shuttle is targetable and its home ship's faction is at war with `faction` (a captured home ship makes it friendly). */
 export function hostileVehicle(sim: Sim, id: number, faction: Faction): boolean {
   const v = sim.world.get(id, VehicleC);
+  if (faction === 'rogue' && rogueAlly(sim, v?.homeShip ?? 0)) return false;
   return !!v && targetableVehicle(sim, id) && factionsHostile(faction, shipById(sim, v.homeShip)?.faction ?? 'neutral');
 }
 
@@ -55,8 +57,8 @@ export function nextModule(sim: Sim, shipId: number, deadId: number): number {
  * The concrete target a weapon would shoot now: its own target, else the ship-wide one. A target ship that is
  * destroyed or captured clears the stored target. A target module that is destroyed is replaced (and the stored
  * target updated) by the next sensible module of the same ship, see `nextModule`. A module that no longer
- * exists, or "any" (module 0), is replaced by a random module of the target ship (preferring intact ones) drawn
- * from sim.rng. Null if there is no valid target ship.
+ * exists, or "any" (module 0), is replaced by a part of the target ship that still stands, module or wall, picked with odds by its share of
+ * the remaining integrity (`shipWideAim`, sim.rng). Null if there is no valid target ship.
  */
 export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Target | null {
   const anti = weaponAntiVehicle(sim, weaponId);
@@ -85,7 +87,10 @@ export function resolveTarget(sim: Sim, weaponId: number, combat: Combat): Targe
     store(next);
     return next;
   }
-  return { ship: t.ship, moduleId: randomModule(sim, shipId) };
+  // The whole ship (module 0, or a module that no longer exists): a part that still stands, weighted by what it holds of the integrity (issue #225).
+  const part = shipWideAim(sim, shipId);
+  if (part && 'tile' in part) return { ship: t.ship, moduleId: 0, tile: part.tile };
+  return { ship: t.ship, moduleId: part?.moduleId ?? randomModule(sim, shipId) };
 }
 
 /** A random module of a grid (intact ones first); 0 if it has none. */

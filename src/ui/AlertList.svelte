@@ -1,10 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiAlert, UiApi } from './api';
+  import type { UiAlert, UiAlertKind, UiApi } from './api';
   import Icon, { type IconName } from './Icon.svelte';
   import { splitAlerts } from './phoneHud';
 
-  let { api }: { api: UiApi } = $props();
+  let { api, onNode }: { api: UiApi; onNode?: (node: string) => void } = $props();
+  const jump = (a: UiAlert) => {
+    if (a.report) api.openFightReport(a.id);
+    else if (a.subject?.kind === 'node') onNode?.(a.subject.id);
+    else api.focusAlert(a.id);
+  };
   let list = $state<UiAlert[]>([]);
   /** Phone: one compact toast (the newest) with a count badge; a tap opens the whole list under it. */
   let narrow = $state(false);
@@ -21,16 +26,16 @@
   const split = $derived(splitAlerts(list));
   const extra = $derived(split.extra);
 
-  const danger = new Set(['fire.started', 'hull.breach', 'crew.died', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'module.destroyed', 'ship.lost', 'creatures.aboard', 'ship.provoked', 'galaxy.encounter', 'galaxy.incomingHostile']);
-  const good = new Set(['production.done', 'crew.rescued', 'ship.destroyed', 'trade']);
-  const icon: Record<string, IconName> = {
-    'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.downed': 'downed', 'crew.starving': 'food', 'crew.moodLow': 'smile', 'crew.died': 'skull',
-    'crew.rescued': 'person', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'outpost.discovered': 'station', 'ship.provoked': 'combat', 'mining.waiting': 'person', 'mining.done': 'pick', 'module.destroyed': 'close', 'ship.destroyed': 'prize', 'ship.fled': 'ship', 'ship.lost': 'skull', 'job.missingMaterials': 'stock', 'storage.full': 'stock', 'production.done': 'wrench', trade: 'credits', 'galaxy.encounter': 'alert', 'galaxy.incomingHostile': 'alert', 'galaxy.incoming': 'ship', transfer: 'stock',
+  /** Every alert is urgent: red for threats to the ship and crew, amber for shortages. */
+  const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile', 'boarders.stranded']);
+  const icon: Record<UiAlertKind, IconName> = {
+    'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.downed': 'downed',
+    'crew.starving': 'food', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed',
   };
 </script>
 
 {#snippet row(a: UiAlert, toast = false)}
-  <div class="alert" class:danger={danger.has(a.kind)} class:good={good.has(a.kind)} data-testid="alert" data-kind={a.kind}>
+  <div class="alert" class:danger={danger.has(a.kind)} data-testid="alert" data-kind={a.kind}>
     {#if a.notice}
       <button class="go story" data-testid="story-notice" disabled={!a.notice.lead} onclick={() => { if (a.notice) api.dispatch({ type: 'story.openNotice', notice: a.notice.id }); api.dismissAlert(a.id); }}>
         <b>{a.notice.title}</b>
@@ -38,7 +43,7 @@
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
     {:else}
-      <button class="go" disabled={toast ? false : !a.at} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : api.focusAlert(a.id))}><span class="ic"><Icon name={icon[a.kind] ?? 'alert'} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+      <button class="go" disabled={toast ? false : !a.subject && !a.report} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
     <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
   </div>
@@ -72,7 +77,6 @@
   .alerts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; }
   .alert { display: flex; min-width: 0; background: var(--panel); border: 1px solid var(--amber); border-left-width: 3px; }
   .alert.danger { border-color: var(--red); }
-  .alert.good { border-color: var(--green); }
   .alert button { min-height: 32px; border: 0; background: transparent; font-size: 13px; }
   .go { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; text-align: left; padding: 4px 8px; overflow: hidden; }
   /* Two lines at most; the whole message on hover, or while the card holds focus (a tap on touch screens). */
@@ -86,9 +90,8 @@
   .alert:has(.story:disabled) { border-color: var(--line); }
   .x { min-width: 32px; padding: 0; color: var(--dim); display: inline-flex; align-items: center; justify-content: center; }
   .ic { display: inline-flex; color: var(--amber); }
-  .danger .ic { color: var(--red); } .good .ic { color: var(--green); }
+  .danger .ic { color: var(--red); }
   .more { color: var(--dim); font-size: 12px; padding-left: 4px; }
-  @media (max-width: 600px) { :global(html[data-combat]) .alerts { display: none; } }
   /* Phone: a single-line toast, cyan-panel badge for the rest, the rest listed in a dropdown on tap. */
   .toastrow { display: flex; gap: 2px; align-items: stretch; }
   .one { flex: 1; min-width: 0; display: grid; }

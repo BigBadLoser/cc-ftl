@@ -27,13 +27,15 @@ export const modules = {
   'module.lifeSupport': {
     name: 'Life support',
     category: 'life',
-    description: "Makes breathable air and scrubs CO2 for the room it sits in.",
+    description: "Makes breathable air and scrubs CO2 for the room it sits in. Oxygen in the stores doubles the air while a room refills.",
     asset: 'module.life_support',
     footprint: [1, 2],
     solid: true,
     power: -6,
     powerPriority: 1,
     o2PerSec: 3,
+    // Bottled oxygen (split from ice at a refinery) doubles the air while a room refills: one unit per 20 s of it.
+    o2Supply: { item: 'item.oxygen', mult: 2, secPerUnit: 20 },
     co2ScrubPerSec: 1,
     flammability: 0.2,
     maxHp: 100,
@@ -308,6 +310,15 @@ export const modules = {
     asset: 'module.point_defense', footprint: [2, 2], solid: true, power: -5, powerPriority: 3,
     flammability: 0.2, maxHp: 70, buildWork: 180, pointDefense: true, deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
+  },
+  // Radiator: sheds combat heat while the shields are down (and helps a vent). Placeholder art: the light's sprite.
+  'module.radiator': {
+    name: 'Radiator',
+    category: 'defence',
+    description: "Speeds up cooling of the ship's combat heat. Heat only falls while the shields are down.",
+    asset: 'module.light', footprint: [1, 1], solid: true, power: -1, powerPriority: 3,
+    flammability: 0.1, maxHp: 50, buildWork: 80, radiator: { coolPerSec: 3 },
+    cost: [{ item: 'item.metal', count: 8 }],
   },
   // Robot fabricator (rogue AI shipyards): builds hostile robots while powered and run by a live AI core. Placeholder
   // art: the crafting fabricator's sprite.

@@ -15,8 +15,16 @@
     const a = api.inspect.subscribe((i) => (info = i));
     const b = api.modules.subscribe((m) => (mods = m));
     const c = api.combat.subscribe((v) => (foes = v.enemies));
-    return () => (a(), b(), c());
+    // A refused debug command (e.g. "Spawn raider" beside a station: too close) is shown here too, where the clicker is looking.
+    const d = api.toast.subscribe((t) => {
+      if (!t) return;
+      clearTimeout(note);
+      toast = t;
+      note = setTimeout(() => (toast = ''), 4000);
+    });
+    return () => (a(), b(), c(), d(), clearTimeout(note));
   });
+  let note: ReturnType<typeof setTimeout> | undefined;
   let roofed = $state(true);
   const toggleRoof = () => {
     roofed = !roofed;
@@ -87,8 +95,8 @@
   aside { position: fixed; z-index: 6; top: calc(var(--hdr) + 236px + var(--sat)); right: calc(8px + var(--sar)); width: min(230px, calc(100vw - 16px)); background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: 8px; max-height: calc(100vh - var(--hdr) - 250px); overflow-y: auto; }
   aside button { min-height: 34px; font-size: 12px; padding: 0 6px; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 1px 12px; margin: 0 0 8px; font-size: 12px; }
-  dt { color: var(--dim); } dd { margin: 0; text-align: right; color: var(--cyan); }
+  dt { color: var(--dim); } dd { margin: 0; text-align: right; color: var(--ink-accent); }
   .btns { display: flex; flex-direction: column; gap: 4px; }
-  .toast { margin-top: 8px; text-align: center; color: var(--cyan); }
+  .toast { margin-top: 8px; text-align: center; color: var(--ink-accent); }
   @media (max-width: 600px) { aside { top: calc(var(--hdr) + var(--sat) + 4px); right: 8px; left: 8px; width: auto; max-height: 52vh; } .btns { display: grid; grid-template-columns: 1fr 1fr; } dl { grid-template-columns: repeat(2, 1fr 1fr); } }
 </style>

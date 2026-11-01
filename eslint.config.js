@@ -26,8 +26,28 @@ const noGridIds = [
   { selector: "MemberExpression[property.name='grids']", message: 'No sim.grids (step 7d): use shipGrid(sim, ship) or regions(sim); bounds are the ShipC rectangle.' },
 ];
 
+/**
+ * Crew AI (docs/CREW_AI.md Phase 1): `AssignmentC` is written only through the task API in src/sim/ai (`reserveJob`, `attachJob`,
+ * `detachJob`, `abortTask`), which keeps the `Task` mirror in step. Reading it is fine everywhere.
+ */
+const assignmentMsg = 'AssignmentC is written only by the task API in src/sim/ai (reserveJob, attachJob, detachJob, abortTask).';
+const noAssignmentWrites = [
+  { selector: "CallExpression[callee.property.name=/^(add|remove)$/][arguments.1.name='AssignmentC']", message: assignmentMsg },
+  { selector: "ArrayExpression > Identifier[name='AssignmentC']", message: assignmentMsg },
+  { selector: "AssignmentExpression > MemberExpression.left Identifier[name='AssignmentC']", message: assignmentMsg },
+];
+
+const simSyntax = [
+  {
+    selector: "BinaryExpression[operator=/^[-+]$/][left.type='MemberExpression'][left.object.name=/^(ship|s|sh)$/][left.property.name=/^[xy]$/][right.type='MemberExpression'][right.property.name=/^[xy]$/]",
+    message: 'Positions are sector tiles: no ship-origin + local sums (step 6).',
+  },
+  { selector: "BinaryExpression[operator=/^[-+]$/] > MemberExpression[property.name=/^o[xy]$/]", message: 'Grids read sector tiles: no window-origin sums (step 6).' },
+  ...noGridIds,
+];
+
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...svelte.configs['flat/recommended'],
@@ -62,17 +82,18 @@ export default tseslint.config(
     // Step 6 (coordinate flip): positions are sector tiles everywhere, so no ship-origin or window-origin sums in the sim.
     files: ['src/sim/**/*.ts'],
     ignores: ['src/sim/shipgen/**', 'src/sim/**/*.test.ts'], // shipgen is template-local
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "BinaryExpression[operator=/^[-+]$/][left.type='MemberExpression'][left.object.name=/^(ship|s|sh)$/][left.property.name=/^[xy]$/][right.type='MemberExpression'][right.property.name=/^[xy]$/]",
-          message: 'Positions are sector tiles: no ship-origin + local sums (step 6).',
-        },
-        { selector: "BinaryExpression[operator=/^[-+]$/] > MemberExpression[property.name=/^o[xy]$/]", message: 'Grids read sector tiles: no window-origin sums (step 6).' },
-        ...noGridIds,
-      ],
-    },
+    rules: { 'no-restricted-syntax': ['error', ...simSyntax, ...noAssignmentWrites] },
+  },
+  {
+    // The task API itself (crew AI) is the one writer of AssignmentC.
+    files: ['src/sim/ai/**/*.ts'],
+    ignores: ['src/sim/**/*.test.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...simSyntax] },
+  },
+  {
+    files: ['src/app/**/*.ts', 'src/render/**/*.ts', 'src/ui/**/*.ts', 'src/ui/**/*.svelte'],
+    ignores: ['src/**/*.test.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...noAssignmentWrites] },
   },
   {
     files: ['src/sim/**/*.test.ts'],

@@ -73,9 +73,9 @@
 </FloatingWindow>
 
 <style>
-  .close { position: absolute; top: 0; right: 0; width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; }
+  .close { position: absolute; top: 0; right: 0; width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: #fff; }
   .res { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-  .cell { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); font: inherit; text-align: left; }
+  .cell { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); font: inherit; text-align: left; }
   .cell b { color: var(--text); font-weight: 600; }
   button.cell { cursor: pointer; } button.cell.on { border-color: var(--cyan); background: var(--panel-3); }
   .cell .lab { color: var(--dim); } .cell.wide b { white-space: nowrap; }

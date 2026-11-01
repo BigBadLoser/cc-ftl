@@ -1,0 +1,53 @@
+name: Deploy game and wiki to GitHub Pages
+
+# Keep manual publication: playable game and wiki must describe the same commit.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build playable game
+        run: npx vite build --base /cc-ftl/
+      - name: Install wiki dependencies
+        run: npm --prefix wiki install --no-audit --no-fund
+      - name: Build gameplay wiki
+        run: npm --prefix wiki run build
+      - name: Merge static websites
+        run: |
+          mkdir -p dist/wiki
+          cp -a wiki/dist/. dist/wiki/
+          test -f dist/index.html
+          test -f dist/wiki/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

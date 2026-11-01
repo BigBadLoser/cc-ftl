@@ -34,7 +34,7 @@ NV, LV = np.array(N), np.array(LIGHT)
 # ---- stars ------------------------------------------------------------------------------------------------------------
 # ramp: centre to limb; edges: facing (n . N) thresholds between ramp steps; spot: umbra, penumbra; halo: glow hue and the
 # strength of each band from the limb out (halo may also list a hue per band); glow: the disc's own glow; gran: granulation
-# strength; spots / flares: counts.
+# strength (gfreq: its noise frequency, default 5); spots / flares: counts.
 STARS = {
     "star": dict(ramp=("fxW", "lampY", "fxY", "fxO"), edges=(0.8, 0.55, 0.3), spot=("fxR", "fxO"), halo="fxY", glow=0.2,
                  bands=(0.42, 0.22, 0.11, 0.05), gran=0.2, spots=2, flares=2, flare=("fxY", "fxO")),
@@ -59,7 +59,7 @@ def _star_paint(spec, seed):
     ramp, edges = spec["ramp"], spec["edges"]
 
     def paint(ns):
-        t = ns @ NV + (noise.fbm(ns * 5.0) - 0.5) * spec["gran"] * 2
+        t = ns @ NV + (noise.fbm(ns * spec.get("gfreq", 5.0)) - 0.5) * spec["gran"] * 2
         band = sum((t < e).astype(int) for e in edges)
         looks = [selflit(ramp[b], spec["glow"]) for b in band]
         for d, size in spots:
@@ -91,9 +91,13 @@ def _band_hue(spec, k):
     return h if isinstance(h, str) else h[k]
 
 
+SOFTEN = None                   # a hook (spec -> spec) every star goes through; backdrop_bodies sets it for soft halos
+
+
 def star(kind, seed, spec=None, c=None, r=RB, reach=EDGE):
     """A star of radius r at c (default: the body radius at the origin), its halo bands out to `reach`."""
     spec = spec or STARS[kind]
+    spec = SOFTEN(spec) if SOFTEN else spec
     c = Vector() if c is None else c
     rng = np.random.default_rng(seed + 101)
     body = core.Mesh("star")
@@ -279,10 +283,14 @@ def body_items(kind, v):
     return items(kind, v, *scene(kind, v))
 
 
+def seed_of(kind, v):
+    return 9001 + 37 * KINDS.index(kind) + v
+
+
 def scene(kind, v):
     """Build variant v of a body kind in a fresh scene; -> (halo objects, outlined?)."""
     start()
-    seed = 9001 + 37 * KINDS.index(kind) + v
+    seed = seed_of(kind, v)
     if kind in STARS:
         objs, halo = star(kind, seed)
     elif kind == "gas_giant":

@@ -25,8 +25,13 @@ describe('the population over many seeds', () => {
     let ships = 0;
     let classed = 0;
     const cost = galaxy.fleet.sizeCost;
-    for (const seed of [31, 32, 33, 34]) {
+    // The fixed seeds 31 to 50. A seed whose near map holds no pirate fleet says nothing about pirates, so it is skipped; at least MIN_PIRATE_WORLDS must qualify.
+    const MIN_PIRATE_WORLDS = 4;
+    let withDens = 0;
+    for (let seed = 31; seed <= 50; seed++) {
       const sim = world(seed, 2);
+      if (!sim.galaxy.fleets.some((f) => f.role === 'pirate')) continue;
+      withDens++;
       for (const f of sim.galaxy.fleets) {
         const port = portOf(sim, f.home)!;
         kinds.add(port.kind);
@@ -45,6 +50,7 @@ describe('the population over many seeds', () => {
         }
       }
     }
+    expect(withDens).toBeGreaterThanOrEqual(MIN_PIRATE_WORLDS);
     expect([...kinds].sort()).toEqual(['den', 'depot', 'nest', 'outpost', 'station']);
     // Pirates lean strongly to one ship; two small ones now and then.
     expect(pirates[0]).toBeGreaterThan((pirates[1] ?? 0) * 2);

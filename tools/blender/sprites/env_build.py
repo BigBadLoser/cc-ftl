@@ -87,16 +87,14 @@ def crop_item(sid, fp, c, op, g, ox, oy, al=None):
 
 
 def global_digest():
-    """Everything global that can change a rendered sprite: the render code (core, post, this file), the palette files, the
-    tile scale, the Blender version and the quality settings. Per-sprite inputs (geometry, scene state) are keyed separately."""
-    b = sprite_cache.BL
-    files = [sprite_cache.SRC / f for f in ("core.py", "post.py", "env_build.py", "scale.py", "geom_digest.py", "sprite_cache.py")]
-    files += [b / "lib/palette.py", sprite_cache.ROOT / "palette.json", b / "palette_extra.json"]
-    return sprite_cache.digest(sprite_cache.files_digest(files), bpy.app.version_string, core.TILE_W, core.TILE_H, core.SS,
+    """Everything global that can change a rendered sprite: the render code (sprite_cache.RENDER_VERSION, not its files),
+    the tile scale, the Blender version and the quality settings. Per-sprite inputs (geometry and its colours, scene state,
+    the palette selection's entries: post.palette_digest) are keyed separately."""
+    return sprite_cache.digest(sprite_cache.RENDER_VERSION, bpy.app.version_string, core.TILE_W, core.TILE_H, core.SS,
                                core.SAMPLES, core.PREVIEW)
 
 
-def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False, plan=False, progress=None):
+def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False, plan=False, progress=None, adopt=False):
     """Render sprite jobs: (id, footprint, kind, builder) tuples, or callables returning ready items (multi-part
     sprites such as a console and its front overlay). `extra` picks the quantisation palette (see post.select).
 
@@ -104,14 +102,18 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
     rendering. A tuple job is keyed by its built geometry, so editing one builder re-renders only the sprites whose meshes
     changed. A callable job renders itself, so it is keyed by the source of its module and everything that module imports.
     `force` ignores the cache for the selected jobs; `plan` only counts hits and misses (nothing renders or is stored).
-    `progress(done, total)` is called as the jobs go by (the sprite dashboard, progress.py)."""
-    items, hits, misses, miss_ids = [], 0, 0, []
+    `progress(done, total)` is called as the jobs go by (the sprite dashboard, progress.py). `adopt` renders nothing: a
+    job missing under its key keeps its existing entry (sprite_cache.adopt), for a change to how keys are made."""
+    items, hits, misses, miss_ids, adopted = [], 0, 0, [], 0
+    plan = plan or adopt
     glob = global_digest() if family else None
     t0 = time.time()
 
     def cached(stem, key):
-        nonlocal hits
+        nonlocal hits, adopted
         path = sprite_cache.entry_path(family, stem, key)
+        if family and not force and adopt and not path.exists() and sprite_cache.adopt(family, stem, path):
+            adopted += 1
         if family and not force and path.exists():
             hits += 1
             return path, sprite_cache.load(path)
@@ -130,7 +132,7 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
                          code.co_code.hex() if code else None, repr([c for c in code.co_consts if not hasattr(c, 'co_code')]) if code else None, getattr(job, "__defaults__", None))
                 stem = "call." + sprite_cache.digest(ident)[:10]
                 key = sprite_cache.digest(glob, ident, sprite_cache.files_digest(sprite_cache.closure_files(job.__module__)),
-                                          gd.scene_digest())
+                                          gd.scene_digest(), post.palette_digest(True if callable(extra) else extra))
                 path, got = cached(stem, key)
                 if got is not None:
                     items += got
@@ -148,11 +150,12 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
         if only and not any(o in sid for o in only):
             continue
         core.clear_scene_meshes()
-        pal = bool(extra(sid) if callable(extra) else extra)
+        pal = extra(sid) if callable(extra) else extra
         post.select(pal)
         objs = fn()
         if family:
-            key = sprite_cache.digest(glob, sid, fp, kind, pal, gd.scene_digest(), gd.objects_digest(objs))
+            key = sprite_cache.digest(glob, sid, fp, kind, post.palette_digest(pal), gd.scene_digest(),
+                                      gd.objects_digest(objs))
             path, got = cached(sid, key)
             if got is not None:
                 items += got
@@ -167,7 +170,7 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
         if family:
             sprite_cache.store(path, [it] if it else [])
     if family:
-        log(f"CACHE {family}: {hits} hits, {misses} misses{' (planned: nothing rendered)' if plan else ''} in {time.time() - t0:.1f}s"
+        log(f"CACHE {family}: {hits} hits ({adopted} adopted), {misses} misses{' (planned: nothing rendered)' if plan else ''} in {time.time() - t0:.1f}s"
             + (f"; first misses: {', '.join(miss_ids[:8])}" if miss_ids else ""))
     log(f"RENDERED {len(items)} sprites")
     return items

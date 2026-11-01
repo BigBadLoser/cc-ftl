@@ -1,6 +1,7 @@
 import type { QueuedCommand } from './commands';
 import type { Sector } from './combat/components';
 import { World, type WorldData } from './ecs';
+import { restoreTasks } from './ai/task';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
@@ -74,8 +75,21 @@ import { newYard, type YardState } from './yard/types';
  * v59 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
  * v60: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
  * v62: the yard and per-faction standing together (the shipyard branch numbered v58 to v61 before standing took v58; this is the merged line).
+ * v63 (pirate factions): new galaxy factions (`raiders`, `cartel`, `zealots`, `mercenaries`) with their own reputation keys, `Contact.hired`, `CoreRaiderC` / `CoreRaidC`, boarder flags `prefer` / `coreRaid`.
+ * v64 (black markets): optional `Trader.services` / `Trader.fence`, `NodeState.truce` / `scanned`, `Encounter.scan`, `Ship.banned`, `ForHire.shady` (and `SkillXpC` on shady crew), contraband items (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`, the zealot machine goods).
+ * v65 (jobs by station): `GalaxyState.claims` (finished bounties and surveys waiting for hand-in), survey jobs (`StationJob.kind` 'survey', `station`, `feature`), `Deal.handover` (the station shuttle collecting a delivery crate).
+ * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges), `WeaponDef.heat`, `ModuleDef.radiator`.
+ * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
+ * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
+ * v69 (trade): optional `Deal.getValue` (each get line's agreed share of the escrow, for settling a part-delivered run).
+ * v70 (weapon modes, merged after trade): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
+ * v71 (boarding, merged after weapon modes): `RecallC` (a player boarding party's recall, on the shuttle), the 'sabotage' job kind and
+ *   `SabotageOrderC` (a boarder's sabotage order, kept while a fight pauses it).
+ * v72 (crew traits): `TraitsC` and `RolledSkillsC` (a starting crew member's traits and rolled skills), optional `Mood.idle`,
+ *   `quiet` and `inside` (trait mood memory).
+ * v73 (work xp): `SkillXpC` is on the new curve (level n costs 100 x n^2 xp), so old xp reads as fewer levels; no migration.
  */
-export const SAVE_VERSION = 62;
+export const SAVE_VERSION = 73;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -134,9 +148,11 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
+  sim.trade.bestCredits = Math.max(sim.trade.bestCredits ?? 0, sim.trade.credits); // a save from before the field starts at what it holds
   sim.yard = { ...newYard(), ...data.yard };
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;
+  restoreTasks(sim); // a save from before the crew-AI task mirror (Phase 1) has none
   return sim;
 }

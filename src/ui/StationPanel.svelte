@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { anchor } from './lessons/anchors';
   import type { UiApi, UiJobs, UiTrade } from './api';
   import BlueprintList from './BlueprintList.svelte';
   import FloatingWindow from './FloatingWindow.svelte';
@@ -14,7 +15,7 @@
   type Tab = 'trade' | 'jobs' | 'crew' | 'blueprints' | 'yard';
   let tab = $state<Tab>('trade');
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], max: 0, mine: null });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
   let metal = $state(0);
   onMount(() => {
     const u = [api.trade.subscribe((t) => (trade = t)), api.jobs.subscribe((j) => (jobs = j)), api.stock.subscribe((s) => (metal = s.filter((x) => x.item === 'item.metal').reduce((n, x) => n + x.stored, 0)))];
@@ -23,7 +24,7 @@
   const p = $derived(trade.partners.find((x) => x.id === station));
   const hiring = $derived(trade.deals.find((d) => d.ship === station && d.live && p?.recruits.some((r) => r.coming)));
   const tabs = $derived<{ id: Tab; label: string; n: number }[]>([
-    { id: 'trade', label: 'Trade', n: 0 }, { id: 'jobs', label: 'Jobs', n: jobs.offers.length }, { id: 'crew', label: 'Crew', n: p?.recruits.length ?? 0 },
+    { id: 'trade', label: 'Trade', n: 0 }, { id: 'jobs', label: 'Jobs', n: jobs.offers.length + jobs.handIn.length }, { id: 'crew', label: 'Crew', n: p?.recruits.length ?? 0 },
     ...(p?.info?.services.includes('Blueprints') ? [{ id: 'blueprints' as const, label: 'Blueprints', n: p.info.blueprints.filter((b) => !b.known).length }] : []),
     ...(p?.info?.yard ? [{ id: 'yard' as const, label: 'Shipyard', n: 0 }] : []),
   ]);
@@ -34,7 +35,7 @@
     <small class="role">{p?.role ?? ''}</small>
     <span class="chip" data-testid="station-credits" title="Your credits">₵ {trade.credits}</span>
   {/snippet}
-  <div class="tabs" role="tablist">
+  <div class="tabs" role="tablist" data-lesson={anchor('station.tabs')}>
     {#each tabs as t (t.id)}
       <button role="tab" aria-selected={tab === t.id} class:on={tab === t.id} data-testid="station-tab-{t.id}" onclick={() => (tab = t.id)}>{t.label}{#if t.n}<span class="n">{t.n}</span>{/if}</button>
     {/each}
@@ -47,6 +48,7 @@
     <div class="body">
     {#if jobs.here === null}<p class="none">Jobs cannot be taken now.</p>
     {:else if !jobs.offers.length}<p class="none">No work posted here.</p>{/if}
+    {#if jobs.handIn.length}<JobCards {api} {jobs} list="handIn" />{/if}
     <JobCards {api} {jobs} list="offers" />
     <p class="note">You hold {jobs.active.length}/{jobs.max} jobs. The jobs button in the top bar lists them.</p>
     </div>
@@ -61,7 +63,7 @@
 
 <style>
   .body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-  .role { color: #9fd6ea; font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .role { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
   .chip { padding: 2px 8px; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; font: inherit; letter-spacing: 0; }
   .tabs { flex: none; display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
   .tabs button { flex: 1; background: transparent; border: 0; border-bottom: 2px solid transparent; min-height: 32px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }

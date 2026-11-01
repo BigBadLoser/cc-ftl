@@ -40,6 +40,8 @@ function suits(sim: Sim, f: Fleet, id: string): boolean {
     case 'trader': return structureKinds(sim, id).station;
     case 'miner': return structureKinds(sim, id).ore;
     case 'patrol': return nodeOf(sim, id)?.faction === f.faction;
+    // A route guard keeps to its own space.
+    case 'pirate': return !sim.content.galaxy?.factions[f.faction]?.guardsRoutes || nodeOf(sim, id)?.faction === f.faction;
     default: return true;
   }
 }
@@ -64,7 +66,8 @@ function targets(sim: Sim, f: Fleet, any = false): string[] {
 function hunt(sim: Sim, f: Fleet, turn: number): string | null {
   if (!ARMED.includes(f.role) || rnd(sim, f, turn, SALT.hunt) >= HUNT_CHANCE) return null;
   const mine = fleetPower(f);
-  const here = targets(sim, f, true);
+  const guard = !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes;
+  const here = targets(sim, f, true).filter((n) => !guard || nodeOf(sim, n)?.faction === f.faction);
   const prey = new Set<string>();
   for (const g of sim.galaxy.fleets) {
     if (g === f || !g.ships.length || g.node === f.node || !here.includes(g.node) || !wouldFight(sim, f, g)) continue;

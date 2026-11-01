@@ -44,7 +44,7 @@ export interface FactionSpecialityDef {
   shipyard?: { capMult?: number; tilePrice?: number };
 }
 
-/** How two factions stand to each other: at war they fight on sight; allied is reserved for the pirate factions of phase 2b. */
+/** How two factions stand to each other: at war they fight on sight; allied (the zealots and the Rogue AI) never fight, and overrides `alwaysHostile`. */
 export type Stance = 'war' | 'neutral' | 'allied';
 
 /**
@@ -78,7 +78,22 @@ export interface GalaxyFactionDef {
    * Claim on territory seeds: the weight of owning a seed whose danger tier is in range, and how far its space reaches
    * from the seed (default TERRITORY_REACH). Absent = holds no territory.
    */
-  territory?: { weight: number; danger?: DangerRange; reach?: number };
+  territory?: {
+    weight: number;
+    danger?: DangerRange;
+    reach?: number;
+    /**
+     * It does not claim seeds outright but shares out the seeds of another faction (the raider, cartel and mercenary factions share the Scrapper Clans' pirate
+     * space): a seed that faction wins is re-drawn among it and its sharers, by `weight`.
+     */
+    shares?: string;
+    /**
+     * It takes open or pirate seeds next to a seed of this faction (the zealots, beside the machines): each such seed gives it cells with chance `weight` (0..1),
+     * at most `max` (default 1) neighbouring cells. Neither this nor `shares` moves a government's or corporation's map.
+     */
+    near?: string;
+    max?: number;
+  };
   /** Station kinds (StructureDef ids) it builds in its own sectors, weighted. */
   stations?: readonly Weighted[];
   /** Standing before any reputation is earned. */
@@ -93,6 +108,11 @@ export interface GalaxyFactionDef {
   home?: true;
   /** The fleets its ports field: which roles, and each role's group budget. Absent = no ships of its own. */
   fleet?: FactionFleetDef;
+  /**
+   * Guards its routes (the cartel): its armed fleets interdict only inside its own territory, and keep to it when they hunt; elsewhere they
+   * hail like traders.
+   */
+  guardsRoutes?: true;
 }
 
 /**
@@ -106,6 +126,8 @@ export interface FleetGroupDef {
   budget: readonly Weighted<number>[];
   sizes: readonly Weighted<ShipSize>[];
   maxShips: number;
+  /** A hired escort (roster.ts): with `chance` the group gains one more ship, built and named by `faction` (the cartel's mercenaries). */
+  escort?: { faction: string; chance: number };
 }
 
 export interface FactionFleetDef {

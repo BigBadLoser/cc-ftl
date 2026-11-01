@@ -1,8 +1,6 @@
-import { releaseBedClaim } from '../crew/beds';
 import { CrewC, DeadC, PositionC, type Crew } from '../crew/components';
-import { releaseAssignment } from '../crew/helpers';
+import { abortTask } from '../ai/task';
 import { FighterC } from '../fight/components';
-import { dropCarried } from '../items/stacks';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { StunC } from './components';
@@ -10,9 +8,7 @@ import { freeze, speciesOf } from './core';
 
 /** Stop a crew member in place: job, bed claim, load and fight dropped; activity 'inert'. */
 export function haltCrew(sim: Sim, id: number): void {
-  releaseAssignment(sim, id);
-  releaseBedClaim(sim, id);
-  dropCarried(sim, id);
+  abortTask(sim, id, 'halted');
   const f = sim.world.get(id, FighterC);
   if (f) Object.assign(f, { mode: 'idle', target: 0, ordered: 0 });
   const pos = sim.world.get(id, PositionC);

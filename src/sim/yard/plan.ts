@@ -9,7 +9,9 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { playerItems, playerShip } from '../trade/player';
 import { ASTEROID_GAP, REGION_PAD } from '../tuning';
+import { boxOf, enclosedFloor } from './enclose';
 import { yardPrice, yardService, type YardService } from './rules';
+import { hullFootprint, newViolations, planViolations } from './width';
 import { inRowOrder, pickSection, rowRanks, type Rim } from './rows';
 import { HullPlanC, type YardMoney } from './types';
 
@@ -36,14 +38,6 @@ function dockApproaches(sim: Sim, ship: number): Set<string> {
     if (collar) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) out.add(key(collar.x + dx, collar.y + dy));
   }
   return out;
-}
-
-function boxOf(tiles: readonly Tile[], by: number): Rect {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const t of tiles) {
-    x0 = Math.min(x0, t.x); y0 = Math.min(y0, t.y); x1 = Math.max(x1, t.x); y1 = Math.max(y1, t.y);
-  }
-  return { x: x0 - by, y: y0 - by, w: x1 - x0 + 1 + 2 * by, h: y1 - y0 + 1 + 2 * by };
 }
 
 function union(a: Rect, b: Rect): Rect {
@@ -95,50 +89,6 @@ function reach(sim: Sim, ship: number, tiles: readonly Tile[]): { connected: Til
     }
   }
   return { connected: queue, loose: tiles.filter((t) => !seen.has(key(t.x, t.y)) && !clear.has(key(t.x, t.y))), blocked };
-}
-
-/** Space tiles the hull tiles (with the ship's own structure) shut in: the floor the yard lays. */
-function enclosedFloor(sim: Sim, hull: readonly Tile[]): Tile[] {
-  if (hull.length === 0) return [];
-  const grid = sim.sector.grid;
-  const box = boxOf(hull, 1);
-  const at = (x: number, y: number): number => (y - box.y) * box.w + (x - box.x);
-  // 1 = shuts the floor in: a hull tile of this section, other structure (an open truss shuts nothing in), other ships' tiles
-  const shut = new Uint8Array(box.w * box.h);
-  for (const t of hull) shut[at(t.x, t.y)] = 1;
-  for (let y = box.y; y < box.y + box.h; y++) {
-    for (let x = box.x; x < box.x + box.w; x++) {
-      if (shut[at(x, y)]) continue;
-      const k = grid.get('struct', x, y);
-      if ((k !== Struct.Space && k !== Struct.Beam) || (k === Struct.Space && grid.get('ship', x, y) !== 0)) shut[at(x, y)] = 1;
-    }
-  }
-  const outside = new Uint8Array(box.w * box.h);
-  const stack: number[] = [];
-  const push = (x: number, y: number): void => {
-    if (x < box.x || y < box.y || x >= box.x + box.w || y >= box.y + box.h || outside[at(x, y)] || shut[at(x, y)]) return;
-    outside[at(x, y)] = 1;
-    stack.push(x, y);
-  };
-  for (let x = box.x; x < box.x + box.w; x++) {
-    push(x, box.y);
-    push(x, box.y + box.h - 1);
-  }
-  for (let y = box.y; y < box.y + box.h; y++) {
-    push(box.x, y);
-    push(box.x + box.w - 1, y);
-  }
-  while (stack.length) {
-    const y = stack.pop() as number;
-    const x = stack.pop() as number;
-    push(x + 1, y);
-    push(x - 1, y);
-    push(x, y + 1);
-    push(x, y - 1);
-  }
-  const out: Tile[] = [];
-  for (let y = box.y; y < box.y + box.h; y++) for (let x = box.x; x < box.x + box.w; x++) if (!shut[at(x, y)] && !outside[at(x, y)]) out.push({ x, y });
-  return out;
 }
 
 /** The ship's size (interior area) once these hull tiles and this floor are built. */
@@ -199,7 +149,7 @@ export function viewPlan(sim: Sim, ship = playerShip(sim)): HullView {
 }
 
 /** Why a quote cannot be bought; the first that applies. */
-export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'notAdjacent' | 'crowded';
+export type YardError = 'noYard' | 'noShip' | 'noTiles' | 'narrowHull' | 'narrowCut' | 'notAdjacent' | 'crowded';
 
 /**
  * A yard's quote for the plan. First pass: a truss on every reachable planned tile that has none (the planning fee, outside the cap). Second pass: the tiles it
@@ -291,10 +241,15 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   if (!service || !def) return { ...base, error: 'noYard' };
   if (!ship || !sim.world.get(ship, ShipC)) return { ...base, error: 'noShip' };
   if (view.tiles.length === 0) return { ...base, error: 'noTiles' };
+  if (planViolations(sim, ship, view.tiles).length > 0) return { ...base, error: 'narrowHull' };
   if (view.reachable.length === 0) return { ...base, error: 'notAdjacent' };
   const own = shipRect(sim.world.get(ship, ShipC) as Ship);
   const rank = rowRanks(sim, ship, union(own, boxOf(view.reachable, 1)));
-  const { walls, floor } = pickSection(view.reachable, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w));
+  // A visit's section may not leave a narrow strip behind (the 3-wide rule): the cut only takes shapes the hull plus the section keeps wide enough.
+  const hull = hullFootprint(sim, ship);
+  const wide = (w: readonly Tile[], f: readonly Tile[]): boolean => newViolations(hull, [...w, ...f]).length === 0;
+  const { walls, floor } = pickSection(view.reachable, view.floor, service.tier.cap, rank, rimOf(sim, ship), (w) => enclosedFloor(sim, w), wide);
+  if (walls.length === 0) return { ...base, error: 'narrowCut' };
   // The planning pass trusses the whole footprint that is still open space: every reachable planned tile and all the floor the plan encloses (also the
   // floor beyond this visit's section), so a ship left half built reads as scaffolding all the way. Open trusses are walkable on EVA, so the crew reach all of it.
   const gaps = gapsFor(sim, walls, floor, dockApproaches(sim, ship));
@@ -304,8 +259,8 @@ export function quoteYard(sim: Sim, station: number, ship = playerShip(sim)): Ya
   const trusses = inRowOrder([...footprint.values()], rank);
   const after = areaWith(sim, ship, walls, floor);
   const fee = { credits: Math.ceil(trusses.length * def.trussFee), metal: 0 };
-  const hull = yardPrice(sim, service, walls.length + floor.length);
-  const cost = { credits: hull.credits + fee.credits, metal: hull.metal };
+  const built = yardPrice(sim, service, walls.length + floor.length);
+  const cost = { credits: built.credits + fee.credits, metal: built.metal };
   const planned = new Set(view.tiles.map((t) => key(t.x, t.y)));
   const rect = union(own, boxOf([...view.reachable, ...walls, ...floor], 1));
   const out: YardQuote = {

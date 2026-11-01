@@ -32,17 +32,35 @@ function legacyWorld(sim: Sim): unknown {
   const stores = { ...data.stores };
   const bodies = new Map((stores.body ?? []) as [number, Body][]);
   delete stores.body;
+  // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.
+  delete stores.bedOwner;
+  // The crew-AI components (Phase 1 of docs/CREW_AI.md) mirror the legacy ones: not part of the legacy shape.
+  for (const k of ['task', 'intent', 'interrupt']) delete stores[k];
+  // Skill XP from routine work came after the refactor: crew earn it as they work, so the store is not part of the legacy shape.
+  delete stores.skillXp;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
-    const { pilot, cruisePilot, cruiseEvasion, ...rest } = raw as Record<string, unknown>;
+    // `heat` (combat heat, #185) is a new empty field in the same way.
+    const { pilot, cruisePilot, cruiseEvasion, heat, ...rest } = raw as Record<string, unknown>;
+    void heat;
     void pilot;
     void cruisePilot;
     void cruiseEvasion;
+    return [id, rest];
+  });
+  // The telegraph's `commit` on weapons came with the incoming-fire marker (#180): not part of the legacy shape.
+  stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
+    // `mode`, `restore` and `once` (per-weapon fire modes, #169) are new fields too.
+    const { commit, mode, restore, once, ...rest } = raw as Record<string, unknown>;
+    void commit;
+    void mode;
+    void restore;
+    void once;
     return [id, rest];
   });
   // `freeSince` on operate jobs came with station relief: not part of the legacy shape.
@@ -247,4 +265,24 @@ describe('sector refactor equivalence', () => {
 });
 
 // Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-const EXPECTED = { combat: 'c28a5816', disaster: 'fa40fdbe' };
+// Round 1 merge: combat 7dbce8c4 is the combination of the two repins below and nothing else (with the #168 weapon values reverted it gives a01f1f5a; the disaster hash is #181's).
+// Repinned for the charge-time rebalance (#168): the burst laser (5 s from 8), mass driver (8 s from 12) and missile (7 s from 10) charge faster and the laser's crew damage is 5 (from 8), so the starter-vs-raider run's volleys land at other ticks.
+// Repinned for automatic damage control (#181): every working role now does damage control at priority 1 (was 2; the hashed world holds crew priorities, so
+// the combat hash changes by that alone: with the old role table it still gives c28a5816), and crew seal hull breaches by themselves (a wall build in the
+// firefighting category), which changes the fire and breach run.
+// Repinned for combat heat (#185): shields regenerate 1.4x faster for every ship (SHIELD_REGEN_MULT, so layers come back at other ticks), and the raider overcharges
+// its weapons and vents its heat (the player ship does neither without a command). The new `heat` field on the combat component is dropped in legacyWorld, so the
+// disaster hash (no fight) is unchanged.
+// Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks; on main alone it pinned b0b4e040.
+// Merged with combat round 1 it is e65e90fe; the disaster hash is unchanged by the bed owners.
+// Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it (and by the empty `boardHold` store).
+// Crew traits (#242): the surrender rally reads the `surrendered` store every tick, which leaves it present but empty in runs
+// where nobody surrendered; dropped like the other new empty stores, so both hashes are unchanged.
+// Repinned for mining as income (#222): the starter crate now carries water and oxygen (the hashed world holds storage, so both hashes change by that
+// alone), the galley's rations take water, and life support burns bottled oxygen to refill a room short of air (the breach run).
+// Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
+// draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run. On the
+// pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
+// Repinned `combat` for work XP (#250): the crew earn gunnery, piloting and shielding XP in the fight and a level gained inside the run changes who hits
+// (only the player's side earns XP; the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
+const EXPECTED = { combat: 'ba8f9e66', disaster: '2cf7530b' };

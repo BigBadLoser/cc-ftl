@@ -82,6 +82,11 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 - `draw.ts`: sheet layout, the detail view, diversity metrics, and the `faction:family` filter.
 - `views.ts`: the silhouette, assembly and structure views.
 - `live.ts`, `index.html`: the browser viewer.
+- `templates.ts`: sheets of hand-drawn templates (starter ships and their variants), the iso view and the board.
+- `templateDraw.py`: a drawing aid for hand-drawn templates (rooms, outlines, doors, beams, containers, modules).
+- `starters/`: the starter ship variants (#241): `<ship>.py` draws the current round, `<ship>.ts` is the generated variant
+  file the CLI reads, `<ship>R3.*`, `<ship>R4.*` and `<ship>R5.*` keep earlier rounds for reference (not tested), `picks.ts` lists the shipped
+  starters, `kits.ts` and `variants*.test.ts` keep every current variant playable.
 
 ## How to iterate
 
@@ -98,6 +103,37 @@ node tools/shipgen/cli.js faction.drones:picket --depth 9 --count 12 --views str
 
 - **Output:** `<faction>-d<depth>.png` (detail), `-silhouette.png`, `-assembly.png`, `-structure.png`, plus
   `<faction>-d<depth>.txt`.
+
+### Hand-drawn templates (starter ships)
+
+The same sheets work for hand-made templates, so a layout can be iterated without starting the game. The generator and
+its grammars play no part: every room, door and module is placed by hand.
+
+```sh
+# A board: one PNG, a column per variant, rows iso / silhouette / structure / detail, a label under each cell
+node tools/shipgen/cli.js --templates tools/shipgen/starters/lancer.ts --board --out /tmp/sheets/starters
+# Or one PNG per view (--views detail,structure,silhouette,iso; --scale sets px per tile)
+node tools/shipgen/cli.js --templates tools/shipgen/starters/picks.ts --views iso,detail --out /tmp/sheets/starters
+```
+
+- **Variant files** export `variants: { name, kind?, note?, template }[]` (`kind`: favourite, riff, new or shipped,
+  shown in the label). The CLI prints each variant's size and tile count, and every `validateTemplate` problem, with the
+  coordinates of unreachable tiles when there are any.
+- **Iso view:** an approximation of the in-game camera (x runs down-right, y down-left, so the engines on the east hull
+  face the viewer): the hull slab, floors, walls, and modules as blocks of their rough height and colour (engines orange,
+  reactors yellow, weapons pink, shields cyan, airlocks white, containers orange, consoles blue). Use it to judge a
+  silhouette from the game's angle; the in-game screenshot is still the final check.
+- **Drawing:** `tools/shipgen/starters/<ship>.py` builds the variants with `tools/shipgen/templateDraw.py`
+  (`Ship.room`, `hull` from column extents for stepped or tapered outlines, `vline` / `hline` interior walls, `door`,
+  `beam`, `box` for a clamped container, `Shift` to place a block at an offset, `section` to head a group of modules
+  with a comment, `show` to print the grid with a coordinate ruler). `starters/common.py` adds `room(s, name, x0, y0, x1, y1)`:
+  a walled room (walls forced even inside an outline) with `row()` to line furniture along its north or south wall. `python3 tools/shipgen/starters/<ship>.py`
+  rewrites `<ship>.ts`; then render the board. Edit the `.py`, not the generated `.ts`.
+- **Playability:** `tools/shipgen/starters/variants.test.ts` checks every variant against the starter ships' rules
+  (valid template, the ship's kit, beds, galley, helm, life support, airlock, hull load under 0.85);
+  `variants.slow.test.ts` runs each for a minute (crew alive, everything powered, every room lit and breathable).
+- **Shipping a variant:** copy its template into `src/content/ships/<ship>.ts` (the starter files there are plain,
+  hand-written templates; `starterShips.test.ts` covers them).
   - The `.txt` has one line per seed: grammar profile, size, metrics, attempts, OK or problems, and rejected
     attempts.
   - It also has a `diversity:` header line.

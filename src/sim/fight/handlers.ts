@@ -5,6 +5,7 @@ import { EmbarkOrderC } from '../vehicles/components';
 import { clearPath } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { FighterC, type Fighter } from './components';
+import { endSabotage } from '../boarding/sabotage';
 import { manStation } from './man';
 import { dropWeapon, orderEquip } from './equip';
 import { isCombatReady, isHostile } from './relations';
@@ -43,6 +44,7 @@ export const fightHandlers: { [T in FightCommand]: Handler<T> } = {
     const tp = sim.world.get(cmd.target, PositionC);
     const there = sac ? sac.ship : tp ? shipIdOf(sim, tp) : 0;
     if (!here || shipIdOf(sim, here) !== there) return reject(sim, cmd.type, 'otherShip');
+    endSabotage(sim, cmd.id, 'interrupted'); // an explicit attack order replaces a sabotage order (automatic defence only pauses it)
     fighter(sim, cmd.id).ordered = cmd.target;
     sim.world.remove(cmd.id, EmbarkOrderC);
     drafted.target = null; // attacking replaces a walk order
@@ -56,6 +58,7 @@ export const fightHandlers: { [T in FightCommand]: Handler<T> } = {
   'crew.equip': (sim, cmd) => {
     const reason = orderEquip(sim, cmd.id, cmd.item);
     if (reason) reject(sim, cmd.type, reason);
+    else endSabotage(sim, cmd.id, 'interrupted'); // fetching a weapon is a new order too
   },
   'crew.unequip': (sim, cmd) => {
     if (!sim.world.has(cmd.id, CrewC)) return reject(sim, cmd.type, 'noCrew');

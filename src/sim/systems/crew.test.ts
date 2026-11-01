@@ -141,7 +141,7 @@ describe('crew jobs', () => {
   it('tired crew sleeps, wakes, then resumes work', () => {
     const sim = make();
     const id = spawn(sim, 1, 1, construction, 19);
-    sim.step();
+    run(sim, 4); // the sleep decision is staggered over up to 3 ticks
     expect(sim.world.get(id, CrewC)?.activity).toBe('sleeping');
     build(sim, 3, 1);
     run(sim, 50);

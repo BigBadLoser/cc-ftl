@@ -7,6 +7,7 @@ import { tierModules } from './tiers';
 import { research, researchBands } from './research';
 import { recipes } from './recipes';
 import { roles } from './roles';
+import { traits } from './traits';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
 import { species } from './species';
@@ -19,19 +20,22 @@ import { galaxy } from './galaxy';
 import { trade } from './trade';
 import { stations } from './stations';
 import { yard } from './yard';
+import { blackMarkets } from './blackMarkets';
 import { creatures } from './creatures';
 import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
+import { starterShips } from './ships/starterShips';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
 
 const modules = { ...baseModules, ...tierModules };
 
 export const content = {
-  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard },
+  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard, ...Object.fromEntries(starterShips.map((s) => [s.id, s.template])) },
   roles,
   modules,
   species,
   crewNames,
+  traits,
   items,
   recipes,
   structCosts,
@@ -44,6 +48,7 @@ export const content = {
   galaxy,
   stations,
   yard,
+  blackMarkets,
   trade,
   creatures,
   ores,

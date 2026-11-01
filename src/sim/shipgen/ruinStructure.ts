@@ -1,3 +1,4 @@
+import { footprintFromTiles, openingOf } from '../footprint';
 import { at, components, heavy, isHull, modTiles, N4, put, touchesSpace } from './ruinGrid';
 import type { RuinCtx } from './ruinTypes';
 import { tearOff } from './ruinContainers';
@@ -6,12 +7,14 @@ import { tearOff } from './ruinContainers';
  * Structural damage. Combat wrecks take a few clustered impacts on one flank: hull blown out, inner walls and doors torn,
  * deck plating gone at the core of each blast. Old derelicts decay from the outside: many small hull breaches spread
  * along the skin, a few rotted deck plates beside them. Heavy ruins lose a whole section (a ragged shear across the
- * hull). Whatever no longer touches the largest piece drifts away, so the remainder is always one structure.
+ * hull). Whatever no longer touches the largest piece drifts away, so the remainder is always one structure. Blasts
+ * and shears leave slivers, so the wreck is then opened by a 3x3 square (footprint width rule: nothing under 3 tiles wide;
+ * see sim/footprint.ts), which can split it again, so the largest piece is taken once more.
  */
 export function structureStage(c: RuinCtx): void {
   if (c.meta.cause === 'combat') impacts(c);
   else decay(c);
-  keepLargest(c);
+  settle(c);
   if (c.intensity >= (c.meta.cause === 'combat' ? 0.6 : 0.75) && c.rng.chance(0.4 + c.intensity * 0.55)) {
     // A shear (with whatever it cuts loose) may take at most MAX_SHEAR of the hull; otherwise try a shallower cut once.
     const solid = (): number => c.cells.filter((ch) => ch !== '.').length;
@@ -19,7 +22,7 @@ export function structureStage(c: RuinCtx): void {
     const snap = { cells: c.cells.slice(), sheared: c.meta.sheared };
     for (const depth of [1, 0.5]) {
       shear(c, depth);
-      keepLargest(c);
+      settle(c);
       if (solid() >= before * (1 - maxShear(c))) break;
       c.cells.splice(0, c.cells.length, ...snap.cells);
       c.meta.sheared = snap.sheared;
@@ -126,6 +129,26 @@ function shear(c: RuinCtx, depth: number): void {
     }
   }
   c.meta.sheared += removed;
+}
+
+/** Keep the largest piece, drop what the 3x3 opening takes (parts under 3 tiles wide), and keep the largest piece again. */
+function settle(c: RuinCtx): void {
+  keepLargest(c);
+  openWidth(c);
+  keepLargest(c);
+}
+
+/** Open the hull (every tile but struts, `=`) by a 3x3 square: each hull tile of a part narrower than 3 goes to space. Beams may stay thin. */
+function openWidth(c: RuinCtx): void {
+  const tiles: { x: number; y: number }[] = [];
+  for (let i = 0; i < c.cells.length; i++) if (c.cells[i] !== '.' && c.cells[i] !== '=') tiles.push({ x: i % c.width, y: Math.floor(i / c.width) });
+  const f = footprintFromTiles(tiles);
+  const open = openingOf(f);
+  for (let i = 0; i < f.data.length; i++) {
+    if (!f.data[i] || open.data[i]) continue;
+    c.cells[(f.y0 + Math.floor(i / f.w)) * c.width + f.x0 + (i % f.w)] = '.';
+    c.meta.sheared++;
+  }
 }
 
 function keepLargest(c: RuinCtx): void {

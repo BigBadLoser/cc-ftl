@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
+import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, isContraband, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
 import { content } from './index';
 import { shipIdOf } from '../sim/regions';
 import { shipIds } from '../sim/regions';
@@ -76,7 +76,12 @@ describe('pricing', () => {
           sim.story.reputation[content.trade.factions[faction as keyof typeof content.trade.factions].reputation] = rep;
           for (const [item] of traded) {
             const sell = unitPrice(sim, station, item, 'sell')!;
-            const buy = unitPrice(sim, station, item, 'buy')!;
+            const buy = unitPrice(sim, station, item, 'buy');
+            // Only a black market buys contraband; a plain trader does not buy it at all.
+            if (buy === null) {
+              expect(isContraband(sim, item), `${profile} ${faction} ${item}`).toBe(true);
+              continue;
+            }
             expect(buy, `${profile} ${faction} rep ${rep} ${item}`).toBeLessThanOrEqual(sell);
             expect(buy).toBeGreaterThanOrEqual(1);
           }
@@ -89,8 +94,9 @@ describe('pricing', () => {
     const { sim, station } = withStation();
     const t = sim.world.get(station, TraderC)!;
     // Station, civilian: spread only.
-    expect(unitPrice(sim, station, 'item.metal', 'sell')).toBe(Math.round(6 * 1.25));
-    expect(unitPrice(sim, station, 'item.metal', 'buy')).toBe(Math.round(6 * 0.6));
+    const metal = sim.content.items['item.metal']!.price!; // the base price (8 since the mining economy, #222)
+    expect(unitPrice(sim, station, 'item.metal', 'sell')).toBe(Math.round(metal * 1.25));
+    expect(unitPrice(sim, station, 'item.metal', 'buy')).toBe(Math.round(metal * 0.6));
     // Trader kind: the liner pays more for food (tag mod) and sells it cheaper.
     t.profile = 'trader.liner';
     expect(unitPrice(sim, station, 'item.ration', 'buy')).toBe(Math.round(5 * 0.6 * 1.25));
@@ -294,6 +300,7 @@ describe('trade state', () => {
     const raw = JSON.parse(serialize(sim)) as Record<string, unknown>;
     delete raw['trade'];
     const loaded = deserialize(JSON.stringify(raw), content);
-    expect(loaded.trade).toEqual({ credits: 0, hails: [], offers: [], deals: [], nextId: 1 });
+    // Loading sets the high-water mark (#166) from what the save holds: none here.
+    expect(loaded.trade).toEqual({ credits: 0, bestCredits: 0, hails: [], offers: [], deals: [], nextId: 1 });
   });
 });

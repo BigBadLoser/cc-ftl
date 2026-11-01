@@ -3,6 +3,7 @@ import { Rng } from '../rng';
 import type { Sim } from '../sim';
 import { CombatC } from '../combat/components';
 import { reputationOf } from '../story/state';
+import { augmentedCrew } from './augmentation';
 import { TraderC, type Trader, type TraderDef, type TradeFactionDef } from './types';
 
 /** Stable 32-bit mix of integers (seed, identity), so a trader's stock does not depend on when it is first hailed. */
@@ -101,7 +102,7 @@ export function ensureTrader(sim: Sim, id: number): Trader | null {
 
 export interface HailVerdict {
   answers: boolean;
-  /** '' when it answers, else 'silent' (wreck, fled), 'noTrade' (nothing to trade with), 'weaponsHot' or 'hostile'. */
+  /** '' when it answers, else 'silent' (wreck, fled), 'noTrade' (nothing to trade with), 'weaponsHot', 'hostile'. */
   reason: string;
   /** relation + reputation (+ trader kind): >= 0 answers. */
   score: number;
@@ -118,7 +119,8 @@ export function hailVerdict(sim: Sim, id: number): HailVerdict {
   if (!cfg || !t) return { answers: false, reason: 'noTrade', score: 0 };
   if (ship && ship.state !== 'active' && ship.state !== 'disabled') return { answers: false, reason: 'silent', score: 0 };
   const fac: TradeFactionDef | undefined = cfg.factions[t.faction];
-  const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0);
+  const augmented = fac?.augmentBonus ? fac.augmentBonus * augmentedCrew(sim) : 0;
+  const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0) + augmented;
   if (ship && aimingAtPlayer(sim, id)) return { answers: false, reason: 'weaponsHot', score };
   return { answers: score >= 0, reason: score >= 0 ? '' : 'hostile', score };
 }

@@ -333,18 +333,20 @@ describe('trusses', () => {
   it('are still part of the plan, and taking one down with the normal deconstruct job removes that tile from the plan', () => {
     const { sim, me } = yardGame();
     const s = sim.world.get(me, ShipC)!;
-    const tile = { x: s.x + 8, y: s.y }; // open margin against the hull
-    planHull(sim, me, [tile, { x: s.x + 9, y: s.y }]);
+    const tile = { x: s.x + 8, y: s.y }; // open margin against the hull (the block's bottom-left)
+    const block = rect(sim, me, 8, -2, 3, 3); // a 3 x 3 block: the plan must be at least 3 wide
+    const others = block.filter((t) => t.x !== tile.x || t.y !== tile.y);
+    planHull(sim, me, block);
     sim.enqueue({ type: 'debug.setStruct', ship: me, x: tile.x, y: tile.y, kind: Struct.Beam });
     sim.step();
-    expect(plannedTiles(sim, me)).toHaveLength(2); // the trussed tile is still planned
+    expect(plannedTiles(sim, me)).toHaveLength(9); // the trussed tile is still planned
     expect(viewPlan(sim, me).trussed).toEqual([tile]);
-    expect(viewPlan(sim, me).connected).toEqual([{ x: s.x + 9, y: s.y }]); // nothing is drawn over a truss
+    expect(viewPlan(sim, me).connected).toHaveLength(8); // nothing is drawn over a truss
     sim.enqueue({ type: 'job.deconstruct', ship: me, x: tile.x, y: tile.y });
     run(sim, 1500, () => shipGrid(sim, me)!.get('struct', tile.x, tile.y) === Struct.Space);
     expect(shipGrid(sim, me)!.get('struct', tile.x, tile.y)).toBe(Struct.Space);
-    expect(plannedTiles(sim, me)).toEqual([{ x: s.x + 9, y: s.y }]);
-    expect(sim.world.get(me, HullPlanC)!.tiles).toEqual([{ x: s.x + 9, y: s.y }]);
+    expect(plannedTiles(sim, me)).toEqual(others);
+    expect(sim.world.get(me, HullPlanC)!.tiles).toEqual(others);
   });
 });
 
@@ -352,7 +354,7 @@ describe('shipyard: cost of a big plan', () => {
   it('quotes a very large plan in well under 50 ms (the Shipyard tab re-quotes while it is open)', () => {
     const { sim, station, me } = yardGame();
     planHull(sim, me, outline(sim, me, -20, -20, 60, 40)); // 196 tiles of outline round 1700 floor
-    const times = [0, 1, 2].map(() => {
+    const times = [0, 1, 2, 3, 4, 5, 6].map(() => { // best of 7: this is a wall-clock bound, and the box is shared by parallel workers
       const t = performance.now();
       const q = quoteYard(sim, station, me);
       expect(q.walls.length + q.floor.length).toBeLessThanOrEqual(40);

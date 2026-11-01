@@ -57,10 +57,11 @@ export const inRowOrder = <T extends Tile>(tiles: readonly T[], rank: (x: number
 export function pickSection(
   connected: readonly Tile[], fullFloor: readonly Tile[], cap: number, rank: (x: number, y: number) => number, edge: (x: number, y: number) => Rim,
   shut: (walls: readonly Tile[]) => Tile[],
+  wide: (walls: readonly Tile[], floor: readonly Tile[]) => boolean = () => true,
 ): { walls: Tile[]; floor: Tile[] } {
   const ordered = inRowOrder(connected, rank);
   const whole = shut(ordered);
-  if (ordered.length + whole.length <= cap) return { walls: ordered, floor: whole };
+  if (ordered.length + whole.length <= cap && wide(ordered, whole)) return { walls: ordered, floor: whole };
   const top = Math.max(0, ...fullFloor.map((t) => rank(t.x, t.y)));
   const planned = new Set(connected.map((t) => key(t.x, t.y)));
   for (let k = top; k >= 1; k--) {
@@ -69,11 +70,12 @@ export function pickSection(
     if (cross.length === 0 || near.length + cross.length >= cap) continue;
     const walls = inRowOrder([...near, ...cross], rank);
     const floor = shut(walls);
-    if (floor.length > 0 && walls.length + floor.length <= cap) return { walls, floor };
+    if (floor.length > 0 && walls.length + floor.length <= cap && wide(walls, floor)) return { walls, floor };
   }
-  return closedRect(fullFloor, cap, rank, edge, shut) ?? (() => {
+  return closedRect(fullFloor, cap, rank, edge, shut, wide) ?? (() => {
     const walls = ordered.slice(0, cap); // an open outline shuts nothing in: nothing to seal, so just the nearest tiles
-    return { walls, floor: shut(walls) };
+    const floor = shut(walls);
+    return wide(walls, floor) ? { walls, floor } : { walls: [], floor: [] }; // nothing the cap pays for stays wide enough: no section
   })();
 }
 
@@ -86,6 +88,7 @@ export type Rim = 'wall' | 'ship' | 'no';
  */
 function closedRect(
   floor: readonly Tile[], cap: number, rank: (x: number, y: number) => number, edge: (x: number, y: number) => Rim, shut: (walls: readonly Tile[]) => Tile[],
+  wide: (walls: readonly Tile[], floor: readonly Tile[]) => boolean,
 ): { walls: Tile[]; floor: Tile[] } | null {
   if (floor.length === 0) return null;
   const x0 = Math.min(...floor.map((t) => t.x)), x1 = Math.max(...floor.map((t) => t.x));
@@ -124,7 +127,8 @@ function closedRect(
       for (let x = x0; x + w - 1 <= x1; x++) {
         if (!blockIsFloor(x, y, w, h)) continue;
         const cand = rectSection(x, y, w, h, edgeAt, rank, cap);
-        if (cand && (!best || cand.area > best.area || (cand.area === best.area && (cand.walls.length < best.walls.length || (cand.walls.length === best.walls.length && cand.near < best.near))))) best = cand;
+        const better = !!cand && (!best || cand.area > best.area || (cand.area === best.area && (cand.walls.length < best.walls.length || (cand.walls.length === best.walls.length && cand.near < best.near))));
+        if (cand && better && wide(cand.walls, shut(cand.walls))) best = cand;
       }
     }
   }

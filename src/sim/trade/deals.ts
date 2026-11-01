@@ -3,11 +3,39 @@ import { VehicleC } from '../vehicles/components';
 import { bumpStat } from '../story/goals';
 import { FUEL_ITEM } from '../galaxy/fuel';
 import { settlement, type OfferCheck } from './offers';
+import { unitPrice } from './pricing';
 import { TraderC, type Deal, type Offer, type Trader, type Trip } from './types';
 import type { CourierPlan } from './courier';
 import { releaseRecruits } from './recruitLand';
 import { canStart } from './trips';
 import { undock } from '../vehicles/lifecycle';
+import { destroyJob } from '../items/stacks';
+import { JobC } from '../crew/components';
+import { addCredits } from './credits';
+
+/**
+ * Stop crew taking anything more out of a trader's shuttle: remove every haul job that still has to pick up from it (a crew member already
+ * carrying a stack keeps it: those goods have left the hold). Call it before any accounting of what was delivered.
+ */
+export function cancelCourierHauls(sim: Sim, d: Deal): void {
+  if (!d.vehicle) return;
+  for (const id of [...sim.world.query(JobC)]) {
+    const h = sim.world.get(id, JobC)?.haul;
+    if (h && h.phase === 'pickup' && h.src.kind === 'vehicle' && h.src.id === d.vehicle) destroyJob(sim, id);
+  }
+}
+
+/**
+ * Tear down a trader's shuttle when its deal ends early, the one place for it: cancel the pending pickups, then empty the hold (what was
+ * delivered is already out; the rest goes back to the trader's stock in the caller's accounting, and the shuttle is dismissed next tick).
+ * Nothing later in the same tick (the crew work step runs after trade) can take from it. The player's own shuttle keeps its hold.
+ */
+export function closeCourier(sim: Sim, d: Deal): void {
+  if (d.courier !== 'them' || !d.vehicle) return;
+  cancelCourierHauls(sim, d);
+  const v = sim.world.get(d.vehicle, VehicleC);
+  if (v) v.cargo = [];
+}
 
 /** Finished deals kept for the UI's history. */
 export const DEAL_HISTORY = 8;
@@ -49,9 +77,20 @@ export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: Courie
   return deal;
 }
 
+/** Each `get` line's share of the price, fixed now (before the goods leave the trader's stock and move its prices); the shares sum to the balance. */
+function agreedValues(sim: Sim, d: Deal): number[] {
+  const raw = d.get.map((l) => (unitPrice(sim, d.ship, l.item, 'sell') ?? 1) * l.count);
+  const total = raw.reduce((n, v) => n + v, 0);
+  const target = Math.max(0, d.balance);
+  const out = raw.map((v) => (total > 0 ? Math.floor((v * target) / total) : 0));
+  if (out.length > 0) out[out.length - 1] = (out[out.length - 1] as number) + target - out.reduce((n, v) => n + v, 0);
+  return out;
+}
+
 /** Put a deal's current trip in escrow: the payer's credits are held, and the goods the trader sells leave its stock. */
 function holdTrip(sim: Sim, d: Deal, trader: Trader | undefined): void {
   const pay = settlement(d);
+  d.getValue = agreedValues(sim, d);
   if (pay > 0) sim.trade.credits -= pay;
   else if (trader) trader.credits += pay;
   if (trader) for (const l of d.get) takeStock(trader.stock, l.item, l.count);
@@ -80,7 +119,7 @@ export function settleDeal(sim: Sim, d: Deal): boolean {
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) {
     if (trader) trader.credits += d.held;
-  } else if (d.balance < 0 && !d.barter) sim.trade.credits += d.held;
+  } else if (d.balance < 0 && !d.barter) addCredits(sim, d.held);
   const amount = d.barter ? 0 : d.balance;
   d.held = 0;
   sim.events.emit({ type: 'trade.settled', deal: d.id, ship: d.ship, credits: amount });
@@ -126,8 +165,9 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
  * the shuttle already flew them (`lost`: shot down after the exchange; the payer is refunded but the goods are gone).
  */
 export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void {
+  closeCourier(sim, d);
   const trader = sim.world.get(d.ship, TraderC);
-  if (d.balance > 0 && !d.barter) sim.trade.credits += d.held;
+  if (d.balance > 0 && !d.barter) addCredits(sim, d.held);
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;
   if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count);
   touchMarket(sim, trader);

@@ -8,7 +8,7 @@
    * yard prices what it can build on this visit and you buy it), and the running order with its progress and a Send them home button.
    */
   let { api, station, yard: svc, credits, metal }: { api: UiApi; station: number; yard: UiYardService; credits: number; metal: number } = $props();
-  let view = $state<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
+  let view = $state<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
   onMount(() => {
     api.watchYard(station);
     const u = api.yard.subscribe((y) => (view = y));
@@ -83,7 +83,7 @@
   .bar { height: 8px; background: var(--bg); border: 1px solid var(--line); }
   .bar i { display: block; height: 100%; background: var(--cyan); }
   button { min-height: 32px; font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .go { border-color: var(--cyan); background: var(--panel-3); color: var(--text); }
+  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
   .go:disabled { opacity: 0.4; }
   .stop { border-color: var(--red); color: var(--red); }
   .sub { color: var(--dim); font-weight: 400; font-size: 11px; }

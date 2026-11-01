@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { combatRight } from './combatDock';
   import { EDGE_CURSOR, setDragCursor } from './dragCursor';
   import Icon, { type IconName } from './Icon.svelte';
   import { clampRect, EDGES, moveRect, readWindow, resizeRect, writeWindow, type Bounds, type DefaultRect, type Edge, type Rect, type Size } from './floatingWindow';
@@ -10,7 +9,7 @@
    * outside click and Esc, see outsideClick.ts), remembered per `id` for the browser session, and kept on screen.
    * It is always a positioned window, clamped to the viewport at any width (desktop only; no phone layout).
    */
-  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, avoidCombat = true, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
+  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
     id: string; title: string; icon?: IconName;
     /** The smallest size this panel can be dragged to. */
     min: Size;
@@ -26,8 +25,11 @@
     padded?: boolean;
     /** No header of its own: the content brings its own `.ph` heading, which drags the window; only the pin tile is added (`pinRight` px in from the right edge). */
     bare?: boolean; pinRight?: number;
+    /** False hides the pin tile (a panel that belongs to another and closes with it). */
+    pinnable?: boolean;
+    /** Forces the width (a window whose content sets its size, like the inspector growing for a tab); the player's moves keep it. */
+    width?: number | null;
     /** Default spot keeps right of the combat panel while it is docked on the left. */
-    avoidCombat?: boolean;
     z?: number; pinned?: boolean; class?: string;
     titleExtra?: Snippet; actions?: Snippet; children: Snippet;
   } = $props();
@@ -46,9 +48,9 @@
     void vw; void vh;
     return { left: MARGIN, top: hdr() + MARGIN, right: vw - MARGIN, bottom: vh - MARGIN };
   });
-  /** Bounds for the default spot only: right of the combat panel while it is docked. */
+  /** Bounds for the default spot only: clear of the top-right column. */
   const defBounds = $derived<Bounds>({
-    ...(avoidCombat && $combatRight > 0 && $combatRight < bounds.right - min.w ? { ...bounds, left: Math.max(bounds.left, $combatRight) } : bounds),
+    ...bounds,
     clearRight: bounds.right - RIGHT_COLUMN,
   });
 
@@ -56,10 +58,12 @@
   // svelte-ignore state_referenced_locally
   const saved = readWindow(id);
   let stored = $state<Rect | null>(saved.rect);
-  pinned = saved.pinned;
+  // Whether a window can pin never changes either.
+  // svelte-ignore state_referenced_locally
+  pinned = saved.pinned && pinnable;
   let live = $state<Rect | null>(null);
   let elH = $state(0);
-  const base = $derived<DefaultRect>(stored ?? defaultRect(defBounds));
+  const base = $derived.by<DefaultRect>(() => { const r = stored ?? defaultRect(defBounds); return width ? { ...r, w: width } : r; });
   const auto = $derived(stored === null && base.h === 0);
   const bottomAnchored = $derived(auto && base.anchor === 'bottom');
   const rect = $derived.by((): Rect => {
@@ -127,12 +131,12 @@
       <span class="t" data-testid={titleTestId}>{title}</span>
       {@render titleExtra?.()}
       {@render actions?.()}
-      <button class="tile pin" class:on={pinned} title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
+      {#if pinnable}<button class="tile pin" class:on={pinned} title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
         <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
-      </button>
+      </button>{/if}
       <button class="tile x" title={closeLabel} aria-label={closeLabel} data-testid={closeTestId} onclick={onClose}><Icon name="close" size={16} /></button>
     </header>
-  {:else}
+  {:else if pinnable}
     <button class="tile pin barepin" class:on={pinned} style="right:{pinRight}px" title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
       <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
     </button>
@@ -151,11 +155,11 @@
   .fwbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
   header.ph { margin: 0; padding: 0 0 0 10px; display: flex; align-items: center; gap: 8px; min-height: 32px; flex: none; }
   header.drag, .fw.bare :global(.ph) { cursor: move; touch-action: none; }
-  header .ico { display: inline-flex; color: var(--cyan); }
+  header .ico { display: inline-flex; color: var(--ink-accent); }
   header .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  header :global(button.tile), .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: #0a3a52; color: #fff; cursor: pointer; }
+  header :global(button.tile), .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: #fff; cursor: pointer; }
   header :global(button.tile:hover), .barepin:hover { background: var(--panel-3); }
-  header :global(button.tile.pin), .barepin { color: #8fc4da; }
+  header :global(button.tile.pin), .barepin { color: var(--pin-ink); }
   header :global(button.tile.pin.on), .barepin.on { background: var(--cyan); color: #04202c; }
   .barepin { position: absolute; top: 0; z-index: 3; }
   .fw.bare :global(.ph button) { cursor: pointer; }

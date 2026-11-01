@@ -5,8 +5,8 @@ import { airlockOutside } from './site';
 import { Struct } from '../structure';
 import type { OutpostPlan } from './gen';
 
-/** Ship checks a carved (dug) base is exempt from: its outer walls are the rock, not hull. */
-const DUG_EXEMPT = /not on the hull/;
+/** Ship checks a carved (dug) base is exempt from: its outer walls are the rock, not hull, and the hull width rule (footprint.ts) is for ships. */
+const DUG_EXEMPT = /not on the hull|^width: /;
 
 /**
  * Problems with an outpost, empty when sound: the station template passes the ship checks (immobile: modules on floor, access and

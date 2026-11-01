@@ -1,5 +1,40 @@
 # Design
 
+## Index
+
+One line per section; read the index, then only the sections your task touches.
+
+- [Pillars](#pillars): Depth from systems interacting. A few simulation systems that multiply each other beat many
+- [Setting](#setting): Gritty industrial with a cyberpunk edge: corporations, salvager clans, augmentation cults, militaries.
+- [Structure](#structure): Persistent sandbox with normal saves. A recoverable-failure mode (escape pods, salvaging back)
+- [Ship & building](#ship--building): Tile grid, full-tile walls, no roof. Walls are low bevelled blocks that autotile by neighbour
+- [Crew](#crew): Roles (engineer, gunner, medic, security, pilot…) give a default priority set; a per-crew
+  - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock. There is no locker module and no suit item. Each airlock holds a few suits (a...
+  - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
+- [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
+- [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
+- [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
+- [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
+- [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
+  - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
+- [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
+  - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
+  - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
+  - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
+  - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
+  - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
+  - [Money](#money): No crew wages. Credits are mostly for buying things: gear, upgrades, materials, fuel, station repairs,...
+  - [After the tutorial: story missions](#after-the-tutorial-story-missions): Self-contained stories, not one overarching plot. Each mission is a short arc with its own setup and...
+- [Art direction](#art-direction): Isometric pixel art in the spirit of Space Haven: 2:1 isometric, 64x32 px tiles, detailed and
+- [UI](#ui): Layout: a full-screen game view with Svelte panels over it.
+  - [Combat view (user decisions, 2026-10-29)](#combat-view-user-decisions-2026-10-29): It replaces the colony HUD during a fight: the nav strip, node strip, drawers, build tools, inspector and...
+  - [UI soft rules (user decisions, 2026-10-28)](#ui-soft-rules-user-decisions-2026-10-28): These are soft rules. They set the default direction. An agent or session should always feel free to suggest
+  - [Boarding in ship combat (user decisions, 2026-10-29; not built yet)](#boarding-in-ship-combat-user-decisions-2026-10-29-not-built-yet): The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to...
+  - [Lessons: the tutorial system (user decisions, 2026-10-29)](#lessons-the-tutorial-system-user-decisions-2026-10-29): The goal chain (src/sim/story/goals.ts) says what to do next; lessons teach how a feature works. They are a
+- [Open questions](#open-questions): Mood and breakdown severity.
+- [Generated ships](#generated-ships): Enemy ships are generated at encounter time from a faction (src/content/factions/.ts, satisfies FactionDef).
+
+
 A persistent, isometric ship-colony game in the browser. Space Haven is the target; FTL supplies the
 tactical combat, weapon variety, crew species, encounters and build variety. The goal is Space Haven
 **with depth**.
@@ -69,6 +104,16 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   - **Open:** breakdowns. `breakdownRisk()` (mood under 10) is the hook; nothing calls it yet. Also open: beauty and
     room quality as a comfort factor, friends and rivals, whether drafted crew should starve quietly (they do now: they
     never stop to eat while drafted).
+- **Damage control (#181):** crew deal with fires and hull breaches on their own, at the top priority. The `firefighting`
+  work category (shown as "Dmg" in the priority grid: fires and breaches) is 1 for every working role (0 for roles that do no
+  work), and the player can lower it in the grid. The auto-jobs system posts an `extinguish` job per burning tile and a wall
+  `build` job (same category, so it outranks ordinary construction) on each hole in a player ship's hull, once the stock can pay
+  for a wall. Crew pick them like any job (nearest free crew by walking distance, a suit first when the way is thin air), and
+  materials are hauled to the site by the usual supply jobs. Crew manning a console never leave it for a fire or a breach (a
+  console job is held, not picked); that includes the shield console, which could leave "when nobody else can reach" but doesn't
+  yet. Doors and venting stay manual.
+  - **Priority repair** (`module.priorityRepair`, a button in the module inspector) is the one manual lever: a flagged module's
+    repair job beats every other for the crew who repair, until it is mended.
 - **Danger awareness:** crew read tile fields (fire, vacuum, heat) and avoid or flee unless their job,
   species or gear allows.
 - **Species** are base bodies (organic, synthetic, hybrid) with real sim effects (no breathing, fire
@@ -173,8 +218,12 @@ FTL's decision-making with physical consequences, in a shared sector.
   you stay.
 - **No movement, no maneuvering, no firing arcs.** Distance only affects **projectile travel time**,
   so a far deployment gives more time to react (shields, point defence). There is no accuracy penalty.
-- **Combat overlay:** the camera stays on your ship, and an overlay panel shows the enemy ship live,
-  where you pick targets. On phones it is an expandable sheet.
+- **Combat view:** while a fight is on, a dedicated combat HUD replaces the colony HUD (see "Combat view" under UI). The camera
+  frames both ships, and you pick targets by clicking the enemy's modules in the world.
+- **Heat (user decision):** every combat ship has a heat meter (0-100); the player manages it entirely by hand, no auto-vent. Shots
+  and shield hits add heat, and it only falls while the shields are down. **Vent** (G) dumps heat fast but drops the shields and holds fire.
+  **Overcharge** boosts weapons, shields or engines for a few seconds, adds heat, then has a long cooldown. Hitting the maximum is a
+  **thermal overload**: weapons and shields lock out for a few seconds. Tuning lives in `sim/combat/heatTuning.ts`.
 - **Consoles, not manned weapons:**
   - The **weapons console** operator runs all weapons; their skill affects charge and accuracy. With
     no operator, weapons don't fire.
@@ -201,8 +250,8 @@ FTL's decision-making with physical consequences, in a shared sector.
   the interior. Modules that should be visible from outside (weapons, shield generators, engines and
   similar) show a unique roof tile above them instead of the generic one, so they can still be
   identified and targeted. Enemy roofs can't be hidden without a scanning upgrade (planned research).
-- **Aiming from the main view:** while a fight is on, the combat panel's "Target in view" button (per weapon, and for all weapons) arms a
-  left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A roof-visible
+- **Aiming from the main view:** while a fight is on, selecting a weapon card (Q W E R) arms a
+  left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A weapon with no aim of its own follows the ship target, shown as "Auto". A roof-visible
   module (weapons, shields, engines, AI core) is aimed at as that module; any other roof tile is a **blind tile aim**, and shots land near it
   with the usual spread. A bracket marks the aimed tile or module in the main view.
 - **Hits** land on tiles near the aim point (spread by accuracy). Walls lose integrity and breach,
@@ -330,7 +379,7 @@ Each station type has its own reason to visit:
   materials cost.
 - Shields count as Defence. Mk I is on the starter ship, so Mk II/III being hard to get early is fine (open to revisit).
 
-### Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; not built yet)
+### Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)
 
 Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be conquerable.
 
@@ -452,13 +501,116 @@ common there, and the starmap hints at notable stock.
 
 ## UI
 
-- Full-screen game view with Svelte panels over it: a top bar (resources, time), a bottom context panel
-  (selection), side drawers (build, crew, priorities, starmap). Drawers become sheets on phones.
-- Field **overlays** (O2, heat, power, light, damage) and a **tile inspector**.
-- **Alert queue** with click-to-jump and per-type auto-pause.
-- Keyboard: space pauses, 1–3 set speed, plus drawer hotkeys. Touch has buttons for everything.
-- The starmap is its own view.
-- Expect heavy refinement once it's playable.
+- **Layout:** a full-screen game view with Svelte panels over it.
+  - **Top:** the crew bar and the node strip.
+  - **Top left:** drawer buttons (starmap, ship, crew, build and so on).
+  - **Top right:** the time controls, with the ship's log above them and the goals and alerts below them.
+  - **Bottom left:** a context panel for the selection.
+  - **Bottom right:** a tool bar.
+
+  The layout that grew in play replaced the original plan (a top bar, a crew roster on the left, one right-hand drawer).
+- **Overlays and inspection:** field overlays (O2, heat, power, light, damage) and a tile inspector.
+- **Keyboard:** Space pauses, 1–3 set speed, backtick opens the debug menu, plus drawer hotkeys. In a fight: Q W E R select weapons 1-4 (R only when there is a fourth weapon, else it stays crew draft), V volley, H hold fire, G vent, F flee.
+- **Starmap:** it is its own view.
+- **Platform:** desktop only.
+
+### Combat view (user decisions, 2026-10-29)
+
+- **It replaces the colony HUD during a fight:** the nav strip, node strip, drawers, build tools, inspector and goals give way. The ship's log,
+  the clock and time controls, and urgent alerts stay; the crew bar shrinks to portraits. The camera frames both ships, clear of the HUD bands.
+- **Enemy card (top left, red hostile theme):** name, faction and class, hull (green, amber, red at 60% and 30%), shield pips, evasion,
+  heat, and a charge bar per weapon with the commit notch (red once it has committed an aim).
+- **Your strip (bottom):** defence block (hull, shields, evasion) and station tags (WPN, SHD, HELM manned; ENG online when an engine is
+  powered), four weapon slots (card: key badge, charge, target or "Auto"), Volley and Hold fire, the heat block (gauge with the net
+  %/s rate, Vent, three Overcharge buttons with active and cooldown rings), and a docked Flee tab on the right edge whose drive charge fills upward.
+- **Thermal overload:** a dark overlay with a red THERMAL OVERLOAD label and a countdown covers the strip and its hotkeys.
+- **No Hail and no colony inspection in a fight.**
+
+### UI soft rules (user decisions, 2026-10-28)
+
+**These are soft rules.** They set the default direction. An agent or session should always feel free to suggest
+breaking one, or to ask whether it should apply in a given case. Say why, and let the user decide.
+
+1. **Nothing happens only in the UI.** Story and interactions play out in the world wherever possible. For example, navy
+   inspectors dock and come aboard (#138) rather than a dialog doing the search.
+2. **Show, don't tell.** State is shown in the world first: sprites, effects, overlays, and small floating feedback where
+   it happens (for example "+245 ₵" rising off the station). Text on screen is the fallback, not the default.
+3. **Numbers on demand.** These games tend towards dense, number-heavy UI, and that overloads the player. Dense
+   information lives behind an action: inspect a tile, crew member or module, or open a drawer from the top-left
+   buttons. The always-on HUD stays sparse.
+4. **The ship's log** (above the time controls) is the full, persistent record of everything notable: trades and
+   payouts, combat, deaths, story beats, production. It can be scrolled back, and each entry jumps to its subject when
+   clicked. Events that also raise an alert are logged as well.
+5. **Alerts** (under the clock) are for urgent, actionable things only. Every alert is clickable and takes you to its
+   subject:
+   - combat goes to the enemy;
+   - a downed crew member goes to them;
+   - a fire or breach goes to the room;
+   - a shortage opens the relevant panel.
+
+   Alerts clear themselves once resolved. Anything that isn't urgent goes to the log, not the alerts.
+6. **The Esc menu:** Esc first cancels the active tool or aim. When there is nothing to cancel, it opens a medium-sized
+   menu (about the size of the ship stock panel, or smaller) with resume, save and load, new game, controls and settings.
+
+### Boarding in ship combat (user decisions, 2026-10-29; not built yet)
+
+The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to capture). The combat
+HUD from #184 does not show or drive it. Offence is the focus; defence stays automatic (crew fight boarders, the player
+drafts) and only gains visibility: an alert when boarders dock and intruder marks on the inset.
+
+- **Launch from the HUD.** A BOARD action (B) opens a party picker: the shuttle and its seats, crew with weapon and
+  health (default: armed crew not on a console), and the target airlock, clicked on the enemy in the main view or the
+  nearest one. Crew sent leave their stations, and the STATIONS tags show it.
+- **The flight is the risk.** Enemy point defence shoots the shuttle. Shields have **no effect** on docking: they stop
+  projectiles, not a shuttle; boarding is a way around a heavily shielded ship.
+- **Aboard.** The enemy is already the main view, so the party is commanded there with the existing crew orders. The
+  enemy card gains a party section (members, health, status).
+- **Objectives.** Capture: subdue the crew, then hold the bridge (a visible "holding bridge" bar); the result is a prize
+  with prisoners. **Sabotage:** order boarders to wreck a module (weapons, shields, reactor) from inside, then recall;
+  a reason to board a ship you don't want. Recall: back to the shuttle and home.
+- **Friendly fire is on.** Your weapons hit tiles, so they can hurt your own boarders. The enemy card warns "Your crew
+  aboard" and the rooms they are in are marked.
+- **Stranded parties are lost.** If the enemy is destroyed with the party aboard, they die; if it jumps away, they go
+  with it (a possible story hook later). The warnings make it fair; bad play loses.
+- **Fix:** a near-capture must not turn into a wreck when boarders step off before the bridge hold completes.
+- **Later:** a teleporter module, rarer, using the same picker with no flight and a cooldown.
+
+### Lessons: the tutorial system (user decisions, 2026-10-29)
+
+The goal chain (`src/sim/story/goals.ts`) says **what** to do next; lessons teach **how** a feature works. They are a
+UI-layer system: they read the sim and its events, never change it, and are not part of the game save.
+
+- **Just-in-time, not scripted.** A lesson fires the first time the player meets a feature: the first fight, the first
+  build, the first trade. There is no scripted opening sequence; the goal chain gives direction, and a goal row can link
+  to a lesson ("Show me how").
+- **Coach marks.** Each step is a short callout pointing at the real thing: a UI element or an object in the world (a
+  module, a station). A lesson is a few steps, a few lines each.
+- **Step text** (user decisions, 2026-10-30 and 2026-10-31). One line of the instructor's dialogue, then plain lines
+  that say what to do and what each thing is for, with keys from the key map. The text is as concise as it can be while
+  still giving the player everything they need: don't cut useful information to save words, and don't pad.
+- **Pause.** The game pauses while a lesson is open and resumes when it closes. A step that needs time to pass (watching
+  shields recharge) says so and runs the game during that step.
+- **Completion per step.** A step either waits for the player to do the thing ("Press Q to arm a weapon", done when they
+  do) or just needs "Got it".
+- **One at a time.** Lessons queue, with a cooldown between them, and wait while something urgent is on screen.
+- **Remembered per profile, not per save.** Seen lessons are kept in the browser profile. Settings has "Reset
+  tutorials", and every lesson can be replayed from Help (#167), whose index is built from the same definitions.
+- **Content, like everything else.** Lessons are TS objects (`satisfies LessonDef`) referenced by string ID. UI elements
+  carry a `data-lesson` anchor from a typed list, so a missing or renamed anchor fails the typecheck. World anchors use
+  the screen projection the module quick panel uses.
+- **Instructors** (user decisions, 2026-10-30). Lessons are spoken in character by a fixed instructor per category, not
+  by the player's crew. The card shows the instructor's portrait on its left edge (the frame's left border breaks around
+  it) with "NAME · ROLE" in the top label and the lesson name and step count on the right. Each instructor gets custom
+  portrait art from the Blender pipeline; until it exists the portrait is drawn from a stand-in look.
+
+  | Category | Instructor | Voice | Look |
+  |---|---|---|---|
+  | Combat, navigation (weapons, heat, flee, starmap, jumps, fuel) | **Vash**, Pilot | Cocky, restless, loves a fast exit | Buzz cut, headset, aviator jacket |
+  | Engineering (power, building, repairs) | **Okafor**, Chief Engineer | Patient, proud of the ship, talks to machines | Grey beard, goggles pushed up, orange coveralls |
+  | Crew care (needs, beds, food, medical) | **Dr. Lin Hale**, Medic | Warm but blunt about neglect | Tied-back hair, white coat over a ship suit |
+  | Trade and stations (deals, hiring, markets) | **Marguerite Sol**, Quartermaster | Shrewd, counts everything twice | Sharp bob, glasses on a chain, high collar |
+  | Boarding and EVA (suits, shuttles, sabotage) | **Kade**, Boarding Lead | Loud, fearless, a little reckless | Shaved head, heavy suit with a cracked visor at the neck |
+  | Factions and the black market | **"Ghost"**, Fixer | Quiet, wry, never answers a direct question | Hooded, half-shadowed face, one cybernetic eye |
 
 ## Open questions
 

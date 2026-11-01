@@ -3,6 +3,7 @@ import { footprintTiles } from '../modules/footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Rng } from '../rng';
 import { GEN_ATTEMPTS, finishLayout, seedOf } from './generate';
+import { widthProblem } from './validate';
 import { arrangeHull } from './navyLayouts';
 import { SECURITY_ROLE, planStation } from './stationPlan';
 import { STATION_MAX, type StationDef, type StationInfo, type StationSize } from './stationTypes';
@@ -49,6 +50,10 @@ export function stationProblems(t: ShipTemplate, defs: Record<string, ModuleDef>
     if (tiles.some((p) => p.x < 0 || p.y < 0 || p.x >= w || p.y >= h)) out.push(`${m.def}@${m.x},${m.y}: outside the template`);
   }
   if (mods.some((m) => defs[m.def]?.engine)) out.push('station has an engine');
+  const cells: string[] = [];
+  for (const r of t.rows) for (let x = 0; x < w; x++) cells.push(r[x] ?? '.');
+  const narrow = widthProblem(cells, w, h);
+  if (narrow) out.push(narrow);
   return out;
 }
 

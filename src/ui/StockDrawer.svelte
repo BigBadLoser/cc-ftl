@@ -56,8 +56,8 @@
   li, .head { display: grid; grid-template-columns: 1fr 52px 48px 52px 56px; align-items: center; text-align: right; gap: 4px; }
   .head { color: var(--dim); font-size: 11px; }
   .nm { display: flex; align-items: center; gap: 6px; text-align: left; }
-  li.none { opacity: 0.45; }
+  li.none { opacity: 0.65; }
   li.out b { color: var(--red); }
-  li.sec { display: block; text-align: left; color: var(--cyan); font-size: 12px; margin-top: 4px; }
+  li.sec { display: block; text-align: left; color: var(--ink-accent); font-size: 12px; margin-top: 4px; }
   li > span:not(.nm) { color: var(--dim); }
 </style>

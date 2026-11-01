@@ -9,11 +9,14 @@ import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/sp
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
+import { performSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DoorJam, Struct, writeStruct } from '../structure';
 import { stochasticRound } from '../stochastic';
-import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
+import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
+import type { SkillName } from '../registry';
+import { grantXp } from './xp';
 import { findFreeBed } from './beds';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
@@ -30,6 +33,19 @@ export type WorkResult = 'done' | 'working' | 'wait';
 
 /** Do one tick of work on a job. `speed` is the crew member's resolved workSpeed. */
 export function performJob(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
+  const result = work(sim, crew, job, speed);
+  const skill = result === 'wait' ? undefined : XP_SKILL[job.kind];
+  if (skill) grantXp(sim, crew, skill, (XP_PER_WORK_SEC * speed) / TICK_HZ); // docs/TRAITS.md section 3: one XP per work-second at workSpeed 1
+  return result;
+}
+
+/** The skill a job kind trains while it progresses (crafting, hauling and the rest train none). */
+const XP_SKILL: Partial<Record<Job['kind'], SkillName>> = {
+  build: 'repair', module: 'repair', deconstruct: 'repair', moduleDecon: 'repair', repair: 'repair', extinguish: 'repair',
+  forceDoor: 'repair', mend: 'repair', salvage: 'repair', assemble: 'repair', research: 'science', hack: 'hacking',
+};
+
+function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
   if ((job.kind === 'build' || job.kind === 'module' || job.kind === 'assemble') && needsMaterials(job)) return 'wait';
   switch (job.kind) {
     case 'haul': return performHaul(sim, crew, job);
@@ -55,6 +71,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
+    case 'sabotage': return performSabotage(sim, crew, job);
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff': return performSuitJob(sim, crew, job, speed);

@@ -63,7 +63,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
     if (!scIn) return null;
     return {
       map: scIn.map, current: scIn.current, selected: scIn.selected, hover: scIn.hover, picked: scIn.picked, route: scIn.route,
-      routePts: parsePoints(scIn.routePts), routeSectors: scIn.routeSectors, only: scIn.only, inset: scIn.inset,
+      routePts: parsePoints(scIn.routePts), routeSectors: scIn.routeSectors, inset: scIn.inset,
     };
   };
 

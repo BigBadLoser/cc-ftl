@@ -1,5 +1,55 @@
 # Architecture
 
+## Index
+
+One line per section; read the index, then only the sections your task touches.
+
+- [Stack](#stack): TypeScript (strict), Vite.
+- [Layout and dependency direction](#layout-and-dependency-direction): src/
+- [Simulation core](#simulation-core): Determinism.
+- [Two kinds of state](#two-kinds-of-state): Every ship, station, derelict and wreck is a Grid with:
+  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Every ship, station, derelict and wreck is a Grid with:
+  - [2. Entities: a small in-house ECS](#2-entities-a-small-in-house-ecs): Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.
+- [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver.
+- [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
+- [Rendering](#rendering): Two-way contract.
+- [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
+- [Asset pipeline](#asset-pipeline): Asset creation is decoupled from asset rendering. Models are built as 3D in Blender, then
+- [Crew AI](#crew-ai): The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in...
+- [UI](#ui): Svelte components read snapshots published by app after each tick, or on demand for
+- [UI kit, `src/ui/kit/`](#ui-kit-srcuikit): Small in-house controls for panels, built on [Bits UI](https://bits-ui.com) (headless, Svelte 5: it...
+- [Lessons (tutorials), `src/ui/lessons/`](#lessons-tutorials-srcuilessons): UI layer only (design: DESIGN.md, "Lessons"). LessonHost.svelte builds a LessonCtx from the snapshots and...
+- [Keys, settings and the Esc menu](#keys-settings-and-the-esc-menu): Key map (src/ui/keymap/): every key the game answers to is an action in actions.ts (id, group, label,...
+- [Saves](#saves): A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,
+- [Quality rules](#quality-rules): Sim systems get unit tests, plus scenario tests, for example "a 1-tile breach vents a 4×4 room
+- [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
+- [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
+- [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
+- [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
+- [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
+- [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
+- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Sim only so far (branch galaxy): no UI, no snapshot, no tools. The starmap view, its zoom levels and the...
+- [Sector grid (planned)](#sector-grid-planned): Decision (user, 2026-10-19): a sector is one large grid with everything placed on it. It replaces the...
+  - [Target model in one paragraph](#target-model-in-one-paragraph): sim.sector.grid is a chunked, sparse SectorGrid in sector-tile coordinates. A ship, station, derelict or...
+  - [1. Inventory: what assumes many grids](#1-inventory-what-assumes-many-grids): Size = lines likely touched: S < 30, M 30–150, L > 150. About 780 gridId / sim.grids references in src/...
+  - [2. Data model](#2-data-model): Storage: SectorGrid (sim/sectorGrid.ts, new).
+  - [3. Vehicles as free entities](#3-vehicles-as-free-entities): Position and heading. New BodyC { x, y, heading, alt }: continuous sector tiles, radians, and altitude in...
+  - [4. Placement and jumping](#4-placement-and-jumping): Packets (built in 9a, sim/sector/packet.ts). ShipPacket is the single format for a ship in transit:
+  - [5. Combat on one map](#5-combat-on-one-map): Projectiles. Already sector-space with dt = speed / distance, so travel time is real distance. They launch...
+  - [6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)](#6-performance-budget-phone-target-mid-range-android-60-fps-render-20-hz-sim): 
+  - [7. Migration order](#7-migration-order): Amended (user, 2026-10-19). The single shared tile store is confirmed: mining is planned, and building in...
+  - [Step 7 split (planned 2026-10-20)](#step-7-split-planned-2026-10-20): Step 7 is split into four slices. Each keeps npm run check green, changes no behaviour (the sectorEquiv...
+  - [8. Risks (open questions for the user are in `docs/STATUS.md`, "Sector grid decision")](#8-risks-open-questions-for-the-user-are-in-docsstatusmd-sector-grid-decision): Step 6 (the coordinate flip) is the one wide change. It is safe only if step 5 has removed every...
+- [Crew AI: one system for every ship (user principle, 2026-10-21)](#crew-ai-one-system-for-every-ship-user-principle-2026-10-21): NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
+- [Stations](#stations): Generated by shipgen/stationGen.ts (kinds and sizes in content/stations.ts; see docs/STATUS.md) and stamped by
+- [Crew for hire](#crew-for-hire): Trade stations post candidates derived from hashes (galaxy/recruit.ts, tuningRecruit.ts). While the player...
+- [Engine capacity and the shipyard (progression phase 5)](#engine-capacity-and-the-shipyard-progression-phase-5): Size = the area inside the outer hull. hullArea(grid) (combat/hull.ts, interiorArea) counts every tile the...
+- [Black markets, contraband, scans and the truce (progression phase 2b slice 2), `src/sim/blackmarket/`](#black-markets-contraband-scans-and-the-truce-progression-phase-2b-slice-2-srcsimblackmarket): Design: DESIGN.md "Pirate factions and the black market". Content: content/blackMarkets.ts...
+  - [Pirate factions (phase 2b slice 1)](#pirate-factions-phase-2b-slice-1): Galaxy factions pirates (Scrappers), raiders, cartel, zealots, mercenaries, each with its own reputation...
+- [Hull width rule and the hull plan brushes (#143)](#hull-width-rule-and-the-hull-plan-brushes-143): The rule. No part of a ship may be narrower than 3 tiles. The footprint (every struct tile except Space...
+- [Station jobs by station type (issue #178)](#station-jobs-by-station-type-issue-178): Offers (galaxy/jobOffers.ts) are still a pure function of (seed, port, window, slot). The port's station...
+
+
 The previous attempt (`bigbadloser/space-web-game`, **reference only, nothing is copied**) bloated
 because systems called each other directly, game state lived in Svelte stores, things were built twice,
 and polish came before gameplay. These rules exist to prevent that.
@@ -247,7 +297,7 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
 
 ## Test tiers
 
-- **Fast tier** (`npm run check:fast`, before every commit): lint, typecheck, then `vitest run --changed`, which runs only the
+- **Fast tier** (`npm run check:fast`, before every commit): lint, typecheck, then `VITEST_FAST=1 vitest run --changed`, which runs only the
   test files that import an uncommitted file, directly or transitively. A render or UI change runs its own tests in seconds.
   A `src/sim` change still selects most content tests, because they build a full game through `newGame` and so depend on every
   system. That is correct, not noise.
@@ -255,7 +305,8 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   always run them. Today: the shipgen seed and depth sweeps, the balance fights (`ships/balance`) and the end-to-end trade
   runs (`content/trade`, `ships/trade`). Name a test `.slow.test.ts` only when it is a soak or sweep whose failures a normal test would also hint
   at, never to hide a flaky test.
-- **Full** (`npm run check`, before a PR is called finished, and in CI on every push): everything.
+- **Full** (in CI on every ready PR push, in 8 time-balanced shards, and the nightly run on `main`; `npm run check` runs it locally): everything.
+  Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.json`, refreshed by `npm run test:weights`).
 - Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
 - Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.
 
@@ -697,6 +748,25 @@ palette.json    the single palette, read by Blender scripts and the game
     becomes the owner's colour on the shade ramp `MULT`, 0.42 .. 1.22). Asteroids and derelicts carry no key colour.
   - Glow: as everywhere, the glow twin is added over the colour sprite (SVG/CSS: `mix-blend-mode: plus-lighter` or
     `screen`).
+- **Backdrop bodies (`backdrop` family, sheet `backdrop`; `sprites/backdrop_bodies.py`, `backdrop_pulsar.py`):** the
+  node's central body drawn large and dim behind the main view.
+  - Ids: `backdrop.body.<kind>.v<n>`, and `backdrop.body.<kind>` (= v0), as `starmap.body.*`. Kinds and variants match the
+    starmap bodies: `star`, `red_dwarf`, `blue_giant`, `black_hole` v0..v2; `gas_giant` v0..v5 (v0..v2 ringed); and,
+    not spawned yet, `binary_star`, `white_dwarf`, `pulsar`, `protostar`, `ice_giant`, `lava_world`, `ocean_world`
+    v0..v2. No nebula: the backdrop draws its own. Pick the variant by node with the same index as the starmap, so a
+    node's backdrop body matches its starmap body.
+  - Frame: 640 px square (320 in the 1x file), anchor at the centre, body radius 200 px (100), halos, rings and discs
+    within 1.6 r. Rendered at full value and colour (the game dims and tints it); glow on the `.glow` twin.
+  - Built by each kind's own starmap builder and seed, scaled up 10/3 with `starmap_kit.DETAIL = 3` times the sphere
+    and ring faces. Stars go through `starmap_bodies.SOFTEN` for a soft, quickly fading halo and finer granulation;
+    the pulsar has its own build (`backdrop_pulsar.py`, soft layered beams). Starmap renders are unchanged (`DETAIL` 1,
+    no `SOFTEN`).
+
+## Crew AI
+
+The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in [`docs/CREW_AI.md`](CREW_AI.md), issue #194. It's being implemented in phases.
+
+Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs `policy.legacy`, the need machines and the legacy job picker; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
 
 ## UI
 
@@ -711,7 +781,7 @@ Small in-house controls for panels, built on [Bits UI](https://bits-ui.com) (hea
 ARIA behaviour and no styling). The game keeps its own look: every kit component is styled here with the tokens in
 `src/ui/theme.css` (sharp dark panels, the global `button.on` state, 40px touch targets, `--focus` ring), not by a styled library.
 
-- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, exported from `src/ui/kit/index.ts`.
+- Components: `Select`, `NumberStepper`, `Segmented`, `Chips`, `Tooltip`, `Dialog`, `Slider`, `SideTabs` (left-sidebar tabs), exported from `src/ui/kit/index.ts`.
   Props are plain values plus an `onChange` callback (controlled); options are `KitOption` (`value`, `label`, `sub`, `disabled`, `testId`).
 - **Rule: panels import from `ui/kit` only, never `bits-ui`.** ESLint (`no-restricted-imports`) allows `bits-ui` only under
   `src/ui/kit`, so the library can be swapped by editing the kit alone. Panels still never mutate the sim; a kit control only reports a
@@ -720,6 +790,45 @@ ARIA behaviour and no styling). The game keeps its own look: every kit component
   (add a token to `theme.css` rather than a literal), keep it working at 390px wide with a visible focus ring, put pure logic in a
   `<name>.ts` with a `*.test.ts` beside it, and export it from `index.ts`.
 - Portalled parts (Select list, Tooltip, Dialog) render under `body`, so their styles are `:global` and namespaced `kit-*`.
+- **Panel pieces** (combat view and later HUD): `Frame` (titled section frame: the title sits in a real gap in the border via `FrameGap`, so content
+  behind a semi-transparent panel shows through, no background patch), `Meter` (bar with value), `Pips` (shield and charge pips), `Pill` and
+  `StatusTag` (small labelled badges), `KeyBadge` (hotkey cap) and `ActionButton` (button with icon, label and `KeyBadge`). Their look comes from tokens
+  in `theme.css` (`--frame-line`, `--frame-w`, `--track`, `--heat-low`, `--band`, `--health-good` and the other combat tokens). **New panels compose these** and add tokens
+  rather than redrawing borders, bars or badges by hand; a panel component only lays its sections out.
+
+## Lessons (tutorials), `src/ui/lessons/`
+
+UI layer only (design: DESIGN.md, "Lessons"). `LessonHost.svelte` builds a `LessonCtx` from the snapshots and feeds `LessonEngine` (plain TS) every
+frame with the signals since the last one: sim events and every queued command, from `api.onSignal` (`app/signals.ts` reads the command queue, so
+an aim made while paused counts). The engine queues triggered lessons, opens one at a time (cooldown, waits while `ctx.busy`), pauses through
+`api.setSpeed` and restores the player's speed (never unpausing a game they had paused). Seen lessons and the on/off switch are in localStorage
+(`prefs.ts`); reset and the switch are in the debug panel until the Esc menu exists; `?lessons=reset` / `?lessons=off` for scripts.
+
+**Adding a lesson:** write a `LessonDef` in `defs/<name>.ts` (`satisfies LessonDef`) and list it in `defs/index.ts`. A step has a `title`,
+`say` (the speaker's line) and `keys` (short mechanics lines), or plain `text` without a speaker (`[Q]` renders a key badge, `**word**` a strong word), a `target` and `advance: 'gotIt'` or a condition (a "do" step); the lesson's optional `delay` (ms) lets
+the scene settle between the trigger and the card. Conditions (`conditions.ts`): `onEvent`,
+`onCommand` (with a match), `when` (a state of the context), `anyOf` / `allOf`. Targets (`targets.ts`): `uiTarget(anchor)` rings an element
+carrying `data-lesson={anchor('...')}` (names are typed in `anchors.ts`; a kit `Frame` takes `lesson=`), `moduleTarget(pick)` rings a module in the
+world through `api.moduleScreenRect`. A new condition or target kind is one shape in the `...Kinds` interface plus one evaluator or resolver beside
+it; the engine does not change. If a lesson needs more of the game, add the field to `LessonCtx` and fill it in the host.
+A lesson (or a step) names its `speaker` from `speakers.ts`: a fixed instructor (name, role, `look`), whose portrait the crew portrait
+renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the plain card.
+
+## Keys, settings and the Esc menu
+
+- **Key map** (`src/ui/keymap/`): every key the game answers to is an action in `actions.ts` (id, group, label, default chords, context).
+  A chord is an optional `Shift+` and a `KeyboardEvent.code`, so bindings are physical keys. `keymap.matches(e, id)` is the only way a
+  handler reads a key (App, the combat strip, lessons, the deploy picker, `app/input.ts` for camera and R, the profiler's F3); key badges
+  read `keyLabel($keymap, id)`, and lesson text writes `[@combat.volley]` for the bound key. The player's changes live in localStorage
+  (`cc-ftl.keys`, only the differences). Two actions on one key conflict when their contexts overlap, unless one `shares` the other on
+  purpose (R drafts crew, rotates a module and picks weapon 4). Esc is fixed. A new key: add an action, then call `matches` in its handler.
+- **Settings** (`src/ui/settings/`): a store in localStorage (`cc-ftl.settings`), applied live: `apply.ts` (pause on alert or in the
+  background, tooltips off), `app/input.ts` (edge scroll, scroll and zoom speed, invert drag), App (FPS), main.ts (start speed).
+  Lessons keep their own prefs.
+- **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
+  menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open it holds the one modal gate (`holdModal` / `modalOpen` in `ui/keys.ts`, also held by the jump confirmation), and every game key handler stands aside; the App pauses the game and restores the speed.
+- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
+  ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
 
 ## Saves
 
@@ -1578,7 +1687,7 @@ Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch 
 - **Sector frame.** The art origin is sector tile (0, 0). `render/sectorPos.ts` (`regionOrigin`, `sectorPos`, `sectorArt`)
   adds the ShipC origin until step 6, when it becomes the identity. Camera framing, focus, `fightFx`, `crewMarks`,
   `sectorFx` and shuttles use it; the "camera ship's frame" (`ref`) is gone from the fx hosts.
-- **Pass B** (`render/combatPass.ts`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
+- **Pass B** (`render/insetPass.ts, which replaced the old combatPass`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
   and fitted on the target region, renders the stage into a `RenderTexture` the size of `CombatViewRect` (the texture is the
   scissor: a GL scissor would also clip filter passes). The main pass draws that texture in place. `place(cam, target)`
   positions the stack per pass, culls regions by their padded art box, and shows target marks only in pass B and UI layers
@@ -1846,3 +1955,74 @@ Suits are the contractors' own and never run dry. The unbuilt share of the price
 (`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
 (`abortYards`). Save v61. UI: the station panel's
 Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.
+
+## Black markets, contraband, scans and the truce (progression phase 2b slice 2), `src/sim/blackmarket/`
+
+Design: DESIGN.md "Pirate factions and the black market". Content: `content/blackMarkets.ts` (`ContentRegistry.blackMarkets`, `BlackMarketDef`).
+
+- **Service sets.** A set (`bm.lesser`, and the named `bm.cartel`, `bm.zealot`, `bm.mercenary`) is attached to any station with `attachServices(sim, station, setId)`
+  (`attach.ts`): it records the set on `Trader.services`, rolls the fence rate (`Trader.fence`), adds the set's stock lines to the shelf, takes the owner faction if the
+  galaxy has one by that string id, and sets the node's truce flag when the set has a truce. The lesser set is attached at populate time to a seeded 25% (LESSER_SHARE) of pirate-held stations and of
+  unowned stations in lawless space (`attachLesser`, `galaxy/populateSpawn.ts`); the rest stay hostile dens. Every set has a truce. The named sets are not spawned by the galaxy yet. The station keeps its own trade profile and
+  port market; `galaxy/marketLive.ts` leaves the service shelves alone when it binds, steps and unbinds a market.
+- **Contraband** is the `contraband` item tag (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`). Sources: a delivery crate broken open or abandoned spills stolen
+  goods instead of the delivery (`galaxy/jobs.ts`); a captured ship's hold gets looted goods (`capture/prize.ts`, LOOT_*); the disruptor is sold only at black markets.
+  A legitimate trader does not buy contraband (`unitPrice` is null, `checkOffer` says `contraband`); a black market pays `contrabandBuy` of the base value; the fence (cartel
+  only) pays its 50-60% for anything.
+- **Scans** (`scan.ts`). A navy or corporation station scans the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node), and a patrol that crosses
+  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (value, fine, bribe) and waits for
+  `galaxy.respond` with `surrender` (goods taken, fine paid, standing down) or `bribe`; trade offers are refused meanwhile (`scanPending`). The UI reuses `InterdictModal`.
+- **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
+  there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
+  every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.
+- **Shady crew** (`galaxy/recruit.ts`, `shadyRecruits`). Sets with `shadyCrew` post extra candidates (`ForHire.shady`) with extra skill levels (`SkillXpC`) for a higher
+  one-time fee. No wages exist for anyone.
+
+### Pirate factions (phase 2b slice 1)
+
+- Galaxy factions `pirates` (Scrappers), `raiders`, `cartel`, `zealots`, `mercenaries`, each with its own reputation key and generator style (`content/factions/pirates.ts`, scrapper hulls, told apart by loadout, budget, crew and doctrine; `livery.<id>` hooks await #127). Every pirate pair has a row in `galaxyRelations.ts`; an `allied` row beats `alwaysHostile` (zealots and the Rogue AI). Zealots fly on the rogue combat side so drones never shoot them.
+- Territory: `territory.shares` (raiders, cartel, mercenaries share the Scrappers' seeds) and `territory.near` (zealots take open or pirate seeds beside the machines'); neither moves any other power's map.
+- Cartel: `guardsRoutes` (interdicts only in its own space, hunts only there) and `FleetGroupDef.escort` (hired mercenary ships, `Contact.hired`, fly on the employer's side).
+- Raiders: `boarding.prefer` (the ship holds fire while its party is out). Zealots: `boarding.coreRaid`, `capture/coreRaid.ts` (the party walks to the AI core; held for CORE_RAID_HOLD_TICKS undefended, the core module is removed and robots go inert), `FactionDef.neverSurrender` (no prize; the fight ends in a derelict).
+- Standing: kills lower the victim faction's key (heat.ts); relation spill warms its rivals; a done bounty also pleases pirate factions at war with its target (jobs.ts `RIVAL_REPUTATION`). Trade: zealots answer a hail only at high standing; `trade/augmentation.ts` is a stub (always 0) until implants (phase 7).
+
+## Hull width rule and the hull plan brushes (#143)
+
+**The rule.** No part of a ship may be narrower than 3 tiles. The footprint (every `struct` tile except Space and `Struct.Beam`: struts and the yard's scaffolding
+trusses are exempt) must equal its morphological opening by a 3x3 square (erode, then dilate). Straight edges and 45 degree staircases survive it, 1-2 wide
+spines and stubs do not (a 1-step corner notch passes too). `sim/footprint.ts` is the pure helper (`footprintFromGrid`, `footprintFromTiles`, `openingOf`,
+`widthViolations(footprint, change?)`, flat byte masks, about 0.2 ms on 120x80). Generated ships, stations and wrecks obey it (shipgen validators reseed an
+attempt that breaks it, ruins open by a 3x3 square; see `docs/SHIPGEN.md`).
+
+**The plan is judged as ship hull plus the planned footprint** (the outline plus the floor it shuts in, `yard/width.ts`), and only violations the plan ADDS count
+(`changeViolations`), so an old thin template can still be planned on elsewhere. `hull.plan` rejects `narrowHull`; `quoteYard` returns `narrowHull` for a
+plan that has violations, and `narrowCut` if no cut the visit cap pays for stays wide (`pickSection` and `closedRect` take a `wide` predicate). I could not make the
+cut leave a narrow strip (strips flush against the hull count as supported), so the guard is defensive; `content/yardWidth.test.ts` searches 60 random plans.
+
+**Brushes** (`app/hullPlanTool.ts`, geometry in `app/hullBrush.ts`, the plan logic in `sim/yard/brush.ts`). A brush produces a tile list; `brushPlan(sim, ship,
+'add'|'erase', tiles)` and `cutPlan(sim, ship, line)` return the new outline, the footprint, the tiles removed and the new violations, and the tool sends `hull.plan`
+on release (no confirm). Rectangle: drag, shown at its real size, red under 3x3 (`minSize`), must touch the ship or the connected plan (`touchesShip`, else
+`mustTouch`), preview shows the merged hull ring (amber) and floor (cyan). Erase: outline plus only the planned tiles it removes; real hull is never in the plan, so it
+is never touched. Line cut: a straight line snapped to `LINE_SLOPES` (0, 45, 90 degrees; adding 0.5 or 1/3 allows 1:2 or 1:3 staircases, runs of at least 2); planned
+tiles cut off from the hull are dropped, the line's tiles become the edge; a line that cuts nothing is a no-op. Mirror reflects every stroke across the ship's long axis.
+A stroke that adds a narrow part shows red and does not apply. With no drag the brush shows a 1x1 ghost under the cursor. While the build tools are open a thin
+world grid (`render/worldGrid.ts`, Pixi `pixelLine`) is drawn, and with Hull plan open the Build menu folds down to its category row until hovered. A freehand
+0/45/90 brush later is one more source of tile lists.
+
+**Debug start:** `?scenario=hullplan` spawns a trading hub (visit cap 100) beside the ship, 100000 credits and 500 metal (`debug.giveItems`), and opens Hull plan.
+
+## Station jobs by station type (issue #178)
+
+Offers (`galaxy/jobOffers.ts`) are still a pure function of (seed, port, window, slot). The port's station type (`Port.station`, from `StructureDef.station`; `stationClass(port)` in `ports.ts`, 'den' for a pirate den) decides the kind:
+trade stations post deliveries only, military stations and depots bounties only, research stations **surveys** only, dens the old half-and-half mix. Tuning is in `tuningJobs.ts`.
+
+- **Bounty and survey completion** (`jobs.ts` `tendJobs`): the kill (or entering a survey's node) moves the job from `galaxy.jobs` to `galaxy.claims` and emits `job.completed`. A claim never expires, is not a task (no tracker or HUD entry) and does not
+  count against `MAX_JOBS`. Command `jobs.handIn {id}` pays it (normal credit path, standing, stats, `job.handedIn`) at a port of the issuing station class (`StationJob.station`) owned by the issuing faction, at the player's node.
+  A survey's target is a node with a feature: a sector body of kind nebula, black hole or blue giant, or an asteroid field (`featureOf`). A scanner module requirement is a later follow-up.
+- **Delivery handover** (`galaxy/handover.ts`): arriving with the crate aboard asks for a shuttle, run as a `Deal` with `Deal.handover` set (no goods, no escrow). Preference: (1) the station's own shuttle, only for a trader kind with
+  `shuttle: true` (it docks at a working player airlock, crew haul the crate from the deck into its hold, the job is paid when it has it: `job.handedOver` `via: 'shuttle'`); (2) the player's own shuttle, which is the usual case since most stations have none
+  (it docks at the airlock, crew load the crate, it hovers beside the station and drops it there, the job is paid on the drop-off with `via: 'own'`, then it flies home and is stowed); (3) by hand at once (`via: 'instant'`) only when neither can run
+  (no station ship at the node, no working airlock, no shuttle on either side) or each that could has been called off `MAX_TRIES` times. Crew load through the airlock's unloaders (an ordinary floor-to-vehicle haul) and the hold is sealed `outbound`.
+  Combat holds both back alike (a run out is called off, a crate in the hold goes back on deck, the job's clock runs, it is retried when calm); a run that cannot dock or load is retried after `HANDOVER_RETRY_SEC`. A live handover blocks jumping like any live deal.
+- Debug: `?scenario=handover|bounty|survey` (handover shows the own-shuttle path: the spawned trade station has no shuttle) (`debug.jobScenario`, `galaxy/jobsDebug.ts`).
+- Save v65: `GalaxyState.claims`, `StationJob.station/feature/collected/handoverTries`, `Deal.handover`.

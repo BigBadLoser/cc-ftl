@@ -84,15 +84,29 @@ export interface UiStarLink {
 }
 
 /** A port's market in a few words: the goods that are cheap and the goods that are dear there right now. */
+/** A good and a price in credits per unit: what the port sells it for (cheap goods) or pays for it (wanted goods). */
+export interface UiGoodPrice {
+  name: string;
+  price: number;
+}
+
 export interface UiStarMarket {
-  cheap: string[];
-  dear: string[];
+  cheap: UiGoodPrice[];
+  dear: UiGoodPrice[];
+}
+
+/** A good aboard and the known ports that pay most for it now (dearest first): the starmap's "where to sell" view. */
+export interface UiSellGood {
+  item: string;
+  name: string;
+  count: number;
+  best: { node: string; name: string; hops: number; price: number }[];
 }
 
 /** A held station job that ends at a node: a delivery's destination or a bounty's target. */
 export interface UiNodeJob {
-  kind: 'delivery' | 'bounty';
-  /** "Deliver a sealed crate (12 Ration)" or "Bounty: Bone Saint". */
+  kind: 'delivery' | 'bounty' | 'survey';
+  /** "Deliver a sealed crate (12 Ration)", "Bounty: Bone Saint" or "Survey: nebula". */
   label: string;
 }
 
@@ -253,7 +267,7 @@ export interface UiStarmap {
 
 /** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
 export interface UiEncounterChoice {
-  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
   label: string;
   detail: string;
   enabled: boolean;
@@ -278,6 +292,8 @@ export interface UiEncounter {
   how: string;
   node: string;
   choices: UiEncounterChoice[];
+  /** A scan that found contraband aboard: what was found (a line of text) and what it is worth; the choices are surrender / bribe. */
+  contraband?: { found: string; value: number; fine: number; bribe: number };
 }
 
 /** How the last encounter ended, as a line with a tone. */
@@ -315,7 +331,7 @@ export interface UiTravel {
   route: string[];
   at: number;
   /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid; 'story': held for a story decision. */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story';
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story' | 'adrift';
   /** A drop was asked for: the route ends at the next node, where the ship drops out. */
   stopping: boolean;
   /** Fuel the next hop needs (when stopped for want of it). */

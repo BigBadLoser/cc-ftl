@@ -13,6 +13,12 @@ const ids = Object.keys(content.galaxy.factions);
 const WAR_PAIRS = [
   ['navy', 'pirates'], ['navy', 'rogue'], ['meridian', 'helix'], ['meridian', 'vantor'], ['meridian', 'pirates'], ['helix', 'rogue'],
   ['vantor', 'pirates'], ['traders', 'pirates'], ['meridian', 'rogue'], ['vantor', 'rogue'], ['traders', 'rogue'], ['pirates', 'rogue'],
+  // Phase 2b: the Rogue AI is at war with the new pirate factions too, except the zealots (allied) ...
+  ['raiders', 'rogue'], ['cartel', 'rogue'], ['mercenaries', 'rogue'],
+  // ... and the law and the traders against the pirate factions that are not mercenaries, and the pirate wars (the cartel is neutral with the Scrappers).
+  ['navy', 'raiders'], ['navy', 'cartel'], ['navy', 'zealots'], ['meridian', 'raiders'], ['vantor', 'raiders'], ['meridian', 'zealots'],
+  ['traders', 'raiders'], ['traders', 'cartel'], ['traders', 'zealots'], ['pirates', 'raiders'], ['pirates', 'zealots'], ['raiders', 'cartel'],
+  ['raiders', 'zealots'], ['cartel', 'zealots'],
 ];
 
 describe('per-faction standing', () => {
@@ -77,7 +83,7 @@ describe('per-faction standing', () => {
 });
 
 describe('faction relations table', () => {
-  it('keeps today\'s wars and nothing else', () => {
+  it('has these wars and no others', () => {
     const war = new Set(WAR_PAIRS.map(([a, b]) => [a, b].sort().join('|')));
     for (const a of ids) for (const b of ids) {
       if (a >= b) continue;
@@ -103,20 +109,6 @@ describe('faction relations table', () => {
     expect(spillSources(galaxy, 'navy')).toContainEqual({ faction: 'vantor', weight: 0.2 });
   });
 
-  it('takes new factions as rows: pirates at war with each other, the cartel neutral with the Scrappers', () => {
-    const more: GalaxyContent = {
-      ...galaxy,
-      factions: { ...galaxy.factions, raiders: { ...galaxy.factions['pirates']!, reputation: 'raiders' }, cartel: { ...galaxy.factions['pirates']!, reputation: 'cartel' } },
-      relations: [
-        ...galaxy.relations,
-        { a: 'pirates', b: 'raiders', stance: 'war' }, { a: 'cartel', b: 'pirates', stance: 'neutral' }, { a: 'cartel', b: 'raiders', stance: 'war' },
-      ],
-    };
-    expect(stanceBetween(more, 'pirates', 'raiders')).toBe('war');
-    expect(stanceBetween(more, 'cartel', 'pirates')).toBe('neutral');
-    expect(stanceBetween(more, 'raiders', 'cartel')).toBe('war');
-    expect(stanceBetween(more, 'cartel', 'navy')).toBe('neutral');
-  });
 });
 
 describe('faction stock specialities', () => {

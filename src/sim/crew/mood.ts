@@ -8,6 +8,7 @@ import {
   MOOD_MEAL_SEC, MOOD_SLEEP_SEC, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT, O2_ALERT_BELOW, O2_HARM_BELOW,
 } from '../tuning';
 import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type MoodFactor } from './components';
+import { applyTraitMood, TRAIT_MOOD_LABELS } from './traitMood';
 
 const NONE: readonly Modifier[] = [];
 
@@ -18,6 +19,7 @@ export const MOOD_LABELS: Readonly<Record<string, string>> = {
   hotMeal: 'Hot meal at the galley', bed: 'Slept in a bed', floor: 'Slept on the floor',
   dark: 'Dark room', thinAir: 'Thin air', staleAir: 'Stale air', smoky: 'Smoky room', temperature: 'Uncomfortable temperature',
   company: 'Company', lonely: 'Lonely',
+  ...TRAIT_MOOD_LABELS,
 };
 
 /** True for crew who have moods: their species says so, and they fight for the player (enemy crews do not mope). */
@@ -80,7 +82,7 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
   }
   if (m.alone >= MOOD_LONELY_SEC) add('lonely', -4);
   else if (m.alone === 0) add('company', 3);
-  return out;
+  return applyTraitMood(sim, id, m, out, (o) => hasMood(sim, o));
 }
 
 /** True when another living crew member of the same side stands within MOOD_COMPANY_RADIUS tiles on the same grid. */

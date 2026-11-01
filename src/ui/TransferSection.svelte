@@ -80,7 +80,7 @@
   .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .go { width: 100%; margin-top: 8px; }
   .hint { margin: 4px 0 0; }
-  h3 { margin: 12px 0 4px; font-size: 13px; color: var(--cyan); }
+  h3 { margin: 12px 0 4px; font-size: 13px; color: var(--ink-accent); }
   .queue li { border: 1px solid var(--line); background: var(--panel-2); padding: 6px 8px; display: grid; gap: 2px; }
   .queue li.blocked { border-color: var(--amber); }
   .row1 { display: flex; align-items: center; gap: 8px; }

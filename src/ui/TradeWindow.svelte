@@ -28,7 +28,7 @@
   .card { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; overflow: hidden; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 0; padding: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
   header { flex: none; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .who { flex: 1; min-width: 0; }
-  h2 { margin: 0; font-size: 18px; color: var(--cyan); }
+  h2 { margin: 0; font-size: 18px; color: var(--ink-accent); }
   .who small { color: var(--dim); }
   .chip { padding: 5px 10px; border-radius: 0; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; }
   header button { min-width: 36px; min-height: 36px; padding: 0; font-size: 18px; }
