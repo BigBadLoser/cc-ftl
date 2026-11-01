@@ -4,7 +4,7 @@ import colorsys
 from .. import wall3d as T
 from .. import walls as W
 from ..relief_style import Style
-from ..restyle import STEP, Look, ramp
+from ..restyle import SECTION_STEP, Look, ramp
 from ..structure_looks import FLOOR_STEP
 
 # base colours: wall (partitions), hull (far hull, belly), trim (accents), second (a second tone: headers, recesses,
@@ -118,8 +118,8 @@ class Faction(Look):
                 return T.CUT                                    # header's top, 0.02 under the cap, too)
         end = P.sprite.partition(".end.")[2][:1]                       # s / e: the end piece's section faces y / x
         if (self.shaded and end and P.kind == ("y" if end == "s" else "x") and P.fam in ("wall", "hull")
-                and P.role in STEP["x"]):
-            return f"{self.pre}X{STEP['x'][P.role]}"
+                and P.role in SECTION_STEP):
+            return f"{self.pre}X{SECTION_STEP[P.role]}"
         return super().paint(P)
 
 
