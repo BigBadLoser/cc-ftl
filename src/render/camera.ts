@@ -8,13 +8,13 @@ import { ART_SCALE } from './iso';
 export const SCALE_QUANTUM = 1 / 16;
 
 /**
- * Zoom levels (device px per art px) of the main camera. From 1 up they are whole numbers,
- * so the art stays crisp with nearest-neighbour. Below 1 come fractional levels down to 1/8, each a multiple of
- * SCALE_QUANTUM (3/16 and 3/8 stand where 1/6 and 1/3 were: about the same steps): framing things far bigger
- * than a ship (station hubs), and `1 / ART_SCALE` is the old zoom 1 (one art px per world px). The renderer draws every
- * level below 1 with linear filtering (`scene.ts` `setSmooth`) so the pixel art does not shimmer when shrunk.
+ * Zoom levels (device px per world px) of the main camera. The rule (#187): one art pixel is ART_SCALE world px, so a level
+ * must give a whole number of device px per art px (zoom x ART_SCALE integer): the whole levels from 1 up, and
+ * `1 / ART_SCALE` (1 device px per art px). Below that, only 1/4 and 1/8 (the art shrunk by an exact 2 and 4 for framing station hubs),
+ * which are powers of two so the filter averages whole blocks. 3/16, 3/8 and 3/4 were dropped: they map an art px to 0.375, 0.75 and
+ * 1.5 device px and shimmer. The renderer draws every level below 1 with linear filtering (`scene.ts` `setSmooth`).
  */
-const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 3 / 16, 1 / 4, 3 / 8, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
+const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 1 / 4, 1 / ART_SCALE, 1 / 2])].filter((z) => z < 1).sort((a, b) => a - b);
 
 /** A scale snapped down to an aligned one: a whole number from 1 up, a whole number of SCALE_QUANTUM below (at least one). */
 export function alignedScale(s: number): number {
