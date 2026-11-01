@@ -118,8 +118,7 @@ class RecessTones(Feature):
     def col_face(self, sp, face, x, y, z):
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
-        return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][1]   # (dark, as the
-                                                                                                    # recess reads)
+        return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][2]
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R = T.RAMPS[fam][0]
@@ -145,17 +144,21 @@ def _cornice(k, ax, plane, a, b, c0, c1, zc0, zh, m, band, F):
             T.paint(k, ax, plane, max(u0, a), min(u1, b), zc0, zc0 + 2 * PZ, BAST_K, F, 3)
 
 
-def _ledge_seams(k, ax, plane, f0, f1, db, dl, zlo, zsl, F):
-    """The ledge (the slope from the lip at dl, zlo back up to db, zsl) cut in three blocks: two dark seams down it."""
+def _ledge_seams(k, ax, plane, f0, f1, db, dl, zs, zlo, zsl, F):
+    """The ledge (the slope from the lip at dl, zlo back up to db, zsl) cut in three blocks: two seams down it, on down
+    the lower wall's front to its foot at zs."""
     dd, dz = db - dl, zsl - zlo
     n = math.hypot(dd, dz)
     nd, nz = dz / n, -dd / n                            # (its outward normal, in the face's d, z)
     nrm = T.OUT(ax) * nd + Vector((0, 0, 1)) * nz
+    col = SEAM[F] if ax == "y" else None
     for i in (1, 2):
         u = f0 + (f1 - f0) * i / 3
+        u0, u1 = u - T.LINE / 2, u + T.LINE / 2
         k.poly([T.P(ax, plane, uu, z + nz * PAINT, d + nd * PAINT) for uu, (d, z) in
-                ((u - T.LINE / 2, (dl, zlo)), (u + T.LINE / 2, (dl, zlo)), (u + T.LINE / 2, (db, zsl)),
-                 (u - T.LINE / 2, (db, zsl)))], F, 1, nrm)
+                ((u0, (dl, zlo)), (u1, (dl, zlo)), (u1, (db, zsl)), (u0, (db, zsl)))], F, 1, nrm, fixed=col)
+        k.poly([T.P(ax, plane, uu, z, dl + PAINT) for uu, z in ((u0, zs), (u1, zs), (u1, zlo), (u0, zlo))], F, 1,
+               T.OUT(ax), fixed=col)
 
 
 def _arm(ax, plane, u, top, i, side):
@@ -188,8 +191,10 @@ def bastion(hull):
         mt = (-1.0 if ina else 0.0, 1.0 if out else -1.0 if inb else 0.0)    # into the corner, mitred to meet the
                                                                               # other face's (straight at the camera)
 
-        def band(u0, u1, z0, z1, lvl, cap=None, front=dl, m=(False, False), back=d0):
-            prism(k, ax, plane, u0, u1, [(back, z0), (front, z0), (front, z1), (back, z1)], F, lvl, cap=cap, mitre=m)
+        def band(u0, u1, z0, z1, lvl, cap=None, front=dl, m=(False, False), back=d0, cols=None):
+            prism(k, ax, plane, u0, u1, [(back, z0), (front, z0), (front, z1), (back, z1)], F, lvl, cap=cap, mitre=m,
+                  cols=cols)
+        fc = [None, FRONT[F], None, None] if ax == "y" else None   # (the main face's front the ramp's tone)
         if endf:                                        # a wall's end face: not recessed; its section, and the
             _end_section(k, ax, plane, a, b, zs, top - BAST_HB if full else top, F)   # cornice turned onto it
             if full:
@@ -197,7 +202,7 @@ def bastion(hull):
             return
         zl0 = zs + (0.08 if full else 0.3)              # the lower wall's top: the ledge's foot, 2 px up from it
         zlo = min(zl0 + (2 * PZ if full else 0.0), top - 0.02)
-        band(a, bb, zs, zlo, 3, m=mt)                                                            # the lower wall
+        band(a, bb, zs, zlo, 3, m=mt, cols=fc)                                                   # the lower wall
         if not full:
             band(a, bb, zlo, top, 3)
             return
@@ -221,7 +226,7 @@ def bastion(hull):
                     continue                                     # (nor an inner one)
                 q0, q1 = (max(edge, a), edge + PW) if lo else (edge - PW, min(edge, bb))
                 if q1 - q0 > 1e-6:
-                    band(q0, q1, zlo, zc0, 3)                                    # (its inner side shaded as it faces)
+                    band(q0, q1, zlo, zc0, 3, cols=fc)                           # (its inner side shaded as it faces)
                     for i in (1, 2):                                     # small lit blocks stepping out of it
                         zj = zsl + (zc0 - zsl) * i / 3
                         band(q0, q1, zj - 3 * PZ, zj, 4, front=dl + 1 / 32)
@@ -234,7 +239,10 @@ def bastion(hull):
             if not T.fill("flat", False):                                                     # the slope into
                 prism(k, ax, plane, f0, f1, [(d0 + EPS, zlo), (dl, zlo), (d0 + EPS, zsl)], F, 4,    # it (a design
                       mitre=m, cols=[None, T.RAMPS[F][0][4], None])                    # (lit, whatever its angle)                                                                   # may want it flat)
-                _ledge_seams(k, ax, plane, f0, f1, d0 + EPS, dl, zlo, zsl, F)                    # in three blocks
+                if T.fill("seams", True):                                                        # in three blocks
+                    _ledge_seams(k, ax, plane, f0, f1, d0 + EPS, dl, zs, zlo, zsl, F)            # (a design may not)
+            T.paint(k, ax, plane + d0, f0, f0 + T.LINE, zsl, zc0, 0.75 * PAINT, F, 1)    # a shadow in the corner where
+                                                                                        # its first side meets its back
             cut = T.fill("cut", bastion_hood)                                                    # (its design's)
             cp = cut(k, ax, plane + d0, f0, f1, zlo, zsl, zc0, top, F, m, d0) or cp
         if out and ax == "y":                           # round the chamfer, once (the corner is the y face's end):
@@ -259,6 +267,8 @@ def bastion(hull):
     return face
 
 
+FRONT = {"wall": "fBW8", "blue": "fBH8"}           # the main face's front: the ramp's slope's tone (SLOPE_LIFT)
+SEAM = {"wall": "fBW7", "blue": "fBH7"}            # the ledge's seams, down the lower wall too
 SLOPE_LIFT = {"fBW2": "fBW8", "fBH2": "fBH8"}     # the floor ramp's slope a step lighter (8: between 2 and 1) than
                                                 # the step its role gives (2, what the open slot's insides keep)
 

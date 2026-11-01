@@ -219,7 +219,7 @@ def bastion_machinery(plate, u0, u1, run_, k=None, P=None, zs=0.0, hole=None, fa
     lamp(k, ax, fp, a + 0.47, a + 0.51, c + 0.03, c + 0.08, dl, "blueN")
 
 
-BAST_TOPS = (Design("hood", cut=bastion_hood), Design("readout", cut=bastion_readout, deep=2 / 32),
+BAST_TOPS = (Design("hood", cut=bastion_hood), Design("readout", cut=bastion_readout, deep=2 / 32, seams=False),
              Design("equipment", cut=bastion_equipment, flat=True), Design("module", cut=bastion_module))
 BAST_RAMPS = (Design("cover"), Design("open slot", ramp=bastion_open, ramp_hole=bastion_hole),
               Design("machinery", ramp=bastion_machinery, ramp_hole=bastion_hole))
