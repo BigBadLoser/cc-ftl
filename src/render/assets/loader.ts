@@ -224,7 +224,15 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
 
   const io: SheetIO<Texture> = {
     async load(image, glow) {
-      const [img, gl] = await Promise.all([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null]);
+      // Settle both: when one half fails, the other is freed (each load allocates its own GPU texture, so a retry would leak it).
+      const [a, b] = await Promise.allSettled([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null]);
+      if (a.status === 'rejected' || b.status === 'rejected') {
+        if (a.status === 'fulfilled') a.value.destroy(true);
+        if (b.status === 'fulfilled') b.value?.destroy(true);
+        throw a.status === 'rejected' ? a.reason : (b as PromiseRejectedResult).reason;
+      }
+      const img = a.value;
+      const gl = b.value;
       return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
     },
     unload(name, sheet) {
