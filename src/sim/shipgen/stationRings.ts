@@ -63,7 +63,7 @@ function stampCells(b: Builder, cells: Cell[], key: string, role = 'hall'): Rect
 }
 
 /** A rect is free: its floor lands on space only, its walls on space or wall. */
-function free(b: Builder, r: Rect): boolean {
+export function free(b: Builder, r: Rect): boolean {
   for (let y = r.y; y < r.y + r.h; y++) {
     for (let x = r.x; x < r.x + r.w; x++) {
       const c = b.cv.at(x, y);
@@ -87,7 +87,7 @@ function doorSpots(b: Builder, r: Rect, label: number | ((L: number) => boolean)
 }
 
 /** The room role of a canvas label (the part its chunk was stamped as), or undefined. */
-function roleAt(b: Builder, L: number): string | undefined {
+export function roleAt(b: Builder, L: number): string | undefined {
   const chunk = b.cv.labels[L]?.chunk;
   return chunk === undefined ? undefined : b.parts.find((p) => p.key === chunk)?.role;
 }
@@ -100,7 +100,7 @@ const mid = <T>(xs: T[]): T => xs[(xs.length - 1) >> 1] as T;
  * (side -1): each room is centred on its share of the arc and pushed along the normal until it lands clear with a
  * door onto the corridor. Returns the rooms that found no place.
  */
-function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs: [number, number][], side: 1 | -1, reach = 0, avoid?: Set<number>): RoomSpec[] {
+export function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs: [number, number][], side: 1 | -1, reach = 0, avoid?: Set<number>): RoomSpec[] {
   // With `reach`, rooms stand beyond a band of rooms and door onto one of them: never onto a dock (its airlock needs
   // the dock's side walls), and onto crew quarters only when nothing else is in reach (nobody should walk through a
   // bunk room to reach a gun or a reactor).
@@ -156,7 +156,7 @@ function fitAlong(b: Builder, R: number, label: number, rooms: RoomSpec[], arcs:
 }
 
 /** The round corridor of radius R stamped onto `b`; its rect and room label. */
-function corridor(b: Builder, R: number, key: string, a0 = 0, a1 = TAU): { rect: Rect; label: number } | null {
+export function corridor(b: Builder, R: number, key: string, a0 = 0, a1 = TAU): { rect: Rect; label: number } | null {
   const cells = circleCells(R, a0, a1);
   const rect = stampCells(b, cells, key);
   const c = cells[0] as Cell;
@@ -167,7 +167,7 @@ function corridor(b: Builder, R: number, key: string, a0 = 0, a1 = TAU): { rect:
  * A straight spoke on a cardinal axis from distance `a` to `z` (its end walls), `width` floor wide, doored to both
  * labels. A wide spoke (the concourse) gets a door as wide as its floor at each end, where the ring meets it square.
  */
-function spoke(b: Builder, d: 'n' | 's' | 'e' | 'w', a: number, z: number, inner: number, outer: number, width = 1): boolean {
+export function spoke(b: Builder, d: 'n' | 's' | 'e' | 'w', a: number, z: number, inner: number, outer: number, width = 1): boolean {
   const len = z - a + 1;
   if (len < 3) return false;
   const W = width + 2, o = -(width >> 1) - 1;
@@ -188,13 +188,13 @@ function spoke(b: Builder, d: 'n' | 's' | 'e' | 'w', a: number, z: number, inner
 
 /** The concourse: the north-south spokes (dock bank to hub to dock bank) are the station's main street. */
 const CONCOURSE = 3;
-const widthOf = (d: 'n' | 's' | 'e' | 'w'): number => (d === 'n' || d === 's' ? CONCOURSE : 1);
+export const widthOf = (d: 'n' | 's' | 'e' | 'w'): number => (d === 'n' || d === 's' ? CONCOURSE : 1);
 
 /** Distance from the centre to a hub's wall on a face. */
 const face = (h: Part, d: 'n' | 's' | 'e' | 'w'): number => ({ n: -h.y, s: h.y + h.h - 1, w: -h.x, e: h.x + h.w - 1 })[d];
 
 /** Floor radius of a civil station's rotunda (the round plaza at its centre). */
-const ROTUNDA = 5;
+export const ROTUNDA = 5;
 
 /** The centre of a round station: its label, the distance to its wall on each face, and its part (the bridge's). */
 interface Centre { label: number; face: (d: 'n' | 's' | 'e' | 'w') => number; part: Part | null; radius: number }
@@ -203,7 +203,7 @@ interface Centre { label: number; face: (d: 'n' | 's' | 'e' | 'w') => number; pa
  * The centre: the bridge as a box (military command), or with `hub` null a rotunda, a round plaza that the concourse
  * runs into (a court: fit-out sets its landmark, promenades and floors).
  */
-function centreOf(b: Builder, hub: RoomSpec | null): Centre | null {
+export function centreOf(b: Builder, hub: RoomSpec | null): Centre | null {
   if (!hub) {
     const cells: Cell[] = [];
     for (let y = -ROTUNDA; y <= ROTUNDA; y++) for (let x = -ROTUNDA; x <= ROTUNDA; x++) if (x * x + y * y <= (ROTUNDA + 0.5) ** 2) cells.push({ x, y });
@@ -279,12 +279,12 @@ const secureDepth = (rooms: RoomSpec[]): number => Math.max(0, ...rooms.filter((
  * Rooms inboard of a ring beside a cardinal spoke at angle `axis`, packed from the spoke outward on side `side` (1:
  * clockwise): warehouses beside the dock spokes.
  */
-function besideSpoke(rooms: RoomSpec[], R: number, axis: number, side: -1 | 1): [number, number][] {
+export function besideSpoke(rooms: RoomSpec[], R: number, axis: number, side: -1 | 1): [number, number][] {
   const span = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 2, 0) / Math.max(1, R);
   return [side < 0 ? [axis - 0.14 - span, axis - 0.14] : [axis + 0.14, axis + 0.14 + span]];
 }
 /** The arc centred on `at` just long enough for `rooms` side by side at radius R (each a little clear of the next). */
-function span(rooms: RoomSpec[], at: number, R: number): [number, number] {
+export function span(rooms: RoomSpec[], at: number, R: number): [number, number] {
   const half = rooms.reduce((t, r) => t + Math.max(r.w, r.h) + 3, 0) / 2 / Math.max(1, R);
   return [at - half, at + half];
 }
@@ -295,7 +295,7 @@ function span(rooms: RoomSpec[], at: number, R: number): [number, number] {
  * on the stern axis (east), of two on the east-west axis, of three on the axis and one more on two opposite diagonals.
  * Bays go round in order of size, so mirrored bastions get matching rooms.
  */
-function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
+export function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
   const q = Math.PI / 4;
   const sorted = [...guns].sort((a, b) => b.w * b.h - a.w * a.h);
   const diag = Math.floor(sorted.length / 4) * 4;
@@ -309,10 +309,10 @@ function bastions(guns: RoomSpec[]): [number, RoomSpec[]][] {
 }
 
 /** Shop units along the market street: floor across the concourse (depth) and along it (width). */
-const SHOP = { depth: 5, width: 4 };
+export const SHOP = { depth: 5, width: 4 };
 
 /** A unit lining a spoke: its room, and its floor along the spoke and across it. */
-interface Unit { spec: RoomSpec; along: number; across: number }
+export interface Unit { spec: RoomSpec; along: number; across: number }
 
 /**
  * Rooms lining a straight spoke (from the centre out along direction d to the ring of radius R; floor 3 wide, walls 2
@@ -320,7 +320,7 @@ interface Unit { spec: RoomSpec; along: number; across: number }
  * opens onto the spoke through its middle. Straight geometry, so the units are plain rectangles: the market street's
  * shops, a clinic's ward and treatment rooms. Returns the units placed.
  */
-function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => Unit | null): RoomSpec[] {
+export function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => Unit | null, sides: readonly (-1 | 1)[] = [-1, 1]): RoomSpec[] {
   // (u along the spoke from the centre, v across it) to canvas (x, y); the spoke's walls stand `hw` either side of its
   // axis (2 for the 3-wide concourse, 1 for a narrow spoke).
   const xy = (u: number, v: number): [number, number] => (d === 's' ? [v, u] : d === 'n' ? [v, -u] : d === 'e' ? [u, v] : [-u, v]);
@@ -328,7 +328,7 @@ function lineSpoke(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', next: () => 
   const out: RoomSpec[] = [];
   // A unit that did not fit on one side tries the other.
   let unit: Unit | null = next();
-  for (const side of [-1, 1] as const) {
+  for (const side of sides) {
     let u = R - 3;
     while (unit) {
       const { along: A, across: C } = unit;
@@ -368,7 +368,7 @@ function clinic(b: Builder, R: number, d: 'n' | 's' | 'e' | 'w', rooms: RoomSpec
 }
 
 /** A warehouse in two, each with half its crates and floor (the second take on a crowded ring). */
-function halves(r: RoomSpec): RoomSpec[] {
+export function halves(r: RoomSpec): RoomSpec[] {
   if (!r.warehouse || r.mods.length < 8) return [r];
   const half = (k: number): RoomSpec => {
     const mods = r.mods.filter((_, j) => j % 2 === k);

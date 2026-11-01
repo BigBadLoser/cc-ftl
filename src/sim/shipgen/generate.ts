@@ -315,7 +315,7 @@ export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => s
 export function finishLayout(
   rng: Rng, f: FactionDef, factionId: string, seed: number, role: ShipRoleDef, archetype: ArchetypeId, plan: ShipPlan, b: Builder,
   topology: string, comp: Arranger | null, profile: string, defs: Record<string, ModuleDef>, n: number,
-  opts: { immobile?: boolean; check?: ExtraCheck } = {},
+  opts: { immobile?: boolean; check?: ExtraCheck; placed?: boolean } = {},
 ): GenResult {
   b.cv.fixDoors();
   const labels = b.cv.labels;
@@ -346,7 +346,8 @@ export function finishLayout(
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   // Stations: rooms that can stand in for each other trade roles where their neighbours suit them better (roleSwap.ts).
-  const sw = opts.immobile ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
+  // Not where departments were placed before the rooms (the wheel).
+  const sw = opts.immobile && !opts.placed ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
   // Off the navy, bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts). Metrics read the rooms as planned.
   const cab = f.berths === 'rows' ? { rows, roomOf, roles: sw.roles, specs: sw.specs } : splitCabins(rows, roomOf, width, sw.roles, sw.specs, rng);
   const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, !!opts.immobile);

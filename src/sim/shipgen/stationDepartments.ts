@@ -146,7 +146,7 @@ function withMedbays(rooms: readonly RoomSpec[]): RoomSpec[] {
 export interface RingPlan { secure: 'e' | 'w'; freight: ('n' | 's')[]; quiet: number[]; market: boolean }
 
 /** Quadrants beside a spoke: north 0 and 3, south 1 and 2, east 0 and 1, west 2 and 3. */
-const SIDE: Record<'n' | 's' | 'e' | 'w', number[]> = { n: [0, 3], s: [1, 2], e: [0, 1], w: [2, 3] };
+export const SIDE: Record<'n' | 's' | 'e' | 'w', number[]> = { n: [0, 3], s: [1, 2], e: [0, 1], w: [2, 3] };
 
 /**
  * A small search over the department placements (docs/STATIONFLOWS.md, step 2). Hard: the secure core never beside a
@@ -243,9 +243,9 @@ export interface RingPlacement { plan: RingPlan; arcs: [number, number][]; band:
  * stretched over it) while each department keeps its place in the order; the run starts at the main (north) bank, so the
  * office and the customs post are always the first rooms after it.
  */
-export function placeDepartments(rng: Rng, prog: RingProgram, splits: readonly number[], market: boolean): RingPlacement {
+export function placeDepartments(rng: Rng, prog: RingProgram, splits: readonly number[], market: boolean, given?: RingPlan): RingPlacement {
   const westDocks = splits.some((a) => Math.abs(Math.cos(a) + 1) < 0.01);
-  const plan = planRing(rng, prog.houses.length, westDocks, market);
+  const plan = given ?? planRing(rng, prog.houses.length, westDocks, market);
   const arcs = arcsBetween([...new Set([...splits, 0, Math.PI].map((a) => Math.round(((a % TAU) + TAU) % TAU * 1e6) / 1e6))]);
   const groups = quadrantRooms(prog.band, plan, arcs.map(([a, z]) => z - a), arcs.map(([a]) => a));
   const n0 = Math.max(0, arcs.findIndex(([a]) => quadrantOf(a + 1e-6) === 0));

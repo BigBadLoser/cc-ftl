@@ -6,6 +6,7 @@ import { latticeStation, ringStation } from './civilStations';
 import type { Builder } from './builder';
 import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
+import { plannedWheel } from './stationWheel';
 import { tagged, warehoused } from './stationDepartments';
 import { dockSpec, MK1_REACTOR, type Reactor, type RoomSpec } from './plan';
 import { blockOf, civil, shuffle } from './civilKit';
@@ -193,11 +194,10 @@ function welded(c: Ctx): boolean {
  * rest stay open to space.
  */
 function wheel(c: Ctx): boolean {
-  const spokes: Side[] = ['n', 'e', 's', 'w'];
-  const o = { spokes, extra: c.rng.int(0, 2), centre: 0 };
   const courts = c.rng.int(0, 2);
-  c.parts.push(`spokes nesw courts ${courts}`);
-  return placeRoot(c, civil(courtOf(c, courts)(wheelStation(c.rng, null, office(c), { ...o, ...(c.fam.market ? { market: true } : {}) })), 'command', 'wheel station'), 'wheel');
+  const w = plannedWheel(c.rng, office(c), !!c.fam.market);
+  c.parts.push(`spokes nesw courts ${courts}`, ...(w ? [w.label] : []));
+  return placeRoot(c, civil(courtOf(c, courts)(w?.b ?? null), 'command', 'wheel station'), 'wheel');
 }
 
 /** Hub spokes always include north and south: the concourse runs dock bank to hub to dock bank. */
