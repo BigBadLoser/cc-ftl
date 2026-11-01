@@ -405,6 +405,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
     atlas.setSmooth(c.scale < 1);
+    if (target === null) setRounding(c.scale >= 1 / ART_SCALE); // the inset follows the main view
     W.setUiVisible(target === null);
     W.setMarksVisible(false);
     SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
@@ -412,6 +413,21 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     W.root.position.set(c.originX, c.originY);
     SL.setScale(c.scale);
     SL.world.position.set(c.originX, c.originY);
+  }
+
+  /**
+   * Whole-px snapping of sprites (`roundPixels`) is on from the 1:1 level up. A sprite's offsets are whole art px (2 world px), so below
+   * `1 / ART_SCALE` they are fractions of a device px, and rounding each sprite on its own steps neighbouring wall pieces a device px
+   * apart (seams). Below it the sprites keep their exact subpixel positions and the linear filter blends them. Pixi reads the flag
+   * once per sprite when it is first drawn, so a change is pushed to the sprites already known to the pipe.
+   */
+  let rounding = true;
+  function setRounding(on: boolean): void {
+    if (on === rounding) return;
+    rounding = on;
+    const r = gl as unknown as { _roundPixels: number; renderPipes?: { sprite?: { _gpuSpriteHash?: Record<string, { roundPixels: number } | null> } } };
+    r._roundPixels = on ? 1 : 0;
+    for (const b of Object.values(r.renderPipes?.sprite?._gpuSpriteHash ?? {})) if (b) b.roundPixels = on ? 1 : 0;
   }
 
   // The combat inset: camera pass B over the same world stack, into a texture shown above the main pass.
