@@ -3,6 +3,7 @@ foot up to the cornice; slots cut into the ramp for machinery; its shell and its
 from mathutils import Vector
 
 from .. import wall3d as T
+from .. import walls as W
 from .base import Faction, _style
 from .bastion_designs import BAST_PANEL, BAST_RAMPS, BAST_TOPS, bast_r, bastion_hood, slot_tone
 from .parts import PAINT, body, corner_piece, prism
@@ -206,8 +207,18 @@ def bastion(hull):
     return face
 
 
+SLOPE_LIFT = {"fBW2": "fBW8", "fBH2": "fBH8"}     # the floor ramp's slope a step lighter (8: between 2 and 1) than
+                                                # the step its role gives (2, what the open slot's insides keep)
+
+
 class Bastion(Faction):
     pre = "fB"
+
+    def paint(self, P):
+        c = super().paint(P)
+        if P.kind.startswith("slope") and P.z < W.skirt_top() + 0.01 and P.sprite.startswith("tile.wall."):
+            return SLOPE_LIFT.get(c, c)
+        return c
 
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
