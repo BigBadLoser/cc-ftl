@@ -9,7 +9,7 @@ export const SKILL_ICON: Record<string, string> = {
 };
 
 /** Pip colours by where a skill level comes from. */
-export const SOURCE_COLOR = { rolled: '#8b939a', xp: 'var(--cyan)', trait: 'var(--green)' } as const;
+export const SOURCE_COLOR = { rolled: '#8b939a', xp: 'var(--cyan)', trait: 'var(--green)', lost: 'var(--red)' } as const;
 
 /** The fields of a crew card that decide the state line. */
 type StateOf = Pick<UiCrew, 'dead' | 'downed' | 'surrendered' | 'prisoner' | 'drafted' | 'job' | 'activity'> & { fight?: UiCrew['fight'] };

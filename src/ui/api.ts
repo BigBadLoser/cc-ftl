@@ -1200,7 +1200,7 @@ export interface UiApi {
   /** Esc: close the order menu, drop the tool or aim, or clear the selection. False when there was nothing to cancel. */
   cancel(): boolean;
   session: Subscribable<UiSession>;
-  /** Throw this game away and start a new one (reloads the page). */
+  /** Open the new-game flow on the title screen (the game in play stays the autosave until the new one starts). */
   newGame: () => void;
   /** Go back to the last save, from before the loss (reloads the page). */
   loadLastSave: () => void;

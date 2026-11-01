@@ -14,7 +14,8 @@
   const trained = $derived(d?.skills.filter((s) => s.value > 0) ?? []);
   const untrained = $derived(d?.skills.filter((s) => s.value <= 0) ?? []);
   // The pip track stays six 24px pips wide (159px); a skill past level 6 shrinks the pips instead of widening the row.
-  const max = $derived(Math.max(6, ...trained.map((s) => s.value)));
+  // Room for every pip, the red ones a trait took away included.
+  const max = $derived(Math.max(6, ...trained.map((s) => s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0))));
   const num = (v: number, unit: string) => (unit && unit !== 'x' ? `${v} ${unit}` : `${v}`);
   const part = (p: { op: 'add' | 'mul'; value: number; label: string }) => `${p.op === 'mul' ? `x${p.value}` : `${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`} ${p.label}`;
   const good = (p: { op: 'add' | 'mul'; value: number }, invert: boolean) => (p.op === 'mul' ? p.value > 1 : p.value > 0) !== invert;
@@ -25,7 +26,7 @@
     <ul class="rows" style:--pips-w="159px">{#each trained as s (s.skill)}<SkillRow {s} {max} role={c.role} />{/each}</ul>
     <div class="foot">
       <span>{#if untrained.length}Untrained: {untrained.map((s) => s.name).join(', ')}{/if}</span>
-      <span class="key">{#each Object.entries({ rolled: 'rolled', xp: 'XP', trait: 'trait' }) as [k, l] (k)}<span><i style:background={SOURCE_COLOR[k as keyof typeof SOURCE_COLOR]}></i>{l}</span>{/each}</span>
+      <span class="key">{#each Object.entries({ rolled: 'rolled', xp: 'XP', trait: 'trait', lost: 'trait −' }) as [k, l] (k)}<span><i style:background={SOURCE_COLOR[k as keyof typeof SOURCE_COLOR]}></i>{l}</span>{/each}</span>
     </div>
   </Section>
   {#if d.traits.length}<Section title="Traits" testId="crew-traits-detail"><TraitChips traits={d.traits} list /></Section>{/if}

@@ -179,3 +179,4 @@ export { abortYards, YARD_HISTORY } from './yard/flow';
 export { builtCount, totalTiles } from './yard/progress';
 export { YardCrewC, HullPlanC, isLiveOrder, type YardDef, type YardOrder, type YardPhase, type YardState, type YardSizeDef, type YardMoney } from './yard/types';
 export { nodesWithin } from './galaxy/graph';
+export { surrenderBelow } from './fight/surrender';

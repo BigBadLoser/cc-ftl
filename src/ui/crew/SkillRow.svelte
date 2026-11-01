@@ -1,20 +1,17 @@
 <script lang="ts">
   import type { UiSkillDetail } from '../crewDetailApi';
   import Icon, { type IconName } from '../Icon.svelte';
-  import { SKILL_ICON, SOURCE_COLOR } from './format';
+  import { SKILL_ICON } from './format';
+  import Pips, { pipsOf } from '../inspector/Pips.svelte';
 
   /**
    * One trained skill: icon, name, level, then a pip per level coloured by where it comes from (rolled, XP, trait) with a thin
    * grey XP bar under the pips and the XP % after them. Hovering the row highlights it and opens its breakdown card.
    */
   let { s, max, role }: { s: UiSkillDetail; max: number; role: string } = $props();
-  const pips = $derived.by(() => {
-    const seq: (keyof typeof SOURCE_COLOR)[] = [];
-    for (let i = 0; i < s.rolled; i++) seq.push('rolled');
-    for (let i = 0; i < s.xpLevels; i++) seq.push('xp');
-    for (const m of s.mods) if (m.op === 'add' && m.value > 0) for (let i = 0; i < m.value; i++) seq.push('trait');
-    return seq.slice(0, Math.max(0, s.value));
-  });
+  const pips = $derived(pipsOf(s.rolled, s.xpLevels,
+    s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0),
+    s.mods.reduce((n, m) => n + (m.op === 'add' && m.value < 0 ? -m.value : 0), 0)));
   const pct = $derived(Math.round((s.xp / s.per) * 100));
   const sgn = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v)}`;
 </script>
@@ -24,7 +21,7 @@
   <span class="n">{s.name}</span>
   <b>{s.value}</b>
   <span class="pips">
-    <span class="row">{#each Array.from({ length: max }, (_v, i) => i) as i (i)}<i style:--k={pips[i] ? SOURCE_COLOR[pips[i]] : undefined} class:on={!!pips[i]}></i>{/each}</span>
+    <Pips cells={pips} {max} />
     <span class="xp"><i style:width="{pct}%"></i></span>
   </span>
   <span class="pc">{pct}%</span>
@@ -47,9 +44,6 @@
   .n { font-size: 13px; }
   b { font: 700 17px/1 var(--head-font); text-align: right; }
   .pips { display: grid; gap: 4px; }
-  .row { display: flex; gap: 3px; }
-  .row i { display: block; flex: 1; min-width: 0; height: 10px; box-sizing: border-box; background: var(--track); border: 1px solid var(--line); }
-  .row i.on { background: var(--k); border-color: var(--k); }
   .xp { display: block; height: 3px; background: #141a20; }
   .xp i { display: block; height: 100%; background: #7d858c; }
   .pc { align-self: end; line-height: 1; font-size: 11px; color: var(--dim); }
