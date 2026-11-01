@@ -18,6 +18,11 @@ import t_chevron_left from '@tabler/icons/outline/chevron-left.svg?raw';
 import t_chevron_up from '@tabler/icons/outline/chevron-up.svg?raw';
 import t_clock from '@tabler/icons/outline/clock.svg?raw';
 import t_coin from '@tabler/icons/outline/coin.svg?raw';
+import t_sword from '@tabler/icons/outline/sword.svg?raw';
+import t_code from '@tabler/icons/outline/code.svg?raw';
+import t_first_aid_kit from '@tabler/icons/outline/first-aid-kit.svg?raw';
+import t_backpack from '@tabler/icons/outline/backpack.svg?raw';
+import t_shirt from '@tabler/icons/outline/shirt.svg?raw';
 import t_cpu from '@tabler/icons/outline/cpu.svg?raw';
 import t_crosshair from '@tabler/icons/outline/crosshair.svg?raw';
 import t_current_location from '@tabler/icons/outline/current-location.svg?raw';
@@ -158,6 +163,11 @@ export const FILES = {
   research: 'flask-2',
   wind: 'wind',
   helm: 'steering-wheel',
+  sword: 'sword',
+  code: 'code',
+  medkit: 'first-aid-kit',
+  backpack: 'backpack',
+  shirt: 'shirt',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -178,6 +188,11 @@ const RAW: Record<string, string> = {
   'chevron-up': t_chevron_up,
   'clock': t_clock,
   'coin': t_coin,
+  'sword': t_sword,
+  'code': t_code,
+  'first-aid-kit': t_first_aid_kit,
+  'backpack': t_backpack,
+  'shirt': t_shirt,
   'cpu': t_cpu,
   'crosshair': t_crosshair,
   'current-location': t_current_location,

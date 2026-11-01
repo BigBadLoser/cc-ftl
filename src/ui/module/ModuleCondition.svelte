@@ -16,7 +16,7 @@
   ]);
 </script>
 
-<Section title="Hull points" icon="wrench" testId="module-condition">
-  <StatBar size="lg" value={(m.hp / Math.max(1, m.maxHp)) * 100} color="var(--hp)" low={m.hp < m.maxHp * 0.4} text="{m.hp}/{m.maxHp}" />
+<Section title="Hull points" testId="module-condition">
+  <StatBar value={(m.hp / Math.max(1, m.maxHp)) * 100} color="var(--hp)" low={m.hp < m.maxHp * 0.4} text="{m.hp}/{m.maxHp}" />
 </Section>
-<Section title="Status" icon="power"><ConditionList items={items} /></Section>
+<Section title="Status"><ConditionList items={items} /></Section>

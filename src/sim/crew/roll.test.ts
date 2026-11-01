@@ -11,7 +11,7 @@ const ROLES = {
   gunner: { gunnery: 3 },
   medic: { medicine: 3 },
 } as const;
-const trait = (o: Partial<TraitDef>): TraitDef => ({ name: 'T', flavour: '', kind: 'texture', effect: '', weight: 5, rollable: true, ...o });
+const trait = (o: Partial<TraitDef>): TraitDef => ({ name: 'T', flavour: '', kind: 'texture', effect: '', short: '', weight: 5, rollable: true, ...o });
 const traits: Record<string, TraitDef> = {
   'trait.a': trait({ excludes: ['trait.b'] }),
   'trait.b': trait({ excludes: ['trait.a'] }),

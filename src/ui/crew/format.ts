@@ -1,24 +1,10 @@
-import type { UiStatPart } from '../crewDetailApi';
-
-/** "+2" / "−1" for points, "x1.15" for factors (a real minus sign). */
-export function partText(p: Pick<UiStatPart, 'op' | 'value'>): string {
-  if (p.op === 'mul') return `x${Math.round(p.value * 100) / 100}`;
-  return `${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`;
-}
-
-/** Whether a term helps (more points, a factor above 1); `restDecay` is the one stat where more is worse. */
-export function partGood(p: Pick<UiStatPart, 'op' | 'value'>, invert = false): boolean {
-  const up = p.op === 'mul' ? p.value > 1 : p.value > 0;
-  return invert ? !up : up;
-}
-
+/** The word for a mood score (the crew card and the inspector). */
 export const moodWord = (v: number): string => (v < 20 ? 'miserable' : v < 35 ? 'unhappy' : v < 65 ? 'content' : 'happy');
 
-/** Signed points with a real minus sign. */
-export const signed = (v: number): string => `${v >= 0 ? '+' : '−'}${Math.abs(v)}`;
+/** The icon of each skill (the Skills tab). */
+export const SKILL_ICON: Record<string, string> = {
+  gunnery: 'target', piloting: 'helm', shielding: 'shield', melee: 'sword', repair: 'wrench', hacking: 'code', medicine: 'medkit', science: 'research',
+};
 
-/** The inspector tabs that open the expanded view. */
-export type DetailTab = 'status' | 'skills' | 'gear';
-
-/** Bar colours of the breakdown kinds (skills tab). */
-export const PART_COLOR: Record<UiStatPart['kind'], string> = { rolled: '#9aa3ab', xp: 'var(--cyan)', trait: 'var(--green)', gear: 'var(--amber)', state: 'var(--amber)', env: 'var(--amber)' };
+/** Pip colours by where a skill level comes from. */
+export const SOURCE_COLOR = { rolled: '#8b939a', xp: 'var(--cyan)', trait: 'var(--green)' } as const;

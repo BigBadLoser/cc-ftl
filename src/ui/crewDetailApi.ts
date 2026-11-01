@@ -52,20 +52,31 @@ export interface UiCondition {
   tone: 'good' | 'ok' | 'warn' | 'bad';
 }
 
+/** A hover card for an item: a title bar (name, kind), stat rows, and a foot (value) under a rule. */
+export interface UiItemCard {
+  title: string;
+  sub: string;
+  rows: { label: string; value: string; note?: string; extra?: { text: string; good: boolean } }[];
+  foot: { label: string; value: string; note?: string }[];
+  flavour?: string;
+}
+
 export interface UiGearSlot {
   slot: 'weapon' | 'suit' | 'hands' | 'implant';
   label: string;
-  /** What fills it, or null for an empty slot. */
-  item: { id: string; name: string; count?: number; lines: string[]; natural?: boolean } | null;
+  /** What fills it (`id`: the item id, for its sprite), or null for an empty slot. */
+  item: { id: string; name: string; count?: number; natural?: boolean; card: UiItemCard | null } | null;
 }
 
 export interface UiCrewDetail {
   id: number;
   health: { hp: number; maxHp: number; conditions: UiCondition[] };
-  /** Null for crew without moods (robots). */
-  mood: { value: number; base: number; factors: { label: string; value: number; trait: boolean }[]; workMult: number } | null;
+  /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. */
+  mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number } | null;
   skills: UiSkillDetail[];
   stats: UiStatDetail[];
-  traits: { id: string; name: string; kind: string; flavour: string; effect: string }[];
+  traits: { id: string; name: string; kind: string; flavour: string; effect: string; short: string }[];
   gear: UiGearSlot[];
+  /** The stats card of every hand weapon, as this crew member would use it (their skill): the wielded one and those in storage. */
+  cards: Record<string, UiItemCard>;
 }

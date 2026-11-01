@@ -17,7 +17,8 @@ describe('the crew inspector detail', () => {
     for (const s of d.skills) expect(s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + m.value, 0)).toBe(Math.round(stat(sim, id, s.skill as 'gunnery')));
     const carry = d.stats.find((s) => s.stat === 'carryCapacity')!;
     expect(carry.parts).toEqual([{ label: 'Strong', kind: 'trait', op: 'mul', value: 1.5 }]);
-    expect(d.gear.map((g) => g.slot)).toEqual(['weapon', 'suit', 'hands', 'implant', 'implant']);
+    expect(d.gear.map((g) => g.slot)).toEqual(['weapon', 'suit', 'hands', 'implant']);
+    expect(d.cards['item.rifle']?.rows.find((r) => r.label === 'Accuracy')?.extra?.good).toBe(true);
   });
 
   it('lists the mood factors over the base', () => {

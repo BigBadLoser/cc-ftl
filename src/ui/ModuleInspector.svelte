@@ -29,7 +29,8 @@
   <PowerPanel {api} {m} {mods} onBack={() => (powerOpen = false)} />
 {:else if m && tabProps}
   <div data-testid="module-inspector">
-    <PanelHead icon="module" title={m.name} sub="{m.local.x},{m.local.y}" {onBack} />
-    <TabbedInspector tabs={moduleTabs} props={tabProps} title={m.name} />
+    <TabbedInspector tabs={moduleTabs} props={tabProps}>
+      {#snippet head()}<PanelHead icon="module" title={m.name} sub="{m.local.x},{m.local.y}" {onBack} />{/snippet}
+    </TabbedInspector>
   </div>
 {/if}

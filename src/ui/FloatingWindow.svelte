@@ -9,7 +9,7 @@
    * outside click and Esc, see outsideClick.ts), remembered per `id` for the browser session, and kept on screen.
    * It is always a positioned window, clamped to the viewport at any width (desktop only; no phone layout).
    */
-  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
+  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
     id: string; title: string; icon?: IconName;
     /** The smallest size this panel can be dragged to. */
     min: Size;
@@ -25,6 +25,10 @@
     padded?: boolean;
     /** No header of its own: the content brings its own `.ph` heading, which drags the window; only the pin tile is added (`pinRight` px in from the right edge). */
     bare?: boolean; pinRight?: number;
+    /** False hides the pin tile (a panel that belongs to another and closes with it). */
+    pinnable?: boolean;
+    /** Forces the width (a window whose content sets its size, like the inspector growing for a tab); the player's moves keep it. */
+    width?: number | null;
     /** Default spot keeps right of the combat panel while it is docked on the left. */
     z?: number; pinned?: boolean; class?: string;
     titleExtra?: Snippet; actions?: Snippet; children: Snippet;
@@ -54,10 +58,12 @@
   // svelte-ignore state_referenced_locally
   const saved = readWindow(id);
   let stored = $state<Rect | null>(saved.rect);
-  pinned = saved.pinned;
+  // Whether a window can pin never changes either.
+  // svelte-ignore state_referenced_locally
+  pinned = saved.pinned && pinnable;
   let live = $state<Rect | null>(null);
   let elH = $state(0);
-  const base = $derived<DefaultRect>(stored ?? defaultRect(defBounds));
+  const base = $derived.by<DefaultRect>(() => { const r = stored ?? defaultRect(defBounds); return width ? { ...r, w: width } : r; });
   const auto = $derived(stored === null && base.h === 0);
   const bottomAnchored = $derived(auto && base.anchor === 'bottom');
   const rect = $derived.by((): Rect => {
@@ -125,12 +131,12 @@
       <span class="t" data-testid={titleTestId}>{title}</span>
       {@render titleExtra?.()}
       {@render actions?.()}
-      <button class="tile pin" class:on={pinned} title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
+      {#if pinnable}<button class="tile pin" class:on={pinned} title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
         <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
-      </button>
+      </button>{/if}
       <button class="tile x" title={closeLabel} aria-label={closeLabel} data-testid={closeTestId} onclick={onClose}><Icon name="close" size={16} /></button>
     </header>
-  {:else}
+  {:else if pinnable}
     <button class="tile pin barepin" class:on={pinned} style="right:{pinRight}px" title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
       <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
     </button>

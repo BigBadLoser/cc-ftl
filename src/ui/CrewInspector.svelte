@@ -28,7 +28,7 @@
 
 {#if c && tabProps}
   <div data-testid="crew-inspector">
-    <PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub="{c.role}{enemy ? ' · hostile' : ''}" foe={enemy} {onBack} />
-    {#if enemy}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} title={c.name} />{/if}
+    {#snippet head()}<PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub="{c.role}{enemy ? ' · hostile' : ''}" foe={enemy} {onBack} />{/snippet}
+    {#if enemy}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
   </div>
 {/if}

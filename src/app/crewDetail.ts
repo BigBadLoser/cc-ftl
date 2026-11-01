@@ -5,8 +5,8 @@ import {
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
 import { xpGainMult } from '../sim/crew/traits';
-import { TRAIT_MOOD_LABELS } from '../sim/crew/traitMood';
-import type { UiCondition, UiCrewDetail, UiGearSlot, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
+import { carriedCard, suitCard, weaponCard } from './crewItemCards';
+import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
 
 const cap = (s: string): string => s[0]!.toUpperCase() + s.slice(1);
 const OTHER_STATS: readonly { stat: StatName; name: string; unit: UiStatDetail['unit'] }[] = [
@@ -90,37 +90,50 @@ function moodOf(sim: Sim, id: number): UiCrewDetail['mood'] {
   const m = sim.world.get(id, MoodC);
   if (!m) return null;
   const factors = m.factors.map((f) => ({
-    label: MOOD_LABELS[f.key] ?? (f.key.startsWith('trait:') ? f.key.slice(6) : f.key), value: f.value,
-    trait: f.key.startsWith('trait:') || f.key in TRAIT_MOOD_LABELS,
+    label: MOOD_LABELS[f.key] ?? (f.key.startsWith('trait:') ? f.key.slice(6) : f.key), value: f.value, source: factorSource(sim, id, f.key),
   })).sort((a, b) => b.value - a.value);
   return { value: m.value, base: MOOD_BASE, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1 };
 }
 
-const pct = (v: number): string => `${Math.round(v * 100)}%`;
+/** The trait behind a mood factor: the trait's own factor, or the one that changes how this factor feels (Social's Company). */
+function factorSource(sim: Sim, id: number, key: string): string | undefined {
+  for (const d of traitDefs(sim, id)) {
+    const e = d.effects ?? {};
+    if (key.startsWith('trait:') && MOOD_LABELS[key] !== undefined) return d.name;
+    if ((key === 'company' || key === 'lonely' || key === 'alone' || key === 'crowded') && e.company) return d.name;
+    if ((key === 'wellFed' || key === 'hotMeal') && e.foodMoodMult) return d.name;
+    if ((key === 'thrill' || key === 'bored') && e.thrill) return d.name;
+    if (key === 'cooped' && e.voidHome) return d.name;
+    if (key === 'glare' && e.darkAdapted) return d.name;
+    if ((key === 'idle' || key === 'restless') && e.idleMood?.key === key) return d.name;
+  }
+  return undefined;
+}
 
+/** The loadout: weapon, suit (armor when it exists), what they carry, and two implant slots. Each item has its hover card. */
 function gearOf(sim: Sim, id: number): UiGearSlot[] {
   const w = wielded(sim, id);
-  const d = w.def;
-  const weaponLines = [`${d.kind === 'ranged' ? `Ranged, ${d.range} tiles` : 'Melee'}`, `${d.damage} damage every ${d.cooldownSec} s`, `${pct(d.accuracy)} base accuracy`];
-  if (d.ion) weaponLines.push('Ion: stuns robots');
-  if (d.knockdownChance) weaponLines.push(`${pct(d.knockdownChance)} knockdown for ${d.knockdownSec ?? 0} s`);
   const natural = w.item !== 'unarmed' && !sim.content.items[w.item];
+  const wname = sim.content.items[w.item]?.name ?? cap(w.item.replace(/^.*\./, ''));
   const out: UiGearSlot[] = [{
     slot: 'weapon', label: 'Weapon',
-    item: w.item === 'unarmed' ? null : { id: w.item, name: sim.content.items[w.item]?.name ?? cap(w.item.replace(/^.*\./, '')), lines: weaponLines, natural },
+    item: w.item === 'unarmed' ? null : { id: w.item, name: wname, natural, card: weaponCard(sim, id, wname, w.def, sim.content.items[w.item]?.price) },
   }];
-  const s = suitDef(sim);
-  out.push({
-    slot: 'suit', label: 'Suit',
-    item: sim.world.has(id, SuitC) ? { id: 'suit', name: 'EVA suit', lines: [`${Math.round(suitAir(sim, id))} of ${s.airSec} s air`, `Move x${s.moveMult}, work x${s.workMult}`, `Aim x${s.accuracyMult}`] } : null,
-  });
+  out.push({ slot: 'suit', label: 'Armor', item: sim.world.has(id, SuitC) ? { id: 'suit', name: 'EVA suit', card: suitCard(sim, id) } : null });
   const c = sim.world.get(id, CarryingC);
-  out.push({ slot: 'hands', label: 'Carrying', item: c ? { id: c.item, name: sim.content.items[c.item]?.name ?? c.item, count: c.count, lines: [] } : null });
+  out.push({ slot: 'hands', label: 'Carrying', item: c ? { id: c.item, name: sim.content.items[c.item]?.name ?? c.item, count: c.count, card: carriedCard(sim, id, c.item, c.count) } : null });
   const implants = sim.world.get(id, ImplantsC)?.list ?? [];
-  for (let i = 0; i < Math.max(2, implants.length); i++) {
+  for (let i = 0; i < Math.max(1, implants.length); i++) {
     const imp = implants[i];
-    out.push({ slot: 'implant', label: 'Implant', item: imp ? { id: imp, name: cap(imp.replace(/^.*\./, '').replace(/_/g, ' ')), lines: [] } : null });
+    out.push({ slot: 'implant', label: 'Implant', item: imp ? { id: imp, name: cap(imp.replace(/^.*\./, '').replace(/_/g, ' ')), card: null } : null });
   }
+  return out;
+}
+
+/** Hover cards of every hand weapon in content, as this crew member would use it. */
+function cardsOf(sim: Sim, id: number): Record<string, UiItemCard> {
+  const out: Record<string, UiItemCard> = {};
+  for (const [item, def] of Object.entries(sim.content.items)) if (def.hand) out[item] = weaponCard(sim, id, def.name, def.hand, def.price);
   return out;
 }
 
@@ -136,8 +149,9 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
     stats: statsOf(sim, id),
     traits: (sim.world.get(id, TraitsC)?.ids ?? []).flatMap((tid) => {
       const d = sim.content.traits?.[tid];
-      return d ? [{ id: tid, name: d.name, kind: d.kind, flavour: d.flavour, effect: d.effect }] : [];
+      return d ? [{ id: tid, name: d.name, kind: d.kind, flavour: d.flavour, effect: d.effect, short: d.short }] : [];
     }),
     gear: gearOf(sim, id),
+    cards: cardsOf(sim, id),
   };
 }

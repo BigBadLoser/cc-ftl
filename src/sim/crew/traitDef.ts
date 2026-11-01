@@ -60,6 +60,8 @@ export interface TraitDef {
   kind: TraitKind;
   /** The exact effect in words, shown on hover (numbers on demand). */
   effect: string;
+  /** The effect in a few words, for the inspector's one-line trait list (`effect` is on hover). */
+  short: string;
   /** Roll weight: 10 common, 5 uncommon, 2 rare. */
   weight: number;
   /** Trait ids that can't be rolled together with this one (both directions are listed in content). */

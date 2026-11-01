@@ -1,32 +1,38 @@
 <script lang="ts">
   import type { UiCrewDetail } from '../crewDetailApi';
   import Section from '../inspector/Section.svelte';
-  import StatBar from '../inspector/StatBar.svelte';
   import ConditionList from '../inspector/ConditionList.svelte';
   import Breakdown from '../inspector/Breakdown.svelte';
+  import type { Condition } from '../inspector/blocks';
   import { moodWord } from './format';
 
-  /** The crew Status tab: health and every condition, then mood with its whole breakdown (base, each factor, total). */
+  /**
+   * The crew Status tab on the inspector grid: health and the needs as bars, then a Conditions line that lists only real
+   * conditions (downed, surrendered); mood with its whole breakdown (base, each factor with the trait behind it, total).
+   */
   let { d }: { d: UiCrewDetail | null } = $props();
-  const sum = $derived(d?.mood ? d.mood.base + d.mood.factors.reduce((n, f) => n + f.value, 0) : 0);
+  const health = $derived.by<Condition[]>(() => {
+    if (!d) return [];
+    const bars = d.health.conditions.filter((c) => c.pct !== null);
+    const other = d.health.conditions.filter((c) => c.pct === null);
+    return [
+      { key: 'hp', label: 'Health', text: `${d.health.hp} / ${d.health.maxHp}`, pct: (d.health.hp / Math.max(1, d.health.maxHp)) * 100, tone: d.health.hp < d.health.maxHp * 0.4 ? 'bad' : 'ok', color: 'var(--hp)' },
+      ...bars.map((c) => ({ ...c, color: c.key === 'hunger' || c.key === 'rest' ? (c.tone === 'bad' ? 'var(--red)' : 'var(--amber)') : undefined })),
+      { key: 'conditions', label: 'Conditions', text: other.length ? other.map((c) => `${c.label}: ${c.text}`).join(', ') : 'none', pct: null, tone: other.some((c) => c.tone === 'bad') ? 'bad' : other.length ? 'warn' : 'dim' },
+    ];
+  });
+  const mood = $derived<Condition[]>(d?.mood ? [{ key: 'mood', label: 'Mood', text: `${d.mood.value} ${moodWord(d.mood.value)}`, pct: d.mood.value, tone: d.mood.value < 35 ? 'bad' : 'ok', color: '#b58cff' }] : []);
 </script>
 
 {#if d}
-  <Section title="Health" icon="heart" testId="crew-status">
-    <div class="big"><StatBar size="lg" value={(d.health.hp / Math.max(1, d.health.maxHp)) * 100} color="var(--hp)" low={d.health.hp < d.health.maxHp * 0.4} text="{d.health.hp}/{d.health.maxHp}" /></div>
-    <ConditionList items={d.health.conditions} />
-  </Section>
+  <Section title="Health" testId="crew-status"><ConditionList items={health} /></Section>
   {#if d.mood}
-    <Section title="Mood" icon="smile" testId="crew-mood-breakdown">
-      <div class="big"><StatBar size="lg" value={d.mood.value} color="#b58cff" low={d.mood.value < 35} text="{d.mood.value} {moodWord(d.mood.value)}" /></div>
+    <Section title="Mood" testId="crew-mood-breakdown">
+      <ConditionList items={mood} />
       <Breakdown base={{ label: 'Base', value: d.mood.base }}
-        rows={[...d.mood.factors.map((f) => ({ label: f.label, value: f.value, tag: f.trait ? 'trait' : undefined }))]}
-        total={{ label: sum !== d.mood.value ? 'Mood (kept within 0 to 100)' : 'Mood', value: d.mood.value }}
-        note={d.mood.workMult < 1 ? `Low mood: work speed x${d.mood.workMult}` : undefined} />
+        rows={d.mood.factors.map((f) => ({ label: f.label, value: f.value, tag: f.source }))}
+        total={{ label: 'Total', value: d.mood.value }}
+        note="Below 35, mood slows work.{d.mood.workMult < 1 ? ` Now x${d.mood.workMult}.` : ''}" />
     </Section>
   {/if}
 {/if}
-
-<style>
-  .big { margin-bottom: 8px; }
-</style>

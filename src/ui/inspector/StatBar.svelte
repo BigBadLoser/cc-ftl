@@ -2,20 +2,20 @@
   import Icon, { type IconName } from '../Icon.svelte';
 
   /**
-   * A labelled stat bar: a fill of `value` out of `max` (or stacked `segments`, each with its own colour), an optional
-   * baseline tick (the role's level, a target), optional cell dividers for small whole-number stats, and a readout.
+   * A labelled stat bar, one look everywhere: an 8px bar of `value` out of `max` (or stacked `segments`, each with its own
+   * colour), an optional baseline tick, optional whole-unit cells, and a right-aligned readout. The label and readout
+   * columns take `--sb-label` and `--sb-value` so rows line up when stacked.
    */
-  let { label, icon, value = 0, max = 100, segments, baseline, cells = false, text, color = 'var(--cyan)', low = false, size = 'md', testId, title }: {
+  let { label, icon, value = 0, max = 100, segments, baseline, cells = false, text, color = 'var(--cyan)', low = false, testId, title }: {
     label?: string; icon?: IconName; value?: number; max?: number;
     segments?: { value: number; color: string; hatch?: boolean }[];
-    baseline?: number; cells?: boolean; text?: string; color?: string; low?: boolean;
-    size?: 'sm' | 'md' | 'lg'; testId?: string; title?: string;
+    baseline?: number; cells?: boolean; text?: string; color?: string; low?: boolean; testId?: string; title?: string;
   } = $props();
   const pct = (v: number) => `${Math.max(0, Math.min(100, (v / Math.max(1e-6, max)) * 100))}%`;
-  const parts = $derived(segments ?? [{ value, color: low ? '#ff5a2d' : color }]);
+  const parts = $derived(segments ?? [{ value, color: low ? 'var(--red)' : color }]);
 </script>
 
-<div class="sb {size}" class:low class:labelled={!!(label || icon)} class:texted={text !== undefined} data-testid={testId} {title}>
+<div class="sb" class:low class:labelled={!!(label || icon)} class:texted={text !== undefined} data-testid={testId} {title}>
   {#if label || icon}<span class="l">{#if icon}<Icon name={icon} size={16} />{/if}{#if label}<span>{label}</span>{/if}</span>{/if}
   <span class="track">
     {#each parts as s, i (i)}<i class:hatch={s.hatch} style:width={pct(s.value)} style:--c={s.color}></i>{/each}
@@ -26,19 +26,16 @@
 </div>
 
 <style>
-  .sb { display: grid; grid-template-columns: 1fr; align-items: center; gap: 8px; color: var(--dim); }
-  .sb.texted { grid-template-columns: 1fr auto; }
-  .sb.labelled { grid-template-columns: auto 1fr; }
-  .sb.labelled.texted { grid-template-columns: auto 1fr auto; }
-  .l { display: inline-flex; align-items: center; gap: 6px; min-width: 16px; font-size: 13px; }
+  .sb { display: grid; grid-template-columns: 1fr; align-items: center; gap: 10px; min-height: 22px; color: var(--dim); font-size: 13px; }
+  .sb.texted { grid-template-columns: 1fr var(--sb-value, auto); }
+  .sb.labelled { grid-template-columns: var(--sb-label, auto) 1fr; }
+  .sb.labelled.texted { grid-template-columns: var(--sb-label, auto) 1fr var(--sb-value, auto); }
+  .l { display: inline-flex; align-items: center; gap: 6px; min-width: 16px; }
   .track { position: relative; display: flex; height: 8px; background: var(--track); border: 1px solid var(--line); }
-  .sm .track { height: 4px; } .lg .track { height: 12px; }
   .track > i { display: block; height: 100%; background: var(--c); flex: none; }
   .track > i.hatch { background: repeating-linear-gradient(135deg, var(--c) 0 2px, transparent 2px 4px); }
-  /* Cells: a gap after every whole unit so small levels read as blocks. */
-  .track > s { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--panel-2); }
-  .base { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -2px; background: #fff; z-index: 1; }
-  .v { min-width: 74px; text-align: right; color: var(--text); font-size: 12px; }
-  .lg .v { font: 700 20px/1 var(--head-font); min-width: 0; }
+  .track > s { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--panel); }
+  .base { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: #fff; }
+  .v { text-align: right; color: var(--text); white-space: nowrap; }
   .low .v { color: #ff9a9a; }
 </style>

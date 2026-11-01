@@ -3,6 +3,7 @@
   import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
   import FloatingWindow from './FloatingWindow.svelte';
   import { isPinned } from './floatingWindow';
+  import { inspectorWidth } from './inspector/width';
   import GridPanel from './GridPanel.svelte';
   import AsteroidPanel from './AsteroidPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
@@ -24,6 +25,8 @@
   let selShuttle = $state<number | null>(null);
   let sites = $state<UiSite[]>([]);
   let selSite = $state<number | null>(null);
+  /** The open inspector tab's width (the inspector grows for Status, Skills, Gear). */
+  let tabWidth = $state<number | null>(null);
 
   onMount(() => {
     const u = [
@@ -39,6 +42,7 @@
       api.selectedShuttle.subscribe((v) => (selShuttle = v)),
       api.sites.subscribe((v) => (sites = v)),
       api.selectedSite.subscribe((v) => (selSite = v)),
+      inspectorWidth.subscribe((v) => (tabWidth = v)),
     ];
     return () => u.forEach((f) => f());
   });
@@ -57,7 +61,7 @@
 </script>
 
 {#if shown || pinned}
-<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinRight={0} padded bind:pinned>
+<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinnable={false} width={tabWidth} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
   {:else if selShuttle !== null}

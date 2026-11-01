@@ -1,53 +1,64 @@
 <script lang="ts">
   import type { UiSkillDetail } from '../crewDetailApi';
-  import StatBar from '../inspector/StatBar.svelte';
-  import Breakdown from '../inspector/Breakdown.svelte';
-  import { PART_COLOR } from './format';
+  import Icon, { type IconName } from '../Icon.svelte';
+  import { SKILL_ICON, SOURCE_COLOR } from './format';
 
   /**
-   * One skill: an attribute bar in whole-level cells coloured by where each level comes from (rolled start, experience,
-   * a trait), levels a trait takes away hatched red, a tick at the role's level; then the terms in words and XP to the next level.
+   * One trained skill: icon, name, level, then a pip per level coloured by where it comes from (rolled, XP, trait) with a thin
+   * grey XP bar under the pips and the XP % after them. Hovering the row highlights it and opens its breakdown card.
    */
-  let { s, cells }: { s: UiSkillDetail; cells: number } = $props();
-  const segments = $derived.by(() => {
-    const out: { value: number; color: string; hatch?: boolean }[] = [];
-    if (s.rolled) out.push({ value: s.rolled, color: PART_COLOR.rolled });
-    if (s.xpLevels) out.push({ value: s.xpLevels, color: PART_COLOR.xp });
-    for (const m of s.mods) if (m.op === 'add' && m.value > 0) out.push({ value: m.value, color: PART_COLOR[m.kind] });
-    let lost = s.mods.filter((m) => m.op === 'add' && m.value < 0).reduce((n, m) => n - m.value, 0);
-    // A lost level hatches the top of the bar: shrink the last segments and add a hatched one.
-    const hatched = lost;
-    for (let i = out.length - 1; i >= 0 && lost > 0; i--) {
-      const take = Math.min(out[i]!.value, lost);
-      out[i]!.value -= take;
-      lost -= take;
-    }
-    if (hatched) out.push({ value: hatched, color: 'var(--red)', hatch: true });
-    return out;
+  let { s, max, role }: { s: UiSkillDetail; max: number; role: string } = $props();
+  const pips = $derived.by(() => {
+    const seq: (keyof typeof SOURCE_COLOR)[] = [];
+    for (let i = 0; i < s.rolled; i++) seq.push('rolled');
+    for (let i = 0; i < s.xpLevels; i++) seq.push('xp');
+    for (const m of s.mods) if (m.op === 'add' && m.value > 0) for (let i = 0; i < m.value; i++) seq.push('trait');
+    return seq.slice(0, Math.max(0, s.value));
   });
+  const pct = $derived(Math.round((s.xp / s.per) * 100));
+  const sgn = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v)}`;
 </script>
 
-<li class:zero={s.value === 0} data-testid="skill-row-{s.skill}">
+<li data-testid="skill-row-{s.skill}">
+  <span class="ic"><Icon name={(SKILL_ICON[s.skill] ?? 'list') as IconName} size={15} /></span>
   <span class="n">{s.name}</span>
-  <span class="cellbar" style:width="{cells * 20}px"><StatBar size="lg" max={cells} {segments} baseline={s.role} cells title="{s.name} {s.value}, role {s.role}" /></span>
-  <b class:up={s.value > s.role} class:down={s.value < s.role}>{s.value}</b>
-  <span class="xp" title="{s.xp} of {s.per} XP to level {s.value + 1}{s.gain !== 1 ? ` (XP gains x${s.gain})` : ''}">
-    <StatBar size="sm" value={s.xp} max={s.per} text="{s.xp}/{s.per} XP" />
+  <b>{s.value}</b>
+  <span class="pips">
+    <span class="row">{#each Array.from({ length: max }, (_v, i) => i) as i (i)}<i style:--k={pips[i] ? SOURCE_COLOR[pips[i]] : undefined} class:on={!!pips[i]}></i>{/each}</span>
+    <span class="xp"><i style:width="{pct}%"></i></span>
   </span>
-  {#if s.rolled || s.xpLevels || s.mods.length || s.role}<span class="terms">
-    <Breakdown inline base={s.rolled ? { label: 'rolled', value: s.rolled } : undefined}
-      rows={[...(s.xpLevels ? [{ label: 'XP', value: s.xpLevels }] : []), ...s.mods.map((m) => ({ label: m.label, value: m.value, op: m.op }))]}
-      note="role {s.role}" />
-  </span>{/if}
+  <span class="pc">{pct}%</span>
+  <div class="tip" data-testid="skill-tip-{s.skill}">
+    <div class="h">{s.name} {s.value}</div>
+    <div class="r"><span class="l">Rolled at start</span><span>{s.rolled}</span></div>
+    <div class="r"><span class="l">From XP</span><span class="xpc">{s.xpLevels ? `+${s.xpLevels}` : '0'}</span></div>
+    {#each s.mods as m, i (i)}<div class="r" class:pos={m.op === 'add' ? m.value > 0 : m.value > 1} class:neg={m.op === 'add' ? m.value < 0 : m.value < 1}><span>{m.label}{m.kind === 'trait' ? ' (trait)' : ''}</span><span>{m.op === 'add' ? sgn(m.value) : `x${m.value}`}</span></div>{/each}
+    <hr />
+    <div class="r"><span class="l">Role baseline</span><span>{s.role} ({role.toLowerCase()})</span></div>
+    <div class="r"><span class="l">Next level</span><span>{pct}% ({s.xp}/{s.per} XP)</span></div>
+    {#if s.gain !== 1}<div class="r"><span class="l">XP gains</span><span class="pos">x{s.gain}</span></div>{/if}
+  </div>
 </li>
 
 <style>
-  li { display: grid; grid-template-columns: 78px auto 24px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 10px; row-gap: 3px; padding: 5px 6px; background: var(--panel-2); }
-  li.zero { opacity: 0.55; }
-  .n { font: 600 13px var(--head-font); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
-  b { font: 700 18px/1 var(--head-font); text-align: right; color: var(--text); }
-  b.up { color: #9fe0a8; } b.down { color: #ff9a9a; }
-  .xp :global(.v) { min-width: 64px; font-size: 11px; color: var(--dim); }
-  .terms { grid-column: 2 / 5; }
-  .cellbar { display: block; }
+  li { position: relative; display: grid; grid-template-columns: 18px 84px 22px var(--pips-w) 1fr; column-gap: 10px; align-items: center; padding: 8px 0 9px; border-bottom: 1px solid var(--panel-3); }
+  li:hover { background: var(--panel-2); }
+  .ic { display: inline-flex; color: var(--cyan); }
+  .n { font-size: 13px; }
+  b { font: 700 17px/1 var(--head-font); text-align: right; }
+  .pips { display: grid; gap: 4px; }
+  .row { display: flex; gap: 3px; }
+  .row i { display: block; width: 24px; height: 10px; box-sizing: border-box; background: var(--track); border: 1px solid var(--line); }
+  .row i.on { background: var(--k); border-color: var(--k); }
+  .xp { display: block; height: 3px; background: #141a20; }
+  .xp i { display: block; height: 100%; background: #7d858c; }
+  .pc { align-self: end; line-height: 1; font-size: 11px; color: var(--dim); }
+  .tip { display: none; position: absolute; left: 112px; top: calc(100% - 2px); z-index: 3; width: 236px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line-hi); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6); }
+  li:hover .tip { display: block; }
+  .h { margin-bottom: 4px; font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
+  .r { display: flex; justify-content: space-between; min-height: 20px; font-size: 12px; }
+  .l { color: var(--dim); }
+  .xpc { color: #c9ced3; }
+  .pos { color: #9fe0a8; } .neg { color: #ff9a9a; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
 </style>
