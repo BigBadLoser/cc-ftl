@@ -29,6 +29,9 @@ def palette_entries():
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
             out.update(ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {})))
+            if pre in OFFSETS and len(OFFSETS[pre]) > 7:         # (an extra step is painted exactly: flat, so the
+                out[f"{pre}{tag}7"] = {"hex": out[f"{pre}{tag}7"], "flat": True}   # quantiser keeps it, not a near
+                                                                                    # tone of another look's)
         out.update(ramp(f"{pre}F", b["floor"], offsets=(0.16, 0.1, 0.05, 0.0, -0.05, -0.1, -0.16)))
     return out
 
