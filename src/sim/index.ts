@@ -67,7 +67,8 @@ export * from './robots/components';
 export { hasLiveCore, isCoreLive, aiCores, isShutDown } from './robots/core';
 export { factionsHostile, isAiFaction } from './combat/factions';
 export * from './story/defs';
-export { ImplantsC, SkillXpC, XP_PER_LEVEL, type Implants, type SkillXp } from './story/components';
+export { ImplantsC, SkillXpC, type Implants, type SkillXp } from './story/components';
+export { grantXp, levelsFor, xpForLevels, xpProgress } from './crew/xp';
 export type { TraitDef, TraitEffects, TraitKind } from './crew/traitDef';
 export { RolledSkillsC, TraitsC, bleedOutSec, traitDefs, type RolledSkills, type Traits } from './crew/traits';
 export {

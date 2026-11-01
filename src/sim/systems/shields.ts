@@ -5,7 +5,8 @@ import { mannedConsole, skillOf } from '../combat/operators';
 import { shieldCapacity, shieldRechargeSec } from '../combat/ships';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { SHIELD_OPERATED_BONUS, SKILL_STEP } from '../tuning';
+import { SHIELD_OPERATED_BONUS, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
+import { grantXp } from '../crew/xp';
 
 /**
  * Shield layers: the maximum comes from the running generators (floor(|power| x layersPerPower) each). Layers
@@ -31,6 +32,7 @@ export function shieldSystem(sim: Sim): void {
     }
     const op = mannedConsole(sim, id, 'shields');
     const rate = SHIELD_REGEN_MULT * (1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0)) * (combat && overchargeActive(combat, 'shields') ? OVERCHARGE_SHIELD_REGEN : 1);
+    if (op) grantXp(sim, op.crew, 'shielding', XP_PER_WORK_SEC / TICK_HZ);
     s.timer += rate / TICK_HZ;
     if (s.timer >= shieldRechargeSec(sim, id)) {
       s.layers++;

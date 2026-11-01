@@ -17,8 +17,9 @@ import { TICK_HZ } from '../time';
 import {
   BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
   COLD_BELOW, FIRE_CREW_DAMAGE, GET_UP_HP, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, REGEN_PER_SEC,
-  SKILL_STEP, STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC,
+  SKILL_STEP, STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
+import { grantXp } from '../crew/xp';
 
 /** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (with air in the tank) or airless skips thin air and CO2; a suit also insulates against cold. */
 function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
@@ -43,15 +44,17 @@ function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: 
  */
 export function vitalsSystem(sim: Sim): void {
   // Best medicine level per ship and side, worked out only when a patient in a bed needs it (rare), once per tick.
-  const medics = new Map<string, number>();
-  const medicine = (ship: number, side: string): number => {
+  const medics = new Map<string, { skill: number; id: number }>();
+  const medicine = (ship: number, side: string): { skill: number; id: number } => {
     const key = `${ship}:${side}`;
     let best = medics.get(key);
     if (best === undefined) {
-      best = 0;
+      best = { skill: 0, id: 0 };
       for (const c of sim.world.query(CrewC, PositionC)) {
         if (sim.world.has(c, DeadC) || sim.world.has(c, DownedC) || sim.world.get(c, AllegianceC)?.faction !== side) continue;
-        if (shipIdOf(sim, sim.world.get(c, PositionC) as Position) === ship) best = Math.max(best, skillOf(sim, c, 'medicine'));
+        if (shipIdOf(sim, sim.world.get(c, PositionC) as Position) !== ship) continue;
+        const skill = skillOf(sim, c, 'medicine');
+        if (skill > best.skill) best = { skill, id: c };
       }
       medics.set(key, best);
     }
@@ -85,8 +88,11 @@ export function vitalsSystem(sim: Sim): void {
         else down(sim, id, pos);
       }
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
-      const care = 1 + SKILL_STEP * medicine(shipIdOf(sim, pos), sim.world.get(id, AllegianceC)?.faction ?? '');
+      const medic = medicine(shipIdOf(sim, pos), sim.world.get(id, AllegianceC)?.faction ?? '');
+      const care = 1 + SKILL_STEP * medic.skill;
+      const before = health.hp;
       health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
+      if (medic.id && health.hp > before) grantXp(sim, medic.id, 'medicine', (health.hp - before) * XP_PER_HP_HEALED); // the medic whose skill sped the healing
       if (health.hp >= GET_UP_HP) getUp(sim, id, downed);
     } else {
       health.hp = Math.max(0, health.hp - harm / TICK_HZ);

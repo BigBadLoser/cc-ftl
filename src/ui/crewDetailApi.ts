@@ -25,7 +25,7 @@ export interface UiSkillDetail {
   mods: UiStatPart[];
   /** The role's level (0 for an off-role skill). */
   role: number;
-  /** XP into the next level, out of `per`. */
+  /** XP into the next level, out of `per` (the level's width; 0 at the XP cap). */
   xp: number;
   per: number;
   /** XP gain multiplier from traits for this skill (1 = none). */
