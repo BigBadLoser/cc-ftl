@@ -134,6 +134,9 @@ class RecessTones(Feature):
         tl = T.style().toe_lvl                                                     # (its last cell the step's lip)
         return [(sp.run - 1 / 32, R[1]), (sp.run, tl[fam] if isinstance(tl, dict) else R[tl or 0])]
 
+    def end_tone(self, sp, fam, ox):                    # (the ramps' caps at a free end: its section's)
+        return SECTION[fam] if ox == "y" else darker(SECTION[fam])
+
 
 def _cornice(k, ax, plane, a, b, c0, c1, zc0, zh, m, band, F):
     """The cornice from c0 to c1 (run on past the face's a..b round a corner or over an arm), lit, in blocks a tile:
@@ -208,15 +211,23 @@ def bastion(hull):
             prism(k, ax, plane, u0, u1, [(back, z0), (front, z0), (front, z1), (back, z1)], F, lvl, cap=cap, mitre=m,
                   cols=cols)
         fc = [None, FRONT[F] if ax == "y" else darker(FRONT[F]), None, None]   # (the main face's front the ramp's)
+        sd = (lambda c: c) if ax == "y" else darker     # noqa: E731   (the shade side a shade under)
         if endf:                                        # a wall's end face: not recessed; its section, and the
-            _end_section(k, ax, plane, a, b, zs, top - BAST_HB if full else top, F)   # cornice turned onto it
-            if full:
-                band(a, b + BAST_K, top - BAST_HB, top - BAST_HT, 4, front=BAST_K,
-                     cols=[None, HEAD[F] if ax == "y" else darker(HEAD[F]), None, None])
+            _end_section(k, ax, plane, a, b, zs, top - BAST_HB if full else top, F, col=sd(SECTION[F]),
+                         edge=sd(END_EDGE[F]))         # and the cornice turned onto it (as its side blocks: a
+            if full:                                    # dark foot, a lit top edge)
+                zc0, zh = top - BAST_HB, top - BAST_HT
+                band(a, b + BAST_K, zc0, zh, 4, front=BAST_K, cols=[None, sd(HEAD[F]), None, None])
+                T.paint(k, ax, plane, a, b, zc0, zc0 + 2 * PZ, BAST_K, F, 3)
+                flat(k, ax, plane, a, b, zh - PZ, zh, BAST_K + PAINT, sd(EDGE[F]))
+                zlo = zs + 0.08 + 2 * PZ                # a seam across it at the lower wall's top
+                flat(k, ax, plane, a, b, zlo - PZ, zlo, PAINT, sd(darker(darker(SEAM[F]))))
             return
         zl0 = zs + (0.08 if full else 0.3)              # the lower wall's top: the ledge's foot, 2 px up from it
         zlo = min(zl0 + (2 * PZ if full else 0.0), top - 0.02)
-        band(a, bb, zs, zlo, 3, m=mt, cols=fc)                                                   # the lower wall
+        so = darker if ax == "y" else (lambda c: c)     # noqa: E731   (a part's end at a free end: the end face's,
+        ce = (None, so(END[F])) if end1 else None       # which faces the other way)
+        band(a, bb, zs, zlo, 3, m=mt, cols=fc, cap=ce)                                          # the lower wall
         if not full:
             band(a, bb, zlo, top, 3)
             return
@@ -239,12 +250,13 @@ def bastion(hull):
                 if (lo and ia) or (not lo and ib):
                     continue                                     # (nor an inner one)
                 q0, q1 = (max(edge, a), edge + PW) if lo else (edge - PW, min(edge, bb))
-                if q1 - q0 > 1e-6:
-                    band(q0, q1, zlo, zc0, 3, cols=fc, cap=RECESS_SIDE[F] if ax == "y" else darker(RECESS_SIDE[F]))   # (its inner
-                                                                                        # side the recess's)
+                if q1 - q0 > 1e-6:                      # (its inner side the recess's; at a wall's free end its
+                    side = sd(RECESS_SIDE[F])           # outer one the end face's)
+                    fe = end1 and not lo and abs(edge - b) < 1e-6
+                    band(q0, q1, zlo, zc0, 3, cols=fc, cap=(side, so(END[F])) if fe else side)
                     for i in (1, 2):                                     # small lit blocks stepping out of it
                         zj = zsl + (zc0 - zsl) * i / 3
-                        band(q0, q1, zj - 3 * PZ, zj, 4, front=dl + 1 / 32)
+                        band(q0, q1, zj - 3 * PZ, zj, 4, front=dl + 1 / 32, cap=(None, so(END[F])) if fe else None)
             corner = out and abs(s1 - b) < 1e-6
             f0 = s0 if ia else s0 + PW
             f1 = bb if corner or ib else min(s1 - PW, bb)
@@ -289,6 +301,9 @@ RECESS_SIDE = {"wall": "fBW2", "blue": "fBH2"}     # and its side walls
 SEAM = {"wall": "fBW7", "blue": "fBH7"}            # the ledge's seams, down the lower wall too
 SHADOW = {"wall": "fBW3", "blue": "fBH3"}
 HEAD = {"wall": "fBW8", "blue": "fBH8"}            # the header blocks' fronts
+END = {"wall": "fBW2", "blue": "fBH2"}             # a wall's end face (lit; its shade side a shade under)
+SECTION = {"wall": "fBW9", "blue": "fBH9"}         # and its ramps' section
+END_EDGE = {"wall": "fBW1", "blue": "fBH1"}        # and its front edge's highlight
 EDGE = {"wall": "fBW0", "blue": "fBH0"}            # and their lit top edges          # the shadow line where the recess's side meets its back
 SLOPE_LIFT = {"fBW2": "fBW10", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}   # (and its panel's outline 7)     # the floor ramp's slope a step lighter (8: between 2 and 1) than
                                                 # the step its role gives (2, what the open slot's insides keep)

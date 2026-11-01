@@ -94,6 +94,17 @@ def bastion_readout(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), bac
             lamp(k, ax, plane, *q, dl, "lvR2")
     zr = q1 + 0.04                                  # over it, a face sloping out to the cut's top edge from a
     prism(k, ax, plane, f0, f1, [(0.0, zr), (1 / 32, zr), (R, z1), (0.0, z1)], F, 3, cap=False)  # px lip
+    from .bastion import SEAM
+    sm = darker(darker(SEAM[F]))                    # its seams at the thirds (as the base's back wall's)
+    sm = sm if ax == "y" else darker(sm)
+    dd, dz = R - 1 / 32, z1 - zr
+    nn = (dd * dd + dz * dz) ** 0.5
+    nrm = T.OUT(ax) * (dz / nn) + Vector((0, 0, 1)) * (-dd / nn)
+    for i in (1, 2):
+        u = T.snap(f0 + (f1 - f0) * i / 3)
+        k.poly([T.P(ax, plane, uu, z, d) + nrm * PAINT for uu, (d, z) in
+                ((u - LINE / 2, (1 / 32, zr)), (u + LINE / 2, (1 / 32, zr)), (u + LINE / 2, (R, z1)),
+                 (u - LINE / 2, (R, z1)))], F, 1, nrm, fixed=sm)
     o, up = T.OUT(ax), Vector((0, 0, 1))
     n = (o * (zb - zf) + up * R).normalized()
 
@@ -186,7 +197,9 @@ SLOT_SIDE = {"wall": "fBW4", "blue": "fBH4"}    # (step 4: the ramp's own cut fa
 
 def slot_tone(part, fam, ax, n):
     """The open slot's walls as the solid ramp cuts them (Style.hole_tone): its back and its sides."""
-    return (SLOT_TONE if part == "back" else SLOT_SIDE).get(fam) or T.tone(fam, 1, n, ax)
+    from .bastion import darker
+    c = (SLOT_TONE if part == "back" else SLOT_SIDE).get(fam)
+    return (c if ax == "y" else darker(c)) if c else T.tone(fam, 1, n, ax)      # (a shade under on the shade side)
 
 
 def _slot(k, P, run_, zs, hole, fam):
@@ -196,15 +209,20 @@ def _slot(k, P, run_, zs, hole, fam):
     zat = lambda d: ft + (zs - ft) * (1 - d / run_)    # noqa: E731   the slope's height d out (over its foot)
     zb = zat(d1)                                       # (the floor level, meeting the slope where the slot ends)
     up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
+    from .bastion import darker
+    shade = abs(out_.x) > abs(out_.y)
+
+    def sh(c):                                          # (on the shade side a shade under, as its ramp is)
+        return darker(c) if shade and c and c.startswith("fB") else c
     R = T.RAMPS[fam][0]                                 # (SLOT_TONE)
-    c = SLOT_TONE.get(fam, R[2])
+    c = sh(SLOT_TONE.get(fam, R[2]))
     k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zb, d1), P(o0, zb, d1)], fam, 2, up, fixed=c)          # floor,
     k.poly([P(o0, zb, d0), P(o1, zb, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], fam, 1, out_, fixed=c)  # back
     zf = zb + 2 * PZ                                                        # (2 px of shadow along their fold)
     k.poly([P(o0, zb, d0 + PAINT), P(o1, zb, d0 + PAINT), P(o1, zf, d0 + PAINT), P(o0, zf, d0 + PAINT)],
-           fam, 1, out_, fixed=SLOT_FOLD.get(fam, R[0]))
+           fam, 1, out_, fixed=sh(SLOT_FOLD.get(fam, R[0])))
     for u, sg in ((o0, 1), (o1, -1)):                                                                # and sides
-        k.poly([P(u, zb, d0), P(u, zat(d0), d0), P(u, zb, d1)], fam, 1, along * sg, fixed=SLOT_SIDE.get(fam))
+        k.poly([P(u, zb, d0), P(u, zat(d0), d0), P(u, zb, d1)], fam, 1, along * sg, fixed=sh(SLOT_SIDE.get(fam)))
 
 
 def bastion_open(plate, u0, u1, run_, k=None, P=None, zs=0.0, hole=None, fam="wall", **_):

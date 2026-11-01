@@ -40,6 +40,9 @@ class Feature:
     def band(self, sp, fam):
         return NO
 
+    def end_tone(self, sp, fam, ox):
+        return NO
+
 
 class LookShell(T.Shell):
     """wall3d.Shell built from the current look's features. What features may set on it: end_sides (free ends),
@@ -81,6 +84,11 @@ class LookShell(T.Shell):
             if sd[1] == "y" and ox0 < x1 and ox1 > x0 and abs((oy0 - y1) if sd[0] == "+" else (oy1 - y0)) < 1e-9:
                 return True
         return False
+
+    def _end_tone(self, fam, ox):
+        """A ramp's cap at a wall's free end (on the end face, facing ox): the section's tone."""
+        v = self._ask("end_tone", fam, ox)
+        return T.tone(fam, 2, T.OUT(ox), ox) if v is NO else v
 
     def is_end(self, ax, u, side):
         """Does a face along ax end at u (its low end: side -1) on a wall's free end?"""
@@ -167,7 +175,7 @@ class LookShell(T.Shell):
         holes = sorted(h[2:] for h in self.holes if h[0] == ax and abs(h[1] - plane) < 1e-6 and a < h[3] and h[2] < b)
         cuts = [a] + [u for h in holes for u in h[:2]] + [b]
         ox = "x" if ax == "y" else "y"                  # (at a wall's free end the cap is the end face's section:
-        endc = T.tone(fam, 2, T.OUT(ox), ox)            # in its tone, as shell._end_section paints it there)
+        endc = self._end_tone(fam, ox)                  # in its tone, as shell._end_section paints it there)
         ec = tuple(endc if t == "end" else False if t == "cont" else R[0] for t in (lo_t, hi_t))   # (on into the
                                                                                           # next tile: open)
         side = (lambda sg: self.hole_tone("side", fam, ax, al * sg)) if self.hole_tone else \
@@ -261,8 +269,7 @@ class LookShell(T.Shell):
             pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)
             mt = {"cont": 0.0, "end": 0.0, "out": -1.0, "in": 1.0}
             lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
-            ox = "x" if ax == "y" else "y"
-            endc = T.tone(fam, 2, T.OUT(ox), ox)
+            endc = self._end_tone(fam, "x" if ax == "y" else "y")
             cols = [False if q in ("bottom", "back") else R[0] for q in parts]
             prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=cols,
                   cap=tuple(endc if t == "end" else False if t == "cont" else R[0] for t in (lo, hi)),
@@ -440,14 +447,16 @@ def _ramp_chamfer(k, X, Y, C, zs, F):
         k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
 
 
-def _end_section(k, ax, plane, a, b, zs, zt, F):
+def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None):
     """A wall's end face, under its face parts: the section of its foot and its two ramps down to the floor (each
     ending in an upright foot where the shell's ramps do), with edge highlights up its front edge (to zt) and down the
-    front ramp's slope (b: the face's side; a, the wall's back, none)."""
+    front ramp's slope (b: the face's side; a, the wall's back, none); col, edge: the section's and the highlights'
+    fixed colours."""
     sh = T.SHELL
     run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
     sec = [(a - run, 0.0035), (b + run, 0.0035), (b + run, ft), (b, zs), (a, zs), (a - run, ft)]
-    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in (sec if ft > 0.0035 else sec[:2] + sec[3:5])], F, 2, T.OUT(ax))
+    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in (sec if ft > 0.0035 else sec[:2] + sec[3:5])], F, 2, T.OUT(ax),
+           fixed=col)
     if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],
@@ -455,4 +464,4 @@ def _end_section(k, ax, plane, a, b, zs, zt, F):
     hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],                   # (the front's: the back, the wall's
           [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)]]      # far side, takes none)
     for q in hl:
-        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))
+        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax), fixed=edge)
