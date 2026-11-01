@@ -1,6 +1,7 @@
 """Breached walls in relief (derelict dressing; the wall3d.py look): tile.{wall|hull}.{full.|}m<mask>.breach[.v1|.v2]
 (three tears, picked per tile by the renderer) and the intact neighbour's exposed end beside each,
-tile.{wall|hull}.{full.|}breach.end.{w|n}[.v1|.v2] (the same variant as the breach it borders).
+tile.{wall|hull}.{full.|}breach.end.{w|n}[.v1|.v2] (the same variant as the breach it borders). The far hull's are
+the full partition piece's (the far hull is that piece with the hull's cap over it), its ends the hull's section too.
 
 The wall is torn down along a few big teeth (never noise; each variant meets the tile edges at its own heights, so a
 breached run steps at its seams), as clean straight cuts instead of the old cell staircase. Each arm is a solid cut by
@@ -205,15 +206,75 @@ def breach_end(fam, side, level, variant=0):
     return [k.m.build()]
 
 
+def tear_hull(variant):
+    """The far hull's tear: the partitions' (so a breached far hull meets a breached partition at its seam)."""
+    return tear_range("wall", "up", variant)
+
+
+def breach_hull(mask, variant=0):
+    """A breached far hull: the hull's whole strip (the partition's face, the hull's depth behind it) torn, its torn top
+    the hull's section, the partition's relief on its face (the cap is torn away with it: the tear stays under it)."""
+    sp = Stub(mask, "hull", "up", variant)
+    sp.lo, sp.edge = tear_hull(variant)
+    sp.rects = [(r[0], "wall", *r[2:]) for r in sp.rects]      # (the hull's depth in the partition's tones: its foot too)
+    k = T.Relief(f"wall3d_breach_hull_{mask}_{variant}")
+    T.W.emit(k.m, sp)
+    for r in sp.rects:
+        k.side = None
+        prism(k, sp, r, "wall")
+    for ax, plane, a, b, top in faces(sp):
+        e = 1e-3
+        plane = T.snap(plane)
+        k.side = ax
+        T.skirt(k, sp, ax, plane, a, b, "wall")
+        full = top > W.skirt_top() + W.CUT + 0.05
+        ends = (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))
+        T.CLIP = (lambda u, ax=ax, plane=plane: sp.at(*((u, plane - e) if ax == "y" else (plane - e, u))) or 0.0)
+        try:
+            T.wall_face(k, ax, plane, a, b, ends, sp.zs, min(top, W.HF), full)
+        finally:
+            T.CLIP = None
+    if sp.v["cables"]:
+        cables(k.m, "wall", mask, "up", sp.v["cables"])
+    return [k.m.build()]
+
+
+def breach_end_hull(side, variant=0):
+    """The intact far hull's end beside a breached one (the far hull is the full partition piece with the hull's cap
+    over it, renderer tiles.ts): the partition's section and the hull's behind it, from the tear's height at that edge
+    to the partitions' height in the partition's tone (an outline down both edges, a lit lip under the cap's band),
+    and over it to the hull's top the cap's black cut."""
+    lo, hi = tear_hull(variant)
+    edge = lo + (hi - lo) * VARIANTS[variant]["tear"]["x" if side == "w" else "y"][0][1]
+    top, ht = W.wall_top("wall", "up"), W.hull_top()
+    b = W.wall_back() + W.TW + T.PX
+    ax = "x" if side == "w" else "y"
+    k = T.Relief(f"wall3d_breach_end_hull_{side}_{variant}")
+    k.side = ax
+
+    def quad(u0, u1, z0, z1, lvl, d=0.0, col=None):
+        k.poly([T.P(ax, -0.5, u - 0.5, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "wall", lvl,
+               T.OUT(ax), fixed=col)
+    quad(0.0, b, edge, top, 2)
+    quad(0.0, T.LINE, edge, top, 1, T.PAINT)
+    quad(b - T.LINE, b, edge, top, 1, T.PAINT)
+    quad(0.0, b, top - 0.026, top, 4, T.PAINT)
+    quad(0.0, b, top, ht, 2, col=T.CUT)
+    return [k.m.build()]
+
+
 PRE = {"up": "full.", "cut": ""}
 SPRITES = []
-for _fam in ("wall", "hull"):
-    for _lv, _pre in PRE.items():
-        for _m in range(16):
-            for _v in range(len(VARIANTS)):
-                SPRITES.append((f"tile.{_fam}.{_pre}m{_m}.breach{f'.v{_v}' if _v else ''}", (1, 1), "block",
-                                lambda m=_m, f=_fam, lv=_lv, v=_v: breach(m, f, lv, v)))
+for _lv, _pre in PRE.items():
+    for _m in range(16):
         for _v in range(len(VARIANTS)):
-            for _s in ("w", "n"):
-                SPRITES.append((f"tile.{_fam}.{_pre}breach.end.{_s}{f'.v{_v}' if _v else ''}", (1, 1), "block",
-                                lambda s=_s, f=_fam, lv=_lv, v=_v: breach_end(f, s, lv, v)))
+            SPRITES.append((f"tile.wall.{_pre}m{_m}.breach{f'.v{_v}' if _v else ''}", (1, 1), "block",
+                            lambda m=_m, lv=_lv, v=_v: breach(m, "wall", lv, v)))
+            SPRITES.append((f"tile.hull.{_pre}m{_m}.breach{f'.v{_v}' if _v else ''}", (1, 1), "block",   # (the far
+                            lambda m=_m, v=_v: breach_hull(m, v)))              # hull: full in every level)
+    for _v in range(len(VARIANTS)):
+        for _s in ("w", "n"):
+            SPRITES.append((f"tile.wall.{_pre}breach.end.{_s}{f'.v{_v}' if _v else ''}", (1, 1), "block",
+                            lambda s=_s, lv=_lv, v=_v: breach_end("wall", s, lv, v)))
+            SPRITES.append((f"tile.hull.{_pre}breach.end.{_s}{f'.v{_v}' if _v else ''}", (1, 1), "block",
+                            lambda s=_s, v=_v: breach_end_hull(s, v)))
