@@ -6,7 +6,7 @@
   import { Chips } from '../kit';
   import StatBar from '../inspector/StatBar.svelte';
   import TraitChips from '../inspector/TraitChips.svelte';
-  import { moodWord } from './format';
+  import { attackBlocked, crewState, moodWord } from './format';
 
   /**
    * The crew Overview tab (and the whole view of a hostile): portrait, health and mood, what they are doing, the trait chips,
@@ -17,7 +17,8 @@
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   let rev = $state(0);
   const pic = $derived((void rev, api.portrait(c.id)));
-  const doing = $derived(c.dead ? 'Dead' : c.downed ? (c.downed.stabilized ? 'Downed, stabilized' : `Downed, bleeding out in ${c.downed.bleed} s`) : c.drafted ? 'Drafted' : `${c.job ?? c.activity}`);
+  const now = $derived(crewState(c));
+  const blocked = $derived(attackBlocked(c));
 
   onMount(() => {
     const e = api.shuttles.subscribe((v) => (shuttles = v));
@@ -35,10 +36,10 @@
       {#if c.mood && !enemy}<div class="v" title="Mood" data-testid="crew-mood"><span class="ic"><Icon name="smile" size={16} /></span><StatBar value={c.mood.value} color="#b58cff" low={c.mood.value < 35} /><span class="n">{c.mood.value} {moodWord(c.mood.value)}</span></div>{/if}
     </div>
   </div>
-  <p class="doing" class:bad={c.dead || !!c.downed} data-testid="crew-activity"><span class="ic"><Icon name="wrench" size={14} /></span><span>{doing}</span></p>
+  <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<span class="state" data-testid="crew-state">{now.chip}</span>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span>{now.text}</span></p>
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} limit={2} testId="crew-traits" /></div>{/if}
   {#if enemy}
-    <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={c.dead || c.surrendered || !!c.downed} onclick={() => api.attack(c.id)}>Attack</button></div>
+    <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} title={blocked ?? 'Order the selected drafted crew to attack'} onclick={() => api.attack(c.id)}>Attack</button></div>
   {:else}
     <div class="orders">
       <button class:on={c.drafted} title="{c.drafted ? 'Undraft' : 'Draft'} (R)" data-testid="draft" onclick={() => api.dispatch({ type: 'crew.draft', id: c.id, drafted: !c.drafted })}><Icon name="draft" size={18} /><span>{c.drafted ? 'Undraft' : 'Draft'}</span></button>
@@ -83,6 +84,7 @@
   .doing > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .doing > span:last-child::first-letter { text-transform: uppercase; }
   .bad { color: #ff9a9a; }
+  .state { flex: none; padding: 3px 6px; border: 1px solid var(--red); color: #ff9a9a; font: 600 11px/1 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
   .orders { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 10px; }
   .orders button { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--cyan); }
   .orders button span { color: var(--text); font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
