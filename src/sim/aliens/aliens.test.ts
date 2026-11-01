@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
+import { SkillXpC } from '../story/components';
+import { XP_DAMAGE_PER_XP } from '../tuning';
 import { CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 import type { SimEvent } from '../events';
 import { AllegianceC, EquipC } from '../fight/components';
@@ -152,6 +154,9 @@ describe('egg sacs', () => {
     const ev = run(sim, 2 * TICK_HZ, () => sac(sim, near).hp < sac(sim, near).max);
     expect(of(ev, 'crew.attacked').some((e) => e.crew === idle && e.target === near)).toBe(true);
     expect(sim.world.get(idle, PositionC)).toMatchObject({ x: 2, y: 3 });
+    const hits = of(ev, 'crew.hit').filter((e) => e.crew === idle).length;
+    expect(hits).toBeGreaterThan(0);
+    expect(sim.world.get(idle, SkillXpC)?.xp.gunnery ?? 0).toBeGreaterThanOrEqual(hits * 18 / XP_DAMAGE_PER_XP); // shooting sacs trains gunnery too
     expect(sac(sim, far).hp).toBe(sac(sim, far).max);
     // A sac out of reach (beyond rifle range): no shot and no walk.
     const b = make();

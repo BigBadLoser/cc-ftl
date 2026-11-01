@@ -255,6 +255,7 @@ function attack(
   const sac = sim.world.get(targetId, EggSacC);
   if (sac) {
     sac.hp = Math.max(0, sac.hp - weapon.def.damage); // the egg sac system sees the damage next tick
+    grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', weapon.def.damage / XP_DAMAGE_PER_XP);
     sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: sac.hp, cover });
     return;
   }
