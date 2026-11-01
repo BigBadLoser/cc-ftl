@@ -83,7 +83,7 @@ def dart():
     rr = room(s, 'Reactor room: two reactors, life support', 24, 12, 32, 16); rr.m('reactor', 25, 13); rr.m('reactor', 29, 13); rr.m('lifeSupport', 31, 13); rr.light((27, 15))
     sf = room(s, 'South tail fin: a burst laser', 24, 16, 31, 21); sf.m('burstLaser', 29, 19); sf.light((26, 18))
     er = room(s, 'Engine room: two engines, a reactor', 32, 5, 37, 17); er.m('engine', 33, 6, 1); er.m('engine', 33, 13, 1); er.m('reactor', 35, 10); er.light((33, 11))
-    for d in [(7, 11), (10, 10), (16, 10), (22, 10), (28, 10), (28, 6), (11, 12), (15, 12), (21, 12), (27, 12), (28, 16), (32, 11)]: s.door(*d)
+    for d in [(7, 11), (10, 10), (16, 10), (22, 10), (28, 10), (28, 6), (11, 12), (15, 12), (22, 12), (27, 12), (28, 16), (32, 11)]: s.door(*d)
     return s
 
 

@@ -236,10 +236,12 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 7, y: 13, rot: 0 },
         { def: 'module.light', x: 2, y: 13, rot: 0 },
         { def: 'module.light', x: 6, y: 19, rot: 0 },
-        // Lounge: galley, hydroponics, mess table, the airlock
+        // Lounge: galley, mess table and chairs, the airlock
         { def: 'module.airlock', x: 9, y: 4, rot: 0 },
         { def: 'module.galley', x: 12, y: 5, rot: 0, orders: [{ recipe: 'recipe.ration', mode: 'keep', target: 12 }] },
         { def: 'module.mess_table', x: 12, y: 8, rot: 0 },
+        { def: 'module.chair', x: 12, y: 7, rot: 2 },
+        { def: 'module.chair', x: 13, y: 7, rot: 2 },
         { def: 'module.light', x: 14, y: 9, rot: 0 },
         { def: 'module.light', x: 14, y: 6, rot: 0 },
         // Hab corridor
@@ -254,16 +256,16 @@ export const variants: Variant[] = [
         // Spine
         { def: 'module.light', x: 17, y: 12, rot: 0 },
         { def: 'module.light', x: 23, y: 12, rot: 0 },
-        // Cargo bay 1
+        // Cargo bay 1: a rack
         { def: 'module.storage_rack', x: 16, y: 7, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
         { def: 'module.light', x: 19, y: 8, rot: 0 },
-        // Cargo bay 2
+        // Cargo bay 2: a rack
         { def: 'module.storage_rack', x: 21, y: 7, rot: 0, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.light', x: 24, y: 8, rot: 0 },
-        // Cargo bay 3
+        // Cargo bay 3: a rack
         { def: 'module.storage_rack', x: 16, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 19, y: 16, rot: 0 },
-        // Cargo bay 4
+        // Workshop: the fabricator
         { def: 'module.fabricator', x: 21, y: 17, rot: 2 },
         { def: 'module.light', x: 24, y: 16, rot: 0 },
         // Hangar: the shuttle bay

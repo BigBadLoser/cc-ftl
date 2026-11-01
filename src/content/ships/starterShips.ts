@@ -14,5 +14,5 @@ export interface StarterShip {
 export const starterShips: StarterShip[] = [
   { id: wayfarerShipId, name: 'Wayfarer', blurb: 'Balanced. A long-hauler with a gun, a shield, a shuttle and a lounge. Four crew, one of each role.', template: wayfarerShip },
   { id: prospectorShipId, name: 'Prospector', blurb: 'Hauler and miner. A big hold, an ore refinery, a mining pod and one light gun. Three crew.', template: prospectorShip },
-  { id: lancerShipId, name: 'Lancer', blurb: 'Fighter. Three weapons forward, a Mk II shield and a small hold. Four crew, two of them gunners.', template: lancerShip },
+  { id: lancerShipId, name: 'Lancer', blurb: 'Fighter. A missile in the point and a laser in each tail fin, a Mk II shield and a small magazine. Four crew, two of them gunners.', template: lancerShip },
 ];
