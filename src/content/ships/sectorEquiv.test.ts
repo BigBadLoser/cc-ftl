@@ -285,4 +285,4 @@ describe('sector refactor equivalence', () => {
 // pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
 // Repinned `combat` for work XP (#250): the crew earn gunnery, piloting and shielding XP in the fight and a level gained inside the run changes who hits
 // (the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
-const EXPECTED = { combat: '5e9b40b5', disaster: '2cf7530b' };
+const EXPECTED = { combat: '288ac15a', disaster: '2cf7530b' };

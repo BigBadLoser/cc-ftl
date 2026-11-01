@@ -64,9 +64,12 @@ const job = (kind: Job['kind'], target: number, work = 1e6): Job =>
   ({ category: 'repair', kind, x: 3, y: 3, struct: 0, work, progress: 0, reservedBy: 0, target }) as Job;
 
 describe('the XP curve', () => {
-  it('costs XP_LEVEL_COST x n^2 in total and stops at the cap', () => {
+  it('costs XP_LEVEL_COST x n^2 for level n on top of the earlier levels, and stops at the cap', () => {
+    expect([0, 1, 2, 3, 4, 5].map(xpForLevels)).toEqual([0, 100, 500, 1400, 3000, 5500]);
+    expect(levelsFor(160)).toBe(1);
+    expect(xpProgress(160)).toEqual({ xp: 60, per: 400 });
     for (let n = 0; n <= XP_MAX_LEVEL; n++) {
-      expect(xpForLevels(n)).toBe(XP_LEVEL_COST * n * n);
+      expect(levelsFor(xpForLevels(n))).toBe(n);
       expect(levelsFor(xpForLevels(n))).toBe(n);
       if (n > 0) expect(levelsFor(xpForLevels(n) - 1)).toBe(n - 1);
     }
@@ -173,5 +176,17 @@ describe('XP from routine work', () => {
     const rate = xpOf(sim, medic, 'medicine') / healed;
     for (let i = 0; i < seconds(5); i++) sim.step();
     expect(xpOf(sim, medic, 'medicine') / (sim.world.get(patient, HealthC)!.hp - hp0)).toBeCloseTo(rate, 3);
+  });
+
+  it('bed healing with no medic aboard still trains the lowest-id crew member', () => {
+    const sim = make();
+    const a = person(sim, speciesOf.human, 3, 3);
+    const b = person(sim, speciesOf.human, 4, 3);
+    const patient = person(sim, speciesOf.human, 5, 3);
+    sim.world.get(patient, HealthC)!.hp = 10;
+    sim.world.add(patient, DownedC, { bleed: 60, stabilized: true, bed: 0 });
+    for (let i = 0; i < seconds(5); i++) sim.step();
+    expect(xpOf(sim, a, 'medicine')).toBeGreaterThan(0);
+    expect(xpOf(sim, b, 'medicine')).toBe(0);
   });
 });

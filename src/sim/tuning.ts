@@ -337,7 +337,7 @@ export const COMMIT_WINDOW_SEC = 4;
 export const COMMIT_MAX_FRACTION = 0.5;
 
 // --- Skill XP (docs/TRAITS.md section 3) ---
-/** XP needed in total for level n is XP_LEVEL_COST x n^2: +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500. */
+/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500. */
 export const XP_LEVEL_COST = 100;
 /** The most levels XP can add to a skill. */
 export const XP_MAX_LEVEL = 5;

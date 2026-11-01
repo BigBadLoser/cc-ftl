@@ -49,12 +49,12 @@ export function vitalsSystem(sim: Sim): void {
     const key = `${ship}:${side}`;
     let best = medics.get(key);
     if (best === undefined) {
-      best = { skill: 0, id: 0 };
+      best = { skill: 0, id: 0 }; // the best medicine wins; ties (all at 0 too) go to the lowest id, the query order
       for (const c of sim.world.query(CrewC, PositionC)) {
         if (sim.world.has(c, DeadC) || sim.world.has(c, DownedC) || sim.world.get(c, AllegianceC)?.faction !== side) continue;
         if (shipIdOf(sim, sim.world.get(c, PositionC) as Position) !== ship) continue;
         const skill = skillOf(sim, c, 'medicine');
-        if (skill > best.skill) best = { skill, id: c };
+        if (best.id === 0 || skill > best.skill || (skill === best.skill && c < best.id)) best = { skill, id: c };
       }
       medics.set(key, best);
     }
@@ -89,7 +89,7 @@ export function vitalsSystem(sim: Sim): void {
       }
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
       const medic = medicine(shipIdOf(sim, pos), sim.world.get(id, AllegianceC)?.faction ?? '');
-      const care = 1 + SKILL_STEP * medic.skill;
+      const care = 1 + SKILL_STEP * Math.max(0, medic.skill);
       const before = health.hp;
       health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
       if (medic.id && health.hp > before) grantXp(sim, medic.id, 'medicine', (health.hp - before) * XP_PER_HP_HEALED); // the medic whose skill sped the healing
