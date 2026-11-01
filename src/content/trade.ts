@@ -103,7 +103,7 @@ export const trade = {
       stock: [{ item: 'item.missile', min: 10, max: 30 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.electronics', min: 10, max: 30 }, { item: 'item.metal', min: 20, max: 60 }, { item: 'item.fuel', min: 20, max: 50 }],
     },
     'trader.station.pirate': {
-      name: 'Den fence', match: { faction: 'station.pirate' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, salvage: { buy: 1.2 } }, credits: [300, 1200],
+      name: 'Den fence', match: { faction: 'station.pirate' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [300, 1200],
       stock: [
         { item: 'item.scrap_hull', min: 30, max: 100 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.ion_pistol', min: 1, max: 4, chance: 0.7 },
         { item: 'item.blade', min: 2, max: 6 }, { item: 'item.rifle', min: 1, max: 3, chance: 0.5 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
@@ -132,7 +132,7 @@ export const trade = {
       ],
     },
     'trader.pirate': {
-      name: 'Pirate fence', match: { faction: 'faction.scrapper' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, salvage: { buy: 1.2 } }, credits: [100, 600],
+      name: 'Pirate fence', match: { faction: 'faction.scrapper' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [100, 600],
       stock: [
         { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.parts', min: 3, max: 12 }, { item: 'item.ion_pistol', min: 1, max: 3, chance: 0.6 },
         { item: 'item.blade', min: 1, max: 4, chance: 0.6 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
