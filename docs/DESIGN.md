@@ -309,10 +309,16 @@ Salvage is one order from the inspector. The crew then run it on their own, like
 - **EVA work:** most derelicts are breached, so salvage is a spacesuit job. The shuttle ferries crew out to the wreck,
   hauls packed scrap back to the ship (into the scrap bins) and brings crew home when they need rest, food and so on.
   Walking across through a docked airlock is not part of it: the deploy screen never places a derelict that close.
-- **Aliens first:** a derelict with aliens aboard can't be salvaged until the wreck is cleared.
+- **Aliens first:** a derelict can't be salvaged while anything hostile is aboard: a living, non-surrendered hostile, an
+  egg sac or a nest. Once the wreck is cleared, the salvage panel opens.
+- **Suit air:** crew refill their suits at the hovering shuttle, or at an airlock on the wreck that hasn't been stripped yet.
 - **Processing:** a new **scrapper** module turns scrap into materials (electronics, metal and so on). It is crew work,
   like any crafting module.
-- **The scrap types replace the generic `item.scrap`.** Events and trades that use it switch to other items.
+  It is buildable from the start; the starter ship doesn't come with one. Scrap goes into the existing **scrap bin**
+  asset (the industrial tip bin made for the refinery).
+- **The scrap types replace the generic `item.scrap`.** Events and trades that use it switch to other items. The
+  fabricator recipes that turned scrap into metal, electronics or polymer give way to the scrapper. Rations will use
+  hydroponics output once that works. Starting crates hold basic metal, electronics and polymer instead of scrap.
 
 ## Starmap and factions
 
