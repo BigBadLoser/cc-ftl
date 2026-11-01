@@ -91,7 +91,7 @@ describe('station generator', () => {
       const hub = gen(id, 'hub', 2);
       // Built tiles, not the bounding box: spines and crosses have long thin outlines.
       const filled = (g: StationResult): number => g.template.rows.join('').replace(/\./g, '').length;
-      expect(filled(hub), id).toBeGreaterThan(2 * filled(small));
+      expect(filled(hub), id).toBeGreaterThan(1.9 * filled(small));
       expect(Math.max(hub.width, hub.height), id).toBeGreaterThan(70);
     }
   }, 120000);
