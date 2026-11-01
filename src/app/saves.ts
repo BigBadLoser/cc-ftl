@@ -52,10 +52,15 @@ export interface Start {
  * fresh random seed; otherwise the saved game, else a new one. A save from another SAVE_VERSION cannot be loaded
  * (no migrations while this is a prototype): it is dropped, with a notice.
  */
+/** The starter ship of a new game (the Spine Hauler) until the new-game ship pick lands. */
+export const DEFAULT_STARTER = 'ship.wayfarer';
+
 export async function startGame(seedParam: string | null, starterParam: string | null = null): Promise<Start> {
   // `?starter=wayfarer|prospector|lancer` (debug, until the new-game picker lands): a new game with that starter ship, never saved over the campaign.
   const starter = starterParam ? starterShips.find((s) => s.id === `ship.${starterParam}` || s.id === starterParam) : undefined;
-  const fresh = (seed: number) => newGame(seed >>> 0, content, starter?.id, true, 'rolled');
+  // A new game sails the Spine Hauler (`ship.wayfarer`) unless `?starter=` picks another; `newGame`'s own default stays the
+  // old `ship.starter`, which the sim tests are built on.
+  const fresh = (seed: number) => newGame(seed >>> 0, content, starter?.id ?? DEFAULT_STARTER, true, 'rolled');
   const random = () => (Math.random() * 0x100000000) >>> 0;
   await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
