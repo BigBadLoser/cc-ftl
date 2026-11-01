@@ -79,7 +79,11 @@ def palette_entries():
                                                                     # tone of another look's, and anti-aliases)
         r = ramp(f"{pre}F", b["floor"], offsets=(0.16, 0.1, 0.05, 0.0, -0.05, -0.1, -0.16))
         out.update(_tinted(r, TINT[pre]) if pre in TINT else r)
+        out.update(TONES.get(pre, {}))
     return out
+
+
+TONES = {"fB": {"fBG": "#1c2444"}}     # a look's own single tones (bastion's screen glass, a deep navy on a bin centre)
 
 
 class Faction(Look):

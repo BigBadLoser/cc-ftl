@@ -96,7 +96,7 @@ def bastion_equipment(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), b
     uc, w = (f0 + f1) / 2, f1 - f0
     dl = 2 * PAINT                                      # (lamps stand on the glass)
     A, B = R + 3.5 / 32, R + 7.5 / 32               # the tiers' fronts (past the wall's line by 3.5 and 7.5 px)
-    z1 = top - 0.02                                 # (up to the cornice's top: it hides the cornice there)
+    z1 = top - 0.02 - 1 / 39                        # (up to the cornice's top: it hides the cornice there)
     H2 = z1 - zlo
     zt, zu = zlo + 0.5 * H2, zlo + 0.5 * H2 + (B - A)                                            # tier 1's top,
     prism(k, ax, plane, f0, f1, [(0.0, zlo), (A, zlo), (A, zt), (0.0, zt)], F, 2)               # tier 2's foot
@@ -127,21 +127,23 @@ def bastion_module(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back
     dl = 2 * PAINT                                      # (lamps stand on the glass)
     prism(k, ax, plane, f0, f1, [(0.0, z0), (R, z0), (R, z1), (0.0, z1)], F, 2)                  # the module
     fp = plane + R
-    q0, q1 = z0 + 0.3 * H, z0 + 0.72 * H
-    for zz in (q1 + 0.08, q1 + 0.17):                                                            # its ribs
-        T.slab(k, ax, fp, f0, f1, zz, zz + 0.05, 0.03, F, 3, ends=(False, False))
+    q0, q1 = z0 + 0.2 * H, z0 + 0.86 * H
     a, b, c, e = uc - 0.36 * w, uc + 0.36 * w, q0 + 0.06, q1 - 0.06
-    _frame(k, ax, fp, a, b, c, e, 0.025, F, 3)
-    T.paint(k, ax, fp, a, b, c, e, 0.0, F, 0)
-    _cells(k, ax, fp, a + 0.02, a + 0.12, c + 0.03, e - 0.03, dl, 2, 3, ("flameY", "red"))      # lit block
-    for i, col in enumerate(("red", "flameY", "red", "flameY")):                                  # small lights
-        u = a + 0.17 + i * 0.07
-        lamp(k, ax, fp, u, u + 2 * LINE, e - 0.09, e - 0.04, dl, col)
-    lamp(k, ax, fp, a + 0.19, a + 0.33, c + 0.04, c + 0.1, dl, "green")                           # buttons
-    lamp(k, ax, fp, a + 0.36, b - 0.03, c + 0.03, c + 0.11, dl, "red")
+    _frame(k, ax, fp, a, b, c, e, 0.025, F, 3)                                                   # a tall screen,
+    k.poly([T.P(ax, fp, u, z, PAINT) for u, z in ((a, c), (b, c), (b, e), (a, e))], F, 0, T.OUT(ax),  # its glass
+           fixed="fBG")                                                                          # navy
+    h = e - c
+    lamp(k, ax, fp, a + 2 * LINE, a + 7 * LINE, c + 0.12 * h, e - 0.1 * h, dl, "flameY")       # a gauge: yellow,
+    lamp(k, ax, fp, a + 2 * LINE, a + 3 * LINE, c + 0.12 * h, e - 0.1 * h, dl + PAINT, "red")  # red down its side
+    for zz in (c + 0.35 * h, c + 0.62 * h):                                                       # and in it
+        lamp(k, ax, fp, a + 4 * LINE, a + 6 * LINE, zz, zz + 2 * PZ, dl + PAINT, "red")
+    for i, col in enumerate(("red", "flameY", "red", "flameY")):                                  # small lights,
+        u = a + 0.27 + i * 0.07
+        lamp(k, ax, fp, u, u + 2 * LINE, c + 0.66 * h, c + 0.66 * h + 2 * PZ, dl, col)
+    lamp(k, ax, fp, a + 0.27, a + 0.42, c + 0.3 * h, c + 0.3 * h + 2 * PZ, dl, "green")           # a green bar
+    lamp(k, ax, fp, b - 0.13, b - 0.03, c + 0.08 * h, c + 0.08 * h + 4 * PZ, dl, "red")          # a red block
 
-
-BAST_PANEL = (0.15, 0.755)          # the ramp's panel (the base design's outline) and the slot cut where it lies:
+BAST_PANEL = (0.15, 0.792)          # the ramp's panel (the base design's outline) and the slot cut where it lies:
                                     # its top and bottom down the run (fractions of it)
 
 

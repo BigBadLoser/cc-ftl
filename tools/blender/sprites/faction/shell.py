@@ -404,11 +404,13 @@ class FloorDrop(Feature):
 
 class FootTone(Feature):
     """The ramp's upright foot (the shell's foot) in a family's level (its y face's ramp; the x face's)."""
-    def __init__(self, fam, lvl):
-        self.fam, self.lvl = fam, lvl
+    def __init__(self, fam, lvl, front=None):
+        self.fam, self.lvl, self.front = fam, lvl, front      # (front: a palette name for its y face instead)
 
     def col_face(self, sp, face, x, y, z):
         if z < sp.foot - 1e-6:
+            if self.front and face == "y":
+                return self.front
             return T.RAMPS[self.fam][0 if face == "y" else 1][self.lvl]
         return NO
 
