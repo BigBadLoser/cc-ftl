@@ -65,6 +65,7 @@ describe('seeded debug sessions', () => {
 
     const start = await startGame('12345');
     expect(start.persist).toBe(false);
+    expect(start.sim.world.get(homeShip(start.sim), ShipC)?.name).toBe('Wayfarer'); // a new game sails the Spine Hauler
     const save = createSaver(start.sim, start.persist, () => false, () => undefined);
     save(); // the autosave timer
     save(); // visibilitychange: hidden / pagehide use the same function
