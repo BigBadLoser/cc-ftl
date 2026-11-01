@@ -11,8 +11,9 @@ replacing its weakest algorithms one at a time. We don't write another independe
 bin and the visual baseline. Every step is compared with the step before it, and a step that makes layouts worse is
 reverted or redesigned, never compensated for with repair passes.
 
-Work branch: `stationgen/staged` (#234 head + the station bench). E1 to E3 (room-level extractions, PRs #257–#259) land on
-`main` first. Each step here becomes its own PR.
+Work branch: `stationgen/staged` (#234 head + the station bench). Each step here becomes its own PR. The room-level
+extractions E1 to E3 (#257–#259) were closed by the user (the ship results looked worse); #234's own room code stays on
+this branch, and room-level changes for ships are revisited separately if needed.
 
 ## Target stages
 
@@ -27,7 +28,7 @@ facility requirements → structure ⇄ department placement → room subdivisio
 - **Room subdivision:** split strips along straight runs into rooms of planned width (split grammars), blocks into
   rectangles (treemap or packer), and ring-band strips of fixed depth. Rooms never stretch to fill: surplus becomes bare
   ring or deliberate open space with clean edges.
-- **Furnishing:** the existing fit-out with the E1–E3 room plans and designs.
+- **Furnishing:** #234's fit-out (room plans, designs) as it stands on this branch.
 - **Validation and selection:** functional checks (reachability, module use, power, docks, station rules, through-routes
   only on circulation, controlled departments' single entrance), structural metrics (the bench) and candidate selection.
 
