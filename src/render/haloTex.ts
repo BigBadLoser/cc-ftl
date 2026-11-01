@@ -6,18 +6,26 @@ export const HALO_BLUR = 1.5 * ART_SCALE;
 /** Transparent border added on every side so the blur is not clipped. */
 export const HALO_PAD = 6 * ART_SCALE;
 
-let renderer: Renderer | null = null;
+/** The live renderers that asked for halos, newest last: a renderer disposed while another is alive must not leave the bake with a dead one. */
+const renderers: Renderer[] = [];
 const cache = new WeakMap<Texture, Texture>();
 
 /** Give the halo bake its renderer (Quality High only). */
 export function initHalos(r: Renderer): void {
-  renderer = r;
+  renderers.push(r);
+}
+
+/** The renderer is going away: the bake falls back to the newest one still alive. */
+export function releaseHalos(r: Renderer): void {
+  const i = renderers.indexOf(r);
+  if (i >= 0) renderers.splice(i, 1);
 }
 
 /** The pre-blurred, padded copy of a glow texture, baked on first use. Position it HALO_PAD px up-left of its glow. */
 export function haloTex(glow: Texture): Texture {
   const hit = cache.get(glow);
   if (hit) return hit;
+  const renderer = renderers[renderers.length - 1];
   if (!renderer) throw new Error('initHalos was not called');
   const w = glow.frame.width + 2 * HALO_PAD;
   const h = glow.frame.height + 2 * HALO_PAD;
