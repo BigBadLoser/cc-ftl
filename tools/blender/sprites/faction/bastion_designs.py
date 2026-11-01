@@ -57,7 +57,10 @@ def bastion_readout(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), bac
     T.paint(k, ax, plane, f0, f1, zlo, z1, 0.0, F, 1)                                          # (a dark cut)
     zf = zlo + 0.1                                  # the angled floor, raised: zf at the wall's line, rising
     zb = zf + 0.55 * R                              # gently to the back
-    prism(k, ax, plane, f0, f1, [(0.0, zlo), (R, zlo), (R, zf), (0.0, zb)], F, 3, cap=False)   # (its ends the posts')
+    from .bastion import FRONT, darker
+    fr = FRONT[F] if ax == "y" else darker(FRONT[F])                    # (its front the lower wall's, on up)
+    prism(k, ax, plane, f0, f1, [(0.0, zlo), (R, zlo), (R, zf), (0.0, zb)], F, 3, cap=False,   # (its ends the
+          cols=[None, fr, None, None])                                                       # posts')
     a, b = uc - 0.36 * w, uc + 0.36 * w
     va, vb = f0, f1 - R                             # (what shows of the back: it sits as far right on screen as
     rc = (va + vb) / 2                              # the cut is deep, its right end behind the far post)
@@ -208,7 +211,8 @@ def bastion_machinery(plate, u0, u1, run_, k=None, P=None, zs=0.0, hole=None, fa
     zb = zat(d1)
     df, zt = d1, zat(d0)                            # the box: the slot's floor deep, its back's height
     a, b = o0 + 0.02, o1 - 0.02
-    prism(k, ax, plane, a, b, [(d0, zb), (df, zb), (df, zt), (d0, zt)], fam, 3)
+    prism(k, ax, plane, a, b, [(d0, zb), (df, zb), (df, zt), (d0, zt)], fam, 3,
+          cap={"wall": "fBW9", "blue": "fBH9"}[fam])                          # (its end a shade under the shade side's)
     c, e = zb + 0.03, zt - 0.03                                                                  # its screen
     T.slab(k, ax, plane + df, a + 0.03, b - 0.03, c, e, PAINT, fam, 0)
     fp, dl = plane + df, 2 * PAINT

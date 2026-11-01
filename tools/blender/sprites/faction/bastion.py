@@ -279,8 +279,8 @@ def bastion(hull):
 
 
 FRONT = {"wall": "fBW10", "blue": "fBH8"}           # the main face's front: the ramp's slope's tone (SLOPE_LIFT)
-RECESS = {"wall": "fBW9", "blue": "fBH9"}          # the recess's back (step 9: between 3 and 7)
-RECESS_SIDE = {"wall": "fBW3", "blue": "fBH3"}     # and its side walls
+RECESS = {"wall": "fBW2", "blue": "fBH2"}          # the recess's back (as a3's sloping ceiling)
+RECESS_SIDE = {"wall": "fBW2", "blue": "fBH2"}     # and its side walls
 SEAM = {"wall": "fBW7", "blue": "fBH7"}            # the ledge's seams, down the lower wall too
 SLOPE_LIFT = {"fBW2": "fBW10", "fBH2": "fBH8", "fBW3": "fBW7", "fBH3": "fBH7"}   # (and its panel's outline 7)     # the floor ramp's slope a step lighter (8: between 2 and 1) than
                                                 # the step its role gives (2, what the open slot's insides keep)
