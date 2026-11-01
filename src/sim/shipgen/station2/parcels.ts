@@ -34,6 +34,7 @@ export function startAngle(g: Grid, tiles: readonly number[], fallback: number):
 /** Split `tiles` in angle order from `start` into runs by weight. */
 function byWeight(g: Grid, tiles: readonly number[], start: number, items: readonly Cut[]): Map<string, number[]> {
   const out = new Map<string, number[]>(items.map((c) => [c.key, []]));
+  if (items.length === 0) return out;
   const order = [...tiles].sort((p, q) => norm(g.a(p) - start) - norm(g.a(q) - start) || g.r(p) - g.r(q));
   const total = items.reduce((t, c) => t + c.weight, 0) || 1;
   let acc = 0, k = 0;
@@ -50,6 +51,47 @@ function byWeight(g: Grid, tiles: readonly number[], start: number, items: reado
     }
     out.get((items[k] as Cut).key)?.push(order[j] as number);
   }
+  return square(g, out, items);
+}
+
+/**
+ * Straighten the cuts: a radial cut on a diagonal is a staircase (rooms either side get ragged walls and no straight
+ * stretch for a door), so each cut becomes the axis line nearest to it (a row or a column through the cut's middle).
+ * A tile moves to the neighbouring run when it lies past that line.
+ */
+function square(g: Grid, runs: Map<string, number[]>, items: readonly Cut[]): Map<string, number[]> {
+  const keys = items.map((c) => c.key);
+  const lists = keys.map((k) => runs.get(k) ?? []);
+  if (lists.filter((l) => l.length > 0).length < 2) return runs;
+  // Cut k lies between run k and run k + 1: a line through the mean of the two runs' end tiles.
+  const lines: ({ horiz: boolean; at: number; sign: number } | null)[] = [];
+  for (let k = 0; k + 1 < lists.length; k++) {
+    const a = lists[k] as number[], b = lists[k + 1] as number[];
+    if (a.length === 0 || b.length === 0) { lines.push(null); continue; }
+    const mid = (ts: number[]): [number, number] => [ts.reduce((t, i) => t + g.x(i), 0) / ts.length, ts.reduce((t, i) => t + g.y(i), 0) / ts.length];
+    const [ax, ay] = mid(a), [bx, by] = mid(b);
+    // The cut runs across the direction from run k to run k + 1; snap it to the nearer axis.
+    const dx = bx - ax, dy = by - ay;
+    const horiz = Math.abs(dy) < Math.abs(dx);
+    // horiz: the runs follow each other along x, so the cut is a column x = at.
+    const ends = (ts: number[], far: number): number => {
+      const vs = ts.map((i) => (horiz ? g.x(i) : g.y(i)));
+      return far > 0 ? Math.max(...vs) : Math.min(...vs);
+    };
+    const sign = Math.sign(horiz ? dx : dy) || 1;
+    lines.push({ horiz, at: (ends(a, sign) + ends(b, -sign)) / 2, sign });
+  }
+  const out = new Map<string, number[]>(keys.map((k) => [k, []]));
+  lists.forEach((ts, k) => {
+    for (const i of ts) {
+      let to = k;
+      const past = (l: { horiz: boolean; at: number; sign: number }): boolean => ((l.horiz ? g.x(i) : g.y(i)) - l.at) * l.sign > 0;
+      const lo = lines[k - 1], hi = lines[k];
+      if (lo && !past(lo)) to = k - 1;
+      else if (hi && past(hi)) to = k + 1;
+      out.get(keys[to] as string)?.push(i);
+    }
+  });
   return out;
 }
 

@@ -2,7 +2,7 @@ import type { Rng } from '../../rng';
 import type { Builder } from '../builder';
 import type { ShipPlan } from '../plan';
 import { assign, type Assignment } from './assign';
-import { K } from './grid';
+import { DIRS8, K } from './grid';
 import { harbourStrategy } from './harbour';
 import { PREC, addRoom, type Ctx2 } from './kit';
 import { bayStrategy, machineStrategy, warehouseStrategy } from './machine';
@@ -28,19 +28,26 @@ export interface Candidate {
   open: Set<string>;
 }
 
-export interface V2Result { candidates: Candidate[]; draws: number; rejected: number; why: string[] }
+/** The furthest a rejected draw got, for the debug view: its assignment, the rooms laid out so far, the reason. */
+export interface V2Debug { a: Assignment; c?: Ctx2; why: string; stage: number }
+
+export interface V2Result { candidates: Candidate[]; draws: number; rejected: number; why: string[]; debug?: V2Debug }
 
 /** Draws tried per station, feasible candidates wanted, assignments searched per draw. */
-const DRAWS = 12, WANT = 3, SEARCH = 24;
+const DRAWS = 8, WANT = 2, SEARCH = 12;
 /** A draw whose best assignment scores below this is rejected. */
-const FLOOR = -6;
+const FLOOR = -25;
 
 /** Lay out every parcel of an assignment on a fresh raster; the context, or why it failed. */
-export function layOut(rng: Rng, a: Assignment, depts: readonly Dept[]): Ctx2 | string {
+export function layOut(rng: Rng, a: Assignment, depts: readonly Dept[], seen?: (c: Ctx2) => void): Ctx2 | string {
   const s = rasterise(a.s.t, a.s.R) as Structure;
   const g = s.g;
   const c: Ctx2 = { rng, s, g, rooms: [], publics: [], halls: new Map(), owner: new Map() };
+  seen?.(c);
   for (const ts of a.courts) for (const i of ts) g.pub[i] = 2;
+  // Spare floor beside space is left open; corridors along it keep a wall.
+  for (const ts of a.voids) for (const i of ts) g.set(i, K.Open);
+  for (const ts of a.voids) for (const i of ts) if (g.nb(i, DIRS8).some((j) => (g.pub[j] as number) > 0)) g.set(i, K.Solid);
   addRoom(c, { tiles: g.tiles((k) => k === K.Hall), spec: { role: 'hall', mods: [], w: 1, h: 1 }, dept: 'public', prec: PREC.hall, doors: [] });
   c.publics.push(0);
   const courts = [...g.components(g.tiles((k) => k === K.Court)), ...a.courts];
@@ -89,6 +96,7 @@ export function layOut(rng: Rng, a: Assignment, depts: readonly Dept[]): Ctx2 | 
 
 export function stationV2(rng: Rng, family: Family, plan: ShipPlan, docks: number): V2Result {
   const out: V2Result = { candidates: [], draws: 0, rejected: 0, why: [] };
+  const note = (d: V2Debug): void => { if (!out.debug || d.stage >= out.debug.stage) out.debug = d; };
   for (let n = 0; n < DRAWS && out.candidates.length < WANT; n++) {
     out.draws++;
     const t = sampleTemplate(rng, family, docks);
@@ -97,22 +105,26 @@ export function stationV2(rng: Rng, family: Family, plan: ShipPlan, docks: numbe
     let why = '';
     for (let k = 0; k < SEARCH; k++) {
       const a = assign(rng, t, depts);
-      if (typeof a === 'string') why ||= a; else ok.push(a);
+      if (typeof a === 'string') why ||= a;
+      else if (a.why) { why ||= a.why; note({ a, why: a.why, stage: 0 }); }
+      else ok.push(a);
     }
     ok.sort((a, b) => b.score - a.score);
     if (ok.length === 0 || (ok[0] as Assignment).score < FLOOR) {
       out.rejected++;
       out.why.push(ok.length === 0 ? why || 'infeasible' : `low score ${(ok[0] as Assignment).score.toFixed(1)}`);
+      if (ok[0]) note({ a: ok[0], why: 'low score', stage: 1 });
       continue;
     }
     let made = false;
     for (const a of ok.slice(0, 4)) {
-      const c = layOut(rng, a, depts);
-      if (typeof c === 'string') { out.why.push(c); continue; }
+      let ctx: Ctx2 | undefined;
+      const c = layOut(rng, a, depts, (x) => { ctx = x; });
+      if (typeof c === 'string') { out.why.push(c); note({ a, c: ctx, why: c, stage: 2 }); continue; }
       const d = build(c);
-      if (typeof d === 'string') { out.why.push(d); continue; }
+      if (typeof d === 'string') { out.why.push(d); note({ a, c, why: d, stage: 3 }); continue; }
       const s = a.s;
-      const open = new Set(s.open.map((i) => `${s.g.x(i)},${s.g.y(i)}`));
+      const open = new Set([...s.open, ...a.voids.flat()].map((i) => `${s.g.x(i)},${s.g.y(i)}`));
       out.candidates.push({ b: emit(c, d, rng), score: a.score, profile: `${templateSig(s.t)} R${s.R}`, open });
       made = true;
       break;

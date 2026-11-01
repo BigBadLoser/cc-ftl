@@ -31,10 +31,16 @@ export interface Dept {
   facilities: Facility[];
   /** Floor the department needs, walls and its own circulation included. */
   need: number;
-  /** Shallowest parcel (across, wall to wall) its strategy can work in. */
+  /** Natural depth of its parcel (across, wall to wall) off one public face: what its strategy lays out best in. */
   minDepth: number;
+  /** Natural depth between two public faces (a row facing each), where that differs. */
+  depth2?: number;
+  /** Its largest rectangular room with walls, [short side, long side]: on a ring away from the axes it stands askew to the band and needs more depth. */
+  rect?: [number, number];
   /** A harbour's dock count and face. */
   docks?: number;
+  /** Front (along the corridor) a row department needs for one row of its units: cabins, shops. */
+  front?: number;
 }
 
 const fac = (spec: RoomSpec, shape: 'rect' | 'soft', minSide = 2): Facility => {
@@ -74,20 +80,26 @@ export function program(rng: Rng, plan: ShipPlan, docksPer: number[]): Dept[] {
   };
   const freight = Array.from({ length: holds }, (_, i) => fac(hold(i), 'rect', 5));
   for (const f of freight) if (f.spec.items?.length === 0) delete f.spec.items;
-  depts.push({ id: 'freight', facilities: freight, need: Math.round(gross(freight) * 1.2), minDepth: 8 });
+  depts.push({ id: 'freight', facilities: freight, need: Math.round(gross(freight) * 1.2), minDepth: 10 });
   const machines = [...reactorRooms(plan.reactors, reactorOf(plan)), ...plan.shields, ...(plan.core ? [plan.core] : [])];
   const eng = [...machines.map((r) => fac(r, 'rect', 3)), fac(arms[1] ? { ...arms[1], pinned: true } : guardSpec(arms[0]), 'soft', 3)];
   // Machine rooms stand in one row behind the service aisle: the parcel is as deep as the deepest room (on its short
   // side) plus the aisle and walls, and as long as the rooms side by side (each on its short side where the depth allows).
   const deep = Math.max(...machines.map((r) => Math.min(r.w, r.h)));
   const along = machines.reduce((t, r) => t + (Math.max(r.w, r.h) <= deep ? Math.min(r.w, r.h) : Math.max(r.w, r.h)) + 1, 0) + 6;
-  depts.push({ id: 'engineering', facilities: eng, need: Math.round(along * (deep + 7) * 1.1), minDepth: deep + 7 });
+  const big = (rs: RoomSpec[]): [number, number] => {
+    const r = rs.reduce((b, x) => (x.w * x.h > b.w * b.h ? x : b));
+    return [Math.min(r.w, r.h) + 2, Math.max(r.w, r.h) + 2];
+  };
+  // Demand: the strip the row of rooms and the aisle take (rooms at their size with walls, the aisle, the guard post).
+  depts.push({ id: 'engineering', facilities: eng, need: Math.round(along * (deep + 6) * 1.05), minDepth: deep + 6, rect: big(machines) });
   // Gun bays (roof turrets: any clear roof) stand on their own gun deck, a rect row off a short corridor.
   const bays = [...plan.weapons, ...plan.pd];
   if (bays.length > 0) {
     const bd = Math.max(...bays.map((r) => Math.min(r.w, r.h)));
     const bl = bays.reduce((t, r) => t + Math.max(r.w, r.h) + 1, 0) + 4;
-    depts.push({ id: 'defence', facilities: bays.map((r) => fac(r, 'rect', 3)), need: Math.round(bl * (bd + 6) * 1.1), minDepth: bd + 6 });
+    const fs = bays.map((r) => fac(r, 'rect', 3));
+    depts.push({ id: 'defence', facilities: fs, need: Math.round(bl * (bd + 6) * 1.05), minDepth: bd + 6, rect: big(bays) });
   }
   const quarters = of('quarters');
   const beds = quarters.reduce((t, r) => t + r.mods.filter((m) => m === 'module.bed').length, 0);
@@ -101,12 +113,12 @@ export function program(rng: Rng, plan: ShipPlan, docksPer: number[]): Dept[] {
     fac({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4, pinned: true }, 'soft', 3),
     ...messes.slice(2).map((m) => fac(m, 'soft', 3)),
   ];
-  depts.push({ id: 'habitation', facilities: hab, need: Math.round((beds * CABIN_GROSS + gross(hab.slice(beds))) * 1.15), minDepth: 6 });
+  depts.push({ id: 'habitation', facilities: hab, need: Math.round((beds * CABIN_GROSS + gross(hab.slice(beds))) * 1.15), minDepth: 6, depth2: 11, front: beds * 4 + hab.slice(beds).reduce((t, f) => t + Math.max(6, (f.spec.w * f.spec.h) / 3), 0) + 4 });
   const shops = rng.int(3, 6);
   const market = [
     ...(messes[0] ? [fac(messes[0], 'soft', 3)] : []),
     ...Array.from({ length: shops }, () => fac({ role: 'shop', mods: [], w: 3, h: 4 }, 'soft', 3)),
   ];
-  depts.push({ id: 'market', facilities: market, need: Math.round(gross(market) * 1.1), minDepth: 5 });
+  depts.push({ id: 'market', facilities: market, need: Math.round(gross(market) * 1.1), minDepth: 6, front: shops * 4.5 + (messes[0] ? 9 : 0) + 3 });
   return depts;
 }

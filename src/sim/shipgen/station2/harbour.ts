@@ -51,9 +51,9 @@ export function harbourStrategy(c: Ctx2, dept: DeptId, tiles: number[], face: Fa
   const cut = office ? Math.max(3, Math.min(5, Math.floor(maxD / 2))) : maxD;
   const front = gate.filter((i) => (d.get(i) ?? 99) <= cut);
   const back = gate.filter((i) => (d.get(i) ?? 99) > cut);
-  addRoom(c, { tiles: front, spec: { ...(customs?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }) }, dept, prec: PREC.inner + 1e4 + c.rooms.length, doors: ['public', hallId] });
+  const post = addRoom(c, { tiles: front, spec: { ...(customs?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }) }, dept, prec: PREC.inner + 1e4 + c.rooms.length, doors: ['public', hallId] });
   if (back.length > 0) {
-    if (office) addRoom(c, { tiles: back, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [hallId] });
+    if (office) addRoom(c, { tiles: back, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
     else { for (const i of back) g.set(i, K.Room, hallId); (c.rooms[hallId] as { tiles: number[] }).tiles.push(...back); }
   }
   return true;

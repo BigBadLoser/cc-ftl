@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { DIRS8, K, type Grid } from './grid';
-import { PREC, addRoom, depthFrom, frontLength, nearPublic, slice, type Ctx2, type Door } from './kit';
+import { PREC, addRoom, depthFrom, faces, frontLength, nearPublic, slice, type Ctx2, type Door } from './kit';
 import type { DeptId, Facility } from './program';
 
 /**
@@ -21,6 +21,7 @@ interface Unit { spec: RoomSpec; weight: number }
 
 /** Slice a row into units, each doored to `door` near the middle of its front. */
 function row(c: Ctx2, dept: DeptId, tiles: number[], units: Unit[], door: Door, front: (i: number) => boolean): number[] {
+  if (units.length === 0) units = [{ spec: { ...STORE }, weight: 1 }];
   const parts = slice(c.g, tiles, units.map((u) => u.weight));
   return units.map((u, k) => {
     const ts = parts[k] ?? [];
@@ -32,9 +33,7 @@ function row(c: Ctx2, dept: DeptId, tiles: number[], units: Unit[], door: Door, 
 /** Split a parcel's public front into its inner and outer side (by radius). */
 function sides(c: Ctx2, tiles: readonly number[]): { inner: number[]; outer: number[] } {
   const g = c.g;
-  const fr = tiles.filter((i) => nearPublic(g, i));
-  const mid = tiles.reduce((t, i) => t + g.r(i), 0) / Math.max(1, tiles.length);
-  return { inner: fr.filter((i) => g.r(i) < mid), outer: fr.filter((i) => g.r(i) >= mid) };
+  return faces(g, tiles);
 }
 
 /** Units for a run of `n` front tiles: the extras' weights, cabins, then stores for floor to spare. */
@@ -65,9 +64,8 @@ interface HabPlan { rows: Row[]; hall: number[] }
  *   otherwise: one row facing the corridor
  */
 export function planCabins(g: Grid, tiles: readonly number[], beds: number, extras: Facility[]): HabPlan | null {
-  const fr = tiles.filter((i) => nearPublic(g, i));
-  const mid = tiles.reduce((t, i) => t + g.r(i), 0) / Math.max(1, tiles.length);
-  const inner = new Set(fr.filter((i) => g.r(i) < mid)), outer = new Set(fr.filter((i) => g.r(i) >= mid));
+  const fs = faces(g, tiles);
+  const inner = new Set(fs.inner), outer = new Set(fs.outer);
   const front = inner.size >= outer.size ? inner : outer;
   const d = depthFrom(g, tiles, (i) => front.has(i));
   const th = Math.max(0, ...d.values());
@@ -86,7 +84,7 @@ export function planCabins(g: Grid, tiles: readonly number[], beds: number, extr
     const hallSet = new Set(hall);
     const onHall = (i: number): boolean => g.nb(i, DIRS8).some((j) => hallSet.has(j));
     const cabFront = new Set(cab.filter(onHall));
-    const units = run(beds, hasFront ? [] : extras, cabFront.size);
+    const units = run(beds, hasFront ? [] : extras, frontLength(g, cab, (i) => cabFront.has(i)));
     if (!units) return null;
     const rows: Row[] = [{ tiles: cab, units, front: cabFront, hall: true }];
     if (hasFront) {
@@ -97,7 +95,7 @@ export function planCabins(g: Grid, tiles: readonly number[], beds: number, extr
     }
     return { rows, hall };
   }
-  const units = run(beds, extras, front.size);
+  const units = run(beds, extras, frontLength(g, tiles, (i) => front.has(i)));
   return units ? { rows: [{ tiles: [...tiles], units, front, hall: false }], hall: [] } : null;
 }
 

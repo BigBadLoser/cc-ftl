@@ -24,6 +24,8 @@ export interface Room2 {
   doors: Door[];
   /** Tiles a door should be near (the middle of its front), when it matters. */
   doorNear?: number;
+  /** A leftover room (stores, plant): dropped (made wall) when walls leave it too little floor. */
+  optional?: boolean;
 }
 
 export const PREC = { hall: 1e6, court: 9e5, rect: 5e5, inner: 4e5, soft: 1e3 } as const;
@@ -39,6 +41,8 @@ export interface Ctx2 {
   halls: Map<DeptId, number>;
   /** Parcel of each tile (dept id), for strategies that look at their neighbours. */
   owner: Map<number, DeptId>;
+  /** The walls and floors build drew last (kept for the debug view when it fails). */
+  drawn?: { wall: Uint8Array; floor: Int32Array };
 }
 
 export function addRoom(c: Ctx2, r: Room2): number {
@@ -79,8 +83,20 @@ export function slice(g: Grid, tiles: readonly number[], weights: readonly numbe
   return weights.map((_, k) => m.get(String(k)) ?? []);
 }
 
-/** The arc length of a run of tiles: the number of distinct front tiles, at least one. */
-export const frontLength = (g: Grid, tiles: readonly number[], front: (i: number) => boolean): number => Math.max(1, tiles.filter(front).length);
+/**
+ * The length of a run's front along the ring: its angular span times its mean radius (a count of front tiles would
+ * read a staircase on a diagonal as up to twice as long as it is), at least one.
+ */
+export function frontLength(g: Grid, tiles: readonly number[], front: (i: number) => boolean): number {
+  const fs = tiles.filter(front);
+  if (fs.length < 2) return 1;
+  const TAU = 2 * Math.PI;
+  const as = fs.map((i) => ((g.a(i) % TAU) + TAU) % TAU).sort((p, q) => p - q);
+  let gap = (as[0] as number) + TAU - (as[as.length - 1] as number);
+  for (let k = 1; k < as.length; k++) gap = Math.max(gap, (as[k] as number) - (as[k - 1] as number));
+  const r = fs.reduce((t, i) => t + g.r(i), 0) / fs.length;
+  return Math.max(1, (TAU - gap) * r + 1);
+}
 
 /**
  * Place a rectangle of interior w x h (either way round) whose walls lie in `free`, scored by `rank` (higher better);
@@ -106,3 +122,22 @@ export function rectParts(g: Grid, r: TileRect): { inner: number[]; ring: number
 
 /** Tiles of `set` 4-adjacent to some tile of `other`. */
 export const touching = (g: Grid, set: readonly number[], other: ReadonlySet<number>): number[] => set.filter((i) => g.nb(i).some((j) => other.has(j)));
+
+/**
+ * A parcel's public faces: tiles touching public floor further in (its inner face) or further out (its outer face).
+ * Public floor at the same radius (a spoke along the parcel's end) counts for neither.
+ */
+export function faces(g: Grid, tiles: readonly number[]): { inner: number[]; outer: number[] } {
+  const inner: number[] = [], outer: number[] = [];
+  for (const i of tiles) {
+    let lo = false, hi = false;
+    for (const j of g.nb(i, DIRS8)) {
+      if (!isPublic(g, j)) continue;
+      const d = g.r(j) - g.r(i);
+      if (d < -0.4) lo = true; else if (d > 0.4) hi = true;
+    }
+    if (lo) inner.push(i);
+    if (hi) outer.push(i);
+  }
+  return { inner, outer };
+}

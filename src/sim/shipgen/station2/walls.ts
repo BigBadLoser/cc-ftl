@@ -24,6 +24,7 @@ export function build(c: Ctx2): Drawn | string {
   for (let i = 0; i < n; i++) if (g.kind[i] === K.Free) g.set(i, K.Solid);
   const wall = new Uint8Array(n);
   const floor = new Int32Array(n).fill(-1);
+  c.drawn = { wall, floor };
   for (let i = 0; i < n; i++) {
     const k = g.kind[i];
     if (k === K.Solid) { wall[i] = 1; continue; }
@@ -45,14 +46,20 @@ export function build(c: Ctx2): Drawn | string {
     for (const comp of comps.slice(1)) for (const i of comp) { floor[i] = -1; wall[i] = 1; }
     tilesOf.set(id, comps[0] ?? []);
   }
+  const dropped = new Set<number>();
   for (const [id, r] of rooms.entries()) {
-    if ((tilesOf.get(id)?.length ?? 0) < (r.spec.role === 'hall' ? 1 : 4)) return `${r.dept} ${r.spec.role}: no floor`;
+    const k = tilesOf.get(id)?.length ?? 0;
+    if (r.optional && k < 6) {
+      dropped.add(id);
+      for (const i of tilesOf.get(id) ?? []) { floor[i] = -1; wall[i] = 1; }
+      tilesOf.delete(id);
+    } else if (k < (r.spec.role === 'hall' ? 1 : 4)) return `${r.dept} ${r.spec.role}: no floor`;
   }
   const doors: number[] = [];
   const targets = (d: Door): number[] => (d === 'public' ? c.publics : typeof d === 'number' ? [d] : d.any);
   for (const [id, r] of rooms.entries()) {
-    for (const d of r.doors) {
-      const to = new Set(targets(d));
+    if (dropped.has(id)) continue;
+    const doorsTo = (to: ReadonlySet<number>): number[] => {
       const cands: number[] = [];
       for (const i of tilesOf.get(id) ?? []) {
         for (const [dx, dy] of DIRS4) {
@@ -63,7 +70,22 @@ export function build(c: Ctx2): Drawn | string {
           if (s1 >= 0 && s2 >= 0 && wall[s1] && wall[s2]) cands.push(w);
         }
       }
-      if (cands.length === 0) return `${r.dept} ${r.spec.role}: no door`;
+      return cands;
+    };
+    for (const d of r.doors) {
+      let cands = doorsTo(new Set(targets(d)));
+      // Where the wall to its own hall has no straight stretch, a room opens onto a room of its department instead.
+      if (cands.length === 0 && !r.optional && r.dept !== 'public') {
+        cands = doorsTo(new Set([...rooms.keys()].filter((k) => k !== id && !dropped.has(k) && rooms[k]?.dept === r.dept && !rooms[k]?.optional)));
+      }
+      if (cands.length === 0 && r.optional) {
+        // A leftover room no door fits (a sliver on a diagonal) is left as wall.
+        dropped.add(id);
+        for (const i of tilesOf.get(id) ?? []) { floor[i] = -1; wall[i] = 1; }
+        tilesOf.delete(id);
+        break;
+      }
+      if (cands.length === 0) return `${r.dept} ${r.spec.role}: no door (room ${id})`;
       const near = r.doorNear;
       const pick = near !== undefined
         ? cands.reduce((b, w) => (Math.hypot(g.x(w) - g.x(near), g.y(w) - g.y(near)) < Math.hypot(g.x(b) - g.x(near), g.y(b) - g.y(near)) ? w : b))

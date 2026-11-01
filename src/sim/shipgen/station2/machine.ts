@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { K, type Grid, type TileRect } from './grid';
-import { PREC, addRoom, depthFrom, isPublic, nearPublic, placeRect, rectParts, slice, solid, type Ctx2 } from './kit';
+import { PREC, addRoom, depthFrom, faces, isPublic, nearPublic, placeRect, rectParts, slice, solid, type Ctx2 } from './kit';
 import type { DeptId, Facility } from './program';
 import { planSpine } from './spine';
 
@@ -19,9 +19,7 @@ const AISLE = 3;
 
 /** The aisle (public side, AISLE deep) and the back of a parcel; the aisle's floor is all but its first row. */
 export function split(g: Grid, tiles: readonly number[]): { aisle: number[]; back: number[]; floor: Set<number>; depth: Map<number, number> } {
-  const fr = tiles.filter((i) => nearPublic(g, i));
-  const mid = tiles.reduce((t, i) => t + g.r(i), 0) / Math.max(1, tiles.length);
-  const inner = fr.filter((i) => g.r(i) < mid), outer = fr.filter((i) => g.r(i) >= mid);
+  const { inner, outer } = faces(g, tiles);
   const side = new Set(inner.length >= outer.length ? inner : outer);
   const depth = depthFrom(g, tiles, (i) => side.has(i));
   const aisle = tiles.filter((i) => (depth.get(i) ?? 99) <= AISLE);
@@ -115,11 +113,19 @@ export const machinesFit = (g: Grid, tiles: readonly number[], sizes: readonly [
 export const rowFits = (g: Grid, tiles: readonly number[], sizes: readonly [number, number][]): boolean => layoutRects(g, tiles, sizes) !== null;
 
 /** Back floor no rect took: rooms where big enough and beside a corridor, else part of a corridor, else solid. */
-function leftovers(c: Ctx2, dept: DeptId, back: readonly number[], halls: readonly number[], spec: () => RoomSpec): void {
+export function leftovers(c: Ctx2, dept: DeptId, back: readonly number[], halls: readonly number[], spec: () => RoomSpec): void {
   const g = c.g;
   for (const comp of g.components(back.filter((i) => g.kind[i] === K.Free))) {
     const touch = halls.filter((h) => comp.some((i) => g.nb(i).some((j) => g.kind[j] === K.Room && g.id[j] === h)));
-    if (touch.length > 0 && comp.length >= 8) addRoom(c, { tiles: comp, spec: spec(), dept, prec: PREC.soft + c.rooms.length, doors: [{ any: touch }] });
+    if (touch.length > 0 && comp.length >= 8) {
+      // Big leftovers become several rooms of about 24 tiles (a store, a plant room), not one sprawling one.
+      const k = Math.max(1, Math.round(comp.length / 24));
+      const ids: number[] = [];
+      for (const ts of slice(g, comp, Array<number>(k).fill(1))) {
+        if (ts.length === 0) continue;
+        ids.push(addRoom(c, { tiles: ts, spec: spec(), dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [...touch, ...ids] }], optional: true }));
+      }
+    }
     else if (touch.length > 0) { const h = touch[0] as number; for (const i of comp) g.set(i, K.Room, h); (c.rooms[h] as { tiles: number[] }).tiles.push(...comp); }
     else solid(c, comp);
   }
@@ -143,8 +149,8 @@ export function machineStrategy(c: Ctx2, tiles: number[], facilities: Facility[]
   // Leftovers: plant rooms off the corridor; floor only the public side reaches becomes a store there; the rest solid.
   for (const comp of g.components(tiles.filter((i) => g.kind[i] === K.Free))) {
     const touch = (id: number): boolean => comp.some((i) => g.nb(i).some((j) => g.kind[j] === K.Room && g.id[j] === id));
-    if (comp.length >= 8 && (touch(hall) || touch(post))) addRoom(c, { tiles: comp, spec: { role: 'plant', mods: [], w: 3, h: 3 }, dept: 'engineering', prec: PREC.soft + c.rooms.length, doors: [{ any: [hall, post] }] });
-    else if (comp.length >= 10 && comp.some((i) => nearPublic(g, i))) addRoom(c, { tiles: comp, spec: { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }, dept: 'engineering', prec: PREC.soft + c.rooms.length, doors: ['public'] });
+    if (comp.length >= 8 && (touch(hall) || touch(post))) leftovers(c, 'engineering', comp, [hall, post], () => ({ role: 'plant', mods: [], w: 3, h: 3 }));
+    else if (comp.length >= 10 && comp.some((i) => nearPublic(g, i))) addRoom(c, { tiles: comp, spec: { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }, dept: 'engineering', prec: PREC.soft + c.rooms.length, doors: ['public'], optional: true });
     else solid(c, comp);
   }
   return true;

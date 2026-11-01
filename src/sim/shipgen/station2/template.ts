@@ -44,6 +44,10 @@ export interface Template {
   centre: 'rotunda' | 'hub' | 'annular';
   /** Radius of the centre (the court's outer edge for annular). */
   rc: number;
+  /** The template's own centre radius before solving grew it. */
+  rcMin?: number;
+  /** Each zone's inner radius as last solved (for the curvature its rect rooms lose). */
+  radii?: number[];
   /** Depth of each band from the hull inward: bands[0] the outer band (hull to ring 0), bands[k] between rings k-1 and k. */
   bands: number[];
   rings: Ring[];
@@ -94,7 +98,8 @@ export function sampleTemplate(rng: Rng, kind: Family, docks: number): Template 
     const set = rng.chance(0.75) ? [...CARDINAL] : shuffle(rng, CARDINAL).slice(0, 3).sort((a, b) => a - b);
     const open: [number, number][] = [];
     // Open quarters between the spokes; one may stay filled.
-    const filled = rng.chance(0.35) ? rng.int(0, set.length - 1) : -1;
+    // One quarter is always filled: a pie slice with two straight sides (engineering's rect-friendly parcel).
+    const filled = rng.int(0, set.length - 1);
     set.forEach((d, i) => {
       const next = set[(i + 1) % set.length] as number;
       if (i !== filled) open.push([dirAngle(d), ((next - d + 8) % 8 || 8) * (Math.PI / 4)]);
@@ -119,9 +124,9 @@ export function sampleTemplate(rng: Rng, kind: Family, docks: number): Template 
   const extra = shuffle(rng, CARDINAL.filter((d) => !faces.includes(d)));
   const set = [...new Set([...faces, ...extra.slice(0, Math.max(0, rng.int(2, 4) - faces.length))])];
   if (set.length === 1) set.push(opp(set[0] as Dir8));
-  const spokes: Spoke[] = set.map((dir) => ({ dir, hw: 1, reach: 0, from: -1 }));
-  // Links between the rings only, on the cardinals the main spokes leave free.
-  for (const dir of CARDINAL.filter((d) => !set.includes(d))) if (rng.chance(0.6)) spokes.push({ dir, hw: 1, reach: 0, from: 1 });
+  // Only the harbour concourses run through to the outer ring; the other spokes stop at the inner ring, so the middle
+  // band runs on in one or two long arcs (a band cut into quarters leaves quarters no department needs).
+  const spokes: Spoke[] = set.map((dir) => ({ dir, hw: 1, reach: faces.includes(dir) ? 0 : 1, from: -1 }));
   return {
     kind, centre: 'rotunda', rc: rng.int(4, 6), outer: rng.int(9, 11), bands: [], rings: [{ w: rng.pick([2, 3]) }, { w: 2 }],
     spokes, chords: [], harbours: hb, open: [],
