@@ -92,7 +92,7 @@ import { newYard, type YardState } from './yard/types';
  * v75 (salvage items): `item.scrap` is gone; saved stock may hold the new scrap types (hull, tech, energy, weapons, comfort) and cloth; no migration.
  * v76 (salvage orders): `SalvageOrderC` on a derelict, `Job.scrap` (a salvage job's scrap type), and `ModuleDef.scrap`; a stripped wreck leaves the world.
  */
-export const SAVE_VERSION = 76;
+export const SAVE_VERSION = 77;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
