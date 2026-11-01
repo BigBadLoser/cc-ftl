@@ -23,6 +23,8 @@ export interface WorldStack {
   setUiVisible(on: boolean): void;
   /** Combat panel target marks (pass B only). */
   setMarksVisible(on: boolean): void;
+  /** Everything but the ui and marks layers: the minified view draws that art into a texture and only the ui layers directly. */
+  setArtVisible(on: boolean): void;
 }
 
 /** One region's view of the shared stack: a `Layers` whose containers live in the shared layers at the region's offset. */
@@ -120,6 +122,9 @@ export function createWorldStack(): WorldStack {
     },
     setMarksVisible(on) {
       marks.visible = on;
+    },
+    setArtVisible(on) {
+      for (const c of [under, floor, decal, depth as unknown as Container, fx, fxAdd, anchors, low]) c.visible = on;
     },
     region(halos) {
       const parts = { under: flat(), floor: new Container(), decal: new Container(), sorted: new Container(), fx: new Container(), fxAdd: new Container(), ui: new Container(), marks: new Container() };

@@ -17,8 +17,12 @@ export interface Stage {
   portrait(look: CrewLook): string | null;
 }
 
-/** Peak drift from the framed position, in CSS px, and its periods in ms. */
-const DRIFT = { x: 46, y: 16, px: 17_000, py: 23_000 };
+/**
+ * Peak drift from the framed position, in CSS px, and its periods in ms (#264: periods doubled from 17 s / 23 s, half the speed). The drift
+ * adds to the camera's unsnapped centre; the camera draws on whole device px (`originX/originY` are rounded), so the ship only
+ * ever moves by whole pixels.
+ */
+const DRIFT = { x: 46, y: 16, px: 34_000, py: 46_000 };
 /** The ship's offset right of the screen centre, as a share of the width. */
 const SHIFT = 0.16;
 
@@ -38,7 +42,6 @@ export async function startStage(canvas: HTMLCanvasElement, ship: string, seed =
   let at = { x: 0, y: 0 };
   const frame = (): void => {
     r.frameShips([homeShip(sim)]);
-    r.zoomAt(0.01, innerWidth / 2, innerHeight / 2); // one level out from the fit: room around the ship
     r.pan(innerWidth * SHIFT, 0);
     at = { x: 0, y: 0 };
   };
