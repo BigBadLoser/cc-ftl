@@ -278,7 +278,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const ratio = () => cam.w / Math.max(1, canvas.clientWidth);
 
   function resize(): void {
-    cam.resize(canvas.clientWidth || 1, canvas.clientHeight || 1, window.devicePixelRatio || 1);
+    // At a fractional dpr (125% scaling, browser zoom 90%) the canvas box is not a whole number of physical px, and the browser
+    // resamples a backing store that is not exactly that size: art px come out 1 and 2 px wide. So the backing store is the box
+    // rounded down to whole physical px, and the canvas box is then set to exactly that size.
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = '';
+    canvas.style.height = '';
+    const box = canvas.getBoundingClientRect();
+    const device = { w: Math.max(1, Math.floor(box.width * dpr + 1e-6)), h: Math.max(1, Math.floor(box.height * dpr + 1e-6)) };
+    canvas.style.width = `${device.w / dpr}px`;
+    canvas.style.height = `${device.h / dpr}px`;
+    cam.resize(canvas.clientWidth || 1, canvas.clientHeight || 1, dpr, device);
     gl.resize(cam.w, cam.h);
   }
   resize();

@@ -45,6 +45,26 @@ describe('zoom levels', () => {
   });
 });
 
+describe('camera at fractional and sub-1 dpr (browser zoom)', () => {
+  it('sizes the backing store to the physical px, below 1 too', () => {
+    const cam = createCamera(3);
+    cam.resize(1920, 950, 0.8955223880597015);
+    expect([cam.w, cam.h]).toEqual([1719, 851]);
+    cam.resize(1535, 757, 1.25);
+    expect([cam.w, cam.h]).toEqual([1919, 946]);
+  });
+  it('keeps a 1:1 level 1:1 and the origin whole at those ratios', () => {
+    for (const dpr of [0.8955223880597015, 1.25, 1.5]) {
+      const cam = createCamera(3);
+      cam.resize(1600, 800, dpr);
+      cam.setZoom(1 / ART_SCALE);
+      expect(cam.scale * ART_SCALE).toBe(1);
+      cam.pan(3.3, -7.7);
+      expect(Number.isInteger(cam.originX) && Number.isInteger(cam.originY)).toBe(true);
+    }
+  });
+});
+
 describe('camera', () => {
   it('draws the world on a whole device px, at dpr 1 and 2, whatever the pan and zoom (#187)', () => {
     for (const dpr of [1, 2]) {

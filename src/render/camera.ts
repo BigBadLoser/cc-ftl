@@ -57,7 +57,8 @@ export interface Camera {
   /** World container position in device px (whole numbers). */
   readonly originX: number;
   readonly originY: number;
-  resize(cssW: number, cssH: number, dpr: number): void;
+  /** `dpr` is the real devicePixelRatio, below 1 too (browser zoom out); `device`: the backing store's exact size in physical px when the caller has made the canvas box match it. */
+  resize(cssW: number, cssH: number, dpr: number, device?: { w: number; h: number }): void;
   /** Drag by a delta in CSS px. */
   pan(dx: number, dy: number): void;
   /** Continuous zoom factor from wheel/pinch/keys, accumulated into level steps. */
@@ -107,8 +108,10 @@ export function createCamera(maxZoom: number): Camera {
     get originY() {
       return Math.round(h / 2 - cy * scale());
     },
-    resize(cssW, cssH, dpr) {
-      ratio = Math.max(1, dpr);
+    resize(cssW, cssH, dpr, device) {
+      // The backing store is the canvas's physical px, never more: a larger one (the old `max(1, dpr)` at browser zoom 90%) is
+      // resampled by the browser and the art px come out 1 and 2 px wide.
+      ratio = dpr > 0 ? dpr : 1;
       dprInt = Math.max(1, Math.round(dpr));
       // `maxZoom` and the starting zoom are in the 64 px-tile art's terms (art px = css px x dpr at the start): divide them
       // by ART_SCALE so the default and maximum take about the same screen size as before (rounded up to a whole level).
@@ -118,8 +121,8 @@ export function createCamera(maxZoom: number): Camera {
         sized = true;
       }
       zoom = nearestLevel(levels, Math.min(zoom, levels[levels.length - 1] as number));
-      w = Math.max(1, Math.round(cssW * ratio));
-      h = Math.max(1, Math.round(cssH * ratio));
+      w = Math.max(1, device ? device.w : Math.round(cssW * ratio));
+      h = Math.max(1, device ? device.h : Math.round(cssH * ratio));
     },
     pan(dx, dy) {
       cx -= (dx * ratio) / scale();
