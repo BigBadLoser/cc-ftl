@@ -85,6 +85,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   - Keep one Opus agent open for bug fixes and work that really needs Opus, and reuse it by message rather than
     starting new ones, so its cache isn't rebuilt every time. Use it only when Opus is needed, and tell the user when it
     gets a task.
+  - Context budget: agents keep their notes current enough to hand off at any time. When an agent's context nears
+    about 450k tokens, the orchestrator asks it for a handoff note (state, branch, next steps, open questions) in the
+    scratchpad and continues the work with a fresh agent briefed from that note. Compaction is set around 500k.
   - Visual work: build the minimum viewable prototype first, send the user screenshots and stop, so they can iterate or
     change direction early. Finish the work and open the PR only after their go.
   - Non-visual work: no prototype stop. Work it through to a tested PR.
