@@ -70,7 +70,8 @@ export function previewCrew(content: ContentRegistry, plan: UiCrewPlan): UiRollC
       return { skill, name: cap(skill), rolled: r, trait, lost, role: role?.skills?.[skill] ?? 0, value: Math.max(0, r + trait - lost) };
     });
     const roleName = role?.name ?? c.role;
-    const lead = c.label === 'talented' ? `Talented for a ${roleName.toLowerCase()}.` : c.label === 'green' ? `A rookie ${roleName.toLowerCase()}.` : '';
+    const r = roleName.toLowerCase();
+    const lead = c.label === 'talented' ? `Talented for ${/^[aeiou]/.test(r) ? 'an' : 'a'} ${r}.` : c.label === 'green' ? `A rookie ${r}.` : '';
     return {
       slot, role: c.role, roleName, name: c.name, rerolls: plan.picks[slot]?.rerolls ?? 0, label: c.label,
       look: { species: role?.species ?? 'species.human', role: c.role, appearanceSeed: c.appearanceSeed },

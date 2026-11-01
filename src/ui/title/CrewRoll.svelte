@@ -53,6 +53,7 @@
       <span class="steps"><span class="done"><Icon name="check" size={14} />Ship</span><Icon name="chevRight" size={14} /><span class="cur">Crew</span></span>
     </div>
     <div class="ship"><span class="sn">{ship.title}</span><span class="sc">{ship.name} · {crew.length} crew</span></div>
+    <div class="mid" data-testid="crew-roster-scroll">
     <ul>
       {#each crew as c (c.slot)}
         {@const pic = face(c)}
@@ -74,6 +75,7 @@
       <button class="hd" data-testid="crew-reroll-all" onclick={rerollAll}><Icon name="dice" size={18} />Reroll whole crew</button>
     </div>
     <CrewCoverage {crew} />
+    </div>
     <div class="foot">
       <button class="hd" data-testid="title-back" onclick={onBack}><Icon name="back" size={16} />Back</button>
       <button class="hd primary" data-testid="title-start" onclick={start}><Icon name="play" size={16} />Start</button>
@@ -85,14 +87,16 @@
 </div>
 
 <style>
-  .pair { position: fixed; inset: 96px 0; display: flex; justify-content: center; gap: 16px; pointer-events: none; }
+  /* 758px tall, centred; on a shorter window it keeps a 24px margin and the panels scroll inside. */
+  .pair { position: fixed; inset: max(24px, calc((100vh - 758px) / 2)) 0; display: flex; justify-content: center; gap: 16px; pointer-events: none; }
   .pair > :global(*) { pointer-events: auto; }
-  .win { display: flex; flex-direction: column; background: rgba(11, 14, 17, 0.96); border: 1px solid var(--line-hi); }
+  .win { display: flex; flex-direction: column; min-height: 0; background: rgba(11, 14, 17, 0.96); border: 1px solid var(--line-hi); }
   .roster { width: 440px; }
   .ph { display: flex; align-items: center; gap: 10px; min-height: 36px; margin: 0; padding: 0 12px; font-size: 15px; letter-spacing: 0.06em; }
   .steps { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--head-font); letter-spacing: 0.08em; color: var(--dim); }
   .steps .done { display: inline-flex; align-items: center; gap: 4px; color: #9fe0a8; }
   .steps .cur { color: #fff; border-bottom: 2px solid var(--cyan); padding-bottom: 1px; }
+  .ph, .ship { flex: none; }
   .ship { display: flex; align-items: baseline; gap: 12px; padding: 12px; border-bottom: 1px solid var(--line); }
   .sn { font: 600 20px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .sc, .role { font: 600 13px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; }
@@ -118,5 +122,7 @@
   .all { display: grid; gap: 8px; padding: 12px; font-size: 13px; color: var(--dim); }
   .hd { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .primary { border-color: var(--cyan); color: #fff; background: #0c1a22; min-width: 180px; }
-  .foot { margin-top: auto; display: flex; justify-content: space-between; gap: 10px; padding: 12px; border-top: 1px solid var(--line); }
+  /* The header and the Back / Start footer stay put; the list and the coverage scroll between them. */
+  .mid { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .foot { flex: none; margin-top: auto; display: flex; justify-content: space-between; gap: 10px; padding: 12px; border-top: 1px solid var(--line); }
 </style>

@@ -431,6 +431,16 @@ describe('campaigns', () => {
     expect(start.sim.seed).toBe(99);
   });
 
+  it('skips the title for a debug start: ?seed=, ?scenario= and a valid ?starter=', () => {
+    browser();
+    expect(titleWanted(new URLSearchParams(''))).toBe(true);
+    expect(titleWanted(new URLSearchParams('seed=5'))).toBe(false);
+    expect(titleWanted(new URLSearchParams('scenario=fight'))).toBe(false);
+    expect(titleWanted(new URLSearchParams('starter=lancer'))).toBe(false);
+    expect(titleWanted(new URLSearchParams('starter=ship.prospector'))).toBe(false);
+    expect(titleWanted(new URLSearchParams('starter=nonsense'))).toBe(true);
+  });
+
   it('the in-game New game opens the title on the ship pick, once, and keeps the campaign until Start', async () => {
     const { session } = browser();
     const assign = vi.fn();

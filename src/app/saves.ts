@@ -65,7 +65,7 @@ export const DEFAULT_STARTER = 'ship.wayfarer';
 
 export async function startGame(seedParam: string | null, starterParam: string | null = null): Promise<Start> {
   // `?starter=wayfarer|prospector|lancer` (debug): a new game with that starter ship, never saved over the campaign.
-  const starter = starterParam ? starterShips.find((s) => s.id === `ship.${starterParam}` || s.id === starterParam) : undefined;
+  const starter = starterOf(starterParam);
   // A new game sails the ship the new-game flow picked, else `?starter=`, else the Spine Hauler (`ship.wayfarer`);
   // `newGame`'s own default stays the old `ship.starter`, which the sim tests are built on.
   const fresh = (seed: number, ship?: string, crew?: CrewPick[]) => newGame(seed >>> 0, content, ship ?? starter?.id ?? DEFAULT_STARTER, true, crew ?? 'rolled');
@@ -214,12 +214,17 @@ export function saveMeta(sim: Sim, id: string, name: string, now = Date.now()): 
 }
 
 /**
- * Whether the page opens on the title screen: not for a debug start (`?scenario=`, `?seed=`), nor right after a reload that goes into a game
- * (the flag is read once). A plain page load shows it.
+ * Whether the page opens on the title screen: not for a debug start (`?scenario=`, `?seed=`, a valid `?starter=`), nor right
+ * after a reload that goes into a game (the flag is read once). A plain page load shows it.
  */
 export function titleWanted(params: URLSearchParams): boolean {
   const skip = take(SKIP_TITLE) !== null;
-  return !skip && !params.has('scenario') && !params.has('seed');
+  return !skip && !params.has('scenario') && !params.has('seed') && !starterOf(params.get('starter'));
+}
+
+/** The starter ship a `?starter=` debug start names (`wayfarer` or `ship.wayfarer`), or undefined when it names none. */
+export function starterOf(param: string | null) {
+  return param ? starterShips.find((s) => s.id === `ship.${param}` || s.id === param) : undefined;
 }
 
 function skipTitleOnce(): void {

@@ -78,10 +78,11 @@
 </section>
 
 <style>
-  .win { display: flex; flex-direction: column; width: 560px; background: rgba(11, 14, 17, 0.96); border: 1px solid var(--line-hi); }
+  .win { display: flex; flex-direction: column; min-height: 0; width: 560px; background: rgba(11, 14, 17, 0.96); border: 1px solid var(--line-hi); }
   .ph { display: flex; align-items: center; gap: 10px; min-height: 36px; margin: 0; padding: 0 12px; font-size: 15px; letter-spacing: 0.06em; }
   .ph small { font: 600 13px var(--head-font); color: var(--dim); letter-spacing: 0.06em; }
-  .body { padding: 14px; overflow-y: auto; min-height: 0; }
+  .ph { flex: none; }
+  .body { flex: 1 1 auto; padding: 14px; overflow-y: auto; min-height: 0; }
   .id { display: grid; grid-template-columns: 112px 1fr; gap: 16px; }
   .face { width: 112px; height: 128px; background: #061020; border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
