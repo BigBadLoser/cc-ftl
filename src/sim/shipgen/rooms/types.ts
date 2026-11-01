@@ -1,3 +1,5 @@
+import type { BerthStyle } from './plans';
+
 /**
  * Room recipes: data-driven layout rules per room role. A recipe lists 2-3 arrangements; the seed picks one per room,
  * plus a mirror (port and starboard swapped) and the alternatives of each step. Directions are in the ship frame:
@@ -18,6 +20,8 @@ export interface Step {
    * fill target.
    */
   count: 'spec' | number | 'fill';
+  /** With `count: 'fill'`: at most one of this step's module per module of this def in the room (a locker a bed). */
+  per?: string;
   /** Walls the footprint should back onto (preferred, not required). */
   wall?: Wall;
   /** A second-choice wall, scored lower (the helm backs onto a long wall when the fore wall has a door). */
@@ -57,6 +61,11 @@ export interface Step {
 }
 
 export interface Arrangement {
+  /**
+   * Lay the room out at once from a repeating unit (rooms/plans.ts, rooms/aisles.ts); its steps are the fallback when the
+   * plan does not fit. `style` overrides the room spec's own choice (RoomSpec.berths), which overrides the faction's.
+   */
+  plan?: { kind: 'berths'; lounge?: boolean; style?: BerthStyle } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' };
   name: string;
   weight: number;
   /**

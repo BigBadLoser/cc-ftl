@@ -1,6 +1,7 @@
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
 import type { StationGrammar } from './stationTypes';
+import type { BerthStyle } from './rooms/plans';
 
 /**
  * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
@@ -176,6 +177,8 @@ export interface FactionDef {
   side?: Faction;
   /** Building style id; also the art lookup key. */
   motif: string;
+  /** Default for how quarters are laid out (rooms/plans.ts): 'rows' barracks (no cabins), 'apart' (default) beds spread round the walls. A room spec may say otherwise. */
+  berths?: BerthStyle;
   /** Art variants for the renderer (looked up later; no art is generated here). */
   art: { hull: string; wall: string; roof: string; livery: string; signature: readonly string[] };
   architecture: ArchitectureDef;
