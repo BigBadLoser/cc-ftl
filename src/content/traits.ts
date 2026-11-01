@@ -56,7 +56,7 @@ export const traits = {
   'trait.thrill_seeker': {
     name: 'Thrill-seeker', flavour: "Bored when it's quiet.", kind: 'behaviour', weight: 5, rollable: true,
     short: 'Danger +6 · bored −3', effect: '+6 mood in combat or on EVA. Bored -3 after 15 min without either.',
-    excludes: ['trait.battle_shy', 'trait.void_fear'], effects: { thrill: true },
+    excludes: ['trait.battle_shy', 'trait.space_sick'], effects: { thrill: true },
   },
   'trait.stoic': {
     name: 'Stoic', flavour: 'Seen worse.', kind: 'behaviour', weight: 5, rollable: true,
@@ -81,16 +81,19 @@ export const traits = {
   // --- Phobias and habits (mechanics pending) ---
   'trait.pyrophobic': {
     name: 'Pyrophobic', flavour: 'Saw a ship burn once.', kind: 'phobia', weight: 5, rollable: false,
-    short: 'Afraid of fire', effect: 'Afraid of fire: avoids jobs near flames; panics if it lasts.',
+    short: 'Afraid of fire', effect: 'Fire within 6 tiles: -6 mood. (Job avoidance and panic still to come.)',
+    effects: { fireFear: true },
   },
-  'trait.void_fear': {
-    name: 'Afraid of the void', flavour: 'Hates the hum of the hull.', kind: 'phobia', weight: 5, rollable: false,
-    short: 'Afraid of vacuum and EVA', effect: 'Afraid of vacuum and EVA: avoids spacewalks; panics if it lasts.',
+  'trait.space_sick': {
+    name: 'Space-sick', flavour: 'Hates the hum of the hull.', kind: 'phobia', weight: 5, rollable: false,
+    short: 'Hates spacewalks', effect: 'Suited and outside the hull: -4 mood. (Job avoidance and panic still to come.)',
+    effects: { spaceSick: true },
     excludes: ['trait.void_born', 'trait.thrill_seeker'],
   },
   'trait.dark_fear': {
     name: 'Afraid of the dark', flavour: 'Sleeps with the lights on.', kind: 'phobia', weight: 5, rollable: false,
-    short: 'Afraid of the dark', effect: 'Afraid of darkness: avoids dark rooms; panics if it lasts.',
+    short: 'Afraid of the dark', effect: 'Dark rooms cost -10 mood instead of -5. (Panic still to come.)',
+    effects: { darkFear: true },
     excludes: ['trait.dark_adapted'],
   },
   'trait.battle_shy': {
@@ -146,7 +149,7 @@ export const traits = {
   'trait.void_born': {
     name: 'Void-born', flavour: 'Spacewalks before breakfast.', kind: 'tradeoff', weight: 2, rollable: true,
     short: 'Suit air ×1.5 · no suit slowdown', effect: 'Suit air lasts 1.5x as long; no walking penalty in a suit. Cooped up -3 mood after 30 min without EVA.',
-    excludes: ['trait.void_fear'], effects: { suitAirMult: 1.5, noSuitSlow: true, voidHome: true },
+    excludes: ['trait.space_sick'], effects: { suitAirMult: 1.5, noSuitSlow: true, voidHome: true },
   },
   'trait.dark_adapted': {
     name: 'Dark-adapted', flavour: 'Grew up on a dim station.', kind: 'tradeoff', weight: 5, rollable: true,
