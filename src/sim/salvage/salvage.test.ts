@@ -19,6 +19,7 @@ import { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
 import { CREW_MAX_HP } from '../tuning';
 import { SalvageOrderC } from './components';
+import { workLeft } from './counts';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -178,6 +179,33 @@ describe('salvage orders', () => {
     }
     expect(sim.world.query(ModuleC).length).toBe(0);
     expect(sim.world.query(JobC).length).toBe(0);
+  });
+
+  it('report progress that never goes backwards, from 0 to 1', () => {
+    const sim = new Sim(4, content);
+    const w = derelict(sim, withoutRobot);
+    person(sim, 4, 3);
+    person(sim, 5, 3);
+    order(sim, w, all);
+    const frac = (): number => {
+      const o = sim.world.get(w, SalvageOrderC);
+      return o ? o.done / (o.done + workLeft(sim, w, o.types)) : 1;
+    };
+    const first = frac();
+    let prevDone = 0, prev = first;
+    run(sim, 6000, {}, () => {
+      const o = sim.world.get(w, SalvageOrderC);
+      if (o) { expect(o.done).toBeGreaterThanOrEqual(prevDone); prevDone = o.done; }
+      const f = frac();
+      expect(f).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = f;
+      const left = [...Array(rows.length * rows[0]!.length).keys()].filter((i) => sim.sector.grid.get('struct', i % 10, Math.floor(i / 10)) !== Struct.Space);
+      if (left.length <= 2 && sim.world.query(ModuleC).length === 0) for (const i of left) writeStruct(sim.sector.grid, i % 10, Math.floor(i / 10), Struct.Space); // crew-under-feet stand-in, as above
+      return !sim.world.has(w, ShipC);
+    });
+    expect(first).toBe(0);
+    expect(prevDone).toBeGreaterThan(10);
+    expect(prev).toBeGreaterThan(0.9);
   });
 
   it('strip modules first, then walls and doors, then floors', () => {

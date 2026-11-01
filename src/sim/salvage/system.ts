@@ -1,27 +1,17 @@
-import { EggSacC, NestC } from '../aliens/components';
-import { factionsHostile } from '../combat/factions';
-import { CrewC, DeadC, PositionC } from '../crew/components';
-import { AllegianceC, SurrenderedC } from '../fight/components';
 import { destroyJob } from '../items/stacks';
 import { FerryC } from '../ferry/components';
 import { TransferC } from '../logistics/components';
-import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { SALVAGE_EVERY } from '../tuning';
 import { SalvageOrderC } from './components';
+import { hostilesAboard } from './counts';
 import { planJobs, salvageJobs } from './plan';
 import { isEmptyShell, removeWreck } from './remove';
 
 /** True while something hostile to the player is aboard: a living, non-surrendered hostile crew member, an egg sac or a nest. */
 export function hostileAboard(sim: Sim, ship: number): boolean {
-  for (const id of sim.world.query(CrewC, PositionC, AllegianceC)) {
-    if (sim.world.has(id, DeadC) || sim.world.has(id, SurrenderedC)) continue;
-    if (!factionsHostile(sim.world.get(id, AllegianceC)?.faction, 'player')) continue;
-    if (shipIdOf(sim, sim.world.get(id, PositionC)) === ship) return true;
-  }
-  for (const id of sim.world.query(EggSacC)) if (sim.world.get(id, EggSacC)?.ship === ship) return true;
-  for (const id of sim.world.query(NestC)) if (sim.world.get(id, NestC)?.ship === ship) return true;
-  return false;
+  const h = hostilesAboard(sim, ship);
+  return h.crew + h.sacs + h.nests > 0;
 }
 
 /** True while a shuttle run (a logistics transfer, or a hand-made ferry run) is still moving loot or crew off the wreck: the wreck stays until it has landed. */

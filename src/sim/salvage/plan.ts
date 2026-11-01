@@ -40,6 +40,9 @@ export function partsOf(sim: Sim, ship: number, types: readonly ScrapType[]): Pa
   return parts;
 }
 
+/** How many parts `parts` lists. */
+export const partCount = (p: Parts): number => p.modules.length + p.walls.length + p.floors.length;
+
 /** True if a module of the ship has no scrap type, and every module is such (robot hardware only: salvage has nothing to take, now or later). */
 export function robotOnly(sim: Sim, ship: number): boolean {
   let any = false;
@@ -111,7 +114,7 @@ export function salvageJobs(sim: Sim, ship: number): number[] {
  */
 export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): number {
   const parts = partsOf(sim, ship, types);
-  const remaining = parts.modules.length + parts.walls.length + parts.floors.length;
+  const remaining = partCount(parts);
   const open = salvageJobs(sim, ship).map((id) => sim.world.get(id, JobC)!);
   let room = SALVAGE_JOBS_OPEN - open.length;
   if (room <= 0 || remaining === 0) return remaining;

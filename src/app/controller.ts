@@ -365,8 +365,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const any = renderer.pickTileAny(sx, sy);
           const ag = any && shipGrid(sim, any.shipId);
           const jammed = !!any && !!ag && ag.get('struct', any.x, any.y) === Struct.Door && ag.get('jam', any.x, any.y) !== 0;
-          if (any && (jammed || (!tile && any.shipId !== homeShipId() && sim.world.get(any.shipId, ShipC)?.state === 'wreck'))) {
-            // A derelict tile selects like one of your own (its panel offers Force door on jammed doors); the ship panel is on the node strip.
+          if (any && jammed) {
+            // A jammed derelict door selects like one of your own (its panel offers Force door); the rest of a derelict opens its ship panel (salvage) below.
             selectTile({ x: any.x, y: any.y }, any.shipId);
           } else if (any && foreignShipTarget(sim, any.shipId, homeShipId()) !== null) {
             // A station or another ship: its inspector (the same panel as its node-strip button), without moving the camera.
