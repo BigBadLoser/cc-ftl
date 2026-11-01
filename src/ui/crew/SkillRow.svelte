@@ -53,12 +53,12 @@
   .xp { display: block; height: 3px; background: #141a20; }
   .xp i { display: block; height: 100%; background: #7d858c; }
   .pc { align-self: end; line-height: 1; font-size: 11px; color: var(--dim); }
-  .tip { display: none; position: absolute; left: 112px; top: calc(100% - 2px); z-index: 3; width: 236px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line-hi); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6); }
+  .tip { display: none; position: absolute; left: 112px; top: calc(100% - 2px); z-index: 3; width: 210px; padding: 5px 8px; background: var(--panel); border: 1px solid var(--line-hi); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6); }
   li:hover .tip { display: block; }
-  .h { margin-bottom: 4px; font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .r { display: flex; justify-content: space-between; min-height: 20px; font-size: 12px; }
+  .h { margin-bottom: 2px; font: 600 11px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
+  .r { display: flex; justify-content: space-between; line-height: 18px; font-size: 12px; }
   .l { color: var(--dim); }
   .xpc { color: #c9ced3; }
   .pos { color: #9fe0a8; } .neg { color: #ff9a9a; }
-  hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 3px 0; }
 </style>

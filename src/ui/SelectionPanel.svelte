@@ -69,7 +69,7 @@
   {:else if selShip !== null}
     <GridPanel {api} ship={selShip} onBack={back} {onTrade} {onStation} />
   {:else if hasCrew}
-    <CrewInspector {api} {onPriorities} onBack={back} />
+    <CrewInspector {api} {onPriorities} />
   {:else if site}
     <SiteInspector {api} onBack={back} />
   {:else if mod && bays.some((b) => b.id === mod.id)}

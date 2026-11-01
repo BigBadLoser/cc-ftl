@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, RolledSkillsC, SkillXpC, TraitsC, newGame, stat } from '../sim';
+import { CrewC, PositionC, RolledSkillsC, SkillXpC, TraitsC, newGame, stat } from '../sim';
+import { shipGrid, shipIdOf } from '../sim/regions';
 import { buildCrewDetail } from './crewDetail';
 
 describe('the crew inspector detail', () => {
@@ -28,5 +29,19 @@ describe('the crew inspector detail', () => {
     const d = buildCrewDetail(sim, id)!;
     expect(d.mood?.base).toBe(50);
     expect(d.health.conditions.some((c) => c.key === 'rest')).toBe(true);
+  });
+
+  it('names an environment penalty by its cause, not its size (thin air on a lit tile is not a dark room)', () => {
+    const sim = newGame(1, content);
+    const id = sim.world.query(CrewC)[0]!;
+    const p = sim.world.get(id, PositionC)!;
+    const grid = shipGrid(sim, shipIdOf(sim, p))!;
+    grid.set('light', p.x, p.y, 100);
+    grid.set('o2', p.x, p.y, 5);
+    const work = buildCrewDetail(sim, id)!.stats.find((s) => s.stat === 'workSpeed')!;
+    expect(work.parts.map((x) => x.label)).toContain('Thin air');
+    expect(work.parts.map((x) => x.label)).not.toContain('Dark room');
+    grid.set('light', p.x, p.y, 0);
+    expect(buildCrewDetail(sim, id)!.stats.find((s) => s.stat === 'moveSpeed')!.parts.map((x) => x.label)).toEqual(['Dark room']);
   });
 });

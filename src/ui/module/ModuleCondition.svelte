@@ -17,6 +17,6 @@
 </script>
 
 <Section title="Hull points" testId="module-condition">
-  <StatBar value={(m.hp / Math.max(1, m.maxHp)) * 100} color="var(--hp)" low={m.hp < m.maxHp * 0.4} text="{m.hp}/{m.maxHp}" />
+  <StatBar value={(m.hp / Math.max(1, m.maxHp)) * 100} health text="{m.hp}/{m.maxHp}" />
 </Section>
 <Section title="Status"><ConditionList items={items} /></Section>

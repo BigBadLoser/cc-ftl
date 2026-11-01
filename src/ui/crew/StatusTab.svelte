@@ -5,6 +5,7 @@
   import Breakdown from '../inspector/Breakdown.svelte';
   import type { Condition } from '../inspector/blocks';
   import { moodWord } from './format';
+  import { healthColor, healthTone } from '../inspector/health';
 
   /**
    * The crew Status tab on the inspector grid: health and the needs as bars, then a Conditions line that lists only real
@@ -16,7 +17,7 @@
     const bars = d.health.conditions.filter((c) => c.pct !== null);
     const other = d.health.conditions.filter((c) => c.pct === null);
     return [
-      { key: 'hp', label: 'Health', text: `${d.health.hp} / ${d.health.maxHp}`, pct: (d.health.hp / Math.max(1, d.health.maxHp)) * 100, tone: d.health.hp < d.health.maxHp * 0.4 ? 'bad' : 'ok', color: 'var(--hp)' },
+      { key: 'hp', label: 'Health', text: `${d.health.hp} / ${d.health.maxHp}`, pct: (d.health.hp / Math.max(1, d.health.maxHp)) * 100, tone: healthTone(d.health.hp / Math.max(1, d.health.maxHp)), color: healthColor(d.health.hp / Math.max(1, d.health.maxHp)) },
       ...bars.map((c) => ({ ...c, color: c.key === 'hunger' || c.key === 'rest' ? (c.tone === 'bad' ? 'var(--red)' : 'var(--amber)') : undefined })),
       { key: 'conditions', label: 'Conditions', text: other.length ? other.map((c) => `${c.label}: ${c.text}`).join(', ') : 'none', pct: null, tone: other.some((c) => c.tone === 'bad') ? 'bad' : other.length ? 'warn' : 'dim' },
     ];

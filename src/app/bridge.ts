@@ -251,7 +251,7 @@ export function createBridge(sim: Sim): Bridge {
       lastHostiles = hk;
       hostiles.set(lists.hostiles);
     }
-    const detail = watched !== null && lists.crew.some((c) => c.id === watched) ? buildCrewDetail(sim, watched) : null;
+    const detail = watched !== null && (lists.crew.some((c) => c.id === watched) || lists.hostiles.some((c) => c.id === watched)) ? buildCrewDetail(sim, watched) : null;
     const dk = JSON.stringify(detail);
     if (dk !== lastDetail) {
       lastDetail = dk;

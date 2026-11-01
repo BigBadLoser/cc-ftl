@@ -7,8 +7,11 @@
   import CrewOverview from './crew/CrewOverview.svelte';
   import { crewTabs, type CrewTabProps } from './crew/crewTabs';
 
-  /** The crew inspector: the player's crew get the tabbed inspector (crew/crewTabs.ts); a hostile shows its Overview only. */
-  let { api, onPriorities, onBack }: { api: UiApi; onPriorities: () => void; onBack: () => void } = $props();
+  /**
+   * The crew inspector: the player's crew get the tabbed inspector (crew/crewTabs.ts); a hostile shows its Overview only.
+   * No back tile in the title bar: the tabs go back to the Overview, and Esc or a click on the world closes the inspector.
+   */
+  let { api, onPriorities }: { api: UiApi; onPriorities: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
@@ -28,7 +31,7 @@
 
 {#if c && tabProps}
   <div data-testid="crew-inspector">
-    {#snippet head()}<PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub="{c.role}{enemy ? ' · hostile' : ''}" foe={enemy} {onBack} />{/snippet}
+    {#snippet head()}<PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub="{c.role}{enemy ? ' · hostile' : ''}" foe={enemy} />{/snippet}
     {#if enemy}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
   </div>
 {/if}

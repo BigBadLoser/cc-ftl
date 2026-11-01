@@ -1,18 +1,21 @@
 <script lang="ts">
   import Icon, { type IconName } from '../Icon.svelte';
+  import { healthColor } from './health';
 
   /**
    * A labelled stat bar, one look everywhere: an 8px bar of `value` out of `max` (or stacked `segments`, each with its own
    * colour), an optional baseline tick, optional whole-unit cells, and a right-aligned readout. The label and readout
    * columns take `--sb-label` and `--sb-value` so rows line up when stacked.
    */
-  let { label, icon, value = 0, max = 100, segments, baseline, cells = false, text, color = 'var(--cyan)', low = false, testId, title }: {
+  let { label, icon, value = 0, max = 100, segments, baseline, cells = false, text, color = 'var(--cyan)', low = false, health = false, testId, title }: {
     label?: string; icon?: IconName; value?: number; max?: number;
     segments?: { value: number; color: string; hatch?: boolean }[];
-    baseline?: number; cells?: boolean; text?: string; color?: string; low?: boolean; testId?: string; title?: string;
+    baseline?: number; cells?: boolean; text?: string; color?: string; low?: boolean;
+    /** Colour by health (green, yellow when hurt, red when critical; see health.ts) instead of `color`. */
+    health?: boolean; testId?: string; title?: string;
   } = $props();
   const pct = (v: number) => `${Math.max(0, Math.min(100, (v / Math.max(1e-6, max)) * 100))}%`;
-  const parts = $derived(segments ?? [{ value, color: low ? 'var(--red)' : color }]);
+  const parts = $derived(segments ?? [{ value, color: health ? healthColor(value / Math.max(1e-6, max)) : low ? 'var(--red)' : color }]);
 </script>
 
 <div class="sb" class:low class:labelled={!!(label || icon)} class:texted={text !== undefined} data-testid={testId} {title}>

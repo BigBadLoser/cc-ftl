@@ -1,5 +1,5 @@
 import { CrewC } from './crew/components';
-import { environmentModifiers } from './crew/conditions';
+import { darkModifiers, lowAirModifiers } from './crew/conditions';
 import { suitModifiers } from './eva/conditions';
 import { moodModifiers } from './crew/mood';
 import { xpSkillModifiers } from './story/components';
@@ -24,11 +24,11 @@ export interface Modifier {
 export type ModifierSource = (sim: Sim, entity: number) => readonly Modifier[];
 
 /** Where a modifier comes from, for the crew inspector's breakdown. */
-export type ModifierOrigin = 'environment' | 'skills' | 'charge' | 'suit' | 'xp' | 'traits' | 'mood';
+export type ModifierOrigin = 'dark' | 'lowAir' | 'skills' | 'charge' | 'suit' | 'xp' | 'traits' | 'mood';
 
 /** Register sources here, each under its origin. Implants plug in later. */
 export const modifierSources: readonly { origin: ModifierOrigin; get: ModifierSource }[] = [
-  { origin: 'environment', get: environmentModifiers }, { origin: 'skills', get: roleSkillModifiers }, { origin: 'charge', get: chargeModifiers },
+  { origin: 'dark', get: darkModifiers }, { origin: 'lowAir', get: lowAirModifiers }, { origin: 'skills', get: roleSkillModifiers }, { origin: 'charge', get: chargeModifiers },
   { origin: 'suit', get: suitModifiers }, { origin: 'xp', get: xpSkillModifiers }, { origin: 'traits', get: traitModifiers }, { origin: 'mood', get: moodModifiers },
 ];
 

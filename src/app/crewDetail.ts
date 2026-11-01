@@ -1,6 +1,6 @@
 import {
   CrewC, DownedC, HealthC, ImplantsC, MoodC, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
-  NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC, XP_PER_LEVEL, DARK_MOVE_MULT, DARK_WORK_MULT,
+  NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC, XP_PER_LEVEL,
   statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
@@ -37,7 +37,8 @@ function partsOf(sim: Sim, id: number, name: StatName, b: StatBreakdown): UiStat
       case 'suit': out.push({ label: 'EVA suit', kind: 'gear', op: p.op, value: p.value }); break;
       case 'charge': out.push({ label: 'Flat battery', kind: 'state', op: p.op, value: p.value }); break;
       case 'mood': out.push({ label: 'Low mood', kind: 'state', op: p.op, value: p.value }); break;
-      case 'environment': out.push({ label: p.value === DARK_MOVE_MULT || p.value === DARK_WORK_MULT ? 'Dark room' : 'Thin air', kind: 'env', op: p.op, value: p.value }); break;
+      case 'dark': out.push({ label: 'Dark room', kind: 'env', op: p.op, value: p.value }); break;
+      case 'lowAir': out.push({ label: 'Thin air', kind: 'env', op: p.op, value: p.value }); break;
     }
   }
   return out;
