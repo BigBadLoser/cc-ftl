@@ -82,9 +82,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   - The main session is the orchestrator. It talks with the user, plans, briefs agents, reviews their results and
     drives the PRs, and does small things itself when that is quicker than a handoff.
   - Subagents default to Sonnet, which handles most well-scoped work.
-  - Keep one Opus agent open for bug fixes and work that really needs Opus, and reuse it by message rather than
-    starting new ones, so its cache isn't rebuilt every time. Use it only when Opus is needed, and tell the user when it
-    gets a task.
+  - Keep one Opus agent (the `opus-fixer` type in `.claude/agents`, 1-hour cache) open for bug fixes and work that
+    really needs Opus, and reuse it by message rather than starting new ones, so its cache isn't rebuilt every time. Use
+    it only when Opus is needed, and tell the user when it gets a task. Other subagents keep the 5-minute cache.
   - Context budget: agents keep their notes current enough to hand off at any time. When an agent's context nears
     about 450k tokens, the orchestrator asks it for a handoff note (state, branch, next steps, open questions) in the
     scratchpad and continues the work with a fresh agent briefed from that note. Compaction is set around 500k.
