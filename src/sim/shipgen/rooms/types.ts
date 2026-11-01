@@ -1,3 +1,4 @@
+import type { DesignName } from './designs';
 import type { BerthStyle } from './plans';
 
 /**
@@ -65,7 +66,8 @@ export interface Arrangement {
    * Lay the room out at once from a repeating unit (rooms/plans.ts, rooms/aisles.ts); its steps are the fallback when the
    * plan does not fit. `style` overrides the room spec's own choice (RoomSpec.berths), which overrides the faction's.
    */
-  plan?: { kind: 'berths'; lounge?: boolean; style?: BerthStyle } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' };
+  plan?: { kind: 'berths'; lounge?: boolean; style?: BerthStyle } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' }
+    | { kind: 'design'; designs: readonly DesignName[] };
   name: string;
   weight: number;
   /**
@@ -76,8 +78,16 @@ export interface Arrangement {
   steps: readonly Step[];
 }
 
+/** A hand-made group of modules, laid out at rotation 0 round its origin (chairs turn to face their table). */
+export interface Vignette {
+  name: string;
+  mods: readonly { mod: string; x: number; y: number; rot?: number }[];
+}
+
 export interface RoomRecipe {
   /** Target share of the room's floor under modules (lights excluded) for 'fill' steps. */
   fill: number;
+  /** Groups set in a roomy room's open middle after the steps (rooms/islands.ts). */
+  islands?: readonly Vignette[];
   arrangements: readonly Arrangement[];
 }
