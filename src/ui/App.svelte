@@ -47,6 +47,7 @@
   import { closeOutside, outsideTap, type ClosablePanel } from './outsideClick';
   import './theme.css';
 
+  import { liftBootVeil } from './bootVeil';
   let { api }: { api: UiApi } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -183,6 +184,7 @@
       applySettings(api),
     ];
     api.attachCanvas(canvas);
+    if (api.artReady) liftBootVeil(api.artReady);
     return () => unsubs.forEach((u) => u());
   });
 

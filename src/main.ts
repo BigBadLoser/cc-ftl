@@ -55,6 +55,8 @@ if (titleWanted(new URLSearchParams(location.search))) {
 const errorLog = createErrorLog();
 const consoleRing = installConsoleRing();
 let gameCanvas: HTMLCanvasElement | undefined;
+let artReadyResolve: () => void = () => {};
+const artReady = new Promise<void>((res) => (artReadyResolve = res));
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
 const start = await startGame(new URLSearchParams(location.search).get('seed'), new URLSearchParams(location.search).get('starter'));
 const sim = start.sim;
@@ -533,7 +535,12 @@ const api: UiApi = {
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());
+        loop.hold(true); // no sim ticks while the loading veil is up (a loaded fight must not start unseen)
         loop.start();
+        void r.whenArtReady().then(() => {
+          loop.hold(false);
+          artReadyResolve();
+        });
         startScenario();
         if (stationFlag) {
           const [k, s] = stationFlag.split(':');
@@ -544,8 +551,9 @@ const api: UiApi = {
         const warm = (): void => { if (bridge.warmStarmap()) idle(warm); };
         setTimeout(() => idle(warm), 1500);
       })
-      .catch((e: unknown) => errorLog.push(e));
+      .catch((e: unknown) => { errorLog.push(e); artReadyResolve(); });
   },
+  artReady,
 };
 
 mount(App, { target, props: { api } });

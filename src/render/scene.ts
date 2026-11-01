@@ -60,12 +60,17 @@ export interface RenderInfo {
 type Tile = { x: number; y: number; lift?: number };
 
 
+/** Cap on `whenArtReady`, so a broken sheet never holds the loading screen. */
+export const ART_READY_MAX_MS = 6000;
+
 export interface Renderer {
   render(alpha: number): void;
   /** Where `render` reports its passes (labels `render/...`); the no-op by default. */
   setProbe(probe: Probe): void;
   resize(): void;
   dispose(): void;
+  /** Resolves once the scene has drawn with every sheet it asked for loaded (a few quiet frames with every scene shown), or after `ART_READY_MAX_MS`. */
+  whenArtReady(): Promise<void>;
   /** The sector grid every ship is stamped into. Ships are drawn for every ShipC (a scene reads its ShipC rectangle of it). */
   setSector(sector: SectorGrid): void;
   /** Make this grid the one the camera, picking and the editing markers work on, and frame the camera on it. */
@@ -478,13 +483,32 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChild(inset.sprite);
 
   let probe: Probe = NOOP_PROBE;
+  let frames = 0;
 
   return {
     setProbe(p) {
       probe = p;
     },
+    whenArtReady() {
+      return new Promise<void>((resolve) => {
+        const t0 = performance.now();
+        let quiet = 0;
+        let seen = frames;
+        const poll = (): void => {
+          if (frames !== seen) {
+            seen = frames;
+            const hidden = scenes.size === 0 || [...scenes.keys()].some((id) => art.waiting(id));
+            quiet = atlas.busy() === 0 && !hidden ? quiet + 1 : 0;
+          }
+          if (quiet >= 5 || performance.now() - t0 > ART_READY_MAX_MS) resolve();
+          else setTimeout(poll, 30);
+        };
+        poll();
+      });
+    },
     render(alpha) {
       if (atlas.restoring) return;
+      frames++;
       probe.begin('render/sync');
       sync();
       art.update();
