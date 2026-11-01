@@ -19,7 +19,7 @@ export { spawnModule, removeModule, placementError } from './modules/spawn';
 export { isTileWalkable } from './modules/walk';
 export { roomTiles } from './roomIndex';
 export * from './tuning';
-export { newGame } from './newGame';
+export { newGame, startingRoles } from './newGame';
 export { pipeline, runPipeline, systemLabels, type System } from './pipeline';
 export { NOOP_PROBE, type Probe } from './probe';
 export { MarkerC, type Marker } from './components';
@@ -68,6 +68,11 @@ export { hasLiveCore, isCoreLive, aiCores, isShutDown } from './robots/core';
 export { factionsHostile, isAiFaction } from './combat/factions';
 export * from './story/defs';
 export { ImplantsC, SkillXpC, XP_PER_LEVEL, type Implants, type SkillXp } from './story/components';
+export type { TraitDef, TraitEffects, TraitKind } from './crew/traitDef';
+export { RolledSkillsC, TraitsC, bleedOutSec, traitDefs, type RolledSkills, type Traits } from './crew/traits';
+export {
+  CREW_ROLL_SALT, SKILLS, defaultPicks, rollCrewMember, rollStartingCrew, skillLabel, type CrewPick, type RolledCrew, type SkillLabel,
+} from './crew/roll';
 export type { StoryState, ActiveEvent, Notice, Resolution, PhysicalEntry } from './story/state';
 export { choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
 export { poolFor, startEvent } from './story/engine';

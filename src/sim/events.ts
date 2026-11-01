@@ -130,6 +130,8 @@ export type SimEvent =
   | { type: 'crew.equipped'; crew: number; item: string }
   | { type: 'crew.unequipped'; crew: number; item: string }
   | { type: 'crew.surrendered'; crew: number }
+  /** A player crew member who surrendered picks themselves up once no hostile is left on their ship (fight/surrender.ts). */
+  | { type: 'crew.rallied'; crew: number }
   /** `by`'s crew took the ship on ship `ship` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
   | { type: 'ship.captured'; ship: number; by: Faction; from: Faction }
   | { type: 'crew.imprisoned'; crew: number; ship: number }

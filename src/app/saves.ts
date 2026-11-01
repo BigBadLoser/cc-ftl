@@ -52,7 +52,7 @@ export interface Start {
  * (no migrations while this is a prototype): it is dropped, with a notice.
  */
 export async function startGame(seedParam: string | null): Promise<Start> {
-  const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true);
+  const fresh = (seed: number) => newGame(seed >>> 0, content, undefined, true, 'rolled');
   const random = () => (Math.random() * 0x100000000) >>> 0;
   await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
