@@ -153,8 +153,7 @@ const session = createStore<UiSession>({ notice: start.notice, lost: null });
 const SAVE_FAILED = 'Saving failed: the browser refused the write (storage full or blocked). Your progress since the last save is not stored.';
 // A failed write is an urgent alert (click: the Save game page); it clears itself when a later write works.
 const reportSave = (ok: boolean): void => {
-  if (ok) controller.alerts.clear('save');
-  else controller.alerts.post({ kind: 'save.failed', key: 'save', text: SAVE_FAILED, menu: 'save' });
+  if (controller.alerts.saveResult(ok, SAVE_FAILED)) controller.log.note({ kind: 'warning', tone: 'bad', text: SAVE_FAILED });
 };
 const save = createSaver(sim, start.persist, () => session.get().lost !== null, reportSave);
 setInterval(save, AUTOSAVE_MS);

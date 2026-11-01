@@ -29,6 +29,18 @@ function awayTeam(): { sim: Sim; crew: number } {
 }
 
 describe('alerts', () => {
+  it('a dismissed save-failed alert stays muted until a write succeeds, then a new failure raises it again', () => {
+    const al = createAlerts(newGame(1, content));
+    expect(al.saveResult(false, 'x')).toBe(true);
+    expect(current(al)).toHaveLength(1);
+    al.dismiss(current(al)[0]!.id);
+    expect(al.saveResult(false, 'x')).toBe(false); // same streak: no new log line, no alert
+    expect(current(al)).toEqual([]);
+    al.saveResult(true, 'x');
+    expect(al.saveResult(false, 'x')).toBe(true);
+    expect(current(al)).toHaveLength(1);
+  });
+
   it('posts a clickable save-failed alert that opens the Save page, replaces itself, and clears', () => {
     const al = createAlerts(newGame(1, content));
     al.post({ kind: 'save.failed', key: 'save', text: 'Saving failed', menu: 'save' });
