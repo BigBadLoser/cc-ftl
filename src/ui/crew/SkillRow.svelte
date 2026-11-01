@@ -48,7 +48,7 @@
   b { font: 700 17px/1 var(--head-font); text-align: right; }
   .pips { display: grid; gap: 4px; }
   .row { display: flex; gap: 3px; }
-  .row i { display: block; width: 24px; height: 10px; box-sizing: border-box; background: var(--track); border: 1px solid var(--line); }
+  .row i { display: block; flex: 1; min-width: 0; height: 10px; box-sizing: border-box; background: var(--track); border: 1px solid var(--line); }
   .row i.on { background: var(--k); border-color: var(--k); }
   .xp { display: block; height: 3px; background: #141a20; }
   .xp i { display: block; height: 100%; background: #7d858c; }

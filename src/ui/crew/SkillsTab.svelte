@@ -13,6 +13,7 @@
   let { c, d }: { c: UiCrew; d: UiCrewDetail | null } = $props();
   const trained = $derived(d?.skills.filter((s) => s.value > 0) ?? []);
   const untrained = $derived(d?.skills.filter((s) => s.value <= 0) ?? []);
+  // The pip track stays six 24px pips wide (159px); a skill past level 6 shrinks the pips instead of widening the row.
   const max = $derived(Math.max(6, ...trained.map((s) => s.value)));
   const num = (v: number, unit: string) => (unit && unit !== 'x' ? `${v} ${unit}` : `${v}`);
   const part = (p: { op: 'add' | 'mul'; value: number; label: string }) => `${p.op === 'mul' ? `x${p.value}` : `${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`} ${p.label}`;
@@ -21,7 +22,7 @@
 
 {#if d}
   <Section testId="crew-skills-detail">
-    <ul class="rows" style:--pips-w="{max * 24 + (max - 1) * 3}px">{#each trained as s (s.skill)}<SkillRow {s} {max} role={c.role} />{/each}</ul>
+    <ul class="rows" style:--pips-w="159px">{#each trained as s (s.skill)}<SkillRow {s} {max} role={c.role} />{/each}</ul>
     <div class="foot">
       <span>{#if untrained.length}Untrained: {untrained.map((s) => s.name).join(', ')}{/if}</span>
       <span class="key">{#each Object.entries({ rolled: 'rolled', xp: 'XP', trait: 'trait' }) as [k, l] (k)}<span><i style:background={SOURCE_COLOR[k as keyof typeof SOURCE_COLOR]}></i>{l}</span>{/each}</span>
