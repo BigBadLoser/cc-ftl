@@ -17,7 +17,7 @@ export interface TitleApi {
   /** A crew portrait from a look, or null while the backdrop's art loads. */
   portrait(look: UiRollCrew['look']): string | null;
   /** Draw `ship` in the backdrop canvas; dispose to stop. */
-  stage(canvas: HTMLCanvasElement, ship: string): Promise<{ dispose(): void }>;
+  stage(canvas: HTMLCanvasElement, ship: string): Promise<{ dispose(): void; ready: Promise<void> }>;
 }
 
 /** One skill of a rolled crew member: the rolled level, what traits add and take away, the role's level (the dashed "below role" pips). */

@@ -13,6 +13,8 @@ import { setAnimPaused } from '../../render/animClock';
  */
 export interface Stage {
   dispose(): void;
+  /** Resolves once the stage has drawn with its sheets loaded (the loading screen waits on it). */
+  ready: Promise<void>;
   /** A crew portrait from a look, drawn with the stage renderer's art (null while its sheets load). */
   portrait(look: CrewLook): string | null;
 }
@@ -68,6 +70,7 @@ export async function startStage(canvas: HTMLCanvasElement, ship: string, seed =
   raf = requestAnimationFrame(loop);
   addEventListener('resize', onResize);
   return {
+    ready: r.whenArtReady(),
     portrait: (look) => (dead ? null : r.portraitOf(look)),
     dispose() {
       dead = true;

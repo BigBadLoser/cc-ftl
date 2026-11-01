@@ -41,7 +41,7 @@ export async function mountTitle(target: HTMLElement): Promise<void> {
     stage: async (canvas, ship) => {
       const s = await startStage(canvas, ship);
       stage = s;
-      return { dispose: () => { if (stage === s) stage = null; s.dispose(); } };
+      return { ready: s.ready, dispose: () => { if (stage === s) stage = null; s.dispose(); } };
     },
   };
   mount(TitleApp, { target, props: { api, start: takeTitleView() ?? 'main' } });
