@@ -3,7 +3,7 @@ import { stampShip } from '../combat/ships';
 import { Sim } from '../sim';
 import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, Struct, isEvaWalkable, isWalkable } from '../structure';
 import { shipGrid } from '../regions';
 import { EXTERIOR_COST, findPath, type PathGoal, type PathOpts, type Tile } from './pathfind';
 
@@ -63,6 +63,12 @@ export function legacyFindPath(sim: Sim, shipId: number, from: Tile, goal: PathG
   const closed = new Uint8Array(width * height);
   const heap = new LegacyMinHeap();
   const start = fromIndex;
+  let doorEnd = -1;
+  const pathTo = (end: number): Tile[] => {
+    const out: Tile[] = [];
+    for (let i = end; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
+    return out.reverse();
+  };
   g[start] = 0;
   heap.push(heuristic(from.x, from.y), heuristic(from.x, from.y), start);
 
@@ -73,9 +79,10 @@ export function legacyFindPath(sim: Sim, shipId: number, from: Tile, goal: PathG
     const cx = cur % width;
     const cy = (cur - cx) / width;
     if (isGoal(x0 + cx, y0 + cy)) {
-      const out: Tile[] = [];
-      for (let i = cur; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
-      return out.reverse();
+      // Same rule as findPath (#248): a doorway beside an adjacency goal is only a fallback stop.
+      if (adj && struct[cur] === Struct.Door && cur !== start) {
+        if (doorEnd < 0) doorEnd = cur;
+      } else return pathTo(cur);
     }
     for (const [dx, dy] of NEIGHBOURS) {
       const nx = cx + dx;
@@ -94,7 +101,7 @@ export function legacyFindPath(sim: Sim, shipId: number, from: Tile, goal: PathG
       heap.push(ng + h, h, ni);
     }
   }
-  return null;
+  return doorEnd >= 0 ? pathTo(doorEnd) : null;
 }
 
 /** Binary min-heap of (f, h, index) ordered lexicographically. */

@@ -76,7 +76,8 @@ export function equipOrders(sim: Sim): void {
       cancel();
       continue;
     }
-    if (atStorage(sim, pos, order.storage) && pos.toX === pos.x && pos.toY === pos.y) {
+    // Only on arrival: a crew member passing a doorway diagonal to the crate must not take the weapon there and stop (#248).
+    if (path.steps.length === 0 && atStorage(sim, pos, order.storage) && pos.toX === pos.x && pos.toY === pos.y) {
       storageTake(sim, order.storage, order.item, 1);
       const eq = sim.world.get(id, EquipC);
       if (eq) {
