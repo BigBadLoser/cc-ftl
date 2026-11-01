@@ -29,6 +29,13 @@ describe('shipped manifest', () => {
     }
     expect(n).toBeGreaterThan(100);
   });
+  it('keeps sheets and assets key-sorted, as the pipeline writes them (#140)', () => {
+    // An unsorted manifest (a hand merge, a tool that skips pack.save_manifest) makes the next render re-sort every entry.
+    for (const map of [m.sheets, m.assets]) {
+      const keys = Object.keys(map);
+      expect(keys).toEqual([...keys].sort());
+    }
+  });
   it('every asset names a sheet the manifest has', () => {
     for (const [id, a] of Object.entries(m.assets)) {
       const names = a.kind === 'static' ? [a.sheet] : [...Object.values(a.clips).map((c) => c.sheet ?? a.sheet), a.sheet];

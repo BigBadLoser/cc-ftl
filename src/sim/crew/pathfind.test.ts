@@ -47,6 +47,17 @@ describe('findPath', () => {
     expect(p[p.length - 1]).toEqual({ x: 3, y: 0 });
     expect(findPath(s, 1, { x: 3, y: 1 }, { x: 4, y: 0, adjacent: true })).toEqual([]);
   });
+  it('an adjacency goal never ends on a doorway when another tile beside it is reachable (#248)', () => {
+    const s = sim(['____', '#D##', '__#_', '____']);
+    // The door (1,1) is diagonal to the goal wall (2,2) and nearer; the walker must go on to a proper stand spot.
+    const p = findPath(s, 1, { x: 0, y: 0 }, { x: 2, y: 2, adjacent: true }) ?? [];
+    expect(p.at(-1)).toEqual({ x: 1, y: 2 });
+    expect(p.map((t) => `${t.x},${t.y}`)).toContain('1,1'); // passing through the doorway is fine
+  });
+  it('an adjacency goal reachable only from a doorway still ends there (#248)', () => {
+    const s = sim(['_D#', '###']);
+    expect(findPath(s, 1, { x: 0, y: 0 }, { x: 2, y: 0, adjacent: true })).toEqual([{ x: 1, y: 0 }]);
+  });
   it('is deterministic', () => {
     const s = sim(['______', '______', '______']);
     const a = findPath(s, 1, { x: 0, y: 0 }, { x: 5, y: 2 });

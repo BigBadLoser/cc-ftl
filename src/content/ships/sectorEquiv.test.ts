@@ -285,4 +285,6 @@ describe('sector refactor equivalence', () => {
 // pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
 // Repinned `combat` for work XP (#250): the crew earn gunnery, piloting and shielding XP in the fight and a level gained inside the run changes who hits
 // (only the player's side earns XP; the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
-const EXPECTED = { combat: 'ba8f9e66', disaster: '2cf7530b' };
+// Repinned `combat` for doorway stops (#248): an adjacency path (build, repair, fetch) no longer ends on a Door tile when another tile beside the goal is
+// reachable, so a few crew in the fight stand (and path) one tile differently. Confirmed to come from findPath alone (reverting it restores ba8f9e66). The disaster run is unchanged.
+const EXPECTED = { combat: '3650e115', disaster: '2cf7530b' };
