@@ -137,7 +137,7 @@ function validate(m: Manifest): void {
 }
 
 async function fetchManifest(url: string): Promise<Manifest> {
-  const res = await fetch(url, { signal: abort.signal });
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Cannot load ${url} (${res.status})`);
   const m = (await res.json()) as Manifest;
   validate(m);
