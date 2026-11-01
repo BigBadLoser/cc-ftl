@@ -10,6 +10,7 @@ import { furniture } from './furniture';
  */
 export const modules = {
   'module.reactor': {
+    scrap: 'energy',
     name: 'Reactor',
     category: 'power',
     description: "Burns fuel rods for the ship's main power. Runs hot, so keep it ventilated.",
@@ -25,6 +26,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }],
   },
   'module.lifeSupport': {
+    scrap: 'hull',
     name: 'Life support',
     category: 'life',
     description: "Makes breathable air and scrubs CO2 for the room it sits in. Oxygen in the stores doubles the air while a room refills.",
@@ -44,6 +46,7 @@ export const modules = {
   },
   // A lamp on a floor tile beside a wall. Not solid: crew walk over it.
   'module.light': {
+    scrap: 'hull',
     name: 'Light',
     category: 'utility',
     description: "A lamp for a floor tile beside a wall. Crew walk right over it.",
@@ -59,6 +62,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 1 }, { item: 'item.electronics', count: 1 }],
   },
   'module.bed': {
+    scrap: 'comfort',
     name: 'Bed',
     category: 'life',
     description: "Somewhere for a crew member to sleep and recover rest.",
@@ -73,6 +77,7 @@ export const modules = {
     bed: true,
   },
   'module.console': {
+    scrap: 'tech',
     name: 'Console',
     category: 'systems',
     description: "A general console. Crew sit at it to work.",
@@ -92,6 +97,7 @@ export const modules = {
   // The research module: crew work the ship's active research project here (sim/research). No blueprint: known from the start.
   // Placeholder art: the console sprite (docs/STATUS.md). Needs its own model in an art pack.
   'module.research': {
+    scrap: 'tech',
     name: 'Research module',
     category: 'systems',
     description: "Crew study the ship's active research project here, faster with science. A second one speeds the same project up.",
@@ -110,6 +116,7 @@ export const modules = {
   },
   // Crew work at the access tile (below, at rotation 0). Draws power; crafts recipes with this station.
   'module.fabricator': {
+    scrap: 'tech',
     name: 'Fabricator',
     category: 'production',
     description: "Turns metal, polymer and electronics into parts, tools and gear. Crew work it from the front tile.",
@@ -129,6 +136,7 @@ export const modules = {
   // Scrapper: crew reclaim scrap into materials at the front tile (recipes.ts). Buildable from the start; the starter ship has none.
   // Placeholder art: the fabricator's sprite (a scrapper sheet is still to make).
   'module.scrapper': {
+    scrap: 'tech',
     name: 'Scrapper',
     category: 'production',
     description: "Reclaims salvaged scrap into metal, electronics, spare parts and more. Crew work it from the front tile.",
@@ -148,6 +156,7 @@ export const modules = {
   // Galley / food printer: prints rations (crafting) and is where hungry crew eat a hot meal (access tile).
   // Placeholder art (fallback.ts): needs a real model, see docs/STATUS.md.
   'module.galley': {
+    scrap: 'comfort',
     name: 'Galley',
     category: 'life',
     description: "Prints hot meals. Hungry crew eat at its access tile, which lifts their mood.",
@@ -167,6 +176,7 @@ export const modules = {
   },
   // A crate. Crew use it from any neighbouring tile; the access tile just keeps one side walkable.
   'module.storage': {
+    scrap: 'comfort',
     name: 'Storage crate',
     category: 'storage',
     description: "A small crate. Crew use it from any neighbouring tile.",
@@ -185,6 +195,7 @@ export const modules = {
   // Sealed cargo containers (sim/containers): solid boxes on Beam tiles clamped to a freighter's frame, no interior.
   // Footprint W x H at rotation 0 (art `container.<W>x<H>`); a storage slot per tile and a bit (capacity, hp and cost scale with the area: 8 and 18 tiles).
   'container.2x4': {
+    scrap: 'comfort',
     name: 'Small container',
     category: 'storage',
     description: "A sealed cargo container clamped to the frame. Holds a modest load.",
@@ -192,6 +203,7 @@ export const modules = {
     flammability: 0.1, maxHp: 120, buildWork: 320, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 9 }, container: true,
   },
   'container.3x6': {
+    scrap: 'comfort',
     name: 'Large container',
     category: 'storage',
     description: "A large sealed cargo container clamped to the frame.",
@@ -203,6 +215,7 @@ export const modules = {
   // Weapons are a floor bay plus a roof turret: the bay sits anywhere under the roof; the turret aims (Weapon.aim).
   // Light weapons 2x2, heavy 3x3.
   'module.burstLaser': {
+    scrap: 'weapons',
     name: 'Burst laser',
     category: 'defence',
     description: "Fast light laser. Fires bursts at a target ship's systems.",
@@ -211,6 +224,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }],
   },
   'module.massDriver': {
+    scrap: 'weapons',
     name: 'Mass driver',
     category: 'defence',
     description: "Heavy kinetic gun. Slow to reload and hard to stop.",
@@ -219,6 +233,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 24 }, { item: 'item.electronics', count: 8 }],
   },
   'module.missileLauncher': {
+    scrap: 'weapons',
     name: 'Missile launcher',
     category: 'defence',
     description: "Heavy launcher for guided missiles that point defence can shoot down.",
@@ -227,6 +242,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 10 }],
   },
   'module.ionCannon': {
+    scrap: 'weapons',
     name: 'Ion cannon',
     category: 'defence',
     description: "Disables systems with ion charges instead of destroying them.",
@@ -235,6 +251,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 14 }],
   },
   'module.incendiaryLauncher': {
+    scrap: 'weapons',
     name: 'Incendiary launcher',
     category: 'defence',
     description: "Throws incendiary rounds that start fires aboard the target.",
@@ -247,6 +264,7 @@ export const modules = {
   // 4 wide along the hull, 5 deep. At rotation 0 the north row (y = 0) replaces the hull wall (rotate clockwise for
   // east, south, west); the bell protrudes into space beyond it.
   'module.engine': {
+    scrap: 'energy',
     name: 'Engine',
     category: 'systems',
     description: "Pushes the ship and adds evasion in a fight. Needs a pilot. Sits on the hull edge.",
@@ -263,6 +281,7 @@ export const modules = {
   //   row 3   (1,3)       walkable;  (0,3) (2,3) keep-out tiles: walkable, where crew work the chutes, nothing else builds here
   // Cycles in 4 s, pumping the outer door tile's air back into the ship. Holds 3 EVA suits (crew put one on at the inside tile).
   'module.airlock': {
+    scrap: 'hull',
     name: 'Airlock',
     category: 'structure',
     description: "Cycles crew between the ship and open space or a docked craft. Replaces a stretch of hull.",
@@ -284,6 +303,7 @@ export const modules = {
   },
   // Mk I shield generator (2x2): 6 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship. Mk II (2x3) and Mk III (3x3) are in tiers.ts.
   'module.shieldGen': {
+    scrap: 'tech',
     name: 'Shield generator',
     category: 'defence',
     description: "Projects shield layers that absorb incoming shots and recharge over time.",
@@ -296,6 +316,7 @@ export const modules = {
   // Footprints, chairs and open tiles match the approved art (tools/blender/sprites/consoles.py meta()).
   // Weapons console 2x2: desk (0,0) (1,0) and the right-hand bar (1,1); chair (0,1) in the U, the flight-stick pod on its left.
   'module.weaponsConsole': {
+    scrap: 'tech',
     name: 'Weapons console',
     category: 'systems',
     description: "Crew at this console run the ship's weapons in combat.",
@@ -305,6 +326,7 @@ export const modules = {
   },
   // Shield console 3x2: solid (0,0) (1,0) (2,0) (0,1); chair (1,1) and free floor (2,1). May shrink to 2x2 later.
   'module.shieldConsole': {
+    scrap: 'tech',
     name: 'Shield console',
     category: 'systems',
     description: "Crew at this console run the ship's shields in combat.",
@@ -314,6 +336,7 @@ export const modules = {
   },
   // Helm 3x2: solid (0,0) (1,0) (2,0) (0,1) (2,1); chair (1,1) between the side panels.
   'module.helm': {
+    scrap: 'tech',
     name: 'Helm',
     category: 'systems',
     description: "The pilot's seat. Steers the ship and holds the bridge.",
@@ -323,6 +346,7 @@ export const modules = {
   },
   // Point defence: floor bay plus roof turret. Works only while the ship has a powered, intact AI core with its mast out.
   'module.pointDefense': {
+    scrap: 'weapons',
     name: 'Point defence',
     category: 'defence',
     description: "Shoots down incoming missiles. Needs a working AI core.",
@@ -332,6 +356,7 @@ export const modules = {
   },
   // Radiator: sheds combat heat while the shields are down (and helps a vent). Placeholder art: the light's sprite.
   'module.radiator': {
+    scrap: 'hull',
     name: 'Radiator',
     category: 'defence',
     description: "Speeds up cooling of the ship's combat heat. Heat only falls while the shields are down.",
@@ -372,6 +397,7 @@ export const modules = {
   // the normal floor beside the long side: the access tile is outside the footprint, east of the pit in the hatch row
   // (rotation 0: tile (4, 3)), and turns with the module. Pod bays (3x3, class 'pod') come later.
   'module.vehicle_bay': {
+    scrap: 'hull',
     name: 'Shuttle bay',
     category: 'utility',
     description: "A pit that holds one shuttle and launches it through hatch doors.",
@@ -382,6 +408,7 @@ export const modules = {
   // Small 3x3 bay for one pod (class 'pod'), placed like the shuttle bay: solid pit, crew unload it at the access tile beside
   // the middle of its east side.
   'module.pod_bay': {
+    scrap: 'hull',
     name: 'Pod bay',
     category: 'utility',
     description: "A pit for one mining or construction pod.",

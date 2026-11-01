@@ -385,6 +385,9 @@ export interface AirlockLayout {
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
 /** Build catalog tab of a module (tool cards live in their own tabs: structure tools in Structure, rock tools in Mining). */
+/** What a derelict's part strips into (DESIGN.md "Salvaging derelicts"); the item is `item.scrap_<type>`. */
+export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
+
 export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
@@ -410,6 +413,8 @@ export interface ModuleDef {
    * console's chair and the free floor beside it. All other footprint tiles of a solid module block walking.
    */
   openTiles?: readonly (readonly [number, number])[];
+  /** Scrap type stripping this module from a derelict gives. Absent = salvage leaves it alone (robot modules). */
+  scrap?: ScrapType;
   /** Positive supplies power, negative draws it (units per second). */
   power: number;
   /** Power-shedding order 1 (served first) .. 5 when the ship is short of power. Default DEFAULT_POWER_PRIORITY. */
