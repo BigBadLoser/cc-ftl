@@ -3,7 +3,7 @@ import type { Builder, Rect } from './builder';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
 import { bandArcs, bandDepth, bandRadius } from './stationBands';
-import { isDock, isSystem, placeDepartments, ringProgram } from './stationDepartments';
+import { isDock, isSystem, placeDepartments, ringProgram, type RingProgram } from './stationDepartments';
 import { dockBanks } from './stationDocks';
 import { besideSpoke, centreOf, circleCells, corridor, fitAlong, free, roleAt, ROTUNDA, SHOP, span, spoke, widthOf } from './stationRings';
 import { halfWidth, reachOf, unitOf, wheelCandidates, type Dir, type Job, type Unit, type WheelCandidate } from './stationWheelSearch';
@@ -20,10 +20,13 @@ import { halfWidth, reachOf, unitOf, wheelCandidates, type Dir, type Job, type U
 const ANGLE: Record<Dir, number> = { e: 0, s: Math.PI / 2, w: Math.PI, n: -Math.PI / 2 };
 /** Candidates built for real, and the radius steps a candidate may grow by when its blocks do not all fit. */
 const TRIES = 6;
-const GROW = [0, 3, 6];
+const SLACK = 8;
+const GROW = [0, 2, 4];
 /** Score lost per tile of radius (as in the search), and the weight of the measured inboard ring frontage (0..1). */
 const PER_TILE = 0.08;
 const FRONT = 8;
+/** About the most inboard frontage a candidate's skeleton shows (its courts' shop bands; rarely over a third). */
+const MAX_FRONT = 0.4;
 const DIAGONALS = [-Math.PI / 4, Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4];
 
 /**
@@ -133,29 +136,50 @@ export function plannedWheel(rng: Rng, rooms: RoomSpec[], market: boolean, court
   // The least ring: the band and its dock banks round the rotunda; the blocks inside may ask for more.
   const R0 = Math.max(bandRadius([...prog.band, ...docks], depth), ROTUNDA + 12);
   const cands = wheelCandidates(rng, { prog, R0, market, westDocks: false });
-  // The search's radius is an estimate from the blocks' lengths: a candidate whose blocks do not all fit when built
-  // grows a little and is tried again (the blocks set the size); each step costs it score.
+  // Compact first: candidates within SLACK tiles of the least ring any of them needs are built first (a bigger ring is
+  // emptier, stretches its band and needs more lamps and power); the rest only if none of those works out.
+  const least = Math.min(...cands.map((c) => c.R));
+  for (const pool of [cands.filter((c) => c.R <= least + SLACK), cands.filter((c) => c.R > least + SLACK)]) {
+    const w = choose(rng, pool.slice(0, TRIES), { prog, docks, depth, market, court });
+    if (w) return w;
+  }
+  return null;
+}
+
+interface Ctx { prog: RingProgram; docks: RoomSpec[]; depth: number; market: boolean; court: (b: Builder) => void }
+
+/**
+ * Build candidates on their skeletons and keep the best. The search's radius is an estimate from the blocks' lengths:
+ * a candidate whose blocks do not all fit when built grows a little and is tried again (the blocks set the size); each
+ * step costs it score. The best then takes its dock banks and band, kept if every public band room opens onto the ring.
+ */
+function choose(rng: Rng, cands: WheelCandidate[], x: Ctx): PlannedWheel | null {
   const built: { cand: WheelCandidate; b: Builder; ring: number; R: number; v: number }[] = [];
-  for (const cand of cands.slice(0, TRIES)) {
+  // Candidates come best score first: once one is built, a candidate that could not beat it even with the most
+  // frontage a skeleton gets is not built at all.
+  let top = -Infinity;
+  for (const cand of cands) {
+    if (cand.score + FRONT * MAX_FRONT <= top) break;
     for (const g of GROW) {
       const R = cand.R + g;
-      const sk = skeleton(rng, R, market);
+      const sk = skeleton(rng, R, x.market);
       if (!sk) continue;
       if (cand.jobs.flatMap((j) => placeJob(sk.b, R, sk.ring, j)).length > 0) continue;
       // The open space the blocks leave: the kind's courts (a market's shops round their edge) in the largest pockets.
       // Measured: the ring lined inboard as well as out (a tulou, not a hoop round open space).
-      court(sk.b);
-      built.push({ cand, b: sk.b, ring: sk.ring, R, v: cand.score - PER_TILE * g + FRONT * frontIn(sk.b, R, sk.ring) });
+      x.court(sk.b);
+      const v = cand.score - PER_TILE * g + FRONT * frontIn(sk.b, R, sk.ring);
+      built.push({ cand, b: sk.b, ring: sk.ring, R, v });
+      top = Math.max(top, v);
       break;
     }
   }
-  // The best that also takes its dock banks and its band with every public room opening onto the ring.
   for (const { cand, b, ring, R } of built.sort((p, q) => q.v - p.v)) {
-    const banks = dockBanks(b, R, ring, docks, R + Math.max(depth, 6) + 2);
+    const banks = dockBanks(b, R, ring, x.docks, R + Math.max(x.depth, 6) + 2);
     if (!banks) continue;
-    const plan = { secure: cand.secure, freight: cand.freight, quiet: cand.quiet, market };
-    const { arcs, band } = placeDepartments(rng, prog, banks.splits, market, plan);
-    if (!bandArcs(b, R, ring, band, depth, arcs) || !publicOnRing(b, ring)) continue;
+    const plan = { secure: cand.secure, freight: cand.freight, quiet: cand.quiet, market: x.market };
+    const { arcs, band } = placeDepartments(rng, x.prog, banks.splits, x.market, plan);
+    if (!bandArcs(b, R, ring, band, x.depth, arcs) || !publicOnRing(b, ring)) continue;
     return { b, label: `${cand.label} R ${R}` };
   }
   return null;

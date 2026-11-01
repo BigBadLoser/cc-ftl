@@ -139,9 +139,7 @@ describe('station generator', () => {
     const storage = (g: StationResult): number => count(g, 'module.storage');
     // Trading: several docks and the most storage of the civil kinds.
     expect(t.station.docks).toBeGreaterThanOrEqual(5);
-    // Storage over a few seeds: one station's layout draw (a farm on a big concentric ring) can outstore a trader's.
-    const stored = (id: Id): number => [3, 4, 5].reduce((n, seed) => n + storage(gen(id, 'station', seed)), 0);
-    expect(stored('station.trading')).toBeGreaterThan(stored('station.farming'));
+    expect(storage(t)).toBeGreaterThan(storage(f));
     // Mining: refineries, several docks.
     expect(count(m, 'module.refinery')).toBeGreaterThanOrEqual(4);
     expect(m.station.docks).toBeGreaterThanOrEqual(4);

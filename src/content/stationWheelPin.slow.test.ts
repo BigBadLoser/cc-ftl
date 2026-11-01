@@ -17,8 +17,8 @@ function hash(s: string): string {
 }
 
 const PIN: string[] = [
-  'c1db1cba','1a8ff04a','5666d9ce','7dbc5260','f439f9c9','0c47d675','a3d0c0f6','bd92c917','55a19e8d','e546f71a','1d62a37f','c04f5ff9',
-  '2ff8810e','688f6085','4ac86939','d9f4c2cd','434cc67f','80d7e50a','2a6186c3','05855ee1','426c9d30','990c78d6','4dcc547c','f7e4a066',
+  'd4b8eb93','32ffd570','42e9584d','b23adba5','60746716','0c47d675','45f894f6','39f6b846','384c22f2','754696b0','309082fe','c04f5ff9',
+  '2ff8810e','08e9be0d','0e1fafd3','84d2bf03','66cc2b2c','6c30ba53','fafe0964','08d285e7','426c9d30','de05a019','b72c0693','79203b90',
 ];
 
 describe('wheel station pin', () => {
