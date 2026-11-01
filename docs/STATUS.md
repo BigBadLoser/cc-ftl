@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-10-27 (main at PR #124).
+Last updated: 2026-11-01.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
@@ -11,36 +11,29 @@ Last updated: 2026-10-27 (main at PR #124).
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
-## On `main` now (PRs #97 to #124)
+## On `main` now (merged PRs through #251)
 
-- **#97 progression phase 1:** blueprints, tiers, research stations.
-- **#98 playtest UI** and **#100 playtest render:** playtest fixes to the HUD and the renderer.
-- **#106 shield and reactor tier art:** Mk II/III art for shields and reactors.
-- **#113 GPU texture fix:** invisible sprites.
-- **#114 research tree:** nodes inspectable only when researchable.
-- **#115 trade trips and the combat panel,** now on the left.
-- **#117 combat:** roof fog of war, aiming from the main view, derelict ending, station relief.
-- **#118 drafted-crew control.**
-- **#121 floating windows.**
-- **#124 PixiJS starmap.**
+- **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
+  black-market services (#141); hull planner, shipyard and engine capacity (#134); hull width rule and hull plan brushes (#145).
+- **Combat and boarding:** combat rounds 1-2 with pacing, flee, telegraph, damage control, heat and the combat view (#184); readability and the steel palette (#211);
+  boarding sim and HUD (#210, #214, #226); stuck-fight fixes (#231); drafted-crew control, roof fog of war, derelict ending (#117, #118).
+- **Crew:** traits core with rolled skills and crew card (#243); tabbed crew inspector (#246); skill XP from routine work (#251); new-game flow with title screen,
+  ship pick and crew roll (#249); three starter ships, Spine Hauler default (#247).
+- **Crew AI:** Phase 0 profiling/baseline (#200), Phase 1 executor, task API and scheduler stub (#207); scheduling and bed-search perf (#196, #228).
+- **Economy and world:** station jobs by type (#182); mining and refining as income (#229); trade trips (#115); PixiJS starmap (#124); space backdrop and body art (#219, #221).
+- **UI:** ship's log, urgent alerts (#183); lessons engine, combat and trade lessons (#213, #227); Esc menu, settings, rebindable keys, save slots (#216);
+  rotating autosaves in IndexedDB, game-over summary (#223); onboarding markers (#220); floating windows (#121); research tree (#114).
+- **Tooling:** in-game bug report (#159, #230); gameplay wiki (#161); performance profiler (#189); faster test suite (#235); CI skips drafts and main pushes (#198);
+  manual GitHub Pages deploy (#147).
+- **Bug batches:** #206, #218, #199, #232.
 
 ## In progress
 
-- **Hull width rule and hull plan brushes (branch `build/footprint-width`, #143):** no part of a ship narrower than 3 tiles (3x3 opening, struts exempt); generated
-  ships, stations and wrecks obey it; the Hull plan tool gets rectangle (min 3x3, must touch the ship), erase and line-cut brushes with mirror, a world grid, a cursor
-  ghost and a collapsing Build menu; `hull.plan` and the yard quote refuse a narrow plan. Playtest with `?scenario=hullplan`. No save change (stays v64). See "Hull width rule
-  and the hull plan brushes" in [ARCHITECTURE.md](ARCHITECTURE.md). Open: the line cut's slope set is one list (`LINE_SLOPES`) pending the user's call on 1:2 and 1:3.
-
-- **Progression phase 5 (branch `progression-5`, #125):** plan the outer hull in the build tools (Hull plan, any time, saved with the ship), buy it at a yard
-  (station panel quote, contractors build up to the visit cap in EVA, the rest stays planned). Size (interior area inside the outer hull) is the readout everywhere (ship panel, engine
-  capacity, jobs screen); the yard prices and caps by tiles built, outline plus floor (station cap 40, hub 100, 10 credits and 0.75 metal a tile). Engine capacity is Mk I 330 / Mk II 495 / Mk III 700 per engine (starter 416 / 660); There is no ship maximum: engine capacity (summed over any number of engines) is the only size limit. Yards truss the whole plan first (real `Struct.Beam` tiles, 2 credits a tile planning fee, outside the cap), then turn trusses into hull row by row up to the cap; leftovers stay as scaffolding for the next yard. The plan's ghost tiles show only in the Hull plan tool or a Shipyard tab. Waiting on screenshot approval.
-  See "Engine capacity and the shipyard" in [ARCHITECTURE.md](ARCHITECTURE.md). **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough
-  engines (#129).
-
-- **Progression phase 2b slice 2 (branch `progression-2b-market`, #136):** contraband, navy/corporation scans (surrender or bribe), the cartel fence, black-market
-  service sets (lesser wired to pirate-held and lawless stations; cartel, zealot and mercenary sets ready to attach but not spawned), shady crew and the node truce.
-  Save v63. See "Black markets" in [ARCHITECTURE.md](ARCHITECTURE.md). Waiting on screenshot approval of the scan prompt and the trade screens. Deferred: spawning the named markets
-  (station generation belongs to the shipgen session), pirate dens as conquerable stations, shady-crew drawback traits.
+- **Crew AI Phase 2 (#194, branch `ai/phase2`, Opus agent):** scheduler benchmarking. See [CREW_AI.md](CREW_AI.md).
+- **Phobia mood effects (PR #253, issue #252, branch `traits/phobia-mood`):** ready, awaiting CI.
+- **Next, in order:** #248 doorway/movement arbitration investigation (crew stuck 8+ s in a doorway on the Dart starter), then #194 Phase 3 (utility AI plus
+  hazard interrupts), then mental breaks ([TRAITS.md](TRAITS.md) section 5b), relationships, addictions.
+- **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough engines (#129).
 
 ## Decisions (user)
 
@@ -55,11 +48,11 @@ Last updated: 2026-10-27 (main at PR #124).
 
 ## Open work, in order
 
-1. Engine Mk II/III art (#105).
-2. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
-3. Station intruder bug (#107).
-4. Build order: phase 5 shipyard, then phases 2/2b pirate factions and black market (#116), then phase 4 upgrade slots.
-5. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103).
+1. The "In progress" list above (#194, #253, #248).
+2. Engine Mk II/III art (#105).
+3. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
+4. Station intruder bug (#107); prisoners and prizes (#116).
+5. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103), NPC engine capacity (#129).
 
 Other open issues: #65 sim performance, #60, #59, #54, #53, #52, #51, #50, #49, #48, #47.
 

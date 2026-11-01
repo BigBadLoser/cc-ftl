@@ -2,6 +2,52 @@
 
 History only: completed-work logs, past PR notes and superseded decisions moved out of STATUS.md. [STATUS.md](STATUS.md) is current. Sections keep their original order and text verbatim; branch names and "not merged" notes here are stale.
 
+## Replaced STATUS.md sections, 2026-11-01 (stale "On main now", "In progress", "Open work")
+Last updated: 2026-10-27 (main at PR #124).
+
+
+## On `main` now (PRs #97 to #124)
+
+- **#97 progression phase 1:** blueprints, tiers, research stations.
+- **#98 playtest UI** and **#100 playtest render:** playtest fixes to the HUD and the renderer.
+- **#106 shield and reactor tier art:** Mk II/III art for shields and reactors.
+- **#113 GPU texture fix:** invisible sprites.
+- **#114 research tree:** nodes inspectable only when researchable.
+- **#115 trade trips and the combat panel,** now on the left.
+- **#117 combat:** roof fog of war, aiming from the main view, derelict ending, station relief.
+- **#118 drafted-crew control.**
+- **#121 floating windows.**
+- **#124 PixiJS starmap.**
+
+## In progress
+
+- **Hull width rule and hull plan brushes (branch `build/footprint-width`, #143):** no part of a ship narrower than 3 tiles (3x3 opening, struts exempt); generated
+  ships, stations and wrecks obey it; the Hull plan tool gets rectangle (min 3x3, must touch the ship), erase and line-cut brushes with mirror, a world grid, a cursor
+  ghost and a collapsing Build menu; `hull.plan` and the yard quote refuse a narrow plan. Playtest with `?scenario=hullplan`. No save change (stays v64). See "Hull width rule
+  and the hull plan brushes" in [ARCHITECTURE.md](ARCHITECTURE.md). Open: the line cut's slope set is one list (`LINE_SLOPES`) pending the user's call on 1:2 and 1:3.
+
+- **Progression phase 5 (branch `progression-5`, #125):** plan the outer hull in the build tools (Hull plan, any time, saved with the ship), buy it at a yard
+  (station panel quote, contractors build up to the visit cap in EVA, the rest stays planned). Size (interior area inside the outer hull) is the readout everywhere (ship panel, engine
+  capacity, jobs screen); the yard prices and caps by tiles built, outline plus floor (station cap 40, hub 100, 10 credits and 0.75 metal a tile). Engine capacity is Mk I 330 / Mk II 495 / Mk III 700 per engine (starter 416 / 660); There is no ship maximum: engine capacity (summed over any number of engines) is the only size limit. Yards truss the whole plan first (real `Struct.Beam` tiles, 2 credits a tile planning fee, outside the cap), then turn trusses into hull row by row up to the cap; leftovers stay as scaffolding for the next yard. The plan's ghost tiles show only in the Hull plan tool or a Shipyard tab. Waiting on screenshot approval.
+  See "Engine capacity and the shipyard" in [ARCHITECTURE.md](ARCHITECTURE.md). **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough
+  engines (#129).
+
+- **Progression phase 2b slice 2 (branch `progression-2b-market`, #136):** contraband, navy/corporation scans (surrender or bribe), the cartel fence, black-market
+  service sets (lesser wired to pirate-held and lawless stations; cartel, zealot and mercenary sets ready to attach but not spawned), shady crew and the node truce.
+  Save v63. See "Black markets" in [ARCHITECTURE.md](ARCHITECTURE.md). Waiting on screenshot approval of the scan prompt and the trade screens. Deferred: spawning the named markets
+  (station generation belongs to the shipgen session), pirate dens as conquerable stations, shady-crew drawback traits.
+
+## Open work, in order
+
+1. Engine Mk II/III art (#105).
+2. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
+3. Station intruder bug (#107).
+4. Build order: phase 5 shipyard, then phases 2/2b pirate factions and black market (#116), then phase 4 upgrade slots.
+5. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103).
+
+Other open issues: #65 sim performance, #60, #59, #54, #53, #52, #51, #50, #49, #48, #47.
+
+
 ## Original STATUS.md header note
 
 
