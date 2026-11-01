@@ -92,11 +92,13 @@ describe('grantXp', () => {
     expect(xpOf(sim, gifted, 'repair')).toBe(40 * 1.5);
   });
 
-  it('does nothing for crew without skills to grow', () => {
+  it('lets robots learn on top of their role skills, and ignores non-crew', () => {
     const sim = make();
     const bot = person(sim, speciesOf.bot);
+    const before = stat(sim, bot, 'repair');
     grantXp(sim, bot, 'repair', 500);
-    expect(sim.world.get(bot, SkillXpC)).toBeUndefined();
+    expect(xpOf(sim, bot, 'repair')).toBe(500);
+    expect(stat(sim, bot, 'repair')).toBe(before + levelsFor(500));
     grantXp(sim, 9999, 'repair', 500); // not crew at all
   });
 
