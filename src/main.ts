@@ -535,8 +535,12 @@ const api: UiApi = {
         if (grid) r.setGrid(grid);
         attachInput(canvas, r, controller.attach(r));
         window.addEventListener('resize', () => r.resize());
+        loop.hold(true); // no sim ticks while the loading veil is up (a loaded fight must not start unseen)
         loop.start();
-        void r.whenArtReady().then(artReadyResolve);
+        void r.whenArtReady().then(() => {
+          loop.hold(false);
+          artReadyResolve();
+        });
         startScenario();
         if (stationFlag) {
           const [k, s] = stationFlag.split(':');

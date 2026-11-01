@@ -43,3 +43,33 @@ describe('flush', () => {
     expect(seen.length).toBeGreaterThan(0);
   });
 });
+
+describe('hold', () => {
+  it('keeps rendering but runs no ticks while held, then resumes at the requested speed', () => {
+    const g = globalThis as unknown as { requestAnimationFrame: unknown; cancelAnimationFrame: unknown };
+    const saved = { raf: g.requestAnimationFrame, caf: g.cancelAnimationFrame };
+    let next: ((t: number) => void) | undefined;
+    g.requestAnimationFrame = (f: (t: number) => void) => ((next = f), 1);
+    g.cancelAnimationFrame = () => undefined;
+    try {
+      const sim = newGame(4, content);
+      let frames = 0;
+      const loop = createLoop({ sim, render: () => void frames++, onFrame: () => undefined });
+      loop.setSpeed(2);
+      loop.hold(true);
+      loop.start();
+      const tick = sim.tick;
+      for (let t = 0; t <= 1000; t += 100) next?.(t);
+      expect(sim.tick).toBe(tick);
+      expect(frames).toBeGreaterThan(5);
+      expect(loop.getSpeed()).toBe(2);
+      loop.hold(false);
+      for (let t = 1100; t <= 1500; t += 100) next?.(t);
+      expect(sim.tick).toBeGreaterThan(tick);
+      loop.stop();
+    } finally {
+      g.requestAnimationFrame = saved.raf;
+      g.cancelAnimationFrame = saved.caf;
+    }
+  });
+});
