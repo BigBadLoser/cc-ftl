@@ -9,11 +9,16 @@
   let { api, ship }: { api: TitleApi; ship: string } = $props();
   import LoadingVeil from '../LoadingVeil.svelte';
   let ready = $state<Promise<void> | null>(null);
+  /** Only the first stage (arriving at the menu) is veiled; ship switches on the menu and the ship picker are not. */
+  let first = true;
 
   function stage(canvas: HTMLCanvasElement, of: string) {
     let stop: (() => void) | undefined;
     let gone = false;
-    ready = new Promise<void>((done) => {
+    const veiled = first;
+    first = false;
+    ready = null;
+    const wait = new Promise<void>((done) => {
       api.stage(canvas, of).then(
         (s) => {
           if (gone) s.dispose();
@@ -23,6 +28,7 @@
         () => done(),
       );
     });
+    if (veiled) ready = wait;
     return {
       destroy() {
         gone = true;
