@@ -399,9 +399,12 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             else:
                 qs = [(fu0, fu1, fd0, fd0 + t), (fu0, fu1, fd1 - t, fd1), (fu0, fu0 + L, fd0, fd1),
                       (fu1 - L, fu1, fd0, fd1)]
+            ob = style().outline_block
+            if ob:                                            # a block in it, under its top line
+                qs.append((fu0 + L + ob[1], fu1 - L - ob[1], fd0 + t + ob[0], fd0 + t + ob[0] + ob[2], ob[3]))
             for q in qs:
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT, fam,
-                      style().outline_lvl, base=rise)
+                      q[4] if len(q) > 4 else style().outline_lvl, base=rise)
             if style().slot and not VARIANT[1] and hole:        # a handle slot cut into it (the solid ramp
                 if not getattr(sp, "solid", False):                    # builds its own)
                     slot_cut(k, ax, plane, hole, zsurf, fam)
@@ -441,11 +444,12 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             if len(poly) >= 3:                  # under it the foot line, a strip of the ramp in the plates' tone
                 plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
         return
-    if ft:                                      # an upright foot: its top edge lit
+    if ft:                                      # an upright foot: its top edge lit (or in a look's toe tone)
+        tl = style().toe_lvl
         for u0, u1, _ in segs:
             poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
             if len(poly) >= 3:
-                plate(k, poly, pt, nrm, 0.0, rise, fam, 3)
+                plate(k, poly, pt, nrm, 0.0, rise, fam, 3, fixed=tl.get(fam) if isinstance(tl, dict) else None)
         return
     tb = b - cr + run_ if cr else b
     toe = [P(ax, plane, u, 0.0035, dd) for u, dd in ((a, run_ - 0.03), (tb, run_ - 0.03), (tb, run_), (a, run_))]
@@ -471,11 +475,12 @@ def slot_cut(k, ax, plane, hole, zsurf, fam):
         k.poly([q(u, zf(d0), d0), q(u, zf(d1), d1), q(u, zsurf(d1), d1), q(u, zsurf(d0), d0)], fam, 1, al * sg)
 
 
-def plate(k, poly, pt, nrm, ch, rise, fam, lvl, base=0.0):
-    """A plate on the slope over a 2D (u, d) polygon: a top rise above it, chamfered down to base on every edge."""
+def plate(k, poly, pt, nrm, ch, rise, fam, lvl, base=0.0, fixed=None):
+    """A plate on the slope over a 2D (u, d) polygon: a top rise above it, chamfered down to base on every edge
+    (fixed: its top in that palette name)."""
     inner = _inset(poly, 0.0 if HARD else ch)
     topf = [pt(u, dd, rise) for u, dd in inner]
-    k.poly(topf, fam, lvl, nrm)
+    k.poly(topf, fam, lvl, nrm, fixed=fixed)
     cen = sum(topf, Vector()) / len(topf)
     for i in range(len(poly)):
         j = (i + 1) % len(poly)

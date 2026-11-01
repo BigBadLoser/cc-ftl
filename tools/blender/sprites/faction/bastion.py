@@ -13,7 +13,7 @@ from .shell import Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles,
 
 BAST_OT = 0.015                     # the ramp panel's outline: its top and bottom lines 1 px
 
-BAST_FOOT = 4 / 39                  # the ramp ends in an upright step this high at the floor (set 8), its lip lit
+BAST_FOOT = 4 / 39                  # the ramp ends in an upright step this high at the floor (set 8), its lip dark
 
 BAST_L = 2 / 32                     # the lip: the wall below the cornice stands this far back from the ramp's edge
 
@@ -105,13 +105,14 @@ class Recess(Feature):
 
 
 class RecessTones(Feature):
-    """The lip lit; the joints at the ramp's top the same on both faces (the default leaves the +x one black); the
+    """The lip in the toe's tone; the joints at the ramp's top the same on both faces (the default leaves the +x one black); the
     chamfer a plain plate (no plates are laid on it); the cut face in the wall's own tone."""
     def col_skirt(self, sp, i, j, kind, x, y):
         d, r, ch = sp._cdist(x, y)
         fam = "blue" if r[1] == "hull" else "wall"
-        if d < 1e-9:
-            return T.RAMPS[fam][0][4]
+        if d < 1e-9:                                    # (the lip over the foot: the step's edge, as the toe)
+            tl = T.style().toe_lvl
+            return tl[fam] if isinstance(tl, dict) else T.RAMPS[fam][0][4]
         R = T.RAMPS[fam][1 if kind == "x" else 0]
         if d >= sp.run - 1 / 32:
             return R[0]
@@ -124,7 +125,8 @@ class RecessTones(Feature):
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R = T.RAMPS[fam][0]
-        return [(sp.run - 1 / 32, R[1]), (sp.run, R[T.style().toe_lvl or 0])]     # (its last cell the step's lip)
+        tl = T.style().toe_lvl                                                     # (its last cell the step's lip)
+        return [(sp.run - 1 / 32, R[1]), (sp.run, tl[fam] if isinstance(tl, dict) else R[tl or 0])]
 
 
 def _cornice(k, ax, plane, a, b, c0, c1, zc0, zh, m, band, F):
@@ -287,6 +289,6 @@ class Bastion(Faction):
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
                       tops=BAST_TOPS, ramps=BAST_RAMPS, outline_lvl=1, outline_t=BAST_OT, outline_d=BAST_PANEL, ramp_solid=True,
-                      foot=BAST_FOOT, toe_lvl=4, hole_tone=slot_tone,
+                      foot=BAST_FOOT, toe_lvl=SEAM, outline_block=(0.015, 2 / 32, 0.045, 3), hole_tone=slot_tone,
                       shell=LookShell,
-                      features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), FootTone("wall", 2, front=FRONT["wall"]), RecessTones()))
+                      features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), FootTone("wall", 2, front="fBW2"), RecessTones()))

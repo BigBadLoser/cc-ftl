@@ -37,7 +37,8 @@ class Style:
     toe: Optional[str] = None             # a family for a band along the ramp's toe
     toe_at: float = 0.72                  # where down the ramp the toe band starts (a fraction of its run)
     toe_lvl: Optional[int] = None         # the solid ramp's last cell over its foot (the step's lip) in this level of
-                                          # the ramp; None: its darkest (the joint the plates leave)
+                                          # the ramp; None: its darkest (the joint the plates leave); or {family:
+                                          # palette name}
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
     ramp_solid: bool = False              # the ramp built as one solid along each face
                                           # (faction.shell.LookShell.ramp) instead of the shell's height grid
@@ -47,6 +48,8 @@ class Style:
     outline_round: bool = False           # ... its corners softened (each corner pixel left out)
     outline_d: tuple = (0.15, 0.62)       # ... its top and bottom down the ramp (fractions of the run)
     outline_t: float = 0.03               # ... its top and bottom lines' depth down the ramp
+    outline_block: Optional[tuple] = None  # ... a block in it: (gap under its top line, gap from its sides, depth down
+                                           # the ramp, level)
     slot: bool = False                    # a dark handle slot in the outlined panel (the base design)
     slot_d: tuple = (0.5, 0.57, 0.1)      # ... painted: its top and bottom (fractions of the run) and half width
     hole_tone: Optional[Callable] = None  # (part "back" | "side", family, face axis, outward normal) -> the tone

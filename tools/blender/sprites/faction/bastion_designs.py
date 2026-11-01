@@ -96,9 +96,10 @@ def bastion_equipment(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), b
     uc, w = (f0 + f1) / 2, f1 - f0
     dl = 2 * PAINT                                      # (lamps stand on the glass)
     A, B = R + 3.5 / 32, R + 7.5 / 32               # the tiers' fronts (past the wall's line by 3.5 and 7.5 px)
-    z1 = top - 0.02 - 1 / 39                        # (up to the cornice's top: it hides the cornice there)
-    H2 = z1 - zlo
-    zt, zu = zlo + 0.5 * H2, zlo + 0.5 * H2 + (B - A)                                            # tier 1's top,
+    z1 = top - 0.02                                 # (up to the cornice's top: it hides the cornice there; all
+    H2 = z1 - zlo                                   # but the lower tier a px under the wall's top, so its top is
+    zt, zu = zlo + 0.5 * H2 - PZ, zlo + 0.5 * H2 + (B - A) - PZ                                  # lit) tier 1's top,
+    z1 -= PZ
     prism(k, ax, plane, f0, f1, [(0.0, zlo), (A, zlo), (A, zt), (0.0, zt)], F, 2)               # tier 2's foot
     prism(k, ax, plane, f0, f1, [(0.0, zt), (A, zt), (B, zu), (B, z1), (0.0, z1)], F, 2)
     fp = plane + A                                  # tier 1: a keypad and a small readout
@@ -125,8 +126,9 @@ def bastion_module(k, ax, plane, f0, f1, zlo, z0, z1, top, F, m=(0.0, 0.0), back
     R = bast_r()
     uc, w, H = (f0 + f1) / 2, f1 - f0, z1 - z0
     dl = 2 * PAINT                                      # (lamps stand on the glass)
-    prism(k, ax, plane, f0, f1, [(0.0, z0), (R, z0), (R, z1), (0.0, z1)], F, 2)                  # the module
-    fp = plane + R
+    Rm = R - 1 / 32                                 # (its front a px back in the cut)
+    prism(k, ax, plane, f0, f1, [(0.0, z0), (Rm, z0), (Rm, z1), (0.0, z1)], F, 2)                # the module
+    fp = plane + Rm
     q0, q1 = z0 + 0.2 * H, z0 + 0.86 * H
     a, b, c, e = uc - 0.36 * w, uc + 0.36 * w, q0 + 0.06, q1 - 0.06
     _frame(k, ax, fp, a, b, c, e, 0.025, F, 3)                                                   # a tall screen,
