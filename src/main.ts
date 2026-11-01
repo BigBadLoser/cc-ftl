@@ -23,7 +23,7 @@ import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { createRenderer, type Renderer } from './render/scene';
-import { createSaver, loadSlot, lostReason, reloadLastSave, restartNewGame, startGame, titleWanted, inThisCampaign, writePrecombat, writeSave } from './app/saves';
+import { createSaver, loadSlot, lostReason, reloadLastSave, openNewGame, startGame, titleWanted, inThisCampaign, writePrecombat, writeSave } from './app/saves';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
 import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
@@ -379,7 +379,7 @@ const api: UiApi = {
     remove: (id) => (SLOT_IDS.includes(id as never) ? saveStore.remove(id) : Promise.resolve(false)),
   },
   cancel: () => controller.cancel(),
-  newGame: () => void restartNewGame(),
+  newGame: () => openNewGame(),
   loadLastSave: reloadLastSave,
   dismissNotice: () => session.set({ ...session.get(), notice: null }),
   inspect: bridge.inspect,

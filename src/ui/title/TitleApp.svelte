@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { starters } from '../../content/starters';
+  import { starterShips as starters } from '../../content/ships/starterShips';
   import type { UiApi } from '../api';
   import Icon, { type IconName } from '../Icon.svelte';
   import { Frame } from '../kit';
   import SavesPage from '../menu/SavesPage.svelte';
   import SettingsPage from '../menu/SettingsPage.svelte';
   import ShipPick from './ShipPick.svelte';
+  import CrewRoll from './CrewRoll.svelte';
   import TitleStage from './TitleStage.svelte';
   import type { TitleApi } from './titleApi';
   import '../theme.css';
@@ -15,13 +16,15 @@
    * The title screen and the first steps of a new game (issue #240). One page at a time over a live backdrop; Back and Esc step back one
    * (Esc on the title itself does nothing). Continue, Load and Start reload the page into a game (app/saves.ts).
    */
-  let { api }: { api: TitleApi } = $props();
   type View = 'main' | 'load' | 'settings' | 'ship' | 'crew';
-  let view = $state<View>('main');
+  /** `start`: the page to open on (the in-game "New game" lands on the ship pick). */
+  let { api, start = 'main' }: { api: TitleApi; start?: View } = $props();
+  // svelte-ignore state_referenced_locally
+  let view = $state<View>(start);
   let picked = $state(0);
-  const starter = $derived(starters[picked] ?? starters[0]);
+  const starter = $derived((starters[picked] ?? starters[0])!);
   /** Its own derived, so picking a card of the same ship template does not rebuild the backdrop. */
-  const shipId = $derived(starter.ship);
+  const shipId = $derived(starter.id);
   const canContinue = $derived(api.canContinue());
   const TITLES: Record<View, string> = { main: '', load: 'Load game', settings: 'Settings', ship: 'New game: choose a ship', crew: 'New game: crew' };
   const ITEMS: { id: View | 'continue'; label: string; icon: IconName; testid: string }[] = [
@@ -68,8 +71,10 @@
         </button>
       {/each}
     </nav>
+  {:else if view === 'crew'}
+    <CrewRoll {api} ship={starter} onBack={back} />
   {:else}
-    <div class="panel steel" class:wide class:ships={view === 'ship' || view === 'crew'} bind:this={panel}>
+    <div class="panel steel" class:wide class:ships={view === 'ship'} bind:this={panel}>
       <Frame title={TITLES[view]}>
         {#snippet right()}
           <button class="back" data-testid="title-back" onclick={back}><Icon name="back" size={14} />Back</button>
@@ -81,16 +86,6 @@
             <div class="settings"><SettingsPage /></div>
           {:else if view === 'ship'}
             <ShipPick {starters} bind:picked onNext={() => (view = 'crew')} />
-          {:else}
-            <div class="crew" data-testid="title-crew">
-              <p class="chosen">{starter.name} <span>{starter.tagline}</span></p>
-              <p>The crew roll comes with traits: you will be able to reroll the whole crew or one member at a time, and rename them. Roles are fixed by the ship.</p>
-              <p class="dim">Until then the {starter.name} sails with its stock crew.</p>
-              <div class="row">
-                <button onclick={back}>Back</button>
-                <button class="interact" data-testid="title-start" onclick={() => api.startGame(starter.ship)}><Icon name="play" size={16} />Start</button>
-              </div>
-            </div>
           {/if}
         </div>
       </Frame>
@@ -116,10 +111,4 @@
   .body { overflow-y: auto; min-height: 0; padding: var(--sp-1); }
   .back { min-height: 0; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; gap: 4px; background: var(--panel); border: 1px solid var(--line-hi); color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .back:hover { color: var(--text); border-color: var(--cyan); }
-  .crew p { margin: 4px 0 12px; line-height: 1.5; }
-  .crew .chosen { font: 600 18px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .crew .chosen span { color: var(--dim); font-size: 13px; margin-left: 8px; }
-  .dim { color: var(--dim); }
-  .row { display: flex; justify-content: flex-end; gap: var(--sp-2); }
-  .row button { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 16px; }
 </style>

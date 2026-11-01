@@ -23,6 +23,9 @@ import t_code from '@tabler/icons/outline/code.svg?raw';
 import t_first_aid_kit from '@tabler/icons/outline/first-aid-kit.svg?raw';
 import t_backpack from '@tabler/icons/outline/backpack.svg?raw';
 import t_shirt from '@tabler/icons/outline/shirt.svg?raw';
+import t_dice_5 from '@tabler/icons/outline/dice-5.svg?raw';
+import t_pencil from '@tabler/icons/outline/pencil.svg?raw';
+import t_chevron_right from '@tabler/icons/outline/chevron-right.svg?raw';
 import t_cpu from '@tabler/icons/outline/cpu.svg?raw';
 import t_crosshair from '@tabler/icons/outline/crosshair.svg?raw';
 import t_current_location from '@tabler/icons/outline/current-location.svg?raw';
@@ -167,6 +170,9 @@ export const FILES = {
   code: 'code',
   medkit: 'first-aid-kit',
   backpack: 'backpack',
+  dice: 'dice-5',
+  pencil: 'pencil',
+  chevRight: 'chevron-right',
   shirt: 'shirt',
 } as const;
 
@@ -193,6 +199,9 @@ const RAW: Record<string, string> = {
   'first-aid-kit': t_first_aid_kit,
   'backpack': t_backpack,
   'shirt': t_shirt,
+  'dice-5': t_dice_5,
+  'pencil': t_pencil,
+  'chevron-right': t_chevron_right,
   'cpu': t_cpu,
   'crosshair': t_crosshair,
   'current-location': t_current_location,

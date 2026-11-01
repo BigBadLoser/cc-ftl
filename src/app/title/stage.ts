@@ -1,5 +1,7 @@
 import { content } from '../../content';
 import { createRenderer, type Renderer } from '../../render/scene';
+
+type CrewLook = Parameters<Renderer['portraitOf']>[0];
 import { homeShip, newGame } from '../../sim';
 import { shipGrid } from '../../sim/regions';
 import { backdropSpecOf } from '../backdropSpec';
@@ -11,6 +13,8 @@ import { setAnimPaused } from '../../render/animClock';
  */
 export interface Stage {
   dispose(): void;
+  /** A crew portrait from a look, drawn with the stage renderer's art (null while its sheets load). */
+  portrait(look: CrewLook): string | null;
 }
 
 /** Peak drift from the framed position, in CSS px, and its periods in ms. */
@@ -61,6 +65,7 @@ export async function startStage(canvas: HTMLCanvasElement, ship: string, seed =
   raf = requestAnimationFrame(loop);
   addEventListener('resize', onResize);
   return {
+    portrait: (look) => (dead ? null : r.portraitOf(look)),
     dispose() {
       dead = true;
       cancelAnimationFrame(raf);

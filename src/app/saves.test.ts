@@ -1,10 +1,10 @@
 import { IDBDatabase, IDBFactory } from 'fake-indexeddb';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { content } from '../content';
-import { deserialize, homeShip, newGame, SAVE_VERSION, serialize, ShipC } from '../sim';
+import { CrewC, deserialize, homeShip, newGame, SAVE_VERSION, serialize, ShipC, startingRoles } from '../sim';
 import { DeadC } from '../sim/crew/components';
 import { playerCrew } from '../sim/story/world';
-import { createSaver, inThisCampaign, incompatibleSaves, restartNewGame, lostReason, ROTATE_MS, startGame, unloadableNotice, writeAutosave, writePrecombat, writeSave } from './saves';
+import { createSaver, inThisCampaign, incompatibleSaves, openNewGame, restartNewGame, lostReason, takeTitleView, titleWanted, ROTATE_MS, startGame, unloadableNotice, writeAutosave, writePrecombat, writeSave } from './saves';
 import { createIdbSaveStore, saveStore, setSaveStore } from './saveStore';
 
 describe('game over', () => {
@@ -417,6 +417,33 @@ describe('campaigns', () => {
     await writeSave(a, 'slot1', 'Mine');
     await restartNewGame();
     expect(saveStore.list().map((m) => m.id)).toEqual(['slot1']);
+  });
+
+  it('a new game from the crew screen sails the picked ship with the crew it showed', async () => {
+    browser();
+    vi.stubGlobal('location', { reload: vi.fn(), assign: vi.fn(), pathname: '/' });
+    const picks = startingRoles(content, 'ship.lancer').map((role, i) => ({ role, rerolls: i, ...(i === 0 ? { name: 'Ada' } : {}) }));
+    await restartNewGame({ ship: 'ship.lancer', seed: 99, picks });
+    const start = await startGame(null);
+    expect(start.persist).toBe(true);
+    expect(start.sim.world.get(homeShip(start.sim), ShipC)?.name).toBe('Lancer');
+    expect(playerCrew(start.sim).map((id) => start.sim.world.get(id, CrewC)?.name)).toContain('Ada');
+    expect(start.sim.seed).toBe(99);
+  });
+
+  it('the in-game New game opens the title on the ship pick, once, and keeps the campaign until Start', async () => {
+    const { session } = browser();
+    const assign = vi.fn();
+    vi.stubGlobal('location', { reload: vi.fn(), assign, pathname: '/game/' });
+    await saveStore.ready();
+    await writeAutosave(newGame(11, content), 1_000_000);
+    openNewGame();
+    expect(assign).toHaveBeenCalledWith('/game/');
+    expect(titleWanted(new URLSearchParams(''))).toBe(true); // the title shows (no skip flag)
+    expect(takeTitleView()).toBe('ship');
+    expect(takeTitleView()).toBeNull();
+    expect(session.length).toBe(0);
+    expect(saveStore.list().map((m) => m.id)).toEqual(['auto']); // Continue still resumes it
   });
 
   it("does not push another campaign's autosave into the history", async () => {

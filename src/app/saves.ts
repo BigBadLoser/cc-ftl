@@ -1,6 +1,6 @@
 import { content } from '../content';
 import { starterShips } from '../content/ships/starterShips';
-import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, type Sim } from '../sim';
+import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, startingRoles, type CrewPick, type Sim } from '../sim';
 import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, isAutoId, saveStore, type SaveMeta } from './saveStore';
 import { playerCrew } from '../sim/story/world';
 
@@ -18,6 +18,10 @@ const LOAD_SLOT = 'cc.loadSlot';
 const SKIP_TITLE = 'cc.skipTitle';
 /** Set with NEW_GAME: the ship template the new game starts with (the title screen's pick). */
 const NEW_SHIP = 'cc.newShip';
+/** Set with NEW_GAME by the crew screen: the seed it rolled with and its picks (JSON), so the game holds the crew it showed. */
+const NEW_CREW = 'cc.newCrew';
+/** The title screen opens on this page (the in-game "New game" lands on the ship pick). */
+const TITLE_VIEW = 'cc.titleView';
 /** A save is being loaded: the reload's pagehide must not write this game over the autosave first. */
 let loading = false;
 
@@ -64,14 +68,16 @@ export async function startGame(seedParam: string | null, starterParam: string |
   const starter = starterParam ? starterShips.find((s) => s.id === `ship.${starterParam}` || s.id === starterParam) : undefined;
   // A new game sails the ship the new-game flow picked, else `?starter=`, else the Spine Hauler (`ship.wayfarer`);
   // `newGame`'s own default stays the old `ship.starter`, which the sim tests are built on.
-  const fresh = (seed: number, ship?: string) => newGame(seed >>> 0, content, ship ?? starter?.id ?? DEFAULT_STARTER, true, 'rolled');
+  const fresh = (seed: number, ship?: string, crew?: CrewPick[]) => newGame(seed >>> 0, content, ship ?? starter?.id ?? DEFAULT_STARTER, true, crew ?? 'rolled');
   const random = () => (Math.random() * 0x100000000) >>> 0;
   await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
   if (starter) return { sim: fresh(random()), notice: null, persist: false };
   if (take(NEW_GAME)) {
     const ship = take(NEW_SHIP) ?? undefined;
-    return { sim: fresh(random(), ship && (content.ships as Record<string, unknown>)[ship] ? ship : undefined), notice: null, persist: true };
+    const known = ship && (content.ships as Record<string, unknown>)[ship] ? ship : undefined;
+    const plan = known ? planOf(take(NEW_CREW), known) : null;
+    return { sim: plan ? fresh(plan.seed, known, plan.picks) : fresh(random(), known), notice: null, persist: true };
   }
   const slot = take(LOAD_SLOT);
   if (slot && slot !== AUTO_ID) {
@@ -253,11 +259,51 @@ export function loadSlot(id: string): void {
 }
 
 /** Throw this game away and start a new one (a reload). */
-export async function restartNewGame(ship?: string): Promise<void> {
+/**
+ * In-game "New game" (Esc menu, game over, debug): back to the title screen on the new-game ship pick. The game in play
+ * stays the autosave until the new one starts, so backing out of the flow and choosing Continue resumes it.
+ */
+export function openNewGame(): void {
+  try {
+    sessionStorage.setItem(TITLE_VIEW, 'ship');
+  } catch {
+    /* without it the title opens on its main page; New game is one click from there */
+  }
+  location.assign(location.pathname);
+}
+
+/** The page the title screen opens on (once): 'ship' after an in-game "New game", else null. */
+export function takeTitleView(): 'ship' | null {
+  return take(TITLE_VIEW) === 'ship' ? 'ship' : null;
+}
+
+/** The crew screen's plan read back for `ship`: a seed and one well-formed pick per crew slot of that ship, else null. */
+export function planOf(json: string | null, ship: string): { seed: number; picks: CrewPick[] } | null {
+  if (!json) return null;
+  try {
+    const p = JSON.parse(json) as { seed?: unknown; picks?: unknown };
+    const roles = startingRoles(content, ship);
+    if (typeof p.seed !== 'number' || !Array.isArray(p.picks) || p.picks.length !== roles.length) return null;
+    const picks = (p.picks as { role?: unknown; rerolls?: unknown; name?: unknown }[]).map((k, i) => ({
+      role: roles[i] as string,
+      rerolls: typeof k.rerolls === 'number' && k.rerolls >= 0 ? Math.floor(k.rerolls) : 0,
+      ...(typeof k.name === 'string' && k.name.trim() ? { name: k.name.trim().slice(0, 24) } : {}),
+    }));
+    return { seed: p.seed >>> 0, picks };
+  } catch {
+    return null;
+  }
+}
+
+/** Start a new game: with the crew screen's plan (ship, seed, picks) when given, else a random one on the default ship. */
+export async function restartNewGame(plan?: { ship: string; seed: number; picks: CrewPick[] }): Promise<void> {
   skipTitleOnce();
   try {
     sessionStorage.setItem(NEW_GAME, '1');
-    if (ship) sessionStorage.setItem(NEW_SHIP, ship);
+    if (plan) {
+      sessionStorage.setItem(NEW_SHIP, plan.ship);
+      sessionStorage.setItem(NEW_CREW, JSON.stringify({ seed: plan.seed, picks: plan.picks }));
+    }
   } catch {
     /* without it the reload loads the save; clear it so it starts fresh anyway */
   }
