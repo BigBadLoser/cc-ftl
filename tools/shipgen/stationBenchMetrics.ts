@@ -7,7 +7,7 @@ import { airlockTiles, checkUse, footprintTiles, openTilesOf, roomQuality, type 
 import { audit } from './audit';
 import { ROLE_TINT } from './draw';
 import { classifyVoids } from './stationBenchVoids';
-import { protrusionShare } from './stationBenchHull';
+import { type Outline, outlineStats, protrusionShare } from './stationBenchHull';
 import { expectFor, withinExpect } from './stationBenchExpect';
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -33,7 +33,9 @@ export interface Metrics {
   slivers: number;
   aspects: number[];
   fills: number[];
+  /** Old rim-protrusion share (JSON only; superseded by the outline metrics). */
   protrusion: number;
+  outline: Outline;
   /** Walk depth (tiles from the nearest airlock) per room role. */
   depth: Record<string, number[]>;
   viaQuarters: number;
@@ -174,13 +176,14 @@ export function measure(g: GenResult): Metrics {
   }
   const protrusion = protrusionShare(W, H, rows, skip, real.filter((r) => r.role !== 'dock').flatMap((r) => r.tiles));
 
+  const outline = outlineStats(W, H, rows, skip, (i) => g.rooms[g.roomOf[i] ?? -1]?.role);
   const floorCount = rows.reduce((t, r) => t + r.split('').filter((c) => c === '_' || c === 'D').length, 0);
   return {
     hard: { reach: unreached === 0 && starts.length > 0, unreached, usable: use.length === 0, useIssues: use.length, docks, docksOk: docks >= 1, power: supply >= demand, rects: badRects.length === 0, badRects },
     ...classifyVoids(g, floorCount),
     rooms: real.length,
     cargoRect: cargoRect.length ? cargoRect.filter(Boolean).length / cargoRect.length : NaN,
-    slivers, aspects, fills, protrusion, depth,
+    slivers, aspects, fills, protrusion, outline, depth,
     viaQuarters: audit(g).viaQuarters.length,
     quality: real.map((r) => rq.get(r.id)?.score).filter((v): v is number => v !== undefined),
     expect, params: paramsOf(g, faces), design: [...[...sliverRoles].map((r) => `sliver: ${r}`), ...[...new Set(badRects.map((b) => b.split('#')[0]))].map((r) => `non-rect machine room: ${r}`)], sig: signature(g), sigS: signature(g, true), faces,

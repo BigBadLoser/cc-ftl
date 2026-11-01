@@ -5,7 +5,7 @@ import { createServer } from 'vite';
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error', optimizeDeps: { noDiscovery: true } });
 try {
-  const { protrusionShare } = await server.ssrLoadModule('/tools/shipgen/stationBenchHull.ts');
+  const { protrusionShare, outlineStats } = await server.ssrLoadModule('/tools/shipgen/stationBenchHull.ts');
   const W = 60, H = 60;
   const build = (glue) => {
     const rows = [];
@@ -21,6 +21,11 @@ try {
   const plain = build(false), glued = build(true);
   const a = protrusionShare(W, H, plain.rows, new Set(), plain.room);
   const b = protrusionShare(W, H, glued.rows, new Set(), glued.room);
+  const stats = (b) => outlineStats(W, H, b.rows, new Set(), (i) => (b.room.includes(i) ? (i % W >= 40 ? 'hold' : 'ring') : undefined));
+  const [sa, sb] = [stats(plain), stats(glued)];
+  console.log(`outline round spread ${sa.spread.toFixed(3)} rough ${sa.roughness.toFixed(3)}; glued spread ${sb.spread.toFixed(3)} rough ${sb.roughness.toFixed(3)} offenders ${JSON.stringify(sb.offenders)}`);
+  assert.ok(sa.spread < 0.1 && sa.roughness < 0.6);
+  assert.ok(sb.spread > sa.spread && sb.roughness > sa.roughness && (sb.offenders.hold ?? 0) > 0);
   console.log(`round ${a.toFixed(3)}, with glued rectangle ${b.toFixed(3)}`);
   assert.equal(a, 0);
   assert.ok(b > 0.05);

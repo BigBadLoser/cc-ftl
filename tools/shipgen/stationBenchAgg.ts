@@ -6,7 +6,7 @@ export interface SeedRow {
 }
 export interface Agg {
   n: number; withMetrics: number; validRate: number; attempts: number; msMedian: number; msP95: number;
-  voidUnintended: number; voidDeliberate: number; voidMethod: string; maskRejected: number; sliverShare: number; aspectP90: number; fillMean: number; protrusion: number;
+  voidUnintended: number; voidDeliberate: number; voidMethod: string; maskRejected: number; sliverShare: number; aspectP90: number; fillMean: number; outlineSpread: number; outlineRough: number; offenders: Record<string, number>;
   quality: number; expectAll: number; expectByRole: Record<string, number>; depthByRole: Record<string, number>;
   viaQuarters: number; reach: number; usable: number; docks: number; power: number; rects: number; cargoRect: number;
   diversity: number; diversityStruct: number; faces: Record<string, number>;
@@ -71,7 +71,8 @@ export function aggregate(rows: SeedRow[]): Agg {
     sliverShare: totalRooms ? sum((m) => m.slivers) / totalRooms : 0,
     aspectP90: pct(ms.flatMap((m) => m.aspects), 0.9),
     fillMean: mean(ms.flatMap((m) => m.fills)),
-    protrusion: mean(ms.map((m) => m.protrusion)),
+    outlineSpread: mean(ms.map((m) => m.outline.spread)), outlineRough: mean(ms.map((m) => m.outline.roughness)),
+    offenders: ms.reduce<Record<string, number>>((t, m) => { for (const [k, v] of Object.entries(m.outline.offenders)) t[k] = (t[k] ?? 0) + v; return t; }, {}),
     quality: mean(ms.flatMap((m) => m.quality)),
     expectAll: totalRooms ? sum((m) => Object.values(m.expect).reduce((t, e) => t + e[0], 0)) / totalRooms : 0,
     expectByRole, depthByRole,
@@ -99,7 +100,7 @@ export function metricRows(a: Agg, { roles, reasons, design, params }: Keys): [s
     ...design.map((r): [string, number] => [`design: ${r}`, a.designReasons[r] ?? 0]), ['attempts mean', a.attempts],
     ['ms median', a.msMedian], ['ms p95', a.msP95],
     ['hard: all rooms reachable', a.reach], ['hard: modules usable', a.usable], ['hard: power ok', a.power], ['hard: rect rooms rectangular', a.rects], ['info: cargo rooms rectangular', a.cargoRect], ['docks mean', a.docks],
-    ['void unintended (share of floor)', a.voidUnintended], ['void deliberate (share of floor)', a.voidDeliberate], ['void classified by', a.voidMethod], ['void mask claims rejected', a.maskRejected], ['sliver share of rooms', a.sliverShare], ['room aspect p90', a.aspectP90], ['room fill mean', a.fillMean], ['protrusion share', a.protrusion],
+    ['void unintended (share of floor)', a.voidUnintended], ['void deliberate (share of floor)', a.voidDeliberate], ['void classified by', a.voidMethod], ['void mask claims rejected', a.maskRejected], ['sliver share of rooms', a.sliverShare], ['room aspect p90', a.aspectP90], ['room fill mean', a.fillMean], ['outline spread (p90-p10)/median', a.outlineSpread], ['outline roughness (tiles)', a.outlineRough], ['outline offenders (bins by role)', Object.entries(a.offenders).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k}:${v}`).join(' ') || '-'],
     ['rooms only via quarters (mean)', a.viaQuarters], ['roomQuality mean', a.quality], ['expectation pass (all roles)', a.expectAll],
     ...roles.map((r): [string, number] => [`expect pass: ${r}`, a.expectByRole[r] ?? NaN]),
     ...roles.map((r): [string, number] => [`walk depth: ${r}`, a.depthByRole[r] ?? NaN]),

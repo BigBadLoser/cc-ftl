@@ -23,3 +23,50 @@ export function protrusionShare(W: number, H: number, rows: readonly string[], s
   const hit = room.filter((i) => dist(i) > Rc + MARGIN).length;
   return room.length ? hit / room.length : 0;
 }
+
+export interface Outline { spread: number; roughness: number; offenders: Record<string, number> }
+
+/**
+ * Outline of the station from the per-bin outer radius (48 bins around the template centre): the outermost non-space tile
+ * per bin, airlock footprints and dock-role rooms excluded. A round hull is flat; rooms glued to the rim define a ragged
+ * one.
+ *   spread = (p90 - p10) / median of the bin radii;
+ *   roughness = mean |r[i] - r[i+1]| over adjacent bins, circular, in tiles;
+ *   offenders = role of the room owning the outermost tile (a wall tile belongs to the room on its floor side) in bins
+ *   more than 1.5 tiles above the median, counted per role.
+ */
+export function outlineStats(W: number, H: number, rows: readonly string[], skip: Set<number>, roleAt: (i: number) => string | undefined): Outline {
+  const cx = W / 2, cy = H / 2;
+  const outer = new Array<number>(BINS).fill(0);
+  const owner = new Array<string>(BINS).fill('');
+  const own = (x: number, y: number): string | undefined => {
+    const c = rows[y]?.[x] ?? '.';
+    if (c === '_' || c === 'D') return roleAt(y * W + x);
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+      const f = rows[ny]?.[nx] ?? '.';
+      if (f === '_' || f === 'D') return roleAt(ny * W + nx);
+    }
+    return undefined;
+  };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if ((rows[y]?.[x] ?? '.') === '.' || skip.has(i)) continue;
+    const role = own(x, y);
+    if (role === 'dock') continue;
+    const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+    const b = Math.floor(((Math.atan2(y + 0.5 - cy, x + 0.5 - cx) + Math.PI) / (2 * Math.PI)) * BINS) % BINS;
+    if (d > (outer[b] as number)) { outer[b] = d; owner[b] = role ?? 'wall'; }
+  }
+  const used = outer.map((v, b) => ({ v, b })).filter((e) => e.v > 0);
+  const sorted = used.map((e) => e.v).sort((a, b) => a - b);
+  const q = (p: number): number => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? 0;
+  const median = q(0.5);
+  let rough = 0, pairs = 0;
+  for (let b = 0; b < BINS; b++) {
+    const [p, n] = [outer[b] as number, outer[(b + 1) % BINS] as number];
+    if (p > 0 && n > 0) { rough += Math.abs(p - n); pairs++; }
+  }
+  const offenders: Record<string, number> = {};
+  for (const e of used) if (e.v > median + 1.5) offenders[owner[e.b] as string] = (offenders[owner[e.b] as string] ?? 0) + 1;
+  return { spread: median ? (q(0.9) - q(0.1)) / median : 0, roughness: pairs ? rough / pairs : 0, offenders };
+}
