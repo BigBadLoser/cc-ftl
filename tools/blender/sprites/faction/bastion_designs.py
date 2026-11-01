@@ -160,9 +160,10 @@ def bastion_hole():
     return (BAST_PANEL[0], BAST_PANEL[1], -0.08)
 
 
-SLOT_TONE = {"wall": "fBW3", "blue": "fBH3"}    # the open slot's floor and back wall (step 3), a 2 px shadow along
-SLOT_FOLD = {"wall": "fBW5", "blue": "fBH5"}    # the fold between them (step 5), its sides (step 5: the ramp's own
-SLOT_SIDE = {"wall": "fBW5", "blue": "fBH5"}    # cut faces there too, bastion.Bastion's hole_tone)
+SLOT_TONE = {"wall": "fBW7", "blue": "fBH7"}    # the open slot's floor and back wall (the look's 8th step, between 3
+SLOT_FOLD = {"wall": "fBW4", "blue": "fBH4"}    # and the slope's 2), a 2 px shadow along the fold between them (step
+SLOT_SIDE = {"wall": "fBW4", "blue": "fBH4"}    # 4), its sides (step 4: the ramp's own cut faces there too,
+                                                # bastion.Bastion's hole_tone)
 
 
 def slot_tone(part, fam, ax, n):

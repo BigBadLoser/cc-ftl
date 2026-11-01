@@ -21,7 +21,7 @@ BASES = {
 
 # a look's own lightness steps (restyle.LIGHT's, spread): bastion's set 8 is dark charcoal-slate with strong
 # highlights against it
-OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, -0.025)}   # (its 8th, <pre>W7: between 3 and 4)
+OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045)}    # (its 8th, <pre>W7: between 3 and 2)
 
 
 def palette_entries():
