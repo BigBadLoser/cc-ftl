@@ -151,5 +151,6 @@ def plain_relief():
     """The default walls' relief (Style): their own faces and grid skirt, with the looks' square free ends."""
     if not _PLAIN:
         from .shell import FreeEnds, LookShell
-        _PLAIN.append(Style(wall=_plain_face(False), hull=_plain_face(True), shell=LookShell, features=(FreeEnds(),)))
+        _PLAIN.append(Style(wall=_plain_face(False), hull=_plain_face(True), shell=LookShell, features=(FreeEnds(),),
+                            plain=True))
     return _PLAIN[0]

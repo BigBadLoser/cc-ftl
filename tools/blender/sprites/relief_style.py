@@ -24,6 +24,8 @@ class Style:
     hull: Optional[Callable] = None       # the far hull face's (wall3d.hull_face's signature)
     ext: Optional[Callable] = None        # the exterior hull face's (wall3d_ext.ext_face's)
     shell: Optional[type] = None          # the Shell class the pieces build on; None: wall3d.Shell
+    plain: bool = False                   # the default walls' own relief (faction.base.plain_relief): their colours
+                                          # as a default wall's (wall3d.tone's shade side)
     features: tuple = ()                  # the shell's features (faction.shell.LookShell: each a Feature)
     shade: Optional[int] = None           # how many ramp levels darker the +x side sits; None: wall3d.SHADE
     end_out: Optional[float] = None       # how far an end piece's section runs past the face's line (< 0: stops short

@@ -47,7 +47,7 @@ def tone(fam, lvl, n, side=None):
         step = 0
     if (n.x > n.y + 1e-6) if side is None or abs(n.z) < 0.3 else side == "x":   # the shade side: SHADE levels darker (Space Haven's near-black side)
         sh = SHADE if style().shade is None else style().shade                  # (a faction look may soften it)
-        if STYLE is None and fam == "wall":                                      # (the default walls: their own
+        if (STYLE is None or STYLE.plain) and fam == "wall":                     # (the default walls: their own
             t = lvl + step                                                       # ramp SHADE steps darker, its
             return ys[max(min(1, lvl), min(5, t - (1 if t >= 4 else SHADE)))]    # light lines one: one material)
         return xs[max(min(1, lvl), min(5, lvl + step - sh))]
