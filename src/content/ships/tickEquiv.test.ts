@@ -120,7 +120,7 @@ function refHelm(sim: Sim): void {
     combat.pilot = skill;
     combat.evasion = Math.min(EVASION_CAP, engines * boost);
     if (ship.faction === 'player' && sim.tick % 10 === 0) refCruise(sim, id, combat);
-    if (pilot && engines > 0) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ); // piloting XP (a later addition, not part of the old code under test)
+    if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ); // piloting XP (a later addition, not part of the old code under test)
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
     if (combat.ftlOrder) settleOrder(sim, id);
   }

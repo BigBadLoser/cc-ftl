@@ -8,10 +8,13 @@ import { Sim } from '../sim';
 import { stat } from '../stats';
 import { SkillXpC } from '../story/components';
 import { TICK_HZ } from '../time';
-import { XP_LEVEL_COST, XP_MAX_LEVEL } from '../tuning';
+import { FTL_CHARGE_SEC, XP_LEVEL_COST, XP_MAX_LEVEL } from '../tuning';
+import { CombatC, ShipC } from '../combat/components';
+import { newHeat } from '../combat/heat';
+import { helmSystem } from '../systems/helm';
 import { AllegianceC } from '../fight/components';
 import {
-  CrewC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Job,
+  CrewC, DownedC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Job,
 } from './components';
 import { performJob } from './jobWork';
 import { TraitsC, RolledSkillsC } from './traits';
@@ -28,7 +31,7 @@ const content: ContentRegistry = {
     'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, mood: true },
     'species.bot': { name: 'B', moveSpeed: 2.5, workSpeed: 1, restDecay: 0 },
   },
-  modules: { panel: mod({}), lab: mod({ research: true }), bed: mod({ bed: true, footprint: [1, 2] }), core: mod({}) },
+  modules: { helm: mod({ console: 'helm' }), engine: mod({ engine: { evasionPerPower: 1 }, power: -1 }), panel: mod({}), lab: mod({ research: true }), bed: mod({ bed: true, footprint: [1, 2] }), core: mod({}) },
   crewNames: [],
   items: {},
   recipes: {},
@@ -44,6 +47,7 @@ function make(): Sim {
   stampShip(sim, { name: 't', rows }, { faction: 'player', state: 'prize', x: 0, y: 0 });
   spawnTemplateModules(sim, 1, { name: 't', rows, modules: [
     { def: 'panel', x: 3, y: 2, rot: 0 }, { def: 'lab', x: 4, y: 2, rot: 0 }, { def: 'core', x: 5, y: 2, rot: 0 }, { def: 'bed', x: 7, y: 2, rot: 0 },
+    { def: 'helm', x: 3, y: 3, rot: 0 }, { def: 'engine', x: 6, y: 3, rot: 0 },
   ] });
   return sim;
 }
@@ -188,5 +192,33 @@ describe('XP from routine work', () => {
     for (let i = 0; i < seconds(5); i++) sim.step();
     expect(xpOf(sim, a, 'medicine')).toBeGreaterThan(0);
     expect(xpOf(sim, b, 'medicine')).toBe(0);
+  });
+
+  describe('helm', () => {
+    function seated(): { sim: Sim; pilot: number } {
+      const sim = make();
+      sim.world.add(1, CombatC, {
+        hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, heat: newHeat(),
+        evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
+      });
+      sim.world.get(1, ShipC)!.state = 'active';
+      for (const d of ['helm', 'engine']) sim.world.get(moduleId(sim, d), ModuleC)!.powered = true;
+      const pilot = person(sim, speciesOf.human, 3, 3);
+      const j = sim.world.createEntity();
+      sim.world.add(j, JobC, { ...job('operate', moduleId(sim, 'helm')), x: 3, y: 3, reservedBy: pilot } as Job);
+      return { sim, pilot };
+    }
+    it('a seated pilot earns piloting XP while the drive charges, and nothing once it is full in peacetime', () => {
+      const { sim, pilot } = seated();
+      for (let i = 0; i < seconds(5); i++) helmSystem(sim);
+      const charging = xpOf(sim, pilot, 'piloting');
+      expect(charging).toBeGreaterThan(0);
+      sim.world.get(1, CombatC)!.ftl = FTL_CHARGE_SEC;
+      for (let i = 0; i < seconds(5); i++) helmSystem(sim);
+      expect(xpOf(sim, pilot, 'piloting')).toBe(charging);
+      sim.sector.inCombat = true; // evading a hostile: it matters again
+      for (let i = 0; i < seconds(5); i++) helmSystem(sim);
+      expect(xpOf(sim, pilot, 'piloting')).toBeGreaterThan(charging);
+    });
   });
 });
