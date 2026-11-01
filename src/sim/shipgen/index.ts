@@ -6,6 +6,7 @@ export { generateShip, generateAttempt, previewHull, GEN_ATTEMPTS } from './gene
 export { structureParts, validateTemplate } from './validate';
 export { scaled, hullChoices } from './plan';
 export { roleOfLetter } from './canvas';
+export { checkUse, type UseBreak, type UseIssue } from './rooms/usage';
 export { adjacencyDistance, adjacencySignature, layoutMetrics, meanPairwise, profileDistance, silhouetteDistance, silhouetteMask } from './metrics';
 export { Arranger, mirrorBlock, flipId, type Block, type BlockPort, type AttachOpts } from './arranger';
 export { generateStation, stationFaction, stationProblems, type StationResult } from './stationGen';
