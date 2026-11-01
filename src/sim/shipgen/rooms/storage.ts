@@ -1,3 +1,4 @@
+import { rackIsland } from './islandSets';
 import type { RoomRecipe } from './types';
 
 const pack = { count: 'fill', pack: true } as const;
@@ -10,6 +11,7 @@ const pack = { count: 'fill', pack: true } as const;
  * fallback.
  */
 export const storage = {
+  islands: [rackIsland],
   fill: 0.85,
   arrangements: [
     {

@@ -7,7 +7,7 @@ import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
 import { splitCabins } from './rooms/cabins';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, planAisles, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, planAisles, planDesign, type RoomDraw } from './rooms';
 import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -113,6 +113,10 @@ function fitOut(
       const style = plan.style ?? spec.berths ?? f.berths ?? 'apart';
       d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style, lounge: !!plan.lounge });
       if (d.planned) d.plannedDefs = new Set(['module.bed', 'module.lifeSupport']);
+    } else if (plan.kind === 'design') {
+      const got = planDesign(lay, rng, room, new Map([...new Set(spec.mods)].map((id) => [id, n(id)])), plan.designs);
+      d.planned = !!got;
+      if (got) d.plannedDefs = got;
     } else {
       // A farm's planned beds are its row piece (at least that many); a hold's planned crates go in first.
       const farm = plan.piece === 'module.hydroponics';
