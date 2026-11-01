@@ -24,14 +24,22 @@ BASES = {
 OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045)}    # (its 8th, <pre>W7: between 3 and 2)
 
 
+def _on_bin(hexc):
+    """The colour on the nearest centre of post.quantize's bins (8 a channel, centred at 8n + 4), kept blue over
+    green: a tone between steps that the quantiser maps to itself."""
+    c = [int(hexc[i:i + 2], 16) for i in (1, 3, 5)]
+    r, g, b = (min(252, max(4, round((v - 4) / 8) * 8 + 4)) for v in c)
+    return "#%02x%02x%02x" % (r, g, max(b, g + 16))
+
+
 def palette_entries():
     out = {}
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
             out.update(ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {})))
-            if pre in OFFSETS and len(OFFSETS[pre]) > 7:         # (an extra step is painted exactly: flat, so the
-                out[f"{pre}{tag}7"] = {"hex": out[f"{pre}{tag}7"], "flat": True}   # quantiser keeps it, not a near
-                                                                                    # tone of another look's)
+            if pre in OFFSETS and len(OFFSETS[pre]) > 7:         # (an extra step on a centre of the quantiser's
+                out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # bins: it keeps it, not a near tone of
+                                                                    # another look's, and anti-aliases)
         out.update(ramp(f"{pre}F", b["floor"], offsets=(0.16, 0.1, 0.05, 0.0, -0.05, -0.1, -0.16)))
     return out
 

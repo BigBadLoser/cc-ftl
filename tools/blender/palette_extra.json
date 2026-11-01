@@ -2301,23 +2301,18 @@
   "flat": true
  },
  "fBW7": {
-  "hex": "#39404f",
-  "flat": true
+  "hex": "#3c4454"
  },
  "fBH7": {
-  "hex": "#303848",
-  "flat": true
+  "hex": "#343444"
  },
  "fBT7": {
-  "hex": "#657794",
-  "flat": true
+  "hex": "#647494"
  },
  "fBS7": {
-  "hex": "#272d3e",
-  "flat": true
+  "hex": "#242c3c"
  },
  "fBX7": {
-  "hex": "#2f364a",
-  "flat": true
+  "hex": "#2c344c"
  }
 }
