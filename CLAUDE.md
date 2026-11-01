@@ -1,8 +1,9 @@
 # cc-ftl
 
 Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read `docs/HANDOFF.md` and `docs/STATUS.md`
-(current state, branches, decisions) first, then
-`docs/DESIGN.md` and `docs/ARCHITECTURE.md` before non-trivial work.
+(current state, branches, decisions) first. Before non-trivial work, read the index at the top of `docs/DESIGN.md` and
+`docs/ARCHITECTURE.md`, then only the sections your task touches; don't read those files whole. Older history lives in
+`docs/STATUS_ARCHIVE.md`; open it only when you need the background of a past decision.
 
 ## Commands
 
@@ -88,6 +89,13 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   - Context budget: agents keep their notes current enough to hand off at any time. When an agent's context nears
     about 450k tokens, the orchestrator asks it for a handoff note (state, branch, next steps, open questions) in the
     scratchpad and continues the work with a fresh agent briefed from that note. Compaction is set around 500k.
+  - Token use:
+    - Briefs name the doc sections and files to read, and ask for a short report: changed, verified, open.
+    - Keep command output small: pipe test, lint and build runs through `2>&1 | tail -n 40` (widen only to chase a
+      failure), and fetch CI logs for the failing job only, tailed.
+    - Review fixes (Codex, CI) go back by message to the agent that wrote the PR, not to a fresh agent.
+    - Mechanical work (scanning logs, sorting review comments, renames, doc moves) goes to Haiku.
+    - The orchestrator reads an agent's final report, not its output file.
   - Visual work: build the minimum viewable prototype first, send the user screenshots and stop, so they can iterate or
     change direction early. Finish the work and open the PR only after their go.
   - Non-visual work: no prototype stop. Work it through to a tested PR.
