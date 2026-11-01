@@ -335,3 +335,15 @@ export const EMERGENCY_STAND_DOWN_SEC = 30;
 export const COMMIT_WINDOW_SEC = 4;
 /** The window never exceeds this share of a weapon's charge, so a fast weapon still charges unmarked first. */
 export const COMMIT_MAX_FRACTION = 0.5;
+
+// --- Skill XP (docs/TRAITS.md section 3) ---
+/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500. */
+export const XP_LEVEL_COST = 100;
+/** The most levels XP can add to a skill. */
+export const XP_MAX_LEVEL = 5;
+/** XP for one second of work at workSpeed 1 (job progress points / TICK_HZ). Also the rate for a console held while it matters. */
+export const XP_PER_WORK_SEC = 1;
+/** XP per hp of bed healing, granted to the best medic aboard. */
+export const XP_PER_HP_HEALED = 2;
+/** Hand weapons: 1 XP per this much damage dealt (gunnery for ranged, melee for the rest). */
+export const XP_DAMAGE_PER_XP = 4;

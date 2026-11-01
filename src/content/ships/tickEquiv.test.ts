@@ -6,6 +6,7 @@ import {
 import { mannedConsole, operatorOf, skillOf, type ConsoleKind } from '../../sim/combat/operators';
 import { shieldCapacity, shieldRechargeSec } from '../../sim/combat/ships';
 import { isIncapacitated } from '../../sim/crew/helpers';
+import { grantXp } from '../../sim/crew/xp';
 import { settleOrder } from '../../sim/ftl/order';
 import { AirlockC } from '../../sim/modules/airlock';
 import { isDeployed } from '../../sim/modules/deploy';
@@ -19,7 +20,7 @@ import { helmSystem } from '../../sim/systems/helm';
 import { modulesSystem } from '../../sim/systems/modules';
 import { powerSystem } from '../../sim/systems/power';
 import {
-  DOOR_CLOSE_PER_TICK, EVASION_CAP, FTL_CHARGE_SEC, GAS_EPSILON, NORMAL_O2, SKILL_STEP,
+  DOOR_CLOSE_PER_TICK, EVASION_CAP, FTL_CHARGE_SEC, GAS_EPSILON, NORMAL_O2, SKILL_STEP, XP_PER_WORK_SEC,
 } from '../../sim/tuning';
 import { content } from '../index';
 
@@ -119,6 +120,7 @@ function refHelm(sim: Sim): void {
     combat.pilot = skill;
     combat.evasion = Math.min(EVASION_CAP, engines * boost);
     if (ship.faction === 'player' && sim.tick % 10 === 0) refCruise(sim, id, combat);
+    if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ); // piloting XP (a later addition, not part of the old code under test)
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
     if (combat.ftlOrder) settleOrder(sim, id);
   }

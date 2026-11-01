@@ -1,7 +1,8 @@
 import { setsOf, stationIdentity } from '../blackmarket/services';
 import { abortTask } from '../ai/task';
 import type { Sim } from '../sim';
-import { SkillXpC, XP_PER_LEVEL } from '../story/components';
+import { SkillXpC } from '../story/components';
+import { xpForLevels } from '../crew/xpCurve';
 import { spawnNamedCrew } from '../combat/ships';
 import { isIncapacitated } from '../crew/helpers';
 import { CrewC, DeadC } from '../crew/components';
@@ -162,7 +163,7 @@ export function syncRecruits(sim: Sim): void {
       if (r.shady) {
         // Better skills: extra levels in every skill the role has, through the xp the stat resolver reads.
         const xp: Record<string, number> = {};
-        for (const skill of Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = r.shady * XP_PER_LEVEL;
+        for (const skill of Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = xpForLevels(r.shady);
         sim.world.add(crew, SkillXpC, { xp });
       }
     }

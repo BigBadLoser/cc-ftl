@@ -11,7 +11,8 @@ import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_REPLAN_TICKS } from '../tuning';
 import { AllegianceC, EquipOrderC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
 import { traitFlag } from '../crew/traits';
-import { COWARD_FLEE_BELOW } from '../tuning';
+import { COWARD_FLEE_BELOW, XP_DAMAGE_PER_XP } from '../tuning';
+import { grantXp } from '../crew/xp';
 import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
@@ -254,12 +255,14 @@ function attack(
   const sac = sim.world.get(targetId, EggSacC);
   if (sac) {
     sac.hp = Math.max(0, sac.hp - weapon.def.damage); // the egg sac system sees the damage next tick
+    grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', weapon.def.damage / XP_DAMAGE_PER_XP);
     sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: sac.hp, cover });
     return;
   }
   const health = sim.world.get(targetId, HealthC);
   const damage = weapon.def.damage * (1 - armorOf(sim, targetId));
   if (health) health.hp = Math.max(0, health.hp - damage); // vitals downs them next tick
+  grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', damage / XP_DAMAGE_PER_XP);
   sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage, hp: health?.hp ?? 0, cover });
   if (weapon.def.ion) stunCrew(sim, targetId);
   if (weapon.def.knockdownChance && health && health.hp > 0 && sim.rng.chance(weapon.def.knockdownChance)) {

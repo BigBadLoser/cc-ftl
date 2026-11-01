@@ -12,7 +12,7 @@
   const pips = $derived(pipsOf(s.rolled, s.xpLevels,
     s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0),
     s.mods.reduce((n, m) => n + (m.op === 'add' && m.value < 0 ? -m.value : 0), 0)));
-  const pct = $derived(Math.round((s.xp / s.per) * 100));
+  const pct = $derived((s.per ? Math.round((s.xp / s.per) * 100) : 100)); // per is 0 at the XP cap
   const sgn = (v: number) => `${v >= 0 ? '+' : '−'}${Math.abs(v)}`;
 </script>
 
@@ -32,7 +32,7 @@
     {#each s.mods as m, i (i)}<div class="r" class:pos={m.op === 'add' ? m.value > 0 : m.value > 1} class:neg={m.op === 'add' ? m.value < 0 : m.value < 1}><span>{m.label}{m.kind === 'trait' ? ' (trait)' : ''}</span><span>{m.op === 'add' ? sgn(m.value) : `x${m.value}`}</span></div>{/each}
     <hr />
     <div class="r"><span class="l">Role baseline</span><span>{s.role} ({role.toLowerCase()})</span></div>
-    <div class="r"><span class="l">Next level</span><span>{pct}% ({s.xp}/{s.per} XP)</span></div>
+    <div class="r"><span class="l">Next level</span><span>{s.per ? `${pct}% (${s.xp}/${s.per} XP)` : 'Maxed'}</span></div>
     {#if s.gain !== 1}<div class="r"><span class="l">XP gains</span><span class="pos">x{s.gain}</span></div>{/if}
   </div>
 </li>

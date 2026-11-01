@@ -36,6 +36,8 @@ function legacyWorld(sim: Sim): unknown {
   delete stores.bedOwner;
   // The crew-AI components (Phase 1 of docs/CREW_AI.md) mirror the legacy ones: not part of the legacy shape.
   for (const k of ['task', 'intent', 'interrupt']) delete stores[k];
+  // Skill XP from routine work came after the refactor: crew earn it as they work, so the store is not part of the legacy shape.
+  delete stores.skillXp;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
@@ -281,4 +283,6 @@ describe('sector refactor equivalence', () => {
 // Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
 // draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run. On the
 // pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
-const EXPECTED = { combat: '694a0569', disaster: '2cf7530b' };
+// Repinned `combat` for work XP (#250): the crew earn gunnery, piloting and shielding XP in the fight and a level gained inside the run changes who hits
+// (only the player's side earns XP; the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
+const EXPECTED = { combat: 'ba8f9e66', disaster: '2cf7530b' };

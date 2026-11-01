@@ -87,8 +87,9 @@ import { newYard, type YardState } from './yard/types';
  *   `SabotageOrderC` (a boarder's sabotage order, kept while a fight pauses it).
  * v72 (crew traits): `TraitsC` and `RolledSkillsC` (a starting crew member's traits and rolled skills), optional `Mood.idle`,
  *   `quiet` and `inside` (trait mood memory).
+ * v73 (work xp): `SkillXpC` is on the new curve (level n costs 100 x n^2 xp), so old xp reads as fewer levels; no migration.
  */
-export const SAVE_VERSION = 72;
+export const SAVE_VERSION = 73;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

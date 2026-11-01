@@ -1,7 +1,7 @@
 import {
   CrewC, DownedC, HealthC, ImplantsC, MoodC, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
-  NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC, XP_PER_LEVEL,
-  statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, type Sim, type StatBreakdown, type StatName,
+  NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC,
+  statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
 import { xpGainMult } from '../sim/crew/traits';
@@ -55,7 +55,7 @@ function skillsOf(sim: Sim, id: number): UiSkillDetail[] {
     return {
       skill, name: cap(skill), value: Math.round(b.value), rolled: sum('rolled'), xpLevels: sum('xp'),
       mods: parts.filter((p) => p.kind !== 'rolled' && p.kind !== 'xp'), role: role?.[skill] ?? 0,
-      xp: Math.floor((xp[skill] ?? 0) % XP_PER_LEVEL), per: XP_PER_LEVEL, gain: xpGainMult(sim, id, skill),
+      ...xpProgress(xp[skill] ?? 0), gain: xpGainMult(sim, id, skill),
     };
   });
 }

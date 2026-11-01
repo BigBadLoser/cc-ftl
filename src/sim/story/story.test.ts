@@ -16,6 +16,7 @@ import { ModuleC } from '../modules/components';
 import { StorageC } from '../items/components';
 
 import { SkillXpC, ImplantsC } from './components';
+import { levelsFor } from '../crew/xp';
 import { checkOdds, describeRequirement, meets, unmetReasons } from './requirements';
 import { playerCrew, skillOf } from './world';
 import { shipIdOf } from '../regions';
@@ -35,7 +36,7 @@ export const baseContent = (events: Record<string, EventDef>): ContentRegistry =
     'role.bot': { name: 'Bot', priorities: all, species: 'species.robot' },
   },
   species: {
-    'species.human': { name: 'Human', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 },
+    'species.human': { name: 'Human', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, mood: true },
     'species.robot': { name: 'Robot', moveSpeed: 2, workSpeed: 1, restDecay: 0, airless: true },
   },
   modules: { 'module.crate': mod({ storage: { capacity: 4 }, access: [0, 1] }) },
@@ -276,7 +277,7 @@ describe('effects', () => {
     const sim = apply({ effects: [{ type: 'skillXp', skill: 'repair', amount: 250, who: 'all' }] });
     const id = playerCrew(sim)[1] as number;
     expect(sim.world.get(id, SkillXpC)?.xp['repair']).toBe(250);
-    expect(skillOf(sim, id, 'repair')).toBe(3);
+    expect(skillOf(sim, id, 'repair')).toBe(1 + levelsFor(250)); // role.rookie's 1 plus the XP levels
   });
 
   it('reputation, flags (set, add, clear)', () => {

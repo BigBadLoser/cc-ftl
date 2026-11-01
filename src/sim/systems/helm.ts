@@ -7,7 +7,8 @@ import { mannedConsole, skillOf } from '../combat/operators';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP } from '../tuning';
+import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
+import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
 import { settleOrder } from '../ftl/order';
 
@@ -36,6 +37,8 @@ export function helmSystem(sim: Sim): void {
     combat.pilot = skill;
     combat.evasion = Math.min(EVASION_CAP, engines * boost + (pilot && engines > 0 && overchargeActive(combat, 'engines') ? OVERCHARGE_ENGINE_EVASION : 0));
     if (ship.faction === 'player' && sim.tick % CRUISE_EVERY === 0) cruise(sim, id, combat);
+    // Piloting XP only while the helm matters: evading in a fight, or the drive actually charging. A seated pilot with a full drive in peacetime learns nothing.
+    if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
     if (combat.ftlOrder) settleOrder(sim, id);
   }

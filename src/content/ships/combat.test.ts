@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, spawnCrew, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, CrewC, SkillXpC, spawnCrew, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
@@ -430,5 +430,24 @@ describe('determinism, saves, performance', { timeout: 30000 }, () => {
     const start = performance.now();
     run(sim, 2000);
     expect(performance.now() - start).toBeLessThan(6000);
+  });
+});
+
+describe('skill XP at the consoles', () => {
+  it('a gunner earns gunnery XP while a weapon charges at a manned console, and nobody does when it is unmanned', () => {
+    const manned = duel('module.burstLaser', dummyNoShield);
+    aim(manned, 1, 2);
+    run(manned, 400);
+    const gunner = manned.world.query(CrewC).find((i) => manned.world.get(i, CrewC)?.role === 'role.gunner') as number;
+    const xp = manned.world.get(gunner, SkillXpC)?.xp.gunnery ?? 0;
+    expect(xp).toBeGreaterThan(0);
+    run(manned, 400);
+    expect(manned.world.get(gunner, SkillXpC)?.xp.gunnery ?? 0).toBeGreaterThan(xp);
+    expect(manned.world.get(gunner, SkillXpC)?.xp.shielding ?? 0).toBe(0);
+
+    const empty = duel('module.burstLaser', dummyNoShield, { crew: [] });
+    aim(empty, 1, 2);
+    run(empty, 400);
+    expect(empty.world.query(SkillXpC)).toHaveLength(0);
   });
 });
