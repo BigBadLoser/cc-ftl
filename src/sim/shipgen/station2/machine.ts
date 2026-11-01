@@ -3,6 +3,7 @@ import { K, type Grid, type TileRect } from './grid';
 import { PREC, addRoom, depthFrom, faces, goodShape, isPublic, nearPublic, placeRect, rectParts, slice, solid, type Ctx2 } from './kit';
 import type { DeptId, Facility } from './program';
 import { planSpine } from './spine';
+import { blockOrigin, type CoreBlock } from './core';
 
 /**
  * Rectangle strategies (docs/STATIONGEN2.md section 3.4). The parcel's public side becomes an aisle; rectangular rooms
@@ -136,9 +137,28 @@ export function leftovers(c: Ctx2, dept: DeptId, back: readonly number[], halls:
 
 const hallSpec = (): RoomSpec => ({ role: 'hall', mods: [], w: 1, h: 1 });
 
+/** Engineering in a core block: the block's own layout (solved with the station), placed as it stands. */
+function blockMachines(c: Ctx2, b: CoreBlock, rects: Facility[], guard: Facility | undefined): boolean {
+  const g = c.g;
+  const [x0, y0] = blockOrigin(b);
+  const at = (r: TileRect): TileRect => ({ x: r.x + x0, y: r.y + y0, w: r.w, h: r.h });
+  const all = (r: TileRect): number[] => { const out: number[] = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) out.push(g.idx(x, y)); return out; };
+  for (const r of b.rects) solid(c, rectParts(g, at(r)).ring);
+  const cor = at(b.corridor);
+  solid(c, [g.idx(cor.x - 1, cor.y), g.idx(cor.x - 1, cor.y + 1), g.idx(cor.x + cor.w, cor.y), g.idx(cor.x + cor.w, cor.y + 1)]);
+  const hall = addRoom(c, { tiles: all(cor), spec: hallSpec(), dept: 'engineering', prec: PREC.inner + c.rooms.length, doors: [] });
+  addRoom(c, { tiles: all(at(b.post)).filter((i) => g.kind[i] === K.Free), spec: guard?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }, dept: 'engineering', prec: PREC.inner + 1e4, doors: ['public', hall] });
+  rects.forEach((f, k) => {
+    addRoom(c, { tiles: rectParts(g, at(b.rects[k] as TileRect)).inner, spec: { ...f.spec }, dept: 'engineering', prec: PREC.rect + c.rooms.length, doors: [hall] });
+  });
+  return true;
+}
+
 export function machineStrategy(c: Ctx2, tiles: number[], facilities: Facility[]): boolean {
   const g = c.g;
   const rects = facilities.filter((f) => f.shape === 'rect');
+  const b = c.s.t.block;
+  if (b) return blockMachines(c, b, rects, facilities.find((f) => f.shape === 'soft'));
   const sizes = rects.map((f) => [f.spec.w, f.spec.h] as [number, number]);
   const sp = planSpine(g, tiles, sizes);
   if (!sp) return aisleMachines(c, tiles, rects, facilities.find((f) => f.shape === 'soft'));

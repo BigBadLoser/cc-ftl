@@ -12,6 +12,11 @@ export interface Cut {
   weight: number;
   /** Fixed arc: centre angle and span (radians). */
   anchor?: { a: number; span: number };
+  /**
+   * Instead of the arc, a slot with straight sides on a cardinal (0 east .. 6 north as 0, 2, 4, 6): the tiles on that
+   * side of the centre at most `hw` from the axis. The gaps either side then meet at the axis.
+   */
+  slot?: { dir: number; hw: number };
   /** For a free item in a region with anchors: the gap it goes in (the gap after anchor k) and its order there. */
   gap?: number;
 }
@@ -103,19 +108,25 @@ export function cutRegion(g: Grid, tiles: readonly number[], items: readonly Cut
   const anchors = items.filter((c) => c.anchor).sort((p, q) => norm((p.anchor as { a: number }).a) - norm((q.anchor as { a: number }).a));
   if (anchors.length === 0) return byWeight(g, tiles, startAngle(g, tiles, fallback).start, items);
   const out = new Map<string, number[]>(items.map((c) => [c.key, []]));
-  const inArc = (a: number, c: Cut): boolean => {
+  const inArc = (i: number, c: Cut): boolean => {
+    if (c.slot) {
+      const d = c.slot.dir, x = g.x(i), y = g.y(i);
+      const along = d === 0 ? x : d === 2 ? y : d === 4 ? -x : -y;
+      return along > 0 && Math.abs(d === 0 || d === 4 ? y : x) <= c.slot.hw;
+    }
     const { a: m, span } = c.anchor as { a: number; span: number };
-    return Math.abs(wrap(a - m)) <= span / 2;
+    return Math.abs(wrap(g.a(i) - m)) <= span / 2;
   };
   const rest: number[] = [];
   for (const i of tiles) {
-    const c = anchors.find((x) => inArc(g.a(i), x));
+    const c = anchors.find((x) => inArc(i, x));
     if (c) out.get(c.key)?.push(i); else rest.push(i);
   }
+  const half = (c: Cut): number => (c.slot ? 0 : (c.anchor as { span: number }).span / 2);
   anchors.forEach((c, k) => {
     const next = anchors[(k + 1) % anchors.length] as Cut;
-    const a0 = norm((c.anchor as { a: number; span: number }).a + (c.anchor as { span: number }).span / 2);
-    const a1raw = norm((next.anchor as { a: number; span: number }).a - (next.anchor as { span: number }).span / 2);
+    const a0 = norm((c.anchor as { a: number; span: number }).a + half(c));
+    const a1raw = norm((next.anchor as { a: number; span: number }).a - half(next));
     const a1 = a1raw <= a0 ? a1raw + TAU : a1raw;
     const mine = rest.filter((i) => { const a = norm(g.a(i)); return (a >= a0 && a < a1) || (a + TAU >= a0 && a + TAU < a1); });
     const free = items.filter((x) => !x.anchor && x.gap === k);

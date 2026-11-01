@@ -1,7 +1,7 @@
 import type { Rng } from '../../rng';
 import { DIRS8, K, rectSpots, type Grid } from './grid';
 import { machinesFit, rowFits } from './machine';
-import { coreRadius } from './core';
+import { coreBlock } from './core';
 import { cutRegion, type Cut } from './parcels';
 import { planCabins } from './rows';
 import type { Dept, DeptId } from './program';
@@ -60,11 +60,13 @@ export const fitsRect = (g: Grid, tiles: ReadonlySet<number>, w: number, h: numb
   rectSpots(g, tiles, w + 2, h + 2).length > 0 || rectSpots(g, tiles, h + 2, w + 2).length > 0;
 
 /** Zones from the outside in: 0 the outer band, 1 the band inside ring 0, 2 the inner zone of a two-ring station. */
-interface Item { key: string; dept: Dept; weight: number; zone: number; sector: number; anchor?: { a: number; span: number }; gap?: number }
+interface Item { key: string; dept: Dept; weight: number; zone: number; sector: number; anchor?: { a: number; span: number }; slot?: { dir: number; hw: number }; gap?: number }
 
 const TAU = 2 * Math.PI;
 /** Share of a zone's floor that walls between parcels and spokes leave. */
 const NET = 0.86;
+/** A core station's band depth at the inner ring's corners: two rows of four-deep rooms back to back with their walls. */
+export const DIAG = 11;
 
 /** The spoke angles that cut zone `z` (none for the outer band). */
 function cuts(t: Template, z: number): number[] {
@@ -123,6 +125,8 @@ function depthOf(t: Template, it: Item): number {
  * zone is, so in a deep zone it takes front times depth (half that where the zone holds two rows).
  */
 function weightIn(t: Template, it: Item, D: number): number {
+  // A core station: the occupant takes its block; the band's departments their floor (its depth is set for them).
+  if (t.block) return it.zone === 2 ? (t.block.w * t.block.h - t.block.spare) * NET : it.weight;
   const f = it.dept.front;
   if (!f) {
     // A rect department askew to its band loses floor round its rooms in proportion to the extra depth they take.
@@ -175,25 +179,32 @@ function solve(t: Template, items0: readonly Item[]): Solved {
   const bands: number[] = [];
   let waste = 0;
   if (t.centre === 'core') {
-    // Outside in: the core is as big as its occupant needs; the band around it as deep as its rooms (two back to back,
-    // up to two deeper if that keeps the station smaller); the band's arc must hold its busiest sector.
+    // Outside in: the core block is as big as its occupant's layout, the inner ring runs round it square, and the
+    // promenade's inner radius A is the least that gives the band its depth at the ring's corners (two rows back to
+    // back) and every sector between spokes the floor its departments need.
     const occ = items.find((i) => i.zone === 2);
     const sizes = (occ?.dept.facilities ?? []).filter((f) => f.shape === 'rect').map((f) => [f.spec.w, f.spec.h] as [number, number]);
-    const rc = sizes.length > 0 ? coreRadius(sizes) : (t.rcMin ?? t.rc);
-    const base = rc + 0.5 + w1;
-    let best = { a1: base, d: D[1] as number, R: Infinity };
-    for (let d = Math.max(6, D[1] as number); d <= Math.max(6, D[1] as number) + 2; d++) {
-      const a1 = Math.max(base, req(1, d));
-      if (a1 + d + w0 < best.R) best = { a1, d, R: a1 + d + w0 };
-    }
-    // A core grown past its occupant's need is waste (its spare floor becomes plant or fill).
-    waste += Math.PI * (best.a1 * best.a1 - base * base);
-    t.rc = best.a1 - w1 - 0.5;
-    a = best.R;
-    bands.push(0, best.d);
-    t.radii = [a, best.a1, rc];
-    inner = rc;
-    sectors(t, 1).forEach((_, s) => { waste += Math.max(0, area(1, s, best.a1, best.d) - need(1, s)); });
+    const b = coreBlock(sizes);
+    t.block = b;
+    const hx = b.w / 2 + w1, hy = b.h / 2 + w1;
+    const rho = (th: number): number => Math.min(hx / Math.max(1e-6, Math.abs(Math.cos(th))), hy / Math.max(1e-6, Math.abs(Math.sin(th))));
+    let A = Math.hypot(hx, hy) + DIAG;
+    const sec = sectors(t, 1);
+    const spokesAt = sec.length > 1 ? 2 : sec.length === 1 && t.spokes.length > 0 ? t.spokes.length : 0;
+    const I = sec.map(([a0, span]) => {
+      let v = 0;
+      for (let k = 0; k < 96; k++) v += rho(a0 + ((k + 0.5) * span) / 96) ** 2 * (span / 96);
+      return v;
+    });
+    // Each sector loses half of each spoke bounding it (three wide, from the inner ring out to the promenade).
+    const spokeLoss = (a: number, s: number): number => (spokesAt * 3 * (a - rho((sec[s] as [number, number])[0]))) / 2;
+    for (let it = 0; it < 3; it++) sec.forEach(([, span], s) => { A = Math.max(A, Math.sqrt((2 * (need(1, s) / NET + spokeLoss(A, s)) + (I[s] as number)) / span)); });
+    sec.forEach(([, span], s) => { waste += Math.max(0, (0.5 * span * A * A - (I[s] as number) / 2 - spokeLoss(A, s)) * NET - need(1, s)); });
+    t.rc = Math.min(b.w, b.h) / 2;
+    a = A + w0;
+    bands.push(0, A - Math.min(hx, hy));
+    t.radii = [a, Math.min(hx, hy), t.rc];
+    inner = t.rc;
   } else if (t.kind === 'concentric') {
     const [d0, d1, d2] = D as [number, number, number];
     if (t.rings.length > 1 && d1 > 0 && d2 > 0) {
@@ -313,7 +324,7 @@ function draw(rng: Rng, t: Template, depts: readonly Dept[]): Item[] {
  * gap beside the first harbour (first after it or last before it), the rest largest first to the gap with most floor
  * left. Gap k is the one after the k-th anchor in angle order (as cutRegion reads them). Items are reordered in place.
  */
-function gaps(rng: Rng, items: Item[], floor: number): void {
+function gaps(rng: Rng, items: Item[], floor: number, any = false): void {
   const anchors = items.filter((i) => i.anchor).sort((a, b) => norm(a.anchor!.a) - norm(b.anchor!.a));
   const n = anchors.length;
   if (n === 0) return;
@@ -323,7 +334,7 @@ function gaps(rng: Rng, items: Item[], floor: number): void {
     return n === 1 ? TAU - a.anchor!.span : s;
   });
   const left = span.map((s) => (s / TAU) * floor);
-  const outer = items.filter((i) => i.zone === 0 && !i.anchor);
+  const outer = items.filter((i) => (any || i.zone === 0) && !i.anchor);
   const fr = outer.find((i) => i.key === 'freight#0');
   const h0 = anchors.findIndex((a) => a.key.startsWith('harbour#'));
   let frFirst = true;
@@ -340,7 +351,7 @@ function gaps(rng: Rng, items: Item[], floor: number): void {
   }
   // Order inside a gap: shuffled, freight at its harbour's end.
   const rest = outer.filter((i) => i !== fr).map((i) => ({ i, k: rng.next() })).sort((a, b) => a.k - b.k).map((x) => x.i);
-  const others = items.filter((i) => i.zone !== 0 || i.anchor);
+  const others = items.filter((i) => (!any && i.zone !== 0) || i.anchor);
   items.length = 0;
   items.push(...others.filter((i) => i.anchor), ...(fr && frFirst ? [fr] : []), ...rest, ...(fr && !frFirst ? [fr] : []), ...others.filter((i) => !i.anchor));
 }
@@ -426,12 +437,25 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
         const span = (sectors(t, its[0]?.zone ?? 1)[its[0]?.sector ?? 0] as [number, number])[1];
         for (const it of its.filter((i) => i.anchor)) {
           const f = s.faces[t.harbours.findIndex((h) => dirAngle(h.dir) === it.anchor?.a)];
+          if (t.block && f) {
+            // A core station's harbour: a slot with straight sides from the inner ring out to its face, as wide as
+            // its dock bank with its side walls, or wider until it has its floor.
+            const d = f.dir;
+            const off = (i: number): number => Math.abs(d === 0 || d === 4 ? g.y(i) : g.x(i));
+            const mine = r.tiles.filter((i) => (d === 0 ? g.x(i) : d === 2 ? g.y(i) : d === 4 ? -g.x(i) : -g.y(i)) > 0);
+            let hw = f.half + 1;
+            while (hw < f.half + 8 && mine.filter((i) => off(i) <= hw).length < it.weight / NET) hw++;
+            it.slot = { dir: d, hw };
+            (it.anchor as { span: number }).span = 2 * Math.atan(hw / f.line);
+            continue;
+          }
           const least = f ? 2 * Math.atan((f.half + 6) / f.line) : 0;
           it.weight = Math.max(it.weight, (least / span) * r.tiles.length * NET);
           (it.anchor as { span: number }).span = Math.min(span * 0.9, (it.weight / NET / r.tiles.length) * span);
         }
         if (its.some((i) => i.anchor)) {
-          for (const o of its) if (!o.anchor) o.gap = 0;
+          if (t.block) gaps(rng, its, r.tiles.length, true);
+          else for (const o of its) if (!o.anchor) o.gap = 0;
         } else axisAnchor(t, r, its);
       }
       cut(r.tiles, its, r === outer);
@@ -565,7 +589,7 @@ function score(s: Structure, depts: readonly Dept[], a: Assignment): Assignment 
     }
     // Engineering: its machine rooms must pack behind the service aisle together (the strategy's own packer).
     if (p.dept === 'defence' && !rowFits(g, p.tiles, d.facilities.filter((f) => f.shape === 'rect').map((f) => [f.spec.w, f.spec.h]))) return fail('gun bays do not pack');
-    if (p.dept === 'engineering' && !machinesFit(g, p.tiles, d.facilities.filter((f) => f.shape === 'rect').map((f) => [f.spec.w, f.spec.h]))) return fail('machine rooms do not pack');
+    if (p.dept === 'engineering' && !s.t.block && !machinesFit(g, p.tiles, d.facilities.filter((f) => f.shape === 'rect').map((f) => [f.spec.w, f.spec.h]))) return fail('machine rooms do not pack');
   }
   const at = (id: DeptId): [number, number][] => a.parcels.filter((p) => p.dept === id).map((p) => centroid(g, p.tiles));
   const dist = (p: [number, number], q: [number, number]): number => Math.hypot(p[0] - q[0], p[1] - q[1]);

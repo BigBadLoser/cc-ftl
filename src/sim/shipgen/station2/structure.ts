@@ -1,4 +1,5 @@
 import { DIRS8, Grid, K, wrap } from './grid';
+import { blockOrigin, type CoreBlock } from './core';
 import { DIR_V, type Template } from './template';
 
 /**
@@ -52,6 +53,17 @@ export const onArc = (a: number, a0: number, span: number): boolean => {
   return (d < 0 ? d + 2 * Math.PI : d) <= span + 1e-9;
 };
 
+/** A core block's floor on the grid: its rooms, corridor (with its end walls) and post; floor no room needs is left out. */
+export function blockSet(g: Grid, b: CoreBlock): Set<number> {
+  const [x0, y0] = blockOrigin(b);
+  const out = new Set<number>();
+  const c = b.corridor;
+  for (const r of [...b.rects, b.post, { x: c.x - 1, y: c.y, w: c.w + 2, h: c.h }]) {
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) out.add(g.idx(x0 + x, y0 + y));
+  }
+  return out;
+}
+
 export function rasterise(t: Template, R: number): Structure | string {
   const g = new Grid(R + 3);
   const n = g.kind.length;
@@ -77,6 +89,12 @@ export function rasterise(t: Template, R: number): Structure | string {
   });
   const innerEdge = edge - (t.kind === 'wheel' ? (t.bands[t.rings.length] as number) : 0);
   const free = (i: number): boolean => g.kind[i] === K.Free;
+  // A core block: the inner ring runs round its floor (rooms, corridor, post), two tiles wide.
+  const core = t.block ? blockSet(g, t.block) : null;
+  if (core && t.block) {
+    const half = Math.min(t.block.w, t.block.h) / 2;
+    ringR[1] = { ro: half + 2, ri: half };
+  }
   // Open sectors: the innermost zone (wheel: inside the rim's inner band).
   const lastRi = (ringR[ringR.length - 1] as { ri: number }).ri;
   for (let i = 0; i < n; i++) {
@@ -85,6 +103,16 @@ export function rasterise(t: Template, R: number): Structure | string {
   }
   t.rings.forEach((ring, k) => {
     const { ro, ri } = ringR[k] as { ro: number; ri: number };
+    if (core && k === 1) {
+      for (let i = 0; i < n; i++) {
+        if (g.kind[i] === K.Space || core.has(i)) continue;
+        const x = g.x(i), y = g.y(i);
+        let near = false;
+        for (let dy = -2; dy <= 2 && !near; dy++) for (let dx = -2; dx <= 2 && !near; dx++) near = core.has(g.idx(x + dx, y + dy));
+        if (near) g.set(i, K.Hall);
+      }
+      return;
+    }
     for (let i = 0; i < n; i++) {
       const r = g.r(i);
       if (g.kind[i] === K.Space || r > ro || r <= ri) continue;
@@ -100,7 +128,7 @@ export function rasterise(t: Template, R: number): Structure | string {
     const ro = (ringR[s.reach] as { ro: number }).ro;
     const r0 = s.from < 0 ? 0 : (ringR[s.from] as { ri: number }).ri;
     for (let i = 0; i < n; i++) {
-      if (g.kind[i] === K.Space || g.r(i) > ro || g.r(i) < r0) continue;
+      if (g.kind[i] === K.Space || g.r(i) > ro || g.r(i) < r0 || core?.has(i)) continue;
       const x = g.x(i), y = g.y(i);
       if (x * dx + y * dy < 0) continue;
       const cross = dx !== 0 && dy !== 0 ? x * dy - y * dx : dx === 0 ? x : y;
@@ -144,7 +172,7 @@ export function rasterise(t: Template, R: number): Structure | string {
       if (!hull && g.nb(i, DIRS8).some((j) => g.kind[j] === K.Space)) hull = true;
     }
     const r = sr / comp.length;
-    regions.push({ id, tiles: comp, hull, front, r, a: Math.atan2(sy, sx), band: bandOf(r) });
+    regions.push({ id, tiles: comp, hull, front, r, a: Math.atan2(sy, sx), band: core?.has(comp[0] as number) ? 2 : bandOf(r) });
   }
   return { g, t, R, ringR, faces, regions, open: g.tiles((k) => k === K.Open) };
 }

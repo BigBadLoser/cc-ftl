@@ -29,6 +29,7 @@ export function harbourStrategy(c: Ctx2, dept: DeptId, tiles: number[], face: Fa
   if (dockRects.some((d) => d.pts.some((i) => !mine.has(i)))) return false;
   const bank = new Set(dockRects.flatMap((d) => d.pts));
   const rest = tiles.filter((i) => !bank.has(i));
+  if (c.s.t.block) return slotHarbour(c, dept, rest, dockRects, docks, face, facilities, along, perp);
   // The side freight stands on: the hall runs out to it.
   const nbDept = (i: number): DeptId | undefined => g.nb(i).map((j) => c.owner.get(j)).find((d) => d !== undefined && d !== dept);
   const sideA = rest.filter((i) => perp(i) < p0), sideB = rest.filter((i) => perp(i) > p0 + W - 1);
@@ -64,5 +65,45 @@ export function harbourStrategy(c: Ctx2, dept: DeptId, tiles: number[], face: Fa
     if (office) addRoom(c, { tiles: rear, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
     else addRoom(c, { tiles: rear, spec: { role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }], optional: true });
   }
+  return true;
+}
+
+/**
+ * A core station's harbour slot (inner ring out to the face): the dock bank at the face, the hall right behind it (and
+ * beside the bank where the slot is wider), and between the hall and the inner ring the gate: the customs post a column
+ * from the ring to the hall on one side (the one way between them), the dock office on the other side off the hall,
+ * stores behind the office where the slot is deeper.
+ */
+function slotHarbour(c: Ctx2, dept: DeptId, rest: number[], dockRects: { pts: number[]; inner: number[] }[], docks: Facility[], face: Face, facilities: Facility[], along: (i: number) => number, perp: (i: number) => number): boolean {
+  const g = c.g;
+  const hallLine = face.line - 7;
+  const hall = rest.filter((i) => along(i) >= hallLine);
+  const gate = rest.filter((i) => along(i) < hallLine);
+  if (gate.length < 20) return false;
+  const hallId = addRoom(c, { tiles: hall, spec: { role: 'hall', mods: [], w: 1, h: 1 }, dept, prec: PREC.inner + c.rooms.length, doors: [] });
+  if (dept === 'harbour') c.halls.set('harbour', hallId);
+  solid(c, dockRects.flatMap((d) => d.pts.filter((i) => !d.inner.includes(i))));
+  for (const [k, d] of dockRects.entries()) {
+    addRoom(c, { tiles: d.inner, spec: { ...(docks[k] as Facility).spec }, dept, prec: PREC.rect + c.rooms.length, doors: [hallId] });
+  }
+  const customs = facilities.find((f) => f.spec.role === 'armoury');
+  const office = facilities.find((f) => f.spec.role === 'bridge');
+  // The customs column on the side away from freight (else either), five wide with its wall.
+  const ps = gate.map(perp);
+  const lo = Math.min(...ps), hi = Math.max(...ps);
+  const nbFreight = (side: number): boolean => gate.some((i) => (side < 0 ? perp(i) <= lo + 1 : perp(i) >= hi - 1) && g.nb(i).some((j) => c.owner.get(j) === 'freight'));
+  const side = nbFreight(-1) && !nbFreight(1) ? 1 : nbFreight(1) && !nbFreight(-1) ? -1 : c.rng.chance(0.5) ? -1 : 1;
+  const inPost = (i: number): boolean => (side < 0 ? perp(i) <= lo + 4 : perp(i) >= hi - 4);
+  const post = addRoom(c, { tiles: gate.filter(inPost), spec: { ...(customs?.spec ?? { role: 'armoury', mods: [], w: 3, h: 3 }) }, dept, prec: PREC.inner + 1e4 + c.rooms.length, doors: ['public', hallId] });
+  const other = gate.filter((i) => !inPost(i));
+  // The office off the hall, as deep as it needs (its floor and a wall); stores behind it, off the post.
+  const need = office ? office.spec.w * office.spec.h : 0;
+  const width = Math.max(1, new Set(other.map(perp)).size - 1);
+  const deep = Math.max(4, Math.ceil(need / width) + 1);
+  const front = office ? other.filter((i) => along(i) >= hallLine - deep) : [];
+  const frontSet = new Set(front);
+  const back = other.filter((i) => !frontSet.has(i));
+  if (office && front.length > 0) addRoom(c, { tiles: front, spec: { ...office.spec }, dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [hallId, post] }] });
+  if (back.length > 0) leftovers(c, dept, back, [post], () => ({ role: 'cargo', mods: ['module.storage_rack', 'module.storage_rack'], w: 3, h: 3 }));
   return true;
 }

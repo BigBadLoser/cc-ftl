@@ -1,5 +1,6 @@
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
+import type { CoreBlock } from './core';
 
 /**
  * Station v2 structure templates (docs/STATIONGEN2.md section 3.3): the public circulation of a round station as a few
@@ -49,6 +50,8 @@ export interface Template {
   centre: 'rotunda' | 'hub' | 'annular' | 'core';
   /** The department in a core centre (the slot's occupant; other occupants can plug in later). */
   occupant?: 'engineering';
+  /** A core centre's block (solved from its occupant): the inner ring runs round it. */
+  block?: CoreBlock;
   /** Radius of the centre (the court's outer edge for annular). */
   rc: number;
   /** The template's own centre radius before solving grew it. */
