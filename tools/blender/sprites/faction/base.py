@@ -136,8 +136,8 @@ def _plain_face(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
         endf, end1, _, back = _ends(ax, plane, b, ends)
-        if endf:
-            _end_section(k, ax, plane, a, b, zs, top - 0.03, F)
+        if endf:                                        # (its edge highlights a step under the highlight)
+            _end_section(k, ax, plane, a, b, zs, top - 0.03, F, edge=T.tone(F, 4, T.OUT(ax), ax))
             return
         pe = ("in" if back else ends[0], "in" if end1 else ends[1])
         (T.hull_face if hull else T.wall_face)(k, ax, plane, a, b, pe, zs, top, full, *((variant,) if hull else ()))
