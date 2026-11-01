@@ -28,6 +28,10 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run profile` / `npm run profile:sim`: performance profiler for agents (headless game / sim only). See `docs/PROFILING.md`.
 - `npm run sprites`: rebuild the sprite sheets in `public/assets/1x/` with headless Blender (see "Asset pipeline")
   (`tools/blender/setup.sh` installs it). Commit the generated sheets, JSON and manifest.
+- A full sprite re-render takes about 6 hours, so the render cache does not hash the engine's files
+  (`core`, `post`, `env_build`, `scale`, `geom_digest`, `sprite_cache`). Bump `sprite_cache.RENDER_VERSION` in any change
+  to them that can alter a sprite's pixels, and only then. Put a new family's colours in their own palette set
+  (`"set"` in `palette_extra.json`). See "Speed: render cache" in `tools/blender/README.md`.
 
 ## Hard rules
 

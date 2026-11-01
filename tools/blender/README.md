@@ -22,11 +22,20 @@ The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for
 
 ### Speed: render cache and `--preview`
 Every rendered family (not `sol`, `robots`, `aliens`, which run their own renderers) is cached in `.cache/sprites/<family>`
-(`sprite_cache.py`, `geom_digest.py`; `$SPRITE_CACHE` moves it). A sprite's key hashes the render code (`core`, `post`,
-`env_build`, `scale`), the palette files, tile size, Blender version, SS and samples, the scene state (world, sun, camera) and
-the built geometry (vertices, faces, colour attributes, object flags). Editing one builder re-renders only the sprites whose
-meshes changed. Callable jobs (consoles, bays, shuttle, airlock) render themselves, so they are keyed by their module and
-everything it imports. Options: `--plan` (hit/miss report, renders nothing), `--force`, `--no-cache`.
+(`sprite_cache.py`, `geom_digest.py`; `$SPRITE_CACHE` moves it). A sprite's key hashes the render code's version
+(`sprite_cache.RENDER_VERSION`, standing for the engine's files: `core`, `post`, `env_build`, `scale`, `geom_digest`,
+`sprite_cache`), its palette selection's entries (`post.palette_digest`), tile size, Blender version, SS and samples, the
+scene state (world, sun, camera) and the built geometry (vertices, faces, colour attributes, object flags). Editing one
+builder re-renders only the sprites whose meshes changed. Callable jobs (consoles, bays, shuttle, airlock) render
+themselves, so they are keyed by their module and everything it imports (less the engine's files), and by their family's
+palette selection. Options: `--plan` (hit/miss report, renders nothing), `--force`, `--no-cache`, `--adopt` (renders
+nothing: each job missing under its key keeps its existing entry; once, after a change to how keys are made).
+- **The render version.** An edit to the engine's files re-renders nothing by itself (a full re-render takes hours). Bump
+  `RENDER_VERSION` in any such edit that can change a sprite's pixels, or the cache serves stale sprites. When unsure,
+  re-render a sample of each family with the edit and compare it to the cached one.
+- **Palette sets.** `palette_extra.json` entries with a `"set"` join only the palette of families that select that set
+  (`families.jobs` returns its name in place of `True`), so adding a family's colours leaves every other family's key
+  and pixels alone. Entries without one are shared by every family that selects the extras.
 `--preview` renders at SS 2 and 1 sample (grainy, about 4x faster), cached apart under `preview/`; with `--only` it needs a
 scratch outdir. Do not lower the FINAL settings: 1 sample leaves visible grain (the ambient term is noisy at 1 spp).
 
