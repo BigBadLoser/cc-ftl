@@ -2341,5 +2341,227 @@
  },
  "fBW10": {
   "hex": "#44546c"
+ },
+ "bkT": {
+  "hex": "#c3c7cc",
+  "flat": true,
+  "aa": true
+ },
+ "bkY": {
+  "hex": "#959aa1",
+  "flat": true,
+  "aa": true
+ },
+ "bkX": {
+  "hex": "#646970",
+  "flat": true,
+  "aa": true
+ },
+ "bkTd": {
+  "hex": "#9da2a8",
+  "flat": true,
+  "aa": true
+ },
+ "bkYd": {
+  "hex": "#74797f",
+  "flat": true,
+  "aa": true
+ },
+ "bkXd": {
+  "hex": "#4c5157",
+  "flat": true,
+  "aa": true
+ },
+ "bkTdd": {
+  "hex": "#7b8086",
+  "flat": true,
+  "aa": true
+ },
+ "bkYdd": {
+  "hex": "#585d63",
+  "flat": true,
+  "aa": true
+ },
+ "bkXdd": {
+  "hex": "#393d43",
+  "flat": true,
+  "aa": true
+ },
+ "bkG": {
+  "hex": "#5f7488",
+  "flat": true,
+  "aa": true,
+  "alpha": 0.7
+ },
+ "bkYl": {
+  "hex": "#acb1b8",
+  "flat": true,
+  "aa": true
+ },
+ "bkXl": {
+  "hex": "#7b8087",
+  "flat": true,
+  "aa": true
+ },
+ "dfT": {
+  "hex": "#79838f",
+  "flat": true,
+  "aa": true
+ },
+ "dfY": {
+  "hex": "#454c55",
+  "flat": true,
+  "aa": true
+ },
+ "dfX": {
+  "hex": "#262b31",
+  "flat": true,
+  "aa": true
+ },
+ "dfTd": {
+  "hex": "#666e78",
+  "flat": true,
+  "aa": true
+ },
+ "dfYd": {
+  "hex": "#3a4047",
+  "flat": true,
+  "aa": true
+ },
+ "dfXd": {
+  "hex": "#202429",
+  "flat": true,
+  "aa": true
+ },
+ "dfTdd": {
+  "hex": "#555c64",
+  "flat": true,
+  "aa": true
+ },
+ "dfYdd": {
+  "hex": "#30353b",
+  "flat": true,
+  "aa": true
+ },
+ "dfXdd": {
+  "hex": "#1b1e22",
+  "flat": true,
+  "aa": true
+ },
+ "dfYl": {
+  "hex": "#545c66",
+  "flat": true,
+  "aa": true
+ },
+ "dfXl": {
+  "hex": "#2e343c",
+  "flat": true,
+  "aa": true
+ },
+ "dlT": {
+  "hex": "#c2cbd6",
+  "flat": true,
+  "aa": true
+ },
+ "dlY": {
+  "hex": "#929dab",
+  "flat": true,
+  "aa": true
+ },
+ "dlX": {
+  "hex": "#5a6370",
+  "flat": true,
+  "aa": true
+ },
+ "dlTd": {
+  "hex": "#a3abb4",
+  "flat": true,
+  "aa": true
+ },
+ "dlYd": {
+  "hex": "#7b8490",
+  "flat": true,
+  "aa": true
+ },
+ "dlXd": {
+  "hex": "#4c535e",
+  "flat": true,
+  "aa": true
+ },
+ "dlTdd": {
+  "hex": "#888e96",
+  "flat": true,
+  "aa": true
+ },
+ "dlYdd": {
+  "hex": "#666e78",
+  "flat": true,
+  "aa": true
+ },
+ "dlXdd": {
+  "hex": "#3f454e",
+  "flat": true,
+  "aa": true
+ },
+ "dlYl": {
+  "hex": "#a7b1be",
+  "flat": true,
+  "aa": true
+ },
+ "dlXl": {
+  "hex": "#6e7989",
+  "flat": true,
+  "aa": true
+ },
+ "dmG": {
+  "hex": "#4f6f88",
+  "flat": true,
+  "aa": true,
+  "alpha": 0.7
+ },
+ "dHzY": {
+  "hex": "#c9a227",
+  "flat": true,
+  "aa": true
+ },
+ "dHzK": {
+  "hex": "#25282d",
+  "flat": true,
+  "aa": true
+ },
+ "dHzYd": {
+  "hex": "#9a7b1c",
+  "flat": true,
+  "aa": true
+ },
+ "dHzKd": {
+  "hex": "#191b1f",
+  "flat": true,
+  "aa": true
+ },
+ "dLmG": {
+  "hex": "#6ef2a8",
+  "flat": true,
+  "aa": true
+ },
+ "dLmGd": {
+  "hex": "#3fae74",
+  "flat": true,
+  "aa": true
+ },
+ "dSlot": {
+  "hex": "#0f1114",
+  "flat": true,
+  "aa": true
+ },
+ "dLmA": {
+  "hex": "#7a5a30",
+  "flat": true,
+  "aa": true
+ },
+ "dAcc": {
+  "hex": "#8c3b35",
+  "flat": true,
+  "aa": true
  }
 }

@@ -18,13 +18,29 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
 - The belly alone for a door in the near hull (tile.hull.drop.{s|e}); doors, never cut (tile.door.{x|y}[.open])."""
 import re
 
-from .doors import door
+from .door_block import door                   # the metal door (door_block, its metal look)
 from .floors import floor
 from .hull import drop, out_block, vert
 from .wall3d_ext import EXT_PAIRS, STRAIGHT, ext_block, ext_run_wide
 from .wall3d import block, end_face, hull_cap, hull_cap_end    # the relief walls (wall3d.py)
 from .wall3d_variants import PAIRS
 from .walls import corner_sets
+
+def _plain(fn):
+    """A default partition piece built in the plain look's relief (faction.base.plain_relief: its free ends stop square,
+    as every look's), unless a look's relief is already set (structure.py wraps the same builders)."""
+    def build():
+        from . import wall3d
+        if wall3d.STYLE is not None:
+            return fn()
+        from .faction.base import plain_relief
+        wall3d.STYLE = plain_relief()
+        try:
+            return fn()
+        finally:
+            wall3d.STYLE = None
+    return build
+
 
 FLOORS = "abcdefgh"
 PRE = {"up": "full.", "cut": "", "low": "low."}
@@ -34,7 +50,7 @@ for _m in range(16):
         _id = f"m{_m}c{_c}" if _c else f"m{_m}"
         for _lv, _pre in PRE.items():
             SPRITES.append((f"tile.wall.{_pre}{_id}", (1, 1), "block",
-                            lambda m=_m, lv=_lv, c=_c: block(m, "wall", level=lv, corners=c)))
+                            _plain(lambda m=_m, lv=_lv, c=_c: block(m, "wall", level=lv, corners=c))))
         for _lv in ("up", "cut"):
             for _v in (0, 1):
                 SPRITES.append((f"tile.hull.{PRE[_lv]}{_id}{'.v1' if _v else ''}", (1, 1), "block",
@@ -101,8 +117,8 @@ for _s in ("s", "e"):
                         lambda s=_s, c=_c: hull_cap_end(s, c)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):
-    SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
-                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True))]
+    SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False, leaf="halves", look="metal")),
+                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True, leaf="halves", look="metal"))]
 
 
 STEPS = {1: (0, -1), 2: (1, 0), 4: (0, 1), 8: (-1, 0)}    # a mask bit's neighbour (N1 E2 S4 W8)
