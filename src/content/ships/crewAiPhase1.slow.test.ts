@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, ShipC, Struct, TaskC,
+  AssignmentC, BedClaimC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, ShipC, Struct, TaskC,
   deserialize, findPath, homeShip, isSuited, isThin, liftShip, newGame, placementError, removeModule, serialize, shipGrid, spawnModule,
   stampPacket, type Sim,
 } from '../../sim';
@@ -76,12 +76,16 @@ function robot(seed: number): Sim {
   return sim;
 }
 
-function bedless(seed: number): Sim {
+function bedless(seed: number, lifted = false): Sim {
   const sim = newGame(seed, content, 'ship.starter', false);
   run(sim, 2);
   const crew = sim.world.query(CrewC);
   sim.world.get(crew[2]!, HealthC)!.hp = 0;
   run(sim, 30); // the rescue is posted while the beds still stand
+  // `lifted`: the beds go only once the patient is carried, so the carrier is left with nowhere to lay them. Under the scheduler (#194 Phase 2)
+  // the medic, who ranks medical first, takes the rescue from across the ship and has not lifted in 30 ticks; the legacy picker gave it to
+  // the lowest id, two tiles away, at their fourth level.
+  for (let i = 0; lifted && i < 600 && !sim.world.has(crew[2]!, CarriedC); i++) run(sim, 1);
   for (const id of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(id, ModuleC)!.def]?.bed) removeModule(sim, id);
   for (const c of crew) sim.world.get(c, NeedsC)!.rest = 5;
   return sim;
@@ -91,7 +95,7 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'busy', make: () => busy(1), ticks: 2000 },
   { name: 'robot', make: () => robot(1), ticks: 400 },
   { name: 'bedless 1', make: () => bedless(1), ticks: 900 },
-  { name: 'bedless 2', make: () => bedless(2), ticks: 300 },
+  { name: 'bedless 2', make: () => bedless(2, true), ticks: 300 },
 ];
 
 /**

@@ -1,14 +1,15 @@
 import type { GridLike } from './grid';
 import { SectorGrid } from './sectorGrid';
 import { SHIP_EMPTY, SHIP_FIELDS } from './structure';
+import { EVA_THIN_AIR_BELOW } from './tuning';
 
 /**
  * A fresh, empty sector grid with the ship fields. Chunks are not released on write (no occupancy field): a chunk whose
  * structure is all gone can still hold module or item ids on Space tiles. `liftShip` releases the chunks it leaves wholly
- * empty (`SectorGrid.releaseEmpty`).
+ * empty (`SectorGrid.releaseEmpty`). Oxygen crossings of the thin-air line are counted (the crew scheduler's pass gate reads them).
  */
 export function newSectorGrid(): SectorGrid {
-  return new SectorGrid(0, SHIP_FIELDS, SHIP_EMPTY, { occupancyField: null });
+  return new SectorGrid(0, SHIP_FIELDS, SHIP_EMPTY, { occupancyField: null, watch: { field: 'o2', below: EVA_THIN_AIR_BELOW } });
 }
 
 /**

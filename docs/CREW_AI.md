@@ -317,6 +317,67 @@ Reading it:
 - **Metric sampling changed (same-step jobs).** The first baseline read jobs only after the step, so a job taken and finished in one step was never seen: the short jobs were missing from time-to-assign. Jobs, first reservations and categories are now also read as `sim/work` begins (see the `metrics.ts` header). Against the previous table this moved only the assign and age columns: the assign p50 is 0 (not 1) wherever jobs are taken in the step they appear (colony, hub, multiship, most of log and hullplan), the p95s move by at most 1 tick, and the oldest open age rose by 1 where jobs were open from the start (they are now stamped a tick earlier). Never-assigned, idle-with-work and completed per 1000 ticks did not move, and the runs repeat exactly.
 - Not covered yet: `fight` and `damage` (arrive with #184), and prize or yard-crew runs in `multiship`.
 
+#### Phase 2 scheduler: candidates, pick and what was built (branch `ai/phase2`)
+
+Candidates were throwaway prototypes run against the same live sim (removed once the real scheduler landed; no bench is kept beyond `npm run profile:baseline`). `legacy` is the per-crew `pickJob`; `prune2` is legacy plus the component prefilter and octile bounds (decisions identical to legacy, which showed the prefilter is exact); `gA`, `gC` and `gH` are global per-level matching on the section 7.1 tuple with the prefilter, using lazy A\*, one multi-goal Dijkstra per (crew, mode), or a hybrid of the two; `gB` (per-job reverse fields) was dropped early because struct changes rebuilt thousands of fields. `+gate` runs a pass only when its inputs change, and every 20 ticks regardless.
+
+`sim/schedule` ms per tick: mean / p99 / max / first pass (hullplan, hub and haul: mean over seeds 1–3; the others seed 1; shared machine, so times are indicative):
+
+| scenario | legacy | prune2 | gA+gate | gC+gate | **gH+gate** |
+| --- | --- | --- | --- | --- | --- |
+| colony | 0.15 / 1.0 / 10 / 19 | 0.17 / 0.9 / 10 / 29 | 0.13 / 0.8 / 8 / 3 | 0.12 / 0.7 / 13 / 12 | 0.11 / 0.7 / 8 / 2 |
+| hullplan | 2.38 / 17.6 / 119 / 81 | 1.91 / 6.1 / 20 / 41 | 0.46 / 2.6 / 17 / 14 | 0.48 / 2.6 / 19 / 7 | 0.47 / 2.2 / 32 / 6 |
+| log | 0.25 / 1.4 / 16 / 2 | 0.31 / 1.2 / 12 / 4 | 0.15 / 0.8 / 11 / 1 | 0.15 / 0.8 / 11 / 4 | 0.16 / 0.9 / 15 / 2 |
+| hub | 0.26 / 3.0 / 26 / 206 | 0.24 / 1.7 / 17 / 66 | 0.19 / 1.7 / 39 / 32 | 0.19 / 1.6 / 47 / 26 | 0.19 / 1.6 / 38 / 24 |
+| storm | 1.29 / 5.4 / 23 / 22 | 0.83 / 5.3 / 13 / 17 | 0.22 / 1.6 / 7 / 5 | 0.22 / 1.4 / 6 / 1 | 0.21 / 1.4 / 7 / 1 |
+| haul | 3.70 / 53.9 / 188 / 5930 | 1.14 / 5.4 / 62 / 1601 | 0.49 / 3.2 / 112 / 1575 | 0.49 / 3.4 / 36 / 79 | 0.49 / 3.1 / 36 / 94 |
+| multiship | 1.23 / 5.2 / 11 / 24 | 1.35 / 4.1 / 13 / 6 | 0.26 / 1.2 / 10 / 2 | 0.26 / 1.1 / 9 / 3 | 0.26 / 1.1 / 7 / 2 |
+
+Priority violations were 0 for every candidate, and an exhaustive all-pairs check found regret 0 for gA, gC and gH. The worst legacy spike was the first `haul` pass (5.4–7.8 s); one Dijkstra per crew member settles hundreds of stacks at once, which is why gC and gH cut it to 64–130 ms where lazy A\* stayed at 1.4–2.5 s (loose octile bounds on that board).
+
+**Pick: `gH+gate`** (approved, with the nearest-crew behaviour change). It is exact, has the lowest first-pass spike and p99 almost everywhere, and the fewest nodes in hullplan. gC alone is the fallback if the hybrid is ever not worth its code.
+
+**As built** (`src/sim/ai/`):
+
+- `navView.ts`: a per-(ship, walk mode) view of the grid (passability, step multipliers, tiles blocked only by thin air, a component label per tile) cached on the grid and checked against `walkSignature`, so it rebuilds only when walking changes. `reaches` is the prefilter: a job in another component than the crew member is never searched.
+- `navSearch.ts`: `astar` and multi-goal `dijkstraFrom` over a view, with `findPath`'s step costs, tie-breaks and doorway rule (a Door tile beside an adjacent goal is only a fallback stop, #248); tests check costs, steps and reachability equal `findPath`.
+- `jobRank.ts`: `admitLevel` (the legacy fit, relief gate and level per crew member) and `pairCost`, the integer pair terms `10 × (EVA penalty + relief penalty − operate affinity)`. A trait or phobia term (TRAITS.md §5) is added here; it sits in the cost slot, so it reorders only within (level, urgency). No trait behaviour is built.
+- `scheduler.ts`: `assignJobs`. Per level 1..4 it builds every admitted (crew, job) pair whose job the crew member's first reaching walk mode (`siteWalkModes` in `eva/route.ts`, the order `planSiteWalk` uses) can reach, costs it with Dijkstra when that crew member has more than `SCHED_DIJKSTRA_ABOVE` (6) candidates in the mode and lazy A\* otherwise, and matches greedily on `(level, −urgency, pathCost + pairCost, jobId, crewId)`. A match reserves the job with the found path, or starts a `suitUp` errand when the mode needs a suit. Suits are booked as matches are accepted: the suit source is looked up again then (`findSuitSource` counts the errands this pass already started), so an airlock is never promised more suits than it holds; the next airlock with stock is used, and with none left the match is passed over.
+- The gate: a pass runs when an FNV signature changes, on every tick while an emergency (fire, breach seal, rescue) is open, and every `SCHED_CADENCE` (20) ticks regardless. The signature covers the open job ids (and whether each is funded), the free crew ids, the views' passability, the suit stock (each airlock's suits, usability and suit errands) and thin air: the sector grid counts writes that move an oxygen tile across `EVA_THIN_AIR_BELOW` (`SectorGrid` `watch`, `crossings()`), a counter rather than a scan. Its memory is `sector.sched {sig, at}`; the crossing count is saved with the grid and no revision counter (those reset on load) is used, so a loaded game runs the same passes; `SAVE_VERSION` 74.
+- `emergency.ts` (was `legacyPick.ts`) keeps only `emergencyWaiting`; the per-crew `pickJob` is gone. `scheduleSystem` collects free crew in its per-crew loop, runs `assignJobs` once after it, and gives the rest their idle turn.
+
+Behaviour changes: the nearest admitted crew member gets a job, not the lowest id; a pass can be up to 20 ticks late when only something outside the gate signature changed (fight state, other job fields). A medic in a boarder's sight still hides rather than carry a rescue (tested separately from the out-of-sight case). Repins, each with its cause in a comment: `sectorEquiv` `disaster` hash; `boardDefence` (the medic, now the nearest free crew member and out of the boarder's sight, holds the rescue instead of a lower-id crew member who fled); the `crewAiPhase1` `bedless 2` driver (the medic takes the rescue from across the ship, so the test waits for the lift before removing the beds).
+
+After the build, `npm run profile:baseline -- --seeds 1,2,3` (columns as in the Phase 0 table; `decide` is now `sim/schedule`):
+
+| scenario | seed | ticks | decide mean ms | p95 | max | oldest open max | p95 | assign p50 | p95 | never assigned | idle-with-work crew-ticks | completed /1000 ticks |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| colony | 1 | 5000 | 0.161 | 0.268 | 13.9 | 1994 | 1734 | 0 | 210 | 1 | 0 | 7.12 |
+| colony | 2 | 5000 | 0.106 | 0.209 | 6.2 | 432 | 172 | 0 | 0 | 0 | 0 | 13.27 |
+| colony | 3 | 5000 | 0.134 | 0.321 | 16.6 | 563 | 313 | 0 | 0 | 0 | 25 | 37.12 |
+| hullplan | 1 | 5000 | 0.914 | 2.349 | 19.4 | 5200 | 4940 | 0 | 2514 | 83 | 225 | 54.04 |
+| hullplan | 2 | 5000 | 0.284 | 0.442 | 6.3 | 5200 | 4940 | 0 | 804 | 20 | 25 | 17.69 |
+| hullplan | 3 | 5000 | 0.812 | 1.610 | 15.2 | 5200 | 4940 | 0 | 2610 | 97 | 175 | 78.08 |
+| log | 1 | 5000 | 0.239 | 0.344 | 6.5 | 3707 | 3447 | 17 | 480 | 14 | 25 | 8.46 |
+| log | 2 | 5000 | 0.235 | 0.386 | 5.0 | 4694 | 4434 | 0 | 236 | 15 | 0 | 14.42 |
+| log | 3 | 5000 | 0.233 | 0.365 | 23.0 | 4715 | 4455 | 0 | 195 | 18 | 0 | 34.23 |
+| hub | 1 | 5000 | 0.223 | 0.505 | 10.1 | 2210 | 1950 | 0 | 60 | 0 | 0 | 15.96 |
+| hub | 2 | 5000 | 0.210 | 0.329 | 14.9 | 2023 | 1873 | 0 | 0 | 1 | 0 | 18.08 |
+| hub | 3 | 5000 | 0.222 | 0.349 | 40.0 | 1874 | 1614 | 0 | 0 | 0 | 0 | 17.5 |
+| storm | 1 | 1500 | 0.245 | 0.705 | 2.2 | 1650 | 1568 | 0 | 0 | 177 | 0 | 0 |
+| storm | 2 | 1500 | 0.228 | 0.650 | 2.1 | 1650 | 1568 | 0 | 0 | 177 | 0 | 0 |
+| storm | 3 | 1500 | 0.214 | 0.641 | 2.1 | 1650 | 1568 | 0 | 0 | 177 | 0 | 0 |
+| haul | 1 | 2500 | 0.525 | 1.011 | 26.4 | 2692 | 2557 | 436 | 1532 | 112 | 475 | 158.89 |
+| haul | 2 | 2500 | 0.504 | 1.045 | 27.8 | 2692 | 2557 | 409 | 1524 | 112 | 700 | 160.37 |
+| haul | 3 | 2500 | 0.519 | 1.242 | 42.7 | 2692 | 2557 | 443 | 1500 | 112 | 275 | 162.96 |
+| multiship | 1 | 5000 | 0.364 | 0.692 | 4.1 | 5200 | 4940 | 0 | 197 | 133 | 25 | 8.46 |
+| multiship | 2 | 5000 | 0.318 | 0.562 | 3.6 | 5200 | 4940 | 0 | 0 | 133 | 0 | 7.5 |
+| multiship | 3 | 5000 | 0.338 | 0.638 | 3.9 | 5200 | 4940 | 0 | 0 | 133 | 0 | 8.27 |
+
+Against the Phase 0 table (same warm-up exclusion, same shared machine): `storm` 53–58 ms → 0.2 ms mean (max 2 ms); `hullplan` 0.4–14 ms → 0.3–0.9 ms (p95 26–49 ms → 0.4–2.3 ms); `haul` about 4 ms → 0.5 ms (max 140–220 ms → 26–43 ms); `multiship` 1.2 ms → 0.3–0.4 ms; `colony`, `log` and `hub` stay at 0.1–0.25 ms. Both budgets are met. Job-flow columns move within seed variance (nearest crew, gate delays): `colony` seed 1 now leaves 1 job never assigned, `haul` idle-with-work samples are 275–700 crew-ticks (were 275–400).
+
+Still to do from the section 10 Phase 2 scope: urgency moved into the posting systems, pending claims, same-level preemption, operate handoff, airlock transit cost, a wake-based `SchedState`, and per-job candidate lists in the inspector.
+
 ## 8. Policy interface (refinement 6)
 
 The scheduler needs only three facts about a crew member, none from utility: eligibility (`Intent.drive == 'work'` and no `Interrupt`), per-category levels (`PrioritiesC`), and static admission. It never reads drive scores. Anything that can set `Intent.drive` to `work`, including a trivial policy, gets full scheduling.
@@ -415,6 +476,17 @@ Readings chosen where the design and the code differ (behaviour kept identical i
 8. The debug hook's `parkCrew` keeps its old semantics through `detachJob` (the job stays reserved).
 
 ### Phase 2: scheduler, with a deliberate behaviour change
+
+Built so far (PR #263, #194): the nav prefilter, the benchmark-selected candidate (`gH+gate`) and global per-level matching, with `SAVE_VERSION` 74; see "As built" in 7.4. The rest of the scope below follows in separate PRs after #263:
+
+- the `urgency` field, moving `repairUrgency` and `repairFirst` into the posting systems;
+- pending claims with atomic promotion and `isOpen`, and claim lifetimes in the audit;
+- selective same-level preemption with hysteresis (the emergency check is still the legacy one);
+- operate swap handoff and exhaustion, console handoff without an empty gap;
+- safe-point handling of priority 0, priority-zero revalidation, saved `Task.stack`, haul category inheritance;
+- airlock transit cost in path-cost units;
+- a wake-based `SchedState` in place of the signature-and-cadence gate;
+- per-job candidate lists in the inspector.
 
 Scope: `BoardIndex`, nav prefilter and the benchmark-selected candidate; global per-level matching; the `urgency` field (moves `repairUrgency` and `repairFirst` into the posting systems); pending claims with atomic promotion and `isOpen`; claim lifetimes in the audit; selective same-level preemption with hysteresis; operate swap handoff and exhaustion; safe-point handling of priority 0; saved `Task.stack`; haul category inheritance; priority-zero revalidation; cost in path-cost units with airlock cost; `SchedState`; `SAVE_VERSION` bump; inspector gains per-job candidate lists.
 

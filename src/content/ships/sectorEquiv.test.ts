@@ -287,4 +287,7 @@ describe('sector refactor equivalence', () => {
 // (only the player's side earns XP; the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
 // Repinned `combat` for doorway stops (#248): an adjacency path (build, repair, fetch) no longer ends on a Door tile when another tile beside the goal is
 // reachable, so a few crew in the fight stand (and path) one tile differently. Confirmed to come from findPath alone (reverting it restores ba8f9e66). The disaster run is unchanged.
-const EXPECTED = { combat: '3650e115', disaster: '2cf7530b' };
+// Repinned `disaster` for the job scheduler (#194 Phase 2): free crew are matched to jobs together, the nearest crew member first (was: each in id order
+// takes their own best job), and a pass is skipped while its inputs are unchanged (at most SCHED_CADENCE ticks), so other crew put out the fire and seal
+// the breach. On the legacy picker it still gives 2cf7530b. The combat run makes the same assignments and is unchanged.
+const EXPECTED = { combat: '3650e115', disaster: '971586b4' };

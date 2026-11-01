@@ -28,6 +28,8 @@ export interface Sector {
   state: 'active' | 'hyperspace' | 'deploying';
   /** The player's ship in transit while in hyperspace or deploying. */
   packet?: ShipPacket;
+  /** The job scheduler's pass gate (ai/scheduler.ts): the fingerprint of the last pass's inputs and its tick. Saved, so a load runs as a continuous game. */
+  sched?: { sig: number; at: number };
 }
 
 /** 'rogue': rogue AI (robot crews under an AI core); hostile to every other faction, neutral included. */
