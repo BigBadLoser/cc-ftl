@@ -68,10 +68,11 @@ function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
   recipes = RECIPES,
   slide = false,
+  gunsAnywhere = slide,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   // Stations (the only callers that slide doors) may stand guns away from the hull.
-  lay.gunsAnywhere = slide;
+  lay.gunsAnywhere = gunsAnywhere;
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), slid: 0 };
   specs.forEach((spec, room) => { if (spec?.sealed) lay.sealed.add(room); });
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
@@ -309,13 +310,31 @@ export function generateAttempt(
 export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => string[];
 
 /**
+ * How finishLayout treats a layout. Ships pass nothing; stations pass `immobile`. Station v2 (station2/) draws its walls,
+ * doors and departments itself and turns off the passes that would undo them: role swaps (they break departments), door
+ * slides and door pruning (its doors are placed on purpose, each department's access rule already in them).
+ */
+export interface FinishOpts {
+  immobile?: boolean;
+  check?: ExtraCheck;
+  /** Station role swaps (default: on for immobile). */
+  swapRoles?: boolean;
+  /** Station door slides for designs (default: on for immobile). */
+  doorSlide?: boolean;
+  /** Door pruning (default on). */
+  pruneDoors?: boolean;
+  /** Tiles left open on purpose, in canvas coordinates: reported as the result's `negativeSpace`. */
+  negative?: (x: number, y: number) => boolean;
+}
+
+/**
  * Crop the built structure, fit it out, make the template, validate it and take metrics: the shared back half of a
  * generation attempt (ships and stations).
  */
 export function finishLayout(
   rng: Rng, f: FactionDef, factionId: string, seed: number, role: ShipRoleDef, archetype: ArchetypeId, plan: ShipPlan, b: Builder,
   topology: string, comp: Arranger | null, profile: string, defs: Record<string, ModuleDef>, n: number,
-  opts: { immobile?: boolean; check?: ExtraCheck } = {},
+  opts: FinishOpts = {},
 ): GenResult {
   b.cv.fixDoors();
   const labels = b.cv.labels;
@@ -342,14 +361,14 @@ export function finishLayout(
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const roles = labels.map((l) => roleOfLabel(l));
   const { rows: framed, containers } = extractContainers(drawn);
-  const rows = pruneDoors(framed, roomOf, width, roles);
+  const rows = opts.pruneDoors === false ? framed : pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   // Stations: rooms that can stand in for each other trade roles where their neighbours suit them better (roleSwap.ts).
-  const sw = opts.immobile ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
+  const sw = opts.immobile && opts.swapRoles !== false ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
   // Off the navy, bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts). Metrics read the rooms as planned.
   const cab = f.berths === 'rows' ? { rows, roomOf, roles: sw.roles, specs: sw.specs } : splitCabins(rows, roomOf, width, sw.roles, sw.specs, rng);
-  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, !!opts.immobile);
+  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, !!opts.immobile && opts.doorSlide !== false, !!opts.immobile);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
@@ -365,8 +384,11 @@ export function finishLayout(
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);
   const rooms: GenRoom[] = cab.roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
+  const negative = opts.negative;
+  const negativeSpace = negative ? fitted.flatMap((r, y) => Array.from({ length: width }, (_, x) => x).filter((x) => (r[x] ?? '.') === '.' && negative(x + ox, y + oy)).map((x) => y * width + x)) : null;
   return {
     template, rooms, roomOf: cab.roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
+    ...(negativeSpace ? { negativeSpace } : {}),
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }

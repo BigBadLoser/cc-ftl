@@ -257,6 +257,11 @@ export interface GenResult {
   thin?: { slabs: number; folded: number; outlineChanged: number };
   /** Airlock-only docks opened into their corridor, and those left walled for want of one (openDocks.ts). */
   docks?: { merged: number; walled: number };
+  /**
+   * Tiles left open on purpose inside the silhouette (station v2: a wheel's open quarters, an open sector), as indices
+   * y * width + x into the template; tools count them apart from voids.
+   */
+  negativeSpace?: number[];
   /** Assemblies, ports, joins and traversal (assembly-driven generation only), for the viewer. */
   debug?: CompDebug;
 }

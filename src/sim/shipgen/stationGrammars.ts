@@ -271,5 +271,7 @@ const withCages = (run: (c: Ctx) => boolean) => (c: Ctx): boolean => run(c) && c
 export const STATION_GRAMMARS: Record<StationGrammar, (c: Ctx, f: FactionDef) => boolean> = {
   stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
   stationWheel: withCages(wheel), stationConcentric: withCages(concentric), stationArc: withCages(arc),
-  stationAnnex: withCages(annexed), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
+  stationAnnex: withCages(annexed),
+  // Station v2 layouts are built by stationGen.ts directly (station2/gen2.ts), never through the arranger.
+  stationConcentric2: (c) => no(c, 'v2 layout'), stationWheel2: (c) => no(c, 'v2 layout'), stationConcourse2: (c) => no(c, 'v2 layout'), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
 };
