@@ -69,7 +69,7 @@ export interface Renderer {
   setProbe(probe: Probe): void;
   resize(): void;
   dispose(): void;
-  /** Resolves once the scene has drawn with every sheet it asked for loaded (a few quiet frames), or after `ART_READY_MAX_MS`. */
+  /** Resolves once the scene has drawn with every sheet it asked for loaded (a few quiet frames with every scene shown), or after `ART_READY_MAX_MS`. */
   whenArtReady(): Promise<void>;
   /** The sector grid every ship is stamped into. Ships are drawn for every ShipC (a scene reads its ShipC rectangle of it). */
   setSector(sector: SectorGrid): void;
@@ -497,9 +497,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         const poll = (): void => {
           if (frames !== seen) {
             seen = frames;
-            quiet = atlas.busy() === 0 ? quiet + 1 : 0;
+            const hidden = scenes.size === 0 || [...scenes.keys()].some((id) => art.waiting(id));
+            quiet = atlas.busy() === 0 && !hidden ? quiet + 1 : 0;
           }
-          if (quiet >= 3 || performance.now() - t0 > ART_READY_MAX_MS) resolve();
+          if (quiet >= 5 || performance.now() - t0 > ART_READY_MAX_MS) resolve();
           else setTimeout(poll, 30);
         };
         poll();
