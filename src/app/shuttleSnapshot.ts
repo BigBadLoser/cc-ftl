@@ -1,10 +1,13 @@
 import { launchOf } from '../sim/boarding/launch';
 import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
 import { localOf } from './moduleSnapshot';
-import type { UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
+import type { UiSalvage, UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
+import { salvageCounts, hostilesAboard } from '../sim/salvage/counts';
+import { partCount, partsOf } from '../sim/salvage/plan';
+import { SalvageOrderC, SCRAP_TYPES } from '../sim/salvage/components';
 import { isIncapacitated } from '../sim/crew/helpers';
 
 
@@ -161,5 +164,33 @@ function derelictInfo(sim: Sim, id: number, s: Ship): UiDerelict {
     air: mean < 5 ? 'vacuum' : mean < 14 ? 'thin' : 'breathable',
     power: source ? 'emergency' : 'off',
     jammed,
+    salvage: salvageInfo(sim, id),
+    crewAboard: crewOn(sim, id),
   };
+}
+
+/** Player crew standing on a ship. */
+function crewOn(sim: Sim, id: number): number {
+  let n = 0;
+  for (const c of sim.world.query(CrewC, PositionC)) {
+    if (sim.world.has(c, DeadC) || sim.world.get(c, AllegianceC)?.faction !== 'player') continue;
+    if (shipIdOf(sim, sim.world.get(c, PositionC)!) === id) n++;
+  }
+  return n;
+}
+
+/** The salvage panel's data for a wreck: per-type part counts with the estimated materials, and the order running on it. */
+function salvageInfo(sim: Sim, id: number): UiSalvage {
+  const counts = salvageCounts(sim, id);
+  const types = SCRAP_TYPES.map((type) => ({
+    type, parts: counts[type].parts,
+    materials: counts[type].materials.map((q) => ({ name: (sim.content.items[q.item]?.name ?? q.item).toLowerCase(), count: q.count })),
+  }));
+  const o = sim.world.get(id, SalvageOrderC);
+  if (!o) return { types, order: null };
+  const left = partCount(partsOf(sim, id, o.types));
+  const h = hostilesAboard(sim, id);
+  const total = Math.max(o.total ?? left, left);
+  const why = [h.crew ? 'hostiles aboard' : '', h.sacs ? 'egg sacs aboard' : '', h.nests ? 'nests aboard' : ''].filter(Boolean).join(', ');
+  return { types, order: { types: [...o.types], status: o.status, block: o.status === 'blocked' ? why || 'hostiles aboard' : '', done: total - left, total } };
 }

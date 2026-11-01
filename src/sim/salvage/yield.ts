@@ -18,6 +18,12 @@ export function salvageYield(sim: Sim, cost: readonly ItemQty[] | undefined): nu
   return Math.min(stochasticRound(sim, total * SALVAGE_FRAC), total - 1);
 }
 
+/** The average of `salvageYield` for `cost` over the rng (what the inspector's estimate sums), without rolling it. */
+export function expectedYield(cost: readonly ItemQty[] | undefined): number {
+  const total = (cost ?? []).reduce((n, q) => n + q.count, 0);
+  return total <= 1 ? 0 : Math.min(total * SALVAGE_FRAC, total - 1);
+}
+
 /** Strip a part: drop its scrap (of `type`) on or near a tile. Returns the units made (lost ones included when the deck has no room). */
 export function spillScrap(sim: Sim, ship: number, x: number, y: number, type: ScrapType, cost: readonly ItemQty[] | undefined): number {
   const n = salvageYield(sim, cost);

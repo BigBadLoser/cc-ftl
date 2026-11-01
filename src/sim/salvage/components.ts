@@ -16,6 +16,8 @@ export interface SalvageOrder {
   status: 'running' | 'blocked';
   /** Set while blocked. */
   block?: SalvageBlock;
+  /** Parts the order had to strip when it was given (or last changed, counting those already stripped): the progress bar's whole. */
+  total: number;
   /** Tick the order was given. */
   since: number;
 }
