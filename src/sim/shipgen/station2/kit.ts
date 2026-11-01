@@ -141,3 +141,28 @@ export function faces(g: Grid, tiles: readonly number[]): { inner: number[]; out
   }
   return { inner, outer };
 }
+
+/** Thickness of a tile set: twice the greatest 4-step distance from a tile to the set's edge, less one. */
+export function thickness(g: Grid, tiles: readonly number[]): number {
+  const mine = new Set(tiles);
+  const seen = new Set<number>();
+  let q: number[] = [];
+  for (const i of tiles) if (g.nb(i).some((j) => !mine.has(j))) { seen.add(i); q.push(i); }
+  let d = 1;
+  for (;;) {
+    const next: number[] = [];
+    for (const i of q) for (const j of g.nb(i)) if (mine.has(j) && !seen.has(j)) { seen.add(j); next.push(j); }
+    if (next.length === 0) break;
+    d++;
+    q = next;
+  }
+  return 2 * d - 1;
+}
+
+/** A room shape worth keeping: three floor wide after its walls (thickness five) and filling 60% of its bounding box. */
+export function goodShape(g: Grid, tiles: readonly number[]): boolean {
+  if (tiles.length < 12 || thickness(g, tiles) < 5) return false;
+  const xs = tiles.map((i) => g.x(i)), ys = tiles.map((i) => g.y(i));
+  const box = (Math.max(...xs) - Math.min(...xs) + 1) * (Math.max(...ys) - Math.min(...ys) + 1);
+  return tiles.length / box >= 0.6;
+}

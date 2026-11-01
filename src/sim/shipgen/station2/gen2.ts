@@ -10,6 +10,7 @@ import { program, type Dept, type DeptId } from './program';
 import { cabinsStrategy, storefrontStrategy } from './rows';
 import { rasterise, type Structure } from './structure';
 import { sampleTemplate, templateSig, type Family } from './template';
+import { footLine, footStats } from './stats';
 import { trimHalls } from './trim';
 import { build, emit } from './walls';
 
@@ -127,7 +128,7 @@ export function stationV2(rng: Rng, family: Family, plan: ShipPlan, docks: numbe
       if (typeof d === 'string') { out.why.push(d); note({ a, c, why: d, stage: 3 }); continue; }
       const s = a.s;
       const open = new Set([...s.open, ...a.voids.flat()].map((i) => `${s.g.x(i)},${s.g.y(i)}`));
-      out.candidates.push({ b: emit(c, d, rng), score: a.score, profile: `${templateSig(s.t)} R${s.R}`, open });
+      out.candidates.push({ b: emit(c, d, rng), score: a.score, profile: `${templateSig(s.t)} | ${footLine(footStats(c, d, a, depts))} |`, open });
       if (!out.debug || out.debug.stage < 4) out.debug = { a, c, why: `ok ${a.score.toFixed(1)}`, stage: 4 };
       made = true;
       break;

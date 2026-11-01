@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { K, type Grid, type TileRect } from './grid';
-import { PREC, addRoom, depthFrom, faces, isPublic, nearPublic, placeRect, rectParts, slice, solid, type Ctx2 } from './kit';
+import { PREC, addRoom, depthFrom, faces, goodShape, isPublic, nearPublic, placeRect, rectParts, slice, solid, type Ctx2 } from './kit';
 import type { DeptId, Facility } from './program';
 import { planSpine } from './spine';
 
@@ -112,22 +112,25 @@ export const machinesFit = (g: Grid, tiles: readonly number[], sizes: readonly [
 /** Can a parcel hold these rooms behind an aisle along its public side? */
 export const rowFits = (g: Grid, tiles: readonly number[], sizes: readonly [number, number][]): boolean => layoutRects(g, tiles, sizes) !== null;
 
-/** Back floor no rect took: rooms where big enough and beside a corridor, else part of a corridor, else solid. */
+/**
+ * Back floor no rect took (also a trimmed hall's spare floor): rooms of about 24 tiles (stores, plant) off the halls,
+ * cut with straight partitions. A piece of poor shape (under three floor wide, or ragged: under 60% of its bounding
+ * box) is left as solid fill; scraps never widen a hall.
+ */
 export function leftovers(c: Ctx2, dept: DeptId, back: readonly number[], halls: readonly number[], spec: () => RoomSpec): void {
   const g = c.g;
   for (const comp of g.components(back.filter((i) => g.kind[i] === K.Free))) {
     const touch = halls.filter((h) => comp.some((i) => g.nb(i).some((j) => g.kind[j] === K.Room && g.id[j] === h)));
-    if (touch.length > 0 && comp.length >= 8) {
-      // Big leftovers become several rooms of about 24 tiles (a store, a plant room), not one sprawling one.
+    const ids: number[] = [];
+    if (touch.length > 0 && comp.length >= 12) {
       const k = Math.max(1, Math.round(comp.length / 24));
-      const ids: number[] = [];
       for (const ts of slice(g, comp, Array<number>(k).fill(1))) {
         if (ts.length === 0) continue;
-        ids.push(addRoom(c, { tiles: ts, spec: spec(), dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [...touch, ...ids] }], optional: true }));
+        if (goodShape(g, ts)) ids.push(addRoom(c, { tiles: ts, spec: spec(), dept, prec: PREC.soft + c.rooms.length, doors: [{ any: [...touch, ...ids] }], optional: true }));
       }
     }
-    // Scraps too small for a room are wall, never hall (halls keep their width).
-    else solid(c, comp);
+    // Floor no room can use is left as solid fill: it shows as waste (the footprint is too big), not as a room.
+    solid(c, comp.filter((i) => g.kind[i] === K.Free));
   }
 }
 
