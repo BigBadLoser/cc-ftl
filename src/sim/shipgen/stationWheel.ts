@@ -5,7 +5,7 @@ import type { Rng } from '../rng';
 import { bandArcs, bandDepth, bandRadius } from './stationBands';
 import { isDock, isSystem, placeDepartments, ringProgram } from './stationDepartments';
 import { dockBanks } from './stationDocks';
-import { besideSpoke, centreOf, corridor, fitAlong, free, ROTUNDA, SHOP, span, spoke, widthOf } from './stationRings';
+import { besideSpoke, centreOf, circleCells, corridor, fitAlong, free, roleAt, ROTUNDA, SHOP, span, spoke, widthOf } from './stationRings';
 import { halfWidth, reachOf, unitOf, wheelCandidates, type Dir, type Job, type Unit, type WheelCandidate } from './stationWheelSearch';
 
 /**
@@ -21,8 +21,9 @@ const ANGLE: Record<Dir, number> = { e: 0, s: Math.PI / 2, w: Math.PI, n: -Math.
 /** Candidates built for real, and the radius steps a candidate may grow by when its blocks do not all fit. */
 const TRIES = 6;
 const GROW = [0, 3, 6];
-/** Score lost per tile of radius (as in the search). */
+/** Score lost per tile of radius (as in the search), and the weight of the measured inboard ring frontage (0..1). */
 const PER_TILE = 0.08;
+const FRONT = 8;
 const DIAGONALS = [-Math.PI / 4, Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4];
 
 /**
@@ -78,6 +79,34 @@ function placeJob(b: Builder, R: number, ring: number, j: Job): RoomSpec[] {
   return fitAlong(b, R, ring, j.rooms.flat(), arcs, -1);
 }
 
+/** Rooms that are circulation (open courts are not stamped as parts: no role). */
+const OPEN: readonly (string | undefined)[] = ['hall', 'plaza', 'garden', 'drill', undefined];
+
+/**
+ * Share of the ring's inboard wall with a room behind it, against open space; walls onto corridors and courts are left
+ * out (the bench's ring frontage, tools/shipgen/stationBenchFlow.ts).
+ */
+function frontIn(b: Builder, R: number, ring: number): number {
+  let rooms = 0, all = 0;
+  const seen = new Set<string>();
+  for (const c of circleCells(R)) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const wx = c.x + dx, wy = c.y + dy;
+      if (b.cv.at(wx, wy) !== '#' || Math.hypot(wx, wy) >= Math.hypot(c.x, c.y) || seen.has(`${wx},${wy}`)) continue;
+      seen.add(`${wx},${wy}`);
+      let x = wx + dx, y = wy + dy;
+      if (b.cv.at(x, y) === '#') { x += dx; y += dy; }
+      const ch = b.cv.at(x, y);
+      if (ch === '#') continue;
+      const L = ch === '.' ? -1 : b.cv.labelAt(x, y);
+      if (L === ring || (L >= 0 && OPEN.includes(roleAt(b, L)))) continue;
+      all++;
+      if (L >= 0) rooms++;
+    }
+  }
+  return all > 0 ? rooms / all : 0;
+}
+
 /** The ring, the rotunda, the four spokes and the market street's shops (as many as fit, both sides). */
 function skeleton(rng: Rng, R: number, market: boolean): { b: Builder; ring: number } | null {
   const b = localBuilder(rng);
@@ -95,7 +124,7 @@ function skeleton(rng: Rng, R: number, market: boolean): { b: Builder; ring: num
 export interface PlannedWheel { b: Builder; label: string }
 
 /** The trading wheel: rooms (the office first), docks among them; `market` lines the south concourse with shops. */
-export function plannedWheel(rng: Rng, rooms: RoomSpec[], market: boolean): PlannedWheel | null {
+export function plannedWheel(rng: Rng, rooms: RoomSpec[], market: boolean, court: (b: Builder) => void = () => {}): PlannedWheel | null {
   const docks = rooms.filter(isDock);
   const sys = rooms.filter(isSystem);
   const bandIn = rooms.filter((r) => !isDock(r) && !isSystem(r));
@@ -113,7 +142,10 @@ export function plannedWheel(rng: Rng, rooms: RoomSpec[], market: boolean): Plan
       const sk = skeleton(rng, R, market);
       if (!sk) continue;
       if (cand.jobs.flatMap((j) => placeJob(sk.b, R, sk.ring, j)).length > 0) continue;
-      built.push({ cand, b: sk.b, ring: sk.ring, R, v: cand.score - PER_TILE * g });
+      // The open space the blocks leave: the kind's courts (a market's shops round their edge) in the largest pockets.
+      // Measured: the ring lined inboard as well as out (a tulou, not a hoop round open space).
+      court(sk.b);
+      built.push({ cand, b: sk.b, ring: sk.ring, R, v: cand.score - PER_TILE * g + FRONT * frontIn(sk.b, R, sk.ring) });
       break;
     }
   }
