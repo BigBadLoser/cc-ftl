@@ -17,6 +17,8 @@ export interface Ring {
   w: number;
   /** A partial ring: the arc from `a0` (radians) clockwise over `span`. */
   arc?: { a0: number; span: number };
+  /** Breaks in the ring, [centre angle, span] (where a harbour runs through to the hull). */
+  gaps?: [number, number][];
 }
 
 export interface Spoke {
@@ -40,8 +42,13 @@ export interface Harbour {
 
 export interface Template {
   kind: Family;
-  /** rotunda: a round court at the centre; hub: a small round hall where the spokes meet; annular: a hub inside a court ring. */
-  centre: 'rotunda' | 'hub' | 'annular';
+  /**
+   * rotunda: a round court at the centre; hub: a small round hall where the spokes meet; annular: a hub inside a court
+   * ring; core: a department's parcel (the slot's occupant), walled off inside the innermost ring.
+   */
+  centre: 'rotunda' | 'hub' | 'annular' | 'core';
+  /** The department in a core centre (the slot's occupant; other occupants can plug in later). */
+  occupant?: 'engineering';
   /** Radius of the centre (the court's outer edge for annular). */
   rc: number;
   /** The template's own centre radius before solving grew it. */
@@ -120,15 +127,24 @@ export function sampleTemplate(rng: Rng, kind: Family, docks: number): Template 
       chords: [{ horiz, off: side * rng.int(6, 9), hw: rng.chance(0.5) ? 2 : 1, reach: 0 }], harbours: hb, open: [],
     };
   }
-  // Concentric: the spokes include every harbour face (the concourse from the rotunda to the docks).
-  const extra = shuffle(rng, CARDINAL.filter((d) => !faces.includes(d)));
-  const set = [...new Set([...faces, ...extra.slice(0, Math.max(0, rng.int(2, 4) - faces.length))])];
-  if (set.length === 1) set.push(opp(set[0] as Dir8));
-  // Only the harbour concourses run through to the outer ring; the other spokes stop at the inner ring, so the middle
-  // band runs on in one or two long arcs (a band cut into quarters leaves quarters no department needs).
-  const spokes: Spoke[] = set.map((dir) => ({ dir, hw: 1, reach: faces.includes(dir) ? 0 : 1, from: -1 }));
+  // Concentric: a secure core (engineering) inside the inner ring, one band of rooms back to back between the inner
+  // ring and a promenade ring along the hull, broken where a harbour runs through to its face. Spokes join the two
+  // rings only (none crosses the core): at least one per stretch of the outer ring, on the free cardinals.
+  const free = shuffle(rng, CARDINAL.filter((d) => !faces.includes(d)));
+  // One spoke in each stretch of the outer ring between harbours first, then extras.
+  const fs = [...faces].sort((a, b) => a - b);
+  const between = (d: number, k: number): boolean => {
+    const a = fs[k] as number, b = fs[(k + 1) % fs.length] as number;
+    return fs.length === 1 ? d !== a : b > a ? d > a && d < b : d > a || d < b;
+  };
+  const pick: Dir8[] = [];
+  fs.forEach((_, k) => { const d = free.find((x) => between(x, k) && !pick.includes(x)); if (d !== undefined) pick.push(d); });
+  const want = Math.max(pick.length, rng.int(1, 3));
+  for (const d of free) if (pick.length < want && !pick.includes(d)) pick.push(d);
+  const spokes: Spoke[] = pick.map((dir) => ({ dir, hw: 1, reach: 0, from: 1 }));
   return {
-    kind, centre: 'rotunda', rc: rng.int(4, 6), outer: rng.int(9, 11), bands: [], rings: [{ w: 2 }, { w: 2 }],
+    kind, centre: 'core', occupant: 'engineering', rc: 8, outer: 0, bands: [],
+    rings: [{ w: 3, gaps: hb.map((h) => [dirAngle(h.dir), 0] as [number, number]) }, { w: 2 }],
     spokes, chords: [], harbours: hb, open: [],
   };
 }

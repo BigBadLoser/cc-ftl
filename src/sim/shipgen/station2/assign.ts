@@ -1,10 +1,11 @@
 import type { Rng } from '../../rng';
 import { DIRS8, K, rectSpots, type Grid } from './grid';
 import { machinesFit, rowFits } from './machine';
+import { coreRadius } from './core';
 import { cutRegion, type Cut } from './parcels';
 import { planCabins } from './rows';
 import type { Dept, DeptId } from './program';
-import { rasterise, type Region, type Structure } from './structure';
+import { bankWidth, rasterise, type Region, type Structure } from './structure';
 import { dirAngle, type Ring, type Template } from './template';
 
 /**
@@ -84,6 +85,11 @@ function sectors(t: Template, z: number): [number, number][] {
 
 /** The zones a family has, outside in. */
 const zonesOf = (t: Template): number[] => (t.kind === 'concentric' ? [0, 1, 2] : [0, 1]);
+
+/** The sector of zone z holding angle a. */
+function sectorAt(t: Template, z: number, a: number): number {
+  return Math.max(0, sectors(t, z).findIndex(([a0, span]) => norm(a - a0) < span));
+}
 
 /** A wheel's filled quarter: its sector of the rim's inner band runs on in to the hub (a pie with two straight sides). */
 function filled(t: Template, z: number, s: number): boolean {
@@ -168,7 +174,27 @@ function solve(t: Template, items0: readonly Item[]): Solved {
   let a: number, inner: number;
   const bands: number[] = [];
   let waste = 0;
-  if (t.kind === 'concentric') {
+  if (t.centre === 'core') {
+    // Outside in: the core is as big as its occupant needs; the band around it as deep as its rooms (two back to back,
+    // up to two deeper if that keeps the station smaller); the band's arc must hold its busiest sector.
+    const occ = items.find((i) => i.zone === 2);
+    const sizes = (occ?.dept.facilities ?? []).filter((f) => f.shape === 'rect').map((f) => [f.spec.w, f.spec.h] as [number, number]);
+    const rc = sizes.length > 0 ? coreRadius(sizes) : (t.rcMin ?? t.rc);
+    const base = rc + 0.5 + w1;
+    let best = { a1: base, d: D[1] as number, R: Infinity };
+    for (let d = Math.max(6, D[1] as number); d <= Math.max(6, D[1] as number) + 2; d++) {
+      const a1 = Math.max(base, req(1, d));
+      if (a1 + d + w0 < best.R) best = { a1, d, R: a1 + d + w0 };
+    }
+    // A core grown past its occupant's need is waste (its spare floor becomes plant or fill).
+    waste += Math.PI * (best.a1 * best.a1 - base * base);
+    t.rc = best.a1 - w1 - 0.5;
+    a = best.R;
+    bands.push(0, best.d);
+    t.radii = [a, best.a1, rc];
+    inner = rc;
+    sectors(t, 1).forEach((_, s) => { waste += Math.max(0, area(1, s, best.a1, best.d) - need(1, s)); });
+  } else if (t.kind === 'concentric') {
     const [d0, d1, d2] = D as [number, number, number];
     if (t.rings.length > 1 && d1 > 0 && d2 > 0) {
       // Two rings: inner radius of the inner zone (the rotunda's edge), out to whatever the zones outside it need.
@@ -228,27 +254,34 @@ function solve(t: Template, items0: readonly Item[]): Solved {
 function draw(rng: Rng, t: Template, depts: readonly Dept[]): Item[] {
   const zones = zonesOf(t);
   const items: Item[] = [];
+  const core = t.centre === 'core';
   const harbours = depts.filter((d) => d.docks);
   harbours.forEach((h, k) => {
-    const dir = t.harbours[k]?.dir ?? 6;
-    items.push({ key: `${h.id}#0`, dept: h, weight: h.need, zone: 0, sector: 0, anchor: { a: dirAngle(dir), span: 0 } });
+    const a = dirAngle(t.harbours[k]?.dir ?? 6);
+    // A core station's harbours are in its one band, in the sector holding their face.
+    const sector = core ? sectorAt(t, 1, a) : 0;
+    items.push({ key: `${h.id}#0`, dept: h, weight: h.need, zone: core ? 1 : 0, sector, anchor: { a, span: 0 } });
   });
   const gaps = Math.max(1, harbours.length);
   const fr = depts.find((d) => d.id === 'freight');
-  if (fr) items.push({ key: 'freight#0', dept: fr, weight: fr.need, zone: 0, sector: 0, gap: rng.chance(0.5) ? 0 : gaps - 1 });
+  if (fr && !core) items.push({ key: 'freight#0', dept: fr, weight: fr.need, zone: 0, sector: 0, gap: rng.chance(0.5) ? 0 : gaps - 1 });
+  // The core's occupant goes in the core.
+  const occ = core ? depts.find((d) => d.id === t.occupant) : undefined;
+  if (occ) items.push({ key: `${occ.id}#0`, dept: occ, weight: occ.need, zone: 2, sector: 0 });
   const parts: Item[] = [];
   for (const d of depts) {
-    if (d.docks || d.id === 'freight') continue;
-    const n = d.id === 'engineering' || d.id === 'defence' ? 1 : rng.int(1, d.id === 'habitation' ? 4 : 3);
+    if (d.docks || (d.id === 'freight' && !core) || d === occ) continue;
+    const n = d.id === 'engineering' || d.id === 'defence' || d.id === 'freight' ? 1 : rng.int(1, d.id === 'habitation' ? 4 : 3);
     for (let p = 0; p < n; p++) parts.push({ key: `${d.id}#${p}`, dept: d, weight: d.need / n, zone: 0, sector: 0 });
   }
   const cost = (its: readonly Item[]): number => {
     const { R, waste } = solve(t, its);
-    const pref = its.filter((i) => i.dept.id === 'market' && t.kind === 'concentric' && i.zone >= 1).length * -20
+    const h0 = its.find((i) => i.dept.id === 'harbour');
+    const pref = (core ? its.filter((i) => i.dept.id === 'freight' && h0 && i.sector === h0.sector).length * -20 : its.filter((i) => i.dept.id === 'market' && t.kind === 'concentric' && i.zone >= 1).length * -20)
       + its.filter((i) => i.dept.id === 'engineering' && t.kind === 'wheel' && filled(t, i.zone, i.sector)).length * -30;
     return 3 * R + Math.max(0, waste) / 4 + pref;
   };
-  const slots = zones.flatMap((z) => sectors(t, z).map((_, s) => ({ z, s })));
+  const slots = zones.filter((z) => !core || z === 1).flatMap((z) => sectors(t, z).map((_, s) => ({ z, s })));
   // A department deeper than the outer band stays out of it (it would deepen the whole band).
   const fits = (it: Item, z: number): boolean => z !== 0 || depthOf(t, { ...it, zone: 0 }) <= t.outer + 1;
   // Greedy, parts in a random order, each where the station stays smallest with the least floor to spare (with noise).
@@ -262,7 +295,7 @@ function draw(rng: Rng, t: Template, depts: readonly Dept[]): Item[] {
   }
   // Then local search: move one part at a time while the cost falls.
   let now = cost(items);
-  const movable = items.filter((i) => !i.anchor && i.key !== 'freight#0');
+  const movable = items.filter((i) => !i.anchor && (core ? i.zone !== 2 : i.key !== 'freight#0'));
   for (let k = 0; k < 120 && movable.length > 0; k++) {
     const it = movable[rng.int(0, movable.length - 1)] as Item;
     const sl = slots[rng.int(0, slots.length - 1)] as { z: number; s: number };
@@ -330,13 +363,16 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
   const solved = solve(t, items);
   const { R } = solved;
   if (R > 74) return 'too big';
+  const core = t.centre === 'core';
+  // A core station's promenade ring breaks where each harbour runs through to its face (its dock bank and a wing).
+  if (core && t.rings[0]) t.rings[0].gaps = ringGaps(t, R);
   const s = rasterise(t, R);
   if (typeof s === 'string') return s;
   const { g } = s;
   // Anchored arcs: the harbour's share of the outer band, at least its dock bank and a wing either side.
   const outer = s.regions.filter((r) => r.band === 0 && r.hull).sort((a, b) => b.tiles.length - a.tiles.length)[0];
-  if (!outer) return 'no outer band';
-  for (const [k, it] of items.filter((i) => i.anchor).entries()) {
+  if (!outer && !core) return 'no outer band';
+  if (outer) for (const [k, it] of items.filter((i) => i.anchor).entries()) {
     const f = s.faces[k];
     if (!f || !it.anchor) continue;
     // A harbour needs at least its dock bank and a wing either side, whatever its floor.
@@ -347,14 +383,14 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
   for (const it of items) it.weight = weightIn(t, it, solved.depths[it.zone] as number);
   // A rect department in the outer band stands square on a free axis (rooms askew to a curved band waste it).
   const taken = new Set(t.harbours.map((h) => h.dir as number));
-  for (const it of items.filter((i) => i.zone === 0 && i.dept.rect && !i.anchor)) {
+  if (outer) for (const it of items.filter((i) => i.zone === 0 && i.dept.rect && !i.anchor)) {
     const free = [0, 2, 4, 6].filter((d) => !taken.has(d));
     if (free.length === 0) break;
     const d = free[rng.int(0, free.length - 1)] as number;
     taken.add(d);
     it.anchor = { a: dirAngle(d), span: (it.weight / NET / outer.tiles.length) * TAU };
   }
-  gaps(rng, items, outer.tiles.length);
+  if (outer) gaps(rng, items, outer.tiles.length);
   const parcels: Parcel[] = [];
   const courts: number[][] = [];
   const voids: number[][] = [];
@@ -368,7 +404,7 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
     const cuts: Cut[] = [...(its as unknown as Cut[])];
     // Spare floor is left open only beside space (the edge of a wheel's hollow); elsewhere the departments take it
     // (as stores and plant rooms), scored by the waste ratio: a court is never the sink for surplus.
-    if (!outerBand && extra > 0.12 * tiles.length && nearSpace(tiles)) cuts.push({ key: 'spare#0', weight: extra * NET, gap: 0 });
+    if (!outerBand && t.kind === 'wheel' && extra > 0.12 * tiles.length && nearSpace(tiles)) cuts.push({ key: 'spare#0', weight: extra * NET, gap: 0 });
     for (const [key, ts] of cutRegion(g, tiles, cuts, rng.next() * TAU)) {
       const [dept, part] = key.split('#') as [DeptId | 'spare', string];
       if (dept === 'spare') spare(ts); else parcels.push({ dept, part: Number(part), tiles: ts, need: (its.find((i) => i.key === key)?.weight ?? 0) / NET });
@@ -385,7 +421,19 @@ export function assign(rng: Rng, t0: Template, depts: readonly Dept[]): Assignme
     }
     if (its.length > 0) {
       for (const i of its) used.add(i);
-      if (r !== outer) axisAnchor(t, r, its);
+      if (r !== outer) {
+        // Harbours anchored in a sector: their arc, at least the dock bank and a wing either side.
+        const span = (sectors(t, its[0]?.zone ?? 1)[its[0]?.sector ?? 0] as [number, number])[1];
+        for (const it of its.filter((i) => i.anchor)) {
+          const f = s.faces[t.harbours.findIndex((h) => dirAngle(h.dir) === it.anchor?.a)];
+          const least = f ? 2 * Math.atan((f.half + 6) / f.line) : 0;
+          it.weight = Math.max(it.weight, (least / span) * r.tiles.length * NET);
+          (it.anchor as { span: number }).span = Math.min(span * 0.9, (it.weight / NET / r.tiles.length) * span);
+        }
+        if (its.some((i) => i.anchor)) {
+          for (const o of its) if (!o.anchor) o.gap = 0;
+        } else axisAnchor(t, r, its);
+      }
       cut(r.tiles, its, r === outer);
     } else spare(r.tiles);
   }
@@ -429,7 +477,7 @@ function axisAnchor(t: Template, r: Region, its: Item[]): void {
  * concourses always stay.
  */
 function justify(t: Template, items: Item[]): void {
-  if (t.kind !== 'concentric') return;
+  if (t.kind !== 'concentric' || t.centre === 'core') return;
   const has = (z: number): boolean => items.some((i) => i.zone === z);
   if (t.rings.length > 1 && !(has(1) && has(2))) {
     t.rings = [t.rings[0] as Ring];
@@ -458,6 +506,28 @@ function justify(t: Template, items: Item[]): void {
 }
 
 const wrapA = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
+
+/**
+ * The breaks in a core station's promenade ring: one at each harbour (its dock bank and a wing either side). A stretch
+ * of ring between two breaks with no spoke to it would be cut off, so the two breaks join over it.
+ */
+function ringGaps(t: Template, R: number): [number, number][] {
+  let gs = t.harbours.map((h) => { const w = 2 * Math.atan((Math.ceil(bankWidth(h.docks) / 2) + 6) / R); return [norm(dirAngle(h.dir) - w / 2), w] as [number, number]; })
+    .sort((p, q) => p[0] - q[0]);
+  const spokes = t.spokes.map((sp) => norm(dirAngle(sp.dir)));
+  for (let k = 0; gs.length > 1 && k < gs.length; ) {
+    const [a0, w0] = gs[k] as [number, number], [b0, w1] = gs[(k + 1) % gs.length] as [number, number];
+    const from = a0 + w0, span = norm(b0 - from);
+    if (spokes.some((a) => norm(a - from) < span)) { k++; continue; }
+    const merged: [number, number] = [a0, norm(b0 + w1 - a0) || 2 * Math.PI];
+    gs = gs.filter((_, j) => j !== k && j !== (k + 1) % gs.length);
+    gs.splice(Math.min(k, gs.length), 0, merged);
+    k = 0;
+    if (gs.length === 1) break;
+  }
+  // As [centre, span] for the raster.
+  return gs.map(([a0, w]) => [a0 + w / 2, w]);
+}
 
 const sumW = (its: readonly Item[] | undefined): number => (its ?? []).reduce((a, i) => a + i.weight, 0);
 

@@ -89,6 +89,7 @@ export function rasterise(t: Template, R: number): Structure | string {
       const r = g.r(i);
       if (g.kind[i] === K.Space || r > ro || r <= ri) continue;
       if (ring.arc && !onArc(g.a(i), ring.arc.a0, ring.arc.span)) continue;
+      if (ring.gaps?.some(([a, sp]) => Math.abs(wrap(g.a(i) - a)) <= sp / 2)) continue;
       g.set(i, K.Hall);
     }
   });
@@ -116,7 +117,7 @@ export function rasterise(t: Template, R: number): Structure | string {
   for (let i = 0; i < n; i++) {
     const r = g.r(i);
     if (t.centre === 'rotunda' && r <= t.rc + 0.5) g.set(i, K.Court);
-    else if (t.centre !== 'rotunda' && r <= (t.centre === 'annular' ? 2.5 : t.rc + 0.5)) g.set(i, K.Hall);
+    else if ((t.centre === 'hub' || t.centre === 'annular') && r <= (t.centre === 'annular' ? 2.5 : t.rc + 0.5)) g.set(i, K.Hall);
   }
   // Corridors across open space get walls of their own.
   for (let i = 0; i < n; i++) {
