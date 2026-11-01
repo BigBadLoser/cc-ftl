@@ -1,6 +1,6 @@
 import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
-import type { ItemQty, SkillName } from './registry';
+import type { ItemQty, ScrapType, SkillName } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
@@ -8,6 +8,9 @@ export type Command =
   | { type: 'debug.spawnMarker'; x: number; y: number }
   | { type: 'debug.setStruct'; ship: number; x: number; y: number; kind: number }
   | { type: 'job.build'; ship: number; x: number; y: number; struct: number }
+  /** Order a derelict (a wreck with ruin data) stripped of the ticked scrap types; the crew run it as ordinary jobs (sim/salvage). Orders again to change the types. */
+  | { type: 'salvage.order'; ship: number; types: ScrapType[] }
+  | { type: 'salvage.cancel'; ship: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }

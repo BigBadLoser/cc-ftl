@@ -1,6 +1,6 @@
 import { defineComponent } from '../ecs';
 import type { HaulData } from '../items/components';
-import type { ItemQty } from '../registry';
+import type { ItemQty, ScrapType } from '../registry';
 
 /**
  * Shared contract for M2 (crew & jobs). Sim systems write these; render/ui only read them.
@@ -144,6 +144,8 @@ export interface Job {
   yardRank?: number;
   /** The yard's closing wall: only the yard's own crew take it (anyone else might wall themselves in). */
   yardOnly?: true;
+  /** Derelict salvage: a deconstruct or moduleDecon job of the salvage order; finishing it spills scrap of this type instead of the refund. */
+  scrap?: ScrapType;
   /** sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them. */
   holder?: number;
 }

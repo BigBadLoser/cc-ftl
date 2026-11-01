@@ -46,6 +46,17 @@ export function isCombatReady(sim: Sim, crew: number): boolean {
   return !hp || hp.hp > 0;
 }
 
+/** True if the crew member stands on a wreck: nobody there to fight for it, so the player's crew work it (salvage) rather than boarding it. */
+export function onWreck(sim: Sim, crew: number): boolean {
+  const pos = sim.world.get(crew, PositionC);
+  return !!pos && shipById(sim, shipIdOf(sim, pos))?.state === 'wreck';
+}
+
+/** An invader that is still boarding: on a wreck an invader is just crew at work, so it takes jobs like anyone (the fight code still counts it as an invader). */
+export function isBoarding(sim: Sim, crew: number): boolean {
+  return isInvader(sim, crew) && !onWreck(sim, crew);
+}
+
 /** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */
 export function isInvader(sim: Sim, crew: number): boolean {
   if (sim.world.has(crew, AlienC)) return false; // creatures live where they hatched: they never board or take ships
@@ -64,5 +75,5 @@ export function isPlayerControlled(sim: Sim, crew: number): boolean {
 /** True if the crew member must not pick colony jobs: fighting, fetching or stowing a weapon, surrendered or invading. */
 export function isOffDuty(sim: Sim, crew: number): boolean {
   const f = sim.world.get(crew, FighterC);
-  return (!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isInvader(sim, crew);
+  return (!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew);
 }

@@ -24,6 +24,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Quality rules](#quality-rules): Sim systems get unit tests, plus scenario tests, for example "a 1-tile breach vents a 4×4 room
 - [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
+- [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
@@ -873,6 +874,24 @@ Each milestone ends with something playable or watchable in the browser.
 - Throwaway visual tests are published as private claude.ai pages so the user can check them on any
   device.
 - Spikes so far: voxel deck (environment, lighting, power-off) and crew lineup (style B chosen).
+
+## Derelict salvage, `src/sim/salvage/`
+
+Slice 2 of #268 (the order and the stripping; the inspector panel and the EVA/shuttle automation are later slices).
+
+- **Order.** `salvage.order {ship, types}` / `salvage.cancel {ship}`. Only on a wreck with `ruin` data; refused for robot-only content (`robotOnly`), when
+  nothing of the ticked types is left (`nothingToStrip`) and for bad types. `SalvageOrderC` on the wreck: `types`, `status` ('running' or 'blocked'), `block`.
+  Ordering again changes the types (open jobs are dropped and re-planned).
+- **Parts.** `ModuleDef.scrap` tags a module with its scrap type (robot modules have none and are never touched). Walls, doors and beams are hull.
+  `partsOf` lists what an order still strips; `planJobs` posts the jobs: ordinary `moduleDecon` / `deconstruct` jobs with `Job.scrap` set, so `jobWork`
+  spills scrap (`salvage/yield.ts`) instead of the refund. Order: modules, then walls and doors (they come down to floor), then floors, which
+  wait until no loose stack lies on the wreck (the salvage ferry in `logistics/salvage.ts` and the haulers clear them) and go farthest-from-the-crew first, one distance level at a time, so crew never cut themselves off. A floor comes down to open space.
+- **Yield.** item count of the part's build cost x `SALVAGE_FRAC` (0.4), stochastic rounding on the sim rng, capped at cost - 1 (a 1-item floor yields nothing).
+- **System.** `salvageSystem` (every `SALVAGE_EVERY` ticks, after `haulCleanupSystem`): hostile aboard (a living, non-surrendered hostile crew member, an egg sac or a nest)
+  blocks the order and drops its open jobs; at most `SALVAGE_JOBS_OPEN` jobs per wreck; when nothing of the ticked types is left it emits `salvage.done`
+  and, if the wreck is an empty shell, `removeWreck` clears its tiles, jobs, modules, stacks, corpses, sacs and the ShipC. Events: `salvage.ordered|blocked|done`.
+- **Guard.** `job.build`, `job.deconstruct`, `job.buildModule` and `job.deconstructModule` are rejected (`wreck`) on any ship in state 'wreck'; `job.forceDoor` still works.
+  Crew of the player on a wreck are not 'boarding' (`isBoarding`: an invader on a wreck is off duty no longer), so they take jobs there like on any ship.
 
 ## Vehicles (shuttles), `src/sim/vehicles/`
 
