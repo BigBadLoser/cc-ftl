@@ -1,4 +1,4 @@
-import { autoDetectRenderer, Container } from 'pixi.js';
+import { autoDetectRenderer, Container, RenderTexture, Sprite } from 'pixi.js';
 import { animNow } from './animClock';
 import { NOOP_PROBE, type Probe } from '../sim/probe';
 import { ShipC, type Ship } from '../sim/combat/components';
@@ -278,7 +278,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const ratio = () => cam.w / Math.max(1, canvas.clientWidth);
 
   function resize(): void {
-    cam.resize(canvas.clientWidth || 1, canvas.clientHeight || 1, window.devicePixelRatio || 1);
+    // At a fractional dpr (125% scaling, browser zoom 90%) the canvas box is not a whole number of physical px, and the browser
+    // resamples a backing store that is not exactly that size: art px come out 1 and 2 px wide. So the backing store is the box
+    // rounded down to whole physical px, and the canvas box is then set to exactly that size.
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = '';
+    canvas.style.height = '';
+    const box = canvas.getBoundingClientRect();
+    const device = { w: Math.max(1, Math.floor(box.width * dpr + 1e-6)), h: Math.max(1, Math.floor(box.height * dpr + 1e-6)) };
+    canvas.style.width = `${device.w / dpr}px`;
+    canvas.style.height = `${device.h / dpr}px`;
+    cam.resize(canvas.clientWidth || 1, canvas.clientHeight || 1, dpr, device);
     gl.resize(cam.w, cam.h);
   }
   resize();
@@ -404,6 +414,65 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     SL.world.position.set(c.originX, c.originY);
   }
 
+
+  /**
+   * Below the 1:1 level (1/2) the art px grid cannot be drawn sprite by sprite: offsets fall on fractions of a device px, so rounding
+   * each sprite steps wall pieces apart and not rounding blends tile edges into faint seams. So the world is drawn at 1/2 (every sprite
+   * on whole device px) into a texture k times the canvas on each side, and that image is averaged down by k (in steps of 2, linear
+   * filter on exact texel boundaries = a box filter). Every seam would have to survive averaging a clean image.
+   */
+  const mini = new Sprite();
+  mini.visible = false;
+  stage.addChildAt(mini, 1);
+  const miniRts: RenderTexture[] = [];
+  const MAX_MINI_PX = 96e6;
+  /** The GPU's own texture and renderbuffer size limits (4096 on some GPUs), so the pass falls back before it would fail. */
+  const maxMiniSide = ((): number => {
+    const ctx = (gl as unknown as { gl?: WebGLRenderingContext }).gl;
+    if (!ctx) return 4096;
+    return Math.min(8192, ctx.getParameter(ctx.MAX_TEXTURE_SIZE) as number, ctx.getParameter(ctx.MAX_RENDERBUFFER_SIZE) as number);
+  })();
+  function miniRt(i: number, w: number, h: number): RenderTexture {
+    let rt = miniRts[i];
+    if (!rt || rt.width !== w || rt.height !== h) {
+      rt?.destroy(true);
+      rt = RenderTexture.create({ width: w, height: h, resolution: 1, scaleMode: 'linear' });
+      miniRts[i] = rt;
+    }
+    return rt;
+  }
+  const setArt = (on: boolean): void => {
+    W.setArtVisible(on);
+    for (const c of [SL.under, SL.floor, SL.decal, SL.sorted, SL.fx, SL.fxAdd]) c.visible = on;
+  };
+  /** Draw the world at 1/2 into a texture and average it down to the canvas size; false when it would be too big (drawn directly instead). */
+  function renderMini(k: number, inView: Sprite): boolean {
+    const w = cam.w * k, h = cam.h * k;
+    if (w * h > MAX_MINI_PX || w > maxMiniSide || h > maxMiniSide) return false;
+    const vcam = { scale: 0.5, zoom: 0.5, w, h, originX: cam.originX * k, originY: cam.originY * k } as unknown as Camera;
+    place(vcam, null);
+    W.setUiVisible(false);
+    SL.ui.visible = false;
+    threatMarks.update();
+    backdrop.root.visible = false;
+    const insetShown = inView.visible;
+    inView.visible = false;
+    let rt = miniRt(0, w, h);
+    gl.render({ container: stage, target: rt, clear: true, clearColor: [0, 0, 0, 0] });
+    inView.visible = insetShown;
+    let n = 1;
+    for (let f = k; f > 1; f /= 2, n++) {
+      const down = new Sprite(rt);
+      down.scale.set(0.5);
+      const next = miniRt(n, Math.ceil(rt.width / 2), Math.ceil(rt.height / 2));
+      gl.render({ container: down, target: next, clear: true, clearColor: [0, 0, 0, 0] });
+      down.destroy();
+      rt = next;
+      }
+    mini.texture = rt;
+    return true;
+  }
+
   // The combat inset: camera pass B over the same world stack, into a texture shown above the main pass.
   const inset = createInsetPass({ ship: shipOf, origin, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, ratio, place });
   stage.addChild(inset.sprite);
@@ -456,10 +525,18 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       backdrop.root.visible = backdropOn;
       probe.end('render/inset');
       probe.begin('render/gl');
+      const k = cam.scale < 0.5 - 1e-9 ? Math.round(0.5 / cam.scale) : 1;
+      const shrunk = k > 1 && renderMini(k, inset.sprite);
+      backdrop.root.visible = backdropOn;
       place(cam, null);
       backdrop.update(cam.w, cam.h, cam.originX, cam.originY, ratio());
       threatMarks.update();
+      // Shrunk: the art is the averaged texture; only the ui layers (one-pixel grid lines, markers) draw directly, at the real scale.
+      mini.visible = shrunk;
+      setArt(!shrunk);
       gl.render({ container: stage });
+      mini.visible = false;
+      setArt(true);
       probe.end('render/gl');
       probe.begin('render/present');
       atlas.tick();

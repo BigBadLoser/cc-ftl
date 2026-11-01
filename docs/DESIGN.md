@@ -14,6 +14,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
+  - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
 - [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
@@ -280,6 +281,24 @@ FTL's decision-making with physical consequences, in a shared sector.
 - **Story events happen in transit** only: a hop of a hyperspace trip may draw one (never the hop that is interdicted), and the trip is held until you answer. Nothing starts while the ship idles in a node. Hostile arrivals and NPC traffic are node-local happenings, not story events.
 - **Presentation:** decisions pause in a modal; flavour and optional leads arrive in-world and can be
   ignored.
+
+### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
+
+Salvage is one order from the inspector. The crew then run it on their own, like any other work.
+
+- **The order:** select a derelict. Its inspector has a salvage panel: tick any or all scrap types, then click **Salvage**.
+  That is the whole player flow. The build tools never work on derelicts.
+- **Scrap types** (names not final): Tech Scrap, Weapons Scrap, Hull Scrap and so on. Each comes from its own kind of part
+  (electronics modules, weapon mounts, hull and walls). The order only strips the parts that yield a ticked type.
+- **Stripping:** crew deconstruct the wreck's parts the way they deconstruct anything else, but the yield is scrap of
+  that part's type. The wreck visibly comes apart, and it is gone when nothing is left.
+- **EVA work:** most derelicts are breached, so salvage is a spacesuit job. The shuttle ferries crew out to the wreck,
+  hauls packed scrap back to the ship (into the scrap bins) and brings crew home when they need rest, food and so on.
+  Walking across through a docked airlock is not part of it: the deploy screen never places a derelict that close.
+- **Aliens first:** a derelict with aliens aboard can't be salvaged until the wreck is cleared.
+- **Processing:** a new **scrapper** module turns scrap into materials (electronics, metal and so on). It is crew work,
+  like any crafting module.
+- **The scrap types replace the generic `item.scrap`.** Events and trades that use it switch to other items.
 
 ## Starmap and factions
 

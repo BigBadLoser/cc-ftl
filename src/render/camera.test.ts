@@ -3,7 +3,7 @@ import { alignedScale, createCamera, floorLevel, nearestLevel, SCALE_QUANTUM, zo
 import { ART_SCALE } from './iso';
 
 /** The fractional levels: down to 1/8 (station hubs), with 1 / ART_SCALE among them. */
-const below = [...new Set([1 / 8, 3 / 16, 1 / 4, 3 / 8, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
+const below = [...new Set([1 / 8, 1 / 4, 1 / ART_SCALE, 1 / 2])].filter((z) => z < 1).sort((a, b) => a - b);
 
 describe('zoom levels', () => {
   it('are whole numbers from 1 up, plus fractional ones below 1 down to 1/8', () => {
@@ -15,6 +15,12 @@ describe('zoom levels', () => {
     for (const z of zoomLevels(4)) {
       expect(Number.isInteger(64 * z) && Number.isInteger(32 * z), `level ${z}`).toBe(true);
       expect(Number.isInteger(z / SCALE_QUANTUM) || Number.isInteger(z), `level ${z}`).toBe(true);
+    }
+  });
+  it('every level above 1/4 maps one art px to a whole number of device px; the smaller two shrink by an exact power of two (#187)', () => {
+    for (const z of zoomLevels(6)) {
+      const dev = z * ART_SCALE; // device px per art px (the camera works in device px, so dpr is already in the level)
+      expect(Number.isInteger(dev) || Number.isInteger(1 / dev), `level ${z}`).toBe(true);
     }
   });
   it('alignedScale snaps a fitted scale down to an aligned one', () => {
@@ -39,7 +45,39 @@ describe('zoom levels', () => {
   });
 });
 
+describe('camera at fractional and sub-1 dpr (browser zoom)', () => {
+  it('sizes the backing store to the physical px, below 1 too', () => {
+    const cam = createCamera(3);
+    cam.resize(1920, 950, 0.8955223880597015);
+    expect([cam.w, cam.h]).toEqual([1719, 851]);
+    cam.resize(1535, 757, 1.25);
+    expect([cam.w, cam.h]).toEqual([1919, 946]);
+  });
+  it('keeps a 1:1 level 1:1 and the origin whole at those ratios', () => {
+    for (const dpr of [0.8955223880597015, 1.25, 1.5]) {
+      const cam = createCamera(3);
+      cam.resize(1600, 800, dpr);
+      cam.setZoom(1 / ART_SCALE);
+      expect(cam.scale * ART_SCALE).toBe(1);
+      cam.pan(3.3, -7.7);
+      expect(Number.isInteger(cam.originX) && Number.isInteger(cam.originY)).toBe(true);
+    }
+  });
+});
+
 describe('camera', () => {
+  it('draws the world on a whole device px, at dpr 1 and 2, whatever the pan and zoom (#187)', () => {
+    for (const dpr of [1, 2]) {
+      const cam = createCamera(3);
+      cam.resize(1333, 777, dpr);
+      for (let i = 0; i < 40; i++) {
+        cam.pan(0.37 * i, -0.61 * i);
+        cam.centerOn(i * 0.173 + 0.5, -i * 0.291);
+        cam.zoomAt(i % 2 ? 1.2 : 1 / 1.2, 300, 200);
+        expect(Number.isInteger(cam.originX) && Number.isInteger(cam.originY)).toBe(true);
+      }
+    }
+  });
   it('starts at the old default size: zoom = dpr / ART_SCALE, on a level', () => {
     for (const dpr of [1, 2, 3]) {
       const cam = createCamera(3);
@@ -79,10 +117,10 @@ describe('framing big things', () => {
     const cam = createCamera(3);
     cam.resize(1440, 900, 1);
     cam.fitZoom(0.2);
-    expect(cam.zoom).toBe(3 / 16);
+    expect(cam.zoom).toBe(1 / 8);
     cam.fitZoom(0.01);
     expect(cam.zoom).toBe(1 / 8);
     cam.zoomAt(2, 700, 450);
-    expect(cam.zoom).toBe(3 / 16);
+    expect(cam.zoom).toBe(1 / 4);
   });
 });
