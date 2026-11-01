@@ -85,7 +85,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 - `templates.ts`: sheets of hand-drawn templates (starter ships and their variants), the iso view and the board.
 - `templateDraw.py`: a drawing aid for hand-drawn templates (rooms, outlines, doors, beams, containers, modules).
 - `starters/`: the starter ship variants (#241): `<ship>.py` draws the current round, `<ship>.ts` is the generated variant
-  file the CLI reads, `<ship>R3.*` keep the earlier round for reference (not tested), `picks.ts` lists the shipped
+  file the CLI reads, `<ship>R3.*` and `<ship>R4.*` keep earlier rounds for reference (not tested), `picks.ts` lists the shipped
   starters, `kits.ts` and `variants*.test.ts` keep every current variant playable.
 
 ## How to iterate
@@ -126,7 +126,8 @@ node tools/shipgen/cli.js --templates tools/shipgen/starters/picks.ts --views is
 - **Drawing:** `tools/shipgen/starters/<ship>.py` builds the variants with `tools/shipgen/templateDraw.py`
   (`Ship.room`, `hull` from column extents for stepped or tapered outlines, `vline` / `hline` interior walls, `door`,
   `beam`, `box` for a clamped container, `Shift` to place a block at an offset, `section` to head a group of modules
-  with a comment, `show` to print the grid with a coordinate ruler). `python3 tools/shipgen/starters/<ship>.py`
+  with a comment, `show` to print the grid with a coordinate ruler). `starters/common.py` adds `room(s, name, x0, y0, x1, y1)`:
+  a walled room (walls forced even inside an outline) with `row()` to line furniture along its north or south wall. `python3 tools/shipgen/starters/<ship>.py`
   rewrites `<ship>.ts`; then render the board. Edit the `.py`, not the generated `.ts`.
 - **Playability:** `tools/shipgen/starters/variants.test.ts` checks every variant against the starter ships' rules
   (valid template, the ship's kit, beds, galley, helm, life support, airlock, hull load under 0.85);

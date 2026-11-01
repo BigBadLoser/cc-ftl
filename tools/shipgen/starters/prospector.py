@@ -1,145 +1,130 @@
-"""Prospector variants, round 4: new concepts only, no containers (#241). Run: python3 tools/shipgen/starters/prospector.py"""
-import math
+"""Prospector variants, round 5: new concepts with proper rooms, no containers (#241). Run: python3 tools/shipgen/starters/prospector.py"""
 from common import *  # noqa: F401,F403
 
 CREW = ['role.pilot', 'role.engineer', 'role.engineer']
 STOCK = [STOCK_BUILD, [{'item': 'item.scrap', 'count': 80}, {'item': 'item.ice', 'count': 10}, {'item': 'item.ration', 'count': 12}, {'item': 'item.fuel', 'count': 16}], [{'item': 'item.rifle', 'count': 1}, {'item': 'item.sidearm', 'count': 2}, {'item': 'item.blade', 'count': 1}, {'item': 'item.water', 'count': 30}, {'item': 'item.oxygen', 'count': 20}]]
+RK = [('storage_rack', {'stock': STOCK[0]}), ('storage_rack', {'stock': STOCK[1]}), ('storage_rack', {'stock': STOCK[2]})]
 
 
-def racks(s, pts, rot=0):
-    for (x, y), st in zip(pts, STOCK): s.m('storage_rack', x, y, rot, stock=st)
-
-
-def dump_truck():
-    s = Ship('DUMP TRUCK', 34, 26, CREW, 'one huge open ore tub; a tiny cab perched on its front corner, the engines tucked under the back')
-    s.room(1, 1, 10, 10); s.room(8, 5, 28, 22); s.room(28, 7, 33, 19)
-    for d in [(28, 14)]: s.door(*d)
-    s.section('Cab (front corner): helm, gun console, three bunks, galley, life support')
-    s.m('helm', 2, 2); s.m('weaponsConsole', 6, 2); s.m('lifeSupport', 9, 2)
-    for x in (2, 3, 4): s.m('bed', x, 6)
-    s.m('galley', 6, 8, **GALLEY)
-    s.lights((5, 5), (8, 5), (2, 9), (9, 9))
-    s.section('Tub: the pod bay at the front, refinery, rows of ore bins, pallets and racks, the laser, shield, airlock')
-    s.m('pod_bay', 9, 12, vehicle='vehicle.mining_pod'); s.m('burstLaser', 9, 20)
-    s.m('refinery', 12, 6); s.m('storage_ore_large', 16, 6); s.m('storage_ore_large', 20, 6); s.m('storage_ore', 24, 6)
-    s.m('storage_ore', 15, 11); s.m('storage_ore', 18, 11); s.m('storage_ore', 21, 11)
-    s.m('storage_pallet', 15, 15); s.m('storage_pallet', 18, 15); s.m('storage_pallet', 21, 15)
-    racks(s, [(14, 20), (16, 20), (18, 20)], 2)
-    s.m('shieldGen', 24, 19); s.m('lifeSupport', 26, 12); s.m('airlock', 21, 19, 2)
-    s.lights((10, 7), (15, 9), (19, 9), (24, 10), (12, 14), (24, 14), (11, 18), (16, 18), (24, 17), (27, 21), (20, 21))
-    s.section('Engine block')
-    s.m('engine', 29, 8, 1); s.m('engine', 29, 15, 1); s.m('reactor', 29, 12); s.m('reactor', 31, 12)
-    s.lights((30, 14), (32, 14))
-    return s
-
+def pod(x0, y0, x1, y1):
+    """A rectangle with its corners cut by one tile (a rounded tank or pod)."""
+    return [(x0, y0 + 1, y1 - 1)] + [(x, y0, y1) for x in range(x0 + 1, x1)] + [(x1, y0 + 1, y1 - 1)]
 
 
 def octagon(cx, cy, r, flat):
-    """Hull columns of an octagon: half-height r, the middle `flat` columns either side of cx full height."""
     return [(x, cy - (r - max(0, abs(x - cx) - flat)), cy + (r - max(0, abs(x - cx) - flat))) for x in range(cx - r - flat + 1, cx + r + flat)]
 
 
-def silos():
-    s = Ship('SILOS', 31, 29, CREW, 'three round ore silos stacked across the bow, the works and crew in a block behind them')
-    hull(s, octagon(7, 5, 4, 3) + octagon(7, 14, 4, 3) + octagon(7, 23, 4, 3))
-    s.room(12, 8, 30, 20)
-    vline(s, 19, 8, 20); vline(s, 25, 8, 20)
-    for d in [(19, 12), (25, 15)]: s.door(*d)
-    s.section('North silo: the refinery and an ore bin; middle silo: ore bins; south silo: a big ore bin and the laser')
-    s.m('refinery', 5, 3); s.m('storage_ore', 9, 3)
-    s.m('storage_ore_large', 5, 13); s.m('storage_ore', 9, 15)
-    s.m('storage_ore_large', 5, 22); s.m('burstLaser', 9, 22)
-    s.lights((3, 5), (11, 5), (7, 9), (3, 14), (11, 13), (7, 19), (3, 23), (11, 23), (7, 25))
-    s.section('Hold: the pod bay, a pallet, racks, shield, life support')
-    s.m('pod_bay', 13, 9, vehicle='vehicle.mining_pod'); s.m('storage_pallet', 16, 13); s.m('shieldGen', 17, 15); s.m('lifeSupport', 18, 9)
-    racks(s, [(13, 19), (15, 19), (17, 19)], 2)
-    s.lights((16, 9), (14, 15), (13, 12), (19, 18) if False else (16, 17))
-    s.section('Crew: helm, gun console, three bunks, galley, life support, the airlock')
-    s.m('helm', 20, 9); s.m('weaponsConsole', 23, 9); s.m('galley', 21, 12, **GALLEY); s.m('lifeSupport', 24, 13)
-    for x in (20, 21, 22): s.m('bed', x, 15)
-    s.m('airlock', 22, 17, 2)
-    s.lights((23, 12), (20, 18), (24, 16))
-    s.section('Engine room')
-    s.m('engine', 26, 9, 1); s.m('engine', 26, 16, 1); s.m('reactor', 26, 13); s.m('reactor', 28, 13)
-    s.lights((26, 15), (29, 15))
+def saddlebags():
+    s = Ship('SADDLEBAGS', 34, 26, CREW, 'a slim spine with two big holds slung either side like saddlebags: ore above, the pod hangar below')
+    hull(s, [(x, 13 - min(6, x + 2), 13 + min(6, x + 2)) for x in range(1, 9)])
+    hline(s, 0, 8, 13)
+    s.section('Bridge (bow, upper): helm and gun console')
+    s.m('helm', 5, 8); s.m('weaponsConsole', 5, 11); s.lights((7, 12), (4, 9), (2, 12))
+    s.section('Quarters (bow, lower): three bunks; the burst laser in the chin')
+    for x in (5, 6, 7): s.m('bed', x, 14)
+    s.m('burstLaser', 3, 15); s.lights((6, 17))
+    s.lights((2, 14), (7, 17))
+    room(s, 'Spine corridor', 8, 11, 25, 15).light((10, 13), (17, 13), (23, 13))
+    no = room(s, 'Ore hold (north saddlebag): refinery and ore bins', 10, 2, 22, 11)
+    no.m('refinery', 11, 3); no.m('storage_ore_large', 15, 3); no.m('storage_ore', 19, 3); no.m('storage_ore', 19, 7); no.m('lifeSupport', 21, 9); no.light((12, 9), (17, 8), (21, 6))
+    so = room(s, 'Pod hangar (south saddlebag): the pod bay, a pallet, racks, the airlock', 10, 15, 22, 24)
+    so.m('pod_bay', 11, 17, vehicle='vehicle.mining_pod'); so.m('storage_pallet', 16, 17); so.row(RK, x=11, wall='s'); so.m('airlock', 18, 21, 2)
+    so.light((15, 16), (21, 17), (13, 21))
+    ga = room(s, 'Galley', 22, 7, 25, 11); ga.m('galley', 23, 8, **GALLEY); ga.m('lifeSupport', 24, 9); ga.light((23, 10))
+    sh = room(s, 'Shield room', 22, 15, 25, 19); sh.m('shieldGen', 23, 17); sh.light((24, 16))
+    er = room(s, 'Engine room: two engines, two reactors', 25, 7, 33, 19)
+    er.m('engine', 29, 8, 1); er.m('engine', 29, 15, 1); er.m('reactor', 26, 8); er.m('reactor', 26, 16); er.light((28, 10), (30, 13), (26, 13), (28, 17))
+    for d in [(8, 12), (8, 14), (16, 11), (16, 15), (23, 11), (23, 15), (25, 13)]: s.door(*d)
     return s
 
 
-def spider():
-    s = Ship('SPIDER', 34, 31, CREW, 'a crew hub with four stepped legs: refinery and pod bay on the front pair, engines on the back pair')
-    s.room(11, 11, 23, 19)
-    for a in [(6, 5, 13, 12), (1, 1, 8, 8), (6, 18, 13, 25), (1, 22, 8, 29), (21, 5, 28, 12), (26, 1, 33, 8), (21, 18, 28, 25), (26, 22, 33, 29)]: s.room(*a)
-    s.section('Front-north leg: refinery and ore bins')
-    s.m('refinery', 2, 2); s.m('storage_ore', 5, 2); s.m('storage_ore', 8, 7); s.m('storage_ore_large', 9, 10) if False else None
-    s.lights((7, 5), (11, 9), (6, 7))
-    s.section('Front-south leg: the pod bay at the foot, the laser, pallet and racks')
-    s.m('pod_bay', 2, 24, vehicle='vehicle.mining_pod'); s.m('burstLaser', 2, 27) if False else None
-    s.m('storage_pallet', 11, 21); s.m('burstLaser', 2, 27)
-    racks(s, [(10, 19), (9, 22), (7, 24)])
-    s.lights((6, 23), (8, 20), (4, 28), (12, 23))
-    s.section('Hub: helm, gun console, three bunks, galley, life support, shield')
-    s.m('helm', 15, 12); s.m('weaponsConsole', 19, 12); s.m('lifeSupport', 12, 15)
-    for x in (13, 14, 15): s.m('bed', x, 17)
-    s.m('galley', 18, 15, **GALLEY); s.m('shieldGen', 20, 17)
-    s.lights((14, 15), (17, 14), (22, 14), (17, 18))
-    s.section('Back-north leg: an engine at the foot, a reactor, the airlock')
-    s.m('engine', 29, 2, 1); s.m('reactor', 22, 9) if False else None
-    s.m('reactor', 24, 9); s.m('airlock', 22, 5); s.m('lifeSupport', 27, 7)
-    s.lights((22, 10), (27, 5), (32, 7))
-    s.section('Back-south leg: an engine at the foot, a reactor, stores')
-    s.m('engine', 29, 24, 1); s.m('reactor', 24, 21)
-    s.lights((22, 23), (27, 27), (32, 23), (26, 20))
+
+def mining_train():
+    s = Ship('MINING TRAIN', 38, 19, CREW, 'four cars on short couplings: cab, refinery car, ore car, engine car')
+    for x0, x1 in [(1, 8), (10, 18), (20, 28), (30, 37)]: hull(s, [(x, 3, 15) for x in range(x0, x1 + 1)])
+    for x0 in (8, 18, 28): room(s, 'Coupling', x0, 7, x0 + 2, 11).light((x0 + 1, 9))
+    for x0, x1 in [(1, 8), (10, 18), (20, 28)]: hline(s, x0, x1, 9)
+    br = Room(s, 1, 3, 8, 9, 'Cab: bridge'); s.section('Cab: bridge'); br.m('helm', 2, 4); br.m('weaponsConsole', 5, 4); br.light((7, 8), (2, 7))
+    s.section('Cab: quarters'); qu = Room(s, 1, 9, 8, 15, 'Cab: quarters'); qu.row(['bed', 'bed', 'bed', 'lifeSupport'], wall='s'); qu.m('burstLaser', 2, 10); qu.light((7, 11), (6, 14))
+    s.section('Refinery car: the refinery and an ore bin'); rf = Room(s, 10, 3, 18, 9, 'Refinery car'); rf.m('refinery', 11, 4); rf.m('storage_ore', 15, 4); rf.light((17, 8), (15, 8))
+    s.section('Refinery car: galley, a rack, life support'); ga = Room(s, 10, 9, 18, 15, 'Galley'); ga.row([('galley', GALLEY), 'mess_table', RK[2]], wall='s'); ga.m('lifeSupport', 17, 13); ga.light((14, 10), (11, 11))
+    s.section('Ore car: the pod bay and a big ore bin'); pd = Room(s, 20, 3, 28, 9, 'Ore car: pod bay'); pd.m('pod_bay', 21, 4, vehicle='vehicle.mining_pod'); pd.m('storage_ore_large', 25, 4); pd.light((27, 8), (21, 8))
+    s.section('Ore car: racks, shield, the airlock'); ho = Room(s, 20, 9, 28, 15, 'Ore car: hold'); ho.row(RK[:2], x=22, y=10); ho.m('airlock', 24, 12, 2)
+    ho.m('shieldGen', 21, 13); ho.light((27, 12), (23, 12))
+    s.section('Engine car: two engines, two reactors, the airlock'); en = Room(s, 30, 3, 37, 15, 'Engine car')
+    en.m('engine', 33, 4, 1); en.m('engine', 33, 11, 1); en.m('reactor', 31, 4); en.m('reactor', 31, 13); en.light((32, 9), (35, 9), (31, 7))
+    for d in [(8, 8), (8, 10), (10, 8), (10, 10), (18, 8), (18, 10), (20, 8), (20, 10), (28, 8), (28, 10), (30, 9)]: s.door(*d)
     return s
 
 
-def sidewinder():
-    s = Ship('SIDEWINDER', 34, 26, CREW, 'a long ore hold with the crew cab on a sponson to one side and an engine pod to the other')
-    s.room(1, 9, 33, 17); s.room(11, 1, 22, 9); s.room(21, 17, 29, 24)
-    vline(s, 11, 9, 17); vline(s, 26, 9, 17)
-    for d in [(11, 13), (26, 13), (16, 9), (24, 17)]: s.door(*d)
-    s.section('Bow: the laser in the nose, refinery and ore bins')
-    s.m('burstLaser', 2, 10); s.m('refinery', 5, 10); s.m('storage_ore', 2, 14); s.m('storage_ore', 8, 10)
-    s.lights((4, 13), (9, 15), (2, 12))
-    s.section('Hold: the pod bay, pallets, a big ore bin, racks, shield')
-    s.m('pod_bay', 12, 10, vehicle='vehicle.mining_pod'); s.m('storage_ore_large', 17, 10); s.m('storage_pallet', 21, 10); s.m('shieldGen', 21, 15)
-    racks(s, [(12, 15), (14, 15), (16, 15)], 2)
-    s.lights((15, 12), (20, 13), (25, 11), (19, 16))
-    s.section('Cab sponson (north): helm, gun console, three bunks, galley, life support, the airlock')
-    s.m('helm', 12, 2); s.m('weaponsConsole', 16, 2); s.m('airlock', 19, 1)
-    for x in (12, 13, 14): s.m('bed', x, 6)
-    s.m('galley', 16, 6, **GALLEY); s.m('lifeSupport', 21, 5)
-    s.lights((15, 4), (12, 8), (20, 8), (18, 5))
-    s.section('Engine pod (south) and stern: two engines, reactors, life support')
-    s.m('engine', 25, 19, 1); s.m('engine', 29, 10, 1); s.m('reactor', 22, 18); s.m('reactor', 31, 14); s.m('lifeSupport', 22, 21)
-    s.lights((24, 23), (28, 15), (30, 16), (27, 10))
+
+def excavator():
+    s = Ship('EXCAVATOR', 34, 27, CREW, 'a works block with a jointed boom reaching down and forward to a bucket: the pod bay')
+    br = room(s, 'Bridge: helm and gun console', 12, 2, 19, 7); br.m('helm', 13, 3); br.m('weaponsConsole', 16, 3); br.light((18, 6), (13, 6))
+    qu = room(s, 'Quarters: three bunks, life support', 19, 2, 25, 7); qu.row(['bed', 'bed', 'bed', 'lifeSupport']); qu.light((24, 6))
+    ga = room(s, 'Galley', 25, 2, 28, 7); ga.m('galley', 26, 3, **GALLEY); ga.light((27, 6))
+    room(s, 'Corridor', 12, 7, 28, 11).light((14, 9), (20, 9), (26, 9))
+    rf = room(s, 'Refinery: the refinery and two ore bins', 12, 11, 20, 17); rf.m('refinery', 13, 12); rf.m('storage_ore', 17, 12); rf.m('storage_ore', 17, 15, 2); rf.light((19, 16), (19, 12), (14, 16))
+    sh = room(s, 'Shield and life support', 20, 11, 24, 17); sh.m('shieldGen', 21, 15); sh.m('lifeSupport', 23, 15); sh.light((23, 12))
+    al = room(s, 'Airlock room', 24, 11, 28, 17); al.m('airlock', 25, 14, 2); al.light((27, 12))
+    er = room(s, 'Engine room: two engines, two reactors', 28, 2, 33, 17); er.m('engine', 29, 3, 1); er.m('engine', 29, 13, 1); er.m('reactor', 31, 7); er.m('reactor', 31, 10)
+    er.light((29, 8), (32, 12), (29, 12))
+    bm = room(s, 'Boom: racks', 10, 17, 15, 21); bm.m('storage_rack', 11, 18, 0, stock=STOCK[0]); bm.m('storage_rack', 13, 20, 2, stock=STOCK[1]); bm.light((14, 18), (11, 20))
+    bk = room(s, 'Bucket: the pod bay, a rack, the burst laser', 4, 19, 10, 25); bk.m('pod_bay', 5, 20, vehicle='vehicle.mining_pod'); bk.m('burstLaser', 5, 23); bk.m('storage_rack', 7, 24, 2, stock=STOCK[2])
+    bk.light((9, 24), (8, 20))
+    for d in [(15, 7), (22, 7), (26, 7), (16, 11), (22, 11), (26, 11), (28, 9), (13, 17), (10, 20)]: s.door(*d)
     return s
 
 
-def chisel():
-    s = Ship('CHISEL', 30, 25, CREW, 'an ore ram: a heavy bow sloping back on one side like a chisel, the refinery right behind the edge')
-    hull(s, [(x, 2, min(22, 8 + x)) for x in range(1, 30)])
-    vline(s, 9, 0, 24); vline(s, 18, 0, 24); vline(s, 24, 0, 24); hline(s, 18, 24, 11)
-    for d in [(9, 6), (9, 13), (18, 7), (18, 16), (21, 11), (24, 7), (24, 16)]: s.door(*d)
-    s.section('Ram: refinery and ore bins behind the sloped edge, the laser on the blunt corner')
-    s.m('refinery', 2, 3); s.m('burstLaser', 6, 3); s.m('storage_ore', 5, 7)
-    s.lights((3, 8), (8, 9), (8, 3), (8, 14))
-    s.section('Hold: the pod bay, the airlock, a big ore bin, pallets, racks, shield')
-    s.m('pod_bay', 10, 3, vehicle='vehicle.mining_pod'); s.m('airlock', 14, 2); s.m('storage_ore_large', 13, 7); s.m('storage_pallet', 11, 15); s.m('storage_pallet', 14, 15)
-    racks(s, [(10, 10), (12, 10), (14, 10)])
-    s.m('shieldGen', 15, 17); s.m('lifeSupport', 17, 3)
-    s.lights((11, 7), (17, 8), (11, 13), (16, 13), (13, 19), (17, 21))
-    s.section('Bridge (north) and quarters (south)')
-    s.m('helm', 19, 3); s.m('weaponsConsole', 21, 7); s.m('lifeSupport', 23, 3)
-    for x in (19, 20, 21): s.m('bed', x, 19)
-    s.m('galley', 19, 13, **GALLEY); s.m('airlock', 21, 19, 2) if False else None
-    s.lights((22, 6), (22, 9), (23, 14), (22, 21))
-    s.section('Engine room')
-    s.m('engine', 25, 3, 1); s.m('engine', 25, 18, 1); s.m('reactor', 25, 11); s.m('reactor', 27, 11); s.m('airlock', 25, 22, 2) if False else None
-    s.lights((25, 8), (28, 14), (25, 15))
+
+def tanker():
+    s = Ship('TANKER', 36, 25, CREW, 'a corridor ship with round pods budding off it, each pod one job: ore tank, bunks, pod bay, galley')
+    hull(s, pod(8, 4, 16, 11) + pod(19, 6, 26, 11) + pod(8, 15, 16, 22) + pod(19, 15, 26, 20))
+    hull(s, [(x, 13 - min(4, x + 1), 13 + min(4, x + 1)) for x in range(1, 8)])
+    room(s, 'Corridor', 7, 11, 27, 15).light((9, 13), (16, 13), (25, 13))
+    s.section('Bridge (bow): helm and gun console')
+    s.m('helm', 3, 11); s.m('weaponsConsole', 4, 14); s.lights((6, 12), (2, 14))
+    s.section('Ore tank (north): the refinery and two ore bins')
+    s.m('refinery', 10, 5); s.m('storage_ore', 13, 5); s.m('storage_ore', 14, 8); s.lights((10, 10), (15, 6), (13, 9))
+    s.section('Bunk pod: three bunks and life support')
+    for x in (21, 22, 23): s.m('bed', x, 7)
+    s.m('lifeSupport', 24, 7); s.lights((21, 10), (24, 10))
+    s.section('Pod tank (south): the pod bay, the burst laser')
+    s.m('pod_bay', 9, 17, vehicle='vehicle.mining_pod'); s.m('burstLaser', 13, 20); s.lights((10, 21), (15, 17), (13, 16))
+    s.section('Galley pod: galley and life support')
+    s.m('galley', 21, 18, **GALLEY); s.m('lifeSupport', 24, 16); s.lights((21, 16), (24, 19))
+    en = room(s, 'Engine room (north): an engine, a reactor, racks', 27, 4, 35, 13); en.m('engine', 31, 5, 1); en.m('reactor', 28, 5)
+    en.m('storage_rack', 28, 11, 0, stock=STOCK[0]); en.m('storage_rack', 30, 11, 0, stock=STOCK[1]); en.light((28, 9), (33, 10))
+    es = room(s, 'Engine room (south): an engine, a reactor, the shield, a rack, the airlock', 27, 13, 35, 22); es.m('engine', 31, 18, 1); es.m('reactor', 29, 15); es.m('shieldGen', 32, 14); es.m('airlock', 28, 19, 2)
+    es.light((28, 14), (34, 16), (31, 17))
+    for d in [(7, 13), (12, 11), (23, 11), (12, 15), (23, 15), (27, 12), (27, 14)]: s.door(*d)
     return s
 
 
-VARIANTS = [lambda: tagged(dump_truck(), 'new'), lambda: tagged(silos(), 'new'), lambda: tagged(spider(), 'new'), lambda: tagged(sidewinder(), 'new'), lambda: tagged(chisel(), 'new')]
+def t_hauler():
+    s = Ship('T-HAULER', 34, 28, CREW, 'a long neck from a small cab to a wide crossbar of holds: ore hold above, pod hangar below, engines between')
+    hull(s, [(x, 14 - min(5, x + 2), 14 + min(5, x + 2)) for x in range(1, 10)])
+    hline(s, 0, 9, 14)
+    s.section('Bridge (cab, upper): helm, gun console, the burst laser')
+    s.m('helm', 4, 10)
+    s.m('weaponsConsole', 7, 10); s.lights((3, 13), (8, 13))
+    s.section('Quarters (cab, lower): three bunks, life support, the burst laser')
+    for x in (4, 5, 6): s.m('bed', x, 17)
+    s.m('lifeSupport', 8, 17); s.m('burstLaser', 2, 15); s.lights((7, 15), (4, 16))
+    room(s, 'Neck corridor', 9, 12, 22, 16).light((11, 14), (17, 14), (21, 14))
+    ga = room(s, 'Galley', 12, 8, 18, 12); ga.m('galley', 13, 9, **GALLEY); ga.m('mess_table', 16, 9); ga.light((14, 11))
+    sh = room(s, 'Shield and life support', 12, 16, 18, 20); sh.m('shieldGen', 13, 18); sh.m('lifeSupport', 16, 18); sh.light((17, 17))
+    oh = room(s, 'Ore hold: refinery and ore bins', 22, 2, 33, 9); oh.m('refinery', 23, 3); oh.m('storage_ore_large', 27, 3); oh.m('storage_ore', 30, 3); oh.light((26, 8), (31, 8), (29, 6))
+    er = room(s, 'Engine room: two engines, two reactors', 22, 9, 33, 19); er.m('engine', 29, 10, 1); er.m('engine', 29, 15, 1); er.m('reactor', 24, 10); er.m('reactor', 24, 16)
+    er.light((23, 13), (27, 12), (27, 17), (32, 14))
+    ph = room(s, 'Pod hangar: the pod bay, racks, the airlock', 22, 19, 33, 26); ph.m('pod_bay', 23, 20, vehicle='vehicle.mining_pod'); ph.m('storage_rack', 26, 20, 0, stock=STOCK[0])
+    ph.m('storage_rack', 26, 25, 2, stock=STOCK[1]); ph.m('storage_rack', 28, 25, 2, stock=STOCK[2]); ph.m('airlock', 30, 23, 2); ph.light((23, 24), (29, 20), (32, 21))
+    for d in [(9, 13), (9, 15), (15, 12), (15, 16), (22, 14), (27, 9), (28, 19)]: s.door(*d)
+    return s
+
+
+VARIANTS = [lambda: tagged(saddlebags(), 'new'), lambda: tagged(mining_train(), 'new'), lambda: tagged(excavator(), 'new'), lambda: tagged(tanker(), 'new'), lambda: tagged(t_hauler(), 'new')]
 
 if __name__ == '__main__':
-    write('prospector', [v() for v in VARIANTS], 'Prospector variants, round 4: new concepts only')
+    write('prospector', [v() for v in VARIANTS], 'Prospector variants, round 5: new concepts with proper rooms')
