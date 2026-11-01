@@ -21,7 +21,7 @@ export const ROOM_EXPECT: Record<string, RoomExpect> = {
   weapons: { density: [0.2, 0.8], aspect: 3, minSide: 3 },
   hangar: { density: [0.1, 0.6], aspect: 3, minSide: 4 },
   cargo: { density: [0.3, 0.85], aspect: 4, minSide: 3 },
-  quarters: { density: [0.2, 0.6], aspect: 3, minSide: 3 },
+  quarters: { density: [0.2, 0.6], aspect: 3, minSide: 2 },
   support: { density: [0.15, 0.6], aspect: 3, minSide: 3 },
   medbay: { density: [0.15, 0.6], aspect: 3, minSide: 3 },
   armoury: { density: [0.2, 0.7], aspect: 3, minSide: 3 },

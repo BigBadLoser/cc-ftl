@@ -1,11 +1,11 @@
 /**
- * Station bench: rim protrusions against the actual hull. The hull is the outermost non-space tile (wall or floor) per
- * angle bin around the template centre, airlock footprints excluded. Its circle radius Rc is the median of those bin
- * radii. A room-floor tile protrudes when it lies in a local bump: its bin's outer radius exceeds both Rc and the median
- * of the neighbouring bins (+-3, itself excluded) by at least BUMP tiles, and the tile itself is farther out than that
- * larger reference by at least BUMP. Docks (role dock) are excluded. Share = protruding tiles / room-floor tiles.
+ * Station bench: rim protrusions against the hull circle. The hull circle is fitted robustly: Rc = median over 48 angle
+ * bins of the outermost non-space tile's distance from the template centre, airlock footprints excluded (docks stick out
+ * by design). A room (not role dock) tile protrudes when it lies farther than Rc + MARGIN. A room glued to the rim spans
+ * several bins, so it is a plateau that a per-bin hull would follow; the median ignores it. Share = protruding tiles /
+ * room-floor tiles.
  */
-const BINS = 48, BUMP = 2, NEIGH = 3;
+const BINS = 48, MARGIN = 2;
 
 export function protrusionShare(W: number, H: number, rows: readonly string[], skip: Set<number>, room: number[]): number {
   const cx = W / 2, cy = H / 2;
@@ -20,11 +20,6 @@ export function protrusionShare(W: number, H: number, rows: readonly string[], s
   }
   const med = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
   const Rc = med(outer);
-  const ref = outer.map((o, b) => {
-    const nb: number[] = [];
-    for (let k = 1; k <= NEIGH; k++) nb.push(outer[(b + k) % BINS] as number, outer[(b - k + BINS) % BINS] as number);
-    return o - Math.max(Rc, med(nb)) >= BUMP ? Math.max(Rc, med(nb)) : Infinity;
-  });
-  const hit = room.filter((i) => dist(i) - (ref[binOf(i)] as number) >= BUMP).length;
+  const hit = room.filter((i) => dist(i) > Rc + MARGIN).length;
   return room.length ? hit / room.length : 0;
 }

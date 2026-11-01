@@ -8,7 +8,7 @@ import { audit } from './audit';
 import { ROLE_TINT } from './draw';
 import { classifyVoids } from './stationBenchVoids';
 import { protrusionShare } from './stationBenchHull';
-import { withinExpect } from './stationBenchExpect';
+import { expectFor, withinExpect } from './stationBenchExpect';
 
 const defs = content.modules as Record<string, ModuleDef>;
 
@@ -134,6 +134,7 @@ export function measure(g: GenResult): Metrics {
   const expect: Record<string, [number, number]> = {};
   let slivers = 0;
   const cargoRect: boolean[] = [];
+  const sliverRoles = new Set<string>();
   const rq = new Map(roomQuality({ rows, modules: mods, roomOf: g.roomOf, defs }).map((q) => [q.room, q]));
   const footprintIn = new Map<number, number>();
   for (const m of mods) {
@@ -154,7 +155,7 @@ export function measure(g: GenResult): Metrics {
     if (RECT_ROLES.includes(r.role) && fill < 1) badRects.push(`${r.role}#${r.id}`);
     if (r.role === 'cargo') cargoRect.push(fill >= 1);
     const th = thickness(r.tiles, g.roomOf, W, H, r.id);
-    if (th < 3 && r.role !== 'dock') slivers++;
+    if (th < expectFor(r.role).minSide) { slivers++; sliverRoles.add(r.role); }
     const ds = r.tiles.map((i) => dist[i] as number).filter((v) => v >= 0);
     if (ds.length === 0) { unreached++; } else (depth[r.role] ??= []).push(Math.min(...ds));
     const e = (expect[r.role] ??= [0, 0]);
@@ -182,7 +183,7 @@ export function measure(g: GenResult): Metrics {
     slivers, aspects, fills, protrusion, depth,
     viaQuarters: audit(g).viaQuarters.length,
     quality: real.map((r) => rq.get(r.id)?.score).filter((v): v is number => v !== undefined),
-    expect, params: paramsOf(g, faces), design: [...(slivers ? [`slivers`] : []), ...[...new Set(badRects.map((b) => b.split('#')[0]))].map((r) => `non-rect machine room: ${r}`)], sig: signature(g), sigS: signature(g, true), faces,
+    expect, params: paramsOf(g, faces), design: [...[...sliverRoles].map((r) => `sliver: ${r}`), ...[...new Set(badRects.map((b) => b.split('#')[0]))].map((r) => `non-rect machine room: ${r}`)], sig: signature(g), sigS: signature(g, true), faces,
   };
 }
 
