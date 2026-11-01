@@ -150,10 +150,19 @@ export const FLEET_START_REST = 10;
 export const TRADE_GUESTS = 3;
 /** Tries at finding a generator seed whose hull family is the size class a roster slot asked for. */
 export const SEED_TRIES = 48;
+/**
+ * Story events (storyHop.ts): the chance a finished hop draws one, and on a lane with a mid-lane anchor. Before, every trip drew one on arrival
+ * (certain) plus a timed draw about every 3 minutes wherever the ship sat; now only hops draw: one in five plain hops, one in two anchored lanes
+ * (user, 2026-10-24: 50% per hop was too often; a 3-hop trip averages 0.6 events).
+ */
+export const STORY_HOP_CHANCE = 0.2;
+export const STORY_ANCHOR_CHANCE = 0.5;
 /** Chance a non-hostile fleet crossing the player produces a hail or scan (distress always offers help; hostile interdictions always happen). */
 export const PASSING_ENCOUNTER_CHANCE = 0.12;
 /** At most this many ships other than the player's are in a live node when a fleet's ships materialise (the sector is small; the rest wait as descriptors). */
 export const FLEET_NODE_SHIPS = 3;
+/** Fleets this many jumps from the player's node (or routed to it) have their ship generated ahead of arrival (fleetShips.ts `warmFleets`). */
+export const WARM_HOPS = 2;
 /** Turns before the same fleet can meet the player again, and before an unresolved encounter expires (interdictions last longer). */
 export const ENCOUNTER_COOLDOWN = 6;
 export const ENCOUNTER_TTL = { alert: 3, interdict: 6 } as const;
@@ -223,6 +232,10 @@ export const SENSOR_HOPS = 3;
 export const FRONTIER_RING = 1;
 
 /** Arrival rolls while the player stays at a node: every ARRIVAL_EVERY_SEC, chance ARRIVAL_PER_DANGER x danger (x territory). */
+/** Opening grace (grace.ts): no unprompted hostile arrival at a danger-0 node for this many seconds of game time... */
+export const GRACE_SEC = 20 * 60;
+/** ...or until the goal chain is past this act index (0 = the first act, "Get underway", is done), whichever comes first. */
+export const GRACE_ACT = 0;
 export const ARRIVAL_EVERY_SEC = 60;
 export const ARRIVAL_PER_DANGER = 0.05;
 export const ARRIVAL_MAX_CHANCE = 0.45;
@@ -249,6 +262,8 @@ export const MARKET_CAP_MULT = 3;
 export const MARKET_WANT_TURNS = 20;
 /** Deviations smaller than this from the baseline are not stored. */
 export const MARKET_EPS = 0.05;
+/** A port's goods start up to this share above or below their baseline (seeded per port and good), so prices differ from the first turn. */
+export const MARKET_START_SPREAD = 0.4;
 /** Units one hull of a size class hauls. */
 export const CARGO_BY_SIZE = { small: 20, medium: 40, heavy: 80 } as const;
 /** A trader only buys a good for the next stop when the price there beats the price here by this fraction, and takes at most this share of the stock. */
@@ -260,3 +275,14 @@ export const TRADE_CANDIDATES = 6;
 export const MINER_RARE_SHARE = 0.2;
 /** What a miner digs: the common ore, then the rare one (MINER_RARE_SHARE of the load). */
 export const MINER_ORE = ['item.iron_ore', 'item.rare_ore'] as const;
+
+/**
+ * Stranding (stranded.ts). A ship that cannot pay for any jump and finds no fuel on sale in its node may call for a tug. It arrives after DISTRESS_TURNS turns
+ * (game-time turns, TURN_SEC each) with enough fuel for DISTRESS_HOPS of the cheapest jumps (at least DISTRESS_MIN_FUEL units) at DISTRESS_MARKUP times the
+ * item's base price. The tug always delivers: the player pays what they can, and a shortfall costs DISTRESS_UNPAID_REP reputation with the traders.
+ */
+export const DISTRESS_TURNS = 2;
+export const DISTRESS_HOPS = 2;
+export const DISTRESS_MIN_FUEL = 6;
+export const DISTRESS_MARKUP = 3;
+export const DISTRESS_UNPAID_REP = 2;

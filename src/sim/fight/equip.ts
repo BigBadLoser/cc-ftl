@@ -1,13 +1,14 @@
 import { CrewC, DraftedC, PathC, PositionC, type Position } from '../crew/components';
-import { clearPath, isIncapacitated, origin, releaseAssignment } from '../crew/helpers';
+import { abortTask } from '../ai/task';
+import { clearPath, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
-import { dropCarried, spillItems } from '../items/stacks';
+import { spillItems } from '../items/stacks';
 import { storageAdd, storageCount, storageTake } from '../items/storage';
 import { StorageC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Sim } from '../sim';
-import { EquipC, EquipOrderC } from './components';
+import { AllegianceC, EquipC, EquipOrderC } from './components';
 import { handDefOf } from './weapons';
 import { shipIdOf } from '../regions';
 
@@ -28,7 +29,7 @@ function nearestStock(sim: Sim, shipId: number, at: { x: number; y: number }, it
 }
 
 /** True if the crew member stands next to (or on) a tile of the storage module. */
-function atStorage(sim: Sim, pos: Position, storage: number): boolean {
+export function atStorage(sim: Sim, pos: Position, storage: number): boolean {
   const m = sim.world.get(storage, ModuleC);
   const def = m && sim.content.modules[m.def];
   if (!m || !def || shipIdOf(sim, m) !== shipIdOf(sim, pos)) return false;
@@ -44,8 +45,7 @@ export function orderEquip(sim: Sim, crew: number, item: string): string | null 
   if (sim.world.get(crew, EquipC)?.weapon === item) return 'alreadyEquipped';
   const storage = nearestStock(sim, shipIdOf(sim, pos), origin(pos), item);
   if (!storage) return 'noStock';
-  releaseAssignment(sim, crew);
-  dropCarried(sim, crew);
+  abortTask(sim, crew, 'equip');
   sim.world.add(crew, EquipOrderC, { item, storage });
   return null;
 }
@@ -76,7 +76,8 @@ export function equipOrders(sim: Sim): void {
       cancel();
       continue;
     }
-    if (atStorage(sim, pos, order.storage) && pos.toX === pos.x && pos.toY === pos.y) {
+    // Only on arrival: a crew member passing a doorway diagonal to the crate must not take the weapon there and stop (#248).
+    if (path.steps.length === 0 && atStorage(sim, pos, order.storage) && pos.toX === pos.x && pos.toY === pos.y) {
       storageTake(sim, order.storage, order.item, 1);
       const eq = sim.world.get(id, EquipC);
       if (eq) {
@@ -98,7 +99,8 @@ export function equipOrders(sim: Sim): void {
 export function autoLoadout(sim: Sim): void {
   for (const id of sim.world.query(CrewC, PositionC)) {
     if ((sim.tick + id) % 10 !== 0) continue;
-    const loadout = sim.content.roles[sim.world.get(id, CrewC)?.role ?? '']?.loadout;
+    const role = sim.content.roles[sim.world.get(id, CrewC)?.role ?? ''];
+    const loadout = role?.loadout ?? (sim.world.get(id, AllegianceC)?.faction === 'player' ? role?.playerLoadout : undefined);
     if (!loadout || sim.world.get(id, EquipC)?.weapon || sim.world.has(id, EquipOrderC) || sim.world.has(id, DraftedC)) continue;
     if (sim.world.get(id, CrewC)?.activity === 'sleeping') continue;
     for (const item of loadout) if (orderEquip(sim, id, item) === null) break;

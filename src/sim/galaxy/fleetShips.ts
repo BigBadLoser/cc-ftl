@@ -1,10 +1,13 @@
+import { loseStrandedCrew } from '../boarding/stranded';
 import { ShipC } from '../combat/components';
 import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
-import { spawnContact } from './arrivals';
+import { spawnContact, warmContact } from './arrivals';
+import { graceHolds } from './grace';
+import { nodesWithin } from './graph';
 import { owe } from './portIndex';
-import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY } from './tuning';
+import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
 
 /**
@@ -39,6 +42,7 @@ function shipsInPlay(sim: Sim): number {
  * event grid), up to FLEET_NODE_SHIPS ships in the sector. Ships that find no room stay descriptors and are retried by `tendFleets`.
  */
 export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): void {
+  if (node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
   for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c);
 }
 
@@ -90,6 +94,7 @@ export function liftFleet(sim: Sim, f: Fleet): void {
   const gone = new Set<number>(fled.map((c) => c.id));
   for (const c of f.ships) {
     if (c.ship === undefined) continue;
+    loseStrandedCrew(sim, c.ship, 'lifted'); // a boarding party left aboard goes with the ship
     liftShip(sim, c.ship);
     gone.add(c.ship);
     c.ship = undefined;
@@ -127,6 +132,20 @@ export function tendFleet(sim: Sim, f: Fleet, node: string = f.node, escaped?: C
   return lost.length > 0 || fled.length > 0;
 }
 
+/**
+ * Generate, at most one per call, the ship of a fleet that will soon turn up in the player's node (within WARM_HOPS jumps, or routed here) into
+ * the generated-ship memo (arrivals.ts), so `materialiseFleet` finds it ready instead of stalling a tick on `generateShip`. Fleets in galaxy order;
+ * the memo is derived and unsaved, and nothing else is touched, so a run with or without warming plays the same.
+ */
+export function warmFleets(sim: Sim): void {
+  const g = sim.galaxy;
+  const near = nodesWithin(sim, g.current, WARM_HOPS);
+  for (const f of g.fleets) {
+    if (f.node === g.current || !(near.has(f.node) || f.dest === g.current || f.route.includes(g.current))) continue;
+    for (const c of f.ships) if (c.ship === undefined && warmContact(sim, c)) return;
+  }
+}
+
 /** Once a second in the active node: forget ships that are gone, drop fleets with none left, retry ships that had no room. */
 export function tendFleets(sim: Sim): void {
   const g = sim.galaxy;
@@ -138,4 +157,5 @@ export function tendFleets(sim: Sim): void {
     changed = true;
   }
   if (changed) g.rev++;
+  warmFleets(sim);
 }

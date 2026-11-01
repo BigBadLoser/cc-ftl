@@ -1,24 +1,36 @@
+import { whereToSell } from './sellSnapshot';
 import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
-import type { UiTrade, UiStory, UiCombat, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiModule, UiStats, UiStock, UiStorage } from '../ui/api';
+import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiBoarding, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
-import { buildModuleList, buildStats } from './moduleSnapshot';
+import { buildModuleDefs, buildModuleList, buildStats } from './moduleSnapshot';
+import { buildSites } from './siteSnapshot';
+import { buildJobs } from './jobsSnapshot';
+import { buildStranded } from './strandedSnapshot';
+import { buildGoals } from './goalsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
+import { buildCrewDetail } from './crewDetail';
+import type { UiCrewDetail } from '../ui/crewDetailApi';
 import { buildCombat } from './combatSnapshot';
+import { buildBoarding } from './boardingSnapshot';
+import { buildFtl } from './ftlSnapshot';
 import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
+import { buildYard, yardInputs } from './yardSnapshot';
 import { buildStory } from './storySnapshot';
 import { warmOutlines } from './starmapClusters';
 import { warmNebula } from './starmapNebula';
 import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
 import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
-import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute } from '../ui/starmapApi';
+import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute, UiSellGood } from '../ui/starmapApi';
 import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
-import { createStore, type Readable } from './store';
+import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
+import { crateInfo } from './jobsSnapshot';
+import { buildResearch } from './researchSnapshot';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
@@ -49,7 +61,7 @@ export interface InspectSnapshot extends TileRef {
   local: { x: number; y: number };
   structName: string;
   /** The loose item stack on the tile, or null. */
-  stack: { item: string; name: string; count: number } | null;
+  stack: { item: string; name: string; count: number; crate: { job: number; title: string; to: string } | null } | null;
   /** Room id, or 0 when none. */
   room: number;
   fields: { name: string; value: number }[];
@@ -66,20 +78,35 @@ export interface Bridge {
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
   hostiles: Readable<UiCrew[]>;
+  /** The inspector's detail tabs for the one selected crew member of the player's (null otherwise). */
+  crewDetail: Readable<UiCrewDetail | null>;
   modules: Readable<UiModule[]>;
+  /** The build menu's modules; rebuilt when a blueprint is learnt. */
+  moduleDefs: Readable<UiModuleDef[]>;
+  sites: Writable<UiSite[]>;
+  jobs: Readable<UiJobs>;
+  goals: Readable<UiGoals | null>;
+  stranded: Readable<UiStranded | null>;
   stats: Readable<UiStats>;
   stock: Readable<UiStock[]>;
   storages: Readable<UiStorage[]>;
   fabs: Readable<UiFab[]>;
+  research: Readable<UiResearch>;
   combat: Readable<UiCombat>;
+  boarding: Readable<UiBoarding[]>;
+  ftl: Readable<UiFtl | null>;
   shuttles: Readable<UiShuttles>;
   trade: Readable<UiTrade>;
+  /** The hull plan, the quote of the watched station (the open station panel) and the yard order. */
+  yard: Writable<UiYard>;
+  watchYard(station: number): void;
   prizes: Readable<UiPrize[]>;
   mining: Readable<UiMining>;
   story: Readable<UiStory>;
   /** The generated starmap (geometry rebuilt when the galaxy changes; fuel and charge kept fresh). */
   starmap: Readable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  whereToSell(): UiSellGood[];
   /** The deploy picker's data while the ship waits to be placed (null otherwise), the gap-rule check of a spot, and the jump confirm's list. */
   deploy: Readable<UiDeploy | null>;
   deployCheck(x: number, y: number): string | null;
@@ -91,6 +118,8 @@ export interface Bridge {
   /** Pick an option of the open event decision and resume the speed the game was on. */
   chooseStory(choice: string): void;
   setSelected(tile: TileRef | null): void;
+  /** An enemy crew member being inspected: listed among the hostiles even where none of your crew stand. */
+  watchCrew(id: number | null): void;
   setHovered(tile: TileRef | null): void;
   dispatch(cmd: Command): void;
   setSpeed(speed: Speed): void;
@@ -118,15 +147,36 @@ export function createBridge(sim: Sim): Bridge {
   const crew = createStore<UiCrew[]>([]);
   const hostiles = createStore<UiCrew[]>([]);
   let lastHostiles = '';
+  const crewDetail = createStore<UiCrewDetail | null>(null);
+  let lastDetail = 'null';
   const modules = createStore<UiModule[]>([]);
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, o2: null });
+  const moduleDefs = createStore<UiModuleDef[]>(buildModuleDefs(sim));
+  let lastBlueprints = sim.story.blueprints.join(',');
+  const sites = createStore<UiSite[]>([]);
+  const jobs = createStore<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
+  const goals = createStore<UiGoals | null>(null);
+  const stranded = createStore<UiStranded | null>(null);
+  let lastStranded = 'null';
+  let lastGoals = '';
+  let lastJobsKey = '';
+  let lastSites = '[]';
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
+  const research = createStore<UiResearch>(buildResearch(sim));
+  let lastResearch = '';
   const combat = createStore<UiCombat>({ inCombat: false, player: null, enemies: [] });
+  const boarding = createStore<UiBoarding[]>([]);
+  let lastBoarding = '[]';
+  const ftl = createStore<UiFtl | null>(null);
+  let lastFtl = '';
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
+  const yard = createStore<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
+  let yardStation = 0;
+  let lastYard = '';
   const prizes = createStore<UiPrize[]>([]);
   const mining = createStore<UiMining>({ asteroids: [], pods: [] });
   let lastMining = '';
@@ -176,7 +226,7 @@ export function createBridge(sim: Sim): Bridge {
         job: job ? { kind: job.kind, progress: job.progress, work: job.work } : null,
         grid: shipId,
         local: { x: ref.x - grid.x0, y: ref.y - grid.y0 },
-        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count } : null,
+        stack: st ? { item: st.item, name: sim.content.items[st.item]?.name ?? st.item, count: st.count, crate: crateInfo(sim, st.job) } : null,
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,
         fields,
@@ -188,8 +238,9 @@ export function createBridge(sim: Sim): Bridge {
     lastInspect = key;
     inspect.set(snap);
   };
+  let watched: number | null = null;
   const refreshCrew = () => {
-    const lists = buildCrewLists(sim);
+    const lists = buildCrewLists(sim, watched);
     const key = JSON.stringify(lists.crew);
     if (key !== lastCrew) {
       lastCrew = key;
@@ -200,6 +251,12 @@ export function createBridge(sim: Sim): Bridge {
       lastHostiles = hk;
       hostiles.set(lists.hostiles);
     }
+    const detail = watched !== null && (lists.crew.some((c) => c.id === watched) || lists.hostiles.some((c) => c.id === watched)) ? buildCrewDetail(sim, watched) : null;
+    const dk = JSON.stringify(detail);
+    if (dk !== lastDetail) {
+      lastDetail = dk;
+      crewDetail.set(detail);
+    }
   };
   const refreshShip = () => {
     if (frame++ % 4) return;
@@ -208,6 +265,48 @@ export function createBridge(sim: Sim): Bridge {
     if (mk !== lastMods) {
       lastMods = mk;
       modules.set(ml);
+    }
+    const bk = sim.story.blueprints.join(',');
+    if (bk !== lastBlueprints) {
+      lastBlueprints = bk;
+      moduleDefs.set(buildModuleDefs(sim));
+    }
+    const sl = buildSites(sim);
+    const slk = JSON.stringify(sl);
+    if (slk !== lastSites) {
+      lastSites = slk;
+      sites.set(sl);
+    }
+    // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
+    const g = sim.galaxy;
+    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${sim.trade.credits}|${frame >> 5}`;
+    if (jk !== lastJobsKey) {
+      lastJobsKey = jk;
+      jobs.set(buildJobs(sim));
+    }
+    // Stranded without fuel: cheap checks, sent on when changed.
+    if ((frame >> 1) % 4 === 0) {
+      const st = buildStranded(sim);
+      const sk = JSON.stringify(st);
+      if (sk !== lastStranded) {
+        lastStranded = sk;
+        stranded.set(st);
+      }
+    }
+    // The goal chain: cheap, but only sent on when it changed.
+    if ((frame >> 2) % 4 === 0) {
+      const gl = buildGoals(sim);
+      const gk = JSON.stringify(gl);
+      if (gk !== lastGoals) {
+        lastGoals = gk;
+        goals.set(gl);
+      }
+    }
+    const rs = buildResearch(sim);
+    const rk = JSON.stringify(rs);
+    if (rk !== lastResearch) {
+      lastResearch = rk;
+      research.set(rs);
     }
     const logs = [buildStock(sim), buildStorages(sim), buildFabs(sim)] as const;
     const keys = logs.map((l) => JSON.stringify(l));
@@ -231,6 +330,22 @@ export function createBridge(sim: Sim): Bridge {
     lastCombat = key;
     combat.set(snap);
   };
+  const refreshBoarding = () => {
+    if (combatFrame % 3) return;
+    const snap = buildBoarding(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastBoarding) return;
+    lastBoarding = key;
+    boarding.set(snap);
+  };
+  const refreshFtl = () => {
+    if (combatFrame % 3) return;
+    const snap = buildFtl(sim);
+    const key = JSON.stringify(snap);
+    if (key === lastFtl) return;
+    lastFtl = key;
+    ftl.set(snap);
+  };
   const refreshShuttles = () => {
     if (combatFrame % 3) return;
     const snap = buildShuttles(sim);
@@ -246,6 +361,18 @@ export function createBridge(sim: Sim): Bridge {
     if (key === lastTrade) return;
     lastTrade = key;
     trade.set(snap);
+  };
+  let yardInputsKey = '';
+  const refreshYard = (force = false) => {
+    if (!force && combatFrame % 3) return;
+    const inputs = yardInputs(sim, yardStation);
+    if (!force && inputs === yardInputsKey) return; // nothing the yard view depends on has changed: no need to quote the plan again
+    yardInputsKey = inputs;
+    const snap = buildYard(sim, yardStation);
+    const key = JSON.stringify(snap);
+    if (key === lastYard) return;
+    lastYard = key;
+    yard.set(snap);
   };
   const refreshMining = () => {
     if (combatFrame % 6) return;
@@ -293,8 +420,9 @@ export function createBridge(sim: Sim): Bridge {
   };
   /** While the screen is open: full rebuild on a galaxy revision, otherwise only the fuel and FTL figures (about six times a second). */
   const refreshStarmap = () => {
-    // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace.
-    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel) || starFrame++ % 5) return;
+    // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace, and answer a scan that found contraband.
+    const scanning = sim.galaxy.encounters.some((e) => !!e.scan) || starmap.get().encounters.some((e) => !!e.contraband);
+    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel && !scanning) || starFrame++ % 5) return;
     const cur = starmap.get();
     if (starOpen && cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
     const st = starmapStatus(sim);
@@ -328,12 +456,21 @@ export function createBridge(sim: Sim): Bridge {
     inspect,
     crew,
     hostiles,
+    crewDetail,
     modules,
+    moduleDefs,
+    sites,
+    jobs,
+    goals,
+    stranded,
     stats,
     stock,
     storages,
     fabs,
+    research,
     combat,
+    boarding,
+    ftl,
     shuttles,
     trade,
     prizes,
@@ -341,6 +478,7 @@ export function createBridge(sim: Sim): Bridge {
     story,
     starmap,
     planRoute: (to) => planStarmapRoute(sim, to),
+    whereToSell: () => whereToSell(sim),
     deploy,
     deployCheck: (x, y) => deployError(sim, x, y),
     jumpWarnings: (ship) => buildJumpWarnings(sim, ship),
@@ -368,9 +506,19 @@ export function createBridge(sim: Sim): Bridge {
       heldSpeed = null;
       if (back !== null) applySpeed(back === 0 ? lastSpeed : back);
     },
+    watchCrew(id) {
+      if (id === watched) return;
+      watched = id;
+      refreshCrew();
+    },
     setSelected(t) {
       selected = t;
       refreshInspect();
+    },
+    yard,
+    watchYard(station) {
+      yardStation = station;
+      refreshYard(true);
     },
     setHovered(t) {
       hovered = t;
@@ -378,8 +526,9 @@ export function createBridge(sim: Sim): Bridge {
     },
     dispatch(cmd) {
       sim.enqueue(cmd);
-      // Trade offers are answered at once even with the game paused: the window would otherwise wait for time to run.
-      if (cmd.type.startsWith('trade.') && store.get().paused) loop?.flush();
+      // A UI command (accept a job, answer a trade offer, hire, ...) takes effect at once even with the game paused: the panel would
+      // otherwise sit unchanged until time runs. The command still goes through the queue; flush() drains it without running a tick.
+      if (store.get().paused) loop?.flush();
     },
     setSpeed,
     togglePause: () => setSpeed(store.get().paused ? lastSpeed : 0),
@@ -393,9 +542,12 @@ export function createBridge(sim: Sim): Bridge {
       refreshShip();
       refreshShuttles();
       refreshTrade();
+      refreshYard();
       refreshPrizes();
       refreshMining();
       refreshCombat();
+      refreshBoarding();
+      refreshFtl();
       refreshStory();
       refreshDeploy();
       refreshStarmap();

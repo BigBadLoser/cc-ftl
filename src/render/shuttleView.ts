@@ -1,4 +1,5 @@
 import { Container, Sprite } from 'pixi.js';
+import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import { ModuleC } from '../sim/modules/components';
 import { hullOutward, hullSide } from '../sim/modules/footprint';
@@ -64,6 +65,8 @@ export interface ShuttleViewHost {
 export interface ShuttleView {
   /** Per frame: follow the sim (smoothly), create and remove sprites. Reads the sim only. */
   update(dt: number): void;
+  /** The shuttle (vehicle entity) drawn under an art point of the layer frame, front-most first, or null. Its sprite's ellipse, not the corners. */
+  pick(ax: number, ay: number): number | null;
   dispose(): void;
 }
 
@@ -175,7 +178,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
 
   return {
     update(dt) {
-      const now = performance.now();
+      const now = animNow();
       const seen = new Set<number>();
       for (const id of world.query(VehicleC, BodyC)) {
         const v = world.get(id, VehicleC);
@@ -319,6 +322,24 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         t.root.zIndex = !t.low ? sx + sy : t.pose ? sx + sy - 1 : frontDepth(sx, sy, t.heading) + 0.5;
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);
+    },
+    pick(ax, ay) {
+      let best: number | null = null;
+      let bestZ = -Infinity;
+      for (const [id, t] of tracks) {
+        if (!t.root.visible || t.root.destroyed || !t.body.texture) continue;
+        const w = t.body.texture.width;
+        const h = t.body.texture.height;
+        const cx = t.root.x + t.body.x + w / 2;
+        const cy = t.root.y + t.body.y + h / 2;
+        const nx = (ax - cx) / (w / 2);
+        const ny = (ay - cy) / (h / 2);
+        if (nx * nx + ny * ny <= 1 && t.root.zIndex > bestZ) {
+          best = id;
+          bestZ = t.root.zIndex;
+        }
+      }
+      return best;
     },
     dispose() {
       for (const id of [...tracks.keys()]) drop(id);

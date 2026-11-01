@@ -28,6 +28,8 @@ export interface Sector {
   state: 'active' | 'hyperspace' | 'deploying';
   /** The player's ship in transit while in hyperspace or deploying. */
   packet?: ShipPacket;
+  /** The job scheduler's pass gate (ai/scheduler.ts): the fingerprint of the last pass's inputs and its tick. Saved, so a load runs as a continuous game. */
+  sched?: { sig: number; at: number };
 }
 
 /** 'rogue': rogue AI (robot crews under an AI core); hostile to every other faction, neutral included. */
@@ -70,6 +72,12 @@ export interface Ship {
   hullMax: number;
   /** 0..1 overall integrity: wall integrity (lightly weighted) plus module hp. Updated by the ship-state system. */
   integrity: number;
+  /** Set by `wreckShip` when the player's guns were on it: the player destroyed it (galaxy/heat.ts counts it). */
+  killedBy?: 'player';
+  /** Its loss (destroyed by the player, or taken) has been counted towards the player's notoriety. */
+  tallied?: true;
+  /** A bounty target: the id of the station job that wants it destroyed (galaxy/jobs.ts). */
+  bounty?: number;
   /** Set on generated ships: the faction, seed and depth they were generated from (the grid itself is saved). */
   gen?: GenOrigin;
   /** Set on derelicts: dressing data for the renderer (see ShipRuin). */
@@ -90,6 +98,8 @@ export interface Ship {
    * through `wake` (combat/dormant.ts), which removes the field.
    */
   dormant?: number;
+  /** The faction this ship had before a truce breach made it hostile to the player (blackmarket/truce.ts); restored when the ban ends. */
+  banned?: Faction;
 }
 export const ShipC = defineComponent<Ship>('ship');
 
@@ -100,9 +110,31 @@ export interface Target {
   moduleId: number;
   /** Set (with ship 0, moduleId 0) when the target is a shuttle in flight or docked. */
   vehicle?: number;
+  /** Set (with moduleId 0) for a blind aim at one tile (sector tile coordinates) of the ship: shots land near it, spread by accuracy. */
+  tile?: { x: number; y: number };
 }
 
 export type Doctrine = 'weapons' | 'shields' | 'random';
+
+/** The systems that can be overcharged (`combat.overcharge`). */
+export type OverchargeSystem = 'weapons' | 'shields' | 'engines';
+/** One system's overcharge, in ticks: `left` while it is active, `cooldown` until it can be started again. */
+export interface Overcharge {
+  left: number;
+  cooldown: number;
+}
+/** A ship's combat heat (rules in combat/heat.ts, numbers in combat/heatTuning.ts). */
+export interface Heat {
+  /** 0..HEAT_MAX. */
+  value: number;
+  /** Ticks of overheat lockout left. */
+  lockout: number;
+  /** Ticks of vent left. */
+  vent: number;
+  /** Ticks the running vent was started with (its length depends on the coolant console), for the HUD. */
+  ventLen: number;
+  overcharge: Record<OverchargeSystem, Overcharge>;
+}
 
 /** Per-ship combat state. */
 export interface Combat {
@@ -112,10 +144,21 @@ export interface Combat {
   volley: boolean;
   /** Ship-wide target, used by weapons without their own. */
   target: Target | null;
+  /**
+   * A shuttle that only anti-vehicle weapons (`WeaponDef.antiVehicle`) aim at, ahead of the ship-wide target; the other weapons keep
+   * shooting `target`. Set by `combat.setTarget` with a vehicle and no weapon, or by the vehicle defence system. Cleared once it is gone.
+   */
+  vehicleTarget?: number;
   doctrine: Doctrine;
   /** Seconds of FTL charge (flee needs FTL_CHARGE_SEC). */
   ftl: number;
+  /**
+   * A standing order to charge the drive (`ftl.charge`): the helm is manned outside combat too while it stands. `jump` is a route (without the
+   * current node) to fly the moment the charge covers it. Absent or null: no order.
+   */
+  ftlOrder?: { jump: string[] | null; withDocked?: number[]; overcharge?: true } | null;
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
+  heat: Heat;
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;
   /** Piloting skill of whoever mans the helm (0 when nobody does); with `evasion` it gives the hyperspace evade odds. */
@@ -132,7 +175,18 @@ export interface Combat {
 export const CombatC = defineComponent<Combat>('combat');
 
 /** On weapon modules. */
+export type WeaponMode = 'auto' | 'hold';
+
 export interface Weapon {
+  /**
+   * The player's per-weapon fire mode. `auto` fires when charged; `hold` charges and waits for a volley, or for the player to aim it at a
+   * target (see `once`). Ammo weapons start on `hold`, the rest on `auto`. AI ships ignore it (they use `Combat.hold`).
+   */
+  mode: WeaponMode;
+  /** The mode to go back to when "hold all" is switched off; set only while hold all has put this weapon on hold. */
+  restore?: WeaponMode;
+  /** A held weapon the player aimed: it fires once when charged, then stays on hold. */
+  once?: boolean;
   /** 0..1, full at 1. */
   charge: number;
   /** Own target; null = use the ship-wide one. */
@@ -148,6 +202,22 @@ export interface Weapon {
    * (y grows downward): 1 = +x+y, 2 = +y, 3 = -x+y, 4 = -x, 5 = -x-y, 6 = -y, 7 = +x-y. Renderer-readable.
    */
   aim: number;
+  /**
+   * The telegraphed aim of an enemy weapon in its final charge window (see `commit.ts`): the target it will shoot and the sector rectangle
+   * (the module's footprint, or the one blind tile) the shot lands in, give or take the weapon's scatter. Null/absent outside the window.
+   * Renderer-readable.
+   */
+  commit?: Commit | null;
+}
+/** A weapon's committed aim. `from` is the charge (0..1) at which it committed, so (charge - from) / (1 - from) is the countdown. */
+export interface Commit {
+  target: Target;
+  /** Aim area in sector tiles: top-left and size. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  from: number;
 }
 export const WeaponC = defineComponent<Weapon>('weapon');
 

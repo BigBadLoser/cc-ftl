@@ -31,6 +31,32 @@ export class Canvas {
   readonly labels: Label[] = [];
   private readonly labelIds = new Map<string, number>();
 
+  /** Lowest and highest cell index written through this class (a pooled canvas clears only that range). */
+  /** Set for pooled canvases (see `acquireCanvas`): every write goes through this class, so `lo`..`hi` bounds the drawing. */
+  tracked = false;
+  private lo = Infinity;
+  private hi = -1;
+  private touch(k: number): void {
+    if (k < this.lo) this.lo = k;
+    if (k > this.hi) this.hi = k;
+  }
+
+  /**
+   * Back to blank for reuse. Only valid for a canvas whose cells were written through stamp / put / setDoor / fixDoors:
+   * the local builders of blocks, never the main ship canvas (thinWalls and the station passes write `cells` directly).
+   */
+  clear(): void {
+    if (this.hi >= 0) {
+      this.cells.fill('.', this.lo, this.hi + 1);
+      this.label.fill(-1, this.lo, this.hi + 1);
+    }
+    this.lo = Infinity;
+    this.hi = -1;
+    this.labels.length = 0;
+    this.labelIds.clear();
+    this.stamped.length = 0;
+  }
+
   constructor(size = 220) {
     this.size = size;
     this.cells = new Array<string>(size * size).fill('.');
@@ -79,6 +105,7 @@ export class Canvas {
         if (c === '.') continue;
         const k = this.idx(ox + i, oy + j);
         const cur = this.cells[k] as string;
+        this.touch(k);
         if (isContainerCell(c)) this.cells[k] = c;
         else if (c === '#') {
           if (cur !== 'D') this.cells[k] = '#';
@@ -112,6 +139,7 @@ export class Canvas {
   put(x: number, y: number, c: string): void {
     const k = this.idx(x, y);
     if (k < 0) return;
+    this.touch(k);
     this.cells[k] = c;
     if (c !== '_') this.label[k] = -1;
   }
@@ -125,30 +153,35 @@ export class Canvas {
   /** Put a door on a wall tile (callers check it joins two floors). */
   setDoor(x: number, y: number): void {
     const k = this.idx(x, y);
-    if (k >= 0 && this.cells[k] === '#') this.cells[k] = 'D';
+    if (k >= 0 && this.cells[k] === '#') { this.touch(k); this.cells[k] = 'D'; }
   }
 
   /** Turn doors that do not join floor on two opposite sides back into walls. */
   fixDoors(): void {
     const o = this.size >> 1;
-    for (let k = 0; k < this.cells.length; k++) {
-      if (this.cells[k] !== 'D') continue;
+    for (let k = this.cells.indexOf('D'); k >= 0; k = this.cells.indexOf('D', k + 1)) {
       const x = (k % this.size) - o;
       const y = Math.floor(k / this.size) - o;
       const ns = this.at(x, y - 1) === '_' && this.at(x, y + 1) === '_';
       const ew = this.at(x - 1, y) === '_' && this.at(x + 1, y) === '_';
-      if (!ns && !ew) this.cells[k] = '#';
+      if (!ns && !ew) this.cells[k] = '#'; // a door was already there, so the cell is inside the dirty range
     }
   }
 
   /** Rows of the used area with a one-tile space margin, and the label of every cell in that frame. */
   crop(): { rows: string[]; labels: Int16Array; width: number; height: number; ox: number; oy: number } {
     let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
-    for (let k = 0; k < this.cells.length; k++) {
-      if (this.cells[k] === '.') continue;
-      const x = k % this.size;
-      const y = Math.floor(k / this.size);
-      x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+    // A tracked (pooled) canvas has only been written through this class, so everything drawn lies in [lo, hi].
+    const first = this.tracked ? Math.max(0, this.lo) : 0;
+    const last = this.tracked ? this.hi + 1 : this.cells.length;
+    for (let k = first, x = first % this.size, y = Math.floor(first / this.size); k < last; k++) {
+      if (this.cells[k] !== '.') {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+      if (++x === this.size) { x = 0; y++; }
     }
     const width = x1 - x0 + 3;
     const height = y1 - y0 + 3;
@@ -192,4 +225,18 @@ export function doorCols(c: ChunkDef): number[] {
   const out: number[] = [];
   for (let i = 0; i < last.length; i++) if (last[i] === 'D') out.push(i);
   return out;
+}
+
+/** Spare blank 220-tile canvases: local builders draw a block, freeze it, and give the canvas back. */
+const pool: Canvas[] = [];
+
+export function acquireCanvas(): Canvas {
+  const c = pool.pop() ?? new Canvas();
+  c.tracked = true;
+  return c;
+}
+
+export function releaseCanvas(c: Canvas): void {
+  c.clear();
+  pool.push(c);
 }

@@ -28,7 +28,7 @@ function fixtureShip(sim: Sim, t: ShipTemplate): number {
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
 });
 const content: ContentRegistry = {
   ships: { 'ship.t': { name: 't', rows } },
@@ -141,7 +141,7 @@ describe('crew jobs', () => {
   it('tired crew sleeps, wakes, then resumes work', () => {
     const sim = make();
     const id = spawn(sim, 1, 1, construction, 19);
-    sim.step();
+    run(sim, 4); // the sleep decision is staggered over up to 3 ticks
     expect(sim.world.get(id, CrewC)?.activity).toBe('sleeping');
     build(sim, 3, 1);
     run(sim, 50);

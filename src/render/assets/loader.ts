@@ -1,7 +1,24 @@
-import { Assets, Rectangle, Texture, type TextureSource } from 'pixi.js';
+import { ImageSource, Rectangle, Texture, type TextureSource } from 'pixi.js';
 import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest, type StaticAsset } from './manifest';
 import { dropHalo } from '../haloTex';
+import { buildMask, keepMask } from './alphaMask';
+import { composeManifest } from './compose';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
+
+/** The art directory under the asset base: 64x32 pixel art, each art pixel drawn as a hard 2x2 block (see compose.ts). */
+export const ART_DIR = '1x';
+
+/**
+ * Keep a sheet's texture on the GPU for as long as the atlas holds it. A sheet's decoded bitmap is closed once it is
+ * uploaded (see `toGpu`), so it can never be uploaded again from the CPU. Pixi's texture GC unloads an image source no
+ * sprite drew for a minute or so (`textureGCMaxIdle` frames: a region off screen, a view held somewhere else) and would
+ * then re-upload it from that closed bitmap on its next use: nothing. The sprites of every sheet that idled went blank
+ * while their halos (canvas textures, which keep their pixels) still drew (issue #102). The sheet store owns when a sheet
+ * is freed (budgets and eviction), so Pixi's GC must leave these sources alone.
+ */
+export function keepOnGpu(source: TextureSource): void {
+  source.autoGarbageCollect = false;
+}
 
 /** Base URL of the asset folder. `VITE_ASSET_BASE` only relocates it (used to point at a fixture). */
 export function assetBase(): string {
@@ -57,6 +74,7 @@ export interface AtlasStats {
 }
 
 export interface Atlas {
+  /** The composed manifest: every geometry value in world px (128x64 tile; see compose.ts). */
   readonly manifest: Manifest;
   /** Bumps whenever an environment sheet arrives or is evicted (crew clips are looked up per frame and do not count): views that cached a resolved texture re-resolve when it changes. */
   readonly generation: number;
@@ -91,6 +109,8 @@ export interface Atlas {
   contextRestored(): Promise<void>;
   /** Resolves when no sheet is queued or loading. */
   whenIdle(): Promise<void>;
+  /** Unload every loaded sheet from pixi's global asset cache, so the next atlas (a new renderer) loads and uploads its own copies. */
+  dispose(): void;
   /** Decoded sizes and load counters (the `?hook` debug API shows them). */
   stats(): AtlasStats;
 }
@@ -98,8 +118,8 @@ export interface Atlas {
 /** Sheets every ship draws (walls and floors, beams, the item/puff sheet, combat fx): loaded at start, never evicted. */
 export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
 /** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
-export const CREW_BUDGET = 256 * 2 ** 20;
-export const ENV_BUDGET = 384 * 2 ** 20;
+export const CREW_BUDGET = 64 * 2 ** 20;
+export const ENV_BUDGET = 96 * 2 ** 20;
 /** A crew sheet nobody drew with for this long may be evicted. */
 export const CREW_IDLE_MS = 4000;
 
@@ -116,15 +136,34 @@ function validate(m: Manifest): void {
   }
 }
 
+async function fetchManifest(url: string): Promise<Manifest> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Cannot load ${url} (${res.status})`);
+  const m = (await res.json()) as Manifest;
+  validate(m);
+  return m;
+}
+
+/** The art manifest, composed into world px. */
+export async function loadComposed(base = assetBase()): Promise<Manifest> {
+  return composeManifest(await fetchManifest(`${base}${ART_DIR}/manifest.json`), ART_DIR);
+}
+
 export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise<Atlas> {
-  const res = await fetch(`${base}manifest.json`);
-  if (!res.ok) throw new Error(`Cannot load ${base}manifest.json (${res.status})`);
-  const manifest = (await res.json()) as Manifest;
-  validate(manifest);
+  const manifest = await loadComposed(base);
+  let disposed = false;
+  /** Aborts this atlas's downloads when it is disposed: a replaced title stage must not keep fetching and decoding sheets nobody will draw. */
+  const abort = new AbortController();
+  /** Texture resolution by image path (0.5 for a 1x sheet: it is drawn at twice its pixel size). */
+  const resOf = new Map<string, number>();
+  for (const s of Object.values(manifest.sheets)) {
+    resOf.set(s.image, s.resolution ?? 1);
+    if (s.glow) resOf.set(s.glow, s.resolution ?? 1);
+  }
 
   let smooth = false;
   /** Crew sheet images hold palette-swap key colours: the crew filter reads them, so they are always sampled nearest (a blend of a key with its neighbour would escape the swap). The filter's own output is what the camera smooths. */
-  const isCrewImage = (path: string): boolean => path.startsWith('sprites/crew.');
+  const isCrewImage = (path: string): boolean => path.includes('sprites/crew.');
   let clock = performance.now();
   const bytesOf = (t: Texture): number => t.source.pixelWidth * t.source.pixelHeight * 4;
   let restoring = false;
@@ -134,18 +173,45 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     hooks.upload(src);
     (src.resource as { close?: () => void }).close?.();
   };
-  const loadTex = async (path: string, keyed = false): Promise<Texture> => {
-    const mode = smooth && !keyed ? 'linear' : 'nearest';
-    const t = await Assets.load<Texture>({ src: base + path, data: { scaleMode: mode } });
+  /** Sheets that host sprites a click can land on (module art, vehicles, containers, stand-in props): they keep an opacity mask for picking. */
+  const pickable = new Set<string>();
+  for (const [id, a] of Object.entries(manifest.assets)) {
+    const img = a.kind === 'static' && /^(module|vehicle|container|prop)\./.test(id) ? manifest.sheets[a.sheet]?.image : undefined;
+    if (img) pickable.add(img);
+  }
+  /** Fetch and decode a sheet image: the same plain URL every time, so the browser's HTTP cache serves repeats. */
+  const decode = async (url: string): Promise<ImageBitmap> => {
+    if (disposed) throw new Error('atlas disposed');
+    const res = await fetch(url, { signal: abort.signal });
+    if (!res.ok) throw new Error(`${url} ${res.status}`);
+    return createImageBitmap(await res.blob());
+  };
+  const loadTex = async (path: string, keyed = false, mask = false): Promise<Texture> => {
+    const resolution = resOf.get(path) ?? 1;
+    // 1x sheets are always nearest: each art pixel must stay a hard 2x2 block (smoothing is for 2x art shrunk below zoom 1).
+    const mode = smooth && !keyed && resolution === 1 ? 'linear' : 'nearest';
+    // Each atlas builds its own textures from the plain URL (the browser's HTTP cache dedupes the download), not through pixi's
+    // URL-keyed Assets cache: that would hand one texture to two atlases, and disposing one would destroy it under the other.
+    const bitmap = await decode(base + path);
+    const t = new Texture({ source: new ImageSource({ resource: bitmap, alphaMode: 'premultiply-alpha-on-upload', scaleMode: mode, resolution }) });
+    if (disposed) {
+      // The atlas was disposed while this sheet was in flight (a stage replaced before its renderer finished): free it, use nothing.
+      t.destroy(true);
+      throw new Error('atlas disposed');
+    }
     t.source.scaleMode = mode;
     t.source.autoGenerateMipmaps = false;
+    keepOnGpu(t.source);
+    // The bitmap is closed once uploaded; picking reads sprite alpha from this mask instead (moduleView/partPick).
+    if (mask && hooks) {
+      const m = buildMask(t.source.resource, t.source.pixelWidth, t.source.pixelHeight);
+      if (m) keepMask(t.source, m);
+    }
     toGpu(t.source);
     return t;
   };
   const redecode = async (url: string, src: TextureSource): Promise<void> => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`${url} ${res.status}`);
-    src.resource = await createImageBitmap(await res.blob());
+    src.resource = await decode(url);
     hooks?.upload(src);
     (src.resource as { close?: () => void }).close?.();
   };
@@ -158,14 +224,22 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
 
   const io: SheetIO<Texture> = {
     async load(image, glow) {
-      const [img, gl] = await Promise.all([loadTex(image, isCrewImage(image)), glow ? loadTex(glow) : null]);
+      // Settle both: when one half fails, the other is freed (each load allocates its own GPU texture, so a retry would leak it).
+      const [a, b] = await Promise.allSettled([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null]);
+      if (a.status === 'rejected' || b.status === 'rejected') {
+        if (a.status === 'fulfilled') a.value.destroy(true);
+        if (b.status === 'fulfilled') b.value?.destroy(true);
+        throw a.status === 'rejected' ? a.reason : (b as PromiseRejectedResult).reason;
+      }
+      const img = a.value;
+      const gl = b.value;
       return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
     },
-    unload(name, _sheet, image, glow) {
+    unload(name, sheet) {
       for (const t of detached.get(name) ?? []) t.destroy(false);
       detached.delete(name);
-      void Assets.unload(base + image);
-      if (glow) void Assets.unload(base + glow);
+      sheet.image.destroy(true);
+      sheet.glow?.destroy(true);
     },
   };
   const store = new SheetStore<Texture>({
@@ -187,12 +261,12 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       detached.set(name, [...(detached.get(name) ?? []), ...list]);
     },
     onRestore: (name) => void detached.delete(name),
-    onError: (name, err) => console.warn(`Sheet "${name}" failed to load`, err),
+    onError: (name, err) => !disposed && console.warn(`Sheet "${name}" failed to load`, err),
   });
   const eager = new Set(EAGER_SHEETS);
   for (const [name, def] of Object.entries(manifest.sheets)) {
     const pinned = eager.has(name);
-    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : name.startsWith('crew.') ? 'crew' : 'env', pinned });
+    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : /^(\dx:)?crew\./.test(name) ? 'crew' : 'env', pinned });
   }
   for (const name of EAGER_SHEETS) if (store.has(name)) store.request(name);
   await store.idle();
@@ -299,7 +373,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       if (on === smooth) return;
       smooth = on;
       store.forEachReady((name, s) => {
-        for (const [i, t] of [s.image, s.glow].entries()) if (t) t.source.scaleMode = on && !(i === 0 && name.startsWith('crew.')) ? 'linear' : 'nearest';
+        for (const [i, t] of [s.image, s.glow].entries()) if (t) t.source.scaleMode = on && !(i === 0 && name.includes('crew.')) && t.source.resolution === 1 ? 'linear' : 'nearest';
       });
     },
     get restoring() {
@@ -331,6 +405,16 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     sweepEnv: (before) => (store.over('env') ? store.sweep('env', before) : []),
     envOver: () => store.over('env'),
     whenIdle: () => store.idle(),
+    dispose() {
+      // Free this atlas's own textures (nothing else holds them). Sharing them through pixi's URL cache once handed a later
+      // renderer spent textures (bitmap closed after the upload, GPU gone) that drew nothing (the title screen's ship switch).
+      disposed = true;
+      abort.abort();
+      store.forEachReady((_name, sheet) => {
+        sheet.image.destroy(true);
+        sheet.glow?.destroy(true);
+      });
+    },
     stats() {
       const st = store.stats();
       return {

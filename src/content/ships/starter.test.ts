@@ -57,6 +57,8 @@ describe('starter ship', () => {
     const g = shipGrid(sim, shipIds(sim)[0] as number)!;
     const quarters = ROOM_TILES(sim, g.get('room', at(10, 6).x, at(10, 6).y));
     const neighbour = ROOM_TILES(sim, g.get('room', at(19, 6).x, at(19, 6).y));
+    // The crew seal a breach by themselves now (damage control, #181): this test is about the air, so they stay out of it.
+    for (const id of sim.world.query(CrewC)) sim.enqueue({ type: 'crew.setPriority', id, category: 'firefighting', value: 0 });
     sim.enqueue({ type: 'debug.setStruct', ship: nth(sim, 1), ...at(11, 1), kind: Struct.Floor }); // north hull, space beyond
     run(sim, 20 * 90);
     expect(meanO2(sim, quarters)).toBeLessThan(5);

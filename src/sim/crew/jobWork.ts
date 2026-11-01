@@ -1,4 +1,5 @@
 import { performCraft } from '../items/craft';
+import { performResearch } from '../research/work';
 import { performHaul } from '../items/haul';
 import { consumeDelivered, needsMaterials } from '../items/materials';
 import { evictStack, refundCost, structCostKey } from '../items/stacks';
@@ -8,28 +9,48 @@ import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/sp
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
+import { performSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DoorJam, Struct, writeStruct } from '../structure';
 import { stochasticRound } from '../stochastic';
-import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
+import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
+import type { SkillName } from '../registry';
+import { grantXp } from './xp';
 import { findFreeBed } from './beds';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
 import { shipIdOf, shipGrid } from '../regions';
 import { finishDig } from '../rock/dig';
+import { bumpStat } from '../story/goals';
+import { playerShips } from '../story/world';
 import { AsteroidC } from '../asteroids/components';
 import { spawnVehicle } from '../vehicles/lifecycle';
+import { dropPlanTile } from '../yard/trussPlan';
 
 /** 'done': the job is finished and removed. 'working': progressing. 'wait': ready but blocked. */
 export type WorkResult = 'done' | 'working' | 'wait';
 
 /** Do one tick of work on a job. `speed` is the crew member's resolved workSpeed. */
 export function performJob(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
+  const result = work(sim, crew, job, speed);
+  const skill = result === 'wait' ? undefined : XP_SKILL[job.kind];
+  if (skill) grantXp(sim, crew, skill, (XP_PER_WORK_SEC * speed) / TICK_HZ); // docs/TRAITS.md section 3: one XP per work-second at workSpeed 1
+  return result;
+}
+
+/** The skill a job kind trains while it progresses (crafting, hauling and the rest train none). */
+const XP_SKILL: Partial<Record<Job['kind'], SkillName>> = {
+  build: 'repair', module: 'repair', deconstruct: 'repair', moduleDecon: 'repair', repair: 'repair', extinguish: 'repair',
+  forceDoor: 'repair', mend: 'repair', salvage: 'repair', assemble: 'repair', research: 'science', hack: 'hacking',
+};
+
+function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
   if ((job.kind === 'build' || job.kind === 'module' || job.kind === 'assemble') && needsMaterials(job)) return 'wait';
   switch (job.kind) {
     case 'haul': return performHaul(sim, crew, job);
     case 'craft': return performCraft(sim, job, speed);
+    case 'research': return performResearch(sim, crew, job, speed);
     case 'build':
     case 'deconstruct': return timed(job, speed, () => finishStruct(sim, job));
     case 'module': return timed(job, speed, () => finishModule(sim, job));
@@ -38,6 +59,8 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
       const cost = m && sim.content.modules[m.def]?.cost;
       removeModule(sim, job.target ?? 0);
       if (m) refundCost(sim, shipIdOf(sim, job), m.x, m.y, cost); // after the tiles are free
+      // Taking a module apart on a ship that is not the player's is salvage (the goal chain counts it).
+      if (m && !playerShips(sim).has(shipIdOf(sim, job))) bumpStat(sim, 'gathered');
       return 'done';
     });
     case 'extinguish': return extinguish(sim, job, speed);
@@ -48,6 +71,7 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
+    case 'sabotage': return performSabotage(sim, crew, job);
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff': return performSuitJob(sim, crew, job, speed);
@@ -69,13 +93,16 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
   if (job.kind === 'build' && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
   const grid = shipGrid(sim, shipIdOf(sim, job));
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
-    const next = job.kind === 'build' ? job.struct : Struct.Floor;
+    const next = job.kind === 'build' ? job.struct : job.struct === Struct.Space ? Struct.Space : Struct.Floor; // a truss comes down to open space
     const before = grid.get('struct', job.x, job.y);
     if ((before === Struct.Rock || before === Struct.RockWall) && next === Struct.Floor) finishDig(sim, grid, shipIdOf(sim, job), job.x, job.y);
     else writeStruct(grid, job.x, job.y, next);
+    // a shipyard tile belongs to the ship even when it is finished before its neighbours (the owner layer is otherwise inherited from them)
+    if (job.yard && job.kind === 'build' && grid.get('ship', job.x, job.y) === 0) grid.set('ship', job.x, job.y, shipIdOf(sim, job));
     // built on an asteroid base: the new tile is the base's, not the asteroid's
     const ship = shipIdOf(sim, job);
     if (next !== Struct.Space && grid.get('ship', job.x, job.y) !== ship && sim.world.has(grid.get('ship', job.x, job.y), AsteroidC)) grid.set('ship', job.x, job.y, ship);
+    if (job.kind === 'deconstruct' && before === Struct.Beam) dropPlanTile(sim, shipIdOf(sim, job), job.x, job.y); // the tile leaves the hull plan
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
       refundCost(sim, shipIdOf(sim, job), job.x, job.y, key ? sim.content.structCosts[key] : undefined);
@@ -103,6 +130,7 @@ function finishModule(sim: Sim, job: Job): WorkResult {
   if (comes && sim.content.vehicles?.[comes]) spawnVehicle(sim, comes, id); // the pod bay comes with its pod
   consumeDelivered(job);
   if (grid.has('item')) for (const t of footprintTiles(def, job.x, job.y, bp.rot)) evictStack(sim, shipIdOf(sim, job), t.x, t.y);
+  if (playerShips(sim).has(shipIdOf(sim, job))) bumpStat(sim, 'built');
   return 'done';
 }
 
@@ -119,7 +147,10 @@ function repair(sim: Sim, job: Job, speed: number): WorkResult {
   const def = m && sim.content.modules[m.def];
   if (!m || !def) return 'done';
   m.hp = Math.min(def.maxHp, m.hp + (REPAIR_PER_SEC * speed) / TICK_HZ);
-  return m.hp >= def.maxHp ? 'done' : 'working';
+  if (m.wrecked && m.hp >= def.maxHp / 2) delete m.wrecked;
+  if (m.hp < def.maxHp) return 'working';
+  if (playerShips(sim).has(shipIdOf(sim, m))) bumpStat(sim, 'repaired');
+  return 'done';
 }
 
 /**

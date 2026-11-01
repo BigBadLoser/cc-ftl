@@ -1,6 +1,6 @@
 import type { Sim } from '../sim';
 import {
-  AssignmentC, CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
+  CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
 } from './components';
 
 import { InertC, StunC } from '../robots/components';
@@ -44,17 +44,6 @@ export function hasRoute(sim: Sim, crew: number): boolean {
   return !!path && (path.steps.length > 0);
 }
 
-/** Drop a crew member's job: free the reservation, remove the Assignment, clear the path. */
-export function releaseAssignment(sim: Sim, crew: number): void {
-  const a = sim.world.get(crew, AssignmentC);
-  if (a) {
-    const job = sim.world.get(a.jobId, JobC);
-    if (job && job.reservedBy === crew) job.reservedBy = 0;
-    sim.world.remove(crew, AssignmentC);
-  }
-  clearPath(sim, crew);
-}
-
 /** True if the crew member cannot act: downed, dead, being carried, or a robot that is inert or stunned. */
 export function isIncapacitated(sim: Sim, crew: number): boolean {
   return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
@@ -87,11 +76,17 @@ export function findJobAt(sim: Sim, shipId: number, x: number, y: number): numbe
 const ON_TILE_KINDS: readonly string[] = ['operate', 'suitUp', 'suitOff', 'patrol'];
 
 /** Where a crew member must be to work a job: adjacent to it, or ON its tile for operate and suit jobs. */
-export function atJob(pos: Tile, job: { kind: string; x: number; y: number }): boolean {
-  return ON_TILE_KINDS.includes(job.kind) ? pos.x === job.x && pos.y === job.y : isAdjacent(pos, job);
+export function atJob(pos: Tile, job: { kind: string; x: number; y: number; size?: [number, number] }): boolean {
+  if (ON_TILE_KINDS.includes(job.kind)) return pos.x === job.x && pos.y === job.y;
+  if (!job.size) return isAdjacent(pos, job);
+  // a module site: beside the footprint, never on it (a builder standing on it would block its own finish)
+  const [w, h] = job.size;
+  return Math.max(job.x - pos.x, pos.x - (job.x + w - 1), job.y - pos.y, pos.y - (job.y + h - 1)) === 1;
 }
 
 /** Path goal for reaching a job (see atJob). */
-export function jobGoal(job: { kind: string; x: number; y: number }): { x: number; y: number; adjacent: boolean } {
-  return { x: job.x, y: job.y, adjacent: !ON_TILE_KINDS.includes(job.kind) };
+export function jobGoal(job: { kind: string; x: number; y: number; size?: [number, number] }): { x: number; y: number; adjacent: boolean; w?: number; h?: number } {
+  const g: { x: number; y: number; adjacent: boolean; w?: number; h?: number } = { x: job.x, y: job.y, adjacent: !ON_TILE_KINDS.includes(job.kind) };
+  if (job.size && g.adjacent) { g.w = job.size[0]; g.h = job.size[1]; }
+  return g;
 }

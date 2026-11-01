@@ -8,7 +8,7 @@ import type { ShipTemplate } from '../../sim';
  */
 export const starterShip = {
   name: 'Starter ship',
-  crew: ['role.engineer', 'role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
+  crew: ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
   rows: [
     '..............................',
     '.############################.',
@@ -54,7 +54,7 @@ export const starterShip = {
     { def: 'module.bed', x: 17, y: 3, rot: 3 },
     { def: 'module.light', x: 15, y: 2, rot: 0 },
     { def: 'module.light', x: 17, y: 7, rot: 0 },
-    // Shield room: generator (2x3) beside the north wall; the door at (11, 8) stays clear.
+    // Shield room: generator (2x2) beside the north wall; the door at (11, 8) stays clear.
     { def: 'module.shieldGen', x: 11, y: 2, rot: 0 },
     { def: 'module.light', x: 9, y: 2, rot: 0 },
     { def: 'module.light', x: 9, y: 7, rot: 0 },
@@ -94,7 +94,7 @@ export const starterShip = {
       stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }],
     },
     { def: 'module.storage', x: 19, y: 17, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 8 }, { item: 'item.ration', count: 12 }] },
-    { def: 'module.storage', x: 18, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }] },
+    { def: 'module.storage', x: 18, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
     { def: 'module.light', x: 15, y: 12, rot: 0 },
     { def: 'module.light', x: 14, y: 12, rot: 0 },
     { def: 'module.light', x: 20, y: 15, rot: 0 },

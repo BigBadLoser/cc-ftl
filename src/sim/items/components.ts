@@ -9,6 +9,8 @@ export interface ItemStack {
   y: number;
   /** Tick of the last 'storage.full' warning for this stack (debounce). */
   warnedAt?: number;
+  /** A delivery crate: the StationJob id it belongs to. */
+  job?: number;
 }
 export const ItemStackC = defineComponent<ItemStack>('itemStack');
 
@@ -26,6 +28,8 @@ export const StorageC = defineComponent<Storage>('storage');
 export interface Carrying {
   item: string;
   count: number;
+  /** The rest of a construction bundle (see HaulData.extra). */
+  extra?: ItemQty[];
 }
 export const CarryingC = defineComponent<Carrying>('carrying');
 
@@ -63,4 +67,8 @@ export interface HaulData {
   phase: 'pickup' | 'deliver';
   src: HaulRef;
   dst: HaulRef;
+  /** Other materials for the same job taken from the same storage on the same trip (a builder carries a whole bundle). */
+  extra?: ItemQty[];
+  /** Later stops: after the destination is served, what is left goes to these jobs in turn (one trip serves a run of walls). */
+  then?: { job: number; count: number }[];
 }

@@ -218,7 +218,7 @@ def hand(A, pub, out):
 
 def main():
     A, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/1x")
     out.mkdir(parents=True, exist_ok=True)
     PW, PH = 440, 250
     cv = Canvas(PW * 2, PH * 3)

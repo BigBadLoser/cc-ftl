@@ -34,7 +34,7 @@ const content: ContentRegistry = {
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 } },
   modules: {
     reactor: mod({ footprint: [2, 2], solid: true, power: 20 }),
-    light: mod({ power: -1, priority: 2, light: { radius: 8, level: 230 } }),
+    light: mod({ power: -1, powerPriority: 2, light: { radius: 8, level: 230 } }),
     bed: mod({ footprint: [1, 2], bed: true }),
   },
   crewNames: [],
@@ -43,7 +43,7 @@ const content: ContentRegistry = {
   structCosts: {},
 };
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
 });
 
 // V (x 2-3) is a small room that gets breached; B (x 5-12) is the sick bay with the bed.

@@ -1,6 +1,6 @@
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, newGame, type Sim } from '../sim';
+import { CrewC, PositionC, PrisonerC, SurrenderedC, newGame, type Sim } from '../sim';
 import { content } from '../content';
 import { buildCrewLists } from './crewSnapshot';
 import { shipIds } from '../sim/regions';
@@ -17,7 +17,7 @@ describe('buildCrewLists', () => {
     const sim = newGame(1, content);
     run(sim, 3);
     const { crew, hostiles } = buildCrewLists(sim);
-    expect(crew).toHaveLength(5);
+    expect(crew).toHaveLength(4);
     expect(hostiles).toHaveLength(0);
     expect(crew.every((c) => c.side === 'player' && c.where === 'Starter ship' && !c.away && c.weapon === null)).toBe(true);
     expect(crew[0]?.arms.map((a) => a.item).sort()).toEqual(['item.blade', 'item.rifle', 'item.sidearm']);
@@ -28,6 +28,16 @@ describe('buildCrewLists', () => {
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
     run(sim, 5);
     expect(buildCrewLists(sim).hostiles).toHaveLength(0);
+    // The one being inspected is listed even where none of the player's crew stand (a click on it must always open the inspector).
+    const foe = sim.world.query(CrewC).find((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === shipIds(sim)[1])!;
+    expect(buildCrewLists(sim, foe).hostiles.map((h) => h.id)).toEqual([foe]);
+    // A surrendered or captured hostile says so (the Overview shows it as a state chip).
+    sim.world.add(foe, SurrenderedC, { tick: sim.tick });
+    expect(buildCrewLists(sim, foe).hostiles[0]).toMatchObject({ surrendered: true, prisoner: false });
+    sim.world.add(foe, PrisonerC, { tick: sim.tick });
+    expect(buildCrewLists(sim, foe).hostiles[0]).toMatchObject({ surrendered: true, prisoner: true });
+    sim.world.remove(foe, PrisonerC);
+    sim.world.remove(foe, SurrenderedC);
     const id = sim.world.query(CrewC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === shipIds(sim)[0] as number)!;
     const pos = sim.world.get(id, PositionC)!;
     const raider = shipGrid(sim, shipIds(sim)[1] as number)!;

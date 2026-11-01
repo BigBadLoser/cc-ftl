@@ -298,6 +298,65 @@ function companions(lay: Layout, rng: Rng, room: number, host: PlacedModule, id:
   }
 }
 
+/**
+ * Set up to `n` bigger companions (ore bins) flush against a placed host, away from its access tile (the working end, so
+ * the bins sit at the feed end), each turned so its own access tile is open floor. Every placement keeps the ship reachable.
+ */
+export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, id: string, n: number): number {
+  const hdef = lay.defs[host.def] as ModuleDef;
+  const def = lay.defs[id];
+  if (!def) return 0;
+  const [hw, hh] = rotatedSize(hdef, host.rot);
+  const work = accessTile(hdef, host.x, host.y, host.rot);
+  // Tiles other modules are worked from: never covered.
+  const worked = new Set<number>();
+  for (const m of lay.modules) {
+    const a = accessTile(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot);
+    if (a && lay.inBounds(a.x, a.y)) worked.add(a.y * lay.w + a.x);
+  }
+  const reserve: number[] = [];
+  let placed = 0;
+  const base = lay.unreached();
+  // Second pass: if the reserved walkway leaves no flush spot (a tight hall), a bin may take walkway floor, as long as
+  // every tile stays reachable.
+  for (const relax of [false, true]) {
+    if (placed >= n) break;
+    const keep = lay.keep.slice();
+    if (relax) for (const i of lay.roomTiles(room)) lay.keep[i] = 0;
+    const cands: { x: number; y: number; rot: number; v: number }[] = [];
+    for (let rot = 0; rot < 4; rot++) {
+      const [w, h] = rotatedSize(def, rot);
+      for (let y = host.y - h; y <= host.y + hh; y++) {
+        for (let x = host.x - w; x <= host.x + hw; x++) {
+          // Flush: shares an edge run with the host without overlapping it.
+          const overlapX = Math.min(x + w, host.x + hw) - Math.max(x, host.x);
+          const overlapY = Math.min(y + h, host.y + hh) - Math.max(y, host.y);
+          const sideX = (x + w === host.x || x === host.x + hw) && overlapY > 0;
+          const sideY = (y + h === host.y || y === host.y + hh) && overlapX > 0;
+          if (!sideX && !sideY) continue;
+          if (lay.fitError(id, x, y, rot, room) || footprintTiles(def, x, y, rot).some((t) => worked.has(t.y * lay.w + t.x))) continue;
+          const dist = work ? Math.hypot(x + w / 2 - work.x - 0.5, y + h / 2 - work.y - 0.5) : 0;
+          cands.push({ x, y, rot, v: dist + 0.5 * (sideX ? overlapY : overlapX) + rng.next() * 0.8 });
+        }
+      }
+    }
+    cands.sort((p, q) => q.v - p.v);
+    for (const c of cands) {
+      if (placed >= n) break;
+      if (lay.fitError(id, c.x, c.y, c.rot, room)) continue;
+      lay.push({ def: id, x: c.x, y: c.y, rot: c.rot });
+      if (lay.unreached() > base) { lay.pop(); continue; }
+      placed++;
+      const a = accessTile(def, c.x, c.y, c.rot);
+      if (a) reserve.push(a.y * lay.w + a.x);
+    }
+    lay.keep.set(keep);
+    // Later furniture leaves each bin's working tile clear.
+    for (const i of reserve.splice(0)) lay.keep[i] = (lay.keep[i] as number) + 1;
+  }
+  return placed;
+}
+
 /** True if the step should be skipped in this room. */
 function skip(lay: Layout, room: number, s: Step, id: string): boolean {
   if (s.minFloor && lay.roomTiles(room).length < s.minFloor) return true;
@@ -311,7 +370,18 @@ export function furnish(
 ): void {
   keepDoorApproach(lay, room);
   d.arr.steps.forEach((s, si) => {
-    if (s.count === 'spec') return;
+    if (s.count === 'spec') {
+      // The planned modules are all in: set each one's flush companions (ore bins beside a refinery).
+      const w = s.with;
+      if (w) {
+        for (const host of roomModules(lay, room).filter((m) => m.def === d.picks[si])) {
+          // One big piece first where it fits, then the small ones for the rest.
+          const big = w.big ? flank(lay, rng, room, host, w.big, 1) : 0;
+          if (big < w.n) flank(lay, rng, room, host, w.mod, w.n - big);
+        }
+      }
+      return;
+    }
     const id = d.picks[si] as string;
     if (skip(lay, room, s, id)) return;
     const draw = Math.max(0, -(lay.defs[id]?.power ?? 0));

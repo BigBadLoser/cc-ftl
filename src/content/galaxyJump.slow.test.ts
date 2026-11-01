@@ -31,7 +31,7 @@ function trip(seed: number): Sim {
     if (c) c.ftl = FTL_CHARGE_SEC;
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [to] });
     run(1);
-    for (let i = 0; i < 90000 && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+    for (let i = 0; i < 90000 && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { sim.step(); sim.story.active = null; }
     sim.enqueue({ type: 'galaxy.drop' });
     run(1);
     deploy();

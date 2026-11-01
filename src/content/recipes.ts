@@ -30,26 +30,38 @@ export const recipes = {
     outputs: [{ item: 'item.polymer', count: 1 }],
     work: 80,
   },
-  // Refinery recipes: raw ore from mining pods and digging becomes building materials.
+  // Refinery recipes: raw ore from mining pods and digging becomes building materials, worth more than the ore at any trader (issue #222;
+  // the balance harness, economy.slow.test.ts, checks it). Batches are big: fetching the ore is most of a craft's time.
   'recipe.refine_iron': {
+    category: 'refining',
     name: 'Refine iron ore',
     station: 'module.refinery',
-    inputs: [{ item: 'item.iron_ore', count: 3 }],
-    outputs: [{ item: 'item.metal', count: 2 }],
-    work: 80,
+    inputs: [{ item: 'item.iron_ore', count: 24 }],
+    outputs: [{ item: 'item.metal', count: 20 }],
+    work: 300,
   },
   'recipe.refine_rare': {
+    category: 'refining',
     name: 'Refine rare ore',
     station: 'module.refinery',
-    inputs: [{ item: 'item.rare_ore', count: 2 }],
-    outputs: [{ item: 'item.electronics', count: 1 }],
-    work: 140,
+    inputs: [{ item: 'item.rare_ore', count: 8 }],
+    outputs: [{ item: 'item.electronics', count: 8 }],
+    work: 400,
   },
-  // The galley's recipe: reclaimed scrap becomes nutrient paste bars.
+  // Ice splits into water and oxygen.
+  'recipe.refine_ice': {
+    category: 'refining',
+    name: 'Split ice',
+    station: 'module.refinery',
+    inputs: [{ item: 'item.ice', count: 16 }],
+    outputs: [{ item: 'item.water', count: 8 }, { item: 'item.oxygen', count: 8 }],
+    work: 240,
+  },
+  // The galley's recipe: reclaimed scrap and water become nutrient paste bars (water: issue #222; the starter ship carries 30, for 90 rations).
   'recipe.ration': {
     name: 'Print rations',
     station: 'module.galley',
-    inputs: [{ item: 'item.scrap', count: 2 }],
+    inputs: [{ item: 'item.scrap', count: 2 }, { item: 'item.water', count: 1 }],
     outputs: [{ item: 'item.ration', count: 3 }],
     work: 40,
   },

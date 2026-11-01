@@ -1,3 +1,6 @@
+import { ShipC } from '../combat/components';
+import { attachServices } from '../blackmarket/attach';
+import { LAWLESS_DANGER, LESSER_SHARE } from '../blackmarket/tuning';
 import { generateAsteroid } from '../asteroids/gen';
 import { placedParts, stampAsteroid } from '../asteroids/place';
 import { spawnDerelict } from '../combat/derelict';
@@ -13,6 +16,8 @@ import { bindStation } from './marketLive';
 import { profileOf } from './market';
 import { pickWeighted } from './sector';
 import type { Port } from './ports';
+import { isHostileFaction } from './standing';
+import { nodeOf } from './state';
 import type { NodeData } from './types';
 
 /**
@@ -24,10 +29,11 @@ import type { NodeData } from './types';
 const SIZES: readonly StationSize[] = ['outpost', 'station', 'hub'];
 
 /** The station kind (content `station.*`) a station structure is: from its port when it has one, else from its definition and owner. */
-export function stationKindOf(sim: Sim, port: Port | undefined, military: boolean, pirate: boolean): string {
+export function stationKindOf(sim: Sim, port: Port | undefined, military: boolean, pirate: boolean, research = false): string {
   const stations = sim.content.stations ?? {};
   if (port?.kind === 'den') return 'station.pirate';
   if (port?.kind === 'depot') return 'station.military';
+  if (research && !pirate && stations['station.research']) return 'station.research';
   if (port) {
     // A market's trade profile names the station kind it is (trading or farming).
     const profile = profileOf(sim, port);
@@ -43,11 +49,30 @@ export function growSector(sim: Sim, x: number, y: number, w: number, h: number)
   sim.sector.height = Math.max(sim.sector.height, y + h + 8);
 }
 
+/** Only a share of pirate-held and lawless stations are markets (LESSER_SHARE): a seeded roll per station, the rest stay hostile dens. */
+export function isMarket(sim: Sim, ship: number): boolean {
+  return unit(sim.seed, strHash(String(sim.sector.node)), sim.world.get(ship, ShipC)?.gen?.seed ?? ship, 0xb1ac) < LESSER_SHARE;
+}
+
+/**
+ * The lesser black-market services (content `bm.lesser`) go to pirate-held stations (a den, or any port of a pirate faction) and to stations no faction holds in
+ * lawless space (danger from LAWLESS_DANGER). The three named markets are not placed here: they are attached by the galaxy once they are spawned.
+ */
+export function attachLesser(sim: Sim, ship: number, port: Port | undefined): void {
+  const pirate = !!port && sim.content.galaxy?.factions[port.owner]?.kind === 'pirates';
+  const lawless = !port && (nodeOf(sim, sim.galaxy.current)?.danger ?? 0) >= LAWLESS_DANGER;
+  if ((pirate || lawless) && isMarket(sim, ship)) attachServices(sim, ship, 'bm.lesser');
+}
+
 /** A station for a structure, bound to its port's market. Returns the ship id, or null. */
 export function populateStation(sim: Sim, port: Port | undefined, kind: string, size: StationSize, seed: number, at: Place): number | null {
-  const r = spawnStation(sim, kind, size, seed, at);
+  // A navy depot is hostile only to someone the navy is hostile to: at a standing that is not hostile it is a station you can dock at and trade with
+  // (it sells the defence blueprints), crew and all. Pirate dens and the other hostile kinds stay hostile (dormant until provoked).
+  const calm = port?.kind === 'depot' && !isHostileFaction(sim, port.owner);
+  const r = spawnStation(sim, kind, size, seed, at, undefined, calm ? 'neutral' : undefined);
   if (typeof r === 'string') return null;
   if (port) bindStation(sim, r, port);
+  attachLesser(sim, r, port);
   return r;
 }
 
@@ -60,6 +85,7 @@ export function populateOutpost(sim: Sim, port: Port | undefined, style: Outpost
   growSector(sim, x, y, o.asteroid.w, o.asteroid.h);
   const ids = stampOutpost(sim, o, x, y);
   if (port) bindStation(sim, ids.ship, port);
+  attachLesser(sim, ids.ship, port);
   return true;
 }
 

@@ -1,3 +1,4 @@
+import { settleLosses } from './jobs';
 import { ShipC } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import { liftShip } from '../sector/packet';
@@ -43,7 +44,7 @@ export function enterEvent(sim: Sim, e: Encounter, kind: EventGrid['kind']): boo
   if (!t || !f || sim.sector.state !== 'hyperspace' || g.event) return false;
   g.fleets = g.fleets.filter((x) => x !== f);
   g.event = { id: e.id, kind, encounter: { ...e }, fleet: f, fled: [] };
-  t.held = t.phase === 'event' ? 'hop' : t.phase;
+  t.held = t.phase === 'event' || t.phase === 'story' ? 'hop' : t.phase;
   t.phase = 'event';
   const from = sim.sector.node;
   sim.sector.node = eventNodeId(e.id);
@@ -104,6 +105,8 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim) => void, command = 'gala
   const blocked = leaveBlocker(sim);
   if (blocked) return reject(blocked);
   let packet = sim.sector.packet;
+  // Kills in the grid count before its ships are gone.
+  settleLosses(sim);
   if (sim.sector.state === 'active') {
     const me = playerShipInfo(sim) as NonNullable<ReturnType<typeof playerShipInfo>>;
     if (hostilesPresent(sim) > 0) spendCharge(sim, FTL_CHARGE_SEC, me.id);
@@ -126,7 +129,7 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim) => void, command = 'gala
   if (fleet.ships.length) g.fleets = [...g.fleets, fleet].sort((a, b) => a.id - b.id);
   const held = t.held ?? 'hop';
   delete t.held;
-  t.phase = held;
+  t.phase = held === 'hopEnd' ? 'hop' : held;
   g.rev++;
   sim.events.emit({ type: 'galaxy.eventLeft', id: ev.id, node: g.current });
   if (held === 'interdicted') resume(sim);

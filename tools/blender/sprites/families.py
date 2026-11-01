@@ -27,6 +27,7 @@
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
+  storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
   wallprops pieces on a wall run's face: pipes, cable tray, conduit, vents, panels, signs, a terminal (wallprops.py)
   hazards   looping hazards (.f0 .. .f3): sparking cables (wall and floor), a steam leak, an emergency beacon (hazards.py)
@@ -38,6 +39,12 @@
   pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
   mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
+  starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
+  backdrop  the node's central body drawn large behind the main view: backdrop.body.<kind>.v<n>, 320 px frame (backdrop_bodies.py,
+            backdrop_pulsar.py)
+  cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
+  items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
+            for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -168,6 +175,23 @@ def jobs(name):
     if name == "fx_mining":
         from . import fx_mining
         return fx_mining.SPRITES, True
+    if name == "starmap":
+        from . import starmap
+        return starmap.jobs(), True
+    if name == "backdrop":
+        from . import backdrop_bodies
+        return backdrop_bodies.jobs(), True
+    if name == "cargo":
+        from . import cargo
+        return cargo.SPRITES, True
+    if name == "items":
+        from . import items_goods, items_materials, items_now, items_parts, items_tech
+        from .items_kit import jobs as item_jobs
+        planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
+        return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+    if name == "storage_ore":
+        from . import tip_bin
+        return tip_bin.jobs(), True
     raise KeyError(name)
 
 
@@ -175,5 +199,5 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "storage_ore")
 ALL = RENDERED + ("sol", "damage_sol")

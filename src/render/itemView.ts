@@ -1,4 +1,5 @@
 import { Sprite } from 'pixi.js';
+import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ItemStackC } from '../sim/items/components';
@@ -60,7 +61,7 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
     const live = new Set<number>();
     if (t) {
       const { grid } = t;
-      const pulse = host.emergency() ? pulsePhase(performance.now()) : -1;
+      const pulse = host.emergency() ? pulsePhase(animNow()) : -1;
       for (const id of world.query(ItemStackC)) {
         const st = world.get(id, ItemStackC);
         if (!st || !grid.inBounds(st.x, st.y)) continue;

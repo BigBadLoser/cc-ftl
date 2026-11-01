@@ -4,8 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>cc-ftl</title>
+    <style>
+      html, body { margin: 0; background: #06080a; }
+      #boot-veil { position: fixed; inset: 0; z-index: 2000; background: #06080a; display: grid; place-items: center; transition: opacity 200ms ease-in; }
+      #boot-veil.lift { opacity: 0; pointer-events: none; }
+      #boot-veil div { display: flex; align-items: center; gap: 10px; color: #8a97a8; font: 600 12px system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; }
+      #boot-veil i { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: boot-spin 0.8s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
+    <!-- Covers the page from the first paint until the first scene's sprites are in (src/ui/bootVeil.ts lifts it). -->
+    <div id="boot-veil" role="status"><div><i></i>Loading</div></div>
+    <script>setTimeout(function () { var v = document.getElementById('boot-veil'); if (v) v.remove(); }, 15000);</script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

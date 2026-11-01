@@ -4,7 +4,7 @@ import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -24,13 +24,24 @@ export interface ShipTemplate {
    * player's ship once `afterSec` seconds of combat have passed, or earlier when fewer than half its weapons work or its
    * integrity falls below `losingBelow`. Absent = it never boards (keeps the balance scenarios comparable).
    */
-  boarding?: { party: number; afterSec: number; losingBelow: number; /** Hand weapon (item id) issued to the party when it leaves. */ weapon?: string };
+  boarding?: {
+    party: number; afterSec: number; losingBelow: number;
+    /** Hand weapon (item id) issued to the party when it leaves. */
+    weapon?: string;
+    /** Raiders: once the party is on its way the ship stops shooting, so the prize is not wrecked under it. */
+    prefer?: true;
+    /** Zealots: the party heads for the player's AI core (capture/coreRaid.ts) and tears it out if it holds it. */
+    coreRaid?: true;
+  };
 }
 
-import type { EventDef } from './story/defs';
+import type { EventDef, GoalActDef } from './story/defs';
 import type { TradeDef } from './trade/types';
 import type { OreDef } from './asteroids/types';
 import type { GalaxyContent } from './galaxy/defs';
+import type { YardDef } from './yard/types';
+import type { BlackMarketDef } from './blackmarket/defs';
+import type { TraitDef } from './crew/traitDef';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -43,6 +54,8 @@ export interface ContentRegistry {
   modules: Record<string, ModuleDef>;
   /** Pool of first names for generated crew. */
   crewNames: string[];
+  /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
+  traits?: Record<string, TraitDef>;
   /** Item content id (e.g. 'item.metal') to definition. */
   items: Record<string, ItemDef>;
   /** Recipe content id to definition. */
@@ -55,6 +68,8 @@ export interface ContentRegistry {
   vehicles?: Record<string, VehicleDef>;
   /** Event content (story/defs.ts) by id. Absent = no events. */
   events?: Record<string, EventDef>;
+  /** The tutorial goal chain, in order (story/goals.ts). Absent = none. */
+  goals?: GoalActDef[];
   /** The EVA spacesuit. Absent = DEFAULT_SUIT (tuning.ts). */
   suit?: SuitDef;
   /** Starmap content: galaxy factions (territory, standings), node structures, sector names. Absent = a bare galaxy. */
@@ -69,6 +84,39 @@ export interface ContentRegistry {
   creatures?: CreatureDefs;
   /** Ore kinds in asteroid rock (content/ores.ts) by id. Absent = asteroids carry no ore. */
   ores?: Record<string, OreDef>;
+  /** Research projects (content/research.ts) by id. Absent = nothing to research. */
+  research?: Record<string, ResearchDef>;
+  /** The research tree's bands in order (ids are `ResearchDef.category`). */
+  researchBands?: { id: string; name: string }[];
+  /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
+  yard?: YardDef;
+  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */
+  blackMarkets?: Record<string, BlackMarketDef>;
+}
+
+/**
+ * A research project (sim/research): crew work it at a research module until `work` is done, which unlocks the blueprints of `unlocks`
+ * (module def ids, as buying them at a station does). `cost` is taken from the ship's stock when the project becomes the active one.
+ * `requires`: module ids that must be known, or unlocked by a project queued ahead of it, before it can be queued (Mk III needs Mk II); it only starts once they are known.
+ */
+export interface ResearchDef {
+  name: string;
+  description?: string;
+  cost: ItemQty[];
+  /** Ticks of work at workSpeed 1 and science 0. */
+  work: number;
+  unlocks: string[];
+  requires?: string[];
+  /**
+   * Further prerequisites as OR groups: each inner list is "any one of these modules", and every group must hold. Not read yet; it is
+   * here so the data model has a place for "either of two weapon techs" without a rewrite.
+   */
+  requiresAny?: string[][];
+  /** The research tree band it sits in (content/research.ts researchBands). */
+  category: string;
+  /** Tree placement overrides: column (default: one right of the furthest prerequisite) and row within the band (default: stacked by the tree). */
+  col?: number;
+  row?: number;
 }
 
 /** Derelict creatures (content/creatures.ts). */
@@ -137,6 +185,8 @@ export type Effect =
 /** A weapon: how it charges, flies and what it does. Power draw is on the carrying ModuleDef. */
 export interface WeaponDef {
   name: string;
+  /** One-line name for the combat HUD's weapon cards ("Missiles"); the module's own name is the tooltip. Defaults to the module name. */
+  shortName?: string;
   /** Render asset id of the projectile. */
   projectileAsset: string;
   /** Shots per volley. */
@@ -153,11 +203,15 @@ export interface WeaponDef {
   ammo?: string;
   /** Point defence may shoot it down. */
   interceptable?: boolean;
+  /** Can be aimed at (and hurts) shuttles. Weapons without it never fire at a shuttle. */
+  antiVehicle?: boolean;
   /**
    * Shield rule: a shot is blocked when layers > pierce (and `bypass` is off), removing `damage` layers.
    * `bypass` skips shields entirely.
    */
   shield: { damage: number; pierce: number; bypass?: boolean };
+  /** Heat the firing ship gains per volley (combat/heat.ts). */
+  heat: number;
   /** Applied (in order) when the shot lands on the hull. */
   effects: Effect[];
 }
@@ -185,6 +239,8 @@ export interface ItemDef {
   price?: number;
   /** Quality tier of gear (1 basic, 2 middle grade, 3 the best). Traders' surplus rules sell only up to a tier. */
   tier?: number;
+  /** A job's sealed cargo (a delivery crate): it stays where it is put on deck, never hauled into storage, loaded or sold. */
+  cargo?: true;
 }
 
 /** Pose family of a hand weapon's art (which aim/fire/ready/swing clips it has). */
@@ -224,6 +280,8 @@ export interface RecipeDef {
   outputs: ItemQty[];
   /** Ticks of work at workSpeed 1. */
   work: number;
+  /** Work category of the craft job (default 'crafting'; refinery recipes use 'refining'). */
+  category?: WorkCategory;
 }
 
 /** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */
@@ -236,12 +294,18 @@ export interface RoleDef {
   fighter?: true;
   /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
   loadout?: string[];
+  /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
+  playerLoadout?: string[];
+  /** Items (best first) this role's player crew may take from storage when intruders are aboard and they have no weapon (see fight/emergency.ts). */
+  emergencyLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */
   assemble?: { cost: readonly ItemQty[]; work: number };
   /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
   surrenderBelow?: number;
+  /** In a fight, this role's crew relieve a weapons or helm console that has been empty for RELIEF_AFTER_SEC, whatever their operating priority (0 still opts out). */
+  relievesStations?: true;
 }
 
 /** A species: base stats. Modifiers (traits, implants) come later via the stat resolver. */
@@ -318,8 +382,15 @@ export interface AirlockLayout {
  * A placeable ship module. `footprint` is [w, h] at rotation 0; (x, y) of a placed module is the
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
+/** Build catalog tab of a module (tool cards live in their own tabs: structure tools in Structure, rock tools in Mining). */
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+
 export interface ModuleDef {
   name: string;
+  /** Build catalog tab. Absent = Utility. */
+  category?: ModuleCategory;
+  /** One or two sentences for the build catalog's popover. */
+  description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */
   asset: string;
   footprint: readonly [number, number];
@@ -339,10 +410,15 @@ export interface ModuleDef {
   openTiles?: readonly (readonly [number, number])[];
   /** Positive supplies power, negative draws it (units per second). */
   power: number;
-  /** Power priority 1 (served first) .. 5. Default DEFAULT_PRIORITY. */
-  priority?: number;
+  /** Power-shedding order 1 (served first) .. 5 when the ship is short of power. Default DEFAULT_POWER_PRIORITY. */
+  powerPriority?: number;
   /** Oxygen added per second, spread over the module's room. */
   o2PerSec?: number;
+  /**
+   * Bottled supply that speeds the air up (issue #222): while the room is short of air and the ship's stores hold `item`, the module adds
+   * `mult` times its oxygen, burning one unit per `secPerUnit` seconds of boosted running. A room at normal air burns nothing.
+   */
+  o2Supply?: { item: string; mult: number; secPerUnit: number };
   /** CO2 removed per second, spread over the module's room. */
   co2ScrubPerSec?: number;
   /** Degrees C x tiles added per second, spread over the footprint. */
@@ -358,10 +434,19 @@ export interface ModuleDef {
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
   workstation?: true;
+  /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
+  research?: true;
   /** Materials to build it; deconstructing refunds DECON_REFUND of them. */
   cost?: ItemQty[];
   /** Holds items: capacity in stacks. */
   storage?: { capacity: number };
+  /** Storage that takes only these item ids (ore bins); unset takes everything. Becomes the storage's `filter` at spawn. */
+  storageAccepts?: string[];
+  /**
+   * Art only: item id -> art kind for a storage module whose sprite shows what it holds (ore bins:
+   * `.empty`, else `.<kind>.<fill1|fill2|full>` by the dominant mapped item). The sim never reads it.
+   */
+  storageArt?: Record<string, string>;
   /** Crafts recipes whose `station` is this def (gets a ProductionC order list). */
   crafting?: true;
   /**
@@ -395,8 +480,25 @@ export interface ModuleDef {
   weapon?: string;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };
-  /** Engine: evasion added per unit of power (needs a pilot). */
-  engine?: { evasionPerPower: number };
+  /**
+   * Engine: evasion added per unit of power (needs a pilot); `fuelFactor` scales the fuel each jump burns (default 1, 0.85 = 15% less).
+   * `hullCapacity`: how many tiles of ship size (interior area, see `hullArea`) the engine can push through a jump; the ship's capacity is the sum over its engines
+   * that still work, and a ship over it cannot make a normal jump (ftl/capacity.ts).
+   */
+  /** Cools the ship while its shields are down: heat per second shed (combat/heat.ts). */
+  radiator?: { coolPerSec: number };
+  engine?: { evasionPerPower: number; fuelFactor?: number; hullCapacity?: number };
+  /**
+   * Needs its blueprint before crew can build it (`job.buildModule` is refused until it is known, see sim/modules/blueprints.ts). Absent = a
+   * basic blueprint every game starts with. Stations sell the blueprint from danger tier `minDanger` up, for `price` credits scaled by
+   * the station's danger tier; `tier` (2, 3...) is only a label.
+   */
+  blueprint?: { tier: number; minDanger: number; price: number };
+  /**
+   * Placeholder art of a bigger tier of an existing module: the base `asset` is drawn normally at the footprint `base` (the one it was
+   * modelled for), with an outline in `tint` over the whole footprint and a tier badge. Render-only; goes when the tier has its own art.
+   */
+  tierArt?: { base: readonly [number, number]; tint: number };
   /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
   pointDefense?: true;
   /**

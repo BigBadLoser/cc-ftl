@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { crewPalette, filterResolution, hash } from './palette';
+import { artZoom, crewPalette, filterResolution, hash } from './palette';
 
 describe('crewPalette', () => {
   it('is deterministic per seed', () => {
@@ -21,5 +21,16 @@ describe('filterResolution', () => {
   });
   it('guards a degenerate scale', () => {
     expect(filterResolution(0)).toBe(1);
+  });
+});
+
+describe('crew filter on the art grid', () => {
+  it('works on the art grid: the zoom is the camera scale times 2 world px per art px', () => {
+    expect(artZoom(0.5)).toBe(1);
+    expect(artZoom(1)).toBe(2);
+  });
+  it('keeps one texel per art px while the art is shrunk, and shrinks nothing at camera scale 0.5 and up', () => {
+    for (const cam of [1 / 8, 0.2, 0.4]) expect(filterResolution(artZoom(cam)) * artZoom(cam)).toBeCloseTo(1, 10);
+    for (const cam of [0.5, 0.75, 1, 3]) expect(filterResolution(artZoom(cam))).toBe(1);
   });
 });

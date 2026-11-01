@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
+import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, isContraband, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
 import { content } from './index';
 import { shipIdOf } from '../sim/regions';
 import { shipIds } from '../sim/regions';
@@ -45,9 +45,12 @@ function withStation(): { sim: Sim; station: number } {
   return { sim, station };
 }
 
+/** Items that change hands: all but a job's sealed cargo (ItemDef.cargo), which is never for sale. */
+const traded = Object.entries(content.items).filter(([, d]) => !(d as { cargo?: true }).cargo);
+
 describe('content', () => {
-  it('prices every item and every trader stocks only priced items; faction and trader tables resolve', () => {
-    for (const [id, d] of Object.entries(content.items)) expect((d as { price?: number }).price, id).toBeGreaterThan(0);
+  it('prices every item but job cargo, and every trader stocks only priced items; faction and trader tables resolve', () => {
+    for (const [id, d] of traded) expect((d as { price?: number }).price, id).toBeGreaterThan(0);
     for (const [id, t] of Object.entries(content.trade.traders)) {
       for (const s of t.stock) expect(content.items[s.item as keyof typeof content.items], `${id} ${s.item}`).toBeDefined();
       const fid = (t.match as { faction?: string }).faction;
@@ -71,9 +74,14 @@ describe('pricing', () => {
         t.faction = faction;
         for (const rep of [-8, -2, 0, 3, 9]) {
           sim.story.reputation[content.trade.factions[faction as keyof typeof content.trade.factions].reputation] = rep;
-          for (const item of Object.keys(content.items)) {
+          for (const [item] of traded) {
             const sell = unitPrice(sim, station, item, 'sell')!;
-            const buy = unitPrice(sim, station, item, 'buy')!;
+            const buy = unitPrice(sim, station, item, 'buy');
+            // Only a black market buys contraband; a plain trader does not buy it at all.
+            if (buy === null) {
+              expect(isContraband(sim, item), `${profile} ${faction} ${item}`).toBe(true);
+              continue;
+            }
             expect(buy, `${profile} ${faction} rep ${rep} ${item}`).toBeLessThanOrEqual(sell);
             expect(buy).toBeGreaterThanOrEqual(1);
           }
@@ -86,8 +94,9 @@ describe('pricing', () => {
     const { sim, station } = withStation();
     const t = sim.world.get(station, TraderC)!;
     // Station, civilian: spread only.
-    expect(unitPrice(sim, station, 'item.metal', 'sell')).toBe(Math.round(6 * 1.25));
-    expect(unitPrice(sim, station, 'item.metal', 'buy')).toBe(Math.round(6 * 0.6));
+    const metal = sim.content.items['item.metal']!.price!; // the base price (8 since the mining economy, #222)
+    expect(unitPrice(sim, station, 'item.metal', 'sell')).toBe(Math.round(metal * 1.25));
+    expect(unitPrice(sim, station, 'item.metal', 'buy')).toBe(Math.round(metal * 0.6));
     // Trader kind: the liner pays more for food (tag mod) and sells it cheaper.
     t.profile = 'trader.liner';
     expect(unitPrice(sim, station, 'item.ration', 'buy')).toBe(Math.round(5 * 0.6 * 1.25));
@@ -231,7 +240,10 @@ describe('offers', () => {
     expect(offer(10, 1).error).toEqual([]);
     sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
     // The player's shuttle carries the goods over to the station and back (no instant fallback any more).
-    const ev = run(sim, 8000);
+    // Step until the deal settles (bounded), not a fixed span: the shuttle trip is the only thing being waited for.
+    const ev: SimEvent[] = [];
+    for (let i = 0; i < 8000 && ofType(ev, 'trade.settled').length === 0; i++) ev.push(...run(sim, 1));
+    ev.push(...run(sim, 100)); // a short tail: nothing is rejected or settled twice afterwards
     expect(rejected(ev)).toEqual([]);
     expect(ofType(ev, 'trade.settled')).toHaveLength(1);
     expect(sim.trade.credits).toBe(before);
@@ -288,6 +300,7 @@ describe('trade state', () => {
     const raw = JSON.parse(serialize(sim)) as Record<string, unknown>;
     delete raw['trade'];
     const loaded = deserialize(JSON.stringify(raw), content);
-    expect(loaded.trade).toEqual({ credits: 0, hails: [], offers: [], deals: [], nextId: 1 });
+    // Loading sets the high-water mark (#166) from what the save holds: none here.
+    expect(loaded.trade).toEqual({ credits: 0, bestCredits: 0, hails: [], offers: [], deals: [], nextId: 1 });
   });
 });

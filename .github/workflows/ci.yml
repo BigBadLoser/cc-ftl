@@ -1,30 +1,126 @@
 name: CI
 
+# The repo is public, so minutes are free and wall time is what counts: lint, typecheck, build and the tests run as parallel
+# jobs, and the tests are split across a matrix of shards (`vitest --shard`, balanced by tools/testWeights.ts).
+# - Ready PRs: all of that, on the merge result with a clean install. PR_TESTS below picks what the test shards run: `full`
+#   (every test, slow tier included) or `affected` (only the fast tests the change can affect, by Vitest's import graph
+#   against the first parent, the base branch for the PR's merge commit; Vitest runs everything when package.json or the
+#   Vite config changes). Draft PRs don't run CI: open a PR as a draft while review fixes go back and forth (comment
+#   `@codex review` for a Codex review, which skips drafts), and mark it ready when it is; CI then runs on that and on
+#   every later push.
+# - Pushes to main don't run CI: everything reaching main is a PR merge CI already checked, or a markdown-only change.
+# - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
+#   tier (*.slow.test.ts) included. This catches what slips through, such as two PRs that only break together.
+#   A manual run can pick `affected` too (it then compares the branch's last commit with its parent) and the shard count.
+# Markdown-only and wiki-only changes don't run this CI (the wiki has .github/workflows/wiki-ci.yml).
+# Shared src/content edits still run both.
 on:
   pull_request:
-  push:
-    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: Test shards (the suite is split this many ways)
+        default: '8'
+      tests:
+        description: Which tests the shards run, full or affected
+        default: full
+
+env:
+  # What PRs test (see the top). One line to switch.
+  PR_TESTS: full
+  SHARDS: '8'
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
+  gate:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.fresh.outputs.run }}
+      count: ${{ steps.fresh.outputs.count }}
+      mode: ${{ steps.fresh.outputs.mode }}
+      shards: ${{ steps.fresh.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      # The daily run skips itself when main has no commit from the last 24 hours.
+      - name: Needed?
+        id: fresh
+        run: |
+          if [ "${{ github.event_name }}" = schedule ] && [ $(( $(date +%s) - $(git log -1 --format=%ct) )) -gt 86400 ]; then
+            echo "main unchanged for a day: skipping"; echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+          # Shard count: SHARDS above for PRs and the nightly run, or set by hand on a manual run.
+          mode=${{ github.event.inputs.tests || (github.event_name == 'pull_request' && env.PR_TESTS) || 'full' }}
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          count=${{ github.event.inputs.shards || env.SHARDS }}
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "shards=$(seq -s, 1 "$count" | sed 's/^/[/; s/$/]/')" >> "$GITHUB_OUTPUT"
+
+  lint:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+        with: { node-version: 22, cache: npm }
       - run: npm ci
-      - name: Lint
-        run: npm run lint
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Test
-        run: npm test
-      - name: Build
-        run: npm run build
+      - run: npm run lint
+
+  typecheck:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+
+  build:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+
+  test:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.gate.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # `affected`: --changed compares against the first parent; the shards split whatever it selects. VITEST_FAST skips *.slow.test.ts (vite.config.ts).
+      - name: Test (shard ${{ matrix.shard }}/${{ needs.gate.outputs.count }}, ${{ needs.gate.outputs.mode }})
+        run: |
+          if [ "${{ needs.gate.outputs.mode }}" = affected ]; then export VITEST_FAST=1; args="--changed HEAD~1"; fi
+          npx vitest run --shard=${{ matrix.shard }}/${{ needs.gate.outputs.count }} --passWithNoTests ${args:-}

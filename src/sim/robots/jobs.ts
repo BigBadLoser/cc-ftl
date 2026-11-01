@@ -1,6 +1,7 @@
 import { ammoCount, consumeAmmo } from '../combat/ammo';
 
 import { skillOf } from '../combat/operators';
+import { bumpStat } from '../story/goals';
 import { AssignmentC, CarriedC, DeadC, DraftedC, HealthC, JobC, PositionC, type Job, type Position } from '../crew/components';
 import { origin } from '../crew/helpers';
 import type { WorkResult } from '../crew/jobWork';
@@ -78,9 +79,9 @@ export function heldForMend(sim: Sim, robot: number): boolean {
   });
 }
 
-/** May this crew member take this robot job? Mending needs the repair skill and a robot of their own side; hacks are only ever ordered. */
+/** May this crew member take this robot job? Mending needs the repair skill and a robot of their own side; hacks and sabotage are only ever ordered. */
 export function canTakeRobotJob(sim: Sim, crew: number, job: Job): boolean {
-  if (job.kind === 'hack') return false;
+  if (job.kind === 'hack' || job.kind === 'sabotage') return false;
   if (job.kind !== 'mend') return true;
   const mine = sim.world.get(crew, AllegianceC)?.faction;
   return skillOf(sim, crew, 'repair') > 0 && mine === sim.world.get(job.target ?? 0, AllegianceC)?.faction;
@@ -116,6 +117,7 @@ export function performSalvage(sim: Sim, job: Job, speed: number): WorkResult {
   if (job.progress < job.work) return 'working';
   for (const q of speciesOf(sim, wreck)?.wreck ?? []) spillItems(sim, shipIdOf(sim, pos), pos.x, pos.y, q.item, q.count);
   sim.events.emit({ type: 'robot.salvaged', crew: wreck, ship: shipIdOf(sim, pos), x: pos.x, y: pos.y });
+  bumpStat(sim, 'gathered');
   sim.world.destroyEntity(wreck);
   return 'done';
 }

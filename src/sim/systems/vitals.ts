@@ -1,21 +1,25 @@
 import { shipIdOf, shipGrid } from '../regions';
-import { releaseBed, releaseBedClaim } from '../crew/beds';
+import { abortTask } from '../ai/task';
+import { releaseBed } from '../crew/beds';
 import {
   CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC,
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
-import { releaseAssignment } from '../crew/helpers';
 import type { Grid } from '../grid';
 import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
+import { skillOf } from '../combat/operators';
+import { AllegianceC } from '../fight/components';
 import type { Sim } from '../sim';
+import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import {
-  BED_HEAL_PER_SEC, BLEED_OUT_SECONDS, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
+  BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
   COLD_BELOW, FIRE_CREW_DAMAGE, GET_UP_HP, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, REGEN_PER_SEC,
-  STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC,
+  SKILL_STEP, STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
+import { grantXp } from '../crew/xp';
 
 /** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (with air in the tank) or airless skips thin air and CO2; a suit also insulates against cold. */
 function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
@@ -39,6 +43,23 @@ function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: 
  * cold, and starve at zero hunger (a slow harm); `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down; `creature` ones die at 0 hp.
  */
 export function vitalsSystem(sim: Sim): void {
+  // Best medicine level per ship and side, worked out only when a patient in a bed needs it (rare), once per tick.
+  const medics = new Map<string, { skill: number; id: number }>();
+  const medicine = (ship: number, side: string): { skill: number; id: number } => {
+    const key = `${ship}:${side}`;
+    let best = medics.get(key);
+    if (best === undefined) {
+      best = { skill: 0, id: 0 }; // the best medicine wins; ties (all at 0 too) go to the lowest id, the query order
+      for (const c of sim.world.query(CrewC, PositionC)) {
+        if (sim.world.has(c, DeadC) || sim.world.has(c, DownedC) || sim.world.get(c, AllegianceC)?.faction !== side) continue;
+        if (shipIdOf(sim, sim.world.get(c, PositionC) as Position) !== ship) continue;
+        const skill = skillOf(sim, c, 'medicine');
+        if (best.id === 0 || skill > best.skill || (skill === best.skill && c < best.id)) best = { skill, id: c };
+      }
+      medics.set(key, best);
+    }
+    return best;
+  };
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const pos = sim.world.get(id, PositionC) as Position;
@@ -67,7 +88,11 @@ export function vitalsSystem(sim: Sim): void {
         else down(sim, id, pos);
       }
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
-      health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC - harm) / TICK_HZ);
+      const medic = medicine(shipIdOf(sim, pos), sim.world.get(id, AllegianceC)?.faction ?? '');
+      const care = 1 + SKILL_STEP * Math.max(0, medic.skill);
+      const before = health.hp;
+      health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
+      if (medic.id && health.hp > before) grantXp(sim, medic.id, 'medicine', (health.hp - before) * XP_PER_HP_HEALED); // the medic whose skill sped the healing
       if (health.hp >= GET_UP_HP) getUp(sim, id, downed);
     } else {
       health.hp = Math.max(0, health.hp - harm / TICK_HZ);
@@ -79,13 +104,12 @@ export function vitalsSystem(sim: Sim): void {
 
 function down(sim: Sim, id: number, pos: Position): void {
   const crew = sim.world.get(id, CrewC) as Crew;
-  releaseAssignment(sim, id);
-  releaseBedClaim(sim, id);
+  abortTask(sim, id, 'downed');
   sim.world.remove(id, DraftedC);
   pos.toX = pos.x;
   pos.toY = pos.y;
   pos.progress = 0;
-  sim.world.add(id, DownedC, { bleed: BLEED_OUT_SECONDS, stabilized: false, bed: 0 });
+  sim.world.add(id, DownedC, { bleed: bleedOutSec(sim, id), stabilized: false, bed: 0 });
   crew.activity = 'downed';
   sim.events.emit({ type: 'crew.downed', crew: id });
 }

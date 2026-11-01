@@ -1,4 +1,5 @@
 """numpy post-processing: palette quantization, mode downsample, outline, PNG writer. No bpy imports."""
+import hashlib
 import json
 import struct
 import zlib
@@ -324,13 +325,31 @@ def crop_box(op, extra=None):
 _STATES = {}
 
 
+def _palette(sel):
+    """A selection's palette entries: the game palette (False), it plus the extras that name no "set" (True), or those
+    plus the extras of a named set (a family's own colours: adding them changes no other family's palette)."""
+    if not sel:
+        return dict(_BASE_PAL)
+    out = {**_BASE_PAL, **{k: v for k, v in EXTRA.items() if not v.get("set")}}
+    if isinstance(sel, str):
+        out.update({k: v for k, v in EXTRA.items() if v.get("set") == sel})
+    return out
+
+
+def palette_digest(sel):
+    """What a selection's quantisation depends on in the palette files: its entries, in order (the render cache's
+    palette key: a colour added to another set leaves it unchanged)."""
+    return hashlib.sha1(json.dumps(list(_palette(sel).items())).encode()).hexdigest()
+
+
 def select(extra):
-    """Switch the quantisation palette: the game palette (default) or it plus the neon extras. Existing sprites keep
-    the plain one so their pixels never change when a colour is added."""
+    """Switch the quantisation palette (_palette): the game palette (default), it plus the neon extras (True), or
+    plus a named set's too. Existing sprites keep the plain one so their pixels never change when a colour is
+    added."""
     global PAL, BASE, NB, PALETTE, LUT, BAND_MAP, FLAT
-    key = bool(extra)
+    key = extra if isinstance(extra, str) else bool(extra)
     if key not in _STATES:
-        PAL = {**_BASE_PAL, **EXTRA} if key else dict(_BASE_PAL)
+        PAL = _palette(key)
         BASE = build_palette()
         NB = len(BASE)
         FLAT = _flat()

@@ -2,19 +2,24 @@ import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { wreckShip } from '../combat/wreck';
 import { hullSum } from '../combat/hull';
+import { crewSubdued } from '../combat/subdued';
+import { hopeless } from '../combat/hopeless';
+import { AllegianceC } from '../fight/components';
+import { isSubdued } from '../fight/relations';
+import { surrender } from '../fight/surrender';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { SHIP_STATE_INTERVAL, WRECK_BELOW } from '../tuning';
+import { SHIP_STATE_INTERVAL, WALL_WEIGHT, WRECK_BELOW } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
 
-/** One wall tile's weight in the integrity score, relative to one module hp (a full wall tile counts as 1.3). */
-const WALL_WEIGHT = 0.005;
 
 /**
  * Ship lifecycle, checked every few ticks. Integrity = (wall integrity x WALL_WEIGHT + module hp) over their
  * maxima. A ship is a WRECK (terminal) when integrity < WRECK_BELOW or every power source is destroyed: its
  * crew dies, its weapons and shields go dead, but the grid stays as a derelict. It is DISABLED while no crew
- * member can act or no power source runs (ion), and recovers when that clears. Fled ships are left alone.
+ * member can act or no power source runs (ion), and recovers when that clears. An enemy ship whose whole crew is subdued or dead (and
+ * none of the player's stand aboard) is wrecked too: the fight ends in a derelict, see `crewSubdued`. A hostile ship whose fight is hopeless
+ * (combat/hopeless.ts) surrenders first: its crew give up through the ordinary surrender path. Fled ships are left alone.
  */
 export function shipStateSystem(sim: Sim): void {
   if (sim.tick % SHIP_STATE_INTERVAL !== 0) return;
@@ -44,6 +49,23 @@ export function shipStateSystem(sim: Sim): void {
     }
     ship.integrity = (walls * WALL_WEIGHT + modHp) / Math.max(1, ship.hullMax * WALL_WEIGHT + modMax);
     if (ship.integrity < WRECK_BELOW || (sources > 0 && alive === 0)) {
+      wreckShip(sim, id);
+      continue;
+    }
+    // a hopeless fight (hull failing, weapons dead, crew cut off or outnumbered): its crew surrender, and the line below gives the ship up
+    if (hopeless(sim, id, ship)) {
+      let gaveUp = 0;
+      for (const c of sim.world.query(CrewC, PositionC)) {
+        const crew = sim.world.get(c, CrewC);
+        if (shipIdOf(sim, sim.world.get(c, PositionC)) !== id || isSubdued(sim, c) || sim.world.get(c, AllegianceC)?.faction === 'player') continue;
+        if (crew && sim.content.species[crew.species]?.fearless) continue;
+        surrender(sim, c);
+        gaveUp++;
+      }
+      if (gaveUp) sim.events.emit({ type: 'ship.surrendered', ship: id });
+    }
+    // an enemy ship whose whole crew is down, surrendered or dead has nothing left to fight with: it is given up as a derelict
+    if (crewSubdued(sim, id, ship)) {
       wreckShip(sim, id);
       continue;
     }

@@ -1,14 +1,19 @@
+import { dockScan, scanPending } from '../blackmarket/scan';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
 import { planCourier } from './courier';
 import { failDeal, isLive, liveDealWith, openDeal } from './deals';
 import { checkOffer } from './offers';
+import { peakFunding, planTrips } from './trips';
 import { ensureTrader, hailVerdict } from './traders';
+import { giveItems } from '../story/effects';
 import { spawnStation } from '../stations/spawn';
 import { unwindStation } from './stationDock';
 import { VehicleC } from '../vehicles/components';
+import { TraderC } from './types';
+import { addCredits } from './credits';
 
-type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits'>;
+type TradeCommandType = Extract<Command['type'], `trade.${string}` | 'debug.spawnStation' | 'debug.setCredits' | 'debug.giveItems'>;
 type Handler<T extends TradeCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -24,8 +29,11 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     sim.trade.hails.push({ ship: cmd.ship, answered: v.answers, reason: v.reason, tick: sim.tick });
     if (!v.answers) sim.trade.offers = sim.trade.offers.filter((o) => o.ship !== cmd.ship);
     sim.events.emit(v.answers ? { type: 'trade.hailAnswered', ship: cmd.ship, name: trader.name } : { type: 'trade.hailRefused', ship: cmd.ship, name: trader.name, reason: v.reason });
+    // A navy or corporation station scans a visitor as they open trade with it.
+    if (v.answers && trader.station) dockScan(sim, trader.owner, trader.name);
   },
   'trade.offer': (sim, cmd) => {
+    if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
     const c = checkOffer(sim, cmd.ship, cmd.give, cmd.get, cmd.barter === true);
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
     if (liveDealWith(sim, cmd.ship)) return reject(sim, cmd.type, 'dealOpen');
@@ -35,6 +43,7 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     sim.events.emit({ type: 'trade.offered', offer: offer.id, ship: cmd.ship, balance: offer.balance });
   },
   'trade.accept': (sim, cmd) => {
+    if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
     const offer = sim.trade.offers.find((o) => o.id === cmd.offer);
     if (!offer) return reject(sim, cmd.type, 'noOffer');
     if (liveDealWith(sim, offer.ship)) return reject(sim, cmd.type, 'dealOpen');
@@ -42,9 +51,17 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
     const plan = planCourier(sim, offer.ship, c.give, c.get);
     if ('error' in plan) return reject(sim, cmd.type, plan.error);
+    // More than one hold: haul trips in turn, each settled as it lands (see Deal.trip). The funds for the whole order were checked above.
+    const trips = planTrips(sim, offer.ship, c.give, c.get, plan.cap, offer.barter);
+    if (!trips) return reject(sim, cmd.type, offer.barter ? 'unbalanced' : 'noPrice');
+    if (trips === 'tooBig') return reject(sim, cmd.type, 'tooBig');
+    // Each trip settles on its own, so a mixed order can need more than its net balance along the way: check the peak, never overdraw a wallet.
+    const need = peakFunding(trips, offer.barter);
+    if (need.player > sim.trade.credits) return reject(sim, cmd.type, 'noFunds');
+    if (need.trader > (sim.world.get(offer.ship, TraderC)?.credits ?? 0)) return reject(sim, cmd.type, 'theyBroke');
     offer.balance = c.quote.balance;
-    const deal = openDeal(sim, offer, c, plan);
-    sim.events.emit({ type: 'trade.dealMade', deal: deal.id, ship: deal.ship, courier: deal.courier, balance: deal.balance });
+    const deal = openDeal(sim, offer, c, plan, trips);
+    sim.events.emit({ type: 'trade.dealMade', deal: deal.id, ship: deal.ship, courier: deal.courier, balance: offer.balance });
   },
   'trade.cancel': (sim, cmd) => {
     if (sim.trade.offers.some((o) => o.id === cmd.id)) {
@@ -56,10 +73,13 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
     // unwound there (goods back where they were) and the shuttle flies home.
     const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';
-    if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation) return reject(sim, cmd.type, 'inTransit');
+    // A hiring run can be called off until the recruits are aboard and the shuttle has left the station.
+    const fetching = !!deal.crew && (deal.phase === 'out' || atStation);
+    if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation && !fetching) return reject(sim, cmd.type, 'inTransit');
     if (atStation) unwindStation(sim, deal);
     failDeal(sim, deal, 'cancelled');
-    const v = atStation ? sim.world.get(deal.vehicle, VehicleC) : undefined;
+    // A later trip of a multi-trip order is called off with the shuttle still out from the last one: it flies home.
+    const v = atStation || (deal.trip && deal.trip.n > 1 && deal.courier === 'you') ? sim.world.get(deal.vehicle, VehicleC) : undefined;
     if (v) {
       // Keep the autopilot until it is home (parkCourier clears it once the shuttle is stowed).
       v.autopilot = true;
@@ -77,6 +97,10 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
   },
   'debug.setCredits': (sim, cmd) => {
     if (!Number.isFinite(cmd.value)) return reject(sim, cmd.type, 'badValue');
-    sim.trade.credits = Math.max(0, Math.round(cmd.value));
+    addCredits(sim, Math.max(0, Math.round(cmd.value)) - sim.trade.credits);
+  },
+  'debug.giveItems': (sim, cmd) => {
+    if (!sim.content.items[cmd.item] || !Number.isFinite(cmd.count) || cmd.count <= 0) return reject(sim, cmd.type, 'badValue');
+    giveItems(sim, cmd.item, Math.round(cmd.count));
   },
 };

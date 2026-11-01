@@ -1,8 +1,8 @@
-import { releaseBedClaim } from '../crew/beds';
-import { AssignmentC, CarriedC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
-import { clearPath, facingOf, isSettled, origin, releaseAssignment } from '../crew/helpers';
+import { CoreRaiderC, besideBox, coreObjective } from '../capture/coreRaid';
+import { abortTask, isCarrying } from '../ai/task';
+import { AssignmentC, CrewC, DraftedC, HealthC, JobC, PathC, PositionC, type Crew, type Path, type Position } from '../crew/components';
+import { clearPath, facingOf, isSettled, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
-import { dropCarried } from '../items/stacks';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
@@ -10,6 +10,10 @@ import type { Sim } from '../sim';
 import { CHASE_REPLAN_TICKS, COMBAT_SIGHT, FLEE_REPLAN_TICKS } from '../tuning';
 import { AllegianceC, EquipOrderC, FighterC, type Fighter } from './components';
 import { fleePath } from './flee';
+import { traitFlag } from '../crew/traits';
+import { COWARD_FLEE_BELOW, XP_DAMAGE_PER_XP } from '../tuning';
+import { grantXp } from '../crew/xp';
+import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
 import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
 import { armorOf } from '../robots/core';
@@ -48,22 +52,11 @@ function fighterOf(sim: Sim, id: number): Fighter {
   return f;
 }
 
-/** True while the crew member carries a patient on a rescue job: they finish it rather than flee or fight. */
-function carryingPatient(sim: Sim, id: number): boolean {
-  const a = sim.world.get(id, AssignmentC);
-  const job = a && sim.world.get(a.jobId, JobC);
-  return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === id;
-}
-
 /** Enter or leave a fighting mode. Leaving idle drops the colony chores; leaving a fight forgets the chase path. */
 function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void {
   if (f.mode === mode) return;
   if (f.mode === 'idle') {
-    releaseAssignment(sim, id);
-    releaseBedClaim(sim, id);
-    dropCarried(sim, id);
-    const crew = sim.world.get(id, CrewC) as Crew;
-    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') crew.activity = 'idle';
+    abortTask(sim, id, 'fight');
   } else if (mode === 'idle' && !sim.world.get(id, DraftedC)?.target) clearPath(sim, id);
   f.mode = mode;
   if (mode === 'idle') {
@@ -73,7 +66,7 @@ function setMode(sim: Sim, id: number, f: Fighter, mode: Fighter['mode']): void 
 }
 
 /** Walk to `goal` (adjacent to it if `adjacent`), replanning when idle on the way or when the goal moved. */
-function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: number; y: number }, adjacent: boolean): void {
+function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: number; y: number; w?: number; h?: number }, adjacent: boolean): void {
   const path = sim.world.get(id, PathC) as Path;
   const moved = !f.goal || f.goal.x !== goal.x || f.goal.y !== goal.y;
   const idle = path.steps.length === 0 && isSettled(pos);
@@ -125,22 +118,31 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
-      const goal = consoleObjective(sim, shipIdOf(sim, pos), pos);
-      if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
+      const shipId = shipIdOf(sim, pos);
+      // Zealot raiders go for the AI core when the ship has one; otherwise they board like anyone else.
+      const core = sim.world.has(id, CoreRaiderC) ? coreObjective(sim, shipId, pos) : null;
+      if (core) {
+        if (!besideBox(pos, core)) walkTo(sim, id, f, pos, core, true);
+      } else {
+        const goal = consoleObjective(sim, shipId, pos);
+        if (goal && (pos.x !== goal.x || pos.y !== goal.y)) walkTo(sim, id, f, pos, goal, false);
+      }
     }
     return;
   }
   const faction0 = sim.world.get(id, AllegianceC)?.faction;
   if (!controlled && wantsToSurrender(sim, id, units.filter((o) => sim.world.get(o, AllegianceC)?.faction === faction0), foes.map((o) => o.id))) return surrender(sim, id);
-  if (carryingPatient(sim, id)) return;
+  if (isCarrying(sim, id)) return; // carrying a patient: they finish the rescue rather than flee or fight
 
   const crew = sim.world.get(id, CrewC) as Crew;
   const role = sim.content.roles[crew.role];
   const weapon = wielded(sim, id);
   const faction = sim.world.get(id, AllegianceC)?.faction;
-  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do.
-  const canFight = isArmed(sim, id) || !!role?.fighter || (faction !== 'player' && !sim.world.has(id, StationCrewC));
-  const hunter = invader || !!role?.fighter;
+  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do. A Brave crew member fights bare-handed.
+  const canFight = isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && !sim.world.has(id, StationCrewC));
+  // Armed undrafted crew of the player's own ship hunt intruders they have not seen yet (onboarding: no draft needed).
+  const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id);
+  const hunter = invader || !!role?.fighter || defender;
 
   // The nearest foe we can see (sight range, clear line).
   let seen: (typeof foes)[number] | undefined;
@@ -152,6 +154,11 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     }
   }
 
+  // A Coward on their own runs from the foes they see once hurt, armed or not (a draft keeps them in line).
+  if (!controlled && seen && traitFlag(sim, id, 'coward') && hurtBelow(sim, id, COWARD_FLEE_BELOW)) {
+    return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  }
+
   let target: (typeof foes)[number] | undefined;
   if (controlled) {
     const ordered = f.ordered ? foes.find((o) => o.id === f.ordered) : undefined;
@@ -159,10 +166,36 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
     target = ordered ?? (sac ? { id: f.ordered, pos: sac } : f.engage && canFight ? seen ?? autoSac ?? undefined : undefined);
   } else if (creatureTurn(sim, grid, id, f, pos, seen, foes)) return;
   else if (canFight) target = seen ?? (hunter ? foes[0] : undefined);
-  else if (seen && !sim.content.species[crew.species]?.fearless) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  else if (!sim.content.species[crew.species]?.fearless) {
+    // Unarmed player crew know about every intruder aboard (a small ship): they keep away from all of them, not just those in view.
+    // Others (station civilians) run only from what they see.
+    if (faction === 'player') {
+      if (sim.world.has(id, EquipOrderC)) return; // on the way to arm (emergency arming): keep walking to the locker
+      const threats = foes.map((o) => o.pos);
+      // Hidden from every intruder: a rescue (on the way or just claimed, for a patient out of their sight) goes on instead of hiding.
+      if (hiddenFrom(sim, grid, pos, threats)) {
+        if (onRescue(sim, id)) return;
+        const wasFleeing = f.mode === 'flee';
+        if (wasFleeing) setMode(sim, id, f, 'idle');
+        if (claimHiddenRescue(sim, grid, id, pos, threats)) return;
+      }
+      return flee(sim, grid, id, f, pos, threats, true);
+    }
+    if (seen) return flee(sim, grid, id, f, pos, foes.filter((o) => dist(pos, o.pos) <= COMBAT_SIGHT).map((o) => o.pos));
+  }
 
   if (!target) {
     setMode(sim, id, f, 'idle');
+    return;
+  }
+  // A drafted crew member ordered to man a console stays at it: they may fire from the post when the foe is in reach, but the
+  // fight never takes the station away or sends them chasing (the order beats automatic engagement).
+  const asg = controlled ? sim.world.get(id, AssignmentC) : undefined;
+  if (asg && sim.world.get(asg.jobId, JobC)?.kind === 'operate') {
+    if (!isSettled(pos) || f.cooldown > 0) return;
+    const wd = wielded(sim, id).def;
+    const reach = wd.kind === 'ranged' ? dist(pos, target.pos) <= wd.range && sightLine(sim, grid, pos, target.pos).visible : Math.max(Math.abs(pos.x - target.pos.x), Math.abs(pos.y - target.pos.y)) <= 1;
+    if (reach) attack(sim, id, f, target.id, target.pos, pos, wielded(sim, id), dist(pos, target.pos), wd.kind === 'ranged' ? sightLine(sim, grid, pos, target.pos).cover : 'none');
     return;
   }
   setMode(sim, id, f, 'engage');
@@ -222,12 +255,14 @@ function attack(
   const sac = sim.world.get(targetId, EggSacC);
   if (sac) {
     sac.hp = Math.max(0, sac.hp - weapon.def.damage); // the egg sac system sees the damage next tick
+    grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', weapon.def.damage / XP_DAMAGE_PER_XP);
     sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: sac.hp, cover });
     return;
   }
   const health = sim.world.get(targetId, HealthC);
   const damage = weapon.def.damage * (1 - armorOf(sim, targetId));
   if (health) health.hp = Math.max(0, health.hp - damage); // vitals downs them next tick
+  grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', damage / XP_DAMAGE_PER_XP);
   sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage, hp: health?.hp ?? 0, cover });
   if (weapon.def.ion) stunCrew(sim, targetId);
   if (weapon.def.knockdownChance && health && health.hp > 0 && sim.rng.chance(weapon.def.knockdownChance)) {
@@ -238,11 +273,19 @@ function attack(
   }
 }
 
+/** True when the crew member's hp is below `frac` of their max. */
+function hurtBelow(sim: Sim, id: number, frac: number): boolean {
+  const hp = sim.world.get(id, HealthC);
+  return !!hp && hp.hp < hp.max * frac;
+}
+
 /** Unarmed non-fighters run from hostiles they can see: replan every FLEE_REPLAN_TICKS or when the path runs out. */
-function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threats: Position[]): void {
+function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threats: Position[], holdWhenHidden = false): void {
   setMode(sim, id, f, 'flee');
   const path = sim.world.get(id, PathC) as Path;
   const idle = path.steps.length === 0 && isSettled(pos);
+  // Already out of every intruder's sight and well away: stay put until the ship is clear (then back to work).
+  if (holdWhenHidden && idle && hiddenFrom(sim, grid, pos, threats)) return;
   if (!idle && sim.tick - f.planned < FLEE_REPLAN_TICKS) return;
   f.planned = sim.tick;
   const steps = fleePath(sim, grid, origin(pos), threats);

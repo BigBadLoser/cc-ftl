@@ -4,6 +4,9 @@
  *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
  *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout stationWheel]: station sheets.
  *   --ruin 0.2,0.5,0.9 [--cause combat|decay|both]: derelict ruin sheets instead (tools/shipgen/ruinView.ts).
+ *   --templates <file.ts> [--views detail,structure,silhouette,iso] [--scale 12]: hand-drawn templates (a module exporting
+ *   `variants`, e.g. tools/shipgen/starters/*.ts) side by side, one PNG per view (tools/shipgen/templates.ts).
+ *   --templates <file.ts> --board: one PNG with every view stacked, a column per variant, labels under each cell.
  * Writes <out>/<faction>-d<depth>.png and .txt (validation summary + ASCII dump per seed) and prints the summary.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -50,6 +53,29 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 try {
   const lib = await server.ssrLoadModule('/tools/shipgen/draw.ts');
   mkdirSync(out, { recursive: true });
+  if (opt('templates')) {
+    const tv = await server.ssrLoadModule('/tools/shipgen/templates.ts');
+    const file = opt('templates');
+    const mod = await server.ssrLoadModule(`/${file.replace(/^\.?\//, '')}`);
+    const name = file.split('/').pop().replace(/\.ts$/, '');
+    if (args.includes('--board')) {
+      const board = tv.templateBoard(name, mod.variants, opt('views') ? opt('views').split(',') : undefined);
+      const f = join(out, `${name}-board.png`);
+      writeFileSync(f, png(board.raster.width, board.raster.height, board.raster.data));
+      console.log(f);
+      console.log(board.text);
+      process.exit(0);
+    }
+    const tviews = opt('views', 'detail,structure,silhouette,iso') === 'all' ? ['detail', 'structure', 'silhouette', 'iso'] : opt('views', 'detail,structure,silhouette,iso').split(',');
+    for (const view of tviews) {
+      const sheet = tv.templateSheet(name, mod.variants, view, Number(opt('scale', view === 'iso' ? 9 : 12)));
+      const f = join(out, `${name}-${view}.png`);
+      writeFileSync(f, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));
+      console.log(f);
+      if (view === tviews[0]) console.log(sheet.text);
+    }
+    process.exit(0);
+  }
   // Stations: `station.<kind>` (or `station.all`) with --size outpost|station|hub, a comma list, or all.
   const size = opt('size');
   const layout = opt('layout');

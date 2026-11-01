@@ -6,11 +6,11 @@ import { storageAdd, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { SkillXpC } from './components';
+import { grantXp } from '../crew/xp';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
-import { playerCrew, playerShips, playerStorages } from './world';
+import { inPacketView, playerCrew, playerShips, playerStorages, withPlayerAboard } from './world';
 
 /** Who an effect applies to and the event it belongs to. */
 export interface EffectCtx {
@@ -31,17 +31,20 @@ const nameOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)?.name 
 const names = (sim: Sim, ids: number[]): string => (ids.length > 1 ? `${ids.length} crew` : ids[0] === undefined ? 'nobody' : nameOf(sim, ids[0]));
 
 /** Put items in the player's storage; what does not fit lands on the floor beside it. Returns units that found no room. */
-export function giveItems(sim: Sim, item: string, count: number): number {
+export const giveItems = (sim: Sim, item: string, count: number): number => withPlayerAboard(sim, () => giveNow(sim, item, count));
+/** In a packet view there is no floor to spill onto: what does not fit in storage is lost. */
+function giveNow(sim: Sim, item: string, count: number): number {
   let left = count;
   const stores = playerStorages(sim);
   for (const id of stores) left -= storageAdd(sim, id, item, left);
   const first = stores[0] === undefined ? undefined : sim.world.get(stores[0], ModuleC);
-  if (left > 0 && first) left = spillItems(sim, shipIdOf(sim, first), first.x, first.y, item, left);
+  if (left > 0 && first && !inPacketView(sim)) left = spillItems(sim, shipIdOf(sim, first), first.x, first.y, item, left);
   return left;
 }
 
 /** Take items from the player's storage, then loose stacks on player ships. Returns units taken. */
-export function takeItems(sim: Sim, item: string, count: number): number {
+export const takeItems = (sim: Sim, item: string, count: number): number => withPlayerAboard(sim, () => takeNow(sim, item, count));
+function takeNow(sim: Sim, item: string, count: number): number {
   let left = count;
   for (const id of playerStorages(sim)) left -= storageTake(sim, id, item, left);
   const grids = playerShips(sim);
@@ -72,7 +75,7 @@ const sign = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
 
 /** Apply one effect; always emits `story.effect` (text '' when there is nothing to show) and returns its one-line summary or null. */
 export function applyEffect(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
-  const text = run(sim, eff, ctx);
+  const text = withPlayerAboard(sim, () => run(sim, eff, ctx));
   sim.events.emit({ type: 'story.effect', event: ctx.event, effect: eff.type, text: text ?? '' });
   return text;
 }
@@ -107,9 +110,7 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     case 'skillXp': {
       const ids = targets(sim, eff.who, ctx);
       for (const id of ids) {
-        let c = sim.world.get(id, SkillXpC);
-        if (!c) sim.world.add(id, SkillXpC, (c = { xp: {} }));
-        c.xp[eff.skill] = (c.xp[eff.skill] ?? 0) + eff.amount;
+        grantXp(sim, id, eff.skill, eff.amount);
       }
       return `${names(sim, ids)}: ${eff.skill} ${sign(eff.amount)} xp`;
     }

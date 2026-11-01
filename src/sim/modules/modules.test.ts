@@ -47,7 +47,7 @@ const content: ContentRegistry = {
   structCosts: {},
 };
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, crafting: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
 });
 // A 5x3 corridor-like room: a solid block placed in the middle row can be walked around.
 const rows = ['.......', '.#####.', '.#___#.', '.#___#.', '.#___#.', '.#####.', '.......'];
@@ -151,7 +151,7 @@ describe('modules', () => {
     sim.step();
     expect(reasons()).toEqual(['jobExists']);
     sim.enqueue({ type: 'job.deconstructModule', ship: 1, x: 2, y: 2 });
-    sim.enqueue({ type: 'module.setPriority', id: 999, priority: 2 });
+    sim.enqueue({ type: 'module.setPowerPriority', id: 999, powerPriority: 2 });
     sim.step();
     expect(reasons()).toEqual(['noModule', 'noModule']);
   });
@@ -160,13 +160,13 @@ describe('modules', () => {
     const sim = make();
     spawnTemplateModules(sim, 1, { name: 't', rows, modules: [{ def: 'bed', x: 2, y: 2, rot: 0 }] });
     const [bed] = modulesOf(sim, 'bed') as [number];
-    sim.enqueue({ type: 'module.setPriority', id: bed, priority: 5 });
+    sim.enqueue({ type: 'module.setPowerPriority', id: bed, powerPriority: 5 });
     sim.enqueue({ type: 'module.setEnabled', id: bed, enabled: false });
     sim.step();
-    expect(sim.world.get(bed, ModuleC)).toMatchObject({ priority: 5, enabled: false });
-    sim.enqueue({ type: 'module.setPriority', id: bed, priority: 9 });
+    expect(sim.world.get(bed, ModuleC)).toMatchObject({ powerPriority: 5, enabled: false });
+    sim.enqueue({ type: 'module.setPowerPriority', id: bed, powerPriority: 9 });
     sim.step();
-    expect(sim.world.get(bed, ModuleC)!.priority).toBe(5);
+    expect(sim.world.get(bed, ModuleC)!.powerPriority).toBe(5);
   });
 });
 

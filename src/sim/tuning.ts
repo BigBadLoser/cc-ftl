@@ -50,8 +50,17 @@ export const FIRE_SMOKE = 80;
 export const FIRE_MODULE_DAMAGE = 8;
 
 // --- Modules / power ---
-export const DEFAULT_PRIORITY = 3;
+export const DEFAULT_POWER_PRIORITY = 3;
+/** Pyrophobic: a burning tile within this many tiles gives FIRE_FEAR_MOOD. */
+export const FIRE_FEAR_RADIUS = 6;
+export const FIRE_FEAR_MOOD = -6;
+/** Space-sick: mood while suited and outside the hull. */
+export const SPACE_SICK_MOOD = -4;
+/** Afraid of the dark: the dark room factor (others get -5). */
+export const DARK_FEAR_MOOD = -10;
 export const LIGHT_DARK_BELOW = 40;
+/** A Dark-adapted crew member (trait) feels the glare on tiles at least this bright (a lamp's own spot is 230). */
+export const LIGHT_GLARE_ABOVE = 180;
 /** Light falloff: level is scaled by (1 - FALLOFF * dist / radius). */
 export const LIGHT_FALLOFF = 0.55;
 /** A wreck's lights run on emergency power: their level is scaled by this (a wreck with no power has none). */
@@ -79,6 +88,7 @@ export const FIRE_CREW_DAMAGE = 8;
 export const BLEED_OUT_SECONDS = 120;
 /** Hp per second regained in a bed while stabilized. */
 export const BED_HEAL_PER_SEC = 1.5;
+/** Bed healing is SKILL_STEP faster per medicine level of the best conscious medic aboard the patient's ship. */
 /** Stabilized crew get up at this hp. */
 export const GET_UP_HP = 40;
 /** Hp per second regained by upright crew in safe air. */
@@ -100,6 +110,12 @@ export const HUNGER_SLEEP_MULT = 0.5;
 /** Mood is 0..100 from a neutral base plus named factors. */
 export const MOOD_BASE = 50;
 /** Ticks between mood recomputes per crew member (staggered by id). */
+/** A Loner (trait) feels crowded with this many crew within MOOD_COMPANY_RADIUS. */
+export const MOOD_CROWD = 3;
+/** A Thrill-seeker (trait) gets bored after this many seconds without combat or EVA. */
+export const TRAIT_BORED_SEC = 900;
+/** A Void-born crew member (trait) feels cooped up after this many seconds without EVA. */
+export const TRAIT_COOPED_SEC = 1800;
 export const MOOD_INTERVAL = 10;
 /** Below this mood work slows (x MOOD_LOW_WORK_MULT); below MOOD_VERY_LOW it slows more and an alert fires. */
 export const MOOD_LOW = 35;
@@ -168,6 +184,10 @@ export const PD_CHANCE = 0.35;
 export const PD_WINDOW = 0.6;
 /** Hull integrity below which a ship is a wreck / below which the AI tries to flee. */
 export const WRECK_BELOW = 0.15;
+/** Below this integrity a hostile ship with dead weapons and crew cut off or outnumbered surrenders (combat/hopeless.ts, issue #225). */
+export const HOPELESS_HULL = 0.5;
+/** One wall tile's weight in the integrity score, relative to one module hp (a full wall tile counts as 1.3). */
+export const WALL_WEIGHT = 0.005;
 export const FLEE_BELOW = 0.3;
 /** Ticks between ship-state and AI re-evaluations. */
 export const SHIP_STATE_INTERVAL = 10;
@@ -176,6 +196,14 @@ export const AI_RETARGET_TICKS = 40;
 export const IGNITE_INTENSITY = 90;
 /** Crew with operating priority at or below this level (1 or 2) will man consoles on their own. */
 export const OPERATE_MAX_LEVEL = 2;
+/** In a fight, a console nobody has held for this long is relieved by any idle crew (operating priority above OPERATE_MAX_LEVEL, but not disabled). */
+export const RELIEF_AFTER_SEC = 12;
+/** Path-score penalty on a relieved console (longer than any walk), so other work of the same rank comes first. */
+export const RELIEF_PENALTY = 1000;
+/** The job scheduler (ai/scheduler.ts) runs a pass at least this often (ticks) while crew are free and jobs open, even when nothing it fingerprints changed. */
+export const SCHED_CADENCE = 20;
+/** A free crew member with more candidate jobs than this in one walk mode is costed by one multi-goal Dijkstra; fewer, by lazy A* per job. */
+export const SCHED_DIJKSTRA_ABOVE = 6;
 /** Operators keep manning their console until rest drops below this. */
 export const OPERATOR_EXHAUSTED_BELOW = 5;
 /**
@@ -192,10 +220,27 @@ export const VEHICLE_PD_INTERVAL = 10;
 /** Chance per roll, and hp taken on a hit. */
 export const VEHICLE_PD_CHANCE = 0.35;
 export const VEHICLE_PD_DAMAGE = 10;
+/** Point defence never takes a shuttle below this fraction of its max hp: it chips, only anti-vehicle weapons kill. */
+export const VEHICLE_PD_FLOOR = 0.3;
+/** Player anti-vehicle weapons engage a hostile shuttle in flight within this many tiles of the ship centre (or one heading for it at any range). */
+export const ANTI_VEHICLE_RANGE = 70;
 /** Boarding parties never leave the ship with fewer than this many crew aboard. */
 export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
+
+/**
+ * Sabotage (boarding/sabotage.ts): hp per second one boarder takes off the module they were ordered to wreck, with a weapon or
+ * tools alike (melee and ranged are the same). A reactor (200 hp) falls to one boarder in 25 s, a weapon (80 hp) in 10 s.
+ */
+export const SABOTAGE_PER_SEC = 8;
+/** Ticks a recalled party gets to reach the docked shuttle before it leaves with whoever has boarded (the rest stay put). */
+export const RECALL_BOARD_TICKS = 600;
+
+/** Zealot core raid (capture/coreRaid.ts): ticks raiders must hold an AI core undisturbed to tear it out, how close they stand, and how close a defender must be to stop them. */
+export const CORE_RAID_HOLD_TICKS = 40 * 20;
+export const CORE_RAID_RADIUS = 2.5;
+export const CORE_RAID_DEFENDER_RADIUS = 5;
 
 // --- Crew combat ---
 /** Crew notice hostiles this far away (tiles) when they have line of sight. */
@@ -216,11 +261,19 @@ export const DOOR_SIGHT_OPEN = 64;
 /** Ticks between flee replans. */
 export const FLEE_REPLAN_TICKS = 15;
 export const FLEE_RADIUS = 10;
+/** An unarmed crew member who is out of every intruder's sight and farther than this (tiles) stays where they are. */
+export const FLEE_HOLD_DIST = 5;
 /** Ticks between path replans while closing in on a target. */
 export const CHASE_REPLAN_TICKS = 6;
 /** Surrender: hp fraction under which a non-player crew member gives up when outnumbered within this many tiles. */
+/** Hp fraction under which a Coward (trait) runs from the foes they see, armed or not. */
+export const COWARD_FLEE_BELOW = 0.5;
+/** Hp fraction under which a Coward surrenders when outnumbered (player crew otherwise never do). */
+export const COWARD_SURRENDER_BELOW = 0.3;
 export const SURRENDER_HP_FRAC = 0.3;
 export const SURRENDER_RADIUS = 12;
+/** Ticks a surrendered player crew member stays down before rallying, once no hostile is left on their ship (5 s). */
+export const RALLY_AFTER_TICKS = 100;
 
 // --- Capture ---
 /** Default seconds player-side crew must hold a ship's bridge, unopposed, to capture it. A bridge module's `bridge.holdSec` overrides. */
@@ -286,3 +339,22 @@ export const NEST_RADIUS = 4;
 /** Idle aliens wander within this many tiles of where they hatched (per-tick chance of a stroll). */
 export const ALIEN_ROAM = 4;
 export const ALIEN_WANDER_CHANCE = 0.01;
+/** Seconds the player's ship must stay clear of intruders before emergency-armed crew put their weapon back in storage. */
+export const EMERGENCY_STAND_DOWN_SEC = 30;
+
+/** Enemy weapons commit their aim (and the player's ship shows a marker) for this many seconds of charge before they can fire, at base gunnery. */
+export const COMMIT_WINDOW_SEC = 4;
+/** The window never exceeds this share of a weapon's charge, so a fast weapon still charges unmarked first. */
+export const COMMIT_MAX_FRACTION = 0.5;
+
+// --- Skill XP (docs/TRAITS.md section 3) ---
+/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500. */
+export const XP_LEVEL_COST = 100;
+/** The most levels XP can add to a skill. */
+export const XP_MAX_LEVEL = 5;
+/** XP for one second of work at workSpeed 1 (job progress points / TICK_HZ). Also the rate for a console held while it matters. */
+export const XP_PER_WORK_SEC = 1;
+/** XP per hp of bed healing, granted to the best medic aboard. */
+export const XP_PER_HP_HEALED = 2;
+/** Hand weapons: 1 XP per this much damage dealt (gunnery for ranged, melee for the rest). */
+export const XP_DAMAGE_PER_XP = 4;

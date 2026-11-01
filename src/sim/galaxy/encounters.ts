@@ -1,6 +1,9 @@
+import { scanFor } from '../blackmarket/scan';
+import { truceHolds } from '../blackmarket/truce';
 import type { Sim } from '../sim';
 import { unit } from './hash';
 import { fleetName } from './names';
+import { graceHolds } from './grace';
 import { fleetStrength } from './encounterOdds';
 import { isHostileFaction } from './standing';
 import { nodeOf } from './state';
@@ -19,15 +22,24 @@ import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
  */
 
 /**
- * What a fleet wants of the player: pirates and raiders that are hostile to the player interdict; traders hail; patrols scan;
+ * What a fleet wants of the player: pirates, raiders and hunters (hunters.ts) that are hostile to the player interdict; traders hail; patrols scan;
  * a damaged (stranded) fleet that is not hostile calls for help.
  */
 export function encounterKind(sim: Sim, f: Fleet): EncounterKind {
   const hostile = isHostileFaction(sim, f.faction);
   if (f.damaged) return hostile ? 'hail' : 'distress';
-  if ((f.role === 'pirate' || f.role === 'raider') && hostile) return 'interdict';
+  if ((f.role === 'pirate' || f.role === 'raider' || f.hunt) && hostile) {
+    // A route guard (the cartel) holds up travellers on its own routes only; elsewhere it passes like a trader, unless it was sent to hunt you.
+    if (!f.hunt && offRoute(sim, f)) return 'hail';
+    return 'interdict';
+  }
   if (f.role === 'patrol') return 'scan';
   return 'hail';
+}
+
+/** Is the fleet a route guard outside its own faction's space? */
+export function offRoute(sim: Sim, f: Fleet): boolean {
+  return !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes && nodeOf(sim, f.node)?.faction !== f.faction;
 }
 
 const PASSING_SALT = 0x9a55;
@@ -52,11 +64,14 @@ export const interdicted = (sim: Sim): boolean => sim.galaxy.encounters.some((e)
  */
 export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
   const g = sim.galaxy;
+  const graced = (f: Fleet): boolean => graceHolds(sim, to, f.faction); // opening grace: no interdiction at a danger-0 node
   let halted = false;
+  // Nobody starts a fight at a black market's node: no interdiction is made there while its truce holds.
+  const calm = truceHolds(sim, to);
   // One hop halts the trip once: when several hostile fleets cross it, the strongest (then the lowest id) holds the player and the rest find nothing to
   // intercept this turn (their cooldown is not started, so they can still interdict a later hop). Two pending interdictions could not both be answered.
   const interdictor = g.fleets
-    .filter((f) => crossingOf(f, from, to, g.turn) && !(f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) && encounterKind(sim, f) === 'interdict')
+    .filter((f) => crossingOf(f, from, to, g.turn) && !(f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) && encounterKind(sim, f) === 'interdict' && !graced(f) && !calm)
     .sort((a, b) => fleetStrength(b.ships) - fleetStrength(a.ships) || a.id - b.id)[0]?.id;
   for (const f of g.fleets) {
     const how = crossingOf(f, from, to, g.turn);
@@ -64,7 +79,7 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
     sim.events.emit({ type: 'galaxy.crossing', fleet: f.id, faction: f.faction, role: f.role, how, node: to });
     if (f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) continue;
     const kind = encounterKind(sim, f);
-    if (kind === 'interdict' && f.id !== interdictor) continue;
+    if (kind === 'interdict' && (f.id !== interdictor || graced(f) || calm)) continue;
     // Passing a non-hostile fleet usually means nothing: only a small chance of a hail or scan (distress and interdictions always happen).
     if ((kind === 'hail' || kind === 'scan') && !passingMeets(sim, f.id, g.turn)) continue;
     f.met = g.turn;
@@ -72,6 +87,7 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
     const e: Encounter = {
       id: g.nextFleet++, kind, fleet: f.id, faction: f.faction, role: f.role, name: fleetName(f), ships: f.ships.length, strength: fleetStrength(f.ships), danger: nodeOf(sim, to)?.danger ?? 0, how, node: to, turn: g.turn, expires: g.turn + ttl,
     };
+    scanFor(sim, e);
     g.encounters.push(e);
     if (g.encounters.length > ENCOUNTER_MAX) g.encounters.splice(0, g.encounters.length - ENCOUNTER_MAX);
     sim.events.emit({ type: 'galaxy.encounter', id: e.id, kind, fleet: f.id, faction: f.faction, role: f.role, node: to });
@@ -84,7 +100,7 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
 /** Drop alerts whose time ran out (an interdiction stays until it is resolved). */
 export function expireEncounters(sim: Sim, turn: number): void {
   const g = sim.galaxy;
-  const gone = (e: Encounter): boolean => e.kind !== 'interdict' && e.expires <= turn;
+  const gone = (e: Encounter): boolean => e.kind !== 'interdict' && !e.scan && e.expires <= turn;
   const left = g.encounters.filter((e) => !gone(e));
   if (left.length === g.encounters.length) return;
   for (const e of g.encounters) if (gone(e)) sim.events.emit({ type: 'galaxy.encounterResolved', id: e.id, outcome: 'expired' });

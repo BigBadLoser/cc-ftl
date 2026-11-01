@@ -12,6 +12,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import compose, core, post  # noqa: E402
+from sprites.scale import assets_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_OUT = "/tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scratchpad/r1-assets"
@@ -237,7 +238,7 @@ def mask_sheet(assets, man, mode):
 
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    assets = Path(argv[0]) if argv else ROOT / "public/assets"
+    assets = Path(argv[0]) if argv else assets_dir()
     out = Path(argv[1] if len(argv) > 1 else DEFAULT_OUT)
     out.mkdir(parents=True, exist_ok=True)
     man = json.loads((assets / "manifest.json").read_text())

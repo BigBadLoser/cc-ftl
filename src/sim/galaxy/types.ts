@@ -114,6 +114,10 @@ export interface Contact {
   /** Fleet ships only: the ship's name ("CNS Valiant") and size class (what its home port rebuilds when it is lost). */
   name?: string;
   size?: ShipSize;
+  /** A bounty target (jobs.ts): the id of the job it is wanted by; its ship carries it too (`Ship.bounty`). */
+  bounty?: number;
+  /** A hired escort (roster.ts `FleetGroupDef.escort`): the faction that pays it. It flies on that faction's side in a fight; `faction` stays its own. */
+  hired?: string;
 }
 
 export interface NodeState {
@@ -129,6 +133,13 @@ export interface NodeState {
   populated?: true;
   /** Ships destroyed here while the player was elsewhere, waiting to be found as wrecks at the next drop (wrecks.ts). */
   wrecks?: WreckSeed[];
+  /**
+   * Set by a black-market service with a truce (blackmarket/truce.ts): nobody starts a fight at this node. `banUntil` is the turn a breach's ban
+   * lasts to (everyone there fires on the player until then; the truce is off meanwhile). Absent = no truce here.
+   */
+  truce?: { banUntil?: number };
+  /** The turn a navy or corporation station last scanned the player here (blackmarket/scan.ts). */
+  scanned?: number;
 }
 
 /** A destroyed NPC ship's hull: the generator key of the ship it was (so the wreck is that ship, ruined) and when and under what name it fell. */
@@ -145,9 +156,9 @@ export interface WreckSeed {
 /**
  * What the news log reports (news.ts). `destroyed`: `who` destroyed `foe`; `driven`: `who` drove `foe` off; `clash`: `who` and `foe` fought to a bloody draw;
  * `raid`: `who` raided a den and destroyed `foe`; `cut`: a trade route is cut, `foe` (a trader) was lost near here; `loot`: `who` took `count` of `item`
- * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here.
+ * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here; `hunt`: `who` set out from here after the player.
  */
-export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt';
+export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt';
 
 export interface NewsItem {
   id: number;
@@ -178,11 +189,18 @@ export interface Travel {
   /**
    * 'hop': under way; 'arrived': at the end of the route; 'noFuel': stopped at `route[at]` for want of fuel for the next hop;
    * 'interdicted': halted at `route[at]` by a pending interdiction (resolved by `galaxy.respond`, the ship stays in hyperspace);
-   * 'event': the ship is in an event grid (`GalaxyState.event`) and the trip waits.
+   * 'event': the ship is in an event grid (`GalaxyState.event`) and the trip waits;
+   * 'story': a story decision is open (`sim.story.active`) and the trip waits until it is answered;
+   * 'adrift': a flee put the ship in hyperspace with no route (`route` is just the node it fled, `galaxy.current`): it stays until a `galaxy.jump`
+   * starts a route from there (no charge, normal fuel) or `galaxy.drop` puts it back in that node. Nothing happens while adrift (design hook: drift costs,
+   * such as life support or a random event, come later).
    */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event';
-  /** Set in phase 'event': the phase to go back to when the grid is left ('interdicted' resumes the trip). */
-  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted';
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story' | 'adrift';
+  /**
+   * Set in phase 'event' or 'story': the phase to go back to when the grid is left or the decision answered ('interdicted' resumes the trip after
+   * a hop; so does 'hopEnd', a story drawn at the hop just finished; 'hop' goes on with the hop under way).
+   */
+  held?: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'hopEnd' | 'adrift';
   /** A drop was asked for mid-hop: the route was cut after the hop under way and the ship drops out when it gets there. */
   stopping?: true;
 }
@@ -225,6 +243,10 @@ export interface Fleet {
   cargo?: ItemQty[];
   /** The node a trader bought its cargo for: its next stop, if that is still a valid stop (agenda.ts). */
   pick?: string;
+  /** A hunter (hunters.ts): it follows the player until turn `until`, then stands down. */
+  hunt?: { until: number };
+  /** A hunter that has stood down: it heads home and is disbanded when it gets there. */
+  standDown?: true;
 }
 
 /**
@@ -271,10 +293,15 @@ export interface Encounter {
   node: string;
   turn: number;
   expires: number;
+  /**
+   * A scan that found contraband aboard (blackmarket/scan.ts): `value` is what the goods are worth at base prices, and the player chooses to
+   * 'surrender' them (and pay `fine`, with a standing hit) or 'bribe' (`bribe` credits). Such a scan waits for an answer; it does not expire.
+   */
+  scan?: { value: number; fine: number; bribe: number };
 }
 
-/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge. */
-export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge, a scan that found contraband surrender / bribe. */
+export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
 
 /**
  * A deep-space pocket (node id `event:<encounter id>`, never in the galaxy index, never archived) the player's packet was deployed into
@@ -306,7 +333,59 @@ export interface EncounterResult {
   cost?: number;
 }
 
+/**
+ * A station job the player took (jobs.ts). `key` is the offer it came from (jobOffers.ts); `issuer` the galaxy faction that pays; `from` the port.
+ * A delivery carries `count` of `item` to `to` (a node). A bounty is for one ship named `target` of `targetFaction` (generator `shipgen`, `seed`, `depth`),
+ * placed at node `node` (one the player has not entered yet) when the job is taken. A survey is for entering node `node`, which has `feature`.
+ * A finished bounty or survey becomes a claim (`GalaxyState.claims`, `done` true): paid by `jobs.handIn` at a port of the issuing station class.
+ */
+export type StationJobKind = 'delivery' | 'bounty' | 'survey';
+
+export interface StationJob {
+  id: number;
+  key: string;
+  kind: StationJobKind;
+  issuer: string;
+  from: string;
+  /** The issuing port's `stationClass` (ports.ts): a finished bounty or survey is handed in at a port of this class owned by `issuer`. */
+  station?: string;
+  reward: number;
+  /** The turn it must be done by. */
+  due: number;
+  to?: string;
+  item?: string;
+  count?: number;
+  target?: string;
+  targetFaction?: string;
+  shipgen?: string;
+  seed?: number;
+  depth?: number;
+  /** A bounty's node (its target waits there) or a survey's node (entering it completes the survey). */
+  node?: string;
+  /** A survey's feature, what the node has to survey: a body kind ('nebula', 'black_hole', 'blue_giant') or 'asteroids'. */
+  feature?: string;
+  /** A delivery: the station's shuttle took the crate from the airlock, or the player's own shuttle dropped it at the station (galaxy/handover.ts); the next `tendJobs` pays it. */
+  collected?: 'shuttle' | 'own';
+  /** A delivery: handover runs called off so far, by the station's shuttle and by the player's own (the crate is handed across by hand once both are used up). */
+  handoverTries?: number;
+  ownTries?: number;
+}
+
+/** The player's notoriety and who last sent hunters after them (heat.ts, hunters.ts). */
+export interface HeatState {
+  notoriety: number;
+  /** Turn each faction last sent hunters, by galaxy faction id. */
+  hunted: Record<string, number>;
+}
+
 /** Mutable starmap state on the Sim (`sim.galaxy`), saved with the game. */
+/** A call for a tug from a stranded ship: where, the turn it was sent and the turn the tug arrives. */
+export interface Distress {
+  node: string;
+  sent: number;
+  due: number;
+}
+
 export interface GalaxyState {
   current: string;
   /** Generated chunks by key. Saved as keys only and rebuilt from the seed on load. */
@@ -346,10 +425,19 @@ export interface GalaxyState {
   nextNews: number;
   /** Travel days spent in jumps. */
   days: number;
+  heat: HeatState;
+  /** Jobs the player holds (jobs.ts), and the offer keys already taken or finished (newest last). */
+  jobs: StationJob[];
+  /** Finished bounties and surveys not yet handed in (jobs.ts): they never expire and are not shown as tasks. */
+  claims: StationJob[];
+  jobLog: string[];
+  /** Crew-for-hire keys already hired (recruit.ts), newest last. */
+  recruitLog: string[];
+  nextJob: number;
   /** The hyperspace trip in progress, or null. */
   travel: Travel | null;
-  /** The story draw owed at the next `sector.deploy` ('transit' after an anchored hyperlane), or null. */
-  pendingDraw: 'arrival' | 'transit' | null;
+  /** A distress call waiting for its tug, or null (stranded.ts). */
+  distress: Distress | null;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }

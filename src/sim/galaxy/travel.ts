@@ -2,7 +2,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { isLive } from '../trade/deals';
 import { playerShipInfo } from './arrivals';
-import { ftlCharge, fuelStock } from './fuel';
+import { ftlCharge, fuelStock, jumpFuel } from './fuel';
 import { chunkOfId } from './generator';
 import { syncFleets } from './fleets';
 import { repKey } from './standing';
@@ -16,7 +16,7 @@ export function jumpBlocker(sim: Sim, edge: EdgeData | undefined, ship?: number)
   const charge = ftlCharge(sim, ship);
   if (charge === null) return 'noShip';
   if (charge + 1e-9 < edge.charge) return 'notCharged';
-  if (fuelStock(sim, ship) < edge.fuel) return 'noFuel';
+  if (fuelStock(sim, ship) < jumpFuel(sim, edge.fuel, ship)) return 'noFuel';
   return null;
 }
 
@@ -71,7 +71,7 @@ export function discover(sim: Sim): number {
   return found;
 }
 
-/** Point the story pool (danger tier, territory by its owner's reputation key, e.g. 'corp') at a node. Enemy generation reads the node's danger directly. */
+/** Point the story pool (danger tier, territory by its owner's reputation key, e.g. 'meridian') at a node. Enemy generation reads the node's danger directly. */
 function setContext(sim: Sim, node: NodeData): void {
   sim.story.context.danger = node.danger;
   sim.story.context.faction = node.faction ? repKey(sim, node.faction) : null;

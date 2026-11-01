@@ -1,4 +1,4 @@
-import { TICK_HZ, type Sim, type SimEvent } from '../sim';
+import { NOOP_PROBE, TICK_HZ, type Probe, type Sim, type SimEvent } from '../sim';
 
 export type Speed = 0 | 1 | 2 | 3;
 
@@ -42,6 +42,8 @@ export interface LoopOptions {
   onEvents?: (events: SimEvent[]) => void;
   /** Called every frame after steps and event draining. */
   onFrame: (stats: FrameStats) => void;
+  /** The measurement probe to report to, read every frame (default: none). */
+  probe?: () => Probe;
 }
 
 export interface Loop {
@@ -49,7 +51,9 @@ export interface Loop {
   stop(): void;
   setSpeed(speed: Speed): void;
   getSpeed(): Speed;
-  /** Run one tick now (even paused) so queued commands apply: trade offers answer while the game is paused. */
+  /** Hold the sim still (frames and rendering go on) without touching the requested speed: the loading veil is up. */
+  hold(on: boolean): void;
+  /** Apply queued commands now (even paused) without running a tick: trade offers answer while the game is paused. */
   flush(): void;
   readonly alpha: number;
 }
@@ -59,6 +63,7 @@ const ROLL = 30;
 export function createLoop(opts: LoopOptions): Loop {
   const { sim } = opts;
   let speed: Speed = 1;
+  let held = false;
   let acc = 0;
   let alpha = 0;
   let last = 0;
@@ -75,19 +80,24 @@ export function createLoop(opts: LoopOptions): Loop {
   const frame = (now: number) => {
     if (!running) return;
     raf = requestAnimationFrame(frame);
+    const probe = opts.probe?.() ?? NOOP_PROBE;
+    probe.begin('loop/frame');
     const dt = last ? now - last : 0;
     last = now;
     push(frameTimes, dt);
-    const r = advance(acc, dt, speed);
+    const eff: Speed = held ? 0 : speed;
+    const r = advance(acc, dt, eff);
     acc = r.acc;
     for (let i = 0; i < r.steps; i++) {
       const t0 = performance.now();
-      sim.step();
+      sim.step(probe);
       push(tickTimes, performance.now() - t0);
     }
     const events = sim.events.drain();
     if (events.length) opts.onEvents?.(events);
-    alpha = speed === 0 ? 0 : acc / (1000 / TICK_HZ);
+    probe.count('loop/ticks', r.steps);
+    if (dt > 0) probe.count('loop/interval', dt);
+    alpha = eff === 0 ? 0 : acc / (1000 / TICK_HZ);
     opts.render(alpha);
     const frameMs = avg(frameTimes);
     opts.onFrame({
@@ -97,6 +107,7 @@ export function createLoop(opts: LoopOptions): Loop {
       frameMs,
       tickMs: avg(tickTimes),
     });
+    probe.end('loop/frame');
   };
 
   return {
@@ -114,8 +125,11 @@ export function createLoop(opts: LoopOptions): Loop {
       speed = s;
     },
     getSpeed: () => speed,
+    hold(on) {
+      held = on;
+    },
     flush() {
-      sim.step();
+      sim.applyCommands(); // commands only: a paused click must not advance game time
       const events = sim.events.drain();
       if (events.length) opts.onEvents?.(events);
     },

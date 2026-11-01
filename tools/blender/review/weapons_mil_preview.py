@@ -80,7 +80,7 @@ def bays(w, pub, out):
 
 def main():
     w, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    pub = Assets(ROOT / "public/assets")
+    pub = Assets(ROOT / "public/assets/1x")
     out.mkdir(parents=True, exist_ok=True)
     turrets(w, pub, out)
     bays(w, pub, out)

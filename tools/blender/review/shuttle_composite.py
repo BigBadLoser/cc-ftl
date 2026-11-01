@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
-AS = ROOT / "public/assets"
+AS = ROOT / "public/assets/1x"
 D = Path(sys.argv[1])
 MAN = json.loads((AS / "manifest.json").read_text())["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA")).astype(np.float32)

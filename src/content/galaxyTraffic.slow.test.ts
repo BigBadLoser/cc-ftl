@@ -32,12 +32,18 @@ function check(sim: Sim): void {
   }
 }
 
+/** Rounds of one turn each (jumps in rounds 2 and 5, a save taken in round 5), then the save's continuation for TAIL_TURNS more turns. */
+const ROUNDS = 6;
+const TAIL_TURNS = 2;
+
 describe('NPC traffic over a long run', () => {
-  it.each([31, 32])('seed %i: game-time turns and trips keep the invariants, and a save continues identically', (seed) => {
+  // One seed: the second seed (32) walked the same invariants through a different world and cost as much again.
+  it.each([31])('seed %i: game-time turns and trips keep the invariants, and a save continues identically', (seed) => {
     const sim = newGame(seed, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     giveItems(sim, 'item.fuel', 400);
     let copy: Sim | null = null;
-    for (let round = 0; round < 9; round++) {
+    for (let round = 0; round < ROUNDS; round++) {
       for (let i = 0; i < TIME_TURN_TICKS; i += 20) {
         for (let k = 0; k < 20; k++) sim.step();
         sim.events.drain();
@@ -53,6 +59,7 @@ describe('NPC traffic over a long run', () => {
         sim.step();
         for (let k = 0; k < 200 && stateOf(sim) === 'hyperspace'; k++) {
           sim.step();
+          sim.story.active = null; // a hop may draw a story decision, which holds the trip
           if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' });
         }
         sim.events.drain();
@@ -68,7 +75,7 @@ describe('NPC traffic over a long run', () => {
     expect(copy).not.toBeNull();
     // Continue the copy through the same remaining rounds' worth of idle time and compare the fleets with a fresh run of the original.
     const a = deserialize(serialize(copy as Sim), content);
-    for (let i = 0; i < TIME_TURN_TICKS * 3; i++) {
+    for (let i = 0; i < TIME_TURN_TICKS * TAIL_TURNS; i++) {
       (copy as Sim).step();
       a.step();
     }

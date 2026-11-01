@@ -1,9 +1,10 @@
 import { PointDefenseC, WeaponC } from '../combat/components';
+import { clearBedOwners } from '../crew/beds';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
 import type { Sim } from '../sim';
-import { DEFAULT_PRIORITY } from '../tuning';
+import { DEFAULT_POWER_PRIORITY } from '../tuning';
 import { Struct } from '../structure';
 import { ModuleC } from './components';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf } from './footprint';
@@ -22,11 +23,11 @@ export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: 
   if (!def) throw new Error(`spawnModule: unknown def "${defId}"`);
   const id = sim.world.createEntity();
   sim.world.add(id, ModuleC, {
-    def: defId, x, y, rot, hp: def.maxHp, priority: def.priority ?? DEFAULT_PRIORITY,
+    def: defId, x, y, rot, hp: def.maxHp, powerPriority: def.powerPriority ?? DEFAULT_POWER_PRIORITY,
     enabled: true, powered: false, reservedBy: 0,
   });
-  if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: null, stacks: [] });
-  if (def.weapon) sim.world.add(id, WeaponC, { charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null, aim: 0 });
+  if (def.storage) sim.world.add(id, StorageC, { capacity: def.storage.capacity, filter: def.storageAccepts ? [...def.storageAccepts] : null, stacks: [] });
+  if (def.weapon) sim.world.add(id, WeaponC, { mode: sim.content.weapons?.[def.weapon]?.ammo ? 'hold' : 'auto', charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null, aim: 0 });
   if (def.pointDefense) sim.world.add(id, PointDefenseC, { aim: 0 });
   if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });
   if (def.vehicleBay) sim.world.add(id, VehicleBayC, { vehicle: 0 });
@@ -52,6 +53,7 @@ export function removeModule(sim: Sim, id: number): void {
   }
   if (def?.vehicleBay) releaseBayVehicle(sim, id, shipIdOf(sim, m), m.x, m.y);
   for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, shipIdOf(sim, m), m.x, m.y, st.item, st.count);
+  clearBedOwners(sim, id);
   sim.world.destroyEntity(id);
 }
 

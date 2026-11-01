@@ -50,8 +50,8 @@ export interface Step {
   once?: boolean;
   /** Skip the step in rooms with fewer floor tiles than this. */
   minFloor?: number;
-  /** Companions set around each placed module, facing it: chairs at a table. Up to `n`, on its long sides first. */
-  with?: { mod: string; n: number };
+  /** Companions set around each placed module: chairs at a table, facing it, long sides first; or, on a `spec` step, bigger pieces (ore bins) flush against the planned module, away from its access tile. Up to `n`; with `big`, one of that bigger module is tried first and counts toward `n`. */
+  with?: { mod: string; n: number; big?: string };
   /** Rotations to try (default: the module's generator rotations). */
   rots?: readonly number[];
 }

@@ -4,6 +4,7 @@ import {
   standing, tierOf, type Sim,
 } from '../sim';
 import { GENERATOR_VERSION } from '../sim/galaxy/tuning';
+import { SCAVENGER_CHANCE, SCAVENGER_FACTION } from '../sim/galaxy/tuningHeat';
 import { galaxySystem } from '../sim/systems/galaxy';
 import { rollArrival } from '../sim/galaxy/arrivals';
 import { ensureAround } from '../sim/galaxy/state';
@@ -19,7 +20,7 @@ const jumpTo = (sim: Sim, ...route: string[]) => sim.enqueue({ type: 'galaxy.jum
 /** Run a trip to its last node and drop out of hyperspace. */
 const land = (sim: Sim) => {
   sim.step();
-  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'hop'; i++) sim.step();
+  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { sim.step(); sim.story.active = null; }
   sim.enqueue({ type: 'galaxy.drop' });
   sim.step();
 };
@@ -56,12 +57,15 @@ describe('galaxy content', () => {
     for (const [id, f] of Object.entries(g.factions)) {
       for (const s of f.ships) expect(content.factions[s.value as keyof typeof content.factions], `${id} ${s.value}`).toBeDefined();
       for (const s of 'stations' in f ? f.stations : []) expect(g.structures[s.value as keyof typeof g.structures], s.value).toBeDefined();
-      for (const r of Object.keys('relations' in f ? f.relations : {})) expect(g.factions[r as keyof typeof g.factions], r).toBeDefined();
     }
     for (const s of Object.values(g.structures)) for (const item of s.resources) expect(content.items[item as keyof typeof content.items], item).toBeDefined();
-    // One faction table: every galaxy faction names a reputation key trade also uses.
-    const tradeKeys = new Set(Object.values(content.trade.factions).map((f) => f.reputation));
-    for (const [id, f] of Object.entries(g.factions)) expect(tradeKeys.has(f.reputation), `${id} ${f.reputation}`).toBe(true);
+    // One faction table: every faction has a reputation key of its own, so each standing moves independently.
+    const keys = Object.values(g.factions).map((f) => f.reputation);
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const r of g.relations) {
+      expect(g.factions[r.a as keyof typeof g.factions], r.a).toBeDefined();
+      expect(g.factions[r.b as keyof typeof g.factions], r.b).toBeDefined();
+    }
     expect(Object.values(g.factions).filter((f) => f.kind === 'corporation').length).toBeGreaterThanOrEqual(2);
   });
 
@@ -134,13 +138,16 @@ describe('starmap travel', () => {
     expect(sim.galaxy.current).toBe(START_NODE);
   });
 
-  it('rolls arrivals deterministically, never at danger 0, and spawns them by the gap rule', () => {
+  it('rolls arrivals deterministically, only the odd lone scavenger at danger 0, and spawns them by the gap rule', () => {
     const calm = newGame(4, content);
     for (let t = 0; t < 40; t++) {
       calm.tick = calm.galaxy.nextArrival;
       rollArrival(calm);
     }
-    expect(Object.values(calm.galaxy.nodes).flatMap((s) => s.contacts).filter((c) => c.since > 0)).toEqual([]);
+    // Near the start nobody hostile is in the traffic pool: only scavengers (SCAVENGER_CHANCE a roll), never more than the arrival cap.
+    const came = Object.values(calm.galaxy.nodes).flatMap((s) => s.contacts).filter((c) => c.since > 0);
+    expect(came.every((c) => c.faction === SCAVENGER_FACTION && c.depth === 0)).toBe(true);
+    expect(came.length).toBeLessThanOrEqual(Math.ceil(40 * SCAVENGER_CHANCE * 3));
 
     const run = () => {
       const sim = newGame(4, content);

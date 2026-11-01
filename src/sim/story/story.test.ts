@@ -6,6 +6,7 @@ import { playerStock } from './world';
 import { deserialize, serialize } from '../save';
 import { TICK_HZ } from '../time';
 import type { EventDef } from './defs';
+import { pump } from './engine';
 import { spawnShip } from '../combat/ships';
 import { createCrew } from '../crew/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
@@ -15,6 +16,7 @@ import { ModuleC } from '../modules/components';
 import { StorageC } from '../items/components';
 
 import { SkillXpC, ImplantsC } from './components';
+import { levelsFor } from '../crew/xp';
 import { checkOdds, describeRequirement, meets, unmetReasons } from './requirements';
 import { playerCrew, skillOf } from './world';
 import { shipIdOf } from '../regions';
@@ -24,7 +26,7 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'Crate', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
 });
 const item = (name: string, stackSize = 100) => ({ name, tags: [], stackSize });
-const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction: 2, hauling: 2, crafting: 2, cooking: 2, patrol: 0 };
+const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction: 2, hauling: 2, refining: 2, crafting: 2, research: 2, cooking: 2, patrol: 0 };
 
 export const baseContent = (events: Record<string, EventDef>): ContentRegistry => ({
   ships: {},
@@ -34,7 +36,7 @@ export const baseContent = (events: Record<string, EventDef>): ContentRegistry =
     'role.bot': { name: 'Bot', priorities: all, species: 'species.robot' },
   },
   species: {
-    'species.human': { name: 'Human', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 },
+    'species.human': { name: 'Human', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, mood: true },
     'species.robot': { name: 'Robot', moveSpeed: 2, workSpeed: 1, restDecay: 0, airless: true },
   },
   modules: { 'module.crate': mod({ storage: { capacity: 4 }, access: [0, 1] }) },
@@ -275,7 +277,7 @@ describe('effects', () => {
     const sim = apply({ effects: [{ type: 'skillXp', skill: 'repair', amount: 250, who: 'all' }] });
     const id = playerCrew(sim)[1] as number;
     expect(sim.world.get(id, SkillXpC)?.xp['repair']).toBe(250);
-    expect(skillOf(sim, id, 'repair')).toBe(3);
+    expect(skillOf(sim, id, 'repair')).toBe(1 + levelsFor(250)); // role.rookie's 1 plus the XP levels
   });
 
   it('reputation, flags (set, add, clear)', () => {
@@ -352,6 +354,9 @@ describe('chaining and arcs', () => {
     run(sim, 9 * TICK_HZ);
     expect(sim.story.active).toBeNull();
     run(sim, 2 * TICK_HZ);
+    expect(sim.story.active).toBeNull(); // due, but a flag-queued decision opens only in transit
+    sim.sector.state = 'hyperspace';
+    pump(sim);
     expect(sim.story.active?.event).toBe('back');
   });
 });

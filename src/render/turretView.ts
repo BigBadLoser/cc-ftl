@@ -94,7 +94,10 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
         t.spr.tint = mulColor(lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
-        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + 0.93;
+        // On a roofed ship the turret (hatch, opening or deployed) sits on the roof, and its base ring reaches two diagonal rows
+        // past the bay's front tile, whose roof plating sorts at +1.9 and +2.9: it sorts above both so the grid lines and
+        // plate edges stop at the ring (#260). Turrets keep their order to each other (every bay's offset is the same).
+        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + (roofed ? 2.95 : 0.93);
         if (art.fallback && out) {
           while (t.barrel.length < BARREL_AT.length) {
             const dot = new Sprite();

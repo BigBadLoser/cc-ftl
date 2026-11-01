@@ -1,4 +1,5 @@
 import { Filter, GlProgram } from 'pixi.js';
+import { ART_SCALE } from '../iso';
 
 /** Per-crew colours for the palette-swap of `team.*` key colours. 0xRRGGBB. */
 export interface CrewPalette {
@@ -175,8 +176,11 @@ export function setFilterTint(filter: Filter, color: number): void {
   group.update();
 }
 
+/** Zoom in device px per art px: the camera scale (device px per world px) times the world px per art px (`ART_SCALE`, 2). */
+export const artZoom = (cameraScale: number): number => cameraScale * ART_SCALE;
+
 /**
- * Resolution of the filter's offscreen texture for a camera scale (device px per art px): one texel per art px when the
+ * Resolution of the filter's offscreen texture for a zoom in device px per art px (`artZoom`): one texel per art px when the
  * art is shrunk (scale < 1: the texture is denser than the screen by 1 / scale), and one texel per device px otherwise
  * (the layers are then magnified with nearest sampling, which keeps art px whole).
  */

@@ -69,12 +69,14 @@ export function lum(hex: number): number {
   return (0.299 * ((hex >> 16) & 255) + 0.587 * ((hex >> 8) & 255) + 0.114 * (hex & 255)) / 255;
 }
 
+type Channel = 'P' | 'S' | 'T' | 'U';
 interface Scheme {
   motifs: readonly string[];
   P: number;
   S: number;
   T?: number;
-  remap?: Readonly<Record<string, readonly ['P' | 'S' | 'T', 'P' | 'S' | 'T']>>;
+  U?: number;
+  remap?: Readonly<Record<string, readonly [Channel, Channel]>>;
 }
 /** roof_livery.SCHEMES. */
 export const SCHEMES: Readonly<Record<string, Scheme>> = {
@@ -91,8 +93,82 @@ export const SCHEMES: Readonly<Record<string, Scheme>> = {
     motifs: ['split', 'dbl', 'em.star', 'big', 'sten'], P: 0x24324f, S: 0xe2ddd0, T: 0xb0443a,
     remap: { dbl: ['T', 'S'], 'em.star': ['T', 'S'], big: ['T', 'S'] },
   },
+  // v13 faction schemes: a coat over the whole roof carries the faction colour, its motifs the rest
+  gash: {
+    motifs: ['coat', 'claw', 'fangs', 'em.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
+    remap: { claw: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
+  },
+  scorch: {
+    motifs: ['coat', 'claw', 'fangs', 'em.skull'], P: 0x33302c, S: 0xe07a26, T: 0xe2dccb,
+    remap: { claw: ['S', 'S'], fangs: ['S', 'S'], 'em.skull': ['P', 'T'] },
+  },
+  reaver: {
+    motifs: ['coat', 'claw', 'fangs', 'emL.skull'], P: 0x2a2d33, S: 0xc8402e, T: 0xe2dccb,
+    remap: { claw: ['S', 'S'], fangs: ['S', 'S'], 'emL.skull': ['P', 'T'] },
+  },
+  litany: { motifs: ['coat', 'trace', 'em.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'em.eye': ['T', 'S'] } },
+  relic: {
+    motifs: ['coat', 'aft', 'trace', 'em.eye'], P: 0xc9ccd1, S: 0x5fd6c0, T: 0x3a2f4a,
+    remap: { aft: ['T', 'T'], trace: ['S', 'S'], 'em.eye': ['T', 'S'] },
+  },
+  vigil: { motifs: ['coat', 'trace', 'emL.eye'], P: 0xd6cfbd, S: 0x3fc4d4, T: 0x2b3440, remap: { trace: ['S', 'S'], 'emL.eye': ['T', 'S'] } },
+  velvet: { motifs: ['coat', 'pins', 'em.crest'], P: 0x4a1f2e, S: 0xc9a64a },
+  jade: { motifs: ['coat', 'pins', 'em.crest'], P: 0x1d3b33, S: 0xc9a64a },
+  sable: { motifs: ['coat', 'pins', 'emL.crest'], P: 0x1f2026, S: 0xc9a64a },
+  drab: { motifs: ['coat', 'aft', 'big', 'em.rank', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
+  khaki: { motifs: ['coat', 'aft', 'big', 'em.rank', 'sten'], P: 0x7a6e4f, S: 0x1e2018, T: 0x3d3a2c, remap: { aft: ['T', 'T'] } },
+  combine: {
+    motifs: ['coat', 'split', 'nose', 'big', 'em.meridian'], P: 0x2456a0, S: 0xe8b830, T: 0xe4e2da,
+    remap: { coat: ['T', 'T'], nose: ['S', 'P'], big: ['T', 'P'] },
+  },
+  helix: {
+    motifs: ['coat', 'stripe', 'em.helix', 'sten'], P: 0xe6ebea, S: 0x2aa59a, T: 0x8fd3cb,
+    remap: { stripe: ['S', 'T'], 'em.helix': ['P', 'S'], sten: ['S', 'S'] },
+  },
+  vantor: { motifs: ['coat', 'hazard', 'big', 'em.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'em.delta': ['S', 'P'] } },
+  brigade: { motifs: ['coat', 'aft', 'big', 'emL.rank', 'sten'], P: 0x4d5a3a, S: 0xd8d4c4, T: 0x1e2018, remap: { aft: ['T', 'T'] } },
+  freight: {
+    motifs: ['coat', 'split', 'nose', 'big', 'emL.meridian'], P: 0x2456a0, S: 0xe8b830, T: 0xe4e2da,
+    remap: { coat: ['T', 'T'], nose: ['S', 'P'], big: ['T', 'P'] },
+  },
+  clinic: {
+    motifs: ['coat', 'stripe', 'emL.helix', 'sten'], P: 0xe6ebea, S: 0x2aa59a, T: 0x8fd3cb,
+    remap: { stripe: ['S', 'T'], 'emL.helix': ['P', 'S'], sten: ['S', 'S'] },
+  },
+  foundry: { motifs: ['coat', 'hazard', 'big', 'emL.delta'], P: 0xd6a424, S: 0x1e2018, remap: { 'emL.delta': ['S', 'P'] } },
+  rustbucket: { motifs: ['coat', 'patch', 'sten'], P: 0x4a4740, S: 0xb59a3a, T: 0x7c4a2c, U: 0x6e3a33, remap: { patch: ['T', 'U'] } },
+  junker: {
+    motifs: ['coat', 'patch', 'aft', 'sten'], P: 0x4a5340, S: 0xb59a3a, T: 0x7c4a2c, U: 0x6a6a66,
+    remap: { patch: ['T', 'U'], aft: ['T', 'T'] },
+  },
+  lattice: {
+    motifs: ['coat', 'split', 'trace', 'em.dot'], P: 0x8a929c, S: 0xd8343a, T: 0x2a2f36,
+    remap: { split: ['T', 'S'], trace: ['S', 'S'], 'em.dot': ['T', 'S'] },
+  },
+  node: { motifs: ['coat', 'trace', 'emL.cross'], P: 0x2a2f36, S: 0xd8343a, T: 0x8a929c, remap: { trace: ['S', 'S'], 'emL.cross': ['P', 'S'] } },
+  bazaar: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
+  souk: { motifs: ['coat', 'patch', 'em.diamond', 'sten'], P: 0x33302a, S: 0x39e0d0, T: 0x6e5a3a, U: 0x5a3a5e, remap: { patch: ['T', 'U'] } },
+  neon: { motifs: ['coat', 'patch', 'emL.diamond', 'sten'], P: 0x2b2830, S: 0xff3fa4, T: 0x8a4a2e, U: 0x3e6e6a, remap: { patch: ['T', 'U'] } },
 };
 export const SCHEME_NAMES = Object.keys(SCHEMES);
+
+/** roof_livery.CLASSIC: the original ten schemes (an unknown livery picks from all of them). */
+const CLASSIC = ['crimson', 'ivory', 'tide', 'sovereign', 'orchid', 'hornet', 'glacier', 'verdant', 'ember', 'tricolour'] as const;
+/** roof_livery.LIVERIES: a faction art def's `livery` id -> the schemes its ships pick from by name. */
+export const LIVERIES: Readonly<Record<string, readonly string[]>> = {
+  'livery.navy': ['sovereign', 'tricolour', 'glacier', 'ember'],
+  'livery.civilian': ['crimson', 'ivory', 'tide', 'orchid', 'hornet', 'verdant'],
+  'livery.scrapper': ['rustbucket', 'junker'],
+  'livery.drone': ['lattice', 'node'],
+  'livery.raider': ['gash', 'scorch', 'reaver'],
+  'livery.zealot': ['litany', 'relic', 'vigil'],
+  'livery.cartel': ['velvet', 'jade', 'sable'],
+  'livery.merc': ['drab', 'khaki', 'brigade'],
+  'livery.meridian': ['combine', 'freight'],
+  'livery.helix': ['helix', 'clinic'],
+  'livery.vantor': ['vantor', 'foundry'],
+  'livery.blackmarket': ['bazaar', 'souk', 'neon'],
+};
 
 /** Paint colours (P and S channel) of a motif in a scheme. */
 export function motifColours(scheme: string, motif: string): [number, number] {
@@ -108,14 +184,22 @@ function strHash(s: string): number {
   return h;
 }
 
-/** Deterministic livery of a ship from its faction and name: scheme, registry seed and which end the bow motifs take. */
-export function liveryFor(faction: string, name: string): { scheme: string; seed: number; bowWest: boolean } {
+/**
+ * Deterministic livery of a ship from its faction and name: scheme, registry seed and which end the bow motifs take.
+ * `livery` (the generating faction's art def `livery` id) picks the scheme list; an unknown or missing id takes the
+ * classic ten.
+ */
+export function liveryFor(faction: string, name: string, livery?: string): { scheme: string; seed: number; bowWest: boolean } {
   const h = strHash(`${faction}:${name}`);
-  return { scheme: SCHEME_NAMES[h % SCHEME_NAMES.length] as string, seed: h % 1000, bowWest: ((h >>> 11) & 1) === 1 };
+  const list = (livery && LIVERIES[livery]) || CLASSIC;
+  return { scheme: list[h % list.length] as string, seed: h % 1000, bowWest: ((h >>> 11) & 1) === 1 };
 }
 
-/** Text masks (registry digits, stencils): never mirrored, so they stay readable; only their placement mirrors. */
-const isText = (mask: string): boolean => mask.startsWith('reg.') || mask.startsWith('big.') || mask.startsWith('sten.');
+/**
+ * Text masks (registry digits, stencils) and the claw swipe: never mirrored, so text stays readable and the swipe keeps its
+ * angle; only their placement mirrors (roof_livery.TEXT).
+ */
+const isText = (mask: string): boolean => ['reg.', 'big.', 'sten.', 'claw.'].some((p) => mask.startsWith(p));
 
 /** Python's round(): halves go to the even neighbour. */
 function pyRound(v: number): number {
@@ -195,7 +279,30 @@ function planBowEast(width: number, height: number, solid: (x: number, y: number
       list.push({ mask: k, motif: m });
       out.set(key, list);
     };
-    if (m === 'aft') {
+    if (m === 'coat') {
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) add(x, y, 'full.P');
+    } else if (m === 'fangs') {
+      for (let y = 0; y < height; y++) {
+        add(xb - 2, y, 'fang');
+        for (let x = xb - 1; x < width; x++) add(x, y, 'full.P');
+      }
+    } else if (m === 'claw') {
+      const x0 = xs + pyRound(0.25 * L);
+      for (let q = 0; q < 12; q++) add(x0 + (q % 4), yc - 2 + Math.floor(q / 4), `claw.${q}`);
+    } else if (m === 'hazard') {
+      for (let y = 0; y < height; y++) for (const x of [xs, xs + 1, ...Array.from({ length: Math.max(0, width - xb + 1) }, (_, k) => xb - 1 + k)]) add(x, y, 'hazard');
+    } else if (m === 'patch') {
+      for (let y = 0; y < height; y++)
+        for (let x = 0; x < width; x++) {
+          const k = rhash(Math.floor((x + Math.floor(y / 2)) / 3), Math.floor(y / 2), seed, 17) % 5;
+          if (k < 2) add(x, y, k === 0 ? 'full.P' : 'full.S');
+        }
+    } else if (m === 'trace') {
+      for (let x = xs; x <= xb; x++) {
+        add(x, yc - 1, 'trace.n');
+        add(x, yc, 'trace.s');
+      }
+    } else if (m === 'aft') {
       for (let k = 0; k < 3; k++) for (let y = 0; y < height; y++) add(xs + k, y, `aft.${k}`);
     } else if (m === 'bars') {
       for (let k = 0; k < 3; k++) for (let y = 0; y < height; y++) add(xs + k, y, 'bar');
@@ -232,6 +339,11 @@ function planBowEast(width: number, height: number, solid: (x: number, y: number
         add(x, yc, 'shaft.s');
       }
       for (let qx = 0; qx < 2; qx++) for (let qy = 0; qy < 4; qy++) add(xh + qx, yc - 2 + qy, `arr.${qx}.${qy}`);
+    } else if (m.startsWith('emL.')) {
+      const x0 = xs + pyRound(0.62 * L);
+      const block = (xe: number) => [0, 1, 2, 3, 4, 5, 6, 7, 8].map((q) => [xe - 1 + (q % 3), yc - 2 + Math.floor(q / 3)] as const);
+      const d = [0, -1, 1, -2, 2, -3, 3].find((dd) => block(x0 + dd).every(([x, y]) => S(x, y)));
+      block(x0 + (d ?? 0)).forEach(([x, y], q) => add(x, y, `${m}.${q}`));
     } else if (m.startsWith('em.')) {
       const ye = yc - 2;
       const x0 = xs + pyRound(0.62 * L);

@@ -34,6 +34,7 @@ const packetCombat = (sim: Sim) => {
 /** The player flies two hops; a pirate fleet (or `faction`/`role`) at the first node flies the other way and interdicts there. */
 function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = 'pirate', over: Partial<Fleet> = {}, others = 0) {
   const sim = newGame(seed, content);
+  sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
   sim.galaxy.fleets = [];
   giveItems(sim, 'item.fuel', 50);
   const c = sim.world.get(playerShip(sim), CombatC);
@@ -52,9 +53,16 @@ function interdiction(seed: number, faction = 'pirates', role: Fleet['role'] = '
   // More hostile fleets crossing the same hop (deeper ships, so the lead one is the strongest).
   for (let i = 0; i < others; i++) g.fleets.push({ ...f, id: g.nextFleet++, ships: [{ ...f.ships[0]!, id: g.nextFleet++, depth: 3 + i, seed: 80 + i }] });
   step(sim);
-  while (g.travel?.phase === 'hop') step(sim);
+  flyOn(sim);
   return { sim, f, to, next, enc: g.encounters[0]! };
 }
+/** Fly on until the trip stops at something other than a hop, answering any story decision a hop draws (these tests are about encounters). */
+const flyOn = (sim: Sim): void => {
+  while (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story') {
+    step(sim);
+    sim.story.active = null;
+  }
+};
 const respond = (sim: Sim, choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge', id = sim.galaxy.encounters[0]?.id as number) => {
   sim.enqueue({ type: 'galaxy.respond', encounter: id, choice });
   return step(sim);
@@ -102,7 +110,7 @@ describe('evade', () => {
     expect(ev).toContainEqual(expect.objectContaining({ type: 'galaxy.encounterResolved', outcome: 'evaded' }));
     expect(sim.galaxy.encounters).toHaveLength(0);
     expect(sim.galaxy.event).toBeNull();
-    while (sim.galaxy.travel?.phase === 'hop') step(sim);
+    flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
     expect(sim.galaxy.travel?.phase).toBe('arrived');
   }, 60000);
@@ -141,6 +149,7 @@ describe('evade odds follow the pilot', () => {
 
   it('with nobody at the helm the best pilot aboard flies: the staged ship is no longer stuck at the floor', () => {
     const sim = newGame(26, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     const combat = sim.world.get(playerShip(sim), CombatC)!;
     for (let i = 0; i < 40; i++) sim.step();
     expect(combat.pilot).toBe(0);
@@ -172,7 +181,7 @@ describe('two hostile fleets on one hop', () => {
     expect(sim.galaxy.encounters.filter((e) => e.kind === 'interdict')).toHaveLength(0);
     expect(sim.galaxy.travel?.phase).not.toBe('interdicted');
     // The trip carries on and ends; a new jump is accepted afterwards.
-    for (let i = 0; i < 80 && sim.galaxy.travel; i++) { step(sim); if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' }); }
+    for (let i = 0; i < 80 && sim.galaxy.travel; i++) { step(sim); sim.story.active = null; if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' }); }
     expect(sim.galaxy.travel).toBeNull();
   }, 60000);
 
@@ -219,7 +228,7 @@ describe('bribe', () => {
     expect(sim.trade.credits).toBe(5);
     expect(sim.galaxy.encounters).toHaveLength(0);
     expect(f.met).toBe(turn);
-    while (sim.galaxy.travel?.phase === 'hop') step(sim);
+    flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
   }, 60000);
 });
@@ -283,7 +292,7 @@ describe('fight', () => {
     expect(sim.sector.inCombat).toBe(false);
     expect(sim.galaxy.lastResult?.outcome).toBe('cleared');
     expect(sim.galaxy.travel?.phase).toBe('hop');
-    while (sim.galaxy.travel?.phase === 'hop') step(sim);
+    flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
     expect(sim.galaxy.travel?.phase).toBe('arrived');
     sim.enqueue({ type: 'galaxy.drop' });
@@ -324,7 +333,7 @@ describe('fight', () => {
     step(sim);
     expect(sim.galaxy.event).toBeNull();
     expect(sim.sector.state).toBe('hyperspace');
-    while (sim.galaxy.travel?.phase === 'hop') step(sim);
+    flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
   }, 60000);
 });
@@ -384,6 +393,7 @@ describe('alerts: hail, scan, distress', () => {
   /** A stranded damaged trader sits at the node the player reaches. */
   function distress() {
     const sim = newGame(27, content);
+    sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     sim.galaxy.fleets = [];
     giveItems(sim, 'item.fuel', 50);
     const c = sim.world.get(playerShip(sim), CombatC);
@@ -417,7 +427,7 @@ describe('alerts: hail, scan, distress', () => {
     expect(sim.story.reputation.traders).toBeGreaterThan(rep);
     expect(f.damaged).toBeUndefined();
     expect(sim.galaxy.fleets.includes(f)).toBe(true);
-    while (sim.galaxy.travel?.phase === 'hop') step(sim);
+    flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
   }, 60000);
 
@@ -427,7 +437,7 @@ describe('alerts: hail, scan, distress', () => {
     expect(sim.galaxy.encounters).toHaveLength(0);
     expect(sim.galaxy.event).toBeNull();
     expect(sim.galaxy.fleets.includes(f)).toBe(true);
-    while (sim.galaxy.travel?.phase === 'hop') step(sim);
+    flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
   }, 60000);
 });

@@ -60,6 +60,11 @@
             <span class="nm">{o.name}</span>
             <span class="pr">{o.active ? 'working: ' : finished(o) ? 'met: ' : ''}{progress(o)}</span>
           </div>
+          {#if r}
+            <div class="rf" data-testid="order-recipe-{i}">{flow(r.inputs)} → {flow(r.outputs)}
+              {#if o.missing.length}<b class="bad" data-testid="order-missing-{i}">missing {o.missing.join(', ')}</b>{:else}<span class="ok">inputs in stock</span>{/if}
+            </div>
+          {/if}
           <div class="l2">
             <button class="mode" data-testid="order-mode-{i}" title="Make N batches, or keep stock at N" onclick={() => edit(i, { mode: o.mode === 'count' ? 'keep' : 'count' })}>{o.mode === 'count' ? 'Make' : 'Keep'}</button>
             <NumberStepper value={o.target} min={1} {step} label="Batches" decTestId="order-dec-{i}" incTestId="order-inc-{i}" onChange={(v) => edit(i, { target: v })} />
@@ -109,13 +114,16 @@
   .dim { color: var(--dim); }
   .bad { color: #ff9a9a; }
   .prog > i { background: #ff9a3c; }
-  h3 { margin: 10px 0 4px; font-size: 13px; color: var(--cyan); }
+  h3 { margin: 10px 0 4px; font-size: 13px; color: var(--ink-accent); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .orders li { background: #0e1626; border: 1px solid var(--line); border-radius: 0; padding: 4px 6px; }
   .orders li.active { border-color: #ff9a3c; }
   .orders li.done { opacity: 0.6; }
   .orders li.none { color: var(--dim); border-style: dashed; padding: 8px; }
+  .orders .rf { color: var(--dim); font-size: 12px; margin-top: 2px; }
+  .orders .rf b { margin-left: 6px; font-weight: 600; }
+  .orders .rf .ok { margin-left: 6px; color: #7fd38a; }
   .l1 { display: flex; align-items: center; gap: 6px; }
   .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pr { color: var(--dim); font-size: 12px; white-space: nowrap; }
@@ -130,8 +138,8 @@
   .rt { flex: 1; display: grid; line-height: 1.2; min-width: 0; }
   .rn { font-weight: 600; }
   .rf { color: var(--dim); font-size: 12px; }
-  .sec { color: var(--cyan); font-size: 12px; }
+  .sec { color: var(--ink-accent); font-size: 12px; }
   .form { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
-  .go { background: #0e4a56; border-color: var(--cyan); min-width: 64px; }
+  .go { background: var(--go-fill); border-color: var(--go-edge); min-width: 64px; }
   .hint { margin: 2px 0 0; color: var(--dim); font-size: 12px; }
 </style>

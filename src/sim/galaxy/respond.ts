@@ -1,4 +1,6 @@
 import type { Sim } from '../sim';
+import { settleScan } from '../blackmarket/scan';
+import { headHome } from './agenda';
 import { bribeCost, evadeOdds } from './encounterOdds';
 import { finishEncounter } from './encounters';
 import { enterEvent, inEvent, leaveEvent } from './eventGrid';
@@ -12,13 +14,13 @@ import type { Encounter, EncounterChoice } from './types';
  *   'bribe' (`bribeCost` credits, refused without them; the fleet then leaves you alone for its cooldown) or 'fight' (the event grid opens).
  *   Success lets the halted trip carry on.
  * - distress: 'respond' (an event grid with the damaged fleet's ships as neutral ships; leaving it carries the trip on) or 'ignore'.
- * - hail / scan: 'acknowledge' (or 'ignore').
+ * - hail / scan: 'acknowledge' (or 'ignore'). A scan that found contraband (`Encounter.scan`, blackmarket/scan.ts) takes 'surrender' or 'bribe' instead.
  */
 const EVADE_SALT = 0xe7ad;
 
 /** The choices an encounter offers. */
 export const choicesOf = (e: Encounter): EncounterChoice[] =>
-  e.kind === 'interdict' ? ['evade', 'bribe', 'fight'] : e.kind === 'distress' ? ['respond', 'ignore'] : ['acknowledge'];
+  e.kind === 'interdict' ? ['evade', 'bribe', 'fight'] : e.kind === 'distress' ? ['respond', 'ignore'] : e.scan ? ['surrender', 'bribe'] : ['acknowledge'];
 
 /** The evade roll for an encounter: a pure function of the seed and the id. */
 export const evadeRoll = (sim: Sim, e: Encounter): number => unit(sim.seed, e.id, EVADE_SALT);
@@ -51,12 +53,24 @@ export function respond(sim: Sim, id: number, choice: EncounterChoice, command =
   const t = g.travel;
   const waiting = sim.sector.state === 'hyperspace' && !!t;
   if (e.kind === 'interdict' && !(waiting && t?.phase === 'interdicted')) return reject('notInterdicted');
+  if (e.scan && (choice === 'surrender' || choice === 'bribe')) {
+    const r = settleScan(sim, e, choice);
+    if (r === 'cantAfford') return reject('cantAfford');
+    finishEncounter(sim, id, r.outcome, { cost: r.cost });
+    return true;
+  }
   if (choice === 'bribe') {
     const cost = bribeCost(sim, e);
     if (sim.trade.credits < cost) return reject('cantAfford');
     sim.trade.credits -= cost;
     const f = g.fleets.find((x) => x.id === e.fleet);
     if (f) f.met = g.turn;
+    // A bought-off hunter calls off the hunt.
+    if (f?.hunt) {
+      delete f.hunt;
+      f.standDown = true;
+      headHome(sim, f);
+    }
     sim.events.emit({ type: 'galaxy.bribed', id, cost, faction: e.faction });
     finishEncounter(sim, id, 'bribed', { cost });
     resume(sim);

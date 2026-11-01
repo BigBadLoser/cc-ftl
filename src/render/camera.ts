@@ -1,12 +1,26 @@
 import { ART_SCALE } from './iso';
 
 /**
- * Zoom levels (device px per art px) of the main camera: one ladder at any art scale. From 1 up they are whole numbers,
- * so the art stays crisp with nearest-neighbour. Below 1 come fractional levels down to 1/8: framing things far bigger
- * than a ship (station hubs), and at 2x art (TILE_W 128) `1 / ART_SCALE` is the old zoom 1. The renderer draws every
- * level below 1 with linear filtering (`scene.ts` `setSmooth`) so the pixel art does not shimmer when shrunk.
+ * Every fractional scale is a whole number of these (1/16): the half tile (64 x 32 world px) then spans a whole number
+ * of device px, so tiles and the sprites anchored on them land on the same device px. At 1/3 or 1/6 it spans 21.33 or
+ * 10.67 px, and with `roundPixels` each piece rounds on its own: neighbours end up a px apart (seams, off-by-one).
  */
-const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / ART_SCALE, 1 / 2, 0.75])].filter((z) => z < 1).sort((a, b) => a - b);
+export const SCALE_QUANTUM = 1 / 16;
+
+/**
+ * Zoom levels (device px per world px) of the main camera. The rule (#187): one art pixel is ART_SCALE world px, so a level
+ * must give a whole number of device px per art px (zoom x ART_SCALE integer): the whole levels from 1 up, and
+ * `1 / ART_SCALE` (1 device px per art px). Below that, only 1/4 and 1/8 (the art shrunk by an exact 2 and 4 for framing station hubs),
+ * which are powers of two so the filter averages whole blocks. 3/16, 3/8 and 3/4 were dropped: they map an art px to 0.375, 0.75 and
+ * 1.5 device px and shimmer. The renderer draws every level below 1 with linear filtering (`scene.ts` `setSmooth`).
+ */
+const BELOW_ONE: readonly number[] = [...new Set([1 / 8, 1 / 4, 1 / ART_SCALE, 1 / 2])].filter((z) => z < 1).sort((a, b) => a - b);
+
+/** A scale snapped down to an aligned one: a whole number from 1 up, a whole number of SCALE_QUANTUM below (at least one). */
+export function alignedScale(s: number): number {
+  if (s >= 1) return Math.floor(s + 1e-9);
+  return Math.max(SCALE_QUANTUM, Math.floor(s / SCALE_QUANTUM + 1e-9) * SCALE_QUANTUM);
+}
 
 /** Every allowed zoom up to `max`, ascending. */
 export function zoomLevels(max: number): number[] {
@@ -35,7 +49,7 @@ export function nearestLevel(levels: readonly number[], z: number): number {
  */
 export interface Camera {
   readonly zoom: number;
-  /** Device px per art px (a zoom level: whole from 1 up, fractional only below 1 at 2x art). */
+  /** Device px per art px (a zoom level: whole from 1 up, fractional only below 1). */
   readonly scale: number;
   /** Canvas size in device px. */
   readonly w: number;
@@ -43,7 +57,8 @@ export interface Camera {
   /** World container position in device px (whole numbers). */
   readonly originX: number;
   readonly originY: number;
-  resize(cssW: number, cssH: number, dpr: number): void;
+  /** `dpr` is the real devicePixelRatio, below 1 too (browser zoom out); `device`: the backing store's exact size in physical px when the caller has made the canvas box match it. */
+  resize(cssW: number, cssH: number, dpr: number, device?: { w: number; h: number }): void;
   /** Drag by a delta in CSS px. */
   pan(dx: number, dy: number): void;
   /** Continuous zoom factor from wheel/pinch/keys, accumulated into level steps. */
@@ -93,19 +108,21 @@ export function createCamera(maxZoom: number): Camera {
     get originY() {
       return Math.round(h / 2 - cy * scale());
     },
-    resize(cssW, cssH, dpr) {
-      ratio = Math.max(1, dpr);
+    resize(cssW, cssH, dpr, device) {
+      // The backing store is the canvas's physical px, never more: a larger one (the old `max(1, dpr)` at browser zoom 90%) is
+      // resampled by the browser and the art px come out 1 and 2 px wide.
+      ratio = dpr > 0 ? dpr : 1;
       dprInt = Math.max(1, Math.round(dpr));
-      // `maxZoom` and the starting zoom are in the 64 px-tile art's terms (art px = css px x dpr at the start): halve them
-      // at 2x art so the default and maximum take about the same screen size as before (rounded up to a whole level).
+      // `maxZoom` and the starting zoom are in the 64 px-tile art's terms (art px = css px x dpr at the start): divide them
+      // by ART_SCALE so the default and maximum take about the same screen size as before (rounded up to a whole level).
       levels = zoomLevels(Math.max(1, Math.ceil((maxZoom * dprInt) / ART_SCALE - 1e-9)));
       if (!sized) {
         zoom = nearestLevel(levels, dprInt / ART_SCALE);
         sized = true;
       }
       zoom = nearestLevel(levels, Math.min(zoom, levels[levels.length - 1] as number));
-      w = Math.max(1, Math.round(cssW * ratio));
-      h = Math.max(1, Math.round(cssH * ratio));
+      w = Math.max(1, device ? device.w : Math.round(cssW * ratio));
+      h = Math.max(1, device ? device.h : Math.round(cssH * ratio));
     },
     pan(dx, dy) {
       cx -= (dx * ratio) / scale();
@@ -133,7 +150,8 @@ export function createCamera(maxZoom: number): Camera {
       cy = a.y - (py - h / 2) / scale();
     },
     setExactScale(s) {
-      zoom = s;
+      // Snapped down to an aligned scale, so the panel's tiles and sprites stay on whole device px (see SCALE_QUANTUM).
+      zoom = alignedScale(s);
     },
     centerOn(ax, ay) {
       cx = ax;

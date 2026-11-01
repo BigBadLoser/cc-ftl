@@ -1,12 +1,16 @@
 import { CombatC, IonC, ShipC } from '../combat/components';
 import { CrewC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
+import { overchargeActive } from '../combat/heat';
+import { OVERCHARGE_ENGINE_EVASION } from '../combat/heatTuning';
 import { mannedConsole, skillOf } from '../combat/operators';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP } from '../tuning';
+import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
+import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
+import { settleOrder } from '../ftl/order';
 
 /**
  * Evasion and the FTL drive. Both need a pilot at a powered helm. Evasion is the sum of powered engines'
@@ -23,17 +27,20 @@ export function helmSystem(sim: Sim): void {
     if (pilot) {
       for (const mid of sim.world.query(ModuleC)) {
         const m = sim.world.get(mid, ModuleC);
-        const eng = m && shipIdOf(sim, m) === id ? sim.content.modules[m.def]?.engine : undefined;
-        if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC)) continue;
+        const eng = m && sim.content.modules[m.def]?.engine;
+        if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
         engines += Math.abs(sim.content.modules[m.def]?.power ?? 0) * eng.evasionPerPower;
       }
     }
     const skill = pilot ? Math.max(0, skillOf(sim, pilot.crew, 'piloting')) : 0;
     const boost = pilot ? 1 + SKILL_STEP * skill : 0;
     combat.pilot = skill;
-    combat.evasion = Math.min(EVASION_CAP, engines * boost);
+    combat.evasion = Math.min(EVASION_CAP, engines * boost + (pilot && engines > 0 && overchargeActive(combat, 'engines') ? OVERCHARGE_ENGINE_EVASION : 0));
     if (ship.faction === 'player' && sim.tick % CRUISE_EVERY === 0) cruise(sim, id, combat);
+    // Piloting XP only while the helm matters: evading in a fight, or the drive actually charging. A seated pilot with a full drive in peacetime learns nothing.
+    if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
+    if (combat.ftlOrder) settleOrder(sim, id);
   }
 }
 
@@ -53,7 +60,7 @@ function cruise(sim: Sim, id: number, combat: { cruisePilot: number; cruiseEvasi
   for (const mid of sim.world.query(ModuleC)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
+    if (!m || !def || (def.console !== 'helm' && !def.engine) || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
     if (def.console === 'helm') helm = true;
     if (def.engine) engines += Math.abs(def.power ?? 0) * def.engine.evasionPerPower;
   }

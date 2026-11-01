@@ -18,6 +18,28 @@ export function storageFill(world: World, id: number): 'empty' | 'partial' | 'fu
   return s.stacks.length >= s.capacity * FULL_SHARE ? 'full' : 'partial';
 }
 
+/** Share of an ore bin's slots in use up to which it shows its first and second fill sprite. */
+const BIN_FILLS = [0.25, 0.6] as const;
+
+/**
+ * Art state of a storage module: `.empty/.partial/.full`, or for a def with `storageArt` (ore bins) `.empty`, else
+ * `.<kind>.<fill1|fill2|full>` by the mapped item filling the most slots and the slots in use. Items with no kind are ignored.
+ */
+export function storageState(world: World, id: number, def: ModuleDef): string {
+  const s = def.storageArt ? world.get(id, StorageC) : undefined;
+  if (!def.storageArt || !s) return storageFill(world, id);
+  if (s.stacks.length === 0) return 'empty';
+  const by = new Map<string, number>();
+  for (const q of s.stacks) {
+    const kind = def.storageArt[q.item];
+    if (kind) by.set(kind, (by.get(kind) ?? 0) + 1);
+  }
+  const kind = [...by.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!kind) return storageFill(world, id);
+  const share = s.stacks.length / Math.max(1, s.capacity);
+  return `${kind}.${share <= BIN_FILLS[0] ? 'fill1' : share <= BIN_FILLS[1] ? 'fill2' : 'full'}`;
+}
+
 /** Craft jobs by module id, for the renderer's "is it crafting" test. */
 export function craftProgress(world: World): Map<number, number> {
   const out = new Map<number, number>();
@@ -40,15 +62,84 @@ export function mannedConsoles(world: World): Set<number> {
   return out;
 }
 
+/** Frames per second of a looping `.active` animation. The manifest does not carry animations.json, so this is the pack's rate (4 fps) for every module. */
+export const ANIM_FPS = 4;
+
+/** What the renderer knows about a module beyond the sim state: power off, the render clock, and whether the art has an id (no load queued). */
+export interface ModuleLook {
+  off: boolean;
+  now: number;
+  /** Hit points and their maximum: the art's `.damaged` (below half) and `.destroyed` (0) states. */
+  hp?: number;
+  maxHp?: number;
+  has(id: string): boolean;
+}
+
+/** Frames of a looping state: `base`, `base.f1`, `base.f2`... while the art has them consecutively (1 = not animated). */
+export function frameCount(has: (id: string) => boolean, base: string): number {
+  let n = 1;
+  while (has(`${base}.f${n}`)) n++;
+  return n;
+}
+
+/** Frame index at render time `now` (ms) of an animation of `count` frames. */
+export const animFrame = (now: number, count: number, fps = ANIM_FPS): number => Math.floor((Math.max(0, now) / 1000) * fps) % count;
+
+/** A module reads as damaged below this share of its max hp (the containers' rule). */
+export const DAMAGED_BELOW = 0.5;
+/** A powered damaged machine's lights flicker: lit this long, then dark this long (ms of render time). */
+export const FLICKER_LIT_MS = 340;
+export const FLICKER_DARK_MS = 170;
+
+/**
+ * The state art of a module ahead of its idle chain, first match wins:
+ * - `<asset>.rN.destroyed` at 0 hp;
+ * - `.damaged` under half hp, which while powered alternates with the dark `.damaged.flicker` (340 ms lit, 170 ms dark) and while
+ *   unpowered stays on `.damaged.flicker`;
+ * - `.unpowered` while off;
+ * - the current `.active` frame (`.active`, `.active.f1`...) when the art animates.
+ * Each only when the art has the id. `anim` names an animation whose frames swap texture (no rebuild).
+ */
+export function stateArt(def: ModuleDef, rot: number, active: boolean, look?: ModuleLook): { head: string[]; anim?: string } {
+  if (!look) return { head: [] };
+  const base = `${def.asset}.r${rot}`;
+  if (look.hp !== undefined && look.maxHp) {
+    if (look.hp <= 0 && look.has(`${base}.destroyed`)) return { head: [`${base}.destroyed`] };
+    const lit = `${base}.damaged`;
+    const dark = `${base}.damaged.flicker`;
+    if (look.hp > 0 && look.hp < look.maxHp * DAMAGED_BELOW && look.has(lit)) {
+      if (!look.has(dark)) return { head: [lit] };
+      if (look.off) return { head: [dark] };
+      const on = Math.max(0, look.now) % (FLICKER_LIT_MS + FLICKER_DARK_MS) < FLICKER_LIT_MS;
+      return { head: [on ? lit : dark], anim: lit };
+    }
+  }
+  if (look.off && look.has(`${base}.unpowered`)) return { head: [`${base}.unpowered`] };
+  if (!active) return { head: [] };
+  const n = frameCount(look.has, `${base}.active`);
+  if (n < 2) return { head: [] };
+  const f = animFrame(look.now, n);
+  return { head: [f ? `${base}.active.f${f}` : `${base}.active`], anim: `${base}.active` };
+}
+
+/**
+ * A derelict ruin's look merged into a layer's chain: the ruin's own art first (an explicit override), then the first `headLen`
+ * ids (the live state art: destroyed, damaged / flicker, unpowered, active), then the ruin's `.damaged` / `.destroyed` suffix
+ * stand-ins, then the rest. The live state wins over the equivalent suffix, so a flickering or unpowered ruin shows its dark frame.
+ */
+export const mergeRuinChain = (chain: string[], headLen: number, art: string[], suffix: string[]): string[] =>
+  [...art, ...chain.slice(0, headLen), ...suffix, ...chain.slice(headLen)];
+
 /**
  * Asset ids to try for a module, most specific first: the rotation variant (`.r0`..`.r3`) with the state variant
  * (`.active`, or storage `.empty/.partial/.full`), the rotation variant, then the plain state variant and the plain
- * asset. A non-square module drawn from the plain asset at an odd rotation is mirrored (moduleView).
+ * asset. A non-square module drawn from the plain asset at an odd rotation is mirrored (moduleView). With a `look`, the
+ * `.unpowered` art or the current `.active` animation frame comes first (see `stateArt`).
  */
-export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef, active: boolean): string[] {
-  const state = def.storage ? `.${storageFill(world, id)}` : active ? '.active' : '';
+export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef, active: boolean, look?: ModuleLook): string[] {
+  const state = def.storage ? `.${storageState(world, id, def)}` : active ? '.active' : '';
   const rot = `.r${m.rot}`;
-  return [`${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
+  return [...stateArt(def, m.rot, active, look).head, `${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
 }
 
 /**
@@ -109,6 +200,8 @@ export interface ModuleLayer {
   overlay?: 'paint' | 'lv';
   /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
   optional?: boolean;
+  /** The chain's head is a frame of this looping animation (an `.active` base id): the view swaps the texture as frames advance instead of rebuilding. */
+  anim?: string;
   /** Stays drawn on a roofed ship (hull block, collar); the other parts are under the roof. */
   roofVisible?: boolean;
 }
@@ -137,7 +230,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
  *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
-export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null): ModuleLayer[] {
+export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null, look?: ModuleLook): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
   if (def.container) {
@@ -170,7 +263,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     ];
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
-  const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active), key: a, tiles: 'all' };
+  const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
   if (!def.console) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];

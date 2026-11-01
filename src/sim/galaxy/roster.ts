@@ -87,7 +87,7 @@ function makeShip(sim: Sim, owner: GalaxyFactionDef, ownerId: string, table: Tab
     seed = s;
     break;
   }
-  const name = shipNameFor((owner.fleet as NonNullable<typeof owner.fleet>).names, key, used);
+  const name = shipNameFor((owner.fleet as NonNullable<typeof owner.fleet>).names, [sim.seed, ...key], used);
   return { id: sim.galaxy.nextFleet++, faction: ownerId, shipgen: cand.shipgen, seed, depth, since: 0, name, size };
 }
 
@@ -121,8 +121,50 @@ export function makeFleet(
     if (c) ships.push(c);
   });
   if (!ships.length) return null;
+  if (!want) hireEscort(sim, group, pick.faction, role, depth, key, used, ships);
   return {
     id: sim.galaxy.nextFleet++, faction: pick.faction, role, ships, home: port.id, node: port.node, from: port.node, moved: -1, route: [], dest: port.node,
+    dwell: 0, legs: 0, synced: turn,
+  };
+}
+
+/**
+ * The cartel hires mercenaries to guard its fleets: with the group's escort chance, one more ship of the escort faction joins (a small or medium hull
+ * from its own table). It keeps its own faction (name, standing, trade) and flies on its employer's side (`Contact.hired`). Rolls are hashes of the fleet key.
+ */
+function hireEscort(sim: Sim, group: FleetGroupDef, employer: string, role: FleetRole, depth: number, key: readonly number[], used: Set<string>, ships: Contact[]): void {
+  const esc = group.escort;
+  const hired = esc ? sim.content.galaxy?.factions[esc.faction] : undefined;
+  if (!esc || !hired?.fleet || unit(sim.seed, ...key, 90) >= esc.chance) return;
+  const table = tableFor(sim, hired, role, depth);
+  const want: ShipSize = unit(sim.seed, ...key, 91) < 0.6 ? 'small' : 'medium';
+  const size = [want, ...SIZES].find((z) => table[z].length > 0);
+  const c = size ? makeShip(sim, hired, esc.faction, table, size, depth, [...key, 99], used) : null;
+  if (c) ships.push({ ...c, hired: employer });
+}
+
+/**
+ * A hunter fleet (hunters.ts) for the owner's armed `role` at a port: the owner's group for the role with its budget and ship count replaced, so the ships
+ * are the faction's usual hulls for this depth, only more of them. Null when the owner fields no such group or no ship fits.
+ */
+export function makeHunters(
+  sim: Sim, port: Port, faction: string, role: FleetRole, depth: number, key: readonly number[], budget: number, maxShips: number, turn: number,
+): Fleet | null {
+  const owner = sim.content.galaxy?.factions[faction];
+  const base = owner?.fleet?.groups[role];
+  if (!owner || !base) return null;
+  const table = tableFor(sim, owner, role, depth);
+  const h = (salt: number): number => unit(sim.seed, ...key, salt);
+  const sizes = groupSizes(sim, { ...base, budget: [{ value: budget, weight: 1 }], maxShips }, table, (salt) => h(10 + salt));
+  const used = usedNames(sim);
+  const ships: Contact[] = [];
+  sizes.forEach((size, i) => {
+    const c = makeShip(sim, owner, faction, table, size, depth, [...key, i], used);
+    if (c) ships.push(c);
+  });
+  if (!ships.length) return null;
+  return {
+    id: sim.galaxy.nextFleet++, faction, role, ships, home: port.id, node: port.node, from: port.node, moved: -1, route: [], dest: port.node,
     dwell: 0, legs: 0, synced: turn,
   };
 }

@@ -1,5 +1,6 @@
 import { ALT, BodyC, type Body } from '../body';
 import { cargoAdd, cargoCount, cargoSpace } from '../vehicles/cargo';
+import { bumpStat } from '../story/goals';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, bayWorking } from '../vehicles/geometry';
 import { vehicleDefOf, vehicleSpeedPerTick } from '../vehicles/lifecycle';
@@ -9,6 +10,8 @@ import { ensurePilot, releasePilot } from '../mining/pilot';
 import type { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
 import { TICK_HZ } from '../time';
+import { XP_PER_WORK_SEC } from '../tuning';
+import { grantXp } from '../crew/xp';
 
 /** The item an ore code yields, or undefined. */
 function oreItem(sim: Sim, code: number): string | undefined {
@@ -96,6 +99,8 @@ export function miningSystem(sim: Sim): void {
     if (v.state === 'docked') continue;
     if (v.state === 'stowed') {
       if (cargoCount(v) > 0) {
+        // A pod home with ore: the goal chain counts the trip once, as it starts unloading.
+        if (order.phase !== 'unloading') bumpStat(sim, 'gathered');
         order.phase = 'unloading';
         continue;
       }
@@ -117,7 +122,8 @@ export function miningSystem(sim: Sim): void {
       sim.events.emit({ type: 'mining.launched', pod, asteroid: order.asteroid, x: next.x, y: next.y, trip: order.trips });
       continue;
     }
-    // flying
+    // flying: the pilot is at the controls
+    if (v.pilot) grantXp(sim, v.pilot, 'piloting', XP_PER_WORK_SEC / TICK_HZ);
     if (order.phase === 'returning') {
       if (!v.dest && !bayWorking(sim, v.home)) end(sim, pod, order, 'lost'); // no bay to come home to: it holds where it is
       else if (!v.dest) v.dest = { type: 'bay' };

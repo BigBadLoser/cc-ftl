@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { liveryFor, liveryPlan, moduleColour, moduleLayout, roofTile, SCHEME_NAMES } from './roofArt';
+import { LIVERIES, liveryFor, liveryPlan, moduleColour, moduleLayout, roofTile, SCHEME_NAMES } from './roofArt';
 
 // Reference values computed with the Blender pipeline's pure-Python roof_layout / roof_variants / roof_livery.
 const MASKS = new Set(
@@ -8,7 +8,9 @@ const MASKS = new Set(
     'em.cross.1 em.cross.2 em.cross.3 em.star.0 em.star.1 em.star.2 em.star.3 em.diamond.0 em.diamond.1 em.diamond.2 em.diamond.3 ' +
     'full.P half.n dbl.n dbl.s shaft.n shaft.s bar arr.0.0 arr.0.1 arr.0.2 arr.0.3 arr.1.1 arr.1.2 big.0.0 big.0.1 big.1.0 big.1.1 ' +
     'big.2.0 big.2.1 big.3.0 big.3.1 big.4.0 big.4.1 big.5.0 big.5.1 big.6.0 big.6.1 big.7.0 big.7.1 big.8.0 big.8.1 big.9.0 big.9.1 ' +
-    'sten.0 sten.1').split(' '),
+    'sten.0 sten.1 em.skull.0 em.skull.1 em.skull.2 em.skull.3 em.eye.0 em.eye.1 em.eye.2 em.eye.3 fang claw.0 claw.1 claw.2 claw.3 claw.4 claw.5 claw.6 claw.7 claw.8 claw.9 claw.10 claw.11 trace.n ' +
+    'trace.s ' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map((q) => `emL.skull.${q} emL.eye.${q}`).join(' ') + ' ' +
+    'em.crest.0 em.crest.1 em.crest.2 em.crest.3 em.helix.0 em.helix.1 em.helix.2 em.helix.3 em.meridian.0 em.meridian.1 em.meridian.2 em.meridian.3 emL.crest.0 emL.crest.1 emL.crest.2 emL.crest.3 emL.crest.4 emL.crest.5 emL.crest.6 emL.crest.7 emL.crest.8 hazard full.S emL.helix.0 emL.helix.1 emL.helix.2 emL.helix.3 emL.helix.4 emL.helix.5 emL.helix.6 emL.helix.7 emL.helix.8 emL.meridian.0 emL.meridian.1 emL.meridian.2 emL.meridian.3 emL.meridian.4 emL.meridian.5 emL.meridian.6 emL.meridian.7 emL.meridian.8 emL.delta.0 emL.delta.1 emL.delta.2 emL.delta.3 emL.delta.4 emL.delta.5 emL.delta.6 emL.delta.7 emL.delta.8 emL.diamond.0 emL.diamond.1 emL.diamond.2 emL.diamond.3 emL.diamond.4 emL.diamond.5 emL.diamond.6 emL.diamond.7 emL.diamond.8 em.rank.0 em.rank.1 em.rank.2 em.rank.3 emL.rank.0 emL.rank.1 emL.rank.2 emL.rank.3 emL.rank.4 emL.rank.5 emL.rank.6 emL.rank.7 emL.rank.8 emL.cross.0 emL.cross.1 emL.cross.2 emL.cross.3 emL.cross.4 emL.cross.5 emL.cross.6 emL.cross.7 emL.cross.8').split(' '),
 );
 const solid = (x: number, y: number) => x > 1 && x < 22 && y > 1 && y < 14;
 
@@ -26,6 +28,10 @@ describe('livery plan', () => {
     const want: Record<string, [number, number]> = {
       crimson: [43, 43], ivory: [64, 68], tide: [67, 67], sovereign: [47, 47], orchid: [73, 79], hornet: [66, 70],
       glacier: [132, 142], verdant: [58, 62], ember: [70, 70], tricolour: [148, 172],
+      gash: [240, 292], scorch: [240, 292], reaver: [240, 297], litany: [240, 284], relic: [240, 320], vigil: [240, 289],
+      velvet: [240, 284], jade: [240, 284], sable: [240, 289], drab: [240, 288], khaki: [240, 288], combine: [240, 394], helix: [240, 286], vantor: [240, 298], bazaar: [240, 326], souk: [240, 326],
+      brigade: [240, 293], freight: [240, 399], clinic: [240, 291], foundry: [240, 303], rustbucket: [240, 322], junker: [240, 358], lattice: [240, 404], node: [240, 289],
+      neon: [240, 331],
     };
     for (const sc of SCHEME_NAMES) {
       const p = liveryPlan(24, 16, solid, sc, 42, (m) => MASKS.has(m));
@@ -35,10 +41,26 @@ describe('livery plan', () => {
     expect(['15,9', '16,9', '17,9'].map((k) => t.get(k)?.map((q) => q.mask))).toEqual([['big.1.0'], ['big.1.1'], ['big.5.0']]);
     const v = liveryPlan(24, 16, solid, 'verdant', 42, (m) => MASKS.has(m));
     expect(v.get('13,5')).toEqual([{ mask: 'em.star.0', motif: 'em.star' }]);
+    const big = liveryPlan(24, 16, solid, 'vigil', 42, (m) => MASKS.has(m));
+    expect(['13,6', '14,7', '15,8'].map((k) => big.get(k)?.at(-1)?.mask)).toEqual(['emL.eye.0', 'emL.eye.4', 'emL.eye.8']);
+    const g = liveryPlan(24, 16, solid, 'gash', 42, (m) => MASKS.has(m));
+    expect(['13,5', '7,6', '19,2', '20,2'].map((k) => g.get(k)?.map((q) => q.mask))).toEqual([
+      ['full.P', 'em.skull.0'], ['full.P', 'claw.0'], ['full.P', 'fang'], ['full.P', 'full.P'],
+    ]);
   });
   it('picks a scheme per ship deterministically', () => {
     expect(liveryFor('hostile', 'Raider')).toEqual(liveryFor('hostile', 'Raider'));
     expect(SCHEME_NAMES).toContain(liveryFor('hostile', 'Raider').scheme);
+  });
+  it('picks from the faction livery, the classic ten for an unknown one', () => {
+    const names = ['Raider', 'Kestrel', 'Vow of Iron', 'Hollow Saint', 'Dust Runner', 'Pale Choir'];
+    for (const n of names) {
+      expect(LIVERIES['livery.raider']).toContain(liveryFor('hostile', n, 'livery.raider').scheme);
+      expect(LIVERIES['livery.zealot']).toContain(liveryFor('hostile', n, 'livery.zealot').scheme);
+      expect(LIVERIES['livery.navy']).toContain(liveryFor('hostile', n, 'livery.navy').scheme);
+      expect(LIVERIES['livery.scrapper']).toContain(liveryFor('hostile', n, 'livery.scrapper').scheme);
+      expect(liveryFor('hostile', n, 'livery.unknown')).toEqual(liveryFor('hostile', n));
+    }
   });
 });
 
@@ -76,7 +98,7 @@ describe('livery bow at either end', () => {
       'em.diamond.3 bar arr.0.0 arr.0.1 arr.0.2 arr.0.3 arr.1.1 arr.1.2').split(' ').map((m) => `${m}.m`),
   );
   const has = (m: string) => MASKS.has(m) || MIRRORED.has(m);
-  const text = (m: string) => /^(reg|big|sten)\./.test(m);
+  const text = (m: string) => /^(reg|big|sten|claw)\./.test(m);
   it('mirrors every motif to the other end, with mirrored masks, and keeps the text readable', () => {
     for (const sc of SCHEME_NAMES) {
       const east = liveryPlan(24, 16, solid, sc, 42, has);

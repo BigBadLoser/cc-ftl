@@ -15,7 +15,7 @@ from sprites import compose  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 W, C, OUT = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-A = Path(sys.argv[4]) if len(sys.argv) > 4 else ROOT / "public/assets"      # asset dir with the airlock sheet (a scratch build)
+A = Path(sys.argv[4]) if len(sys.argv) > 4 else ROOT / "public/assets/1x"      # asset dir with the airlock sheet (a scratch build)
 MAN = json.loads((A / "manifest.json").read_text())
 SHEET = np.array(Image.open(A / "sprites/airlock.png").convert("RGBA"))
 GLOW = np.array(Image.open(A / "sprites/airlock.glow.png").convert("RGBA"))

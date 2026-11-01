@@ -1,0 +1,337 @@
+import { content } from '../content';
+import { starterShips } from '../content/ships/starterShips';
+import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, startingRoles, type CrewPick, type Sim } from '../sim';
+import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, isAutoId, saveStore, type SaveMeta } from './saveStore';
+import { playerCrew } from '../sim/story/world';
+
+/**
+ * The browser saves (saveStore.ts): the autosave plus a few named slots. `startGame` loads the autosave on page load (or the slot the
+ * player picked, see `loadSlot`); the main loop writes the autosave with `createSaver`. Starting over or loading a save reloads the page:
+ * the renderer, bridge and controller are all built around one Sim, and a reload is the clean way to swap it.
+ */
+
+/** Set before a reload to start a new game instead of loading the save. */
+const NEW_GAME = 'cc.newGame';
+/** Set before a reload to load this save slot instead of the autosave. */
+const LOAD_SLOT = 'cc.loadSlot';
+/** Set before a reload that must go straight into a game (Continue, a loaded save, a new game): the title screen is skipped once. */
+const SKIP_TITLE = 'cc.skipTitle';
+/** Set with NEW_GAME: the ship template the new game starts with (the title screen's pick). */
+const NEW_SHIP = 'cc.newShip';
+/** Set with NEW_GAME by the crew screen: the seed it rolled with and its picks (JSON), so the game holds the crew it showed. */
+const NEW_CREW = 'cc.newCrew';
+/** The title screen opens on this page (the in-game "New game" lands on the ship pick). */
+const TITLE_VIEW = 'cc.titleView';
+/** A save is being loaded: the reload's pagehide must not write this game over the autosave first. */
+let loading = false;
+
+function take(key: string): string | null {
+  const v = read(key, sessionStorage);
+  if (v !== null) {
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      /* the flag only lasts the reload */
+    }
+  }
+  return v;
+}
+
+function read(key: string, store: Storage = localStorage): string | null {
+  try {
+    return store.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export interface Start {
+  sim: Sim;
+  /** Shown once on start: the save could not be loaded (an older version), so this is a new game. */
+  notice: string | null;
+  /** False for a `?seed=` debug game: it must never write over the player's campaign save. */
+  persist: boolean;
+  /** A new game started because the saved campaign could not be loaded: list every autosave, whatever campaign it belongs to. */
+  showAll?: boolean;
+}
+
+/**
+ * The game to play: `?seed=` asks for a new game of that seed (debug and screenshot scripts); a requested new game is a
+ * fresh random seed; otherwise the saved game, else a new one. A save from another SAVE_VERSION cannot be loaded
+ * (no migrations while this is a prototype): it is dropped, with a notice.
+ */
+/** The starter ship of a new game (the Spine Hauler) when the new-game flow picked none. */
+export const DEFAULT_STARTER = 'ship.wayfarer';
+
+export async function startGame(seedParam: string | null, starterParam: string | null = null): Promise<Start> {
+  // `?starter=wayfarer|prospector|lancer` (debug): a new game with that starter ship, never saved over the campaign.
+  const starter = starterOf(starterParam);
+  // A new game sails the ship the new-game flow picked, else `?starter=`, else the Spine Hauler (`ship.wayfarer`);
+  // `newGame`'s own default stays the old `ship.starter`, which the sim tests are built on.
+  const fresh = (seed: number, ship?: string, crew?: CrewPick[]) => newGame(seed >>> 0, content, ship ?? starter?.id ?? DEFAULT_STARTER, true, crew ?? 'rolled');
+  const random = () => (Math.random() * 0x100000000) >>> 0;
+  await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
+  if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };
+  if (starter) return { sim: fresh(random()), notice: null, persist: false };
+  if (take(NEW_GAME)) {
+    const ship = take(NEW_SHIP) ?? undefined;
+    const known = ship && (content.ships as Record<string, unknown>)[ship] ? ship : undefined;
+    const plan = known ? planOf(take(NEW_CREW), known) : null;
+    return { sim: plan ? fresh(plan.seed, known, plan.picks) : fresh(random(), known), notice: null, persist: true };
+  }
+  const slot = take(LOAD_SLOT);
+  if (slot && slot !== AUTO_ID) {
+    const picked = await saveStore.read(slot);
+    try {
+      if (picked) return { sim: deserialize(picked, content), notice: null, persist: true };
+    } catch {
+      /* falls through to the autosave below; the slot itself is left as it is */
+    }
+    const auto = await loadAuto(fresh, random);
+    const why = 'The save you picked could not be loaded (it may be from another version of the game). It was kept; you are playing your autosave instead.';
+    return { ...auto, notice: auto.notice ?? why };
+  }
+  return loadAuto(fresh, random);
+}
+
+async function loadAuto(fresh: (seed: number) => Sim, random: () => number): Promise<Start> {
+  const json = await saveStore.read(AUTO_ID);
+  let why: unknown = null;
+  let kept = false;
+  const head = saveStore.list().find((m) => m.id === AUTO_ID); // its label, read before keepBroken moves it
+  if (json) {
+    try {
+      return { sim: deserialize(json, content), notice: null, persist: true };
+    } catch (e) {
+      why = e;
+      kept = await keepBroken(json, head?.campaign);
+    }
+  }
+  // The newest autosave is gone or unloadable: the older autosaves and the pre-combat snapshot of the same campaign are the way back, newest
+  // first (a save without a campaign matches only a head without one). Another campaign's saves stay listed for the player to pick.
+  // Whose saves may stand in: the failed head's campaign, or (a reload before the new game's first autosave) the one recorded on the set-aside save.
+  const scope = head ?? saveStore.meta(BROKEN_ID);
+  const rest = saveStore.list().filter((m) => m.id !== AUTO_ID && (isAutoId(m.id) || m.id === PRECOMBAT_ID) && (!scope || m.campaign === scope.campaign)).sort((x, y) => y.savedAt - x.savedAt);
+  for (const m of rest) {
+    const alt = await saveStore.read(m.id);
+    if (!alt) continue;
+    try {
+      const sim = deserialize(alt, content);
+      const min = Math.max(1, Math.round((Date.now() - m.savedAt) / 60_000));
+      const was = why ? `The latest autosave ${unloadableWhy(why)} and couldn't be loaded.` : 'The latest autosave is missing.';
+      return { sim, notice: `${was} Loaded ${m.id === PRECOMBAT_ID ? 'the snapshot from before combat' : 'the autosave'} from ${m.savedAt ? `${min} min ago` : 'earlier'} instead.${kept ? ' The broken one was kept in the browser.' : ''}`, persist: true };
+    } catch { /* the next one */ }
+  }
+  if (!json) return { sim: fresh(random()), notice: null, persist: true };
+  // A new game, and the old campaign's saves stay listed: they are the only way back to it.
+  return { sim: fresh(random()), notice: unloadableNotice(why, kept, saveStore.list()), persist: true, showAll: true };
+}
+
+/** Saves written by another SAVE_VERSION than this build's (a save without the version in its label is not counted: it may well load). */
+export function incompatibleSaves(metas: readonly SaveMeta[]): SaveMeta[] {
+  return metas.filter((m) => m.version !== undefined && m.version !== SAVE_VERSION);
+}
+
+/** The start-up notice for a save that would not load, saying why, what was kept, and how many other saves are in the same state. */
+export function unloadableNotice(e: unknown, kept: boolean, metas: readonly SaveMeta[]): string {
+  const others = incompatibleSaves(metas).length;
+  return `Your saved game ${unloadableWhy(e)} and could not be loaded. A new game has started.${kept ? ' The old save was kept in the browser.' : ''}`
+    + (others ? ` ${others} other save${others === 1 ? '' : 's'} in the Load list ${others === 1 ? 'is' : 'are'} from another version too and cannot be loaded.` : '');
+}
+
+/** Why a save would not load: another version (naming both), or damaged. */
+function unloadableWhy(e: unknown): string {
+  const msg = e instanceof Error ? e.message : '';
+  const was = /^Save version (\S+) is not/.exec(msg)?.[1];
+  return msg.startsWith(VERSION_MISMATCH) ? `is from another version of the game${was && was !== 'undefined' ? ` (v${was}; this is v${SAVE_VERSION})` : ''}` : 'is damaged';
+}
+
+/** Message prefix `migrate` throws for a save of another SAVE_VERSION (as opposed to a corrupt payload). */
+const VERSION_MISMATCH = 'Save version';
+/** Move an unloadable save out of the main slot, keeping it. False when it could not be copied (it then stays in the main slot). */
+async function keepBroken(json: string, campaign?: number): Promise<boolean> {
+  // The label keeps the failed campaign's id: a reload before the fresh game autosaves must not recover another campaign's saves. Once an `auto` exists again its own label rules.
+  if (!(await saveStore.write({ id: BROKEN_ID, name: 'Unloadable save', savedAt: Date.now(), turn: 0, node: '', campaign }, json))) return false;
+  await clearSave();
+  return true;
+}
+
+/**
+ * The save function for the main loop (periodic, tab-hide and pagehide saves all go through it). Does nothing for a game that
+ * must not persist (`?seed=`) or that is lost; otherwise writes and reports whether the write worked. A failed write leaves
+ * the previous save in the slot untouched (the last known good one).
+ */
+export function createSaver(sim: Sim, persist: boolean, isLost: () => boolean, onResult: (ok: boolean) => void): () => void {
+  return () => {
+    if (!persist || loading || isLost() || lostReason(sim)) return;
+    void writeAutosave(sim).then(onResult);
+  };
+}
+
+/** The newest autosave is pushed down the chain (`auto` to `auto2` to `auto3`) once its head has been this long in place (`SaveMeta.since`, not the last write: autosaves overwrite it every 30 s); younger ones are overwritten. */
+export const ROTATE_MS = 3 * 60_000;
+
+/**
+ * The periodic autosave: writes `auto`, first keeping the previous one as `auto2` (and that as `auto3`) when it was started at least ROTATE_MS ago.
+ * Never rotates during a fight, and never moves a head that was saved in one (it is overwritten, keeping its age), so the older autosaves stay calm ones to go back to. A write that fails leaves the chain as it was.
+ */
+export function writeAutosave(sim: Sim, now = Date.now()): Promise<boolean> {
+  // Whether the chain moves is decided by the store when this write's turn comes, from the label the writes before it left.
+  const due = (newest: SaveMeta | undefined) => !!newest && newest.savedAt > 0 && !newest.fight && (newest.campaign ?? sim.seed) === sim.seed && now - (newest.since ?? newest.savedAt) >= ROTATE_MS && !sim.sector.inCombat;
+  return writeSave(sim, AUTO_ID, 'Autosave', now, AUTO_IDS, due);
+}
+
+/** The snapshot taken as a fight starts (overwritten by the next fight). */
+export function writePrecombat(sim: Sim, now = Date.now()): Promise<boolean> {
+  return writeSave(sim, PRECOMBAT_ID, 'Before combat', now);
+}
+
+/**
+ * Whether a save in the list belongs to this game's campaign. The pre-combat snapshot must (an older one has no campaign and never does);
+ * the older autosaves must not be another campaign's; the newest autosave and the named slots are always the player's to pick.
+ */
+export function inThisCampaign(sim: Sim, m: Pick<SaveMeta, 'id' | 'campaign'>): boolean {
+  if (m.id === PRECOMBAT_ID) return m.campaign === sim.seed;
+  if (AUTO_IDS.includes(m.id as never) && m.id !== AUTO_ID) return (m.campaign ?? sim.seed) === sim.seed;
+  return true;
+}
+
+/** Write the save (async; the write is started at once). False when the browser refuses (storage full or blocked). */
+export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.now(), shift?: readonly string[], due?: (newest: SaveMeta | undefined) => boolean): Promise<boolean> {
+  let json: string;
+  try {
+    json = serialize(sim);
+  } catch (e) {
+    console.error('Save failed: the game could not be serialized', e);
+    return Promise.resolve(false);
+  }
+  // The store starts its transaction before this returns, so a save made in a `pagehide` handler is already under way.
+  return saveStore.write(saveMeta(sim, id, name, now), json, shift, due);
+}
+
+/** The list label of a save of this game now. */
+export function saveMeta(sim: Sim, id: string, name: string, now = Date.now()): SaveMeta {
+  return { id, name, savedAt: now, turn: sim.galaxy.turn, node: nodeOf(sim, sim.galaxy.current)?.name ?? '', version: SAVE_VERSION, fight: sim.sector.inCombat, campaign: sim.seed };
+}
+
+/**
+ * Whether the page opens on the title screen: not for a debug start (`?scenario=`, `?seed=`, a valid `?starter=`), nor right
+ * after a reload that goes into a game (the flag is read once). A plain page load shows it.
+ */
+export function titleWanted(params: URLSearchParams): boolean {
+  const skip = take(SKIP_TITLE) !== null;
+  return !skip && !params.has('scenario') && !params.has('seed') && !starterOf(params.get('starter'));
+}
+
+/** The starter ship a `?starter=` debug start names (`wayfarer` or `ship.wayfarer`), or undefined when it names none. */
+export function starterOf(param: string | null) {
+  return param ? starterShips.find((s) => s.id === `ship.${param}` || s.id === param) : undefined;
+}
+
+function skipTitleOnce(): void {
+  try {
+    sessionStorage.setItem(SKIP_TITLE, '1');
+  } catch {
+    /* without the flag the reload shows the title again */
+  }
+}
+
+/** Title screen: the newest autosave, if any (null: none). */
+export function newestAutosave(): SaveMeta | null {
+  return saveStore.list().filter((m) => isAutoId(m.id) && (m.version === undefined || m.version === SAVE_VERSION)).sort((a, b) => b.savedAt - a.savedAt)[0] ?? null;
+}
+
+/** Title screen: play the autosave (a reload that skips the title). */
+export function continueGame(): void {
+  skipTitleOnce();
+  location.assign(location.pathname);
+}
+
+export function clearSave(): Promise<boolean> {
+  return saveStore.remove(AUTO_ID);
+}
+
+/** Load a save slot (a reload: the game is rebuilt around it). Progress since the last save is lost. The page drops its debug query. */
+export function loadSlot(id: string): void {
+  loading = true;
+  skipTitleOnce();
+  try {
+    sessionStorage.setItem(LOAD_SLOT, id);
+  } catch {
+    /* without the flag the reload plays the autosave */
+  }
+  // Without the query: a debug start (`?seed=`, `?scenario=`) would otherwise replace the loaded game.
+  location.assign(location.pathname);
+}
+
+/** Throw this game away and start a new one (a reload). */
+/**
+ * In-game "New game" (Esc menu, game over, debug): back to the title screen on the new-game ship pick. The game in play
+ * stays the autosave until the new one starts, so backing out of the flow and choosing Continue resumes it.
+ */
+export function openNewGame(): void {
+  try {
+    sessionStorage.setItem(TITLE_VIEW, 'ship');
+  } catch {
+    /* without it the title opens on its main page; New game is one click from there */
+  }
+  location.assign(location.pathname);
+}
+
+/** The page the title screen opens on (once): 'ship' after an in-game "New game", else null. */
+export function takeTitleView(): 'ship' | null {
+  return take(TITLE_VIEW) === 'ship' ? 'ship' : null;
+}
+
+/** The crew screen's plan read back for `ship`: a seed and one well-formed pick per crew slot of that ship, else null. */
+export function planOf(json: string | null, ship: string): { seed: number; picks: CrewPick[] } | null {
+  if (!json) return null;
+  try {
+    const p = JSON.parse(json) as { seed?: unknown; picks?: unknown };
+    const roles = startingRoles(content, ship);
+    if (typeof p.seed !== 'number' || !Array.isArray(p.picks) || p.picks.length !== roles.length) return null;
+    const picks = (p.picks as { role?: unknown; rerolls?: unknown; name?: unknown }[]).map((k, i) => ({
+      role: roles[i] as string,
+      rerolls: typeof k.rerolls === 'number' && k.rerolls >= 0 ? Math.floor(k.rerolls) : 0,
+      ...(typeof k.name === 'string' && k.name.trim() ? { name: k.name.trim().slice(0, 24) } : {}),
+    }));
+    return { seed: p.seed >>> 0, picks };
+  } catch {
+    return null;
+  }
+}
+
+/** Start a new game: with the crew screen's plan (ship, seed, picks) when given, else a random one on the default ship. */
+export async function restartNewGame(plan?: { ship: string; seed: number; picks: CrewPick[] }): Promise<void> {
+  skipTitleOnce();
+  try {
+    sessionStorage.setItem(NEW_GAME, '1');
+    if (plan) {
+      sessionStorage.setItem(NEW_SHIP, plan.ship);
+      sessionStorage.setItem(NEW_CREW, JSON.stringify({ seed: plan.seed, picks: plan.picks }));
+    }
+  } catch {
+    /* without it the reload loads the save; clear it so it starts fresh anyway */
+  }
+  loading = true; // the reload's pagehide must not write the old game back
+  await Promise.all([...AUTO_IDS, PRECOMBAT_ID].map((id) => saveStore.remove(id))); // nothing of the old campaign is left to load into the new one
+  location.reload();
+}
+
+/** Go back to the last save (a reload: the save on disk is the one before the loss). */
+export function reloadLastSave(): void {
+  skipTitleOnce();
+  location.reload();
+}
+
+/**
+ * Why the game is lost, or null: the player's ship destroyed, or no living crew left aboard. Only checked while the ship
+ * is in a node: in hyperspace the ship and crew are packed away and read as absent.
+ */
+export function lostReason(sim: Sim): string | null {
+  if (sim.sector.state !== 'active') return null;
+  const ship = homeShip(sim);
+  if (!ship || sim.world.get(ship, ShipC)?.state === 'wreck') return 'Your ship was destroyed.';
+  if (!playerCrew(sim).length) return 'Your crew is gone.';
+  return null;
+}

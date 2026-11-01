@@ -14,13 +14,9 @@ export interface StoryContext {
 
 /** When an event may start. An event lists any number of triggers. */
 export type EventTrigger =
-  /** Drawn (weighted) when the player arrives somewhere (`story.arrive`). */
-  | { kind: 'arrival'; weight: number }
-  /** Drawn (weighted) when the player crosses a hyperlane with a mid-lane anchor (starmap), instead of an arrival draw. */
+  /** Drawn (weighted) at a hop of a hyperspace trip (see galaxy/hyperspace.ts `storyAtHop`). The only drawn pool: nothing starts while the ship idles in a node. */
   | { kind: 'transit'; weight: number }
-  /** Drawn (weighted) every `periodicSec` of play, outside combat. */
-  | { kind: 'periodic'; weight: number }
-  /** Queued `delaySec` after the flag first reaches `atLeast` (default 1); eligibility is checked when it comes due. */
+  /** Queued `delaySec` after the flag first reaches `atLeast` (default 1); eligibility is checked when it comes due. A decision waits for the ship to be in hyperspace. */
   | { kind: 'flag'; flag: string; atLeast?: number; delaySec?: number }
   /** Never drawn: only a `chain` effect or the debug command reaches it. */
   | { kind: 'chain' };
@@ -125,4 +121,29 @@ export interface EventDef {
   lead?: string;
   /** Notices: seconds before an unopened lead lapses (default NOTICE_LIFE_SEC). */
   expireSec?: number;
+}
+
+/** What finishes a goal (the tutorial goal chain, content/goals.ts). */
+export type GoalCheck =
+  /** A `stat.<stat>` counter (story/goals.ts `bumpStat`) reached `atLeast` (default 1). */
+  | { kind: 'stat'; stat: string; atLeast?: number }
+  /** The player has been to at least `count` nodes (the start node counts). */
+  | { kind: 'visited'; count: number }
+  /** The player is in a cluster other than the one the game started in. */
+  | { kind: 'otherCluster' };
+
+export interface GoalDef {
+  id: string;
+  title: string;
+  /** One line on how to do it. */
+  text: string;
+  check: GoalCheck;
+}
+
+/** One act of the goal chain: its goals, done in any order, and what finishing them all gives. */
+export interface GoalActDef {
+  id: string;
+  title: string;
+  goals: GoalDef[];
+  reward: { credits?: number; items?: ItemQty[]; reputation?: number };
 }

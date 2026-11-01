@@ -189,3 +189,21 @@ describe('SectorGrid releaseEmpty', () => {
     expect(g.revision('o2')).toBeGreaterThan(rev);
   });
 });
+
+describe('SectorGrid threshold watch', () => {
+  it('counts writes that cross the watched threshold, either way, and keeps the count through a save', () => {
+    const grid = new SectorGrid(0, { o2: 'f32', struct: 'u8' }, { o2: 0, struct: 0 }, { occupancyField: null, watch: { field: 'o2', below: 10 } });
+    grid.set('o2', 1, 1, 21); // 0 -> 21: up across
+    grid.set('o2', 1, 1, 15); // stays over
+    grid.set('struct', 1, 1, 1); // another field
+    expect(grid.crossings()).toBe(1);
+    grid.set('o2', 1, 1, 5); // down across
+    grid.set('o2', 40, -3, 0); // empty stays empty
+    expect(grid.crossings()).toBe(2);
+    const back = SectorGrid.deserialize(0, JSON.parse(JSON.stringify(grid.serialize())));
+    expect(back.crossings()).toBe(2);
+    back.set('o2', 1, 1, 12);
+    expect(back.crossings()).toBe(3);
+    expect(new SectorGrid(0, { o2: 'f32' }, { o2: 0 }).crossings()).toBe(0);
+  });
+});

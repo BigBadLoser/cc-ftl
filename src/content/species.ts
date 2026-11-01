@@ -38,10 +38,23 @@ export const species = {
     workSpeed: 1,
     // Rest drains in a few minutes so sleeping is easy to observe while testing.
     restDecay: 0.6,
-    carryCapacity: 20,
+    carryCapacity: 40,
     // Fed to hungry in about 9 minutes (hungry crew eat below 35), starving after about 14.
     hunger: { decayPerSec: 0.12 },
     mood: true,
+  },
+  // Zealot crews: human, machine-touched (tougher) and fearless, so they never surrender. Real implants arrive with phase 7; until then this body stands in for them.
+  'species.augmented': {
+    name: 'Augmented human',
+    moveSpeed: 2.5,
+    workSpeed: 1,
+    restDecay: 0.6,
+    carryCapacity: 40,
+    maxHp: 130,
+    armor: 0.1,
+    hunger: { decayPerSec: 0.12 },
+    mood: true,
+    fearless: true,
   },
   // Robot crew (the rogue AI faction; player-built in robot bays). Variants are roles (role.robot_*).
   'species.robot': robot,

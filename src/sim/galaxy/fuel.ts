@@ -15,7 +15,7 @@ export const FUEL_ITEM = 'item.fuel';
 const inPacket = (sim: Sim): boolean => sim.sector.state === 'hyperspace' && !!sim.sector.packet;
 
 /** Storage modules on one ship, ascending id. */
-const storagesOf = (sim: Sim, ship: number): number[] =>
+export const storagesOf = (sim: Sim, ship: number): number[] =>
   sim.world.query(StorageC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship).sort((a, b) => a - b);
 
 /**
@@ -62,3 +62,30 @@ export function spendCharge(sim: Sim, seconds: number, ship: number = playerShip
   const c = inPacket(sim) ? packetCombat(sim) : sim.world.get(ship, CombatC);
   if (c) c.ftl = Math.max(0, c.ftl - seconds);
 }
+
+/**
+ * Fuel factor of the flown ship's drive: the best (lowest) `engine.fuelFactor` of its intact engines, 1 with none or when no engine
+ * is better than Mk I. Read from the packet while in hyperspace.
+ */
+export function engineFuelFactor(sim: Sim, ship: number = playerShip(sim)): number {
+  let best = 1;
+  const note = (def: string, hp: number): void => {
+    const f = sim.content.modules[def]?.engine?.fuelFactor;
+    if (f !== undefined && hp > 0) best = Math.min(best, f);
+  };
+  if (inPacket(sim)) {
+    for (const e of sim.sector.packet!.entities) {
+      const m = e.c['module'] as { def: string; hp: number } | undefined;
+      if (m) note(m.def, m.hp);
+    }
+  } else {
+    for (const id of sim.world.query(ModuleC)) {
+      const m = sim.world.get(id, ModuleC);
+      if (m && shipIdOf(sim, m) === ship) note(m.def, m.hp);
+    }
+  }
+  return best;
+}
+
+/** The fuel a jump of base cost `base` burns on this ship: at least 1, less with a better engine. */
+export const jumpFuel = (sim: Sim, base: number, ship: number = playerShip(sim)): number => Math.max(1, Math.ceil(base * engineFuelFactor(sim, ship) - 1e-9));

@@ -29,13 +29,34 @@ function awayTeam(): { sim: Sim; crew: number } {
 }
 
 describe('alerts', () => {
+  it('a dismissed save-failed alert stays muted until a write succeeds, then a new failure raises it again', () => {
+    const al = createAlerts(newGame(1, content));
+    expect(al.saveResult(false, 'x')).toBe(true);
+    expect(current(al)).toHaveLength(1);
+    al.dismiss(current(al)[0]!.id);
+    expect(al.saveResult(false, 'x')).toBe(false); // same streak: no new log line, no alert
+    expect(current(al)).toEqual([]);
+    al.saveResult(true, 'x');
+    expect(al.saveResult(false, 'x')).toBe(true);
+    expect(current(al)).toHaveLength(1);
+  });
+
+  it('posts a clickable save-failed alert that opens the Save page, replaces itself, and clears', () => {
+    const al = createAlerts(newGame(1, content));
+    al.post({ kind: 'save.failed', key: 'save', text: 'Saving failed', menu: 'save' });
+    al.post({ kind: 'save.failed', key: 'save', text: 'Saving failed', menu: 'save' });
+    expect(current(al).map((x) => [x.kind, x.menu])).toEqual([['save.failed', 'save']]);
+    al.clear('save');
+    expect(current(al)).toEqual([]);
+  });
+
   it('raise "is down" for a player crew member down away from the home ship (a derelict)', () => {
     const { sim, crew } = awayTeam();
     const alerts = createAlerts(sim);
     alerts.onEvents([{ type: 'crew.downed', crew }]);
     const list = current(alerts);
     expect(list.map((a) => a.kind)).toEqual(['crew.downed']);
-    expect(list[0]?.text).toContain('is down');
+    expect(list[0]?.text).toContain('Down: ');
   });
 
   describe('arrival warnings', () => {
@@ -63,7 +84,7 @@ describe('alerts', () => {
       let list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]?.kind).toBe('galaxy.incomingHostile');
-      expect(list[0]?.text).toBe('Rust Jackal drops from hyperspace in 2 turns');
+      expect(list[0]?.text).toBe('Arriving: Rust Jackal, 2 turns');
       const id = list[0]?.id;
       pirate.node = a;
       pirate.route = [START_NODE];
@@ -72,7 +93,7 @@ describe('alerts', () => {
       list = current(alerts);
       expect(list).toHaveLength(1);
       expect(list[0]).toMatchObject({ id, kind: 'galaxy.incomingHostile' });
-      expect(list[0]?.text).toMatch(/in 1 turn$/);
+      expect(list[0]?.text).toMatch(/, 1 turn$/);
       pirate.node = START_NODE;
       pirate.route = [];
       sim.galaxy.rev++;
@@ -80,13 +101,18 @@ describe('alerts', () => {
       expect(current(alerts)).toEqual([]);
     });
 
-    it('a friendly fleet is a plain warning, a change of course clears it, and a dismissed warning stays dismissed for that trip', () => {
+    it('a friendly fleet raises no alert; a hostile one dismissed stays dismissed for that trip', () => {
       const { sim, a, b, add } = setup();
       const alerts = createAlerts(sim);
-      const trader = add('traders', 'trader', a, [START_NODE]);
+      add('traders', 'trader', a, [START_NODE]);
       sim.galaxy.rev++;
       alerts.syncIncoming();
-      expect(current(alerts).map((x) => x.kind)).toEqual(['galaxy.incoming']);
+      expect(current(alerts)).toEqual([]);
+      const trader = add('pirates', 'pirate', a, [START_NODE]);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts).map((x) => x.kind)).toEqual(['galaxy.incomingHostile']);
+      expect(current(alerts)[0]?.subject).toEqual({ kind: 'node', id: START_NODE });
       alerts.dismiss(current(alerts)[0]!.id);
       sim.galaxy.rev++;
       alerts.syncIncoming();

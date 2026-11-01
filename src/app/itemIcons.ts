@@ -1,11 +1,11 @@
-import { assetBase } from '../render/assets/loader';
-import type { Manifest, StaticAsset } from '../render/assets/manifest';
+import { assetBase, loadComposed } from '../render/assets/loader';
+import type { StaticAsset } from '../render/assets/manifest';
 import type { UiIcon } from '../ui/api';
 
 /** CSS icon frames for items, cut from the medium floor-stack sprite of each (falls back to the small or the held one). */
 export async function loadItemIcons(ids: readonly string[]): Promise<Record<string, UiIcon>> {
   const base = assetBase();
-  const manifest = (await (await fetch(`${base}manifest.json`)).json()) as Manifest;
+  const manifest = await loadComposed(base);
   const sizes = new Map<string, { w: number; h: number }>();
   const size = async (src: string) => {
     let s = sizes.get(src);
@@ -24,7 +24,9 @@ export async function loadItemIcons(ids: readonly string[]): Promise<Record<stri
     if (!a || !sheet) continue;
     const src = base + sheet.image;
     const { w, h } = await size(src);
-    out[id] = { src, x: a.frame.x, y: a.frame.y, w: a.frame.w, h: a.frame.h, sheetW: w, sheetH: h };
+    // The composed frame is in world px; the CSS icon cuts the image itself, in its own pixels (a 1x sheet: resolution 0.5).
+    const r = sheet.resolution ?? 1;
+    out[id] = { src, x: a.frame.x * r, y: a.frame.y * r, w: a.frame.w * r, h: a.frame.h * r, sheetW: w, sheetH: h };
   }
   return out;
 }

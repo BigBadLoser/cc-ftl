@@ -11,13 +11,19 @@ export interface Module {
   rot: number;
   hp: number;
   /** Power priority 1 (served first) .. 5; ties go to the lower entity id. */
-  priority: number;
+  powerPriority: number;
   /** Player switch. A disabled module draws and supplies nothing. */
   enabled: boolean;
   /** Derived by the power system each tick: running (supplied / allocated). */
   powered: boolean;
   /** Crew entity that has reserved this bed (0 = free). Only used by bed modules. */
   reservedBy: number;
+  /** Set when hp hits 0 and cleared once repaired past half: a wrecked module that is patched and shot again does not announce its destruction again. */
+  wrecked?: boolean;
+  /** Life support: seconds of bottled-oxygen boost run since the last unit was burned (ModuleDef.o2Supply). */
+  o2Burn?: number;
+  /** Priority repair (module.priorityRepair): crew pick this module's repair job before any other; a higher number was ordered later and goes first. Cleared at full hp. */
+  repairFirst?: number;
 }
 export const ModuleC = defineComponent<Module>('module');
 

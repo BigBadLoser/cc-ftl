@@ -1,5 +1,5 @@
-import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory } from '../sim';
-import type { UiCrew, UiFight } from '../ui/api';
+import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
+import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
@@ -29,6 +29,7 @@ function jobLabel(sim: Sim, j: Job): string {
     case 'rescue': return 'Rescuing crew';
     case 'haul': return 'Hauling';
     case 'craft': return 'Crafting';
+    case 'research': return 'Researching';
     default: return j.kind;
   }
 }
@@ -124,8 +125,26 @@ function hungerOf(sim: Sim, id: number): number | null {
 function moodOf(sim: Sim, id: number): UiCrew['mood'] {
   const m = sim.world.get(id, MoodC);
   if (!m) return null;
-  const factors = m.factors.map((f) => ({ label: MOOD_LABELS[f.key] ?? f.key, value: f.value })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  const factors = m.factors.map((f) => ({ label: MOOD_LABELS[f.key] ?? (f.key.startsWith('trait:') ? f.key.slice(6) : f.key), value: f.value })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   return { value: m.value, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1 };
+}
+
+function traitsOf(sim: Sim, id: number): UiTrait[] {
+  return (sim.world.get(id, TraitsC)?.ids ?? []).flatMap((tid) => {
+    const d = sim.content.traits?.[tid];
+    return d ? [{ id: tid, name: d.name, kind: d.kind, flavour: d.flavour, effect: d.effect }] : [];
+  });
+}
+
+/** Skills above 0 now or in the role, in the resolver's order, against the role's level. */
+function skillsOf(sim: Sim, id: number, roleSkills: Partial<Record<string, number>> | undefined): UiSkill[] {
+  const out: UiSkill[] = [];
+  for (const skill of SKILLS) {
+    const value = Math.round(stat(sim, id, skill));
+    const base = roleSkills?.[skill] ?? 0;
+    if (value > 0 || base > 0) out.push({ skill, value, base });
+  }
+  return out;
 }
 
 function fightOf(sim: Sim, id: number): UiFight | null {
@@ -168,6 +187,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     hunger: hungerOf(sim, id),
     mood: moodOf(sim, id),
     drafted: sim.world.has(id, DraftedC),
+    mechanical: !!sim.content.species[crew.species]?.mechanical,
     job,
     priorities: { ...(sim.world.get(id, PrioritiesC) ?? NONE) },
     defaults: { ...(role?.priorities ?? NONE) },
@@ -191,11 +211,13 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     evaShuttle: evaShuttleOf(sim, id),
     suit: suitOf(sim, id),
     suitAt: suitAtOf(sim, id),
+    traits: traitsOf(sim, id),
+    skills: side === 'player' && !sim.content.species[crew.species]?.mechanical ? skillsOf(sim, id, role?.skills) : [],
   };
 }
 
-/** Plain-data lists for the UI: all of the player's crew wherever they are, and the hostile crew on the grids they stand on. Reads the sim only. */
-export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] } {
+/** Plain-data lists for the UI: all of the player's crew wherever they are, and the hostile crew on the grids they stand on (plus the one being inspected, `watch`). Reads the sim only. */
+export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: UiCrew[]; hostiles: UiCrew[] } {
   const ctx = makeCtx(sim);
   const crew: UiCrew[] = [];
   const hostiles: UiCrew[] = [];
@@ -212,7 +234,8 @@ export function buildCrewLists(sim: Sim): { crew: UiCrew[]; hostiles: UiCrew[] }
   }
   for (const id of enemies) {
     const g = shipIdOf(sim, sim.world.get(id, PositionC));
-    if (!g || !occupied.has(g) || sim.world.has(id, DeadC)) continue;
+    if ((!g || !occupied.has(g)) && id !== watch) continue;
+    if (sim.world.has(id, DeadC)) continue;
     const c = card(sim, ctx, id, 'enemy');
     if (c) hostiles.push(c);
   }

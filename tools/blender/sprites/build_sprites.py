@@ -1,7 +1,7 @@
 """Entry point (npm run sprites):
   blender -b --factory-startup --python tools/blender/sprites/build_sprites.py -- [outdir] [what]
 
-`what` = all (default), crew, robots, or a comma list of families (families.py: env, walls, consoles, weapons, roof, sol).
+`what` = all (default), crew, portraits, robots, or a comma list of families (families.py: env, walls, consoles, weapons, roof, sol).
 `crew` is incremental (crew_build.py: render cache under .cache/sprites/crew); options --item S, --clip C, --force, --plan.
 Every other rendered family is cached too (sprite_cache.py, .cache/sprites/<family>): a job re-renders only when its key changed;
 --force ignores the cache, --plan reports hits and misses and renders nothing, --no-cache bypasses it.
@@ -10,7 +10,8 @@ Every other rendered family is cached too (sprite_cache.py, .cache/sprites/<fami
 for a quick check (the sheets are then partial: never commit them).
 Each family renders into its own sheets under <outdir>/sprites/ and is merged into <outdir>/manifest.json (shape:
 src/render/assets/manifest.ts): its old sheets and ids are replaced, the rest is kept. So one family can be rebuilt
-alone and the committed manifest is the cache. Default outdir = public/assets."""
+alone and the committed manifest is the cache. Default outdir = public/assets/1x (scale.assets_dir()): 64x32 tiles, the game's only art set."""
+import json
 import os
 import sys
 from pathlib import Path
@@ -19,6 +20,7 @@ if "--preview" in sys.argv:         # before core is imported: it reads the qual
     os.environ["SPRITE_PREVIEW"] = "1"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import core, pack, families, walls  # noqa: E402
+from sprites.scale import assets_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 MANIFEST_VERSION = 1
@@ -36,7 +38,7 @@ def parse_opts(argv):
     pos, opts, k = [], {}, 0
     while k < len(argv):
         a = argv[k]
-        if a in ("--force", "--plan", "--preview", "--no-cache", "--cache-only"):
+        if a in ("--force", "--plan", "--preview", "--no-cache", "--cache-only", "--adopt"):
             opts[a[2:]] = True
         elif a in ("--item", "--clip", "--only") and k + 1 < len(argv):
             k += 1
@@ -52,16 +54,21 @@ def parse_opts(argv):
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     argv, opts = parse_opts(argv)
-    out = Path(argv[0]) if argv else ROOT / "public/assets"
-    if (opts.get("preview") or opts.get("only")) and out.resolve() == (ROOT / "public/assets").resolve() \
-            and not opts.get("plan"):
+    out = Path(argv[0]) if argv else assets_dir()
+    if (opts.get("preview") or opts.get("only")) and out.resolve() == assets_dir().resolve() and not opts.get("plan"):
         sys.exit("--preview / --only give approximate or partial sheets: pass a scratch outdir "
-                 "(npm run sprites -- -- /tmp/out walls --only tile.wall.m5 --preview), never public/assets")
+                 "(npm run sprites -- -- /tmp/out walls --only tile.wall.m5 --preview), never public/assets/1x")
     what = argv[1] if len(argv) > 1 else "all"
     out.mkdir(parents=True, exist_ok=True)
     mpath = out / "manifest.json"
-    names = (["crew", "robots", "aliens"] + list(families.ALL)) if what == "all" else what.split(",")
+    if mpath.exists():
+        have = json.loads(mpath.read_text()).get("tile", {}).get("w")
+        if have not in (None, core.TILE_W):
+            sys.exit(f"{mpath} holds {have} px tiles but the pipeline renders {core.TILE_W} px: wrong outdir")
+    names = (["crew", "robots", "aliens", "portraits"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
+        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "damage_sol"):
+            continue                                    # (their own caches and renderers: --adopt is for env_build's)
         m = pack.load_manifest(mpath, base())
         if name == "crew":
             from sprites import crew_build, crew_pack
@@ -73,6 +80,11 @@ def main():
             from sprites import alien_render
             sheets, assets = alien_render.build(out)
             pack.merge(m, "aliens", sheets, assets)
+        elif name == "portraits":
+            # front-facing head-and-shoulders renders of every crew layer, human, robot and creature (portrait_render.py)
+            from sprites import portrait_render
+            sheets, assets = portrait_render.build(out)
+            pack.merge(m, "portraits", sheets, assets)
         elif name == "robots":
             # ROBOT_QUICK=1: preview frames only (see robot_render.build); not for commits
             from sprites import robot_render
@@ -97,8 +109,8 @@ def main():
                     print("FAMILY_PROGRESS", name, done, count, flush=True)
             items = env_build.render_jobs(jobs, extra, only=opts["only"].split(",") if opts.get("only") else None,
                                           family=None if opts.get("no-cache") else name, force=bool(opts.get("force")),
-                                          plan=bool(opts.get("plan")), progress=progress)
-            if opts.get("plan"):
+                                          plan=bool(opts.get("plan")), progress=progress, adopt=bool(opts.get("adopt")))
+            if opts.get("plan") or opts.get("adopt"):
                 continue
             sheets, assets = pack.pack(name, items, out)
             pack.merge(m, name, sheets, assets)

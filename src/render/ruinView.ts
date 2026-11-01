@@ -1,4 +1,5 @@
 import { Container, type Sprite, type Texture } from 'pixi.js';
+import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ShipC, type ShipRuin } from '../sim/combat/components';
@@ -199,7 +200,7 @@ export function createRuinView(grid: Grid, atlas: Atlas, L: Layers, world: World
         litKey = lk;
         for (const t of lit) t.spr.tint = mulColor(light.tintAt(t.x, t.y, t.wall), t.mul);
       }
-      const now = performance.now();
+      const now = animNow();
       for (const s of sparks) s.spr.texture = Math.floor(now / 140 + s.phase) % 5 === 0 ? s.on : s.off;
     },
     setLevel(l) {

@@ -8,7 +8,7 @@ every cell stays the same size and the renderer's column/row maths is unchanged.
 (src/render/assets/manifest.ts `ClipDef`). The layer's `frameW`/`frameH`/`anchor` and the weapon muzzle offsets (px from the
 anchor) are untouched. Idempotent: a trimmed sheet's box is its whole cell.
 
-  python3 -m sprites.crew_trim [assets dir]      # retrofit an existing sprite output (default public/assets)
+  python3 -m sprites.crew_trim [assets dir]      # retrofit an existing sprite output (default: public/assets/1x)
 """
 import json
 import sys
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import post
+from . import pack, post
 
 
 def cell_geom(asset, clip):
@@ -114,10 +114,10 @@ def retrofit(outdir, log=print):
             after += ni.size + (ng.size if ng is not None else 0)
         if a.get("glow") and not any("glow" in m["sheets"][c.get("sheet", a.get("sheet"))] for c in a["clips"].values()):
             del a["glow"]
-    mp.write_text(json.dumps(m, indent=1))
+    pack.save_manifest(mp, m)  # sorted, like every other manifest write (#140)
     log(f"crew sheets trimmed: {before / 2**20:.0f} MiB -> {after / 2**20:.0f} MiB decoded")
     return before, after
 
 
 if __name__ == "__main__":
-    retrofit(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[3] / "public" / "assets")
+    retrofit(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[3] / "public" / "assets" / "1x")

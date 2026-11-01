@@ -2,11 +2,11 @@
 
 ## Sprite pipeline (current): `npm run sprites`
 
-`sprites/build_sprites.py` renders pre-baked isometric pixel sprites into `public/assets/sprites/*.png` and merges them
-into `public/assets/manifest.json` in the shape of `src/render/assets/manifest.ts` (the contract). The art is split into
+`sprites/build_sprites.py` renders pre-baked isometric pixel sprites into `public/assets/1x/sprites/*.png` and merges them
+into `public/assets/1x/manifest.json` (64x32 tiles, the game's only art set) in the shape of `src/render/assets/manifest.ts` (the contract). The art is split into
 families (`sprites/families.py`): `crew`, `env`, `walls`, `consoles`, `weapons`, `roof`, `sol`. Each renders into its own
 sheets (`pack.py`: pages of at most 2048 px) and replaces only its own sheets and ids in the manifest, so
-`npm run sprites -- public/assets walls` rebuilds one family and the committed manifest is the cache (`all` = every
+`npm run sprites -- public/assets/1x walls` rebuilds one family and the committed manifest is the cache (`all` = every
 family). `sol` runs Sol's renderers in `experiments/` (final quality, one Blender job at a time) and packs their output
 (`sol_pack.py`). The manifest also records the art heights (`heights`: wall 1.85, roof top 2.05, px per tile of height).
 The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for the CC0 base import but no longer feeds the game.
@@ -22,11 +22,20 @@ The older GLB pipeline below (`build.py`, `crew/`, `lib/`) is kept as source for
 
 ### Speed: render cache and `--preview`
 Every rendered family (not `sol`, `robots`, `aliens`, which run their own renderers) is cached in `.cache/sprites/<family>`
-(`sprite_cache.py`, `geom_digest.py`; `$SPRITE_CACHE` moves it). A sprite's key hashes the render code (`core`, `post`,
-`env_build`, `scale`), the palette files, tile size, Blender version, SS and samples, the scene state (world, sun, camera) and
-the built geometry (vertices, faces, colour attributes, object flags). Editing one builder re-renders only the sprites whose
-meshes changed. Callable jobs (consoles, bays, shuttle, airlock) render themselves, so they are keyed by their module and
-everything it imports. Options: `--plan` (hit/miss report, renders nothing), `--force`, `--no-cache`.
+(`sprite_cache.py`, `geom_digest.py`; `$SPRITE_CACHE` moves it). A sprite's key hashes the render code's version
+(`sprite_cache.RENDER_VERSION`, standing for the engine's files: `core`, `post`, `env_build`, `scale`, `geom_digest`,
+`sprite_cache`), its palette selection's entries (`post.palette_digest`), tile size, Blender version, SS and samples, the
+scene state (world, sun, camera) and the built geometry (vertices, faces, colour attributes, object flags). Editing one
+builder re-renders only the sprites whose meshes changed. Callable jobs (consoles, bays, shuttle, airlock) render
+themselves, so they are keyed by their module and everything it imports (less the engine's files), and by their family's
+palette selection. Options: `--plan` (hit/miss report, renders nothing), `--force`, `--no-cache`, `--adopt` (renders
+nothing: each job missing under its key keeps its existing entry; once, after a change to how keys are made).
+- **The render version.** An edit to the engine's files re-renders nothing by itself (a full re-render takes hours). Bump
+  `RENDER_VERSION` in any such edit that can change a sprite's pixels, or the cache serves stale sprites. When unsure,
+  re-render a sample of each family with the edit and compare it to the cached one.
+- **Palette sets.** `palette_extra.json` entries with a `"set"` join only the palette of families that select that set
+  (`families.jobs` returns its name in place of `True`), so adding a family's colours leaves every other family's key
+  and pixels alone. Entries without one are shared by every family that selects the extras.
 `--preview` renders at SS 2 and 1 sample (grainy, about 4x faster), cached apart under `preview/`; with `--only` it needs a
 scratch outdir. Do not lower the FINAL settings: 1 sample leaves visible grain (the ambient term is noisy at 1 spp).
 
@@ -46,7 +55,7 @@ Stack order (`order`): body 0, eyes 10, legs 20, torso 30, gear.belt 40, arm.R 5
 implant.temple 65, gear.head 70, gear.back 80.
 
 #### Incremental builds and the render cache
-`npm run sprites -- -- public/assets crew` renders only what the cache lacks (`<repo>/.cache/sprites/crew`, gitignored,
+`npm run sprites -- -- public/assets/1x crew` renders only what the cache lacks (`<repo>/.cache/sprites/crew`, gitignored,
 `$SPRITE_CACHE` to move it), then packs. Options after `crew`:
 `--item S[,S]` (substring of the layer id, e.g. `torso.tee`), `--clip C[,C]` (e.g. `walk`), `--force` (ignore the cache for the
 selected entries), `--plan` (print the hit/miss report and render nothing). With `--item`/`--clip` only those sheets are

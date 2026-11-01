@@ -1,4 +1,5 @@
 /** Starmap view data (published by app/starmapSnapshot.ts). Plain data; map units, y down. */
+import type { UiHeat } from './api';
 
 /** A theme colour by token name (`--cyan`...): the view maps it through `starmapStyle.ts`; the data holds no CSS. */
 export type Tone = 'cyan' | 'amber' | 'green' | 'red' | 'text' | 'dim';
@@ -83,9 +84,30 @@ export interface UiStarLink {
 }
 
 /** A port's market in a few words: the goods that are cheap and the goods that are dear there right now. */
+/** A good and a price in credits per unit: what the port sells it for (cheap goods) or pays for it (wanted goods). */
+export interface UiGoodPrice {
+  name: string;
+  price: number;
+}
+
 export interface UiStarMarket {
-  cheap: string[];
-  dear: string[];
+  cheap: UiGoodPrice[];
+  dear: UiGoodPrice[];
+}
+
+/** A good aboard and the known ports that pay most for it now (dearest first): the starmap's "where to sell" view. */
+export interface UiSellGood {
+  item: string;
+  name: string;
+  count: number;
+  best: { node: string; name: string; hops: number; price: number }[];
+}
+
+/** A held station job that ends at a node: a delivery's destination or a bounty's target. */
+export interface UiNodeJob {
+  kind: 'delivery' | 'bounty' | 'survey';
+  /** "Deliver a sealed crate (12 Ration)", "Bounty: Bone Saint" or "Survey: nebula". */
+  label: string;
 }
 
 export interface UiStarNode {
@@ -102,6 +124,8 @@ export interface UiStarNode {
   /** Structure badges ("T", "A", "D"...). Empty for unknown nodes. */
   badges: string[];
   structures: string[];
+  /** The same structures as starmap icons: sprite id (`starmap.struct.*`), owner tone for its livery (null: none), name. */
+  icons: UiStarIcon[];
   resources: string[];
   /** Ships seen at the node (within sensor range only): hostile and other. */
   hostiles: number;
@@ -110,6 +134,17 @@ export interface UiStarNode {
   reachable: boolean;
   /** The market of its trading port, when sensors reach it and it has one. */
   market?: UiStarMarket | null;
+  /** Notable stock at its ports ("Mk II shield gens"), for known nodes. */
+  hints?: string[];
+  /** The player's held jobs that end here (discovered nodes only). */
+  jobs?: UiNodeJob[];
+}
+
+/** A structure's starmap icon. */
+export interface UiStarIcon {
+  sprite: string;
+  tone: Tone | null;
+  name: string;
 }
 
 /** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */
@@ -126,6 +161,8 @@ export interface UiStarFleet {
   /** Faction name, role label ("Trader", "Patrol", "Raider"), ship count, tone by faction kind, and whether it is hostile to the player. */
   faction: string;
   role: string;
+  /** The role id, for its icon (`starmap.fleet.<kind>.d0..d7`). */
+  kind: string;
   ships: number;
   tone: Tone;
   hostile: boolean;
@@ -155,6 +192,7 @@ export interface UiStarFaction {
   name: string;
   tone: Tone;
   tier: 'hostile' | 'neutral' | 'friendly';
+  /** The player's standing with this faction alone (each corporation and each pirate faction has its own). */
   standing: number;
 }
 
@@ -168,6 +206,18 @@ export interface UiNews {
   /** Where: the node's name for news in range, the region (sector) for a rumour. */
   place: string;
   rumour: boolean;
+}
+
+/**
+ * The starmap's pipeline art (the `starmap` sprite family): the sheet image, its glow twin (same layout) and their sizes, and
+ * each `starmap.*` frame in the sheet's own pixels (`glow`: the glow twin has pixels there).
+ */
+export interface UiStarArt {
+  src: string;
+  glow: string | null;
+  w: number;
+  h: number;
+  frames: Record<string, { x: number; y: number; w: number; h: number; glow: boolean }>;
 }
 
 export interface UiStarmap {
@@ -195,6 +245,8 @@ export interface UiStarmap {
   news: UiNews[];
   /** The player's credits (what a bribe costs is compared to this), pending encounters, the event grid and how the last encounter ended. */
   credits: number;
+  /** The player's notoriety and who hunts them. */
+  heat: UiHeat;
   encounters: UiEncounter[];
   event: UiEventGrid | null;
   result: UiEncounterResult | null;
@@ -215,7 +267,7 @@ export interface UiStarmap {
 
 /** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
 export interface UiEncounterChoice {
-  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge';
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
   label: string;
   detail: string;
   enabled: boolean;
@@ -240,6 +292,8 @@ export interface UiEncounter {
   how: string;
   node: string;
   choices: UiEncounterChoice[];
+  /** A scan that found contraband aboard: what was found (a line of text) and what it is worth; the choices are surrender / bribe. */
+  contraband?: { found: string; value: number; fine: number; bribe: number };
 }
 
 /** How the last encounter ended, as a line with a tone. */
@@ -276,8 +330,8 @@ export interface UiEventGrid {
 export interface UiTravel {
   route: string[];
   at: number;
-  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid. */
-  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event';
+  /** 'hop': under way to route[at + 1]; 'arrived': at the end; 'noFuel': stopped for want of fuel; 'interdicted': halted by an encounter; 'event': in an event grid; 'story': held for a story decision. */
+  phase: 'hop' | 'arrived' | 'noFuel' | 'interdicted' | 'event' | 'story' | 'adrift';
   /** A drop was asked for: the route ends at the next node, where the ship drops out. */
   stopping: boolean;
   /** Fuel the next hop needs (when stopped for want of it). */
@@ -314,6 +368,8 @@ export interface UiStarRoute {
   chargeOk: boolean;
   /** Why the next jump cannot go now (a short sentence), or null. */
   blocker: string | null;
+  /** The hull is over what the engines carry: a normal jump is blocked, an overcharged one goes at a risk (`risk` 0..1). Null when it fits. */
+  overweight: { tiles: number; capacity: number; risk: number } | null;
 }
 
 /** What a jump would leave behind or cut loose (the confirm step lists it). Names only: the ids of docked vehicles go in `withDocked`. */

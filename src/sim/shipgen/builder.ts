@@ -1,5 +1,5 @@
 import type { Rng } from '../rng';
-import { Canvas, chunkWidth, doorRows, letterOf } from './canvas';
+import { Canvas, acquireCanvas, chunkWidth, doorRows, letterOf } from './canvas';
 import type { RoomSpec } from './plan';
 import type { ChunkDef, RoomRole } from './types';
 
@@ -28,16 +28,22 @@ export const box = (x: number, y: number, w: number, h: number): Rect => ({ x: x
  * on shared walls, hand-made chunks (noses), and mirroring about the ship's long axis.
  */
 export class Builder {
-  cv = new Canvas();
+  cv: Canvas;
+  /** A local builder borrows a pooled canvas; `blockFrom` returns it once the block is frozen. */
+  readonly pooled: boolean;
   parts: Part[] = [];
   private n = 0;
 
   /** `axis2`: twice the y of the mirror axis (rows y and axis2 - y mirror each other). */
-  constructor(readonly rng: Rng, public axis2 = 0) {}
+  constructor(readonly rng: Rng, public axis2 = 0, pooled = false) {
+    this.pooled = pooled;
+    this.cv = pooled ? acquireCanvas() : new Canvas();
+  }
 
   /** Throw away everything drawn (an arrangement is being revised). */
   reset(): void {
-    this.cv = new Canvas();
+    if (this.pooled) this.cv.clear();
+    else this.cv = new Canvas();
     this.parts = [];
     this.chunkSpecs.clear();
     this.chunkRoles.clear();

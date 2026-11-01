@@ -1,39 +1,46 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { UiApi } from './api';
-  import type { UiEncounterChoice, UiJumpWarnings, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
+  import type { UiApi, UiFtl } from './api';
+  import type { UiEncounterChoice, UiJumpWarnings, UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
-  import StarmapNebula from './StarmapNebula.svelte';
   import InterdictModal from './InterdictModal.svelte';
   import StarmapDrawer from './StarmapDrawer.svelte';
   import StarmapStats from './StarmapStats.svelte';
-  import { fade } from 'svelte/transition';
   import StarmapInfo from './StarmapInfo.svelte';
   import StarmapNews from './StarmapNews.svelte';
-  import StarmapGalaxy from './StarmapGalaxy.svelte';
-  import StarmapCluster from './StarmapCluster.svelte';
-  import StarmapSector from './StarmapSector.svelte';
+  import StarmapSell from './StarmapSell.svelte';
+  import type { UiSellGood } from './starmapApi';
+  import { isTypingTarget } from './keys';
   import { jumpCommand, toggleTake } from './starmapJump';
-  import { BODY_LOOK, toneColor } from './starmapStyle';
+  import { toneColor } from './starmapStyle';
+  import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
 
-  /**
-   * The starmap screen. `flee`: the player's ship id when it was opened from the combat panel to pick where to flee to (only the
-   * nodes one jump away can be picked, the cheapest affordable one is preselected); null for ordinary browsing and jumping.
-   */
-  let { api, flee = null, onClose, onSlide }: { api: UiApi; flee?: number | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
+  /** The starmap screen. `focusNode`: a node to centre on when it opens. (Fleeing a fight is the combat panel's flee control, not this map.) */
+  let { api, focusNode = null, onClose, onSlide }: { api: UiApi; focusNode?: string | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
 
   let map = $state<UiStarmap | null>(null);
-  /** Flee-target mode: only while the ship is still in the node (once it is in hyperspace the map is the ordinary trip view). */
+  /** The starmap's sprites (null until loaded: the levels draw their code shapes meanwhile). */
+  let art = $state<UiStarArt | null>(null);
   /** In hyperspace the map cannot be closed: it is the view until the ship drops. */
-  const locked = $derived(map?.state === 'hyperspace');
-  const fleeing = $derived(flee !== null && map?.state !== 'hyperspace' && map?.state !== 'deploying');
+  /** Adrift: a flee left the ship in hyperspace with no route. The map is the way to pick one (and can be closed: the ship stays adrift). */
+  const adrift = $derived(map?.travel?.phase === 'adrift');
+  const locked = $derived(map?.state === 'hyperspace' && !adrift);
+  /** The trip under way (not the adrift state, which has no route to draw). */
+  const trip = $derived(map?.travel && !adrift ? map.travel : null);
   let w = $state(800);
   let h = $state(600);
-  /** View centre (map units) and scale (screen px per unit). */
-  let cx = $state(0);
-  let cy = $state(0);
-  let s = $state(1);
+  /**
+   * View centre (map units) and scale (screen px per unit). Plain numbers: the map is drawn by Pixi (`gpu`), and every change goes through
+   * `setCam`, which tells it and works out the zoom level. Nothing reactive is touched per frame.
+   */
+  let cx = 0;
+  let cy = 0;
+  let s = 1;
+  /** The zoom target, unsnapped: zoom inputs add to it and `s` is its snapped value. */
+  let sTarget = 1;
+  let gpu: StarmapGpu | null = null;
+  let stage: HTMLDivElement;
   let selected = $state<string | null>(null);
   /** A sector (level 2) or cluster (level 3) tapped on an outer level. */
   let picked = $state<{ kind: 'sector' | 'cluster'; id: string } | null>(null);
@@ -41,10 +48,13 @@
   let hover = $state<string | null>(null);
   let dragging = $state(false);
   let placed = false;
-  let preselected = false;
   /** The jump confirm step (what the jump would leave behind) and which docked shuttles come along. */
   let confirming = $state<UiJumpWarnings | null>(null);
   let taking = $state<number[]>([]);
+  /** The FTL drive and its order, and whether the open confirm step is for "Jump when charged". */
+  let ftl = $state<UiFtl | null>(null);
+  let queueing = false;
+  let overcharging = false;
 
   const nodeById = $derived(new Map((map?.nodes ?? []).map((n) => [n.id, n])));
   const sectorById = $derived(new Map((map?.sectors ?? []).map((x) => [x.id, x])));
@@ -52,17 +62,26 @@
   const sel = $derived(selected ? nodeById.get(selected) ?? null : null);
   /** Recomputed whenever the map or its fuel/charge figures change. */
   const route = $derived<UiStarRoute | null>(map && sel && sel.known && !sel.current ? api.planRoute(sel.id) : null);
-  const travelPts = $derived(map?.travel ? map.travel.route.slice(map.travel.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
+  const travelPts = $derived(trip ? trip.route.slice(trip.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
   const routePts = $derived(travelPts || (route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : ''));
   const here = $derived(map ? sectorById.get(map.currentSector) ?? null : null);
   /**
    * Semantic zoom by how much map fits across the shorter side: the sector (nodes), sectors as icons inside clusters,
    * then clusters as nodes.
    */
-  const span = $derived(Math.min(w, h) / s);
-  const level = $derived<1 | 2 | 3>(span < 2200 ? 1 : span < 11000 ? 2 : 3);
-  /** The visible map rectangle (for pinning labels inside the view). */
-  const view = $derived({ x0: cx - w / 2 / s, y0: cy - h / 2 / s, x1: cx + w / 2 / s, y1: cy + h / 2 / s });
+  let level = $state<1 | 2 | 3>(1);
+  /** Camera changed: pass it to the GPU view and take the semantic zoom level from it. */
+  function setCam() {
+    const span = Math.min(w, h) / s;
+    const l = span < 2200 ? 1 : span < 11000 ? 2 : 3;
+    if (l !== level) level = l;
+    gpu?.camera(cx, cy, s, w, h);
+  }
+  $effect(() => {
+    void w;
+    void h;
+    setCam();
+  });
   const LEVELS = [
     { n: 1, label: 'Sector', span: 0 }, { n: 2, label: 'Cluster', span: 5200 }, { n: 3, label: 'Galaxy', span: 12500 },
   ] as const;
@@ -90,8 +109,8 @@
           sec.id === map.currentSector ? 'You are here' : route ? `Route: ${route.hops} jump${route.hops > 1 ? 's' : ''} · ${route.fuel} fuel · ${route.time} d` : 'No known route yet',
         ],
         zoom: () => focusSector(sec.id),
-        action: route && !route.blocker ? { label: fleeing ? 'Flee' : route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: go } : null,
-        warn: route?.blocker ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
+        action: route && !route.blocker && !route.overweight ? { label: route.hops > 1 ? `Jump (1 of ${route.hops})` : 'Jump', run: () => go() } : null,
+        warn: route?.blocker ?? (route?.overweight ? `Overweight: hull ${route.overweight.tiles} / ${route.overweight.capacity}.` : null) ?? (route && !route.fuelOk ? 'Not enough fuel for the whole route.' : null),
       };
     }
     const reg = map.clusters.find((r) => r.id === picked!.id);
@@ -110,13 +129,28 @@
     };
   });
   let newsOpen = $state(false);
+  /** The "where to sell" panel: built when it opens and again each starmap turn (prices move as ships trade). */
+  let sellOpen = $state(false);
+  let sellGoods = $state<UiSellGood[]>([]);
+  $effect(() => {
+    if (sellOpen && map) {
+      void map.turn;
+      sellGoods = api.whereToSell();
+    }
+  });
+  const pickNode = (id: string) => {
+    selected = id;
+    confirming = null;
+    const n = nodeById.get(id);
+    if (n) flyTo(n.x, n.y, s, 300);
+  };
   /** News the player has not looked at: ids above the newest one seen when the panel was last open (the panel starts closed, so the map stays clear). */
   let newsSeen = $state(0);
   const newestNews = $derived(map?.news.reduce((m, n) => Math.max(m, n.id), 0) ?? 0);
   const unread = $derived(newsOpen ? 0 : (map?.news.filter((n) => n.id > newsSeen).length ?? 0));
   $effect(() => { if (newsOpen) newsSeen = newestNews; });
   const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
-  const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict') ?? null);
+  const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict' || !!e.contraband) ?? null);
   const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
@@ -136,7 +170,9 @@
       const e = 1 - (1 - t) ** 3;
       cx = from.cx + (x - from.cx) * e;
       cy = from.cy + (y - from.cy) * e;
-      s = from.s * (to / from.s) ** e;
+      sTarget = from.s * (to / from.s) ** e;
+      s = snapScale(sTarget);
+      setCam();
       if (t < 1) camRaf = requestAnimationFrame(step);
     };
     if (ms > 0) camRaf = requestAnimationFrame(step);
@@ -158,18 +194,6 @@
     if (map) focusSector(map.currentSector);
   }
 
-  /** The nodes one jump away that can be picked in flee mode (null when browsing). */
-  const only = $derived(fleeing && map ? new Set(map.nodes.filter((n) => n.reachable).map((n) => n.id)) : null);
-  /** Flee preselect: the cheapest target that can go now (least fuel, then charge), else the cheapest of all. */
-  function cheapestTarget(m: UiStarmap): string | null {
-    const options = m.nodes.filter((n) => n.reachable).flatMap((n) => {
-      const r = api.planRoute(n.id);
-      return r ? [{ id: n.id, ok: !r.blocker, fuel: r.fuel, charge: r.nextCharge }] : [];
-    });
-    options.sort((p, q) => Number(q.ok) - Number(p.ok) || p.fuel - q.fuel || p.charge - q.charge || (p.id < q.id ? -1 : 1));
-    return options[0]?.id ?? null;
-  }
-
   onMount(() => {
     api.setStarmapOpen(true);
     const unsub = api.starmap.subscribe((m) => {
@@ -177,19 +201,28 @@
       map = m;
       if (!placed && m.nodes.length) {
         placed = true;
-        queueMicrotask(() => focusSector(m.currentSector, true));
+        queueMicrotask(() => {
+          const n = focusNode ? m.nodes.find((x) => x.id === focusNode) : undefined;
+          const sec = n ? sectorById.get(n.sector) : undefined;
+          if (n && sec) flyTo(n.x, n.y, (Math.min(w, h) * 0.62) / (2 * sec.r + 60), 0); // a log entry or alert about a node: open on it
+          else focusSector(m.currentSector, true);
+        });
       }
       if (moved && selected === m.current) selected = null;
-      if (fleeing && !preselected && m.nodes.length) {
-        preselected = true;
-        selected = cheapestTarget(m);
-      }
     });
+    const unsubFtl = api.ftl.subscribe((f) => (ftl = f));
+    const unsubArt = api.starmapArt.subscribe((a) => (art = a));
+    gpu = api.createStarmapGpu(stage);
+    setCam();
     // A wheel listener must not be passive to stop the page from scrolling.
-    svg.addEventListener('wheel', wheel, { passive: false });
+    stage.addEventListener('wheel', wheel, { passive: false });
     return () => {
       unsub();
-      svg.removeEventListener('wheel', wheel);
+      unsubFtl();
+      unsubArt();
+      stage.removeEventListener('wheel', wheel);
+      gpu?.destroy();
+      gpu = null;
     };
   });
 
@@ -199,7 +232,8 @@
    * GLIDE_MS, never overshooting, so fast sim turns queue up and play one after another.
    */
   const GLIDE_MS = 700;
-  let glide = $state<number | null>(null);
+  let glide: number | null = null;
+  let ship: StarmapGlide | null = null;
   let tripKey = '';
   let follow = false;
   let raf = 0;
@@ -207,7 +241,7 @@
   function frame(now: number) {
     const dt = lastFrame ? Math.min(100, now - lastFrame) : 16;
     lastFrame = now;
-    const tr = map?.travel;
+    const tr = trip;
     if (tr) {
       const key = `${tr.route[0]}>${tr.route.length}`;
       if (key !== tripKey && (tripKey === '' || tr.at === 0)) {
@@ -221,12 +255,17 @@
       const g = glide ?? tr.at;
       glide = g < target ? Math.min(target, g + dt / GLIDE_MS) : target;
       onSlide?.(g < target);
+      ship = shipAt(glide);
+      gpu?.glide(ship);
       if (follow && level === 1 && ship) {
         cx += (ship.x - cx) * 0.12;
         cy += (ship.y - cy) * 0.12;
+        setCam();
       }
     } else if (glide !== null) {
       glide = null;
+      ship = null;
+      gpu?.glide(null);
       tripKey = '';
       onSlide?.(false);
     }
@@ -242,9 +281,9 @@
     onSlide?.(false);
   });
   /** The ship marker on the lane it is gliding along (ends of the lane for the heading). */
-  const ship = $derived.by(() => {
-    const tr = map?.travel;
-    if (!tr || glide === null) return null;
+  function shipAt(glide: number): StarmapGlide | null {
+    const tr = trip;
+    if (!tr) return null;
     const i = Math.min(tr.route.length - 2, Math.max(0, Math.floor(glide)));
     const a = nodeById.get(tr.route[i] as string);
     const b = nodeById.get(tr.route[i + 1] as string);
@@ -252,17 +291,19 @@
     const t = Math.min(1, glide - i);
     const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
     return { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, fx: a.x, fy: a.y, tx: b.x, ty: b.y };
-  });
+  }
 
   const toMap = (px: number, py: number) => ({ x: cx + (px - w / 2) / s, y: cy + (py - h / 2) / s });
   const MIN_S = 0.015;
   const MAX_S = 6;
   function zoomAt(px: number, py: number, f: number) {
     const before = toMap(px, py);
-    s = Math.min(MAX_S, Math.max(MIN_S, s * f));
+    sTarget = zoomTarget(sTarget, f, MIN_S, MAX_S);
+    s = Math.min(MAX_S, Math.max(MIN_S, snapScale(sTarget)));
     const after = toMap(px, py);
     cx += before.x - after.x;
     cy += before.y - after.y;
+    setCam();
   }
 
   // Pointer handling: one finger pans, two pinch; a press that barely moves is a tap (selects the nearest node).
@@ -270,14 +311,13 @@
   const pointers = new Map<number, { x: number; y: number }>();
   let downAt: { x: number; y: number } | null = null;
   let moved = 0;
-  let svg: SVGSVGElement;
   const local = (e: PointerEvent | WheelEvent) => {
-    const r = svg.getBoundingClientRect();
+    const r = stage.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   function down(e: PointerEvent) {
     cancelAnimationFrame(camRaf);
-    svg.setPointerCapture(e.pointerId);
+    stage.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) {
       downAt = local(e);
@@ -291,6 +331,7 @@
     if (pointers.size === 1) {
       cx -= (p.x - prev.x) / s;
       cy -= (p.y - prev.y) / s;
+      setCam();
       moved += Math.hypot(p.x - prev.x, p.y - prev.y);
       dragging = moved >= 8;
     } else if (pointers.size === 2) {
@@ -334,7 +375,7 @@
     let bd = 24 / s;
     for (const n of map.nodes) {
       const d = Math.hypot(n.x - m.x, n.y - m.y);
-      if (d < bd && (n.known || s > 0.5) && (!only || only.has(n.id) || n.current)) {
+      if (d < bd && (n.known || s > 0.5)) {
         bd = d;
         best = n;
       }
@@ -347,7 +388,7 @@
       picked = hit ? { kind: 'sector', id: hit.id } : null;
       selected = picked ? routeInto(picked.id) : null;
     } else if (level === 3) picked = hit ? { kind: 'cluster', id: hit.id } : null;
-    else if (hit && hit.id === selected && route && !route.blocker && map?.state === 'active') go();
+    else if (hit && hit.id === selected && route && !route.blocker && !route.overweight && (map?.state === 'active' || adrift)) go();
     else {
       selected = hit?.id ?? null;
       confirming = null;
@@ -361,28 +402,32 @@
     if (pointers.size || e.pointerType === 'touch') return;
     const p = local(e);
     cancelAnimationFrame(hoverRaf);
-    hoverRaf = requestAnimationFrame(() => (hover = hitAt(p)?.id ?? null));
+    hoverRaf = requestAnimationFrame(() => {
+      hover = hitAt(p)?.id ?? null;
+      stage.title = (level === 1 && gpu?.tip(p.x, p.y)) || '';
+    });
   }
   function wheel(e: WheelEvent) {
     e.preventDefault();
     cancelAnimationFrame(camRaf);
     const p = local(e);
-    zoomAt(p.x, p.y, e.deltaY < 0 ? 1.18 : 1 / 1.18);
+    zoomAt(p.x, p.y, wheelFactor(e.deltaY, e.deltaMode));
   }
   function key(e: KeyboardEvent) {
-    if (e.key === 'Escape' && !locked) onClose();
+    if (e.key === 'Escape' && !locked && !isTypingTarget(e)) onClose();
   }
 
   /**
-   * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). Flee goes at once as a one-hop trip;
-   * a jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
+   * Set off along the plotted route (the second tap on the picked node, or the drawer's Jump). A jump that would leave crew or shuttles behind opens the confirm step in the drawer first.
    */
-  function go() {
-    if (!route || route.blocker || !map || map.state !== 'active') return;
-    if (fleeing) {
-      api.dispatch({ type: 'combat.flee', ship: flee as number, to: route.path[1] });
-      return;
-    }
+  function go(queue = false, overcharge = false) {
+    if (!route || !map || (map.state !== 'active' && !adrift)) return;
+    if (queue ? route.chargeOk : route.blocker) return;
+    // A hull over what the engines carry only goes by the Overcharge button.
+    if (route.overweight && !overcharge) return;
+    overcharging = overcharge;
+    queueing = queue;
+    if (adrift) return fly(); // nothing is left behind: the ship has already left the node
     const w = api.jumpWarnings(map.ship);
     if (w.crew.length || w.vehicles.length || w.hostileDocked.length) {
       confirming = w;
@@ -392,7 +437,11 @@
   /** Enter hyperspace with the plotted route (and the docked shuttles picked in the confirm step). */
   function fly() {
     if (!route || !map) return;
-    api.dispatch(jumpCommand(map.ship, route.path, taking));
+    const jump = jumpCommand(map.ship, route.path, taking);
+    const oc = overcharging ? { overcharge: true } : {};
+    api.dispatch(queueing ? { type: 'ftl.charge', ship: map.ship, jump: jump.route, ...(jump.withDocked ? { withDocked: jump.withDocked } : {}), ...oc } : { ...jump, ...oc });
+    queueing = false;
+    overcharging = false;
     confirming = null;
     taking = [];
     selected = null;
@@ -400,44 +449,29 @@
   const toggle = (id: number) => (taking = toggleTake(taking, id));
   const drop = () => api.dispatch({ type: 'galaxy.drop' });
   const respond = (encounter: number, choice: UiEncounterChoice['choice']) => api.dispatch({ type: 'galaxy.respond', encounter, choice });
-  const px = (v: number) => v / s;
+  /** The GPU view's scene: the data and the screen state the levels colour themselves by. */
+  $effect(() => {
+    if (!map || !gpu) return;
+    gpu.scene({
+      map, art, level, current, selected, hover, picked: picked?.id ?? null, route, routePts, routeSectors,
+      inset: drawerOpen && w > 600 ? 340 : 0,
+    });
+  });
 </script>
 
 <svelte:window onkeydown={key} />
 
-<div class="starmap" data-testid="starmap" data-mode={fleeing ? 'flee' : 'browse'}>
+<div class="starmap legacy" data-testid="starmap" data-mode="browse">
   <div class="head">
-    <PanelHead icon="map" title={fleeing ? 'Flee: pick a target' : 'Starmap'} sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+    <PanelHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
       onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
   </div>
   <div class="statbar">
     {#if map}<StarmapStats {map} fuelBad={!!route && !route.fuelOk} chargeBad={!!route && !route.chargeOk} />{/if}
   </div>
   <div class="view" bind:clientWidth={w} bind:clientHeight={h}>
-    <svg bind:this={svg} width={w} height={h} role="application" aria-label="Starmap" class:drag={dragging} class:over={!!hover && !dragging}
-      onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onpointerleave={() => (hover = null)}>
-      {#if map}
-        <defs>
-          {#each Object.entries(BODY_LOOK) as [kind, look] (kind)}
-            <radialGradient id={`sm-glow-${kind}`}><stop offset="0" style={`stop-color: ${look.glow}; stop-opacity: 0.5`} /><stop offset="1" style={`stop-color: ${look.glow}; stop-opacity: 0`} /></radialGradient>
-          {/each}
-        </defs>
-        <g transform={`translate(${w / 2 - cx * s} ${h / 2 - cy * s}) scale(${s})`}>
-          {#if level < 3}<StarmapNebula tiles={map.nebula} opacity={level === 1 ? 0.6 : 1} />{/if}
-          {#key level}
-            <g transition:fade={{ duration: 180 }}>
-              {#if level === 1}
-                <StarmapSector {map} {px} {s} {view} {current} {route} {routePts} {selected} {hover} {only} {ship} inset={drawerOpen && w > 600 ? 340 : 0} />
-              {:else if level === 2}
-                <StarmapCluster {map} {px} picked={picked?.id ?? null} {hover} {routePts} {routeSectors} />
-              {:else}
-                <StarmapGalaxy {map} {px} picked={picked?.id ?? null} {hover} />
-              {/if}
-            </g>
-          {/key}
-        </g>
-      {/if}
-    </svg>
+    <div bind:this={stage} class="stage" role="application" aria-label="Starmap" class:drag={dragging} class:over={!!hover && !dragging}
+      onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up} onpointerleave={() => (hover = null)}></div>
     <div class="levels" role="group" aria-label="Zoom level">
       {#each LEVELS as l (l.n)}
         <button class:on={level === l.n} onclick={() => setLevel(l.n)} data-testid={`starmap-level-${l.n}`} aria-pressed={level === l.n}>{l.label}</button>
@@ -447,22 +481,27 @@
       <button class="tile" title="Zoom in" aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
       <button class="tile" title="Zoom out" aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
       <button class="tile" title="Centre on your ship" aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
-      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => (newsOpen = !newsOpen)} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
+      <button class="tile" class:on={sellOpen} title="Where to sell what is aboard" aria-label="Where to sell" aria-pressed={sellOpen} onclick={() => { sellOpen = !sellOpen; if (sellOpen) newsOpen = false; }} data-testid="starmap-sell-toggle"><Icon name="trade" size={22} /></button>
+      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => { newsOpen = !newsOpen; if (newsOpen) sellOpen = false; }} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
     </div>
-    {#if seenFactions.length && !cardOpen && !newsOpen}
+    {#if seenFactions.length && !cardOpen && !newsOpen && !sellOpen}
       <ul class="legend" aria-label="Territory">
+        {#if map && (map.heat.notoriety > 0 || map.heat.hunters.length)}
+          <li class="heat" class:wanted={map.heat.wanted} data-testid="starmap-heat">Notoriety {map.heat.notoriety}{#if map.heat.wanted}&nbsp;· wanted{/if}{#if map.heat.hunters.length}<br />Hunted by {map.heat.hunters.join(', ')}{/if}</li>
+        {/if}
         <li class="lh">Territory</li>
         {#each seenFactions as f (f.id)}
-          <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier}>{f.tier}</em></li>
+          <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier} title="Your standing with them">{f.tier} {f.standing > 0 ? '+' : ''}{f.standing}</em></li>
         {/each}
       </ul>
     {/if}
+  {#if map && sellOpen}<StarmapSell goods={sellGoods} current={map.current} onPick={pickNode} onClose={() => (sellOpen = false)} />{/if}
   {#if map && newsOpen && !drawerOpen}<StarmapNews news={map.news} turn={map.turn} onClose={() => (newsOpen = false)} />{/if}
   {#if interdiction}<InterdictModal encounter={interdiction} onChoose={respond} />{/if}
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
-        factions={map.factions} {route} nodes={nodeById} {fleeing} warnings={confirming} taking={new Set(taking)}
-        onGo={go} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
+        factions={map.factions} {route} nodes={nodeById} warnings={confirming} taking={new Set(taking)}
+        {ftl} onGo={() => go()} onQueue={() => go(true)} onOvercharge={() => go(!!route && !route.chargeOk, true)} onCharge={() => map && api.dispatch({ type: 'ftl.charge', ship: map.ship })} onCancelCharge={() => map && api.dispatch({ type: 'ftl.cancelCharge', ship: map.ship })} onConfirm={fly} onCancel={() => (confirming = null)} onToggle={toggle} onDrop={drop} onRespond={respond} onClear={() => ((selected = null), (confirming = null))} />
   {/if}
   </div>
   {#if pickedInfo && level === 3}
@@ -477,9 +516,9 @@
   .head :global(.ph) { margin: -10px -10px 0; }
   .statbar { flex: none; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 34px; box-sizing: border-box; }
   .view { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-  svg { display: block; touch-action: none; cursor: default; }
-  svg.over { cursor: pointer; }
-  svg.drag { cursor: grab; }
+  .stage { position: absolute; inset: 0; touch-action: none; cursor: default; }
+  .stage.over { cursor: pointer; }
+  .stage.drag { cursor: grab; }
   .levels { position: absolute; left: 8px; top: 8px; display: flex; background: var(--panel); border: 1px solid var(--line-hi); }
   .levels button { border: 0; border-right: 1px solid var(--line); background: transparent; font: 600 14px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
   .levels button:last-child { border-right: 0; }
@@ -494,6 +533,7 @@
   .badge { position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; display: grid; place-items: center; font: 700 10px/1 var(--head-font); color: var(--bg); background: var(--amber); }
   .tools button.tile.on { box-shadow: inset 0 0 0 1px var(--cyan); }
   .legend { position: absolute; left: 8px; bottom: 8px; margin: 0; padding: 6px 10px; list-style: none; background: var(--panel); border: 1px solid var(--line-hi); font-size: 12px; display: grid; gap: 3px; pointer-events: none; }
+  .legend .heat { color: #ffb43c; } .legend .heat.wanted { color: var(--red); }
   .legend .lh { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
   .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
   .legend em { font-style: normal; margin-left: 6px; font: 600 11px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }

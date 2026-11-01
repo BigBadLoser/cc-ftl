@@ -38,7 +38,7 @@ export function operatorOf(sim: Sim, moduleId: number): number {
 export function mannedConsole(sim: Sim, shipId: number, kind: ConsoleKind): { module: number; crew: number } | null {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || shipIdOf(sim, m) !== shipId || sim.content.modules[m.def]?.console !== kind) continue;
+    if (!m || sim.content.modules[m.def]?.console !== kind || shipIdOf(sim, m) !== shipId) continue;
     if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) continue;
     const crew = operatorOf(sim, id);
     if (crew) return { module: id, crew };

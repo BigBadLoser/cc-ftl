@@ -6,12 +6,13 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
+import { trimThin } from './salvage';
 import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
@@ -58,6 +59,7 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
+  recipes = RECIPES,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
@@ -69,7 +71,7 @@ function fitOut(
   // Rooms with a recipe draw their arrangement once; their planned modules go where the recipe says.
   const draws = new Map<number, RoomDraw>();
   const drawOf = (room: number): RoomDraw | null => {
-    const recipe = RECIPES[roles[room] as RoomRole];
+    const recipe = recipes[roles[room] as RoomRole];
     if (!recipe || specs[room]?.sealed) return null;
     if (!draws.has(room)) {
       const d = drawRoom(rng, recipe);
@@ -82,7 +84,12 @@ function fitOut(
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {
-      out.stock.set(idx, (spec.items ?? f.stock).map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+      const items = spec.items ?? f.stock;
+      // An ore bin holds one ore (its sprite shows one kind): pick one from the room's stock list.
+      const art = defs[id]?.storageArt;
+      const ores = art ? items.filter((s) => art[s.item]) : [];
+      const pick = ores.length > 0 ? [ores[rng.int(0, ores.length - 1)] as (typeof items)[number]] : items;
+      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
     }
   };
   // Planned modules per room and def, for steps that place only a share of them.
@@ -260,6 +267,8 @@ export function finishLayout(
     rank: (i) => (labels[i] && roleOfLabel(labels[i] as { chunk: string; letter: string }) === 'hall' ? 1 : 0),
     axis2: b.axis2,
   });
+  // Footprint width rule: bare wall stubs under 3 tiles wide that the arrangers and the wall thinning leave are taken off.
+  trimThin(b);
   b.cv.fixDoors();
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const roles = labels.map((l) => roleOfLabel(l));
@@ -267,7 +276,7 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs);
+  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };

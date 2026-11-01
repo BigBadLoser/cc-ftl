@@ -35,7 +35,12 @@ export const WORK_CATEGORIES = [
   'repair',
   'construction',
   'hauling',
+  /** Raw materials into materials (the refinery). */
+  'refining',
+  /** Materials into items (fabricator, workbench, galley; a recipe's `category` can override). */
   'crafting',
+  /** Working the ship's active research project at a research module (sim/research). */
+  'research',
   'cooking',
   /** Walking a patrol (station guards; patrol jobs come from a ship's director, see stations/director). */
   'patrol',
@@ -107,8 +112,12 @@ export interface Job {
   progress: number;
   /** Crew entity that reserved it, or 0. */
   reservedBy: number;
+  /** For 'operate' jobs: the tick since which nobody holds it (absent while someone does). Crew with a low operating priority relieve it after RELIEF_AFTER_SEC. */
+  freeSince?: number;
   /** For 'module' jobs: the blueprint. */
   module?: { def: string; rot: number };
+  /** For 'module' jobs: the rotated footprint [w, h] from (x, y); builders work from beside it, never on it. */
+  size?: [number, number];
   /** Entity the job acts on: module (moduleDecon, repair) or downed crew (rescue). */
   target?: number;
   /** For 'rescue': the bed module reserved for the patient, or 0. */
@@ -129,13 +138,23 @@ export interface Job {
   resume?: number;
   /** For suitUp / suitOff: the crew member this personal errand belongs to (nobody else may take it). */
   errandFor?: number;
+  /** For a shipyard order's build jobs: the order (`YardOrder.id`) that paid for them (yard/). */
+  yard?: number;
+  /** The job's row out from the ship (`YardOrder.rank`): the yard's crew work the nearest open row and the one after it. */
+  yardRank?: number;
+  /** The yard's closing wall: only the yard's own crew take it (anyone else might wall themselves in). */
+  yardOnly?: true;
+  /** sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them. */
+  holder?: number;
 }
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'operate'
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
+  /** sabotage: a boarder wrecks the hostile ship's module `target` from beside it (boarding/sabotage.ts). */
+  | 'sabotage'
   /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
   | 'assemble'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
@@ -182,6 +201,15 @@ export interface BedClaim {
 export const BedClaimC = defineComponent<BedClaim>('bedClaim');
 
 /**
+ * The bed module a crew member owns: assigned by the bed-owner pass (nearest unowned bed on their ship) and kept until the
+ * bed is lost or they change ship. Tired crew walk to it first (BedClaim is the temporary reservation for one sleep).
+ */
+export interface BedOwner {
+  bed: number;
+}
+export const BedOwnerC = defineComponent<BedOwner>('bedOwner');
+
+/**
  * A hungry crew member on the way to eat (left = -1) or eating (left = ticks to go). `x, y` is the tile to stand on:
  * a galley's access tile (`galley`) or a walkable tile beside a storage crate holding `item`. The ration is taken from
  * storage when the meal starts, nutrition is added when it ends.
@@ -218,5 +246,9 @@ export interface Mood {
   alone: number;
   /** True while the 'very unhappy' alert is armed (set on the way down, cleared once mood recovers). */
   low: boolean;
+  /** Trait memory (crew/traitMood.ts), kept only for traits that read it: seconds idle without a job, since combat or EVA, since EVA. */
+  idle?: number;
+  quiet?: number;
+  inside?: number;
 }
 export const MoodC = defineComponent<Mood>('mood');

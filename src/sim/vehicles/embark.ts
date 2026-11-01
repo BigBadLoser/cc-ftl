@@ -1,6 +1,7 @@
-import { releaseBedClaim } from '../crew/beds';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
-import { isIncapacitated, releaseAssignment } from '../crew/helpers';
+import { abortTask } from '../ai/task';
+import { FighterC } from '../fight/components';
+import { isIncapacitated } from '../crew/helpers';
 import { airlockWorking } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { AboardC, EmbarkOrderC, VehicleC } from './components';
@@ -23,13 +24,15 @@ export function sendToEmbark(sim: Sim, crew: number, vehicle: number): string | 
   if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return 'full';
   let drafted = sim.world.get(crew, DraftedC);
   if (!drafted) {
-    releaseAssignment(sim, crew);
-    releaseBedClaim(sim, crew);
+    abortTask(sim, crew, 'drafted');
     drafted = { target: null };
     sim.world.add(crew, DraftedC, drafted);
     (sim.world.get(crew, CrewC) as { activity: string }).activity = 'drafted';
   }
   drafted.target = { x: at.x, y: at.y };
+  delete drafted.planned;
+  const fighter = sim.world.get(crew, FighterC);
+  if (fighter) fighter.ordered = 0; // climbing in replaces an attack order
   sim.world.add(crew, EmbarkOrderC, { vehicle });
   return null;
 }

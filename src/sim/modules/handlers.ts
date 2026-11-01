@@ -4,16 +4,17 @@ import { JobC } from '../crew/components';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AUTO_LEVEL_TICKS } from '../rock/dig';
-import { footprintTiles } from './footprint';
+import { footprintTiles, rotatedSize } from './footprint';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { AirlockC, requestAirlock } from './airlock';
 import { ModuleC } from './components';
 import { placementError, spawnModule } from './spawn';
+import { isKnown } from './blueprints';
 import { needsFrom } from '../items/materials';
 import { shipGrid } from '../regions';
 
-type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
+type ModuleCommandType = 'job.buildModule' | 'job.deconstructModule' | 'module.setPowerPriority' | 'module.setEnabled' | 'debug.spawnModule' | 'airlock.cycle';
 type Handler<T extends ModuleCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 const DECON_FRACTION = 0.5;
@@ -29,6 +30,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     requestAirlock(sim, cmd.moduleId, cmd.to);
   },
   'job.buildModule': (sim, cmd) => {
+    if (!isKnown(sim, cmd.def)) return reject(sim, cmd.type, sim.content.modules[cmd.def] ? 'unknownBlueprint' : 'badDef');
     const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);
     if (findJobAt(sim, cmd.ship, cmd.x, cmd.y)) return reject(sim, cmd.type, 'jobExists');
@@ -40,6 +42,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
     sim.world.add(id, JobC, {
       category: 'construction', kind: 'module', x: cmd.x, y: cmd.y, struct: 0,
       work: (def?.buildWork ?? TICK_HZ) + rock * AUTO_LEVEL_TICKS, progress: 0, reservedBy: 0, module: { def: cmd.def, rot: cmd.rot },
+      ...(def ? { size: rotatedSize(def, cmd.rot) } : {}),
       ...(needs ? { needs, delivered: [] } : {}),
     });
   },
@@ -60,11 +63,11 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
       work, progress: 0, reservedBy: 0, target,
     });
   },
-  'module.setPriority': (sim, cmd) => {
+  'module.setPowerPriority': (sim, cmd) => {
     const m = sim.world.get(cmd.id, ModuleC);
     if (!m) return reject(sim, cmd.type, 'noModule');
-    if (!Number.isInteger(cmd.priority) || cmd.priority < 1 || cmd.priority > 5) return reject(sim, cmd.type, 'badValue');
-    m.priority = cmd.priority;
+    if (!Number.isInteger(cmd.powerPriority) || cmd.powerPriority < 1 || cmd.powerPriority > 5) return reject(sim, cmd.type, 'badValue');
+    m.powerPriority = cmd.powerPriority;
   },
   'debug.spawnModule': (sim, cmd) => {
     const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);

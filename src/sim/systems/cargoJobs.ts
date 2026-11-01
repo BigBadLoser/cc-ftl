@@ -2,6 +2,7 @@ import { shipIdAt } from '../regions';
 
 import { ItemStackC } from '../items/components';
 import { makeHaul } from '../items/plan';
+import { isCargo } from '../items/stacks';
 import { nearestStorageFor, refKey, reservations, type Reservations } from '../items/stock';
 import type { Sim } from '../sim';
 import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
@@ -35,7 +36,7 @@ export function cargoJobsSystem(sim: Sim): void {
     if (ship.state === 'prize') {
       for (const sid of sim.world.query(ItemStackC)) {
         const s = sim.world.get(sid, ItemStackC);
-        if (!s || shipIdAt(sim, s.x, s.y) !== at.shipId) continue;
+        if (!s || isCargo(sim, s.item) || shipIdAt(sim, s.x, s.y) !== at.shipId) continue;
         const avail = s.count - (res.out.get(refKey('floor', sid, s.item)) ?? 0);
         const room = cargoSpace(sim, v) - promised(res, id);
         if (avail <= 0 || room <= 0) continue;

@@ -1,4 +1,5 @@
 import { shipIdAtTile } from './regionRules';
+import { animNow } from './animClock';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
@@ -17,7 +18,7 @@ import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprin
 import { moduleKey } from './moduleView';
 import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
-import { createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
+import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
@@ -52,9 +53,11 @@ export interface CrewViewHost {
 
 export interface CrewView {
   update(): void;
-  setSelectedCrew(id: number | null): void;
+  setSelectedCrew(ids: readonly number[]): void;
   /** Crew entity under an art-px point (the one whose feet are lowest on screen) and its feet's art y, or null. */
   pick(ax: number, ay: number): { id: number; y: number } | null;
+  /** Where a crew member's feet are drawn now (art px of this view's frame, smoothed like the sprite) and how tall the figure is, or null if not shown. */
+  spritePos(id: number): { x: number; y: number; h: number } | null;
   count(): number;
   dispose(): void;
 }
@@ -99,7 +102,6 @@ interface Slot {
 }
 
 const RED = 0xff3b3b;
-const CYAN = 0x22d3ee;
 const SMOOTH = 14;
 /** Seconds a crew member keeps the weapon up after the fight leaves them (no target in view). */
 const WEAPON_LINGER = 1.5;
@@ -113,8 +115,8 @@ const SEAT_DIR = [6, 0, 2, 4];
 export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost): CrewView {
   const slots = new Map<number, Slot>();
   const tex = diamondTextures();
-  let selected: number | null = null;
-  let last = performance.now();
+  let selected: ReadonlySet<number> = new Set();
+  let last = animNow();
 
   /** True if a grid has a ship (an EVA drift is drawn only while it does). */
   function hasShip(shipId: number): boolean {
@@ -137,7 +139,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     ring.visible = false;
     const body = new Container();
     const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
-    body.filters = crewFilters(filter, L.scale);
+    body.filters = crewFilters(filter, artZoom(L.scale));
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
       sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
@@ -176,20 +178,20 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, body, shrunk: L.scale < 1, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
+    return { root, parts, glows, ring, shadow, filter, body, shrunk: artZoom(L.scale) < 1, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
     const lv = host.light ? host.light(Math.round(tx), Math.round(ty)) : 255;
     const emergency = host.emergency?.() ?? false;
-    let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(performance.now()) : -1);
+    let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(animNow()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
     setFilterTint(s.filter, tint);
-    setFilterZoom(s.filter, L.scale);
-    const shrunk = L.scale < 1;
+    setFilterZoom(s.filter, artZoom(L.scale));
+    const shrunk = artZoom(L.scale) < 1;
     if (shrunk !== s.shrunk) {
       s.shrunk = shrunk;
-      s.body.filters = crewFilters(s.filter, L.scale);
+      s.body.filters = crewFilters(s.filter, artZoom(L.scale));
     }
   }
 
@@ -212,7 +214,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
   }
 
   function update(): void {
-    const now = performance.now();
+    const now = animNow();
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     const target = host.target();
@@ -254,7 +256,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const flight = !!drift; // eva_float only while drifting between the shuttle and the hull
         const dist = Math.hypot(tx - s.x, ty - s.y);
         const k = 1 - Math.exp(-dt * SMOOTH);
-        if (!s.placed || dist > 3) {
+        // Snap instead of smoothing when far off, or when the smoothed point is not a number (`!(dist <= 3)`): a NaN here would
+        // otherwise stick for good (NaN > 3 is false), leaving the figure undrawn while the status marks still show.
+        if (!s.placed || !(dist <= 3)) {
           s.x = tx;
           s.y = ty;
           s.placed = true;
@@ -333,7 +337,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const showBar = !dead && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;
         if (showBar) {
-          const frac = downed ? Math.max(0, downed.bleed / BLEED_OUT_SECONDS) : hp ? hp.hp / hp.max : 1;
+          // Tough crew last longer downed: their bar stays full until the usual bleed-out time is left.
+          const frac = downed ? Math.max(0, Math.min(1, downed.bleed / BLEED_OUT_SECONDS)) : hp ? hp.hp / hp.max : 1;
           const w = 22 * S;
           const by = s.lying ? -34 * S : -s.height - 10 * S;
           s.barBg.position.set(-w / 2 - S, by - S);
@@ -364,8 +369,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.airFill.tint = blink ? 0xffffff : frac > 0.5 ? 0x22d3ee : frac > 0.25 ? 0xf0c030 : 0xff3b3b;
         }
         const drafted = world.has(id, DraftedC) || crew.activity === 'drafted';
-        s.ring.visible = drafted || id === selected;
-        s.ring.tint = id === selected ? CYAN : RED;
+        s.ring.visible = drafted && !selected.has(id); // a selected crew member gets the overlay's lime ring instead
+        s.ring.tint = RED;
       }
     for (const [id, s] of slots) {
       if (seen.has(id)) continue;
@@ -376,8 +381,12 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
 
   return {
     update,
-    setSelectedCrew(id) {
-      selected = id;
+    setSelectedCrew(ids) {
+      selected = new Set(ids);
+    },
+    spritePos(id) {
+      const s = slots.get(id);
+      return s && s.root.visible ? { x: s.root.x, y: s.root.y, h: s.height } : null;
     },
     pick(ax, ay) {
       let best: number | null = null;

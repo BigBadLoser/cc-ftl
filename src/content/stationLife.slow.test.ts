@@ -4,14 +4,15 @@ import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
 
 describe('station life over a long stretch', () => {
-  it('a hub runs its schedules for ten minutes of game time: work, meals, sleep, no alarms, no errors', () => {
+  it('a hub runs its schedules for seven and a half minutes of game time: work, meals, sleep, no alarms, no errors', () => {
     const sim = newGame(5, content);
     sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'hub', seed: 6 });
     sim.step();
     const st = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
     const ev: SimEvent[] = [];
     const activities = new Set<string>();
-    for (let i = 0; i < 12000; i++) {
+    // The first meal comes at about tick 6800 and hunger levels off near 26 by tick 8000, so 9000 ticks show every property; more only repeats the plateau.
+    for (let i = 0; i < 9000; i++) {
       sim.step();
       ev.push(...sim.events.drain().filter((e) => e.type === 'crew.ate' || e.type === 'station.alarm' || e.type === 'crew.died'));
       if (i % 200 === 0) for (const c of sim.world.query(StationCrewC, CrewC)) activities.add(sim.world.get(c, CrewC)!.activity);

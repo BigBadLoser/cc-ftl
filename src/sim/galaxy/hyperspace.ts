@@ -1,17 +1,24 @@
+import { hullLoad } from '../ftl/capacity';
+import { applyOvercharge } from '../ftl/overcharge';
+import { abortYards } from '../yard/flow';
+import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
 import { playerShipInfo, spawnContact } from './arrivals';
-import { burnFuel, ftlCharge, fuelStock, spendCharge } from './fuel';
+import { playerShip } from '../trade/player';
+import { burnFuel, ftlCharge, fuelStock, jumpFuel, spendCharge } from './fuel';
 import { arrive, checkLeaving, type Reject } from './travel';
 import { edgeBetween } from './route';
 import { ensureAround, galaxyIndex, nodeState } from './state';
 import { TURN_TICKS } from './tuning';
+import { FTL_CHARGE_SEC } from '../tuning';
 import { crossAfterHop, interdicted } from './encounters';
 import { liftFleetsAt, materialiseFleetsAt } from './fleetShips';
 import { bindMarkets, unbindMarkets } from './marketLive';
 import { populateNode } from './populate';
 import { placeWrecks } from './wrecks';
 import { takeHopTurn } from './turn';
+import { storyAtHop, storyHold } from './storyHop';
 import type { EdgeData, Travel } from './types';
 
 /**
@@ -53,13 +60,13 @@ export function routeBlocker(sim: Sim, edges: readonly EdgeData[] | null, ship?:
   if (!edges || !edges.length) return 'noRoute';
   const charge = ftlCharge(sim, ship);
   if (charge === null) return 'noShip';
-  if (charge + 1e-9 < routeCharge(edges)) return 'notCharged';
-  if (fuelStock(sim, ship) < (edges[0] as EdgeData).fuel) return 'noFuel';
+  if (!isAdrift(sim) && charge + 1e-9 < routeCharge(edges)) return 'notCharged';
+  if (fuelStock(sim, ship) < jumpFuel(sim, (edges[0] as EdgeData).fuel, ship)) return 'noFuel';
   return null;
 }
 
 /** `galaxy.jump`: validate the route, pay the charge and the first hop, lift the ship out and enter hyperspace. */
-export function jump(sim: Sim, ship: number, route: readonly string[], withDocked?: number[], command = 'galaxy.jump'): boolean {
+export function jump(sim: Sim, ship: number, route: readonly string[], withDocked?: number[], command = 'galaxy.jump', overcharge = false): boolean {
   const g = sim.galaxy;
   const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command, reason }), false);
   if (!checkLeaving(sim, ship, reject)) return false;
@@ -70,11 +77,16 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const edges = routeEdges(sim, nodes);
   const blocked = routeBlocker(sim, edges, ship);
   if (blocked || !edges) return reject(blocked ?? 'noRoute');
+  // TODO(#129): NPC ships do not obey engine capacity yet. A ship heavier than its engines carry needs the overcharge (the player's flee takes it: staying is worse).
+  const overcharged = hullLoad(sim, ship).over > 0;
+  if (overcharged && !overcharge && command !== 'combat.flee') return reject('overweight');
   const first = edges[0] as EdgeData;
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
-  burnFuel(sim, first.fuel, ship);
-  g.pendingDraw = null;
+  if (overcharged) applyOvercharge(sim, ship);
+  abortYards(sim, 'left');
+  burnFuel(sim, jumpFuel(sim, first.fuel, ship), ship);
+  settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, withDocked ?? false);
@@ -95,7 +107,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
 export function advanceTravel(sim: Sim): void {
   const g = sim.galaxy;
   const t = g.travel;
-  if (!t || t.phase !== 'hop') return;
+  if (!t || storyHold(sim, t, resumeAfterHop) || t.phase !== 'hop') return;
   if (++t.elapsed < t.hopTicks) return;
   const edge = edgeBetween(g, t.route[t.at] as string, t.route[t.at + 1] as string) as EdgeData;
   const from = t.route[t.at] as string;
@@ -106,9 +118,6 @@ export function advanceTravel(sim: Sim): void {
   g.days = Math.round((g.days + edge.time) * 10) / 10;
   sim.events.emit({ type: 'galaxy.jumped', from, to: g.current, edge: edge.id, fuel: edge.fuel, charge: from === t.route[0] ? t.charge : 0 });
   arrive(sim);
-  // One draw per trip, resolved at deploy. An anchored lane anywhere on the route owes the (rarer) transit draw, which a later plain hop
-  // must not overwrite: transit wins over arrival.
-  g.pendingDraw = g.pendingDraw === 'transit' || edge.anchor ? 'transit' : 'arrival';
   t.elapsed = 0;
   // The turn ends here: a fleet that crossed the hop, or is in this node, may interdict. The ship halts in hyperspace until `galaxy.respond` settles it.
   if (crossAfterHop(sim, from, g.current)) {
@@ -116,6 +125,8 @@ export function advanceTravel(sim: Sim): void {
     sim.events.emit({ type: 'galaxy.interdicted', node: g.current });
     return;
   }
+  // A story event may come up at this hop (never on one that interdicted); a decision holds the trip until it is answered.
+  if (storyAtHop(sim, t, edge)) return;
   resumeAfterHop(sim, t);
 }
 
@@ -133,12 +144,13 @@ export function resumeAfterHop(sim: Sim, t: Travel | null = sim.galaxy.travel): 
   }
   t.phase = 'hop';
   const next = edgeBetween(g, g.current, t.route[t.at + 1] as string) as EdgeData;
-  if (fuelStock(sim) < next.fuel) {
+  const fuel = jumpFuel(sim, next.fuel);
+  if (fuelStock(sim) < fuel) {
     t.phase = 'noFuel';
-    sim.events.emit({ type: 'galaxy.stalled', node: g.current, need: next.fuel });
+    sim.events.emit({ type: 'galaxy.stalled', node: g.current, need: fuel });
     return;
   }
-  burnFuel(sim, next.fuel);
+  burnFuel(sim, fuel);
   t.hopTicks = hopTicksOf();
   takeHopTurn(sim);
 }
@@ -152,8 +164,8 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
   const g = sim.galaxy;
   const t = g.travel;
   if (sim.sector.state !== 'hyperspace' || !t) return sim.events.emit({ type: 'command.rejected', command, reason: 'notInHyperspace' }), false;
-  // An interdiction or an event grid must be settled first.
-  if (t.phase === 'interdicted' || t.phase === 'event') return sim.events.emit({ type: 'command.rejected', command, reason: t.phase === 'event' ? 'inEvent' : 'interdicted' }), false;
+  // An interdiction, an open story decision or an event grid must be settled first.
+  if (t.phase === 'interdicted' || t.phase === 'event' || t.phase === 'story') return sim.events.emit({ type: 'command.rejected', command, reason: t.phase === 'event' ? 'inEvent' : t.phase === 'story' ? 'inStory' : 'interdicted' }), false;
   if (t.phase === 'hop' && t.elapsed > 0) {
     t.route.length = t.at + 2;
     t.stopping = true;
@@ -179,19 +191,55 @@ export function drop(sim: Sim, command = 'galaxy.drop'): boolean {
   return true;
 }
 
+/** True while the player's ship is adrift: in hyperspace after a flee, with no route yet (see `Travel.phase`). */
+export const isAdrift = (sim: Sim): boolean => sim.sector.state === 'hyperspace' && sim.galaxy.travel?.phase === 'adrift';
+
 /**
- * The player's flee: a one-hop hyperspace trip to `to` (an adjacent node), else to the cheapest connected node it can pay for now
- * (least fuel, then charge, then node id); when none is affordable the cheapest one's blocker is the reason.
+ * The player's flee: spend the full drive charge and enter hyperspace adrift, with no route and no fuel spent. The hostiles stay in the node's archive.
+ * `galaxy.jump` (`leaveAdrift`) then starts a route from the node fled, `galaxy.drop` goes back to it. A hull over its engines' capacity takes the
+ * overcharge risk, as a jump would (staying is worse).
  */
-export function flee(sim: Sim, ship: number, to?: string): boolean {
+export function flee(sim: Sim, ship: number): boolean {
   const g = sim.galaxy;
+  const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command: 'combat.flee', reason }), false);
+  if (!checkLeaving(sim, ship, reject)) return false;
+  if ((ftlCharge(sim, ship) ?? 0) + 1e-9 < FTL_CHARGE_SEC) return reject('notCharged');
   if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
-  const options = (galaxyIndex(g).adjacent.get(g.current) ?? [])
-    .map((e) => ({ e, to: e.a === g.current ? e.b : e.a }))
-    .filter((o) => to === undefined || o.to === to)
-    .sort((p, q) => p.e.fuel - q.e.fuel || p.e.charge - q.e.charge || (p.to < q.to ? -1 : 1));
-  const pick = options.find((o) => routeBlocker(sim, [o.e]) === null) ?? options[0];
-  return jump(sim, ship, [pick?.to ?? to ?? ''], undefined, 'combat.flee');
+  spendCharge(sim, FTL_CHARGE_SEC, ship);
+  if (hullLoad(sim, ship).over > 0) applyOvercharge(sim, ship);
+  abortYards(sim, 'left');
+  settleLosses(sim);
+  unbindMarkets(sim);
+  liftFleetsAt(sim, g.current);
+  enterHyperspace(sim, ship, false);
+  const left = g.nodes[g.current];
+  if (left) left.contacts = [];
+  g.travel = { route: [g.current], charge: FTL_CHARGE_SEC, at: 0, elapsed: 0, hopTicks: 0, phase: 'adrift' };
+  g.rev++;
+  sim.events.emit({ type: 'galaxy.hyperspace', ship, route: [g.current], charge: FTL_CHARGE_SEC });
+  return true;
+}
+
+/**
+ * `galaxy.jump` while adrift: start a route from the node fled. The drive charge was spent on the flee, so none is asked again; the first hop's fuel is
+ * paid now and the hops go on as any trip (interdiction, story holds). Going back to the node itself is `galaxy.drop`.
+ */
+export function leaveAdrift(sim: Sim, ship: number, route: readonly string[]): boolean {
+  const g = sim.galaxy;
+  const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command: 'galaxy.jump', reason }), false);
+  if (!isAdrift(sim)) return reject('notAdrift');
+  if (ship !== playerShip(sim)) return reject('notPlayerShip');
+  const nodes = [g.current, ...route];
+  const edges = routeEdges(sim, nodes);
+  if (!edges) return reject('noRoute');
+  const fuel = jumpFuel(sim, (edges[0] as EdgeData).fuel, ship);
+  if (fuelStock(sim, ship) < fuel) return reject('noFuel');
+  burnFuel(sim, fuel, ship);
+  g.travel = { route: nodes, charge: 0, at: 0, elapsed: 0, hopTicks: hopTicksOf(), phase: 'hop' };
+  takeHopTurn(sim);
+  g.rev++;
+  sim.events.emit({ type: 'galaxy.hyperspace', ship, route: nodes, charge: 0 });
+  return true;
 }
 
 /** Debug: move the player's ship to any generated node at no cost: into hyperspace and straight out again (then it waits to deploy). */
@@ -202,6 +250,7 @@ export function teleport(sim: Sim, to: string): boolean {
   if (!me) return reject('notPlayerShip');
   if (!checkLeaving(sim, me.id, reject)) return false;
   const from = g.current;
+  settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, from);
   enterHyperspace(sim, me.id, false);
@@ -210,7 +259,6 @@ export function teleport(sim: Sim, to: string): boolean {
   g.current = to;
   sim.sector.node = to;
   arrive(sim);
-  g.pendingDraw = null;
   g.travel = { route: [from, to], charge: 0, at: 1, elapsed: 0, hopTicks: 1, phase: 'arrived' };
   return drop(sim, 'debug.galaxyTeleport');
 }

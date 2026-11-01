@@ -1,6 +1,7 @@
 import type { QueuedCommand } from './commands';
 import type { Sector } from './combat/components';
 import { World, type WorldData } from './ecs';
+import { restoreTasks } from './ai/task';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
@@ -8,6 +9,7 @@ import { Sim } from './sim';
 import { newStory, type StoryState } from './story/state';
 import { loadGalaxy, saveGalaxy, type GalaxySave } from './galaxy/state';
 import { newTrade, type TradeState } from './trade/types';
+import { newYard, type YardState } from './yard/types';
 
 /**
  * Current save format version. Bump it whenever the shape changes. Saves are not migrated (user decision, 2026-10-19:
@@ -53,10 +55,42 @@ import { newTrade, type TradeState } from './trade/types';
  * v40 (stage 4, off-screen life): `galaxy.news` / `galaxy.nextNews` (the bounded news log), `NodeState.wrecks` (ships destroyed in NPC fights, waiting to be found as wrecks).
  * v41: `Combat.cruisePilot` / `Combat.cruiseEvasion` (evade odds outside combat).
  * v42: base logistics and the living world in one save.
- * v43 (art/2x): 2x art merge; mining pod geometry (v33 on art/2x) reconciled with main's v42. Sim shape unchanged.
- * v44 (art/2x): cargo containers are 2x4 and 3x6 (the art's sizes; were 2x3 and 3x5): new def ids, footprints and stock capacity; shipgen frames repacked.
+ * v43 (story events in transit): no `galaxy.pendingDraw`, no `story.periodicSec` / `nextPeriodic`, `Travel.phase` 'story' and `Travel.held` 'hopEnd'.
+ * v44: `Combat.ftlOrder` (the standing `ftl.charge` order and its queued jump).
+ * v45: construction hauling carries several item types per trip (bigger carry capacity, chained haul jobs).
+ * v46: `powerPriority` rename, Refine/Craft work categories split.
+ * v47: art/2x and dual art sets on top of v46: cargo containers are 2x4 and 3x6 (the art's sizes; were 2x3 and 3x5), new def ids, footprints and stock capacity; shipgen frames repacked; mining pod geometry.
+ * v48 (danger layers): `GalaxyState.heat` (notoriety, last hunt per faction), `Fleet.hunt` / `standDown`, `Ship.killedBy` / `tallied`.
+ * v49 (station jobs): `GalaxyState.jobs`, `jobLog`, `nextJob`.
+ * v50 (goal chain): `StoryState.goals` (act, goals done, skipped, home cluster), `stat.*` story flags.
+ * v51 (crew for hire): `GalaxyState.recruitLog`, `ForHireC` on station crew who can be hired, `Deal.crew` (a hiring run fetches them by
+ *     shuttle).
+ * v52 (fuel economy): `GalaxyState.distress` (a pending call for a tug), `item.fuel` in the market goods.
+ * v53 (playtest fixes): optional `Module.wrecked` (set at 0 hp, cleared past half hp; a patched wreck is not announced twice).
+ * v54 (blueprints): `StoryState.blueprints` (the bought module blueprints), Mk II / III core module defs, research stations.
+ * v55 (shield tiers): `module.shieldGenSmall` removed (now `module.shieldGen`, 2x2); Mk II is 2x3, Mk III 3x3.
+ * v56 (research): `ResearchC` (a ship's research queue), the `research` work category, the science skill and role.scientist.
+ * v57 (tile aim): optional `Target.tile` (a blind aim at one tile of the target ship, on `CombatC.target` and `WeaponC.target`).
+ * v58 (per-faction standing): reputation keys `meridian`, `helix`, `vantor` replace the shared `corp`; optional `Trader.owner` and `Ship.gen.owner` (the galaxy faction a trader or fleet ship belongs to).
+ * v59 (shipyard): `yard` (hull-expansion orders), `YardCrewC` (the yard shuttle's crew), `Job.yard`, a ship's rectangle that grows with its hull.
+ * v60: `HullPlanC` (a ship's planned outer hull), `Job.yardOnly`, `YardOrder.gaps` / `sealed` / `ejected`; the yard sells outer-profile hull tiles.
+ * v62: the yard and per-faction standing together (the shipyard branch numbered v58 to v61 before standing took v58; this is the merged line).
+ * v63 (pirate factions): new galaxy factions (`raiders`, `cartel`, `zealots`, `mercenaries`) with their own reputation keys, `Contact.hired`, `CoreRaiderC` / `CoreRaidC`, boarder flags `prefer` / `coreRaid`.
+ * v64 (black markets): optional `Trader.services` / `Trader.fence`, `NodeState.truce` / `scanned`, `Encounter.scan`, `Ship.banned`, `ForHire.shady` (and `SkillXpC` on shady crew), contraband items (`item.stolen_goods`, `item.looted_goods`, `item.disruptor`, the zealot machine goods).
+ * v65 (jobs by station): `GalaxyState.claims` (finished bounties and surveys waiting for hand-in), survey jobs (`StationJob.kind` 'survey', `station`, `feature`), `Deal.handover` (the station shuttle collecting a delivery crate).
+ * v66 (combat heat): `Combat.heat` (heat meter, vent, lockout, overcharges), `WeaponDef.heat`, `ModuleDef.radiator`.
+ * v67: `Combat.heat.auto` removed (the player's heat is never automatic).
+ * v68 (bed owners, merged after combat heat): `BedOwnerC` (the bed a crew member owns and sleeps in).
+ * v69 (trade): optional `Deal.getValue` (each get line's agreed share of the escrow, for settling a part-delivered run).
+ * v70 (weapon modes, merged after trade): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
+ * v71 (boarding, merged after weapon modes): `RecallC` (a player boarding party's recall, on the shuttle), the 'sabotage' job kind and
+ *   `SabotageOrderC` (a boarder's sabotage order, kept while a fight pauses it).
+ * v72 (crew traits): `TraitsC` and `RolledSkillsC` (a starting crew member's traits and rolled skills), optional `Mood.idle`,
+ *   `quiet` and `inside` (trait mood memory).
+ * v73 (work xp): `SkillXpC` is on the new curve (level n costs 100 x n^2 xp), so old xp reads as fewer levels; no migration.
+ * v74 (crew AI Phase 2): `sector.sched`, and the sector grid's thin-air `watch` count (the job scheduler's pass gate).
  */
-export const SAVE_VERSION = 44;
+export const SAVE_VERSION = 74;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -70,6 +104,8 @@ export interface SaveData {
   story?: StoryState;
   /** Trade state. Optional like `story`: older saves load with an empty one. */
   trade?: TradeState;
+  /** Shipyard orders. Optional like `trade`. */
+  yard?: YardState;
   /** Starmap state, chunks as keys (see galaxy/state.ts). */
   galaxy: GalaxySave;
   pending: QueuedCommand[];
@@ -88,6 +124,7 @@ export function serialize(sim: Sim): string {
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
     trade: sim.trade,
+    yard: sim.yard,
     galaxy: saveGalaxy(sim.galaxy),
     pending: [...sim.commands.getPending()],
     archives: sim.archives,
@@ -112,8 +149,11 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
+  sim.trade.bestCredits = Math.max(sim.trade.bestCredits ?? 0, sim.trade.credits); // a save from before the field starts at what it holds
+  sim.yard = { ...newYard(), ...data.yard };
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;
+  restoreTasks(sim); // a save from before the crew-AI task mirror (Phase 1) has none
   return sim;
 }

@@ -5,6 +5,7 @@ import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { graceHolds } from './grace';
 import { pickWeighted, trafficPool } from './sector';
 import { isHostileFaction, tierOf } from './standing';
 import { currentNode, nodeState, withGalaxyRng } from './state';
@@ -12,6 +13,7 @@ import {
   ARRIVAL_EVERY_SEC, ARRIVAL_FRIENDLY_TERRITORY, ARRIVAL_HOSTILE_TERRITORY, ARRIVAL_MAX_CHANCE, ARRIVAL_PER_DANGER,
   MAX_HOSTILE_CONTACTS,
 } from './tuning';
+import { SCAVENGER_CHANCE, SCAVENGER_FACTION, SCAVENGER_MAX_DANGER } from './tuningHeat';
 import type { Contact } from './types';
 
 /**
@@ -25,6 +27,47 @@ function generated(sim: Sim): Map<string, ReturnType<typeof generateShip> | null
   let m = generatedShips.get(sim.content);
   if (!m) generatedShips.set(sim.content, (m = new Map()));
   return m;
+}
+
+export const GENERATED_CAP = GENERATED_MAX;
+/** The memo key of a contact's ship: the generator faction, seed and depth are all `generateShip` reads besides content. */
+export const contactKey = (c: Contact): string => `${c.shipgen}|${c.seed}|${c.depth}`;
+/** Is the contact's ship already in the memo (generated, or known not to generate)? */
+export const isGenerated = (sim: Sim, c: Contact): boolean => generated(sim).has(contactKey(c));
+
+/** The memoised ship of a contact without generating or touching its place in the order (undefined: not there). */
+export const peekGenerated = (sim: Sim, c: Contact): ReturnType<typeof generateShip> | null | undefined => generated(sim).get(contactKey(c));
+
+/** The contact's generated ship from the memo (most recently used last), generating and remembering it on a miss. Null when it cannot be generated. */
+function shipFor(sim: Sim, c: Contact, def: NonNullable<Sim['content']['factions']>[string]): ReturnType<typeof generateShip> | null {
+  const memo = generated(sim);
+  const key = contactKey(c);
+  let gen = memo.get(key);
+  if (gen !== undefined) {
+    memo.delete(key);
+    memo.set(key, gen);
+    return gen;
+  }
+  try {
+    gen = generateShip(def, c.shipgen, c.seed, c.depth, sim.content.modules);
+  } catch {
+    gen = null;
+  }
+  if (gen && gen.problems.length > 0) gen = null;
+  memo.set(key, gen);
+  if (memo.size > GENERATED_MAX) memo.delete(memo.keys().next().value as string);
+  return gen;
+}
+
+/**
+ * Generate a contact's ship into the memo ahead of its arrival (fleetShips.ts `warmFleets`). Touches nothing but the memo: no Rng, no sim state.
+ * False when it was already there or its generator faction is missing.
+ */
+export function warmContact(sim: Sim, c: Contact): boolean {
+  const def = sim.content.factions?.[c.shipgen];
+  if (!def || isGenerated(sim, c)) return false;
+  shipFor(sim, c, def);
+  return true;
 }
 
 /** The player's flown ship (lowest id) with its components: active, player faction, with combat state. Trade's `playerShip` returns just the id. */
@@ -69,29 +112,21 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
-  const key = `${c.shipgen}|${c.seed}|${c.depth}`;
-  const memo = generated(sim);
-  let gen = memo.get(key);
-  if (gen === undefined) {
-    try {
-      gen = generateShip(def, c.shipgen, c.seed, c.depth, sim.content.modules);
-    } catch {
-      gen = null;
-    }
-    if (gen && gen.problems.length > 0) gen = null;
-    memo.set(key, gen);
-    if (memo.size > GENERATED_MAX) memo.delete(memo.keys().next().value as string);
-  }
+  const key = contactKey(c);
+  const gen = shipFor(sim, c, def);
   if (!gen) return false;
   const spot = freeSpot(sim, gen.width, gen.height);
   if (!spot) return false;
-  memo.delete(key);
-  const side = isHostileFaction(sim, c.faction) ? sim.content.galaxy?.factions[c.faction]?.combatFaction ?? 'hostile' : 'neutral';
+  generated(sim).delete(key);
+  // A hired escort fights for whoever pays it.
+  const payer = c.hired ?? c.faction;
+  const side = isHostileFaction(sim, payer) ? sim.content.galaxy?.factions[payer]?.combatFaction ?? 'hostile' : 'neutral';
   const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
   if (ship) {
-    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth };
+    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction };
     if (c.name) ship.name = c.name;
+    if (c.bounty !== undefined) ship.bounty = c.bounty;
   }
   c.ship = id;
   sim.galaxy.rev++;
@@ -140,19 +175,24 @@ function hostileShipsHere(sim: Sim, contacts: readonly Contact[]): number {
 
 /**
  * The arrival roll while the player stays: every ARRIVAL_EVERY_SEC, with `arrivalChance`, a ship of a faction hostile to
- * the player (drawn from the node's traffic pool) jumps in and is spawned. Uses the galaxy's own Rng.
+ * the player (drawn from the node's traffic pool) jumps in and is spawned. Where the pool holds nobody hostile near the start (danger up to
+ * SCAVENGER_MAX_DANGER), a lone scavenger still turns up with chance SCAVENGER_CHANCE, so the first hours are not empty (#45). Uses the galaxy's own Rng.
  */
 export function rollArrival(sim: Sim): void {
   const g = sim.galaxy;
   if (sim.sector.state !== 'active' || sim.tick < g.nextArrival) return;
   g.nextArrival = sim.tick + Math.round(ARRIVAL_EVERY_SEC * TICK_HZ);
   const node = currentNode(sim);
-  if (!node || !playerShipInfo(sim)) return;
+  if (!node || !playerShipInfo(sim) || graceHolds(sim, node.id)) return;
   const st = nodeState(sim, node.id);
   if (hostileShipsHere(sim, st.contacts) >= MAX_HOSTILE_CONTACTS) return;
-  const p = arrivalChance(sim);
+  let p = arrivalChance(sim);
   const content = sim.content.galaxy;
-  const pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
+  let pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
+  if (!pool.length && node.danger <= SCAVENGER_MAX_DANGER && content?.factions[SCAVENGER_FACTION] && isHostileFaction(sim, SCAVENGER_FACTION)) {
+    pool = [{ value: SCAVENGER_FACTION, weight: 1 }];
+    p = Math.max(p, SCAVENGER_CHANCE);
+  }
   const roll = withGalaxyRng(g, (rng) => ({ hit: rng.next() < p, who: rng.next(), ship: rng.next(), seed: rng.int(0, 0x7fffffff) }));
   if (!roll.hit || !pool.length) return;
   const faction = pickWeighted(pool, roll.who) as string;

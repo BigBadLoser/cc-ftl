@@ -1,6 +1,7 @@
 import type { Faction } from './combat/components';
 import type { JobKind } from './crew/components';
 import type { EventEffect } from './story/defs';
+import type { StationJobKind } from './galaxy/types';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
@@ -90,9 +91,16 @@ export type SimEvent =
   | { type: 'container.detached'; container: number; ship: number; x: number; y: number }
   /** Ship state changes. 'destroyed' = became a wreck. */
   | { type: 'ship.disabled'; ship: number }
+  /** A hostile ship's crew gave up: hull failing, weapons dead, cut off or outnumbered (combat/hopeless.ts). */
+  | { type: 'ship.surrendered'; ship: number }
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
+  /** A ship's heat hit the maximum: lockout (no weapons, no shields) until it cools. */
+  | { type: 'combat.overheated'; ship: number }
+  /** A ship started venting heat (shields down, weapons held). */
+  | { type: 'combat.vented'; ship: number }
+  | { type: 'combat.overcharged'; ship: number; system: 'weapons' | 'shields' | 'engines' }
   /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
   | { type: 'ship.provoked'; ship: number; reason: 'aimed' | 'damaged' | 'boarded' | 'dug' | 'breach' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
@@ -122,12 +130,16 @@ export type SimEvent =
   | { type: 'crew.equipped'; crew: number; item: string }
   | { type: 'crew.unequipped'; crew: number; item: string }
   | { type: 'crew.surrendered'; crew: number }
+  /** A player crew member who surrendered picks themselves up once no hostile is left on their ship (fight/surrender.ts). */
+  | { type: 'crew.rallied'; crew: number }
   /** `by`'s crew took the ship on ship `ship` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
   | { type: 'ship.captured'; ship: number; by: Faction; from: Faction }
   | { type: 'crew.imprisoned'; crew: number; ship: number }
   /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
   | { type: 'robot.stunned'; crew: number; until: number }
   | { type: 'robot.inert'; crew: number }
+  /** Zealot raiders held a ship's AI core long enough: it was torn out and lost (its robots go inert). */
+  | { type: 'core.torn'; ship: number }
   /** A held hack lent the robot to `faction` (or it went back to its own side). */
   | { type: 'robot.flipped'; crew: number; faction: Faction }
   /** A robot bay finished assembling a robot (its home bay). */
@@ -152,6 +164,18 @@ export type SimEvent =
   | { type: 'robot.fabricated'; crew: number; moduleId: number; ship: number }
   /** An AI core was hacked by `by`. */
   | { type: 'core.hacked'; moduleId: number; ship: number; by: Faction }
+  /** Player boarders: a crew member was ordered to wreck `module` of hostile ship `ship`; it ended (`destroyed`, `interrupted` by a fight or a new order, `downed`, `cancelled`). */
+  | { type: 'crew.sabotageStarted'; crew: number; module: number; ship: number }
+  /** A fight took the boarder off the job; the order stays and resumes (`crew.sabotageResumed`) once nothing hostile is in sight. */
+  | { type: 'crew.sabotagePaused'; crew: number; module: number; ship: number }
+  | { type: 'crew.sabotageResumed'; crew: number; module: number; ship: number }
+  | { type: 'crew.sabotageEnded'; crew: number; module: number; ship: number; reason: 'destroyed' | 'interrupted' | 'downed' | 'cancelled' }
+  /** A boarding party was recalled: `crew` walk to shuttle `vehicle` docked at hostile ship `ship`; the shuttle brought them home; the recall failed (`crew` may be empty) for `reason`. */
+  | { type: 'crew.recallStarted'; vehicle: number; ship: number; crew: number[]; left: { crew: number; reason: string }[] }
+  | { type: 'crew.recalled'; vehicle: number; crew: number[] }
+  | { type: 'crew.recallFailed'; vehicle: number; crew: number[]; reason: string }
+  /** Player crew were aboard a ship that left (`fled`: it jumped away; `lifted`: it left the node) and left with it: they are lost. */
+  | { type: 'crew.leftWithShip'; crew: number; ship: number; how: 'fled' | 'lifted' }
   /** The player lost the game; `reason` is a short code ('captured'). */
   | { type: 'game.lost'; reason: string }
   /** EVA: a crew member put on / took off a suit at `airlock` (a module); the tank hit the warning level / ran dry. */
@@ -176,6 +200,13 @@ export type SimEvent =
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
   | { type: 'galaxy.chunk'; key: string }
   | { type: 'galaxy.hyperspace'; ship: number; route: string[]; charge: number }
+  /** An overcharged jump (ship over its engines' hull capacity) took its toll: engines hit, engines destroyed, engine-room fires lit (ftl/overcharge.ts). */
+  | { type: 'ftl.overcharged'; ship: number; damaged: number; destroyed: number; fires: number }
+  /** A shipyard order was paid (yard/), and ended: `built` of `total` tiles stand; `reason` is empty when all was built. */
+  /** A ship's hull plan was set (hull.plan): `tiles` still open. */
+  | { type: 'hull.planned'; ship: number; tiles: number }
+  | { type: 'yard.ordered'; order: number; station: number; tiles: number }
+  | { type: 'yard.ended'; order: number; reason: string; built: number; total: number }
   /** A hop of the trip ended at `to` (fuel of that hop and, for the first, the FTL charge paid on entry). */
   | { type: 'galaxy.jumped'; from: string; to: string; edge: string; fuel: number; charge: number }
   /** A starmap turn began (a hop was entered, or `cause: 'time'` for a game-time turn); see galaxy/turn.ts. */
@@ -187,7 +218,12 @@ export type SimEvent =
   | { type: 'galaxy.interdicted'; node: string }
   | { type: 'galaxy.encounterResolved'; id: number; outcome: string }
   | { type: 'galaxy.evadeRoll'; id: number; odds: number; roll: number; success: boolean }
+  | { type: 'galaxy.distressSent'; node: string; due: number }
+  | { type: 'galaxy.towArrived'; fuel: number; paid: number; owed: number }
   | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
+  | { type: 'scan.found'; id: number; faction: string; value: number }
+  | { type: 'scan.settled'; id: number; faction: string; outcome: 'confiscated' | 'bribed'; cost: number }
+  | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }
@@ -195,6 +231,30 @@ export type SimEvent =
   | { type: 'galaxy.dropped'; node: string }
   | { type: 'galaxy.populated'; node: string; count: number }
   | { type: 'galaxy.news'; id: number; kind: string; node: string }
+  /** The player's notoriety changed (galaxy/heat.ts); `faction` is the victim's when a kill caused it. */
+  | { type: 'galaxy.notoriety'; value: number; delta: number; faction: string | null }
+  /** A faction sent a hunter fleet after the player (galaxy/hunters.ts). */
+  | { type: 'galaxy.hunt'; fleet: number; faction: string; node: string; ships: number }
+  /** A station job was taken, or closed: 'done' (paid), 'failed' (ran out of time), 'abandoned'. */
+  /** Crew was hired at a station (galaxy/recruit.ts). */
+  /** A research project finished and its blueprints are known (sim/research). */
+  | { type: 'research.done'; ship: number; project: string }
+  /** A blueprint was bought at a station (galaxy/blueprintShop.ts). */
+  | { type: 'blueprint.bought'; def: string; port: string; cost: number }
+  | { type: 'crew.hired'; crew: number; role: string; cost: number }
+  | { type: 'job.accepted'; id: number; kind: StationJobKind; issuer: string }
+  /** A bounty's target was destroyed or a survey's node entered: the job is now a claim to hand in at a station of the issuing type. */
+  | { type: 'job.completed'; id: number; kind: 'bounty' | 'survey'; issuer: string; reward: number }
+  /** A claim was handed in and paid. */
+  | { type: 'job.handedIn'; id: number; kind: 'bounty' | 'survey'; issuer: string; reward: number; port: string }
+  /** The station sent its shuttle for a delivery's crate. */
+  | { type: 'job.shuttleSent'; id: number; station: number; via: 'station' | 'own' }
+  /** A delivery was paid (`reward`): the station's shuttle took the crate ('shuttle'), the player's shuttle dropped it at the station ('own'), or no shuttle could ('instant'; see galaxy/handover.ts). */
+  | { type: 'job.handedOver'; id: number; issuer: string; reward: number; via: 'shuttle' | 'own' | 'instant' }
+  /** A goal of the tutorial chain was met, and an act of it finished (its reward paid). */
+  | { type: 'goal.done'; goal: string; title: string }
+  | { type: 'goal.actDone'; act: string; title: string }
+  | { type: 'job.closed'; id: number; kind: StationJobKind; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
   | { type: 'galaxy.discovered'; count: number }
   | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */

@@ -1,8 +1,10 @@
 import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { DoorJam, isEvaWalkable, isWalkable } from '../structure';
+import { DoorJam, Struct, isEvaWalkable, isWalkable } from '../structure';
 import type { Sim } from '../sim';
 import { shipGrid } from '../regions';
+import type { ShipGrid } from '../shipGrid';
+import { ModuleC } from '../modules/components';
 
 export interface Tile {
   x: number;
@@ -10,8 +12,14 @@ export interface Tile {
 }
 
 export interface PathGoal extends Tile {
-  /** True: stop on any walkable tile 8-adjacent to (x, y) (for working on walls). */
+  /**
+   * True: stop on any walkable tile 8-adjacent to (x, y) (for working on walls). A Door tile is a stop only when no other
+   * tile beside the goal can be reached: standing on a doorway holds it open and idle crew never leave it (#248).
+   */
   adjacent?: boolean;
+  /** With `adjacent`: the goal is the w x h box whose top-left is (x, y), and the walker stops beside the box, never inside it. */
+  w?: number;
+  h?: number;
 }
 
 // Integer costs (x10) keep the search exact and tie-breaking deterministic.
@@ -39,6 +47,54 @@ export interface PathOpts {
 export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, opts: PathOpts = {}): Tile[] | null {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
+  // An unreachable goal floods the whole grid, and the crew picker asks again every tick for every idle crew member and open job (#224):
+  // remember the failure for as long as nothing the search reads has changed.
+  const key = `${shipId}|${from.x},${from.y}|${goal.x},${goal.y},${goal.adjacent ? 1 : 0},${goal.w ?? 1},${goal.h ?? 1}|${opts.avoidThin ? 1 : 0}${opts.suited ? 1 : 0}`;
+  const sig = walkSignature(sim, grid, !!opts.avoidThin);
+  // Keyed by the sector grid instance, not the sim: a restored archive brings a new grid whose revisions start again at zero.
+  let memo = NO_PATH.get(sim.sector.grid);
+  if (!memo) NO_PATH.set(sim.sector.grid, (memo = new Map()));
+  if (memo.get(key) === sig) return null;
+  const steps = searchPath(sim, grid, from, goal, opts);
+  if (steps === null) {
+    if (memo.size >= NO_PATH_MAX) memo.clear();
+    memo.set(key, sig);
+  }
+  return steps;
+}
+
+/** Failed searches per sector grid instance: key -> the walk signature they failed under. Derived data, never saved. */
+const NO_PATH = new WeakMap<object, Map<string, string>>();
+const NO_PATH_MAX = 4096;
+const THIN_MASK = new WeakMap<object, Map<string, { rev: number; h: number }>>();
+
+/**
+ * Everything a search reads, as one string: the sector-wide revisions of the fields it walks (struct, door jams, modules), the module count (a
+ * module's solid and open tiles come from its component), the ship's window, and for a thin-air-avoiding search a hash of which tiles are thin.
+ * The scheduler's navigation views (ai/navView.ts) are cached on it too.
+ */
+export function walkSignature(sim: Sim, grid: ShipGrid, avoidThin: boolean): string {
+  const g = sim.sector.grid;
+  let sig = `${grid.x0},${grid.y0},${grid.width},${grid.height}|${g.revision('struct')}|${grid.has('jam') ? g.revision('jam') : 0}|${grid.has('module') ? g.revision('module') : 0}|${sim.world.query(ModuleC).length}`;
+  if (avoidThin && grid.has('o2')) {
+    // Hashing the mask walks the whole ship, so it is kept for as long as the o2 field is unchanged (many searches per tick share it).
+    const rev = g.revision('o2');
+    const id = `${grid.x0},${grid.y0},${grid.width},${grid.height}`;
+    let masks = THIN_MASK.get(g);
+    if (!masks) THIN_MASK.set(g, (masks = new Map()));
+    let hit = masks.get(id);
+    if (!hit || hit.rev !== rev) {
+      const o2 = grid.load('o2');
+      let h = 2166136261;
+      for (let i = 0; i < o2.length; i++) h = Math.imul(h ^ ((o2[i] as number) < EVA_THIN_AIR_BELOW ? 1 : 0), 16777619);
+      masks.set(id, (hit = { rev, h }));
+    }
+    sig += `|${hit.h}`;
+  }
+  return sig;
+}
+
+function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: PathOpts): Tile[] | null {
   const { width, height, x0, y0 } = grid;
   // The search runs on window indices, i = (y - y0) * width + (x - x0): the tie-break order is the same in any frame.
   const struct = grid.load('struct');
@@ -61,54 +117,95 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
   const at = (x: number, y: number): number => (y - y0) * width + (x - x0);
   const fromIndex = at(from.x, from.y);
   const adj = goal.adjacent ? 1 : 0;
-  const isGoal = (x: number, y: number): boolean =>
-    adj ? Math.max(Math.abs(x - goal.x), Math.abs(y - goal.y)) === 1 : x === goal.x && y === goal.y;
+  const gw = goal.w ?? 1, gh = goal.h ?? 1;
+  const gap = (x: number, y: number): number =>
+    Math.max(goal.x - x, x - (goal.x + gw - 1), goal.y - y, y - (goal.y + gh - 1), 0);
+  const isGoal = (x: number, y: number): boolean => (adj ? gap(x, y) === 1 : x === goal.x && y === goal.y);
   if (!adj && !walk(at(goal.x, goal.y))) return null;
   if (isGoal(from.x, from.y)) return [];
 
   const heuristic = (x: number, y: number): number => {
-    const dx = Math.max(0, Math.abs(x - goal.x) - adj);
-    const dy = Math.max(0, Math.abs(y - goal.y) - adj);
+    const dx = Math.max(0, Math.max(goal.x - x, x - (goal.x + gw - 1)) - adj);
+    const dy = Math.max(0, Math.max(goal.y - y, y - (goal.y + gh - 1)) - adj);
     return DIAG * Math.min(dx, dy) + ORTHO * Math.abs(dx - dy);
   };
 
-  const g = new Int32Array(width * height).fill(-1);
-  const parent = new Int32Array(width * height).fill(-1);
-  const closed = new Uint8Array(width * height);
+  const sc = scratchFor(width * height);
+  const { g, parent, seen, done } = sc;
+  const gen = nextGen(sc);
+  const gOf = (i: number): number => (seen[i] === gen ? (g[i] as number) : -1);
   const heap = new MinHeap();
   const start = fromIndex;
+  let doorEnd = -1;
+  const pathTo = (end: number): Tile[] => {
+    const out: Tile[] = [];
+    for (let i = end; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
+    return out.reverse();
+  };
   g[start] = 0;
+  seen[start] = gen;
   heap.push(heuristic(from.x, from.y), heuristic(from.x, from.y), start);
 
   while (heap.size > 0) {
     const cur = heap.pop();
-    if (closed[cur]) continue;
-    closed[cur] = 1;
+    if (done[cur] === gen) continue;
+    done[cur] = gen;
     const cx = cur % width;
     const cy = (cur - cx) / width;
     if (isGoal(x0 + cx, y0 + cy)) {
-      const out: Tile[] = [];
-      for (let i = cur; i !== start; i = parent[i] as number) out.push({ x: x0 + (i % width), y: y0 + Math.floor(i / width) });
-      return out.reverse();
+      if (adj && struct[cur] === Struct.Door && cur !== start) {
+        // A doorway beside the goal is only a fallback: keep looking for a proper stand spot (g is final for `cur` once popped).
+        if (doorEnd < 0) doorEnd = cur;
+      } else return pathTo(cur);
     }
     for (const [dx, dy] of NEIGHBOURS) {
       const nx = cx + dx;
       const ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
       const ni = ny * width + nx;
-      if (closed[ni] || !walk(ni)) continue;
+      if (done[ni] === gen || !walk(ni)) continue;
       const diagonal = dx !== 0 && dy !== 0;
       if (diagonal && (!walk(cy * width + nx) || !walk(ny * width + cx))) continue;
       const step = (diagonal ? DIAG : ORTHO) * (isWalkable(struct[ni] as number) ? 1 : EXTERIOR_COST);
       const ng = (g[cur] as number) + step;
-      if (g[ni] !== -1 && ng >= (g[ni] as number)) continue;
+      const old = gOf(ni);
+      if (old !== -1 && ng >= old) continue;
       g[ni] = ng;
+      seen[ni] = gen;
       parent[ni] = cur;
       const h = heuristic(x0 + nx, y0 + ny);
       heap.push(ng + h, h, ni);
     }
   }
-  return null;
+  return doorEnd >= 0 ? pathTo(doorEnd) : null;
+}
+
+/**
+ * Working arrays of one grid size, reused across calls. `seen` / `done` hold the generation of the search that last set a tile's
+ * g / closed flag, so a new search needs no clearing (a tile not stamped with the current generation reads as unvisited).
+ */
+interface Scratch {
+  g: Int32Array;
+  parent: Int32Array;
+  seen: Int32Array;
+  done: Int32Array;
+  gen: number;
+}
+const SCRATCH = new Map<number, Scratch>();
+
+function scratchFor(size: number): Scratch {
+  let sc = SCRATCH.get(size);
+  if (!sc) SCRATCH.set(size, (sc = { g: new Int32Array(size), parent: new Int32Array(size), seen: new Int32Array(size), done: new Int32Array(size), gen: 0 }));
+  return sc;
+}
+
+function nextGen(sc: Scratch): number {
+  if (sc.gen >= 0x7fffffff) {
+    sc.seen.fill(0);
+    sc.done.fill(0);
+    sc.gen = 0;
+  }
+  return ++sc.gen;
 }
 
 /** Binary min-heap of (f, h, index) ordered lexicographically. */
