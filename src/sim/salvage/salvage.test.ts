@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ShipC } from '../combat/components';
 import { stampShip } from '../combat/ships';
 import { wreckShip } from '../combat/wreck';
+import { isPickupRegion } from '../ferry/pick';
+import { spillItems } from '../items/stacks';
+import { queueTransfer } from '../logistics/handlers';
 import { FerryC } from '../ferry/components';
 import { CrewC, DeadC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 import type { SimEvent } from '../events';
@@ -234,6 +237,18 @@ describe('wrecks of a fight', () => {
     expect(rejected(order(sim, w, ['tech']))).toBeUndefined();
     run(sim, 1200, {}, () => !sim.world.has(w, SalvageOrderC));
     expect(sim.world.query(ModuleC).map((m) => sim.world.get(m, ModuleC)!.def).sort()).toEqual(['bed', 'gun', 'reactor']);
+  });
+});
+
+describe('scrap on a combat wreck', () => {
+  it('is a valid pickup and transfer source (no ruin data needed)', () => {
+    const sim = new Sim(13, content);
+    const w = stampShip(sim, { name: 'Shot up', rows, modules: parts }, { faction: 'hostile', x: 0, y: 0, state: 'active' });
+    wreckShip(sim, w);
+    const home = stampShip(sim, { name: 'Home', rows, modules: parts }, { faction: 'player', x: 30, y: 0, state: 'active' });
+    spillItems(sim, w, 2, 2, 'item.scrap_hull', 5);
+    expect(isPickupRegion(sim, w)).toBe(true);
+    expect(typeof queueTransfer(sim, w, home, [{ item: 'item.scrap_hull', count: 5 }])).toBe('number');
   });
 });
 
