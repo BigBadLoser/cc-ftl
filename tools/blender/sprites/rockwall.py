@@ -37,12 +37,7 @@ def fine_grid():
 
 
 class Shell(W.Strip):
-    """The mortar shell: the dark cap, the joint floor under the footing's bricks; the bricks are the face. (Stone:
-    its footing's blocks run down to the floor, no upright foot.)"""
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.foot = 0.0
-
+    """The mortar shell: the dark cap, the joint floor under the footing's bricks; the bricks are the face."""
     def col_top(self, i, j, kind, x, y):
         return "swK"
 
@@ -201,7 +196,8 @@ def end_face(side, level="up", corners=0):
         u0, u1 = c / FINE, (c + 1) / FINE
         um = (u0 + u1) / 2
         sp = next((s for s in spans if s[0] <= um < s[1]), None)
-        zt = min(lo, sp[2]) if sp else min(lo, zs * max(0.0, 1.0 - min(max(a - um, um - b) for a, b, _ in spans) / run))
+        dd = min(max(a - um, um - b) for a, b, _ in spans)            # (out from the wall: the skirt, on its foot)
+        zt = min(lo, sp[2]) if sp else min(lo, W.foot() + (zs - W.foot()) * (1.0 - dd / run) if dd <= run else 0.0)
         if zt <= W.ZG + 1e-6:
             continue
         polyg(k, [_pt(ax, 0.5, u - 0.5, z, 0.0) for u, z in ((u0, W.ZG), (u1, W.ZG), (u1, zt), (u0, zt))], "rkD", out)

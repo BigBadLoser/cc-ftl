@@ -419,6 +419,8 @@ class Strip(Spec):
         return A.wall_skirt(kind, s, d, run, True)
 
     def col_face(self, face, x, y, z):
+        if z < self.foot - 1e-6:                        # the skirt's upright foot: the skirt's mid tone
+            return A.ramp("blue" if self._dist(x, y)[1][1] == "hull" else "wall", face)["M"]
         e = 0.5 / GN
         r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
         s = x + 0.5 if face == "y" else 0.5 - y

@@ -125,3 +125,31 @@ class Faction(Look):
 
 def _style(face, **kw):
     return Style(wall=face(False), hull=face(True), shade=0, **kw)   # (the +x faces only a step darker)
+
+
+def _plain_face(hull):
+    """The default walls' faces (wall3d.wall_face / hull_face) with the looks' free ends: a wall's end face is its
+    section only, and the faces beside it stop square there."""
+    from .parts import body
+    from .shell import _end_section, _ends
+
+    def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
+        F = body(hull)
+        endf, end1, _, back = _ends(ax, plane, b, ends)
+        if endf:
+            _end_section(k, ax, plane, a, b, zs, top - 0.03, F)
+            return
+        pe = ("in" if back else ends[0], "in" if end1 else ends[1])
+        (T.hull_face if hull else T.wall_face)(k, ax, plane, a, b, pe, zs, top, full, *((variant,) if hull else ()))
+    return face
+
+
+_PLAIN = []
+
+
+def plain_relief():
+    """The default walls' relief (Style): their own faces and grid skirt, with the looks' square free ends."""
+    if not _PLAIN:
+        from .shell import FreeEnds, LookShell
+        _PLAIN.append(Style(wall=_plain_face(False), hull=_plain_face(True), shell=LookShell, features=(FreeEnds(),)))
+    return _PLAIN[0]

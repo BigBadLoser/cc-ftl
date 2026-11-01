@@ -571,6 +571,9 @@ class Shell(W.Strip):
         r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
         R = RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0]
         top = r[3] if r else self.top
+        if z < self.foot - 1e-6:                        # the skirt's upright foot (under the plates' toes): a plate
+            R = RAMPS["blue" if self._dist(x, y)[1][1] == "hull" else "wall"][1 if face == "x" else 0]
+            return R[2]                                 # tone, not the joints' black
         return R[0] if z < self.zs + 0.02 or z > top - 0.03 or face == "x" else R[1]
 
 
