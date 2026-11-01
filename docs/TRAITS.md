@@ -57,14 +57,14 @@ Final gunnery 3, piloting 1, total 4. No label.
 
 ## 3. XP from routine work
 
-All skill XP today comes from story effects (`story/effects.ts`, `skillXp`) and shady recruits (`galaxy/recruit.ts`). Routine
-work adds most XP from now on, in proportion to the work done, not the number of jobs.
+Built in #251. Routine work gives most XP, in proportion to the work done, not the number of jobs; story `skillXp`
+effects and shady recruits (`galaxy/recruit.ts`) go through the same helper.
 
 | Rule | Value |
 |---|---|
 | Unit | 1 XP = 1 work-second at workSpeed 1, i.e. progress points / 20. Faster workers learn faster because they do more work. |
-| Grant | One helper, `grantXp(sim, id, skill, xp)` (new, `src/sim/crew/xp.ts`, a module function like `stat`, not a system), called where the work is done. Gifted multiplies here. |
-| Curve | Level n costs `100 × n²` XP: +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500 (cap). In work time at full speed: 2 min, 8 min, 23 min, 50 min, 92 min of that skill's work. |
+| Grant | One helper, `grantXp(sim, id, skill, xp)` (`src/sim/crew/xp.ts`, a module function like `stat`, not a system), called where the work is done. Gifted multiplies here. Only the player's side learns (`AllegianceC.faction === 'player'`, recruits and robots included): hostile and NPC crew keep the skills their generator gave them. Letting the raider's crew level mid-fight flipped the starter-vs-raider balance test. |
+| Curve | Level n costs `100 × n²` XP on top of the levels before it (`crew/xpCurve.ts`): +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500 (cap). In work time at full speed: 2 min, 8 min, 23 min, 50 min, 92 min of that skill's work. |
 | To the stat | `xpSkillModifiers` adds `levelsFor(xp)` (largest n whose total cost ≤ xp, max 5) instead of `floor(xp / 100)`. Integer levels only. |
 | Specialists stay distinct | XP levels stack on the rolled base and the cost depends on XP levels earned, not on the skill's total, so a rolled 4 and a rolled 1 climb at the same rate and the gap stays. Crew mostly earn XP in their own role's work, so the role gap widens. +5 takes about 90 min of focused work, so it's rare. |
 
@@ -72,22 +72,23 @@ Where XP is granted:
 
 | Work | Skill | Granted in | Amount |
 |---|---|---|---|
-| build, module, deconstruct, moduleDecon, repair, extinguish, forceDoor, mend, salvage, assemble | repair | `crew/jobWork.ts` `progress()` (the one place job progress accrues, called from `ai/work.ts`) | progress added / 20 |
-| research | science | same (`research` jobs go through `performJob`) | progress / 20 |
-| hack | hacking | same | progress / 20 |
-| Helm, while it matters (combat evade, FTL charge, mining pilot) | piloting | `systems/helm.ts`, `ftl/order.ts`, `mining/pilot.ts` | 1 per second |
+| build, module, deconstruct, moduleDecon, repair, extinguish, forceDoor, mend, salvage, assemble | repair | `performJob` (a job-kind → skill map) | workSpeed / 20 per working tick (nothing while the job waits) |
+| research | science | same | same |
+| hack | hacking | same | same |
+| Helm, while it matters: the sector is in combat or the FTL drive is still charging | piloting | `systems/helm.ts` | 1 per second |
+| Mining pod in flight | piloting | `systems/mining.ts` | 1 per second |
 | Weapon console while a weapon charges | gunnery | `systems/weaponCharge.ts` | 1 per second |
 | Shield console while shields recharge | shielding | `systems/shields.ts` | 1 per second |
-| Bed healing | medicine | `systems/vitals.ts`, to the crew member whose medicine was used | 2 per hp healed |
-| Hand weapons | gunnery / melee | `fight/weapons.ts` | 1 per 4 damage dealt |
+| Bed healing | medicine | `systems/vitals.ts`, to the best medic aboard (ties, including all at 0, to the lowest id among standing allies, so a crew with no medic can learn) | 2 per hp healed |
+| Hand weapons, egg sacs included | gunnery / melee | `fight/fighter.ts` | 1 per 4 damage dealt |
 | Crafting, hauling | none | — | — |
 
-A console in peacetime grants nothing: sitting at the helm isn't work. Medicine counts the best medic aboard
+A console in peacetime grants nothing: sitting at the helm isn't work (a drafted pilot at a full drive earns nothing).
+"In combat" is the sector-wide flag: there is no per-ship hostile check yet. Medicine counts the best medic aboard
 (`vitals.ts` doesn't need the medic present today); that stays the same until a tend job exists.
 
 Existing numbers: story `skillXp` amounts are worth fewer levels late on (accepted: they're bonuses). Shady recruits
-get `xpForLevels(shady)` instead of `shady × XP_PER_LEVEL`. Saved `SkillXpC` values would map to fewer levels. A
-migration is cheap (old levels → `xpForLevels`), so the user decides between that and a `SAVE_VERSION` bump.
+get `xpForLevels(shady)`. The user chose a `SAVE_VERSION` bump (73) over a migration.
 
 ## 4. Traits
 
@@ -305,4 +306,4 @@ Size **M** buy-only; **L** with the still and its art.
 | 7 | Addictions; Drinker, Stim-hooked rollable | M/L | |
 
 Save: `RolledSkillsC`, `TraitsC`, `FearC`, `RelationsC`, `AddictionC` are new optional components; old saves load with
-role skills and no traits. Step 4 changes what `SkillXpC` means (migration or `SAVE_VERSION`, user's call).
+role skills and no traits. Step 4 changed what `SkillXpC` means (`SAVE_VERSION` 73, no migration).
