@@ -9,6 +9,8 @@ import { buildJobs } from './jobsSnapshot';
 import { buildStranded } from './strandedSnapshot';
 import { buildGoals } from './goalsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
+import { buildCrewDetail } from './crewDetail';
+import type { UiCrewDetail } from '../ui/crewDetailApi';
 import { buildCombat } from './combatSnapshot';
 import { buildBoarding } from './boardingSnapshot';
 import { buildFtl } from './ftlSnapshot';
@@ -76,6 +78,8 @@ export interface Bridge {
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
   hostiles: Readable<UiCrew[]>;
+  /** The inspector's detail tabs for the one selected crew member of the player's (null otherwise). */
+  crewDetail: Readable<UiCrewDetail | null>;
   modules: Readable<UiModule[]>;
   /** The build menu's modules; rebuilt when a blueprint is learnt. */
   moduleDefs: Readable<UiModuleDef[]>;
@@ -143,6 +147,8 @@ export function createBridge(sim: Sim): Bridge {
   const crew = createStore<UiCrew[]>([]);
   const hostiles = createStore<UiCrew[]>([]);
   let lastHostiles = '';
+  const crewDetail = createStore<UiCrewDetail | null>(null);
+  let lastDetail = 'null';
   const modules = createStore<UiModule[]>([]);
   const moduleDefs = createStore<UiModuleDef[]>(buildModuleDefs(sim));
   let lastBlueprints = sim.story.blueprints.join(',');
@@ -244,6 +250,12 @@ export function createBridge(sim: Sim): Bridge {
     if (hk !== lastHostiles) {
       lastHostiles = hk;
       hostiles.set(lists.hostiles);
+    }
+    const detail = watched !== null && (lists.crew.some((c) => c.id === watched) || lists.hostiles.some((c) => c.id === watched)) ? buildCrewDetail(sim, watched) : null;
+    const dk = JSON.stringify(detail);
+    if (dk !== lastDetail) {
+      lastDetail = dk;
+      crewDetail.set(detail);
     }
   };
   const refreshShip = () => {
@@ -444,6 +456,7 @@ export function createBridge(sim: Sim): Bridge {
     inspect,
     crew,
     hostiles,
+    crewDetail,
     modules,
     moduleDefs,
     sites,

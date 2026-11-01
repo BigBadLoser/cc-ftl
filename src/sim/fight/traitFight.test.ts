@@ -8,7 +8,7 @@ import { Sim } from '../sim';
 import { CREW_MAX_HP } from '../tuning';
 import { AllegianceC, EquipC, FighterC, SurrenderedC } from './components';
 
-const trait = (o: Partial<TraitDef>): TraitDef => ({ name: 'T', flavour: '', kind: 'behaviour', effect: '', weight: 5, rollable: true, ...o });
+const trait = (o: Partial<TraitDef>): TraitDef => ({ name: 'T', flavour: '', kind: 'behaviour', effect: '', short: '', weight: 5, rollable: true, ...o });
 const content: ContentRegistry = {
   ships: {},
   roles: { 'role.civ': { name: 'Civ', priorities: {} as Priorities } },

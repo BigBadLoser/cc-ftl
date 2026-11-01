@@ -30,6 +30,7 @@ import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERS
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
+import { inspectorScenario } from './app/inspectorScenario';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
 import { isTypingTarget, modalOpen } from './ui/keys';
@@ -296,6 +297,14 @@ function startScenario(): void {
     loop.setSpeed(1);
     return;
   }
+  if (scenario === 'inspector') {
+    // `?scenario=inspector`: a crew member with traits, XP, a rifle and a mixed mood, selected (app/inspectorScenario.ts).
+    const set = inspectorScenario(sim);
+    for (const cmd of set.commands) bridge.dispatch(cmd);
+    if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 300);
+    loop.setSpeed(1);
+    return;
+  }
   if (scenario === 'damage') {
     loop.setSpeed(1);
     // Rooms exist after the first ticks: set the scene then. Crew answer the fire and the breach on their own.
@@ -370,6 +379,7 @@ const api: UiApi = {
   errors: errorLog.errors,
   crew: bridge.crew,
   hostiles: bridge.hostiles,
+  crewDetail: bridge.crewDetail,
   focusCrew: controller.focusCrew,
   attack: controller.attack,
   selectedCrew: controller.selectedCrew,

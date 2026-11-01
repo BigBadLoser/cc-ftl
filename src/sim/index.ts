@@ -28,7 +28,7 @@ export { runSummary, type RunSummary } from './runSummary';
 export { Struct, SHIP_FIELDS, isWalkable, isEvaWalkable, writeStruct, type StructKind } from './structure';
 export * from './crew/components';
 export { findPath, type Tile, type PathGoal } from './crew/pathfind';
-export { stat, modifierSources, type Modifier, type ModifierSource, type StatName } from './stats';
+export { stat, statBase, statBreakdown, modifierSources, type Modifier, type ModifierOrigin, type ModifierSource, type StatBreakdown, type StatName } from './stats';
 export * from './items/components';
 export { storageSpace, storageCount, storageAdd, storageTake } from './items/storage';
 export { stackAt, stackSizeOf } from './items/stacks';
