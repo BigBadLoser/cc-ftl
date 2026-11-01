@@ -94,9 +94,9 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
         t.spr.tint = mulColor(lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
-        // A stowed hatch or an opening one is flat on the roof but its rim reaches into the next diagonal row, whose roof
-        // plating sorts at +1.9: it goes one row up so the rim covers the plating's grid lines (#260).
-        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + (out ? 0.93 : 1.95);
+        // A stowed or opening hatch on a roofed ship is flat on the roof, but its rim reaches two diagonal rows past the bay's
+        // front tile, whose roof plating sorts at +1.9 and +2.9: it sorts above both so the grid lines stop at the rim (#260).
+        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + (roofed && !out ? 2.95 : 0.93);
         if (art.fallback && out) {
           while (t.barrel.length < BARREL_AT.length) {
             const dot = new Sprite();
