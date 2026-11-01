@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES, findPath, homeShip, newGame, shipGrid, type Job, type Priorities, type Sim } from '../../sim';
+import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES, findPath, homeShip, newGame, shipGrid, type Job, type Priorities, type Sim } from '../../sim';
 import { admitLevel, pairCost, repairUrgency } from '../../sim/ai/jobRank';
 import { astar, dijkstraFrom } from '../../sim/ai/navSearch';
 import { goalTiles, indexOf, isFallbackStop, reaches, startLabels, viewOf } from '../../sim/ai/navView';
@@ -8,6 +8,9 @@ import { abortTask } from '../../sim/ai/task';
 import { jobGoal, origin } from '../../sim/crew/helpers';
 import type { PathOpts, Tile } from '../../sim/crew/pathfind';
 import { findSuitSource } from '../../sim/eva/errands';
+import { airlockSuits } from '../../sim/eva/suit';
+import { AirlockC } from '../../sim/modules/airlock';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
 import { planSiteWalk } from '../../sim/eva/route';
 import { destroyJob } from '../../sim/items/stacks';
 import { shipIdOf } from '../../sim/regions';
@@ -251,6 +254,52 @@ describe('crew scheduler: matching', () => {
   });
 });
 
+describe('crew scheduler: suits', () => {
+  it('books suits as matches are accepted: an airlock is never promised more suits than it holds, the next one is used instead', () => {
+    const { sim, ship, crew, floor } = board(3);
+    const g = shipGrid(sim, ship)!;
+    const [near] = [...sim.world.query(AirlockC)] as [number];
+    sim.world.get(near, AirlockC)!.suits = 1;
+    // A second airlock with its full stock, as far from the first as it can be placed (the starter is packed: clear the modules of its
+    // far corner first).
+    const at = sim.world.get(near, ModuleC)!;
+    for (const m of [...sim.world.query(ModuleC)]) {
+      const mod = sim.world.get(m, ModuleC)!;
+      if (m !== near && Math.abs(mod.x - at.x) > 12 && shipIdOf(sim, mod) === ship) removeModule(sim, m);
+    }
+    let best: { x: number; y: number; rot: number; d: number } | null = null;
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) for (const rot of [0, 1, 2, 3]) {
+      const d = Math.abs(x - at.x) + Math.abs(y - at.y);
+      if ((!best || d > best.d) && placementError(sim, ship, 'module.airlock', x, y, rot) === null) best = { x, y, rot, d };
+    }
+    expect(best).not.toBeNull();
+    const far = spawnModule(sim, 'module.airlock', best!.x, best!.y, best!.rot);
+    expect(airlockSuits(sim, far)).toBeGreaterThanOrEqual(2);
+    // Sites out on the hull: reachable only in a suit. Crew are moved next to the one-suit airlock, so it is everyone's nearest.
+    const from = floor.sort((p, q) => Math.abs(p.x - at.x) + Math.abs(p.y - at.y) - (Math.abs(q.x - at.x) + Math.abs(q.y - at.y)));
+    const team = crew.filter((c) => sim.world.get(c, CrewC)!.species !== 'species.robot').slice(0, 3);
+    expect(team.length).toBe(3);
+    team.forEach((c, i) => {
+      const t = from[i]!;
+      sim.world.add(c, PositionC, { x: t.x, y: t.y, toX: t.x, toY: t.y, progress: 0, facing: 0 });
+      sim.world.add(c, PrioritiesC, { ...all(0), construction: 1 });
+    });
+    const sites: Tile[] = [];
+    for (let y = g.y0; y < g.y0 + g.height && sites.length < 3; y++) for (let x = g.x0; x < g.x0 + g.width && sites.length < 3; x++) {
+      const goal = { x, y, adjacent: true };
+      if (g.get('struct', x, y) === Struct.Space && !findPath(sim, ship, from[0]!, goal, {}) && findPath(sim, ship, from[0]!, goal, { suited: true })) sites.push({ x, y });
+    }
+    expect(sites.length).toBe(3);
+    for (const t of sites) postJob(sim, t);
+    sim.sector.sched = undefined;
+    assignJobs(sim, team);
+    const errands = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).filter((j) => j.kind === 'suitUp');
+    expect(errands.filter((j) => j.target === near).length).toBe(1);
+    expect(errands.filter((j) => j.target === far).length).toBe(2);
+    expect(team.every((c) => sim.world.has(c, AssignmentC))).toBe(true);
+  });
+});
+
 describe('crew scheduler: pass gate', () => {
   it('skips a pass whose inputs did not change, runs on a new job at once and on the cadence regardless', () => {
     const { sim, ship, crew, floor } = board(2);
@@ -285,5 +334,39 @@ describe('crew scheduler: pass gate', () => {
     sim.tick += 1;
     assignJobs(sim, free);
     expect(sim.sector.sched!.at).toBe(sim.tick);
+  });
+
+  it('wakes on thin air and on suit stock, and never holds back while an emergency is open', () => {
+    const { sim, ship, crew, floor } = board(2);
+    for (const c of crew) sim.world.add(c, PrioritiesC, { ...all(0), construction: 1 });
+    const g = shipGrid(sim, ship)!;
+    const t = floor[floor.length >> 1]!;
+    for (const [dx, dy] of NB) g.set('jam', t.x + dx, t.y + dy, DoorJam.Shut);
+    postJob(sim, t); // unreachable: every pass assigns nothing
+    sim.sector.sched = undefined;
+    assignJobs(sim, crew);
+    const ran = (): boolean => {
+      const before = sim.sector.sched;
+      sim.tick += 1;
+      assignJobs(sim, crew);
+      return sim.sector.sched !== before;
+    };
+    expect(ran()).toBe(false);
+    // A small oxygen change that stays breathable is no input; a tile going thin is.
+    const air = floor[0]!;
+    g.set('o2', air.x, air.y, (g.get('o2', air.x, air.y) as number) - 0.5);
+    expect(ran()).toBe(false);
+    g.set('o2', air.x, air.y, 0);
+    expect(ran()).toBe(true);
+    expect(ran()).toBe(false);
+    // A suit taken from the airlock.
+    const [lock] = [...sim.world.query(AirlockC)] as [number];
+    sim.world.get(lock, AirlockC)!.suits = airlockSuits(sim, lock) - 1;
+    expect(ran()).toBe(true);
+    expect(ran()).toBe(false);
+    // An open emergency (a fire nobody can reach): a pass every tick.
+    postJob(sim, t, { kind: 'extinguish', category: 'firefighting' });
+    expect(ran()).toBe(true);
+    expect(ran()).toBe(true);
   });
 });

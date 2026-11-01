@@ -214,6 +214,44 @@ describe('emergency arming: unarmed crew fetch weapons from storage when boarder
     expect(sim.world.get(medic, FighterC)?.mode).toBe('idle');
   });
 
+  it('a medic in the boarder\'s sight hides, and is not sent for a weapon while a rescue waits', { timeout: 60000 }, () => {
+    const sim = settle();
+    bare(sim);
+    storageAdd(sim, crate(sim), 'item.rifle', 1);
+    const grid = shipGrid(sim, ownShip(sim))!;
+    const [engineer, medic] = ['role.engineer', 'role.medic'].map((r) => player(sim).find((c) => roleOf(sim, c) === r)!) as [number, number];
+    sim.world.get(engineer, HealthC)!.hp = 0;
+    run(sim, 1);
+    expect(sim.world.has(engineer, DownedC)).toBe(true);
+    // The medic stands beside the patient (the nearest free crew member by far) and an unarmed, unkillable boarder stands in plain sight.
+    const pe = sim.world.get(engineer, PositionC)!;
+    const floor = (x: number, y: number): boolean => grid.get('struct', x, y) === Struct.Floor && !grid.get('module', x, y);
+    const nextTo = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: pe.x + dx!, y: pe.y + dy! })).find((t) => floor(t.x, t.y))!;
+    sim.world.add(medic, PositionC, { x: nextTo.x, y: nextTo.y, toX: nextTo.x, toY: nextTo.y, progress: 0, facing: 0 });
+    sim.world.add(medic, PathC, { steps: [] });
+    let spot: { x: number; y: number } | null = null;
+    for (let d = 3; d <= 6 && !spot; d++) {
+      for (const [dx, dy] of [[d, 0], [-d, 0], [0, d], [0, -d]] as const) {
+        const t = { x: nextTo.x + dx, y: nextTo.y + dy };
+        if (floor(t.x, t.y) && sightLine(sim, grid, t, nextTo).visible) { spot = t; break; }
+      }
+    }
+    expect(spot).not.toBeNull();
+    const [boarder] = land(sim, 1) as [number];
+    sim.world.remove(boarder, EquipC);
+    sim.world.get(boarder, HealthC)!.hp = 1e9;
+    sim.world.get(boarder, HealthC)!.max = 1e9;
+    let fled = false;
+    for (let i = 0; i < 20 * 3; i++) {
+      sim.world.add(boarder, PositionC, { x: spot!.x, y: spot!.y, toX: spot!.x, toY: spot!.y, progress: 0, facing: 0 });
+      sim.world.get(boarder, PathC)!.steps = [];
+      run(sim, 1);
+      fled ||= sim.world.get(medic, FighterC)?.mode === 'flee';
+      expect(sim.world.has(medic, EmergencyArmC) || sim.world.has(medic, EquipOrderC) || !!sim.world.get(medic, EquipC)?.weapon).toBe(false);
+    }
+    expect(fled).toBe(true);
+  });
+
   /** Arm volunteers against one boarder, then make the ship safe and run to just before they would put the weapon back. */
   function almostStandDown(): { sim: Sim; volunteers: number[]; storages: number[] } {
     const sim = settle();
