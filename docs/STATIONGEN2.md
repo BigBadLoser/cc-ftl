@@ -11,9 +11,26 @@ replacing its weakest algorithms one at a time. We don't write another independe
 bin and the visual baseline. Every step is compared with the step before it, and a step that makes layouts worse is
 reverted or redesigned, never compensated for with repair passes.
 
-Work branch: `stationgen/staged` (#234 head + the station bench). Each step here becomes its own PR. The room-level
+Work branch: `stationgen/staged` (#234 head + the station bench). Each step here becomes its own PR (see "How the work
+reaches `main`"). The room-level
 extractions E1 to E3 (#257–#259) were closed by the user (the ship results looked worse); #234's own room code stays on
 this branch, and room-level changes for ships are revisited separately if needed.
+
+## How the work reaches `main`
+
+`stationgen/staged` starts from unmerged #234, so step PRs can't target `main` directly without dragging in #234's whole
+diff. The path:
+
+1. **Baseline PR, #234 trimmed.** A branch from `main` carrying only the #234 code the staged generator stands on:
+   station structure and room code, the bench and tools. Left out: lamps and other new art (deferred), court floors and
+   the save bump, landmarks, `lamp_concepts.py`. **Ships stay on `main`'s behaviour.** The user rejected #234's room
+   changes on ships (E1–E3), so room-level changes are gated to stations (station recipes, plan options set by the
+   station plan only) and the ship tests are pinned. Reviewed as "#234's stations, as already seen", with labelled sheets.
+2. **Step PRs stack on the baseline.** Each step is a small PR whose base is the previous one, so it shows only its own
+   diff (step 2 deletes `swapRoles`, step 4 deletes the rim placement, and so on). They merge in order.
+3. **#234 is closed** once the baseline PR exists, with a link to it. `shipgen-stations-1` stays as the reference branch.
+
+Before any PR, the steps live on `stationgen/staged`. When the baseline PR is cut, the step commits are rebased onto it.
 
 ## Target stages
 
