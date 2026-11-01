@@ -32,7 +32,7 @@
   "dependencies": {
     "@tabler/icons": "3.49.0",
     "bits-ui": "2.20.1",
-    "pixi.js": "^8.9.2",
+    "pixi.js": "~8.9.2",
     "svelte": "^5.57.2"
   },
   "devDependencies": {

@@ -427,8 +427,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     rounding = on;
     const r = gl as unknown as { _roundPixels: number; renderPipes?: { sprite?: { _gpuSpriteHash?: Record<string, { roundPixels: number } | null> } } };
     r._roundPixels = on ? 1 : 0;
-    for (const b of Object.values(r.renderPipes?.sprite?._gpuSpriteHash ?? {})) if (b) b.roundPixels = on ? 1 : 0;
+    const hash = r.renderPipes?.sprite?._gpuSpriteHash;
+    if (!hash) {
+      if (!warnedPixi) console.warn('render: pixi.js no longer has renderPipes.sprite._gpuSpriteHash; sprite rounding cannot follow the zoom level (wall seams below zoom 1/2). Update setRounding in scene.ts.');
+      warnedPixi = true;
+      return;
+    }
+    for (const b of Object.values(hash)) if (b) b.roundPixels = on ? 1 : 0;
   }
+  let warnedPixi = false;
 
   // The combat inset: camera pass B over the same world stack, into a texture shown above the main pass.
   const inset = createInsetPass({ ship: shipOf, origin, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, ratio, place });
