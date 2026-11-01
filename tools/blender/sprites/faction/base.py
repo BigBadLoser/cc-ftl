@@ -32,16 +32,28 @@ OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045)}    # (its 
 TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18))}
 
 
+def _snap(h, l, s):
+    """The colour (HLS) on a centre of post.quantize's bins (8 a channel, centred at 8n + 4), so the quantiser keeps
+    it (not a near tone of another look's): of the 8 round it, the nearest in lightness, saturation and hue (a channel
+    rounded on its own can turn a dark blue green)."""
+    def err(c):
+        hh, ll, ss = colorsys.rgb_to_hls(*(v / 255 for v in c))
+        dh = (hh - h + 0.5) % 1.0 - 0.5
+        return (ll - l) ** 2 + 0.5 * (ss - s) ** 2 + (dh * 3 * s) ** 2
+    near = [sorted({min(252, max(4, (int(v * 255 - 4) // 8 + d) * 8 + 4)) for d in (0, 1)})
+            for v in colorsys.hls_to_rgb(h, l, s)]
+    return "#%02x%02x%02x" % min(((r, g, b) for r in near[0] for g in near[1] for b in near[2]), key=err)
+
+
 def _tinted(ramp_, tint):
-    """A ramp's steps ({name: hex}) at the hue and saturation tint gives their lightness, each on a centre of
-    post.quantize's bins (8 a channel, centred at 8n + 4): the quantiser keeps it, not a near tone of another's."""
+    """A ramp's steps ({name: hex}) at the hue and saturation tint gives their lightness, each on a bin centre
+    (_snap)."""
     (l0, h0, s0), (l1, h1, s1) = tint
     out = {}
     for k, hexc in ramp_.items():
-        h, l, s = colorsys.rgb_to_hls(*(int(hexc[i:i + 2], 16) / 255 for i in (1, 3, 5)))
+        _, l, _ = colorsys.rgb_to_hls(*(int(hexc[i:i + 2], 16) / 255 for i in (1, 3, 5)))
         t = min(1.0, max(0.0, (l - l0) / (l1 - l0)))
-        rgb = colorsys.hls_to_rgb((h0 + (h1 - h0) * t) / 360, l, s0 + (s1 - s0) * t)
-        out[k] = "#%02x%02x%02x" % tuple(min(252, max(4, round((v * 255 - 4) / 8) * 8 + 4)) for v in rgb)
+        out[k] = _snap((h0 + (h1 - h0) * t) / 360, l, s0 + (s1 - s0) * t)
     return out
 
 
@@ -59,10 +71,11 @@ def palette_entries():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
             r = ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {}))
             out.update(_tinted(r, TINT[pre]) if pre in TINT else r)
-            if pre in OFFSETS and len(OFFSETS[pre]) > 7:         # (an extra step on a centre of the quantiser's
-                out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # bins: it keeps it, not a near tone of
-                                                                    # another look's, and anti-aliases)
-        out.update(ramp(f"{pre}F", b["floor"], offsets=(0.16, 0.1, 0.05, 0.0, -0.05, -0.1, -0.16)))
+            if pre in OFFSETS and len(OFFSETS[pre]) > 7 and pre not in TINT:   # (an extra step on a centre of
+                out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # the quantiser's bins: it keeps it, not a near
+                                                                    # tone of another look's, and anti-aliases)
+        r = ramp(f"{pre}F", b["floor"], offsets=(0.16, 0.1, 0.05, 0.0, -0.05, -0.1, -0.16))
+        out.update(_tinted(r, TINT[pre]) if pre in TINT else r)
     return out
 
 
