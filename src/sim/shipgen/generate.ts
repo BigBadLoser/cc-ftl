@@ -6,8 +6,9 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
-import { Layout } from './layout';
+import { splitCabins } from './rooms/cabins';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, planAisles, type RoomDraw } from './rooms';
+import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -97,21 +98,65 @@ function fitOut(
   const planned = new Map<string, number>();
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
+  // Rooms whose arrangement has a plan are laid out whole first (rooms/plans.ts, rooms/aisles.ts), their planned modules
+  // with it; a plan that does not fit leaves the room to its steps. Each plan's options come from the arrangement, then the
+  // room spec, then the faction's default: nothing here is tied to a faction or a kind of ship.
+  specs.forEach((spec, room) => {
+    const d = spec ? drawOf(room) : null;
+    if (!spec || !d?.arr.plan) return;
+    // The door approach is kept clear while the plan lays the room out; a plan that does not fit gives it back.
+    const kept = lay.roomTiles(room).map((i) => [i, lay.keep[i] as number] as const);
+    keepDoorApproach(lay, room);
+    const n = (id: string): number => spec.mods.filter((m) => m === id).length;
+    const plan = d.arr.plan;
+    if (plan.kind === 'berths') {
+      const style = plan.style ?? spec.berths ?? f.berths ?? 'apart';
+      d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style, lounge: !!plan.lounge });
+      if (d.planned) d.plannedDefs = new Set(['module.bed', 'module.lifeSupport']);
+    } else {
+      // A farm's planned beds are its row piece (at least that many); a hold's planned crates go in first.
+      const farm = plan.piece === 'module.hydroponics';
+      const got = planAisles(lay, rng, room, { piece: plan.piece, crates: n('module.storage'), fill: farm ? 0.6 : 0.7, min: n(plan.piece), gaps: !farm });
+      d.planned = !!got;
+      if (got) { d.plannedDefs = new Set(['module.storage', plan.piece]); for (const i of got) stockUp(i, spec); }
+    }
+    if (!d.planned) for (const [i, k] of kept) lay.keep[i] = k;
+  });
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     const d = drawOf(j.room);
+    if (d?.planned && d.plannedDefs?.has(j.def)) { placed[j.def] = (placed[j.def] ?? 0) + 1; continue; }
     const si = d ? specStep(d, j.def) : -1;
     const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
     const k = `${j.room} ${j.def}`;
     if (share !== undefined && (done.get(k) ?? 0) >= Math.max(1, Math.ceil((planned.get(k) ?? 0) * share))) { wanted[j.def] = (wanted[j.def] ?? 1) - 1; continue; }
     done.set(k, (done.get(k) ?? 0) + 1);
-    const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
+    const place = (): PlacedModule | null => (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
       ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
+    let pm = place();
+    let at = lay.modules.length - 1;
+    // A host that needs flush companions (a refinery's ore bins) goes in with its first one: a spot with no room for one
+    // is given up and the next best tried (marked keep-clear meanwhile), up to twenty spots; if every spot went, the host
+    // goes back to its best one without. Furnishing tops the companions up in turns.
+    const w = d && si >= 0 ? d.arr.steps[si]?.with : undefined;
+    if (pm && w) {
+      const banned: number[] = [];
+      for (let t = 0; t < 20 && pm && !claimCompanion(lay, rng, j.room, pm, w); t++) {
+        lay.pop();
+        const i = pm.y * lay.w + pm.x;
+        banned.push(i);
+        lay.keep[i] = (lay.keep[i] as number) + 1;
+        pm = place();
+        at = lay.modules.length - 1;
+      }
+      for (const i of banned) lay.keep[i] = (lay.keep[i] as number) - 1;
+      if (!pm) { pm = place(); at = lay.modules.length - 1; }
+    }
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
-    const idx = lay.modules.length - 1;
-    stockUp(idx, j.spec);
-    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
+    // The host, then any companion that went in with it.
+    for (let i = at; i < lay.modules.length; i++) stockUp(i, j.spec);
+    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(at);
   }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
@@ -277,12 +322,15 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
+  // Bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts): a room spec says so itself (`cabins`),
+  // else the faction's berths default decides (barracks rows keep bunk rooms). Metrics read the rooms as planned.
+  const cab = splitCabins(rows, roomOf, width, roles, specs, rng, (spec) => spec.cabins ?? (spec.berths ?? f.berths) !== 'rows');
+  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
   const dockTile = new Set(opened.tiles);
-  const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
+  const fitted = opened.merged > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
@@ -290,9 +338,9 @@ export function finishLayout(
   const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x), defs);
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);
-  const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
+  const rooms: GenRoom[] = cab.roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
+    template, rooms, roomOf: cab.roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }

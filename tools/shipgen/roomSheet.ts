@@ -24,12 +24,33 @@ const short = (id: string): string => id.replace('module.', '').replace('storage
 
 interface Pick { g: GenResult; seed: number; room: GenResult['rooms'][number] }
 
+/**
+ * Cabin blocks (role 'cabins'): each hallway with the one-bed quarters that open onto it through a door (rooms/cabins.ts),
+ * drawn as one room.
+ */
+function cabinBlocks(g: GenResult): GenResult['rooms'] {
+  const W = g.width;
+  const out: GenResult['rooms'] = [];
+  for (const hall of g.rooms.filter((r) => r.role === 'hall' && r.tiles.length > 0)) {
+    const cabins = new Set<number>();
+    for (const i of hall.tiles) for (const d of [1, -1, W, -W]) {
+      if (g.template.rows[Math.floor((i + d) / W)]?.[(i + d) % W] !== 'D') continue;
+      const j = i + 2 * d;
+      const r = g.roomOf[j] ?? -1;
+      if (r >= 0 && g.rooms[r]?.role === 'quarters') cabins.add(r);
+    }
+    if (cabins.size < 2 || hall.tiles.length > 80) continue; // a cabin block, not a main corridor
+    out.push({ id: hall.id, role: 'quarters', tiles: [...hall.tiles, ...[...cabins].flatMap((c) => g.rooms[c]?.tiles ?? [])] });
+  }
+  return out;
+}
+
 /** Up to `count` rooms of `role` from seeds `from`.., at most `perSeed` from one layout (largest first). */
 function pickRooms(spec: string, role: RoomRole, from: number, count: number, depth: number, perSeed: number): Pick[] {
   const out: Pick[] = [];
   for (let seed = from; out.length < count && seed < from + count * 4; seed++) {
     const g = gen(spec, seed, depth);
-    const mine = g.rooms.filter((r) => r.role === role && r.tiles.length > 0).sort((a, b) => b.tiles.length - a.tiles.length);
+    const mine = (role === ('cabins' as RoomRole) ? cabinBlocks(g) : g.rooms.filter((r) => r.role === role && r.tiles.length > 0)).sort((a, b) => b.tiles.length - a.tiles.length);
     for (const room of mine.slice(0, perSeed)) if (out.length < count) out.push({ g, seed, room });
   }
   return out;

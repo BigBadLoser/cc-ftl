@@ -1,5 +1,6 @@
 import type { Rng } from '../rng';
 import type { ModuleDef } from '../registry';
+import type { BerthStyle } from './rooms/plans';
 import type { FactionDef, HullFamilyDef, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted } from './types';
 
 /** min(max, floor(base + perDepth * depth)). */
@@ -45,6 +46,10 @@ export interface RoomSpec {
   vehicle?: boolean;
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
+  /** Quarters: how the beds are laid out (rooms/plans.ts). Unset: the faction's default (`FactionDef.berths`), else 'apart'. */
+  berths?: BerthStyle;
+  /** Quarters: divide off one-bed cabins (rooms/cabins.ts) or keep a bunk room. Unset: cabins unless the berths are rows. */
+  cabins?: boolean;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
   items?: readonly { item: string; min: number; max: number }[];
 }
