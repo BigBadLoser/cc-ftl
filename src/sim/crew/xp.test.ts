@@ -107,6 +107,10 @@ describe('grantXp', () => {
     expect(xpOf(sim, bot, 'repair')).toBe(500);
     expect(stat(sim, bot, 'repair')).toBe(before + levelsFor(500));
     grantXp(sim, 9999, 'repair', 500); // not crew at all
+    const raider = person(sim, speciesOf.human);
+    sim.world.get(raider, AllegianceC)!.faction = 'hostile';
+    grantXp(sim, raider, 'repair', 500);
+    expect(sim.world.get(raider, SkillXpC)).toBeUndefined(); // only the player's side learns
   });
 
   it('takes a penalty as is and never goes below 0', () => {
