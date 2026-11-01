@@ -42,7 +42,6 @@ export async function startStage(canvas: HTMLCanvasElement, ship: string, seed =
   let at = { x: 0, y: 0 };
   const frame = (): void => {
     r.frameShips([homeShip(sim)]);
-    r.zoomAt(0.01, innerWidth / 2, innerHeight / 2); // one level out from the fit: room around the ship
     r.pan(innerWidth * SHIFT, 0);
     at = { x: 0, y: 0 };
   };
