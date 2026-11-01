@@ -69,9 +69,11 @@
   }
   /** The Esc menu: the game pauses while it is open and goes back to its speed on close (as the bug report). */
   let menuOpen = $state(false);
+  let menuStart = $state<'save' | undefined>(undefined);
   let speedBeforeMenu: 1 | 2 | 3 | null = null;
-  function openMenu() {
+  function openMenu(start?: 'save') {
     if (menuOpen) return;
+    menuStart = start;
     const s = snap?.speed ?? 0;
     speedBeforeMenu = s === 0 ? null : s;
     api.setSpeed(0);
@@ -344,7 +346,7 @@
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <LessonHost {api} busy={reporting || menuOpen} />
-{#if menuOpen}<EscMenu {api} onClose={closeMenu} />{/if}
+{#if menuOpen}<EscMenu {api} start={menuStart} onClose={closeMenu} />{/if}
 <ErrorOverlay {api} />
 <GameSession {api} />
 
@@ -359,7 +361,7 @@
     <JobsTracker {api} onOpen={() => (jobsOpen = true)} />{/if}
   </div>
   <StrandedBanner {api} />
-  <AlertList {api} onNode={openNode} />
+  <AlertList {api} onNode={openNode} onMenu={openMenu} />
 </div>
 
 <style>

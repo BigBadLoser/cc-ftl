@@ -12,10 +12,10 @@
    * The Esc menu (DESIGN.md, UI soft rule 6): resume, save, load, new game, controls and settings, as pages with a back button. The App
    * pauses the game while it is open. Esc closes it from any page (not rebindable); while it is open the game's own keys stand aside.
    */
-  let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
+  let { api, onClose, start }: { api: UiApi; onClose: () => void; start?: 'save' } = $props();
 
   type Page = 'main' | 'save' | 'load' | 'controls' | 'settings' | 'newGame';
-  let page = $state<Page>('main');
+  let page = $state<Page>(start ?? 'main');
   /** The Controls page is waiting for a key: it takes Esc too (to cancel the rebind). */
   let capturing = $state(false);
   // A new page: focus its Back button (the button that opened it is gone), so the keyboard stays in the menu.

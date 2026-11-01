@@ -156,6 +156,39 @@ describe('save failures and recovery', () => {
     expect(await saveStore.read('broken')).toBe(old);
   });
 
+  it('reports a write the browser aborts after it started (quota hit mid-transaction), and keeps the last good save', async () => {
+    browser();
+    await saveStore.ready();
+    const sim = newGame(3, content);
+    expect(await writeSave(sim)).toBe(true);
+    const good = await saveStore.read('auto');
+    const real = IDBDatabase.prototype.transaction;
+    vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, ...a: Parameters<typeof real>) {
+      const tx = real.apply(this, a);
+      if (a[1] === 'readwrite') queueMicrotask(() => tx.abort());
+      return tx;
+    });
+    sim.tick = 50;
+    expect(await writeSave(sim)).toBe(false);
+    expect(await writePrecombat(sim)).toBe(false);
+    expect(await saveStore.read('auto')).toBe(good);
+  });
+
+  it('saves and reloads a campaign with many visited nodes through the store', async () => {
+    browser();
+    await saveStore.ready();
+    const sim = newGame(5, content);
+    const base = sim.archives[0] ?? { node: 'n', tick: 1, width: 8, height: 8, grid: sim.sector.grid.serialize(), entities: [] };
+    for (let i = 0; i < 150; i++) sim.archives.push({ ...base, node: `n${i}`, tick: i });
+    const size = serialize(sim).length;
+    expect(size).toBeLessThan(40_000_000); // measured: about 100 KB for the game plus ~85 KB per archived start sector
+    expect(await writeSave(sim)).toBe(true);
+    expect(await writeSave(sim, 'slot1', 'Big')).toBe(true);
+    const start = await startGame(null);
+    expect(start.notice).toBeNull();
+    expect(start.sim.archives.map((x) => x.node)).toEqual(sim.archives.map((x) => x.node));
+  });
+
   it('round-trips a save with many archived sectors', () => {
     const sim = newGame(5, content);
     const base = sim.archives[0] ?? { node: 'n', tick: 1, width: 8, height: 8, grid: sim.sector.grid.serialize(), entities: [] };

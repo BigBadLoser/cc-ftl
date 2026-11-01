@@ -19,7 +19,7 @@ import type { CutawayMode } from './gridView';
 import { ART_SCALE, iso, TILE_H, TILE_W } from './iso';
 import { createParticles } from './fx/particles';
 import { createLayers } from './layers';
-import { initHalos } from './haloTex';
+import { initHalos, releaseHalos } from './haloTex';
 import { createWorldStack } from './worldLayers';
 import { regionOrigin, sectorArt, type Origin } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
@@ -723,6 +723,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       inset.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
+      atlas.dispose();
+      releaseHalos(gl);
       gl.destroy();
     },
   };
