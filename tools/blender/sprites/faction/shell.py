@@ -55,7 +55,7 @@ class LookShell(T.Shell):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.features = T.style().features
-        self.foot = T.style().foot
+        self.foot = T.W.foot()                          # (every look's: the walls' foot)
         if self.foot:                                   # (its toe on a cell line, where the upright foot is drawn)
             self.run = math.ceil(self.run * T.W.GN - 1e-6) / T.W.GN
         self.end_sides, self.holes, self.face_holes = [], [], []
@@ -117,7 +117,8 @@ class LookShell(T.Shell):
 
     # -- the ramp built as solids (Style.ramp_solid): one profile along each face, mitred where faces meet --
     def _zsurf(self, d):
-        return self.foot + (self.zs - self.foot) * (1.0 - d / self.run)
+        return max(self.foot, self.zs - d * T.W.GN * T.W.RAMP_PX / T.W.ZART)   # (the walls' fall a cell: over a
+                                                                                # foot it ends on a ledge)
 
     def _prof(self, d0, d1, top):
         """The ramp's section from d0 to d1 out (its slope down to the toe, the foot under that), its top cut down to
@@ -227,11 +228,11 @@ class LookShell(T.Shell):
     def _back_end(self, ax, plane, u, side):
         """How a back face ends at u (side -1: its low end): on into the next tile, at a wall's free end, round an
         outer corner, or short at an inner one (an arm off its side)."""
-        if abs(u) > 0.5 - 1e-6:
-            return "cont"
         sd = ("+" if side > 0 else "-") + ("x" if ax == "y" else "y")
         if any(s == sd and abs(p - u) < 1e-6 for s, p in self.end_sides):
             return "end"
+        if abs(u) > 0.5 - 1e-6:
+            return "cont"
         e = 1e-3
         q = (u + side * e, plane - e) if ax == "y" else (plane - e, u + side * e)
         return "in" if self._rect_at(*q, 0.0) is not None else "out"
@@ -266,9 +267,9 @@ class LookShell(T.Shell):
             fam = "blue" if r and r[1] == "hull" else "wall"
             R = T.RAMPS[fam][1 if ax == "x" else 0]
             pts, parts = self._prof(0.0, self.run, None)
-            pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)
             mt = {"cont": 0.0, "end": 0.0, "out": -1.0, "in": 1.0}
             lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
+            pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)
             endc = self._end_tone(fam, "x" if ax == "y" else "y")
             cols = [False if q in ("bottom", "back") else R[0] for q in parts]
             prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=cols,
@@ -323,7 +324,21 @@ class FreeEnds(Feature):
     """A partition's free ends ("+x" | "-x" | "+y" | "-y", plane: a free side with an arm opposite and none beside
     it), where the wall stops square: no ramp past it (skip_skirt), the ramps beside it cut square (wall3d.skirt reads
     is_end) and no ramp across its end face (end_face)."""
+    STUB = {1: "+y", 4: "-y", 8: "+x", 2: "-x"}         # a stub (one arm): the side opposite its arm
+
     def setup(self, sp):
+        sd = self.STUB.get(sp.mask) if sp.fam == "wall" and sp.rects and sp.rects[0][1] == "wall" else None
+        if sd:                                          # a stub runs on to its tile's edge (it ended at the post,
+            x0, x1, y0, y1 = sp.rects[0][0]             # short of a tile) and stops square there
+            e = 0.5 if sd[0] == "+" else -0.5
+            box = {"+y": (x0, x1, y1, e), "-y": (x0, x1, e, y0), "+x": (x1, e, y0, y1), "-x": (e, x0, y0, y1)}[sd]
+            sp.rects.append((box, "wall", sp.rects[0][2], sp.rects[0][3]))
+            sp.end_sides.append((sd, e))
+            if sd == "+y":                              # (its end face on the tile's edge: walls.emit draws it)
+                sp.open_y = True
+            elif sd == "+x":
+                sp.open_x = True
+            return
         for r in sp.rects:
             x0, x1, y0, y1 = r[0]
             pl = {"+x": x1, "-x": x0, "+y": y1, "-y": y0}
@@ -455,8 +470,11 @@ def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None):
     sh = T.SHELL
     run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
     sec = [(a - run, 0.0035), (b + run, 0.0035), (b + run, ft), (b, zs), (a, zs), (a - run, ft)]
-    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in (sec if ft > 0.0035 else sec[:2] + sec[3:5])], F, 2, T.OUT(ax),
-           fixed=col)
+    sec = sec if ft > 0.0035 else sec[:2] + sec[3:5]
+    if ft > 0.0035:                                     # (over a foot the slope ends on a ledge, as the ramps')
+        dl = min(run, (zs - ft) / (T.W.GN * T.W.RAMP_PX / T.W.ZART))
+        sec = sec[:3] + [(b + dl, ft)] + sec[3:5] + [(a - dl, ft)] + sec[5:]
+    k.poly([T.P(ax, plane, u, z, 0.0) for u, z in sec], F, 2, T.OUT(ax), fixed=col)
     if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],

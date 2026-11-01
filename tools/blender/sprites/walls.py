@@ -1,9 +1,9 @@
 """Wall and hull blocks (grid frame, origin = tile centre at floor level). Surface colours: wallart.py.
 
-Profile (after Space Haven, measured): a vertical wall with a flat cap stands on a straight sloped SKIRT (rise SKIRT * HF
-at 55 degrees). A partition is a TW band set back from the tile's far edges (-x, -y: away from the camera, which sees +x,
-+y and the tops) by wall_back(), with an arm to every connected side; its front skirt toe reaches the tile's near edge,
-and a back skirt stays hidden behind it. The far hull is a thicker strip along the far edges whose skirt also reaches the
+Profile (after Space Haven, on the pixel grid): a vertical wall with a flat cap stands on a straight sloped skirt (RAMP_PX
+art px a cell over RAMP_CELLS: about 58 degrees, 22 px). A partition is a TW band set back from the tile's far edges (-x,
+-y: away from the camera, which sees +x, +y and the tops) by wall_back(), with an arm to every connected side; its front
+skirt toe reaches the tile's near edge, and a back skirt behind it reaches the far edge. The far hull is a thicker strip along the far edges whose skirt also reaches the
 near edge; an arm off a straight hull run is a partition. Skirts are mitred at corners and ends (L-inf distance).
 
 View levels (LEVELS): up = everything full height; cut = partitions cut CUT above the skirt (black cut cap), the rear
@@ -24,8 +24,6 @@ GN = 32
 # derived from HF when a piece is built, so HF stays the single height knob.
 HF = 1.85          # interior wall height (chosen by the user)
 ROOF_T = 0.2       # roof slab thickness
-SKIRT = 0.30       # skirt rise as a fraction of HF (Space Haven: about 0.3 of the wall), the same in every view level
-SLOPE = math.tan(math.radians(55))   # skirt rise / run (Space Haven: 55 degrees)
 CUT = 0.2          # cutaway: the wall face kept above the skirt
 T = TW = 10 / 32   # partition thickness (Space Haven: cap 19-22 px on a 64 px tile, minus a 2 px outline: ~0.30)
 ZG = 0.30          # ghost hull: front rim top AND rear crest height (one value, so they meet flush at corners)
@@ -46,12 +44,25 @@ def hull_top():
     return HF + ROOF_T
 
 
+# The skirt (ramp) on the pixel grid: it falls RAMP_PX art px a cell over RAMP_CELLS cells onto an upright FOOT_PX foot,
+# so its edges step evenly on screen (3 rows to 2 px across a wall's end: no odd steps), and the two skirts and the TW
+# wall centred between them fill the tile exactly (the back skirt's foot on the far edge, the front's on the near).
+RAMP_PX = 2
+RAMP_CELLS = (GN - round(TW * GN)) // 2            # (11: the TW wall centred, both toes on the edges)
+FOOT_PX = 4                                       # every skirt ends in an upright foot this high
+ZART = 64 / math.sqrt(2) * math.cos(math.radians(30))   # art px a unit of height (the 64 px baseline's)
+
+
+def foot():
+    return FOOT_PX / ZART
+
+
 def skirt_top(level="up"):
-    return SKIRT * HF
+    return (RAMP_CELLS * RAMP_PX + FOOT_PX) / ZART
 
 
 def skirt_run(level="up"):
-    return skirt_top() / SLOPE
+    return RAMP_CELLS / GN
 
 
 def hull_thick():
@@ -323,7 +334,7 @@ class Strip(Spec):
         self.mask, self.fam, self.level, self.variant, self.corners = mask, fam, level, variant, corners
         self.full = level == "up"
         t, self.top, self.zs = profile(fam, level)
-        self.run = skirt_run()
+        self.run, self.foot = skirt_run(), foot()
         p0 = -0.5 + wall_back()
         p1 = p0 + TW
         wt = wall_top("wall", level)
@@ -386,7 +397,8 @@ class Strip(Spec):
         for r in self.rects:
             x0, x1, y0, y1 = r[0]
             d = max(x0 - x, x - x1, y0 - y, y - y1, 0.0)
-            z = max(z, self.zs * max(0.0, 1.0 - d / self.run))
+            if d <= self.run + 1e-9:                    # (down to its foot at the toe)
+                z = max(z, self.foot + (self.zs - self.foot) * (1.0 - d / self.run))
         return z
 
     def col_top(self, i, j, kind, x, y):

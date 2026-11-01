@@ -37,7 +37,12 @@ def fine_grid():
 
 
 class Shell(W.Strip):
-    """The mortar shell: the dark cap, the joint floor under the footing's bricks; the bricks are the face."""
+    """The mortar shell: the dark cap, the joint floor under the footing's bricks; the bricks are the face. (Stone:
+    its footing's blocks run down to the floor, no upright foot.)"""
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.foot = 0.0
+
     def col_top(self, i, j, kind, x, y):
         return "swK"
 
@@ -79,8 +84,9 @@ def faces(sp):
     for r in sp.rects:
         x0, x1, y0, y1 = r[0]
         for ax, plane, a, b in (("y", y1, x0, x1), ("x", x1, y0, y1)):
-            if plane > 0.5 - 1e-6:
-                continue                                 # the arm runs on into the next tile
+            if plane > 0.5 - 1e-6 and not any(e == "+" + ax and abs(q - plane) < 1e-6
+                                              for e, q in getattr(sp, "end_sides", ())):
+                continue                                 # the arm runs on into the next tile (not a free end there)
             seg = None
             n = int(round((b - a) * FINE))
             for k in range(n):
