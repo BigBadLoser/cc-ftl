@@ -26,6 +26,7 @@ import { bumpStat } from '../story/goals';
 import { playerShips } from '../story/world';
 import { AsteroidC } from '../asteroids/components';
 import { spawnVehicle } from '../vehicles/lifecycle';
+import { spillScrap } from '../salvage/yield';
 import { dropPlanTile } from '../yard/trussPlan';
 
 /** 'done': the job is finished and removed. 'working': progressing. 'wait': ready but blocked. */
@@ -58,7 +59,8 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
       const m = sim.world.get(job.target ?? 0, ModuleC);
       const cost = m && sim.content.modules[m.def]?.cost;
       removeModule(sim, job.target ?? 0);
-      if (m) refundCost(sim, shipIdOf(sim, job), m.x, m.y, cost); // after the tiles are free
+      if (m && job.scrap) spillScrap(sim, shipIdOf(sim, job), m.x, m.y, job.scrap, cost); // salvage: scrap, not the refund
+      else if (m) refundCost(sim, shipIdOf(sim, job), m.x, m.y, cost); // after the tiles are free
       // Taking a module apart on a ship that is not the player's is salvage (the goal chain counts it).
       if (m && !playerShips(sim).has(shipIdOf(sim, job))) bumpStat(sim, 'gathered');
       return 'done';
@@ -105,7 +107,9 @@ function finishStruct(sim: Sim, job: Job): WorkResult {
     if (job.kind === 'deconstruct' && before === Struct.Beam) dropPlanTile(sim, shipIdOf(sim, job), job.x, job.y); // the tile leaves the hull plan
     if (job.kind === 'deconstruct') {
       const key = structCostKey(before);
-      refundCost(sim, shipIdOf(sim, job), job.x, job.y, key ? sim.content.structCosts[key] : undefined);
+      const cost = key ? sim.content.structCosts[key] : undefined;
+      if (job.scrap) spillScrap(sim, shipIdOf(sim, job), job.x, job.y, job.scrap, cost);
+      else refundCost(sim, shipIdOf(sim, job), job.x, job.y, cost);
     }
     if (grid.has('item') && next !== Struct.Floor && next !== Struct.Ground) evictStack(sim, shipIdOf(sim, job), job.x, job.y);
   }

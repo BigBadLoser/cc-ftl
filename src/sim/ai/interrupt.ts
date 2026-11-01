@@ -2,7 +2,7 @@ import { CarriedC, CrewC, DeadC, DownedC, DraftedC, JobC, NeedsC, PathC, Positio
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
 import { EquipOrderC, FighterC, StowOrderC, SurrenderedC } from '../fight/components';
-import { isInvader, isOffDuty } from '../fight/relations';
+import { isBoarding, isOffDuty } from '../fight/relations';
 import { InertC, StunC } from '../robots/components';
 import type { Sim } from '../sim';
 import { InterruptC, TaskC } from './components';
@@ -63,7 +63,7 @@ export function detect(sim: Sim, id: number, mend?: ReadonlySet<number>): Interr
   if (sim.world.has(id, DraftedC)) return 'drafted';
   if (mend ? mend.has(id) : mendTargets(sim).has(id)) return 'heldForMend';
   const f = sim.world.get(id, FighterC);
-  if ((f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, StowOrderC) || sim.world.has(id, SurrenderedC) || isInvader(sim, id)) return 'fight';
+  if ((f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, StowOrderC) || sim.world.has(id, SurrenderedC) || isBoarding(sim, id)) return 'fight';
   return null;
 }
 

@@ -96,6 +96,10 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
+  /** Derelict salvage: an order was given or changed; it cannot run while something hostile is aboard (and runs again when cleared); it finished (`removed`: nothing was left, the wreck is gone). */
+  | { type: 'salvage.ordered'; ship: number; types: string[] }
+  | { type: 'salvage.blocked'; ship: number; reason: string }
+  | { type: 'salvage.done'; ship: number; removed: boolean }
   /** A ship's heat hit the maximum: lockout (no weapons, no shields) until it cools. */
   | { type: 'combat.overheated'; ship: number }
   /** A ship started venting heat (shields down, weapons held). */

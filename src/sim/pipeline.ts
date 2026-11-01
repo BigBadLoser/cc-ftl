@@ -76,6 +76,7 @@ import { tradeSystem } from './systems/trade';
 import { yardSystem } from './yard/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
+import { salvageSystem } from './salvage/system';
 import { truceSystem } from './systems/truce';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
@@ -130,6 +131,8 @@ export const pipeline: readonly System[] = [
   // Economy planners, in dependency order: drop dead hauls (frees reservations), open craft jobs,
   // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
   haulCleanupSystem,
+  // Salvage orders on derelicts: block on hostiles, keep stripping jobs open, remove a stripped wreck (before supply and the scheduler hand jobs out).
+  salvageSystem,
   craftJobsSystem,
   // Research jobs next to the craft jobs: the active project is paid from stock, which must happen before supply claims it for builds.
   researchJobsSystem,

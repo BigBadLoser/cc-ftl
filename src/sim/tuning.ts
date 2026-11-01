@@ -358,3 +358,11 @@ export const XP_PER_WORK_SEC = 1;
 export const XP_PER_HP_HEALED = 2;
 /** Hand weapons: 1 XP per this much damage dealt (gunnery for ranged, melee for the rest). */
 export const XP_DAMAGE_PER_XP = 4;
+
+// --- Derelict salvage (sim/salvage) ---
+/** A stripped part gives scrap worth this fraction of its build cost (items counted; stochastic rounding), always below the full cost. */
+export const SALVAGE_FRAC = 0.4;
+/** The salvage planner looks at each ordered wreck this often (ticks). */
+export const SALVAGE_EVERY = 10;
+/** Most stripping jobs open at once on one wreck (the crew take the rest as these finish). */
+export const SALVAGE_JOBS_OPEN = 8;

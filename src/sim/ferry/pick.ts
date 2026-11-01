@@ -21,12 +21,12 @@ export function isFerryRegion(sim: Sim, ship: number): boolean {
 }
 
 /**
- * True for a region a run can load from: a ferry region, or a salvage site (a captured prize or a ruined derelict), whose
+ * True for a region a run can load from: a ferry region, or a salvage site (a captured prize or any wreck), whose
  * loose stacks and storage the crew there can haul and a hovering shuttle can swap.
  */
 export function isPickupRegion(sim: Sim, ship: number): boolean {
   const s = sim.world.get(ship, ShipC);
-  return isFerryRegion(sim, ship) || (!!s && (s.state === 'prize' || (s.state === 'wreck' && !!s.ruin)));
+  return isFerryRegion(sim, ship) || (!!s && (s.state === 'prize' || s.state === 'wreck'));
 }
 
 /** Units of every item in a region's storage modules and loose on its floor, ascending by item id. */

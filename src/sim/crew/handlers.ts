@@ -10,6 +10,7 @@ import { SuitC } from '../eva/components';
 import { DoorJam, Struct } from '../structure';
 import type { Sim } from '../sim';
 import type { GridLike } from '../grid';
+import { isWreck } from '../salvage/guard';
 import { rockBuild } from '../rock/dig';
 import { wake } from '../combat/dormant';
 import { ShipC } from '../combat/components';
@@ -30,7 +31,7 @@ type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { typ
 const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, Struct.Ground, Struct.RockWall];
 /** Work needed (ticks at workSpeed 1): walls take 3 s, floors and doors 2 s, a truss (the shipyard's, `yard/`) 1 s. */
 export const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ, [Struct.Beam]: TICK_HZ };
-const DECONSTRUCT_TICKS = 2 * TICK_HZ;
+export const DECONSTRUCT_TICKS = 2 * TICK_HZ;
 /** Forcing a jammed door: 6 s at workSpeed 1 (skill and suits scale it through the worker's speed). */
 const FORCE_DOOR_TICKS = 6 * TICK_HZ;
 
@@ -74,6 +75,7 @@ function crewOf(sim: Sim, type: string, id: number): Crew | undefined {
 
 export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
   'job.build': (sim, cmd) => {
+    if (isWreck(sim, cmd.ship)) return reject(sim, cmd.type, 'wreck');
     if (!BUILDABLE.includes(cmd.struct)) return reject(sim, cmd.type, 'badStruct');
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
@@ -91,6 +93,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
   },
   'job.deconstruct': (sim, cmd) => {
+    if (isWreck(sim, cmd.ship)) return reject(sim, cmd.type, 'wreck');
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
     provokeIfOutpost(sim, cmd.ship);

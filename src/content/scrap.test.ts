@@ -29,3 +29,13 @@ describe('scrap content', () => {
     expect(content.modules['module.scrapper']?.crafting).toBe(true);
   });
 });
+
+describe('module scrap types', () => {
+  it('every module has a scrap type except the robot modules', () => {
+    const robot = ['module.robotFabricator', 'module.robotBay', 'module.aiCore'];
+    for (const [id, def] of Object.entries(content.modules)) {
+      if (robot.includes(id)) expect(def.scrap, id).toBeUndefined();
+      else expect(['hull', 'tech', 'energy', 'weapons', 'comfort'], id).toContain(def.scrap);
+    }
+  });
+});
