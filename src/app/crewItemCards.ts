@@ -1,24 +1,29 @@
-import { hitChance, stat, suitAir, suitDef, type HandWeaponDef, type Sim } from '../sim';
+import { ACCURACY_PER_SKILL, HIT_CHANCE_MAX, HIT_CHANCE_MIN, hitChance, isSuited, stat, suitAir, suitDef, type HandWeaponDef, type Sim } from '../sim';
 import type { UiItemCard } from '../ui/crewDetailApi';
 
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
 
 /**
  * The stats card of a hand weapon in this crew member's hands: damage, range, fire rate, the accuracy they would get with
- * it (base plus their skill, at point blank without cover), the damage per second that makes, and its value. Fields the
+ * it (base plus their skill, then the suit's aim penalty when suited, at point blank without cover), the damage per second
+ * that makes, and its value. Fields the
  * sim has no data for (ammo, weight) are left out.
  */
 export function weaponCard(sim: Sim, crew: number, name: string, def: HandWeaponDef, price?: number): UiItemCard {
   const skill = def.kind === 'ranged' ? 'gunnery' : 'melee';
-  const level = Math.round(stat(sim, crew, skill));
+  const raw = stat(sim, crew, skill);
+  const level = Math.round(raw);
   const acc = hitChance(sim, crew, def, 0, 'none');
-  const bonus = Math.round((acc - def.accuracy) * 100);
+  // The skill's share is worked out without the suit, so a suit's aim penalty isn't put down to the skill.
+  const unsuited = Math.min(HIT_CHANCE_MAX, Math.max(HIT_CHANCE_MIN, def.accuracy + raw * ACCURACY_PER_SKILL));
+  const bonus = Math.round((unsuited - def.accuracy) * 100);
+  const suit = isSuited(sim, crew) ? Math.round((acc - unsuited) * 100) : 0;
   const hands = def.art?.family === '2h' ? ' · 2 hands' : def.art?.family === '1h' ? ' · 1 hand' : '';
   const rows: UiItemCard['rows'] = [
     { label: 'Damage', value: `${def.damage}`, note: 'per hit' },
     { label: 'Range', value: def.kind === 'ranged' ? `${def.range} tiles` : 'adjacent' },
     { label: 'Fire rate', value: `every ${def.cooldownSec} s` },
-    { label: 'Accuracy', value: pct(acc), note: `${pct(def.accuracy)} base`, extra: bonus ? { text: `${bonus > 0 ? '+' : '−'}${Math.abs(bonus)}% ${skill[0]!.toUpperCase()}${skill.slice(1)} ${level}`, good: bonus > 0 } : undefined },
+    { label: 'Accuracy', value: pct(acc), note: `${pct(def.accuracy)} base${suit ? ` · −${Math.abs(suit)}% suit` : ''}`, extra: bonus ? { text: `${bonus > 0 ? '+' : '−'}${Math.abs(bonus)}% ${skill[0]!.toUpperCase()}${skill.slice(1)} ${level}`, good: bonus > 0 } : undefined },
     { label: 'Damage / s', value: `≈ ${((def.damage * acc) / def.cooldownSec).toFixed(1)}`, note: 'at this accuracy' },
   ];
   if (def.ion) rows.push({ label: 'Ion', value: 'stuns robots' });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, PositionC, RolledSkillsC, SkillXpC, TraitsC, newGame, stat } from '../sim';
+import { CrewC, PositionC, SuitC, RolledSkillsC, SkillXpC, TraitsC, newGame, stat } from '../sim';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { buildCrewDetail } from './crewDetail';
 
@@ -20,6 +20,18 @@ describe('the crew inspector detail', () => {
     expect(carry.parts).toEqual([{ label: 'Strong', kind: 'trait', op: 'mul', value: 1.5 }]);
     expect(d.gear.map((g) => g.slot)).toEqual(['weapon', 'suit', 'hands', 'implant']);
     expect(d.cards['item.rifle']?.rows.find((r) => r.label === 'Accuracy')?.extra?.good).toBe(true);
+  });
+
+  it("puts a suit's aim penalty on the suit, not on the skill", () => {
+    const sim = newGame(1, content);
+    const id = sim.world.query(CrewC).find((i) => sim.world.get(i, CrewC)?.role === 'role.gunner') as number;
+    const acc = () => buildCrewDetail(sim, id)!.cards['item.rifle']?.rows.find((r) => r.label === 'Accuracy');
+    const bare = acc()!;
+    sim.world.add(id, SuitC, { worn: true });
+    const suited = acc()!;
+    expect(suited.extra).toEqual(bare.extra);
+    expect(bare.note).not.toMatch(/suit/);
+    expect(suited.note).toMatch(/−\d+% suit/);
   });
 
   it('lists the mood factors over the base', () => {
