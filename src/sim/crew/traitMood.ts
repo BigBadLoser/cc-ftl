@@ -3,7 +3,7 @@ import { isSuited, isThin } from '../eva/suit';
 import { FighterC } from '../fight/components';
 import type { Sim } from '../sim';
 import {
-  LIGHT_GLARE_ABOVE, MOOD_COMPANY_RADIUS, MOOD_CROWD, TRAIT_BORED_SEC, TRAIT_COOPED_SEC,
+  DARK_FEAR_MOOD, FIRE_FEAR_MOOD, FIRE_FEAR_RADIUS, LIGHT_GLARE_ABOVE, SPACE_SICK_MOOD, MOOD_COMPANY_RADIUS, MOOD_CROWD, TRAIT_BORED_SEC, TRAIT_COOPED_SEC,
 } from '../tuning';
 import { AssignmentC, CrewC, DeadC, PositionC, type Mood, type MoodFactor } from './components';
 import { traitDefs, traitEffect, traitFlag, traitMult } from './traits';
@@ -11,7 +11,7 @@ import { traitDefs, traitEffect, traitFlag, traitMult } from './traits';
 /** Mood factor labels added by traits (merged into MOOD_LABELS). */
 export const TRAIT_MOOD_LABELS: Readonly<Record<string, string>> = {
   alone: 'Alone (loner)', crowded: 'Crowded', cheeredUp: 'Cheered up', draggedDown: 'Dragged down',
-  thrill: 'Thrill of danger', bored: 'Bored', cooped: 'Cooped up', glare: 'Glare', idle: 'Nothing to do', restless: 'Restless',
+  thrill: 'Thrill of danger', bored: 'Bored', cooped: 'Cooped up', fireNearby: 'Fire nearby', spacewalk: 'Spacewalk', glare: 'Glare', idle: 'Nothing to do', restless: 'Restless',
 };
 
 /** In combat (the sector fight, or engaging a foe) or on EVA (suited, on thin air): what a Thrill-seeker lives for. */
@@ -95,6 +95,9 @@ export function applyTraitMood(sim: Sim, id: number, m: Mood, base: MoodFactor[]
     else if ((m.quiet ?? 0) >= TRAIT_BORED_SEC) out.push({ key: 'bored', value: -3 });
   }
   if (traitFlag(sim, id, 'voidHome') && (m.inside ?? 0) >= TRAIT_COOPED_SEC) out.push({ key: 'cooped', value: -3 });
+  if (traitFlag(sim, id, 'darkFear')) out = out.map((f) => (f.key === 'dark' ? { key: f.key, value: DARK_FEAR_MOOD } : f));
+  if (traitFlag(sim, id, 'fireFear') && fireNearby(sim, id)) out.push({ key: 'fireNearby', value: FIRE_FEAR_MOOD });
+  if (traitFlag(sim, id, 'spaceSick') && onEva(sim, id)) out.push({ key: 'spacewalk', value: SPACE_SICK_MOOD });
   if (traitFlag(sim, id, 'darkAdapted') && brightTile(sim, id)) out.push({ key: 'glare', value: -3 });
   for (const d of defs) {
     const idle = d.effects?.idleMood;
@@ -115,3 +118,17 @@ function brightTile(sim: Sim, id: number): boolean {
   return !!pos && !!grid?.has('light') && grid.inBounds(pos.x, pos.y) && grid.get('light', pos.x, pos.y) >= LIGHT_GLARE_ABOVE;
 }
 
+
+/** True if a tile burns within FIRE_FEAR_RADIUS of the crew member (a small square scan; only Pyrophobic crew, at the mood cadence). */
+function fireNearby(sim: Sim, id: number): boolean {
+  const pos = sim.world.get(id, PositionC);
+  const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
+  if (!pos || !grid?.has('fire')) return false;
+  const px = Math.round(pos.x), py = Math.round(pos.y);
+  for (let y = py - FIRE_FEAR_RADIUS; y <= py + FIRE_FEAR_RADIUS; y++) {
+    for (let x = px - FIRE_FEAR_RADIUS; x <= px + FIRE_FEAR_RADIUS; x++) {
+      if (grid.inBounds(x, y) && grid.get('fire', x, y) > 0) return true;
+    }
+  }
+  return false;
+}
