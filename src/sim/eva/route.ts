@@ -15,7 +15,7 @@ export interface WalkPlan {
 const thinMemo = new WeakMap<Grid, { tick: number; thin: boolean }>();
 
 /** True if any walkable tile of the grid has thin air. Memoised per tick (derived data, never saved). */
-function gridHasThinAir(sim: Sim, grid: Grid): boolean {
+export function gridHasThinAir(sim: Sim, grid: Grid): boolean {
   const hit = thinMemo.get(grid);
   if (hit && hit.tick === sim.tick) return hit.thin;
   let thin = false;

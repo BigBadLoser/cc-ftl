@@ -1,4 +1,4 @@
-import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Position } from '../crew/components';
+import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Job, type Position } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { dropCarried } from '../items/stacks';
@@ -19,7 +19,22 @@ import { abortTask, isCarrying, syncTask } from './task';
  * job is kept or rerouted, and otherwise the legacy picker (`pickJob`) gives them a job or they idle. Every turn leaves the
  * `Task` mirror current; crew held out of the loop are re-synced.
  */
+/**
+ * BENCHMARK PROTOTYPE HOOK (Phase 2 step 1, throwaway): tools/profile/sched swaps the job picker. `perCrew` replaces `pickJob` in the loop;
+ * `batch` defers every crew member who would pick and assigns them together after the loop (the rest then idle, in id order).
+ */
+export interface PickerHook {
+  perCrew?: (sim: Sim, id: number, pos: Position) => boolean;
+  batch?: (sim: Sim, ids: number[]) => Set<number>;
+  emergency?: (sim: Sim, id: number, pos: Position, job: Job) => boolean;
+}
+let hook: PickerHook | undefined;
+export function setPickerHook(h: PickerHook | undefined): void {
+  hook = h;
+}
+
 export function scheduleSystem(sim: Sim): void {
+  const deferred: number[] = [];
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
     if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) {
       syncTask(sim, id, true); // held out of the loop: keep the mirror current (the turn below sets it for everyone else)
@@ -52,7 +67,7 @@ export function scheduleSystem(sim: Sim): void {
         continue;
       }
       // An emergency (fire, downed crew member, hull hole) the crew member ranks above their job calls them off it.
-      if ((sim.tick + id) % EMERGENCY_CHECK_TICKS === 0 && !isCarrying(sim, id) && emergencyWaiting(sim, id, pos, job)) abortTask(sim, id, 'preempt');
+      if ((sim.tick + id) % EMERGENCY_CHECK_TICKS === 0 && !isCarrying(sim, id) && (hook?.emergency ?? emergencyWaiting)(sim, id, pos, job)) abortTask(sim, id, 'preempt');
       else {
         navigateTurn(sim, id, pos, assignment.jobId, job);
         continue;
@@ -60,6 +75,10 @@ export function scheduleSystem(sim: Sim): void {
     }
 
     dropCarried(sim, id); // a load left over from a lost haul job
-    if (!pickJob(sim, id, pos)) idleTurn(sim, id, crew, pos);
+    if (hook?.batch) deferred.push(id);
+    else if (!(hook?.perCrew ?? pickJob)(sim, id, pos)) idleTurn(sim, id, crew, pos);
   }
+  if (!hook?.batch || deferred.length === 0) return;
+  const taken = hook.batch(sim, deferred);
+  for (const id of deferred) if (!taken.has(id)) idleTurn(sim, id, sim.world.get(id, CrewC) as Crew, sim.world.get(id, PositionC) as Position);
 }

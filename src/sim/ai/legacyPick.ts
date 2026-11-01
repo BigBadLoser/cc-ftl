@@ -24,7 +24,7 @@ import { reserveJob } from './task';
 export const EMERGENCY_CHECK_TICKS = 10;
 
 /** True if an empty console may be relieved by crew whose operating priority is low: in a fight, left empty for RELIEF_AFTER_SEC, and one that matters unmanned (the shield console works at base strength without an operator). */
-function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
+export function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   const role = sim.world.get(crewId, CrewC)?.role;
   if (!role || !sim.content.roles[role]?.relievesStations || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
   const m = sim.world.get(job.target ?? 0, ModuleC);
@@ -41,7 +41,7 @@ const SUPPORT_REPAIR_BONUS = 10000;
  * the fight needs: weapons (and their console), reactors, shield generators and consoles and the helm come first, engines and life
  * support next, then everything else (lights, beds, storage) by distance as usual. Outside combat nothing changes.
  */
-function repairUrgency(sim: Sim, job: Job): number {
+export function repairUrgency(sim: Sim, job: Job): number {
   if (job.kind !== 'repair') return 0;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   if (!m) return 0;
