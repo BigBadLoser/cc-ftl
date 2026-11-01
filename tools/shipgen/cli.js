@@ -100,7 +100,16 @@ try {
   for (const f of factions) {
     const base = join(out, f.startsWith('station.') ? f.replace(':', '-').replace(/,/g, '+').replace('@', '-') : `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
     let text = '';
-    for (const view of views) {
+    if (views.includes('labels')) {
+      const lv = await server.ssrLoadModule('/tools/shipgen/labels.ts');
+      for (let seed = from; seed < from + count; seed++) {
+        const r = lv.labelView(f, seed, depth);
+        const file = `${base}-labels-s${seed}.png`;
+        writeFileSync(file, png(r.width, r.height, r.data));
+        console.log(file);
+      }
+    }
+    for (const view of views.filter((v) => v !== 'labels')) {
       const sheet = lib.contactSheet(f, from, count, depth, scale, 2600, view);
       const file = view === 'detail' ? `${base}.png` : `${base}-${view}.png`;
       writeFileSync(file, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));

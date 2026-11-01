@@ -2,6 +2,7 @@ import type { ModuleDef } from '../registry';
 import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf, type Tile } from '../modules/footprint';
 import { airlockTiles } from '../modules/airlock';
 import type { RoomRole } from './types';
+import { CHAIR, SLEEP, TABLE, around, bedSides, chairFront, useKind } from './useTiles';
 
 export interface PlacedModule {
   def: string;
@@ -30,8 +31,18 @@ export class Layout {
   private readonly solid: Uint8Array;
   readonly modules: PlacedModule[] = [];
   private readonly protects: number[][] = [];
+  /** Tiles beside a placed bed's long sides (no other bed or table may cover them), and tiles a placed chair faces. */
+  private readonly besideBed: Uint8Array;
+  private readonly facedBy: Uint8Array;
+  private readonly marks: { beside: number[]; faced: number[]; needs: number[] }[] = [];
+  /** Per tile, the placed modules that need it as one of their use tiles (a bed's sides, a chair's front, a ring). */
+  private readonly neededBy = new Map<number, number[]>();
+  /** Per placed module with use tiles, those tiles (it needs one of them to stay usable floor). */
+  private readonly needs = new Map<number, number[]>();
   readonly defs: Record<string, ModuleDef>;
   roles: RoomRole[];
+  /** Rooms crew never enter (a drone's machinery bays): their pieces need no use tiles. */
+  readonly sealed = new Set<number>();
 
   constructor(rows: string[], roomOf: Int16Array, roles: RoomRole[], defs: Record<string, ModuleDef>) {
     this.h = rows.length;
@@ -44,6 +55,8 @@ export class Layout {
     this.occ = new Int16Array(this.w * this.h).fill(-1);
     this.keep = new Uint8Array(this.w * this.h);
     this.solid = new Uint8Array(this.w * this.h);
+    this.besideBed = new Uint8Array(this.w * this.h);
+    this.facedBy = new Uint8Array(this.w * this.h);
     for (let i = 0; i < this.cells.length; i++) {
       if (this.cells[i] !== 'D') continue;
       for (const n of this.neighbours(i)) if (this.cells[n] === '_') this.keep[n] = 1;
@@ -114,6 +127,8 @@ export class Layout {
       if (room >= 0 && this.roomOf[ins.y * this.w + ins.x] !== room) return 'otherRoom';
     }
     if (def.weapon && !tiles.some((t) => this.besideHull(t.x, t.y))) return 'offHull';
+    const useErr = this.useError(defId, def, x, y, rot, tiles);
+    if (useErr) return useErr;
     if (roofMounted(def)) {
       for (const t of tiles) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -152,8 +167,22 @@ export class Layout {
       if (wallRow.some((w) => w.x === t.x && w.y === t.y)) continue;
       const i = t.y * this.w + t.x;
       this.occ[i] = idx;
-      this.solid[i] = def.solid && !open.some((o) => o.x === t.x && o.y === t.y) ? 1 : 0;
+      // Beds block walking at generation time: crew are not laid out to climb over them.
+      this.solid[i] = (def.solid || SLEEP.has(pm.def)) && !open.some((o) => o.x === t.x && o.y === t.y) ? 1 : 0;
     }
+    const mark = { beside: [] as number[], faced: [] as number[], needs: [] as number[] };
+    if (SLEEP.has(pm.def)) for (const t of bedSides(def, pm.x, pm.y, pm.rot).flat()) if (this.inBounds(t.x, t.y)) mark.beside.push(t.y * this.w + t.x);
+    if (pm.def === CHAIR) { const f = chairFront(pm.x, pm.y, pm.rot); if (this.inBounds(f.x, f.y)) mark.faced.push(f.y * this.w + f.x); }
+    const kind = this.sealed.has(this.roomOf[pm.y * this.w + pm.x] ?? -1) ? null : useKind(pm.def, def, pm.x, pm.y, pm.rot);
+    const need = kind === 'sides' ? bedSides(def, pm.x, pm.y, pm.rot).flat() : kind === 'front' ? [chairFront(pm.x, pm.y, pm.rot)] : kind === 'ring' ? around(def, pm.x, pm.y, pm.rot) : [];
+    mark.needs = need.filter((t) => this.inBounds(t.x, t.y)).map((t) => t.y * this.w + t.x);
+    if (mark.needs.length > 0) {
+      this.needs.set(idx, mark.needs);
+      for (const i of mark.needs) this.neededBy.set(i, [...(this.neededBy.get(i) ?? []), idx]);
+    }
+    for (const i of mark.beside) this.besideBed[i] = (this.besideBed[i] as number) + 1;
+    for (const i of mark.faced) this.facedBy[i] = (this.facedBy[i] as number) + 1;
+    this.marks.push(mark);
     const prot = this.protectedTiles(pm).map((t) => t.y * this.w + t.x);
     this.protects.push(prot);
     for (const i of prot) this.keep[i] = (this.keep[i] as number) + 2;
@@ -168,6 +197,91 @@ export class Layout {
       if (this.occ[i] === this.modules.length) { this.occ[i] = -1; this.solid[i] = 0; }
     }
     for (const i of this.protects.pop() ?? []) this.keep[i] = (this.keep[i] as number) - 2;
+    const mark = this.marks.pop();
+    for (const i of mark?.beside ?? []) this.besideBed[i] = (this.besideBed[i] as number) - 1;
+    for (const i of mark?.faced ?? []) this.facedBy[i] = (this.facedBy[i] as number) - 1;
+    const gone = this.modules.length;
+    this.needs.delete(gone);
+    for (const i of mark?.needs ?? []) {
+      const l = (this.neededBy.get(i) ?? []).filter((m) => m !== gone);
+      if (l.length > 0) this.neededBy.set(i, l); else this.neededBy.delete(i);
+    }
+  }
+
+  /** Usable floor: a floor tile crew can stand on to use something, holding nothing or only a floor light. */
+  private usableFloor(i: number, room: number): boolean {
+    if (this.cells[i] !== '_' || (room >= 0 && this.roomOf[i] !== room)) return false;
+    const o = this.occ[i] as number;
+    if (o < 0) return true;
+    const d = this.defs[this.modules[o]?.def as string];
+    return !!d && !d.solid && !!d.light;
+  }
+
+  /** Free floor: a floor tile of `room` (any room when -1) with no module on it. */
+  private freeFloor(x: number, y: number, room: number): boolean {
+    return this.inBounds(x, y) && this.usableFloor(y * this.w + x, room);
+  }
+
+  /**
+   * Use rules (rooms/usage.ts) for a module about to go at (x, y): a bed needs free floor beside a long side and no bed
+   * or table beside it; a chair faces free floor or what it serves; any other piece needs a free tile to be used or
+   * serviced from; and no bed or table may cover a tile beside a bed, nor anything solid the tile a chair faces (unless
+   * it is what the chair serves).
+   */
+  private useError(id: string, def: ModuleDef, x: number, y: number, rot: number, tiles: Tile[]): string | null {
+    const idx = (t: Tile): number => t.y * this.w + t.x;
+    const blocksWalk = def.solid || SLEEP.has(id);
+    for (const t of tiles) {
+      const i = idx(t);
+      if ((SLEEP.has(id) || TABLE.has(id)) && this.besideBed[i]) return 'besideBed';
+      if (blocksWalk && this.facedBy[i] && !TABLE.has(id)) {
+        const a = accessTile(def, x, y, rot);
+        const served = !!a && this.modules.some((m) => m.def === CHAIR && m.x === a.x && m.y === a.y);
+        if (!served) return 'facesChair';
+      }
+    }
+    // Covering a tile another piece is used from: fine while that piece keeps another, or when this piece is what it is
+    // used at (a table under a seat's front, a console whose front the seat stands on).
+    const covers = blocksWalk || id === CHAIR || (!def.light && tiles.length > 0);
+    if (covers) {
+      const mine = new Set(tiles.map(idx));
+      const front = accessTile(def, x, y, rot);
+      const servedBy = (m: number): boolean => {
+        const o = this.modules[m];
+        return !!o && o.def === CHAIR && (TABLE.has(id) || (!!front && o.x === front.x && o.y === front.y));
+      };
+      const hit = new Set<number>();
+      for (const i of mine) for (const m of this.neededBy.get(i) ?? []) if (!servedBy(m)) hit.add(m);
+      for (const m of hit) if (!(this.needs.get(m) ?? []).some((i) => !mine.has(i) && this.usableFloor(i, -1))) return 'blocksUse';
+    }
+    const room = this.roomOf[idx(tiles[0] as Tile)] ?? -1;
+    const kind = this.sealed.has(room) ? null : useKind(id, def, x, y, rot);
+    if (kind === 'sides') {
+      const sides = bedSides(def, x, y, rot);
+      for (const t of sides.flat()) {
+        const o = this.inBounds(t.x, t.y) ? (this.occ[idx(t)] as number) : -1;
+        const od = o >= 0 ? this.modules[o]?.def : undefined;
+        if (od && (SLEEP.has(od) || TABLE.has(od))) return 'besideBed';
+      }
+      if (!sides.flat().some((t) => this.freeFloor(t.x, t.y, room))) return 'noUse';
+    } else if (kind === 'front') {
+      const f = chairFront(x, y, rot);
+      if (!this.freeFloor(f.x, f.y, -1) && !this.serves(f.x, f.y, x, y)) return 'chairFacing';
+    } else if (kind === 'ring') {
+      if (!around(def, x, y, rot).some((t) => this.freeFloor(t.x, t.y, -1))) return 'boxedIn';
+    }
+    return null;
+  }
+
+  /** True if the module at (fx, fy) is something a chair at (cx, cy) is used at: a table, or a piece whose access tile it is. */
+  private serves(fx: number, fy: number, cx: number, cy: number): boolean {
+    if (!this.inBounds(fx, fy)) return false;
+    const o = this.occ[fy * this.w + fx] as number;
+    const m = o >= 0 ? this.modules[o] : undefined;
+    if (!m) return false;
+    if (TABLE.has(m.def)) return true;
+    const a = accessTile(this.defs[m.def] as ModuleDef, m.x, m.y, m.rot);
+    return !!a && a.x === cx && a.y === cy;
   }
 
   private protectedTiles(pm: PlacedModule): Tile[] {

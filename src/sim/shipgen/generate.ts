@@ -63,6 +63,7 @@ function fitOut(
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
+  specs.forEach((spec, room) => { if (spec?.sealed) lay.sealed.add(room); });
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
   jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));

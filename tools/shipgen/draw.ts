@@ -7,10 +7,11 @@ import {
   accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
+import { audit } from './audit';
 
-export type View = 'detail' | 'silhouette' | 'assembly' | 'structure';
+export type View = 'detail' | 'silhouette' | 'assembly' | 'structure' | 'interior';
 
-type RGB = [number, number, number];
+export type RGB = [number, number, number];
 
 export class Raster {
   readonly data: Uint8ClampedArray;
@@ -49,14 +50,14 @@ const GLYPHS: Record<string, string> = Object.fromEntries(Object.entries({
   '#': '101111101111101', ' ': '000000000000000', ',': '000000000010100', '(': '010100100100010', ')': '010001001001010', '?': '110001010000010', '=': '000111000111000', '+': '000010111010000',
 }));
 
-const ROLE_TINT: Record<RoomRole, RGB> = {
+export const ROLE_TINT: Record<RoomRole, RGB> = {
   bridge: [52, 92, 140], engine: [120, 70, 40], reactor: [120, 110, 40], weapons: [120, 50, 70], shields: [40, 110, 120],
   cargo: [88, 80, 60], quarters: [70, 100, 60], core: [100, 60, 130], hangar: [70, 70, 90], hall: [58, 60, 66],
   dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40], plaza: [110, 96, 70], garden: [70, 130, 70], drill: [90, 80, 90],
 };
 
 /** Short labels and colours per module. */
-const MOD: Record<string, { label: string; c: RGB }> = {
+export const MOD: Record<string, { label: string; c: RGB }> = {
   'module.engine': { label: 'ENG', c: [255, 120, 40] }, 'module.reactor': { label: 'R', c: [240, 220, 60] },
   'module.helm': { label: 'HLM', c: [90, 170, 255] }, 'module.weaponsConsole': { label: 'WC', c: [90, 170, 255] },
   'module.shieldConsole': { label: 'SC', c: [90, 170, 255] }, 'module.burstLaser': { label: 'BL', c: [255, 70, 140] },
@@ -201,6 +202,32 @@ export function drawShip(r: Raster, g: GenResult, ox: number, oy: number, s: num
       const [dx, dy] = [[0, -1], [1, 0], [0, 1], [-1, 0]][m.rot] as [number, number];
       r.rect(px + (s >> 1) - 1 + dx * (s >> 2), py + (s >> 1) - 1 + dy * (s >> 2), 3, 3, style.c);
     }
+  }
+}
+
+/**
+ * Interior view: the detail view plus each room's role at its middle and the room-layout audit's flags outlined: red
+ * for a key room reached only through quarters, orange for a room reached only through another room, magenta for a room
+ * with no door (drone pods are sealed on purpose).
+ */
+export function drawInterior(r: Raster, g: GenResult, ox: number, oy: number, s: number): void {
+  drawShip(r, g, ox, oy, s);
+  const a = audit(g);
+  const flag = new Map<number, RGB>();
+  const ids = (xs: string[]): number[] => xs.map((n) => Number(n.split('#')[1]));
+  for (const id of ids(a.behind)) flag.set(id, [255, 150, 40]);
+  for (const id of ids(a.viaQuarters)) flag.set(id, [255, 50, 50]);
+  for (const id of ids(a.sealed)) flag.set(id, [235, 70, 200]);
+  for (const room of g.rooms) {
+    if (room.role === 'hall' || room.tiles.length === 0) continue;
+    const xs = room.tiles.map((i) => i % g.width);
+    const ys = room.tiles.map((i) => Math.floor(i / g.width));
+    const x0 = Math.min(...xs); const y0 = Math.min(...ys);
+    const x1 = Math.max(...xs); const y1 = Math.max(...ys);
+    const c = flag.get(room.id);
+    if (c) r.frame(ox + x0 * s, oy + y0 * s, (x1 - x0 + 1) * s, (y1 - y0 + 1) * s, c, 2);
+    const label = room.role.slice(0, Math.max(2, Math.floor(((x1 - x0 + 1) * s) / 4)));
+    r.text(label, ox + x0 * s + 2, oy + Math.round(((y0 + y1) / 2) * s), c ?? [255, 255, 255]);
   }
 }
 
@@ -377,7 +404,7 @@ export function contactSheet(
     const m = g.metrics;
     const ms = m ? ` C${m.compactness.toFixed(2)} O${m.occupancy.toFixed(2)} R${m.corridorRatio.toFixed(2)} N${m.narrowLinks.toFixed(2)}` : '';
     r.text(`${g.topology}${ms}`, ox, oy + 7 * ts, [150, 170, 200], ts);
-    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
+    (view === 'silhouette' ? drawSilhouette : view === 'assembly' ? drawAssemblies : view === 'structure' ? drawStructure : view === 'interior' ? drawInterior : drawShip)(r, g, ox, oy + 14 * ts + 4, s);
     text.push(summary(g, seed), ascii(g), '');
   });
   return { raster: r, text: [`diversity: shape ${sil.toFixed(3)}, sections ${arch.toFixed(3)}, ${adjText}`, `near-duplicates: ${dupPairs.join(' ') || 'none'}`, `interior dups by role: ${idup.byRole}`, ...errors, ...text].join('\n') };
