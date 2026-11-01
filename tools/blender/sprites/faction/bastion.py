@@ -13,6 +13,9 @@ from .shell import Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles,
 
 BAST_OT = 0.015                     # the ramp panel's outline: its top and bottom lines 1 px
 
+BAST_HANDLE = (BAST_PANEL[1] - BAST_OT / W.skirt_run() - 0.07, BAST_PANEL[1] - BAST_OT / W.skirt_run(), 0.1)
+                                    # the panel's dark handle (Style.slot_d): on its bottom line
+
 BAST_FOOT = 4 / 39                  # the ramp ends in an upright step this high at the floor (set 8), its lip dark
 
 BAST_L = 2 / 32                     # the lip: the wall below the cornice stands this far back from the ramp's edge
@@ -293,6 +296,6 @@ class Bastion(Faction):
     def relief(self, sprite):
         return _style(bastion, skirt="outline", slot=True, seam=0, end_out=-BAST_L, chamfer=BAST_CS,
                       tops=BAST_TOPS, ramps=BAST_RAMPS, outline_lvl=1, outline_t=BAST_OT, outline_d=BAST_PANEL, ramp_solid=True,
-                      foot=BAST_FOOT, toe_lvl=SEAM, outline_block=(0.015, 2 / 32, 0.045, {"wall": "fBW8", "blue": "fBH1"}), hole_tone=slot_tone,
+                      foot=BAST_FOOT, toe_lvl=SEAM, outline_block=(0.015, 2 / 32, 0.075, 3), slot_d=BAST_HANDLE, hole_tone=slot_tone,
                       shell=LookShell,
                       features=(FreeEnds(), RampHoles(), Recess(), FloorDrop(), FootTone("wall", 2, front="fBW2"), RecessTones()))
