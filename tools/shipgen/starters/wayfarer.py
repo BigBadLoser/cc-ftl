@@ -1,112 +1,88 @@
-"""Wayfarer variants, round 5: new concepts with proper rooms, no containers (#241). Run: python3 tools/shipgen/starters/wayfarer.py"""
+"""Wayfarer variants, round 6: walkable hull shapes after FTL silhouettes, our own rooms (#241). Run: python3 tools/shipgen/starters/wayfarer.py"""
 from common import *  # noqa: F401,F403
 
 CREW = ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic']
 STOCK = [STOCK_BUILD, [{'item': 'item.scrap', 'count': 80}, {'item': 'item.ice', 'count': 10}, {'item': 'item.ration', 'count': 12}], STOCK_ARMS]
-ST = [('storage', {'stock': STOCK[0]}), ('storage', {'stock': STOCK[1]}), ('storage', {'stock': STOCK[2]})]
 
 
-def longhouse():
-    s = Ship('LONGHOUSE', 37, 22, CREW, 'a long hall down the middle with cabins either side, staggered roofline, the bridge in a rounded bow')
-    hull(s, [(x, 9 - min(4, x), 12 + min(4, x)) for x in range(1, 9)])
-    s.section('Bridge (bow): helm, gun and shield consoles, the burst laser')
-    s.m('helm', 5, 6); s.m('burstLaser', 2, 9); s.m('weaponsConsole', 5, 9); s.m('shieldConsole', 4, 13)
-    s.lights((3, 8), (7, 8), (7, 12), (3, 12))
-    room(s, 'Hall', 8, 9, 30, 12).lit([(14, 10), (24, 10)])
-    q1 = room(s, 'Cabin: two bunks', 8, 4, 13, 9); q1.row(['bed', 'bed']); q1.lit()
-    q2 = room(s, 'Cabin: two bunks', 13, 3, 18, 9); q2.row(['bed', 'bed']); q2.lit([(16, 5)])
-    mb = room(s, 'Med bay', 18, 4, 23, 9); mb.row(['med_bed', 'storage_locker', 'lifeSupport']); mb.lit()
-    ga = room(s, 'Galley and mess', 23, 3, 30, 9); ga.row([('galley', GALLEY), 'hydroponics']); ga.row(['mess_table'], y=6, x=25); ga.lit([(28, 5)])
-    ho = room(s, 'Workshop and stores', 8, 12, 15, 18); ho.row(['fabricator'] + ST); ho.lit()
-    sh = room(s, 'Shield and life support', 15, 12, 20, 17); sh.row(['shieldGen', 'lifeSupport']); sh.lit()
-    hg = room(s, 'Hangar: the shuttle bay', 20, 12, 30, 19); hg.m('vehicle_bay', 21, 13, vehicle='vehicle.shuttle'); hg.m('airlock', 26, 16, 2); hg.lit([(29, 13)])
-    er = room(s, 'Engine room: two engines, two reactors', 30, 2, 36, 19)
-    er.m('engine', 32, 3, 1); er.m('engine', 32, 15, 1); er.m('reactor', 33, 8); er.m('reactor', 33, 11); er.light((35, 10), (31, 13), (31, 5), (31, 17))
-    for d in [(8, 10), (10, 9), (15, 9), (20, 9), (26, 9), (14, 12), (19, 12), (25, 12), (30, 11)]: s.door(*d)
+def kestrel():
+    s = Ship('TWIN PODS', 34, 34, CREW, 'a long-nosed body with two engine pods held out above and below the stern, each reached by a short corridor')
+    hull(s, [(x, 17 - min(7, x + 2), 17 + min(7, x + 2)) for x in range(1, 8)])
+    s.section('Bridge (nose): helm, gun console, the burst laser')
+    s.m('helm', 3, 14); s.m('burstLaser', 2, 17); s.m('weaponsConsole', 5, 17); s.lights((6, 12), (5, 22), (2, 15), (5, 20))
+    room(s, 'Corridor', 7, 14, 22, 18).light((9, 16), (15, 16), (21, 16))
+    q = room(s, 'Quarters: four bunks', 7, 10, 13, 14); q.row(['bed', 'bed', 'bed', 'bed']); q.light((12, 13))
+    me = room(s, 'Mess and comms: galley, the shield console', 13, 10, 19, 14); me.m('galley', 14, 11, **GALLEY); me.m('shieldConsole', 16, 11); me.light((18, 13))
+    ln = room(s, 'Upper lobby: life support', 19, 10, 22, 14); ln.m('lifeSupport', 21, 11); ln.light((20, 13))
+    ho = room(s, 'Hold: stores, fabricator, the airlock', 7, 18, 13, 24); ho.m('fabricator', 8, 19); ho.m('storage', 8, 23, 2, stock=STOCK[0]); ho.m('storage', 9, 23, 2, stock=STOCK[1]); ho.m('airlock', 10, 21, 2); ho.light((12, 19), (8, 21))
+    hg = room(s, 'Hangar: the shuttle bay', 13, 18, 19, 24); hg.m('vehicle_bay', 14, 19, vehicle='vehicle.shuttle'); hg.light((18, 23))
+    md = room(s, 'Med bay: med bed, stores', 19, 18, 22, 24); md.m('med_bed', 20, 19); md.m('storage', 21, 19, stock=STOCK[2]); md.light((21, 23))
+    room(s, 'Upper neck', 19, 6, 22, 10).light((20, 8))
+    room(s, 'Lower neck', 19, 24, 22, 28).light((20, 26))
+    pn = room(s, 'Upper engine pod: an engine, a reactor, life support, the shield', 16, 1, 33, 6); pn.m('engine', 29, 2, 1); pn.m('reactor', 17, 2); pn.m('shieldGen', 22, 2); pn.m('lifeSupport', 26, 2); pn.light((18, 5), (24, 5), (28, 5))
+    ps = room(s, 'Lower engine pod: an engine, a reactor', 16, 28, 33, 33); ps.m('engine', 29, 29, 1); ps.m('reactor', 17, 29); ps.light((18, 32), (24, 30), (28, 32))
+    for d in [(7, 16), (10, 14), (15, 14), (20, 14), (10, 18), (18, 18), (20, 18), (20, 6), (20, 10), (20, 24), (20, 28)]: s.door(*d)
     return s
 
 
 
-def staggered():
-    s = Ship('STAGGERED', 34, 24, CREW, 'two blocks offset corner to corner: a living block forward-north, a working block aft-south, joined by a lobby')
-    br = room(s, 'Bridge', 1, 2, 8, 9); br.m('helm', 2, 3); br.m('shieldConsole', 5, 3); br.m('weaponsConsole', 2, 6); br.m('burstLaser', 5, 6); br.light((7, 8), (2, 8))
-    hall = room(s, 'Living hall', 8, 6, 19, 9); hall.light((10, 7), (16, 7))
-    q = room(s, 'Quarters: four bunks', 8, 1, 14, 6); q.row(['bed', 'bed', 'bed', 'bed']); q.lit()
-    ga = room(s, 'Galley and mess', 14, 1, 20, 6); ga.row([('galley', GALLEY), 'hydroponics']); ga.lit()
-    mb = room(s, 'Med bay and life support', 8, 9, 14, 13); mb.row(['med_bed', 'lifeSupport', 'storage_locker'], wall='s'); mb.light((12, 10))
-    lo = room(s, 'Lobby', 14, 9, 20, 15); lo.lit([(19, 10)])
-    ho = room(s, 'Hold and workshop', 20, 9, 28, 15); ho.row(['fabricator'] + ST); ho.lit()
-    hg = room(s, 'Hangar', 14, 15, 23, 22); hg.m('vehicle_bay', 15, 17, vehicle='vehicle.shuttle'); hg.m('airlock', 20, 19, 2); hg.light((22, 16), (15, 16), (20, 16))
-    rs = room(s, 'Reactor and shield room', 23, 15, 28, 22); rs.row(['reactor', 'shieldGen'], wall='s'); rs.light((25, 17))
-    er = room(s, 'Engine room', 28, 7, 33, 22); er.m('engine', 29, 8, 1); er.m('engine', 29, 18, 1); er.m('reactor', 30, 13); er.m('lifeSupport', 32, 13)
-    er.light((29, 12), (32, 15), (29, 17), (30, 16))
-    for d in [(8, 7), (11, 6), (17, 6), (11, 9), (17, 9), (20, 12), (17, 15), (23, 18), (28, 12), (28, 16)]: s.door(*d)
+def c_arms():
+    s = Ship('C-ARMS', 32, 28, CREW, 'a C open to the bow: two long arms reaching forward from an engine block, a hallway down the inside of each')
+    room(s, 'North hallway', 5, 6, 22, 9).light((7, 7), (14, 7), (20, 8))
+    br = room(s, 'Bridge (north arm tip): helm and shield console', 5, 2, 12, 6); br.m('helm', 6, 3); br.m('shieldConsole', 9, 3); br.light((11, 5) if False else (8, 5))
+    q = room(s, 'Quarters: four bunks', 12, 2, 17, 6); q.row(['bed', 'bed', 'bed', 'bed']); q.light((16, 5))
+    me = room(s, 'Mess: galley, hydroponics, life support', 17, 2, 22, 6); me.row([('galley', GALLEY), 'hydroponics']); me.m('lifeSupport', 21, 3) if False else None; me.light((21, 5))
+    room(s, 'South hallway', 5, 19, 22, 22).light((7, 20), (14, 20), (20, 21))
+    gr = room(s, 'Gun room (south arm tip): the burst laser and gun console', 5, 22, 12, 26); gr.m('burstLaser', 6, 24); gr.m('weaponsConsole', 9, 23); gr.light((11, 25))
+    md = room(s, 'Med bay: med bed, life support', 12, 22, 17, 26); md.m('med_bed', 13, 24); md.m('lifeSupport', 16, 24); md.light((14, 23))
+    ho = room(s, 'Hold: stores, fabricator, the airlock', 17, 22, 22, 26); ho.m('airlock', 18, 23, 2); ho.light((21, 23))
+    hg = room(s, 'Hangar: the shuttle bay, stores', 22, 2, 31, 9); hg.m('vehicle_bay', 23, 3, vehicle='vehicle.shuttle'); hg.m('storage', 28, 3, stock=STOCK[0]); hg.m('storage', 29, 3, stock=STOCK[1]); hg.m('storage', 30, 3, stock=STOCK[2]); hg.light((29, 8), (23, 8) if False else (28, 6))
+    er = room(s, 'Engine room: two engines, two reactors', 22, 9, 31, 19); er.m('engine', 27, 10, 1); er.m('engine', 27, 15, 1); er.m('reactor', 23, 10); er.m('reactor', 23, 16); er.light((24, 13), (26, 14), (30, 14))
+    sr = room(s, 'Shield room: shield, life support, fabricator', 22, 19, 31, 26); sr.m('shieldGen', 23, 23); sr.m('lifeSupport', 30, 20); sr.m('fabricator', 26, 25, 2); sr.light((28, 22), (24, 21))
+    for d in [(8, 6), (14, 6), (19, 6), (8, 22), (14, 22), (19, 22), (22, 8), (22, 20), (26, 9), (26, 19)]: s.door(*d)
     return s
 
 
-def terraces():
-    s = Ship('TERRACES', 34, 24, CREW, 'a straight north side and a south side that steps down in three terraces toward the stern')
-    corr = room(s, 'Main corridor', 8, 6, 28, 9); corr.light((12, 7), (19, 7), (25, 7))
-    br = room(s, 'Bridge', 1, 2, 8, 10); br.m('helm', 2, 3); br.m('shieldConsole', 5, 3); br.m('weaponsConsole', 2, 7); br.light((4, 9), (7, 6))
-    wb = room(s, 'Gun room', 1, 10, 8, 14); wb.m('burstLaser', 2, 11); wb.lit()
-    q = room(s, 'Quarters: four bunks', 8, 1, 15, 6); q.row(['bed', 'bed', 'bed', 'bed']); q.lit()
-    ga = room(s, 'Galley and mess', 15, 1, 22, 6); ga.row([('galley', GALLEY), 'hydroponics', 'mess_table']); ga.lit()
-    mb = room(s, 'Med bay', 22, 1, 28, 6); mb.row(['med_bed', 'med_bed', 'storage_locker', 'lifeSupport']); mb.lit()
-    t1 = room(s, 'Terrace 1: workshop and stores', 8, 9, 15, 14); t1.row(['fabricator'] + ST, wall='s'); t1.light((12, 10))
-    t2 = room(s, 'Terrace 2: shield, life support, the airlock', 15, 9, 21, 17); t2.m('shieldGen', 16, 11); t2.m('lifeSupport', 19, 11); t2.m('airlock', 17, 14, 2); t2.light((19, 10), (16, 15))
-    t3 = room(s, 'Terrace 3: hangar', 21, 9, 28, 20); t3.m('vehicle_bay', 22, 13, vehicle='vehicle.shuttle'); t3.light((22, 11), (27, 11), (27, 18))
-    er = room(s, 'Engine room', 28, 1, 33, 20); er.m('engine', 29, 2, 1); er.m('engine', 29, 16, 1); er.m('reactor', 31, 7); er.m('reactor', 31, 10)
-    er.light((29, 7), (32, 13), (29, 13), (30, 10))
-    for d in [(8, 7), (11, 6), (18, 6), (25, 6), (11, 9), (18, 9), (24, 9), (28, 7), (5, 10)]: s.door(*d)
-    return s
 
-
-def nacelles():
-    s = Ship('NACELLE CRUISER', 35, 28, CREW, 'a slim hull with two big engine nacelles held off on short pylons, the hangar in the lower one')
-    hull(s, [(x, 13 - min(6, x + 1), 13 + min(6, x + 1)) for x in range(1, 9)])
-    s.section('Bridge (bow): helm, gun and shield consoles, the burst laser')
-    s.m('helm', 4, 10); s.m('weaponsConsole', 3, 13); s.m('burstLaser', 5, 13); s.lights((7, 9), (7, 15), (3, 15), (6, 18))
-    room(s, 'Corridor', 8, 11, 27, 15).light((12, 13), (19, 13), (25, 13))
-    q = room(s, 'Quarters: four bunks', 8, 7, 14, 11); q.row(['bed', 'bed', 'bed', 'bed']); q.light((13, 10))
-    ga = room(s, 'Galley and mess', 14, 7, 21, 11); ga.row([('galley', GALLEY), 'hydroponics', 'mess_table']); ga.light((17, 10))
-    mb = room(s, 'Med bay', 21, 7, 27, 11); mb.row(['med_bed', 'lifeSupport', 'storage_locker']); mb.light((26, 10))
-    ho = room(s, 'Stores and workshop', 8, 15, 15, 19); ho.row(['fabricator'] + ST, wall='s'); ho.light((12, 16))
-    sh = room(s, 'Shield and life support', 15, 15, 21, 19); sh.row(['shieldGen', 'lifeSupport'], wall='s'); sh.light((18, 16))
-    lb = room(s, 'Comms lobby: the shield console', 21, 15, 27, 19); lb.m('shieldConsole', 24, 16); lb.light((22, 18))
-    room(s, 'Pylon (north)', 23, 5, 27, 7).light((25, 6))
-    room(s, 'Pylon (south)', 23, 19, 27, 21).light((25, 20))
-    rr = room(s, 'North nacelle: a reactor and the airlock', 20, 0, 27, 5); rr.m('airlock', 21, 0)
-    rr.m('reactor', 24, 1); rr.light((26, 4))
-    en = room(s, 'North nacelle: engine room', 27, 0, 34, 5); en.m('engine', 30, 1, 1); en.light((28, 4))
-    hg = room(s, 'South nacelle: hangar', 20, 21, 27, 27); hg.m('vehicle_bay', 21, 22, vehicle='vehicle.shuttle'); hg.light((26, 22))
-    es = room(s, 'South nacelle: engine room and reactor', 27, 21, 34, 27); es.m('engine', 30, 22, 1); es.m('reactor', 28, 22); es.light((28, 26), (32, 26))
-    for d in [(8, 13), (11, 11), (17, 11), (24, 11), (11, 15), (18, 15), (22, 15), (25, 7), (25, 5), (25, 19), (25, 21), (27, 3), (27, 24)]: s.door(*d)
+def spine():
+    s = Ship('SPINE HAULER', 37, 25, CREW, 'a rounded hab forward, a cargo spine of store rooms amidships, engineering aft')
+    hull(s, [(x, 9, 15) if x <= 2 else (x, 6, 18) if x <= 4 else (x, 4, 20) for x in range(1, 9)])
+    s.section('Cockpit: helm, gun and shield consoles, the burst laser')
+    s.m('helm', 4, 7); s.m('weaponsConsole', 3, 11); s.m('burstLaser', 5, 11); s.m('shieldConsole', 4, 15); s.lights((7, 6), (7, 13), (2, 13), (6, 19))
+    lo = room(s, 'Lounge: galley, hydroponics, mess table, the airlock', 8, 4, 15, 10); lo.m('airlock', 9, 4); lo.m('galley', 12, 5, **GALLEY); lo.m('hydroponics', 12, 8) if False else None; lo.m('mess_table', 12, 8); lo.light((14, 9), (14, 6))
+    room(s, 'Hab corridor', 8, 10, 15, 14).light((11, 12))
+    qu = room(s, 'Quarters: four bunks, a med bed', 8, 14, 15, 20); qu.row(['bed', 'bed', 'bed', 'bed', 'med_bed'], wall='s'); qu.light((14, 15))
+    room(s, 'Spine', 15, 10, 25, 14).light((17, 12), (23, 12))
+    for i, (x0, y0) in enumerate([(15, 6), (20, 6), (15, 14), (20, 14)]):
+        r = room(s, 'Cargo bay ' + str(i + 1), x0, y0, x0 + 5, y0 + 4)
+        if i < 3: r.m('storage_rack', x0 + 1, y0 + 1 if y0 == 6 else y0 + 3, 0 if y0 == 6 else 2, stock=STOCK[i])
+        else: r.m('fabricator', x0 + 1, y0 + 3, 2)
+        r.light((x0 + 4, y0 + 2))
+    hg = room(s, 'Hangar: the shuttle bay', 25, 4, 31, 11); hg.m('vehicle_bay', 26, 5, vehicle='vehicle.shuttle'); hg.light((30, 6))
+    en = room(s, 'Engineering: two reactors, the shield, life support', 25, 11, 31, 20); en.m('lifeSupport', 26, 14); en.m('reactor', 26, 16); en.m('reactor', 26, 18); en.m('shieldGen', 29, 18); en.m('lifeSupport', 30, 14); en.light((28, 13), (28, 18))
+    er = room(s, 'Engine room: two engines', 31, 4, 36, 20); er.m('engine', 32, 5, 1); er.m('engine', 32, 16, 1); er.light((33, 10), (34, 13))
+    lo.m('lifeSupport', 14, 8) if False else None
+    for d in [(8, 12), (11, 10), (11, 14), (15, 12), (18, 10), (23, 10), (18, 14), (23, 14), (25, 12), (30, 11), (31, 12)]: s.door(*d)
     return s
 
 
 def roundhouse():
-    s = Ship('ROUNDHOUSE', 27, 27, CREW, 'an octagon: a ring corridor around the mess, with bridge, bunks, hangar and engines on the four sides')
-    hull(s, [(x, 1 + max(0, 8 - x, x - 19), 25 - max(0, 8 - x, x - 19)) for x in range(2, 26)])
-    vline(s, 7, 0, 26); vline(s, 19, 0, 26); vline(s, 8, 20, 24); hline(s, 0, 26, 7); hline(s, 0, 26, 19)
-    room(s, 'Ring corridor', 7, 7, 19, 19).light((8, 8), (18, 8), (8, 18), (18, 18))
-    core = room(s, 'Mess (centre)', 9, 9, 17, 17); core.row([('galley', GALLEY), 'hydroponics', 'hydroponics'], wall='s'); core.m('mess_table', 12, 12); core.light((13, 10), (10, 13), (16, 13))
-    s.section('Bridge (west side): helm, gun and shield consoles, the burst laser')
-    s.m('helm', 3, 8); s.m('weaponsConsole', 3, 11); s.m('shieldConsole', 3, 14); s.m('burstLaser', 3, 17); s.lights((6, 8), (6, 12), (6, 16), (5, 18))
-    s.section('Quarters (north side): four bunks, a med bed, a locker, the shield')
-    for x in (9, 10, 11, 12): s.m('bed', x, 2)
-    s.m('shieldGen', 13, 2); s.m('med_bed', 15, 2); s.m('storage_locker', 17, 2); s.m('lifeSupport', 18, 2); s.lights((10, 5), (16, 5))
-    s.section('Hangar (south side): the shuttle bay, fabricator, a reactor, stores, the airlock')
-    s.m('vehicle_bay', 9, 20, vehicle='vehicle.shuttle'); s.m('fabricator', 14, 20); s.m('reactor', 17, 20); s.m('airlock', 15, 22, 2)
-    for (x, y), st in zip([(13, 24), (14, 24), (18, 24)], STOCK): s.m('storage', x, y, 2, stock=st)
-    s.lights((13, 20), (18, 22), (13, 22))
-    s.section('Engine room (east side): two engines, a reactor, life support')
-    s.m('engine', 21, 8, 1); s.m('engine', 21, 15, 1); s.m('reactor', 22, 12); s.m('lifeSupport', 24, 12); s.lights((20, 11), (23, 14), (20, 14))
-    s.section('Corner closets: lockers')
-    s.m('storage_locker', 6, 5); s.m('storage_locker', 20, 4); s.lights((5, 6), (20, 6), (20, 22), (5, 20))
-    for d in [(13, 7), (13, 19), (7, 13), (19, 13), (13, 9), (19, 6), (19, 22), (6, 19), (7, 6)]: s.door(*d)
+    s = Ship('ROUNDHOUSE', 28, 26, CREW, 'a squat round hull built around a ring hallway, rooms bulging out on every side like lumps of armour')
+    room(s, 'Ring hallway', 7, 6, 19, 18).light((8, 7), (18, 7), (8, 17), (18, 17), (8, 12), (18, 12), (13, 8), (13, 16))
+    co = room(s, 'Core: two reactors, the shield, life support', 10, 9, 16, 15); co.m('reactor', 11, 10); co.m('reactor', 11, 13); co.m('shieldGen', 14, 10); co.m('lifeSupport', 15, 13); co.light((13, 12))
+    br = room(s, 'Bridge (bow lump): helm, gun console, the burst laser', 1, 8, 7, 16); br.m('helm', 3, 9); br.m('weaponsConsole', 2, 13); br.m('burstLaser', 5, 13); br.light((5, 11), (4, 15))
+    q = room(s, 'Quarters: four bunks', 8, 1, 13, 6); q.row(['bed', 'bed', 'bed', 'bed']); q.light((10, 5))
+    me = room(s, 'Mess: galley, hydroponics', 13, 1, 19, 6); me.row([('galley', GALLEY), 'hydroponics'], x=14); me.light((17, 5))
+    sh = room(s, 'Workshop: fabricator, stores', 19, 0, 25, 6); sh.m('fabricator', 21, 1); sh.m('storage', 24, 1, stock=STOCK[2]); sh.light((22, 4))
+    er = room(s, 'Engine room: two engines', 19, 6, 24, 18); er.m('engine', 20, 7, 1); er.m('engine', 20, 14, 1); er.light((21, 12))
+    ho = room(s, 'Hold: stores, the airlock', 8, 18, 13, 23); ho.m('airlock', 9, 20, 2); ho.m('storage', 12, 19, stock=STOCK[0]); ho.light((12, 22))
+    md = room(s, 'Med bay: med bed, life support, stores', 13, 18, 19, 23); md.m('med_bed', 14, 21); md.m('lifeSupport', 18, 21); md.m('storage', 17, 19, stock=STOCK[1]); md.light((16, 21))
+    hg = room(s, 'Hangar: the shuttle bay', 19, 18, 26, 25); hg.m('vehicle_bay', 21, 19, vehicle='vehicle.shuttle'); hg.light((20, 23), (25, 24))
+    for d in [(7, 12), (13, 9), (13, 15), (11, 6), (16, 6), (19, 4), (19, 12), (11, 18), (16, 18), (19, 20)]: s.door(*d)
     return s
 
-VARIANTS = [lambda: tagged(longhouse(), 'new'), lambda: tagged(staggered(), 'new'), lambda: tagged(terraces(), 'new'), lambda: tagged(nacelles(), 'new'), lambda: tagged(roundhouse(), 'new')]
+
+VARIANTS = [lambda: tagged(kestrel(), 'new'), lambda: tagged(c_arms(), 'new'), lambda: tagged(spine(), 'riff'), lambda: tagged(roundhouse(), 'new')]
 
 if __name__ == '__main__':
-    write('wayfarer', [v() for v in VARIANTS], 'Wayfarer variants, round 5: new concepts with proper rooms')
+    write('wayfarer', [v() for v in VARIANTS], 'Wayfarer variants, round 6: walkable hull shapes after FTL silhouettes')
