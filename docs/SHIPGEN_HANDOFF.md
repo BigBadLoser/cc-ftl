@@ -84,8 +84,9 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 - `live.ts`, `index.html`: the browser viewer.
 - `templates.ts`: sheets of hand-drawn templates (starter ships and their variants), the iso view and the board.
 - `templateDraw.py`: a drawing aid for hand-drawn templates (rooms, outlines, doors, beams, containers, modules).
-- `starters/`: the starter ship variants (#241): `<ship>.py` draws them, `<ship>.ts` is the generated variant file the
-  CLI reads, `picks.ts` lists the shipped starters, `kits.ts` and `variants*.test.ts` keep every variant playable.
+- `starters/`: the starter ship variants (#241): `<ship>.py` draws the current round, `<ship>.ts` is the generated variant
+  file the CLI reads, `<ship>R3.*` keep the earlier round for reference (not tested), `picks.ts` lists the shipped
+  starters, `kits.ts` and `variants*.test.ts` keep every current variant playable.
 
 ## How to iterate
 
