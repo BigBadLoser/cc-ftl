@@ -524,7 +524,7 @@ export type UiSubject =
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.starving'
-  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded';
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -1071,6 +1071,8 @@ export interface UiAlert {
   notice?: { id: number; lead: boolean; title: string };
   /** A click opens the fight breakdown card (api.openFightReport) instead of moving the camera. */
   report?: boolean;
+  /** A click opens the Esc menu on this page (the save-failed alert opens Save game). */
+  menu?: 'save';
 }
 
 /** One module or crew member in a fight report; a click jumps to `subject` when it has one. */

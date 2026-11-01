@@ -101,7 +101,7 @@ const loop = createLoop({
     probe.begin('ui/events');
     controller.onEvents(events);
     // A fight just began: keep this moment, so a fight that goes wrong can be undone (the autosave is overwritten as it goes on).
-    if (start.persist && session.get().lost === null && events.some((e) => e.type === 'combat.started')) void writePrecombat(sim);
+    if (start.persist && session.get().lost === null && events.some((e) => e.type === 'combat.started')) void writePrecombat(sim).then(reportSave);
     renderer?.onEvents(events);
     probe.end('ui/events');
     // A jump lifts the ships out of the sector: their scenes are stale. The deployed ship is shown (and framed) like a new game's.
@@ -151,11 +151,12 @@ const AUTOSAVE_MS = 30_000;
 const session = createStore<UiSession>({ notice: start.notice, lost: null });
 // Read the loss from the sim too, not only the session: the poll below lags by up to a second. A `?seed=` game never saves.
 const SAVE_FAILED = 'Saving failed: the browser refused the write (storage full or blocked). Your progress since the last save is not stored.';
-const save = createSaver(sim, start.persist, () => session.get().lost !== null, (ok) => {
-  const cur = session.get();
-  if (!ok && cur.notice !== SAVE_FAILED) session.set({ ...cur, notice: SAVE_FAILED });
-  else if (ok && cur.notice === SAVE_FAILED) session.set({ ...cur, notice: null });
-});
+// A failed write is an urgent alert (click: the Save game page); it clears itself when a later write works.
+const reportSave = (ok: boolean): void => {
+  if (ok) controller.alerts.clear('save');
+  else controller.alerts.post({ kind: 'save.failed', key: 'save', text: SAVE_FAILED, menu: 'save' });
+};
+const save = createSaver(sim, start.persist, () => session.get().lost !== null, reportSave);
 setInterval(save, AUTOSAVE_MS);
 setInterval(() => {
   if (session.get().lost) return;

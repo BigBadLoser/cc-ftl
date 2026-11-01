@@ -201,7 +201,8 @@ export function writeSave(sim: Sim, id = AUTO_ID, name = 'Autosave', now = Date.
   let json: string;
   try {
     json = serialize(sim);
-  } catch {
+  } catch (e) {
+    console.error('Save failed: the game could not be serialized', e);
     return Promise.resolve(false);
   }
   // The store starts its transaction before this returns, so a save made in a `pagehide` handler is already under way.

@@ -29,6 +29,15 @@ function awayTeam(): { sim: Sim; crew: number } {
 }
 
 describe('alerts', () => {
+  it('posts a clickable save-failed alert that opens the Save page, replaces itself, and clears', () => {
+    const al = createAlerts(newGame(1, content));
+    al.post({ kind: 'save.failed', key: 'save', text: 'Saving failed', menu: 'save' });
+    al.post({ kind: 'save.failed', key: 'save', text: 'Saving failed', menu: 'save' });
+    expect(current(al).map((x) => [x.kind, x.menu])).toEqual([['save.failed', 'save']]);
+    al.clear('save');
+    expect(current(al)).toEqual([]);
+  });
+
   it('raise "is down" for a player crew member down away from the home ship (a derelict)', () => {
     const { sim, crew } = awayTeam();
     const alerts = createAlerts(sim);

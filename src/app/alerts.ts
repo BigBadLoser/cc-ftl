@@ -38,7 +38,7 @@ export interface Alerts {
   /** Arrival warnings: bring the "drops from hyperspace" alerts in line with the fleets now on their way to the player's node (state, not events). */
   syncIncoming(): void;
   /** Raise an alert that is not a reaction to one event (the fight report); it stays until dismissed or `clear`ed. */
-  post(a: { kind: UiAlertKind; key: string; text: string; report?: boolean }): void;
+  post(a: { kind: UiAlertKind; key: string; text: string; report?: boolean; menu?: 'save' }): void;
   /** Remove the alerts raised under a key. */
   clear(key: string): void;
   /** Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...). Cheap; call it every few frames. */
@@ -204,7 +204,7 @@ export function createAlerts(sim: Sim): Alerts {
       for (const [id, k] of keys) if (k === a.key) remove(id);
       const id = nextId++;
       keys.set(id, a.key);
-      store.update((l) => [{ id, kind: a.kind, text: a.text, subject: null, ...(a.report ? { report: true } : {}) }, ...l]);
+      store.update((l) => [{ id, kind: a.kind, text: a.text, subject: null, ...(a.report ? { report: true } : {}), ...(a.menu ? { menu: a.menu } : {}) }, ...l]);
       for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
     },
     clear(key) {
