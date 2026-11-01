@@ -2,7 +2,7 @@
 through a faction look (faction/: its own relief on the walls and far hull, its own colours through restyle), under
 the same id with a faction segment after the family:
 
-  tile.<fam>.<look>.<rest of the default id>      e.g. tile.hull.navy.full.m10.v1, tile.wall.civil.v2.end.s,
+  tile.<fam>.<look>.<rest of the default id>      e.g. tile.hull.navy.cap.m10.v1, tile.wall.civil.v2.end.s,
                                                        tile.hull.scrap.p3.belly.o1.m10, tile.floor.drone.a
 
 <look> is navy | drone | civil.v1..v4 | bastion | scrap.p1..p4. Doors and the hull ghosts (see-through edge lines) are left out:
@@ -21,7 +21,8 @@ LOOKS = ("navy", "drone", "civil.v1", "civil.v2", "civil.v3", "civil.v4", "basti
 
 
 CORNER = re.compile(r"\.m\d+c\d+|\.end\.[se]\.c\d")     # corner-fill pieces: default look only for now
-STRAIGHT = re.compile(r"^tile\.(wall|hull)\.full\.m(10|5)$")   # straight runs: a look's variants (its pairs)
+STRAIGHT = re.compile(r"^tile\.wall\.full\.m(10|5)$")   # straight runs: a look's variants (its pairs)
+STAND_IN = "tile.hull.full.m15"                                 # (the engine's stand-in: default look only)
 DEFAULT_VARIANT = re.compile(r"\.a\d+$")                       # (the default look's own; a look builds its own)
 
 
@@ -48,7 +49,8 @@ def jobs():
     for name in names:
         lk = look(name)
         for sid, fp, kind, fn in DEFAULT:
-            if kind == "ghost" or sid.startswith("tile.door") or CORNER.search(sid) or (only and sid not in only):
+            if kind == "ghost" or sid.startswith("tile.door") or sid == STAND_IN or CORNER.search(sid) or \
+                    (only and sid not in only):
                 continue
             if DEFAULT_VARIANT.search(sid):
                 continue

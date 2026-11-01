@@ -51,10 +51,6 @@ for _m in range(16):
         for _lv, _pre in PRE.items():
             SPRITES.append((f"tile.wall.{_pre}{_id}", (1, 1), "block",
                             _plain(lambda m=_m, lv=_lv, c=_c: block(m, "wall", level=lv, corners=c))))
-        for _lv in ("up", "cut"):
-            for _v in (0, 1):
-                SPRITES.append((f"tile.hull.{PRE[_lv]}{_id}{'.v1' if _v else ''}", (1, 1), "block",
-                                lambda m=_m, lv=_lv, v=_v, c=_c: block(m, "hull", v, level=lv, corners=c)))
         for _v in (0, 1):                           # the far hull over a partition (wall3d.hull_cap: the renderer
             SPRITES.append((f"tile.hull.cap.{_id}{'.v1' if _v else ''}", (1, 1), "over",    # draws it over
                             lambda m=_m, v=_v, c=_c: hull_cap(m, v, corners=c)))         # tile.wall.full.m*)
@@ -76,10 +72,10 @@ def _variant(fn, tr):
     return build
 
 
-for _fam, _m in (("wall", 10), ("wall", 5), ("hull", 10), ("hull", 5)):      # straight runs' variants .a1 .. .a7
-    for _n, _tr in enumerate(PAIRS, 1):                                      # (wall3d_variants; the renderer picks
-        SPRITES.append((f"tile.{_fam}.full.m{_m}.a{_n}", (1, 1), "block",    # one a tile)
-                        _variant(lambda m=_m, f=_fam: block(m, f, level="up"), _tr)))
+for _m in (10, 5):                                                          # straight runs' variants .a1 .. .a7
+    for _n, _tr in enumerate(PAIRS, 1):                                     # (wall3d_variants; the renderer picks
+        SPRITES.append((f"tile.wall.full.m{_m}.a{_n}", (1, 1), "block",     # one a tile)
+                        _variant(lambda m=_m: block(m, "wall", level="up"), _tr)))
 OUT_MASK = {1: 4, 2: 2, 3: 6, 4: 0}    # mask bits that must be clear for each outward set (4: concave corner)
 for _o, _clear in OUT_MASK.items():
     for _m in range(16):
@@ -102,6 +98,8 @@ for _o, _clear in OUT_MASK.items():
                     SPRITES.append((f"tile.hull.ext.o{_o}.m{_m}.a{_n}", (1, 1), "wide",
                                     _variant(lambda m=_m, o=_o: ext_run_wide(m, o), _tr)))
 SPRITES.append(("tile.hull.ghost.vert", (1, 1), "ghost", vert))
+SPRITES.append(("tile.hull.full.m15", (1, 1), "block", lambda: block(15, "hull", level="up")))   # (the engine's
+#   stand-in, render/assets/fallback.ts: the far hull itself is tile.wall.full.m* + tile.hull.cap.m*, tiles.ts)
 END_CORNERS = {"s": (0, 2, 4, 6), "e": (0, 1, 2, 3)}   # the corner fills reaching each end face's edge
 for _s in ("s", "e"):
     for _lv, _pre in PRE.items():
@@ -109,9 +107,6 @@ for _s in ("s", "e"):
             _cs = f".c{_c}" if _c else ""
             SPRITES.append((f"tile.wall.{_pre}end.{_s}{_cs}", (1, 1), "block",
                             lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c)))
-            if _lv != "low":
-                SPRITES.append((f"tile.hull.{_pre}end.{_s}{_cs}", (1, 1), "block",
-                                lambda s=_s, lv=_lv, c=_c: end_face("hull", s, lv, c)))
     for _c in END_CORNERS[_s]:                      # the far hull's end over tile.wall.full.end.* (wall3d.hull_cap_end)
         SPRITES.append((f"tile.hull.cap.end.{_s}{f'.c{_c}' if _c else ''}", (1, 1), "block",
                         lambda s=_s, c=_c: hull_cap_end(s, c)))
