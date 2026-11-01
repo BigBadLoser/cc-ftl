@@ -5,8 +5,7 @@ import type { UiSalvage, UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTra
 import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
-import { salvageCounts, hostilesAboard } from '../sim/salvage/counts';
-import { partCount, partsOf } from '../sim/salvage/plan';
+import { salvageCounts, hostilesAboard, workLeft } from '../sim/salvage/counts';
 import { SalvageOrderC, SCRAP_TYPES } from '../sim/salvage/components';
 import { isIncapacitated } from '../sim/crew/helpers';
 
@@ -188,9 +187,8 @@ function salvageInfo(sim: Sim, id: number): UiSalvage {
   }));
   const o = sim.world.get(id, SalvageOrderC);
   if (!o) return { types, order: null };
-  const left = partCount(partsOf(sim, id, o.types));
+  const left = workLeft(sim, id, o.types);
   const h = hostilesAboard(sim, id);
-  const total = Math.max(o.total ?? left, left);
   const why = [h.crew ? 'hostiles aboard' : '', h.sacs ? 'egg sacs aboard' : '', h.nests ? 'nests aboard' : ''].filter(Boolean).join(', ');
-  return { types, order: { types: [...o.types], status: o.status, block: o.status === 'blocked' ? why || 'hostiles aboard' : '', done: total - left, total } };
+  return { types, order: { types: [...o.types], status: o.status, block: o.status === 'blocked' ? why || 'hostiles aboard' : '', done: o.done ?? 0, total: (o.done ?? 0) + left } };
 }

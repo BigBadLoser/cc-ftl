@@ -20,16 +20,14 @@ export const salvageHandlers: { [T in SalvageCommandType]: Handler<T> } = {
     if (!Array.isArray(cmd.types) || cmd.types.length === 0 || !cmd.types.every((t) => SCRAP_TYPES.includes(t))) return reject(sim, cmd.type, 'badValue');
     const types = SCRAP_TYPES.filter((t) => cmd.types.includes(t));
     if (robotOnly(sim, cmd.ship)) return reject(sim, cmd.type, 'robotOnly');
-    const remaining = partCount(partsOf(sim, cmd.ship, types));
-    if (remaining === 0) return reject(sim, cmd.type, 'nothingToStrip');
+    if (partCount(partsOf(sim, cmd.ship, types)) === 0) return reject(sim, cmd.type, 'nothingToStrip');
     const old = sim.world.get(cmd.ship, SalvageOrderC);
     if (old) {
-      old.total = Math.max(0, old.total - partCount(partsOf(sim, cmd.ship, old.types))) + remaining; // keep what is already stripped
       // A changed order: drop the jobs of types no longer ticked (the planner posts the new ones).
       for (const job of salvageJobs(sim, cmd.ship)) destroyJob(sim, job);
       old.types = types;
     } else {
-      sim.world.add(cmd.ship, SalvageOrderC, { types, status: 'running', total: remaining, since: sim.tick });
+      sim.world.add(cmd.ship, SalvageOrderC, { types, status: 'running', done: 0, since: sim.tick });
     }
     sim.events.emit({ type: 'salvage.ordered', ship: cmd.ship, types: [...types] });
   },

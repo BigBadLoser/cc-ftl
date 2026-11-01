@@ -4,7 +4,7 @@ import { CrewC, DeadC, PositionC } from '../crew/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
 import { structCostKey } from '../items/stacks';
 import { ModuleC } from '../modules/components';
-import { shipIdOf } from '../regions';
+import { shipGrid, shipIdOf } from '../regions';
 import type { ItemQty, ScrapType } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
@@ -58,4 +58,24 @@ export function hostilesAboard(sim: Sim, ship: number): { crew: number; sacs: nu
   for (const id of sim.world.query(EggSacC)) if (sim.world.get(id, EggSacC)?.ship === ship) sacs++;
   for (const id of sim.world.query(NestC)) if (sim.world.get(id, NestC)?.ship === ship) nests++;
   return { crew, sacs, nests };
+}
+
+/**
+ * Stripping jobs an order for `types` still has to do, counting the floors that the walls, doors and modules of the ticked types leave
+ * behind (each comes down to a floor that is stripped in turn, when Hull is ticked). Stripping one part moves one job from here to
+ * `SalvageOrder.done`, so done + this is steady and the progress bar only rises.
+ */
+export function workLeft(sim: Sim, ship: number, types: readonly ScrapType[]): number {
+  const parts = partsOf(sim, ship, types);
+  let n = partCount(parts);
+  const grid = shipGrid(sim, ship);
+  if (!grid || !types.includes('hull')) return n;
+  n += parts.walls.filter((t) => t.kind !== Struct.Beam).length; // a wall or door leaves a floor
+  const ids = new Set(parts.modules);
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      if (ids.has(grid.get('module', x, y)) && grid.get('struct', x, y) === Struct.Floor) n++; // a module's footprint is floor beneath
+    }
+  }
+  return n;
 }
