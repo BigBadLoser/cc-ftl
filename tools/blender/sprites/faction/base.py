@@ -1,4 +1,6 @@
 """What every faction look is (a restyle.Look with a relief) and the faction palettes' ramps."""
+import colorsys
+
 from .. import wall3d as T
 from .. import walls as W
 from ..relief_style import Style
@@ -24,6 +26,25 @@ BASES = {
 OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045)}    # (its 8th, <pre>W7: between 3 and 2)
 
 
+# a look's hue and saturation drifting down its ramps (else each ramp keeps its base colour's): (lightness, hue°,
+# saturation) at the dark end and at the light end, between them by lightness; bastion's shadows indigo, its
+# highlights steel blue
+TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18))}
+
+
+def _tinted(ramp_, tint):
+    """A ramp's steps ({name: hex}) at the hue and saturation tint gives their lightness, each on a centre of
+    post.quantize's bins (8 a channel, centred at 8n + 4): the quantiser keeps it, not a near tone of another's."""
+    (l0, h0, s0), (l1, h1, s1) = tint
+    out = {}
+    for k, hexc in ramp_.items():
+        h, l, s = colorsys.rgb_to_hls(*(int(hexc[i:i + 2], 16) / 255 for i in (1, 3, 5)))
+        t = min(1.0, max(0.0, (l - l0) / (l1 - l0)))
+        rgb = colorsys.hls_to_rgb((h0 + (h1 - h0) * t) / 360, l, s0 + (s1 - s0) * t)
+        out[k] = "#%02x%02x%02x" % tuple(min(252, max(4, round((v * 255 - 4) / 8) * 8 + 4)) for v in rgb)
+    return out
+
+
 def _on_bin(hexc):
     """The colour on the nearest centre of post.quantize's bins (8 a channel, centred at 8n + 4), kept blue over
     green: a tone between steps that the quantiser maps to itself."""
@@ -36,7 +57,8 @@ def palette_entries():
     out = {}
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
-            out.update(ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {})))
+            r = ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {}))
+            out.update(_tinted(r, TINT[pre]) if pre in TINT else r)
             if pre in OFFSETS and len(OFFSETS[pre]) > 7:         # (an extra step on a centre of the quantiser's
                 out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # bins: it keeps it, not a near tone of
                                                                     # another look's, and anti-aliases)
