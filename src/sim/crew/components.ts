@@ -246,5 +246,9 @@ export interface Mood {
   alone: number;
   /** True while the 'very unhappy' alert is armed (set on the way down, cleared once mood recovers). */
   low: boolean;
+  /** Trait memory (crew/traitMood.ts), kept only for traits that read it: seconds idle without a job, since combat or EVA, since EVA. */
+  idle?: number;
+  quiet?: number;
+  inside?: number;
 }
 export const MoodC = defineComponent<Mood>('mood');

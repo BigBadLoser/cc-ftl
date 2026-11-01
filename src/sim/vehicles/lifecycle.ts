@@ -11,7 +11,8 @@ import { ModuleC } from '../modules/components';
 import type { VehicleDef } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
-import { BLEED_OUT_SECONDS, SKILL_STEP } from '../tuning';
+import { SKILL_STEP } from '../tuning';
+import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
@@ -120,7 +121,7 @@ function downCrew(sim: Sim, crew: number): void {
   const hp = sim.world.get(crew, HealthC);
   if (hp) hp.hp = 0;
   sim.world.remove(crew, DraftedC);
-  sim.world.add(crew, DownedC, { bleed: BLEED_OUT_SECONDS, stabilized: false, bed: 0 });
+  sim.world.add(crew, DownedC, { bleed: bleedOutSec(sim, crew), stabilized: false, bed: 0 });
   (sim.world.get(crew, CrewC) as Crew).activity = 'downed';
   sim.events.emit({ type: 'crew.downed', crew });
 }

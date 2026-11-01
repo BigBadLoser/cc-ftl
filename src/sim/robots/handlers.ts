@@ -8,7 +8,9 @@ import { CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, type Path } from '../c
 import { isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { createCrew } from '../crew/spawn';
-import { AllegianceC, FighterC } from '../fight/components';
+import { AllegianceC, EquipC, FighterC } from '../fight/components';
+import { TraitsC } from '../crew/traits';
+import { SkillXpC } from '../story/components';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import { isTileWalkable } from '../modules/walk';
@@ -21,7 +23,7 @@ import { destroyJob } from '../items/stacks';
 import { shipIdOf, shipGrid } from '../regions';
 import { shipById } from '../combat/ships';
 
-type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly' | 'debug.setCharge';
+type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly' | 'debug.setCharge' | 'debug.setCrew';
 type Handler<T extends RobotCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 function reject(sim: Sim, command: string, reason: string): void {
@@ -87,6 +89,18 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
       const n = sim.world.get(id, NeedsC);
       if (n && n.charge !== undefined) n.charge = Math.max(0, Math.min(100, cmd.value));
     }
+  },
+  'debug.setCrew': (sim, cmd) => {
+    if (!sim.world.has(cmd.id, CrewC)) return reject(sim, cmd.type, 'noCrew');
+    if (cmd.traits) sim.world.add(cmd.id, TraitsC, { ids: cmd.traits.filter((t) => sim.content.traits?.[t]) });
+    if (cmd.xp) sim.world.add(cmd.id, SkillXpC, { xp: { ...cmd.xp } });
+    if (cmd.weapon !== undefined) {
+      if (cmd.weapon !== null && !sim.content.items[cmd.weapon]?.hand) return reject(sim, cmd.type, 'notWeapon');
+      sim.world.add(cmd.id, EquipC, { weapon: cmd.weapon });
+    }
+    const n = sim.world.get(cmd.id, NeedsC);
+    if (n && cmd.hunger !== undefined && sim.content.species[sim.world.get(cmd.id, CrewC)?.species ?? '']?.hunger) n.hunger = Math.max(0, Math.min(100, cmd.hunger));
+    if (n && cmd.rest !== undefined) n.rest = Math.max(0, Math.min(100, cmd.rest));
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = shipGrid(sim, cmd.ship);

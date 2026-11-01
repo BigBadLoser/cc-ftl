@@ -1,5 +1,5 @@
-import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory } from '../sim';
-import type { UiCrew, UiFight } from '../ui/api';
+import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
+import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
@@ -125,8 +125,26 @@ function hungerOf(sim: Sim, id: number): number | null {
 function moodOf(sim: Sim, id: number): UiCrew['mood'] {
   const m = sim.world.get(id, MoodC);
   if (!m) return null;
-  const factors = m.factors.map((f) => ({ label: MOOD_LABELS[f.key] ?? f.key, value: f.value })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  const factors = m.factors.map((f) => ({ label: MOOD_LABELS[f.key] ?? (f.key.startsWith('trait:') ? f.key.slice(6) : f.key), value: f.value })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   return { value: m.value, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1 };
+}
+
+function traitsOf(sim: Sim, id: number): UiTrait[] {
+  return (sim.world.get(id, TraitsC)?.ids ?? []).flatMap((tid) => {
+    const d = sim.content.traits?.[tid];
+    return d ? [{ id: tid, name: d.name, kind: d.kind, flavour: d.flavour, effect: d.effect }] : [];
+  });
+}
+
+/** Skills above 0 now or in the role, in the resolver's order, against the role's level. */
+function skillsOf(sim: Sim, id: number, roleSkills: Partial<Record<string, number>> | undefined): UiSkill[] {
+  const out: UiSkill[] = [];
+  for (const skill of SKILLS) {
+    const value = Math.round(stat(sim, id, skill));
+    const base = roleSkills?.[skill] ?? 0;
+    if (value > 0 || base > 0) out.push({ skill, value, base });
+  }
+  return out;
 }
 
 function fightOf(sim: Sim, id: number): UiFight | null {
@@ -193,6 +211,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     evaShuttle: evaShuttleOf(sim, id),
     suit: suitOf(sim, id),
     suitAt: suitAtOf(sim, id),
+    traits: traitsOf(sim, id),
+    skills: side === 'player' && !sim.content.species[crew.species]?.mechanical ? skillsOf(sim, id, role?.skills) : [],
   };
 }
 

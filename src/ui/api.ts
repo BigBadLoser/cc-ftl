@@ -1,5 +1,7 @@
 import type { UiDeploy, UiJumpWarnings, UiSellGood, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
+import type { UiCrewDetail } from './crewDetailApi';
+export type * from './crewDetailApi';
 import type { Command, SimEvent, WorkCategory } from '../sim';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
@@ -152,6 +154,26 @@ export interface UiCrew {
   suit: { air: number; max: number; low: boolean; outside: boolean } | null;
   /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
   suitAt: { id: number; free: number } | null;
+  /** Traits (docs/TRAITS.md): name, kind, flavour and the exact effect (for the hover). */
+  traits: UiTrait[];
+  /** Skills worth showing (above 0 now, or in the role): current level against the role's baseline. */
+  skills: UiSkill[];
+}
+
+export interface UiTrait {
+  id: string;
+  name: string;
+  kind: 'behaviour' | 'phobia' | 'habit' | 'tradeoff' | 'texture';
+  flavour: string;
+  effect: string;
+}
+
+export interface UiSkill {
+  skill: string;
+  /** Current level (rolled start, XP and traits). */
+  value: number;
+  /** The role's level (0 for an off-role skill). */
+  base: number;
 }
 
 export interface UiFight {
@@ -1189,6 +1211,8 @@ export interface UiApi {
   crew: Subscribable<UiCrew[]>;
   /** Hostile crew on grids the player's crew stand on. */
   hostiles: Subscribable<UiCrew[]>;
+  /** The inspector's Status, Skills and Gear tabs for the selected crew member of the player's (null otherwise). */
+  crewDetail: Subscribable<UiCrewDetail | null>;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
   /** Order the selected drafted crew to attack a hostile crew member. */

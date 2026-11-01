@@ -1,4 +1,5 @@
 import { combatReadyUnits, stepFighter } from '../fight/fighter';
+import { rallySurrendered } from '../fight/surrender';
 import type { Sim } from '../sim';
 import { shipGrid } from '../regions';
 
@@ -9,8 +10,10 @@ import { shipGrid } from '../regions';
  * beaten, or walk to a bridge console when a boarder has nobody left to fight. All details in fight/fighter.ts.
  */
 export function crewCombatSystem(sim: Sim): void {
-  for (const [shipId, units] of combatReadyUnits(sim)) {
+  const all = combatReadyUnits(sim);
+  for (const [shipId, units] of all) {
     const grid = shipGrid(sim, shipId);
     if (grid?.has('struct')) for (const id of units) stepFighter(sim, grid, id, units);
   }
+  rallySurrendered(sim, all); // player crew who gave up get back up once the threat is gone
 }
