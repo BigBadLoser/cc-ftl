@@ -21,11 +21,18 @@ export interface SectorGridData {
   empty: EmptySpec;
   occupancy: string | null;
   chunks: { cx: number; cy: number; fields: Record<string, string> }[];
+  /** The threshold watch and its count (see `SectorGridOptions.watch`); saved so the count survives a load. */
+  watch?: { field: string; below: number; crossings: number };
 }
 
 export interface SectorGridOptions {
   /** Field whose non-empty tiles keep a chunk alive (default `struct` when the spec has it, else none: never released). */
   occupancyField?: string | null;
+  /**
+   * Count the writes that move a tile of `field` across `below` (from under it to at or over it, or back). A cheap, saved change signal
+   * for a threshold a reader cares about (the crew scheduler: thin air), where the field's revision changes on every small write.
+   */
+  watch?: { field: string; below: number };
 }
 
 const CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
@@ -69,6 +76,9 @@ export class SectorGrid implements GridLike {
   private readonly chunkRevs = new Map<number, Uint32Array>();
   private readonly fieldRevs: number[];
   private sorted: number[] | null = null;
+  private readonly watchF: number;
+  private readonly watchBelow: number;
+  private crossed = 0;
 
   constructor(
     readonly id: number,
@@ -91,6 +101,14 @@ export class SectorGrid implements GridLike {
     if (occName !== null && !this.index.has(occName)) throw new Error(`SectorGrid: unknown occupancy field "${occName}"`);
     this.occ = occName === null ? -1 : (this.index.get(occName) as number);
     this.fieldRevs = this.names.map(() => 0);
+    if (opts.watch && !this.index.has(opts.watch.field)) throw new Error(`SectorGrid: unknown watched field "${opts.watch.field}"`);
+    this.watchF = opts.watch ? (this.index.get(opts.watch.field) as number) : -1;
+    this.watchBelow = opts.watch?.below ?? 0;
+  }
+
+  /** Writes so far that moved a tile of the watched field across its threshold (0 without a watch). Monotone, saved. */
+  crossings(): number {
+    return this.crossed;
   }
 
   /** Informational extent of the allocated chunks, in tiles. */
@@ -164,6 +182,7 @@ export class SectorGrid implements GridLike {
     const before = arr[i] as number;
     arr[i] = value;
     this.bump(key, f);
+    if (f === this.watchF && before < this.watchBelow !== (arr[i] as number) < this.watchBelow) this.crossed++;
     if (f === this.occ) {
       const e = this.empties[f];
       chunk.solid += Number((arr[i] as number) !== e) - Number(before !== e);
@@ -250,11 +269,15 @@ export class SectorGrid implements GridLike {
       for (const n of [...this.names].sort()) fields[n] = toBase64(chunk.arrays[this.index.get(n) as number] as FieldArray);
       return { cx: keyCx(k), cy: keyCy(k), fields };
     });
-    return { spec: { ...this.spec }, empty, occupancy: this.occ < 0 ? null : (this.names[this.occ] as string), chunks };
+    const out: SectorGridData = { spec: { ...this.spec }, empty, occupancy: this.occ < 0 ? null : (this.names[this.occ] as string), chunks };
+    if (this.watchF >= 0) out.watch = { field: this.names[this.watchF] as string, below: this.watchBelow, crossings: this.crossed };
+    return out;
   }
 
   static deserialize(id: number, data: SectorGridData): SectorGrid {
-    const grid = new SectorGrid(id, data.spec, data.empty, { occupancyField: data.occupancy });
+    const w = data.watch;
+    const grid = new SectorGrid(id, data.spec, data.empty, { occupancyField: data.occupancy, ...(w ? { watch: { field: w.field, below: w.below } } : {}) });
+    grid.crossed = w?.crossings ?? 0;
     for (const c of data.chunks) {
       const chunk = grid.allocChunk();
       grid.names.forEach((n, f) => {

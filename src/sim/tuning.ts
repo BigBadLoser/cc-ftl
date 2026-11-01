@@ -200,6 +200,10 @@ export const OPERATE_MAX_LEVEL = 2;
 export const RELIEF_AFTER_SEC = 12;
 /** Path-score penalty on a relieved console (longer than any walk), so other work of the same rank comes first. */
 export const RELIEF_PENALTY = 1000;
+/** The job scheduler (ai/scheduler.ts) runs a pass at least this often (ticks) while crew are free and jobs open, even when nothing it fingerprints changed. */
+export const SCHED_CADENCE = 20;
+/** A free crew member with more candidate jobs than this in one walk mode is costed by one multi-goal Dijkstra; fewer, by lazy A* per job. */
+export const SCHED_DIJKSTRA_ABOVE = 6;
 /** Operators keep manning their console until rest drops below this. */
 export const OPERATOR_EXHAUSTED_BELOW = 5;
 /**

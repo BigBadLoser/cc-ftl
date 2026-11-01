@@ -1,4 +1,4 @@
-import { findPath, type PathGoal, type Tile } from '../crew/pathfind';
+import { findPath, type PathGoal, type PathOpts, type Tile } from '../crew/pathfind';
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
 import { isWalkable } from '../structure';
@@ -59,8 +59,29 @@ export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goa
  * `thinOk` is asked before any search for a thin plan; a caller that has no use for one (no suit to be had) answers false and gets null for those.
  */
 export function planSiteWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal, thinOk: () => boolean = () => true): WalkPlan | null {
-  const plan = planWalk(sim, crew, shipId, from, goal, thinOk);
-  if (plan || hasSuitAir(sim, crew) || !needsAir(sim, crew) || !thinOk()) return plan;
-  const steps = findPath(sim, shipId, from, goal, { suited: true });
-  return steps && { steps, thin: true };
+  for (const m of siteWalkModes(sim, crew, shipId)) {
+    if (m.thin && !thinOk()) return null;
+    const steps = findPath(sim, shipId, from, goal, m.opts);
+    if (steps) return { steps, thin: m.thin };
+  }
+  return null;
+}
+
+/** One search of `planSiteWalk`: the walker conditions, and whether a plan found with them is `thin` (the walker needs a suit first). */
+export interface WalkMode {
+  opts: PathOpts;
+  thin: boolean;
+}
+
+/**
+ * The searches `planSiteWalk` tries for this crew member on this ship, in order; the first that finds a path wins. Suited crew (with air) and
+ * airless bodies: one search, anywhere they can walk. A grid with no thin air: the plain search, then (thin) suited across the hull. Otherwise:
+ * keep out of thin air, then (thin) through it, then (thin) suited across the hull. The scheduler reads the same order (ai/scheduler.ts).
+ */
+export function siteWalkModes(sim: Sim, crew: number, shipId: number): WalkMode[] {
+  const grid = shipGrid(sim, shipId);
+  if (!grid?.has('struct')) return [];
+  if (hasSuitAir(sim, crew) || !needsAir(sim, crew)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }];
+  if (!gridHasThinAir(sim, grid)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }, { opts: { suited: true }, thin: true }];
+  return [{ opts: { avoidThin: true }, thin: false }, { opts: {}, thin: true }, { opts: { suited: true }, thin: true }];
 }

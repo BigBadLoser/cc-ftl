@@ -3,23 +3,25 @@ import { isIncapacitated } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { dropCarried } from '../items/stacks';
 import type { Sim } from '../sim';
-import { EMERGENCY_CHECK_TICKS, emergencyWaiting, pickJob } from './legacyPick';
+import { EMERGENCY_CHECK_TICKS, emergencyWaiting } from './emergency';
 import { chargeTurn } from './machines/charge';
 import { eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
 import { navigateTurn } from './machines/navigate';
 import { sleepTurn } from './machines/sleep';
 import { legacyIntent } from './policy';
+import { assignJobs } from './scheduler';
 import { abortTask, isCarrying, syncTask } from './task';
 
 /**
- * Crew decisions, in `decide`'s slot (docs/CREW_AI.md Phase 1: the layers split, no behaviour change). Per crew member in id
- * order, as `decide` did: the forced states keep them out (drafted, incapacitated, off duty; a sleeper, charger or eater is
- * busy), `policy.legacy` writes what they want (`Intent`), the need machines (charge, sleep, eat) take it in that order, a held
- * job is kept or rerouted, and otherwise the legacy picker (`pickJob`) gives them a job or they idle. Every turn leaves the
+ * Crew decisions, in `decide`'s slot (docs/CREW_AI.md sections 4 and 7). Per crew member in id order: the forced states keep them
+ * out (drafted, incapacitated, off duty; a sleeper, charger or eater is busy), `policy.legacy` writes what they want (`Intent`), the
+ * need machines (charge, sleep, eat) take it in that order, and a held job is kept, rerouted or dropped for an emergency. The crew
+ * left free are then matched to open jobs together by the scheduler (`assignJobs`, Phase 2), and those without a job idle. Every turn leaves the
  * `Task` mirror current; crew held out of the loop are re-synced.
  */
 export function scheduleSystem(sim: Sim): void {
+  const free: number[] = [];
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
     if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) {
       syncTask(sim, id, true); // held out of the loop: keep the mirror current (the turn below sets it for everyone else)
@@ -60,6 +62,9 @@ export function scheduleSystem(sim: Sim): void {
     }
 
     dropCarried(sim, id); // a load left over from a lost haul job
-    if (!pickJob(sim, id, pos)) idleTurn(sim, id, crew, pos);
+    free.push(id);
   }
+  // Free crew are matched to jobs together (ai/scheduler.ts); the rest idle, in id order.
+  const taken = free.length > 0 ? assignJobs(sim, free) : new Set<number>();
+  for (const id of free) if (!taken.has(id)) idleTurn(sim, id, sim.world.get(id, CrewC) as Crew, sim.world.get(id, PositionC) as Position);
 }
