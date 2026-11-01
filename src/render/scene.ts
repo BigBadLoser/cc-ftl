@@ -426,6 +426,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   stage.addChildAt(mini, 1);
   const miniRts: RenderTexture[] = [];
   const MAX_MINI_PX = 96e6;
+  /** The GPU's own texture and renderbuffer size limits (4096 on some GPUs), so the pass falls back before it would fail. */
+  const maxMiniSide = ((): number => {
+    const ctx = (gl as unknown as { gl?: WebGLRenderingContext }).gl;
+    if (!ctx) return 4096;
+    return Math.min(8192, ctx.getParameter(ctx.MAX_TEXTURE_SIZE) as number, ctx.getParameter(ctx.MAX_RENDERBUFFER_SIZE) as number);
+  })();
   function miniRt(i: number, w: number, h: number): RenderTexture {
     let rt = miniRts[i];
     if (!rt || rt.width !== w || rt.height !== h) {
@@ -442,7 +448,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** Draw the world at 1/2 into a texture and average it down to the canvas size; false when it would be too big (drawn directly instead). */
   function renderMini(k: number, inView: Sprite): boolean {
     const w = cam.w * k, h = cam.h * k;
-    if (w * h > MAX_MINI_PX || w > 8192 || h > 8192) return false;
+    if (w * h > MAX_MINI_PX || w > maxMiniSide || h > maxMiniSide) return false;
     const vcam = { scale: 0.5, zoom: 0.5, w, h, originX: cam.originX * k, originY: cam.originY * k } as unknown as Camera;
     place(vcam, null);
     W.setUiVisible(false);
