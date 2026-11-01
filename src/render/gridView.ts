@@ -178,6 +178,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const r = tiles.chunkRect(c);
     const gapAt = (x: number, y: number): boolean => mode === "up" && tiles.inside(x, y) && replaced.has(y * width + x);
     const struct = tiles.data("struct", c);
+    const finish = tiles.data("floor", c);
     const x0 = Math.max(0, r.x0), x1 = Math.min(width, r.x1);
     const y0 = Math.max(0, r.y0), y1 = Math.min(height, r.y1);
     if (struct)
@@ -206,7 +207,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
           // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
           const engineUp = replaced.has(idx) && mode === "up";
-          const f = ghosts && !engineUp && replacesFloor(wallAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y));
+          const f = ghosts && !engineUp && replacesFloor(wallAt, x, y, mode) ? undefined : atlas.firstOf(floorChain(x, y, finish?.[ci] ?? 0));
           if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
@@ -327,7 +328,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const built = `${base}|${grid.revision("struct")}|${mr}`;
       if (built !== builtKey) {
         builtKey = built;
-        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}`, buildChunk);
+        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${tiles.rev("floor", c)}|${specialsNear(c)}`, buildChunk);
         frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(animNow()) : -1;

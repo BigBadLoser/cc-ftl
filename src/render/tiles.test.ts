@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Struct } from "../sim/structure";
+import { Finish, Struct } from "../sim/structure";
 import { floorChain, ghostVerts, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
 
 const W = Struct.Wall;
@@ -119,5 +119,11 @@ describe("floors", () => {
     expect(set.size).toBeLessThanOrEqual(3);
     expect([...set].filter((v) => v === "tile.floor.a").length).toBe(1);
     expect(tileHash(1, 2)).toBe(tileHash(1, 2));
+  });
+
+  it("shows a floor finish first, the plain deck behind it", () => {
+    expect(floorChain(3, 4, Finish.Market)[0]).toBe("tile.floor.market");
+    expect(floorChain(3, 4, Finish.Market).slice(1)).toEqual(floorChain(3, 4));
+    expect(floorChain(3, 4, Finish.Plain)).toEqual(floorChain(3, 4));
   });
 });

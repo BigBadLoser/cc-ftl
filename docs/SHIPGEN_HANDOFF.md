@@ -69,6 +69,9 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 | `civilFrames.ts` | civil frames: container frames, ore cages, truss bridges, rig booms, the liner's 2D hull |
 | `civilStations.ts` | ring and lattice stations (also the station generator's building blocks) |
 | `stationTypes.ts`, `stationPlan.ts`, `stationGrammars.ts`, `stationGen.ts` | the station generator: kinds and tiers, room plan, ring / lattice / hub / welded grammars, generation and station rules (`docs/STATUS.md`, Stations) |
+| `stationQuality.ts`, `roleSwap.ts`, `stationKit.ts` | station score (adjacency, districts), role swaps after the structure, room order by district ([STATIONGEN.md](STATIONGEN.md)) |
+| `rooms/designs.ts`, `rooms/frame.ts`, `rooms/doorSlide.ts` | designed machine rooms, the room frame, doors that slide for a design |
+| `rooms/quality.ts`, `rooms/islands.ts`, `rooms/courts.ts`, `archways.ts` | room quality score, islands, court promenades, zones, floors and landmarks, archways |
 | `civilKit.ts` | civil joins, drive, `beside`, variant picks |
 | `civilShips.ts` | civil freighters, mining ships, crew bodies |
 | `scrapDonors.ts` | the donor registry and job pool; navy and drone donors cut from their own generators |
@@ -81,6 +84,7 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
 - `cli.js`: renders contact sheets as PNG, plus a `.txt` summary with ASCII dumps.
 - `draw.ts`: sheet layout, the detail view, diversity metrics, and the `faction:family` filter.
 - `views.ts`: the silhouette, assembly and structure views.
+- `labels.ts`: the labelled view (one layout a image, rooms named, furniture coded, a key).
 - `live.ts`, `index.html`: the browser viewer.
 
 ## How to iterate
@@ -91,6 +95,8 @@ Run all commands from the repository root.
 # One faction, one depth, seeds 1..12, every view, into a folder of your choice
 node tools/shipgen/cli.js faction.navy --depth 9 --count 12 --views all --out /tmp/sheets/after
 # Views: detail | silhouette | assembly | structure (comma list) or all. Seeds: --from 13 --count 24
+# Labelled view (one image a seed: rooms named, furniture coded, a key): --views labels
+node tools/shipgen/cli.js station.trading --size station --layout stationWheel --views labels --count 2 --out /tmp/sheets/labels
 # One hull family only:
 node tools/shipgen/cli.js faction.drones:picket --depth 9 --count 12 --views structure,silhouette --out /tmp/sheets/after
 # Live viewer: npm run dev, then open /tools/shipgen/

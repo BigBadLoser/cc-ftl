@@ -1,3 +1,6 @@
+import type { FinishKind } from '../../structure';
+import type { DesignName } from './designs';
+
 /**
  * Room recipes: data-driven layout rules per room role. A recipe lists 2-3 arrangements; the seed picks one per room,
  * plus a mirror (port and starboard swapped) and the alternatives of each step. Directions are in the ship frame:
@@ -18,6 +21,8 @@ export interface Step {
    * fill target.
    */
   count: 'spec' | number | 'fill';
+  /** With `count: 'fill'`: at most one of this step's module per module of this def in the room (a locker a bed). */
+  per?: string;
   /** Walls the footprint should back onto (preferred, not required). */
   wall?: Wall;
   /** A second-choice wall, scored lower (the helm backs onto a long wall when the fore wall has a door). */
@@ -57,6 +62,9 @@ export interface Step {
 }
 
 export interface Arrangement {
+  /** Lay the room out at once from a repeating unit (rooms/plans.ts); its steps are the fallback when the plan does not fit. */
+  plan?: { kind: 'berths'; lounge?: boolean } | { kind: 'aisles'; piece: 'module.storage_rack' | 'module.storage_pallet' | 'module.hydroponics' }
+    | { kind: 'design'; designs: readonly DesignName[] };
   name: string;
   weight: number;
   /**
@@ -64,11 +72,49 @@ export interface Arrangement {
    * joined by the shortest floor path to every door and every protected tile (airlock insides, unloader stands).
    */
   walkway?: 'long' | 'cross';
+  /** Hand-made furniture groups set into the open floor first (rooms/vignettes.ts). */
+  vignettes?: VignetteSet;
+  /** A court laid out by zones (rooms/courts.ts) instead of scattered vignettes. */
+  court?: CourtPlan;
   steps: readonly Step[];
+}
+
+/** A hand-made group of modules, laid out at rotation 0 round its origin (chairs turn to face their table). */
+export interface Vignette {
+  name: string;
+  mods: readonly { mod: string; x: number; y: number; rot?: number }[];
+}
+
+/** Court zoning: themes for the zones between promenades, the hedge module, the share of a zone its pieces fill. */
+export interface CourtPlan {
+  zones: readonly (readonly Vignette[])[];
+  /** Lines each zone where it meets a promenade (none: open). */
+  hedge?: string;
+  fill: number;
+  /** The landmark at the court's middle, which the promenades lead to: the first of these that fits. */
+  centres?: readonly Vignette[];
+  /** Floor finishes (structure.ts `Finish`): the whole court (its promenades), the landmark, and each zone by its theme
+   *  (index into `zones`, else `zone`). Unset: the plain deck. */
+  finish?: { walk?: FinishKind; centre?: FinishKind; zone?: FinishKind; zones?: readonly (FinishKind | undefined)[] };
+}
+
+export interface VignetteSet {
+  pieces: readonly Vignette[];
+  /** Least distance in tiles between two pieces' anchors. */
+  gap: number;
+  /** Share of the room's floor the pieces fill before they stop. */
+  upTo: number;
+  /** Rooms smaller than this get none. */
+  minFloor?: number;
+  /** A landmark set at the middle of rooms of at least `centreFloor` tiles before the rest (the court's centrepiece). */
+  centre?: Vignette;
+  centreFloor?: number;
 }
 
 export interface RoomRecipe {
   /** Target share of the room's floor under modules (lights excluded) for 'fill' steps. */
   fill: number;
+  /** Groups set in a roomy room's open middle after the steps (rooms/islands.ts). */
+  islands?: readonly Vignette[];
   arrangements: readonly Arrangement[];
 }

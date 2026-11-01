@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, deserialize, newGame, serialize, type Sim, type SimEvent } from '../sim';
+import { ShipC, deserialize, isTileWalkable, newGame, serialize, type Sim, type SimEvent } from '../sim';
 import { FighterC } from '../sim/fight/components';
 import { CrewC } from '../sim/crew/components';
 import { StationAlarmC, StationC, StationCrewC, WantedC } from '../sim/stations/components';
+import { shipGrid } from '../sim/regions';
 import { content } from './index';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
@@ -42,9 +43,10 @@ describe('station life and security', () => {
   });
 
   it('an intruder raises the alarm; guards converge and fight, civilians run; then it calms down (seeds 1 to 8)', () => {
-    // Whether civilians see the intruder before the guards down it (and how long that takes) depends on the station layout and the sim's
-    // rng state, so the outcome is judged over a fixed range of seeds, not one: the triggers (alarm, wanted, guards engage) in nearly
-    // all, the outcomes (civilians flee, intruder downed within 400 ticks, calm, alarm again) in at least half.
+    // Every seed must notice the intruder: raise the alarm, mark them wanted, engage, then calm down and alarm again when they get
+    // up. How the fight goes (a civilian sees them before the guards down them, the guards down them within 400 ticks) depends on
+    // the layout and the sim's rng, so those are judged over the seeds. (Seed 7 once never noticed anyone: its first patrol post
+    // sat under the dock's airlock, so the intruder could not be put aboard; #107.)
     const seeds = [1, 2, 3, 4, 5, 6, 7, 8];
     const runs = seeds.map((seed) => {
       const { sim, st } = station('station.trading', 'outpost', seed);
@@ -64,9 +66,9 @@ describe('station life and security', () => {
       const alarmed = types(ev).includes('station.alarm');
       const wanted = sim.world.query(WantedC).length === 1;
       const downed = types(ev).includes('crew.downed');
-      // Quiet for 30 s: the alarm calms and the grudge is forgotten.
+      // Quiet for 30 s: the alarm calms and the grudge is forgotten (allowing for a fight that ran past the window above).
       let calmed = false;
-      for (let i = 0; i < 900 && !calmed; i++) calmed = types(run(sim, 1)).includes('station.calm');
+      for (let i = 0; i < 1800 && !calmed; i++) calmed = types(run(sim, 1)).includes('station.calm');
       const forgotten = calmed && sim.world.get(st, StationAlarmC)?.state === 'calm' && sim.world.query(WantedC).length === 0;
       // The intruder was only downed: when they get up, still aboard and uninvited, the alarm goes off again.
       let again = false;
@@ -75,9 +77,19 @@ describe('station life and security', () => {
     });
     const count = (k: 'alarmed' | 'wanted' | 'engaged' | 'fled' | 'downed' | 'forgotten' | 'again'): number => runs.filter((r) => r[k]).length;
     const table = JSON.stringify(runs);
-    for (const k of ['alarmed', 'wanted', 'engaged'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(6);
-    for (const k of ['fled', 'downed', 'forgotten', 'again'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(4);
+    for (const k of ['alarmed', 'wanted', 'engaged', 'forgotten', 'again'] as const) expect(count(k), `${k}: ${table}`).toBe(seeds.length);
+    for (const k of ['fled', 'downed'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(4);
   }, 120000);
+
+  it('patrol posts and courts are tiles crew can stand on (not under an airlock or a console), every kind', () => {
+    for (const kind of ['station.trading', 'station.military', 'station.pirate', 'station.research']) {
+      for (const seed of [1, 4, 7]) {
+        const { sim, st } = station(kind, 'outpost', seed);
+        const s = sim.world.get(st, StationC)!;
+        for (const t of [...s.posts, ...s.courts]) expect(isTileWalkable(sim, shipGrid(sim, st)!, t.x, t.y), `${kind} seed ${seed} ${t.x},${t.y}`).toBe(true);
+      }
+    }
+  });
 
   it('crew from a trade run docked at the station are invited and raise no alarm', () => {
     const { sim, st } = station();

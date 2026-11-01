@@ -39,6 +39,15 @@ export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { 
       if (g.get('ore', bx + lx, by + ly)) { g.set('ore', bx + lx, by + ly, 0); g.set('oreAmt', bx + lx, by + ly, 0); }
     }
   }
+  // A dug base's rooms are faced in dressed rock all round: raw rock touching a floor or door past the template's own walls
+  // (a corner the walls meet only diagonally) is dressed too. It stays the asteroid's tile.
+  if (o.style === 'dug') {
+    for (const [tx, ty] of built) {
+      const k = g.get('struct', tx, ty);
+      if (k !== Struct.Floor && k !== Struct.Door) continue;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (g.get('struct', tx + dx, ty + dy) === Struct.Rock) g.set('struct', tx + dx, ty + dy, Struct.RockWall);
+    }
+  }
   placeTemplateModules(sim, o.template, bx, by);
   const ship = sim.world.createEntity();
   sim.world.add(ship, ShipC, {

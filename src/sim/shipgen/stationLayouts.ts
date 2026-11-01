@@ -4,7 +4,7 @@ import { civil, shuffle } from './civilKit';
 import { dockBlock } from './navyBlocks';
 import { no, type Ctx } from './navyKit';
 import type { RoomSpec } from './plan';
-import { fullRooms, placeRoot, roomsOf, reactorRooms } from './stationKit';
+import { fullRooms, placeRoot, reactorOf, roomsOf, reactorRooms } from './stationKit';
 import { crossStation, spineStation } from './stationShapes';
 
 /**
@@ -26,15 +26,15 @@ function cross(c: Ctx): boolean {
 
 /** Tree: a quad core, then branches (quads or towers of two to four rooms) on whatever grew last, mostly. */
 function tree(c: Ctx): boolean {
-  const all = shuffle(c.rng, [...roomsOf(c).filter((r) => r.role !== 'dock'), ...reactorRooms(c.plan.reactors)]);
+  const all = shuffle(c.rng, [...roomsOf(c).filter((r) => r.role !== 'dock'), ...reactorRooms(c.plan.reactors, reactorOf(c.plan))]);
   const docks = 2 + roomsOf(c).filter((r) => r.role === 'dock').length;
-  const root = civil(station(c.rng, [c.plan.command, ...all.splice(0, 3)]), 'command', 'tree core');
+  const root = civil(station(c.rng, [c.plan.command, ...all.splice(0, 3)], true), 'command', 'tree core');
   if (!root) return no(c, 'tree core');
   const ids = [c.A.placeRoot(root)];
   while (all.length > 0) {
     const k = Math.min(all.length, c.rng.int(2, 4));
     const group: RoomSpec[] = all.splice(0, k);
-    const blk = c.rng.chance(0.5) && group.length <= 4 ? civil(station(c.rng, group), 'habitat', 'tree quad') : civil(tower(c.rng, group), 'habitat', 'tree tower');
+    const blk = c.rng.chance(0.5) && group.length <= 4 ? civil(station(c.rng, group, true), 'habitat', 'tree quad') : civil(tower(c.rng, group), 'habitat', 'tree tower');
     if (!blk) return no(c, 'branch');
     // Grow off the newest blocks mostly: a branching tree, not a blob round the core.
     const hosts = [...ids.slice(-3).reverse(), ...shuffle(c.rng, ids)];

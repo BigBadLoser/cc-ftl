@@ -15,7 +15,13 @@ export type RoomRole =
   /** Station rooms: hydroponics farms, ore refining and processing, the armoury (weapon lockers). */
   | 'farm' | 'industry' | 'armoury'
   /** Station courtyards (open rooms filling enclosed centres): a concourse, a garden deck, a drill hall. */
-  | 'plaza' | 'garden' | 'drill';
+  | 'plaza' | 'garden' | 'drill'
+  /** Station shops (decorative): the market street and the market ring. */
+  | 'shop'
+  /** Station medbays: sickbay cots at a habitation run's busy end. */
+  | 'medbay'
+  /** Station plant rooms: life support, batteries, radiators (the engineering band by the secure core). */
+  | 'plant';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =
@@ -151,7 +157,14 @@ export interface HullFamilyDef {
   /** Stations: ore cages hung off the structure (mining stations). */
   cages?: number;
   /** Stations: enclosed centres become open rooms of this role, with this chance per station. */
-  atrium?: { role: RoomRole; chance: number };
+  atrium?: { role: RoomRole; chance: number; band: readonly RoomRole[]; packed?: boolean; deck?: boolean };
+  /**
+   * Stations: where the bridge goes on round stations. 'heart': at the centre, one guarded way in (military command).
+   * 'office': beside the main dock as the station's administration, a rotunda at the centre (civil stations).
+   */
+  command?: 'heart' | 'office';
+  /** Stations: a market (trading): shops line the south concourse, and concentric stations ring the rotunda with them. */
+  market?: boolean;
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 
@@ -176,6 +189,8 @@ export interface FactionDef {
   side?: Faction;
   /** Building style id; also the art lookup key. */
   motif: string;
+  /** How quarters are laid out (rooms/plans.ts): 'rows' barracks, 'apart' (default) beds spread round the walls. */
+  berths?: 'rows' | 'apart';
   /** Art variants for the renderer (looked up later; no art is generated here). */
   art: { hull: string; wall: string; roof: string; livery: string; signature: readonly string[] };
   architecture: ArchitectureDef;

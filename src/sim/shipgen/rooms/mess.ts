@@ -13,7 +13,7 @@ export const mess = {
         { mod: 'module.fabricator', count: 'spec', wall: 'long' },
         { mod: 'module.galley', count: 1, once: true, wall: 'long', minFloor: 12 },
         { mod: 'module.mess_table', count: 'fill', upTo: 0.7, clear: 1, centre: 'y', grid: [3, 4], rots: [0], with: { mod: 'module.chair', n: 4 } },
-        { mod: 'module.storage_locker', count: 2, wall: 'end' },
+        { mod: 'module.storage_locker', count: 1, wall: 'end' },
       ],
     },
     {
@@ -31,7 +31,7 @@ export const mess = {
         { mod: 'module.fabricator', count: 'spec', wall: 'any' },
         { mod: 'module.galley', count: 1, once: true, wall: 'any', minFloor: 16 },
         { mod: 'module.mess_table', count: 'fill', upTo: 0.7, clear: 1, centre: 'xy', grid: [3, 4], rots: [0], with: { mod: 'module.chair', n: 4 } },
-        { mod: ['module.hydroponics', 'module.storage_locker'], count: 'fill', wall: 'any', row: true },
+        { mod: 'module.hydroponics', count: 3, wall: 'any', row: true },
       ],
     },
   ],

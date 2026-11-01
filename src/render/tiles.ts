@@ -1,4 +1,4 @@
-import { Struct } from "../sim/structure";
+import { Finish, Struct } from "../sim/structure";
 
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
@@ -31,12 +31,17 @@ export function tileHash(x: number, y: number): number {
   return (h ^ (h >>> 15)) >>> 0;
 }
 
+/** Floor finish art by `Finish` code (the sim's `floor` field): the paving the station generator gives a court. */
+const FINISH_ART: Readonly<Record<number, string>> = { [Finish.Walk]: "walk", [Finish.Soil]: "soil", [Finish.Market]: "market", [Finish.Tread]: "tread" };
+
 /** One main plate; two very subtle variants on ~10% of tiles. Grates, hatches and the rest stay unused in the manifest.
- * Keep in sync with contact_sheet.py. */
-export function floorChain(x: number, y: number): Chain {
+ * A tile with a floor finish shows that instead (the plain deck while its sheet is missing). Keep in sync with
+ * contact_sheet.py. */
+export function floorChain(x: number, y: number, finish = 0): Chain {
   const r = (tileHash(x, y) >>> 8) % 20;
   const v = r === 0 ? "c" : r === 1 ? "h" : "a";
-  return [`tile.floor.${v}`, "tile.floor.a"];
+  const f = FINISH_ART[finish];
+  return f ? [`tile.floor.${f}`, `tile.floor.${v}`, "tile.floor.a"] : [`tile.floor.${v}`, "tile.floor.a"];
 }
 
 /** One sprite of a wall tile: the first existing asset id of the chain, plus its draw order inside the tile. */

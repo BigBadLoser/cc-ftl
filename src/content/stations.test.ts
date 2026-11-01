@@ -60,6 +60,40 @@ describe('research stations', () => {
   }, 120000);
 });
 
+describe('court floors', () => {
+  it('trading courts pave walkways and market zones, research gardens soil, on floor tiles only', () => {
+    const seen = new Map<string, Set<string>>();
+    for (const id of ['station.trading', 'station.research'] as const) {
+      const got = new Set<string>();
+      for (const seed of [1, 2, 3, 4]) {
+        const g = gen(id, 'station', seed);
+        (g.template.floors ?? []).forEach((r, y) => {
+          for (let x = 0; x < r.length; x++) {
+            if (r[x] === '.') continue;
+            got.add(r[x] as string);
+            expect(g.template.rows[y]?.[x], `${id} ${seed} ${x},${y}`).toBe('_');
+          }
+        });
+      }
+      seen.set(id, got);
+    }
+    expect([...(seen.get('station.trading') ?? [])].sort()).toEqual(expect.arrayContaining(['m', 'w']));
+    expect([...(seen.get('station.research') ?? [])].sort()).toEqual(expect.arrayContaining(['s', 'w']));
+  }, 120000);
+});
+
+describe('court landmarks', () => {
+  it('trading plazas raise a holo column and research gardens a great tree, most of the time', () => {
+    let holo = 0, tree = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      holo += count(gen('station.trading', 'station', seed), 'module.holo_sign');
+      tree += count(gen('station.research', 'station', seed), 'module.tree_large');
+    }
+    expect(holo).toBeGreaterThanOrEqual(4);
+    expect(tree).toBeGreaterThanOrEqual(4);
+  }, 120000);
+});
+
 describe('station generator', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {
     for (const id of ids) {
@@ -109,9 +143,12 @@ describe('station generator', () => {
     // Mining: refineries, several docks.
     expect(count(m, 'module.refinery')).toBeGreaterThanOrEqual(4);
     expect(m.station.docks).toBeGreaterThanOrEqual(4);
-    // No station grows hydroponics beds (they read as clutter); farming stations are messes and quarters instead.
-    for (const g of [t, m, f, d, p]) expect(count(g, 'module.hydroponics')).toBe(0);
-    expect(f.rooms.filter((r) => r.role === 'support').length).toBeGreaterThanOrEqual(4);
+    // Farming: hydroponics bays, all in its farm rooms (no other station, and no other room, grows them).
+    for (const g of [t, m, d, p]) expect(count(g, 'module.hydroponics')).toBe(0);
+    expect(count(f, 'module.hydroponics')).toBeGreaterThanOrEqual(20);
+    const farmTile = new Set(f.rooms.filter((r) => r.role === 'farm').flatMap((r) => r.tiles));
+    expect((f.template.modules ?? []).filter((x) => x.def === 'module.hydroponics').every((x) => farmTile.has(x.y * f.width + x.x))).toBe(true);
+    expect(f.rooms.filter((r) => r.role === 'support').length).toBeGreaterThanOrEqual(2);
     // Military depot: the most guns and shields, few docks, an armoury.
     for (const g of [t, m, f, p]) {
       expect(d.station.guns).toBeGreaterThan(g.station.guns);

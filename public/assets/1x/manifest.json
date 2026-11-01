@@ -4729,6 +4729,20 @@
    "image": "sprites/workbench.png",
    "glow": "sprites/workbench.glow.png"
   },
+  "decor": {
+   "image": "sprites/decor.png"
+  },
+  "lights": {
+   "image": "sprites/lights.png",
+   "glow": "sprites/lights.glow.png"
+  },
+  "court_floors": {
+   "image": "sprites/court_floors.png"
+  },
+  "landmarks": {
+   "image": "sprites/landmarks.png",
+   "glow": "sprites/landmarks.glow.png"
+  },
   "backdrop": {
    "image": "sprites/backdrop.png",
    "glow": "sprites/backdrop.glow.png"
@@ -136864,6 +136878,2439 @@
    "footprint": [
     2,
     4
+   ]
+  },
+  "module.bench": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 821,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 53,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 896,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 53,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 971,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 21,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bench.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1046,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 53,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1121,
+    "y": 1,
+    "w": 74,
+    "h": 52
+   },
+   "anchor": {
+    "x": 21,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.deck_hazard": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1196,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1259,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1322,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1385,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_hazard.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1448,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1511,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1568,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1625,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1682,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.deck_inlay.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1739,
+    "y": 1,
+    "w": 56,
+    "h": 30
+   },
+   "anchor": {
+    "x": 28,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 606,
+    "y": 1,
+    "w": 42,
+    "h": 63
+   },
+   "anchor": {
+    "x": 21,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 649,
+    "y": 1,
+    "w": 42,
+    "h": 63
+   },
+   "anchor": {
+    "x": 21,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 778,
+    "y": 1,
+    "w": 42,
+    "h": 57
+   },
+   "anchor": {
+    "x": 21,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 692,
+    "y": 1,
+    "w": 42,
+    "h": 62
+   },
+   "anchor": {
+    "x": 21,
+    "y": 52
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 735,
+    "y": 1,
+    "w": 42,
+    "h": 58
+   },
+   "anchor": {
+    "x": 21,
+    "y": 48
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter_large": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 122,
+    "y": 1,
+    "w": 120,
+    "h": 120
+   },
+   "anchor": {
+    "x": 60,
+    "y": 106
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r0": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 243,
+    "y": 1,
+    "w": 120,
+    "h": 120
+   },
+   "anchor": {
+    "x": 60,
+    "y": 106
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r1": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 485,
+    "y": 1,
+    "w": 120,
+    "h": 114
+   },
+   "anchor": {
+    "x": 60,
+    "y": 100
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r2": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 364,
+    "y": 1,
+    "w": 120,
+    "h": 117
+   },
+   "anchor": {
+    "x": 60,
+    "y": 103
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.planter_large.r3": {
+   "kind": "static",
+   "sheet": "decor",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 120,
+    "h": 122
+   },
+   "anchor": {
+    "x": 60,
+    "y": 108
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.light_cage": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1339,
+    "y": 1,
+    "w": 36,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1376,
+    "y": 1,
+    "w": 36,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1670,
+    "y": 1,
+    "w": 37,
+    "h": 44
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1708,
+    "y": 1,
+    "w": 36,
+    "h": 44
+   },
+   "anchor": {
+    "x": 18,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r0.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1890,
+    "y": 1,
+    "w": 53,
+    "h": 38
+   },
+   "anchor": {
+    "x": 29,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r0.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1413,
+    "y": 1,
+    "w": 36,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r1": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1450,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r1.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1057,
+    "y": 1,
+    "w": 42,
+    "h": 56
+   },
+   "anchor": {
+    "x": 18,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1100,
+    "y": 1,
+    "w": 42,
+    "h": 56
+   },
+   "anchor": {
+    "x": 18,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r1.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1799,
+    "y": 1,
+    "w": 43,
+    "h": 43
+   },
+   "anchor": {
+    "x": 18,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r1.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1493,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r2": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1265,
+    "y": 1,
+    "w": 36,
+    "h": 48
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r2.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1143,
+    "y": 1,
+    "w": 36,
+    "h": 56
+   },
+   "anchor": {
+    "x": 18,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1180,
+    "y": 1,
+    "w": 36,
+    "h": 55
+   },
+   "anchor": {
+    "x": 18,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r2.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1843,
+    "y": 1,
+    "w": 46,
+    "h": 39
+   },
+   "anchor": {
+    "x": 26,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r2.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1302,
+    "y": 1,
+    "w": 36,
+    "h": 48
+   },
+   "anchor": {
+    "x": 18,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r3": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1536,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 24,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r3.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1217,
+    "y": 1,
+    "w": 47,
+    "h": 50
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1579,
+    "y": 1,
+    "w": 47,
+    "h": 45
+   },
+   "anchor": {
+    "x": 24,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_cage.r3.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1745,
+    "y": 1,
+    "w": 53,
+    "h": 44
+   },
+   "anchor": {
+    "x": 30,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_cage.r3.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1627,
+    "y": 1,
+    "w": 42,
+    "h": 45
+   },
+   "anchor": {
+    "x": 24,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2451,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.broken": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3076,
+    "y": 1,
+    "w": 61,
+    "h": 27
+   },
+   "anchor": {
+    "x": 31,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.off": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2508,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r0": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2565,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r0.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1944,
+    "y": 1,
+    "w": 56,
+    "h": 37
+   },
+   "anchor": {
+    "x": 28,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2001,
+    "y": 1,
+    "w": 56,
+    "h": 37
+   },
+   "anchor": {
+    "x": 28,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r0.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2058,
+    "y": 1,
+    "w": 54,
+    "h": 34
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r0.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2622,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r1": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2679,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r1.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2113,
+    "y": 1,
+    "w": 54,
+    "h": 34
+   },
+   "anchor": {
+    "x": 28,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2736,
+    "y": 1,
+    "w": 54,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r1.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2338,
+    "y": 1,
+    "w": 55,
+    "h": 32
+   },
+   "anchor": {
+    "x": 28,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r1.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2791,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r2": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2848,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r2.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3138,
+    "y": 1,
+    "w": 56,
+    "h": 27
+   },
+   "anchor": {
+    "x": 28,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3195,
+    "y": 1,
+    "w": 56,
+    "h": 27
+   },
+   "anchor": {
+    "x": 28,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r2.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2225,
+    "y": 1,
+    "w": 55,
+    "h": 33
+   },
+   "anchor": {
+    "x": 28,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r2.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2905,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r3": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2962,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r3.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2168,
+    "y": 1,
+    "w": 56,
+    "h": 34
+   },
+   "anchor": {
+    "x": 28,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_grate.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2281,
+    "y": 1,
+    "w": 56,
+    "h": 33
+   },
+   "anchor": {
+    "x": 28,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r3.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 2394,
+    "y": 1,
+    "w": 56,
+    "h": 31
+   },
+   "anchor": {
+    "x": 28,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_grate.r3.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 3019,
+    "y": 1,
+    "w": 56,
+    "h": 28
+   },
+   "anchor": {
+    "x": 28,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 197,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 246,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 50,
+    "y": 1,
+    "w": 48,
+    "h": 88
+   },
+   "anchor": {
+    "x": 24,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 99,
+    "y": 1,
+    "w": 48,
+    "h": 88
+   },
+   "anchor": {
+    "x": 24,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r0.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 891,
+    "y": 1,
+    "w": 61,
+    "h": 76
+   },
+   "anchor": {
+    "x": 37,
+    "y": 61
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r0.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 295,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r1": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 442,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r1.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 491,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 540,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r1.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1003,
+    "y": 1,
+    "w": 53,
+    "h": 66
+   },
+   "anchor": {
+    "x": 28,
+    "y": 49
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r1.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 589,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r2": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 638,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r2.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 736,
+    "y": 1,
+    "w": 48,
+    "h": 79
+   },
+   "anchor": {
+    "x": 24,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 785,
+    "y": 1,
+    "w": 48,
+    "h": 79
+   },
+   "anchor": {
+    "x": 24,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r2.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 834,
+    "y": 1,
+    "w": 56,
+    "h": 78
+   },
+   "anchor": {
+    "x": 24,
+    "y": 61
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r2.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 687,
+    "y": 1,
+    "w": 48,
+    "h": 80
+   },
+   "anchor": {
+    "x": 24,
+    "y": 68
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r3": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 344,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r3.damaged": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 48,
+    "h": 89
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.light_mast.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 148,
+    "y": 1,
+    "w": 48,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 75
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r3.destroyed": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 953,
+    "y": 1,
+    "w": 49,
+    "h": 71
+   },
+   "anchor": {
+    "x": 24,
+    "y": 57
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.light_mast.r3.unpowered": {
+   "kind": "static",
+   "sheet": "lights",
+   "frame": {
+    "x": 393,
+    "y": 1,
+    "w": 48,
+    "h": 81
+   },
+   "anchor": {
+    "x": 24,
+    "y": 69
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.market": {
+   "kind": "static",
+   "sheet": "court_floors",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.soil": {
+   "kind": "static",
+   "sheet": "court_floors",
+   "frame": {
+    "x": 64,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tread": {
+   "kind": "static",
+   "sheet": "court_floors",
+   "frame": {
+    "x": 127,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.walk": {
+   "kind": "static",
+   "sheet": "court_floors",
+   "frame": {
+    "x": 190,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 971,
+    "y": 1,
+    "w": 28,
+    "h": 94
+   },
+   "anchor": {
+    "x": 13,
+    "y": 90
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1000,
+    "y": 1,
+    "w": 28,
+    "h": 94
+   },
+   "anchor": {
+    "x": 13,
+    "y": 90
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0.lv.cross": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1116,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0.lv.delta": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1137,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0.lv.diamond": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1158,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0.lv.dot": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1179,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0.lv.plain": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1200,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r0.lv.star": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1221,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1029,
+    "y": 1,
+    "w": 28,
+    "h": 94
+   },
+   "anchor": {
+    "x": 13,
+    "y": 88
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1.lv.cross": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1242,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1.lv.delta": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1263,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1.lv.diamond": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1284,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1.lv.dot": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1305,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1.lv.plain": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1326,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r1.lv.star": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1347,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1058,
+    "y": 1,
+    "w": 28,
+    "h": 94
+   },
+   "anchor": {
+    "x": 15,
+    "y": 88
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2.lv.cross": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1368,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2.lv.delta": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1389,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2.lv.diamond": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1410,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2.lv.dot": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1431,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2.lv.plain": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1452,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r2.lv.star": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1473,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1087,
+    "y": 1,
+    "w": 28,
+    "h": 94
+   },
+   "anchor": {
+    "x": 15,
+    "y": 90
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3.lv.cross": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1494,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3.lv.delta": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1515,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3.lv.diamond": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1536,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3.lv.dot": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1557,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3.lv.plain": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1578,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.banner.r3.lv.star": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1599,
+    "y": 1,
+    "w": 20,
+    "h": 51
+   },
+   "anchor": {
+    "x": 10,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.holo_sign": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 606,
+    "y": 1,
+    "w": 72,
+    "h": 97
+   },
+   "anchor": {
+    "x": 36,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.holo_sign.r0": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 679,
+    "y": 1,
+    "w": 72,
+    "h": 97
+   },
+   "anchor": {
+    "x": 36,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.holo_sign.r1": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 752,
+    "y": 1,
+    "w": 72,
+    "h": 97
+   },
+   "anchor": {
+    "x": 36,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.holo_sign.r2": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 825,
+    "y": 1,
+    "w": 72,
+    "h": 97
+   },
+   "anchor": {
+    "x": 36,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.holo_sign.r3": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 898,
+    "y": 1,
+    "w": 72,
+    "h": 97
+   },
+   "anchor": {
+    "x": 36,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.tree_large": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 122,
+    "y": 1,
+    "w": 120,
+    "h": 146
+   },
+   "anchor": {
+    "x": 60,
+    "y": 147
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.tree_large.r0": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 243,
+    "y": 1,
+    "w": 120,
+    "h": 146
+   },
+   "anchor": {
+    "x": 60,
+    "y": 147
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.tree_large.r1": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 120,
+    "h": 150
+   },
+   "anchor": {
+    "x": 60,
+    "y": 151
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.tree_large.r2": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 364,
+    "y": 1,
+    "w": 120,
+    "h": 146
+   },
+   "anchor": {
+    "x": 60,
+    "y": 147
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "module.tree_large.r3": {
+   "kind": "static",
+   "sheet": "landmarks",
+   "frame": {
+    "x": 485,
+    "y": 1,
+    "w": 120,
+    "h": 146
+   },
+   "anchor": {
+    "x": 60,
+    "y": 147
+   },
+   "footprint": [
+    3,
+    3
    ]
   },
   "backdrop.body.binary_star": {

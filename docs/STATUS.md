@@ -25,6 +25,11 @@ playtest clarity are all on `main`). Treat the sections below as design notes, n
 
 ## In progress
 
+- **Station and room generator rework (branch `shipgen-stations-1`, #193, part of #107):** room designs (reactor, gun bay,
+  shield room, AI core) scored and repaired, doors that slide for a design, role swaps and districts, spaciousness per
+  station kind, islands, court floors, landmarks and archways. Save v72. See [STATIONGEN.md](STATIONGEN.md) for what was done, tried and
+  what's next. Waiting on the testing round and the PR.
+
 - **Hull width rule and hull plan brushes (branch `build/footprint-width`, #143):** no part of a ship narrower than 3 tiles (3x3 opening, struts exempt); generated
   ships, stations and wrecks obey it; the Hull plan tool gets rectangle (min 3x3, must touch the ship), erase and line-cut brushes with mirror, a world grid, a cursor
   ghost and a collapsing Build menu; `hull.plan` and the yard quote refuse a narrow plan. Playtest with `?scenario=hullplan`. No save change (stays v64). See "Hull width rule

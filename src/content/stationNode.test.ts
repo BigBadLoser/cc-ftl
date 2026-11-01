@@ -66,7 +66,9 @@ describe('stations in the node', () => {
   it('a hub is much bigger than any ship and the node grows to hold it', () => {
     const { sim, station } = withStation('station.trading', 'hub');
     const s = sim.world.get(station, ShipC)!;
-    expect(Math.max(s.width, s.height)).toBeGreaterThan(100);
+    // The same bar as the generator's own hub test (stations.test.ts); it was 100 while hubs carried a reactor room for
+    // every few lamps (this seed's hub spans 84 since lamps draw a quarter and reactors come in tiers).
+    expect(Math.max(s.width, s.height)).toBeGreaterThan(70);
     expect(sim.sector.width).toBeGreaterThanOrEqual(s.x + s.width);
     expect(sim.sector.height).toBeGreaterThanOrEqual(s.y + s.height);
   });

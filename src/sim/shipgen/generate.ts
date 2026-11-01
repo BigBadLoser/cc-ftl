@@ -1,13 +1,15 @@
 import { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
+import { FINISH_CHARS } from '../structure';
 import { Builder } from './builder';
 import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
-import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
-import { Layout } from './layout';
+import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
+import { splitCabins } from './rooms/cabins';
+import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, claimCompanion, keepDoorApproach, planBerths, planAisles, planDesign, type RoomDraw } from './rooms';
+import { Layout, type PlacedModule } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -16,7 +18,10 @@ import { trimThin } from './salvage';
 import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
 import { extractContainers } from './containerCells';
+import { openArchways } from './archways';
+import { swapRoles } from './roleSwap';
 import { openBareDocks } from './openDocks';
+import { withSlide } from './rooms/doorSlide';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
@@ -54,15 +59,21 @@ interface Fitted {
   lay: Layout;
   stock: Map<number, { item: string; count: number }[]>;
   vehicles: Set<number>;
+  /** Doors slid along their walls for a room's design (stations). */
+  slid: number;
 }
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
   recipes = RECIPES,
+  slide = false,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
-  const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
+  // Stations (the only callers that slide doors) may stand guns away from the hull.
+  lay.gunsAnywhere = slide;
+  const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), slid: 0 };
+  specs.forEach((spec, room) => { if (spec?.sealed) lay.sealed.add(room); });
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
   jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
@@ -96,21 +107,74 @@ function fitOut(
   const planned = new Map<string, number>();
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
+  // Rooms whose arrangement has a plan are laid out whole first (rooms/plans.ts), their planned modules with it; a plan
+  // that does not fit leaves the room to its steps.
+  specs.forEach((spec, room) => {
+    const d = spec ? drawOf(room) : null;
+    if (!spec || !d?.arr.plan) return;
+    // The door approach is kept clear while the plan lays the room out; a design that does not fit gives it back, so
+    // the room's own placer (mounts first, then the steps) sees the room as it would without a plan.
+    const kept = lay.roomTiles(room).map((i) => [i, lay.keep[i] as number] as const);
+    keepDoorApproach(lay, room);
+    const n = (id: string): number => spec.mods.filter((m) => m === id).length;
+    const plan = d.arr.plan;
+    if (plan.kind === 'berths') {
+      d.planned = planBerths(lay, rng, room, Math.max(1, n('module.bed')), { lifeSupport: n('module.lifeSupport'), style: f.berths ?? 'apart', lounge: !!plan.lounge });
+      if (d.planned) d.plannedDefs = new Set(['module.bed', 'module.lifeSupport']);
+    } else if (plan.kind === 'design') {
+      const want = new Map([...new Set(spec.mods)].map((id) => [id, n(id)]));
+      let got = planDesign(lay, rng, room, want, plan.designs);
+      if (!got) for (const [i, k] of kept) lay.keep[i] = k;
+      // Stations: a door whose approach blocks every design may slide along its wall (rooms/doorSlide.ts).
+      if (!got && slide) {
+        got = withSlide(lay, room, () => { keepDoorApproach(lay, room); return planDesign(lay, rng, room, want, plan.designs); });
+        if (got) out.slid++;
+      }
+      d.planned = !!got;
+      if (got) d.plannedDefs = got;
+    } else {
+      // A farm's planned beds are its row piece (at least that many); a hold's planned crates go in first.
+      const farm = plan.piece === 'module.hydroponics';
+      const got = planAisles(lay, rng, room, { piece: plan.piece, crates: n('module.storage'), fill: farm ? 0.6 : 0.7, min: n(plan.piece), gaps: !farm });
+      d.planned = !!got;
+      if (got) { d.plannedDefs = new Set(['module.storage', plan.piece]); for (const i of got) stockUp(i, spec); }
+    }
+  });
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     const d = drawOf(j.room);
+    if (d?.planned && d.plannedDefs?.has(j.def)) { placed[j.def] = (placed[j.def] ?? 0) + 1; continue; }
     const si = d ? specStep(d, j.def) : -1;
     const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
     const k = `${j.room} ${j.def}`;
     if (share !== undefined && (done.get(k) ?? 0) >= Math.max(1, Math.ceil((planned.get(k) ?? 0) * share))) { wanted[j.def] = (wanted[j.def] ?? 1) - 1; continue; }
     done.set(k, (done.get(k) ?? 0) + 1);
-    const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
+    const place = (): PlacedModule | null => (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
       ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
+    let pm = place();
+    let at = lay.modules.length - 1;
+    // A host that needs flush companions (a refinery's ore bins) goes in with its first one: a spot with no room for one
+    // is given up and the next best tried (marked keep-clear meanwhile), up to twenty spots; if every spot went, the host
+    // goes back to its best one without. Furnishing tops the companions up in turns.
+    const w = d && si >= 0 ? d.arr.steps[si]?.with : undefined;
+    if (pm && w) {
+      const banned: number[] = [];
+      for (let t = 0; t < 20 && pm && !claimCompanion(lay, rng, j.room, pm, w); t++) {
+        lay.pop();
+        const i = pm.y * lay.w + pm.x;
+        banned.push(i);
+        lay.keep[i] = (lay.keep[i] as number) + 1;
+        pm = place();
+        at = lay.modules.length - 1;
+      }
+      for (const i of banned) lay.keep[i] = (lay.keep[i] as number) - 1;
+      if (!pm) { pm = place(); at = lay.modules.length - 1; }
+    }
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
-    const idx = lay.modules.length - 1;
-    stockUp(idx, j.spec);
-    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
+    // The host, then any companion that went in with it.
+    for (let i = at; i < lay.modules.length; i++) stockUp(i, j.spec);
+    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(at);
   }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
@@ -126,24 +190,21 @@ function fitOut(
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
   // Lamps the furnished rooms will need (a trial lighting, taken back: they are lit after furnishing), plus a margin.
   const recipeRooms = roles.map((_, i) => i).filter((i) => drawOf(i));
-  let lamps = 0;
   for (const room of recipeRooms) {
     const n = lay.modules.length;
     lightRoom(lay, rng, room);
-    lamps += lay.modules.length - n;
+    for (let i = n; i < lay.modules.length; i++) demand -= Math.min(0, (defs[lay.modules[i]!.def] as ModuleDef).power);
     while (lay.modules.length > n) lay.pop();
   }
-  const lampPower = -((defs['module.light'] as ModuleDef | undefined)?.power ?? 0);
-  demand += lamps * lampPower;
+  const lampPower = -((defs[LAMP] as ModuleDef | undefined)?.power ?? 0);
   // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
   const margin = recipeRooms.length * lampPower;
-  // Short of power after lighting: squeeze extra reactors into engineering or stores.
-  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' || r === 'support' ? i : -1)).filter((i) => i >= 0);
-  // Station courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort.
-  const courts = roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
+  // Short of power after lighting: a spare reactor in the reactor or engine rooms, if one fits there. Never in living
+  // rooms, stores or courts: a station still short designates another reactor room on its next attempt (stationGen).
+  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' ? i : -1)).filter((i) => i >= 0);
   const reactor = defs['module.reactor'];
-  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand + margin && reactor; k++) {
-    if (!(k < 3 && placeOne(lay, rng, 'module.reactor', spare)) && !(courts.length > 0 && placeOne(lay, rng, 'module.reactor', courts))) break;
+  for (let k = 0; k < 3 && supply < demand + margin && reactor; k++) {
+    if (!placeOne(lay, rng, 'module.reactor', spare)) break;
     supply += reactor.power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };
@@ -173,12 +234,17 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
       ...(d.vehicles.has(i) ? { vehicle: 'vehicle.shuttle' } : {}),
     };
   });
+  // Floor finishes (courts), as template `floors` rows: only when some tile has one.
+  const fin = d.lay.finish;
+  const code = Object.fromEntries(Object.entries(FINISH_CHARS).map(([c, k]) => [k, c])) as Record<number, string>;
+  const floors = fin.some((k) => k > 0) ? rows.map((r, y) => Array.from(r, (_, x) => code[fin[y * d.lay.w + x] as number] ?? '.').join('')) : null;
   return {
     name: `${f.name} ${role.id} ${factionId.replace(/^faction\./, '').slice(0, 2).toUpperCase()}-${tag}`,
     faction: 'hostile',
     doctrine: f.doctrine.targeting,
     crew: plan.crew,
     rows,
+    ...(floors ? { floors } : {}),
     modules,
     ...(f.doctrine.boarding ? { boarding: { ...f.doctrine.boarding } } : {}),
   };
@@ -256,7 +322,10 @@ export function finishLayout(
   const roleOfLabel = (l: { chunk: string; letter: string }): RoomRole => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo';
   const partByKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   // One wall between parts: slabs become floor, spare hull layers and double partitions go (thinWalls.ts).
-  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar'];
+  // Rooms that never grow: docks, engines and bays keep their fit, shield rooms their square floor (a folded wall stub
+  // would leave a bump the generator grid cannot use; the wall folds into the neighbour instead). On stations the
+  // reactor, core and gun rooms keep their rectangles too (ships fold them: their hulls stay symmetric and thin-walled).
+  const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar', 'shields', ...(opts.immobile ? ['reactor', 'core', 'weapons'] as const : [])];
   const thin = thinWalls(b.cv, {
     canGrow: (i) => {
       const l = labels[i];
@@ -276,12 +345,18 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
+  // Stations: rooms that can stand in for each other trade roles where their neighbours suit them better (roleSwap.ts).
+  const sw = opts.immobile ? swapRoles(rng, rows, roomOf, roles, specs) : { roles, specs };
+  // Off the navy, bunk rooms that fit become one-bed cabins off a hallway (rooms/cabins.ts). Metrics read the rooms as planned.
+  const cab = f.berths === 'rows' ? { rows, roomOf, roles: sw.roles, specs: sw.specs } : splitCabins(rows, roomOf, width, sw.roles, sw.specs, rng);
+  const d = fitOut(rng, f, cab.rows, cab.roomOf, cab.roles, cab.specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, !!opts.immobile);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
   const dockTile = new Set(opened.tiles);
-  const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
+  // Stations: doors between corridors and open rooms (mess, courts) become archways (archways.ts).
+  const arches = d.error || !opts.immobile ? 0 : openArchways(d.lay);
+  const fitted = opened.merged > 0 || arches > 0 || d.slid > 0 ? cab.rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : cab.rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
   template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
@@ -289,9 +364,9 @@ export function finishLayout(
   const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x), defs);
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);
-  const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
+  const rooms: GenRoom[] = cab.roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
+    template, rooms, roomOf: cab.roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }

@@ -22,9 +22,11 @@ export function stationFaction(def: StationDef, size: StationSize): FactionDef {
   const fam: HullFamilyDef = {
     id: size, weight: { base: 1, perDepth: 0, max: 1 }, grammars: def.tiers[size].grammars, aspect: [0.7, 1.5], depth: {},
     batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'], ...(def.tiers[size].cages ? { cages: def.tiers[size].cages } : {}), ...(def.atrium ? { atrium: def.atrium } : {}),
+    command: def.kind === 'military' ? 'heart' : 'office',
+    ...(def.kind === 'trading' ? { market: true } : {}),
   };
   return {
-    name: def.name, side: def.side, motif: def.motif,
+    name: def.name, side: def.side, motif: def.motif, ...(def.berths ? { berths: def.berths } : {}),
     art: { hull: 'hull.clean', wall: 'wall.clean', roof: 'roof.grid', livery: 'livery.navy', signature: [] },
     architecture: { roles: [], symmetry: 0, corridorWidth: [1, 2], strutLength: [1, 3], battery: 2, noses: [] },
     hullFamilies: [fam], transition: def.transition, weapons: def.weapons, shields: def.shields, stock: def.stock,
@@ -77,9 +79,11 @@ export function generateStation(def: StationDef, id: string, size: StationSize, 
   const role: ShipRoleDef = { id: size, weight: fam.weight, archetypes: [] };
   const failures: string[] = [];
   let last: StationResult | null = null;
+  // A layout short of power designates one more reactor room on the next attempt (never reactors in other rooms).
+  let extra = 0;
   for (let n = 0; n < GEN_ATTEMPTS; n++) {
     const rng = new Rng(seedOf(seed, n));
-    const plan = planStation(rng, def, size, role, defs);
+    const plan = planStation(rng, def, size, role, defs, extra);
     const r = arrangeHull(rng, f, fam, plan, defs, size === 'hub' ? 3 : 4);
     if (typeof r === 'string') { failures.push(`${size}: ${r}`); continue; }
     const g = finishLayout(rng, f, id, seed, role, 'sections', r.plan, r.b, r.profile, r.A, r.profile, defs, n, {
@@ -88,6 +92,7 @@ export function generateStation(def: StationDef, id: string, size: StationSize, 
     g.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
     last = { ...g, failures: [...failures], station: infoOf(def, size, g.template, defs) };
     if (g.problems.length === 0) return last;
+    if (g.problems.some((p) => p.includes('power'))) extra++;
     failures.push(`${g.topology.split(' ')[0]}: ${g.problems[0]}`);
   }
   if (last) return { ...last, failures };

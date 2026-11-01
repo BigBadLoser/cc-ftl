@@ -45,6 +45,23 @@ export interface RoomSpec {
   vehicle?: boolean;
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
+  /** A ring band segment's door at the start (-1) or end (1) of its arc instead of the middle: towards a dock bank. */
+  doorLean?: -1 | 1;
+  /** Placed on purpose (a guard post, the administration office): role swaps leave it where it is. */
+  pinned?: boolean;
+  /** A warehouse (merged crate rooms): stands between the rings as a rectangle, not as a band segment. */
+  warehouse?: boolean;
+  /** Its department on a round station (stationDepartments.ts): role swaps keep to it. */
+  dept?: string;
+  /** One of a clinic's rooms (a large station's medbays): they line a spoke together instead of standing in a band. */
+  clinic?: boolean;
+  /**
+   * Quarters to be one-bed cabins (off the navy): a ring band cuts them as one segment a bed (stationBands.ts); other
+   * layouts divide the room off a hallway at fit-out (rooms/cabins.ts).
+   */
+  cabins?: boolean;
+  /** One of those cabins (a ring band's segment). */
+  cabin?: boolean;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
   items?: readonly { item: string; min: number; max: number }[];
 }
@@ -57,6 +74,8 @@ export interface ShipPlan {
   shields: RoomSpec[];
   engines: number;
   reactors: number;
+  /** The reactor module and its footprint (stations pick a tier; ships build the Mk I). */
+  reactor?: Reactor;
   /** Navy-style AI core room (with point defence); drones keep the core in the command room and pods for PD. */
   core: RoomSpec | null;
   pd: RoomSpec[];
@@ -81,7 +100,17 @@ export function weaponSpec(defs: Record<string, ModuleDef>, mods: string[]): Roo
   return { role: 'weapons', mods, w: s * 2 + 1, h: s + 1 };
 }
 
-export const reactorSpec = (k: number): RoomSpec => ({ role: 'reactor', mods: Array<string>(k).fill('module.reactor'), w: 2 * k + 1, h: 3 });
+/** A reactor module and its footprint. */
+export interface Reactor {
+  mod: string;
+  fp: readonly [number, number];
+  /** Tiles of floor beyond the reactors' footprint in a station's reactor room (default 3): its spaciousness. */
+  margin?: number;
+}
+export const MK1_REACTOR: Reactor = { mod: 'module.reactor', fp: [2, 2] };
+/** Reactor room for k reactors side by side, a walkway row in front. */
+export const reactorSpec = (k: number, r: Reactor = MK1_REACTOR): RoomSpec =>
+  ({ role: 'reactor', mods: Array<string>(k).fill(r.mod), w: r.fp[0] * k + 1, h: r.fp[1] + 1 });
 
 /** Engine room for k engines stacked along the east hull. `door` is the wall crew enter by. */
 export const engineSpec = (k: number, door: 'w' | 'ns'): RoomSpec => ({

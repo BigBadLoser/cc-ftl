@@ -3,22 +3,27 @@ import type { Arrangement, RoomRecipe } from './types';
 /**
  * Recipes for rooms built around hull or roof mounts: weapons, shields, engines, docks and hangars. Their planned
  * modules keep the generic placer and its mount rules (no 'spec' steps here); recipes only furnish around them:
- * a duty console, battery banks, lockers and racks on the walls, with access and the door approach kept clear.
+ * a duty console, battery banks, a rack on the walls, with access and the door approach kept clear (lockers are for
+ * quarters, armouries, stores, and suits by the docks).
  */
 const around = (name: string, weight: number, steps: Arrangement['steps']): Arrangement => ({ name, weight, steps });
 
 export const weapons = {
   fill: 0.6,
   arrangements: [
+    // Laid out whole from a design (rooms/designs.ts); the steps furnish round the mounts where it does not fit.
+    { name: 'gallery', weight: 10, plan: { kind: 'design', designs: ['gunGallery'] }, steps: [
+      { mod: 'module.storage_rack', count: 2, wall: 'any', row: true },
+      { mod: 'module.battery', count: 1, wall: 'any' },
+    ] },
     around('loader', 2, [
       { mod: 'module.storage_rack', count: 2, wall: 'any', row: true },
       { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: 'module.storage_locker', count: 1, wall: 'any' },
     ]),
     around('duty', 1, [
       { mod: 'module.console', count: 1, wall: 'any', face: 'in' },
       { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: ['module.storage_locker', 'module.storage_rack'], count: 2, wall: 'any', row: true },
+      { mod: 'module.storage_rack', count: 1, wall: 'any' },
     ]),
   ],
 } as const satisfies RoomRecipe;
@@ -26,9 +31,13 @@ export const weapons = {
 export const shields = {
   fill: 0.6,
   arrangements: [
+    { name: 'core', weight: 10, plan: { kind: 'design', designs: ['shieldCore'] }, steps: [
+      { mod: 'module.battery', count: 2, wall: 'any', row: true },
+      { mod: 'module.console', count: 1, wall: 'any' },
+    ] },
     around('banks', 2, [
       { mod: 'module.battery', count: 2, wall: 'any', row: true },
-      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
+      { mod: 'module.console', count: 1, wall: 'any' },
     ]),
     around('monitor', 1, [
       { mod: 'module.console', count: 1, wall: 'any' },
@@ -38,18 +47,25 @@ export const shields = {
   ],
 } as const satisfies RoomRecipe;
 
+/** The AI core's vault (stations' core rooms; no recipe on ships): laid out whole from a design, nothing else in it otherwise. */
+export const core = {
+  fill: 0.4,
+  arrangements: [
+    { name: 'vault', weight: 1, plan: { kind: 'design', designs: ['coreVault'] }, steps: [] },
+  ],
+} as const satisfies RoomRecipe;
+
 export const engines = {
   fill: 0.6,
   arrangements: [
     around('control', 2, [
       { mod: 'module.console', count: 1, wall: 'fore' },
       { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
+      { mod: 'module.storage_rack', count: 1, wall: 'any' },
     ]),
     around('workshop', 1, [
       { mod: 'module.storage_rack', count: 1, wall: 'long' },
       { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
     ]),
   ],
 } as const satisfies RoomRecipe;
@@ -58,7 +74,7 @@ export const engines = {
 export const dock = {
   fill: 0.6,
   arrangements: [
-    around('suits', 2, [{ mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true }]),
+    around('suits', 2, [{ mod: 'module.storage_locker', count: 4, wall: 'any', row: true }]),
     around('freight', 1, [
       { mod: 'module.storage_rack', count: 1, wall: 'any' },
       { mod: 'module.storage', count: 'fill', wall: 'any', row: true },
@@ -66,17 +82,17 @@ export const dock = {
   ],
 } as const satisfies RoomRecipe;
 
-/** Hangars: tool racks and lockers along the walls, the bay's boarding side kept clear. */
+/** Hangars: tool racks along the walls and a couple of lockers, the bay's boarding side kept clear. */
 export const hangar = {
   fill: 0.55,
   arrangements: [
     around('racks', 2, [
       { mod: 'module.storage_rack', count: 'fill', wall: 'long', row: true },
-      { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
+      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
     ]),
     around('pallets', 1, [
       { mod: 'module.storage_pallet', count: 2, wall: 'any' },
-      { mod: ['module.storage', 'module.storage_locker'], count: 'fill', wall: 'any', row: true },
+      { mod: 'module.storage', count: 'fill', wall: 'any', row: true },
     ]),
   ],
 } as const satisfies RoomRecipe;

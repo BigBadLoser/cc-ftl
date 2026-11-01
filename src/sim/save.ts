@@ -85,8 +85,9 @@ import { newYard, type YardState } from './yard/types';
  * v70 (weapon modes, merged after trade): `Weapon.mode` (auto or hold; ammo weapons start on hold), `Weapon.restore` and `Weapon.once`.
  * v71 (boarding, merged after weapon modes): `RecallC` (a player boarding party's recall, on the shuttle), the 'sabotage' job kind and
  *   `SabotageOrderC` (a boarder's sabotage order, kept while a fight pauses it).
+ * v72 (court floors, merged after boarding): the `floor` grid field (a floor tile's finish: plain deck, walkway, soil, market tile, tread plate).
  */
-export const SAVE_VERSION = 71;
+export const SAVE_VERSION = 72;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

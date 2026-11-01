@@ -3,6 +3,7 @@
  * Ship layout contact sheets without Blender or sprite art.
  *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
  *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout stationWheel]: station sheets.
+ *   --views labels: one labelled image a seed (rooms named, furniture coded, a key: tools/shipgen/labels.ts).
  *   --ruin 0.2,0.5,0.9 [--cause combat|decay|both]: derelict ruin sheets instead (tools/shipgen/ruinView.ts).
  * Writes <out>/<faction>-d<depth>.png and .txt (validation summary + ASCII dump per seed) and prints the summary.
  */
@@ -74,7 +75,16 @@ try {
   for (const f of factions) {
     const base = join(out, f.startsWith('station.') ? f.replace(':', '-').replace(/,/g, '+').replace('@', '-') : `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
     let text = '';
-    for (const view of views) {
+    if (views.includes('labels')) {
+      const lv = await server.ssrLoadModule('/tools/shipgen/labels.ts');
+      for (let seed = from; seed < from + count; seed++) {
+        const r = lv.labelView(f, seed, depth);
+        const file = `${base}-labels-s${seed}.png`;
+        writeFileSync(file, png(r.width, r.height, r.data));
+        console.log(file);
+      }
+    }
+    for (const view of views.filter((v) => v !== 'labels')) {
       const sheet = lib.contactSheet(f, from, count, depth, scale, 2600, view);
       const file = view === 'detail' ? `${base}.png` : `${base}-${view}.png`;
       writeFileSync(file, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));

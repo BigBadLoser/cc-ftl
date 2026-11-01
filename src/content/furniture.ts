@@ -25,6 +25,65 @@ export const furniture = {
     asset: 'module.chair', footprint: [1, 1], solid: false, power: 0, flammability: 0.4,
     maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 1 }],
   },
+  // Station dressing (art: tools/blender/sprites/decor.py): planters and a bench break up big open floors (courts, hangar
+  // decks); the deck marks lie flush in the floor and are walkable. Dressing only, no mechanic.
+  'module.planter': {
+    name: 'Planter',
+    category: 'life',
+    description: "A potted shrub.",
+    asset: 'module.planter', footprint: [1, 1], solid: true, power: 0, flammability: 0.5,
+    maxHp: 30, buildWork: 30, cost: [{ item: 'item.polymer', count: 2 }],
+  },
+  'module.planter_large': {
+    name: 'Tree planter',
+    category: 'life',
+    description: "A raised bed with a small tree.",
+    asset: 'module.planter_large', footprint: [2, 2], solid: true, power: 0, flammability: 0.5,
+    maxHp: 80, buildWork: 90, cost: [{ item: 'item.metal', count: 4 }, { item: 'item.polymer', count: 4 }],
+  },
+  'module.bench': {
+    name: 'Bench',
+    category: 'life',
+    description: "A slatted bench.",
+    asset: 'module.bench', footprint: [2, 1], solid: true, power: 0, flammability: 0.3,
+    maxHp: 40, buildWork: 40, cost: [{ item: 'item.metal', count: 3 }, { item: 'item.polymer', count: 1 }],
+  },
+  'module.deck_inlay': {
+    name: 'Deck inlay',
+    category: 'structure',
+    description: "A brass medallion set in the deck. Walkable.",
+    asset: 'module.deck_inlay', footprint: [1, 1], solid: false, power: 0, flammability: 0,
+    maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 2 }],
+  },
+  'module.deck_hazard': {
+    name: 'Hazard plate',
+    category: 'structure',
+    description: "Yellow and black deck striping. Walkable.",
+    asset: 'module.deck_hazard', footprint: [1, 1], solid: false, power: 0, flammability: 0,
+    maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 1 }],
+  },
+  // Court landmarks (art: tools/blender/sprites/landmarks.py), set at a court's middle by the station generator.
+  'module.holo_sign': {
+    name: 'Holo column',
+    category: 'life',
+    description: "A column ringed with advertising light. Plazas gather round it.",
+    asset: 'module.holo_sign', footprint: [2, 2], solid: true, power: -0.5, powerPriority: 3, light: { radius: 8, level: 210 },
+    flammability: 0.1, maxHp: 80, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
+  },
+  'module.tree_large': {
+    name: 'Great tree',
+    category: 'life',
+    description: "A tall tree in a raised bed with a seat ledge.",
+    asset: 'module.tree_large', footprint: [3, 3], solid: true, power: 0, flammability: 0.5,
+    maxHp: 120, buildWork: 160, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 8 }],
+  },
+  'module.banner': {
+    name: 'Banner post',
+    category: 'life',
+    description: "A banner in the ship's colours on a post.",
+    asset: 'module.banner', livery: true, footprint: [1, 1], solid: true, power: 0, flammability: 0.6,
+    maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 2 }],
+  },
   'module.storage_locker': {
     name: 'Locker',
     category: 'storage',
