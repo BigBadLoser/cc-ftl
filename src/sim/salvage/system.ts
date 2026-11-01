@@ -3,6 +3,7 @@ import { factionsHostile } from '../combat/factions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
 import { destroyJob } from '../items/stacks';
+import { FerryC } from '../ferry/components';
 import { TransferC } from '../logistics/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -23,8 +24,9 @@ export function hostileAboard(sim: Sim, ship: number): boolean {
   return false;
 }
 
-/** True while a shuttle run is still moving loot off the wreck (the wreck stays until it has landed). */
+/** True while a shuttle run (a logistics transfer, or a hand-made ferry run) is still moving loot or crew off the wreck: the wreck stays until it has landed. */
 function ferryingFrom(sim: Sim, ship: number): boolean {
+  if (sim.world.query(FerryC).some((id) => sim.world.get(id, FerryC)?.from === ship)) return true;
   return sim.world.query(TransferC).some((id) => {
     const t = sim.world.get(id, TransferC);
     return t?.from === ship && (t.status === 'boarding' || t.status === 'underway');

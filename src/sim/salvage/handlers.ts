@@ -16,7 +16,7 @@ export const salvageHandlers: { [T in SalvageCommandType]: Handler<T> } = {
   'salvage.order': (sim, cmd) => {
     const ship = shipById(sim, cmd.ship);
     if (!ship) return reject(sim, cmd.type, 'noShip');
-    if (ship.state !== 'wreck' || !ship.ruin) return reject(sim, cmd.type, 'notDerelict');
+    if (ship.state !== 'wreck') return reject(sim, cmd.type, 'notDerelict');
     if (!Array.isArray(cmd.types) || cmd.types.length === 0 || !cmd.types.every((t) => SCRAP_TYPES.includes(t))) return reject(sim, cmd.type, 'badValue');
     const types = SCRAP_TYPES.filter((t) => cmd.types.includes(t));
     if (robotOnly(sim, cmd.ship)) return reject(sim, cmd.type, 'robotOnly');

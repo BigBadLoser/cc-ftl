@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC } from '../combat/components';
 import { stampShip } from '../combat/ships';
+import { wreckShip } from '../combat/wreck';
+import { FerryC } from '../ferry/components';
 import { CrewC, DeadC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 import type { SimEvent } from '../events';
 import { AllegianceC, SurrenderedC } from '../fight/components';
@@ -98,12 +100,12 @@ const mods = (sim: Sim, ship: number): number => sim.world.query(ModuleC).filter
 const withoutRobot = { modules: parts };
 
 describe('salvage orders', () => {
-  it('are refused for a non-wreck, a wreck without ruin data, robot-only content and bad types', () => {
+  it('are refused for a non-wreck, robot-only content and bad types', () => {
     const sim = new Sim(1, content);
     const live = stampShip(sim, { name: 'Prize', rows, modules: parts }, { faction: 'player', x: 0, y: 0, state: 'prize' });
     expect(rejected(order(sim, live, all))).toBe('notDerelict');
     const bare = stampShip(sim, { name: 'Bare', rows, modules: parts }, { faction: 'neutral', x: 30, y: 0, state: 'wreck' });
-    expect(rejected(order(sim, bare, all))).toBe('notDerelict');
+    expect(rejected(order(sim, bare, all))).toBeUndefined(); // no ruin data needed: any wreck
     const robots = stampShip(sim, { name: 'Bots', rows, modules: [{ def: 'bay', x: 1, y: 1, rot: 0 }] }, { faction: 'neutral', x: 60, y: 0, state: 'wreck' });
     sim.world.get(robots, ShipC)!.ruin = { ...RUIN };
     expect(rejected(order(sim, robots, all))).toBe('robotOnly');
@@ -217,6 +219,44 @@ describe('salvage orders', () => {
     sim.step();
     expect(sim.world.has(w, SalvageOrderC)).toBe(false);
     expect(sim.world.query(JobC).length).toBe(0);
+  });
+});
+
+describe('wrecks of a fight', () => {
+  it('can be salvaged: wreckShip leaves no ruin data, and the order still strips it', () => {
+    const sim = new Sim(11, content);
+    const w = stampShip(sim, { name: 'Shot up', rows, modules: parts }, { faction: 'hostile', x: 0, y: 0, state: 'active' });
+    breathable(sim, 0, 0);
+    wreckShip(sim, w);
+    expect(sim.world.get(w, ShipC)!.ruin).toBeUndefined();
+    person(sim, 4, 3);
+    sim.events.drain();
+    expect(rejected(order(sim, w, ['tech']))).toBeUndefined();
+    run(sim, 1200, {}, () => !sim.world.has(w, SalvageOrderC));
+    expect(sim.world.query(ModuleC).map((m) => sim.world.get(m, ModuleC)!.def).sort()).toEqual(['bed', 'gun', 'reactor']);
+  });
+});
+
+describe('wreck removal waits for shuttle runs', () => {
+  it('holds while a hand-made ferry run has the wreck as its source', () => {
+    const sim = new Sim(12, content);
+    const w = derelict(sim, { modules: [{ def: 'console', x: 1, y: 1, rot: 0 }] });
+    sim.world.get(w, ShipC)!.ruin = { ...RUIN };
+    const shuttle = sim.world.createEntity();
+    sim.world.add(shuttle, FerryC, { from: w, to: 99, items: [], crew: [], phase: 'gather', timer: 0 });
+    person(sim, 4, 3);
+    person(sim, 5, 3);
+    order(sim, w, all);
+    run(sim, 6000, {}, () => {
+      const left = [...Array(rows.length * rows[0]!.length).keys()].filter((i) => sim.sector.grid.get('struct', i % 10, Math.floor(i / 10)) !== Struct.Space);
+      if (left.length <= 2 && sim.world.query(ModuleC).length === 0) for (const i of left) writeStruct(sim.sector.grid, i % 10, Math.floor(i / 10), Struct.Space);
+      return left.length === 0;
+    });
+    run(sim, 100);
+    expect(sim.world.has(w, ShipC)).toBe(true); // stripped, but the run is still on
+    sim.world.remove(shuttle, FerryC);
+    run(sim, 40);
+    expect(sim.world.has(w, ShipC)).toBe(false);
   });
 });
 

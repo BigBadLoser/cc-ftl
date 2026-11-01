@@ -879,7 +879,7 @@ Each milestone ends with something playable or watchable in the browser.
 
 Slice 2 of #268 (the order and the stripping; the inspector panel and the EVA/shuttle automation are later slices).
 
-- **Order.** `salvage.order {ship, types}` / `salvage.cancel {ship}`. Only on a wreck with `ruin` data; refused for robot-only content (`robotOnly`), when
+- **Order.** `salvage.order {ship, types}` / `salvage.cancel {ship}`. On any wreck (derelicts, and ships wrecked in combat or scuttled, which have no `ruin`); refused for robot-only content (`robotOnly`), when
   nothing of the ticked types is left (`nothingToStrip`) and for bad types. `SalvageOrderC` on the wreck: `types`, `status` ('running' or 'blocked'), `block`.
   Ordering again changes the types (open jobs are dropped and re-planned).
 - **Parts.** `ModuleDef.scrap` tags a module with its scrap type (robot modules have none and are never touched). Walls, doors and beams are hull.
