@@ -8,7 +8,7 @@ const NOTES = [
   'Void = space enclosed by the hull, as a share of floor. Deliberate only if the region has >= 40 tiles, area/bbox >= 0.5 and is bounded >= 90% by corridor/hull wall (a `negativeSpace` mask claim must pass the same test; rejected claims are counted). Everything else is unintended.',
   'Outline = per-bin outer radius (48 bins around the centre; outermost non-space tile; airlocks and dock rooms excluded). Spread = (p90 - p10) / median; roughness = mean |r[i] - r[i+1]| over adjacent bins in tiles; offenders = role owning the outermost tile in bins > 1.5 tiles above the median. The old protrusion share stays in the JSON only.',
   'Diversity: 16x16 role-signature Hamming distance, 16x16 structure-only distance (floor/corridor/wall/space), and structural parameters (from the topology string, or the result\'s `params`): distinct combinations and entropy.',
-  'Not yet measured: guarded access to controlled departments, alternative public routes between departments.',
+  'Ring frontage: share of the ring corridor\'s walls (outboard, inboard) with a room behind them rather than space; walls onto spokes are left out. Flow (on the room graph, rooms joined by doors): public rooms (shop, mess, medbay, office, dock) every airlock reaches through corridors and courts alone; public rooms still joined once private rooms are taken out; controlled departments (secure core: reactor, shields, AI core; defence: gun bays) entered from circulation by more than one room (extra entrances = bypasses). Service doors are not checked (none designated yet).',
 ];
 
 /** Compact markdown: one column pair per layout (all seeds, valid only). */
@@ -19,7 +19,15 @@ export function renderMd(r: BenchResult): string {
   const head = `| metric | ${cols.map((c) => c.h).join(' | ')} |`;
   const body = (cols[0]?.m ?? []).map(([k], i) => `| ${k} | ${cols.map((c) => fmt(c.m[i]?.[1] ?? NaN)).join(' | ')} |`);
   const fails = r.runs.flatMap((x) => x.rows.filter((s) => !s.ok).slice(0, 5).map((s) => `- ${x.layout} seed ${s.seed}: ${s.error ?? 'failed'}`));
-  return [`# ${r.label}: ${r.station} ${r.size}, seeds ${r.from}-${r.from + r.count - 1}`, '', ...NOTES.map((n) => `> ${n}`), '', head, `|${' --- |'.repeat(cols.length + 1)}`, ...body, ...(fails.length ? ['', 'First invalid seeds:', ...fails] : [])].join('\n') + '\n';
+  const flow = r.runs.flatMap((x) => x.rows.filter((s) => s.m?.flow?.violations.length).map((s) => `- ${x.layout} seed ${s.seed}: ${summarise(s.m?.flow?.violations ?? [])}`));
+  return [`# ${r.label}: ${r.station} ${r.size}, seeds ${r.from}-${r.from + r.count - 1}`, '', ...NOTES.map((n) => `> ${n}`), '', head, `|${' --- |'.repeat(cols.length + 1)}`, ...body, ...(fails.length ? ['', 'First invalid seeds:', ...fails] : []), ...(flow.length ? ['', 'Flow violations by seed:', ...flow] : [])].join('\n') + '\n';
+}
+
+/** Violations counted by kind ("controlled reactor+shields x4: 4 entrances" keeps its text; repeats are counted). */
+function summarise(vs: string[]): string {
+  const n = new Map<string, number>();
+  for (const v of vs) { const k = v.replace(/#\d+/, ''); n.set(k, (n.get(k) ?? 0) + 1); }
+  return [...n.entries()].map(([k, c]) => (c > 1 ? `${k} (x${c})` : k)).join('; ');
 }
 
 const seedsOf = (run: Run): number[] => run.rows.map((s) => s.seed);

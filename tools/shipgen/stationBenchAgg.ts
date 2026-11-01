@@ -16,6 +16,8 @@ export interface Agg {
   designRate: number; designReasons: Record<string, number>;
   /** Distinct structural-parameter combinations, their entropy (bits) and each parameter's value counts. */
   combos: number; entropy: number; paramDist: Record<string, Record<string, number>>;
+  /** Ring frontage occupancy (outboard, inboard) and circulation (stationBenchFlow.ts): means per seed, and the share of seeds with a flow violation. */
+  ringOut: number; ringIn: number; publicUnreached: number; privateRoutes: number; bypasses: number; flowRate: number;
 }
 export interface Run { layout: string; spec: string; rows: SeedRow[]; all: Agg; valid: Agg }
 
@@ -82,7 +84,19 @@ export function aggregate(rows: SeedRow[]): Agg {
     diversity: hamming(ms.map((m) => m.sig)), diversityStruct: hamming(ms.map((m) => m.sigS)), faces,
     failRate: rows.length ? rows.filter((r) => !r.ok).length / rows.length : 0, reasons,
     designRate: rows.length ? rows.filter((r) => r.design.length > 0).length / rows.length : 0, designReasons,
+    ...flowAgg(ms),
     combos: comboCount.size, entropy: ms.length ? Math.abs(entropy) : 0, paramDist,
+  };
+}
+
+function flowAgg(ms: Metrics[]): Pick<Agg, 'ringOut' | 'ringIn' | 'publicUnreached' | 'privateRoutes' | 'bypasses' | 'flowRate'> {
+  const fs = ms.map((m) => m.flow).filter((f): f is NonNullable<Metrics['flow']> => !!f);
+  const occ = (t: [number, number]): number => (t[1] ? t[0] / t[1] : NaN);
+  const m = (xs: number[]): number => (xs.length ? mean(xs.filter((v) => !Number.isNaN(v))) : NaN);
+  return {
+    ringOut: m(fs.map((f) => occ(f.ringOut))), ringIn: m(fs.map((f) => occ(f.ringIn))),
+    publicUnreached: m(fs.map((f) => f.publicUnreached)), privateRoutes: m(fs.map((f) => f.privateRoutes)), bypasses: m(fs.map((f) => f.bypasses)),
+    flowRate: fs.length ? fs.filter((f) => f.violations.length > 0).length / fs.length : NaN,
   };
 }
 
@@ -101,7 +115,10 @@ export function metricRows(a: Agg, { roles, reasons, design, params }: Keys): [s
     ['ms median', a.msMedian], ['ms p95', a.msP95],
     ['hard: all rooms reachable', a.reach], ['hard: modules usable', a.usable], ['hard: power ok', a.power], ['hard: rect rooms rectangular', a.rects], ['info: cargo rooms rectangular', a.cargoRect], ['docks mean', a.docks],
     ['void unintended (share of floor)', a.voidUnintended], ['void deliberate (share of floor)', a.voidDeliberate], ['void classified by', a.voidMethod], ['void mask claims rejected', a.maskRejected], ['sliver share of rooms', a.sliverShare], ['room aspect p90', a.aspectP90], ['room fill mean', a.fillMean], ['outline spread (p90-p10)/median', a.outlineSpread], ['outline roughness (tiles)', a.outlineRough], ['outline offenders (bins by role)', Object.entries(a.offenders).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k}:${v}`).join(' ') || '-'],
-    ['rooms only via quarters (mean)', a.viaQuarters], ['roomQuality mean', a.quality], ['expectation pass (all roles)', a.expectAll],
+    ['rooms only via quarters (mean)', a.viaQuarters],
+    ['ring frontage occupied, outboard', a.ringOut], ['ring frontage occupied, inboard', a.ringIn],
+    ['flow: public rooms off circulation (mean)', a.publicUnreached], ['flow: public rooms only via private (mean)', a.privateRoutes],
+    ['flow: controlled bypass entrances (mean)', a.bypasses], ['flow: seeds with a violation', a.flowRate], ['roomQuality mean', a.quality], ['expectation pass (all roles)', a.expectAll],
     ...roles.map((r): [string, number] => [`expect pass: ${r}`, a.expectByRole[r] ?? NaN]),
     ...roles.map((r): [string, number] => [`walk depth: ${r}`, a.depthByRole[r] ?? NaN]),
     ['diversity: roles (mean Hamming, 16x16)', a.diversity], ['diversity: structure only (16x16)', a.diversityStruct],

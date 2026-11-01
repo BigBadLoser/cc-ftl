@@ -9,6 +9,7 @@ import { ROLE_TINT } from './draw';
 import { classifyVoids } from './stationBenchVoids';
 import { type Outline, outlineStats, protrusionShare } from './stationBenchHull';
 import { expectFor, withinExpect } from './stationBenchExpect';
+import { flowOf, type Flow } from './stationBenchFlow';
 
 const defs = content.modules as Record<string, ModuleDef>;
 
@@ -51,6 +52,8 @@ export interface Metrics {
   params: Record<string, string | number>;
   /** Design violations (not functional): slivers, non-rectangular machine rooms. */
   design: string[];
+  /** Ring frontage and circulation analysis (stationBenchFlow.ts). */
+  flow?: Flow;
 }
 
 const FACE = (x: number, y: number): 'N' | 'S' | 'E' | 'W' => (y < 0 ? 'N' : y > 0 ? 'S' : x > 0 ? 'E' : 'W');
@@ -186,7 +189,7 @@ export function measure(g: GenResult): Metrics {
     slivers, aspects, fills, protrusion, outline, depth,
     viaQuarters: audit(g).viaQuarters.length,
     quality: real.map((r) => rq.get(r.id)?.score).filter((v): v is number => v !== undefined),
-    expect, params: paramsOf(g, faces), design: [...[...sliverRoles].map((r) => `sliver: ${r}`), ...[...new Set(badRects.map((b) => b.split('#')[0]))].map((r) => `non-rect machine room: ${r}`)], sig: signature(g), sigS: signature(g, true), faces,
+    expect, params: paramsOf(g, faces), design: [...[...sliverRoles].map((r) => `sliver: ${r}`), ...[...new Set(badRects.map((b) => b.split('#')[0]))].map((r) => `non-rect machine room: ${r}`)], sig: signature(g), sigS: signature(g, true), faces, flow: flowOf(g),
   };
 }
 
