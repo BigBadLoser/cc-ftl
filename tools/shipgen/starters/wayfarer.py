@@ -45,19 +45,18 @@ def c_arms():
 
 
 def spine():
-    s = Ship('SPINE HAULER', 37, 25, CREW, 'a rounded hab forward, a cargo spine of store rooms amidships, engineering aft')
+    s = Ship('SPINE HAULER', 37, 25, CREW, 'a rounded hab forward with the hold, a spine of crew rooms (med bay, two quarters, a workshop) amidships, engineering aft')
     hull(s, [(x, 9, 15) if x <= 2 else (x, 6, 18) if x <= 4 else (x, 4, 20) for x in range(1, 9)])
     s.section('Cockpit: helm, gun and shield consoles, the burst laser')
     s.m('helm', 4, 7); s.m('weaponsConsole', 3, 11); s.m('burstLaser', 5, 11); s.m('shieldConsole', 4, 15); s.lights((7, 6), (7, 13), (2, 13), (6, 19))
     lo = room(s, 'Lounge: galley, mess table and chairs, the airlock', 8, 4, 15, 10); lo.m('airlock', 9, 4); lo.m('galley', 12, 5, **GALLEY); lo.m('mess_table', 12, 8); lo.m('chair', 12, 7, 2); lo.m('chair', 13, 7, 2); lo.light((14, 9), (14, 6))
     room(s, 'Hab corridor', 8, 10, 15, 14).light((11, 12))
-    qu = room(s, 'Quarters: four bunks, a med bed', 8, 14, 15, 20); qu.row(['bed', 'bed', 'bed', 'bed', 'med_bed'], wall='s'); qu.light((14, 15))
+    ho = room(s, 'Hold: three racks', 8, 14, 15, 20); ho.row([('storage_rack', {'stock': st}) for st in STOCK], wall='s'); ho.light((14, 15))
     room(s, 'Spine', 15, 10, 25, 14).light((17, 12), (23, 12))
-    for i, (x0, y0) in enumerate([(15, 6), (20, 6), (15, 14), (20, 14)]):
-        r = room(s, 'Cargo bay ' + str(i + 1) + ': a rack' if i < 3 else 'Workshop: the fabricator', x0, y0, x0 + 5, y0 + 4)
-        if i < 3: r.m('storage_rack', x0 + 1, y0 + 1 if y0 == 6 else y0 + 3, 0 if y0 == 6 else 2, stock=STOCK[i])
-        else: r.m('fabricator', x0 + 1, y0 + 3, 2)
-        r.light((x0 + 4, y0 + 2))
+    md = room(s, 'Med bay: a med bed', 15, 6, 20, 10); md.m('med_bed', 16, 7); md.light((19, 8))
+    qa = room(s, 'Quarters A: two bunks', 20, 6, 25, 10); qa.row(['bed', 'bed'], x=21); qa.light((24, 8))
+    qb = room(s, 'Quarters B: two bunks', 15, 14, 20, 18); qb.row(['bed', 'bed'], x=16, wall='s'); qb.light((19, 16))
+    ws = room(s, 'Workshop: the fabricator', 20, 14, 25, 18); ws.m('fabricator', 21, 17, 2); ws.light((24, 16))
     hg = room(s, 'Hangar: the shuttle bay', 25, 4, 31, 11); hg.m('vehicle_bay', 26, 5, vehicle='vehicle.shuttle'); hg.light((30, 6))
     en = room(s, 'Engineering: two reactors, the shield, life support', 25, 11, 31, 20); en.m('lifeSupport', 26, 14); en.m('reactor', 26, 16); en.m('reactor', 26, 18); en.m('shieldGen', 29, 18); en.m('lifeSupport', 30, 14); en.light((28, 13), (28, 18))
     er = room(s, 'Engine room: two engines', 31, 4, 36, 20); er.m('engine', 32, 5, 1); er.m('engine', 32, 16, 1); er.light((33, 10), (34, 13))

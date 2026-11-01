@@ -196,7 +196,7 @@ export const variants: Variant[] = [
     },
   },
   {
-    name: 'SPINE HAULER', kind: 'riff', note: 'a rounded hab forward, a cargo spine of store rooms amidships, engineering aft',
+    name: 'SPINE HAULER', kind: 'riff', note: 'a rounded hab forward with the hold, a spine of crew rooms (med bay, two quarters, a workshop) amidships, engineering aft',
     template: {
       name: 'SPINE HAULER', crew: ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
       rows: [
@@ -246,24 +246,24 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 14, y: 6, rot: 0 },
         // Hab corridor
         { def: 'module.light', x: 11, y: 12, rot: 0 },
-        // Quarters: four bunks, a med bed
-        { def: 'module.bed', x: 9, y: 18, rot: 2 },
-        { def: 'module.bed', x: 10, y: 18, rot: 2 },
-        { def: 'module.bed', x: 11, y: 18, rot: 2 },
-        { def: 'module.bed', x: 12, y: 18, rot: 2 },
-        { def: 'module.med_bed', x: 13, y: 18, rot: 2 },
+        // Hold: three racks
+        { def: 'module.storage_rack', x: 9, y: 19, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
+        { def: 'module.storage_rack', x: 11, y: 19, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage_rack', x: 13, y: 19, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 14, y: 15, rot: 0 },
         // Spine
         { def: 'module.light', x: 17, y: 12, rot: 0 },
         { def: 'module.light', x: 23, y: 12, rot: 0 },
-        // Cargo bay 1: a rack
-        { def: 'module.storage_rack', x: 16, y: 7, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
+        // Med bay: a med bed
+        { def: 'module.med_bed', x: 16, y: 7, rot: 0 },
         { def: 'module.light', x: 19, y: 8, rot: 0 },
-        // Cargo bay 2: a rack
-        { def: 'module.storage_rack', x: 21, y: 7, rot: 0, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }] },
+        // Quarters A: two bunks
+        { def: 'module.bed', x: 21, y: 7, rot: 0 },
+        { def: 'module.bed', x: 22, y: 7, rot: 0 },
         { def: 'module.light', x: 24, y: 8, rot: 0 },
-        // Cargo bay 3: a rack
-        { def: 'module.storage_rack', x: 16, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
+        // Quarters B: two bunks
+        { def: 'module.bed', x: 16, y: 16, rot: 2 },
+        { def: 'module.bed', x: 17, y: 16, rot: 2 },
         { def: 'module.light', x: 19, y: 16, rot: 0 },
         // Workshop: the fabricator
         { def: 'module.fabricator', x: 21, y: 17, rot: 2 },

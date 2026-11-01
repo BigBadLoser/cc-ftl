@@ -289,7 +289,7 @@ export const variants: Variant[] = [
     },
   },
   {
-    name: 'DART', kind: 'new', note: 'a long thin dart: the missile in its point, crew rooms down one straight corridor, a laser in each of two tail fins',
+    name: 'DART', kind: 'new', note: 'a long thin dart: the missile in its point, crew rooms (two quarters, a sick bay by gun control) down one straight corridor, a laser in each of two tail fins',
     template: {
       name: 'DART', crew: ['role.gunner', 'role.gunner', 'role.pilot', 'role.engineer'],
       rows: [
@@ -300,10 +300,10 @@ export const variants: Variant[] = [
         '........................#______#.......',
         '........................#______#######.',
         '.......#####################D####____#.',
-        '......##______#____#____#_______#____#.',
-        '....####______#____#____#_______#____#.',
-        '..###__#______#____#____#_______#____#.',
-        '..#____###D#####D#####D#####D####____#.',
+        '......##______#____#__#__#______#____#.',
+        '....####______#____#__#__#______#____#.',
+        '..###__#______#____#__#__#______#____#.',
+        '..#____###D#####D###D##D####D####____#.',
         '..#____D________________________D____#.',
         '..#____####D###D######D####D#####____#.',
         '..###__#____#____#______#_______#____#.',
@@ -331,18 +331,20 @@ export const variants: Variant[] = [
         { def: 'module.helm', x: 8, y: 7, rot: 0 },
         { def: 'module.shieldConsole', x: 11, y: 7, rot: 0 },
         { def: 'module.light', x: 13, y: 9, rot: 0 },
-        // Gun control: both gun consoles
+        // Gun control and sick bay: the gun console, a med bed
         { def: 'module.weaponsConsole', x: 15, y: 7, rot: 0 },
-        { def: 'module.weaponsConsole', x: 17, y: 7, rot: 0 },
+        { def: 'module.med_bed', x: 17, y: 7, rot: 0 },
         { def: 'module.light', x: 18, y: 9, rot: 0 },
-        // Quarters: four bunks
+        // Quarters A: two bunks
         { def: 'module.bed', x: 20, y: 7, rot: 0 },
         { def: 'module.bed', x: 21, y: 7, rot: 0 },
-        { def: 'module.bed', x: 22, y: 7, rot: 0 },
-        { def: 'module.bed', x: 23, y: 7, rot: 0 },
         { def: 'module.light', x: 21, y: 9, rot: 0 },
+        // Quarters B: two bunks
+        { def: 'module.bed', x: 23, y: 7, rot: 0 },
+        { def: 'module.bed', x: 24, y: 7, rot: 0 },
+        { def: 'module.light', x: 24, y: 9, rot: 0 },
         // Shield room: the Mk II shield, life support
-        { def: 'module.shieldGen.mk2', x: 25, y: 7, rot: 0 },
+        { def: 'module.shieldGen.mk2', x: 26, y: 7, rot: 0 },
         { def: 'module.lifeSupport', x: 31, y: 7, rot: 0 },
         { def: 'module.light', x: 29, y: 9, rot: 0 },
         // North tail fin: a burst laser

@@ -67,15 +67,16 @@ def gem():
 
 
 def dart():
-    s = Ship('DART', 39, 23, CREW, 'a long thin dart: the missile in its point, crew rooms down one straight corridor, a laser in each of two tail fins')
+    s = Ship('DART', 39, 23, CREW, 'a long thin dart: the missile in its point, crew rooms (two quarters, a sick bay by gun control) down one straight corridor, a laser in each of two tail fins')
     hull(s, [(x, 11 - min(4, x // 2 + 1), 11 + min(4, x // 2 + 1)) for x in range(2, 8)])
     vline(s, 7, 6, 16)
     s.section('Missile room (point): the missile launcher'); s.m('missileLauncher', 3, 10); s.lights((5, 9), (5, 13))
     room(s, 'Corridor', 7, 10, 32, 12).light((9, 11), (16, 11), (23, 11), (30, 11))
     br = room(s, 'Bridge: helm and shield console', 7, 6, 14, 10); br.m('helm', 8, 7); br.m('shieldConsole', 11, 7); br.light((13, 9))
-    gc = room(s, 'Gun control: both gun consoles', 14, 6, 19, 10); gc.m('weaponsConsole', 15, 7); gc.m('weaponsConsole', 17, 7); gc.light((18, 9))
-    qu = room(s, 'Quarters: four bunks', 19, 6, 24, 10); qu.row(['bed', 'bed', 'bed', 'bed']); qu.light((21, 9))
-    sh = room(s, 'Shield room: the Mk II shield, life support', 24, 6, 32, 10); sh.m('shieldGen.mk2', 25, 7); sh.m('lifeSupport', 31, 7); sh.light((29, 9))
+    gc = room(s, 'Gun control and sick bay: the gun console, a med bed', 14, 6, 19, 10); gc.m('weaponsConsole', 15, 7); gc.m('med_bed', 17, 7); gc.light((18, 9))
+    qa = room(s, 'Quarters A: two bunks', 19, 6, 22, 10); qa.row(['bed', 'bed']); qa.light((21, 9))
+    qb = room(s, 'Quarters B: two bunks', 22, 6, 25, 10); qb.row(['bed', 'bed']); qb.light((24, 9))
+    sh = room(s, 'Shield room: the Mk II shield, life support', 25, 6, 32, 10); sh.m('shieldGen.mk2', 26, 7); sh.m('lifeSupport', 31, 7); sh.light((29, 9))
     nf = room(s, 'North tail fin: a burst laser', 24, 1, 31, 6); nf.m('burstLaser', 29, 2); nf.light((26, 4))
     al = room(s, 'Airlock', 7, 12, 12, 16); al.m('airlock', 8, 13, 2); al.light((11, 14))
     ga = room(s, 'Galley: galley, life support', 12, 12, 17, 16); ga.m('galley', 13, 13, **GALLEY); ga.m('lifeSupport', 16, 13); ga.light((14, 15))
@@ -83,7 +84,7 @@ def dart():
     rr = room(s, 'Reactor room: two reactors, life support', 24, 12, 32, 16); rr.m('reactor', 25, 13); rr.m('reactor', 29, 13); rr.m('lifeSupport', 31, 13); rr.light((27, 15))
     sf = room(s, 'South tail fin: a burst laser', 24, 16, 31, 21); sf.m('burstLaser', 29, 19); sf.light((26, 18))
     er = room(s, 'Engine room: two engines, a reactor', 32, 5, 37, 17); er.m('engine', 33, 6, 1); er.m('engine', 33, 13, 1); er.m('reactor', 35, 10); er.light((33, 11))
-    for d in [(7, 11), (10, 10), (16, 10), (22, 10), (28, 10), (28, 6), (11, 12), (15, 12), (22, 12), (27, 12), (28, 16), (32, 11)]: s.door(*d)
+    for d in [(7, 11), (10, 10), (16, 10), (20, 10), (23, 10), (28, 10), (28, 6), (11, 12), (15, 12), (22, 12), (27, 12), (28, 16), (32, 11)]: s.door(*d)
     return s
 
 

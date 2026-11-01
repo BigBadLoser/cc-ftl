@@ -7,18 +7,21 @@ RK = [('storage_rack', {'stock': STOCK[0]}), ('storage_rack', {'stock': STOCK[1]
 
 
 def claw():
-    s = Ship('CLAW', 30, 26, CREW, 'two jaws reach forward with hooked tips: the ore hold is the upper jaw, the pod hangar the lower, the bridge sits in the throat')
-    oh = room(s, 'Ore hold (upper jaw): refinery and ore bins', 4, 1, 17, 7); oh.m('storage_ore_large', 5, 2); oh.m('storage_ore', 9, 2); oh.m('refinery', 12, 2); oh.light((6, 5), (11, 6), (16, 6))
+    s = Ship('CLAW', 30, 26, CREW, 'two jaws reach forward with hooked tips: the ore hold is the upper jaw, the pod hangar the lower; a hallway down the throat links them, with a branch aft to the engines')
+    oh = room(s, 'Ore hold (upper jaw): refinery, ore bins, two racks', 4, 1, 17, 7); oh.m('storage_ore_large', 5, 2); oh.m('storage_ore', 9, 2); oh.m('refinery', 12, 2)
+    oh.m('storage_rack', 7, 6, 2, stock=STOCK[1]); oh.m('storage_rack', 9, 6, 2, stock=STOCK[2]); oh.light((6, 5), (11, 6), (16, 6))
     ut = room(s, 'Upper claw tip: the burst laser', 1, 5, 4, 11); ut.m('burstLaser', 2, 9); ut.light((2, 6))
-    ph = room(s, 'Pod hangar (lower jaw): the pod bay, racks, the airlock', 4, 19, 17, 24); ph.m('pod_bay', 7, 20, vehicle='vehicle.mining_pod'); ph.m('airlock', 12, 21, 2)
+    ph = room(s, 'Pod hangar (lower jaw): the pod bay, a rack, the airlock', 4, 19, 17, 24); ph.m('pod_bay', 7, 20, vehicle='vehicle.mining_pod'); ph.m('airlock', 12, 21, 2)
     ph.m('storage_rack', 15, 20, stock=STOCK[0]); ph.light((5, 23), (10, 23), (16, 23))
     lt = room(s, 'Lower claw tip: the shield', 1, 16, 4, 22); lt.m('shieldGen', 2, 17); lt.light((2, 20))
-    br = room(s, 'Bridge (throat): helm and gun console', 11, 7, 17, 13); br.m('helm', 13, 10); br.m('weaponsConsole', 15, 8); br.light((12, 9), (16, 12))
-    qu = room(s, 'Quarters (throat): three bunks, life support', 11, 13, 17, 19); qu.row(['bed', 'bed'], x=12, wall='s'); qu.m('bed', 15, 17, 2); qu.m('lifeSupport', 16, 17, 2); qu.light((13, 14))
-    ga = room(s, 'Galley: galley, mess table, life support', 17, 7, 23, 13); ga.row([('galley', GALLEY), 'mess_table'], x=18); ga.m('lifeSupport', 22, 8); ga.light((19, 12))
-    st = room(s, 'Stores: racks', 17, 13, 23, 19); st.m('storage_rack', 18, 14, stock=STOCK[1]); st.m('storage_rack', 21, 14, stock=STOCK[2]); st.light((21, 18))
-    er = room(s, 'Engine room: two engines, two reactors', 23, 6, 28, 20); er.m('engine', 24, 7, 1); er.m('engine', 24, 16, 1); er.m('reactor', 24, 12); er.m('reactor', 24, 14); er.light((27, 13), (26, 11))
-    for d in [(4, 6), (4, 21), (14, 7), (14, 13), (14, 19), (17, 11), (17, 16), (20, 13), (23, 11)]: s.door(*d)
+    room(s, 'Throat hallway: jaw to jaw', 11, 7, 14, 19).light((12, 9), (13, 16))
+    room(s, 'Aft hallway: throat to the engine room', 14, 11, 23, 14).light((17, 12), (21, 13))
+    s.open(14, 12, 14, 13)
+    br = room(s, 'Bridge: helm, gun console, life support', 14, 7, 23, 11); br.m('helm', 15, 8); br.m('weaponsConsole', 18, 8); br.m('lifeSupport', 22, 8); br.light((20, 10))
+    qu = room(s, 'Quarters: three bunks, life support', 14, 14, 19, 19); qu.row(['bed', 'bed', 'bed'], x=16); qu.m('lifeSupport', 15, 17, 2); qu.light((17, 18))
+    ga = room(s, 'Galley: galley, mess table', 19, 14, 23, 19); ga.m('galley', 20, 15, **GALLEY); ga.m('mess_table', 20, 18); ga.light((22, 16))
+    er = room(s, 'Engine room: two engines, two reactors', 23, 6, 28, 20); er.m('engine', 24, 7, 1); er.m('engine', 24, 16, 1); er.m('reactor', 26, 12); er.m('reactor', 26, 14); er.light((25, 13), (27, 11))
+    for d in [(4, 6), (4, 21), (12, 7), (12, 19), (17, 11), (15, 14), (22, 14), (23, 12)]: s.door(*d)
     return s
 
 

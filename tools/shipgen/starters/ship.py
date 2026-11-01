@@ -8,14 +8,15 @@ import lancer, prospector, wayfarer
 SHIPS = os.path.join(HERE, '..', '..', '..', 'src', 'content', 'ships')
 PICKS = [
     ('wayfarer', 'Wayfarer', wayfarer.spine, """Wayfarer: the balanced starter, the Spine Hauler. 37x25: a rounded hab forward (cockpit with the helm, the gun and
- * shield consoles and the burst laser; a lounge with the galley and the dorsal airlock; quarters with four bunks and a med bed), a
- * spine corridor amidships lined with three cargo bays and a workshop, and aft the shuttle hangar, engineering (reactors, shield,
- * life support) and the engine room."""),
+ * shield consoles and the burst laser; a lounge with the galley and the dorsal airlock; the hold with three racks), a spine
+ * corridor amidships lined with a med bay, two quarters of two bunks each and a workshop, and aft the shuttle hangar, engineering
+ * (reactors, shield, life support) and the engine room."""),
     ('prospector', 'Prospector', prospector.claw, """Prospector: the hauler and miner, the Claw. 30x26: two jaws reach forward with hooked tips. The upper jaw is the ore hold
- * (refinery and ore bins), the lower jaw the pod hangar (mining pod bay, a rack, the airlock); the tips hold the burst laser and the
- * shield. The bridge and the quarters sit in the throat, the galley and stores behind them, the engine room at the stern."""),
+ * (refinery, ore bins, two racks), the lower jaw the pod hangar (mining pod bay, a rack, the airlock); the tips hold the burst laser
+ * and the shield. A hallway runs down the throat from jaw to jaw, with a branch aft to the engine room; the bridge sits north of
+ * the branch, the quarters (three bunks) and the galley south of it."""),
     ('lancer', 'Lancer', lancer.dart, """Lancer: the fighter, the Dart. 39x23: a long thin dart. The missile launcher is in its point, the crew rooms run down one
- * straight corridor (bridge, gun control, quarters and the Mk II shield on one side; airlock, galley, magazine and reactors on the
+ * straight corridor (bridge, gun control with a sick bay, two quarters of two bunks and the Mk II shield on one side; airlock, galley, magazine and reactors on the
  * other), and each of the two tail fins carries a burst laser."""),
 ]
 
