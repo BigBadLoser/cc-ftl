@@ -317,6 +317,60 @@ Reading it:
 - **Metric sampling changed (same-step jobs).** The first baseline read jobs only after the step, so a job taken and finished in one step was never seen: the short jobs were missing from time-to-assign. Jobs, first reservations and categories are now also read as `sim/work` begins (see the `metrics.ts` header). Against the previous table this moved only the assign and age columns: the assign p50 is 0 (not 1) wherever jobs are taken in the step they appear (colony, hub, multiship, most of log and hullplan), the p95s move by at most 1 tick, and the oldest open age rose by 1 where jobs were open from the start (they are now stamped a tick earlier). Never-assigned, idle-with-work and completed per 1000 ticks did not move, and the runs repeat exactly.
 - Not covered yet: `fight` and `damage` (arrive with #184), and prize or yard-crew runs in `multiship`.
 
+#### Phase 2 candidate benchmark (step 1, branch `ai/phase2`)
+
+Method: throwaway prototypes in `tools/profile/sched/` (`nav.ts`, `candidates.ts`, `bench.ts`), run by `node tools/profile/schedBench.js --scenarios … --seeds … --candidates … [--verify]`, plugged into `scheduleSystem` through a temporary `setPickerHook` (per-crew or batch). Every candidate sees the same live sim, not a recorded board. Each run measures `sim/schedule` self ms (the renamed `sim/decide`), the picker's own time, the emergency check, `sim/tick` with the observers' time removed, the largest pass in the warm-up (the first pass, which the Phase 0 table excluded), and the Phase 0 metrics. It also counts **priority violations**: an assignment at level L while a job at a better level is open and takeable by that crew member after the pass, checked with the legacy `jobFits`, relief gate and `jobTakeable`. Decisions are diffed against legacy with `ai:diff`. `--verify` reruns every global pass against an exhaustive all-pairs A\* matching and counts mismatches (regret). Two runs shared the 4 cores, so the times are indicative and the counts exact.
+
+Candidates:
+
+- `legacy`: today's per-crew `pickJob`.
+- `prune2`: legacy semantics plus the component prefilter and octile lower bounds.
+- `gA`, `gC`, `gH`: global per-level matching on the section 7.1 tuple with the prefilter. `gA` uses lazy A\* (octile-bound heap, exact A\* only when an entry reaches the top). `gC` uses one multi-goal Dijkstra per (crew, mode). `gH` is a hybrid: Dijkstra for a (crew, mode) group with more than 6 candidate jobs, lazy A\* otherwise.
+- `gB` (per-job reverse fields): dropped after the first runs. Struct changes invalidate the fields, so hullplan rebuilt about 6900 fields (3.2M nodes) and its p99 was worse.
+- `+gate`: a pass runs only when the open jobs, the free crew or the struct/jam/module revisions changed, and every 20 ticks regardless.
+
+`sim/schedule` ms per tick: mean / p99 / max / first pass. hullplan, hub and haul are the mean over seeds 1–3; the others are seed 1.
+
+| scenario | legacy | prune2 | gA+gate | gC+gate | **gH+gate** |
+| --- | --- | --- | --- | --- | --- |
+| colony | 0.15 / 1.0 / 10 / 19 | 0.17 / 0.9 / 10 / 29 | 0.13 / 0.8 / 8 / 3 | 0.12 / 0.7 / 13 / 12 | 0.11 / 0.7 / 8 / 2 |
+| hullplan | 2.38 / 17.6 / 119 / 81 | 1.91 / 6.1 / 20 / 41 | 0.46 / 2.6 / 17 / 14 | 0.48 / 2.6 / 19 / 7 | 0.47 / 2.2 / 32 / 6 |
+| log | 0.25 / 1.4 / 16 / 2 | 0.31 / 1.2 / 12 / 4 | 0.15 / 0.8 / 11 / 1 | 0.15 / 0.8 / 11 / 4 | 0.16 / 0.9 / 15 / 2 |
+| hub | 0.26 / 3.0 / 26 / 206 | 0.24 / 1.7 / 17 / 66 | 0.19 / 1.7 / 39 / 32 | 0.19 / 1.6 / 47 / 26 | 0.19 / 1.6 / 38 / 24 |
+| storm | 1.29 / 5.4 / 23 / 22 | 0.83 / 5.3 / 13 / 17 | 0.22 / 1.6 / 7 / 5 | 0.22 / 1.4 / 6 / 1 | 0.21 / 1.4 / 7 / 1 |
+| haul | 3.70 / 53.9 / 188 / 5930 | 1.14 / 5.4 / 62 / 1601 | 0.49 / 3.2 / 112 / 1575 | 0.49 / 3.4 / 36 / 79 | 0.49 / 3.1 / 36 / 94 |
+| multiship | 1.23 / 5.2 / 11 / 24 | 1.35 / 4.1 / 13 / 6 | 0.26 / 1.2 / 10 / 2 | 0.26 / 1.1 / 9 / 3 | 0.26 / 1.1 / 7 / 2 |
+
+Quality:
+
+- **Priority violations are 0 for every candidate, scenario and seed.**
+- `prune2` makes decisions IDENTICAL to legacy everywhere, which shows the prefilter and bounds are exact.
+- The global candidates diverge on purpose (nearest crew instead of lowest crew id). Most scenes diverge within the first 11 ticks, hullplan at t≈251–528 and log at t≈1842–3413.
+- `--verify`: regret 0 for gA, gC and gH. The runs were hullplan s3 (64 passes), haul s1 (207), hub s1 (17) and log s3 (28), each 800 ticks.
+- Global against legacy, as a range over gA, gC and gH:
+  - hullplan: wait p95 1927 → ~1833; never assigned 133 → 156; completed /1000 52.4 → 53.4; walk per job about equal.
+  - log: wait p95 559 → 417; never assigned 18 → 20.
+  - hub: completed 16.0 → 16.9–17.2; walk per job 72 → 66–67. The seeds split both ways, within seed variance.
+  - haul: equal (161.1 vs 160.6 completed).
+  - multiship: completed 7.5 → 8.5; walk per job 73 → 65.
+  - colony: completed 7.5 → 7.1; walk per job 56 → 61; never assigned 0 → 1. This is a single seed.
+  - Idle-with-work crew-ticks rose in hullplan (400 → 600) and haul (1000 → 1250). Those samples are crew left without a job when the gate skipped a pass, and they last at most 20 ticks.
+
+Findings:
+
+- `storm` dropped from 53–58 ms to 1.3 ms under legacy before this work, because of the `findPath` NO_PATH memo (#224). The prefilter takes it to 0.2 ms with no memo.
+- **The worst spike is the first pass in `haul`**: legacy 5.4–7.8 s, `prune2` and `gA` 1.4–2.5 s, `gC` and `gH` 64–130 ms. gA is slow there because octile bounds are loose on that board (3.7–4.4M nodes popped). One Dijkstra per crew settles hundreds of stacks at once.
+- The prefilter alone removes the wasted searches. The gate mostly saves the admission scan (it roughly halves the picker's mean).
+- The emergency check costs at most 0.09 ms mean, which is negligible.
+- Budgets are met by every global candidate: colony 0.11–0.13 ms mean (budget 0.5); hub p99 1.6 ms (budget p95 2.5).
+- No evidence about the doorway bug (#248) came up. Door and movement arbitration were not touched.
+
+**Pick: `gH+gate`.** It is global per-level matching with the component prefilter, a multi-goal Dijkstra per (crew, mode) when a crew member has more than 6 candidate jobs, lazy A\* otherwise, and the wake-plus-cadence gate (section 7.1, "When it runs"). It is exact (regret 0) and ties gC for the lowest first-pass spike. It has the lowest p99 almost everywhere and the fewest nodes in hullplan. gC alone is the fallback if the hybrid's extra code is not worth it; their numbers are close.
+
+Tuple and the hook for later cost terms: `(level, −urgency, pathCost + Σ pairTerms, jobId, crewId)`. Pair terms are EVA ×10, relief, −operate affinity ×10 and, later, the phobia term from TRAITS.md §5. Each must be an integer computable from (crew, job, mode) before the search. Lazy A\* adds it to the bound, and Dijkstra adds it when the goal settles, so both paths support it without change. A term reorders only within (level, urgency). TRAITS.md says "after `level`", but the legacy phobia penalty sat under the urgency bonuses, so it belongs in the cost slot. No trait behaviour is built in Phase 2.
+
+Prototype tooling stays on the branch only until the real scheduler replaces it. This includes the `setPickerHook` hook in `schedule.ts` and the exports of `canRelieve`, `repairUrgency` and `gridHasThinAir`.
+
 ## 8. Policy interface (refinement 6)
 
 The scheduler needs only three facts about a crew member, none from utility: eligibility (`Intent.drive == 'work'` and no `Interrupt`), per-category levels (`PrioritiesC`), and static admission. It never reads drive scores. Anything that can set `Intent.drive` to `work`, including a trivial policy, gets full scheduling.
