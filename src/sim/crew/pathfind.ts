@@ -68,8 +68,9 @@ const THIN_MASK = new WeakMap<object, Map<string, { rev: number; h: number }>>()
 /**
  * Everything a search reads, as one string: the sector-wide revisions of the fields it walks (struct, door jams, modules), the module count (a
  * module's solid and open tiles come from its component), the ship's window, and for a thin-air-avoiding search a hash of which tiles are thin.
+ * The scheduler's navigation views (ai/navView.ts) are cached on it too.
  */
-function walkSignature(sim: Sim, grid: ShipGrid, avoidThin: boolean): string {
+export function walkSignature(sim: Sim, grid: ShipGrid, avoidThin: boolean): string {
   const g = sim.sector.grid;
   let sig = `${grid.x0},${grid.y0},${grid.width},${grid.height}|${g.revision('struct')}|${grid.has('jam') ? g.revision('jam') : 0}|${grid.has('module') ? g.revision('module') : 0}|${sim.world.query(ModuleC).length}`;
   if (avoidThin && grid.has('o2')) {

@@ -285,4 +285,7 @@ describe('sector refactor equivalence', () => {
 // pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
 // Repinned `combat` for work XP (#250): the crew earn gunnery, piloting and shielding XP in the fight and a level gained inside the run changes who hits
 // (only the player's side earns XP; the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
-const EXPECTED = { combat: 'ba8f9e66', disaster: '2cf7530b' };
+// Repinned `disaster` for the job scheduler (#194 Phase 2): free crew are matched to jobs together, the nearest crew member first (was: each in id order
+// takes their own best job), and a pass is skipped while its inputs are unchanged (at most SCHED_CADENCE ticks), so other crew put out the fire and seal
+// the breach. On the legacy picker it still gives 2cf7530b. The combat run makes the same assignments and is unchanged.
+const EXPECTED = { combat: 'ba8f9e66', disaster: '971586b4' };

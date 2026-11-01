@@ -88,8 +88,9 @@ import { newYard, type YardState } from './yard/types';
  * v72 (crew traits): `TraitsC` and `RolledSkillsC` (a starting crew member's traits and rolled skills), optional `Mood.idle`,
  *   `quiet` and `inside` (trait mood memory).
  * v73 (work xp): `SkillXpC` is on the new curve (level n costs 100 x n^2 xp), so old xp reads as fewer levels; no migration.
+ * v74 (crew AI Phase 2): `sector.sched` (the job scheduler's pass gate).
  */
-export const SAVE_VERSION = 73;
+export const SAVE_VERSION = 74;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

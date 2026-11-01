@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sightLine } from '../../sim/fight/los';
-import { AllegianceC, CrewC, DeadC, DownedC, EmergencyArmC, EquipC, EquipOrderC, StowOrderC, ModuleC, StorageC, storageAdd, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
+import { AllegianceC, AssignmentC, CrewC, DeadC, DownedC, EmergencyArmC, EquipC, EquipOrderC, StowOrderC, ModuleC, StorageC, storageAdd, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { DoorJam } from '../../sim/structure';
 import { EMERGENCY_STAND_DOWN_SEC } from '../../sim/tuning';
@@ -207,7 +207,11 @@ describe('emergency arming: unarmed crew fetch weapons from storage when boarder
     run(sim, 20 * 3);
     expect(sim.world.has(engineer, DownedC)).toBe(true);
     expect(sim.world.has(medic, EmergencyArmC) || sim.world.has(medic, EquipOrderC) || !!sim.world.get(medic, EquipC)?.weapon).toBe(false);
-    expect(sim.world.get(medic, FighterC)?.mode).toBe('flee'); // hiding, free to take the rescue once the patient is out of the boarder's sight
+    // The rescue goes to the nearest free crew member (the scheduler, #194 Phase 2): here that is the medic, out of the boarder's sight, so they
+    // carry the engineer instead of hiding. Under the legacy picker a lower-id crew member in sight took it, dropped it to flee, and the medic hid.
+    const job = sim.world.get(sim.world.get(medic, AssignmentC)?.jobId ?? 0, JobC);
+    expect(job?.kind === 'rescue' && job.target === engineer).toBe(true);
+    expect(sim.world.get(medic, FighterC)?.mode).toBe('idle');
   });
 
   /** Arm volunteers against one boarder, then make the ship safe and run to just before they would put the weapon back. */
