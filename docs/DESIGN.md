@@ -288,8 +288,22 @@ Salvage is one order from the inspector. The crew then run it on their own, like
 
 - **The order:** select a derelict. Its inspector has a salvage panel: tick any or all scrap types, then click **Salvage**.
   That is the whole player flow. The build tools never work on derelicts.
-- **Scrap types** (names not final): Tech Scrap, Weapons Scrap, Hull Scrap and so on. Each comes from its own kind of part
-  (electronics modules, weapon mounts, hull and walls). The order only strips the parts that yield a ticked type.
+- **Scrap types.** Each module yields one type; tiles that aren't modules yield Hull Scrap. How much a part yields scales
+  with its build cost, and stripping gives back less than building it cost, so salvage never beats mining and trade for
+  bulk materials. A rare extra is a chance roll per batch, which makes stripping a big wreck worth it.
+
+  | Type | Stripped from | The scrapper gives | Rare extra |
+  |---|---|---|---|
+  | **Hull Scrap** | hull plating, walls, floors, doors | metal | none |
+  | **Tech Scrap** | consoles, computers, sensors, shield and medbay modules | electronics, some spare parts | drone tech |
+  | **Energy Scrap** | reactors, batteries, engines, power conduits | spare parts, electronics, metal | fuel |
+  | **Weapons Scrap** | turrets, launchers, magazines, armouries | spare parts, metal | a missile, or a hand weapon |
+  | **Comfort Scrap** | furniture, beds, kitchens, lounge and storage fittings | polymer, cloth | none |
+
+  The order only strips the parts that yield a ticked type.
+- **Cloth** is a new item. Comfort Scrap is its first source; a later loom-type module will make it.
+- **Robots are not part of salvage.** Robot wrecks and rogue AI hardware will get their own flow, tied into research
+  (design to come). Salvage leaves them alone for now.
 - **Stripping:** crew deconstruct the wreck's parts the way they deconstruct anything else, but the yield is scrap of
   that part's type. The wreck visibly comes apart, and it is gone when nothing is left.
 - **EVA work:** most derelicts are breached, so salvage is a spacesuit job. The shuttle ferries crew out to the wreck,

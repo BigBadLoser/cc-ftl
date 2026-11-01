@@ -29,10 +29,12 @@ Last updated: 2026-11-01.
 
 ## In progress
 
-- **Crew AI Phase 2 (#194, branch `ai/phase2`, Opus agent):** scheduler benchmarking. See [CREW_AI.md](CREW_AI.md).
-- **Phobia mood effects (PR #253, issue #252, branch `traits/phobia-mood`):** ready, awaiting CI.
-- **Next, in order:** #248 doorway/movement arbitration investigation (crew stuck 8+ s in a doorway on the Dart starter), then #194 Phase 3 (utility AI plus
-  hazard interrupts), then mental breaks ([TRAITS.md](TRAITS.md) section 5b), relationships, addictions.
+- **Now:** #265 new-game ship preview (shared sheet cache across renderers, branch `fix/newgame-preview-265`); #149 silent save
+  failures (branch `fix/save-failures-149`); #266 loading screen while sprites load (prototype, branch `ui/loading-screen-266`).
+- **Next, in order (user, 2026-11-01):** derelict salvage (#268, design in DESIGN.md "Salvaging derelicts"), then #194 Crew AI
+  Phase 3 (utility AI plus hazard interrupts), then mental breaks ([TRAITS.md](TRAITS.md) section 5b), relationships, addictions.
+- **Recently merged:** Crew AI Phase 2 scheduler (#263), pixel-perfect camera at every zoom and DPR (#267, closes #187, #264),
+  roof and turret clipping (#262).
 - **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough engines (#129).
 
 ## Decisions (user)
@@ -48,7 +50,7 @@ Last updated: 2026-11-01.
 
 ## Open work, in order
 
-1. The "In progress" list above (#194, #253, #248).
+1. The "In progress" list above.
 2. Engine Mk II/III art (#105).
 3. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
 4. Station intruder bug (#107); prisoners and prizes (#116).
