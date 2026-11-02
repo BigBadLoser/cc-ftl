@@ -31,6 +31,8 @@ export interface GridView extends Markers {
   tintAt(x: number, y: number, wall: boolean): number;
   /** Changes whenever `tintAt` results may change (light, air, emergency pulse). */
   tintKey(): string;
+  /** True if the new hull draws its piece (and its top) on tile (x, y) (global): roofed, an engine's bulkhead is left out there. */
+  hullDrawn(x: number, y: number): boolean;
   dispose(): void;
 }
 
@@ -218,10 +220,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           const engineUp = replaced.has(idx) && mode === "up";
           // The new hull (hullArt): roofed, the hull from outside over the tile's walls; in cutaway the near hull's belly
           // in place of its ghost. A tile without its art keeps the old pieces.
-          const special = gapAt(x, y) || airlocks.has(idx);
-          const drew = !special && hull ? drawHull(hull, x, y, k, ci, v) : false;
+          // An engine's hull row takes the plain hull piece (its top closes the roof over the engine); the bulkhead
+          // stands there only where the new hull has no art.
+          const drew = !airlocks.has(idx) && hull ? drawHull(hull, x, y, k, ci, v) : false;
+          const special = (gapAt(x, y) && !drew) || airlocks.has(idx);
           // Under an engine's bulkhead (walls up / roofed) the hull's belly still runs below the deck.
-          if (hull && gapAt(x, y)) drawHull(hull, x, y, k, ci, v, true);
+          if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
           const f = (ghosts && !engineUp && replacesFloor(wallAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y));
           if (f) {
@@ -384,6 +388,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     grid,
     tintAt,
     tintKey: () => `${grid.revision("light")}|${grid.revision("o2")}|${pulseNow()}`,
+    hullDrawn: (gx, gy) => !!hull && !!exteriorIds(hull, gx - grid.x0, gy - grid.y0, has),
     update() {
       const mr = grid.revision("module");
       if (mr !== modRev) {

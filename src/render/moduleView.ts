@@ -44,6 +44,8 @@ export interface ModuleViewHost {
   livery?(): { scheme: string; seed: number } | null;
   /** The ship's hull paint: the hull layers (an engine's bulkhead, an airlock's hull block) wear it like the hull. */
   hullPaint?(): HullPaint;
+  /** True if the new hull draws its piece on tile (x, y) (global): roofed, an engine's bulkhead is left out under it. */
+  hullDrawn?(x: number, y: number): boolean;
 }
 
 export interface ModuleView {
@@ -178,7 +180,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
       const from = out.length;
-      painting = layer.tiles === 'hull' && !!host.hullPaint;
+      painting = roofed && layer.tiles === 'hull' && !!host.hullPaint; // (roofed: the hull around it is painted too)
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (layer.at) {
         const k = key(layer.at.x, layer.at.y);
@@ -335,6 +337,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+          // Roofed, the new hull runs over an engine's hull row (its plain piece): no bulkhead.
+          if (roofed && def.hullEdge && layer.tiles === 'hull' && host.hullDrawn && hullRow(def, m.x, m.y, m.rot).every((t) => host.hullDrawn!(t.x, t.y))) return [];
           // firstOf queues the sheet; while it loads the container draws nothing (not the stand-in box).
           const first = def.container ? atlas.firstOf(layer.chain) : undefined;
           if (def.container && !first && atlas.loading(layer.chain)) return [];
