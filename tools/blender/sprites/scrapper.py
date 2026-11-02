@@ -85,15 +85,27 @@ class _Build:
 
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
-CH = 0.07            # top-edge chamfer of the shell
-BASE = 0.07          # the dark plinth band under the shell
+BASE = 0.06          # dark plinth band
+TOP = 1.2            # shell height (measured on the reference: 1.17 .. 1.25 tiles)
+R = 0.09             # top-edge rounding
+
+# Measured layout (reference parts are one tile each; L runs from the hatch end): mirrored so rotation 0 shows the hatch end
+# at lower right and the front face at lower left. Tile x = 3: hatch end (both rows). x = 2: display block (front, main
+# doorway: the access tile) and dial block (back). x = 1: drum (front) and hopper (back). x = 0: pipe unit (front) and a
+# second hatch block sloping down to the far end (back).
 
 
-def cbox(b, x0, x1, y0, y1, z0, z1, col=STEEL, top=STEEL_T, ch=CH):
-    """A shell block with all four top edges chamfered (a box, then a frustum cap)."""
-    b.box(x0, x1, y0, y1, z0, z1 - ch, col)
+def rbox(b, x0, x1, y0, y1, z0, z1, col=STEEL, top=STEEL_T, r=R):
+    """A block with rounded top edges: a box and two frustum steps."""
+    b.box(x0, x1, y0, y1, z0, z1 - r, col)
     ring = lambda d, z: [b._tp(x, y, z) for x, y in ((x0 + d, y0 + d), (x1 - d, y0 + d), (x1 - d, y1 - d), (x0 + d, y1 - d))]  # noqa: E731
-    b.solid([ring(0, z1 - ch), ring(ch, z1)], col, top)
+    b.solid([ring(0, z1 - r), ring(r * 0.35, z1 - r * 0.25)], col, top)
+    b.solid([ring(r * 0.35, z1 - r * 0.25), ring(r, z1)], col, top)
+
+
+def roller_y(b, x, z, r, y0, y1, col, sides=12):
+    prof = [(x + r * math.cos((i + .5) * math.tau / sides), z + r * math.sin((i + .5) * math.tau / sides)) for i in range(sides)]
+    b.prism_y(prof, y0, y1, col)
 
 
 def on_slope(b, x0, x1, z0, z1, ya, yb, t0, t1, lift, col):
@@ -102,47 +114,71 @@ def on_slope(b, x0, x1, z0, z1, ya, yb, t0, t1, lift, col):
     pb = (x0 + (x1 - x0) * t1, z0 + (z1 - z0) * t1)
     nx, nz = -(z1 - z0), (x1 - x0)
     ln = math.hypot(nx, nz)
+    if nz < 0:
+        nx, nz = -nx, -nz
     nx, nz = nx / ln * lift, nz / ln * lift
     b.prism_y([pa, pb, (pb[0] + nx, pb[1] + nz), (pa[0] + nx, pa[1] + nz)], ya, yb, col)
 
 
+def hatch_block(b, xi, xo, y0, y1):
+    """Measured hatch block: inner edge at xi (full height), outer end at xo; wall 0.55 at the end, slope over 0.55 of the
+    tile up to 1.12, flat 1.17 to the inner edge. One hatch with sliding double doors on the slope."""
+    d = 1 if xo > xi else -1
+    X = lambda t: xi + (xo - xi) * t                                                      # noqa: E731  t: 0 inner .. 1 outer
+    prof = [(X(0), BASE), (X(1), BASE), (X(1), 0.55), (X(0.97), 0.6), (X(0.46), 1.12), (X(0.38), 1.17), (X(0), 1.17)]
+    if d < 0:
+        prof = prof[::-1]
+    b.box(min(xi, xo), max(xi, xo), y0, y1, 0, BASE, GMD, DARK)
+    b.prism_y(prof, y0, y1, STEEL, STEEL_T)
+    sa, sb = (X(0.95), 0.62), (X(0.48), 1.1)                                             # the slope, outer to inner
+    on_slope(b, sa[0], sb[0], sa[1], sb[1], y0 + 0.1, y1 - 0.1, 0.06, 0.94, 0.025, GMD)  # frame
+    mid = (y0 + y1) / 2
+    for ya, yb in ((y0 + 0.15, mid - 0.012), (mid + 0.012, y1 - 0.15)):
+        on_slope(b, sa[0], sb[0], sa[1], sb[1], ya, yb, 0.14, 0.86, 0.04, PLATE)         # door leaves
+
+
+def doorway(b, x0, x1, y, h):
+    """A framed opening in a +y face: steel frame standing proud, dark inside, a lit floor grate."""
+    b.box(x0, x1, y - 0.02, y + 0.04, BASE, h, GM, PLATE)
+    b.box(x0 + 0.05, x1 - 0.05, y - 0.03, y + 0.045, BASE, h - 0.05, DARK)
+    b.box(x0 + 0.05, x1 - 0.05, y - 0.03, y + 0.045, BASE, BASE + 0.015, GMD)
+
+
 def scrapper(rot):
     b = _Build(rot, f"scrapper_{rot}")
-    b.box(0.04, 3.96, 0.04, 1.96, 0, BASE, GMD, DARK)                                   # plinth band
-    # ---- screen end (x 3..4): the top slopes down toward the +x end, two screens on the slope, one per row
-    xa, za, xb, zb = 3.08, 0.98, 3.92, 0.54                                               # slope from (xa, za) to (xb, zb)
-    b.prism_y([(3.0, BASE), (3.96, BASE), (3.96, zb - 0.06), (xb, zb), (xa, za), (3.0, za)], 0.06, 1.94, STEEL, STEEL_T)
-    for ya, yb in ((0.18, 0.88), (1.12, 1.82)):                                          # two hatches, sliding double doors
-        on_slope(b, xa, xb, za, zb, ya, yb, 0.1, 0.92, 0.025, GMD)                        # frame
-        mid = (ya + yb) / 2
-        for y0, y1 in ((ya + 0.06, mid - 0.012), (mid + 0.012, yb - 0.06)):
-            on_slope(b, xa, xb, za, zb, y0, y1, 0.18, 0.84, 0.04, PLATE)                  # door leaves, a dark seam between
-    # ---- centre block (x 2..3): tall back row with the dial, lower front row with a display and an output slot
-    cbox(b, 2.02, 3.0, 0.06, 1.0, BASE, 1.12)
-    cbox(b, 2.02, 3.0, 1.0, 1.94, BASE, 0.96)
-    b.cyl(2.51, 0.53, 1.12, 0.31, 0.05, GMD, GM, sides=8)                                  # dial housing
-    b.cyl(2.51, 0.53, 1.17, 0.22, 0.03, GM, LIGHT, sides=8)                                # dial face
-    b.box(2.2, 2.84, 1.94, 1.97, 0.52, 0.76, GMD)                                          # display bezel
-    b.box(2.28, 2.76, 1.97, 1.99, 0.56, 0.72, LIT)                                          # display
-    b.box(2.22, 2.82, 1.94, 1.98, BASE, 0.36, GMD)                                         # output slot frame
-    b.box(2.3, 2.74, 1.95, 1.99, BASE, 0.3, DARK)                                          # output slot
-    # ---- drum bay (x 1..2): the hopper with an open lit mouth at the back, the shredder drum in an open bay at the front
-    cbox(b, 1.02, 2.0, 0.06, 0.96, BASE, 1.04)
-    b.box(1.14, 1.88, 0.18, 0.84, 1.02, 1.05, DARK)                                         # hopper mouth
-    b.box(1.18, 1.84, 0.22, 0.8, 1.05, 1.055, LIT)                                         # its lit throat (glow later)
-    b.box(1.02, 2.0, 0.96, 1.94, BASE, 0.16, GMD, GM)                                      # bay floor
-    for x0 in (1.02, 1.92):
-        b.prism_x([(0.96, BASE), (1.94, BASE), (1.94, 0.26), (1.7, 0.84), (0.96, 0.84)], x0, x0 + 0.08, STEEL, STEEL_T)  # cheeks
-    b.roller(1.4, 0.5, 0.33, 1.12, 1.9, GM, sides=16)                                    # drum
-    for k in range(5):
-        b.roller(1.4, 0.5, 0.36, 1.17 + k * 0.155, 1.21 + k * 0.155, GMD, sides=16)      # cutter rings
-    # ---- end block (x 0..1): tall back box with the pipe unit on top, lower front box with the feed doorway
-    cbox(b, 0.06, 1.0, 0.06, 1.0, BASE, 0.94)
-    cbox(b, 0.06, 1.0, 1.0, 1.94, BASE, 0.74)
-    b.box(0.26, 0.8, 0.26, 0.74, 0.94, 1.1, GM, PLATE)                                     # pipe unit
-    b.roller(0.5, 1.02, 0.07, 0.8, 1.06, GMD, sides=8)                                      # its spout
-    b.box(0.22, 0.84, 1.94, 1.98, BASE, 0.44, GMD)                                         # doorway frame
-    b.box(0.3, 0.76, 1.95, 1.99, BASE, 0.38, DARK)                                         # doorway
+    g = 0.012                                                                             # seam between blocks
+    # x 3..4: the hatch end, both rows
+    hatch_block(b, 3.0 + g, 3.96, 0.04, 1.0 - g)
+    hatch_block(b, 3.0 + g, 3.96, 1.0 + g, 1.96)
+    # x 2..3: display block (front) with the main doorway at the access tile; dial block (back)
+    b.box(2.0 + g, 3.0 - g, 0.04, 1.96, 0, BASE, GMD, DARK)
+    rbox(b, 2.0 + g, 3.0 - g, 1.0 + g, 1.96, BASE, 1.22, r=0.12)
+    b.box(2.08, 2.48, 1.96, 1.99, 0.74, 1.0, GMD)                                         # display bezel
+    b.box(2.12, 2.44, 1.98, 2.0, 0.79, 0.95, LIT)                                         # display
+    doorway(b, 2.06, 2.56, 1.96, 0.46)
+    b.cyl(2.62, 1.48, 1.22, 0.16, 0.012, GMD, sides=12)                                   # emblem plate (decal later)
+    rbox(b, 2.0 + g, 3.0 - g, 0.04, 1.0 - g, BASE, 1.22, r=0.12)
+    b.cyl(2.5, 0.52, 1.22, 0.33, 0.07, GMD, GM, sides=8)                                  # dial housing
+    b.cyl(2.5, 0.52, 1.29, 0.25, 0.04, GM, LIGHT, sides=8)                                # dial face
+    # x 1..2: the drum (front) in a low cradle; the hopper (back) with its lit chute over the drum
+    b.box(1.0 + g, 2.0 - g, 1.0 + g, 1.96, 0, 0.12, GMD, GM)
+    b.roller(1.5, 0.47, 0.4, 1.2, 1.9, GM, sides=18)                                      # barrel
+    for k in range(4):
+        b.roller(1.5, 0.47, 0.43, 1.3 + k * 0.15, 1.36 + k * 0.15, GMD, sides=18)         # cutter rings
+    b.roller(1.5, 0.47, 0.47, 1.04, 1.2, GMD, sides=8)                                    # shroud ring
+    b.roller(1.5, 0.47, 0.2, 1.88, 1.92, DARK, sides=12)                                  # hollow end
+    rbox(b, 1.0 + g, 2.0 - g, 0.04, 1.0 - g, 0, 1.2)
+    b.box(1.04, 1.46, 0.99, 1.02, 0.36, 0.86, GMD)                                        # chute frame
+    b.box(1.08, 1.42, 1.0, 1.025, 0.4, 0.82, LIT)                                         # lit chute
+    for k in range(3):
+        roller_y(b, 1.12 + k * 0.13, 1.24, 0.055, 0.68, 0.98, STEEL, sides=10)            # pulleys on the top front edge
+    b.cyl(1.66, 0.4, 1.2, 0.14, 0.012, DARK, sides=12)                                    # vent grille
+    # x 0..1: pipe unit (front), inset from the end, with a motor and the second doorway; a hatch block (back) to the end
+    rbox(b, 0.14, 1.0 - g, 1.0 + g, 1.96, 0, 0.86)
+    b.box(0.34, 0.82, 1.2, 1.62, 0.86, 1.06, GM, PLATE)                                   # motor
+    b.roller(1.42, 0.97, 0.07, 0.12, 0.34, GMD, sides=8)                                  # its spout
+    doorway(b, 0.2, 0.66, 1.96, 0.44)
+    hatch_block(b, 1.0 - g, 0.04, 0.04, 1.0 - g)
     return [b.m.build()]
 
 
