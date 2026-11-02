@@ -24,6 +24,7 @@ export function toleratedHazards(sim: Sim, id: number): number {
   const job = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
   if (!job) return 0;
   if (job.kind === 'extinguish') return HAZARD_FIRE | HAZARD_HEAT;
+  if (job.kind === 'refill') return HAZARD_AIR | HAZARD_COLD; // on the way to fill an empty tank
   if (job.kind === 'build' && job.category === 'firefighting') return HAZARD_AIR | HAZARD_COLD;
   if (isCarrying(sim, id)) return HAZARD_AIR | HAZARD_COLD | HAZARD_FIRE | HAZARD_HEAT;
   return 0;

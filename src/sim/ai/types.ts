@@ -5,7 +5,7 @@
  */
 
 /** What a crew member wants (a utility drive). `idle` and `leisure` are jobless. */
-export type DriveId = 'work' | 'sleep' | 'eat' | 'recharge' | 'leisure' | 'idle';
+export type DriveId = 'work' | 'sleep' | 'eat' | 'recharge' | 'leisure' | 'air' | 'idle';
 
 /** The executor machines (section 6). `generic` covers simple jobs and jobless walks. */
 export type MachineId = 'generic' | 'haul' | 'rescue' | 'eva' | 'eat' | 'sleep' | 'charge' | 'escape' | 'leisure';
@@ -81,6 +81,11 @@ export interface Intent {
   avoid?: { job: number; until: number };
   /** A drive that wants to act but whose `requires` failed with `onMissing: 'block'` (it keeps its score; alerts and the inspector read it). */
   blocked?: DriveId;
+  /**
+   * The air drive's search (ai/airNeed.ts): ticks to the nearest air source (-1: none can be reached), found at tick `at` and
+   * kept for AIR_EVAL_TICKS. Saved, so a load reads the same numbers as the uninterrupted run.
+   */
+  air?: { at: number; ticks: number };
 }
 
 /** Why a crew member is out of the normal loop (L0), in precedence order (section 5). */
@@ -101,7 +106,7 @@ export interface Interrupt {
  * crew member has no such need. Needs are read in tenths of their 0..100 scale (0..1000), floored once at the reader; the
  * predicates (`food`, `robotUpkeep`) read 1000 (fine) or 0. A new input is a reader in that table plus its name here.
  */
-export type DriveInput = 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'mood' | 'food';
+export type DriveInput = 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'airMargin' | 'airSource' | 'mood' | 'food';
 
 /** Which crew a policy is for (ai/utility.ts `crewKind`): battery robots, station crew, the player's colonists, anyone else. */
 export type CrewKind = 'robot' | 'station' | 'colonist' | 'npc';

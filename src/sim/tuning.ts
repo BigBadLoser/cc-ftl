@@ -320,6 +320,19 @@ export const REFILL_FILL_SEC = 3;
 /** Partial work (admission): a crew member is admitted for one work stint of this many seconds, and keeps this reserve of air when they would turn back. */
 export const STINT_SEC = 60;
 export const AIR_RESERVE_SEC = 30;
+/**
+ * The air drive (#286 slice 1, docs/DESIGN.md "Air as a need"), for a suited crew member whose tank drains (in thin air). Refill when the
+ * air left is under the larger of AIR_REFILL_FRAC of a tank and AIR_REFILL_TRAVEL x the travel time to the nearest source + AIR_REFILL_PAD_SEC;
+ * critical (it overrides every task, a carried patient included) under the larger of AIR_CRITICAL_FRAC and AIR_CRITICAL_TRAVEL x + AIR_CRITICAL_PAD_SEC.
+ * The nearest source is searched again every AIR_EVAL_TICKS.
+ */
+export const AIR_REFILL_FRAC = 0.3;
+export const AIR_REFILL_TRAVEL = 1.5;
+export const AIR_REFILL_PAD_SEC = 30;
+export const AIR_CRITICAL_FRAC = 0.1;
+export const AIR_CRITICAL_TRAVEL = 1.2;
+export const AIR_CRITICAL_PAD_SEC = 10;
+export const AIR_EVAL_TICKS = 20;
 /** Travel time: seconds to pass a plain door (a door swings open as the walker steps into it, so none today), and the dock or launch time added to a flight. */
 export const DOOR_PASS_SEC = 0;
 export const FLIGHT_DOCK_SEC = 6;

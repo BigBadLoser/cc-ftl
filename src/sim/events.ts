@@ -190,6 +190,8 @@ export type SimEvent =
   | { type: 'suit.doffed'; crew: number; airlock: number }
   | { type: 'suit.airLow'; crew: number }
   | { type: 'suit.airOut'; crew: number }
+  /** A suited crew member in thin air can reach no air source (the pickup request, #286); `sec` of air left. */
+  | { type: 'crew.airUnreachable'; crew: number; sec: number }
   /** Event system: an event started (`notice` is the notice id for notices with a lead, else 0), a choice resolved it, an effect was applied (`text` '' = nothing to show). */
   | { type: 'story.started'; event: string; mode: 'decision' | 'notice'; notice: number }
   | { type: 'story.resolved'; event: string; choice: string; success: boolean | null }

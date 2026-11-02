@@ -14,25 +14,50 @@ import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
-import { TaskC } from './components';
+import { IntentC, PickupC, TaskC } from './components';
+import { airDraining, airLeftSec, airMargin } from './airNeed';
+import { airTurn } from './machines/air';
 import { hazardHolds } from './hazard';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
-import { evaluateIntent, serveDrive, type TaskView } from './utility';
+import { evaluateIntent, policyOf, serveDrive, type TaskView } from './utility';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
 type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
 
 /** The need machines a drive may start (`DriveDef.task`). A new need is a machine plus its turn here. */
 const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
+  eva: airTurn, // the air drive: the refill errand
   charge: chargeTurn,
   sleep: (sim, id, crew, pos, holdsJob) => (sleepTurn(sim, id, crew, pos, holdsJob), true),
   eat: (sim, id, crew, pos) => eatTurn(sim, id, crew, pos),
   leisure: (sim, id, crew, pos) => leisureTurn(sim, id, crew, pos),
 };
 
-/** Whether a drive's own task is under way (`keepWhileTask`). */
-const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => sim.world.get(id, TaskC)?.machine === machine && machine === 'eat';
+/** Whether a drive's own task is under way (`keepWhileTask`): a meal, or a refill errand (the air drive). */
+const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
+  if (machine === 'eva') return sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'refill';
+  return sim.world.get(id, TaskC)?.machine === machine && machine === 'eat';
+};
+
+/** True when the crew member's air drive is urgent (critical: under its `urgent.below`), read from their policy's data. */
+function airCritical(sim: Sim, id: number): boolean {
+  const d = policyOf(sim, id).drives.find((d) => d.input === 'airMargin');
+  const x = d?.urgent ? airMargin(sim, id) : undefined;
+  return x !== undefined && x < (d?.urgent?.below ?? 0);
+}
+
+/** Keep the pickup request (`PickupC`) in step with the air drive being blocked: set, with its alert, when no source can be reached. */
+function pickupRequest(sim: Sim, id: number): void {
+  const want = sim.world.get(id, IntentC)?.blocked === 'air' && airDraining(sim, id); // only a draining tank with no source in reach
+  if (want === sim.world.has(id, PickupC)) return;
+  if (!want) {
+    sim.world.remove(id, PickupC);
+    return;
+  }
+  sim.world.add(id, PickupC, { since: sim.tick });
+  sim.events.emit({ type: 'crew.airUnreachable', crew: id, sec: Math.floor(airLeftSec(sim, id)) });
+}
 
 /**
  * Crew decisions, in `decide`'s slot (docs/CREW_AI.md sections 4 and 7). Per crew member in id order: the forced states keep them
@@ -50,15 +75,20 @@ export function scheduleSystem(sim: Sim): void {
       // A drafted crew member whose order is done is stepped off a harmful tile and keeps the draft (the hazard interrupt).
       if (sim.world.has(id, DraftedC) && !isIncapacitated(sim, id) && !isOffDuty(sim, id) && hazardHolds(sim, id)) escapeTurn(sim, id, sim.world.get(id, PositionC) as Position, true);
       syncTask(sim, id, true); // held out of the loop: keep the mirror current (the turn below sets it for everyone else)
+      sim.world.remove(id, PickupC);
       continue;
     }
     const crew = sim.world.get(id, CrewC) as Crew;
     // The hazard interrupt (ai/hazard.ts): off a harmful tile before anything else, a sleeper or an eater included. The walk is
     // planned first; with nowhere safer to go the crew member carries on as they were.
     if (hazardHolds(sim, id)) {
+      // With no breathable tile in reach, an empty suit's way out is the air drive below (critical: a refill, which tolerates thin air).
       if (escapeTurn(sim, id, sim.world.get(id, PositionC) as Position)) continue;
       if (sim.world.get(id, TaskC)?.machine === 'escape') clearJoblessTask(sim, id);
     }
+    // Critical air ends a sleep or a meal (a suited crew member whose room lost its air): they get up and the drives below send them to
+    // refill. Charging is a robot's, which does not breathe.
+    if ((crew.activity === 'sleeping' || crew.activity === 'eating') && airCritical(sim, id)) abortTask(sim, id, 'air');
     // Asleep, charging or eating: the need's own machine ends it (wakeUp, endCharge, finishMeal keep the mirror).
     if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') continue;
     const pos = sim.world.get(id, PositionC) as Position;
@@ -77,6 +107,7 @@ export function scheduleSystem(sim: Sim): void {
     const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id) };
     let served = false;
     const ranked = evaluateIntent(sim, id, view);
+    pickupRequest(sim, id);
     for (let i = 0; i < ranked.length; i++) {
       const d = ranked[i] as DriveDef;
       const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
