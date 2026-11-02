@@ -220,10 +220,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           const engineUp = replaced.has(idx) && mode === "up";
           // The new hull (hullArt): roofed, the hull from outside over the tile's walls; in cutaway the near hull's belly
           // in place of its ghost. A tile without its art keeps the old pieces.
-          // An engine's hull row takes the plain hull piece (its top closes the roof over the engine); the bulkhead
-          // stands there only where the new hull has no art.
-          const drew = !airlocks.has(idx) && hull ? drawHull(hull, x, y, k, ci, v) : false;
-          const special = (gapAt(x, y) && !drew) || airlocks.has(idx);
+          // An engine's hull row and an airlock's door take the base hull piece when roofed (its top closes the roof
+          // over them; the designs' relief would clash with the bell or the collar); their own sprites stand there
+          // only where the new hull has no art. In cutaway the airlock keeps its own sprites (no door, no belly).
+          const own = gapAt(x, y) || airlocks.has(idx);
+          const drew = hull && (!airlocks.has(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own) : false;
+          const special = own && !drew;
           // Under an engine's bulkhead (walls up / roofed) the hull's belly still runs below the deck.
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
@@ -262,12 +264,6 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return v;
   }
 
-  /**
-   * The new hull's sprites on tile (x, y), if it has them: roofed, the exterior pieces (hullArt.exteriorIds) and the
-   * belly under them; in cutaway the belly of a near hull tile or of a floor its hull reaches (`low` its cut top). Each
-   * piece takes the armour paint, its deco layer (`<id>.tint`) the deco paint. `bellyOnly`: just the belly below the deck
-   * (an engine's hull row). False if it drew nothing.
-   */
   /** A hull piece (hullPaint.ts: recoloured by its tint, the paint times the light), anchored like `addStatic`. */
   function addHullSprite(s: StaticSprite, x: number, y: number, key: number, parent: Container): HullSprite {
     const p = iso(x, y);
@@ -278,7 +274,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return spr;
   }
 
-  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false): boolean {
+  /**
+   * The new hull's sprites on tile (x, y), if it has them: roofed, the exterior pieces (hullArt.exteriorIds) and the
+   * belly under them; in cutaway the belly of a near hull tile or of a floor its hull reaches (`low` its cut top). Each
+   * piece takes the armour paint, its deco layer (`<id>.tint`) the deco paint. `bellyOnly`: just the belly below the deck
+   * (an engine's hull row); `base`: a straight run's base design only (an engine's row, an airlock's door). False if it
+   * drew nothing.
+   */
+  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false): boolean {
     const paint = host.hullPaint?.() ?? PLAIN_PAINT;
     const put = (id: string, z: number, parent: Container, solid: boolean) => {
       const s = atlas.stat(id);
@@ -299,7 +302,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       return !!b?.under;
     }
     if (!ghosts) {
-      const ext = exteriorIds(h, x, y, has);
+      const ext = exteriorIds(h, x, y, has, base);
       if (!ext) return false;
       // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front.
       ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? 0.9 : 0), L.sorted, solid));

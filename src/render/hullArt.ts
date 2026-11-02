@@ -90,12 +90,12 @@ export function pickDesign(x: number, y: number, n: number, salt: number): numbe
  * straight run in one of its designs), anything else the generic piece and its roof over the rest of the tile. Null
  * for no key (plain roof) or no art.
  */
-export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string[] | null {
+export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false): string[] | null {
   const k = h.at(x, y);
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
     const id = runSetId(h, x, y);
-    const v = STRAIGHT.has(id) ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
+    const v = STRAIGHT.has(id) && !base ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
     for (const c of [id + v, id]) if (has(c)) return [c];
   }
   const n = hullKeyName(k);
