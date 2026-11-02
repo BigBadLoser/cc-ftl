@@ -425,3 +425,15 @@ export const AWAY_DEPART_MARGIN = 1.25;
 export const AWAY_LIFT_SEC = 90;
 /** An idle away crew member farther than this many tiles from the shuttle's hatch spot walks back to wait beside it. */
 export const AWAY_WAIT_TILES = 4;
+/** A robot's battery (charge) below this wants home, like rest and hunger (a need a crew member lacks never does). */
+export const AWAY_HOME_CHARGE = 30;
+/** A passenger waiting aboard for the next trip turns urgent (the trip leaves at once) below this rest, hunger or charge. */
+export const AWAY_URGENT_REST = 20;
+export const AWAY_URGENT_HUNGER = 10;
+export const AWAY_URGENT_CHARGE = 20;
+/** Batched trips (#286 slice 2b): with anyone waiting aboard, a trip leaves at the latest this many seconds after the last one. */
+export const AWAY_TRIP_WAIT_SEC = 300;
+/** The last call: seconds a worker the departure check finds short gets to refill before they must ride the trip out aboard. */
+export const AWAY_LAST_CALL_SEC = 60;
+/** Seconds a due trip waits for the departure check to pass before it is called off (the run stays and tries again). */
+export const AWAY_DEPART_GIVEUP_SEC = 120;

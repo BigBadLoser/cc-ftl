@@ -3,7 +3,7 @@ import type { Grid } from '../grid';
 import type { Sim } from '../sim';
 import { isWalkable } from '../structure';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { isSuited, needsAir } from './suit';
+import { isSuited, needsAir, walksOutside } from './suit';
 import { shipGrid } from '../regions';
 
 /** A walk on one grid. `thin`: it crosses thin air and the walker has no suit for it. */
@@ -42,7 +42,7 @@ export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goa
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return null;
   if (isSuited(sim, crew) || !needsAir(sim, crew) || !gridHasThinAir(sim, grid)) {
-    const steps = findPath(sim, shipId, from, goal, { suited: isSuited(sim, crew) });
+    const steps = findPath(sim, shipId, from, goal, { suited: walksOutside(sim, crew) });
     return steps && { steps, thin: false };
   }
   const clean = findPath(sim, shipId, from, goal, { avoidThin: true });
@@ -80,7 +80,7 @@ export interface WalkMode {
 export function siteWalkModes(sim: Sim, crew: number, shipId: number): WalkMode[] {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return [];
-  if (isSuited(sim, crew) || !needsAir(sim, crew)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }];
+  if (isSuited(sim, crew) || !needsAir(sim, crew)) return [{ opts: { suited: walksOutside(sim, crew) }, thin: false }];
   if (!gridHasThinAir(sim, grid)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }, { opts: { suited: true }, thin: true }];
   return [{ opts: { avoidThin: true }, thin: false }, { opts: {}, thin: true }, { opts: { suited: true }, thin: true }];
 }

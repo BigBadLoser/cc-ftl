@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  VehicleC, destroyVehicle,
   AirlockC, AssignmentC, CarriedC, CrewC, DownedC, HealthC, NeedsC, IntentC, JobC, ModuleC, PickupC, PositionC, ShipC, Struct, SuitC, TICK_HZ, homeShip, newGame, shipGrid,
   suitAir, suitDef, type Sim, type SimEvent,
 } from '../../sim';
@@ -144,6 +145,7 @@ describe('air drive', () => {
   it('with no source in reach the drive is blocked and the pickup request goes out, once, with the air left', () => {
     const { sim, c } = hullWork();
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false; // no airlock to fill at: no source
+    for (const v of [...sim.world.query(VehicleC)]) destroyVehicle(sim, v); // and no shuttle to fetch them (pickup runs: awayCrew.test.ts)
     sim.world.get(c, SuitC)!.air = 0.25 * suitDef(sim).airSec;
     const ev = run(sim, 3 * AIR_TICKS);
     expect(sim.world.get(c, IntentC)!.blocked).toBe('air');

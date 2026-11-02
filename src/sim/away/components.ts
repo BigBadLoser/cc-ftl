@@ -13,8 +13,11 @@ export interface AwaySite {
   vehicle: number;
   since: number;
   demand?: Partial<Record<WorkCategory, number>>;
-  /** Why no passenger comes: no crew took an open passage for a while (the panel shows it; slice 3). */
-  block?: 'noCrew';
+  /**
+   * What holds the site up (the panel shows it; slice 3): `noCrew`, no crew took an open passage for a while; `noRoom`, the hold could not
+   * be unloaded at home (the loot waits on the site); `stranded`, its shuttle is lost and no other free one can come.
+   */
+  block?: 'noCrew' | 'noRoom' | 'stranded';
 }
 export const AwaySiteC = defineComponent<AwaySite>('awaySite');
 
@@ -23,20 +26,29 @@ export const AwaySiteC = defineComponent<AwaySite>('awaySite');
  * - 'board': at home (stowed in its bay, or docked at a home airlock): those aboard step out, passages are posted for the free seats, and it
  *   leaves once its passengers are in (or the wait is over).
  * - 'fly': on its way to the site (hover beside it).
- * - 'stay': hovering beside the site. Passengers go out; those who want home come aboard; a trip home leaves through the departure check.
- * - 'home': on its way home.
+ * - 'stay': beside the site (hovering, or docked at one of its airlocks). Passengers go out; those who want home come aboard; a trip home
+ *   is due on an urgent case at once, else when a batch trigger holds (away/trips.ts).
+ * - 'depart': a trip is due: the last call and riders until the departure check passes (or it is given up and the run stays).
+ * - 'home': on its way home (watched: it turns back when a worker left out would run short).
+ * - 'pickup': a pickup run (`pickup` set, no site): beside the requester's grid until they are aboard, then 'home'.
  * - 'recall': the site is closing or a fight started: everyone comes aboard (lifted after AWAY_LIFT_SEC), then 'home'.
  */
-export type SitePhase = 'board' | 'fly' | 'stay' | 'home' | 'recall';
+export type SitePhase = 'board' | 'fly' | 'stay' | 'depart' | 'home' | 'recall' | 'pickup';
 export interface SiteRun {
   site: number;
   phase: SitePhase;
   /** Ticks in this phase. */
   timer: number;
-  /** Tick the last trip home left the site (0: none yet). */
+  /** Tick the shuttle last arrived at the site or left it (the trip timeout counts from it). */
   lastTrip: number;
+  /** Tick the shuttle must be back at the site by, set on a trip home that leaves a worker counting on their own tank (the watch). */
+  returnBy?: number;
+  /** A pickup run: the crew member (not of a site's party) it fetches; `site` is then the grid they stand on. */
+  pickup?: number;
   /** Tick the first passenger of this stop at home boarded. */
   boardedAt?: number;
+  /** Units in the hold when the stop at home began (a stop that empties none of it: `noRoom`). */
+  held?: number;
   /** Set while the trip home ends the run (the site closed or is gone). */
   ending?: true;
 }
@@ -45,7 +57,9 @@ export const SiteRunC = defineComponent<SiteRun>('siteRun');
 /**
  * On a crew member of a site's party (from boarding at home until they step out at home again). The party is a query, never a stored
  * list. `cat`: the work category of the passage they took. `landing`: sent out of the hatch, handed to the crew AI once on the hull.
- * `home`: came aboard to go home (waits for the next trip).
+ * `home`: came aboard to go home (waits for the next trip). `lastCall`: the departure check found them short: they refill now. `ride`: still
+ * short after the last call: they come aboard for the round trip and go out again on the way back. `pickup`: a shuttle came for them (they
+ * are out of air reach): they come aboard. `downAt`: the tick they were found downed out on the site (the lift's clock).
  */
 export interface Away {
   site: number;
@@ -53,5 +67,9 @@ export interface Away {
   cat: WorkCategory;
   landing?: true;
   home?: true;
+  lastCall?: true;
+  ride?: true;
+  pickup?: true;
+  downAt?: number;
 }
 export const AwayC = defineComponent<Away>('away');

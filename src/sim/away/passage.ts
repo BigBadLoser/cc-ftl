@@ -2,6 +2,7 @@ import { CrewC, DeadC, JobC, PositionC, PrioritiesC, type Job, type WorkCategory
 import { isEmergency } from '../ai/emergency';
 import { isSettled } from '../crew/helpers';
 import { vehicleSuits } from '../eva/shuttle';
+import { needsAir } from '../eva/suit';
 import { destroyJob } from '../items/stacks';
 import { isTileWalkable } from '../modules/walk';
 import { shipGrid } from '../regions';
@@ -28,10 +29,18 @@ export function passagesOf(sim: Sim, vehicle: number): number[] {
   }).sort((a, b) => a - b);
 }
 
-/** Seats a passenger can still take: seats left, as far as the shuttle has suits for them (the seats are suited ones in this slice). */
+/** Seats a passenger can still take (the pilot's seat counts: the shuttle flies itself). */
 export function freeSeats(sim: Sim, v: Vehicle): number {
-  const def = vehicleDefOf(sim, v);
-  return Math.max(0, Math.min((def?.capacity ?? 0) + 1, vehicleSuits(sim, v)) - occupants(v).length);
+  return Math.max(0, (vehicleDefOf(sim, v)?.capacity ?? 0) + 1 - occupants(v).length);
+}
+
+/**
+ * Suits the shuttle still has for new passengers: its stock less those its passengers who breathe will wear going out (all aboard but those
+ * going home). Seats beyond these are `airless` passages.
+ */
+export function freeSuits(sim: Sim, v: Vehicle): number {
+  const out = occupants(v).filter((c) => needsAir(sim, c) && !sim.world.get(c, AwayC)?.home).length;
+  return Math.max(0, vehicleSuits(sim, v) - out);
 }
 
 /** Withdraw every passage of the shuttle (a walker on the way is called off). */
@@ -50,18 +59,22 @@ export function postPassages(sim: Sim, vehicle: number, site: number, want: bool
   const taken = all.filter((j) => (sim.world.get(j, JobC) as Job).reservedBy !== 0);
   const open = all.filter((j) => !taken.includes(j));
   const cats = want && v && at ? allocateSeats(siteDemand(sim, site), freeSeats(sim, v) - taken.length) : [];
-  const now = open.map((j) => (sim.world.get(j, JobC) as Job).category);
-  const same = now.length === cats.length && now.every((c, i) => c === cats[i]) && open.every((j) => {
+  // The first seats are suited ones, as far as suits go (anyone may take them); the rest are for crew who do not breathe.
+  const suited = v ? Math.max(0, freeSuits(sim, v) - taken.filter((j) => !(sim.world.get(j, JobC) as Job).airless).length) : 0;
+  const airless = (i: number): boolean => i >= suited;
+  const same = open.length === cats.length && open.every((j, i) => {
     const job = sim.world.get(j, JobC) as Job;
-    return !!at && job.x === at.x && job.y === at.y;
+    return !!at && job.category === cats[i] && !!job.airless === airless(i) && job.x === at.x && job.y === at.y;
   });
   if (same) return;
   for (const j of open) destroyJob(sim, j);
   if (!at) return;
-  for (const category of cats) {
+  cats.forEach((category, i) => {
     const id = sim.world.createEntity();
-    sim.world.add(id, JobC, { category, kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: vehicle, site });
-  }
+    sim.world.add(id, JobC, {
+      category, kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: vehicle, site, ...(airless(i) ? { airless: true as const } : {}),
+    });
+  });
 }
 
 /** Board the passage holders who stand on the boarding tile: they climb in and are of the party. */

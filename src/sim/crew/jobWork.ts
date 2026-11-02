@@ -18,6 +18,7 @@ import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
 import type { SkillName } from '../registry';
 import { grantXp } from './xp';
 import { findFreeBed } from './beds';
+import { handInPatient, rescueSpot } from '../away/rescue';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
 import { shipIdOf, shipGrid } from '../regions';
@@ -176,6 +177,16 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
     let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
     if (!bed) {
       const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me));
+      const spot = plan ? null : rescueSpot(sim, patient);
+      if (spot) {
+        // An away site with no bed: carried to the shuttle (away/rescue.ts).
+        job.bed = 0;
+        job.x = spot.x;
+        job.y = spot.y;
+        sim.world.add(patient, CarriedC, { carrier: crew });
+        (sim.world.get(patient, CrewC) as Crew).activity = 'carried';
+        return 'working';
+      }
       if (!plan) return 'wait';
       bed = plan.bed;
       (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;
@@ -192,7 +203,11 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   if (carried.carrier !== crew) return 'wait';
 
   const bedModule = sim.world.get(job.bed ?? 0, ModuleC);
-  if (!bedModule) return 'wait';
+  if (!bedModule) {
+    if (!handInPatient(sim, crew, patient)) return 'wait';
+    sim.events.emit({ type: 'crew.rescued', crew: patient, by: crew });
+    return 'done';
+  }
   const pos = patientPos as Position;
   pos.x = pos.toX = bedModule.x;
   pos.y = pos.toY = bedModule.y;

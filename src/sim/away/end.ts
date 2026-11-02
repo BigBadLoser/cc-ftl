@@ -17,7 +17,7 @@ export function endRun(sim: Sim, id: number, r: SiteRun, reason: 'closed' | 'los
   for (const c of [...sim.world.query(AwayC)].sort((a, b) => a - b)) if (sim.world.get(c, AwayC)?.vehicle === id) sim.world.remove(c, AwayC);
   sim.world.remove(id, SiteRunC);
   if (sim.world.get(r.site, AwaySiteC)?.vehicle === id) sim.world.remove(r.site, AwaySiteC);
-  sim.events.emit({ type: 'away.closed', ship: r.site, vehicle: id, reason });
+  if (!r.pickup) sim.events.emit({ type: 'away.closed', ship: r.site, vehicle: id, reason });
 }
 
 /**

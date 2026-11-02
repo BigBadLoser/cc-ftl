@@ -28,9 +28,10 @@ export function evaFloatSystem(sim: Sim): void {
     if (f.mode !== 'back') continue;
     const v = sim.world.get(f.vehicle, VehicleC);
     if (!v || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) continue; // nowhere to climb in: stay out
-    v.suits = vehicleSuits(sim, v) + 1;
-    sim.world.remove(id, SuitC);
-    sim.events.emit({ type: 'suit.doffed', crew: id, airlock: 0 });
+    if (sim.world.remove(id, SuitC)) {
+      v.suits = vehicleSuits(sim, v) + 1;
+      sim.events.emit({ type: 'suit.doffed', crew: id, airlock: 0 });
+    }
     boardCrew(sim, id, f.vehicle);
   }
 }

@@ -11,6 +11,7 @@ import {
 } from '../tuning';
 import { YardCrewC } from '../yard/types';
 import { IntentC } from './components';
+import { AwayC } from '../away/components';
 
 /**
  * The air drive's inputs (#286 slice 1; docs/DESIGN.md "Air as a need", docs/ARCHITECTURE.md "Dependency on crew AI Phase 3"). The need
@@ -66,6 +67,8 @@ export function airMargin(sim: Sim, id: number): number | undefined {
   const ticks = sourceTicks(sim, id);
   const { refill, critical, tank } = airLines(sim, id, Math.max(0, ticks) / TICK_HZ);
   const air = airLeftSec(sim, id);
+  // The last call (away/trips.ts): the departure check found them short, so they refill now, before the shuttle leaves.
+  if (sim.world.get(id, AwayC)?.lastCall && air < tank - 1) return Math.min(999, air < critical ? Math.floor((500 * air) / critical) : 999);
   if (air < critical) return Math.floor((500 * air) / critical);
   if (air < refill) return 500 + Math.floor((500 * (air - critical)) / Math.max(1e-6, refill - critical));
   return 1000 + Math.min(1000, Math.floor((1000 * (air - refill)) / tank));

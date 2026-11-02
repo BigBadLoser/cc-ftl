@@ -7,7 +7,6 @@ import { travelTicks, flightTicks } from '../ai/travel';
 import { airlockAir, tankShortfall, vehicleAir } from '../eva/air';
 import { EvaFloatC } from '../eva/components';
 import { planWalk } from '../eva/route';
-import { hatchSpot } from '../eva/shuttle';
 import { airSources } from '../eva/sources';
 import { isSuited, isThin, needsAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
@@ -17,6 +16,7 @@ import { AIR_RESERVE_SEC, AWAY_DEPART_MARGIN, AWAY_TURNAROUND_SEC } from '../tun
 import { AboardC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter } from '../vehicles/geometry';
 import { AwayC } from './components';
+import { siteSpot } from './crew';
 
 /**
  * The departure check (docs/ARCHITECTURE.md "Departure check", #286): the shuttle serving a site may leave it only if every member of the
@@ -34,7 +34,7 @@ export function partyOut(sim: Sim, vehicle: number): number[] {
 }
 
 /** Where the shuttle goes home to: its bay's centre, else its home ship's centre (sector tiles). */
-function homePoint(sim: Sim, v: Vehicle): { x: number; y: number } | null {
+export function homePoint(sim: Sim, v: Vehicle): { x: number; y: number } | null {
   const bay = v.home ? bayCenter(sim, v.home) : null;
   if (bay) return bay;
   const s = shipById(sim, v.homeShip);
@@ -59,21 +59,31 @@ function noDrain(sim: Sim, m: number): boolean {
   return !isSuited(sim, m) && !!pos && !!grid && !isThin(grid, pos.x, pos.y);
 }
 
-/** (c): ticks to walk to the shuttle's hatch spot (Infinity when it cannot be reached). */
+/** (c): ticks to walk to where the shuttle takes them aboard (Infinity when it cannot be reached). */
 function hatchTicks(sim: Sim, m: number, vehicle: number): number {
   const pos = sim.world.get(m, PositionC);
-  const spot = hatchSpot(sim, vehicle);
-  if (!pos || !spot || spot.shipId !== shipIdOf(sim, pos)) return Infinity;
-  const plan = planWalk(sim, m, spot.shipId, origin(pos), { x: spot.x, y: spot.y });
+  const spot = pos && siteSpot(sim, vehicle, shipIdOf(sim, pos));
+  if (!pos || !spot) return Infinity;
+  const plan = planWalk(sim, m, shipIdOf(sim, pos), origin(pos), { x: spot.x, y: spot.y });
   return plan ? travelTicks(sim, m, plan.steps, { suited: true }) : Infinity;
 }
 
 /** The members of the party staying out who are not safe if the shuttle leaves now (empty: it may go). */
 export function unsafeMembers(sim: Sim, vehicle: number): number[] {
+  return departCheck(sim, vehicle).unsafe;
+}
+
+/**
+ * The departure check in full: `unsafe` as `unsafeMembers`; `returnBy`, the tick the shuttle must be back at the site by, the earliest a
+ * worker safe only by their own tank (c) would run short (undefined when nobody counts on their tank).
+ */
+export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsafe: number[]; returnBy?: number } {
   const out = partyOut(sim, vehicle);
-  if (out.some((m) => sim.world.get(m, EvaFloatC)?.vehicle === vehicle)) return out; // someone between the hull and the hatch: wait
+  // Someone between the hull and the hatch: wait (`floatsOk`: judge them as they stand, for the last call).
+  if (!floatsOk && out.some((m) => sim.world.get(m, EvaFloatC)?.vehicle === vehicle)) return { unsafe: out };
   const R = roundTripTicks(sim, vehicle);
   const unsafe: number[] = [];
+  let returnBy: number | undefined;
   // Members whose own tank does not cover the round trip but who can walk to another source in time: they share its store.
   const leaning: { m: number; sources: string[] }[] = [];
   const stores = new Map<string, number>();
@@ -84,7 +94,13 @@ export function unsafeMembers(sim: Sim, vehicle: number): number[] {
     }
     if (noDrain(sim, m)) continue; // (a)
     const air = airLeftSec(sim, m);
-    if (air >= (AWAY_DEPART_MARGIN * R + hatchTicks(sim, m, vehicle)) / TICK_HZ + AIR_RESERVE_SEC) continue; // (c)
+    const walk = hatchTicks(sim, m, vehicle);
+    if (air >= (AWAY_DEPART_MARGIN * R + walk) / TICK_HZ + AIR_RESERVE_SEC) {
+      // (c): they run short when the air left only covers the walk back and the reserve.
+      const short = sim.tick + Math.floor((air - AIR_RESERVE_SEC) * TICK_HZ - walk);
+      returnBy = Math.min(returnBy ?? Infinity, short);
+      continue;
+    }
     // (b): another source counts only if the tank lasts the walk there, with the same reserve as admission.
     const others = airSources(sim, m, { without: vehicle }).filter((s) => s.ticks / TICK_HZ + AIR_RESERVE_SEC <= air);
     if (others.length === 0) {
@@ -105,5 +121,5 @@ export function unsafeMembers(sim: Sim, vehicle: number): number[] {
     if (key) stores.set(key, (stores.get(key) ?? 0) - need);
     else unsafe.push(m);
   }
-  return unsafe.sort((a, b) => a - b);
+  return { unsafe: unsafe.sort((a, b) => a - b), returnBy };
 }

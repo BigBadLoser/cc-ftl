@@ -1,7 +1,7 @@
 import { JobC, PathC, type Crew, type Job, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
-import { isSuited } from '../../eva/suit';
+import { walksOutside } from '../../eva/suit';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
@@ -134,7 +134,7 @@ function vacateTile(sim: Sim, id: number, here: Tile, ship: number): boolean {
   const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)).filter((j) => j?.kind === 'build' && shipIdOf(sim, j) === ship);
   const grid = shipGrid(sim, ship);
   if (!grid) return false;
-  const suited = isSuited(sim, id);
+  const suited = walksOutside(sim, id);
   let best: Tile[] | null = null;
   let bestOpen = false;
   for (let dy = -1; dy <= 1; dy++) {

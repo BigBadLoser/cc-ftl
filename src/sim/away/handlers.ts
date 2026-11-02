@@ -1,6 +1,5 @@
 import type { Command } from '../commands';
 import { homeShip, shipById } from '../combat/ships';
-import { vehicleSuits } from '../eva/shuttle';
 import { ferryFree } from '../ferry/pick';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
@@ -15,10 +14,13 @@ function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
 }
 
-/** A shuttle that can serve a site: free (ferry rules), with suits (EVA), stowed in a bay on the home ship (its crew walk to it). */
+/**
+ * A shuttle that can serve a site: free (ferry rules), fit for EVA (it hovers; its suits are for those aboard who breathe), stowed in a bay
+ * on the home ship (its crew walk to it).
+ */
 export function siteShuttleOk(sim: Sim, id: number): boolean {
   const v = sim.world.get(id, VehicleC);
-  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || vehicleSuits(sim, v) <= 0 || !ferryFree(sim, id)) return false;
+  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || !ferryFree(sim, id)) return false;
   return boardingTile(sim, id)?.shipId === homeShip(sim);
 }
 

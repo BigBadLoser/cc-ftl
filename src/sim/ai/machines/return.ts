@@ -2,18 +2,18 @@ import { BodyC } from '../../body';
 import { DraftedC, PathC, type Crew, type Path, type Position } from '../../crew/components';
 import { isSettled, origin } from '../../crew/helpers';
 import { AwayC } from '../../away/components';
-import { siteUnderFoot } from '../../away/crew';
-import { EvaFloatC } from '../../eva/components';
+import { siteSpot, siteUnderFoot } from '../../away/crew';
+import { EvaFloatC, SuitC } from '../../eva/components';
 import { hatchFace } from '../../eva/hatch';
 import { planWalk } from '../../eva/route';
-import { floatTicks, hatchSpot, tileCentre } from '../../eva/shuttle';
-import { isSuited, suitDef } from '../../eva/suit';
+import { floatTicks, tileCentre, vehicleSuits } from '../../eva/shuttle';
+import { suitDef, walksOutside } from '../../eva/suit';
 import { dropCarried } from '../../items/stacks';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { AWAY_WAIT_TILES } from '../../tuning';
 import { VehicleC } from '../../vehicles/components';
-import { occupants, vehicleDefOf } from '../../vehicles/lifecycle';
+import { boardCrew, occupants, vehicleDefOf } from '../../vehicles/lifecycle';
 import { TaskC } from '../components';
 import { abortTask, setJoblessTask } from '../task';
 
@@ -24,21 +24,21 @@ import { abortTask, setJoblessTask } from '../task';
  * beside the site, is full, or cannot be walked to.
  */
 
-/** The hatch spot of the crew member's site shuttle when it hovers beside the grid they stand on. */
-function spotFor(sim: Sim, id: number, pos: Position): { vehicle: number; x: number; y: number } | null {
+/** Where the crew member's site shuttle takes them aboard on the grid they stand on (hatch spot or docked airlock). */
+function spotFor(sim: Sim, id: number, pos: Position): { vehicle: number; x: number; y: number; docked: boolean } | null {
   const away = sim.world.get(id, AwayC);
-  const spot = away && hatchSpot(sim, away.vehicle);
-  return away && spot && spot.shipId === shipIdOf(sim, pos) ? { vehicle: away.vehicle, x: spot.x, y: spot.y } : null;
+  const spot = away && siteSpot(sim, away.vehicle, shipIdOf(sim, pos));
+  return away && spot ? { vehicle: away.vehicle, ...spot } : null;
 }
 
 export function returnTurn(sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean): boolean {
-  if (!siteUnderFoot(sim, id) || !isSuited(sim, id)) return false;
+  if (!siteUnderFoot(sim, id)) return false;
   if (sim.world.has(id, EvaFloatC)) return true;
   const spot = spotFor(sim, id, pos);
   const v = spot && sim.world.get(spot.vehicle, VehicleC);
-  if (!spot || !v || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return false;
+  if (!spot || !v || (!spot.docked && !walksOutside(sim, id)) || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return false;
   const path = sim.world.get(id, PathC) as Path;
-  if (isSettled(pos) && pos.x === spot.x && pos.y === spot.y) return floatAboard(sim, id, crew, spot.vehicle, pos);
+  if (isSettled(pos) && pos.x === spot.x && pos.y === spot.y) return spot.docked ? stepAboard(sim, id, spot.vehicle) : floatAboard(sim, id, crew, spot.vehicle, pos);
   const t = sim.world.get(id, TaskC);
   if (t?.machine === 'return' && (path.steps.length > 0 || !isSettled(pos))) return true; // on the way
   const plan = planWalk(sim, id, shipIdOf(sim, pos), origin(pos), { x: spot.x, y: spot.y });
@@ -62,8 +62,28 @@ function floatAboard(sim: Sim, id: number, crew: Crew, vehicle: number, pos: Pos
   sim.world.add(id, EvaFloatC, { mode: 'back', vehicle, sx: face.x, sy: face.y, ticks, total: ticks });
   sim.world.add(id, DraftedC, { target: null });
   crew.activity = 'drafted';
+  cameAboard(sim, id);
+  return true;
+}
+
+/** Aboard (or on the way in): they wait for the trip home, or a rider for the trip out again. A pickup is answered. */
+function cameAboard(sim: Sim, id: number): void {
   const away = sim.world.get(id, AwayC);
-  if (away) away.home = true;
+  if (!away) return;
+  if (!away.ride) away.home = true;
+  delete away.pickup;
+  delete away.lastCall;
+}
+
+/** Step in at the airlock the shuttle is docked at: the suit goes into its stock. */
+function stepAboard(sim: Sim, id: number, vehicle: number): boolean {
+  const v = sim.world.get(vehicle, VehicleC);
+  if (!v) return false;
+  abortTask(sim, id, 'drive');
+  dropCarried(sim, id);
+  if (sim.world.remove(id, SuitC)) v.suits = vehicleSuits(sim, v) + 1;
+  boardCrew(sim, id, vehicle);
+  cameAboard(sim, id);
   return true;
 }
 
@@ -72,7 +92,7 @@ function floatAboard(sim: Sim, id: number, crew: Crew, vehicle: number, pos: Pos
  * hatch spot they walk back to it. True while this keeps them (on the site, suited), so the idle turn does nothing else.
  */
 export function waitBySite(sim: Sim, id: number, pos: Position): boolean {
-  if (!siteUnderFoot(sim, id) || !isSuited(sim, id)) return false;
+  if (!siteUnderFoot(sim, id) || (!walksOutside(sim, id) && !sim.world.get(sim.world.get(id, AwayC)?.vehicle ?? 0, VehicleC)?.dock)) return false;
   const path = sim.world.get(id, PathC) as Path;
   if (path.steps.length > 0 || !isSettled(pos)) return true;
   const spot = spotFor(sim, id, pos);

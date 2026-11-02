@@ -59,7 +59,8 @@ export type Command =
   /** Drafted, suited crew fill their tank: at `airlock`, or at the hatch of the shuttle `vehicle` hovering within float range, else at the nearest source they can reach. Only a source with air in its store counts. */
   | { type: 'eva.refill'; crew: number; airlock?: number; vehicle?: number }
   /** Fly a shuttle to hold station a few tiles off another ship's hull (`ship`: its ShipC entity id; launching a stowed one first). Needs a pilot. */
-  | { type: 'vehicle.hover'; vehicle: number; ship: number }
+  /** `box` (sector tiles) narrows where beside the ship it holds station (a pickup); with one it may hover beside its own home ship. */
+  | { type: 'vehicle.hover'; vehicle: number; ship: number; box?: { x: number; y: number; w: number; h: number } }
   /** Crew aboard a hovering shuttle (default: all passengers) put on suits from its stock and float out to the target's hull. */
   | { type: 'eva.out'; vehicle: number; crew?: number }
   /** A drafted, suited crew member on the hull floats back to the hovering shuttle, boards and stows the suit. */
