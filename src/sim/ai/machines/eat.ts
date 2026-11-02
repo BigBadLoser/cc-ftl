@@ -12,7 +12,7 @@ import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { EAT_SEC } from '../../tuning';
-import { unsafeFor } from '../hazard';
+import { safePathBeside, unsafeFor } from '../hazard';
 import { abortTask, syncTask } from '../task';
 
 /**
@@ -53,9 +53,9 @@ function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: stri
       const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at);
       if (at && steps && (!galley || steps.length < galley.steps.length)) galley = { x: at.x, y: at.y, galley: true, steps };
     } else if (def.storage && sim.world.has(id, StorageC) && storageCount(sim, id, item) > 0) {
-      const steps = findPath(sim, shipId, from, { x: m.x, y: m.y, adjacent: true });
-      const end = steps && (steps[steps.length - 1] ?? from);
-      if (steps && end && !unsafeFor(sim, crew, shipId, end.x, end.y) && (!crate || steps.length < crate.steps.length)) {
+      const steps = safePathBeside(sim, crew, shipId, from, m.x, m.y);
+      if (steps && (!crate || steps.length < crate.steps.length)) {
+        const end = steps[steps.length - 1] ?? from;
         crate = { x: end.x, y: end.y, galley: false, steps };
       }
     }

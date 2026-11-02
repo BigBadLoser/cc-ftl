@@ -1,6 +1,8 @@
 import { AssignmentC, DraftedC, JobC, PathC, PositionC, type Position } from '../crew/components';
 import { exposure, HAZARD_AIR, HAZARD_COLD, HAZARD_FIRE, HAZARD_HEAT, hazardsHere, tileHazards } from '../crew/hazard';
 import { isSettled } from '../crew/helpers';
+import { findPath, type Tile } from '../crew/pathfind';
+import { isTileWalkable } from '../modules/walk';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { TaskC } from './components';
@@ -50,4 +52,26 @@ export function unsafeFor(sim: Sim, id: number, ship: number, x: number, y: numb
   if (!grid) return false;
   const { suited, airless } = exposure(sim, id);
   return tileHazards(grid, x, y, suited, airless) !== 0;
+}
+
+/**
+ * A walk to a tile beside (x, y) that does not harm the crew member: the usual nearest stop beside it, else the nearest of its
+ * other walkable, safe neighbours (a crate whose nearest side burns can still be reached from another). Null when none is reachable.
+ */
+export function safePathBeside(sim: Sim, id: number, ship: number, from: Tile, x: number, y: number): Tile[] | null {
+  const steps = findPath(sim, ship, from, { x, y, adjacent: true });
+  const end = steps && (steps[steps.length - 1] ?? from);
+  if (!end || !unsafeFor(sim, id, ship, end.x, end.y)) return steps;
+  const grid = shipGrid(sim, ship);
+  if (!grid) return null;
+  let best: Tile[] | null = null;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const tx = x + dx, ty = y + dy;
+      if ((!dx && !dy) || !isTileWalkable(sim, grid, tx, ty) || unsafeFor(sim, id, ship, tx, ty)) continue;
+      const s = tx === from.x && ty === from.y ? [] : findPath(sim, ship, from, { x: tx, y: ty });
+      if (s && (!best || s.length < best.length)) best = s;
+    }
+  }
+  return best;
 }

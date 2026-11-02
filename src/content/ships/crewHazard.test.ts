@@ -11,6 +11,10 @@ import { isSettled } from '../../sim/crew/helpers';
 import { SuitC } from '../../sim/eva/components';
 import { MoodC } from '../../sim/crew/components';
 import { isTileWalkable } from '../../sim/modules/walk';
+import { foodOn } from '../../sim/crew/eating';
+import { findPath } from '../../sim/crew/pathfind';
+import { StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
 import { content } from '../index';
 
 /**
@@ -101,6 +105,30 @@ describe('hazard interrupt', () => {
     expect(back).toBe(0);
     expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
     expect(hazardsHere(sim, c)).toBe(0);
+  });
+
+  it('with no galley, a crate whose nearest side burns is reached from another side', () => {
+    const { sim, c } = quiet();
+    const ship = homeShip(sim);
+    let crate = 0;
+    for (const m of sim.world.query(ModuleC)) {
+      const mod = sim.world.get(m, ModuleC)!;
+      const def = sim.content.modules[mod.def];
+      if (def?.galley) mod.enabled = false;
+      else if (!crate && def?.storage && sim.world.has(m, StorageC) && foodOn(sim, ship) && storageCount(sim, m, foodOn(sim, ship)!) > 0) crate = m;
+    }
+    expect(crate).toBeGreaterThan(0);
+    const box = sim.world.get(crate, ModuleC)!;
+    const near = findPath(sim, ship, at(sim, c), { x: box.x, y: box.y, adjacent: true })!;
+    const fire = near[near.length - 1] ?? at(sim, c);
+    sim.world.get(c, NeedsC)!.hunger = 5;
+    for (let i = 0; i < 600 && sim.world.get(c, CrewC)!.activity !== 'eating'; i++) {
+      burn(sim, fire);
+      sim.step();
+    }
+    expect(sim.world.get(c, CrewC)!.activity).toBe('eating');
+    expect(at(sim, c)).not.toEqual({ x: fire.x, y: fire.y });
+    expect(Math.max(Math.abs(at(sim, c).x - box.x), Math.abs(at(sim, c).y - box.y))).toBe(1);
   });
 
   it('a walk through a burning tile is obeyed; standing on it is not', () => {
