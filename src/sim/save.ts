@@ -95,8 +95,9 @@ import { newYard, type YardState } from './yard/types';
  * v78 (scrapper 4x2): saved grids hold the old 2x1 scrapper footprint.
  * v79 (salvage teams): `SalvageTripC` (a salvage shift, on its shuttle, with its cargo run), `SalvageCrewC` (its crew), `SalvageOrder.teamAt`,
  *   blocks `noShuttle` / `noCrew`, `VehicleDest.hover.box`.
+ * v80 (air stores, #286 slice 0): `Airlock.air`, `Vehicle.air`, `EvaFloat.mode` `'refill'`, job kind `refill`; the airStores system.
  */
-export const SAVE_VERSION = 79;
+export const SAVE_VERSION = 80;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
