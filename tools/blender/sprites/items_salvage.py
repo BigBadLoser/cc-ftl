@@ -19,16 +19,22 @@ SX, SY = 0.28, 0.38  # crate footprint (tile units), as the reference: the long 
 H = 0.22            # crate height: ~9 px at 1x, one stack level
 BAND = 0.035        # the dark bottom band that separates stacked levels
 T = 0.035           # wall thickness: thinner breaks the back rim into dots at 1x
-R = 0.05            # corner radius: the vertical edges are rounded
+R = 0.05            # corner radius
+SEG = int(__import__("os").environ.get("SALVAGE_CORNER_SEG", 6))  # arc segments per corner: 6 rounds it, 1 bevels it
 FILL = 0.15         # height of the interior floor the contents rest on
+LIP = 0.014         # the bright lip along the top of the outer wall
 
 Q = math.pi / 2       # a quarter turn: content tables are written long side along x and turned onto the long y
 
-TAGS = {"hull": "hazK", "tech": "polyB", "energy": "hazY", "weapons": "medRed", "comfort": "pcb"}
+# Colours: the family's own palette set (palette_extra.json "salvage"): a cool blue steel ramp svS0 (light) .. svS4,
+# warm plum darks svP1 .. svP3 in place of black, bright steel svB0 .. svB3 for contents, rust svR1/svR2.
+TAGS = {"hull": "svP2", "tech": "polyB", "energy": "hazY", "weapons": "medRed", "comfort": "pcb"}
 
 
-def _profile(ex, ey, r, n=6):
-    """A rounded rectangle (half extents ex, ey, corner radius r) as points counter-clockwise seen from above."""
+def _profile(ex, ey, r, n=None):
+    """A rounded rectangle (half extents ex, ey, corner radius r) as points counter-clockwise seen from above; n arc
+    segments per corner (1 = a 45 degree bevel). Corner 0 (the first n + 1 points) is the front corner (+x, +y)."""
+    n = n or SEG
     pts = []
     for cx, cy, a0 in ((ex - r, ey - r, 0.0), (-ex + r, ey - r, 0.5), (-ex + r, -ey + r, 1.0), (ex - r, -ey + r, 1.5)):
         for i in range(n + 1):
@@ -37,36 +43,42 @@ def _profile(ex, ey, r, n=6):
     return pts
 
 
-def _ring(m, lo, hi, z0, z1, col, outward):
-    """Side wall between two heights along a closed profile, facing out (outer skin) or in (inner skin)."""
-    for i in range(len(lo)):
-        a, b = lo[i], lo[(i + 1) % len(lo)]
+def _ring(m, pts, z0, z1, col, outward):
+    """Side wall between two heights along a closed profile, facing out (outer skin) or in (inner skin); col is a
+    colour or a function of the segment index."""
+    for i in range(len(pts)):
+        a, b = pts[i], pts[(i + 1) % len(pts)]
         q = [core.G(a[0], a[1], z0), core.G(b[0], b[1], z0), core.G(b[0], b[1], z1), core.G(a[0], a[1], z1)]
-        m.poly(q if outward else q[::-1], col, flip=True)
+        m.poly(q if outward else q[::-1], col(i) if callable(col) else col, flip=True)
 
 
 def crate(m, tag, k=1.0):
-    """The shared crate body, scaled by k, with its type tag colour `tag`: one hollow shell with rounded vertical corners
-    (outer radius R, inner R - T), a flat closed bottom, a dark bottom band that separates stacked levels and a pale rim."""
-    sx, sy, h, t, r, b = SX * k, SY * k, H * k, T * k, R * k, BAND * k
+    """The shared crate body, scaled by k, with its type tag colour `tag`: one hollow shell, flat closed bottom, a warm
+    dark bottom band that separates stacked levels, mid blue steel faces, a bright lip and rim, the camera-facing
+    corner picked out bright, a dark plum inside, and the tag panel on both faces the camera sees."""
+    sx, sy, h, t, r, b, lip = SX * k, SY * k, H * k, T * k, R * k, BAND * k, LIP * k
     ex, ey = sx / 2, sy / 2
     out, inn = _profile(ex, ey, r), _profile(ex - t, ey - t, r - t)
-    _ring(m, out, None, 0, b, "steelD", True)                                                    # dark bottom band
-    _ring(m, out, None, b, h, "plate", True)
-    _ring(m, inn, None, FILL * k, h, "plate", False)                                             # inner skin
-    for i in range(len(out)):                                                                    # rim
+    front = lambda i: "svS3" if i < SEG else "svS4"                                           # noqa: E731
+    _ring(m, out, 0, b, "svP2", True)                                                        # dark bottom band
+    _ring(m, out, b, h - lip, front, True)
+    _ring(m, out, h - lip, h, "svS0", True)                                                  # bright lip
+    _ring(m, inn, FILL * k, h, "svP1", False)                                                # inner skin
+    for i in range(len(out)):                                                                # rim
         j = (i + 1) % len(out)
-        m.poly([core.G(*out[i], h), core.G(*out[j], h), core.G(*inn[j], h), core.G(*inn[i], h)], "sole", flip=True)
-    m.poly([core.G(*p, FILL * k) for p in inn], "dark", flip=True)                              # interior floor
-    m.poly([core.G(*p, 0) for p in out][::-1], "dark", flip=True)                               # flat bottom
-    # the faces the camera sees are +x (long, lower right) and +y (short, lower left): the type tag, centred
+        m.poly([core.G(*out[i], h), core.G(*out[j], h), core.G(*inn[j], h), core.G(*inn[i], h)], "svS2", flip=True)
+    m.poly([core.G(*p, FILL * k) for p in inn], "svP3", flip=True)                           # interior floor
+    m.poly([core.G(*p, 0) for p in out][::-1], "svP3", flip=True)                            # flat bottom
+    # the faces the camera sees are +x (long, lower right) and +y (short, lower left): the type tag, a centred panel
+    # (a light frame around it breaks into dots at 1x)
     for axis, o, span in (("x", ex, sy), ("y", ey, sx)):
         def at(u, z, du, dz, col, d):
             if axis == "x":
                 m.box((o + d / 2, u, z), (d, du, dz), col, base=True)
             else:
                 m.box((u, o + d / 2, z), (du, d, dz), col, base=True)
-        at(0, h * 0.42, span * 0.42, 0.065 * k, tag, 0.005 * k)                       # type tag
+        tw, th, z0 = span * 0.44, 0.07 * k, b + (h - lip - b) * 0.5 - 0.035 * k
+        at(0, z0, tw, th, tag, 0.007 * k)                                                     # panel
 
 
 def inside(m, start, k=1.0, slack=0.004):
@@ -84,33 +96,30 @@ def inside(m, start, k=1.0, slack=0.004):
 # Content tables are written long side along x (u) and turned onto the crate's long y: (u, v) -> grid (-v, u).
 
 
-def _plate(m, u, v, z, rz, rx, ry, w, d, col, k, th=0.012):
-    m.box((-v * k, u * k, z * k), (w * k, d * k, th * k), col, top=col, rz=rz + Q, rx=rx, ry=ry)
+def _plate(m, u, v, z, rz, rx, ry, w, d, col, k, th=0.012, top=None):
+    m.box((-v * k, u * k, z * k), (w * k, d * k, th * k), col, top=top or col, rz=rz + Q, rx=rx, ry=ry)
 
 
-def _beam(m, u, v, z, rz, ry, L, k, web="rustD", flange="steel", top="steelL", s=0.035):
-    """An I-beam stub: a flange plate and a web, centred at (u, v, z), tilted up by ry about its width."""
-    c = (-v * k, u * k, z * k)
-    m.box(c, (L * k, s * k, 0.008 * k), flange, top=top, rz=rz + Q, ry=ry)
-    m.box(c, (L * k, 0.008 * k, s * k), web, rz=rz + Q, ry=ry)
+def _bar(m, u, v, z, rz, ry, L, k, col="svB2", top="svB1", s=0.026):
+    """A square steel bar centred at (u, v, z), turned rz about z and raised ry about its width: bright on top."""
+    m.box((-v * k, u * k, z * k), (L * k, s * k, s * k), col, top=top, rz=rz + Q, ry=ry)
 
 
 def hull_contents(m, k=1.0):
-    """Bent hull plating and girder stubs (grey steel with rust) heaped to the rim, and two character pieces standing
-    up out of the heap to catch the eye: a girder stub raised at a steep angle and a torn panel on edge."""
+    """Hull salvage: a bed of dark plating with a rusty sheet, and four bright girder bars fanning up out of it
+    (the crate's read at 1x: bright bars against the dark inside). The tallest two stand over the rim."""
     f = FILL
-    for u, v, z, rz, rx, ry, w, d, col in (                        # the heap: plates leaning on each other
-            (-0.07, -0.03, f + 0.03, 0.1, 0.35, 0.0, 0.15, 0.1, "steel"),
-            (0.07, 0.03, f + 0.03, -0.2, -0.35, 0.2, 0.14, 0.09, "steelD"),
-            (0.0, 0.0, f + 0.045, 0.5, 0.0, -0.3, 0.13, 0.08, "rust"),
-            (0.09, -0.05, f + 0.02, 0.3, 0.2, 0.0, 0.09, 0.06, "steelD"),
-            (-0.08, 0.05, f + 0.025, -0.4, 0.0, 0.25, 0.1, 0.06, "rustD")):
+    for u, v, z, rz, rx, ry, w, d, col in (                        # the bed: dark plates lying on the floor
+            (-0.06, -0.02, f + 0.015, 0.1, 0.2, 0.0, 0.15, 0.1, "svS4"),
+            (0.07, 0.03, f + 0.02, -0.2, -0.2, 0.1, 0.13, 0.09, "svS3"),
+            (0.02, -0.04, f + 0.03, 0.5, 0.0, -0.2, 0.11, 0.07, "svR2")):
         _plate(m, u, v, z, rz, rx, ry, w, d, col, k)
-    _beam(m, 0.03, -0.04, f + 0.05, 0.3, 0.2, 0.15, k)                 # a girder lying in the heap
-    # character pieces
-    _beam(m, -0.07, 0.02, f + 0.1, 0.15, -0.95, 0.19, k, web="rust")  # girder stub raised steeply at the back
-    m.box((0.06 * k, 0.07 * k, (f + 0.02) * k), (0.012 * k, 0.11 * k, 0.12 * k), "steel", top="rust",  # torn panel on edge
-          rz=0.25, rx=0.2, base=True)
+    for u, v, z, rz, ry, L in (                                     # three bars fanning up the same way, one lying
+            (-0.01, -0.072, f + 0.085, 0.08, 1.0, 0.2),
+            (0.02, 0.0, f + 0.1, 0.0, 1.2, 0.21),
+            (-0.01, 0.072, f + 0.08, -0.08, 0.9, 0.19),
+            (0.02, -0.05, f + 0.03, 0.4, -0.15, 0.16)):
+        _bar(m, u, v, z, rz, ry, L, k)
 
 
 CONTENTS = {"hull": hull_contents}

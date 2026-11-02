@@ -1099,5 +1099,61 @@
  },
  "rkDM": {
   "hex": "#3f3a35"
+ },
+ "svS0": {
+  "hex": "#b0b8d4",
+  "set": "salvage"
+ },
+ "svS1": {
+  "hex": "#8a96ba",
+  "set": "salvage"
+ },
+ "svS2": {
+  "hex": "#67729a",
+  "set": "salvage"
+ },
+ "svS3": {
+  "hex": "#4b5478",
+  "set": "salvage"
+ },
+ "svS4": {
+  "hex": "#363c58",
+  "set": "salvage"
+ },
+ "svP1": {
+  "hex": "#3c2c38",
+  "set": "salvage"
+ },
+ "svP2": {
+  "hex": "#2a1f28",
+  "set": "salvage"
+ },
+ "svP3": {
+  "hex": "#1c1418",
+  "set": "salvage"
+ },
+ "svB0": {
+  "hex": "#d0dde4",
+  "set": "salvage"
+ },
+ "svB1": {
+  "hex": "#9fb6c2",
+  "set": "salvage"
+ },
+ "svB2": {
+  "hex": "#6d8794",
+  "set": "salvage"
+ },
+ "svB3": {
+  "hex": "#4a5f6a",
+  "set": "salvage"
+ },
+ "svR1": {
+  "hex": "#9a5532",
+  "set": "salvage"
+ },
+ "svR2": {
+  "hex": "#6a3524",
+  "set": "salvage"
  }
 }
