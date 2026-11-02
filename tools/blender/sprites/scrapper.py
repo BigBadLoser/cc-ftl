@@ -125,17 +125,14 @@ def scrapper(rot):
     b = _Build(rot, f"scrapper_{rot}")
     # plinth band under the shells (not under the open bay)
     b.box(0.03, 2.0, 0.03, 1.97, 0, BASE, GMD, DARK)
-    b.box(2.0, 3.97, 0.03, 1.0, 0, BASE, GMD, DARK)
-    b.box(3.0, 3.9, 1.0, 1.9, 0, BASE, GMD, DARK)
-    # main shell: hatch end, both rows
-    b.loft([(0.03, 0.62), (0.5, 1.16), (2.0, 1.16)], 0.03, 1.97)
-    # back shell: on to the far hatch end
-    b.loft([(1.9, 1.16), (3.5, 1.16), (3.97, 0.66)], 0.03, 1.0)
+    b.box(2.0, 3.0, 0.03, 1.0, 0, BASE, GMD, DARK)
+    b.box(3.0, 3.97, 0.03, 1.97, 0, BASE, GMD, DARK)
+    # one body sloped at both ends; the bay (L 2..3, front row) is notched out of it
+    b.loft([(0.03, 0.62), (0.5, 1.16), (2.0, 1.16)], 0.03, 1.97)                     # hatch end, full width
+    b.loft([(1.9, 1.16), (3.1, 1.16)], 0.03, 1.0)                                      # behind the bay, back row
+    b.loft([(3.0, 1.16), (3.5, 1.16), (3.97, 0.66)], 0.03, 1.97)                       # far end, full width
     # raised deck
     b.loft([(1.0, 1.33), (2.0, 1.33)], 0.08, 1.92, rnd=0.08)
-    # pipe unit: back step and front step
-    b.loft([(3.0, 1.0), (3.9, 1.0)], 1.0, 1.55, rnd=0.06)
-    b.loft([(3.0, 0.66), (3.9, 0.66)], 1.45, 1.9, rnd=0.06)
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
