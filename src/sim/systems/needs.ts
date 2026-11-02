@@ -79,7 +79,7 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
   const left = meal?.n ?? -1;
   if (meal && (sim.world.has(id, DraftedC) || (left >= 0 && crew.activity !== 'eating'))) dropMeal(sim, id);
   else if (meal && left >= 0 && (meal.n = left - 1) <= 0) {
-    const item = meal.item ?? '', galley = (meal.target ?? 0) !== 0;
+    const item = meal.item ?? '', galley = !!meal.hot;
     needs.hunger = Math.min(100, needs.hunger + (sim.content.items[item]?.food?.nutrition ?? 0));
     finishMeal(sim, id);
     noteMeal(sim, id, galley);

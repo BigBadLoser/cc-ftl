@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { shipIds } from '../../sim/regions';
-import { CrewC, DownedC, HealthC, ModuleC, MoodC, NeedsC, StorageC, TICK_HZ, deserialize, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
-import { mealOf } from '../../sim/ai/task';
+import { CrewC, DownedC, HealthC, ModuleC, MoodC, NeedsC, ShipC, StorageC, TaskC, TICK_HZ, deserialize, homeShip, liftShip, removeModule, stampPacket, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
+import { claimedBed, mealOf } from '../../sim/ai/task';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
 
@@ -56,6 +56,43 @@ describe('hunger', () => {
     expect(needs(sim, id).hunger as number).toBeGreaterThan(60);
     expect(totalStock(sim, 'item.ration')).toBe(before - 1);
     expect(!!mealOf(sim, id)).toBe(false);
+  });
+
+  it('a meal outlives its galley across a cut: dismantled mid-meal, then the ship jumps away and back', () => {
+    const { sim, id } = hungry(20);
+    for (let i = 0; i < 40 * TICK_HZ && sim.world.get(id, CrewC)!.activity !== 'eating'; i++) sim.step();
+    expect(mealOf(sim, id)?.bb.hot).toBe(true);
+    removeModule(sim, find(sim, 'module.galley'));
+    const ship = homeShip(sim);
+    const at = sim.world.get(ship, ShipC)!;
+    stampPacket(sim, liftShip(sim, ship), at.x, at.y);
+    expect(sim.world.get(id, CrewC)!.activity).toBe('eating');
+    expect(mealOf(sim, id)).toBeDefined();
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 40 * TICK_HZ && !events.some((e) => e.type === 'crew.ate'); i++) {
+      sim.step();
+      events.push(...sim.events.drain());
+    }
+    expect(events.find((e) => e.type === 'crew.ate')).toMatchObject({ crew: id, galley: true });
+    expect(sim.world.get(id, CrewC)!.activity).not.toBe('eating');
+  });
+
+  it('a sleeper whose bed is dismantled, then cut off by a jump, sleeps on and wakes', () => {
+    const { sim } = hungry(100);
+    const id = humans(sim)[1] as number;
+    needs(sim, id).rest = 5;
+    for (let i = 0; i < 60 * TICK_HZ && !(claimedBed(sim, id) && sim.world.get(id, CrewC)!.activity === 'sleeping'); i++) sim.step();
+    const bed = claimedBed(sim, id);
+    expect(bed).toBeGreaterThan(0);
+    removeModule(sim, bed);
+    const ship = homeShip(sim);
+    const at = sim.world.get(ship, ShipC)!;
+    stampPacket(sim, liftShip(sim, ship), at.x, at.y);
+    for (let i = 0; i < 10; i++) sim.step();
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    expect(sim.world.get(id, TaskC)?.machine).toBe('sleep');
+    for (let i = 0; i < 600 * TICK_HZ && sim.world.get(id, CrewC)!.activity === 'sleeping'; i++) sim.step();
+    expect(sim.world.get(id, CrewC)!.activity).not.toBe('sleeping');
   });
 
   it('eats from a crate when there is no working galley', () => {

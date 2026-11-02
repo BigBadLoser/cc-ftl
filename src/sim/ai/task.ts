@@ -122,9 +122,9 @@ export function mealOf(sim: Sim, crew: number): Task | undefined {
   return t?.machine === 'eat' && t.job === 0 ? t : undefined;
 }
 
-/** Start a meal: the eat task walks to the spot (`tile`; `target` the galley there, 0 at a crate) for `item`. */
-export function startMeal(sim: Sim, crew: number, tile: TileRef, galley: number, item: string): Task {
-  const t = newTask(sim, 0, 'eat', 'eat', 'Walk', { tile, target: galley, item, n: -1 });
+/** Start a meal: the eat task walks to the spot (`tile`; `hot` at a galley, not at a crate) for `item`. */
+export function startMeal(sim: Sim, crew: number, tile: TileRef, hot: boolean, item: string): Task {
+  const t = newTask(sim, 0, 'eat', 'eat', 'Walk', { tile, hot, item, n: -1 });
   sim.world.add(crew, TaskC, t);
   return t;
 }

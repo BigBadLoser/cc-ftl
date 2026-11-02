@@ -38,7 +38,7 @@ function legacyWorld(sim: Sim): unknown {
       return bed ? [[id, { bed }] as [number, unknown]] : [];
     }),
     eat: tasks.flatMap(([id, t]) => (t.machine === 'eat' && t.job === 0
-      ? [[id, { x: t.bb.tile?.x, y: t.bb.tile?.y, galley: (t.bb.target ?? 0) !== 0, item: t.bb.item, left: t.bb.n }] as [number, unknown]] : [])),
+      ? [[id, { x: t.bb.tile?.x, y: t.bb.tile?.y, galley: !!t.bb.hot, item: t.bb.item, left: t.bb.n }] as [number, unknown]] : [])),
   };
   const merged: Record<string, unknown[]> = { ...data.stores };
   for (const [k, rows] of Object.entries(folded)) if (rows.length > 0) merged[k] = rows; // in the pinned runs an empty one was absent

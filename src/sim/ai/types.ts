@@ -28,6 +28,11 @@ export interface Blackboard {
   deadline?: number;
   /** An item content id (the eat task's ration). */
   item?: string;
+  /**
+   * The eat task's meal is at a galley (a hot meal, a mood bonus). Plain data, not the galley's id: a meal outlives its galley
+   * (dismantled mid-meal, or left on the other side of a cut by `sector/refs.ts`).
+   */
+  hot?: boolean;
 }
 
 /** A suspended parent machine on the task stack (EVA nesting). */

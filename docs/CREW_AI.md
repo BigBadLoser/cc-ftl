@@ -527,7 +527,7 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
 
 - `EatC` and `BedClaimC` are gone (SAVE_VERSION 81):
   - A sleep's bed claim is the sleep task's `bed` hold. `claimBed`, `releaseBedClaim` and `claimedBed` live in `ai/task.ts`.
-  - A meal is the eat task's blackboard. `startMeal`, `mealOf` and `endMeal` live in `ai/task.ts`. The blackboard holds the spot (`tile`), the galley (`target`) and the ration (`item`), plus `n`: the ticks of eating left, or -1 while walking. The needs system counts `n` down.
+  - A meal is the eat task's blackboard. `startMeal`, `mealOf` and `endMeal` live in `ai/task.ts`. The blackboard holds the spot (`tile`), whether it is a galley (`hot`, plain data, so a meal outlives its galley across a cut) and the ration (`item`), plus `n`: the ticks of eating left, or -1 while walking. The needs system counts `n` down.
   - `deriveTask` now mirrors only job assignments, a hold-less sleep on the floor and charging; `keepsSameNeed` leaves the sleep and eat tasks as their own truth.
   - The reservation audit compares holds for job tasks only.
   - `sectorEquiv` rebuilds the old `bedClaim` and `eat` stores from the tasks for its legacy-shape hash, so both pinned hashes are unchanged.

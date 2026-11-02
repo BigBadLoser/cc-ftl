@@ -164,7 +164,7 @@ describe('task API', () => {
     (sim.world.get(c, CrewC) as { activity: string }).activity = 'idle';
     syncTask(sim, c);
     expect(sim.world.has(c, TaskC)).toBe(false);
-    startMeal(sim, c, { x: 2, y: 2 }, 0, 'item.metal');
+    startMeal(sim, c, { x: 2, y: 2 }, false, 'item.metal');
     syncTask(sim, c);
     expect(sim.world.get(c, TaskC)).toMatchObject({ machine: 'eat', state: 'Walk', class: 'any' });
     mealOf(sim, c)!.bb.n = 30;

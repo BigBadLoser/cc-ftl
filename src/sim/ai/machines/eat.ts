@@ -17,7 +17,7 @@ import { abortTask, endMeal, mealOf, startMeal, syncTask } from '../task';
 
 /**
  * The eat machine (docs/CREW_AI.md section 6): `Walk` to a spot (a galley, else a crate with food), then `Consume` (activity
- * 'eating'; the needs system counts the meal down and ends it). The task is the meal: `tile` the spot, `target` the galley there (0 at a
+ * 'eating'; the needs system counts the meal down and ends it). The task is the meal: `tile` the spot, `hot` at a galley (not at a
  * crate), `item` the ration, `n` the ticks left (-1 while walking).
  */
 
@@ -42,9 +42,9 @@ export function dropMeal(sim: Sim, id: number): void {
 }
 
 /** Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item` (never a tile that harms the eater). */
-function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: string): { x: number; y: number; galley: number; steps: Tile[] } | null {
-  let galley: { x: number; y: number; galley: number; steps: Tile[] } | null = null;
-  let crate: { x: number; y: number; galley: number; steps: Tile[] } | null = null;
+function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: string): { x: number; y: number; galley: boolean; steps: Tile[] } | null {
+  let galley: { x: number; y: number; galley: boolean; steps: Tile[] } | null = null;
+  let crate: { x: number; y: number; galley: boolean; steps: Tile[] } | null = null;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
@@ -52,12 +52,12 @@ function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: stri
     if (def.galley && m.enabled && m.powered) {
       const at = accessTile(def, m.x, m.y, m.rot);
       const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at);
-      if (at && steps && (!galley || steps.length < galley.steps.length)) galley = { x: at.x, y: at.y, galley: id, steps };
+      if (at && steps && (!galley || steps.length < galley.steps.length)) galley = { x: at.x, y: at.y, galley: true, steps };
     } else if (def.storage && sim.world.has(id, StorageC) && storageCount(sim, id, item) > 0) {
       const steps = safePathBeside(sim, crew, shipId, from, m.x, m.y);
       if (steps && (!crate || steps.length < crate.steps.length)) {
         const end = steps[steps.length - 1] ?? from;
-        crate = { x: end.x, y: end.y, galley: 0, steps };
+        crate = { x: end.x, y: end.y, galley: false, steps };
       }
     }
   }
