@@ -63,7 +63,7 @@ function stampWreck(sim: Sim, home: number): number {
   return stampShip(sim, { name: 'Bench hulk', rows, modules }, { faction: 'neutral', state: 'wreck', x: h.x + h.width + 16, y: h.y + 2 });
 }
 
-/** Put a working airlock on the wreck's hull. */
+/** Put a working airlock on the wreck's hull (the first spot that takes one, scanning from the top left). */
 function addAirlock(sim: Sim, wreck: number): void {
   const g = shipGrid(sim, wreck)!;
   for (let rot = 0; rot < 4; rot++) {

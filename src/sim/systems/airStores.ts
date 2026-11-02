@@ -20,13 +20,13 @@ export function airStoresSystem(sim: Sim): void {
   const tank = suitDef(sim).airSec;
   const lifeSupport = new Map<number, boolean>();
   for (const id of sim.world.query(AirlockC, ModuleC)) {
-    const a = sim.world.get(id, AirlockC)!;
     const cap = airlockAirCap(sim, id);
     const have = airlockAir(sim, id);
-    if (have >= cap && a.air === undefined) continue;
+    if (have >= cap) continue;
     const ship = shipIdOf(sim, sim.world.get(id, ModuleC)!);
     let ok = lifeSupport.get(ship);
     if (ok === undefined) lifeSupport.set(ship, (ok = shipHasLifeSupport(sim, ship)));
+    const a = sim.world.get(id, AirlockC)!;
     a.air = ok ? Math.min(cap, have + tank / AIRLOCK_AIR_REFILL_SEC) : have;
   }
   for (const id of sim.world.query(VehicleC)) {

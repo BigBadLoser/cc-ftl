@@ -13,8 +13,10 @@ export const variantKey = (v: BenchVariant): BenchKey => `${v.crew}${v.airlock ?
 
 /** Per seed: scrap units home after 2 game hours, and stripping jobs done on the wreck. */
 export const BASELINE: Record<BenchKey, readonly { scrap: number; stripped: number }[]> = {
-  '6': [],
-  '6lock': [],
-  '4': [],
-  '4lock': [],
+  '6': [{ scrap: 720, stripped: 519 }, { scrap: 702, stripped: 526 }, { scrap: 805, stripped: 565 }],
+  '4': [{ scrap: 841, stripped: 601 }, { scrap: 926, stripped: 661 }, { scrap: 766, stripped: 558 }],
+  // With an airlock on the wreck today's trip code gets nothing done: the landing crew path through the airlock, which is dead on a derelict
+  // (never cycles), and wait at its door for the rest of the shift. So these baselines are 0; the bench still holds them to "no worse".
+  '6lock': [{ scrap: 0, stripped: 0 }, { scrap: 0, stripped: 0 }, { scrap: 0, stripped: 0 }],
+  '4lock': [{ scrap: 0, stripped: 0 }, { scrap: 0, stripped: 0 }, { scrap: 0, stripped: 0 }],
 };

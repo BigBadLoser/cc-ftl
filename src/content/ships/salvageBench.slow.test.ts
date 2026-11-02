@@ -16,6 +16,14 @@ const env = (globalThis as { process?: { env: Record<string, string | undefined>
 const only = env.SALVAGE_BENCH_ONLY;
 const full = !!env.SALVAGE_BENCH || !!only;
 
+/** Append a result line to the file named by SALVAGE_BENCH_OUT (the runner's console is not shown); no file, no line. */
+async function record(line: string): Promise<void> {
+  const file = env.SALVAGE_BENCH_OUT;
+  if (!file) return;
+  const fs = await import(/* @vite-ignore */ ['node', 'fs'].join(':'));
+  fs.appendFileSync(file, `${line}\n`);
+}
+
 describe('salvage throughput bench', () => {
   it.skipIf(!!only)('runs: a short shift on the bench wreck brings scrap home, and the same seed gives the same run', () => {
     const quick = (): ReturnType<typeof runBench> => runBench(setupBench(1, { crew: 6, airlock: false }), 20 * 60 * 5);
@@ -30,14 +38,15 @@ describe('salvage throughput bench', () => {
       const key = variantKey(v);
       const seeds = [1, 2, 3].filter((s) => !only || only === `${key}:${s}`);
       if (seeds.length === 0) continue;
-      it(`${v.crew} crew, wreck ${v.airlock ? 'with' : 'without'} an airlock: no worse than the baseline of ${BASELINE_COMMIT}`, () => {
+      it(`${v.crew} crew, wreck ${v.airlock ? 'with' : 'without'} an airlock: no worse than the baseline of ${BASELINE_COMMIT}`, async () => {
         const base = BASELINE[key];
-        const perHour = seeds.map((s) => {
+        const perHour: number[] = [];
+        for (const s of seeds) {
           const r = runBench(setupBench(s, v), BENCH_TICKS);
-          console.log(`bench ${key} seed ${s}: ${formatBench(r)}`);
+          await record(`${key} seed ${s}: ${formatBench(r)} | ${JSON.stringify({ scrap: r.scrap, stripped: r.stripped })}`);
           if (base[s - 1]) expect(r.perHour).toBeGreaterThanOrEqual(0.9 * (base[s - 1]!.scrap / BENCH_HOURS)); // no baseline recorded yet: just measure
-          return r.perHour;
-        });
+          perHour.push(r.perHour);
+        }
         if (seeds.length === 3 && base.length === 3) expect(perHour.reduce((n, x) => n + x, 0) / 3).toBeGreaterThanOrEqual(base.reduce((n, b) => n + b.scrap, 0) / (3 * BENCH_HOURS));
       }, 3600000);
     }

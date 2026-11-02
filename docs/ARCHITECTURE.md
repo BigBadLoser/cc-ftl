@@ -1098,6 +1098,12 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 - **Acceptance** (slices 2 and 3): the mean is at least the baseline (no worse), and each seed is at least 90% of its own
   baseline (noise). The same numbers are printed by `npm run profile:sim -- --scenario salvageBench`, so they can be read
   without the test.
+- **Baseline recorded (slice 0, commit 6108953).** Scrap units home after 2 game hours, seeds 1, 2, 3 (the wreck is the 60x40 lattice of
+  `salvageBench.ts`, ambient arrivals switched off): 6 crew 720, 702, 805; 4 crew 841, 926, 766 (about 370 and 420 per game hour). With an
+  airlock on the wreck all six runs bring home 0: today's trip code lands the crew at the wreck's airlock and they path through it, but a
+  derelict's airlock never cycles (unpowered), so they wait at its door for the whole shift. Slices 2 and 3 should fix that, not preserve it; the
+  lock baselines are 0 so "no worse" holds trivially there. The full run is `SALVAGE_BENCH=1 npx vitest run salvageBench` (about 4 minutes a run);
+  `SALVAGE_BENCH_ONLY=6:2` runs one, `SALVAGE_BENCH_OUT=file` appends the numbers to a file.
 - A 4-crew variant (all four with construction and hauling at 1) is asserted too. With no home emergencies in the bench,
   cover holds nobody back.
 
