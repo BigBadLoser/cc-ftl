@@ -22,7 +22,42 @@ def flame_visible(visible):
             ob.hide_render=not visible
 
 
+def block_sprite(out,rot,part,preview=False):
+    """Stage 8's hull layers, from sprites/hull_engine at the module's anchor, rendered as the hull's own pieces are
+    (env_build, the walls+hull palette): part "hull" (the row's two inner tiles, full height, end cuts) or "block"
+    ("over": the thruster block and the bell's mounting ring, its px where it is in front of the hull row)."""
+    from sprites import env_build, hull_engine as HE
+    core.setup_scene()
+    core._state["scene"].cycles.samples=4 if preview else 24
+    post.select("walls+hull")
+    try:
+        sid=f"module.engine.{part}.r{rot}"
+        if part=="block":
+            c,op,g,ox,oy,_=env_build.render_sprite(sid,"over",HE.module_block(rot))
+        else:
+            c,op,g,ox,oy,_=env_build.render_sprite(sid,"block",HE.module_hull(rot))
+    finally:
+        post.select(False)
+    x0,y0,x1,y1=post.crop_box(op|(g[...,3]>0))
+    rgba=post.to_rgba(c,op)[y0:y1,x0:x1]
+    directory=out/"sprites"
+    directory.mkdir(parents=True,exist_ok=True)
+    post.write_png(directory/(sid+".png"),rgba)
+    post.write_png(directory/(sid+".glow.png"),g[y0:y1,x0:x1])
+    entry={"kind":"static","sheet":sid,"frame":{"x":0,"y":0,"w":int(x1-x0),"h":int(y1-y0)},
+           "anchor":{"x":int(ox-x0),"y":int(oy-y0)},"footprint":[5,4] if rot%2 else [4,5],"glow":False}
+    print("SPRITE",sid,entry,flush=True)
+    return sid,entry
+
+
+def stage_of(rot,stage):
+    """Stage 8 (the hull's thruster block) only where the hull row faces the camera; stage 7 elsewhere."""
+    return 7 if stage>=8 and rot not in (1,2) else stage
+
+
 def sprite(out,rot,hot,part,stage,preview=False):
+    if stage>=8 and part in ("hull","block"):
+        return block_sprite(out,rot,part,preview)
     core.setup_scene()
     core._state["scene"].cycles.samples=4 if preview else 24
     objects=model.hull(rot,stage) if part=="hull" else model.machine(rot,hot,stage,part=part)
@@ -185,7 +220,7 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--rot",type=int,nargs="+",default=[0,1],choices=range(4))
-    p.add_argument("--stage",type=int,default=7,choices=(1,2,3,4,5,6,7))
+    p.add_argument("--stage",type=int,default=7,choices=(1,2,3,4,5,6,7,8))
     p.add_argument("--save-blend",action="store_true")
     p.add_argument("--preview",action="store_true",help="Low-sample sprite review")
     p.add_argument("--review-walls",action="store_true",help="Build isolated 1.85 context hull sprites")
@@ -200,12 +235,14 @@ def main():
     fragment=a.out/"manifest.fragment.json"
     entries=json.loads(fragment.read_text())["assets"] if fragment.exists() else {}
     for r in a.rot:
+        stage=stage_of(r,a.stage)
         if not a.no_sprites:
-            for part,hot in (("hull",False),("machine",False),("machine",True),("machine.open",False),
-                             ("machine.open",True),("bell",False),("bell",True)):
-                if part!="hull" and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
+            parts=(("hull",False),)+((("block",False),) if stage>=8 else ())+(("machine",False),("machine",True),
+                   ("machine.open",False),("machine.open",True),("bell",False),("bell",True))
+            for part,hot in parts:
+                if part not in ("hull","block") and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
                     continue
-                sid,entry=sprite(a.out,r,hot,part,a.stage,a.preview)
+                sid,entry=sprite(a.out,r,hot,part,stage,a.preview)
                 entries[sid]=entry
             sheets={sid:{"image":f"sprites/{sid}.png","glow":f"sprites/{sid}.glow.png"} for sid in entries}
             manifest={"version":1,"sheets":sheets,"assets":entries}
@@ -213,7 +250,7 @@ def main():
         if not a.no_beauty:
             for hot in (False,True):
                 if a.beauty_state=="both" or hot==(a.beauty_state=="active"):
-                    beauty(a.out,r,hot,a.stage,a.save_blend)
+                    beauty(a.out,r,hot,stage,a.save_blend)
     entries=json.loads(fragment.read_text())["assets"] if fragment.exists() else entries
     (a.out/"design.json").write_text(json.dumps({"name":"KESTREL / 02","stage":a.stage,
         "rotationsRendered":sorted(int(s[-1]) for s in entries if s.startswith("module.engine.hull.r")),

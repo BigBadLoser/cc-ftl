@@ -114,6 +114,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let builtKey = "";
   let frameKey = "";
   let replaced = new Set<number>();
+  /** Of `replaced`, the tiles of engines behind the hull's thruster block: their own hull sprite in every view without a roof. */
+  let blockHull = new Set<number>();
   let airlocks = new Set<number>();
   /** The region's hull keys (hullArt), null for no new hull art (not a ship). */
   let hull: HullKeys | null = null;
@@ -139,10 +141,11 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   }
 
   /** Tile indices of the engine hull rows the bulkhead covers (walls up / roofed: it stands there in place of the hull wall). */
-  function engineHull(): Set<number> {
+  function engineHull(): [Set<number>, Set<number>] {
     const { world, modules } = host.overlayWorld;
     const tiles = engineHullTiles(world, modules, (x, y) => grid.inBounds(x, y));
-    return new Set(tiles.map((t) => (t.y - grid.y0) * width + (t.x - grid.x0))); // region-local index
+    const at = (t: { x: number; y: number }) => (t.y - grid.y0) * width + (t.x - grid.x0); // region-local index
+    return [new Set(tiles.map(at)), new Set(tiles.filter((t) => t.block).map(at))];
   }
 
   /** Door tiles of the docking airlocks (outer and inner): the airlock's own sprites (hull block, pod housing) stand there. */
@@ -217,7 +220,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
           // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
           // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
-          const engineUp = replaced.has(idx) && mode === "up";
+          // Behind the hull's thruster block the engine's own hull sprite stands there in every view without a roof, over
+          // the near hull's belly and cut top as in cutaway (no floor plate: the cut top shows behind the hull's back).
+          const engineUp = replaced.has(idx) && mode === "up" && !blockHull.has(idx);
           // The new hull (hullArt): roofed, the hull from outside over the tile's walls; in cutaway the near hull's belly
           // in place of its ghost. A tile without its art keeps the old pieces.
           // An engine's hull row and an airlock's door take the base hull piece when roofed (its top closes the roof
@@ -396,7 +401,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const mr = grid.revision("module");
       if (mr !== modRev) {
         modRev = mr;
-        replaced = engineHull();
+        [replaced, blockHull] = engineHull();
         airlocks = airlockHull();
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;

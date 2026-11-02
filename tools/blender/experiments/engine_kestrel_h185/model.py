@@ -4,12 +4,14 @@ One continuous chamber, integrated feed ring, swept ducts and a petal jacket.
 u points outboard. The 4x5 footprint and two-layer engine contract are fixed.
 """
 import math
+import sys
 from sprites import core, detail as D, greeble as G
 import hull_walls as walls
 from sprites import walls as W
 from sprites.cmbkit import Frame
 from geometry import annulus, curved_pipe, sleeve, torus
 from cassette import heavy_bed, armoured_powerhead, integrated_services
+import fittings as FT
 
 BZ=1.42
 WALL_Z=1.85
@@ -335,6 +337,8 @@ def nozzle(f,stage):
         annulus(f,3.86,4.0,1.085,1.3,BZ,"steel","plate",sides=16 if stage>=2 else 32)
         annulus(f,3.83,3.86,1.1,1.245,BZ,"gmD","brass",sides=32)
     for side in (-1,1):
+        if stage>=8:
+            continue
         if stage>=7:
             collector=rad(2.66)+0.1
             curved_pipe(f,[(2.31,side*0.59,1.55),(2.46,side*0.67,1.64),
@@ -348,6 +352,8 @@ def nozzle(f,stage):
                        (2.6,side*0.76,2.16),(2.66,side*0.43,2.22)],
                     0.075,"steelL",steps=5)
     f.hcyl(2.35,2.38,0,BZ,0.29,"dark",sides=24,cap="dark")
+    if stage>=8:
+        FT.nozzle(sys.modules[__name__],f,stage)
 
 
 def exhaust(f,stage):
@@ -363,10 +369,25 @@ def exhaust(f,stage):
 def machine(rot,hot=False,stage=1,holdout=True,part="machine"):
     """The engine's machine, split at the hull's outer face: part "machine" (inboard, the hull wall as a holdout, for
     walls-up and roofed views), "machine.open" (inboard without the wall, for the cutaway and low views) and "bell"
-    (outboard: nozzle, its pipework and the exhaust), each cut by the bulkhead."""
+    (outboard: nozzle, its pipework and the exhaust), each cut by the bulkhead (stage 8: by the hull's thruster
+    block and the hull row, fittings; the engine lower and the bell pushed out)."""
+    with FT.lowered(sys.modules[__name__],stage):
+        objects=_machine(rot,hot,stage,holdout,part)
+    if stage>=8 and part=="bell":
+        f=Frame(core.Mesh("unused"),rot,centre=CENTRE[rot])
+        (x0,y0),(x1,y1)=f.xy(0,0),f.xy(1,0)
+        for ob in objects:
+            ob.location=ob.location+core.G((x1-x0)*FT.PUSH,(y1-y0)*FT.PUSH,0)
+    return objects
+
+
+def _machine(rot,hot,stage,holdout,part):
     if holdout:
-        hull(rot,stage,True)
-        if part!="machine.open":
+        if stage>=8:
+            FT.holdouts(rot)
+        else:
+            hull(rot,stage,True)
+        if part!="machine.open" and stage<8:
             wall(rot)
     _,outer=strip(rot)
     cx,cy=CENTRE[rot]

@@ -224,12 +224,23 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
 /**
  * The sprite layers of a module, bottom first.
  *  - Engines: `<asset>.hull.r{n}` (the bulkhead, never cut; with the walls up or roofed it stands in a gap of the hull wall, otherwise the hull tile draws it), the
- *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), and the
- *    bell outside the hull `<asset>.bell.r{n}`, sorted by its own tile (`out`); `.active` while burning.
+ *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), the hull's thruster block
+ *    `<asset>.block.r{n}` (`engineBlock`: in every view, outside the hull) and the bell outside the hull `<asset>.bell.r{n}`, both
+ *    sorted by the tile beyond the hull row (`out`); `.active` while burning.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
  *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
+/**
+ * Whether an engine stands behind the hull's thruster block (`<asset>.block.r{n}`): its hull row faces the camera (+x or +y). Its
+ * hull layer is then the row's two inner tiles of plain hull, full height in every view without a roof (the whole assembly
+ * shows), closed at either end by a black cut; the far rotations keep the old bulkhead.
+ */
+export function engineBlock(def: ModuleDef, rot: number): boolean {
+  const side = hullSide(def, rot);
+  return side === 'e' || side === 's';
+}
+
 export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null, look?: ModuleLook): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
@@ -256,9 +267,12 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     const burn = active ? ['.active'] : [];
     const variant = (part: string) => [...burn.map((b) => `${a}.${part}${r}${b}`), `${a}.${part}${r}`];
     const machine = [...(open ? variant('machine.open') : []), ...variant('machine'), ...burn.map((b) => `${a}.machine${b}`), `${a}.machine`];
+    // The thruster block hangs outside the hull like the bell, just under it (the bell comes out of its port).
+    const block: ModuleLayer[] = engineBlock(def, m.rot) ? [{ chain: [`${a}.block${r}`], key: `${a}.block`, tiles: 'hull', out: true, dz: -0.01, optional: true }] : [];
     return [
       { chain: [`${a}.hull${r}`, `${a}.hull`], key: `${a}.hull`, tiles: 'hull' },
       { chain: machine, key: active ? `${a}.machine.active` : `${a}.machine`, tiles: 'rest' },
+      ...block,
       { chain: variant('bell'), key: `${a}.bell`, tiles: 'rest', out: true },
     ];
   }
@@ -296,7 +310,7 @@ export function layerKey(def: ModuleDef, m: Module, layer: ModuleLayer, i: numbe
     const side = hullSide(def, m.rot);
     const front = row.reduce((p, t) => (t.x + t.y > p.x + p.y ? t : p), row[0] ?? { x: m.x, y: m.y });
     const o = side ? hullOutward(side) : { x: 0, y: 0 };
-    return depthKey(front.x + o.x, front.y + o.y) + 0.5;
+    return depthKey(front.x + o.x, front.y + o.y) + 0.5 + (layer.dz ?? 0);
   }
   if (roofed && def.hullEdge) return depthKey(m.x, m.y) + 0.85 + i * 0.001;
   return key + (layer.dz ?? i * 0.001);

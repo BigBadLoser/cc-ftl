@@ -2,7 +2,7 @@ import type { World } from '../sim/ecs';
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
-import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, moduleAssets, moduleLayers } from './moduleArt';
+import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, engineBlock, moduleAssets, moduleLayers } from './moduleArt';
 import { depthKey } from './iso';
 
 const engine = content.modules['module.engine'];
@@ -22,9 +22,18 @@ describe('module layer depth', () => {
   });
   it('sorts the bell by the tile beyond the hull row, roofed or not, so it draws over the hull behind it', () => {
     const layers = moduleLayers(null as never, 1, m, engine, true, true);
-    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.machine.open.r1.active', 'module.engine.bell.r1.active']);
-    expect(layerKey(engine, m, layers[2]!, 2, false, 31)).toBe(34.5);
-    expect(layerKey(engine, m, layers[2]!, 2, true, 31)).toBe(34.5);
+    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.machine.open.r1.active', 'module.engine.block.r1', 'module.engine.bell.r1.active']);
+    expect(layerKey(engine, m, layers[3]!, 3, false, 31)).toBe(34.5);
+    expect(layerKey(engine, m, layers[3]!, 3, true, 31)).toBe(34.5);
+  });
+  it('sorts the thruster block just under the bell (the bell comes out of its port), on the near rotations only', () => {
+    const layers = moduleLayers(null as never, 1, m, engine, false);
+    const block = layers.find((l) => l.key === 'module.engine.block')!;
+    expect(block.tiles).toBe('hull');
+    expect(layerKey(engine, m, block, 2, true, 31)).toBeCloseTo(34.49);
+    expect(engineBlock(engine, 1) && engineBlock(engine, 2)).toBe(true);
+    expect(engineBlock(engine, 0) || engineBlock(engine, 3)).toBe(false);
+    expect(moduleLayers(null as never, 1, { ...m, rot: 3 } as Module, engine, false).some((l) => l.key === 'module.engine.block')).toBe(false);
   });
 });
 

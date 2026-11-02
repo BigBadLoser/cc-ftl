@@ -329,3 +329,58 @@ def end_cut(o, hull):
                 m.poly(q if sign > 0 else q[::-1], T.CUT)
     bm.free()
     return m.build()
+
+
+def ring(o):
+    """The bell's mounting ring in the port: a dark sleeve on its neck from inside the bore out past the collar."""
+    pt = _frame(o)
+    m = core.Mesh("hull_engine_ring")
+    r, d0, d1 = RS - 0.03, DF - RD, DF + 0.1
+    for i in range(N):
+        t0, t1 = 2 * math.pi * i / N, 2 * math.pi * (i + 1) / N
+        a = [pt(d0, r * math.cos(t), AXIS + r * math.sin(t)) for t in (t0, t1)]
+        b = [pt(d1, r * math.cos(t), AXIS + r * math.sin(t)) for t in (t0, t1)]
+        m.poly([a[0], a[1], b[1], b[0]], "steelD")
+    m.poly([pt(d1, r * math.cos(2 * math.pi * i / N), AXIS + r * math.sin(2 * math.pi * i / N)) for i in range(N)],
+           "steel")
+    return m.build()
+
+
+KESTREL = {1: 2, 2: 1}  # the Kestrel engine's rotations with its hull row facing the camera: their o
+
+
+def _to_module(rot, objs):
+    """Objects made at the block's frame (the row's front inner tile at the origin) moved to the engine module's
+    (its front tile, the row's last, at the origin: one tile on along the run)."""
+    dx, dy = X.STRAIGHT[(5, 2) if KESTREL[rot] == 2 else (10, 1)]
+    for ob in objs:
+        ob.location = ob.location - core.G(dx, dy, 0.0)
+    return objs
+
+
+def module_block(rot):
+    """module.engine.block.r<rot> ("over"): the block and the bell's mounting ring, over the row's four base hull
+    tiles, at the engine module's anchor."""
+    o = KESTREL[rot]
+    own, wide = piece(o)
+    own.append(ring(o))
+    _to_module(rot, wide + own[-1:])
+    return own, wide + own[-1:]
+
+
+def module_hull(rot):
+    """module.engine.hull.r<rot> (walls up and cutaway: the whole assembly shows): the row's two inner tiles of base
+    hull, full height, closed at either end by end_cut, at the engine module's anchor."""
+    o = KESTREL[rot]
+    mask = 5 if o == 2 else 10
+    dx, dy = X.STRAIGHT[(mask, o)]
+    was, T.VARIANT = T.VARIANT, (0, 0)
+    try:
+        hull = []
+        for k in (-1, 0):
+            for ob in X.ext_block(mask, o):
+                ob.location = ob.location + core.G(k * dx, k * dy, 0.0)
+                hull.append(ob)
+    finally:
+        T.VARIANT = was
+    return _to_module(rot, hull + [end_cut(o, hull)])

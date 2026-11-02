@@ -5,6 +5,7 @@ import { hullRow } from "../sim/modules/footprint";
 import type { ModuleDef } from "../sim/registry";
 import { Struct } from "../sim/structure";
 import { hullKey, hullKeyGeneric, hullKeyName, hullOutline, type Front } from "./hullKey";
+import { engineBlock } from "./moduleArt";
 import { motifColours, SCHEMES } from "./roofArt";
 import { tileHash, type KindAt } from "./tiles";
 
@@ -160,16 +161,18 @@ export function hullPaintParam(search: string): HullPaint | null {
 
 /**
  * Hull tiles an engine's bulkhead stands on: its hull row's inner tiles (the two end tiles keep their hull wall, the
- * sprite stops inside them). Global tiles; `inside` limits the engines to one region.
+ * sprite stops inside them). Global tiles; `inside` limits the engines to one region. `block`: the engine stands behind
+ * the hull's thruster block (`engineBlock`), its own hull sprite there in every view without a roof.
  */
-export function engineHullTiles(world: World, defs: Readonly<Record<string, ModuleDef>>, inside: (x: number, y: number) => boolean): { x: number; y: number }[] {
-  const out: { x: number; y: number }[] = [];
+export function engineHullTiles(world: World, defs: Readonly<Record<string, ModuleDef>>, inside: (x: number, y: number) => boolean): { x: number; y: number; block: boolean }[] {
+  const out: { x: number; y: number; block: boolean }[] = [];
   for (const id of world.query(ModuleC)) {
     const m = world.get(id, ModuleC);
     const def = m && defs[m.def];
     if (!m || !def?.hullEdge || !inside(m.x, m.y)) continue;
     const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
-    out.push(...row.slice(1, -1));
+    const block = engineBlock(def, m.rot);
+    out.push(...row.slice(1, -1).map((t) => ({ ...t, block })));
   }
   return out;
 }

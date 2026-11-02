@@ -180,7 +180,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
       const from = out.length;
-      painting = roofed && layer.tiles === 'hull' && !!host.hullPaint; // (roofed: the hull around it is painted too)
+      painting = roofed && layer.tiles === 'hull' && !layer.out && !!host.hullPaint; // (roofed: the hull around it is painted too; not the block: bare steel)
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (layer.at) {
         const k = key(layer.at.x, layer.at.y);
@@ -337,10 +337,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const layers = withRuin.flatMap((layer) => {
           // Containers ride outside the hull: never under a roof.
           if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
-          // Roofed, the new hull runs over an engine's hull row (its plain piece): no bulkhead.
-          if (roofed && def.hullEdge && layer.tiles === 'hull' && host.hullDrawn && hullRow(def, m.x, m.y, m.rot).every((t) => host.hullDrawn!(t.x, t.y))) return [];
+          // Roofed, the new hull runs over an engine's hull row (its plain piece): no bulkhead (the thruster block stays, over it).
+          if (roofed && def.hullEdge && layer.tiles === 'hull' && !layer.out && host.hullDrawn && hullRow(def, m.x, m.y, m.rot).every((t) => host.hullDrawn!(t.x, t.y))) return [];
           // firstOf queues the sheet; while it loads the container draws nothing (not the stand-in box).
-          const first = def.container ? atlas.firstOf(layer.chain) : undefined;
+          const first = def.container || layer.optional ? atlas.firstOf(layer.chain) : undefined;
           if (def.container && !first && atlas.loading(layer.chain)) return [];
           if (layer.optional) {
             const o = first;
