@@ -366,3 +366,12 @@ export const SALVAGE_FRAC = 0.4;
 export const SALVAGE_EVERY = 10;
 /** Most stripping jobs open at once on one wreck (the crew take the rest as these finish). */
 export const SALVAGE_JOBS_OPEN = 8;
+/** Most crew one salvage shift sends to a wreck (also capped by the shuttle's suits and seats, and by half the able crew aboard). */
+export const SALVAGE_TEAM = 3;
+/** A salvage team member comes home below this rest, or this hunger (0..100: just above where they would sleep or go to eat). */
+export const SALVAGE_TEAM_REST = 25;
+export const SALVAGE_TEAM_HUNGER = 35;
+/** A shift only takes crew with rest and hunger at or above this. */
+export const SALVAGE_TEAM_GO = 60;
+/** A salvage team member goes to refill the suit (at the hovering shuttle or an airlock on the wreck) below this share of a full tank. */
+export const SALVAGE_REFILL_FRAC = 0.4;

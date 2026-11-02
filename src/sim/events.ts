@@ -100,6 +100,8 @@ export type SimEvent =
   | { type: 'salvage.ordered'; ship: number; types: string[] }
   | { type: 'salvage.blocked'; ship: number; reason: string }
   | { type: 'salvage.done'; ship: number; removed: boolean }
+  | { type: 'salvage.teamSent'; ship: number; vehicle: number; crew: number[] }
+  | { type: 'salvage.teamHome'; ship: number; vehicle: number; reason: string }
   /** A ship's heat hit the maximum: lockout (no weapons, no shields) until it cools. */
   | { type: 'combat.overheated'; ship: number }
   /** A ship started venting heat (shields down, weapons held). */

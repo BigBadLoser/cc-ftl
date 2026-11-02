@@ -7,8 +7,11 @@ import type { ItemQty } from '../registry';
  */
 export type VehicleState = 'stowed' | 'flying' | 'docked';
 
-/** Where a flying vehicle is headed. `bay` is its home bay. */
-export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; ship: number };
+/**
+ * Where a flying vehicle is headed. `bay` is its home bay. A hover's `box` (sector tiles) replaces the ship's bounding box when the hover point
+ * is worked out: a salvage shuttle keeps close to the hull that is left of a wreck.
+ */
+export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; ship: number; box?: { x: number; y: number; w: number; h: number } };
 
 /**
  * A shuttle: an entity, never a grid. It has no tiles; crew who embark are hidden (see AboardC) and listed in `pilot` /

@@ -87,11 +87,13 @@ export function bayWorking(sim: Sim, bay: number): boolean {
 /**
  * Where a shuttle holds station beside a ship (ShipC entity id): `gap` tiles off the side of the ship's bounding box that
  * faces `from`, level with the nearest point of that side (never off a corner, so the hull stays within a short float). A
- * point inside the box leaves through its nearest side. Null if the ship is gone.
+ * point inside the box leaves through its nearest side. `box` (sector tiles) stands in for the bounding box: the hull's live
+ * extent, for a shuttle that keeps close to a wreck being stripped. Null if the ship is gone.
  */
-export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: number; y: number }): { x: number; y: number } | null {
-  const s = shipById(sim, ship);
-  if (!s) return null;
+export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: number; y: number }, box?: { x: number; y: number; w: number; h: number }): { x: number; y: number } | null {
+  const ss = shipById(sim, ship);
+  if (!ss) return null;
+  const s = box ? { x: box.x, y: box.y, width: box.w, height: box.h } : ss;
   const nx = Math.min(s.x + s.width, Math.max(s.x, from.x));
   const ny = Math.min(s.y + s.height, Math.max(s.y, from.y));
   let dx = from.x - nx;

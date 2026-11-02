@@ -190,5 +190,5 @@ function salvageInfo(sim: Sim, id: number): UiSalvage {
   const left = workLeft(sim, id, o.types);
   const h = hostilesAboard(sim, id);
   const why = [h.crew ? 'hostiles aboard' : '', h.sacs ? 'egg sacs aboard' : '', h.nests ? 'nests aboard' : ''].filter(Boolean).join(', ');
-  return { types, order: { types: [...o.types], status: o.status, block: o.status === 'blocked' ? why || 'hostiles aboard' : '', done: o.done ?? 0, total: (o.done ?? 0) + left } };
+  return { types, order: { types: [...o.types], status: o.status, block: o.status !== 'blocked' ? '' : o.block === 'noShuttle' ? 'no free shuttle with suits' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard', done: o.done ?? 0, total: (o.done ?? 0) + left } };
 }
