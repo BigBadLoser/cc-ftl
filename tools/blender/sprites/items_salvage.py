@@ -15,6 +15,7 @@ import math
 
 from . import core
 from .items import HELD_K, _fin
+from .items_kit import tube
 from .items_salvage_fill import CONTENTS
 
 # ---- crate body --------------------------------------------------------------------------------------------------
@@ -120,26 +121,40 @@ def unit(kind, k=1.0):
     return build
 
 
+CLOTH = __import__("os").environ.get("CLOTH_STYLE", "A")   # review only: A strapped bale, B rolled bolts, C banded folds
+
+
+def _slab(m, ex, ey, z0, z1, side, top, k, dx=0.0, dy=0.0):
+    """One fold of cloth: a soft-cornered slab with a dark crease along its underside."""
+    out = [(x + dx * k, y + dy * k) for x, y in _profile(ex, ey, 0.03 * k, 3)]
+    _ring(m, out, z0, z0 + 0.012 * k, "svKS4", True)
+    _ring(m, out, z0 + 0.012 * k, z1, side, True)
+    m.poly([core.G(*p, z1) for p in out], top, flip=True)
+    m.poly([core.G(*p, z0) for p in out][::-1], "svKS4", flip=True)
+
+
 def cloth(k=1.0, folds=3):
-    """A bale of folded cloth the size of a crate: `folds` off-white slabs, each a little askew, with a red stripe
-    woven along its sides near the top."""
+    """Cloth in a unit the size of a crate (it stacks on the same grid)."""
     def build():
         m = core.Mesh(f"cloth_{'held' if k < 1 else 'unit'}")
         hz = H / folds
         askew = ((0.006, -0.008, 1.0), (-0.006, 0.006, 0.97), (0.004, 0.004, 0.94))      # (dx, dy, scale) per fold
-        for i in range(folds):
-            dx, dy, sc = askew[i]
-            ex, ey = (SX / 2 - 0.004) * sc * k, (SY / 2 - 0.004) * sc * k
-            out = [(x + dx * k, y + dy * k) for x, y in _profile(ex, ey, 0.03 * k, 3)]
-            z0, z1 = i * hz * k, (i + 1) * hz * k
-            zs = z0 + (z1 - z0) * 0.4
-            sw = 0.026 * k                                                                    # stripe: >= 1 px at 1x
-            _ring(m, out, z0, z0 + 0.012 * k, "svKS4", True)                                  # the fold's underside
-            _ring(m, out, z0 + 0.012 * k, zs, "svKS2", True)
-            _ring(m, out, zs, zs + sw, "svKred", True)                                       # red stripe
-            _ring(m, out, zs + sw, z1, "svKS2", True)
-            m.poly([core.G(*p, z1) for p in out], "svKS0", flip=True)
-            m.poly([core.G(*p, z0) for p in out][::-1], "svKS3", flip=True)
+        if CLOTH in ("A", "C"):
+            for i in range(folds):
+                dx, dy, sc = askew[i]
+                red = CLOTH == "C" and i % 2 == 1
+                _slab(m, (SX / 2 - 0.004) * sc * k, (SY / 2 - 0.004) * sc * k, i * hz * k, (i + 1) * hz * k,
+                      "svKred" if red else "svKS2", "svKred" if red else "svKS0", k, dx, dy)
+            if CLOTH == "A":                                                                 # a red strap round the bale
+                w, t, ex = 0.05 * k, 0.008 * k, (SX / 2) * 0.94 * k
+                m.box((0, 0, H * k), (2 * ex + 2 * t, w, t), "svKredD", top="svKred", base=True)
+                for sx in (1, -1):
+                    m.box((sx * (ex + t / 2), 0, 0), (t, w, H * k + t), "svKred", base=True)
+        else:                                                                                # rolled bolts, 2 + 1
+            r, L = 0.058, 0.34
+            for x, z, col, end in ((-0.064, r, "svKS1", "svKS3"), (0.064, r, "svKS1", "svKS3"),
+                                   (0.0, r + 0.1, "svKred", "svKredD")):
+                tube(m, (x * k, -L / 2 * k, z * k), (x * k, L / 2 * k, z * k), r * k, col, cap=end, sides=12)
         return [m.build()] if k == 1.0 else [_fin(m, HELD_K)]
     return build
 
