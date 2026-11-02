@@ -5,7 +5,7 @@ import { policyById } from './utility';
 import type { Blackboard, DriveId, Interrupt, Task, TaskClass } from './types';
 
 /**
- * The AI debug inspector's core (docs/CREW_AI.md section 11), first cut: per crew member the policy and drive, the interrupt, and
+ * The AI debug inspector's core (docs/CREW_AI.md section 11): per crew member the policy, the drive scores, latches and blocks, the interrupt, and
  * the task's state path and holds. Pure: it reads the sim and never changes it. Phase 2 adds the job side (candidates, tuples).
  */
 export interface CrewExplain {
@@ -13,8 +13,14 @@ export interface CrewExplain {
   name: string;
   policy: string | null;
   drive: DriveId | null;
-  /** Drive scores by drive id (per mille). */
+  /** Drive scores by drive id (per mille), in the policy's drive order. */
   scores: Record<string, number>;
+  /** Drives whose Schmitt latch is on. */
+  latched: DriveId[];
+  /** A drive that wants to act but cannot (`requires` failed with `onMissing: 'block'`). */
+  blocked: DriveId | null;
+  /** A job the scheduler keeps this crew member off, and until when (left for a hazard). */
+  avoid: { job: number; until: number } | null;
   interrupt: Interrupt | null;
   task: {
     /** Suspended parents first, the active machine last: `generic/Navigate > eva/ToAirlock`. */
@@ -41,13 +47,18 @@ export function explainCrew(sim: Sim, id: number): CrewExplain {
   const task = sim.world.get(id, TaskC);
   const job = task?.job ? sim.world.get(task.job, JobC) : undefined;
   const scores: Record<string, number> = {};
-  if (intent) policyById(sim, intent.policy).drives.forEach((d, i) => (scores[d.id] = intent.scores[i] ?? 0));
+  const drives = intent ? policyById(sim, intent.policy).drives : [];
+  drives.forEach((d, i) => (scores[d.id] = intent?.scores[i] ?? 0));
+  const latched = drives.filter((_, i) => ((intent?.latched ?? 0) & (1 << i)) !== 0).map((d) => d.id);
   return {
     id,
     name: sim.world.get(id, CrewC)?.name ?? '',
     policy: intent?.policy ?? null,
     drive: intent?.drive ?? null,
     scores,
+    latched,
+    blocked: intent?.blocked ?? null,
+    avoid: intent?.avoid && sim.tick < intent.avoid.until ? intent.avoid : null,
     interrupt: sim.world.get(id, InterruptC) ?? null,
     task: task ? {
       path: taskPath(task),

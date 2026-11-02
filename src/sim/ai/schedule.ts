@@ -1,4 +1,4 @@
-import { AssignmentC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Position } from '../crew/components';
+import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Position } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { dropCarried } from '../items/stacks';
@@ -32,7 +32,7 @@ const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
 };
 
 /** Whether a drive's own task is under way (`keepWhileTask`). */
-const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => machine === 'eat' && sim.world.has(id, EatC);
+const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => sim.world.get(id, TaskC)?.machine === machine && machine === 'eat';
 
 /**
  * Crew decisions, in `decide`'s slot (docs/CREW_AI.md sections 4 and 7). Per crew member in id order: the forced states keep them

@@ -198,34 +198,14 @@ export interface Carried {
 }
 export const CarriedC = defineComponent<Carried>('carried');
 
-/** A bed module this crew member has reserved for sleeping. */
-export interface BedClaim {
-  bed: number;
-}
-export const BedClaimC = defineComponent<BedClaim>('bedClaim');
-
 /**
  * The bed module a crew member owns: assigned by the bed-owner pass (nearest unowned bed on their ship) and kept until the
- * bed is lost or they change ship. Tired crew walk to it first (BedClaim is the temporary reservation for one sleep).
+ * bed is lost or they change ship. Tired crew walk to it first (the sleep task's bed hold is the temporary reservation for one sleep).
  */
 export interface BedOwner {
   bed: number;
 }
 export const BedOwnerC = defineComponent<BedOwner>('bedOwner');
-
-/**
- * A hungry crew member on the way to eat (left = -1) or eating (left = ticks to go). `x, y` is the tile to stand on:
- * a galley's access tile (`galley`) or a walkable tile beside a storage crate holding `item`. The ration is taken from
- * storage when the meal starts, nutrition is added when it ends.
- */
-export interface Eat {
-  x: number;
-  y: number;
-  galley: boolean;
-  item: string;
-  left: number;
-}
-export const EatC = defineComponent<Eat>('eat');
 
 /** One named reason for the mood score: `key` names it (the UI labels it), `value` is its points. */
 export interface MoodFactor {

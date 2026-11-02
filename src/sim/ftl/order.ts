@@ -1,9 +1,9 @@
 import { CombatC, ShipC } from '../combat/components';
-import { abortTask, reserveJob } from '../ai/task';
+import { abortTask, claimedBed, mealOf, reserveJob } from '../ai/task';
 import { skillOf } from '../combat/operators';
 import { shipById } from '../combat/ships';
 import {
-  AssignmentC, BedClaimC, CrewC, DeadC, DraftedC, EatC, JobC, PathC, PositionC, type Position,
+  AssignmentC, CrewC, DeadC, DraftedC, JobC, PathC, PositionC, type Position,
 } from '../crew/components';
 import { isIncapacitated, jobGoal, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
@@ -36,7 +36,7 @@ function candidates(sim: Sim, ship: number): number[] {
   for (const id of sim.world.query(CrewC, PositionC, PathC)) {
     const crew = sim.world.get(id, CrewC);
     if (!crew || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC) || sim.world.has(id, EmbarkOrderC) || sim.world.has(id, AboardC)) continue;
-    if (sim.world.has(id, EatC) || sim.world.has(id, BedClaimC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    if (mealOf(sim, id) || claimedBed(sim, id) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
     if (['sleeping', 'charging', 'eating'].includes(crew.activity) || sim.world.get(id, AllegianceC)?.faction !== faction) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== ship) continue;
     const a = sim.world.get(id, AssignmentC);

@@ -1,5 +1,5 @@
 import { ammoCount, consumeAmmo } from '../../combat/ammo';
-import { CrewC, EatC, PathC, type Crew, type Path, type Position } from '../../crew/components';
+import { CrewC, PathC, type Crew, type Path, type Position } from '../../crew/components';
 import { foodOn } from '../../crew/eating';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
@@ -13,11 +13,12 @@ import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { EAT_SEC } from '../../tuning';
 import { safePathBeside, unsafeFor } from '../hazard';
-import { abortTask, syncTask } from '../task';
+import { abortTask, endMeal, mealOf, startMeal, syncTask } from '../task';
 
 /**
  * The eat machine (docs/CREW_AI.md section 6): `Walk` to a spot (a galley, else a crate with food), then `Consume` (activity
- * 'eating'; the needs system counts the meal down and ends it). Phase 1: `EatC` stays the saved truth (`left` -1 while walking).
+ * 'eating'; the needs system counts the meal down and ends it). The task is the meal: `tile` the spot, `hot` at a galley (not at a
+ * crate), `item` the ration, `n` the ticks left (-1 while walking).
  */
 
 /** The eat drive's turn: true while the crew member is busy with a meal (the task mirrors it), false to carry on as usual. */
@@ -29,14 +30,14 @@ export function eatTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolea
 
 /** The meal is over (the needs system fed them): the task ends. */
 export function finishMeal(sim: Sim, id: number): void {
-  sim.world.remove(id, EatC);
+  endMeal(sim, id);
   (sim.world.get(id, CrewC) as Crew).activity = 'idle';
   syncTask(sim, id);
 }
 
 /** An interrupted meal is dropped (drafted, or no longer eating): the ration already taken is lost. */
 export function dropMeal(sim: Sim, id: number): void {
-  sim.world.remove(id, EatC);
+  endMeal(sim, id);
   syncTask(sim, id);
 }
 
@@ -70,43 +71,45 @@ function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: stri
  * Starting a trip drops the current job and any load.
  */
 function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
-  let eat = sim.world.get(id, EatC);
-  if (eat && eat.left >= 0) return true;
-  const item = eat?.item && ammoCount(sim, shipIdOf(sim, pos), eat.item) > 0 ? eat.item : foodOn(sim, shipIdOf(sim, pos));
+  let meal = mealOf(sim, id);
+  if (meal && (meal.bb.n ?? -1) >= 0) return true;
+  const want = meal?.bb.item;
+  const item = want && ammoCount(sim, shipIdOf(sim, pos), want) > 0 ? want : foodOn(sim, shipIdOf(sim, pos));
   if (!item) {
-    sim.world.remove(id, EatC);
+    endMeal(sim, id);
     return false;
   }
   const path = sim.world.get(id, PathC) as Path;
-  if (!eat) {
+  if (!meal) {
     if ((sim.tick + id) % 20 !== 0) return false; // look for a spot once a second, not every tick
     const spot = pickSpot(sim, id, shipIdOf(sim, pos), origin(pos), item);
     if (!spot) return false;
     abortTask(sim, id, 'drive');
     dropCarried(sim, id);
-    sim.world.add(id, EatC, (eat = { x: spot.x, y: spot.y, galley: spot.galley, item, left: -1 }));
+    meal = startMeal(sim, id, { x: spot.x, y: spot.y }, spot.galley, item);
     path.steps = spot.steps;
   }
-  if (unsafeFor(sim, id, shipIdOf(sim, pos), eat.x, eat.y)) {
-    sim.world.remove(id, EatC); // the spot now harms them: look again later
+  const at = meal.bb.tile as { x: number; y: number };
+  if (unsafeFor(sim, id, shipIdOf(sim, pos), at.x, at.y)) {
+    endMeal(sim, id); // the spot now harms them: look again later
     clearPath(sim, id);
     return false;
   }
   if (!isSettled(pos) || path.steps.length > 0) return true; // still walking
-  if (pos.x === eat.x && pos.y === eat.y) {
+  if (pos.x === at.x && pos.y === at.y) {
     if (!consumeAmmo(sim, shipIdOf(sim, pos), item)) {
-      sim.world.remove(id, EatC);
+      endMeal(sim, id);
       return false;
     }
-    eat.item = item;
-    eat.left = Math.round(EAT_SEC * TICK_HZ);
+    meal.bb.item = item;
+    meal.bb.n = Math.round(EAT_SEC * TICK_HZ);
     clearPath(sim, id);
     crew.activity = 'eating';
     return true;
   }
-  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: eat.x, y: eat.y });
+  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: at.x, y: at.y });
   if (!steps || steps.length === 0) {
-    sim.world.remove(id, EatC);
+    endMeal(sim, id);
     return false;
   }
   path.steps = steps;

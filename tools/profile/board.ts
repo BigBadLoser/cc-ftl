@@ -7,7 +7,7 @@
  * (jobs by crew, beds by crew). The `meta` (scenario, seed, tick) also lets the exact state be rebuilt by running the scenario to that tick.
  */
 import {
-  AssignmentC, BedClaimC, CarryingC, CrewC, DraftedC, EatC, JobC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, shipGrid, shipIds, shipIdOf,
+  AssignmentC, CarryingC, CrewC, DraftedC, JobC, TaskC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, shipGrid, shipIds, shipIdOf,
   EVA_THIN_AIR_BELOW, freeSuits, airlockSuits, hasSuitAir, isSuited, type Sim,
 } from '../../src/sim';
 import { AirlockC } from '../../src/sim/modules/airlock';
@@ -94,8 +94,8 @@ export function dumpBoard(sim: Sim, meta: BoardMeta): Board {
     crew.push({
       id, name: c.name, role: c.role, ship: shipIdOf(sim, p), x: p.x, y: p.y, toX: p.toX, toY: p.toY, activity: c.activity, pathLen: sim.world.get(id, PathC)!.steps.length,
       priorities: { ...sim.world.get(id, PrioritiesC)! }, job: sim.world.get(id, AssignmentC)?.jobId ?? 0, drafted: sim.world.has(id, DraftedC),
-      incapacitated: isIncapacitated(sim, id), offDuty: isOffDuty(sim, id), suited: isSuited(sim, id), suitAir: hasSuitAir(sim, id), eating: sim.world.has(id, EatC),
-      bed: sim.world.get(id, BedClaimC)?.bed ?? 0, carrying: carry ? `${carry.item}x${carry.count}` : null,
+      incapacitated: isIncapacitated(sim, id), offDuty: isOffDuty(sim, id), suited: isSuited(sim, id), suitAir: hasSuitAir(sim, id), eating: sim.world.get(id, TaskC)?.machine === 'eat',
+      bed: sim.world.get(id, TaskC)?.machine === 'sleep' ? (sim.world.get(id, TaskC)!.holds.find((h) => h.kind === 'bed')?.id ?? 0) : 0, carrying: carry ? `${carry.item}x${carry.count}` : null,
     });
   }
   const airlocks: Board['airlocks'] = [];

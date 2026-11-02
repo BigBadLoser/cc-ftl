@@ -1,9 +1,9 @@
-import { AssignmentC, BedClaimC, CrewC, DeadC, DownedC, JobC, type Job } from '../crew/components';
+import { AssignmentC, CrewC, DeadC, DownedC, JobC, type Job } from '../crew/components';
 import { isErrand } from '../eva/errands';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TaskC } from './components';
-import { deriveTask } from './task';
+import { claimedBed, deriveTask } from './task';
 
 /**
  * The reservation audit (docs/CREW_AI.md section 3, invariants 1, 2, 3 and 5 as far as Phase 1 holds them). Pure: it reads the sim.
@@ -41,7 +41,7 @@ export function auditReservations(sim: Sim): AuditReport {
     else if (!isErrand(job) && parkedBy(sim, id, c)) pendingSweep++;
     else problems.push(`job ${id} (${job.kind}) reserved by ${c}${alive(sim, c) ? '' : ' (gone)'} whose task does not hold it`);
   }
-  // 3. Every crew member's task is the one the legacy components imply (the mirror is current), and holds one root job at most.
+  // 3. Every crew member's job task is the one `AssignmentC` implies (the mirror is current), and holds one root job at most.
   for (const c of sim.world.query(CrewC)) {
     const task = sim.world.get(c, TaskC);
     const want = deriveTask(sim, c);
@@ -49,7 +49,9 @@ export function auditReservations(sim: Sim): AuditReport {
     if (a && !task) problems.push(`crew ${c} holds job ${a.jobId} with no task`);
     if (!task) continue;
     if (sim.world.has(c, DeadC)) problems.push(`dead crew ${c} has a task`);
-    if (want && (want.job !== task.job || want.machine !== task.machine || want.stack.length !== task.stack.length || JSON.stringify(want.holds) !== JSON.stringify(task.holds))) {
+    // A need task is its own truth (its bed hold included): only its machine is compared with what the activity implies.
+    const mirrored = want && want.job !== 0;
+    if (want && (want.job !== task.job || want.machine !== task.machine || (mirrored && (want.stack.length !== task.stack.length || JSON.stringify(want.holds) !== JSON.stringify(task.holds))))) {
       problems.push(`crew ${c} task ${task.machine}/${task.state} job ${task.job} does not mirror ${want.machine} job ${want.job}`);
     }
     if (!want && task.job !== 0) problems.push(`crew ${c} task holds job ${task.job} but has no assignment`);
@@ -66,7 +68,7 @@ export function auditReservations(sim: Sim): AuditReport {
     const m = sim.world.get(id, ModuleC);
     if (!m || !m.reservedBy || !sim.content.modules[m.def]?.bed) continue;
     const b = m.reservedBy;
-    const lines = Number(sim.world.get(b, BedClaimC)?.bed === id) + Number(sim.world.get(b, DownedC)?.bed === id);
+    const lines = Number(claimedBed(sim, b) === id) + Number(sim.world.get(b, DownedC)?.bed === id);
     if (lines !== 1) problems.push(`bed ${id} reserved by ${b} with ${lines} lifelines`);
   }
   return { problems, pendingSweep };

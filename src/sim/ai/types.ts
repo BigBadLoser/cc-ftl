@@ -1,7 +1,7 @@
 /**
- * Crew AI data (docs/CREW_AI.md section 3). Plain serializable data, entities by id. Phase 1: `AssignmentC` (and the legacy
- * need components `BedClaimC`, `EatC`, the crew activity) stay the saved truth; `Task` mirrors them, `Intent` is written by
- * `policy.legacy` and `Interrupt` by a read-only detector. Nothing reads these three to decide what a crew member does yet.
+ * Crew AI data (docs/CREW_AI.md section 3). Plain serializable data, entities by id. A job task mirrors `AssignmentC` (still the
+ * saved truth for jobs); a need task is its own truth (the sleep's bed claim is its hold, the meal its blackboard; Phase 3).
+ * `Intent` is written by the utility engine (ai/utility.ts) and `Interrupt` by the forced-state detector (ai/interrupt.ts).
  */
 
 /** What a crew member wants (a utility drive). `idle` and `leisure` are jobless. */
@@ -26,6 +26,13 @@ export interface Blackboard {
   tile2?: TileRef;
   n?: number;
   deadline?: number;
+  /** An item content id (the eat task's ration). */
+  item?: string;
+  /**
+   * The eat task's meal is at a galley (a hot meal, a mood bonus). Plain data, not the galley's id: a meal outlives its galley
+   * (dismantled mid-meal, or left on the other side of a cut by `sector/refs.ts`).
+   */
+  hot?: boolean;
 }
 
 /** A suspended parent machine on the task stack (EVA nesting). */

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CrewC, DraftedC, IntentC, InterruptC, HealthC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
+  AssignmentC, CrewC, DraftedC, IntentC, InterruptC, HealthC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
   shipGrid, Struct, type ContentRegistry, type Sim,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
+import { explainCrew } from '../../sim/ai/explain';
 import { hazardHolds } from '../../sim/ai/hazard';
-import { reserveJob } from '../../sim/ai/task';
+import { claimedBed, reserveJob } from '../../sim/ai/task';
 import { hazardsHere } from '../../sim/crew/hazard';
 import { isSettled } from '../../sim/crew/helpers';
 import { SuitC } from '../../sim/eva/components';
@@ -98,8 +99,7 @@ describe('hazard interrupt', () => {
       sim.step();
       const p = at(sim, c);
       if (i > 60 && p.x === t.x && p.y === t.y) back++;
-      const claim = sim.world.get(c, BedClaimC);
-      const bed = claim && sim.world.get(claim.bed, ModuleC);
+      const bed = sim.world.get(claimedBed(sim, c), ModuleC);
       if (bed) expect({ x: bed.x, y: bed.y }).not.toEqual(t);
     }
     expect(back).toBe(0);
@@ -168,6 +168,7 @@ describe('hazard interrupt', () => {
     expect(sim.world.get(c, AssignmentC)?.jobId).not.toBe(j);
     expect(sim.world.get(j, JobC)?.reservedBy).not.toBe(c);
     expect(sim.world.get(c, IntentC)!.avoid?.job).toBe(j);
+    expect(explainCrew(sim, c).avoid?.job).toBe(j); // the inspector shows it
   });
 
   it('thin air harms only the unsuited: a suited crew member stays', () => {
@@ -230,6 +231,7 @@ describe('leisure drive', () => {
       if (mood().relax) break;
     }
     expect(breaks).toBeGreaterThan(0);
+    expect(explainCrew(sim, c)).toMatchObject({ latched: ['leisure'], scores: { leisure: 90, work: 100 } });
     expect(mood().relax).toBeGreaterThan(0);
     for (let i = 0; i < 20; i++) sim.step(); // the next mood pass counts it
     expect(mood().factors.map((f) => f.key)).toContain('relaxed');

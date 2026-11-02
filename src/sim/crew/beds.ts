@@ -1,6 +1,6 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { BedClaimC, BedOwnerC } from './components';
+import { BedOwnerC } from './components';
 import { findPath, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 
@@ -50,24 +50,10 @@ export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = fal
   return best;
 }
 
-/** Claim a bed for one sleep: the bed is reserved to the sleeper, who holds it until they wake or are pulled away. */
-export function claimBed(sim: Sim, crew: number, bed: number): void {
-  (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = crew;
-  sim.world.add(crew, BedClaimC, { bed });
-}
-
 /** Free a bed reserved by `crew` (no-op if it is not theirs). */
 export function releaseBed(sim: Sim, bed: number, crew: number): void {
   const m = sim.world.get(bed, ModuleC);
   if (m && m.reservedBy === crew) m.reservedBy = 0;
-}
-
-/** Drop a crew member's sleeping-bed claim and free the bed. */
-export function releaseBedClaim(sim: Sim, crew: number): void {
-  const claim = sim.world.get(crew, BedClaimC);
-  if (!claim) return;
-  releaseBed(sim, claim.bed, crew);
-  sim.world.remove(crew, BedClaimC);
 }
 
 /** Drop a crew member's owned bed (the next bed-owner pass may give them another). */

@@ -1,5 +1,5 @@
-import { claimBed, findFreeBed, ownedBedPlan, releaseBedClaim } from '../../crew/beds';
-import { BedClaimC, PathC, type Crew, type Path, type Position } from '../../crew/components';
+import { findFreeBed, ownedBedPlan } from '../../crew/beds';
+import { PathC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath } from '../../crew/pathfind';
 import { dropCarried } from '../../items/stacks';
@@ -7,12 +7,12 @@ import { ModuleC } from '../../modules/components';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { unsafeFor } from '../hazard';
-import { abortTask, setJoblessTask, syncTask } from '../task';
+import { abortTask, claimBed, claimedBed, releaseBedClaim, setJoblessTask, syncTask } from '../task';
 
 /**
  * The sleep machine (docs/CREW_AI.md section 6): `ClaimBed` (the bed they own, else the nearest free one), `Walk` to it, `Sleep`
- * (activity 'sleeping'; the needs system wakes them at full rest). With no reachable bed they sleep where they stand. Phase 1:
- * `BedClaimC` and the activity stay the saved truth; the bed is the task's hold.
+ * (activity 'sleeping'; the needs system wakes them at full rest). With no reachable bed they sleep where they stand.
+ * The bed claim is the task's hold (`claimBed`, `releaseBedClaim` in ai/task.ts).
  */
 
 /** A tired crew member acts when (tick + id) is a multiple of this, so a whole crew crossing the threshold at once does not search for beds in one tick. */
@@ -20,11 +20,11 @@ export const SLEEP_STAGGER = 4;
 
 /** The sleep drive's turn. A crew member already walking to a bed is not held up by the stagger. */
 export function sleepTurn(sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean): void {
-  if (!sim.world.has(id, BedClaimC) && (sim.tick + id) % SLEEP_STAGGER !== 0) return;
+  if (!claimedBed(sim, id) && (sim.tick + id) % SLEEP_STAGGER !== 0) return;
   if (holdsJob) abortTask(sim, id, 'drive');
   dropCarried(sim, id);
   goToSleep(sim, id, crew, pos);
-  if (sim.world.has(id, BedClaimC) || crew.activity === 'sleeping') syncTask(sim, id);
+  if (claimedBed(sim, id) || crew.activity === 'sleeping') syncTask(sim, id);
   else setJoblessTask(sim, id, 'sleep', 'sleep', 'ClaimBed'); // no bed and still stepping: they lie down once settled
 }
 
@@ -40,11 +40,11 @@ export function wakeUp(sim: Sim, id: number, crew: Crew): void {
  * reachable bed, sleep where standing. A bed whose tile harms them is passed over. Only falls asleep once settled on a tile.
  */
 function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
-  let claim = sim.world.get(id, BedClaimC);
-  const bed = claim && sim.world.get(claim.bed, ModuleC);
+  let claim = claimedBed(sim, id);
+  const bed = claim ? sim.world.get(claim, ModuleC) : undefined;
   if (claim && (!bed || bed.hp <= 0)) {
     releaseBedClaim(sim, id);
-    claim = undefined;
+    claim = 0;
   }
   const path = sim.world.get(id, PathC) as Path;
   const ship = shipIdOf(sim, pos);
@@ -52,7 +52,7 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
   if (claim && bed && unsafe(bed.x, bed.y)) {
     releaseBedClaim(sim, id); // the bed now harms them (a fire on it): another bed, else the floor
     clearPath(sim, id);
-    claim = undefined;
+    claim = 0;
   }
   if (claim && bed) {
     if (isSettled(pos) && pos.x === bed.x && pos.y === bed.y) return fallAsleep(sim, id, crew);

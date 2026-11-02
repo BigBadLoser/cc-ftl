@@ -1,6 +1,7 @@
 import { wakeUp } from '../ai/machines/sleep';
 import { dropMeal, finishMeal } from '../ai/machines/eat';
-import { BedClaimC, CrewC, DraftedC, EatC, NeedsC, PositionC, type Crew, type Needs } from '../crew/components';
+import { CrewC, DraftedC, NeedsC, PositionC, type Crew, type Needs } from '../crew/components';
+import { claimedBed, mealOf } from '../ai/task';
 import { noteMeal, noteSleep } from '../crew/mood';
 import { AllegianceC } from '../fight/components';
 import { isIncapacitated } from '../crew/helpers';
@@ -54,8 +55,8 @@ export function needsSystem(sim: Sim): void {
 
 /** True if the crew member is on the tile of the bed they reserved. */
 function inBed(sim: Sim, id: number): boolean {
-  const claim = sim.world.get(id, BedClaimC);
-  const bed = claim && sim.world.get(claim.bed, ModuleC);
+  const claim = claimedBed(sim, id);
+  const bed = claim ? sim.world.get(claim, ModuleC) : undefined;
   const pos = sim.world.get(id, PositionC);
   return !!bed && !!pos && pos.x === bed.x && pos.y === bed.y;
 }
@@ -74,13 +75,15 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
   const station = sim.world.has(id, StationCrewC);
   if (!def || (!station && sim.world.get(id, AllegianceC)?.faction !== 'player')) return;
   needs.hunger ??= 70 + (crew.appearanceSeed % 31);
-  const eat = sim.world.get(id, EatC);
-  if (eat && (sim.world.has(id, DraftedC) || (eat.left >= 0 && crew.activity !== 'eating'))) dropMeal(sim, id);
-  else if (eat && eat.left >= 0 && --eat.left <= 0) {
-    needs.hunger = Math.min(100, needs.hunger + (sim.content.items[eat.item]?.food?.nutrition ?? 0));
+  const meal = mealOf(sim, id)?.bb;
+  const left = meal?.n ?? -1;
+  if (meal && (sim.world.has(id, DraftedC) || (left >= 0 && crew.activity !== 'eating'))) dropMeal(sim, id);
+  else if (meal && left >= 0 && (meal.n = left - 1) <= 0) {
+    const item = meal.item ?? '', galley = !!meal.hot;
+    needs.hunger = Math.min(100, needs.hunger + (sim.content.items[item]?.food?.nutrition ?? 0));
     finishMeal(sim, id);
-    noteMeal(sim, id, eat.galley);
-    sim.events.emit({ type: 'crew.ate', crew: id, item: eat.item, galley: eat.galley });
+    noteMeal(sim, id, galley);
+    sim.events.emit({ type: 'crew.ate', crew: id, item, galley });
   }
   const before = needs.hunger;
   needs.hunger = Math.max(station ? STATION_HUNGER_FLOOR : 0, before - (def.decayPerSec * traitMult(sim, id, 'hungerMult') * (crew.activity === 'sleeping' ? HUNGER_SLEEP_MULT : 1)) / TICK_HZ);
