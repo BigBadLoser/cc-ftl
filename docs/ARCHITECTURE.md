@@ -934,6 +934,20 @@ there is no opening time to price); the refill is an errand job like a suit erra
 moment at the hull tile, the tank swap itself happens on an `EvaFloat {mode: 'refill'}` at the turn; salvage teams and yard crews are exempt from
 admission until salvage moves onto this (slice 3), so salvage behaves exactly as before.
 
+**Slice 1 is built** (branch `air/drive-286`):
+- **The drive.** `air` in `content/policies.ts` is first in the colonist, station and npc policies (robots have none). Its inputs live in `ai/airNeed.ts`:
+  - `airMargin` maps the air left onto the two travel-time lines: 500 is critical, 1000 is refill.
+  - `airSource` blocks the drive when no source can be reached.
+  - The nearest-source search runs at most once per `AIR_EVAL_TICKS` and is kept in `Intent.air`, so a load reads the same numbers.
+  - The drive applies only while a suited tank drains: needs air, suited, standing on a thin tile. Salvage teams and yard crews are exempt until slice 3.
+- **The turn.** `ai/machines/air.ts` `airTurn` is the drive's machine (`task: 'eva'`, the refill errand).
+  - It nests: the errand's `resume` keeps the job reserved and hands it back.
+  - A haul load is put down and the haul dropped.
+  - A carried patient is set down only at critical (`breaksFinish`). It is set down in place (abort reason `air`); setting it down on a nearby safe tile is left for slice 2a.
+  - There is no `NEST_HOLD_SEC` timeout yet: a refill always ends (full tank, or an abort releases the parked job through the errand sweep).
+- **The pickup request.** `PickupC {since}` is set from `Intent.blocked === 'air'` in the scheduler's turn and cleared when a source is back or the crew member is held out. It emits `crew.airUnreachable {crew, sec}`, an urgent alert. The shuttle that answers it is slice 2b's pickup run.
+- **Hazard.** A refill tolerates thin air and cold. An empty suit with no breathable tile in reach falls through the failed escape to the air drive, which is then critical and refills. So "escape to a source" is the drive itself, not a separate escape goal.
+
 ### Dependency on crew AI Phase 3
 
 The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies PolicyDef`), not additions to
@@ -1110,7 +1124,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 ### Save shape (bump `SAVE_VERSION` in each slice)
 
 - Slice 0: `AirlockC.air`, `Vehicle.air`; `EvaFloat.mode` `'refill'`; `SuitC.airlock` removed.
-- Slice 1: `PickupC`; `Intent.blocked`; nested refill frames in `Task.stack`.
+- Slice 1: `PickupC`; `Intent.air` (the kept source search); `SAVE_VERSION` 82. (`Intent.blocked` came with Phase 3; nested refill frames are the errand's `resume`, derived, nothing new saved.)
 - Slice 2: `AwaySiteC`, `SiteRunC`, `AwayC`; `Job.kind` `passage`, `Job.site`; `SuitC.vehicle` removed.
 - Slice 3: `SalvageTripC`, `SalvageCrewC`, `SalvageOrder.teamAt` removed.
 
@@ -1119,10 +1133,10 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 | # | Slice | Depends on | Size |
 |---|---|---|---|
 | 0 | Travel-time estimator; `airSources`; airlock and shuttle air stores; refill machine behind a player order (`eva.refill`); partial-work admission (`noAir`); the throughput bench and its baseline on today's code. | Phase 2 scheduler (built); **can go before Phase 3** | M, about 450 lines plus tests |
-| 1 | Air drive: policy data, nested refill, critical override including `finish`, early pickup request and alert, hazard escape to sources; delete salvage's refill branch. | Phase 3, slice 0 | M, about 350 lines plus tests |
+| 1 | Air drive: policy data, nested refill, critical override including `finish`, early pickup request and alert, hazard escape to sources. (Deleting salvage's refill branch moved to slice 3, user decision 2026-11-02: under the drive a team would draw on the shuttle's finite store, whose answer, heading home and batched trips, is slice 2b.) | Phase 3, slice 0 | M, about 350 lines plus tests |
 | 2a | Away sites: components, passages with seat allocation and dynamic home cover (`homeNeed`), run out and home, return drive, idle and rescue on a site, haul to the hold, `outsideCrew` by party, bay-gone docking, robots, closing lift. | Phase 3, slice 1 | L, about 750 lines plus tests |
 | 2b | Rotation: batched round trips (urgent and batch triggers, waiting aboard, trip timeout, departure check, last call, riders, `returnBy`, watch), cargo and crew on the same trips, pickup runs, shuttle loss. Throughput bench run against a debug site. | Slice 2a | L, about 500 lines plus tests |
-| 3 | Salvage on sites: the order opens and closes the site, demand, panel blocks from the site, delete the trip code; the throughput acceptance asserted. | Slice 2b | M, net about -700 lines |
+| 3 | Salvage on sites: the order opens and closes the site, demand, panel blocks from the site, delete the trip code and salvage's refill branch (teams and yard crews move onto the air drive: drop their exemption in `ai/airNeed.ts` `airDraining` and in `ai/admitAir.ts`); the throughput acceptance asserted. | Slice 2b | M, net about -700 lines |
 
 Slice 0 can be built while Phase 3 is under way. Parts of 2a that don't touch drives (components, passages, allocation,
 cover, the run machine, shared `arrive`) could be built before Phase 3, but 2a can't ship without the return drive.

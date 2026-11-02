@@ -532,3 +532,10 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
   - The reservation audit compares holds for job tasks only.
   - `sectorEquiv` rebuilds the old `bedClaim` and `eat` stores from the tasks for its legacy-shape hash, so both pinned hashes are unchanged.
 - `explainCrew` also reports `latched`, `blocked` and `avoid`.
+
+**The air drive (#286 slice 1).** The first drive that nests and the first that breaks a `finish` task.
+- `air` (first in colonist, station and npc policies) reads `airMargin` and `airSource` (`ai/airNeed.ts`).
+- Refill nests through the errand's `resume`: the job stays reserved and resumes when the tank is full.
+- Critical (`urgent.below` 500, `breaksFinish`) sets a carried patient down.
+- A blocked drive (`onMissing: 'block'`) raises the pickup request (`PickupC`, alert `crew.airUnreachable`).
+- See ARCHITECTURE.md "Slice 1 is built".

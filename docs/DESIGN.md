@@ -374,6 +374,10 @@ emergency pickups, cargo-run riders. This replaces it with three general pieces 
 - **Suits belong to wherever they are.** A worn suit is the wearer's; a stowed one is part of that airlock's or shuttle's
   stock. Stowing anywhere adds to that stock (already true of `doffSuit` and the float-back). `SuitC.vehicle`, `detached` and
   `SuitC.airlock` go. The rule that no shuttle strands anyone comes from the away party (below), not from suit ownership.
+- **Built (slice 1):** the drive, its thresholds, the nested refill, the critical override and the pickup request with its alert
+  (the shuttle that answers it comes with slice 2b). Salvage teams keep their own refill until salvage moves onto away sites
+  (slice 3, user decision 2026-11-02): under the drive they would draw on the shuttle's finite store before shuttles head home
+  for more (slice 2b).
 - **Home ship hull work** gets all of this for free: a crew member sealing a breach from outside refills at the airlock
   instead of running dry after the `suit.airLow` warning.
 
