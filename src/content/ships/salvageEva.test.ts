@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DraftedC, ModuleC, PositionC, ShipC, VehicleBayC, VehicleC, destroyVehicle, placementError, shipGrid, spawnModule } from '../../sim';
+import { AllegianceC, CrewC, DraftedC, ModuleC, PrioritiesC, PositionC, ShipC, VehicleBayC, VehicleC, destroyVehicle, placementError, shipGrid, spawnModule } from '../../sim';
 import { SuitC } from '../../sim/eva/components';
 import { playerCourier } from '../../sim/trade/courier';
 import { orderLaunch } from '../../sim/boarding/launch';
@@ -104,5 +104,28 @@ describe('salvage teams: blocks and recall', () => {
     play(sim, 400, (a) => of(a, 'salvage.teamSent').length > 0);
     expect(playerCourier(sim)).toEqual({ error: 'courierBusy' });
     expect(orderLaunch(sim, shuttle, [], 0)).toBe('shuttleBusy');
+  });
+
+  it('only sends a team that can both strip and carry the scrap', () => {
+    const crewOf = (sim: ReturnType<typeof setup>['sim']): number[] =>
+      [...sim.world.query(CrewC, PrioritiesC)].filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player').sort((a, b) => a - b);
+    for (const off of ['hauling', 'construction'] as const) {
+      const { sim, wreck } = setup();
+      for (const c of crewOf(sim)) sim.world.get(c, PrioritiesC)![off] = 0;
+      sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull'] });
+      const all = play(sim, 400);
+      expect(of(all, 'salvage.teamSent')).toHaveLength(0);
+      expect(sim.world.get(wreck, SalvageOrderC)).toMatchObject({ status: 'blocked', block: 'noCrew' });
+    }
+    // One builder and the rest haulers only: a pair goes.
+    const { sim, wreck } = setup();
+    const [builder, ...rest] = crewOf(sim);
+    sim.world.get(builder!, PrioritiesC)!.hauling = 0;
+    for (const c of rest) sim.world.get(c, PrioritiesC)!.construction = 0;
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull'] });
+    const sent = of(play(sim, 400, (a) => of(a, 'salvage.teamSent').length > 0), 'salvage.teamSent');
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.crew).toContain(builder);
+    expect(sent[0]!.crew.some((c) => rest.includes(c))).toBe(true);
   });
 });

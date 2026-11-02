@@ -896,7 +896,7 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 - **Teams (`trip.ts`, `team.ts`, `teamCrew.ts`, `cargoRun.ts`).** `salvageTripSystem` (after `ferrySystem`), outside combat: a running order with no team starts a
   shift when a shuttle with suits is free (`ferryFree`, which also refuses a shuttle on a shift) in a bay on the home ship, and crew are free (`pickTeam`: player crew on
   the bay's ship who breathe, not drafted, off duty or at a console, construction or hauling on, rest and hunger >= `SALVAGE_TEAM_GO`; builders first; at most
-  `SALVAGE_TEAM`, the suits and seats, and half the able crew aboard). Else the order is blocked `noShuttle` / `noCrew` (retried every few seconds), unless player crew
+  `SALVAGE_TEAM`, the suits and seats, and half the able crew aboard; the team must cover both construction and hauling, one member with both or a pair). Else the order is blocked `noShuttle` / `noCrew` (retried every few seconds), unless player crew
   already stand on the wreck. `SalvageTripC` on the shuttle: `board` (the team walks to the bay; the first in flies it, no skill needed) -> `fly` (`vehicle.hover`) ->
   `work` -> `recall` -> `home`.
   - Work: everyone, the pilot too, goes out by `eva.out` and is handed back to the crew AI on the hull (`SalvageCrewC` marks them; they keep the suit on when idle).

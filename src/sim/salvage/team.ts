@@ -66,7 +66,8 @@ export function needsHome(sim: Sim, id: number): boolean {
 /**
  * The crew to send: player crew on the home ship who breathe (suits), are free (not drafted, aboard, off duty or at a console), have
  * construction or hauling switched on and are rested. Best construction priority first (then hauling), then the lowest id. At most SALVAGE_TEAM, the shuttle's suits
- * and seats, and half of the able crew aboard (at least one), so the ship is never emptied.
+ * and seats, and half of the able crew aboard (at least one), so the ship is never emptied. The team must cover both kinds of work (one
+ * member with both on, or a builder and a hauler); when no such team can be made it is empty (the order shows 'noCrew').
  */
 export function pickTeam(sim: Sim, vehicle: number): number[] {
   const home = boardingTile(sim, vehicle)?.shipId ?? 0; // the crew who can walk to its bay
@@ -74,7 +75,7 @@ export function pickTeam(sim: Sim, vehicle: number): number[] {
   const def = v && vehicleDefOf(sim, v);
   if (!home || !v || !def) return [];
   let able = 0;
-  const free: { id: number; prio: number }[] = [];
+  const free: { id: number; prio: number; build: boolean; haul: boolean }[] = [];
   for (const id of [...sim.world.query(CrewC, PositionC, PrioritiesC, NeedsC)].sort((a, b) => a - b)) {
     if (sim.world.has(id, DeadC) || isIncapacitated(sim, id) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== home) continue;
@@ -86,10 +87,17 @@ export function pickTeam(sim: Sim, vehicle: number): number[] {
     // Stripping is construction work and carrying the loot is hauling: crew with either switched on can go, builders first.
     const p = sim.world.get(id, PrioritiesC);
     const prio = (p?.construction || 9) * 10 + (p?.hauling || 9);
-    if (p && (p.construction > 0 || p.hauling > 0)) free.push({ id, prio });
+    if (p && (p.construction > 0 || p.hauling > 0)) free.push({ id, prio, build: p.construction > 0, haul: p.hauling > 0 });
   }
   const n = Math.min(SALVAGE_TEAM, vehicleSuits(sim, v), def.capacity + 1, Math.max(1, Math.floor(able / 2)));
-  return free.sort((a, b) => a.prio - b.prio || a.id - b.id).slice(0, n).map((c) => c.id);
+  free.sort((a, b) => a.prio - b.prio || a.id - b.id);
+  // The team must both strip and carry: one member with both on, else the best builder and the best hauler as a pair; then the best of the rest.
+  const both = free.find((c) => c.build && c.haul);
+  const core = both ? [both] : [free.find((c) => c.build), free.find((c) => c.haul)];
+  if (core.some((c) => !c) || core.length > n) return [];
+  const team = core as typeof free;
+  for (const c of free) if (team.length < n && !team.includes(c)) team.push(c);
+  return team.sort((a, b) => a.prio - b.prio || a.id - b.id).map((c) => c.id);
 }
 
 /** The bounds (sector tiles) of what still stands of a ship: its tiles that are not open space. Null when nothing is left. */
