@@ -52633,11 +52633,11 @@
     "x": 139,
     "y": 1,
     "w": 18,
-    "h": 16
+    "h": 17
    },
    "anchor": {
     "x": 9,
-    "y": 11
+    "y": 12
    },
    "footprint": [
     1,
@@ -52648,14 +52648,14 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 116,
+    "x": 47,
     "y": 1,
     "w": 22,
-    "h": 20
+    "h": 21
    },
    "anchor": {
     "x": 11,
-    "y": 14
+    "y": 15
    },
    "footprint": [
     1,
@@ -55248,7 +55248,7 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 47,
+    "x": 70,
     "y": 1,
     "w": 22,
     "h": 21
@@ -55358,7 +55358,7 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 70,
+    "x": 93,
     "y": 1,
     "w": 22,
     "h": 21
@@ -55394,7 +55394,7 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 93,
+    "x": 116,
     "y": 1,
     "w": 22,
     "h": 21
