@@ -120,17 +120,17 @@ def on_slope(b, x0, x1, z0, z1, ya, yb, t0, t1, lift, col):
     b.prism_y([pa, pb, (pb[0] + nx, pb[1] + nz), (pa[0] + nx, pa[1] + nz)], ya, yb, col)
 
 
-def hatch_block(b, xi, xo, y0, y1):
+def hatch_block(b, xi, xo, y0, y1, wall=0.62):
     """Measured hatch block: inner edge at xi (full height), outer end at xo; wall 0.55 at the end, slope over 0.55 of the
     tile up to 1.12, flat 1.17 to the inner edge. One hatch with sliding double doors on the slope."""
     d = 1 if xo > xi else -1
     X = lambda t: xi + (xo - xi) * t                                                      # noqa: E731  t: 0 inner .. 1 outer
-    prof = [(X(0), BASE), (X(1), BASE), (X(1), 0.55), (X(0.97), 0.6), (X(0.46), 1.12), (X(0.38), 1.17), (X(0), 1.17)]
+    prof = [(X(0), BASE), (X(1), BASE), (X(1), wall - 0.05), (X(0.96), wall), (X(0.46), 1.12), (X(0.4), 1.16), (X(0), 1.16)]
     if d < 0:
         prof = prof[::-1]
     b.box(min(xi, xo), max(xi, xo), y0, y1, 0, BASE, GMD, DARK)
     b.prism_y(prof, y0, y1, STEEL, STEEL_T)
-    sa, sb = (X(0.95), 0.62), (X(0.48), 1.1)                                             # the slope, outer to inner
+    sa, sb = (X(0.94), wall + 0.01), (X(0.48), 1.1)                                             # the slope, outer to inner
     on_slope(b, sa[0], sb[0], sa[1], sb[1], y0 + 0.1, y1 - 0.1, 0.06, 0.94, 0.025, GMD)  # frame
     mid = (y0 + y1) / 2
     for ya, yb in ((y0 + 0.15, mid - 0.012), (mid + 0.012, y1 - 0.15)):
@@ -152,33 +152,34 @@ def scrapper(rot):
     hatch_block(b, 3.0 + g, 3.96, 1.0 + g, 1.96)
     # x 2..3: display block (front) with the main doorway at the access tile; dial block (back)
     b.box(2.0 + g, 3.0 - g, 0.04, 1.96, 0, BASE, GMD, DARK)
-    rbox(b, 2.0 + g, 3.0 - g, 1.0 + g, 1.96, BASE, 1.22, r=0.12)
-    b.box(2.08, 2.48, 1.96, 1.99, 0.74, 1.0, GMD)                                         # display bezel
-    b.box(2.12, 2.44, 1.98, 2.0, 0.79, 0.95, LIT)                                         # display
+    rbox(b, 2.0 + g, 3.0 - g, 1.0 + g, 1.96, BASE, 1.33, r=0.12)
+    b.box(2.08, 2.48, 1.96, 1.99, 0.8, 1.08, GMD)                                         # display bezel
+    b.box(2.12, 2.44, 1.98, 2.0, 0.85, 1.03, LIT)                                         # display
     doorway(b, 2.06, 2.56, 1.96, 0.46)
-    b.cyl(2.62, 1.48, 1.22, 0.16, 0.012, GMD, sides=12)                                   # emblem plate (decal later)
-    rbox(b, 2.0 + g, 3.0 - g, 0.04, 1.0 - g, BASE, 1.22, r=0.12)
-    b.cyl(2.5, 0.52, 1.22, 0.33, 0.07, GMD, GM, sides=8)                                  # dial housing
-    b.cyl(2.5, 0.52, 1.29, 0.25, 0.04, GM, LIGHT, sides=8)                                # dial face
+    b.cyl(2.62, 1.48, 1.33, 0.16, 0.012, GMD, sides=12)                                   # emblem plate (decal later)
+    rbox(b, 2.0 + g, 3.0 - g, 0.04, 1.0 - g, BASE, 1.33, r=0.12)
+    b.cyl(2.5, 0.52, 1.31, 0.33, 0.05, GMD, GM, sides=8)                                  # dial housing
+    b.cyl(2.5, 0.52, 1.35, 0.25, 0.03, GM, LIGHT, sides=8)                                # dial face
     # x 1..2: the drum (front) in a low cradle; the hopper (back) with its lit chute over the drum
     b.box(1.0 + g, 2.0 - g, 1.0 + g, 1.96, 0, 0.12, GMD, GM)
-    b.roller(1.5, 0.47, 0.4, 1.2, 1.9, GM, sides=18)                                      # barrel
+    b.roller(1.48, 0.4, 0.34, 1.12, 1.74, GM, sides=18)                                   # barrel, top 0.74
     for k in range(4):
-        b.roller(1.5, 0.47, 0.43, 1.3 + k * 0.15, 1.36 + k * 0.15, GMD, sides=18)         # cutter rings
-    b.roller(1.5, 0.47, 0.47, 1.04, 1.2, GMD, sides=8)                                    # shroud ring
-    b.roller(1.5, 0.47, 0.2, 1.88, 1.92, DARK, sides=12)                                  # hollow end
-    rbox(b, 1.0 + g, 2.0 - g, 0.04, 1.0 - g, 0, 1.2)
+        b.roller(1.48, 0.4, 0.365, 1.22 + k * 0.13, 1.27 + k * 0.13, GMD, sides=18)       # cutter rings
+    b.roller(1.48, 0.43, 0.51, 1.03, 1.2, GMD, sides=8)                                   # shroud frame, top 0.94
+    b.roller(1.48, 0.4, 0.2, 1.74, 1.77, DARK, sides=12)                                  # hollow end
+    rbox(b, 1.0 + g, 2.0 - g, 0.04, 1.0 - g, 0, 1.24)
     b.box(1.04, 1.46, 0.99, 1.02, 0.36, 0.86, GMD)                                        # chute frame
     b.box(1.08, 1.42, 1.0, 1.025, 0.4, 0.82, LIT)                                         # lit chute
     for k in range(3):
-        roller_y(b, 1.12 + k * 0.13, 1.24, 0.055, 0.68, 0.98, STEEL, sides=10)            # pulleys on the top front edge
-    b.cyl(1.66, 0.4, 1.2, 0.14, 0.012, DARK, sides=12)                                    # vent grille
+        roller_y(b, 1.12 + k * 0.13, 1.31, 0.07, 0.62, 0.98, STEEL, sides=10)            # pulleys on the top front edge
+    b.cyl(1.66, 0.4, 1.24, 0.14, 0.012, DARK, sides=12)                                    # vent grille
     # x 0..1: pipe unit (front), inset from the end, with a motor and the second doorway; a hatch block (back) to the end
-    rbox(b, 0.14, 1.0 - g, 1.0 + g, 1.96, 0, 0.86)
-    b.box(0.34, 0.82, 1.2, 1.62, 0.86, 1.06, GM, PLATE)                                   # motor
-    b.roller(1.42, 0.97, 0.07, 0.12, 0.34, GMD, sides=8)                                  # its spout
-    doorway(b, 0.2, 0.66, 1.96, 0.44)
-    hatch_block(b, 1.0 - g, 0.04, 0.04, 1.0 - g)
+    rbox(b, 0.14, 1.0 - g, 1.0 + g, 1.56, 0, 1.0)                                         # back step
+    rbox(b, 0.14, 1.0 - g, 1.5, 1.86, 0, 0.66)                                            # front step, the doorway's
+    b.box(0.36, 0.84, 1.12, 1.5, 1.0, 1.2, GM, PLATE)                                     # motor
+    b.roller(1.31, 1.1, 0.07, 0.12, 0.36, GMD, sides=8)                                   # its spout
+    doorway(b, 0.24, 0.7, 1.86, 0.44)
+    hatch_block(b, 1.0 - g, 0.04, 0.04, 1.0 - g, wall=0.66)
     return [b.m.build()]
 
 
