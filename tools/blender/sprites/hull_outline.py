@@ -39,7 +39,7 @@ def _cross(a, b):
 def _cycles(mask):
     """The mask's edges on space as closed loops, the ship on their left: [(tile, outward normal)]."""
     out = {}
-    for x, y in mask:
+    for x, y in sorted(mask):                                           # (sorted: the loops and their starts by place)
         for n in ((1, 0), (0, 1), (-1, 0), (0, -1)):
             if (x + n[0], y + n[1]) not in mask:
                 a = (2 * x + n[0] + n[1], 2 * y + n[1] - n[0])          # (doubled: its start, the end 2 on)
@@ -190,8 +190,8 @@ def _uses(fronts):
 
 
 def key(loops, tile):
-    """The tile's key: the stretches of fronts that shape it, relative to it ("sx,sy,c;..." per stretch, "|" between),
-    or "" (none: plain roof)."""
+    """The tile's key: the stretches of fronts that shape it, relative to it ("sx,sy,c;..." per stretch, "|" between,
+    in sorted order), or "" (none: plain roof)."""
     x, y = tile
     parts = []
     for fr in loops:
@@ -215,7 +215,8 @@ def key(loops, tile):
             used = _uses(loc)
             if used:
                 parts.append(loc[min(used):max(used) + 1])
-    return "|".join(";".join(f"{s[0]},{s[1]},{c}" for s, c in p) for p in parts)
+    return "|".join(sorted(";".join(f"{s[0]},{s[1]},{c}" for s, c in p) for p in parts))   # (sorted: the loops'
+                                                    # order and where each starts follow the mask's iteration order)
 
 
 def parse(k):

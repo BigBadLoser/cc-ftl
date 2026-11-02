@@ -45,6 +45,8 @@
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
+  hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
+            each piece with its tint mask (hulltiles.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -57,8 +59,8 @@ def jobs(name):
         return props_ + logistics.SPRITES + itemart.SPRITES, False
     if name == "walls":
         from . import envtiles
-        return envtiles.SPRITES, lambda sid: False if sid.startswith("tile.floor") else "walls"   # (palette set
-        #   "walls": the relief walls', hull's, doors' and faction looks' own colours, in no other family's palette)
+        return envtiles.SPRITES, lambda sid: False if sid.startswith("tile.floor") else "walls+hull"   # (palette sets
+        #   "walls" and "hull": the relief walls', hull's, doors' and faction looks' colours, no other family's)
     if name == "consoles":
         from . import consoles
         return consoles.jobs(), True
@@ -96,7 +98,7 @@ def jobs(name):
         return jobs, True
     if name == "structure":
         from . import structure
-        return structure.jobs(), "walls"
+        return structure.jobs(), "walls+hull"
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True
@@ -154,7 +156,7 @@ def jobs(name):
         return derelict_sac.SPRITES, True
     if name == "derelict":
         from . import derelict
-        return derelict.SPRITES, lambda sid: "walls" if sid.startswith("tile.") else True     # (breached walls)
+        return derelict.SPRITES, lambda sid: "walls+hull" if sid.startswith("tile.") else True   # (breached walls)
     if name == "decay":
         from . import derelict_more
         return derelict_more.SPRITES, True
@@ -193,6 +195,9 @@ def jobs(name):
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
+    if name == "hull":
+        from . import hulltiles
+        return hulltiles.jobs(), "hull"                 # (its own palette set: palette_extra "set": "hull")
     raise KeyError(name)
 
 
@@ -200,5 +205,5 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "storage_ore")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "storage_ore", "hull")
 ALL = RENDERED + ("sol", "damage_sol")

@@ -115,8 +115,8 @@ export interface Atlas {
   stats(): AtlasStats;
 }
 
-/** Sheets every ship draws (walls and floors, beams, the item/puff sheet, combat fx): loaded at start, never evicted. */
-export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
+/** Sheets every ship draws (walls and floors, the hull, beams, the item/puff sheet, combat fx): loaded at start, never evicted. */
+export const EAGER_SHEETS: readonly string[] = ['walls', 'hull', 'struct', 'env', 'fx'];
 /** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
 export const CREW_BUDGET = 64 * 2 ** 20;
 export const ENV_BUDGET = 96 * 2 ** 20;

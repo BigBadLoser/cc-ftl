@@ -331,8 +331,9 @@ def _palette(sel):
     if not sel:
         return dict(_BASE_PAL)
     out = {**_BASE_PAL, **{k: v for k, v in EXTRA.items() if not v.get("set")}}
-    if isinstance(sel, str):
-        out.update({k: v for k, v in EXTRA.items() if v.get("set") == sel})
+    if isinstance(sel, str):                        # (one set, or several joined by "+": "walls+hull")
+        names = set(sel.split("+"))
+        out.update({k: v for k, v in EXTRA.items() if v.get("set") in names})
     return out
 
 

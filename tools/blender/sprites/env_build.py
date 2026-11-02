@@ -187,8 +187,10 @@ def render_jobs(jobs, extra=True, only=None, log=print, family=None, force=False
         post.select(pal)
         objs = fn()
         if family:
+            opt = ([repr(core.SHADOWS)] if core.SHADOWS else []) + (["aa"] if sid.startswith(AA) else [])
             key = sprite_cache.digest(glob, sid, fp, kind, post.palette_digest(pal), gd.scene_digest(),
-                                      gd.objects_digest(objs), repr(core.SHADOWS))
+                                      gd.objects_digest(objs), *opt)    # (a builder's shadows, coverage AA: keyed
+                                                                        # only when on, so no other sprite's key moves)
             path, got = cached(sid, key)
             if got is not None:
                 items += got
