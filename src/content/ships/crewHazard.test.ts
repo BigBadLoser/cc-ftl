@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CrewC, DraftedC, IntentC, InterruptC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
+  AssignmentC, CrewC, DraftedC, IntentC, InterruptC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
   shipGrid, Struct, type ContentRegistry, type Sim,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
 import { explainCrew } from '../../sim/ai/explain';
 import { hazardHolds } from '../../sim/ai/hazard';
-import { reserveJob } from '../../sim/ai/task';
+import { claimedBed, reserveJob } from '../../sim/ai/task';
 import { hazardsHere } from '../../sim/crew/hazard';
 import { isSettled } from '../../sim/crew/helpers';
 import { SuitC } from '../../sim/eva/components';
@@ -94,8 +94,7 @@ describe('hazard interrupt', () => {
       sim.step();
       const p = at(sim, c);
       if (i > 60 && p.x === t.x && p.y === t.y) back++;
-      const claim = sim.world.get(c, BedClaimC);
-      const bed = claim && sim.world.get(claim.bed, ModuleC);
+      const bed = sim.world.get(claimedBed(sim, c), ModuleC);
       if (bed) expect({ x: bed.x, y: bed.y }).not.toEqual(t);
     }
     expect(back).toBe(0);
