@@ -24,7 +24,7 @@ import { createWorldStack } from './worldLayers';
 import { regionOrigin, sectorArt, type Origin } from './sectorPos';
 import type { ModuleDefs } from './moduleView';
 import { ROOF_H, Z_PX } from './heights';
-import { hullPaintParam } from './hullArt';
+import { hullPaintFor, hullPaintParam } from './hullArt';
 import { liveryFor } from './roofArt';
 import { createShuttleView } from './shuttleView';
 import { createContainerBodyView } from './containerBodyView';
@@ -337,13 +337,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       }
     return n === 0 || sum / n >= grid.x0 + grid.width / 2;
   }
-  // `?hullPaint=<armour>,<deco>` (hex): every ship's hull painted so (hullArt; ships are plain until they get colours).
-  const hullPaint = hullPaintParam(window.location.search) ?? undefined;
+  // A ship's hull takes its roof livery's colours (hullArt.hullPaintFor); `?hullPaint=<armour>,<deco>` (hex) paints every ship so.
+  const hullPaintOverride = hullPaintParam(window.location.search);
   // a hidden outpost stays under its rock roof whatever the roof toggle says
   const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery: shipLivery(s, grid), beamLook: beamLookFor(s.gen?.faction), hullPaint, ...evaHost() });
+    const livery = shipLivery(s, grid);
+    const hullPaint = hullPaintOverride ?? hullPaintFor(livery.scheme);
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
