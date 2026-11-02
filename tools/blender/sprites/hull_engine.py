@@ -31,8 +31,13 @@ N = 32                  # segments round the port
 ZM = AXIS - RS - 0.1    # the front's port zone down to here; under it a framed recess
 FW, RECD = 0.1, 0.07    # the recess's frame width and depth
 LOUVRES = 3             # slats across the recess
-COLLAR = (0.06, 0.04)   # the port's raised collar: width, stand off the front
-RIBS = (ZM, 1.45)       # heights of the ribs on the block's ends
+COLLAR = (0.1, 0.07)    # the port's raised collar: width, stand off the front
+LIP = 1 / 32            # its front's dark outer edge
+FIN_P, FIN_T, FIN_PAD = 0.09, 0.03, 0.05     # the ends' cooling fins: pitch, thickness (z), padding (d; in z alike)
+RIB_UP, RIB_T = 5 / 39.2, 0.06     # the ends' plain band: 5 px either side of the front's middle, and a half
+CONDUIT = 0.06          # the conduit's radius (up the front from the port's collar, over the top, into the hull)
+SF = 0.3 + 3 / 32       # the shoulders' front, out from the tiles' middle
+BOLT = 0.035            # bolt heads: half size
 RAMPS = {              # unpainted steel, dark to light (palette greys: lighter than the bell's steelD body)
     "light": ("hsXM", "hsXS", "hsM", "hsXL", "hsS", "hsL"),
     "mid": ("steel", "hsXM", "steelL", "hsXS", "plate", "hsXL"),
@@ -115,30 +120,32 @@ def housing(o):
     b.face([(DF - RD, RS * math.cos(t), AXIS + RS * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")
     _collar(b)
     _recess(b)
-    for zc in RIBS:                                     # (the ends' ribs)
-        for e in (-1, 1):
-            b.prism([(0.08, zc - 0.03), (DF - 0.06, zc - 0.03), (DF - 0.06, zc + 0.03), (0.08, zc + 0.03)],
-                     *sorted((e * W, e * (W + 0.025))), lift=1)
-    shoulder = [(-0.5, ZT - 0.05), (0.3, ZT - 0.05), (0.3, H + SH - 0.08), (0.22, H + SH),
+    _fins(b)
+    _bolts(b)
+    _conduit(b)
+    zb = H + SH - 0.04
+    shoulder = [(-0.5, ZT - 0.05), (SF, ZT - 0.05), (SF, zb), (SF - 0.04, H + SH),
                 (-0.5, H + SH)]                 # (on the top, set back over the hull's: none down the front)
     for r0, r1 in SHOULDERS:
-        b.prism(shoulder, r0, r1)
-        b.prism([(-0.42, H + SH), (0.12, H + SH), (0.12, H + SH + 0.03), (-0.42, H + SH + 0.03)],
+        b.prism(shoulder, r0, r1, skip=(1,))    # (its front an exhaust: a frame 1 px wide round a dark opening)
+        _hole(b, SF, r0, r1, ZT - 0.05, zb, 1 / 32, 1 / 39.2, 0.2, z_from=ZT)
+        b.prism([(-0.42, H + SH), (SF - 0.18, H + SH), (SF - 0.18, H + SH + 0.03), (-0.42, H + SH + 0.03)],
                 r0 + 0.06, r1 - 0.06, lift=1)           # (a plate on its top)
     return b.m.build()
 
 
 def _collar(b):
-    """The port's raised collar: its front ring and outer rim."""
+    """The port's raised collar: its light front ring with a dark outer lip, and its outer rim."""
     w, h = COLLAR
     for i in range(N):
         t0, t1 = 2 * math.pi * i / N, 2 * math.pi * (i + 1) / N
         c0, s0, c1, s1 = math.cos(t0), math.sin(t0), math.cos(t1), math.sin(t1)
         ring = lambda r, d, c, s: (d, r * c, AXIS + r * s)
-        b.face([ring(RS, DF + h, c0, s0), ring(RS + w, DF + h, c0, s0), ring(RS + w, DF + h, c1, s1),
-                ring(RS, DF + h, c1, s1)], (1, 0, 0), lift=1)
+        for r0, r1, col in ((RS, RS + w - LIP, RAMP[5]), (RS + w - LIP, RS + w, "steelD")):    # (light, dark lip)
+            b.face([ring(r0, DF + h, c0, s0), ring(r1, DF + h, c0, s0), ring(r1, DF + h, c1, s1),
+                    ring(r0, DF + h, c1, s1)], (1, 0, 0), col)
         b.face([ring(RS + w, DF + h, c0, s0), ring(RS + w, DF, c0, s0), ring(RS + w, DF, c1, s1),
-                ring(RS + w, DF + h, c1, s1)], (0, c0 + c1, s0 + s1), lift=1)
+                ring(RS + w, DF + h, c1, s1)], (0, c0 + c1, s0 + s1), "steelD")
         b.face([ring(RS, DF, c0, s0), ring(RS, DF + h, c0, s0), ring(RS, DF + h, c1, s1), ring(RS, DF, c1, s1)],
                (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
 
@@ -160,6 +167,102 @@ def _recess(b):
     for k in range(LOUVRES):                            # (slats: lit tops sloping out and down, dark under)
         zl = j0 + step * (k + 0.5)
         b.prism([(dp, zl - step * 0.35), (DF - 0.015, zl - step * 0.1), (dp, zl + step * 0.3)], i0 + 0.04, i1 - 0.04)
+
+
+def _hole(b, d, r0, r1, z0, z1, br, bz, depth, z_from=None):
+    """A front (at d, facing out) from r0 to r1, z0 to z1, with an opening in it `br` / `bz` in from its sides
+    (from z_from up, if given) going `depth` back: the frame, the opening's walls and its dark back."""
+    i0, i1, j0, j1 = r0 + br, r1 - br, (z_from if z_from is not None else z0) + bz, z1 - bz
+    for q in ([(r0, z0), (r1, z0), (i1, j0), (i0, j0)], [(r1, z0), (r1, z1), (i1, j1), (i1, j0)],
+              [(r1, z1), (r0, z1), (i0, j1), (i1, j1)], [(r0, z1), (r0, z0), (i0, j0), (i0, j1)]):
+        b.face([(d, r, z) for r, z in q], (1, 0, 0))
+    e = d - depth
+    for (ra, za), (rb, zb), n in (((i0, j0), (i1, j0), (0, 0, 1)), ((i0, j1), (i1, j1), (0, 0, -1)),
+                                  ((i0, j0), (i0, j1), (0, 1, 0)), ((i1, j0), (i1, j1), (0, -1, 0))):
+        b.face([(d, ra, za), (d, rb, zb), (e, rb, zb), (e, ra, za)], n, "hsXK")
+    b.face([(e, i0, j0), (e, i1, j0), (e, i1, j1), (e, i0, j1)], (1, 0, 0), "dark")
+
+
+def _fins(b):
+    """The block's ends: cooling fins stacked to its top and foot (as far in from those as from its front), over and
+    under a plain band round the front's middle height."""
+    pad, t = 2 * FIN_PAD * 32 / 39.2, FIN_T / 2         # (the padding at its top and foot: twice the front's px)
+    mid = (ZF + ZT) / 2
+    ribs = (mid - RIB_UP, mid + RIB_UP)
+    gap = RIB_T / 2 + FIN_P - FIN_T                     # (a rib's nearest fin as far from it as the fins apart)
+    fins, z = [], ZT - pad - t
+    while z - t >= ribs[1] + gap:
+        fins.append(z)
+        z -= FIN_P
+    z = ZF + pad + t
+    while z + t <= ribs[0] - gap:
+        fins.append(z)
+        z += FIN_P
+    for e in (-1, 1):
+        rr = sorted((e * W, e * (W + 0.045)))
+        for zc in fins:
+            fe = min(_front(zc - t), _front(zc + t)) - FIN_PAD             # (in from the front, its chamfers too)
+            b.prism([(FIN_PAD, zc - t), (fe, zc - t), (fe, zc + t), (FIN_PAD, zc + t)], *rr, lift=1)
+
+
+def _box(b, d, r, z, h):
+    """A bolt head: a small square standing h off a front at d, a step darker than the front (a fastener)."""
+    b.prism([(d, z - BOLT), (d + h, z - BOLT), (d + h, z + BOLT), (d, z + BOLT)], r - BOLT, r + BOLT, col=RAMP[2])
+
+
+def _bolts(b):
+    """Bolts at the recess frame's corners and round the port's collar."""
+    for r in (-W + FW / 2, W - FW / 2):
+        for z in (ZF + C + FW / 2, ZM - FW / 2):
+            _box(b, DF, r, z, 0.02)
+    for i in range(8):
+        t = 2 * math.pi * (i + 0.5) / 8
+        rr = RS + COLLAR[0] / 2
+        _box(b, DF + COLLAR[1], rr * math.cos(t), AXIS + rr * math.sin(t), 0.015)
+
+
+def _front(z):
+    """The block's front at height z, out from the tiles' middle (in where its top and foot are chamfered)."""
+    return DF - max(0.0, z - (ZT - C)) - max(0.0, ZF + C - z)
+
+
+def _rounded(pts, R, k=6):
+    """A polyline through (d, z) corners, each inner corner rounded with radius R (a quadratic arc, k steps)."""
+    out = [pts[0]]
+    for a, p, c in zip(pts, pts[1:], pts[2:]):
+        ua = math.hypot(p[0] - a[0], p[1] - a[1])
+        uc = math.hypot(c[0] - p[0], c[1] - p[1])
+        t1 = (p[0] - (p[0] - a[0]) / ua * R, p[1] - (p[1] - a[1]) / ua * R)
+        t2 = (p[0] + (c[0] - p[0]) / uc * R, p[1] + (c[1] - p[1]) / uc * R)
+        for i in range(k + 1):
+            t = i / k
+            out.append(tuple((1 - t) ** 2 * t1[j] + 2 * t * (1 - t) * p[j] + t * t * t2[j] for j in (0, 1)))
+    return out + [pts[-1]]
+
+
+def _conduit(b):
+    """A conduit out of the port (from the middle of the dark ring round the bell, at its top): straight up the
+    front past the collar, over the top edge, back along the top and down into the hull's sloped top between the
+    shoulders; its bends rounded well over its radius (so they don't pinch)."""
+    rad, n = CONDUIT, 8                                 # (an octagon, its sides square to the block: each one tone,
+    rb = (RS - 0.03 + 0.7) / 2                          #  clean edges at game size; rounder came out ragged)
+    f, top = DF + COLLAR[1] + 0.01 + rad, ZT + rad + 0.01  # (down the front just clear of the collar, straight
+    pts = _rounded([(f, AXIS + rb), (f, top), (0.0, top), (0.0, ZT - 0.08)], 2.2 * rad)   # into the dark ring)
+    rings = []
+    for i, (d, z) in enumerate(pts):
+        a, c = pts[max(0, i - 1)], pts[min(len(pts) - 1, i + 1)]
+        td, tz = c[0] - a[0], c[1] - a[1]
+        ln = math.hypot(td, tz)
+        pd, pz = -tz / ln, td / ln                      # (the path's normal in its plane; the other: along the run)
+        ang = [2 * math.pi * (k + 0.5) / n for k in range(n)]
+        rings.append([(d + rad * math.sin(t) * pd, rad * math.cos(t), z + rad * math.sin(t) * pz) for t in ang])
+    for (pa, ra), (pb, rb_) in zip(zip(pts, rings), zip(pts[1:], rings[1:])):
+        cd, cz = (pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2           # (its faces turned out from the path)
+        for k in range(n):
+            q = [ra[k], ra[(k + 1) % n], rb_[(k + 1) % n], rb_[k]]
+            m = [sum(p[j] for p in q) / 4 for j in range(3)]
+            b.face(q, (m[0] - cd, m[1], m[2] - cz), RAMP[2])
+    b.face(rings[0], (0, 0, -1), RAMP[0])               # (its end in the ring)
 
 
 def piece(o):
