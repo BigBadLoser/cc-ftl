@@ -76,7 +76,8 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'sabotage': return performSabotage(sim, crew, job);
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
-    case 'suitOff': return performSuitJob(sim, crew, job, speed);
+    case 'suitOff':
+    case 'refill': return performSuitJob(sim, crew, job, speed);
     case 'forceDoor': return timed(job, speed, () => {
       const grid = shipGrid(sim, shipIdOf(sim, job));
       if (grid?.has('jam') && grid.inBounds(job.x, job.y) && grid.get('jam', job.x, job.y) !== DoorJam.None) grid.set('jam', job.x, job.y, DoorJam.None);

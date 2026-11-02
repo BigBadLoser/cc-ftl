@@ -14,7 +14,7 @@ export const EMERGENCY_CHECK_TICKS = 10;
 /** Jobs a crew member drops what they are doing for: a fire, a downed crew member, a hole in the hull. */
 export const isEmergency = (job: Job): boolean => job.kind === 'extinguish' || job.kind === 'rescue' || (job.kind === 'build' && job.category === 'firefighting');
 /** What an emergency never interrupts: a console, a rescue, a suit errand, or another emergency. */
-const HOLDS = ['operate', 'rescue', 'suitUp', 'suitOff', 'extinguish'];
+const HOLDS = ['operate', 'rescue', 'suitUp', 'suitOff', 'refill', 'extinguish'];
 
 /** True when a free emergency job the crew member ranks higher than their current job is waiting and reachable (checked every few ticks). */
 export function emergencyWaiting(sim: Sim, crewId: number, pos: Position, current: Job): boolean {

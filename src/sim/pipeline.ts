@@ -2,6 +2,7 @@ import type { Sim } from './sim';
 import { NOOP_PROBE, type Probe } from './probe';
 import { airlockSystem } from './systems/airlock';
 import { suitsSystem } from './systems/suits';
+import { airStoresSystem } from './systems/airStores';
 import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
@@ -121,6 +122,8 @@ export const pipeline: readonly System[] = [
   alertsSystem,
   // Suit air drains on the final environment; vitals then sees which tanks ran dry.
   suitsSystem,
+  // Air stores (airlocks, shuttles) top up once a second; nothing reads them but refills.
+  airStoresSystem,
   // Vitals after the environment is final: breathing, harm, downing, bleeding, dying.
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.

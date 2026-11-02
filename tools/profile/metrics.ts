@@ -29,7 +29,7 @@
  *   samples right after a job appears are expected. `crewTicks` = samples x stride.
  */
 import {
-  AssignmentC, BedClaimC, CrewC, DraftedC, EatC, JobC, PositionC, PrioritiesC, TICK_HZ, shipIdOf,
+  AssignmentC, CrewC, DraftedC, JobC, TaskC, PositionC, PrioritiesC, TICK_HZ, shipIdOf,
   NOOP_PROBE, type Job, type Probe, type Sim, type SimEvent, type WorkCategory,
 } from '../../src/sim';
 import { isIncapacitated } from '../../src/sim/crew/helpers';
@@ -177,7 +177,8 @@ export class MetricsRecorder {
       const crew = sim.world.get(id, CrewC)!;
       if (crew.activity === 'dead') continue;
       this.idle.crew++;
-      if (sim.world.has(id, AssignmentC) || sim.world.has(id, DraftedC) || sim.world.has(id, EatC) || sim.world.has(id, BedClaimC)) continue;
+      const need = sim.world.get(id, TaskC)?.machine;
+      if (sim.world.has(id, AssignmentC) || sim.world.has(id, DraftedC) || need === 'eat' || (need === 'sleep' && sim.world.get(id, TaskC)!.holds.length > 0)) continue;
       if (isIncapacitated(sim, id) || isOffDuty(sim, id) || (crew.activity !== 'idle' && crew.activity !== 'walking')) continue;
       this.idle.idle++;
       const pos = sim.world.get(id, PositionC)!;

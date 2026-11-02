@@ -7,7 +7,7 @@ const jobsOf = (sim: Sim, kind: string): number => sim.world.query(JobC).filter(
 
 describe('scenario registry', () => {
   it('lists the planned scenarios', () => {
-    expect(scenarioNames()).toEqual(['colony', 'hullplan', 'log', 'hub', 'storm', 'haul', 'multiship']);
+    expect(scenarioNames()).toEqual(['colony', 'hullplan', 'log', 'hub', 'storm', 'haul', 'multiship', 'salvageBench', 'salvageBench4', 'salvageBenchLock', 'salvageBench4Lock']);
     expect(() => getScenario('nope')).toThrow(/Known: colony/);
   });
 

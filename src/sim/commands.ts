@@ -53,6 +53,8 @@ export type Command =
   | { type: 'eva.suitUp'; crew: number; airlock: number }
   /** Drafted, suited crew walk to an airlock (default: the nearest on their grid) and take the suit off; it returns there with a full tank. */
   | { type: 'eva.suitOff'; crew: number; airlock?: number }
+  /** Drafted, suited crew fill their tank: at `airlock`, or at the hatch of the shuttle `vehicle` hovering within float range, else at the nearest source they can reach. Only a source with air in its store counts. */
+  | { type: 'eva.refill'; crew: number; airlock?: number; vehicle?: number }
   /** Fly a shuttle to hold station a few tiles off another ship's hull (`ship`: its ShipC entity id; launching a stowed one first). Needs a pilot. */
   | { type: 'vehicle.hover'; vehicle: number; ship: number }
   /** Crew aboard a hovering shuttle (default: all passengers) put on suits from its stock and float out to the target's hull. */

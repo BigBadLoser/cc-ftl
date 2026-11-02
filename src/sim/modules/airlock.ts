@@ -20,6 +20,8 @@ export interface Airlock {
   request: 'inner' | 'outer' | null;
   /** Free suits stowed here. Absent (an old save) = the def's `airlock.suits`. */
   suits?: number;
+  /** Seconds of suit air in its store (the air a refill draws from). Absent = the full store. */
+  air?: number;
 }
 export const AirlockC = defineComponent<Airlock>('airlock');
 

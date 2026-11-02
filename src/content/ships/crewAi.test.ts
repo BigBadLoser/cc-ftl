@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, CarriedC, CarryingC, CrewC, DownedC, DraftedC, EatC, HealthC, IntentC, InterruptC, ItemStackC, JobC, ModuleC, NeedsC,
+  AssignmentC, CarriedC, CarryingC, CrewC, DownedC, DraftedC, HealthC, IntentC, InterruptC, ItemStackC, JobC, ModuleC, NeedsC,
   PositionC, ShipC, StorageC, Struct, TaskC, deserialize, findPath, homeShip, newGame, placementError, removeModule, serialize, shipGrid,
   spawnModule, storageCount, type Sim, type SimEvent,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
-import { deriveTask } from '../../sim/ai/task';
+import { deriveTask, mealOf } from '../../sim/ai/task';
 import { killCrew } from '../../sim/crew/death';
 import { explainCrew } from '../../sim/ai/explain';
 import { destroyJob } from '../../sim/items/stacks';
+import { policyOf } from '../../sim/ai/utility';
 import { content } from '../index';
 
 /**
@@ -86,10 +87,10 @@ describe('crew AI phase 1', () => {
     expect(checked).toBe(1500);
     expect(sim.aiLog.interruptMismatches).toBe(0);
     expect(interrupts).toBeGreaterThan(0); // the fight did hold crew out of the loop
-    // Every crew member in the job loop has an intent from policy.legacy.
+    // Every crew member in the job loop has an intent from their kind's policy (content/policies.ts).
     const loop = sim.world.query(CrewC).filter((c) => sim.world.has(c, IntentC));
     expect(loop.length).toBeGreaterThan(3);
-    expect(loop.every((c) => sim.world.get(c, IntentC)!.policy === 'policy.legacy')).toBe(true);
+    expect(loop.every((c) => sim.world.get(c, IntentC)!.policy === policyOf(sim, c).id && policyOf(sim, c).id !== 'policy.none')).toBe(true);
   });
 
   it('finish class: a rescuer carrying a patient lays them in a bed before sleep, hunger or an emergency can pull them off', () => {
@@ -203,17 +204,18 @@ describe('crew AI phase 1', () => {
     expect(hauler).toBeDefined();
     const x = explainCrew(sim, hauler!);
     const job = sim.world.get(hauler!, AssignmentC)!.jobId;
-    expect(x).toMatchObject({ policy: 'policy.legacy', drive: 'work', assignment: job, task: { job: { id: job, kind: 'haul' }, holds: [`job ${job}`] } });
+    expect(x).toMatchObject({ policy: 'policy.colonist', drive: 'work', assignment: job, task: { job: { id: job, kind: 'haul' }, holds: [`job ${job}`] } });
     expect(x.task!.path).toMatch(/^haul\/(ToSource|ToDest|Deposit)$/);
-    expect(x.scores).toEqual({ recharge: 0, sleep: 0, eat: 0, work: 1000 });
+    expect(x.scores).toMatchObject({ sleep: 0, eat: 0, work: 100 });
   });
 
   /**
-   * A save from before crew AI Phase 1 has the legacy components but no `task`, `intent` or `interrupt` store. Every crew member
-   * holding a job or in a need state must have their `Task` mirror straight after the load and after a tick, whatever branch the
+   * Job tasks mirror `AssignmentC`, so a world whose job tasks were dropped (a sector cut, a ship stamped back from a packet:
+   * `restoreTasks`) gets them back from it. The sleep and eat tasks are their own truth (Phase 3) and stay in the data. Every crew
+   * member holding a job or in a need state must have their `Task` straight after the load and after a tick, whatever branch the
    * scheduler takes for them (an operator at a console, a sleeper, a robot charging, an eater, a hauler, a crew member suiting up).
    */
-  it('loading a save made before the task mirror existed derives every missing task', () => {
+  it('loading a world whose job tasks were dropped derives every missing one', () => {
     // A busy starter: builds, hauls, an EVA wall on the hull ring, a hungry and a tired crew member, a robot with a flat battery.
     const sim = haulBoard(1);
     const ship = homeShip(sim);
@@ -249,9 +251,10 @@ describe('crew AI phase 1', () => {
       for (const m of states) seen.add(m);
       if (i % 100 !== 99) continue;
       checks++;
-      // The old save: the crew-AI stores did not exist yet.
+      // Drop the job tasks (and the intents and interrupts, re-derived at the next pass); keep the need tasks, which hold the meals and bed claims.
       const data = JSON.parse(serialize(sim)) as { world: { stores: Record<string, unknown> } };
-      for (const k of ['task', 'intent', 'interrupt']) delete data.world.stores[k];
+      data.world.stores.task = (data.world.stores.task as [number, { job: number }][]).filter(([, t]) => t.job === 0);
+      for (const k of ['intent', 'interrupt']) delete data.world.stores[k];
       const old = deserialize(JSON.stringify(data), content);
       for (const phase of ['loaded', 'one tick later']) {
         if (phase !== 'loaded') run(old, 1);
@@ -260,26 +263,27 @@ describe('crew AI phase 1', () => {
         for (const c of old.world.query(CrewC)) {
           const derived = deriveTask(old, c);
           const task = old.world.get(c, TaskC);
-          if (old.world.has(c, AssignmentC) || old.world.has(c, EatC) || derived) {
+          if (old.world.has(c, AssignmentC) || mealOf(old, c) || derived) {
             expect(task, `crew ${c} at tick ${old.tick}, ${phase}`).toBeDefined();
-            expect(task!.job, `crew ${c} at tick ${old.tick}, ${phase}`).toBe(derived!.job);
-            expect(task!.machine, `crew ${c} at tick ${old.tick}, ${phase}`).toBe(derived!.machine);
+            if (derived) {
+              expect(task!.job, `crew ${c} at tick ${old.tick}, ${phase}`).toBe(derived.job);
+              expect(task!.machine, `crew ${c} at tick ${old.tick}, ${phase}`).toBe(derived.machine);
+            }
           }
         }
       }
     }
     expect([...want].filter((m) => !seen.has(m))).toEqual([]);
   });
-  it('restoring task mirrors on load skips the dead, even one who died mid-meal', () => {
+  it('a crew member who dies mid-meal leaves no task or meal behind, and a reload restores none', () => {
     const sim = newGame(1, content);
     const [cook] = sim.world.query(CrewC);
     sim.world.get(cook!, NeedsC)!.hunger = 5;
-    for (let i = 0; i < 2000 && !sim.world.has(cook!, EatC); i++) run(sim, 1);
-    expect(sim.world.has(cook!, EatC)).toBe(true);
-    killCrew(sim, cook!); // removes the task but leaves the meal on the corpse
-    const data = JSON.parse(serialize(sim)) as { world: { stores: Record<string, unknown> } };
-    for (const k of ['task', 'intent', 'interrupt']) delete data.world.stores[k];
-    const old = deserialize(JSON.stringify(data), content);
+    for (let i = 0; i < 2000 && !mealOf(sim, cook!); i++) run(sim, 1);
+    expect(mealOf(sim, cook!)).toBeDefined();
+    killCrew(sim, cook!); // the meal is the task: both go
+    expect(sim.world.has(cook!, TaskC)).toBe(false);
+    const old = deserialize(serialize(sim), content);
     expect(old.world.has(cook!, TaskC)).toBe(false);
     expect(auditReservations(old).problems).toEqual([]);
   });

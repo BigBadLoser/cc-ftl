@@ -116,7 +116,7 @@ Hook column: **stat** = `traitModifiers` only. **small** = a few lines in one ex
 | Hot-headed | Takes it personally. | Rivalry gains ×2; when near a rival with mood < `MOOD_LOW`, 5% per bond check of a shouting match (both −5 mood for 5 min, −5 score, log line) | Grudges and scenes | 10 | Peacemaker | bond |
 | Peacemaker | Everyone's favourite. | Friendship gains ×1.5; rivals within 7 tiles of them get half the rival penalty; no shouting matches near them | Glue, worth protecting | 5 | Hot-headed | bond |
 | Protective | Nobody touches my people. | Shared-danger bond gains ×2; gunnery and melee +1 in a fight within 6 tiles of a friend; combat stress ×0.5 near a friend; "Grieving" and grief stress ×1.5 | Fierce, then broken by a death | 5 | — | bond, break |
-| Workaholic | One more panel. | workSpeed ×1.15; only sleeps or eats at the urgent thresholds (`policy.legacy`), so stays at the job; "idle" −5 mood after 60 s with no job | Gets it done, burns out | 5 | Lazy | small (`ai/policy.ts`, mood) |
+| Workaholic | One more panel. | workSpeed ×1.15; only sleeps or eats at the urgent thresholds (the drives' `urgent`, `content/policies.ts`), so stays at the job; "idle" −5 mood after 60 s with no job | Gets it done, burns out | 5 | Lazy | small (`ai/utility.ts`, mood) |
 | Lazy | Will get to it. | workSpeed ×0.9; takes the idle stroll between jobs more often; "relaxed" +3 mood | Slow, never miserable | 10 | Workaholic | small (policy, mood) |
 | Thrill-seeker | Bored when it's quiet. | Mood +6 in combat or on EVA; "bored" −3 after 15 min without either; no combat or decompression stress | Volunteers for the dangerous jobs | 5 | Battle-shy, Space-sick | small (mood), break |
 | Stoic | Seen worse. | All mood factors ×0.5, good and bad | Steady, hard to cheer up | 5 | Sensitive | small (mood) |
@@ -284,7 +284,7 @@ when someone can take it. Drafts and `man.ts` orders skip it.
 Touches: 5a `ai/legacyPick.ts`, `crew/traitMood.ts`, `crew/mood.ts`. 5b `crew/breakdown.ts` and `systems/breakdown.ts`
 (new, with `BreakMemoryC`), `pipeline.ts`, `ai/{interrupt,types,classes,policy}.ts`, `ai/machines/break.ts` (new), `events.ts`,
 `app/logText.ts`, alerts, the crew inspector. Size: 5a **S** (now); 5b **M**, after #194 makes the interrupt layer
-authoritative and adds `hazard` (Phase 3). Mild breaks alone could go through `policy.legacy` earlier (a work flag off while `BreakdownC` holds one).
+authoritative and adds `hazard` (Phase 3). Mild breaks alone could go through the policy data earlier (a work flag off while `BreakdownC` holds one).
 
 ## 6. Relationships (L)
 

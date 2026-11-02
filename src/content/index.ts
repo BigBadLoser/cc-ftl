@@ -8,6 +8,7 @@ import { research, researchBands } from './research';
 import { recipes } from './recipes';
 import { roles } from './roles';
 import { traits } from './traits';
+import { policies } from './policies';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
 import { species } from './species';
@@ -36,6 +37,7 @@ export const content = {
   species,
   crewNames,
   traits,
+  policies,
   items,
   recipes,
   structCosts,

@@ -30,7 +30,7 @@
   /** Every alert is urgent: red for threats to the ship and crew, amber for shortages. */
   const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile', 'boarders.stranded', 'save.failed']);
   const icon: Record<UiAlertKind, IconName> = {
-    'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.downed': 'downed',
+    'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.airUnreachable': 'o2', 'crew.downed': 'downed',
     'crew.starving': 'food', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save',
   };
 </script>

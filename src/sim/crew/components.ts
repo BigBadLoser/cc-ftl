@@ -161,6 +161,8 @@ export type JobKind =
   | 'assemble'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
   | 'suitUp' | 'suitOff'
+  /** refill: fill the suit's tank at the airlock `target`'s suit tile, or (target a shuttle) at the hull tile its hatch reaches, then drift out and back. */
+  | 'refill'
   /** patrol: walk to a patrol stop and stand watch there for `work` ticks (a ship director posts them for its guards). */
   | 'patrol'
   /** forceDoor: free a jammed door at (x, y) (player-ordered, worked from beside it). */
@@ -196,34 +198,14 @@ export interface Carried {
 }
 export const CarriedC = defineComponent<Carried>('carried');
 
-/** A bed module this crew member has reserved for sleeping. */
-export interface BedClaim {
-  bed: number;
-}
-export const BedClaimC = defineComponent<BedClaim>('bedClaim');
-
 /**
  * The bed module a crew member owns: assigned by the bed-owner pass (nearest unowned bed on their ship) and kept until the
- * bed is lost or they change ship. Tired crew walk to it first (BedClaim is the temporary reservation for one sleep).
+ * bed is lost or they change ship. Tired crew walk to it first (the sleep task's bed hold is the temporary reservation for one sleep).
  */
 export interface BedOwner {
   bed: number;
 }
 export const BedOwnerC = defineComponent<BedOwner>('bedOwner');
-
-/**
- * A hungry crew member on the way to eat (left = -1) or eating (left = ticks to go). `x, y` is the tile to stand on:
- * a galley's access tile (`galley`) or a walkable tile beside a storage crate holding `item`. The ration is taken from
- * storage when the meal starts, nutrition is added when it ends.
- */
-export interface Eat {
-  x: number;
-  y: number;
-  galley: boolean;
-  item: string;
-  left: number;
-}
-export const EatC = defineComponent<Eat>('eat');
 
 /** One named reason for the mood score: `key` names it (the UI labels it), `value` is its points. */
 export interface MoodFactor {
@@ -241,6 +223,8 @@ export interface Mood {
   factors: MoodFactor[];
   /** Seconds left of the hot-meal bonus. */
   meal: number;
+  /** Seconds left of the bonus from a break (the leisure drive); absent = none. */
+  relax?: number;
   /** Seconds left of the sleep memory, and whether it was in a bed (1) or on the floor (-1). */
   sleep: number;
   bed: 1 | -1;
