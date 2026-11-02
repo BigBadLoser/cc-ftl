@@ -176,7 +176,8 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
       else intent.scores[s.i] = s.score = 0;
       continue;
     }
-    if (!s.def.urgent?.breaksFinish && (finishing ??= view.finishing())) s.open = false; // a carried patient is laid down first
+    // A carried patient is laid down first; only an urgent drive that declares `breaksFinish` may break in, and only once urgent.
+    if (!(s.urgent && s.def.urgent?.breaksFinish) && (finishing ??= view.finishing())) s.open = false;
   }
   if (blocked) intent.blocked = blocked;
   else delete intent.blocked;

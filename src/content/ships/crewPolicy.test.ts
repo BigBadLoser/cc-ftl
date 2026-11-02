@@ -135,6 +135,8 @@ describe('utility drives', () => {
     setRest(sim, c, 1);
     expect(turn(sim, c, carrying)).toBe('work');
     const { sim: sim2, c: c2 } = game([{ ...s, urgent: { below: 50, breaksFinish: true } }, work]);
+    setRest(sim2, c2, 10); // engaged (below enter 20) but not yet urgent (5): the patient still comes first
+    expect(turn(sim2, c2, carrying)).toBe('work');
     setRest(sim2, c2, 1);
     expect(turn(sim2, c2, carrying)).toBe('sleep');
   });
