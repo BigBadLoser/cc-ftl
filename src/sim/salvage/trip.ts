@@ -190,6 +190,13 @@ function work(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
     const r = stepRun(sim, id, v, t, () => !!endReason(sim, id, t) && t.crew.every((c) => aboard(sim, c, id)));
     if (r === 'home') {
       t.reason ??= endReason(sim, id, t) ?? 'lost';
+      if (t.crew.some((c) => !aboard(sim, c, id))) {
+        // Never end a shift with someone out on the wreck (home bay gone, a leg that timed out): fly back and recall them first.
+        t.run!.stage = 'back';
+        t.run!.timer = 0;
+        sim.enqueue({ type: 'vehicle.hover', vehicle: id, ship: t.ship });
+        return;
+      }
       delete t.run;
       return endTrip(sim, id, t);
     }

@@ -168,3 +168,9 @@ export function sendOut(sim: Sim, crew: number, vehicle: number): void {
   team.landing = true;
   sim.enqueue({ type: 'eva.out', vehicle, crew });
 }
+
+/** True if the team member can walk to the suit tile of an airlock still standing on the wreck (where a tank is refilled without the shuttle). */
+export function reachesAirlock(sim: Sim, crew: number, ship: number): boolean {
+  const pos = sim.world.get(crew, PositionC);
+  return !!pos && airlockSpots(sim, ship).some((a) => !!planWalk(sim, crew, ship, origin(pos), a.at));
+}

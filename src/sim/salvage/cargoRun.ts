@@ -15,14 +15,14 @@ import { cargoCount, cargoSpace } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import type { SalvageTrip } from './components';
-import { aboard, airlockSpots, headBack, REPEAT } from './teamCrew';
+import { aboard, headBack, reachesAirlock, REPEAT } from './teamCrew';
 
 const sec = (n: number): number => n * TICK_HZ;
 /** Seconds the pilot gets to float back aboard, the hold to be unloaded at home, and each leg of the flight. */
 const CALL_SEC = 60;
 const UNLOAD_SEC = 60;
 const LEG_SEC = 240;
-/** With no airlock on the wreck to refill at, team members below this share of a tank ride along on a cargo run instead of waiting. */
+/** Team members below this share of a tank who cannot walk to an airlock on the wreck ride along on a cargo run instead of waiting. */
 const RIDE_FRAC = 0.7;
 
 /** Loose loot lying on the wreck (delivery crates of station jobs excepted), lowest id first. */
@@ -87,12 +87,12 @@ export function runDue(sim: Sim, vehicle: number, ship: number, unplaced: number
   return unplaced > 0 && haulsTo(sim, vehicle).length === 0 && cargoCount(sim.world.get(vehicle, VehicleC) as Vehicle) > 0 && looseOn(sim, ship).length > 0;
 }
 
-/** Start a cargo run: pick the pilot, and (no airlock on the wreck) the members whose air would not last until it is back. */
+/** Start a cargo run: pick the pilot, and the members whose air would not last until it is back and who cannot walk to an airlock on the wreck. */
 export function startRun(sim: Sim, vehicle: number, t: SalvageTrip): void {
   const pilot = pickPilot(sim, vehicle, t);
   if (!pilot) return;
-  const airlocks = airlockSpots(sim, t.ship).length > 0;
-  const riders = airlocks ? [] : t.crew.filter((c) => c !== pilot && (aboard(sim, c, vehicle) || suitAir(sim, c) < suitDef(sim).airSec * RIDE_FRAC));
+  const low = (c: number): boolean => suitAir(sim, c) < suitDef(sim).airSec * RIDE_FRAC && !reachesAirlock(sim, c, t.ship);
+  const riders = t.crew.filter((c) => c !== pilot && (aboard(sim, c, vehicle) || low(c)));
   t.run = { pilot, riders, stage: 'call', timer: 0 };
   sim.events.emit({ type: 'salvage.cargoRun', ship: t.ship, vehicle, pilot, riders: [...riders] });
 }
@@ -157,7 +157,7 @@ export function stepRun(sim: Sim, id: number, v: Vehicle, t: SalvageTrip, ending
         delete t.run;
         return 'gone';
       }
-      if (r.timer > sec(LEG_SEC)) return 'home';
+      if (r.timer > sec(LEG_SEC)) return 'home'; // the trip keeps trying while anyone is still out on the wreck
       if (due && (v.dest?.type !== 'hover' || v.dest.ship !== t.ship)) sim.enqueue({ type: 'vehicle.hover', vehicle: id, ship: t.ship });
       return 'on';
   }

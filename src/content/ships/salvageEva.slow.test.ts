@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, PositionC, ShipC, StorageC, VehicleC, deserialize, serialize, type SimEvent } from '../../sim';
+import { AboardC, CrewC, PositionC, ShipC, StorageC, Struct, VehicleC, deserialize, placementError, removeModule, serialize, shipGrid, spawnModule, suitDef, suitTile, writeStruct, type SimEvent } from '../../sim';
 import { shipIdOf } from '../../sim/regions';
 import { SalvageCrewC, SalvageTripC } from '../../sim/salvage/components';
 import { SuitC } from '../../sim/eva/components';
@@ -73,5 +73,51 @@ describe('salvage teams: the shuttle and EVA loop', () => {
       expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(home);
       expect(sim.world.has(c, SalvageCrewC)).toBe(false);
     }
+  });
+
+  it('never leaves a worker on the wreck when the home bay goes during a cargo run: the shuttle flies back and recalls them', () => {
+    const { sim, wreck } = setup(3, smallHold(4));
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const shuttle = shuttleOf(sim);
+    let removed = false;
+    const all: SimEvent[] = [];
+    for (let i = 0; i < 20 * 60 * 10 && of(all, 'salvage.teamHome').length === 0; i++) {
+      all.push(...play(sim, 1));
+      const trip = sim.world.get(shuttle, SalvageTripC);
+      const v = sim.world.get(shuttle, VehicleC)!;
+      const out = trip?.crew.some((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === wreck);
+      if (!removed && trip?.run?.stage === 'home' && v.state === 'flying' && out) {
+        removeModule(sim, v.home);
+        removed = true;
+      }
+    }
+    expect(removed).toBe(true);
+    expect(of(all, 'salvage.teamHome')).toMatchObject([{ ship: wreck, reason: 'lost' }]);
+    for (const c of of(all, 'salvage.teamSent').flatMap((e) => e.crew)) expect(shipIdOf(sim, sim.world.get(c, PositionC))).not.toBe(wreck);
+  });
+
+  it('takes along a low-air worker who cannot reach the airlock on the wreck', () => {
+    const { sim, wreck } = setup(3, smallHold(4));
+    const g = shipGrid(sim, wreck)!;
+    let lock = 0;
+    for (let rot = 0; rot < 4 && !lock; rot++) {
+      for (let y = g.y0; y < g.y0 + g.height && !lock; y++) for (let x = g.x0; x < g.x0 + g.width && !lock; x++) if (!placementError(sim, wreck, 'module.airlock', x, y, rot)) lock = spawnModule(sim, 'module.airlock', x, y, rot);
+    }
+    expect(lock).not.toBe(0);
+    const at = suitTile(sim, lock)!;
+    writeStruct(sim.sector.grid, at.x, at.y, Struct.Wall); // jammed: its suit tile cannot be reached
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const all: SimEvent[] = [];
+    for (let i = 0; i < 20 * 60 * 10 && of(all, 'salvage.cargoRun').length === 0; i++) {
+      for (const c of sim.world.query(SalvageCrewC)) {
+        const s = sim.world.get(c, SuitC);
+        if (s) s.air = suitDef(sim).airSec * 0.5; // low, but above the refill mark
+      }
+      all.push(...play(sim, 1));
+    }
+    const run = of(all, 'salvage.cargoRun')[0]!;
+    const team = of(all, 'salvage.teamSent').at(-1)!.crew;
+    expect(team.length).toBeGreaterThan(1);
+    expect(run.riders).toEqual(team.filter((c) => c !== run.pilot));
   });
 });
