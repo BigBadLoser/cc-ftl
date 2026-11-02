@@ -4,6 +4,7 @@ import {
   shipGrid, Struct, type ContentRegistry, type Sim,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
+import { explainCrew } from '../../sim/ai/explain';
 import { hazardHolds } from '../../sim/ai/hazard';
 import { reserveJob } from '../../sim/ai/task';
 import { hazardsHere } from '../../sim/crew/hazard';
@@ -119,6 +120,7 @@ describe('hazard interrupt', () => {
     expect(sim.world.get(c, AssignmentC)?.jobId).not.toBe(j);
     expect(sim.world.get(j, JobC)?.reservedBy).not.toBe(c);
     expect(sim.world.get(c, IntentC)!.avoid?.job).toBe(j);
+    expect(explainCrew(sim, c).avoid?.job).toBe(j); // the inspector shows it
   });
 
   it('thin air harms only the unsuited: a suited crew member stays', () => {
@@ -155,6 +157,7 @@ describe('leisure drive', () => {
       if (mood().relax) break;
     }
     expect(breaks).toBeGreaterThan(0);
+    expect(explainCrew(sim, c)).toMatchObject({ latched: ['leisure'], scores: { leisure: 90, work: 100 } });
     expect(mood().relax).toBeGreaterThan(0);
     for (let i = 0; i < 20; i++) sim.step(); // the next mood pass counts it
     expect(mood().factors.map((f) => f.key)).toContain('relaxed');

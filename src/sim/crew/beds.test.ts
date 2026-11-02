@@ -1,3 +1,4 @@
+import { claimedBed } from '../ai/task';
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
 import { ModuleC } from '../modules/components';
@@ -9,7 +10,7 @@ import { Sim } from '../sim';
 import { CREW_MAX_HP } from '../tuning';
 import { findFreeBed } from './beds';
 import {
-  BedClaimC, BedOwnerC, CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
+  BedOwnerC, CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from './components';
 import { killCrew } from './death';
 import { findPath } from './pathfind';
@@ -133,8 +134,8 @@ describe('bed ownership', () => {
     const p = sim.world.get(a, PositionC)!;
     Object.assign(p, { x: 2, y: 0, toX: 2, toY: 0 });
     run(sim, 8);
-    expect(sim.world.get(a, BedClaimC)?.bed).toBe(bedAt(sim, 9, 4));
-    expect(sim.world.get(b, BedClaimC)?.bed).toBe(bedAt(sim, 0, 0));
+    expect(claimedBed(sim, a)).toBe(bedAt(sim, 9, 4));
+    expect(claimedBed(sim, b)).toBe(bedAt(sim, 0, 0));
   });
 
   it('falls back to a shared bed when the owned bed is unreachable', () => {
@@ -148,14 +149,14 @@ describe('bed ownership', () => {
     sim.world.get(a, NeedsC)!.rest = 5;
     run(sim, 8);
     // (7,1) is behind the wall: unreachable, so the crew member sleeps on the floor
-    expect(sim.world.has(a, BedClaimC)).toBe(false);
+    expect(claimedBed(sim, a) !== 0).toBe(false);
     const open = make(['_________', '_________', '_________'], [[2, 1], [7, 1]]);
     const b = crew(open, 3, 1);
     run(open, 21);
     open.world.get(bedAt(open, 2, 1), ModuleC)!.reservedBy = 999;
     open.world.get(b, NeedsC)!.rest = 5;
     run(open, 8);
-    expect(open.world.get(b, BedClaimC)?.bed).toBe(bedAt(open, 7, 1));
+    expect(claimedBed(open, b)).toBe(bedAt(open, 7, 1));
   });
 
   it('delays the sleep decision by under 4 ticks, differently per crew member', () => {
@@ -166,7 +167,7 @@ describe('bed ownership', () => {
     const at = new Map<number, number>();
     for (let t = 1; t <= 6; t++) {
       sim.step();
-      for (const id of ids) if (!at.has(id) && sim.world.has(id, BedClaimC)) at.set(id, t);
+      for (const id of ids) if (!at.has(id) && claimedBed(sim, id) !== 0) at.set(id, t);
     }
     expect(at.size).toBe(ids.length);
     const delays = [...at.values()];

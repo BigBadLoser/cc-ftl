@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { shipIds } from '../../sim/regions';
-import { CrewC, DownedC, EatC, HealthC, ModuleC, MoodC, NeedsC, StorageC, TICK_HZ, deserialize, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
+import { CrewC, DownedC, HealthC, ModuleC, MoodC, NeedsC, StorageC, TICK_HZ, deserialize, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
+import { mealOf } from '../../sim/ai/task';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
 
@@ -54,7 +55,7 @@ describe('hunger', () => {
     expect(ate).toMatchObject({ crew: id, item: 'item.ration', galley: true });
     expect(needs(sim, id).hunger as number).toBeGreaterThan(60);
     expect(totalStock(sim, 'item.ration')).toBe(before - 1);
-    expect(sim.world.has(id, EatC)).toBe(false);
+    expect(!!mealOf(sim, id)).toBe(false);
   });
 
   it('eats from a crate when there is no working galley', () => {
@@ -71,11 +72,11 @@ describe('hunger', () => {
   it('does not eat when it is not hungry, and does not walk off with no food', () => {
     const { sim, id } = hungry(80);
     run(sim, 20 * TICK_HZ);
-    expect(sim.world.has(id, EatC)).toBe(false);
+    expect(!!mealOf(sim, id)).toBe(false);
     const other = hungry(10);
     emptyLarder(other.sim);
     run(other.sim, 20 * TICK_HZ);
-    expect(other.sim.world.has(other.id, EatC)).toBe(false);
+    expect(!!mealOf(other.sim, other.id)).toBe(false);
   });
 
   it('starving hurts health slowly, and raises the alert once', () => {
@@ -185,7 +186,7 @@ describe('robots and determinism', () => {
     expect(robot).toBeDefined();
     expect(needs(sim, robot).hunger).toBeUndefined();
     expect(sim.world.has(robot, MoodC)).toBe(false);
-    expect(sim.world.has(robot, EatC)).toBe(false);
+    expect(!!mealOf(sim, robot)).toBe(false);
   });
 
   it('is deterministic and survives a save round trip mid-meal', { timeout: 60000 }, () => {

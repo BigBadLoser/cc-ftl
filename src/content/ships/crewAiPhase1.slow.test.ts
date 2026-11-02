@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, ShipC, Struct, TaskC,
+  AssignmentC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, ShipC, Struct, TaskC,
   deserialize, findPath, homeShip, isSuited, isThin, liftShip, newGame, placementError, removeModule, serialize, shipGrid, spawnModule,
   stampPacket, type Sim,
 } from '../../sim';
+import { claimedBed } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';
 import { machineStates } from '../../sim/ai/classes';
 import { killCrew } from '../../sim/crew/death';
@@ -232,7 +233,7 @@ describe('crew AI phase 1: every executor state', () => {
         if (how === 'draft' || how === 'down' || how === 'kill') {
           expect(sim.world.has(c, AssignmentC), at).toBe(false);
           expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.reservedBy === c), at).toEqual([]);
-          expect(sim.world.has(c, BedClaimC), at).toBe(false);
+          expect(claimedBed(sim, c), at).toBe(0);
         }
         if (how === 'kill') expect(sim.world.has(c, TaskC), at).toBe(false);
         for (const id of sim.world.query(CrewC)) {

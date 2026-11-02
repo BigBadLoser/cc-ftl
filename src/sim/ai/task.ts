@@ -1,5 +1,6 @@
-import { releaseBedClaim } from '../crew/beds';
-import { AssignmentC, BedClaimC, CarriedC, CrewC, DeadC, EatC, JobC, PathC, type Crew, type Job } from '../crew/components';
+import { releaseBed } from '../crew/beds';
+import { AssignmentC, CarriedC, CrewC, DeadC, JobC, PathC, type Crew, type Job } from '../crew/components';
+import { ModuleC } from '../modules/components';
 import { clearPath } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { isErrand } from '../eva/errands';
@@ -8,7 +9,7 @@ import type { Sim } from '../sim';
 import { classOf } from './classes';
 import { machineOf, travelState } from './jobStates';
 import { IntentC, InterruptC, TaskC } from './components';
-import type { Blackboard, DriveId, Frame, Hold, MachineId, Task } from './types';
+import type { Blackboard, DriveId, Frame, Hold, MachineId, Task, TileRef } from './types';
 
 /**
  * The task API: the only writers of `AssignmentC` (lint enforces it) and of `TaskC`. Phase 1 keeps the legacy components as
@@ -46,13 +47,7 @@ export function deriveTask(sim: Sim, crew: number): Task | null {
     return job ? jobTask(sim, crew, a.jobId, job) : newTask(sim, a.jobId, 'work', 'generic', 'Navigate', {});
   }
   const c = sim.world.get(crew, CrewC) as Crew | undefined;
-  const claim = sim.world.get(crew, BedClaimC);
-  if (c?.activity === 'sleeping' || claim) {
-    const holds: Hold[] = claim ? [{ kind: 'bed', id: claim.bed }] : [];
-    return newTask(sim, 0, 'sleep', 'sleep', c?.activity === 'sleeping' ? 'Sleep' : 'Walk', claim ? { aux: claim.bed } : {}, holds);
-  }
-  const eat = sim.world.get(crew, EatC);
-  if (eat) return newTask(sim, 0, 'eat', 'eat', eat.left >= 0 ? 'Consume' : 'Walk', { tile: { x: eat.x, y: eat.y } });
+  if (c?.activity === 'sleeping') return newTask(sim, 0, 'sleep', 'sleep', 'Sleep', {});
   if (c?.activity === 'charging') return newTask(sim, 0, 'recharge', 'charge', 'Charge', {});
   return null;
 }
@@ -76,26 +71,67 @@ function holdsSameJob(sim: Sim, crew: number, prev: Task): boolean {
   return prev.job === a.jobId && prev.stack.length === 0;
 }
 
-/** True if `prev`, a need task, is still the one the legacy components imply (its state refreshed), checked without building one. */
+/**
+ * True if `prev`, a need task, still stands (its state refreshed). The sleep and eat tasks are their own truth (the bed claim is
+ * the sleep task's hold, the meal its blackboard): a sleep task stands while it holds a bed or the crew member sleeps, a meal
+ * until it is finished or dropped. A charge stands while the robot is in the cradle.
+ */
 function keepsSameNeed(sim: Sim, crew: number, prev: Task): boolean {
   if (sim.world.has(crew, AssignmentC)) return false;
   const activity = (sim.world.get(crew, CrewC) as Crew | undefined)?.activity;
   if (prev.machine === 'sleep') {
-    const claim = sim.world.get(crew, BedClaimC);
-    if (activity !== 'sleeping' && !claim) return false;
-    const bed = prev.holds[0];
-    if (claim ? prev.holds.length !== 1 || bed?.kind !== 'bed' || bed.id !== claim.bed : prev.holds.length !== 0) return false;
+    if (activity !== 'sleeping' && !bedHold(prev)) return false;
     setState(sim, crew, prev, activity === 'sleeping' ? 'Sleep' : 'Walk');
     return true;
   }
-  if (sim.world.has(crew, BedClaimC) || activity === 'sleeping') return false;
+  if (activity === 'sleeping') return false;
   if (prev.machine === 'eat') {
-    const eat = sim.world.get(crew, EatC);
-    if (!eat) return false;
-    setState(sim, crew, prev, eat.left >= 0 ? 'Consume' : 'Walk');
+    setState(sim, crew, prev, (prev.bb.n ?? -1) >= 0 ? 'Consume' : 'Walk');
     return true;
   }
-  return prev.machine === 'charge' && prev.state === 'Charge' && activity === 'charging' && !sim.world.has(crew, EatC);
+  return prev.machine === 'charge' && prev.state === 'Charge' && activity === 'charging';
+}
+
+const bedHold = (t: Task): number => t.holds.find((h) => h.kind === 'bed')?.id ?? 0;
+
+/** The bed a crew member has claimed for this sleep (their sleep task's hold), or 0. */
+export function claimedBed(sim: Sim, crew: number): number {
+  const t = sim.world.get(crew, TaskC);
+  return t?.machine === 'sleep' ? bedHold(t) : 0;
+}
+
+/** Claim a bed for one sleep: the bed is reserved to the sleeper, and their task becomes the walk to it, holding it. */
+export function claimBed(sim: Sim, crew: number, bed: number): void {
+  (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = crew;
+  sim.world.add(crew, TaskC, newTask(sim, 0, 'sleep', 'sleep', 'Walk', { aux: bed }, [{ kind: 'bed', id: bed }]));
+}
+
+/** Drop a crew member's sleeping-bed claim and free the bed (the task's hold goes; `syncTask` then ends a task left with nothing). */
+export function releaseBedClaim(sim: Sim, crew: number): void {
+  const t = sim.world.get(crew, TaskC);
+  const bed = t?.machine === 'sleep' ? bedHold(t) : 0;
+  if (!t || !bed) return;
+  releaseBed(sim, bed, crew);
+  t.holds = t.holds.filter((h) => !(h.kind === 'bed' && h.id === bed));
+  delete t.bb.aux;
+}
+
+/** The crew member's meal (their eat task), if they are on the way to one or eating. */
+export function mealOf(sim: Sim, crew: number): Task | undefined {
+  const t = sim.world.get(crew, TaskC);
+  return t?.machine === 'eat' && t.job === 0 ? t : undefined;
+}
+
+/** Start a meal: the eat task walks to the spot (`tile`; `target` the galley there, 0 at a crate) for `item`. */
+export function startMeal(sim: Sim, crew: number, tile: TileRef, galley: number, item: string): Task {
+  const t = newTask(sim, 0, 'eat', 'eat', 'Walk', { tile, target: galley, item, n: -1 });
+  sim.world.add(crew, TaskC, t);
+  return t;
+}
+
+/** End the crew member's meal task, eaten or dropped. */
+export function endMeal(sim: Sim, crew: number): void {
+  if (mealOf(sim, crew)) sim.world.remove(crew, TaskC);
 }
 
 /** Same task (same job, machine, nesting and holds): its state and start tick carry over. */
@@ -133,7 +169,7 @@ export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
  */
 export function restoreTasks(sim: Sim): void {
   for (const c of sim.world.query(CrewC)) {
-    // The dead get no task: a corpse can keep a stale `EatC` (killCrew removes the task, not the meal), and nothing would clear it.
+    // The dead get no task.
     if (sim.world.has(c, TaskC) || sim.world.has(c, DeadC)) continue;
     const t = deriveTask(sim, c);
     if (t) sim.world.add(c, TaskC, t);

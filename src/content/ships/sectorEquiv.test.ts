@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
-  type RoleDef,
+  type RoleDef, type Task,
 } from '../../sim';
 import { content } from '../index';
 
@@ -29,7 +29,20 @@ function fnv(s: string, h = 0x811c9dc5): number {
  */
 function legacyWorld(sim: Sim): unknown {
   const data = sim.world.serialize();
-  const stores = { ...data.stores };
+  // Crew AI Phase 3 folded the meal (`EatC`) and the sleep's bed claim (`BedClaimC`) into the task (SAVE_VERSION 80): rebuild those
+  // stores from it, in their old key order, and put them back in the stores' sorted order. Both hashes are unchanged by the fold.
+  const tasks = (data.stores.task ?? []) as [number, Task][];
+  const folded: Record<string, [number, unknown][]> = {
+    bedClaim: tasks.flatMap(([id, t]) => {
+      const bed = t.machine === 'sleep' ? t.holds.find((h) => h.kind === 'bed')?.id : undefined;
+      return bed ? [[id, { bed }] as [number, unknown]] : [];
+    }),
+    eat: tasks.flatMap(([id, t]) => (t.machine === 'eat' && t.job === 0
+      ? [[id, { x: t.bb.tile?.x, y: t.bb.tile?.y, galley: (t.bb.target ?? 0) !== 0, item: t.bb.item, left: t.bb.n }] as [number, unknown]] : [])),
+  };
+  const merged: Record<string, unknown[]> = { ...data.stores };
+  for (const [k, rows] of Object.entries(folded)) if (rows.length > 0) merged[k] = rows; // in the pinned runs an empty one was absent
+  const stores = Object.fromEntries(Object.keys(merged).sort().map((k) => [k, merged[k]])) as typeof data.stores;
   const bodies = new Map((stores.body ?? []) as [number, Body][]);
   delete stores.body;
   // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.

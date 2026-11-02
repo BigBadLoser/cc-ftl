@@ -95,8 +95,10 @@ import { newYard, type YardState } from './yard/types';
  * v78 (scrapper 4x2): saved grids hold the old 2x1 scrapper footprint.
  * v79 (salvage teams): `SalvageTripC` (a salvage shift, on its shuttle, with its cargo run), `SalvageCrewC` (its crew), `SalvageOrder.teamAt`,
  *   blocks `noShuttle` / `noCrew`, `VehicleDest.hover.box`.
+ * v80 (crew AI Phase 3): the `eat` and `bedClaim` stores are gone: a meal is the eat task's blackboard and a sleep's bed claim
+ *   the sleep task's hold, so `Task` is the saved truth for both; `Intent` gains `latched`, `blocked` and `avoid`; `Mood.relax`.
  */
-export const SAVE_VERSION = 79;
+export const SAVE_VERSION = 80;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

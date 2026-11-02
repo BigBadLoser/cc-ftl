@@ -1,7 +1,8 @@
+import { claimedBed } from '../ai/task';
 import { describe, expect, it } from 'vitest';
 
 import {
-  BedClaimC, CrewC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
+  CrewC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 
 import { findPath } from '../crew/pathfind';
@@ -181,7 +182,7 @@ describe('beds', () => {
       if (withBed) spawnTemplateModules(sim, 1, { name: 't', rows, modules: [{ def: 'bed', x: 4, y: 2, rot: 0 }] });
       const id = crew(sim, 2, 4, all(0), 10);
       run(sim, 20 * 6);
-      const claimed = sim.world.has(id, BedClaimC);
+      const claimed = claimedBed(sim, id) !== 0;
       return { rest: sim.world.get(id, NeedsC)!.rest, claimed };
     };
     const floor = restAfter(false);
@@ -197,7 +198,7 @@ describe('beds', () => {
     const a = crew(sim, 2, 4, all(0), 5);
     const b = crew(sim, 2, 3, all(0), 5);
     run(sim, 30);
-    const claims = [a, b].filter((i) => sim.world.has(i, BedClaimC));
+    const claims = [a, b].filter((i) => claimedBed(sim, i) !== 0);
     expect(claims).toHaveLength(1);
     const [bed] = modulesOf(sim, 'bed') as [number];
     expect(sim.world.get(bed, ModuleC)!.reservedBy).toBe(claims[0]);
