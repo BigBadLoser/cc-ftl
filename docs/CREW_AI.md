@@ -539,3 +539,5 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
 - Critical (`urgent.below` 500, `breaksFinish`) sets a carried patient down.
 - A blocked drive (`onMissing: 'block'`) raises the pickup request (`PickupC`, alert `crew.airUnreachable`).
 - See ARCHITECTURE.md "Slice 1 is built".
+
+**The return drive (#286 slice 2a).** `return` (after `air` in `policy.colonist`) reads `awayReturn` (away/crew.ts) and walks an away crew member to their site's shuttle and floats them aboard (`ai/machines/return.ts`). Its due line (rest 25, hunger 35) sits above sleep and eat, which never lie down on the site. See ARCHITECTURE.md "Slice 2a is built".
