@@ -1,7 +1,7 @@
 import { BodyC } from '../body';
 import { JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { EvaFloatC, SuitC } from '../eva/components';
+import { EvaFloatC } from '../eva/components';
 import { suitAir, suitDef } from '../eva/suit';
 import { ItemStackC } from '../items/components';
 import { makeHaul } from '../items/plan';
@@ -15,7 +15,7 @@ import { cargoCount, cargoSpace } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import type { SalvageTrip } from './components';
-import { aboard, headBack, reachesAirlock, REPEAT } from './teamCrew';
+import { aboard, carryAboard, headBack, reachesAirlock, REPEAT, tieSuits } from './teamCrew';
 
 const sec = (n: number): number => n * TICK_HZ;
 /** Seconds the pilot gets to float back aboard, the hold to be unloaded at home, and each leg of the flight. */
@@ -87,12 +87,14 @@ export function runDue(sim: Sim, vehicle: number, ship: number, unplaced: number
   return unplaced > 0 && haulsTo(sim, vehicle).length === 0 && cargoCount(sim.world.get(vehicle, VehicleC) as Vehicle) > 0 && looseOn(sim, ship).length > 0;
 }
 
+/** True if the team member's air would not last until a cargo run is back and they cannot walk to an airlock on the wreck: they ride along. */
+const mustRide = (sim: Sim, crew: number, ship: number): boolean => suitAir(sim, crew) < suitDef(sim).airSec * RIDE_FRAC && !reachesAirlock(sim, crew, ship);
+
 /** Start a cargo run: pick the pilot, and the members whose air would not last until it is back and who cannot walk to an airlock on the wreck. */
 export function startRun(sim: Sim, vehicle: number, t: SalvageTrip): void {
   const pilot = pickPilot(sim, vehicle, t);
   if (!pilot) return;
-  const low = (c: number): boolean => suitAir(sim, c) < suitDef(sim).airSec * RIDE_FRAC && !reachesAirlock(sim, c, t.ship);
-  const riders = t.crew.filter((c) => c !== pilot && (aboard(sim, c, vehicle) || low(c)));
+  const riders = t.crew.filter((c) => c !== pilot && (aboard(sim, c, vehicle) || mustRide(sim, c, t.ship)));
   t.run = { pilot, riders, stage: 'call', timer: 0 };
   sim.events.emit({ type: 'salvage.cargoRun', ship: t.ship, vehicle, pilot, riders: [...riders] });
 }
@@ -103,8 +105,10 @@ export const runCrew = (t: SalvageTrip): number[] => (t.run ? [t.run.pilot, ...t
 /**
  * One tick of a cargo run. 'call': the pilot and the riders float back aboard; once in (and nobody floating), the members staying out keep
  * their suits (they refill at an airlock on the wreck while the shuttle is away), the hauls to the hold are dropped (carriers set their loads
- * down) and the shuttle flies home. 'unload': the ship's crew empty the hold, then it flies back. `ending` is true when the shift is over
- * and nobody is out on the wreck: the run then ends at home with the shift. A hold that could not be unloaded at all (no room aboard)
+ * down) and the shuttle flies home. It never leaves a member behind who must ride: anyone who has run low meanwhile with no airlock to walk
+ * to is called too, and riders who cannot get back in time (boxed in, downed) are picked up as at the end of a recall. 'unload': the
+ * ship's crew empty the hold, then it flies back (the suits outside are tied to it again). `ending` is true when the shift is over and
+ * nobody is out on the wreck: the run then ends at home with the shift. A hold that could not be unloaded at all (no room aboard)
  * ends the shift ('noRoom'): at home if everyone is aboard, else after flying back to recall the rest. Returns 'gone' if the run was
  * given up, 'home' when the shift should end at the bay, else 'on'.
  */
@@ -120,14 +124,15 @@ export function stepRun(sim: Sim, id: number, v: Vehicle, t: SalvageTrip, ending
         return 'gone';
       }
       for (const c of back) if (!aboard(sim, c, id)) headBack(sim, c, t.ship, id, due);
-      const waiting = back.some((c) => !aboard(sim, c, id)) && r.timer <= sec(CALL_SEC);
+      const late = r.timer > sec(CALL_SEC);
+      const waiting = back.some((c) => !aboard(sim, c, id)) && !late;
       const floating = sim.world.query(EvaFloatC).some((c) => sim.world.get(c, EvaFloatC)?.vehicle === id);
       if (!aboard(sim, r.pilot, id) || waiting || floating) return 'on';
-      r.riders = r.riders.filter((c) => aboard(sim, c, id));
-      for (const c of t.crew) {
-        const s = sim.world.get(c, SuitC);
-        if (s?.vehicle === id) delete s.vehicle; // the shuttle may leave: the suits outside stay with their wearers
-      }
+      const more = t.crew.filter((c) => !aboard(sim, c, id) && !back.includes(c) && mustRide(sim, c, t.ship));
+      r.riders.push(...more);
+      if (more.length > 0 && !late) return 'on';
+      for (const c of runCrew(t)) if (!aboard(sim, c, id)) carryAboard(sim, c, id);
+      tieSuits(sim, t.crew.filter((c) => !aboard(sim, c, id)), id, false); // the shuttle may leave: the suits outside stay with their wearers
       for (const j of haulsTo(sim, id)) destroyJob(sim, j);
       sim.enqueue({ type: 'vehicle.return', vehicle: id });
       r.stage = 'home';
@@ -154,6 +159,7 @@ export function stepRun(sim: Sim, id: number, v: Vehicle, t: SalvageTrip, ending
       return 'on';
     case 'back':
       if (v.state === 'flying' && !v.dest && v.hover === t.ship) {
+        tieSuits(sim, t.crew, id, true);
         delete t.run;
         return 'gone';
       }

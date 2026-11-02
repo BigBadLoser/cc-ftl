@@ -153,11 +153,36 @@ export function carryAboard(sim: Sim, crew: number, vehicle: number): void {
   const v = sim.world.get(vehicle, VehicleC);
   if (!v) return;
   sim.world.remove(crew, EvaFloatC);
-  if (sim.world.get(crew, SuitC)?.vehicle === vehicle) {
+  if (wearsShuttleSuit(sim, crew, vehicle)) {
     sim.world.remove(crew, SuitC);
     v.suits = vehicleSuits(sim, v) + 1;
   }
+  const team = sim.world.get(crew, SalvageCrewC);
+  if (team) delete team.detached;
   boardCrew(sim, crew, vehicle);
+}
+
+/** True if the crew member wears one of the shuttle's suits: tied to it, or a team member's suit untied for a cargo run. */
+export function wearsShuttleSuit(sim: Sim, crew: number, vehicle: number): boolean {
+  const suit = sim.world.get(crew, SuitC);
+  const team = sim.world.get(crew, SalvageCrewC);
+  return !!suit && (suit.vehicle === vehicle || (team?.vehicle === vehicle && !!team.detached && suit.vehicle === undefined));
+}
+
+/** Untie (`tie` false) or tie again the shuttle's suits worn by the team members out on the wreck (see `SalvageCrew.detached`). */
+export function tieSuits(sim: Sim, crew: number[], vehicle: number, tie: boolean): void {
+  for (const c of crew) {
+    const suit = sim.world.get(c, SuitC);
+    const team = sim.world.get(c, SalvageCrewC);
+    if (!suit || !team || team.vehicle !== vehicle) continue;
+    if (!tie && suit.vehicle === vehicle) {
+      delete suit.vehicle;
+      team.detached = true;
+    } else if (tie && team.detached) {
+      if (suit.vehicle === undefined) suit.vehicle = vehicle;
+      delete team.detached;
+    }
+  }
 }
 
 /** Send a team member who is aboard out of the hatch onto the wreck, in a fresh suit from the shuttle's stock. */

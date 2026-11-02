@@ -78,5 +78,10 @@ export interface SalvageCrew {
   refill?: number;
   /** Sent out of the hatch and not landed yet: handed back to the crew AI once on the hull. */
   landing?: true;
+  /**
+   * Wears one of the shuttle's suits whose tie to it (`SuitC.vehicle`) is lifted while the shuttle is away on a cargo run (a shuttle with
+   * suits outside may not leave). The suit still belongs to the shuttle: it goes back into its stock on a pickup, and is tied again on return.
+   */
+  detached?: true;
 }
 export const SalvageCrewC = defineComponent<SalvageCrew>('salvageCrew');

@@ -3,6 +3,9 @@ import { AboardC, CrewC, PositionC, ShipC, StorageC, Struct, VehicleC, deseriali
 import { shipIdOf } from '../../sim/regions';
 import { SalvageCrewC, SalvageTripC } from '../../sim/salvage/components';
 import { SuitC } from '../../sim/eva/components';
+import { NeedsC } from '../../sim/crew/components';
+import { vehicleSuits } from '../../sim/eva/shuttle';
+import { carryAboard } from '../../sim/salvage/teamCrew';
 import { content } from '../index';
 import { shuttleOf, storages } from './ferryFixture';
 import { looseScrap, of, play, scrapHome, setup, smallHold } from './salvageEvaFixture';
@@ -119,5 +122,73 @@ describe('salvage teams: the shuttle and EVA loop', () => {
     const team = of(all, 'salvage.teamSent').at(-1)!.crew;
     expect(team.length).toBeGreaterThan(1);
     expect(run.riders).toEqual(team.filter((c) => c !== run.pilot));
+  });
+
+  it('keeps the shuttle suits through a cargo run: a worker picked up while it is away hands theirs back, the rest are tied again on return', () => {
+    const { sim, wreck } = setup(3, smallHold(4));
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const shuttle = shuttleOf(sim);
+    const outOn = (c: number): boolean => shipIdOf(sim, sim.world.get(c, PositionC)) === wreck;
+    let carried = false;
+    let tied = false;
+    let away: number[] = [];
+    for (let i = 0; i < 20 * 60 * 10 && !tied; i++) {
+      play(sim, 1);
+      const trip = sim.world.get(shuttle, SalvageTripC);
+      const out = trip?.crew.filter(outOn) ?? [];
+      if (trip?.run?.stage === 'home' && out.length > 0 && !carried) {
+        // Away on the run: the suits outside are untied from the shuttle but still its own.
+        for (const c of out) expect(sim.world.get(c, SuitC)?.vehicle).toBeUndefined();
+        const fork = deserialize(serialize(sim), content);
+        const v = fork.world.get(shuttle, VehicleC)!;
+        const suits = vehicleSuits(fork, v);
+        carryAboard(fork, out[0]!, shuttle); // the forced pickup of a recall that ran out of time
+        expect(fork.world.has(out[0]!, SuitC)).toBe(false);
+        expect(vehicleSuits(fork, v)).toBe(suits + 1);
+        carried = true;
+        away = out;
+      }
+      if (carried && !trip?.run && trip?.phase === 'work') {
+        for (const c of away.filter(outOn)) expect(sim.world.get(c, SuitC)?.vehicle).toBe(shuttle);
+        tied = true;
+      }
+    }
+    expect(carried).toBe(true);
+    expect(tied).toBe(true);
+  });
+
+  it('never leaves a low-air rider behind on a cargo run: one boxed in on the wreck is picked up', () => {
+    const { sim, wreck } = setup(3, smallHold(4));
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const shuttle = shuttleOf(sim);
+    const all: SimEvent[] = [];
+    let boxed = 0;
+    let left = false;
+    let departed = false;
+    for (let i = 0; i < 20 * 60 * 10 && !departed && of(all, 'salvage.teamHome').length === 0; i++) {
+      // No airlock on the wreck: everyone low on air rides along (and nobody tires, so the shift goes on).
+      for (const c of sim.world.query(SalvageCrewC)) {
+        const s = sim.world.get(c, SuitC);
+        if (s) s.air = suitDef(sim).airSec * 0.5;
+        const n = sim.world.get(c, NeedsC);
+        if (n) [n.rest, n.hunger] = [100, 100];
+      }
+      all.push(...play(sim, 1));
+      const run = sim.world.get(shuttle, SalvageTripC)?.run;
+      const v = sim.world.get(shuttle, VehicleC)!;
+      if (boxed && v.hover !== wreck && shipIdOf(sim, sim.world.get(boxed, PositionC)) === wreck) left = true;
+      if (boxed && run?.stage === 'home') departed = true;
+      if (run?.stage === 'call' && !boxed) {
+        const rider = run.riders.find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === wreck);
+        const p = rider && sim.world.get(rider, PositionC);
+        if (!rider || !p) continue;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) writeStruct(sim.sector.grid, p.toX + dx, p.toY + dy, Struct.Wall);
+        boxed = rider;
+      }
+    }
+    expect(boxed).not.toBe(0);
+    expect(left).toBe(false);
+    expect(departed).toBe(true);
+    expect(sim.world.get(boxed, AboardC)?.vehicle).toBe(shuttle);
   });
 });
