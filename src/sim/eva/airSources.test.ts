@@ -211,5 +211,16 @@ describe('eva.refill', () => {
     expect(suitAir(sim, c)).toBeLessThan(100);
     expect(sim.world.get(v, VehicleC)!.air).toBe(air);
   });
+  it('plans the walk by the suit worn, not the air in it: an empty tank on the hull still reaches the shuttle hatch', () => {
+    for (const air of [100, 0]) {
+      const sim = world();
+      sim.world.get(airlockOf(sim), AirlockC)!.air = 0;
+      const v = shuttle(sim);
+      const c = crew(sim, 0, 3, { drafted: true }); // out on the hull ring
+      suited(sim, c, air);
+      sim.enqueue({ type: 'eva.refill', crew: c, vehicle: v });
+      expect(rejected(run(sim, 1))).toEqual([]);
+    }
+  });
 });
 
