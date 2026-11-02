@@ -923,7 +923,16 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 
 ## Away sites and the air drive (planned, #286)
 
-Planned design, not built yet. Gameplay side: DESIGN.md "Air, away sites and salvage (design for #286; not built yet)".
+Planned design. Gameplay side: DESIGN.md "Air, away sites and salvage (design for #286; not built yet)".
+
+**Slice 0 is built** (branch `feat/air-sources-286`): `ai/travel.ts` (`travelTicks`, `flightTicks`; `floatTicks` re-exported), `eva/sources.ts`
+(`airSources`, `sourceCandidates`), `eva/air.ts` (stores, `refillFromAirlock` / `refillFromVehicle`), `systems/airStores.ts` (once a second),
+`ai/machines/refill.ts` (the `refill` errand job: `ToAirlock`, then `Fill`, a `finish` state), `eva/refillOrder.ts` (`eva.refill`), `ai/admitAir.ts`
+(`AirAdmission`, asked from the scheduler's `accept`), and the bench (`content/ships/salvageBench.ts`, scenarios `salvageBench*`, baseline in
+`salvageBench.baseline.ts`). Where the code differed from the plan: a plain door costs `DOOR_PASS_SEC` = 0 (doors open as the walker steps in, so
+there is no opening time to price); the refill is an errand job like a suit errand, not a Phase 3 machine; `Fill` at a hovering shuttle is the
+moment at the hull tile, the tank swap itself happens on an `EvaFloat {mode: 'refill'}` at the turn; salvage teams and yard crews are exempt from
+admission until salvage moves onto this (slice 3), so salvage behaves exactly as before.
 
 ### Dependency on crew AI Phase 3
 

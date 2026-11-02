@@ -15,6 +15,7 @@ import { startErrand } from './machines/eva';
 import { astar, dijkstraFrom } from './navSearch';
 import { goalTiles, isFallbackStop, isGoalTile, octileBound, reaches, startLabels, viewOf, type View } from './navView';
 import { reserveJob } from './task';
+import { AirAdmission } from './admitAir';
 
 /**
  * The job scheduler (docs/CREW_AI.md 7.1 and 7.4, Phase 2). Free crew are matched to open jobs together, one priority level at a time: of
@@ -238,6 +239,7 @@ export function assignJobs(sim: Sim, ids: number[]): Set<number> {
     return { id, job, ship: shipIdOf(sim, job), goal: jobGoal(job), urgency: repairUrgency(sim, job) };
   });
   const assigned = new Set<number>();
+  const air = new AirAdmission(sim, jobs); // partial-work admission: a suited walk must fit the tank (ai/admitAir.ts)
   for (let level = 1; level <= 4; level++) {
     const pairs: Pair[] = [];
     for (const w of walkers) {
@@ -256,6 +258,7 @@ export function assignJobs(sim: Sim, ids: number[]): Set<number> {
       const thin = (w.modes[pair.k] as WalkMode).thin;
       const src = thin ? w.bookSource() : null;
       if (thin && !src) return false;
+      if (!air.admits(w, pair.job, steps, thin)) return false;
       taken.add(w.id);
       assigned.add(pair.job);
       reserveJob(sim, w.id, pair.job, steps);

@@ -161,6 +161,8 @@ export type JobKind =
   | 'assemble'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
   | 'suitUp' | 'suitOff'
+  /** refill: fill the suit's tank at the airlock `target`'s suit tile, or (target a shuttle) at the hull tile its hatch reaches, then drift out and back. */
+  | 'refill'
   /** patrol: walk to a patrol stop and stand watch there for `work` ticks (a ship director posts them for its guards). */
   | 'patrol'
   /** forceDoor: free a jammed door at (x, y) (player-ordered, worked from beside it). */
