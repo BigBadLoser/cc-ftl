@@ -1,5 +1,6 @@
-import { JobC, type Job } from '../crew/components';
+import { JobC, PositionC, type Job } from '../crew/components';
 import type { PathGoal, Tile } from '../crew/pathfind';
+import { origin } from '../crew/helpers';
 import { isErrand } from '../eva/errands';
 import { airValue } from '../eva/air';
 import { sourceCandidates } from '../eva/sources';
@@ -13,7 +14,7 @@ import { AIR_RESERVE_SEC, STINT_SEC } from '../tuning';
 import { YardCrewC } from '../yard/types';
 import { isEmergency } from './emergency';
 import { dijkstraFrom } from './navSearch';
-import { goalTiles, isFallbackStop, viewOf, type View } from './navView';
+import { goalTiles, indexOf, isFallbackStop, viewOf, type View } from './navView';
 import { travelTicks } from './travel';
 
 /**
@@ -40,6 +41,8 @@ export interface AirJob {
 export interface AirWalker {
   id: number;
   ship: number;
+  /** Where the walk starts; the work tile of a job with no steps. Defaults to the entity's position. */
+  from?: Tile;
 }
 
 /** The searches out of one ship's sources, to every open job on it. */
@@ -68,13 +71,15 @@ export class AirAdmission {
     const suited = isSuited(sim, w.id);
     const grid = shipGrid(sim, w.ship);
     if (!grid || (!suited && !thin)) return null;
-    const jobThin = isThin(grid, job.x, job.y);
+    const work = steps.length > 0 ? (steps[steps.length - 1] as Tile) : (w.from ?? this.tileOf(w.id)); // the tile the work is done from (an adjacent job's own tile is the wall or module)
+    if (!work) return null;
+    const jobThin = isThin(grid, work.x, work.y);
     if (!jobThin && !thin && !steps.some((s) => isThin(grid, s.x, s.y))) return null; // a suit in breathable air does not drain
     const sec = (ticks: number): number => ticks / TICK_HZ;
     const left = (suited ? suitAir(sim, w.id) : suitDef(sim).airSec) * airValue(sim, w.id);
     const walk = sec(travelTicks(sim, w.id, steps, { shipId: w.ship, suited: true }));
     if (!jobThin) return walk + AIR_RESERVE_SEC <= left ? null : 'noAir';
-    let back = this.toSource(w, job, jobId);
+    let back = this.toSource(w, work);
     if (back === null) {
       if (!isEmergency(job)) return 'noSource';
       back = 0; // a fire, a breach or a patient is not left because there is no way home: they go if the walk and a stint fit
@@ -89,14 +94,20 @@ export class AirAdmission {
     return this.rejection(w, jobId, steps, thin) === null;
   }
 
-  /** Ticks from the job to its nearest source for this walker, or null when none can be reached. */
-  private toSource(w: AirWalker, job: Job, jobId: number): number | null {
+  private tileOf(id: number): Tile | null {
+    const p = this.sim.world.get(id, PositionC);
+    return p ? origin(p) : null;
+  }
+
+  /** Ticks from the work tile to its nearest source for this walker, or null when none can be reached from that very tile. */
+  private toSource(w: AirWalker, work: Tile): number | null {
     const reach = this.reachOf(w.ship);
     if (!reach) return null;
+    const key = indexOf(reach.view, work.x, work.y);
     let best: number | null = null;
     for (const s of reach.from) {
-      if (!s.r.cost.has(jobId)) continue;
-      const path = s.r.steps(jobId); // from the source to the job
+      if (!s.r.cost.has(key)) continue;
+      const path = s.r.steps(key); // from the source to the work tile
       const back = [...path.slice(0, -1).reverse(), s.tile];
       const ticks = travelTicks(this.sim, w.id, back, { from: path.length ? (path[path.length - 1] as Tile) : s.tile, shipId: w.ship, suited: true }) + s.extra;
       if (best === null || ticks < best) best = ticks;
@@ -113,10 +124,7 @@ export class AirAdmission {
       const goals = new Map<number, number[]>();
       const fallbacks = new Map<number, number[]>();
       for (const j of this.byShip.get(ship) ?? []) {
-        for (const t of goalTiles(view, j.goal)) {
-          const into = isFallbackStop(view, j.goal, t) ? fallbacks : goals;
-          into.set(t, [...(into.get(t) ?? []), j.id]);
-        }
+        for (const t of goalTiles(view, j.goal)) (isFallbackStop(view, j.goal, t) ? fallbacks : goals).set(t, [t]); // keyed by tile: the work tile the scheduler chose
       }
       made = { view, from: sources.map((s) => ({ r: dijkstraFrom(view, s.tile, goals, fallbacks), tile: s.tile, extra: s.extra })) };
     }

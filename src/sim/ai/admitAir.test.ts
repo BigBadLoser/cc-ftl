@@ -4,6 +4,8 @@ import { AirlockC } from '../modules/airlock';
 import { SalvageCrewC } from '../salvage/components';
 import { SuitC } from '../eva/components';
 import { airlockOf, crew, world } from '../eva/airFixture';
+import { shipGrid } from '../regions';
+import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { AirAdmission } from './admitAir';
 import { assignJobs } from './scheduler';
@@ -15,7 +17,8 @@ function hullJob(sim: Sim, workSec: number, at = { x: 13, y: 2 }): number {
   sim.world.add(id, JobC, { category: 'construction', kind: 'build', x: at.x, y: at.y, struct: 1, work: workSec * TICK_HZ, progress: 0, reservedBy: 0 } satisfies Job);
   return id;
 }
-const row = (n: number): { x: number; y: number }[] => Array.from({ length: n }, (_, i) => ({ x: 4 + i, y: 6 }));
+/** A walk of `n` tiles that ends on the default job's tile. */
+const row = (n: number): { x: number; y: number }[] => Array.from({ length: n }, (_, i) => ({ x: 13 - (n - 1 - i), y: 2 }));
 const walker = (_sim: Sim, c: number): { id: number; ship: number } => ({ id: c, ship: 1 });
 
 describe('partial-work admission', () => {
@@ -100,5 +103,30 @@ describe('partial-work admission', () => {
       expect(assignJobs(sim, [c]).size).toBe(taken);
       expect(sim.world.get(job, JobC)!.reservedBy).toBe(taken ? c : 0);
     }
+  });
+  it('judges a wall job from the tile the work is done from, not from the wall (suited, breathable work tile)', () => {
+    const { sim, w } = setup(10); // 10 s of air: far too little for any thin-air job
+    const grid = shipGrid(sim, 1)!;
+    for (let x = 2; x <= 11; x++) for (let y = 2; y <= 11; y++) grid.set('o2', x, y, 21); // the interior is breathable, the hull wall at (6,1) is not
+    grid.set('o2', 6, 1, 0);
+    const id = sim.world.createEntity();
+    sim.world.add(id, JobC, { category: 'construction', kind: 'deconstruct', x: 6, y: 1, struct: 1, work: 30 * TICK_HZ, progress: 0, reservedBy: 0 } satisfies Job);
+    const a = new AirAdmission(sim, [{ id, ship: 1, goal: { x: 6, y: 1, adjacent: true } }]);
+    const steps = [{ x: 4, y: 5 }, { x: 5, y: 4 }, { x: 6, y: 3 }, { x: 6, y: 2 }];
+    expect(a.rejection(w, id, steps, false)).toBeNull();
+    // The same suited crew member working from the thin side is held to the tank.
+    expect(a.rejection(w, id, [{ x: 6, y: 0 }], false)).not.toBeNull();
+  });
+
+  it('prices the way back from the work tile chosen, not from the other side of a wall that does not connect', () => {
+    const { sim, w } = setup(600);
+    const grid = shipGrid(sim, 1)!;
+    for (let y = 2; y <= 11; y++) for (let x = 2; x < 6; x++) grid.set('o2', x, y, 0); // the west half is vacuum
+    for (let y = 2; y <= 11; y++) grid.set('struct', 6, y, Struct.Wall); // splits the interior: the airlock is on the east half
+    const id = sim.world.createEntity();
+    sim.world.add(id, JobC, { category: 'construction', kind: 'deconstruct', x: 6, y: 6, struct: 1, work: 30 * TICK_HZ, progress: 0, reservedBy: 0 } satisfies Job);
+    const a = new AirAdmission(sim, [{ id, ship: 1, goal: { x: 6, y: 6, adjacent: true } }]);
+    expect(a.rejection(w, id, [{ x: 7, y: 6 }], false)).toBeNull(); // east side: the airlock is a short walk
+    expect(a.rejection(w, id, [{ x: 5, y: 6 }], false)).toBe('noSource'); // west side: no source can be reached from there
   });
 });
