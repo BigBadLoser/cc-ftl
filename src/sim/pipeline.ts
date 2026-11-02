@@ -77,6 +77,7 @@ import { yardSystem } from './yard/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
 import { salvageSystem } from './salvage/system';
+import { salvageTripSystem } from './salvage/trip';
 import { truceSystem } from './systems/truce';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
@@ -176,6 +177,8 @@ export const pipeline: readonly System[] = [
   yardSystem,
   // Base-logistics runs: shuttles carry cargo and crew between the home ship and claimed bases (ordinary vehicle commands, next tick).
   ferrySystem,
+  // Salvage teams: a shuttle carries a few suited crew to a wreck under a salvage order, hovers as their refill point and takes the loose scrap home.
+  salvageTripSystem,
   // Transfer orders (queue) take free shuttles and pilots and start the runs above; they book trips the ferry flow just settled.
   logisticsSystem,
   // Work last (the executor's work step, sim/ai): completed jobs change the grid, which rooms picks up next tick.

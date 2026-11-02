@@ -24,9 +24,9 @@ const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).fi
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
 describe('EVA content', () => {
-  it('values: 3 suits per airlock, a 4 minute tank, suited crew slower', () => {
+  it('values: 3 suits per airlock, a 10 minute tank, suited crew slower', () => {
     expect((content.modules['module.airlock'] as ModuleDef).airlock?.suits).toBe(3);
-    expect(content.suit).toMatchObject({ airSec: 240, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, });
+    expect(content.suit).toMatchObject({ airSec: 600, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, });
     const sim = newGame(1, content);
     expect(suitDef(sim)).toBe(content.suit);
     expect(airlockSuits(sim, airlockOf(sim, 1))).toBe(3);

@@ -137,14 +137,18 @@ export function resolveClip(def: LayerAsset, clip: string): ClipDef | undefined 
   return undefined;
 }
 
-/** Clips every crew member is seen in: their sheets are queued when the figure appears, the rest on first use. */
+/**
+ * Clips queued when a figure appears. Idle is wanted at once (it is what the figure is drawn in, and the stand-in for every
+ * other clip), so it queues as urgent; the others (walk, run, work) are preloads in the lowest tier: they load once
+ * everything being drawn is in, so they are there before they are needed, and a clip still loading draws as the idle.
+ */
 export const PRELOAD_CLIPS: readonly string[] = ['idle', 'walk', 'run', 'work'];
 
 /** Queue the common clips of each layer (a layer without a clip is skipped). */
 export function preloadLayers(layers: readonly LayerSprite[]): void {
   // Clip by clip across all layers (not layer by layer): the whole figure gets its idle first, then its walk, so a
   // layer is never the last of the stack to have any sheet while the body already walks.
-  for (const name of PRELOAD_CLIPS) for (const l of layers) if (l.def.clips[name]) l.request(l.def.clips[name] as ClipDef);
+  for (const name of PRELOAD_CLIPS) for (const l of layers) if (l.def.clips[name]) l.request(l.def.clips[name] as ClipDef, name === 'idle');
 }
 
 /** Column in the clip's sheet at time t (seconds into the clip). */

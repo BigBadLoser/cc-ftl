@@ -1,3 +1,4 @@
+import { SalvageTripC } from '../salvage/components';
 import { BodyC, ALT } from '../body';
 import { boardingReserved } from '../boarding/reserve';
 import { ShipC } from '../combat/components';
@@ -44,8 +45,8 @@ export function playerCourier(sim: Sim): { vehicle: number; cap: number } | { er
     const v = sim.world.get(id, VehicleC) as Vehicle;
     const cap = vehicleDefOf(sim, v)?.cargo ?? 0;
     if (v.homeShip !== me || cap <= 0 || vehicleDefOf(sim, v)?.class === 'pod') continue;
-    // A shuttle that belongs to a boarding (launching, recalling, or waiting at the enemy for the party) is not free either.
-    if (busy.has(id) || boardingReserved(sim, id) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound) {
+    // A shuttle that belongs to a boarding (launching, recalling, or waiting at the enemy for the party) or a salvage shift is not free either.
+    if (busy.has(id) || boardingReserved(sim, id) || sim.world.has(id, SalvageTripC) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound) {
       error = 'courierBusy';
       continue;
     }
