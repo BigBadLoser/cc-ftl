@@ -92,7 +92,8 @@ import { newYard, type YardState } from './yard/types';
  * v75 (salvage items): `item.scrap` is gone; saved stock may hold the new scrap types (hull, tech, energy, weapons, comfort) and cloth; no migration.
  * v76 (salvage orders): `SalvageOrderC` on a derelict, `Job.scrap` (a salvage job's scrap type), and `ModuleDef.scrap`; a stripped wreck leaves the world.
  * v77 (salvage progress): `SalvageOrder.total`.
- * v78 (salvage teams): `SalvageTripC` (a salvage shift, on its shuttle), `SalvageCrewC` (its crew), `SalvageOrder.teamAt`, blocks `noShuttle` / `noCrew`.
+ * v78 (salvage teams): `SalvageTripC` (a salvage shift, on its shuttle, with its cargo run), `SalvageCrewC` (its crew), `SalvageOrder.teamAt`,
+ *   blocks `noShuttle` / `noCrew`, `VehicleDest.hover.box`.
  */
 export const SAVE_VERSION = 78;
 

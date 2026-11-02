@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DraftedC, PositionC, ShipC, VehicleC } from '../../sim';
+import { DraftedC, ModuleC, PositionC, ShipC, VehicleBayC, VehicleC, destroyVehicle, placementError, shipGrid, spawnModule } from '../../sim';
+import { SuitC } from '../../sim/eva/components';
 import { shipIdOf } from '../../sim/regions';
 import { NestC } from '../../sim/aliens/components';
 import { SalvageCrewC, SalvageOrderC } from '../../sim/salvage/components';
-import { shuttleOf } from './ferryFixture';
+import { outpostRegion, shuttleOf } from './ferryFixture';
 import { of, play, setup } from './salvageEvaFixture';
 
 describe('salvage teams: blocks and recall', () => {
@@ -54,5 +55,42 @@ describe('salvage teams: blocks and recall', () => {
     expect(of(all, 'salvage.teamHome')).toMatchObject([{ ship: wreck, reason: 'hostile' }]);
     for (const c of team) expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(home);
     expect(of(play(sim, 20 * 30), 'salvage.teamSent')).toHaveLength(0); // no new shift while it is blocked
+  });
+
+  it('does not send a team on a shuttle parked at a claimed base: the home crew cannot reach its bay', () => {
+    const { sim, wreck } = setup();
+    const h = sim.world.get(wreck, ShipC)!;
+    const base = outpostRegion(sim, h.x + h.width + 20, h.y, false);
+    const g = shipGrid(sim, base)!;
+    let bay = 0;
+    for (let rot = 0; rot < 4 && !bay; rot++) {
+      for (let y = g.y0; y < g.y0 + g.height && !bay; y++) for (let x = g.x0; x < g.x0 + g.width && !bay; x++) if (!placementError(sim, base, 'module.vehicle_bay', x, y, rot)) bay = spawnModule(sim, 'module.vehicle_bay', x, y, rot);
+    }
+    expect(bay).not.toBe(0);
+    const shuttle = shuttleOf(sim);
+    const v = sim.world.get(shuttle, VehicleC)!;
+    sim.world.get(v.home, VehicleBayC)!.vehicle = 0;
+    sim.world.get(bay, VehicleBayC)!.vehicle = shuttle;
+    v.home = bay;
+    expect(sim.world.has(bay, ModuleC)).toBe(true);
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull'] });
+    const all = play(sim, 400);
+    expect(of(all, 'salvage.teamSent')).toHaveLength(0);
+    expect(of(all, 'salvage.blocked')).toMatchObject([{ ship: wreck, reason: 'noShuttle' }]);
+  });
+
+  it('lets the team go when their shuttle is destroyed mid-shift: no team tag, no suit tied to it, nobody left drafted', () => {
+    const { sim, wreck } = setup();
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    play(sim, 20 * 120, () => sim.world.query(SalvageCrewC).some((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === wreck));
+    const team = [...sim.world.query(SalvageCrewC)];
+    const shuttle = shuttleOf(sim);
+    destroyVehicle(sim, shuttle);
+    play(sim, 40);
+    expect(sim.world.query(SalvageCrewC)).toEqual([]);
+    for (const c of team) {
+      expect(sim.world.get(c, SuitC)?.vehicle).toBeUndefined();
+      if (sim.world.has(c, PositionC)) expect(sim.world.has(c, DraftedC)).toBe(false);
+    }
   });
 });

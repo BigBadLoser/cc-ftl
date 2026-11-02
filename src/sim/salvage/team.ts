@@ -12,6 +12,7 @@ import type { Sim } from '../sim';
 import { SALVAGE_TEAM, SALVAGE_TEAM_GO, SALVAGE_TEAM_HUNGER, SALVAGE_TEAM_REST } from '../tuning';
 import { AboardC, EmbarkOrderC, VehicleC } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
+import { boardingTile } from '../vehicles/geometry';
 import { SalvageCrewC, SalvageTripC } from './components';
 
 /** The shuttle running a salvage shift on this wreck, or 0. */
@@ -34,10 +35,15 @@ export function playerCrewOn(sim: Sim, ship: number): boolean {
   return false;
 }
 
-/** A shuttle that can carry a salvage team: free for a run (ferry rules), has suits (EVA), and sits in its bay so the team can climb in. */
+/**
+ * A shuttle that can carry a salvage team: free for a run (ferry rules), has suits (EVA), and sits in a bay on the home ship (the team's
+ * ship: a shuttle parked at a claimed base cannot be reached by its crew), so the team can walk to it and climb in.
+ */
 function teamShuttle(sim: Sim, id: number): boolean {
   const v = sim.world.get(id, VehicleC);
-  return !!v && v.state === 'stowed' && !!vehicleDefOf(sim, v)?.eva && vehicleSuits(sim, v) > 0 && ferryFree(sim, id);
+  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || vehicleSuits(sim, v) <= 0 || !ferryFree(sim, id)) return false;
+  const at = boardingTile(sim, id);
+  return !!at && at.shipId === homeShip(sim);
 }
 
 /** The lowest-id shuttle free for a salvage team, or 0. */
@@ -59,11 +65,11 @@ export function needsHome(sim: Sim, id: number): boolean {
 
 /**
  * The crew to send: player crew on the home ship who breathe (suits), are free (not drafted, aboard, off duty or at a console), have
- * construction switched on and are rested. Best construction priority first, then the lowest id. At most SALVAGE_TEAM, the shuttle's suits
+ * construction or hauling switched on and are rested. Best construction priority first (then hauling), then the lowest id. At most SALVAGE_TEAM, the shuttle's suits
  * and seats, and half of the able crew aboard (at least one), so the ship is never emptied.
  */
 export function pickTeam(sim: Sim, vehicle: number): number[] {
-  const home = homeShip(sim);
+  const home = boardingTile(sim, vehicle)?.shipId ?? 0; // the crew who can walk to its bay
   const v = sim.world.get(vehicle, VehicleC);
   const def = v && vehicleDefOf(sim, v);
   if (!home || !v || !def) return [];
@@ -77,8 +83,10 @@ export function pickTeam(sim: Sim, vehicle: number): number[] {
     if (!needsAir(sim, id) || isOffDuty(sim, id) || !rested(sim, id)) continue;
     const job = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
     if (job?.kind === 'operate') continue; // on duty at a console
-    const prio = sim.world.get(id, PrioritiesC)?.construction ?? 0;
-    if (prio > 0) free.push({ id, prio });
+    // Stripping is construction work and carrying the loot is hauling: crew with either switched on can go, builders first.
+    const p = sim.world.get(id, PrioritiesC);
+    const prio = (p?.construction || 9) * 10 + (p?.hauling || 9);
+    if (p && (p.construction > 0 || p.hauling > 0)) free.push({ id, prio });
   }
   const n = Math.min(SALVAGE_TEAM, vehicleSuits(sim, v), def.capacity + 1, Math.max(1, Math.floor(able / 2)));
   return free.sort((a, b) => a.prio - b.prio || a.id - b.id).slice(0, n).map((c) => c.id);

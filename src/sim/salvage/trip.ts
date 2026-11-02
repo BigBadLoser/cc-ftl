@@ -3,31 +3,32 @@ import { CrewC, DeadC } from '../crew/components';
 import { EvaFloatC } from '../eva/components';
 import { BodyC } from '../body';
 import { outsideCrew } from '../eva/shuttle';
-import { ItemStackC } from '../items/components';
-import { spillItems, takeFromStack } from '../items/stacks';
+import { SuitC } from '../eva/components';
 import { isTileWalkable } from '../modules/walk';
-import { shipGrid, shipIdAt } from '../regions';
+import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { cargoAdd, cargoCount } from '../vehicles/cargo';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { sendToEmbark } from '../vehicles/embark';
 import { boardingTile, hoverPoint } from '../vehicles/geometry';
 import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { SalvageCrewC, SalvageOrderC, SalvageTripC, type SalvageBlock, type SalvageOrder, type SalvageTrip, type SalvageTripEnd } from './components';
 import { partCount, partsOf, salvageJobs } from './plan';
+import { destroyJob } from '../items/stacks';
 import { liveBox, needsHome, pickTeam, pickTeamShuttle, playerCrewOn, tripFor } from './team';
 import { aboard, carryAboard, handBack, headBack, release, REPEAT, sendOut, tendWorker } from './teamCrew';
+import { haulsTo, looseOn, planCarry, runCrew, runDue, startRun, stepRun } from './cargoRun';
 
 const sec = (n: number): number => n * TICK_HZ;
 /** Seconds the team gets to reach the bay, the shuttle to reach the wreck, the team to float back, and the shuttle to get home. */
 const BOARD_SEC = 60;
 const FLIGHT_SEC = 240;
 const RECALL_SEC = 90;
-/** Seconds between hover swaps of loose loot into the hold, after a shift before the next one, and between looks for a shuttle or crew. */
-const SWAP_SEC = 3;
+/** Seconds after a shift before the next one, between looks for a shuttle or crew, and the team spends carrying off loot once all is stripped. */
 const PAUSE_SEC = 10;
+const DONE_WAIT_SEC = 120;
 const LOOK_SEC = 5;
+
 
 const due = (t: SalvageTrip): boolean => t.timer % REPEAT === 1;
 
@@ -55,39 +56,20 @@ function unblock(sim: Sim, ship: number, o: SalvageOrder): void {
 /** True when the order has nothing left to strip and no stripping job open. */
 const finished = (sim: Sim, ship: number, o: SalvageOrder): boolean => salvageJobs(sim, ship).length === 0 && partCount(partsOf(sim, ship, o.types)) === 0;
 
-/** Loose loot lying on the wreck (delivery crates of station jobs excepted), lowest id first. */
-function looseOn(sim: Sim, ship: number): number[] {
-  return [...sim.world.query(ItemStackC)].filter((id) => {
-    const st = sim.world.get(id, ItemStackC)!;
-    return !st.job && shipIdAt(sim, st.x, st.y) === ship;
-  }).sort((a, b) => a - b);
-}
-
-/** The hover swap: loose loot on the wreck goes straight into the hold while there is room (as a ferry's hover pickup does). */
-function swapLoose(sim: Sim, vehicle: number, ship: number): void {
-  for (const id of looseOn(sim, ship)) {
-    const st = sim.world.get(id, ItemStackC)!;
-    const { item, x, y } = st;
-    const got = takeFromStack(sim, id, st.count);
-    const fit = cargoAdd(sim, vehicle, item, got);
-    if (fit < got) {
-      spillItems(sim, ship, x, y, item, got - fit);
-      return;
-    }
-  }
-}
-
-const holdFull = (sim: Sim, v: Vehicle): boolean => cargoCount(v) >= (vehicleDefOf(sim, v)?.cargo ?? 0);
-
 /** Why the shift should end now, or undefined to keep working. */
-function endReason(sim: Sim, v: Vehicle, t: SalvageTrip): SalvageTripEnd | undefined {
+function endReason(sim: Sim, id: number, t: SalvageTrip): SalvageTripEnd | undefined {
   const o = sim.world.get(t.ship, SalvageOrderC);
   if (!o) return 'cancelled';
   if (o.block === 'hostile') return 'hostile';
   if (t.crew.length === 0) return 'lost';
-  if (finished(sim, t.ship, o)) return 'done';
+  if (sim.sector.inCombat) return 'combat';
+  if (finished(sim, t.ship, o)) {
+    // All stripped: the loot still lying about (or on its way to the hold) is carried off first, for a while.
+    const loot = looseOn(sim, t.ship).length > 0 || haulsTo(sim, id).length > 0;
+    t.doneAt ??= sim.tick;
+    if (!loot || sim.tick - t.doneAt > sec(DONE_WAIT_SEC)) return 'done';
+  }
   if (t.crew.some((c) => needsHome(sim, c))) return 'tired';
-  if (holdFull(sim, v) && looseOn(sim, t.ship).length > 0) return 'full';
   return undefined;
 }
 
@@ -100,9 +82,25 @@ function wrapUp(sim: Sim, id: number, t: SalvageTrip, reason: SalvageTripEnd): v
   } else go(t, 'recall');
 }
 
+/**
+ * Team members whose shift is gone without a word (its shuttle destroyed: the entity, and the trip on it, are removed at once) are let go:
+ * off the team, back to the crew AI, and the suits they wear no longer belong to a shuttle (they stow them at an airlock like any suit).
+ */
+function sweepOrphans(sim: Sim): void {
+  for (const c of [...sim.world.query(SalvageCrewC)].sort((a, b) => a - b)) {
+    const vehicle = sim.world.get(c, SalvageCrewC)!.vehicle;
+    if (sim.world.get(vehicle, SalvageTripC)) continue;
+    const suit = sim.world.get(c, SuitC);
+    if (suit?.vehicle === vehicle) delete suit.vehicle;
+    if (!sim.world.has(c, EvaFloatC)) handBack(sim, c);
+    sim.world.remove(c, EvaFloatC);
+    release(sim, c, vehicle);
+  }
+}
+
 /** Start a shift for an order with no team: a free shuttle with suits and a few rested crew, who walk to its bay. */
 function startTrip(sim: Sim, ship: number, o: SalvageOrder): void {
-  if (o.status === 'blocked' && o.block === 'hostile') return;
+  if ((o.status === 'blocked' && o.block === 'hostile') || sim.sector.inCombat) return;
   if (sim.tick < (o.teamAt ?? 0) || finished(sim, ship, o)) return;
   // Crew of the player's who are on the wreck already (a boarding party left on a ship wrecked in the fight) work it without a team.
   const wait = (reason: SalvageBlock): void => {
@@ -116,7 +114,6 @@ function startTrip(sim: Sim, ship: number, o: SalvageOrder): void {
   if (crew.length === 0) return wait('noCrew');
   unblock(sim, ship, o);
   for (const c of crew) sim.world.add(c, SalvageCrewC, { vehicle });
-  (sim.world.get(vehicle, VehicleC) as Vehicle).autopilot = true;
   sim.world.add(vehicle, SalvageTripC, { ship, crew, phase: 'board', timer: 0 });
   sim.events.emit({ type: 'salvage.teamSent', ship, vehicle, crew: [...crew] });
 }
@@ -128,9 +125,9 @@ function endTrip(sim: Sim, id: number, t: SalvageTrip): void {
     const at = boardingTile(sim, id);
     const grid = at && shipGrid(sim, at.shipId);
     if (at && grid && isTileWalkable(sim, grid, at.x, at.y)) for (const c of occupants(v)) if (t.crew.includes(c)) unboardCrew(sim, c, id, at);
-    v.autopilot = false;
   }
   for (const c of t.crew) release(sim, c, id);
+  for (const j of haulsTo(sim, id)) destroyJob(sim, j);
   sim.world.remove(id, SalvageTripC);
   const o = sim.world.get(t.ship, SalvageOrderC);
   if (o) o.teamAt = sim.tick + sec(PAUSE_SEC);
@@ -163,8 +160,8 @@ function board(sim: Sim, id: number, t: SalvageTrip): void {
 
 function fly(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
   if (v.state === 'flying' && !v.dest && v.hover === t.ship) return go(t, 'work');
-  const end = endReason(sim, v, t);
-  if (end && end !== 'full') return wrapUp(sim, id, t, end);
+  const end = endReason(sim, id, t);
+  if (end) return wrapUp(sim, id, t, end);
   if (t.timer > sec(FLIGHT_SEC)) return wrapUp(sim, id, t, 'lost');
   if (due(t) && (v.dest?.type !== 'hover' || v.dest.ship !== t.ship)) sim.enqueue({ type: 'vehicle.hover', vehicle: id, ship: t.ship });
 }
@@ -187,20 +184,36 @@ function keepClose(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): boolean {
 }
 
 function work(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
-  if (t.timer % sec(SWAP_SEC) === 0) swapLoose(sim, id, t.ship);
-  const end = endReason(sim, v, t);
-  if (end) return wrapUp(sim, id, t, end);
+  if (t.run && t.run.stage !== 'call') {
+    // The shuttle is away with the hold: those left on the wreck work on (refilling at an airlock there, or waiting by the hull).
+    const r = stepRun(sim, id, v, t, () => !!endReason(sim, id, t) && t.crew.every((c) => aboard(sim, c, id)));
+    if (r === 'home') {
+      t.reason ??= endReason(sim, id, t) ?? 'lost';
+      delete t.run;
+      return endTrip(sim, id, t);
+    }
+    for (const c of t.crew) if (!aboard(sim, c, id)) tendWorker(sim, c, t.ship, id, due(t));
+    return;
+  }
+  const end = endReason(sim, id, t);
+  if (end) {
+    delete t.run;
+    return wrapUp(sim, id, t, end);
+  }
   const onStation = keepClose(sim, id, v, t);
   if (!onStation && !(v.dest?.type === 'hover' && v.dest.ship === t.ship) && outsideCrew(sim, id).length === 0) return go(t, 'fly'); // knocked off station
+  if (t.run) stepRun(sim, id, v, t, () => false);
+  else if (onStation && runDue(sim, id, t.ship, planCarry(sim, id, t.ship))) startRun(sim, id, t);
+  const called = runCrew(t);
   for (const c of t.crew) {
+    if (called.includes(c)) continue;
     if (aboard(sim, c, id)) {
-      if (due(t) && onStation) sendOut(sim, c, id);
+      if (due(t) && onStation && !t.run) sendOut(sim, c, id);
     } else tendWorker(sim, c, t.ship, id, due(t));
   }
 }
 
 function recall(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
-  if (t.timer % sec(SWAP_SEC) === 0) swapLoose(sim, id, t.ship);
   keepClose(sim, id, v, t);
   const out = t.crew.filter((c) => !aboard(sim, c, id));
   if (out.length > 0 && t.timer <= sec(RECALL_SEC)) {
@@ -208,7 +221,7 @@ function recall(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
     return;
   }
   for (const c of out) carryAboard(sim, c, id); // downed, boxed in, or cut off from the shuttle's side: the shuttle picks them up
-  swapLoose(sim, id, t.ship);
+  for (const j of haulsTo(sim, id)) destroyJob(sim, j);
   go(t, 'home');
   sim.enqueue({ type: 'vehicle.return', vehicle: id });
 }
@@ -223,17 +236,19 @@ function home(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
 }
 
 /**
- * Salvage teams (DESIGN.md "Salvaging derelicts", EVA work). For each running order without one, a shift starts when a shuttle with suits
- * is free in its bay and crew are free and rested (else the order shows 'noShuttle' or 'noCrew'): a few crew walk to the bay and climb in,
- * the shuttle flies itself to hover beside the wreck, and the team floats over in the shuttle's suits. On the hull they are ordinary crew
- * taking the wreck's stripping jobs; low on air they refill at an airlock still standing on the wreck, or by floating back to the shuttle
- * and out again. Meanwhile the hold takes the loose scrap off the wreck (a hover swap), so the floors are not held up. The shift ends when
- * the order is done, cancelled or blocked by something hostile, when a member needs rest or food, or when the hold is full with loot still
- * lying about: the team floats back (anyone who cannot is carried aboard after a while), the shuttle flies home, the team steps out at the
- * bay and the cargo hauls unload the hold into the ship's storage. Vehicle and crew orders go by command, applied next tick. After the
- * ferry system, beside the other shuttle runs.
+ * Salvage teams (DESIGN.md "Salvaging derelicts", EVA work). For each running order without one, a shift starts (outside combat) when a
+ * shuttle with suits is free in its bay on the home ship and crew are free and rested (else the order shows 'noShuttle' or 'noCrew'): a few
+ * crew walk to the bay and climb in, the first in flies it to hover beside the wreck, and they all float over in the shuttle's suits. On the
+ * hull they are ordinary crew: they take the wreck's stripping jobs and carry the loose scrap to the shuttle's staging tile as haul jobs into
+ * its hold, so the floors are not held up. Low on air they refill at an airlock still standing on the wreck, or by floating back to the
+ * shuttle and out again. When the hold is full with loot still lying about, one of them flies it home to unload and back (`cargoRun.ts`)
+ * while the rest work on. The shift ends when the order is done (and its loot carried off), cancelled or blocked by something hostile, when
+ * a fight starts, or when a member needs rest or food: the team floats back (anyone who cannot is carried aboard after a while), the shuttle
+ * flies home, the team steps out at the bay and the cargo hauls unload the hold. Vehicle and crew orders go by command, applied next tick.
+ * After the ferry system, beside the other shuttle runs.
  */
 export function salvageTripSystem(sim: Sim): void {
+  sweepOrphans(sim);
   for (const ship of [...sim.world.query(SalvageOrderC)].sort((a, b) => a - b)) {
     if (!tripFor(sim, ship) && (sim.tick + ship) % REPEAT === 0) startTrip(sim, ship, sim.world.get(ship, SalvageOrderC) as SalvageOrder);
   }

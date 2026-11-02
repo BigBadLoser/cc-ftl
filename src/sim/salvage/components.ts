@@ -29,14 +29,29 @@ export interface SalvageOrder {
 export const SalvageOrderC = defineComponent<SalvageOrder>('salvageOrder');
 
 /**
- * 'board': the team walks to the shuttle's bay and climbs in. 'fly': the shuttle heads for the wreck. 'work': it hovers beside the wreck as
- * the suit-refill point while the team strips it in suits and the hold takes the loose scrap. 'recall': the team floats back aboard. 'home':
- * the shuttle flies back to its bay, where the team steps out and the cargo hauls unload the hold.
+ * 'board': the team walks to the shuttle's bay and climbs in (the first in flies it). 'fly': the shuttle heads for the wreck. 'work': it
+ * hovers beside the wreck as the suit-refill point while the team strips it in suits and carries the loose scrap to it (with cargo runs
+ * home when the hold is full). 'recall': the team floats back aboard. 'home': the shuttle flies back to its bay, where the team steps out
+ * and the cargo hauls unload the hold.
  */
 export type SalvagePhase = 'board' | 'fly' | 'work' | 'recall' | 'home';
 
-/** Why a shift ended: the order is finished or gone, something hostile is aboard, the team needs rest or food, the hold is full, or it failed. */
-export type SalvageTripEnd = 'done' | 'cancelled' | 'hostile' | 'tired' | 'full' | 'lost' | 'noCrew';
+/** Why a shift ended: the order is finished or gone, something hostile is aboard, a fight began, the team needs rest or food, the ship had no room for the hold, or it failed. */
+export type SalvageTripEnd = 'done' | 'cancelled' | 'hostile' | 'combat' | 'tired' | 'noRoom' | 'lost' | 'noCrew';
+
+/**
+ * A cargo run home in the middle of a shift: one of the team (`pilot`) flies the full hold home and back while the rest work on.
+ * 'call': the pilot (and `riders`, who would run low on air with no airlock on the wreck to refill at) float back aboard. 'home': flying
+ * to the bay. 'unload': the ship's crew empty the hold (cargo hauls). 'back': flying back to the wreck.
+ */
+export interface CargoRun {
+  pilot: number;
+  riders: number[];
+  stage: 'call' | 'home' | 'unload' | 'back';
+  timer: number;
+  /** Units in the hold when it reached the bay. */
+  held?: number;
+}
 
 /** One shift of a salvage team, on the shuttle that carries it: the wreck (ShipC id), the team, and where the shift stands. */
 export interface SalvageTrip {
@@ -47,6 +62,10 @@ export interface SalvageTrip {
   timer: number;
   /** Set once the shift is ending. */
   reason?: SalvageTripEnd;
+  /** A cargo run under way. */
+  run?: CargoRun;
+  /** Tick the order was first seen finished with loot still lying about (the team carries it off before going home). */
+  doneAt?: number;
 }
 export const SalvageTripC = defineComponent<SalvageTrip>('salvageTrip');
 

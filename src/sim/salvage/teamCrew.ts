@@ -61,7 +61,7 @@ function hatchSpots(sim: Sim, ship: number, vehicle: number): Spot[] {
 }
 
 /** Usable suit tiles of airlocks still standing on the wreck (an airlock refills a suit until it is stripped). */
-function airlockSpots(sim: Sim, ship: number): { airlock: number; at: Spot }[] {
+export function airlockSpots(sim: Sim, ship: number): { airlock: number; at: Spot }[] {
   const out: { airlock: number; at: Spot }[] = [];
   for (const id of [...sim.world.query(AirlockC, ModuleC)].sort((a, b) => a - b)) {
     const m = sim.world.get(id, ModuleC)!;

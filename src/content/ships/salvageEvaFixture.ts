@@ -1,5 +1,5 @@
 /** Shared setup for the salvage team tests: a new game with a small sealed derelict beside the home ship, and small run helpers. */
-import { ItemStackC, ShipC, StorageC, VehicleC, homeShip, newGame, stampShip, type Sim, type SimEvent } from '../../sim';
+import { ItemStackC, ShipC, StorageC, VehicleC, homeShip, newGame, stampShip, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
 import { shipIdAt } from '../../sim/regions';
 import { content } from '../index';
 import { storages } from './ferryFixture';
@@ -19,8 +19,8 @@ export function play(sim: Sim, n: number, until?: (all: SimEvent[]) => boolean):
 }
 
 /** A small sealed derelict (8x5 hull in a ring of open space, one console inside, no air) 16 tiles east of the home ship. */
-export function setup(seed = 3): { sim: Sim; home: number; wreck: number } {
-  const sim = newGame(seed, content);
+export function setup(seed = 3, c: ContentRegistry = content): { sim: Sim; home: number; wreck: number } {
+  const sim = newGame(seed, c);
   const home = homeShip(sim);
   const h = sim.world.get(home, ShipC)!;
   const rows = ['..........', '.########.', '.#______#.', '.#______#.', '.#______#.', '.########.', '..........'];
@@ -30,6 +30,22 @@ export function setup(seed = 3): { sim: Sim; home: number; wreck: number } {
 }
 
 const isScrap = (item: string): boolean => item.startsWith('item.scrap_');
+
+/** The real content with a shuttle hold of `cargo` units, so a small wreck fills it and the team makes cargo runs. */
+export const smallHold = (cargo: number): ContentRegistry => ({
+  ...content,
+  vehicles: { ...content.vehicles, 'vehicle.shuttle': { ...content.vehicles['vehicle.shuttle']!, cargo } },
+});
+
+/** Scrap units lying loose on a ship. */
+export function looseScrap(sim: Sim, ship: number): number {
+  let n = 0;
+  for (const id of sim.world.query(ItemStackC)) {
+    const st = sim.world.get(id, ItemStackC)!;
+    if (isScrap(st.item) && shipIdAt(sim, st.x, st.y) === ship) n += st.count;
+  }
+  return n;
+}
 
 /** Scrap units on the home ship: in its storage, loose on its floor, and in the hold of a shuttle parked in its bay. */
 export function scrapHome(sim: Sim, home: number): number {

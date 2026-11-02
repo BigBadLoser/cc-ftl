@@ -893,19 +893,29 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 - **Reach.** While crew of the player's side stand on the wreck, `planJobs` skips parts none of them can reach (`reach.ts`: the scheduler's walk modes, components labelling, no search)
   and drops open jobs nobody holds that none of them can reach, so they never hold a place under the cap; a stage whose parts are all out of reach lets the next one
   start (modules sealed in a hall: the walls come down first). With nobody aboard nothing is judged out of reach.
-- **Teams (`trip.ts`, `team.ts`, `teamCrew.ts`).** `salvageTripSystem` (after `ferrySystem`): a running order with no team starts a shift when a shuttle with suits is free in
-  its bay (`ferryFree`, which now also refuses a shuttle on a shift) and crew are free (`pickTeam`: player crew on the home ship who breathe, not drafted, off duty or at a
-  console, construction priority on, rest and hunger >= `SALVAGE_TEAM_GO`; best construction priority first; at most `SALVAGE_TEAM`, the suits and seats, and half the able
-  crew aboard). Else the order is blocked `noShuttle` / `noCrew` (retried every few seconds), unless player crew already stand on the wreck. `SalvageTripC` on the shuttle:
-  `board` (the team walks to the bay, `sendToEmbark`) -> `fly` (`vehicle.hover`, autopilot) -> `work` -> `recall` -> `home`. In `work` each member goes out by `eva.out`
-  (a shuttle suit) and is handed back to the crew AI on the hull (`SalvageCrewC` marks them; they keep the suit on when idle); below `SALVAGE_REFILL_FRAC` of a tank they walk
-  to the nearer refill point: an airlock still standing on the wreck (tank filled where they stand) or the hull beside the shuttle (`eva.board`, then out again in a fresh suit).
-  Every few seconds the hold takes the wreck's loose stacks (a hover swap, as the ferry's), so the floors are not held up by loot. The shuttle keeps close: the hover point is
-  worked out from the live extent of the hull (`liveBox`, `VehicleDest.hover.box`) and it shifts over when that shrinks, never while someone floats. The shift ends (`recall`)
-  when the order is done, cancelled or blocked by a hostile, when a member falls below `SALVAGE_TEAM_REST` / `SALVAGE_TEAM_HUNGER`, or when the hold is full with loot still
-  lying about; members float back (anyone who cannot after 90 s is carried aboard), the shuttle returns, the team steps out at the bay and the cargo hauls unload the hold.
-  Then a 10 s pause and a new shift. The last floors are taken from outside: suited crew stand on the hull ring beside them. `salvageSystem` keeps a finished wreck until
-  the team has left its side (`teamAt`). Events: `salvage.teamSent|teamHome`.
+- **Teams (`trip.ts`, `team.ts`, `teamCrew.ts`, `cargoRun.ts`).** `salvageTripSystem` (after `ferrySystem`), outside combat: a running order with no team starts a
+  shift when a shuttle with suits is free (`ferryFree`, which also refuses a shuttle on a shift) in a bay on the home ship, and crew are free (`pickTeam`: player crew on
+  the bay's ship who breathe, not drafted, off duty or at a console, construction or hauling on, rest and hunger >= `SALVAGE_TEAM_GO`; builders first; at most
+  `SALVAGE_TEAM`, the suits and seats, and half the able crew aboard). Else the order is blocked `noShuttle` / `noCrew` (retried every few seconds), unless player crew
+  already stand on the wreck. `SalvageTripC` on the shuttle: `board` (the team walks to the bay; the first in flies it, no skill needed) -> `fly` (`vehicle.hover`) ->
+  `work` -> `recall` -> `home`.
+  - Work: everyone, the pilot too, goes out by `eva.out` and is handed back to the crew AI on the hull (`SalvageCrewC` marks them; they keep the suit on when idle).
+    Below `SALVAGE_REFILL_FRAC` of a tank they walk to the nearer refill point: an airlock still standing on the wreck (tank filled where they stand) or the hull beside
+    the shuttle (`eva.board`, then out again in a fresh suit). The shuttle keeps close: its hover point comes from the live extent of the hull (`liveBox`,
+    `VehicleDest.hover.box`), and it shifts over as that shrinks, never while someone floats.
+  - Loot: each loose stack on the wreck becomes an ordinary haul job into the hold (`HaulRef` 'vehicle'), handed in at the hovering shuttle's staging tile
+    (`cargoTile` -> `hatchSpot`: the hull tile nearest its hatch), so floors proceed once the stacks are carried off.
+  - Cargo run (`Trip.run`): when the hold has no room left for the loot still lying about and no haul is under way, one of the team (one aboard, else the one nearest)
+    floats back and flies it home; the cargo hauls unload it at the bay (60 s at most) and the pilot flies back. Suits of those staying out are let go of the shuttle
+    (`Suit.vehicle` cleared) so it may leave; while it is away they refill only at an airlock on the wreck, else they walk to the hull beside the shuttle's spot and wait.
+    With no airlock on the wreck, members below 70% air ride along (they come back out in fresh suits). A run whose hold could not be unloaded at all (no room aboard
+    the ship) ends the shift (`noRoom`).
+  - The shift ends (`recall`) when the order is done and its loot carried off (or 2 min after it is done), cancelled or blocked by a hostile, when a fight starts, or when
+    a member falls below `SALVAGE_TEAM_REST` / `SALVAGE_TEAM_HUNGER`. Members float back (anyone who cannot after 90 s is carried aboard), the shuttle returns, the team
+    steps out at the bay and the cargo hauls unload the hold. Then a 10 s pause and a new shift.
+  - The last floors are taken from outside: suited crew stand on the hull ring beside them. `salvageSystem` keeps a finished wreck until the team has left its side
+    (`teamAt`). A team whose shuttle is destroyed is let go (`sweepOrphans`: tag off, suits no longer tied to it, undrafted). Events: `salvage.teamSent|teamHome|cargoRun`.
+    The shuttle panel shows the shift as its run (`UiShuttle.ferry`).
 - **Guard.** `job.build`, `job.deconstruct`, `job.buildModule` and `job.deconstructModule` are rejected (`wreck`) on any ship in state 'wreck'; `job.forceDoor` still works.
   Crew of the player on a wreck are not 'boarding' (`isBoarding`: an invader on a wreck is off duty no longer), so they take jobs there like on any ship.
 
