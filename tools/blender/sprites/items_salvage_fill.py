@@ -10,8 +10,11 @@ in the crate's column (a crate stacked on top hides everything up to its own int
   comfort  cream foam blocks, torn teal and maroon fabric, a cushion on edge and a bare spring"""
 import math
 
+import bmesh
+from mathutils import Euler, Vector
+
 from . import core
-from .items_kit import cone, tube
+from .items_kit import cone, emit, tube
 
 Q = math.pi / 2
 
@@ -108,15 +111,41 @@ def weapons(m, f, k=1.0):
     cone(m, (0.055 * k, -0.08 * k, (f + 0.11) * k), (0.055 * k, -0.08 * k, (f + 0.18) * k), 0.025 * k, "svWred")
 
 
+def _pillow(m, c, size, col, top, k, rz=0.0, rx=0.0, ry=0.0, p=0.45):
+    """A plump cushion: a rounded box (superellipsoid, squareness p: 1 = an ellipsoid, smaller = boxier) of `size`
+    centred at c, turned rx, ry, rz. Faces turned up take `top`."""
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=1.0)
+    R = Euler((rx, ry, rz), "XYZ").to_matrix()
+    for v in bm.verts:
+        q = Vector(tuple(math.copysign(abs(t) ** p, t) * s_ / 2 for t, s_ in zip(v.co, size)))
+        v.co = (R @ q + Vector(c)) * k
+    emit(m, bm, lambda n, _c: top if n.z > 0.55 else col)
+
+
+def _sheet(m, c, w, d, sag, col, k, rz=0.0, tilt=0.0, n=6):
+    """A draped fabric sheet (both sides drawn) of w x d centred at c: hangs down `sag` off both long edges as if laid
+    over something, turned rz and tilted `tilt` along its width."""
+    def pt(i, j):
+        u, v = (i / n - 0.5) * w, (j / 2 - 0.5) * d
+        z = -sag * (2 * i / n - 1) ** 2 + math.sin(tilt) * v
+        x, y = u * math.cos(rz) - v * math.sin(rz), u * math.sin(rz) + v * math.cos(rz)
+        return core.G((c[0] + x) * k, (c[1] + y) * k, (c[2] + z) * k)
+    for i in range(n):
+        for j in range(2):
+            q = [pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1)]
+            m.poly(q, col, flip=True)
+            m.poly(q[::-1], col, flip=True)
+
+
 def comfort(m, f, k=1.0):
-    for x, y, rz, sx, sy, sz in ((-0.05, -0.08, 0.3, 0.08, 0.09, 0.06), (0.05, 0.08, -0.2, 0.07, 0.08, 0.05)):
-        m.box((x * k, y * k, (f - 0.005) * k), (sx * k, sy * k, sz * k), "svCfoam2", top="svCfoam", rz=rz,
-              base=True, bevel=0.012 * k)                                             # foam chunks
-    m.box((0.0, 0.0, (f + 0.01) * k), (0.15 * k, 0.17 * k, 0.05 * k), "svCfoam2", top="svCfoam", rz=0.15,
-          rx=0.15, base=True, bevel=0.02 * k)                                         # a cream seat cushion lying
-    m.box((-0.03 * k, -0.02 * k, f * k), (0.045 * k, 0.17 * k, 0.17 * k), "svCmar", top="svCmar", rz=0.35,
-          ry=-0.3, base=True, bevel=0.02 * k)                                         # a maroon back cushion on edge
-    _plate(m, 0.04, 0.03, f + 0.09, -0.3, 0.45, 0.2, 0.15, 0.1, "svCteal", k)           # torn teal fabric over it
+    """Upholstery: soft cushions (cream seat, maroon back on its edge over the rim), foam crumbs, torn teal fabric
+    draped across."""
+    for x, y, sz in ((-0.06, -0.1, 0.05), (0.06, 0.1, 0.045), (0.06, -0.11, 0.04)):           # foam crumbs
+        _pillow(m, (x, y, f + sz / 2 - 0.01), (0.06, 0.06, sz), "svCfoam2", "svCfoam", k, rz=0.4, p=0.6)
+    _pillow(m, (0.01, 0.02, f + 0.035), (0.17, 0.2, 0.07), "svCfoam2", "svCfoam", k, rz=0.15, rx=0.1)   # seat
+    _pillow(m, (-0.035, -0.03, f + 0.11), (0.06, 0.2, 0.17), "svCmar", "svCmar", k, rz=0.3, ry=-0.25)   # back
+    _sheet(m, (0.03, 0.03, f + 0.12), 0.18, 0.08, 0.06, "svCteal", k, rz=1.25, tilt=0.3)             # fabric
 
 
 CONTENTS = {"hull": hull, "tech": tech, "energy": energy, "weapons": weapons, "comfort": comfort}
