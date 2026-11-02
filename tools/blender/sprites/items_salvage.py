@@ -16,24 +16,27 @@ from . import core
 
 SX, SY = 0.38, 0.28  # crate footprint (tile units), as the reference: the long +y face (lower right on screen) runs along x.
                      # The slot grid steps 0.35, so neighbours butt tight along x and keep a gap along y
-H = 0.255           # crate height: ~10 px at 1x; the 12 px stack level leaves a dark seam between levels
+H = 0.22            # crate height: ~9 px at 1x, one stack level
+BAND = 0.035        # the dark bottom band that separates stacked levels
 T = 0.022           # wall thickness
-R = 0.03            # corner radius: the vertical edges are rounded
-FILL = 0.15         # height of the interior floor the contents rest on
+R = 0.05            # corner radius: the vertical edges are rounded
+FILL = 0.13         # height of the interior floor the contents rest on
 
 TAGS = {"hull": "hazK", "tech": "polyB", "energy": "hazY", "weapons": "medRed", "comfort": "pcb"}
 
 
 def crate(m, tag, k=1.0):
-    """The shared crate body, scaled by k, with its type tag colour `tag`: flat-bottomed, rounded vertical corners."""
-    sx, sy, h, t, r = SX * k, SY * k, H * k, T * k, R * k
+    """The shared crate body, scaled by k, with its type tag colour `tag`: flat-bottomed with a dark bottom band, rounded vertical corners."""
+    sx, sy, h, t, r, b = SX * k, SY * k, H * k, T * k, R * k, BAND * k
     ex, ey = sx / 2, sy / 2
     m.box((0, 0, 0), (sx - t, sy - t, FILL * k), "grime", top="dark", base=True)                # interior floor
     for (x, y, bx, by) in ((ex - t / 2, 0, t, sy - 2 * r), (-ex + t / 2, 0, t, sy - 2 * r),
                            (0, ey - t / 2, sx - 2 * r, t), (0, -ey + t / 2, sx - 2 * r, t)):
-        m.box((x, y, 0), (bx, by, h), "plate", top="sole", base=True)
+        m.box((x, y, 0), (bx, by, b), "steelD", base=True)
+        m.box((x, y, b), (bx, by, h - b), "plate", top="sole", base=True)
     for cx, cy in ((1, 1), (1, -1), (-1, 1), (-1, -1)):                                            # rounded corners
-        m.cyl((cx * (ex - r), cy * (ey - r), 0), r, h, "plate", sides=12, top="sole")
+        m.cyl((cx * (ex - r), cy * (ey - r), 0), r, b, "steelD", sides=16)
+        m.cyl((cx * (ex - r), cy * (ey - r), b), r, h - b, "plate", sides=16, top="sole")
     # the faces the camera sees are +y (long, lower right) and +x (short, lower left): a pressed rib and the type tag
     for axis, o, span in (("x", ex + 0.004 * k, sy), ("y", ey + 0.004 * k, sx)):
         def at(u, z, du, dz, col, d=0.006 * k):
@@ -41,8 +44,8 @@ def crate(m, tag, k=1.0):
                 m.box((o, u, z), (d, du, dz), col, base=True)
             else:
                 m.box((u, o, z), (du, d, dz), col, base=True)
-        at(0, h * 0.12, span - 2 * r, 0.02 * k, "steelL")                                          # lower rib
-        at(-span * 0.16, h * 0.4, span * 0.42, 0.075 * k, tag, 0.008 * k)                         # type tag
+        at(0, b + 0.012 * k, span - 2 * r, 0.018 * k, "steelL")                                          # lower rib
+        at(-span * 0.16, h * 0.42, span * 0.42, 0.065 * k, tag, 0.008 * k)                         # type tag
 
 
 # ---- contents ----------------------------------------------------------------------------------------------------
@@ -55,9 +58,9 @@ def hull_contents(m, k=1.0):
             (-0.05, -0.04, 0.4, 0.5, 0.15, 0.2, 0.12, "steelL"),
             (0.05, 0.04, -0.6, -0.4, 0.3, 0.18, 0.1, "rust"),
             (0.02, -0.06, 1.2, 0.2, -0.6, 0.16, 0.09, "plate")):
-        m.box((x * k, y * k, z + 0.07 * k), (w * k, d * k, 0.012 * k), col, top=col, rz=rz, rx=rx, ry=ry)
+        m.box((x * k, y * k, z + 0.045 * k), (w * k, d * k, 0.012 * k), col, top=col, rz=rz, rx=rx, ry=ry)
     for (x, y, rz, ry, L) in ((-0.06, 0.06, 0.9, 0.35, 0.2), (0.07, -0.05, -0.3, -0.5, 0.17)):   # I-beam stubs
-        c = (x * k, y * k, z + 0.09 * k)
+        c = (x * k, y * k, z + 0.06 * k)
         m.box(c, (L * k, 0.04 * k, 0.008 * k), "steel", top="steelL", rz=rz, ry=ry)
         m.box(c, (L * k, 0.008 * k, 0.04 * k), "rustD", rz=rz, ry=ry)
 
