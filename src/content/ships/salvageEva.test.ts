@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DraftedC, ModuleC, PositionC, ShipC, VehicleBayC, VehicleC, destroyVehicle, placementError, shipGrid, spawnModule } from '../../sim';
 import { SuitC } from '../../sim/eva/components';
+import { playerCourier } from '../../sim/trade/courier';
+import { orderLaunch } from '../../sim/boarding/launch';
 import { shipIdOf } from '../../sim/regions';
 import { NestC } from '../../sim/aliens/components';
 import { SalvageCrewC, SalvageOrderC } from '../../sim/salvage/components';
@@ -92,5 +94,15 @@ describe('salvage teams: blocks and recall', () => {
       expect(sim.world.get(c, SuitC)?.vehicle).toBeUndefined();
       if (sim.world.has(c, PositionC)) expect(sim.world.has(c, DraftedC)).toBe(false);
     }
+  });
+
+  it('a salvage shuttle is busy for trade runs and boardings', () => {
+    const { sim, wreck } = setup();
+    const shuttle = shuttleOf(sim);
+    expect(playerCourier(sim)).toMatchObject({ vehicle: shuttle });
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull'] });
+    play(sim, 400, (a) => of(a, 'salvage.teamSent').length > 0);
+    expect(playerCourier(sim)).toEqual({ error: 'courierBusy' });
+    expect(orderLaunch(sim, shuttle, [], 0)).toBe('shuttleBusy');
   });
 });

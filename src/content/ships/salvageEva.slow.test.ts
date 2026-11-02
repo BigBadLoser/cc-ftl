@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, PositionC, ShipC, VehicleC, deserialize, serialize, type SimEvent } from '../../sim';
+import { AboardC, CrewC, PositionC, ShipC, StorageC, VehicleC, deserialize, serialize, type SimEvent } from '../../sim';
 import { shipIdOf } from '../../sim/regions';
 import { SalvageCrewC, SalvageTripC } from '../../sim/salvage/components';
 import { SuitC } from '../../sim/eva/components';
 import { content } from '../index';
-import { shuttleOf } from './ferryFixture';
+import { shuttleOf, storages } from './ferryFixture';
 import { looseScrap, of, play, scrapHome, setup, smallHold } from './salvageEvaFixture';
 
 describe('salvage teams: the shuttle and EVA loop', () => {
@@ -53,5 +53,25 @@ describe('salvage teams: the shuttle and EVA loop', () => {
     play(a.sim, 20 * 90);
     play(c, 20 * 90);
     expect(serialize(c)).toBe(serialize(a.sim));
+  });
+
+  it('a cargo run that finds no room at home fetches the crew still on the wreck before the shift ends', () => {
+    const { sim, home, wreck } = setup(3, smallHold(4));
+    for (const id of storages(sim, home)) sim.world.remove(id, StorageC); // nowhere to put scrap: the hold comes back full
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    let leftOut = false;
+    const all: SimEvent[] = [];
+    for (let i = 0; i < 20 * 60 * 10 && of(all, 'salvage.teamHome').length === 0; i++) {
+      all.push(...play(sim, 1));
+      const trip = sim.world.query(SalvageTripC).map((v) => sim.world.get(v, SalvageTripC)!)[0];
+      if (trip?.run?.stage === 'unload' && trip.crew.some((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === wreck)) leftOut = true;
+    }
+    expect(of(all, 'salvage.cargoRun').length).toBeGreaterThan(0);
+    expect(leftOut).toBe(true); // someone stayed out while the hold went home
+    expect(of(all, 'salvage.teamHome')).toMatchObject([{ ship: wreck, reason: 'noRoom' }]);
+    for (const c of of(all, 'salvage.teamSent').flatMap((e) => e.crew)) {
+      expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(home);
+      expect(sim.world.has(c, SalvageCrewC)).toBe(false);
+    }
   });
 });

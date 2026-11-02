@@ -104,9 +104,9 @@ export const runCrew = (t: SalvageTrip): number[] => (t.run ? [t.run.pilot, ...t
  * One tick of a cargo run. 'call': the pilot and the riders float back aboard; once in (and nobody floating), the members staying out keep
  * their suits (they refill at an airlock on the wreck while the shuttle is away), the hauls to the hold are dropped (carriers set their loads
  * down) and the shuttle flies home. 'unload': the ship's crew empty the hold, then it flies back. `ending` is true when the shift is over
- * and nobody is out on the wreck: the run then ends at home with the shift; so does a run whose hold could not be unloaded at all (no
- * room aboard: 'noRoom'). Returns 'gone' if the run was given up, 'home' when the shift
- * should end at the bay, else 'on'.
+ * and nobody is out on the wreck: the run then ends at home with the shift. A hold that could not be unloaded at all (no room aboard)
+ * ends the shift ('noRoom'): at home if everyone is aboard, else after flying back to recall the rest. Returns 'gone' if the run was
+ * given up, 'home' when the shift should end at the bay, else 'on'.
  */
 export function stepRun(sim: Sim, id: number, v: Vehicle, t: SalvageTrip, ending: () => boolean): 'on' | 'gone' | 'home' {
   const r = t.run!;
@@ -144,11 +144,10 @@ export function stepRun(sim: Sim, id: number, v: Vehicle, t: SalvageTrip, ending
       return 'on';
     case 'unload':
       if (cargoCount(v) > 0 && r.timer <= sec(UNLOAD_SEC)) return 'on';
+      // Nothing came out: the ship has no room for it, so the shift ends. Anyone still out on the wreck is fetched first (the shuttle flies
+      // back and the shift recalls them); with everyone aboard it ends here.
+      if (cargoCount(v) >= (r.held ?? 0)) t.reason ??= 'noRoom';
       if (ending()) return 'home';
-      if (cargoCount(v) >= (r.held ?? 0)) {
-        t.reason ??= 'noRoom'; // nothing came out: the ship has no room for it, so the shift ends here
-        return 'home';
-      }
       sim.enqueue({ type: 'vehicle.hover', vehicle: id, ship: t.ship });
       r.stage = 'back';
       r.timer = 0;

@@ -58,6 +58,7 @@ const finished = (sim: Sim, ship: number, o: SalvageOrder): boolean => salvageJo
 
 /** Why the shift should end now, or undefined to keep working. */
 function endReason(sim: Sim, id: number, t: SalvageTrip): SalvageTripEnd | undefined {
+  if (t.reason) return t.reason; // already decided (a cargo run found no room at home)
   const o = sim.world.get(t.ship, SalvageOrderC);
   if (!o) return 'cancelled';
   if (o.block === 'hostile') return 'hostile';

@@ -1,3 +1,4 @@
+import { SalvageTripC } from '../salvage/components';
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC, DraftedC } from '../crew/components';
 import { clearPath, isIncapacitated } from '../crew/helpers';
@@ -29,7 +30,7 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   if (!v) return 'noVehicle';
   if (vehicleFaction(sim, v) !== 'player') return 'badVehicle';
   // One owner at a time: not while it's on a cargo run, a trade deal or an outbound trip.
-  if (sim.world.has(vehicle, BoardLaunchC) || sim.world.has(vehicle, FerryC) || v.outbound || sim.trade.deals.some((d) => d.vehicle === vehicle && isLive(d))) return 'shuttleBusy';
+  if (sim.world.has(vehicle, BoardLaunchC) || sim.world.has(vehicle, FerryC) || sim.world.has(vehicle, SalvageTripC) || v.outbound || sim.trade.deals.some((d) => d.vehicle === vehicle && isLive(d))) return 'shuttleBusy';
   if (v.state !== 'stowed' || occupants(v).length > 0) return 'notStowed';
   const ids = [...new Set(crew)];
   if (ids.length < 1) return 'noCrew';

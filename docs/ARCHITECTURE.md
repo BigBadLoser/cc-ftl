@@ -909,7 +909,8 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
     floats back and flies it home; the cargo hauls unload it at the bay (60 s at most) and the pilot flies back. Suits of those staying out are let go of the shuttle
     (`Suit.vehicle` cleared) so it may leave; while it is away they refill only at an airlock on the wreck, else they walk to the hull beside the shuttle's spot and wait.
     With no airlock on the wreck, members below 70% air ride along (they come back out in fresh suits). A run whose hold could not be unloaded at all (no room aboard
-    the ship) ends the shift (`noRoom`).
+    the ship) ends the shift (`noRoom`): at home if the whole team is aboard, else it flies back and recalls the rest first. A shuttle on a shift is busy
+    for every other picker: ferry and logistics runs (`ferryFree`), trade couriers (`playerCourier`) and boarding launches (`orderLaunch`).
   - The shift ends (`recall`) when the order is done and its loot carried off (or 2 min after it is done), cancelled or blocked by a hostile, when a fight starts, or when
     a member falls below `SALVAGE_TEAM_REST` / `SALVAGE_TEAM_HUNGER`. Members float back (anyone who cannot after 90 s is carried aboard), the shuttle returns, the team
     steps out at the bay and the cargo hauls unload the hold. Then a 10 s pause and a new shift.
