@@ -20,7 +20,7 @@ H = 0.22            # crate height: ~9 px at 1x, one stack level
 BAND = 0.035        # the dark bottom band that separates stacked levels
 T = 0.035           # wall thickness: thinner breaks the back rim into dots at 1x
 R = 0.05            # corner radius
-SEG = int(__import__("os").environ.get("SALVAGE_CORNER_SEG", 6))  # arc segments per corner: 6 rounds it, 1 bevels it
+SEG = 6             # arc segments per corner
 FILL = 0.15         # height of the interior floor the contents rest on
 LIP = 0.014         # the bright lip along the top of the outer wall
 
@@ -33,7 +33,7 @@ TAGS = {"hull": "svP2", "tech": "polyB", "energy": "hazY", "weapons": "medRed", 
 
 def _profile(ex, ey, r, n=None):
     """A rounded rectangle (half extents ex, ey, corner radius r) as points counter-clockwise seen from above; n arc
-    segments per corner (1 = a 45 degree bevel). Corner 0 (the first n + 1 points) is the front corner (+x, +y)."""
+    segments per corner. Corner 0 (the first n + 1 points) is the front corner (+x, +y)."""
     n = n or SEG
     pts = []
     for cx, cy, a0 in ((ex - r, ey - r, 0.0), (-ex + r, ey - r, 0.5), (-ex + r, -ey + r, 1.0), (ex - r, -ey + r, 1.5)):
@@ -59,7 +59,7 @@ def crate(m, tag, k=1.0):
     sx, sy, h, t, r, b, lip = SX * k, SY * k, H * k, T * k, R * k, BAND * k, LIP * k
     ex, ey = sx / 2, sy / 2
     out, inn = _profile(ex, ey, r), _profile(ex - t, ey - t, r - t)
-    front = lambda i: "svS3" if i < SEG else "svS4"                                           # noqa: E731
+    front = lambda i: "svS2" if i < SEG else "svS3"                                           # noqa: E731
     _ring(m, out, 0, b, "svP2", True)                                                        # dark bottom band
     _ring(m, out, b, h - lip, front, True)
     _ring(m, out, h - lip, h, "svS0", True)                                                  # bright lip
@@ -115,9 +115,9 @@ def hull_contents(m, k=1.0):
             (0.02, -0.04, f + 0.03, 0.5, 0.0, -0.2, 0.11, 0.07, "svR2")):
         _plate(m, u, v, z, rz, rx, ry, w, d, col, k)
     for u, v, z, rz, ry, L in (                                     # three bars fanning up the same way, one lying
-            (-0.01, -0.072, f + 0.085, 0.08, 1.0, 0.2),
-            (0.02, 0.0, f + 0.1, 0.0, 1.2, 0.21),
-            (-0.01, 0.072, f + 0.08, -0.08, 0.9, 0.19),
+            (-0.01, -0.072, f + 0.075, 0.08, 1.0, 0.26),
+            (0.02, 0.0, f + 0.065, 0.0, 1.2, 0.27),
+            (-0.01, 0.072, f + 0.075, -0.08, 0.9, 0.25),
             (0.02, -0.05, f + 0.03, 0.4, -0.15, 0.16)):
         _bar(m, u, v, z, rz, ry, L, k)
 
