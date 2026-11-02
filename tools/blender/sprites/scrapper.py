@@ -84,55 +84,63 @@ class _Build:
         self.prism_x(prof, x0, x1, col)
 
 
-STEEL, STEEL_T, DARK, GM, GMD, PLATE, ACCENT = "steel", "steelL", "dark", "gm", "gmD", "plate", "hazY"
+STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
+CH = 0.07            # top-edge chamfer of the shell
+BASE = 0.07          # the dark plinth band under the shell
 
 
-def console(b, y_back, y_front, z_back, z_front, x0, x1):
-    """Angled console: sloped top falling toward the front, two dark screens inset on the slope."""
-    b.prism_x([(y_back, 0), (y_front, 0), (y_front, z_front), (y_back, z_back)], x0, x1, STEEL, STEEL_T)
-    for k in range(2):
-        sx0 = x0 + 0.08 + k * 0.4
-        sx1 = sx0 + 0.34
-        t0, t1 = 0.18, 0.88
-        prof = []
-        for t in (t0, t1):
-            prof.append((y_back + (y_front - y_back) * t, z_back + (z_front - z_back) * t + 0.015))
-        d = 0.03
-        prof2 = [(py, pz + d) for py, pz in prof]
-        b.prism_x([prof[0], prof[1], prof2[1], prof2[0]], sx0, sx1, DARK)
+def cbox(b, x0, x1, y0, y1, z0, z1, col=STEEL, top=STEEL_T, ch=CH):
+    """A shell block with all four top edges chamfered (a box, then a frustum cap)."""
+    b.box(x0, x1, y0, y1, z0, z1 - ch, col)
+    ring = lambda d, z: [b._tp(x, y, z) for x, y in ((x0 + d, y0 + d), (x1 - d, y0 + d), (x1 - d, y1 - d), (x0 + d, y1 - d))]  # noqa: E731
+    b.solid([ring(0, z1 - ch), ring(ch, z1)], col, top)
+
+
+def on_slope(b, x0, x1, z0, z1, ya, yb, t0, t1, lift, col):
+    """A thin panel lying on the slope from (x0, z0) to (x1, z1), between y = ya .. yb, spanning t0 .. t1 of the slope."""
+    pa = (x0 + (x1 - x0) * t0, z0 + (z1 - z0) * t0)
+    pb = (x0 + (x1 - x0) * t1, z0 + (z1 - z0) * t1)
+    nx, nz = -(z1 - z0), (x1 - x0)
+    ln = math.hypot(nx, nz)
+    nx, nz = nx / ln * lift, nz / ln * lift
+    b.prism_y([pa, pb, (pb[0] + nx, pb[1] + nz), (pa[0] + nx, pa[1] + nz)], ya, yb, col)
 
 
 def scrapper(rot):
     b = _Build(rot, f"scrapper_{rot}")
-    # left end: two angled consoles
-    console(b, 0.12, 0.92, 0.82, 0.56, 0.08, 0.92)
-    console(b, 1.08, 1.88, 0.62, 0.38, 0.08, 0.92)
-    # dial block (back, x=1) with a round gauge on top
-    b.box(1.06, 1.94, 0.12, 0.96, 0, 1.0, STEEL, STEEL_T)
-    b.box(1.02, 1.98, 0.12, 0.96, 0.9, 1.0, GM, PLATE)
-    b.cyl(1.5, 0.54, 1.0, 0.3, 0.08, GMD, PLATE, sides=16)
-    b.cyl(1.5, 0.54, 1.08, 0.2, 0.03, DARK, sides=16)
-    # feed block (front, x=1) and its hatch facing the access tile
-    b.box(1.06, 1.94, 1.04, 1.96, 0, 0.7, STEEL, STEEL_T)
-    b.box(1.22, 1.78, 1.96, 2.0, 0.1, 0.5, DARK)
-    b.box(1.22, 1.78, 1.96, 2.0, 0.52, 0.6, ACCENT)
-    b.box(1.34, 1.66, 1.96, 2.03, 0.18, 0.42, GMD, GM)
-    # roller drum (front, x=2) in a low cradle
-    b.box(2.04, 2.96, 1.04, 1.96, 0, 0.24, GMD, GM)
-    b.roller(1.5, 0.62, 0.40, 2.1, 2.9, GM)
-    b.roller(1.5, 0.62, 0.45, 2.06, 2.16, STEEL_T)
-    b.roller(1.5, 0.62, 0.45, 2.84, 2.94, STEEL_T)
-    # hopper (back, x=2) with an open dark mouth
-    b.box(2.04, 2.96, 0.12, 0.96, 0, 1.0, STEEL, STEEL_T)
-    b.box(2.14, 2.86, 0.22, 0.86, 0.96, 1.04, DARK)
-    for (x0, x1, y0, y1) in ((2.04, 2.96, 0.12, 0.22), (2.04, 2.96, 0.86, 0.96), (2.04, 2.14, 0.22, 0.86), (2.86, 2.96, 0.22, 0.86)):
-        b.box(x0, x1, y0, y1, 1.0, 1.1, GM, PLATE)
-    # exhaust: stepped box and a stack
-    b.box(3.06, 3.94, 0.12, 1.88, 0, 0.58, STEEL, STEEL_T)
-    b.box(3.16, 3.84, 0.12, 0.96, 0.58, 0.96, GMD, GM)
-    b.cyl(3.5, 0.5, 0.96, 0.17, 0.62, GM, PLATE)
-    b.cyl(3.5, 0.5, 1.5, 0.21, 0.08, GMD, DARK)
-    b.box(3.2, 3.8, 1.5, 1.82, 0.58, 0.64, ACCENT)
+    b.box(0.04, 3.96, 0.04, 1.96, 0, BASE, GMD, DARK)                                   # plinth band
+    # ---- screen end (x 3..4): the top slopes down toward the +x end, two screens on the slope, one per row
+    xa, za, xb, zb = 3.08, 0.98, 3.92, 0.54                                               # slope from (xa, za) to (xb, zb)
+    b.prism_y([(3.0, BASE), (3.96, BASE), (3.96, zb - 0.06), (xb, zb), (xa, za), (3.0, za)], 0.06, 1.94, STEEL, STEEL_T)
+    for ya, yb in ((0.18, 0.88), (1.12, 1.82)):
+        on_slope(b, xa, xb, za, zb, ya, yb, 0.12, 0.9, 0.02, GMD)                         # bezel
+        on_slope(b, xa, xb, za, zb, ya + 0.06, yb - 0.06, 0.2, 0.82, 0.035, LIGHT)        # screen
+    # ---- centre block (x 2..3): tall back row with the dial, lower front row with a display and an output slot
+    cbox(b, 2.02, 3.0, 0.06, 1.0, BASE, 1.12)
+    cbox(b, 2.02, 3.0, 1.0, 1.94, BASE, 0.96)
+    b.cyl(2.51, 0.53, 1.12, 0.31, 0.05, GMD, GM, sides=8)                                  # dial housing
+    b.cyl(2.51, 0.53, 1.17, 0.22, 0.03, GM, LIGHT, sides=8)                                # dial face
+    b.box(2.2, 2.84, 1.94, 1.97, 0.52, 0.76, GMD)                                          # display bezel
+    b.box(2.28, 2.76, 1.97, 1.99, 0.56, 0.72, LIT)                                          # display
+    b.box(2.22, 2.82, 1.94, 1.98, BASE, 0.36, GMD)                                         # output slot frame
+    b.box(2.3, 2.74, 1.95, 1.99, BASE, 0.3, DARK)                                          # output slot
+    # ---- drum bay (x 1..2): the hopper with an open lit mouth at the back, the shredder drum in an open bay at the front
+    cbox(b, 1.02, 2.0, 0.06, 0.96, BASE, 1.04)
+    b.box(1.14, 1.88, 0.18, 0.84, 1.02, 1.05, DARK)                                         # hopper mouth
+    b.box(1.18, 1.84, 0.22, 0.8, 1.05, 1.055, LIT)                                         # its lit throat (glow later)
+    b.box(1.02, 2.0, 0.96, 1.94, BASE, 0.16, GMD, GM)                                      # bay floor
+    for x0 in (1.02, 1.92):
+        b.prism_x([(0.96, BASE), (1.94, BASE), (1.94, 0.26), (1.7, 0.84), (0.96, 0.84)], x0, x0 + 0.08, STEEL, STEEL_T)  # cheeks
+    b.roller(1.4, 0.5, 0.33, 1.12, 1.9, GM, sides=16)                                    # drum
+    for k in range(5):
+        b.roller(1.4, 0.5, 0.36, 1.17 + k * 0.155, 1.21 + k * 0.155, GMD, sides=16)      # cutter rings
+    # ---- end block (x 0..1): tall back box with the pipe unit on top, lower front box with the feed doorway
+    cbox(b, 0.06, 1.0, 0.06, 1.0, BASE, 0.94)
+    cbox(b, 0.06, 1.0, 1.0, 1.94, BASE, 0.74)
+    b.box(0.26, 0.8, 0.26, 0.74, 0.94, 1.1, GM, PLATE)                                     # pipe unit
+    b.roller(0.5, 1.02, 0.07, 0.8, 1.06, GMD, sides=8)                                      # its spout
+    b.box(0.22, 0.84, 1.94, 1.98, BASE, 0.44, GMD)                                         # doorway frame
+    b.box(0.3, 0.76, 1.95, 1.99, BASE, 0.38, DARK)                                         # doorway
     return [b.m.build()]
 
 
