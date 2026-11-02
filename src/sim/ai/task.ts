@@ -9,6 +9,7 @@ import type { Sim } from '../sim';
 import { classOf } from './classes';
 import { machineOf, travelState } from './jobStates';
 import { IntentC, InterruptC, TaskC } from './components';
+import { setDownPatient } from './setDown';
 import type { Blackboard, DriveId, Frame, Hold, MachineId, Task, TileRef } from './types';
 
 /**
@@ -252,24 +253,26 @@ const DISPOSE: Partial<Record<AbortReason, Dispose>> = {
   equip: { carried: true },
   // Walking off a harmful tile: whatever the crew member was doing ends, a sleeper or eater gets up, a load is dropped.
   hazard: { bed: true, carried: true, wake: true },
-  // Off to refill a suit's tank with a load or a patient in hand: it is set down where they stand (a patient keeps their bed).
-  air: { carried: true },
+  // Off to refill a suit's tank: a load or a patient in hand is set down (the patient on a safe tile nearby, keeping their bed), and a bed
+  // claimed for a sleep not yet begun is given back.
+  air: { bed: true, carried: true },
 };
 
 /**
  * Abandon the crew member's task: the only teardown. In order: free the job (when still theirs) and stop holding it, stop
- * walking (the step in progress finishes), then what the reason disposes of (bed claim, load, a need in progress), and end the
+ * walking (the step in progress finishes), then what the reason disposes of (bed claim, load or carried patient, a need in progress), and end the
  * task. Errands set aside are swept by the suits system next tick, as before (`sweepErrands`). Callers apply their own state.
  */
 export function abortTask(sim: Sim, crew: number, reason: AbortReason): void {
   const a = sim.world.get(crew, AssignmentC);
+  const d = DISPOSE[reason];
+  if (d?.carried) setDownPatient(sim, crew, a?.jobId ?? 0); // before the job lets go of them: the rescue points at where they lie
   if (a) {
     const job = sim.world.get(a.jobId, JobC);
     if (job && job.reservedBy === crew) job.reservedBy = 0;
     sim.world.remove(crew, AssignmentC);
   }
   clearPath(sim, crew);
-  const d = DISPOSE[reason];
   if (d?.bed) releaseBedClaim(sim, crew);
   if (d?.carried) dropCarried(sim, crew);
   if (d?.wake) {

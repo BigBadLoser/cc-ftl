@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, AssignmentC, CrewC, HealthC, IntentC, JobC, ModuleC, PickupC, PositionC, ShipC, Struct, SuitC, TICK_HZ, homeShip, newGame, shipGrid,
+  AirlockC, AssignmentC, CarriedC, CrewC, DownedC, HealthC, NeedsC, IntentC, JobC, ModuleC, PickupC, PositionC, ShipC, Struct, SuitC, TICK_HZ, homeShip, newGame, shipGrid,
   suitAir, suitDef, type Sim, type SimEvent,
 } from '../../sim';
 import { airLines, airMargin } from '../../sim/ai/airNeed';
 import { auditReservations } from '../../sim/ai/audit';
+import { claimedBed } from '../../sim/ai/task';
 import { isThin } from '../../sim/eva/suit';
 import { content } from '../index';
 
@@ -123,6 +124,68 @@ describe('air drive', () => {
       run(sim, 1);
     }
     expect(suitAir(sim, c)).toBeGreaterThan(0);
+  });
+
+  it('a rescuer at critical air sets the patient down on a safe tile nearby, keeping their bed, and goes to refill', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const crew = sim.world.query(CrewC);
+    const patient = crew[2] as number;
+    sim.world.get(patient, HealthC)!.hp = 0;
+    let rescuer = 0;
+    run(sim, 1500, () => {
+      rescuer = sim.world.get(patient, CarriedC)?.carrier ?? 0;
+      return rescuer > 0;
+    });
+    expect(rescuer).toBeGreaterThan(0);
+    const bed = sim.world.get(patient, DownedC)!.bed;
+    expect(bed).toBeGreaterThan(0);
+    const job = sim.world.get(rescuer, AssignmentC)!.jobId;
+    // The rescuer is suited with a nearly empty tank, and the air is gone from the tiles around them (and kept gone).
+    sim.world.add(rescuer, SuitC, { worn: true, air: 0.03 * suitDef(sim).airSec });
+    const grid = shipGrid(sim, homeShip(sim))!;
+    const p = sim.world.get(rescuer, PositionC)!;
+    const vented: [number, number][] = [];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) vented.push([p.x + dx, p.y + dy]);
+    const vent = (): void => vented.forEach(([x, y]) => grid.set('o2', x, y, 0));
+    vent();
+    run(sim, 1);
+    expect(sim.world.has(patient, CarriedC)).toBe(false);
+    const at = sim.world.get(patient, PositionC)!;
+    expect(vented.some(([x, y]) => x === at.x && y === at.y)).toBe(false); // off the airless tiles
+    expect(Math.abs(at.x - p.x) + Math.abs(at.y - p.y)).toBeLessThanOrEqual(4);
+    expect(sim.world.get(patient, DownedC)!.bed).toBe(bed);
+    expect(sim.world.get(bed, ModuleC)!.reservedBy).toBe(patient);
+    expect(sim.world.get(job, JobC)).toMatchObject({ x: at.x, y: at.y });
+    expect(sim.world.get(job, JobC)!.reservedBy).not.toBe(rescuer);
+    const errand = sim.world.get(sim.world.get(rescuer, AssignmentC)?.jobId ?? 0, JobC);
+    expect(errand?.kind).toBe('refill');
+    expect(errand?.resume).toBeUndefined(); // the rescue was given up, not parked
+    expect(auditReservations(sim).problems).toEqual([]);
+    // Another rescuer (or the same one, refilled) picks the patient up where they lie and lays them in their bed.
+    run(sim, 4000, () => !!sim.world.get(patient, DownedC)?.stabilized);
+    expect(sim.world.get(patient, DownedC)?.stabilized).toBe(true);
+    const b = sim.world.get(bed, ModuleC)!;
+    expect(sim.world.get(patient, PositionC)).toMatchObject({ x: b.x, y: b.y });
+  });
+
+  it('a crew member walking to a claimed bed who must refill gives the bed back', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const c = sim.world.query(CrewC)[1] as number;
+    sim.world.get(c, NeedsC)!.rest = 5;
+    run(sim, 200, () => claimedBed(sim, c) > 0 && sim.world.get(c, CrewC)!.activity !== 'sleeping');
+    const bed = claimedBed(sim, c);
+    expect(bed).toBeGreaterThan(0);
+    sim.world.add(c, SuitC, { worn: true, air: 0.03 * suitDef(sim).airSec });
+    const grid = shipGrid(sim, homeShip(sim))!;
+    const p = sim.world.get(c, PositionC)!;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) grid.set('o2', p.x + dx, p.y + dy, 0);
+    run(sim, 1);
+    expect(sim.world.get(sim.world.get(c, AssignmentC)?.jobId ?? 0, JobC)?.kind).toBe('refill');
+    expect(claimedBed(sim, c)).toBe(0);
+    expect(sim.world.get(bed, ModuleC)!.reservedBy).not.toBe(c);
+    expect(auditReservations(sim).problems).toEqual([]);
   });
 
   it('only the air drive breaks a finish task (a carried patient), and only once critical', () => {
