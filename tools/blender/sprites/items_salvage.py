@@ -14,13 +14,15 @@ from . import core
 
 # ---- crate body --------------------------------------------------------------------------------------------------
 
-SX, SY = 0.38, 0.28  # crate footprint (tile units), as the reference: the long +y face (lower right on screen) runs along x.
-                     # The slot grid steps 0.35, so neighbours butt tight along x and keep a gap along y
+SX, SY = 0.28, 0.38  # crate footprint (tile units), as the reference: the long +x face (lower right on screen) runs along y.
+                     # The slot grid steps 0.35, so neighbours butt tight along y and keep a gap along x
 H = 0.22            # crate height: ~9 px at 1x, one stack level
 BAND = 0.035        # the dark bottom band that separates stacked levels
 T = 0.022           # wall thickness
 R = 0.05            # corner radius: the vertical edges are rounded
 FILL = 0.13         # height of the interior floor the contents rest on
+
+Q = math.pi / 2       # a quarter turn: content tables are written long side along x and turned onto the long y
 
 TAGS = {"hull": "hazK", "tech": "polyB", "energy": "hazY", "weapons": "medRed", "comfort": "pcb"}
 
@@ -57,15 +59,14 @@ def crate(m, tag, k=1.0):
         m.poly([core.G(*out[i], h), core.G(*out[j], h), core.G(*inn[j], h), core.G(*inn[i], h)], "sole", flip=True)
     m.poly([core.G(*p, FILL * k) for p in inn], "dark", flip=True)                              # interior floor
     m.poly([core.G(*p, 0) for p in out][::-1], "dark", flip=True)                               # flat bottom
-    # the faces the camera sees are +y (long, lower right) and +x (short, lower left): a pressed rib and the type tag
+    # the faces the camera sees are +x (long, lower right) and +y (short, lower left): the type tag, centred
     for axis, o, span in (("x", ex, sy), ("y", ey, sx)):
         def at(u, z, du, dz, col, d):
             if axis == "x":
                 m.box((o + d / 2, u, z), (d, du, dz), col, base=True)
             else:
                 m.box((u, o + d / 2, z), (du, d, dz), col, base=True)
-        at(0, b + 0.012 * k, span - 2 * r, 0.018 * k, "steelL", 0.004 * k)                     # pressed rib
-        at(-span * 0.16, h * 0.42, span * 0.42, 0.065 * k, tag, 0.005 * k)                       # type tag
+        at(0, h * 0.42, span * 0.42, 0.065 * k, tag, 0.005 * k)                       # type tag
 
 
 def inside(m, start, k=1.0, slack=0.004):
@@ -83,16 +84,16 @@ def inside(m, start, k=1.0, slack=0.004):
 
 def hull_contents(m, k=1.0):
     """Bent hull plating and girder stubs: grey steel with rust, filling the crate to just under the rim."""
-    z = FILL * k
-    for (x, y, rz, rx, ry, w, d, col) in (                     # plates leaning on each other, long side along x
+    z = FILL * k                                               # tables are laid out long side along x, turned onto y
+    for (x, y, rz, rx, ry, w, d, col) in (                     # plates leaning on each other
             (-0.06, -0.02, 0.15, 0.45, 0.0, 0.17, 0.11, "steelL"),
             (0.06, 0.02, -0.2, -0.4, 0.25, 0.16, 0.1, "rust"),
             (0.0, -0.01, 0.6, 0.0, -0.35, 0.15, 0.09, "plate")):
-        m.box((x * k, y * k, z + 0.04 * k), (w * k, d * k, 0.012 * k), col, top=col, rz=rz, rx=rx, ry=ry)
+        m.box((-y * k, x * k, z + 0.04 * k), (w * k, d * k, 0.012 * k), col, top=col, rz=rz + Q, rx=rx, ry=ry)
     for (x, y, rz, ry, L) in ((-0.05, 0.05, 0.25, 0.3, 0.17), (0.07, -0.05, -0.2, -0.35, 0.13)):  # I-beam stubs
-        c = (x * k, y * k, z + 0.055 * k)
-        m.box(c, (L * k, 0.035 * k, 0.008 * k), "steel", top="steelL", rz=rz, ry=ry)
-        m.box(c, (L * k, 0.008 * k, 0.035 * k), "rustD", rz=rz, ry=ry)
+        c = (-y * k, x * k, z + 0.055 * k)
+        m.box(c, (L * k, 0.035 * k, 0.008 * k), "steel", top="steelL", rz=rz + Q, ry=ry)
+        m.box(c, (L * k, 0.008 * k, 0.035 * k), "rustD", rz=rz + Q, ry=ry)
 
 
 CONTENTS = {"hull": hull_contents}
