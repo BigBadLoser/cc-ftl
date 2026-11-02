@@ -18,9 +18,9 @@ SX, SY = 0.28, 0.38  # crate footprint (tile units), as the reference: the long 
                      # The slot grid steps 0.35, so neighbours butt tight along y and keep a gap along x
 H = 0.22            # crate height: ~9 px at 1x, one stack level
 BAND = 0.035        # the dark bottom band that separates stacked levels
-T = 0.022           # wall thickness
+T = 0.035           # wall thickness: thinner breaks the back rim into dots at 1x
 R = 0.05            # corner radius: the vertical edges are rounded
-FILL = 0.13         # height of the interior floor the contents rest on
+FILL = 0.15         # height of the interior floor the contents rest on
 
 Q = math.pi / 2       # a quarter turn: content tables are written long side along x and turned onto the long y
 
@@ -70,30 +70,47 @@ def crate(m, tag, k=1.0):
 
 
 def inside(m, start, k=1.0, slack=0.004):
-    """Raise if any vertex built after index `start` (the contents) leaves the crate's inside: through a wall, out of the
-    bottom, or more than a hair over the rim (it would show through the crate stacked on top). Dipping under the
-    interior floor is fine: it is hidden."""
+    """Raise if any vertex built after index `start` (the contents) leaves the crate's inside column: through a wall, out
+    of the bottom, or higher than a crate stacked on top would hide (its interior floor, H + FILL over this one's base).
+    Pieces up there show only on the top layer of a stack. Dipping under the interior floor is fine: it is hidden."""
     ix, iy = (SX / 2 - T + slack) * k, (SY / 2 - T + slack) * k
-    for x, y, z in m.v[start:]:
-        if abs(x) > ix or abs(y) > iy or z < 0 or z > (H + 0.012) * k:
-            raise ValueError(f"{m.name}: contents vertex ({x:.3f}, {-y:.3f}, {z:.3f}) outside the crate")
+    bad = [(x, -y, z) for x, y, z in m.v[start:] if abs(x) > ix or abs(y) > iy or z < 0 or z > (H + FILL - 0.01) * k]
+    if bad:
+        raise ValueError(f"{m.name}: {len(bad)} contents vertices outside the crate, e.g. "
+                         + ", ".join(f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in bad[:4]))
 
 
 # ---- contents ----------------------------------------------------------------------------------------------------
+# Content tables are written long side along x (u) and turned onto the crate's long y: (u, v) -> grid (-v, u).
+
+
+def _plate(m, u, v, z, rz, rx, ry, w, d, col, k, th=0.012):
+    m.box((-v * k, u * k, z * k), (w * k, d * k, th * k), col, top=col, rz=rz + Q, rx=rx, ry=ry)
+
+
+def _beam(m, u, v, z, rz, ry, L, k, web="rustD", flange="steel", top="steelL", s=0.035):
+    """An I-beam stub: a flange plate and a web, centred at (u, v, z), tilted up by ry about its width."""
+    c = (-v * k, u * k, z * k)
+    m.box(c, (L * k, s * k, 0.008 * k), flange, top=top, rz=rz + Q, ry=ry)
+    m.box(c, (L * k, 0.008 * k, s * k), web, rz=rz + Q, ry=ry)
 
 
 def hull_contents(m, k=1.0):
-    """Bent hull plating and girder stubs: grey steel with rust, filling the crate to just under the rim."""
-    z = FILL * k                                               # tables are laid out long side along x, turned onto y
-    for (x, y, rz, rx, ry, w, d, col) in (                     # plates leaning on each other
-            (-0.06, -0.02, 0.15, 0.45, 0.0, 0.17, 0.11, "steelL"),
-            (0.06, 0.02, -0.2, -0.4, 0.25, 0.16, 0.1, "rust"),
-            (0.0, -0.01, 0.6, 0.0, -0.35, 0.15, 0.09, "plate")):
-        m.box((-y * k, x * k, z + 0.04 * k), (w * k, d * k, 0.012 * k), col, top=col, rz=rz + Q, rx=rx, ry=ry)
-    for (x, y, rz, ry, L) in ((-0.05, 0.05, 0.25, 0.3, 0.17), (0.07, -0.05, -0.2, -0.35, 0.13)):  # I-beam stubs
-        c = (-y * k, x * k, z + 0.055 * k)
-        m.box(c, (L * k, 0.035 * k, 0.008 * k), "steel", top="steelL", rz=rz + Q, ry=ry)
-        m.box(c, (L * k, 0.008 * k, 0.035 * k), "rustD", rz=rz + Q, ry=ry)
+    """Bent hull plating and girder stubs (grey steel with rust) heaped to the rim, and two character pieces standing
+    up out of the heap to catch the eye: a girder stub raised at a steep angle and a torn panel on edge."""
+    f = FILL
+    for u, v, z, rz, rx, ry, w, d, col in (                        # the heap: plates leaning on each other
+            (-0.07, -0.03, f + 0.03, 0.1, 0.35, 0.0, 0.15, 0.1, "steel"),
+            (0.07, 0.03, f + 0.03, -0.2, -0.35, 0.2, 0.14, 0.09, "steelD"),
+            (0.0, 0.0, f + 0.045, 0.5, 0.0, -0.3, 0.13, 0.08, "rust"),
+            (0.09, -0.05, f + 0.02, 0.3, 0.2, 0.0, 0.09, 0.06, "steelD"),
+            (-0.08, 0.05, f + 0.025, -0.4, 0.0, 0.25, 0.1, 0.06, "rustD")):
+        _plate(m, u, v, z, rz, rx, ry, w, d, col, k)
+    _beam(m, 0.03, -0.04, f + 0.05, 0.3, 0.2, 0.15, k)                 # a girder lying in the heap
+    # character pieces
+    _beam(m, -0.07, 0.02, f + 0.1, 0.15, -0.95, 0.19, k, web="rust")  # girder stub raised steeply at the back
+    m.box((0.06 * k, 0.07 * k, (f + 0.02) * k), (0.012 * k, 0.11 * k, 0.12 * k), "steel", top="rust",  # torn panel on edge
+          rz=0.25, rx=0.2, base=True)
 
 
 CONTENTS = {"hull": hull_contents}
