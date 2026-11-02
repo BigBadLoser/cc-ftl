@@ -144,7 +144,7 @@ def comfort(m, f, k=1.0):
     for x, y, sz in ((-0.06, -0.1, 0.05), (0.06, 0.1, 0.045), (0.06, -0.11, 0.04)):           # foam crumbs
         _pillow(m, (x, y, f + sz / 2 - 0.01), (0.06, 0.06, sz), "svCfoam2", "svCfoam", k, rz=0.4, p=0.6)
     _pillow(m, (0.01, 0.02, f + 0.035), (0.17, 0.2, 0.07), "svCfoam2", "svCfoam", k, rz=0.15, rx=0.1)   # seat
-    _pillow(m, (-0.035, -0.03, f + 0.11), (0.06, 0.2, 0.17), "svCmar", "svCmar", k, rz=0.3, ry=-0.25)   # back
+    _pillow(m, (-0.035, -0.03, f + 0.09), (0.06, 0.2, 0.14), "svCmar", "svCmar", k, rz=0.3, ry=-0.25)   # back
     _sheet(m, (0.03, 0.03, f + 0.12), 0.18, 0.08, 0.06, "svCteal", k, rz=1.25, tilt=0.3)             # fabric
 
 
