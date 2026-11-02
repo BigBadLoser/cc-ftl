@@ -16,6 +16,8 @@ import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
 import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { HullSprite } from "./hullPaint";
+import { iso } from "./iso";
 import { bellyIds, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
 
 export type { CutawayMode };
@@ -271,6 +273,16 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
    * piece takes the armour paint, its deco layer (`<id>.tint`) the deco paint. `bellyOnly`: just the belly below the deck
    * (an engine's hull row). False if it drew nothing.
    */
+  /** A hull piece (hullPaint.ts: recoloured by its tint, the paint times the light), anchored like `addStatic`. */
+  function addHullSprite(s: StaticSprite, x: number, y: number, key: number, parent: Container): HullSprite {
+    const p = iso(x, y);
+    const spr = new HullSprite(s.tex);
+    spr.position.set(Math.round(p.x - s.ax), Math.round(p.y - s.ay));
+    spr.zIndex = key;
+    parent.addChild(spr);
+    return spr;
+  }
+
   function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false): boolean {
     const paint = host.hullPaint?.() ?? PLAIN_PAINT;
     const put = (id: string, z: number, parent: Container, solid: boolean) => {
@@ -278,10 +290,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (!s) return;
       for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
         const ps = pid === id ? s : atlas.stat(pid);
-        if (!ps || (pid !== id && paint.deco === paint.armour)) continue; // (unpainted: the piece is its own colours)
-        const made = addStatic(L, ps, x, y, z + (pid === id ? 0 : 0.0005), parent);
-        v.owned.push(...made);
-        v.tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid, paint: col });
+        if (!ps) continue;
+        const spr = addHullSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent);
+        v.owned.push(spr);
+        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: col });
       }
     };
     const solid = k !== Struct.Floor;

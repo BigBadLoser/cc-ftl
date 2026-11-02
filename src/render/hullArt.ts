@@ -125,31 +125,27 @@ export interface HullPaint {
   deco: number;
 }
 
-/** Unpainted: the art's own colours. */
-export const PLAIN_PAINT: HullPaint = { armour: 0xffffff, deco: 0xffffff };
+
 
 /** The roof plating's own blue (palette_extra cB1): the main colour of a roof without a coat. */
 const PLATE_BLUE = 0x4a6788;
-/**
- * Per channel, the deco paint that lands the hull's mid faces on a roof colour, tuned in game against the plating (the
- * hull art is a cool grey, so red needs the most).
- */
-const MATCH = [1.43, 1.31, 1.21] as const;
 /** The armour (seams, belly, under-armour) is the main colour this dark. */
 const ARMOUR_SHADE = 0.55;
 
-const scale = (c: number, k: readonly number[]): number =>
-  [16, 8, 0].reduce((out, sh, i) => out | (Math.min(255, Math.round(((c >> sh) & 255) * k[i]!)) << sh), 0);
+const shade = (c: number, k: number): number => [16, 8, 0].reduce((out, sh) => out | (Math.round(((c >> sh) & 255) * k) << sh), 0);
 
 /**
  * A ship's hull paint from its roof livery: the deco takes the roof's main colour (a faction scheme's coat, else the
- * plating's blue), the armour a dark tone of it.
+ * plating's blue), the armour a dark tone of it. The pieces are recoloured with it (hullPaint.ts), their mid faces
+ * landing on the roof's colour.
  */
 export function hullPaintFor(scheme: string): HullPaint {
   const main = SCHEMES[scheme]?.motifs.includes("coat") ? motifColours(scheme, "coat")[0] : PLATE_BLUE;
-  const deco = scale(main, MATCH);
-  return { armour: scale(deco, [ARMOUR_SHADE, ARMOUR_SHADE, ARMOUR_SHADE]), deco };
+  return { armour: shade(main, ARMOUR_SHADE), deco: main };
 }
+
+/** A ship without a livery: the plating's blue. */
+export const PLAIN_PAINT: HullPaint = hullPaintFor("");
 
 /** `?hullPaint=<armour hex>,<deco hex>` (debug): every ship painted so, e.g. `377d87,6ed7cd`. */
 export function hullPaintParam(search: string): HullPaint | null {
