@@ -28,7 +28,17 @@ RS, RD = 0.8, 0.3       # the port: radius (the bell's 0.76 there), depth
 SH = 0.14               # the shoulders' rise over the top
 SHOULDERS = ((-0.62, -0.16), (0.16, 0.62))       # their spans along the run
 N = 32                  # segments round the port
-YS = GE.YS
+ZM = AXIS - RS - 0.1    # the front's port zone down to here; under it a framed recess
+FW, RECD = 0.1, 0.07    # the recess's frame width and depth
+LOUVRES = 3             # slats across the recess
+COLLAR = (0.06, 0.04)   # the port's raised collar: width, stand off the front
+RIBS = (ZM, 1.45)       # heights of the ribs on the block's ends
+RAMPS = {              # unpainted steel, dark to light (palette greys: lighter than the bell's steelD body)
+    "light": ("hsXM", "hsXS", "hsM", "hsXL", "hsS", "hsL"),
+    "mid": ("steel", "hsXM", "steelL", "hsXS", "plate", "hsXL"),
+    "dark": ("steelD", "hsXD", "steel", "hsXM", "steelL", "hsXS"),
+}
+RAMP = RAMPS["mid"]     # (picked)
 
 
 def _frame(o):
@@ -42,36 +52,32 @@ def _frame(o):
     return pt
 
 
-def _tone(n):
-    """A face's tone by its outward normal (d, r, z)."""
+def _tone(n, lift=0):
+    """A face's tone by its outward normal (d, r, z): RAMP's step for it, `lift` steps lighter (a raised detail)."""
     d, r, z = n
-    if z > 0.8:
-        return GE.TOP
-    if z > 0.2:
-        return YS[5]                                    # (chamfers, the shoulders' slopes: lit)
-    if abs(r) > abs(d):
-        return YS[2]
-    return YS[4] if d > 0 else YS[1]
+    i = 4 if z > 0.8 else 5 if z > 0.2 else 2 if abs(r) > abs(d) else 3 if d > 0 else 1
+    return RAMP[min(5, i + lift)]
 
 
 class _Builder:
     def __init__(self, o, name):
-        self.pt, self.m = _frame(o), core.Mesh(name)
+        self.pt, self.m = _frame(o), core.Mesh(name)     # (lit, as the engine's art: picked over the hull's unlit)
 
-    def face(self, pts, n, col=None):
+    def face(self, pts, n, col=None, lift=0):
         """A face over (d, r, z) points, wound to face out along n (d, r, z)."""
         P = [self.pt(*p) for p in pts]
         nn = (P[1] - P[0]).cross(P[2] - P[0])
         out = self.pt(*n) - self.pt(0.0, 0.0, 0.0)
-        self.m.poly(P if nn.dot(out) > 0 else P[::-1], col or _tone(n))
+        self.m.poly(P if nn.dot(out) > 0 else P[::-1], col or _tone(n, lift))
 
-    def prism(self, prof, r0, r1, skip=(), along="r", col=None):
+    def prism(self, prof, r0, r1, skip=(), along="r", col=None, lift=0):
         """A convex profile run from r0 to r1: its two ends and a face per edge (but those in skip). The profile is
-        (d, z) run along r, or (r, z) run along d (`along` "d"); `col` its faces' tone (default by facing)."""
+        (d, z) run along r, or (r, z) run along d (`along` "d"); `col` its faces' tone (default by facing,
+        `lift` steps lighter)."""
         at = (lambda x, a, z: (x, a, z)) if along == "r" else (lambda x, a, z: (a, x, z))
         cx, cz = sum(p[0] for p in prof) / len(prof), sum(p[1] for p in prof) / len(prof)
-        self.face([at(x, r0, z) for x, z in prof], at(0, -1, 0), col)
-        self.face([at(x, r1, z) for x, z in prof], at(0, 1, 0), col)
+        self.face([at(x, r0, z) for x, z in prof], at(0, -1, 0), col, lift)
+        self.face([at(x, r1, z) for x, z in prof], at(0, 1, 0), col, lift)
         for i, (a, b) in enumerate(zip(prof, prof[1:] + prof[:1])):
             if i in skip:
                 continue
@@ -80,13 +86,13 @@ class _Builder:
                 nx, nz = -nx, -nz
             ln = math.hypot(nx, nz)
             self.face([at(a[0], r0, a[1]), at(b[0], r0, b[1]), at(b[0], r1, b[1]), at(a[0], r1, a[1])],
-                      at(nx / ln, 0, nz / ln), col)
+                      at(nx / ln, 0, nz / ln), col, lift)
 
 
 def _rect(c, s):
     """Where a ray from the port's axis at (c, s) leaves the front face's rectangle, as (r, z)."""
     t = min(W / abs(c) if abs(c) > 1e-9 else math.inf,
-            (ZT - C - AXIS) / s if s > 1e-9 else (AXIS - ZF - C) / -s if s < -1e-9 else math.inf)
+            (ZT - C - AXIS) / s if s > 1e-9 else (AXIS - ZM) / -s if s < -1e-9 else math.inf)
     return c * t, AXIS + s * t
 
 
@@ -96,7 +102,7 @@ def housing(o):
     prof = [(0.0, ZF), (DF - C, ZF), (DF, ZF + C), (DF, ZT - C), (DF - C, ZT), (0.0, ZT)]
     b.prism(prof, -W, W, skip=(2,))                     # (its front: below, with the port)
     ts = {2 * math.pi * i / N for i in range(N)}
-    for zc in (ZF + C, ZT - C):                             # (the front's corners, so its edges stay straight)
+    for zc in (ZM, ZT - C):                             # (the port zone's corners, so its edges stay straight)
         for rc in (-W, W):
             ts.add(math.atan2(zc - AXIS, rc) % math.tau)
     ts = sorted(ts)
@@ -105,13 +111,55 @@ def housing(o):
         (r0, z0), (r1, z1) = _rect(c0, s0), _rect(c1, s1)
         p0, p1 = (RS * c0, AXIS + RS * s0), (RS * c1, AXIS + RS * s1)
         b.face([(DF, *p0), (DF, r0, z0), (DF, r1, z1), (DF, *p1)], (1, 0, 0))
-        b.face([(DF, *p0), (DF - RD, *p0), (DF - RD, *p1), (DF, *p1)], (0, -(c0 + c1), -(s0 + s1)), YS[1])
+        b.face([(DF, *p0), (DF - RD, *p0), (DF - RD, *p1), (DF, *p1)], (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
     b.face([(DF - RD, RS * math.cos(t), AXIS + RS * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")
+    _collar(b)
+    _recess(b)
+    for zc in RIBS:                                     # (the ends' ribs)
+        for e in (-1, 1):
+            b.prism([(0.08, zc - 0.03), (DF - 0.06, zc - 0.03), (DF - 0.06, zc + 0.03), (0.08, zc + 0.03)],
+                     *sorted((e * W, e * (W + 0.025))), lift=1)
     shoulder = [(-0.5, ZT - 0.05), (0.3, ZT - 0.05), (0.3, H + SH - 0.08), (0.22, H + SH),
                 (-0.5, H + SH)]                 # (on the top, set back over the hull's: none down the front)
     for r0, r1 in SHOULDERS:
         b.prism(shoulder, r0, r1)
+        b.prism([(-0.42, H + SH), (0.12, H + SH), (0.12, H + SH + 0.03), (-0.42, H + SH + 0.03)],
+                r0 + 0.06, r1 - 0.06, lift=1)           # (a plate on its top)
     return b.m.build()
+
+
+def _collar(b):
+    """The port's raised collar: its front ring and outer rim."""
+    w, h = COLLAR
+    for i in range(N):
+        t0, t1 = 2 * math.pi * i / N, 2 * math.pi * (i + 1) / N
+        c0, s0, c1, s1 = math.cos(t0), math.sin(t0), math.cos(t1), math.sin(t1)
+        ring = lambda r, d, c, s: (d, r * c, AXIS + r * s)
+        b.face([ring(RS, DF + h, c0, s0), ring(RS + w, DF + h, c0, s0), ring(RS + w, DF + h, c1, s1),
+                ring(RS, DF + h, c1, s1)], (1, 0, 0), lift=1)
+        b.face([ring(RS + w, DF + h, c0, s0), ring(RS + w, DF, c0, s0), ring(RS + w, DF, c1, s1),
+                ring(RS + w, DF + h, c1, s1)], (0, c0 + c1, s0 + s1), lift=1)
+        b.face([ring(RS, DF, c0, s0), ring(RS, DF + h, c0, s0), ring(RS, DF + h, c1, s1), ring(RS, DF, c1, s1)],
+               (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
+
+
+def _recess(b):
+    """The front under the port zone: a frame flush with it round a recessed panel, louvres across the panel."""
+    r0, r1, z0, z1 = -W, W, ZF + C, ZM
+    i0, i1, j0, j1 = r0 + FW, r1 - FW, z0 + FW, z1 - FW
+    for q in ([(r0, z0), (r1, z0), (i1, j0), (i0, j0)], [(r1, z0), (r1, z1), (i1, j1), (i1, j0)],
+              [(r1, z1), (r0, z1), (i0, j1), (i1, j1)], [(r0, z1), (r0, z0), (i0, j0), (i0, j1)]):
+        b.face([(DF, r, z) for r, z in q], (1, 0, 0))   # (the frame)
+    dp = DF - RECD
+    b.face([(DF, i0, j0), (DF, i1, j0), (dp, i1, j0), (dp, i0, j0)], (0, 0, 1))      # (its sides, in to the panel)
+    b.face([(DF, i0, j1), (DF, i1, j1), (dp, i1, j1), (dp, i0, j1)], (0, 0, -1), RAMP[0])
+    b.face([(DF, i0, j0), (DF, i0, j1), (dp, i0, j1), (dp, i0, j0)], (0, 1, 0))
+    b.face([(DF, i1, j0), (DF, i1, j1), (dp, i1, j1), (dp, i1, j0)], (0, -1, 0))
+    b.face([(dp, i0, j0), (dp, i1, j0), (dp, i1, j1), (dp, i0, j1)], (1, 0, 0), RAMP[1])
+    step = (j1 - j0) / LOUVRES
+    for k in range(LOUVRES):                            # (slats: lit tops sloping out and down, dark under)
+        zl = j0 + step * (k + 0.5)
+        b.prism([(dp, zl - step * 0.35), (DF - 0.015, zl - step * 0.1), (dp, zl + step * 0.3)], i0 + 0.04, i1 - 0.04)
 
 
 def piece(o):
