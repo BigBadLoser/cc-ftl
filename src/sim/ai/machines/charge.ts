@@ -6,7 +6,9 @@ import { ModuleC } from '../../modules/components';
 import { shipIdOf } from '../../regions';
 import { bayFree, cradleOf, homeBay } from '../../robots/bay';
 import type { Sim } from '../../sim';
-import { abortTask, setJoblessTask, syncTask } from '../task';
+import { unsafeFor } from '../hazard';
+import { TaskC } from '../components';
+import { abortTask, clearJoblessTask, setJoblessTask, syncTask } from '../task';
 
 /**
  * The charge machine (docs/CREW_AI.md section 6): a battery robot `Walk`s to its home bay (claiming the nearest free one on its
@@ -17,7 +19,13 @@ import { abortTask, setJoblessTask, syncTask } from '../task';
 /** The recharge drive's turn: false when no bay can be reached (the robot carries on as usual). */
 export function chargeTurn(sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean): boolean {
   const bay = goToBay(sim, id, crew, pos);
-  if (!bay) return false;
+  if (!bay) {
+    if (sim.world.get(id, TaskC)?.machine === 'charge' && crew.activity !== 'charging') {
+      clearPath(sim, id); // the walk to a cradle that now harms them
+      clearJoblessTask(sim, id);
+    }
+    return false;
+  }
   if (holdsJob) {
     abortTask(sim, id, 'drive'); // also clears the path: plan the walk to the bay again
     goToBay(sim, id, crew, pos);
@@ -51,6 +59,8 @@ function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): number {
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC);
       if (!m || shipIdOf(sim, m) !== shipIdOf(sim, pos) || !bayFree(sim, id)) continue;
+      const c = cradleOf(sim, id);
+      if (unsafeFor(sim, robot, shipIdOf(sim, pos), c.x, c.y)) continue;
       const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), cradleOf(sim, id));
       if (steps && steps.length < best) [bay, best] = [id, steps.length];
     }
@@ -58,6 +68,7 @@ function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): number {
     (sim.world.get(bay, ModuleC) as { reservedBy: number }).reservedBy = robot;
   }
   const m = cradleOf(sim, bay);
+  if (unsafeFor(sim, robot, shipIdOf(sim, pos), m.x, m.y)) return 0; // the cradle harms it now: keep the home, wait
   const path = sim.world.get(robot, PathC) as Path;
   if (isSettled(pos) && pos.x === m.x && pos.y === m.y) {
     clearPath(sim, robot);
