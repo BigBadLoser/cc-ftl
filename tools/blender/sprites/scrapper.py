@@ -112,9 +112,11 @@ def scrapper(rot):
     # ---- screen end (x 3..4): the top slopes down toward the +x end, two screens on the slope, one per row
     xa, za, xb, zb = 3.08, 0.98, 3.92, 0.54                                               # slope from (xa, za) to (xb, zb)
     b.prism_y([(3.0, BASE), (3.96, BASE), (3.96, zb - 0.06), (xb, zb), (xa, za), (3.0, za)], 0.06, 1.94, STEEL, STEEL_T)
-    for ya, yb in ((0.18, 0.88), (1.12, 1.82)):
-        on_slope(b, xa, xb, za, zb, ya, yb, 0.12, 0.9, 0.02, GMD)                         # bezel
-        on_slope(b, xa, xb, za, zb, ya + 0.06, yb - 0.06, 0.2, 0.82, 0.035, LIGHT)        # screen
+    for ya, yb in ((0.18, 0.88), (1.12, 1.82)):                                          # two hatches, sliding double doors
+        on_slope(b, xa, xb, za, zb, ya, yb, 0.1, 0.92, 0.025, GMD)                        # frame
+        mid = (ya + yb) / 2
+        for y0, y1 in ((ya + 0.06, mid - 0.012), (mid + 0.012, yb - 0.06)):
+            on_slope(b, xa, xb, za, zb, y0, y1, 0.18, 0.84, 0.04, PLATE)                  # door leaves, a dark seam between
     # ---- centre block (x 2..3): tall back row with the dial, lower front row with a display and an output slot
     cbox(b, 2.02, 3.0, 0.06, 1.0, BASE, 1.12)
     cbox(b, 2.02, 3.0, 1.0, 1.94, BASE, 0.96)
