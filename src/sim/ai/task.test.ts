@@ -107,7 +107,7 @@ describe('task API', () => {
     const sim = make();
     const c = spawn(sim, 1, 1);
     reserveJob(sim, c, job(sim));
-    sim.world.add(c, IntentC, { policy: 'policy.legacy', drive: 'work', since: 0, scores: [0, 0, 0, 1000], nextEval: 1 });
+    sim.world.add(c, IntentC, { policy: 'policy.colonist', drive: 'work', since: 0, scores: [0, 0, 1000], nextEval: 1 });
     sim.world.add(c, InterruptC, { reason: 'downed', mode: 'abort', owner: 'none', since: 0 });
     abortTask(sim, c, 'dead');
     expect([TaskC, IntentC, InterruptC].map((k) => sim.world.has(c, k))).toEqual([false, false, false]);

@@ -18,6 +18,10 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 40, ...o,
 });
 const content: ContentRegistry = {
+  // Crew sleep below rest 20 and otherwise work (content/policies.ts holds the game's policies; sim tests cannot import it).
+  policies: {
+    'policy.t': { id: 'policy.t', crew: ['colonist', 'npc', 'station'], drives: [{ id: 'sleep', input: 'rest', curve: [[0, 1000]], enter: 200, task: 'sleep' }, { id: 'work', curve: [[0, 100]], task: 'job' }] },
+  },
   ships: {},
   roles: {},
   species: {

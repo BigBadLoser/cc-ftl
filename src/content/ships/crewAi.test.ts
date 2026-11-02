@@ -9,6 +9,7 @@ import { deriveTask } from '../../sim/ai/task';
 import { killCrew } from '../../sim/crew/death';
 import { explainCrew } from '../../sim/ai/explain';
 import { destroyJob } from '../../sim/items/stacks';
+import { policyOf } from '../../sim/ai/utility';
 import { content } from '../index';
 
 /**
@@ -86,10 +87,10 @@ describe('crew AI phase 1', () => {
     expect(checked).toBe(1500);
     expect(sim.aiLog.interruptMismatches).toBe(0);
     expect(interrupts).toBeGreaterThan(0); // the fight did hold crew out of the loop
-    // Every crew member in the job loop has an intent from policy.legacy.
+    // Every crew member in the job loop has an intent from their kind's policy (content/policies.ts).
     const loop = sim.world.query(CrewC).filter((c) => sim.world.has(c, IntentC));
     expect(loop.length).toBeGreaterThan(3);
-    expect(loop.every((c) => sim.world.get(c, IntentC)!.policy === 'policy.legacy')).toBe(true);
+    expect(loop.every((c) => sim.world.get(c, IntentC)!.policy === policyOf(sim, c).id && policyOf(sim, c).id !== 'policy.none')).toBe(true);
   });
 
   it('finish class: a rescuer carrying a patient lays them in a bed before sleep, hunger or an emergency can pull them off', () => {
@@ -203,9 +204,9 @@ describe('crew AI phase 1', () => {
     expect(hauler).toBeDefined();
     const x = explainCrew(sim, hauler!);
     const job = sim.world.get(hauler!, AssignmentC)!.jobId;
-    expect(x).toMatchObject({ policy: 'policy.legacy', drive: 'work', assignment: job, task: { job: { id: job, kind: 'haul' }, holds: [`job ${job}`] } });
+    expect(x).toMatchObject({ policy: 'policy.colonist', drive: 'work', assignment: job, task: { job: { id: job, kind: 'haul' }, holds: [`job ${job}`] } });
     expect(x.task!.path).toMatch(/^haul\/(ToSource|ToDest|Deposit)$/);
-    expect(x.scores).toEqual({ recharge: 0, sleep: 0, eat: 0, work: 1000 });
+    expect(x.scores).toEqual({ sleep: 0, eat: 0, work: 100 });
   });
 
   /**
