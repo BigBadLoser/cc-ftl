@@ -42,8 +42,8 @@ export interface LayerSprite {
   frame(clip: ClipDef, dir: number, col: number): Texture | undefined;
   /** Same cell of the clip's glow sheet, or null if that sheet has no glow. Only meaningful once `frame` returned a texture. */
   glowFrame(clip: ClipDef, dir: number, col: number): Texture | null;
-  /** Queue the clip's sheet at the back (no-op when loaded or on its way): for clips that will be needed soon. */
-  request(clip: ClipDef): void;
+  /** Queue the clip's sheet as a preload (no-op when loaded or on its way): for clips that will be needed soon. `urgent`: load it ahead of the preloads, by rank. */
+  request(clip: ClipDef, urgent?: boolean): void;
   /** True if the clip's sheet is loaded now (asks for nothing). */
   loaded(clip: ClipDef): boolean;
 }
@@ -119,7 +119,9 @@ export interface Atlas {
 export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
 /** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
 export const CREW_BUDGET = 64 * 2 ** 20;
-export const ENV_BUDGET = 96 * 2 ** 20;
+export const ENV_BUDGET = 160 * 2 ** 20;
+/** Sheets loading at once (a handful of small PNGs each; the browser's connection limit is the real bound). */
+export const SHEET_CONCURRENCY = 12;
 /** A sheet download (headers and body) that takes longer than this is abandoned and retried by the store. */
 export const FETCH_TIMEOUT_MS = 30_000;
 /** A sheet load (download and decode) the store gives up on; after the fetch timeout, so that one fires first. */
@@ -254,7 +256,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       env: { budget: budgetParam('envmb', ENV_BUDGET) },
       crew: { budget: budgetParam('crewmb', CREW_BUDGET), idleMs: CREW_IDLE_MS },
     },
-    concurrency: 4,
+    concurrency: SHEET_CONCURRENCY,
     loadTimeoutMs: LOAD_TIMEOUT_MS,
     now: () => clock,
     onEvict(name) {
@@ -272,7 +274,10 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   const eager = new Set(EAGER_SHEETS);
   for (const [name, def] of Object.entries(manifest.sheets)) {
     const pinned = eager.has(name);
-    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : /^(\dx:)?crew\./.test(name) ? 'crew' : 'env', pinned });
+    const crew = /^(\dx:)?crew\./.test(name);
+    // Load order for sheets being drawn: eager, then environment art, then what crew stand in (idle), then what they walk in, then other clips.
+    const rank = pinned ? 0 : !crew ? 1 : /\.idle$/.test(name) ? 2 : /\.walk$/.test(name) ? 3 : 4;
+    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : crew ? 'crew' : 'env', pinned, rank });
   }
   for (const name of EAGER_SHEETS) if (store.has(name)) store.request(name);
   await store.idle();
@@ -322,7 +327,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       def: a,
       frame: (clip, dir, col) => cut(clip, 'i', dir, col) ?? undefined,
       glowFrame: (clip, dir, col) => cut(clip, 'g', dir, col) ?? null,
-      request: (clip) => store.request(sheetOf(clip)),
+      request: (clip, urgent) => store.request(sheetOf(clip), urgent),
       loaded: (clip) => store.isReady(sheetOf(clip)),
     };
   };

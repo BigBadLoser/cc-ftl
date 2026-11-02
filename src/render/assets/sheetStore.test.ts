@@ -207,6 +207,61 @@ describe('SheetStore', () => {
   });
 });
 
+describe('SheetStore load order', () => {
+  /** One slot, so the order of `loads` is the order the queue hands sheets out; the first sheet occupies the slot. */
+  function ordered() {
+    const loads: string[] = [];
+    const io: SheetIO<string> = {
+      async load(image) {
+        loads.push(image);
+        await Promise.resolve();
+        return { sheet: { image, glow: null } as Loaded<string>, bytes: 1 };
+      },
+      unload: () => undefined,
+    };
+    const store = new SheetStore<string>({ io, pools: { env: { budget: 1000 } }, concurrency: 1, now: () => 0 });
+    const reg = (n: string, rank?: number) => store.register(n, { image: n, pool: 'env', rank });
+    return { store, loads, reg };
+  }
+  it('loads by rank, first come first served within a rank, preloads last', async () => {
+    const o = ordered();
+    for (const [n, r] of [['busy', 1], ['p', 1], ['walk1', 3], ['idle1', 2], ['walk2', 3], ['env1', 1], ['idle2', 2]] as const) o.reg(n, r);
+    o.store.request('busy', true);
+    o.store.request('p'); // a preload: after every rank
+    o.store.request('walk1', true);
+    o.store.request('idle1', true);
+    o.store.request('walk2', true);
+    o.store.request('env1', true);
+    o.store.request('idle2', true);
+    await o.store.idle();
+    expect(o.loads).toEqual(['busy', 'env1', 'idle1', 'idle2', 'walk1', 'walk2', 'p']);
+  });
+  it('does not reshuffle a queued sheet when it is asked for again', async () => {
+    const o = ordered();
+    for (const n of ['busy', 'a', 'b', 'c']) o.reg(n, 1);
+    o.store.request('busy', true);
+    for (const n of ['a', 'b', 'c']) o.store.request(n, true);
+    for (let i = 0; i < 5; i++) o.store.get('c');
+    o.store.get('b');
+    await o.store.idle();
+    expect(o.loads).toEqual(['busy', 'a', 'b', 'c']);
+  });
+  it('promotes a queued preload when something draws without it, but only to its rank', async () => {
+    const o = ordered();
+    o.reg('busy', 1);
+    o.reg('hi', 1);
+    o.reg('w', 3);
+    o.reg('pre', 1);
+    o.store.request('busy', true);
+    o.store.request('pre');
+    o.store.request('w');
+    o.store.request('hi', true);
+    o.store.get('w'); // now drawn: rank 3, ahead of the preload 'pre', behind 'hi'
+    await o.store.idle();
+    expect(o.loads).toEqual(['busy', 'hi', 'w', 'pre']);
+  });
+});
+
 describe('SheetStore load timeout', () => {
   /** Loads of images listed in `stuck` wait for a manual `release`; the others settle at once. */
   function hung(concurrency = 1) {
