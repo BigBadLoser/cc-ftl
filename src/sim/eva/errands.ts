@@ -16,7 +16,7 @@ export interface SuitSource {
 
 /** True for the personal errands the sim makes for a crew member (nobody else may pick them up). */
 export function isErrand(job: Job): boolean {
-  return job.kind === 'suitUp' || job.kind === 'suitOff';
+  return job.kind === 'suitUp' || job.kind === 'suitOff' || job.kind === 'refill';
 }
 
 function onGrid(sim: Sim, airlock: number, shipId: number): boolean {

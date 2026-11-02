@@ -525,7 +525,7 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
 
 **C: need tasks are the saved truth.**
 
-- `EatC` and `BedClaimC` are gone (SAVE_VERSION 80):
+- `EatC` and `BedClaimC` are gone (SAVE_VERSION 81):
   - A sleep's bed claim is the sleep task's `bed` hold. `claimBed`, `releaseBedClaim` and `claimedBed` live in `ai/task.ts`.
   - A meal is the eat task's blackboard. `startMeal`, `mealOf` and `endMeal` live in `ai/task.ts`. The blackboard holds the spot (`tile`), the galley (`target`) and the ration (`item`), plus `n`: the ticks of eating left, or -1 while walking. The needs system counts `n` down.
   - `deriveTask` now mirrors only job assignments, a hold-less sleep on the floor and charging; `keepsSameNeed` leaves the sleep and eat tasks as their own truth.

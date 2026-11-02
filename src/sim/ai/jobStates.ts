@@ -36,5 +36,6 @@ export function workState(sim: Sim, crew: number, job: Job): string {
   if (job.kind === 'rescue') return carrier(sim, crew, job) ? 'Lay' : 'Lift';
   if (job.kind === 'suitUp') return 'Don';
   if (job.kind === 'suitOff') return 'Doff';
+  if (job.kind === 'refill') return 'Fill';
   return 'Work';
 }

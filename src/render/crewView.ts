@@ -248,9 +248,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           const k = 1 - drift.ticks / Math.max(1, drift.total);
           const [hx, hy] = [drift.sx - 0.5, drift.sy - 0.5];
           const [ax, ay, bx, by] = drift.mode === 'out' ? [hx, hy, pos.x, pos.y] : [pos.x, pos.y, hx, hy];
-          tx = ax + (bx - ax) * k;
-          ty = ay + (by - ay) * k;
-          driftFacing = facingOf(bx - ax, by - ay);
+          // A refill goes out to the hatch and back to the same tile: along the line to the hatch for the first half, back for the second.
+          const kk = drift.mode === 'refill' ? 1 - Math.abs(1 - 2 * k) : k;
+          tx = ax + (bx - ax) * kk;
+          ty = ay + (by - ay) * kk;
+          driftFacing = drift.mode === 'refill' && k > 0.5 ? facingOf(ax - bx, ay - by) : facingOf(bx - ax, by - ay);
         }
         // A suited crew member outside the hull (on a Space tile) drifts on the pack's thrusters: the eva_float clip.
         const flight = !!drift; // eva_float only while drifting between the shuttle and the hull

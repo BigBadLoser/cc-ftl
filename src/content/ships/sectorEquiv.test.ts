@@ -29,7 +29,7 @@ function fnv(s: string, h = 0x811c9dc5): number {
  */
 function legacyWorld(sim: Sim): unknown {
   const data = sim.world.serialize();
-  // Crew AI Phase 3 folded the meal (`EatC`) and the sleep's bed claim (`BedClaimC`) into the task (SAVE_VERSION 80): rebuild those
+  // Crew AI Phase 3 folded the meal (`EatC`) and the sleep's bed claim (`BedClaimC`) into the task (SAVE_VERSION 81): rebuild those
   // stores from it, in their old key order, and put them back in the stores' sorted order. Both hashes are unchanged by the fold.
   const tasks = (data.stores.task ?? []) as [number, Task][];
   const folded: Record<string, [number, unknown][]> = {
