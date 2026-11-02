@@ -5,6 +5,7 @@ import { airlockTiles } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
 import { shipIdOf } from '../regions';
+import { hatchSpot } from '../eva/shuttle';
 
 export interface DockPoint {
   shipId: number;
@@ -33,7 +34,8 @@ export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
 
 /**
  * Where crew work a docked vehicle's cargo: the keep-out tile in front of one of the airlock's unloaders. `near` picks the
- * closest one (default the first); a plain airlock has none, so the boarding tile serves.
+ * closest one (default the first); a plain airlock has none, so the boarding tile serves. A shuttle hovering beside a ship takes cargo at
+ * its staging tile on that ship's hull (`hatchSpot`: a salvage team carries the loose scrap there).
  */
 export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: number }): { shipId: number; x: number; y: number } | null {
   const v = sim.world.get(vehicle, VehicleC);
@@ -45,7 +47,7 @@ export function cargoTile(sim: Sim, vehicle: number, near?: { x: number; y: numb
     const best = stands.reduce((a, b) => (d(b) < d(a) ? b : a));
     return { shipId: shipIdOf(sim, m), ...best };
   }
-  return boardingTile(sim, vehicle);
+  return boardingTile(sim, vehicle) ?? hatchSpot(sim, vehicle);
 }
 
 /** Where crew stand to board or leave a vehicle: its bay's access tile (stowed) or the docked airlock's inside tile. */
@@ -87,11 +89,13 @@ export function bayWorking(sim: Sim, bay: number): boolean {
 /**
  * Where a shuttle holds station beside a ship (ShipC entity id): `gap` tiles off the side of the ship's bounding box that
  * faces `from`, level with the nearest point of that side (never off a corner, so the hull stays within a short float). A
- * point inside the box leaves through its nearest side. Null if the ship is gone.
+ * point inside the box leaves through its nearest side. `box` (sector tiles) stands in for the bounding box: the hull's live
+ * extent, for a shuttle that keeps close to a wreck being stripped. Null if the ship is gone.
  */
-export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: number; y: number }): { x: number; y: number } | null {
-  const s = shipById(sim, ship);
-  if (!s) return null;
+export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: number; y: number }, box?: { x: number; y: number; w: number; h: number }): { x: number; y: number } | null {
+  const ss = shipById(sim, ship);
+  if (!ss) return null;
+  const s = box ? { x: box.x, y: box.y, width: box.w, height: box.h } : ss;
   const nx = Math.min(s.x + s.width, Math.max(s.x, from.x));
   const ny = Math.min(s.y + s.height, Math.max(s.y, from.y));
   let dx = from.x - nx;

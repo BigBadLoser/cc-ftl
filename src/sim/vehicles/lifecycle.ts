@@ -163,7 +163,7 @@ export function releaseBayVehicle(sim: Sim, bay: number, shipId: number, x: numb
 /** Fly-to point of a destination from where the body is, or null if it is gone. */
 export function destPoint(sim: Sim, v: Vehicle, from: { x: number; y: number }): { x: number; y: number } | null {
   if (v.dest?.type === 'dock') return dockPoint(sim, v.dest.airlock);
-  if (v.dest?.type === 'hover') return hoverPoint(sim, v.dest.ship, vehicleDefOf(sim, v)?.eva?.hoverGap ?? 2, from);
+  if (v.dest?.type === 'hover') return hoverPoint(sim, v.dest.ship, vehicleDefOf(sim, v)?.eva?.hoverGap ?? 2, from, v.dest.box);
   if (v.dest?.type === 'bay') return bayCenter(sim, v.home);
   return null;
 }

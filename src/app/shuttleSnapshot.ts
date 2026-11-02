@@ -6,7 +6,7 @@ import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
 import { salvageCounts, hostilesAboard, workLeft } from '../sim/salvage/counts';
-import { SalvageOrderC, SCRAP_TYPES } from '../sim/salvage/components';
+import { SalvageOrderC, SalvageTripC, SCRAP_TYPES } from '../sim/salvage/components';
 import { isIncapacitated } from '../sim/crew/helpers';
 
 
@@ -25,8 +25,12 @@ const FERRY_STATUS: Record<string, string> = {
   toFrom: 'Flying to the pickup', gather: 'Loading and boarding', toDest: 'Flying to the drop-off', deliver: 'Unloading and landing', home: 'Heading home',
 };
 
-/** The base run this shuttle is on, as a status line. */
+const SALVAGE_STATUS: Record<string, string> = { board: 'team boarding', fly: 'flying out', work: 'team at work', recall: 'team coming back', home: 'heading home' };
+
+/** The base run (or salvage shift) this shuttle is on, as a status line. */
 function ferryRun(sim: Sim, vehicle: number): UiShuttle['ferry'] {
+  const trip = sim.world.get(vehicle, SalvageTripC);
+  if (trip) return { status: trip.run ? 'Salvage: cargo run home' : `Salvage: ${SALVAGE_STATUS[trip.phase]}`, to: shipName(sim, trip.ship) };
   const f = sim.world.get(vehicle, FerryC);
   return f ? { status: FERRY_STATUS[f.phase] ?? f.phase, to: shipName(sim, f.to) } : null;
 }
@@ -190,5 +194,5 @@ function salvageInfo(sim: Sim, id: number): UiSalvage {
   const left = workLeft(sim, id, o.types);
   const h = hostilesAboard(sim, id);
   const why = [h.crew ? 'hostiles aboard' : '', h.sacs ? 'egg sacs aboard' : '', h.nests ? 'nests aboard' : ''].filter(Boolean).join(', ');
-  return { types, order: { types: [...o.types], status: o.status, block: o.status === 'blocked' ? why || 'hostiles aboard' : '', done: o.done ?? 0, total: (o.done ?? 0) + left } };
+  return { types, order: { types: [...o.types], status: o.status, block: o.status !== 'blocked' ? '' : o.block === 'noShuttle' ? 'no free shuttle with suits' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard', done: o.done ?? 0, total: (o.done ?? 0) + left } };
 }

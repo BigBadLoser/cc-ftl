@@ -1,5 +1,7 @@
 import { createJob, DECONSTRUCT_TICKS } from '../crew/handlers';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
+import { destroyJob } from '../items/stacks';
+import { jobGoal } from '../crew/helpers';
 import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { postModuleDecon } from '../modules/handlers';
@@ -8,6 +10,7 @@ import type { ScrapType } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { SALVAGE_JOBS_OPEN } from '../tuning';
+import { reachTest } from './reach';
 
 interface Tile { x: number; y: number; kind: number }
 
@@ -109,12 +112,20 @@ export function salvageJobs(sim: Sim, ship: number): number[] {
 
 /**
  * Keep the order's stripping jobs topped up (at most SALVAGE_JOBS_OPEN open on the wreck). Modules go first; walls and doors once no
- * module of a ticked type is left; floors last, once no loose stack lies on the wreck (the haulers and the salvage ferry clear those)
- * farthest from the crew first. Returns how many parts the order still has to strip (0 = done).
+ * module of a ticked type is left; floors last, once no loose stack lies on the wreck (the haulers and the salvage shuttle clear those)
+ * farthest from the crew first. While crew stand on the wreck, a part none of them can reach is skipped and an open job nobody holds
+ * that none of them can reach is dropped, so it never holds a place under the cap; a stage whose parts are all out of reach lets the
+ * next one start (an outer wall coming down opens a sealed hall). Returns how many parts the order still has to strip (0 = done).
  */
 export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): number {
   const parts = partsOf(sim, ship, types);
   const remaining = partCount(parts);
+  const reach = reachTest(sim, ship);
+  const can = (g: Parameters<NonNullable<typeof reach>>[0]): boolean => !reach || reach(g);
+  for (const id of salvageJobs(sim, ship)) {
+    const j = sim.world.get(id, JobC)!;
+    if (j.reservedBy === 0 && !can(jobGoal(j))) destroyJob(sim, id);
+  }
   const open = salvageJobs(sim, ship).map((id) => sim.world.get(id, JobC)!);
   let room = SALVAGE_JOBS_OPEN - open.length;
   if (room <= 0 || remaining === 0) return remaining;
@@ -127,18 +138,23 @@ export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): n
       room--;
     }
   };
-  if (parts.modules.length) {
-    for (const id of parts.modules) {
+  const modules = parts.modules.filter((id) => {
+    const m = sim.world.get(id, ModuleC)!;
+    return can(jobGoal({ kind: 'moduleDecon', x: m.x, y: m.y }));
+  });
+  const walls = parts.walls.filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y })));
+  if (modules.length) {
+    for (const id of modules) {
       if (room <= 0) break;
       if (taken.has(`m${id}`)) continue;
       const scrap = sim.content.modules[sim.world.get(id, ModuleC)!.def]?.scrap;
       postModuleDecon(sim, id, { scrap: scrap as ScrapType });
       room--;
     }
-  } else if (parts.walls.length) {
-    post(parts.walls, (t) => (t.kind === Struct.Beam ? Struct.Space : Struct.Floor));
+  } else if (walls.length) {
+    post(walls, (t) => (t.kind === Struct.Beam ? Struct.Space : Struct.Floor));
   } else if (!stacksAboard(sim, ship)) {
-    post(farthestFloors(sim, ship, parts.floors), () => Struct.Space);
+    post(farthestFloors(sim, ship, parts.floors).filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }))), () => Struct.Space);
   }
   return remaining;
 }

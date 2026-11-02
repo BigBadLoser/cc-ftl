@@ -91,8 +91,12 @@ import { newYard, type YardState } from './yard/types';
  * v74 (crew AI Phase 2): `sector.sched`, and the sector grid's thin-air `watch` count (the job scheduler's pass gate).
  * v75 (salvage items): `item.scrap` is gone; saved stock may hold the new scrap types (hull, tech, energy, weapons, comfort) and cloth; no migration.
  * v76 (salvage orders): `SalvageOrderC` on a derelict, `Job.scrap` (a salvage job's scrap type), and `ModuleDef.scrap`; a stripped wreck leaves the world.
+ * v77 (salvage progress): `SalvageOrder.total`.
+ * v78 (scrapper 4x2): saved grids hold the old 2x1 scrapper footprint.
+ * v79 (salvage teams): `SalvageTripC` (a salvage shift, on its shuttle, with its cargo run), `SalvageCrewC` (its crew), `SalvageOrder.teamAt`,
+ *   blocks `noShuttle` / `noCrew`, `VehicleDest.hover.box`.
  */
-export const SAVE_VERSION = 78;
+export const SAVE_VERSION = 79;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

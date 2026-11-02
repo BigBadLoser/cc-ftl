@@ -304,7 +304,8 @@ describe('wreck removal waits for shuttle runs', () => {
 });
 
 describe('hostiles block an order', () => {
-  const blocked = (sim: Sim, w: number): boolean => sim.world.get(w, SalvageOrderC)?.status === 'blocked';
+  // No shuttle in these worlds, so the order also shows 'noShuttle' (salvage teams, trip.ts); this is about the hostile block.
+  const blocked = (sim: Sim, w: number): boolean => sim.world.get(w, SalvageOrderC)?.block === 'hostile';
   it('a living hostile, an egg sac or a nest blocks it with no jobs open, and it runs again once cleared', () => {
     const sim = new Sim(7, content);
     const w = derelict(sim);
