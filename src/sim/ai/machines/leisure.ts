@@ -10,7 +10,7 @@ import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { LEISURE_SEC } from '../../tuning';
 import { TaskC } from '../components';
-import { unsafeFor } from '../hazard';
+import { safePathBeside, unsafeFor } from '../hazard';
 import { clearJoblessTask, setJoblessTask, setState } from '../task';
 
 /**
@@ -74,8 +74,10 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
     const room = grid.get('room', mess.x, mess.y);
     const x = mess.x + sim.rng.int(-MESS_RADIUS, MESS_RADIUS), y = mess.y + sim.rng.int(-MESS_RADIUS, MESS_RADIUS);
     const goal = grid.inBounds(x, y) && room !== 0 && grid.get('room', x, y) === room && isTileWalkable(sim, grid, x, y) ? { x, y } : mess;
-    const steps = unsafeFor(sim, id, ship, goal.x, goal.y) ? null : findPath(sim, ship, from, goal);
-    if (steps) return steps;
+    for (const g of goal === mess ? [mess] : [goal, mess]) {
+      const steps = unsafeFor(sim, id, ship, g.x, g.y) ? null : findPath(sim, ship, from, g);
+      if (steps) return steps;
+    }
   }
   // No mess to go to: someone to sit with.
   let mate: Position | null = null;
@@ -88,7 +90,5 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
   }
   if (!mate) return null;
   if (best <= 1) return []; // already beside them
-  const steps = findPath(sim, ship, from, { x: mate.x, y: mate.y, adjacent: true });
-  const end = steps?.[steps.length - 1];
-  return end && unsafeFor(sim, id, ship, end.x, end.y) ? null : steps;
+  return safePathBeside(sim, id, ship, from, mate.x, mate.y);
 }
