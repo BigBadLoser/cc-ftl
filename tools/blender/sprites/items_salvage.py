@@ -11,6 +11,7 @@ z up, 1 unit = 1 tile, origin the tile centre at floor level. No randomness: pla
 import math
 
 from . import core
+from .items_salvage_fill import CONTENTS
 
 # ---- crate body --------------------------------------------------------------------------------------------------
 
@@ -24,13 +25,11 @@ SEG = 6             # arc segments per corner
 FILL = 0.15         # height of the interior floor the contents rest on
 LIP = 0.014         # the bright lip along the top of the outer wall
 
-Q = math.pi / 2       # a quarter turn: content tables are written long side along x and turned onto the long y
 
 # Colours: each scrap type has its own crate ramp sv<K>S0 (light) .. sv<K>S4 and tag colour in its own palette set
 # (palette_extra.json "salvage_<kind>"), sharing set "salvage": warm darks svP1 .. svP3 in place of black, bright steel
 # svB0 .. svB3 for contents, rust svR1/svR2. A sprite renders on its type's set and the shared one only (`palette`).
 KEYS = {"hull": "H", "tech": "T", "energy": "E", "weapons": "W", "comfort": "C"}
-TAG = __import__("os").environ.get("SALVAGE_TAG", "B")      # review only: A = bright same-hue tag, B = contrast tag
 
 
 def palette(sid):
@@ -66,7 +65,7 @@ def crate(m, kind, k=1.0):
     picked out bright, a dark inside, and the type's tag panel on both faces the camera sees."""
     K = KEYS[kind]
     c = lambda n: f"sv{K}S{n}"                                                                  # noqa: E731
-    tag = f"sv{K}tag{TAG}"
+    tag = f"sv{K}tag"
     sx, sy, h, t, r, b, lip = SX * k, SY * k, H * k, T * k, R * k, BAND * k, LIP * k
     ex, ey = sx / 2, sy / 2
     out, inn = _profile(ex, ey, r), _profile(ex - t, ey - t, r - t)
@@ -103,45 +102,12 @@ def inside(m, start, k=1.0, slack=0.004):
                          + ", ".join(f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in bad[:4]))
 
 
-# ---- contents ----------------------------------------------------------------------------------------------------
-# Content tables are written long side along x (u) and turned onto the crate's long y: (u, v) -> grid (-v, u).
-
-
-def _plate(m, u, v, z, rz, rx, ry, w, d, col, k, th=0.012, top=None):
-    m.box((-v * k, u * k, z * k), (w * k, d * k, th * k), col, top=top or col, rz=rz + Q, rx=rx, ry=ry)
-
-
-def _bar(m, u, v, z, rz, ry, L, k, col="svB2", top="svB1", s=0.026):
-    """A square steel bar centred at (u, v, z), turned rz about z and raised ry about its width: bright on top."""
-    m.box((-v * k, u * k, z * k), (L * k, s * k, s * k), col, top=top, rz=rz + Q, ry=ry)
-
-
-def hull_contents(m, k=1.0):
-    """Hull salvage: a bed of dark plating with a rusty sheet, and four bright girder bars fanning up out of it
-    (the crate's read at 1x: bright bars against the dark inside). The tallest two stand over the rim."""
-    f = FILL
-    for u, v, z, rz, rx, ry, w, d, col in (                        # the bed: dark plates lying on the floor
-            (-0.06, -0.02, f + 0.015, 0.1, 0.2, 0.0, 0.15, 0.1, "svP1"),
-            (0.07, 0.03, f + 0.02, -0.2, -0.2, 0.1, 0.13, 0.09, "svB3"),
-            (0.02, -0.04, f + 0.03, 0.5, 0.0, -0.2, 0.11, 0.07, "svR2")):
-        _plate(m, u, v, z, rz, rx, ry, w, d, col, k)
-    for u, v, z, rz, ry, L in (                                     # three bars fanning up the same way, one lying
-            (-0.01, -0.072, f + 0.075, 0.08, 1.0, 0.26),
-            (0.02, 0.0, f + 0.065, 0.0, 1.2, 0.27),
-            (-0.01, 0.072, f + 0.075, -0.08, 0.9, 0.25),
-            (0.02, -0.05, f + 0.03, 0.4, -0.15, 0.16)):
-        _bar(m, u, v, z, rz, ry, L, k)
-
-
-CONTENTS = {"hull": hull_contents}
-
-
 def unit(kind):
     def build():
         m = core.Mesh(f"scrap_{kind}_unit")
         crate(m, kind)
         n = len(m.v)
-        CONTENTS.get(kind, hull_contents)(m)          # review: types without their own contents yet show hull's
+        CONTENTS[kind](m, FILL)
         inside(m, n)
         ob = m.build()
         return [ob]

@@ -1156,11 +1156,7 @@
   "hex": "#3f4247",
   "set": "salvage_hull"
  },
- "svHtagA": {
-  "hex": "#d4d8dc",
-  "set": "salvage_hull"
- },
- "svHtagB": {
+ "svHtag": {
   "hex": "#2a2d31",
   "set": "salvage_hull"
  },
@@ -1184,11 +1180,7 @@
   "hex": "#363c58",
   "set": "salvage_tech"
  },
- "svTtagA": {
-  "hex": "#5fc8e8",
-  "set": "salvage_tech"
- },
- "svTtagB": {
+ "svTtag": {
   "hex": "#3f9a5c",
   "set": "salvage_tech"
  },
@@ -1212,12 +1204,7 @@
   "hex": "#4a3e1b",
   "set": "salvage_energy"
  },
- "svEtagA": {
-  "hex": "#ffd84a",
-  "set": "salvage_energy",
-  "emissive": 1.2
- },
- "svEtagB": {
+ "svEtag": {
   "hex": "#1c1917",
   "set": "salvage_energy"
  },
@@ -1241,11 +1228,7 @@
   "hex": "#313a20",
   "set": "salvage_weapons"
  },
- "svWtagA": {
-  "hex": "#c9cc8e",
-  "set": "salvage_weapons"
- },
- "svWtagB": {
+ "svWtag": {
   "hex": "#b8352d",
   "set": "salvage_weapons"
  },
@@ -1269,12 +1252,77 @@
   "hex": "#55393e",
   "set": "salvage_comfort"
  },
- "svCtagA": {
-  "hex": "#efdcc0",
+ "svCtag": {
+  "hex": "#3f8f8a",
   "set": "salvage_comfort"
  },
- "svCtagB": {
+ "svTg1": {
+  "hex": "#57b073",
+  "set": "salvage_tech"
+ },
+ "svTg2": {
+  "hex": "#2f6a47",
+  "set": "salvage_tech"
+ },
+ "svTcu": {
+  "hex": "#c98446",
+  "set": "salvage_tech"
+ },
+ "svTk": {
+  "hex": "#26262b",
+  "set": "salvage_tech"
+ },
+ "svTsc": {
+  "hex": "#1d2a38",
+  "set": "salvage_tech"
+ },
+ "svTsc1": {
+  "hex": "#86d2ea",
+  "set": "salvage_tech"
+ },
+ "svEk": {
+  "hex": "#2b2a2e",
+  "set": "salvage_energy"
+ },
+ "svEband": {
+  "hex": "#f2d24a",
+  "set": "salvage_energy"
+ },
+ "svEcu": {
+  "hex": "#c98446",
+  "set": "salvage_energy"
+ },
+ "svEglow": {
+  "hex": "#b6f27a",
+  "set": "salvage_energy",
+  "emissive": 0.8
+ },
+ "svWbr": {
+  "hex": "#c9a23a",
+  "set": "salvage_weapons"
+ },
+ "svWbr2": {
+  "hex": "#8c6d22",
+  "set": "salvage_weapons"
+ },
+ "svWred": {
+  "hex": "#c23a2f",
+  "set": "salvage_weapons"
+ },
+ "svCfoam": {
+  "hex": "#ecdfc2",
+  "set": "salvage_comfort"
+ },
+ "svCfoam2": {
+  "hex": "#c8b896",
+  "set": "salvage_comfort"
+ },
+ "svCteal": {
   "hex": "#3f8f8a",
+  "set": "salvage_comfort"
+ },
+ "svCmar": {
+  "hex": "#7a3b45",
   "set": "salvage_comfort"
  }
 }
