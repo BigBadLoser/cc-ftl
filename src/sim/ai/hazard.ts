@@ -1,6 +1,7 @@
 import { AssignmentC, DraftedC, JobC, PathC, PositionC, type Position } from '../crew/components';
-import { HAZARD_AIR, HAZARD_COLD, HAZARD_FIRE, HAZARD_HEAT, hazardsHere } from '../crew/hazard';
+import { exposure, HAZARD_AIR, HAZARD_COLD, HAZARD_FIRE, HAZARD_HEAT, hazardsHere, tileHazards } from '../crew/hazard';
 import { isSettled } from '../crew/helpers';
+import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { TaskC } from './components';
 import { isCarrying } from './task';
@@ -36,4 +37,17 @@ export function hazardHolds(sim: Sim, id: number): boolean {
   if (drafted && (drafted.target || sim.world.has(id, AssignmentC))) return false;
   const pos = sim.world.get(id, PositionC) as Position;
   return (sim.world.get(id, PathC)?.steps.length ?? 0) === 0 && isSettled(pos);
+}
+
+/**
+ * True when a need's destination (a bed, a meal spot, a charging cradle, a break spot) on ship `ship` would harm the crew member,
+ * for a crew member whose policy escapes hazards. The need planners skip such a tile, so a crew member who has just escaped is not
+ * sent straight back (a sleeper woken by a fire on their bed takes another bed, or the floor where they stand).
+ */
+export function unsafeFor(sim: Sim, id: number, ship: number, x: number, y: number): boolean {
+  if (!policyOf(sim, id).escapeHazards) return false;
+  const grid = shipGrid(sim, ship);
+  if (!grid) return false;
+  const { suited, airless } = exposure(sim, id);
+  return tileHazards(grid, x, y, suited, airless) !== 0;
 }

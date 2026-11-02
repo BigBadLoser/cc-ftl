@@ -10,12 +10,13 @@ import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { LEISURE_SEC } from '../../tuning';
 import { TaskC } from '../components';
+import { unsafeFor } from '../hazard';
 import { clearJoblessTask, setJoblessTask, setState } from '../task';
 
 /**
  * The leisure machine (docs/CREW_AI.md section 6, Phase 3): a crew member with nothing to do whose mood is low takes a break.
  * `Walk` to a spot with company (a tile in the mess, the room of the nearest working galley, else beside the nearest crew
- * member with a mood), then `Relax` there for LEISURE_SEC; the break lifts their mood for a while (`noteLeisure`). It runs only
+ * member with a mood; never a tile that harms them), then `Relax` there for LEISURE_SEC; the break lifts their mood for a while (`noteLeisure`). It runs only
  * in the scheduler's idle turn, after the job scheduler found the crew member nothing, so a break never keeps anyone from work;
  * a job found later replaces it (the walk and the rest are class `any`).
  */
@@ -73,7 +74,7 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
     const room = grid.get('room', mess.x, mess.y);
     const x = mess.x + sim.rng.int(-MESS_RADIUS, MESS_RADIUS), y = mess.y + sim.rng.int(-MESS_RADIUS, MESS_RADIUS);
     const goal = grid.inBounds(x, y) && room !== 0 && grid.get('room', x, y) === room && isTileWalkable(sim, grid, x, y) ? { x, y } : mess;
-    const steps = findPath(sim, ship, from, goal);
+    const steps = unsafeFor(sim, id, ship, goal.x, goal.y) ? null : findPath(sim, ship, from, goal);
     if (steps) return steps;
   }
   // No mess to go to: someone to sit with.
@@ -87,5 +88,7 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
   }
   if (!mate) return null;
   if (best <= 1) return []; // already beside them
-  return findPath(sim, ship, from, { x: mate.x, y: mate.y, adjacent: true });
+  const steps = findPath(sim, ship, from, { x: mate.x, y: mate.y, adjacent: true });
+  const end = steps?.[steps.length - 1];
+  return end && unsafeFor(sim, id, ship, end.x, end.y) ? null : steps;
 }

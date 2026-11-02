@@ -4,6 +4,9 @@ import { BedOwnerC } from './components';
 import { findPath, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 
+/** A bed tile a planner must not use (a hazard there for this sleeper). */
+export type BedSkip = (x: number, y: number) => boolean;
+
 /** A reachable free bed and the steps to it. */
 export interface BedPlan {
   bed: number;
@@ -24,11 +27,12 @@ export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
  * less when ending beside the bed) and the search stops once the best path found beats every remaining bound, so the answer
  * is the exhaustive one (a candidate whose bound ties the best only wins with a lower id).
  */
-export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false): BedPlan | null {
+export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip): BedPlan | null {
   const cands: { id: number; lb: number }[] = [];
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     if (!m || m.reservedBy !== 0 || m.hp <= 0 || !sim.content.modules[m.def]?.bed || shipIdOf(sim, m) !== shipId) continue;
+    if (skip?.(m.x, m.y)) continue;
     const cheb = Math.max(Math.abs(m.x - from.x), Math.abs(m.y - from.y));
     cands.push({ id, lb: adjacent ? Math.max(0, cheb - 1) : cheb });
   }
@@ -64,9 +68,9 @@ export function clearBedOwners(sim: Sim, bed: number): void {
 
 /**
  * The path to the bed this crew member owns, or null when they own none or it is unusable (gone, wrecked, on another ship,
- * reserved by someone else, unreachable). An owner whose bed is gone or elsewhere is dropped.
+ * reserved by someone else, skipped, unreachable). An owner whose bed is gone or elsewhere is dropped.
  */
-export function ownedBedPlan(sim: Sim, crew: number, shipId: number, from: Tile): BedPlan | null {
+export function ownedBedPlan(sim: Sim, crew: number, shipId: number, from: Tile, skip?: BedSkip): BedPlan | null {
   const owner = sim.world.get(crew, BedOwnerC);
   if (!owner) return null;
   if (!isIntactBed(sim, owner.bed, shipId)) {
@@ -74,7 +78,7 @@ export function ownedBedPlan(sim: Sim, crew: number, shipId: number, from: Tile)
     return null;
   }
   const m = sim.world.get(owner.bed, ModuleC) as { x: number; y: number; reservedBy: number };
-  if (m.reservedBy !== 0) return null;
+  if (m.reservedBy !== 0 || skip?.(m.x, m.y)) return null;
   const steps = findPath(sim, shipId, from, { x: m.x, y: m.y });
   return steps ? { bed: owner.bed, steps } : null;
 }

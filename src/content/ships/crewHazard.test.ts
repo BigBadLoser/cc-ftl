@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, CrewC, DraftedC, IntentC, InterruptC, JobC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
+  AssignmentC, BedClaimC, CrewC, DraftedC, IntentC, InterruptC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
   shipGrid, Struct, type ContentRegistry, type Sim,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
@@ -81,6 +81,26 @@ describe('hazard interrupt', () => {
       sim.step();
     }
     expect(at(sim, c)).not.toEqual(t);
+  });
+
+  it('an escaped sleeper does not go back to the burning bed: they sleep somewhere safe', () => {
+    const { sim, c } = quiet();
+    sim.world.get(c, NeedsC)!.rest = 5;
+    for (let i = 0; i < 400 && sim.world.get(c, CrewC)!.activity !== 'sleeping'; i++) sim.step();
+    const t = at(sim, c);
+    let back = 0;
+    for (let i = 0; i < 600; i++) {
+      burn(sim, t);
+      sim.step();
+      const p = at(sim, c);
+      if (i > 60 && p.x === t.x && p.y === t.y) back++;
+      const claim = sim.world.get(c, BedClaimC);
+      const bed = claim && sim.world.get(claim.bed, ModuleC);
+      if (bed) expect({ x: bed.x, y: bed.y }).not.toEqual(t);
+    }
+    expect(back).toBe(0);
+    expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
+    expect(hazardsHere(sim, c)).toBe(0);
   });
 
   it('a walk through a burning tile is obeyed; standing on it is not', () => {

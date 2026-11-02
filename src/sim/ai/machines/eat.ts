@@ -12,6 +12,7 @@ import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { EAT_SEC } from '../../tuning';
+import { unsafeFor } from '../hazard';
 import { abortTask, endMeal, mealOf, startMeal, syncTask } from '../task';
 
 /**
@@ -40,8 +41,8 @@ export function dropMeal(sim: Sim, id: number): void {
   syncTask(sim, id);
 }
 
-/** Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item`. */
-function pickSpot(sim: Sim, shipId: number, from: Tile, item: string): { x: number; y: number; galley: number; steps: Tile[] } | null {
+/** Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item` (never a tile that harms the eater). */
+function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: string): { x: number; y: number; galley: number; steps: Tile[] } | null {
   let galley: { x: number; y: number; galley: number; steps: Tile[] } | null = null;
   let crate: { x: number; y: number; galley: number; steps: Tile[] } | null = null;
   for (const id of sim.world.query(ModuleC)) {
@@ -50,12 +51,12 @@ function pickSpot(sim: Sim, shipId: number, from: Tile, item: string): { x: numb
     if (!m || !def || shipIdOf(sim, m) !== shipId || m.hp <= 0) continue;
     if (def.galley && m.enabled && m.powered) {
       const at = accessTile(def, m.x, m.y, m.rot);
-      const steps = at && findPath(sim, shipId, from, at);
+      const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at);
       if (at && steps && (!galley || steps.length < galley.steps.length)) galley = { x: at.x, y: at.y, galley: id, steps };
     } else if (def.storage && sim.world.has(id, StorageC) && storageCount(sim, id, item) > 0) {
       const steps = findPath(sim, shipId, from, { x: m.x, y: m.y, adjacent: true });
-      if (steps && (!crate || steps.length < crate.steps.length)) {
-        const end = steps[steps.length - 1] ?? from;
+      const end = steps && (steps[steps.length - 1] ?? from);
+      if (steps && end && !unsafeFor(sim, crew, shipId, end.x, end.y) && (!crate || steps.length < crate.steps.length)) {
         crate = { x: end.x, y: end.y, galley: 0, steps };
       }
     }
@@ -81,7 +82,7 @@ function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
   const path = sim.world.get(id, PathC) as Path;
   if (!meal) {
     if ((sim.tick + id) % 20 !== 0) return false; // look for a spot once a second, not every tick
-    const spot = pickSpot(sim, shipIdOf(sim, pos), origin(pos), item);
+    const spot = pickSpot(sim, id, shipIdOf(sim, pos), origin(pos), item);
     if (!spot) return false;
     abortTask(sim, id, 'drive');
     dropCarried(sim, id);
@@ -89,6 +90,11 @@ function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
     path.steps = spot.steps;
   }
   const at = meal.bb.tile as { x: number; y: number };
+  if (unsafeFor(sim, id, shipIdOf(sim, pos), at.x, at.y)) {
+    endMeal(sim, id); // the spot now harms them: look again later
+    clearPath(sim, id);
+    return false;
+  }
   if (!isSettled(pos) || path.steps.length > 0) return true; // still walking
   if (pos.x === at.x && pos.y === at.y) {
     if (!consumeAmmo(sim, shipIdOf(sim, pos), item)) {

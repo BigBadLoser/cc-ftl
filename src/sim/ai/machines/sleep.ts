@@ -6,6 +6,7 @@ import { dropCarried } from '../../items/stacks';
 import { ModuleC } from '../../modules/components';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
+import { unsafeFor } from '../hazard';
 import { abortTask, claimBed, claimedBed, releaseBedClaim, setJoblessTask, syncTask } from '../task';
 
 /**
@@ -36,7 +37,7 @@ export function wakeUp(sim: Sim, id: number, crew: Crew): void {
 
 /**
  * Tired: claim the bed they own (else the nearest free one) and walk to it, then sleep there (faster rest). With no
- * reachable bed, sleep where standing. Only falls asleep once settled on a tile.
+ * reachable bed, sleep where standing. A bed whose tile harms them is passed over. Only falls asleep once settled on a tile.
  */
 function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
   let claim = claimedBed(sim, id);
@@ -46,6 +47,13 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
     claim = 0;
   }
   const path = sim.world.get(id, PathC) as Path;
+  const ship = shipIdOf(sim, pos);
+  const unsafe = (x: number, y: number): boolean => unsafeFor(sim, id, ship, x, y);
+  if (claim && bed && unsafe(bed.x, bed.y)) {
+    releaseBedClaim(sim, id); // the bed now harms them (a fire on it): another bed, else the floor
+    clearPath(sim, id);
+    claim = 0;
+  }
   if (claim && bed) {
     if (isSettled(pos) && pos.x === bed.x && pos.y === bed.y) return fallAsleep(sim, id, crew);
     if (path.steps.length > 0 || !isSettled(pos)) return; // still walking to the bed
@@ -56,7 +64,7 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
     }
     releaseBedClaim(sim, id); // unreachable: sleep on the floor instead
   } else {
-    const plan = ownedBedPlan(sim, id, shipIdOf(sim, pos), origin(pos)) ?? findFreeBed(sim, shipIdOf(sim, pos), origin(pos));
+    const plan = ownedBedPlan(sim, id, ship, origin(pos), unsafe) ?? findFreeBed(sim, ship, origin(pos), false, unsafe);
     if (plan) {
       claimBed(sim, id, plan.bed);
       path.steps = plan.steps;
