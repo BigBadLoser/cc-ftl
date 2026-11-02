@@ -253,9 +253,9 @@ const DISPOSE: Partial<Record<AbortReason, Dispose>> = {
   equip: { carried: true },
   // Walking off a harmful tile: whatever the crew member was doing ends, a sleeper or eater gets up, a load is dropped.
   hazard: { bed: true, carried: true, wake: true },
-  // Off to refill a suit's tank: a load or a patient in hand is set down (the patient on a safe tile nearby, keeping their bed), and a bed
-  // claimed for a sleep not yet begun is given back.
-  air: { bed: true, carried: true },
+  // Off to refill a suit's tank: a load or a patient in hand is set down (the patient on a safe tile nearby, keeping their bed), a bed
+  // claimed for a sleep is given back, and a sleeper or an eater gets up (critical air).
+  air: { bed: true, carried: true, wake: true },
 };
 
 /**

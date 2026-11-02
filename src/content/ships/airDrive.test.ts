@@ -120,6 +120,27 @@ describe('air drive', () => {
     expect(suitAir(sim, c)).toBeGreaterThan(0.9 * suitDef(sim).airSec);
   });
 
+  it('a suited sleeper whose room loses its air wakes at critical and refills before the tank runs dry', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const c = sim.world.query(CrewC)[1] as number;
+    sim.world.get(c, NeedsC)!.rest = 5;
+    run(sim, 600, () => sim.world.get(c, CrewC)!.activity === 'sleeping');
+    expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
+    sim.world.add(c, SuitC, { worn: true, air: 0.2 * suitDef(sim).airSec });
+    const grid = shipGrid(sim, homeShip(sim))!;
+    const ev: SimEvent[] = [];
+    for (let i = 0; i < 150 * TICK_HZ && !(suitAir(sim, c) > 0.9 * suitDef(sim).airSec); i++) {
+      for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) grid.set('o2', x, y, 0);
+      if (sim.world.get(c, CrewC)!.activity === 'sleeping') sim.world.get(c, NeedsC)!.rest = 5; // a long sleep: only the air can end it
+      ev.push(...run(sim, 1));
+    }
+    expect(suitAir(sim, c)).toBeGreaterThan(0.9 * suitDef(sim).airSec);
+    expect(ev.filter((e) => e.type === 'suit.airOut' && e.crew === c)).toEqual([]);
+    expect(claimedBed(sim, c)).toBe(0);
+    expect(auditReservations(sim).problems).toEqual([]);
+  });
+
   it('with no source in reach the drive is blocked and the pickup request goes out, once, with the air left', () => {
     const { sim, c } = hullWork();
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false; // no airlock to fill at: no source
