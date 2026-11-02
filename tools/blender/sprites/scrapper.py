@@ -4,12 +4,10 @@ Built as continuous shells, not one block per tile. Authoring frame: L 0..4 alon
 across it (0 back, 2 front: the access side), z up; 1 unit = 1 tile; on the grid x = L, y = D. Rotation 3 shows it as the
 reference's R0 view (hatch end lower left, front lower right).
 
-Massing (measured on the reference; heights in tiles):
-  main shell   L 0..2, both rows: end wall 0.62, slope to 1.16 at L 0.5, flat to L 2 (the front face there is the bay wall)
-  back shell   L 2..4, back row: flat 1.16 to L 3.5, slope down to a 0.66 end wall at L 4 (the far hatch end)
-  deck         L 1..2: raised panel, 1.33, carries the dial (back) and the emblem (front)
-  bay          L 2..3, front row: open, the shredder drum (top 0.74) on a low cradle, a shroud frame (0.94) at L 3
-  pipe unit    L 3..4, front row: back step 1.0, front step 0.66 with a doorway, a motor on top
+Massing (heights in tiles; profile along L confirmed with the user):
+  body         one profile along L for both rows, symmetric end to end: end wall 0.62, slope to 1.16 at 0.5 in, flat;
+               the centre two tiles (L 1..3) at 1.33, with a short slope up inside each end of them
+  bay          L 2..3, front row: cut out of the body; the shredder drum (top 0.74) on a low cradle
 Origin of the sprite = centre of the front-most footprint tile (like the refinery). Rotation r turns the machine as the sim
 does: (x, y) -> (H - y, x) per step, W and H swapping.
 """
@@ -128,11 +126,12 @@ def scrapper(rot):
     b.box(2.0, 3.0, 0.03, 1.0, 0, BASE, GMD, DARK)
     b.box(3.0, 3.97, 0.03, 1.97, 0, BASE, GMD, DARK)
     # one body sloped at both ends; the bay (L 2..3, front row) is notched out of it
-    b.loft([(0.03, 0.62), (0.5, 1.16), (2.0, 1.16)], 0.03, 1.97)                     # hatch end, full width
-    b.loft([(1.9, 1.16), (3.1, 1.16)], 0.03, 1.0)                                      # behind the bay, back row
-    b.loft([(3.0, 1.16), (3.5, 1.16), (3.97, 0.66)], 0.03, 1.97)                       # far end, full width
-    # raised deck
-    b.loft([(1.0, 1.33), (2.0, 1.33)], 0.08, 1.92, rnd=0.08)
+    # Profile along L, the same for both rows and symmetric end to end: end wall WALL, slope up to EDGE by 0.5 in, flat;
+    # the centre two tiles (L 1..3) rise to TOP with a short slope (STEP long) inside each end of them.
+    WALL, EDGE, TOP, STEP = 0.62, 1.16, 1.33, 0.15
+    b.loft([(0.03, WALL), (0.5, EDGE), (1.0, EDGE), (1.0 + STEP, TOP), (2.0, TOP)], 0.03, 1.97)   # hatch end half
+    b.loft([(1.9, TOP), (3.0 - STEP, TOP), (3.0, EDGE)], 0.03, 1.0)                               # behind the bay
+    b.loft([(3.0, EDGE), (3.5, EDGE), (3.97, WALL)], 0.03, 1.97)                                  # far end tile
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
