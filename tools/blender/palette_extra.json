@@ -1324,5 +1324,9 @@
  "svCmar": {
   "hex": "#7a3b45",
   "set": "salvage_comfort"
+ },
+ "svTsc2": {
+  "hex": "#3d5a78",
+  "set": "salvage_tech"
  }
 }

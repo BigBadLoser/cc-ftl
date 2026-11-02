@@ -11,7 +11,7 @@ in the crate's column (a crate stacked on top hides everything up to its own int
 import math
 
 from . import core
-from .items_kit import tube
+from .items_kit import cone, tube
 
 Q = math.pi / 2
 
@@ -56,37 +56,38 @@ def hull(m, f, k=1.0):
 
 
 def tech(m, f, k=1.0):
-    _plate(m, 0.03, 0.0, f + 0.012, 0.3, 0.0, 0.0, 0.17, 0.12, "svTg2", k)          # a board flat on the floor
-    for x, y in ((0.03, 0.06), (-0.02, 0.09), (0.05, 0.0)):                           # chips on it
-        m.box((x * k, y * k, (f + 0.018) * k), (0.03 * k, 0.03 * k, 0.012 * k), "svTk", base=True)
-    _plate(m, 0.06, 0.02, f + 0.05, -0.2, 0.55, 0.0, 0.13, 0.1, "svTg1", k)          # a board leaning up
-    # cracked screen standing nearly upright at the back, facing the camera
-    c, n = (-0.045 * k, -0.045 * k, f * k), (math.sqrt(0.5), math.sqrt(0.5))
-    m.box(c, (0.014 * k, 0.15 * k, 0.13 * k), "svTsc", top="svTk", rz=math.pi / 4, ry=-0.12, base=True)
+    _plate(m, 0.04, 0.0, f + 0.012, 0.3, 0.0, 0.0, 0.11, 0.08, "svTg2", k)          # a small board flat on the floor
+    for x, y in ((0.03, 0.06), (0.05, 0.02)):                                         # chips on it
+        m.box((x * k, y * k, (f + 0.018) * k), (0.025 * k, 0.025 * k, 0.012 * k), "svTk", base=True)
+    _plate(m, 0.07, 0.03, f + 0.045, -0.2, 0.55, 0.0, 0.08, 0.06, "svTg1", k)        # a small board leaning up
+    # cracked screen standing nearly upright at the back, facing the camera, over the rim: the crate's read
+    c, n = (-0.03 * k, -0.04 * k, f * k), (math.sqrt(0.5), math.sqrt(0.5))
+    m.box(c, (0.014 * k, 0.17 * k, 0.16 * k), "svTsc2", top="svTk", rz=math.pi / 4, ry=-0.1, base=True)
     o = 0.009 * k
-    m.box((c[0] + n[0] * o, c[1] + n[1] * o, c[2] + 0.07 * k), (0.004 * k, 0.12 * k, 0.008 * k), "svTsc1",
-          rx=0.7, rz=math.pi / 4)                                                    # the crack
-    for p0, p1, col in (((0.06, 0.1, f + 0.01), (0.03, 0.04, f + 0.19), "svTk"),       # cable loop over the rim
-                        ((0.03, 0.04, f + 0.19), (0.04, -0.03, f + 0.2), "svTk"),
-                        ((0.04, -0.03, f + 0.2), (0.07, -0.08, f + 0.05), "svTk"),
-                        ((0.07, -0.08, f + 0.05), (0.075, -0.1, f + 0.03), "svTcu")):
-        _tube(m, p0, p1, 0.01, col, k, sides=6)
+    for zc, rx, L in ((0.1, 0.7, 0.15), (0.07, -0.5, 0.09)):                          # the cracks
+        m.box((c[0] + n[0] * o, c[1] + n[1] * o, c[2] + zc * k), (0.004 * k, L * k, 0.01 * k), "svTsc1",
+              rx=rx, rz=math.pi / 4)
+    for p0, p1, col in (((0.06, 0.1, f + 0.01), (0.04, 0.05, f + 0.18), "svTcu"),     # copper cable loop over the rim
+                        ((0.04, 0.05, f + 0.18), (0.05, -0.02, f + 0.19), "svTcu"),
+                        ((0.05, -0.02, f + 0.19), (0.075, -0.08, f + 0.05), "svTcu"),
+                        ((0.075, -0.08, f + 0.05), (0.08, -0.1, f + 0.03), "svTk")):
+        _tube(m, p0, p1, 0.011, col, k, sides=6)
 
 
 def energy(m, f, k=1.0):
     def cell(x, y, h):
-        m.cyl((x * k, y * k, (f - 0.02) * k), 0.028 * k, h * k, "svEk", sides=10)
-        m.cyl((x * k, y * k, (f - 0.02 + h * 0.62) * k), 0.03 * k, 0.025 * k, "svEband", sides=10)
-        m.cyl((x * k, y * k, (f - 0.02 + h) * k), 0.016 * k, 0.008 * k, "svEglow", sides=8)
-    for x, y, h in ((-0.05, -0.1, 0.11), (0.045, -0.085, 0.1), (-0.05, -0.02, 0.12), (0.05, 0.0, 0.1),
-                    (-0.04, 0.07, 0.1), (0.045, 0.085, 0.11)):
+        m.cyl((x * k, y * k, (f - 0.01) * k), 0.028 * k, h * k, "svEk", sides=10)          # cells stand over the rim
+        m.cyl((x * k, y * k, (f - 0.01 + h * 0.55) * k), 0.031 * k, 0.04 * k, "svEband", sides=10)
+        m.cyl((x * k, y * k, (f - 0.01 + h) * k), 0.02 * k, 0.01 * k, "svEglow", sides=8)
+    for x, y, h in ((-0.05, -0.1, 0.13), (0.045, -0.085, 0.12), (-0.05, -0.02, 0.15), (0.05, 0.0, 0.12),
+                    (-0.04, 0.07, 0.13), (0.045, 0.085, 0.14)):
         cell(x, y, h)
     p0, p1 = (0.0, 0.03, f + 0.02), (0.035, 0.1, f + 0.17)                            # one cell tipped up tall
     _tube(m, p0, p1, 0.03, "svEk", k, cap="svEglow", sides=10)
     t = 0.7
     _tube(m, tuple(a + (b - a) * t for a, b in zip(p0, p1)), tuple(a + (b - a) * (t + 0.12) for a, b in zip(p0, p1)),
           0.032, "svEband", k, sides=10)
-    _ring(m, (0.0, -0.06, f + 0.13), 0.045, 0.012, 0.9, "svEcu", k, arc=0.7)       # broken coil
+    _ring(m, (0.0, -0.06, f + 0.16), 0.045, 0.012, 0.9, "svEcu", k, arc=0.7)       # broken coil
 
 
 def weapons(m, f, k=1.0):
@@ -98,26 +99,25 @@ def weapons(m, f, k=1.0):
         d = [b - a for a, b in zip(p0, p1)]
         _tube(m, tuple(b - c * 0.12 for b, c in zip(p1, d)), p1, r * 1.35, "svB1", k, sides=10)   # muzzle collar
     for x, y, a in ((0.05, -0.02, 0.4), (0.0, 0.05, 1.6), (-0.06, 0.1, 2.5), (0.07, 0.07, 0.9), (-0.02, -0.1, 2.0)):
-        dx, dy = 0.022 * math.cos(a), 0.022 * math.sin(a)                            # spent brass casings
-        _tube(m, (x - dx, y - dy, f + 0.025), (x + dx, y + dy, f + 0.025), 0.011, "svWbr", k, cap="svWbr2")
-    m.cyl((0.05 * k, -0.08 * k, (f - 0.01) * k), 0.019 * k, 0.11 * k, "svWbr", sides=10, top="svWbr2")  # a shell
-    from .items_kit import cone
-    cone(m, (0.05 * k, -0.08 * k, (f + 0.1) * k), (0.05 * k, -0.08 * k, (f + 0.15) * k), 0.019 * k, "svWred")
+        dx, dy = 0.025 * math.cos(a), 0.025 * math.sin(a)                            # spent brass casings
+        _tube(m, (x - dx, y - dy, f + 0.03), (x + dx, y + dy, f + 0.03), 0.014, "svWbr", k, cap="svWbr2")
+    m.cyl((0.055 * k, -0.08 * k, (f - 0.01) * k), 0.025 * k, 0.12 * k, "svWbr", sides=10, top="svWbr2")  # a shell
+    cone(m, (0.055 * k, -0.08 * k, (f + 0.11) * k), (0.055 * k, -0.08 * k, (f + 0.18) * k), 0.025 * k, "svWred")
 
 
 def comfort(m, f, k=1.0):
     for x, y, rz, sx, sy, sz in ((-0.04, -0.07, 0.3, 0.09, 0.1, 0.06), (0.04, 0.06, -0.2, 0.08, 0.09, 0.055),
                                  (-0.03, 0.08, 0.6, 0.07, 0.06, 0.05)):                # foam blocks
         m.box((x * k, y * k, (f - 0.005) * k), (sx * k, sy * k, sz * k), "svCfoam2", top="svCfoam", rz=rz, base=True)
-    _plate(m, -0.02, 0.01, f + 0.07, 0.4, 0.35, 0.1, 0.17, 0.12, "svCteal", k)          # torn fabric
+    _plate(m, -0.03, 0.0, f + 0.075, 0.25, 0.3, 0.1, 0.2, 0.12, "svCteal", k)           # torn fabric
     _plate(m, 0.06, -0.03, f + 0.06, -0.5, -0.3, 0.2, 0.12, 0.09, "svCmar", k)
     m.box((0.045 * k, -0.05 * k, f * k), (0.035 * k, 0.12 * k, 0.15 * k), "svCmar", top="svCfoam",  # cushion on edge
           rz=0.2, rx=0.25, base=True)
-    c, R, turns, h = (-0.04, 0.03, f + 0.07), 0.022, 4, 0.12                           # a bare spring
+    c, R, turns, h = (-0.045, 0.04, f + 0.075), 0.026, 4, 0.12                         # a bare spring, bright
     pts = [(c[0] + R * math.cos(a), c[1] + R * math.sin(a), c[2] + h * a / (turns * math.tau))
            for a in (i * math.tau / 8 for i in range(turns * 8 + 1))]
     for a, b in zip(pts, pts[1:]):
-        _tube(m, a, b, 0.006, "svB1", k, sides=5)
+        _tube(m, a, b, 0.009, "svB0", k, sides=5)
 
 
 CONTENTS = {"hull": hull, "tech": tech, "energy": energy, "weapons": weapons, "comfort": comfort}
