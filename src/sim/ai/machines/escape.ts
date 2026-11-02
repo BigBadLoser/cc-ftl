@@ -2,6 +2,7 @@ import { AssignmentC, PathC, type Path, type Position } from '../../crew/compone
 import { exposure, tileHazards } from '../../crew/hazard';
 import { isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
+import { isSuited } from '../../eva/suit';
 import type { Grid } from '../../grid';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
@@ -30,7 +31,7 @@ export type EscapeGoal = (sim: Sim, id: number, grid: Grid, x: number, y: number
 
 export const safeTile: EscapeGoal = (sim, id, grid, x, y) => {
   const { suited, airless } = exposure(sim, id);
-  return isTileWalkable(sim, grid, x, y, suited) && tileHazards(grid, x, y, suited, airless) === 0;
+  return isTileWalkable(sim, grid, x, y, isSuited(sim, id)) && tileHazards(grid, x, y, suited, airless) === 0;
 };
 
 /** The nearest goal tiles, breadth first over walkable tiles (4-neighbour, fixed order, so the result is deterministic). */
@@ -64,8 +65,10 @@ export function escapeTurn(sim: Sim, id: number, pos: Position, drafted = false,
   const grid = shipGrid(sim, ship);
   if (!grid) return false;
   const from = origin(pos);
-  for (const t of nearestGoals(sim, id, grid, from, goal, exposure(sim, id).suited)) {
-    const steps = findPath(sim, ship, from, t, { suited: exposure(sim, id).suited });
+  // Navigation goes by the suit worn (as the movement system does): an empty tank still crosses the hull to air.
+  const suited = isSuited(sim, id);
+  for (const t of nearestGoals(sim, id, grid, from, goal, suited)) {
+    const steps = findPath(sim, ship, from, t, { suited });
     if (!steps || steps.length === 0) continue;
     if (task?.machine !== 'escape' && !drafted) {
       const job = sim.world.get(id, AssignmentC)?.jobId;

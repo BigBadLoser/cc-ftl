@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CrewC, DraftedC, IntentC, InterruptC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
+  AssignmentC, BedClaimC, CrewC, DraftedC, IntentC, InterruptC, HealthC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
   shipGrid, Struct, type ContentRegistry, type Sim,
 } from '../../sim';
 import { auditReservations } from '../../sim/ai/audit';
@@ -10,6 +10,7 @@ import { hazardsHere } from '../../sim/crew/hazard';
 import { isSettled } from '../../sim/crew/helpers';
 import { SuitC } from '../../sim/eva/components';
 import { MoodC } from '../../sim/crew/components';
+import { isTileWalkable } from '../../sim/modules/walk';
 import { content } from '../index';
 
 /**
@@ -149,6 +150,32 @@ describe('hazard interrupt', () => {
     expect(hazardHolds(sim, c)).toBe(true);
     sim.world.add(c, SuitC, { worn: true, air: 300 });
     expect(hazardHolds(sim, c)).toBe(false);
+  });
+
+  it('a suit with an empty tank still walks the hull back to air', () => {
+    const { sim, c } = quiet();
+    const grid = shipGrid(sim, homeShip(sim))!;
+    // An exterior hull tile with no floor beside it an unsuited crew member could walk to.
+    let spot: { x: number; y: number } | null = null;
+    for (let y = grid.y0; y < grid.y0 + grid.height && !spot; y++) {
+      for (let x = grid.x0; x < grid.x0 + grid.width && !spot; x++) {
+        if (isTileWalkable(sim, grid, x, y) || !isTileWalkable(sim, grid, x, y, true)) continue;
+        let near = false;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (isTileWalkable(sim, grid, x + dx, y + dy)) near = true;
+        if (!near) spot = { x, y };
+      }
+    }
+    expect(spot).not.toBeNull();
+    sim.world.add(c, SuitC, { worn: true, air: 0 });
+    Object.assign(sim.world.get(c, PositionC)!, { x: spot!.x, y: spot!.y, toX: spot!.x, toY: spot!.y, progress: 0 });
+    sim.world.get(c, PathC)!.steps = [];
+    expect(hazardHolds(sim, c)).toBe(true);
+    for (let i = 0; i < 1000 && hazardsHere(sim, c) !== 0; i++) {
+      sim.world.get(c, HealthC)!.hp = 100; // the test is about the route, not the vacuum's harm on a long hull walk
+      sim.step();
+    }
+    expect(hazardsHere(sim, c)).toBe(0);
+    expect(isTileWalkable(sim, grid, at(sim, c).x, at(sim, c).y)).toBe(true);
   });
 
   it('a drafted crew member standing on fire is stepped off and keeps the draft', () => {
