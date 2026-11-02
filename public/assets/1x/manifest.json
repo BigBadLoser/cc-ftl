@@ -4685,6 +4685,10 @@
   "roof": {
    "image": "sprites/roof.png"
   },
+  "salvage": {
+   "image": "sprites/salvage.png",
+   "glow": "sprites/salvage.glow.png"
+  },
   "shield_body": {
    "image": "sprites/shield_body.png",
    "glow": "sprites/shield_body.glow.png"
@@ -52622,6 +52626,42 @@
    ],
    "glow": true
   },
+  "item.cloth.held": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 139,
+    "y": 1,
+    "w": 18,
+    "h": 16
+   },
+   "anchor": {
+    "x": 9,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.cloth.unit": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 116,
+    "y": 1,
+    "w": 22,
+    "h": 20
+   },
+   "anchor": {
+    "x": 11,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "item.consumer_goods.held": {
    "kind": "static",
    "sheet": "items",
@@ -55180,6 +55220,188 @@
    "anchor": {
     "x": 12,
     "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_comfort.held": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 158,
+    "y": 1,
+    "w": 16,
+    "h": 15
+   },
+   "anchor": {
+    "x": 8,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_comfort.unit": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 47,
+    "y": 1,
+    "w": 22,
+    "h": 21
+   },
+   "anchor": {
+    "x": 11,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_energy.held": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 175,
+    "y": 1,
+    "w": 16,
+    "h": 15
+   },
+   "anchor": {
+    "x": 8,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.scrap_energy.unit": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 22,
+    "h": 22
+   },
+   "anchor": {
+    "x": 11,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.scrap_hull.held": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 192,
+    "y": 1,
+    "w": 16,
+    "h": 15
+   },
+   "anchor": {
+    "x": 8,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_hull.unit": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 24,
+    "y": 1,
+    "w": 22,
+    "h": 22
+   },
+   "anchor": {
+    "x": 11,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_tech.held": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 209,
+    "y": 1,
+    "w": 16,
+    "h": 14
+   },
+   "anchor": {
+    "x": 8,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_tech.unit": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 70,
+    "y": 1,
+    "w": 22,
+    "h": 21
+   },
+   "anchor": {
+    "x": 11,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_weapons.held": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 226,
+    "y": 1,
+    "w": 16,
+    "h": 14
+   },
+   "anchor": {
+    "x": 8,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.scrap_weapons.unit": {
+   "kind": "static",
+   "sheet": "salvage",
+   "frame": {
+    "x": 93,
+    "y": 1,
+    "w": 22,
+    "h": 21
+   },
+   "anchor": {
+    "x": 11,
+    "y": 15
    },
    "footprint": [
     1,
