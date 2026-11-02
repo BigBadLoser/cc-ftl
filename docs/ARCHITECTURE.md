@@ -768,7 +768,7 @@ palette.json    the single palette, read by Blender scripts and the game
 
 The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in [`docs/CREW_AI.md`](CREW_AI.md), issue #194. It's being implemented in phases.
 
-Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs `policy.legacy`, the need machines and the legacy job picker; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
+Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs the utility engine (`ai/utility.ts` over `content/policies.ts`, Phase 3), the need machines and the job scheduler; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
 
 ## UI
 

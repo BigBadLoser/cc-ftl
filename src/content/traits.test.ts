@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '.';
-import { legacyIntent } from '../sim/ai/policy';
+import { evaluateIntent } from '../sim/ai/utility';
 import { CrewC, HealthC, NeedsC, PositionC } from '../sim/crew/components';
 import { environmentModifiers } from '../sim/crew/conditions';
-import { wantsToEat } from '../sim/crew/eating';
 import { ensureMood, MOOD_LABELS, moodFactors } from '../sim/crew/mood';
 import { rollStartingCrew } from '../sim/crew/roll';
 import { createCrew } from '../sim/crew/spawn';
@@ -41,6 +40,10 @@ function setTile(sim: Sim, id: number, field: 'light' | 'o2', v: number): void {
   const p = sim.world.get(id, PositionC)!;
   shipGrid(sim, shipIdOf(sim, p))!.set(field, p.x, p.y, v);
 }
+
+/** The drive the utility engine ranks first for a crew member who holds no console. */
+const wants = (sim: Sim, id: number): string | undefined =>
+  evaluateIntent(sim, id, { atPost: false, underway: () => false, finishing: () => false })[0]?.id;
 
 describe('trait content', () => {
   it('excludes point at real traits, both ways, and pending mechanics are not rollable', () => {
@@ -143,8 +146,8 @@ describe('trade-off and behaviour hooks', () => {
     expect(drop(a) / drop(c)).toBeCloseTo(1.3, 1);
     expect(drop(b) / drop(c)).toBeCloseTo(0.7, 1);
     for (const id of [a, c]) sim.world.get(id, NeedsC)!.hunger = 45;
-    expect(wantsToEat(sim, a, false)).toBe(true);
-    expect(wantsToEat(sim, c, false)).toBe(false);
+    expect(wants(sim, a)).toBe('eat');
+    expect(wants(sim, c)).toBe('work');
   });
 
   it('Workaholic stays up like an operator; Lazy wanders more', () => {
@@ -153,8 +156,8 @@ describe('trade-off and behaviour hooks', () => {
     give(sim, a, 'trait.workaholic');
     give(sim, b, 'trait.lazy');
     for (const id of [a, b]) sim.world.get(id, NeedsC)!.rest = 10;
-    expect(legacyIntent(sim, a, false).sleep).toBe(false);
-    expect(legacyIntent(sim, b, false).sleep).toBe(true);
+    expect(wants(sim, a)).toBe('work');
+    expect(wants(sim, b)).toBe('sleep');
     expect(traitMult(sim, b, 'wanderMult')).toBe(3);
   });
 

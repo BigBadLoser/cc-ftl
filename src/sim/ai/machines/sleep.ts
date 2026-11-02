@@ -14,8 +14,6 @@ import { abortTask, setJoblessTask, syncTask } from '../task';
  * `BedClaimC` and the activity stay the saved truth; the bed is the task's hold.
  */
 
-/** Below this rest a non-drafted crew member drops everything and sleeps (operators hold out longer, see policy.legacy). */
-export const SLEEP_BELOW = 20;
 /** A tired crew member acts when (tick + id) is a multiple of this, so a whole crew crossing the threshold at once does not search for beds in one tick. */
 export const SLEEP_STAGGER = 4;
 

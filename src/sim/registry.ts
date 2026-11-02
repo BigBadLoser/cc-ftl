@@ -42,6 +42,7 @@ import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
 import type { BlackMarketDef } from './blackmarket/defs';
 import type { TraitDef } from './crew/traitDef';
+import type { PolicyDef } from './ai/types';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -56,6 +57,8 @@ export interface ContentRegistry {
   crewNames: string[];
   /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
   traits?: Record<string, TraitDef>;
+  /** Crew AI policies (content/policies.ts, docs/CREW_AI.md section 8) by id. Absent: every crew member only works. */
+  policies?: Record<string, PolicyDef>;
   /** Item content id (e.g. 'item.metal') to definition. */
   items: Record<string, ItemDef>;
   /** Recipe content id to definition. */

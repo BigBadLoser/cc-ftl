@@ -1,7 +1,7 @@
 import { AssignmentC, CrewC, JobC, type Job } from '../crew/components';
 import type { Sim } from '../sim';
 import { IntentC, InterruptC, TaskC } from './components';
-import { LEGACY_DRIVES } from './policy';
+import { policyById } from './utility';
 import type { Blackboard, DriveId, Interrupt, Task, TaskClass } from './types';
 
 /**
@@ -41,7 +41,7 @@ export function explainCrew(sim: Sim, id: number): CrewExplain {
   const task = sim.world.get(id, TaskC);
   const job = task?.job ? sim.world.get(task.job, JobC) : undefined;
   const scores: Record<string, number> = {};
-  if (intent) LEGACY_DRIVES.forEach((d, i) => (scores[d] = intent.scores[i] ?? 0));
+  if (intent) policyById(sim, intent.policy).drives.forEach((d, i) => (scores[d.id] = intent.scores[i] ?? 0));
   return {
     id,
     name: sim.world.get(id, CrewC)?.name ?? '',

@@ -1,4 +1,4 @@
-import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Position } from '../crew/components';
+import { AssignmentC, CrewC, DraftedC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Position } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { dropCarried } from '../items/stacks';
@@ -9,9 +9,25 @@ import { eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
 import { navigateTurn } from './machines/navigate';
 import { sleepTurn } from './machines/sleep';
-import { legacyIntent } from './policy';
+import { speciesOf } from '../robots/core';
+import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, isCarrying, syncTask } from './task';
+import type { MachineId } from './types';
+import { evaluateIntent, serveDrive, type TaskView } from './utility';
+
+/** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
+type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
+
+/** The need machines a drive may start (`DriveDef.task`). A new need is a machine plus its turn here. */
+const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
+  charge: chargeTurn,
+  sleep: (sim, id, crew, pos, holdsJob) => (sleepTurn(sim, id, crew, pos, holdsJob), true),
+  eat: (sim, id, crew, pos) => eatTurn(sim, id, crew, pos),
+};
+
+/** Whether a drive's own task is under way (`keepWhileTask`). */
+const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => machine === 'eat' && sim.world.has(id, EatC);
 
 /**
  * Crew decisions, in `decide`'s slot (docs/CREW_AI.md sections 4 and 7). Per crew member in id order: the forced states keep them
@@ -32,20 +48,28 @@ export function scheduleSystem(sim: Sim): void {
     if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') continue;
     const pos = sim.world.get(id, PositionC) as Position;
     const assignment = sim.world.get(id, AssignmentC);
-    const want = legacyIntent(sim, id, !!assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate');
+    const atPost = !!assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
 
-    // Robots: hold still for a mender; head to the robot bay when the battery is low or badly damaged.
-    if (want.mendHold) {
+    // Robots: hold still for a mender (an interrupt in the design; kept inline, as a mender may take the job earlier in this pass).
+    // Only a mechanical body is ever mended (mend jobs are posted for robots alone): skip the job scan for everyone else.
+    if (speciesOf(sim, id)?.mechanical && heldForMend(sim, id) && !isCarrying(sim, id)) {
+      evaluateIntent(sim, id, { atPost, underway: underway(sim, id), finishing: () => true });
       abortTask(sim, id, 'heldForMend');
       continue;
     }
-    if (want.recharge && chargeTurn(sim, id, crew, pos, !!assignment)) continue;
-    if (want.sleep) {
-      sleepTurn(sim, id, crew, pos, !!assignment);
-      continue;
+    // The utility engine ranks the drives (ai/utility.ts); each need's machine is tried in that order, falling through when it
+    // cannot start (no bay, no food), until one takes the crew member or `work` hands them to the job scheduler.
+    const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id) };
+    let served = false;
+    for (const d of evaluateIntent(sim, id, view)) {
+      const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
+      if (turn && !turn(sim, id, crew, pos, !!assignment)) continue;
+      serveDrive(sim, id, d.id);
+      served = d.task !== 'job';
+      break;
     }
-    // Hungry: walk to the galley (or a crate with food) and eat. No food or no way there: carry on, try again later.
-    if (want.eat && eatTurn(sim, id, crew, pos)) continue;
+    if (served) continue;
+    serveDrive(sim, id, 'work');
 
     if (assignment) {
       const job = sim.world.get(assignment.jobId, JobC);

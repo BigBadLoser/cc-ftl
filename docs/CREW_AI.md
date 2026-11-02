@@ -500,6 +500,23 @@ Scope: data-driven engine and `policies` content; drives (sleep, eat, recharge, 
 
 Acceptance: with `policy.legacy`-equivalent data the decisions match Phase 2 on the replay scenes; thresholds and hysteresis covered by unit tests (no flip-flop within `minDwell`, latch exit only at `exit`); new drives covered by scenario tests; leisure never starves work: an idle-with-work counter under 1%. Risks: tuning surface grows; hazard response thrash in breach repair (tolerance flags and `avoid`).
 
+#### Phase 3 as built (issue #194, branch `ai/phase3`)
+
+Planned as three PRs: (A) the engine and `policies` content with Phase 2-equivalent data; (B) the new drives (leisure with mood hooks) and the `hazard` interrupt; (C) `EatC`/`BedClaimC` folded into `Task` (`SAVE_VERSION`), nested need tasks and the inspector's drive scores.
+
+**A: the engine.** `src/sim/ai/utility.ts` interprets `content/policies.ts` (`PolicyDef`/`DriveDef` in `ai/types.ts`; `ContentRegistry.policies`, absent = `policy.none`, work only):
+
+- *Inputs* are a reader table (`INPUTS`): `rest`, `hunger`, `charge`, `robotUpkeep` (0 when `wantsBay`), `health`, `air` (suit tank per mille), `mood`, `food` (a predicate). Needs are read in tenths, floored at the reader; `undefined` means the crew member has no such need and the drive scores 0. A new input (#286's `airMargin`, `away`) is a reader plus its name in `DriveInput`.
+- *Score*: an integer piecewise-linear `curve` over the input. A drive with `enter` is latched (bit i of `Intent.latched`): on below `enter`, off at `exit` (no `exit`: no hysteresis). `enterTrait` swaps in a trait threshold (a Glutton's `eatBelow`).
+- *Driven*: a crew member holding a console, or a Workaholic, answers a drive only below its `urgent.below` (today's operator thresholds, 5 and 10). An urgent drive also ignores `minDwell` and `margin`.
+- *Classes*: a `finish` task (a carried patient) holds back every need unless the drive sets `urgent.breaksFinish` (air, #286). This is narrower than the #286 note's "urgent overrides `finish`": sleep and eat keep today's rule that a rescuer never drops a patient, and a test checks nothing else breaks `finish`.
+- *`requires`*: inputs that must read above 0; on failure `onMissing: 'damp'` zeroes the score, `'block'` keeps it and sets `Intent.blocked` (the air drive's pickup request reads it).
+- *`keepWhileTask`*: the drive keeps its score while its own task is under way (a meal being walked to).
+- *Ranking*: by score, ties by policy order; the current drive stays first while `minDwell` or `margin` holds it. The scheduler's turn tries the ranked drives in order through `NEED_TURNS` (machine id to turn): a need that cannot start (no bay, no food) falls through to the next, and `work` hands the crew member to `assignJobs`. `Intent.drive` is the drive actually served.
+- *Policies* by crew kind (`crewKind`: robot by battery species, station by `StationCrewC`, colonist by player allegiance, npc otherwise): `policy.robot` (recharge, work), `policy.colonist` and `policy.station` (sleep, eat, work), `policy.npc` (sleep, work). Yard contractors stay under their faction's policy for now. Evaluation runs every tick (cheap reads; the design's `EVAL_TICKS` stagger is not needed yet).
+
+`ai/policy.ts` (`policy.legacy`) is gone, with `wantsToEat`, `SLEEP_BELOW`, `HUNGER_EAT_BELOW`, `HUNGER_EAT_URGENT` and `OPERATOR_EXHAUSTED_BELOW`: the thresholds are policy data now. The robot mend hold stays inline in the scheduler's turn (an interrupt in the design, reading 5 of Phase 1). Acceptance: `npm run ai:diff` recordings of all seven profile scenarios, seeds 1 and 2, are IDENTICAL to `main`; pinned hashes unchanged.
+
 ## 11. AI debug inspector
 
 Part of the plan, grown per phase. It reads the sim and never mutates it.

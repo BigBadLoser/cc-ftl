@@ -97,10 +97,6 @@ export const REGEN_PER_SEC = 0.1;
 export const BED_REST_MULT = 2;
 
 // --- Hunger and mood ---
-/** Hungry crew (not drafted, not mid-job unless operating) go and eat below this hunger (0..100, 100 = fed). */
-export const HUNGER_EAT_BELOW = 35;
-/** Operators of a console keep their post until hunger is this low. */
-export const HUNGER_EAT_URGENT = 10;
 /** Seconds a meal takes once the crew member is at the galley or the crate. */
 export const EAT_SEC = 4;
 /** Hp per second lost at zero hunger. Slow: a full-health crew member lasts about 33 minutes. */
@@ -204,8 +200,6 @@ export const RELIEF_PENALTY = 1000;
 export const SCHED_CADENCE = 20;
 /** A free crew member with more candidate jobs than this in one walk mode is costed by one multi-goal Dijkstra; fewer, by lazy A* per job. */
 export const SCHED_DIJKSTRA_ABOVE = 6;
-/** Operators keep manning their console until rest drops below this. */
-export const OPERATOR_EXHAUSTED_BELOW = 5;
 /**
  * Deployable roof parts gate gameplay: weapons cannot charge or fire, shields cannot come up or regenerate and
  * point defence cannot roll until the part is fully deployed. Set false to keep the animation but drop the gating.
