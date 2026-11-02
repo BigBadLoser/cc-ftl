@@ -199,7 +199,8 @@ def jobs(name):
         from . import tip_bin
         return tip_bin.jobs(), True
     if name == "scrapper":      # preview-only blockout (scrapper.py): not part of `all`
-        from . import scrapper
+        from . import core, scrapper
+        core._state["scene"].cycles.samples = 32   # its slopes and bay speckle at the default 4 (reset per family)
         return scrapper.jobs(), True
     if name == "storage_scrap":
         from . import scrap

@@ -65,10 +65,11 @@ class _Build:
         ln = math.sqrt(sum(v * v for v in n)) or 1.0
         self.m.poly([core.G(*p) for p in pts], top if top and n[2] / ln > 0.7 else col, flip=True)
 
-    def loft(self, prof, d0, d1, col=STEEL, top=STEEL_T, rnd=RND, seg=3):
+    def loft(self, prof, d0, d1, col=STEEL, top=STEEL_T, rnd=RND, seg=3, caps=(None, None)):
         """A shell: the cross-section across D (d0 .. d1, rounded top edges) swept along the height profile
-        prof = [(L, h), ...] (L increasing); both ends capped."""
-        def ring(h):
+        prof = [(L, h), ...] (L increasing). caps: per end, None closes the whole end; a number db closes only the part
+        past D = db, where a narrower shell (d0 .. db, same rounding) carries on; False leaves the end open."""
+        def ring(h, d0=d0, d1=d1):
             r = min(rnd, (h - BASE) * 0.5, (d1 - d0) * 0.5)
             pts = [(d0, BASE)]
             for k in range(seg + 1):
@@ -87,7 +88,14 @@ class _Build:
                 q = [self.P(La, *ra[j]), self.P(La, *ra[j + 1]), self.P(Lb, *rb[j + 1]), self.P(Lb, *rb[j])]
                 c = [sum(p[i] for p in q) / 4 for i in range(3)]
                 self.face(q, col, (c[0] - ax[0], c[1] - ax[1], c[2] - ax[2]), top)
-        for (L, r), s in ((rings[0], -1), (rings[-1], 1)):
+        for (L, r), s, cap in ((rings[0], -1, caps[0]), (rings[-1], 1, caps[1])):
+            if cap is False:
+                continue
+            if cap is not None:                                  # only the part the narrower shell does not cover
+                h = max(z for _, z in r)
+                nb = ring(h, d0, cap)
+                arc = nb[seg + 2:2 * seg + 3]                     # its front arc: (cap - r, h) .. (cap, h - r)
+                r = [arc[0]] + [p for p in r if p[0] > arc[0][0] + 1e-9] + [(cap, BASE)] + arc[:0:-1]
             a, b = self.P(L, dm, 0.5), self.P(L + s, dm, 0.5)
             self.face([self.P(L, d, z) for d, z in r], col, (b[0] - a[0], b[1] - a[1], b[2] - a[2]), top)
 
@@ -129,9 +137,10 @@ def scrapper(rot):
     # Profile along L, the same for both rows and symmetric end to end: end wall WALL, slope up to EDGE by 0.5 in, flat;
     # the centre two tiles (L 1..3) rise to TOP with a short slope (STEP long) inside each end of them.
     WALL, EDGE, TOP, STEP = 0.62, 1.16, 1.33, 0.15
-    b.loft([(0.03, WALL), (0.5, EDGE), (1.0, EDGE), (1.0 + STEP, TOP), (2.0, TOP)], 0.03, 1.97)   # hatch end half
-    b.loft([(1.9, TOP), (3.0 - STEP, TOP), (3.0, EDGE)], 0.03, 1.0)                               # behind the bay
-    b.loft([(3.0, EDGE), (3.5, EDGE), (3.97, WALL)], 0.03, 1.97)                                  # far end tile
+    # three pieces meeting edge to edge; where a full-width piece meets the back-row piece only the bay wall is closed
+    b.loft([(0.03, WALL), (0.5, EDGE), (1.0, EDGE), (1.0 + STEP, TOP), (2.0, TOP)], 0.03, 1.97, caps=(None, 1.0))
+    b.loft([(2.0, TOP), (3.0 - STEP, TOP), (3.0, EDGE)], 0.03, 1.0, caps=(False, False))          # behind the bay
+    b.loft([(3.0, EDGE), (3.5, EDGE), (3.97, WALL)], 0.03, 1.97, caps=(1.0, None))
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
