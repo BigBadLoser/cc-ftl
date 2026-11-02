@@ -46,6 +46,12 @@ export interface StoreOpts<T> {
    * of the session. Default 2000.
    */
   retryMs?: number;
+  /**
+   * Ms a load may stay unsettled before it counts as failed and frees its slot (retried with the `retryMs` backoff). A
+   * load that never settles (a stalled download, a decode that never returns) would otherwise hold its slot for good, and
+   * enough of them starve every queued sheet. A result that arrives after the timeout is unloaded. Default 45000 (none if 0).
+   */
+  loadTimeoutMs?: number;
 }
 
 export interface PoolStats {
@@ -186,25 +192,56 @@ export class SheetStore<T> {
       r.state = 'loading';
       r.loads++;
       this.running++;
-      this.o.io.load(r.spec.image, r.spec.glow).then(
-        ({ sheet, bytes }) => {
-          r.sheet = sheet;
-          r.state = 'ready';
-          r.fails = 0;
-          this.budgets.get(r.spec.pool)?.add(name, bytes, this.o.now(), !!r.spec.pinned);
-          this.bump(r.spec.pool);
-        },
-        (err) => {
-          r.state = 'failed';
-          r.fails++;
-          r.failedAt = this.o.now();
-          this.o.onError?.(name, err);
-        },
-      ).finally(() => {
-        this.running--;
-        this.pump();
-      });
+      this.startLoad(name, r);
     }
+  }
+
+  private startLoad(name: string, r: Rec<T>): void {
+    const { image, glow } = r.spec;
+    const ms = this.o.loadTimeoutMs ?? 45_000;
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    /** Ends the slot's hold once: by the result, the error or the timeout, whichever comes first. */
+    const finish = (): boolean => {
+      if (settled) return false;
+      settled = true;
+      clearTimeout(timer);
+      this.running--;
+      return true;
+    };
+    const fail = (err: unknown): void => {
+      r.state = 'failed';
+      r.fails++;
+      r.failedAt = this.o.now();
+      this.o.onError?.(name, err);
+    };
+    if (ms > 0) {
+      timer = setTimeout(() => {
+        if (!finish()) return;
+        fail(new Error(`Sheet "${name}" did not load within ${ms} ms`));
+        this.pump();
+      }, ms);
+    }
+    this.o.io.load(image, glow).then(
+      ({ sheet, bytes }) => {
+        if (!finish()) {
+          // Timed out already (a retry may be under way): the state is not ours to touch, only the sheet to free.
+          this.o.io.unload(name, sheet, image, glow);
+          return;
+        }
+        r.sheet = sheet;
+        r.state = 'ready';
+        r.fails = 0;
+        this.budgets.get(r.spec.pool)?.add(name, bytes, this.o.now(), !!r.spec.pinned);
+        this.bump(r.spec.pool);
+        this.pump();
+      },
+      (err) => {
+        if (!finish()) return;
+        fail(err);
+        this.pump();
+      },
+    );
   }
 
   private evict(name: string): void {

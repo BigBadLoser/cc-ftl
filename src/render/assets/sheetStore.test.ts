@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
 interface Rig {
@@ -204,5 +204,95 @@ describe('SheetStore', () => {
     const s = r.store.stats();
     expect(s.pools.env?.resident).toBe(10);
     expect(s.pools.crew?.resident).toBe(10);
+  });
+});
+
+describe('SheetStore load timeout', () => {
+  /** Loads of images listed in `stuck` wait for a manual `release`; the others settle at once. */
+  function hung(concurrency = 1) {
+    const stuck = new Set<string>();
+    const release = new Map<string, () => void>();
+    const loads: string[] = [];
+    const unloaded: string[] = [];
+    const errors: string[] = [];
+    const io: SheetIO<string> = {
+      async load(image) {
+        loads.push(image);
+        if (stuck.has(image)) await new Promise<void>((res) => release.set(image, res));
+        return { sheet: { image, glow: null } as Loaded<string>, bytes: 10 };
+      },
+      unload: (name) => void unloaded.push(name),
+    };
+    const store = new SheetStore<string>({
+      io,
+      pools: { env: { budget: 1000 } },
+      concurrency,
+      now: () => Date.now(),
+      retryMs: 100,
+      loadTimeoutMs: 1000,
+      onError: (n) => void errors.push(n),
+    });
+    for (const n of ['a', 'b']) store.register(n, { image: `${n}.png`, pool: 'env' });
+    return { store, stuck, release, loads, unloaded, errors };
+  }
+
+  it('times out a stuck load, frees its slot and loads the queued sheet', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = hung();
+      h.stuck.add('a.png');
+      h.store.request('a');
+      h.store.request('b');
+      await vi.advanceTimersByTimeAsync(500);
+      expect(h.store.state('b')).toBe('queued');
+      await vi.advanceTimersByTimeAsync(600);
+      expect(h.store.state('a')).toBe('failed');
+      expect(h.store.state('b')).toBe('ready');
+      expect(h.errors).toEqual(['a']);
+      expect(h.store.pending).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('unloads a result that arrives after the timeout and leaves the record alone', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = hung();
+      h.stuck.add('a.png');
+      h.store.request('a');
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(h.store.state('a')).toBe('failed');
+      h.release.get('a.png')?.();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(h.unloaded).toEqual(['a']);
+      expect(h.store.state('a')).toBe('failed');
+      expect(h.store.isReady('a')).toBe(false);
+      expect(h.store.stats().pools.env?.resident).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('retries a timed-out sheet after the back-off, and the retry is not disturbed by the old load settling', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = hung();
+      h.stuck.add('a.png');
+      h.store.request('a');
+      await vi.advanceTimersByTimeAsync(1100);
+      h.stuck.delete('a.png');
+      await vi.advanceTimersByTimeAsync(200);
+      h.store.request('a');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(h.store.state('a')).toBe('ready');
+      expect(h.loads).toEqual(['a.png', 'a.png']);
+      // The first, stuck load finally returns: its sheet is freed, the ready one stays.
+      h.release.get('a.png')?.();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(h.unloaded).toEqual(['a']);
+      expect(h.store.state('a')).toBe('ready');
+      expect(h.store.stats().pools.env?.resident).toBe(10);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

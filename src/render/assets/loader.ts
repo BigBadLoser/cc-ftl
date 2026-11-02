@@ -120,6 +120,10 @@ export const EAGER_SHEETS: readonly string[] = ['walls', 'struct', 'env', 'fx'];
 /** Decoded-byte budgets (`?crewmb=` and `?envmb=` override them, in MiB). Crew clips are evicted by idle time; env sheets by `sweepEnv` (their textures live in built sprites). */
 export const CREW_BUDGET = 64 * 2 ** 20;
 export const ENV_BUDGET = 96 * 2 ** 20;
+/** A sheet download (headers and body) that takes longer than this is abandoned and retried by the store. */
+export const FETCH_TIMEOUT_MS = 30_000;
+/** A sheet load (download and decode) the store gives up on; after the fetch timeout, so that one fires first. */
+export const LOAD_TIMEOUT_MS = 40_000;
 /** A crew sheet nobody drew with for this long may be evicted. */
 export const CREW_IDLE_MS = 4000;
 
@@ -182,7 +186,8 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   /** Fetch and decode a sheet image: the same plain URL every time, so the browser's HTTP cache serves repeats. */
   const decode = async (url: string): Promise<ImageBitmap> => {
     if (disposed) throw new Error('atlas disposed');
-    const res = await fetch(url, { signal: abort.signal });
+    // Its own timeout: a download that stalls rejects (and frees its body) instead of holding a loader slot for good.
+    const res = await fetch(url, { signal: AbortSignal.any([abort.signal, AbortSignal.timeout(FETCH_TIMEOUT_MS)]) });
     if (!res.ok) throw new Error(`${url} ${res.status}`);
     return createImageBitmap(await res.blob());
   };
@@ -250,6 +255,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       crew: { budget: budgetParam('crewmb', CREW_BUDGET), idleMs: CREW_IDLE_MS },
     },
     concurrency: 4,
+    loadTimeoutMs: LOAD_TIMEOUT_MS,
     now: () => clock,
     onEvict(name) {
       for (const id of staticsOf.get(name) ?? []) statics.delete(id);
