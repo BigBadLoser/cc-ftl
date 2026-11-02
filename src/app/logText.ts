@@ -45,6 +45,7 @@ export function createDescriber(sim: Sim) {
       case 'crew.starving': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)} is starving`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.moodLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)} is very unhappy`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'suit.airLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)}: suit air low`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.airUnreachable': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: no air source in reach`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'suit.airOut': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: suit out of air`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'module.destroyed': {
         const name = sim.content.modules[e.def]?.name ?? 'Module';

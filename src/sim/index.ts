@@ -84,7 +84,7 @@ export { createCrew } from './crew/spawn';
 export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
 export { foodOn } from './crew/eating';
 export { abortTask, detachJob, type AbortReason } from './ai/task';
-export { TaskC, IntentC, InterruptC } from './ai/components';
+export { TaskC, IntentC, InterruptC, PickupC } from './ai/components';
 export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass, PolicyDef, DriveDef, DriveInput, CrewKind } from './ai/types';
 export { captureReady, isAiRun } from './capture/control';
 export { playerCrewAboard, type PlayerAboard } from './boarding/aboard';

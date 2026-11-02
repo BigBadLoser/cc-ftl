@@ -9,6 +9,7 @@ import { wantsBay } from '../robots/bay';
 import { speciesOf } from '../robots/core';
 import type { Sim } from '../sim';
 import { StationCrewC } from '../stations/components';
+import { airMargin, airSourceInput } from './airNeed';
 import { IntentC } from './components';
 import type { CrewKind, DriveDef, DriveId, DriveInput, Intent, MachineId, PolicyDef } from './types';
 
@@ -50,6 +51,10 @@ const INPUTS: Record<DriveInput, (sim: Sim, id: number) => number | undefined> =
     const s = sim.world.get(id, SuitC);
     return s?.air === undefined ? undefined : Math.floor((s.air * 1000) / suitDef(sim).airSec);
   },
+  /** Air left against the drive's travel-time thresholds (ai/airNeed.ts): absent unless a suited tank drains. */
+  airMargin,
+  /** An air source can be reached (1000) or not (0); absent unless a suited tank drains. */
+  airSource: airSourceInput,
   mood: (sim, id) => {
     const m = sim.world.get(id, MoodC);
     return m ? tenths(m.value) : undefined;
