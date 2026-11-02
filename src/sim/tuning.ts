@@ -377,3 +377,5 @@ export const SALVAGE_TEAM_GO = 60;
 export const SALVAGE_REFILL_FRAC = 0.4;
 /** A salvage team member still out on the wreck with less air than this share of a full tank (stuck: no way to a refill) is picked up by the shuttle. */
 export const SALVAGE_RESCUE_FRAC = 0.1;
+/** A cargo run turns back (skipping the unload) when someone left on the wreck is out of action, or below this share of a tank (not managing to refill). */
+export const SALVAGE_RUN_BACK_FRAC = 0.2;

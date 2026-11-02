@@ -10,7 +10,7 @@ import { nearestExterior, tileCentre, tileFrame, vehicleSuits } from '../eva/shu
 import { isSuited, suitAir, suitDef, suitTile } from '../eva/suit';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
-import { SALVAGE_REFILL_FRAC, SALVAGE_RESCUE_FRAC } from '../tuning';
+import { SALVAGE_REFILL_FRAC, SALVAGE_RESCUE_FRAC, SALVAGE_RUN_BACK_FRAC } from '../tuning';
 import { AboardC, EmbarkOrderC, VehicleC } from '../vehicles/components';
 import { boardCrew } from '../vehicles/lifecycle';
 import { SalvageCrewC } from './components';
@@ -155,6 +155,12 @@ export function tendWorker(sim: Sim, crew: number, ship: number, vehicle: number
 export function needsRescue(sim: Sim, crew: number): boolean {
   if (!isSuited(sim, crew) || sim.world.has(crew, EvaFloatC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)) return false;
   return suitAir(sim, crew) < suitDef(sim).airSec * SALVAGE_RESCUE_FRAC;
+}
+
+/** True if a team member left on the wreck while a cargo run is away needs the shuttle back: out of action, or low on air and not refilling. */
+export function needsShuttleBack(sim: Sim, crew: number): boolean {
+  if (!isSuited(sim, crew) || sim.world.has(crew, EvaFloatC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)) return false;
+  return isIncapacitated(sim, crew) || suitAir(sim, crew) < suitDef(sim).airSec * SALVAGE_RUN_BACK_FRAC;
 }
 
 /** Carry a team member aboard as is (the end of a recall that ran out of time: downed, boxed in, or cut off from the shuttle's side). */

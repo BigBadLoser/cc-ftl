@@ -222,4 +222,42 @@ describe('salvage teams: the shuttle and EVA loop', () => {
     expect(carried).toBe(true);
     expect(sim.world.get(shuttle, SalvageTripC)?.phase).toBe('work');
   });
+
+  it('cuts a cargo run short when a worker left on the wreck is put out of action, and picks them up', () => {
+    const { sim, wreck } = setup(3, smallHold(4));
+    const g = shipGrid(sim, wreck)!;
+    let lock = 0;
+    for (let rot = 0; rot < 4 && !lock; rot++) {
+      for (let y = g.y0; y < g.y0 + g.height && !lock; y++) for (let x = g.x0; x < g.x0 + g.width && !lock; x++) if (!placementError(sim, wreck, 'module.airlock', x, y, rot)) lock = spawnModule(sim, 'module.airlock', x, y, rot);
+    }
+    expect(lock).not.toBe(0); // an airlock to refill at: those staying out wait on the wreck
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const shuttle = shuttleOf(sim);
+    const all: SimEvent[] = [];
+    let stuck = 0;
+    let unloaded = false;
+    let carried = false;
+    for (let i = 0; i < 20 * 60 * 15 && !carried; i++) {
+      for (const c of sim.world.query(SalvageCrewC)) {
+        const n = sim.world.get(c, NeedsC);
+        if (n) [n.rest, n.hunger] = [100, 100];
+      }
+      all.push(...play(sim, 1));
+      const run = sim.world.get(shuttle, SalvageTripC)?.run;
+      if (stuck) {
+        if (run?.stage === 'unload') unloaded = true;
+        carried = sim.world.get(stuck, AboardC)?.vehicle === shuttle;
+      } else if (run?.stage === 'home') {
+        const c = sim.world.get(shuttle, SalvageTripC)!.crew.find((m) => shipIdOf(sim, sim.world.get(m, PositionC)) === wreck && !sim.world.has(m, EvaFloatC));
+        if (c === undefined) continue;
+        sim.world.add(c, StunC, { until: sim.tick + 20 * 60 * 60 });
+        sim.world.get(c, SuitC)!.air = suitDef(sim).airSec * 0.15;
+        stuck = c;
+      }
+    }
+    expect(stuck).not.toBe(0);
+    expect(unloaded).toBe(false); // turned back without unloading
+    expect(of(all, 'suit.airOut')).toEqual([]);
+    expect(carried).toBe(true);
+  });
 });

@@ -15,7 +15,7 @@ import { cargoCount, cargoSpace } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import type { SalvageTrip } from './components';
-import { aboard, carryAboard, headBack, reachesAirlock, REPEAT, tieSuits } from './teamCrew';
+import { aboard, carryAboard, headBack, needsShuttleBack, reachesAirlock, REPEAT, tieSuits } from './teamCrew';
 
 const sec = (n: number): number => n * TICK_HZ;
 /** Seconds the pilot gets to float back aboard, the hold to be unloaded at home, and each leg of the flight. */
@@ -108,7 +108,8 @@ export const runCrew = (t: SalvageTrip): number[] => (t.run ? [t.run.pilot, ...t
  * down) and the shuttle flies home. It never leaves a member behind who must ride: anyone who has run low meanwhile with no airlock to walk
  * to is called too, and riders who cannot get back in time (boxed in, downed) are picked up as at the end of a recall. 'unload': the
  * ship's crew empty the hold, then it flies back (the suits outside are tied to it again). `ending` is true when the shift is over and
- * nobody is out on the wreck: the run then ends at home with the shift. A hold that could not be unloaded at all (no room aboard)
+ * nobody is out on the wreck: the run then ends at home with the shift. It turns back early, skipping the unload, when someone left on
+ * the wreck is out of action or low on air. A hold that could not be unloaded at all (no room aboard)
  * ends the shift ('noRoom'): at home if everyone is aboard, else after flying back to recall the rest. Returns 'gone' if the run was
  * given up, 'home' when the shift should end at the bay, else 'on'.
  */
@@ -116,6 +117,13 @@ export function stepRun(sim: Sim, id: number, v: Vehicle, t: SalvageTrip, ending
   const r = t.run!;
   r.timer++;
   const due = r.timer % REPEAT === 1;
+  if ((r.stage === 'home' || r.stage === 'unload') && due && t.crew.some((c) => !aboard(sim, c, id) && needsShuttleBack(sim, c))) {
+    // Someone left on the wreck is out of action or not managing to refill: cut the run short and fly back (the hold stays loaded).
+    sim.enqueue({ type: 'vehicle.hover', vehicle: id, ship: t.ship });
+    r.stage = 'back';
+    r.timer = 0;
+    return 'on';
+  }
   switch (r.stage) {
     case 'call': {
       const back = runCrew(t);
