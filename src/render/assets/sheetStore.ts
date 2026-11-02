@@ -71,6 +71,8 @@ interface Rec<T> {
   /** Failed loads in a row, and when the last one failed (store clock). */
   fails: number;
   failedAt: number;
+  /** A load that timed out is still pending: no second attempt starts until it settles (one outstanding attempt per sheet, so a hung half of a pair cannot leak a texture per retry). */
+  stale: boolean;
 }
 
 /**
@@ -95,7 +97,7 @@ export class SheetStore<T> {
 
   register(name: string, spec: SheetSpec): void {
     if (!this.budgets.has(spec.pool)) throw new Error(`Unknown sheet pool "${spec.pool}"`);
-    this.recs.set(name, { spec, state: 'idle', sheet: null, loads: 0, fails: 0, failedAt: 0 });
+    this.recs.set(name, { spec, state: 'idle', sheet: null, loads: 0, fails: 0, failedAt: 0, stale: false });
   }
 
   /** Like `generation`, counting only the given pools' changes (static art is cached in built sprites; crew frames are not). */
@@ -145,7 +147,7 @@ export class SheetStore<T> {
       }
       return;
     }
-    if (r.state === 'failed' && this.o.now() - r.failedAt >= this.retryDelay(r.fails)) r.state = 'idle';
+    if (r.state === 'failed' && !r.stale && this.o.now() - r.failedAt >= this.retryDelay(r.fails)) r.state = 'idle';
     if (r.state !== 'idle') return;
     const i = this.dying.findIndex((d) => d.name === name);
     if (i >= 0) {
@@ -218,16 +220,20 @@ export class SheetStore<T> {
     if (ms > 0) {
       timer = setTimeout(() => {
         if (!finish()) return;
+        r.stale = true;
         fail(new Error(`Sheet "${name}" did not load within ${ms} ms`));
         this.pump();
       }, ms);
     }
     this.o.io.load(image, glow).then(
       ({ sheet, bytes }) => {
-        // Timed out already: keep a late success if nothing took over (no retry started), else free it (a retry owns the record).
-        if (!finish() && r.state !== 'failed') {
-          this.o.io.unload(name, sheet, image, glow);
-          return;
+        // Timed out already: nothing else can have started (see `stale`), so keep the late success.
+        if (!finish()) {
+          r.stale = false;
+          if (r.state !== 'failed') {
+            this.o.io.unload(name, sheet, image, glow);
+            return;
+          }
         }
         r.sheet = sheet;
         r.state = 'ready';
@@ -237,7 +243,10 @@ export class SheetStore<T> {
         this.pump();
       },
       (err) => {
-        if (!finish()) return;
+        if (!finish()) {
+          r.stale = false; // the abandoned attempt is over: a retry may start after the back-off
+          return;
+        }
         fail(err);
         this.pump();
       },

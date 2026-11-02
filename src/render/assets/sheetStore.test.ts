@@ -212,13 +212,17 @@ describe('SheetStore load timeout', () => {
   function hung(concurrency = 1) {
     const stuck = new Set<string>();
     const release = new Map<string, () => void>();
+    const reject = new Map<string, () => void>();
     const loads: string[] = [];
     const unloaded: string[] = [];
     const errors: string[] = [];
     const io: SheetIO<string> = {
       async load(image) {
         loads.push(image);
-        if (stuck.has(image)) await new Promise<void>((res) => release.set(image, res));
+        if (stuck.has(image)) await new Promise<void>((res, rej) => {
+            release.set(image, res);
+            reject.set(image, () => rej(new Error('late')));
+          });
         return { sheet: { image, glow: null } as Loaded<string>, bytes: 10 };
       },
       unload: (name) => void unloaded.push(name),
@@ -233,7 +237,7 @@ describe('SheetStore load timeout', () => {
       onError: (n) => void errors.push(n),
     });
     for (const n of ['a', 'b']) store.register(n, { image: `${n}.png`, pool: 'env' });
-    return { store, stuck, release, loads, unloaded, errors };
+    return { store, stuck, release, reject, loads, unloaded, errors };
   }
 
   it('times out a stuck load, frees its slot and loads the queued sheet', async () => {
@@ -272,23 +276,7 @@ describe('SheetStore load timeout', () => {
       vi.useRealTimers();
     }
   });
-  it('asks for a failed sheet again once its back-off has passed (what the atlas lookups rely on)', async () => {
-    vi.useFakeTimers();
-    try {
-      const h = hung();
-      h.stuck.add('a.png');
-      h.store.request('a');
-      await vi.advanceTimersByTimeAsync(1000);
-      h.store.request('a', true);
-      expect(h.store.state('a')).toBe('failed');
-      await vi.advanceTimersByTimeAsync(150);
-      h.store.request('a', true);
-      expect(h.store.state('a')).toBe('loading');
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-  it('retries a timed-out sheet after the back-off, and the retry is not disturbed by the old load settling', async () => {
+  it('starts no second attempt while a timed-out one is still pending, and allows a retry once it errors', async () => {
     vi.useFakeTimers();
     try {
       const h = hung();
@@ -296,17 +284,35 @@ describe('SheetStore load timeout', () => {
       h.store.request('a');
       await vi.advanceTimersByTimeAsync(1100);
       h.stuck.delete('a.png');
-      await vi.advanceTimersByTimeAsync(200);
+      await vi.advanceTimersByTimeAsync(5000);
+      h.store.request('a');
+      expect(h.store.state('a')).toBe('failed');
+      expect(h.loads).toEqual(['a.png']);
+      h.reject.get('a.png')?.();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(h.store.state('a')).toBe('failed');
       h.store.request('a');
       await vi.advanceTimersByTimeAsync(0);
-      expect(h.store.state('a')).toBe('ready');
       expect(h.loads).toEqual(['a.png', 'a.png']);
-      // The first, stuck load finally returns: its sheet is freed, the ready one stays.
-      h.release.get('a.png')?.();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(h.unloaded).toEqual(['a']);
       expect(h.store.state('a')).toBe('ready');
-      expect(h.store.stats().pools.env?.resident).toBe(10);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('asks for a failed sheet again once its back-off has passed (what the atlas lookups rely on)', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = hung();
+      h.stuck.add('a.png');
+      h.store.request('a');
+      await vi.advanceTimersByTimeAsync(1000);
+      h.reject.get('a.png')?.();
+      await vi.advanceTimersByTimeAsync(0);
+      h.store.request('a', true);
+      expect(h.store.state('a')).toBe('failed');
+      await vi.advanceTimersByTimeAsync(150);
+      h.store.request('a', true);
+      expect(h.store.state('a')).toBe('loading');
     } finally {
       vi.useRealTimers();
     }
