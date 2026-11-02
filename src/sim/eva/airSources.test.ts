@@ -5,6 +5,7 @@ import { VehicleC } from '../vehicles/components';
 import { EvaFloatC, SuitC } from './components';
 import { airlockAir, airlockAirCap, vehicleAir, vehicleAirCap } from './air';
 import { airlockOf, crew, run, shuttle, world } from './airFixture';
+import { startRefillFloat } from './refillFloat';
 import { airSources } from './sources';
 import { airStoresSystem } from '../systems/airStores';
 import { suitAir, suitDef, suitTile } from './suit';
@@ -196,6 +197,19 @@ describe('eva.refill', () => {
     expect(sim.world.has(c, DraftedC)).toBe(true);
     const p = sim.world.get(c, PositionC)!; // back where it floated from: the hull tile of the hatch spot
     expect(p.x).toBeLessThan(2);
+  });
+  it('cancels the swap at the turn when the shuttle has left: no air moves', () => {
+    const sim = world();
+    const v = shuttle(sim);
+    const c = crew(sim, 1, 6, { drafted: true });
+    suited(sim, c, 100);
+    expect(startRefillFloat(sim, c, v)).toBe(true);
+    const air = sim.world.get(v, VehicleC)!.air;
+    sim.world.get(v, VehicleC)!.hover = 0; // it flies off while the crew member drifts out
+    run(sim, 40 * TICK_HZ);
+    expect(sim.world.has(c, EvaFloatC)).toBe(false);
+    expect(suitAir(sim, c)).toBeLessThan(100);
+    expect(sim.world.get(v, VehicleC)!.air).toBe(air);
   });
 });
 

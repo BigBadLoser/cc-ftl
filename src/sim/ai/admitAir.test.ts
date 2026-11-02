@@ -129,4 +129,12 @@ describe('partial-work admission', () => {
     expect(a.rejection(w, id, [{ x: 7, y: 6 }], false)).toBeNull(); // east side: the airlock is a short walk
     expect(a.rejection(w, id, [{ x: 5, y: 6 }], false)).toBe('noSource'); // west side: no source can be reached from there
   });
+  it('budgets a full stint for a repair, whose work is a placeholder: 45 s of air is not enough', () => {
+    const { sim, w } = setup(45);
+    const job = hullJob(sim, 1 / TICK_HZ); // work: 1 tick, as autojobs makes a repair
+    sim.world.get(job, JobC)!.kind = 'repair';
+    expect(adm(sim, job).rejection(w, job, row(10), false)).toBe('noAir');
+    sim.world.get(job, JobC)!.kind = 'build'; // a build that is nearly done really does fit
+    expect(adm(sim, job).rejection(w, job, row(10), false)).toBeNull();
+  });
 });

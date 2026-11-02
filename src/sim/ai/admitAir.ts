@@ -27,6 +27,9 @@ import { travelTicks } from './travel';
  * Salvage teams and the shipyard's contractors keep their own air logic until it moves onto this one, so they are never turned away here.
  */
 
+/** Jobs whose `work` is real: they finish when `progress` reaches it. */
+const PROGRESS_KINDS: ReadonlySet<string> = new Set(['build', 'deconstruct', 'module', 'moduleDecon']);
+
 /** Why a pair was refused: `noAir` (it does not fit the tank) or `noSource` (no source can be reached from the job). */
 export type AirRejection = 'noAir' | 'noSource';
 
@@ -85,7 +88,8 @@ export class AirAdmission {
       back = 0; // a fire, a breach or a patient is not left because there is no way home: they go if the walk and a stint fit
     }
     const speed = stat(sim, w.id, 'workSpeed') * (suited ? 1 : suitDef(sim).workMult);
-    const stint = Math.min(STINT_SEC, Math.max(0, job.work - job.progress) / (TICK_HZ * Math.max(0.05, speed)));
+    // Only a job that finishes by progress has a stint shorter than STINT_SEC; a repair, a fire, a rescue or a console runs until its condition is met (`work` is a placeholder).
+    const stint = PROGRESS_KINDS.has(job.kind) ? Math.min(STINT_SEC, Math.max(0, job.work - job.progress) / (TICK_HZ * Math.max(0.05, speed))) : STINT_SEC;
     return walk + stint + sec(back) + AIR_RESERVE_SEC <= left ? null : 'noAir';
   }
 
