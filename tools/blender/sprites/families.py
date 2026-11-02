@@ -194,7 +194,7 @@ def jobs(name):
         return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
     if name == "salvage":
         from . import items_salvage
-        return items_salvage.jobs(), "salvage"
+        return items_salvage.jobs(), "only:salvage"
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
