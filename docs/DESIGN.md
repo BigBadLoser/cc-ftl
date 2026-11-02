@@ -15,6 +15,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
   - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
+  - [Air, away sites and salvage (design for #286; not built yet)](#air-away-sites-and-salvage-design-for-286-not-built-yet): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
 - [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
@@ -284,6 +285,8 @@ FTL's decision-making with physical consequences, in a shared sector.
 
 ### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
 
+Being rebuilt on general systems (#286): see [Air, away sites and salvage (design for #286; not built yet)](#air-away-sites-and-salvage-design-for-286-not-built-yet). What is below is what #277 built.
+
 Salvage is one order from the inspector. The crew then run it on their own, like any other work.
 
 - **The order:** select a derelict. Its inspector has a salvage panel: tick any or all scrap types, then click **Salvage**.
@@ -319,6 +322,182 @@ Salvage is one order from the inspector. The crew then run it on their own, like
 - **The scrap types replace the generic `item.scrap`.** Events and trades that use it switch to other items. The
   fabricator recipes that turned scrap into metal, electronics or polymer give way to the scrapper. Rations will use
   hydroponics output once that works. Starting crates hold basic metal, electronics and polymer instead of scrap.
+
+### Air, away sites and salvage (design for #286; not built yet)
+
+Salvage today has its own crew controller: team picking with builder/hauler roles, suits tied to a shuttle, refill trips,
+emergency pickups, cargo-run riders. This replaces it with three general pieces that other off-ship work can use later.
+
+#### 1. Air as a need
+
+- **The air need is a drive**, like recharge for robots: when the tank gets low the crew member goes to a source, fills up
+  and comes back. It exists only while they wear a suit in thin air (when the tank drains). Robots and other `airless`
+  bodies never have it and never take a suit.
+- **Times, not steps.** Every air decision uses real travel-time estimates (*travel time*):
+  - walking: each tile at the walker's move speed (suit multiplier, traits), diagonals √2;
+  - doors: their opening time;
+  - airlocks: one cycle (`cycleSec`);
+  - shuttle drifts: distance over `floatSpeed`;
+  - shuttle flights: distance over the vehicle's speed, plus dock or launch time.
+- **When it fires.**
+  - *Refill* when the air left is under the larger of 30% of a tank and 1.5 × the travel time to the nearest source + 30 s.
+    The crew member leaves the job at its next safe point (a hauler puts the load down first), refills and comes back to
+    the **same job**, which stays theirs. Progress on a job is never lost; it lives on the job.
+  - *Critical* when the air left is under 1.2 × that travel time + 10 s, or under 10%. **Survival overrides every task class,
+    `finish` included.** A rescuer carrying a patient sets them down on the nearest tile where they are safe, if one is
+    within a few steps (else where they stand); the patient keeps their bed claim and the rescue job is posted again. Then
+    the rescuer refills.
+  - The drive ends when the tank is full.
+- **Partial work.** The scheduler doesn't need a whole job to fit in one tank. It admits a suited (or suiting) crew member
+  for a job if the travel time there, plus at least one *work stint* (60 s of work, or what is left of the job if less), plus
+  the travel time from the job to its nearest source, plus 30 s, fits in the air they have. A fresh suit counts as a full
+  tank. Long jobs are then done in stints with refill trips in between. A job whose site no source can be reached from is
+  never admitted for a suited walker.
+- **Sources** are found by reachability on the crew member's grid:
+  - **An airlock's suit tile.** The airlock holds a finite **air store**, by default 3 full tanks (30 min). A refill draws
+    from it. On a ship with working life support the store refills slowly (1 tank per 5 min). On a derelict it does not.
+    An empty store is no longer a source (the module inspector shows it); suits can still be stowed there.
+  - **A player shuttle hovering beside the grid**, within float range of a hull tile they can reach. They drift to the
+    hatch, swap tanks and drift back (one drift out and back, no boarding). The shuttle has its own **air store**, by default
+    6 tanks. It is refilled to full in its home bay or while docked at a player airlock with air in its store. A shuttle with
+    less than one tank left is no longer a source and heads home on its next trip (see *Round trips*).
+  - A player shuttle docked at an airlock on that grid counts through the airlock's tile and draws from its own store.
+- **No source reachable: ask early.** As soon as a suited crew member in thin air has no reachable source, they are
+  *out of air reach*, while the tank still has air:
+  - their card shows it and an alert fires with the time left;
+  - a **pickup request** goes out: the site's shuttle (or any free player shuttle with EVA, including one hovering beside
+    the home ship) moves its hover point to within float range of them, and they float aboard;
+  - if no shuttle can come, the alert says so. If the tank then runs dry, the **hazard** interrupt takes over (thin air
+    with an empty suit is a hazard): its escape aims for breathable air or any source. If that fails, they go down and the
+    normal rescue path takes them to a bed.
+  - Crew rescue can't help someone who can't reach a source: the rescuer couldn't reach them either. Only a shuttle can.
+- **Suits belong to wherever they are.** A worn suit is the wearer's; a stowed one is part of that airlock's or shuttle's
+  stock. Stowing anywhere adds to that stock (already true of `doffSuit` and the float-back). `SuitC.vehicle`, `detached` and
+  `SuitC.airlock` go. The rule that no shuttle strands anyone comes from the away party (below), not from suit ownership.
+- **Home ship hull work** gets all of this for free: a crew member sealing a breach from outside refills at the airlock
+  instead of running dry after the `suit.airLow` warning.
+
+#### 2. Away sites
+
+- **An away site** is any grid other than the player's ship and bases where the player wants crew to work: a derelict, a
+  prize, later a station or an event location. It is a mark on the site's ship entity plus a shuttle that serves it. A site
+  **runs continuously** until it closes. There are no shifts: people come and go one at a time.
+- **Who goes: passage jobs.** When the shuttle is at home and the site wants workers, it offers one **passage** job per free
+  seat at the bay's boarding tile. A crew member takes a passage like any other job: at their priority level for its work
+  category, compared with every open job at home, nearest crew first. The player steers it with the priority grid; nobody is
+  a builder or a hauler.
+  - A passage is only open to crew rested and fed enough to stay a while (rest, hunger, a robot's charge at least 60).
+  - Seats beyond the shuttle's suits are passages for crew who don't breathe (robots, #284).
+  - A passage costs its walk plus the estimated flight time, so a home job of the same level and urgency nearby still wins.
+- **Which categories the seats get.** The site knows how much work of each category is waiting (or coming: salvage counts
+  the loot its open stripping jobs will drop). Seats are split by that demand, the same way every time:
+  - with fewer seats than categories, the categories with the most demand get one seat each (ties in the priority grid's
+    column order);
+  - otherwise every category with demand gets one seat, and the rest are shared by largest remainder (same tie order).
+- **Home cover follows real needs.** There is no fixed reserve. Crew are held back only for what the home ship needs right
+  now:
+  - consoles that need an operator now (an open `operate` job);
+  - open emergencies that still need hands: fires, hull breaches, downed or wounded crew.
+
+  Passages rank below those jobs: nobody who could take one of them leaves while it is open. With no emergency there is no
+  reserve, so a crew of 4 can send everyone eligible. Crew at a console never take a passage. Passengers who have boarded
+  but not left yet step out again if an emergency they rank above their passage opens at home.
+- **Getting there.** The shuttle waits up to 60 s for the passengers on their way, then flies itself (autopilot, like ferry
+  runs). At the site it docks at a free working airlock if there is one, else hovers. Passengers go out (airlock, or `eva.out`
+  in the shuttle's suits) and are then **ordinary crew on that grid**: the scheduler hands them the site's jobs by their
+  normal priorities. While idle there they wait near the shuttle instead of wandering or stowing their suit.
+- **Going home, one at a time.** While a crew member is away, a **return** drive wants them back aboard the site's shuttle:
+  - *not urgent*: rest under 25 or hunger under 35. This is earlier than the sleep and eat drives, so they get home before
+    they drop.
+  - *urgent*: hurt (health under 50%, or carried aboard downed), a robot's charge critical, or air critical with no other
+    source.
+
+  Everyone else works on.
+- **Waiting aboard.** Boarding ends the return task: the crew member is a passenger, out of the crew loop, and their needs
+  keep running as they do for anyone aboard a shuttle. A non-urgent passenger waits for the next trip. If they fall to the
+  sleep or eat thresholds while waiting (rest 20, hunger 10), they turn urgent. So waiting is bounded both by the trip
+  timeout and by their own needs, and nobody sleeps or starves in a seat.
+- **Round trips, batched.** The shuttle serving a site goes back and forth, and each trip carries as much as it can. It
+  leaves the site:
+  - **at once** for an urgent passenger, or to serve a pickup (a pickup moves the hover point; it needs no trip unless the
+    person is hurt);
+  - **otherwise only when** one of these holds:
+    - the hold is full and loot is waiting;
+    - rotation is due: non-urgent passengers fill half the seats, or free seats exist that crew at home would take;
+    - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
+    - its own air store is under one tank.
+
+  At home it drops off those going home, unloads the hold (the existing cargo hauls) and refills its air. Meanwhile it
+  offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
+- **The shuttle never strands anyone.** It may leave the site only if every party member staying out is safe, as defined in
+  ARCHITECTURE.md ("Away sites and the air drive", "Departure check"). In short, each staying worker must either have another source they can reach (an airlock with
+  air left, another shuttle) or enough air to last the whole round trip with a margin. The shuttle settles that before it
+  goes:
+  - first a *last call*: anyone short refills at the shuttle;
+  - then anyone still short *rides*: they board and wait out the round trip aboard, and go back out when it returns;
+  - if someone short can't get aboard either, the shuttle stays.
+
+  While it is away it keeps checking. If any staying worker's margin runs out (a slow unload, a delayed flight), it skips
+  whatever is left at home and flies straight back. Every trip goes through this check, urgent ones included. An urgent
+  trip that can't pass it (a worker who is unsafe and can't board: downed out of reach, boxed in) waits. The urgent
+  passenger stays aboard, where nothing harms them further, while the rescue or pickup brings that worker in.
+- **The whole party comes home only** when the site closes (its work done, or cancelled), in a combat evacuation (a fight
+  starts in the node), or on the player's recall. Then the return drive is full for everyone, the shuttle takes everyone
+  aboard, and after 90 s it lifts anyone still out (downed with nobody able to carry them, boxed in). That lift is the one
+  shuttle rule no crew system can replace.
+- **Hurt crew.** A downed party member is a normal rescue job; on a site with no bed the rescue carries them to the shuttle
+  (that counts as handing them in), and they go home on the next trip, which leaves at once.
+- **Failures.**
+  - *Shuttle destroyed*: the party stays on the site with their suits. Every worker who now has no source gets a pickup
+    request, and the site asks for any other free player shuttle (a pickup run). With none, an alert says crew are stranded.
+  - *Home bay lost*: the shuttle docks at a free airlock on the home ship and the crew walk in. With no usable airlock it
+    hovers there and the crew float to the hull. Only with neither do they stay aboard, with an alert.
+  - *Jump with crew away*: the jump confirm already lists crew and shuttles left behind; nothing new.
+
+#### 3. Salvage on top
+
+- A salvage order opens an away site on the wreck and closes it when the order is done or cancelled. The order, the panel,
+  the planner (stage order, reach filter, floors last and farthest first), yields, the hostile block and wreck removal stay.
+- The order tells the site its demand: stripping (construction) and loot (hauling, including the loot its open jobs will
+  drop), so the first trip already has a hauling seat.
+- The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
+- The wreck stays until the party has left its side, then goes as today.
+- **Throughput.** Scrap brought home per game hour must be no worse than today's salvage teams (ARCHITECTURE.md "Away sites and the air drive", "Throughput check").
+
+#### How the general design covers each salvage special case
+
+| Failure that shaped the salvage code | Covered by |
+|---|---|
+| Worker stranded on the wreck with no way to refill | Air drive by reachability. Admission needs a reachable source from the job. Floor order kept. An early pickup request while there is still air. |
+| Low-air worker cut off (`needsRescue`, `carryAboard` below 10%) | The critical air drive overrides every task class. A pickup request as soon as no source is reachable. Hazard escape as the backstop. |
+| Suits lost when the shuttle left on a cargo run (`detached`) | Suits belong to whoever wears them; nothing is tied to the shuttle. |
+| Riders left behind on a cargo run (`mustRide`, 70% rule) | The departure check: last call, then ride, then stay. One exact rule for every trip, not a salvage rule. |
+| Cargo run turning back for someone low or down (`needsShuttleBack`) | The watch while away: the shuttle turns back when any staying worker's margin runs out. A downed worker is never "safe", so it applies to them too. |
+| Shuttle leaving with crew outside | `crewOutside` reads the party. The shuttle leaves only through the departure check. |
+| Shift ending with a worker still on the wreck (Codex r4) | No shifts. A closing site ends only with everyone aboard, or with the lift. |
+| Team must cover building and hauling | Passages split by demand, including expected loot. |
+| One tired member ending the whole shift | Per-person return; batched round trips. |
+| Busy shuttle taken by ferry, courier or boarding | The `SiteRunC` marker, checked by `ferryFree`, the courier and the launch. |
+| Team member stowing their suit at the wreck when idle | Idle away crew wait by the shuttle, suited. |
+| Hold could not be unloaded at home (`noRoom`) | The hold stays loaded and the trip carries on; loot waits on the site. The panel shows "no room at home". |
+| Emptying the ship (half-the-crew cap) | Dynamic home cover: crew needed for open emergencies and unmanned consoles stay. |
+| Robots never join (#284) | Robots take passages: no suit, no air drive. |
+| No home bay (#284) | The home leg docks at an airlock, else hovers and the crew float in. |
+
+#### Decisions (user, 2026-11-02)
+
+- **Pilot:** the shuttle flies on autopilot, as ferry runs do. No crew member has to be its pilot.
+- **Numbers:** start with these and tune in play:
+  - refill at 30% or 1.5 × travel + 30 s; critical at 10% or 1.2 × travel + 10 s; a 60 s work stint;
+  - home at rest 25 / hunger 35 (not urgent), health 50% (urgent); waiting passengers turn urgent at rest 20 / hunger 10;
+  - passages only at 60 or more;
+  - departure margin 1.25 × round trip + 30 s; trip timeout 5 min; rotation due at half the seats;
+  - airlock store 3 tanks (refilling 1 per 5 min with life support), shuttle store 6 tanks.
+- **A general "send a party here" order** comes only when a second feature needs it. Until then `away.open` is a debug
+  command.
+- **Planned follow-up (not in #286):** move boarding launch/recall and the shipyard's contractors onto away sites. Open a
+  GitHub issue for it when slice 3 lands, so it isn't forgotten.
+---
 
 ## Starmap and factions
 
