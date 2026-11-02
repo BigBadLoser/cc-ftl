@@ -4,12 +4,12 @@ import { CarriedC, CrewC, DeadC, PositionC } from '../crew/components';
 import { isIncapacitated, origin } from '../crew/helpers';
 import { airLeftSec } from '../ai/airNeed';
 import { travelTicks, flightTicks } from '../ai/travel';
-import { airlockAir, vehicleAir } from '../eva/air';
+import { airlockAir, tankShortfall, vehicleAir } from '../eva/air';
 import { EvaFloatC } from '../eva/components';
 import { planWalk } from '../eva/route';
 import { hatchSpot } from '../eva/shuttle';
 import { airSources } from '../eva/sources';
-import { isSuited, isThin, needsAir, suitDef } from '../eva/suit';
+import { isSuited, isThin, needsAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -22,9 +22,9 @@ import { AwayC } from './components';
  * The departure check (docs/ARCHITECTURE.md "Departure check", #286): the shuttle serving a site may leave it only if every member of the
  * party staying out is safe until it is back. A member is safe when
  * - (a) they do not drain: they need no air, or wear no suit on a breathable tile;
- * - (b) they can reach another air source (an airlock on the site with air left, another shuttle), and those sources hold a tank for each
- *   member counting on them;
- * - (c) they are able and have air for AWAY_DEPART_MARGIN round trips (`roundTripTicks`) plus the walk to the hatch spot plus AIR_RESERVE_SEC.
+ * - (c) they are able and have air for AWAY_DEPART_MARGIN round trips (`roundTripTicks`) plus the walk to the hatch spot plus AIR_RESERVE_SEC;
+ * - (b) failing that, they can walk to another air source (an airlock on the site with air left, another shuttle) on the air they have, with
+ *   AIR_RESERVE_SEC to spare, and its store still holds their refill once the members before them (ascending id) have had theirs.
  * Downed or carried members are never safe. Nobody may be floating to or from the shuttle either.
  */
 
@@ -74,31 +74,36 @@ export function unsafeMembers(sim: Sim, vehicle: number): number[] {
   if (out.some((m) => sim.world.get(m, EvaFloatC)?.vehicle === vehicle)) return out; // someone between the hull and the hatch: wait
   const R = roundTripTicks(sim, vehicle);
   const unsafe: number[] = [];
-  // (b) members share the other sources' stores: one tank each, counted over the distinct sources they reach.
-  const leaning: number[] = [];
+  // Members whose own tank does not cover the round trip but who can walk to another source in time: they share its store.
+  const leaning: { m: number; sources: string[] }[] = [];
   const stores = new Map<string, number>();
   for (const m of out) {
     if (isIncapacitated(sim, m) || sim.world.has(m, CarriedC) || !sim.world.has(m, PositionC)) {
       unsafe.push(m);
       continue;
     }
-    if (noDrain(sim, m)) continue;
-    const others = airSources(sim, m, { without: vehicle });
-    if (others.length > 0) {
-      leaning.push(m);
-      for (const s of others) {
-        const v = s.kind === 'vehicle' ? sim.world.get(s.id, VehicleC) : undefined;
-        stores.set(`${s.kind}:${s.id}`, s.kind === 'airlock' ? airlockAir(sim, s.id) : v ? vehicleAir(sim, v) : 0);
-      }
+    if (noDrain(sim, m)) continue; // (a)
+    const air = airLeftSec(sim, m);
+    if (air >= (AWAY_DEPART_MARGIN * R + hatchTicks(sim, m, vehicle)) / TICK_HZ + AIR_RESERVE_SEC) continue; // (c)
+    // (b): another source counts only if the tank lasts the walk there, with the same reserve as admission.
+    const others = airSources(sim, m, { without: vehicle }).filter((s) => s.ticks / TICK_HZ + AIR_RESERVE_SEC <= air);
+    if (others.length === 0) {
+      unsafe.push(m);
       continue;
     }
-    const need = (AWAY_DEPART_MARGIN * R + hatchTicks(sim, m, vehicle)) / TICK_HZ + AIR_RESERVE_SEC;
-    if (airLeftSec(sim, m) < need) unsafe.push(m);
+    const keys = others.map((s) => `${s.kind}:${s.id}`);
+    for (const s of others) {
+      const v = s.kind === 'vehicle' ? sim.world.get(s.id, VehicleC) : undefined;
+      stores.set(`${s.kind}:${s.id}`, s.kind === 'airlock' ? airlockAir(sim, s.id) : v ? vehicleAir(sim, v) : 0);
+    }
+    leaning.push({ m, sources: keys });
   }
-  if (leaning.length > 0) {
-    const total = [...stores.values()].reduce((s, n) => s + n, 0);
-    const tanks = leaning.length * suitDef(sim).airSec; // stores and suit tanks hold base seconds (a Void-born wearer's air lasts longer, not more)
-    if (total < tanks) unsafe.push(...leaning);
+  // Each member leaning on a store gets the refill they need from the nearest of theirs that still has it (ascending id).
+  for (const { m, sources } of leaning) {
+    const need = tankShortfall(sim, m);
+    const key = sources.find((k) => (stores.get(k) ?? 0) >= need);
+    if (key) stores.set(key, (stores.get(key) ?? 0) - need);
+    else unsafe.push(m);
   }
   return unsafe.sort((a, b) => a - b);
 }

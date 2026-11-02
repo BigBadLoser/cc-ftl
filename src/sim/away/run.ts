@@ -18,6 +18,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayWorking, hoverPoint } from '../vehicles/geometry';
 import { boardCrew, occupants, vehicleDefOf } from '../vehicles/lifecycle';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
+import { endRun } from './end';
 import { partyOut, unsafeMembers } from './depart';
 import { boardPassengers, calledBack, dropPassages, freeSeats, letOut, passagesOf, postPassages } from './passage';
 
@@ -102,17 +103,6 @@ function lift(sim: Sim, c: number, vehicle: number): void {
     away.home = true;
     delete away.landing;
   }
-}
-
-function endRun(sim: Sim, id: number, r: SiteRun, reason: 'closed' | 'lost'): void {
-  dropPassages(sim, id);
-  for (const j of haulsTo(sim, id)) destroyJob(sim, j);
-  const v = sim.world.get(id, VehicleC);
-  if (v) v.autopilot = false;
-  for (const c of sim.world.query(AwayC)) if (sim.world.get(c, AwayC)?.vehicle === id) sim.world.remove(c, AwayC);
-  sim.world.remove(id, SiteRunC);
-  if (sim.world.get(r.site, AwaySiteC)?.vehicle === id) sim.world.remove(r.site, AwaySiteC);
-  sim.events.emit({ type: 'away.closed', ship: r.site, vehicle: id, reason });
 }
 
 /** At home: passengers board, the passages follow the free seats, and the shuttle leaves when its passengers are in. */
@@ -231,6 +221,11 @@ export function awaySystem(sim: Sim): void {
     const away = sim.world.get(c, AwayC)!;
     if (sim.world.get(away.vehicle, SiteRunC) && !sim.world.has(c, DeadC)) continue;
     sim.world.remove(c, AwayC);
+  }
+  // A passage whose shuttle no longer serves its site (the run ended, or a cut ended it) is withdrawn.
+  for (const j of [...sim.world.query(JobC)].sort((a, b) => a - b)) {
+    const job = sim.world.get(j, JobC)!;
+    if (job.kind === 'passage' && sim.world.get(job.target ?? 0, SiteRunC)?.site !== job.site) destroyJob(sim, j);
   }
   for (const site of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) {
     const s = sim.world.get(site, AwaySiteC)!;

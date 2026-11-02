@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, DraftedC, JobC, NeedsC, PositionC, PrioritiesC, ShipC, VehicleC, type Sim } from '../../sim';
+import { AboardC, CombatC, CrewC, DeadC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PositionC, PrioritiesC, START_NODE, ShipC, VehicleC, deserialize, galaxyIndex, homeShip, serialize, type Sim } from '../../sim';
+import { giveItems } from '../../sim/story/effects';
+import { placementError, shipGrid, spawnModule } from '../../sim';
+import { AirlockC } from '../../sim/modules/airlock';
+import { airSources } from '../../sim/eva/sources';
+import { content } from '../index';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { unsafeMembers } from '../../sim/away/depart';
 import { passagesOf } from '../../sim/away/passage';
@@ -68,6 +73,39 @@ describe('away sites', () => {
     const [low] = party as [number];
     sim.world.get(low, SuitC)!.air = 60;
     expect(unsafeMembers(sim, shuttle)).toEqual([low]);
+  });
+
+  /** A working airlock on the wreck's hull: another air source for the party. */
+  function wreckAirlock(sim: Sim, wreck: number): number {
+    const g = shipGrid(sim, wreck)!;
+    for (let rot = 0; rot < 4; rot++) {
+      for (let y = g.y0; y < g.y0 + g.height; y++) {
+        for (let x = g.x0; x < g.x0 + g.width; x++) if (!placementError(sim, wreck, 'module.airlock', x, y, rot)) return spawnModule(sim, 'module.airlock', x, y, rot);
+      }
+    }
+    throw new Error('no room for an airlock');
+  }
+
+  it('the departure check: another source counts only if the tank lasts the walk there (Codex 4448881718)', () => {
+    const { sim, wreck, shuttle, party } = landed();
+    wreckAirlock(sim, wreck);
+    const [low] = party as [number];
+    const src = airSources(sim, low, { without: shuttle })[0];
+    expect(src).toBeDefined();
+    sim.world.get(low, SuitC)!.air = src!.ticks / 20 + 10; // reaches it with 10 s left: under the 30 s reserve
+    expect(unsafeMembers(sim, shuttle)).toEqual([low]);
+    sim.world.get(low, SuitC)!.air = src!.ticks / 20 + 40;
+    expect(unsafeMembers(sim, shuttle)).toEqual([]);
+  });
+
+  it('the departure check: a nearly empty airlock does not hide a tank that covers the round trip (Codex 4448881710)', () => {
+    const { sim, wreck, shuttle, party } = landed();
+    const lock = wreckAirlock(sim, wreck);
+    sim.world.get(lock, AirlockC)!.air = 5;
+    const [m] = party as [number];
+    expect(airSources(sim, m, { without: shuttle }).length).toBeGreaterThan(0);
+    sim.world.get(m, SuitC)!.air = 590;
+    expect(unsafeMembers(sim, shuttle)).toEqual([]);
   });
 
   it('a waiting passenger does not leave while a worker staying out is unsafe', () => {
@@ -159,5 +197,60 @@ describe('away sites', () => {
     sim.world.get(tired, NeedsC)!.rest = 10;
     play(sim, 20 * 3);
     expect(sim.world.get(tired, CrewC)!.activity).not.toBe('sleeping');
+  });
+
+  describe('a jump with a party away (the cut)', () => {
+    /** Jump the home ship to a neighbouring node and drop out there. */
+    function jumpAway(sim: Sim): void {
+      const ship = homeShip(sim);
+      sim.world.get(ship, CombatC)!.ftl = FTL_CHARGE_SEC;
+      giveItems(sim, 'item.fuel', 50);
+      const node = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? []).map((e) => (e.a === START_NODE ? e.b : e.a)).sort()[0]!;
+      sim.enqueue({ type: 'galaxy.jump', ship, route: [node] });
+      play(sim, 1);
+      for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) {
+        play(sim, 1);
+        sim.story.active = null;
+      }
+      sim.enqueue({ type: 'galaxy.drop' });
+      play(sim, 1);
+      sim.galaxy.fleets = []; // no fleet waits at the node: this is about the cut
+      sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
+      play(sim, 20);
+      expect(sim.sector.state).toBe('active');
+    }
+
+    /** No away component anywhere, live or archived, and the save loads. */
+    function clean(sim: Sim): void {
+      for (const store of ['away', 'siteRun', 'awaySite']) expect(sim.world.serialize().stores[store] ?? []).toEqual([]);
+      for (const a of sim.archives) for (const e of a.entities) for (const store of ['away', 'siteRun', 'awaySite']) expect(e.c[store]).toBeUndefined();
+      expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.kind === 'passage')).toEqual([]);
+      expect(() => deserialize(serialize(sim), content)).not.toThrow();
+    }
+
+    it('with the party on the site and the shuttle beside it: the run ends, the party stays behind as ordinary crew', () => {
+      const { sim, wreck, shuttle, party } = landed();
+      expect(party.length).toBeGreaterThan(0);
+      jumpAway(sim);
+      expect(sim.world.has(wreck, ShipC)).toBe(false); // left behind in the old node's archive
+      expect(sim.world.has(shuttle, VehicleC)).toBe(false);
+      clean(sim);
+      const arch = sim.archives.find((a) => a.entities.some((e) => e.id === shuttle))!;
+      expect(arch.entities.find((e) => e.id === shuttle)!.c.vehicle).toMatchObject({ autopilot: false });
+    });
+
+    it('with passengers aboard the shuttle at home: they step out and the run ends', () => {
+      const { sim, wreck } = setup();
+      siteWork(sim, wreck);
+      const shuttle = shuttleOf(sim);
+      sim.enqueue({ type: 'away.open', ship: wreck });
+      play(sim, 20 * 120, () => sim.world.query(AboardC).length > 0);
+      const aboard = [...sim.world.query(AboardC)];
+      expect(aboard.length).toBeGreaterThan(0);
+      jumpAway(sim);
+      for (const c of aboard) expect(sim.world.has(c, PositionC)).toBe(true);
+      expect(sim.world.get(shuttle, VehicleC)).toMatchObject({ autopilot: false });
+      clean(sim);
+    });
   });
 });
