@@ -10,11 +10,10 @@ in the crate's column (a crate stacked on top hides everything up to its own int
   comfort  cream foam blocks, torn teal and maroon fabric, a cushion on edge and a bare spring"""
 import math
 
-import bmesh
 from mathutils import Euler, Vector
 
 from . import core
-from .items_kit import cone, emit, tube
+from .items_kit import cone, tube
 
 Q = math.pi / 2
 
@@ -111,16 +110,26 @@ def weapons(m, f, k=1.0):
     cone(m, (0.055 * k, -0.08 * k, (f + 0.11) * k), (0.055 * k, -0.08 * k, (f + 0.18) * k), 0.025 * k, "svWred")
 
 
-def _pillow(m, c, size, col, top, k, rz=0.0, rx=0.0, ry=0.0, p=0.45):
+def _pillow(m, c, size, col, top, k, rz=0.0, rx=0.0, ry=0.0, p=0.45, nu=12, nv=8):
     """A plump cushion: a rounded box (superellipsoid, squareness p: 1 = an ellipsoid, smaller = boxier) of `size`
-    centred at c, turned rx, ry, rz. Faces turned up take `top`."""
-    bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=1.0)
+    centred at c, turned rx, ry, rz. Faces turned up take `top`. Built from a fixed lat-long grid of points (not a
+    bmesh sphere: its normal fix-up is not repeatable, which broke the render cache)."""
     R = Euler((rx, ry, rz), "XYZ").to_matrix()
-    for v in bm.verts:
-        q = Vector(tuple(math.copysign(abs(t) ** p, t) * s_ / 2 for t, s_ in zip(v.co, size)))
-        v.co = (R @ q + Vector(c)) * k
-    emit(m, bm, lambda n, _c: top if n.z > 0.55 else col)
+    sp = lambda t: math.copysign(abs(t) ** p, t)                                   # noqa: E731
+    def pt(j, i):
+        th, ph = math.pi * j / nv - math.pi / 2, math.tau * i / nu
+        q = Vector((sp(math.cos(th) * math.cos(ph)) * size[0] / 2, sp(math.cos(th) * math.sin(ph)) * size[1] / 2,
+                    sp(math.sin(th)) * size[2] / 2))
+        return (R @ q + Vector(c)) * k
+    for j in range(nv):
+        for i in range(nu):
+            q = [pt(j, i), pt(j, i + 1), pt(j + 1, i + 1), pt(j + 1, i)]           # outward: as crate._ring
+            if j == 0:
+                q = [q[0], q[2], q[3]]
+            elif j == nv - 1:
+                q = [q[0], q[1], q[2]]
+            nz = (q[1] - q[0]).cross(q[2] - q[0]).normalized().z
+            m.poly([core.G(*v) for v in q], top if nz > 0.55 else col, flip=True)
 
 
 def _sheet(m, c, w, d, sag, col, k, rz=0.0, tilt=0.0, n=6):

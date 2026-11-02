@@ -1336,5 +1336,33 @@
  "svEcap": {
   "hex": "#8fe3f0",
   "set": "salvage_energy"
+ },
+ "svKS0": {
+  "hex": "#efe9dd",
+  "set": "salvage_cloth"
+ },
+ "svKS1": {
+  "hex": "#d2cbbc",
+  "set": "salvage_cloth"
+ },
+ "svKS2": {
+  "hex": "#ada596",
+  "set": "salvage_cloth"
+ },
+ "svKS3": {
+  "hex": "#878072",
+  "set": "salvage_cloth"
+ },
+ "svKS4": {
+  "hex": "#615a4f",
+  "set": "salvage_cloth"
+ },
+ "svKred": {
+  "hex": "#c23a2f",
+  "set": "salvage_cloth"
+ },
+ "svKredD": {
+  "hex": "#8e2a24",
+  "set": "salvage_cloth"
  }
 }

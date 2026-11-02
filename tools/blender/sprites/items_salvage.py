@@ -3,7 +3,10 @@
   item.<id>.unit   ONE crate (or one folded bolt) centred on the tile origin. The game stacks units itself on a fixed
                    slot grid (4 per level: back, right, left, front at 0.35 tile, a level per crate height), so a unit
                    must stack cleanly: flat top rim, nothing poking far above it.
-  item.<id>.held   the small version a crew member carries.
+  item.<id>.held   the small version a crew member carries: the unit at HELD (x HELD_K, as every item's .held).
+
+Items: item.scrap_<kind>.unit/.held for kind in KEYS; item.cloth.unit/.held (white folded cloth with red stripes,
+three folds to a bale the size of a crate, so it stacks on the same grid).
 
 The five scrap types share one crate body (open-topped steel, flat bottom, rounded vertical corners, a type tag on both
 faces the camera sees); the contents and the tag colour tell them apart. Grid frame as items.py: x, y on the deck,
@@ -11,6 +14,7 @@ z up, 1 unit = 1 tile, origin the tile centre at floor level. No randomness: pla
 import math
 
 from . import core
+from .items import HELD_K, _fin
 from .items_salvage_fill import CONTENTS
 
 # ---- crate body --------------------------------------------------------------------------------------------------
@@ -34,7 +38,7 @@ KEYS = {"hull": "H", "tech": "T", "energy": "E", "weapons": "W", "comfort": "C"}
 
 def palette(sid):
     """Palette selection of a sprite id: its scrap type's set plus the shared salvage set."""
-    kind = sid.split(".")[1].removeprefix("scrap_")
+    kind = sid.split(".")[1].removeprefix("scrap_")                 # hull .. comfort, or cloth
     return f"only:salvage+salvage_{kind}"
 
 
@@ -102,17 +106,46 @@ def inside(m, start, k=1.0, slack=0.004):
                          + ", ".join(f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in bad[:4]))
 
 
-def unit(kind):
+HELD = 0.55          # .held: the unit scaled down to a crate a crew member carries in both arms
+
+
+def unit(kind, k=1.0):
     def build():
-        m = core.Mesh(f"scrap_{kind}_unit")
-        crate(m, kind)
+        m = core.Mesh(f"scrap_{kind}_{'held' if k < 1 else 'unit'}")
+        crate(m, kind, k)
         n = len(m.v)
-        CONTENTS[kind](m, FILL)
-        inside(m, n)
-        ob = m.build()
-        return [ob]
+        CONTENTS[kind](m, FILL, k)
+        inside(m, n, k)
+        return [m.build()] if k == 1.0 else [_fin(m, HELD_K)]
+    return build
+
+
+def cloth(k=1.0, folds=3):
+    """A bale of folded cloth the size of a crate: `folds` off-white slabs, each a little askew, with a red stripe
+    woven along its sides near the top."""
+    def build():
+        m = core.Mesh(f"cloth_{'held' if k < 1 else 'unit'}")
+        hz = H / folds
+        askew = ((0.006, -0.008, 1.0), (-0.006, 0.006, 0.97), (0.004, 0.004, 0.94))      # (dx, dy, scale) per fold
+        for i in range(folds):
+            dx, dy, sc = askew[i]
+            ex, ey = (SX / 2 - 0.004) * sc * k, (SY / 2 - 0.004) * sc * k
+            out = [(x + dx * k, y + dy * k) for x, y in _profile(ex, ey, 0.03 * k, 3)]
+            z0, z1 = i * hz * k, (i + 1) * hz * k
+            zs = z0 + (z1 - z0) * 0.4
+            sw = 0.026 * k                                                                    # stripe: >= 1 px at 1x
+            _ring(m, out, z0, z0 + 0.012 * k, "svKS4", True)                                  # the fold's underside
+            _ring(m, out, z0 + 0.012 * k, zs, "svKS2", True)
+            _ring(m, out, zs, zs + sw, "svKred", True)                                       # red stripe
+            _ring(m, out, zs + sw, z1, "svKS2", True)
+            m.poly([core.G(*p, z1) for p in out], "svKS0", flip=True)
+            m.poly([core.G(*p, z0) for p in out][::-1], "svKS3", flip=True)
+        return [m.build()] if k == 1.0 else [_fin(m, HELD_K)]
     return build
 
 
 def jobs():
-    return [(f"item.scrap_{kind}.unit", (1, 1), "prop", unit(kind)) for kind in KEYS]
+    out = []
+    for kind in KEYS:
+        out += [(f"item.scrap_{kind}.unit", (1, 1), "prop", unit(kind)), (f"item.scrap_{kind}.held", (1, 1), "prop", unit(kind, HELD))]
+    return out + [("item.cloth.unit", (1, 1), "prop", cloth()), ("item.cloth.held", (1, 1), "prop", cloth(HELD * 1.15, 2))]
