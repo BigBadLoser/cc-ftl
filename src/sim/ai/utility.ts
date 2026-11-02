@@ -139,7 +139,7 @@ function scoreDrive(sim: Sim, id: number, def: DriveDef, i: number, intent: Inte
   else if (def.enter !== undefined) {
     const trait = def.enterTrait ? traitEffect(sim, id, def.enterTrait) : undefined;
     const enter = trait !== undefined ? tenths(trait) : def.enter;
-    const exit = trait !== undefined ? enter : Math.max(enter, def.exit ?? enter);
+    const exit = Math.max(enter, def.exit ?? enter); // a trait moves the entry; a configured exit still holds, never below it
     on = ((intent.latched ?? 0) & bit) !== 0 ? v < exit : v < enter;
   }
   if (def.enter !== undefined) intent.latched = on ? (intent.latched ?? 0) | bit : (intent.latched ?? 0) & ~bit;
@@ -177,27 +177,28 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
       else intent.scores[s.i] = s.score = 0;
       continue;
     }
-    if (!s.def.urgent?.breaksFinish && (finishing ??= view.finishing())) s.open = false; // a carried patient is laid down first
+    // A carried patient is laid down first; only an urgent drive that declares `breaksFinish` may break in, and only once urgent.
+    if (!(s.urgent && s.def.urgent?.breaksFinish) && (finishing ??= view.finishing())) s.open = false;
   }
   if (blocked) intent.blocked = blocked;
   else delete intent.blocked;
   return rank(sim, intent, scored);
 }
 
-/** Order the open drives: by score, ties by policy order; the current drive first while `minDwell` or `margin` keeps it. */
+/**
+ * Order the open drives: by score, ties by policy order, except that the current drive stays ahead of every challenger that
+ * does not beat it. A challenger ranked above it beats it when urgent, or once `minDwell` has passed and it clears `margin`.
+ * So the order is: the challengers that beat it, the current drive, then everyone else, each part by score.
+ */
 function rank(sim: Sim, intent: Intent, scored: Scored[]): DriveDef[] {
   const open = scored.filter((s) => s.open).sort((a, b) => b.score - a.score || a.i - b.i);
-  const cur = open.find((s) => s.def.id === intent.drive);
-  const top = open[0];
-  if (cur && top && cur !== top && !top.urgent) {
-    const dwelling = sim.tick - intent.since < (cur.def.minDwell ?? 0);
-    const withinMargin = top.score < cur.score + (cur.def.margin ?? 0);
-    if (dwelling || withinMargin) {
-      open.splice(open.indexOf(cur), 1);
-      open.unshift(cur);
-    }
-  }
-  return open.map((s) => s.def);
+  const at = open.findIndex((s) => s.def.id === intent.drive);
+  if (at <= 0) return open.map((s) => s.def);
+  const cur = open[at] as Scored;
+  const dwelling = sim.tick - intent.since < (cur.def.minDwell ?? 0);
+  const beats = (s: Scored): boolean => s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0));
+  const above = open.slice(0, at);
+  return [...above.filter(beats), cur, ...above.filter((s) => !beats(s)), ...open.slice(at + 1)].map((s) => s.def);
 }
 
 /** Record the drive the crew member is serving this tick. */

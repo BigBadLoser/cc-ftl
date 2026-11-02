@@ -115,6 +115,36 @@ describe('utility drives', () => {
     expect(turn(sim, c)).toBe('sleep');
   });
 
+  it('an urgent challenger beats a dwelling drive even when a stronger, non-urgent one is held back', () => {
+    const s = { id: 'sleep', input: 'rest', curve: [[0, 1000]], task: 'sleep' } satisfies DriveDef;
+    const e = { id: 'eat', input: 'hunger', curve: [[0, 900]], urgent: { below: 100 }, task: 'eat' } satisfies DriveDef;
+    const w = { ...work, curve: [[0, 500]], minDwell: 1000 } satisfies DriveDef;
+    const { sim, c } = game([s, e, w]);
+    setRest(sim, c, 100);
+    const needs = sim.world.get(c, NeedsC) as { rest: number; hunger?: number };
+    needs.hunger = 100;
+    // Both needs score above work all along (flat curves), so pin the current drive to work by serving it.
+    serveDrive(sim, c, 'work');
+    expect(evaluateIntent(sim, c, idle).map((d) => d.id)).toEqual(['work', 'sleep', 'eat']); // dwelling: nobody beats it
+    needs.hunger = 5; // eat is urgent now; sleep (1000) still is not
+    expect(evaluateIntent(sim, c, idle).map((d) => d.id)).toEqual(['eat', 'work', 'sleep']);
+  });
+
+  it('a trait threshold moves the entry but keeps a configured exit', () => {
+    const e = { id: 'eat', input: 'hunger', curve: [[0, 1000]], enter: 350, exit: 800, enterTrait: 'eatBelow', task: 'eat' } satisfies DriveDef;
+    const { sim, c } = game([e, work]);
+    sim.world.add(c, TraitsC, { ids: ['trait.glutton'] }); // eatBelow 50
+    const needs = sim.world.get(c, NeedsC) as { hunger?: number };
+    needs.hunger = 49;
+    expect(turn(sim, c)).toBe('eat');
+    for (const h of [55, 70, 79.9]) {
+      needs.hunger = h;
+      expect(turn(sim, c)).toBe('eat'); // still latched: the exit is 80, not the Glutton's 50
+    }
+    needs.hunger = 80;
+    expect(turn(sim, c)).toBe('work');
+  });
+
   it('a driven crew member (console or Workaholic) answers only below urgent', () => {
     const s = { ...sleep, urgent: { below: 50 } } satisfies DriveDef;
     const { sim, c } = game([s, work]);
@@ -135,6 +165,8 @@ describe('utility drives', () => {
     setRest(sim, c, 1);
     expect(turn(sim, c, carrying)).toBe('work');
     const { sim: sim2, c: c2 } = game([{ ...s, urgent: { below: 50, breaksFinish: true } }, work]);
+    setRest(sim2, c2, 10); // engaged (below enter 20) but not yet urgent (5): the patient still comes first
+    expect(turn(sim2, c2, carrying)).toBe('work');
     setRest(sim2, c2, 1);
     expect(turn(sim2, c2, carrying)).toBe('sleep');
   });
