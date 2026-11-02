@@ -141,9 +141,9 @@ export const modules = {
     category: 'production',
     description: "Reclaims salvaged scrap into metal, electronics, spare parts and more. Crew work it from the front tile.",
     asset: 'module.fabricator',
-    footprint: [3, 4], // stand-in art: the fabricator, until the scrapper sprite lands
+    footprint: [4, 2], // stand-in art: the fabricator, until the scrapper sprite lands
     solid: true,
-    access: [1, 4],
+    access: [1, 2],
     power: -5,
     powerPriority: 3,
     flammability: 0.3,
