@@ -1,8 +1,8 @@
 """Scrapper module (4x2, solid crafting workstation): grey blockout, 4 rotations.
 
 Built as continuous shells, not one block per tile. Authoring frame: L 0..4 along the machine from the hatch end, D 0..2
-across it (0 back, 2 front: the access side), z up; 1 unit = 1 tile. The model is mirrored onto the grid (x = 4 - L) so
-rotation 0 shows the hatch end at lower right and the front at lower left, the reference view flipped.
+across it (0 back, 2 front: the access side), z up; 1 unit = 1 tile; on the grid x = L, y = D. Rotation 3 shows it as the
+reference's R0 view (hatch end lower left, front lower right).
 
 Massing (measured on the reference; heights in tiles):
   main shell   L 0..2, both rows: end wall 0.62, slope to 1.16 at L 0.5, flat to L 2 (the front face there is the bay wall)
@@ -18,7 +18,7 @@ import math
 from . import core
 
 FOOTPRINT = (4, 2)
-ACCESS = (2, 2)
+ACCESS = (1, 2)
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BASE = 0.06          # dark plinth band
@@ -51,8 +51,8 @@ class _Build:
             self.W, self.H = self.H, self.W
 
     def P(self, L, D, z):
-        """Authoring point (L, D, z) -> mesh-space (x, y, z): mirror, rotate, centre on the front-most tile."""
-        x, y = 4.0 - L, D
+        """Authoring point (L, D, z) -> mesh-space (x, y, z): rotate, centre on the front-most tile."""
+        x, y = L, D
         w, h = FOOTPRINT
         for _ in range(self.rot):
             x, y = h - y, x
