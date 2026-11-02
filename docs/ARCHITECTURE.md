@@ -943,7 +943,8 @@ admission until salvage moves onto this (slice 3), so salvage behaves exactly as
 - **The turn.** `ai/machines/air.ts` `airTurn` is the drive's machine (`task: 'eva'`, the refill errand).
   - It nests: the errand's `resume` keeps the job reserved and hands it back.
   - A haul load is put down and the haul dropped.
-  - A carried patient is set down only at critical (`breaksFinish`). It is set down in place (abort reason `air`); setting it down on a nearby safe tile is left for slice 2a.
+  - A carried patient is set down only at critical (`breaksFinish`). Any abort that disposes of the carry (`air`, `hazard`, `fight`, `halted`, `equip`) now sets the patient down through `ai/setDown.ts`. It picks the nearest tile within `SETDOWN_STEPS` (4) that is safe for the patient, falling back to the rescuer's tile. The patient keeps `Downed.bed`, and the rescue job is re-aimed at them so the next rescuer can lift them. Before this, the patient kept riding the rescuer.
+  - A jobless task, such as a walk to a claimed bed, ends through `abortTask('air')`, which also gives the bed back.
   - There is no `NEST_HOLD_SEC` timeout yet: a refill always ends (full tank, or an abort releases the parked job through the errand sweep).
 - **The pickup request.** `PickupC {since}` is set from `Intent.blocked === 'air'` in the scheduler's turn and cleared when a source is back or the crew member is held out. It emits `crew.airUnreachable {crew, sec}`, an urgent alert. The shuttle that answers it is slice 2b's pickup run.
 - **Hazard.** A refill tolerates thin air and cold. An empty suit with no breathable tile in reach falls through the failed escape to the air drive, which is then critical and refills. So "escape to a source" is the drive itself, not a separate escape goal.
