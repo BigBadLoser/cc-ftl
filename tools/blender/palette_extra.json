@@ -1099,5 +1099,270 @@
  },
  "rkDM": {
   "hex": "#3f3a35"
+ },
+ "svP1": {
+  "hex": "#3a322e",
+  "set": "salvage"
+ },
+ "svP2": {
+  "hex": "#29231f",
+  "set": "salvage"
+ },
+ "svP3": {
+  "hex": "#1a1614",
+  "set": "salvage"
+ },
+ "svB0": {
+  "hex": "#d0dde4",
+  "set": "salvage"
+ },
+ "svB1": {
+  "hex": "#9fb6c2",
+  "set": "salvage"
+ },
+ "svB2": {
+  "hex": "#6d8794",
+  "set": "salvage"
+ },
+ "svB3": {
+  "hex": "#4a5f6a",
+  "set": "salvage"
+ },
+ "svR1": {
+  "hex": "#9a5532",
+  "set": "salvage"
+ },
+ "svR2": {
+  "hex": "#6a3524",
+  "set": "salvage"
+ },
+ "svHS0": {
+  "hex": "#c3c6c9",
+  "set": "salvage_hull"
+ },
+ "svHS1": {
+  "hex": "#9a9ea4",
+  "set": "salvage_hull"
+ },
+ "svHS2": {
+  "hex": "#757a81",
+  "set": "salvage_hull"
+ },
+ "svHS3": {
+  "hex": "#575b61",
+  "set": "salvage_hull"
+ },
+ "svHS4": {
+  "hex": "#3f4247",
+  "set": "salvage_hull"
+ },
+ "svHtag": {
+  "hex": "#2a2d31",
+  "set": "salvage_hull"
+ },
+ "svTS0": {
+  "hex": "#b0b8d4",
+  "set": "salvage_tech"
+ },
+ "svTS1": {
+  "hex": "#8a96ba",
+  "set": "salvage_tech"
+ },
+ "svTS2": {
+  "hex": "#67729a",
+  "set": "salvage_tech"
+ },
+ "svTS3": {
+  "hex": "#4b5478",
+  "set": "salvage_tech"
+ },
+ "svTS4": {
+  "hex": "#363c58",
+  "set": "salvage_tech"
+ },
+ "svTtag": {
+  "hex": "#3f9a5c",
+  "set": "salvage_tech"
+ },
+ "svES0": {
+  "hex": "#d8c27a",
+  "set": "salvage_energy"
+ },
+ "svES1": {
+  "hex": "#b49c4e",
+  "set": "salvage_energy"
+ },
+ "svES2": {
+  "hex": "#8f7a35",
+  "set": "salvage_energy"
+ },
+ "svES3": {
+  "hex": "#6b5a26",
+  "set": "salvage_energy"
+ },
+ "svES4": {
+  "hex": "#4a3e1b",
+  "set": "salvage_energy"
+ },
+ "svEtag": {
+  "hex": "#1c1917",
+  "set": "salvage_energy"
+ },
+ "svWS0": {
+  "hex": "#a3b07e",
+  "set": "salvage_weapons"
+ },
+ "svWS1": {
+  "hex": "#7c8a58",
+  "set": "salvage_weapons"
+ },
+ "svWS2": {
+  "hex": "#5d6b3e",
+  "set": "salvage_weapons"
+ },
+ "svWS3": {
+  "hex": "#45512d",
+  "set": "salvage_weapons"
+ },
+ "svWS4": {
+  "hex": "#313a20",
+  "set": "salvage_weapons"
+ },
+ "svWtag": {
+  "hex": "#b8352d",
+  "set": "salvage_weapons"
+ },
+ "svCS0": {
+  "hex": "#dcb3b6",
+  "set": "salvage_comfort"
+ },
+ "svCS1": {
+  "hex": "#bc8f94",
+  "set": "salvage_comfort"
+ },
+ "svCS2": {
+  "hex": "#9a6f75",
+  "set": "salvage_comfort"
+ },
+ "svCS3": {
+  "hex": "#775258",
+  "set": "salvage_comfort"
+ },
+ "svCS4": {
+  "hex": "#55393e",
+  "set": "salvage_comfort"
+ },
+ "svCtag": {
+  "hex": "#3f8f8a",
+  "set": "salvage_comfort"
+ },
+ "svTg1": {
+  "hex": "#57b073",
+  "set": "salvage_tech"
+ },
+ "svTg2": {
+  "hex": "#2f6a47",
+  "set": "salvage_tech"
+ },
+ "svTcu": {
+  "hex": "#c98446",
+  "set": "salvage_tech"
+ },
+ "svTk": {
+  "hex": "#26262b",
+  "set": "salvage_tech"
+ },
+ "svTsc": {
+  "hex": "#1d2a38",
+  "set": "salvage_tech"
+ },
+ "svTsc1": {
+  "hex": "#86d2ea",
+  "set": "salvage_tech"
+ },
+ "svEk": {
+  "hex": "#2b2a2e",
+  "set": "salvage_energy"
+ },
+ "svEband": {
+  "hex": "#f2d24a",
+  "set": "salvage_energy"
+ },
+ "svEcu": {
+  "hex": "#c98446",
+  "set": "salvage_energy"
+ },
+ "svEglow": {
+  "hex": "#7fe9ff",
+  "emissive": 1.0,
+  "set": "salvage_energy"
+ },
+ "svWbr": {
+  "hex": "#c9a23a",
+  "set": "salvage_weapons"
+ },
+ "svWbr2": {
+  "hex": "#8c6d22",
+  "set": "salvage_weapons"
+ },
+ "svWred": {
+  "hex": "#c23a2f",
+  "set": "salvage_weapons"
+ },
+ "svCfoam": {
+  "hex": "#ecdfc2",
+  "set": "salvage_comfort"
+ },
+ "svCfoam2": {
+  "hex": "#c8b896",
+  "set": "salvage_comfort"
+ },
+ "svCteal": {
+  "hex": "#3f8f8a",
+  "set": "salvage_comfort"
+ },
+ "svCmar": {
+  "hex": "#7a3b45",
+  "set": "salvage_comfort"
+ },
+ "svTsc2": {
+  "hex": "#3d5a78",
+  "set": "salvage_tech"
+ },
+ "svEcell": {
+  "hex": "#c9ced3",
+  "set": "salvage_energy"
+ },
+ "svEcap": {
+  "hex": "#8fe3f0",
+  "set": "salvage_energy"
+ },
+ "svKS0": {
+  "hex": "#efe9dd",
+  "set": "salvage_cloth"
+ },
+ "svKS1": {
+  "hex": "#d2cbbc",
+  "set": "salvage_cloth"
+ },
+ "svKS2": {
+  "hex": "#ada596",
+  "set": "salvage_cloth"
+ },
+ "svKS3": {
+  "hex": "#878072",
+  "set": "salvage_cloth"
+ },
+ "svKS4": {
+  "hex": "#615a4f",
+  "set": "salvage_cloth"
+ },
+ "svKred": {
+  "hex": "#c23a2f",
+  "set": "salvage_cloth"
+ },
+ "svKredD": {
+  "hex": "#8e2a24",
+  "set": "salvage_cloth"
  }
 }

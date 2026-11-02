@@ -1,4 +1,4 @@
-import { Sprite } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
@@ -8,6 +8,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { lightTint, pulsePhase } from './lightTint';
+import { slotOffset, unitCount } from './stackSlots';
 
 export interface ItemViewHost {
   target(): { grid: Grid } | null;
@@ -26,37 +27,55 @@ export function stackClass(count: number, stackSize: number): 's' | 'm' | 'l' {
   return f <= 0.25 ? 's' : f <= 0.6 ? 'm' : 'l';
 }
 
-/** Asset ids for a floor stack of an item, most specific first. Items without art fall back to a plain crate. */
-/** Placeholder art: every scrap type (`item.scrap_hull` ...) shows the generic scrap pile until each has its own sheet. */
-export const itemArtId = (item: string): string => (item.startsWith('item.scrap_') ? 'item.scrap' : item);
-
-export const stackAssets = (item: string, count: number, stackSize: number): string[] => [`${itemArtId(item)}.${stackClass(count, stackSize)}`, 'prop.crate'];
+/** Asset ids for a floor stack of an item drawn as one sprite, most specific first. Items without art fall back to a plain crate. */
+export const stackAssets = (item: string, count: number, stackSize: number): string[] => [`${item}.${stackClass(count, stackSize)}`, 'prop.crate'];
+/** Asset id of an item's stack unit (stackSlots.ts): items that have one draw their floor stacks as units on the slot grid. */
+export const unitAsset = (item: string): string => `${item}.unit`;
 /** Asset ids for the small sprite a crew member carries. */
-export const heldAssets = (item: string): string[] => [`${itemArtId(item)}.held`, 'prop.crate'];
+export const heldAssets = (item: string): string[] => [`${item}.held`, 'prop.crate'];
 
 interface Entry {
-  spr: Sprite;
-  glow: Sprite | null;
+  root: Container;
+  /** One sprite (and glow) per drawn unit; one in all for a single-sprite stack. */
+  sprs: Sprite[];
+  glows: (Sprite | null)[];
   src: StaticSprite;
 }
 
 type ItemDefs = Readonly<Record<string, ItemDef>>;
 
-/** Loose item stacks lying on floor tiles: one sprite per stack, sized by how full the stack is. */
+/**
+ * Loose item stacks lying on floor tiles. An item with a `.unit` sprite shows one unit per twelfth of a full stack on the
+ * slot grid (stackSlots.ts); others show one sprite sized by how full the stack is (`.s/.m/.l`).
+ */
 export function createItemView(world: World, atlas: Atlas, L: Layers, items: ItemDefs, host: ItemViewHost): ItemView {
   const entries = new Map<number, Entry>();
 
   function drop(e: Entry): void {
-    e.spr.destroy();
-    e.glow?.destroy();
+    e.root.destroy({ children: true });
   }
 
-  function place(e: Entry, x: number, y: number): void {
-    const p = iso(x, y);
-    const px = Math.round(p.x - e.src.ax);
-    const py = Math.round(p.y - e.src.ay);
-    e.spr.position.set(px, py);
-    e.glow?.position.set(px, py);
+  function build(src: StaticSprite, units: number): Entry {
+    const root = new Container();
+    const sprs: Sprite[] = [];
+    const glows: (Sprite | null)[] = [];
+    for (let i = 0; i < Math.max(1, units); i++) {
+      const o = units > 0 ? slotOffset(i) : { x: 0, y: 0 };
+      const spr = new Sprite(src.tex);
+      spr.position.set(o.x - src.ax, o.y - src.ay);
+      root.addChild(spr);
+      sprs.push(spr);
+      let glow: Sprite | null = null;
+      if (src.glow) {
+        glow = new Sprite(src.glow);
+        glow.blendMode = 'add';
+        glow.position.copyFrom(spr.position);
+        root.addChild(glow);
+      }
+      glows.push(glow);
+    }
+    L.sorted.addChild(root);
+    return { root, sprs, glows, src };
   }
 
   function update(): void {
@@ -68,32 +87,24 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
       for (const id of world.query(ItemStackC)) {
         const st = world.get(id, ItemStackC);
         if (!st || !grid.inBounds(st.x, st.y)) continue;
-        const src = atlas.firstOf(stackAssets(st.item, st.count, items[st.item]?.stackSize ?? 50));
-        if (!src) continue;
+        const size = items[st.item]?.stackSize ?? 50;
+        const unit = atlas.firstOf([unitAsset(st.item), ...stackAssets(st.item, st.count, size)]);
+        if (!unit) continue;
+        const isUnit = unit === atlas.stat(unitAsset(st.item));
+        const units = isUnit ? unitCount(st.count, size) : 0;
         live.add(id);
         let e = entries.get(id);
-        if (e && e.src !== src) {
+        if (e && (e.src !== unit || e.sprs.length !== Math.max(1, units))) {
           drop(e);
           e = undefined;
         }
-        if (!e) {
-          const spr = new Sprite(src.tex);
-          L.sorted.addChild(spr);
-          let glow: Sprite | null = null;
-          if (src.glow) {
-            glow = new Sprite(src.glow);
-            glow.blendMode = 'add';
-            L.sorted.addChild(glow);
-          }
-          entries.set(id, (e = { spr, glow, src }));
-        }
+        if (!e) entries.set(id, (e = build(unit, units)));
         // Stacks are in sector tiles; sprites are region-local (the region's containers sit at its sector offset).
-        place(e, st.x - grid.x0, st.y - grid.y0);
-        const key = depthKey(st.x - grid.x0, st.y - grid.y0) - 0.4;
-        e.spr.zIndex = key;
-        if (e.glow) e.glow.zIndex = key + 0.01;
-        const lv = grid.inBounds(st.x, st.y) ? grid.get('light', st.x, st.y) : 0;
-        e.spr.tint = lightTint(lv, false, pulse);
+        const p = iso(st.x - grid.x0, st.y - grid.y0);
+        e.root.position.set(Math.round(p.x), Math.round(p.y));
+        e.root.zIndex = depthKey(st.x - grid.x0, st.y - grid.y0) - 0.4;
+        const tint = lightTint(grid.get('light', st.x, st.y), false, pulse);
+        for (const s of e.sprs) s.tint = tint;
       }
     }
     for (const [id, e] of entries) {
