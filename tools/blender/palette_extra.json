@@ -1161,7 +1161,7 @@
   "set": "salvage_hull"
  },
  "svHtagB": {
-  "hex": "#1c1917",
+  "hex": "#2a2d31",
   "set": "salvage_hull"
  },
  "svTS0": {
@@ -1222,23 +1222,23 @@
   "set": "salvage_energy"
  },
  "svWS0": {
-  "hex": "#bdbd94",
+  "hex": "#a3b07e",
   "set": "salvage_weapons"
  },
  "svWS1": {
-  "hex": "#93946c",
+  "hex": "#7c8a58",
   "set": "salvage_weapons"
  },
  "svWS2": {
-  "hex": "#707251",
+  "hex": "#5d6b3e",
   "set": "salvage_weapons"
  },
  "svWS3": {
-  "hex": "#55573d",
+  "hex": "#45512d",
   "set": "salvage_weapons"
  },
  "svWS4": {
-  "hex": "#3d3f2c",
+  "hex": "#313a20",
   "set": "salvage_weapons"
  },
  "svWtagA": {
@@ -1250,23 +1250,23 @@
   "set": "salvage_weapons"
  },
  "svCS0": {
-  "hex": "#d6ab8a",
+  "hex": "#dcb3b6",
   "set": "salvage_comfort"
  },
  "svCS1": {
-  "hex": "#b3876a",
+  "hex": "#bc8f94",
   "set": "salvage_comfort"
  },
  "svCS2": {
-  "hex": "#8f6650",
+  "hex": "#9a6f75",
   "set": "salvage_comfort"
  },
  "svCS3": {
-  "hex": "#6c4b3b",
+  "hex": "#775258",
   "set": "salvage_comfort"
  },
  "svCS4": {
-  "hex": "#4c3429",
+  "hex": "#55393e",
   "set": "salvage_comfort"
  },
  "svCtagA": {
