@@ -2,7 +2,7 @@ import { BodyC } from '../body';
 import { JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
-import { suitAir, suitDef } from '../eva/suit';
+import { needsAir, suitAir, suitDef } from '../eva/suit';
 import { ItemStackC } from '../items/components';
 import { makeHaul } from '../items/plan';
 import { destroyJob } from '../items/stacks';
@@ -88,7 +88,7 @@ export function runDue(sim: Sim, vehicle: number, ship: number, unplaced: number
 }
 
 /** True if the team member's air would not last until a cargo run is back and they cannot walk to an airlock on the wreck: they ride along. */
-const mustRide = (sim: Sim, crew: number, ship: number): boolean => suitAir(sim, crew) < suitDef(sim).airSec * RIDE_FRAC && !reachesAirlock(sim, crew, ship);
+const mustRide = (sim: Sim, crew: number, ship: number): boolean => needsAir(sim, crew) && suitAir(sim, crew) < suitDef(sim).airSec * RIDE_FRAC && !reachesAirlock(sim, crew, ship);
 
 /** Start a cargo run: pick the pilot, and the members whose air would not last until it is back and who cannot walk to an airlock on the wreck. */
 export function startRun(sim: Sim, vehicle: number, t: SalvageTrip): void {

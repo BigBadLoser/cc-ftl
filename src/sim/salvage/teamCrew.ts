@@ -7,7 +7,7 @@ import { ModuleC } from '../modules/components';
 import { EvaFloatC, SuitC } from '../eva/components';
 import { planWalk } from '../eva/route';
 import { nearestExterior, tileCentre, tileFrame, vehicleSuits } from '../eva/shuttle';
-import { isSuited, suitAir, suitDef, suitTile } from '../eva/suit';
+import { isSuited, needsAir, suitAir, suitDef, suitTile } from '../eva/suit';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { SALVAGE_REFILL_FRAC, SALVAGE_RESCUE_FRAC, SALVAGE_RUN_BACK_FRAC } from '../tuning';
@@ -98,7 +98,7 @@ export function headBack(sim: Sim, crew: number, ship: number, vehicle: number, 
   if (!pos || !due || sim.world.has(crew, EvaFloatC) || isIncapacitated(sim, crew)) return;
   const team = sim.world.get(crew, SalvageCrewC);
   if (team) team.refill = 0;
-  if (isSettled(pos) && inFloatRange(sim, crew, vehicle) && isSuited(sim, crew)) {
+  if (isSettled(pos) && inFloatRange(sim, crew, vehicle) && (isSuited(sim, crew) || !needsAir(sim, crew))) {
     takeOver(sim, crew);
     sim.enqueue({ type: 'eva.board', crew, vehicle });
     return;
@@ -122,6 +122,7 @@ export function tendWorker(sim: Sim, crew: number, ship: number, vehicle: number
     delete team.landing;
     handBack(sim, crew);
   }
+  if (!needsAir(sim, crew)) return; // a robot breathes nothing: no tank to refill
   if (team.refill === undefined) {
     if (isSuited(sim, crew) && suitAir(sim, crew) > suitDef(sim).airSec * SALVAGE_REFILL_FRAC) return;
     if (!due) return;
@@ -159,7 +160,9 @@ export function needsRescue(sim: Sim, crew: number): boolean {
 
 /** True if a team member left on the wreck while a cargo run is away needs the shuttle back: out of action, or low on air and not refilling. */
 export function needsShuttleBack(sim: Sim, crew: number): boolean {
-  if (!isSuited(sim, crew) || sim.world.has(crew, EvaFloatC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)) return false;
+  if (sim.world.has(crew, EvaFloatC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)) return false;
+  if (!needsAir(sim, crew)) return isIncapacitated(sim, crew); // a robot is only out of action
+  if (!isSuited(sim, crew)) return false;
   return isIncapacitated(sim, crew) || suitAir(sim, crew) < suitDef(sim).airSec * SALVAGE_RUN_BACK_FRAC;
 }
 

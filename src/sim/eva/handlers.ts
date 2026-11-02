@@ -79,25 +79,29 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (v.state !== 'flying' || v.dest || !shipId) return reject(sim, cmd.type, 'notHovering');
     const aboard = cmd.crew === undefined ? [...v.passengers] : [cmd.crew];
     if (aboard.some((c) => !occupants(v).includes(c))) return reject(sim, cmd.type, 'notAboard');
-    const going = aboard.filter((c) => needsAir(sim, c) && !sim.world.has(c, DeadC));
+    // Airless bodies (robots) go out only when named, and take no suit.
+    const going = aboard.filter((c) => (needsAir(sim, c) || cmd.crew !== undefined) && !sim.world.has(c, DeadC));
     if (going.length === 0) return reject(sim, cmd.type, 'airless');
     const frame = tileFrame(sim, shipId, body.x, body.y);
     const spots = frame ? nearestExterior(sim, shipId, frame, going.length) : [];
     if (!frame || spots.length === 0) return reject(sim, cmd.type, 'noHull');
     if ((spots[0] as { d: number }).d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
-    if (vehicleSuits(sim, v) <= 0) return reject(sim, cmd.type, 'noSuit');
-    going.slice(0, Math.min(going.length, vehicleSuits(sim, v), spots.length)).forEach((crew, i) => {
+    if (vehicleSuits(sim, v) <= 0 && going.some((c) => needsAir(sim, c))) return reject(sim, cmd.type, 'noSuit');
+    let suitsLeft = vehicleSuits(sim, v);
+    const leaving = going.filter((c) => !needsAir(sim, c) || suitsLeft-- > 0).slice(0, spots.length);
+    leaving.forEach((crew, i) => {
       const spot = spots[i] as { x: number; y: number; d: number };
-      v.suits = vehicleSuits(sim, v) - 1;
+      const suited = needsAir(sim, crew);
+      if (suited) v.suits = vehicleSuits(sim, v) - 1;
       unboardCrew(sim, crew, cmd.vehicle, { shipId, x: spot.x, y: spot.y });
       if (!sim.world.has(crew, DraftedC)) sim.world.add(crew, DraftedC, { target: null });
       (sim.world.get(crew, CrewKey) as Crew).activity = 'drafted';
-      sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, vehicle: cmd.vehicle });
+      if (suited) sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, vehicle: cmd.vehicle });
       const land = tileCentre(sim, shipId, spot.x, spot.y) as { x: number; y: number };
       const start = hatchFace(body, land);
       const ticks = floatTicks(sim, Math.hypot(land.x - start.x, land.y - start.y));
       sim.world.add(crew, EvaFloatC, { mode: 'out', vehicle: cmd.vehicle, sx: start.x, sy: start.y, ticks, total: ticks });
-      sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
+      if (suited) sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
     });
   },
   'eva.board': (sim, cmd) => {
@@ -106,7 +110,7 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     const body = sim.world.get(cmd.vehicle, BodyC);
     const pos = sim.world.get(cmd.crew, PositionC)!;
     if (!v || !body) return reject(sim, cmd.type, 'noVehicle');
-    if (!isSuited(sim, cmd.crew)) return reject(sim, cmd.type, 'notSuited');
+    if (!isSuited(sim, cmd.crew) && needsAir(sim, cmd.crew)) return reject(sim, cmd.type, 'notSuited');
     if (v.state !== 'flying' || v.dest || !v.hover || v.hover !== (shipIdOf(sim, pos))) return reject(sim, cmd.type, 'notHovering');
     if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return reject(sim, cmd.type, 'full');
     const at = tileCentre(sim, shipIdOf(sim, pos), pos.x, pos.y);

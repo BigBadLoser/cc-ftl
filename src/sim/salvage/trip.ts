@@ -11,11 +11,12 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { sendToEmbark } from '../vehicles/embark';
-import { boardingTile, hoverPoint } from '../vehicles/geometry';
+import { bayWorking, boardingTile, hoverPoint } from '../vehicles/geometry';
 import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { SalvageCrewC, SalvageOrderC, SalvageTripC, type SalvageBlock, type SalvageOrder, type SalvageTrip, type SalvageTripEnd } from './components';
 import { partCount, partsOf, salvageJobs } from './plan';
 import { destroyJob } from '../items/stacks';
+import { freeAirlock } from '../trade/player';
 import { liveBox, needsHome, pickTeam, pickTeamShuttle, playerCrewOn, tripFor } from './team';
 import { aboard, carryAboard, handBack, headBack, needsRescue, release, REPEAT, sendOut, tendWorker } from './teamCrew';
 import { haulsTo, looseOn, planCarry, runCrew, runDue, startRun, stepRun } from './cargoRun';
@@ -120,10 +121,10 @@ function startTrip(sim: Sim, ship: number, o: SalvageOrder): void {
   sim.events.emit({ type: 'salvage.teamSent', ship, vehicle, crew: [...crew] });
 }
 
-/** The shift is over: the team is off it (stepping out at the bay if the shuttle is home) and the order rests before the next one. */
+/** The shift is over: the team is off it (stepping out at the bay, or the airlock it docked at, if the shuttle is home) and the order rests before the next one. */
 function endTrip(sim: Sim, id: number, t: SalvageTrip): void {
   const v = sim.world.get(id, VehicleC);
-  if (v?.state === 'stowed') {
+  if (v?.state === 'stowed' || v?.state === 'docked') {
     const at = boardingTile(sim, id);
     const grid = at && shipGrid(sim, at.shipId);
     if (at && grid && isTileWalkable(sim, grid, at.x, at.y)) for (const c of occupants(v)) if (t.crew.includes(c)) unboardCrew(sim, c, id, at);
@@ -199,7 +200,7 @@ function work(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
         return;
       }
       delete t.run;
-      return endTrip(sim, id, t);
+      return go(t, 'home'); // the shuttle lands, or docks if its bay is gone
     }
     for (const c of t.crew) if (!aboard(sim, c, id)) tendWorker(sim, c, t.ship, id, due(t));
     return;
@@ -239,10 +240,20 @@ function recall(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
 }
 
 function home(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
-  if (v.state === 'stowed') return endTrip(sim, id, t);
-  if (t.timer > sec(FLIGHT_SEC * 2) || !v.home) {
+  if (v.state === 'stowed' || v.state === 'docked') return endTrip(sim, id, t);
+  if (t.timer > sec(FLIGHT_SEC * 2)) {
     t.reason = 'lost'; // nowhere to land: the shuttle is left where it is
     return endTrip(sim, id, t);
+  }
+  if (!bayWorking(sim, v.home)) {
+    // No bay to land at: dock at a working airlock on the home ship, and the team steps out there. With none usable the shuttle stays where it is.
+    const airlock = freeAirlock(sim, id);
+    if (!airlock) {
+      t.reason = 'lost';
+      return endTrip(sim, id, t);
+    }
+    if (due(t) && (v.dest?.type !== 'dock' || v.dest.airlock !== airlock)) sim.enqueue({ type: 'vehicle.dock', vehicle: id, airlock });
+    return;
   }
   if (due(t) && v.dest?.type !== 'bay') sim.enqueue({ type: 'vehicle.return', vehicle: id });
 }

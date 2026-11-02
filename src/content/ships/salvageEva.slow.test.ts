@@ -3,7 +3,7 @@ import { AboardC, CrewC, PositionC, ShipC, StorageC, Struct, VehicleC, deseriali
 import { shipIdOf } from '../../sim/regions';
 import { SalvageCrewC, SalvageTripC } from '../../sim/salvage/components';
 import { EvaFloatC, SuitC } from '../../sim/eva/components';
-import { NeedsC } from '../../sim/crew/components';
+import { NeedsC, PrioritiesC } from '../../sim/crew/components';
 import { vehicleSuits } from '../../sim/eva/shuttle';
 import { carryAboard } from '../../sim/salvage/teamCrew';
 import { StunC } from '../../sim/robots/components';
@@ -259,5 +259,74 @@ describe('salvage teams: the shuttle and EVA loop', () => {
     expect(unloaded).toBe(false); // turned back without unloading
     expect(of(all, 'suit.airOut')).toEqual([]);
     expect(carried).toBe(true);
+  });
+  it('docks at an airlock on the home ship and lets the team off when the home bay goes mid-shift', () => {
+    const { sim, home, wreck } = setup();
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const shuttle = shuttleOf(sim);
+    let removed = false;
+    const all: SimEvent[] = [];
+    for (let i = 0; i < 20 * 60 * 10 && of(all, 'salvage.teamHome').length === 0; i++) {
+      all.push(...play(sim, 1));
+      if (!removed && sim.world.get(shuttle, SalvageTripC)?.phase === 'work') {
+        removeModule(sim, sim.world.get(shuttle, VehicleC)!.home);
+        removed = true;
+      }
+    }
+    expect(removed).toBe(true);
+    expect(of(all, 'salvage.teamHome')).toHaveLength(1);
+    const v = sim.world.get(shuttle, VehicleC)!;
+    expect(v.state).toBe('docked');
+    for (const c of of(all, 'salvage.teamSent')[0]!.crew) {
+      expect(sim.world.has(c, AboardC)).toBe(false);
+      expect(shipIdOf(sim, sim.world.get(c, PositionC))).toBe(home);
+      expect(sim.world.has(c, SalvageCrewC)).toBe(false);
+    }
+  });
+
+  const spawnBot = (sim: ReturnType<typeof setup>['sim'], home: number): number => {
+    const at = sim.world.get([...sim.world.query(CrewC, PositionC)][0]!, PositionC)!;
+    const before = new Set(sim.world.query(CrewC));
+    sim.enqueue({ type: 'debug.spawnCrew', ship: home, x: at.x, y: at.y, role: 'role.robot_worker', faction: 'player' });
+    sim.step();
+    sim.events.drain();
+    return [...sim.world.query(CrewC)].find((c) => !before.has(c))!;
+  };
+
+  it('takes a robot on a team without a suit, works the wreck with it and brings it home', () => {
+    const { sim, home, wreck } = setup();
+    const bot = spawnBot(sim, home);
+    const shuttle = shuttleOf(sim);
+    const suits = vehicleSuits(sim, sim.world.get(shuttle, VehicleC)!);
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const all: SimEvent[] = [];
+    let worked = false;
+    for (let i = 0; i < 20 * 60 * 10 && of(all, 'salvage.teamHome').length === 0; i++) {
+      all.push(...play(sim, 1));
+      expect(sim.world.has(bot, SuitC)).toBe(false);
+      if (sim.world.has(bot, SalvageCrewC) && shipIdOf(sim, sim.world.get(bot, PositionC)) === wreck) worked = true;
+    }
+    const sent = of(all, 'salvage.teamSent')[0]!;
+    expect(sent.crew).toContain(bot);
+    expect(sent.crew.length).toBeGreaterThan(1);
+    expect(worked).toBe(true);
+    expect(of(all, 'salvage.teamHome')).toHaveLength(1);
+    expect(shipIdOf(sim, sim.world.get(bot, PositionC))).toBe(home);
+    expect(sim.world.has(bot, SalvageCrewC)).toBe(false);
+    expect(vehicleSuits(sim, sim.world.get(shuttle, VehicleC)!)).toBe(suits); // no suit lost or made
+  });
+
+  it('works with a team of robots alone when the shuttle has no suits', () => {
+    const { sim, home, wreck } = setup();
+    const bot = spawnBot(sim, home);
+    for (const c of sim.world.query(CrewC, PrioritiesC)) if (c !== bot) Object.assign(sim.world.get(c, PrioritiesC)!, { construction: 0, hauling: 0 });
+    const shuttle = shuttleOf(sim);
+    sim.world.get(shuttle, VehicleC)!.suits = 0;
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const all = play(sim, 20 * 60 * 10, (a) => of(a, 'salvage.teamHome').length > 0);
+    expect(of(all, 'salvage.teamSent')[0]!.crew).toEqual([bot]);
+    expect(of(all, 'salvage.teamHome')).toHaveLength(1);
+    expect(shipIdOf(sim, sim.world.get(bot, PositionC))).toBe(home);
+    expect(of(all, 'item.hauled').some((e) => e.ship === wreck)).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import { AssignmentC, CrewC, DeadC, DraftedC, JobC, NeedsC, PositionC, Prioritie
 import { isIncapacitated } from '../crew/helpers';
 import { vehicleSuits } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
+import { wantsBay } from '../robots/bay';
 import { AllegianceC } from '../fight/components';
 import { isOffDuty } from '../fight/relations';
 import { ferryFree } from '../ferry/pick';
@@ -10,7 +11,7 @@ import { shipGrid, shipIdOf } from '../regions';
 import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import { SALVAGE_TEAM, SALVAGE_TEAM_GO, SALVAGE_TEAM_HUNGER, SALVAGE_TEAM_REST } from '../tuning';
-import { AboardC, EmbarkOrderC, VehicleC } from '../vehicles/components';
+import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 import { boardingTile } from '../vehicles/geometry';
 import { SalvageCrewC, SalvageTripC } from './components';
@@ -36,37 +37,38 @@ export function playerCrewOn(sim: Sim, ship: number): boolean {
 }
 
 /**
- * A shuttle that can carry a salvage team: free for a run (ferry rules), has suits (EVA), and sits in a bay on the home ship (the team's
+ * A shuttle that can carry a salvage team: free for a run (ferry rules), built for EVA (suits are counted in `pickTeam`: robots need none), and sits in a bay on the home ship (the team's
  * ship: a shuttle parked at a claimed base cannot be reached by its crew), so the team can walk to it and climb in.
  */
 function teamShuttle(sim: Sim, id: number): boolean {
   const v = sim.world.get(id, VehicleC);
-  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || vehicleSuits(sim, v) <= 0 || !ferryFree(sim, id)) return false;
+  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || !ferryFree(sim, id)) return false;
   const at = boardingTile(sim, id);
   return !!at && at.shipId === homeShip(sim);
 }
 
-/** The lowest-id shuttle free for a salvage team, or 0. */
+/** The lowest-id shuttle free for a salvage team (one with suits first: only robots can go in one without), or 0. */
 export function pickTeamShuttle(sim: Sim): number {
-  return [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((id) => teamShuttle(sim, id)) ?? 0;
+  const free = [...sim.world.query(VehicleC)].sort((a, b) => a - b).filter((id) => teamShuttle(sim, id));
+  return free.find((id) => vehicleSuits(sim, sim.world.get(id, VehicleC) as Vehicle) > 0) ?? free[0] ?? 0;
 }
 
-/** True if a crew member is rested and fed enough to start a shift (the shift ends at lower levels; see `needsHome`). */
+/** True if a crew member is rested and fed enough to start a shift (the shift ends at lower levels; see `needsHome`). A robot must not want its bay. */
 function rested(sim: Sim, id: number): boolean {
   const n = sim.world.get(id, NeedsC);
-  return !!n && n.rest >= SALVAGE_TEAM_GO && (n.hunger ?? 100) >= SALVAGE_TEAM_GO;
+  return !!n && !wantsBay(sim, id) && n.rest >= SALVAGE_TEAM_GO && (n.hunger ?? 100) >= SALVAGE_TEAM_GO;
 }
 
-/** True if a team member should come home: tired or hungry (well before they would drop everything to sleep or eat). */
+/** True if a team member should come home: tired or hungry (well before they would drop everything to sleep or eat), or a robot low on charge. */
 export function needsHome(sim: Sim, id: number): boolean {
   const n = sim.world.get(id, NeedsC);
-  return !!n && (n.rest < SALVAGE_TEAM_REST || (n.hunger ?? 100) < SALVAGE_TEAM_HUNGER);
+  return !!n && (wantsBay(sim, id) || n.rest < SALVAGE_TEAM_REST || (n.hunger ?? 100) < SALVAGE_TEAM_HUNGER);
 }
 
 /**
- * The crew to send: player crew on the home ship who breathe (suits), are free (not drafted, aboard, off duty or at a console), have
- * construction or hauling switched on and are rested. Best construction priority first (then hauling), then the lowest id. At most SALVAGE_TEAM, the shuttle's suits
- * and seats, and half of the able crew aboard (at least one), so the ship is never emptied. The team must cover both kinds of work (one
+ * The crew to send: player crew on the home ship (those who breathe take a suit, robots none) who are free (not drafted, aboard, off duty or at a console), have
+ * construction or hauling switched on and are rested. Best construction priority first (then hauling), then the lowest id. At most SALVAGE_TEAM in all (robots count), the shuttle's seats, the breathing ones no more than its suits,
+ *  and half of the able crew aboard (at least one), so the ship is never emptied. The team must cover both kinds of work (one
  * member with both on, or a builder and a hauler); when no such team can be made it is empty (the order shows 'noCrew').
  */
 export function pickTeam(sim: Sim, vehicle: number): number[] {
@@ -75,28 +77,39 @@ export function pickTeam(sim: Sim, vehicle: number): number[] {
   const def = v && vehicleDefOf(sim, v);
   if (!home || !v || !def) return [];
   let able = 0;
-  const free: { id: number; prio: number; build: boolean; haul: boolean }[] = [];
+  const free: { id: number; prio: number; build: boolean; haul: boolean; robot: boolean }[] = [];
   for (const id of [...sim.world.query(CrewC, PositionC, PrioritiesC, NeedsC)].sort((a, b) => a - b)) {
     if (sim.world.has(id, DeadC) || isIncapacitated(sim, id) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== home) continue;
     able++;
     if (sim.world.has(id, DraftedC) || sim.world.has(id, AboardC) || sim.world.has(id, EmbarkOrderC) || sim.world.has(id, SalvageCrewC)) continue;
-    if (!needsAir(sim, id) || isOffDuty(sim, id) || !rested(sim, id)) continue;
+    if (isOffDuty(sim, id) || !rested(sim, id)) continue;
     const job = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
     if (job?.kind === 'operate') continue; // on duty at a console
     // Stripping is construction work and carrying the loot is hauling: crew with either switched on can go, builders first.
     const p = sim.world.get(id, PrioritiesC);
     const prio = (p?.construction || 9) * 10 + (p?.hauling || 9);
-    if (p && (p.construction > 0 || p.hauling > 0)) free.push({ id, prio, build: p.construction > 0, haul: p.hauling > 0 });
+    if (p && (p.construction > 0 || p.hauling > 0)) free.push({ id, prio, build: p.construction > 0, haul: p.hauling > 0, robot: !needsAir(sim, id) });
   }
-  const n = Math.min(SALVAGE_TEAM, vehicleSuits(sim, v), def.capacity + 1, Math.max(1, Math.floor(able / 2)));
+  const suits = vehicleSuits(sim, v);
+  const n = Math.min(SALVAGE_TEAM, def.capacity + 1, Math.max(1, Math.floor(able / 2)));
   free.sort((a, b) => a.prio - b.prio || a.id - b.id);
+  const team: typeof free = [];
+  let suited = 0;
+  const fits = (c: (typeof free)[number]): boolean => !team.includes(c) && team.length < n && (c.robot || suited < suits);
+  const add = (c: (typeof free)[number] | undefined): void => {
+    if (!c || !fits(c)) return;
+    team.push(c);
+    if (!c.robot) suited++;
+  };
   // The team must both strip and carry: one member with both on, else the best builder and the best hauler as a pair; then the best of the rest.
-  const both = free.find((c) => c.build && c.haul);
-  const core = both ? [both] : [free.find((c) => c.build), free.find((c) => c.haul)];
-  if (core.some((c) => !c) || core.length > n) return [];
-  const team = core as typeof free;
-  for (const c of free) if (team.length < n && !team.includes(c)) team.push(c);
+  add(free.find((c) => c.build && c.haul && fits(c)));
+  if (team.length === 0) {
+    add(free.find((c) => c.build && fits(c)));
+    add(free.find((c) => c.haul && fits(c)));
+  }
+  if (!team.some((c) => c.build) || !team.some((c) => c.haul)) return [];
+  for (const c of free) add(c);
   return team.sort((a, b) => a.prio - b.prio || a.id - b.id).map((c) => c.id);
 }
 
