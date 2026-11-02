@@ -28,7 +28,12 @@ export interface SheetSpec {
   pool: string;
   /** Loaded at start and never evicted. */
   pinned?: boolean;
+  /** Load order among sheets something is drawing without (lower first; default 1). Preloads always wait behind every rank. */
+  rank?: number;
 }
+
+/** Queue tier of a preload (nothing is drawing without it): after every rank. */
+export const PRELOAD_TIER = 9;
 
 export interface StoreOpts<T> {
   io: SheetIO<T>;
@@ -46,6 +51,12 @@ export interface StoreOpts<T> {
    * of the session. Default 2000.
    */
   retryMs?: number;
+  /**
+   * Ms a load may stay unsettled before it counts as failed and frees its slot (retried with the `retryMs` backoff). A
+   * load that never settles (a stalled download, a decode that never returns) would otherwise hold its slot for good, and
+   * enough of them starve every queued sheet. A result that arrives after the timeout is unloaded. Default 45000 (none if 0).
+   */
+  loadTimeoutMs?: number;
 }
 
 export interface PoolStats {
@@ -65,6 +76,11 @@ interface Rec<T> {
   /** Failed loads in a row, and when the last one failed (store clock). */
   fails: number;
   failedAt: number;
+  /** Queue position while queued: lower tier first, then lower `seq` (first come, first served within a tier). */
+  tier: number;
+  seq: number;
+  /** A load that timed out is still pending: no second attempt starts until it settles (one outstanding attempt per sheet, so a hung half of a pair cannot leak a texture per retry). */
+  stale: boolean;
 }
 
 /**
@@ -89,7 +105,7 @@ export class SheetStore<T> {
 
   register(name: string, spec: SheetSpec): void {
     if (!this.budgets.has(spec.pool)) throw new Error(`Unknown sheet pool "${spec.pool}"`);
-    this.recs.set(name, { spec, state: 'idle', sheet: null, loads: 0, fails: 0, failedAt: 0 });
+    this.recs.set(name, { spec, state: 'idle', sheet: null, loads: 0, fails: 0, failedAt: 0, tier: 0, seq: 0, stale: false });
   }
 
   /** Like `generation`, counting only the given pools' changes (static art is cached in built sprites; crew frames are not). */
@@ -126,20 +142,18 @@ export class SheetStore<T> {
 
   /**
    * Queue a sheet's load if it is not loaded or on its way. `urgent`: something is drawing without it right now, so it
-   * goes ahead of the preload backlog (and a queued one moves up); preloads wait their turn in request order.
+   * loads by its `rank` ahead of the preload backlog. Sheets load in tier order, first come first served within a tier;
+   * asking again never reorders a queued sheet, it only moves it to a higher tier (an urgent ask for a queued preload).
    */
   request(name: string, urgent = false): void {
     const r = this.recs.get(name);
     if (!r) return;
-    if (r.state === 'queued' && urgent) {
-      const at = this.queue.indexOf(name);
-      if (at > 0) {
-        this.queue.splice(at, 1);
-        this.queue.unshift(name);
-      }
+    const tier = r.spec.pinned ? 0 : urgent ? (r.spec.rank ?? 1) : PRELOAD_TIER;
+    if (r.state === 'queued') {
+      if (tier < r.tier) r.tier = tier;
       return;
     }
-    if (r.state === 'failed' && this.o.now() - r.failedAt >= this.retryDelay(r.fails)) r.state = 'idle';
+    if (r.state === 'failed' && !r.stale && this.o.now() - r.failedAt >= this.retryDelay(r.fails)) r.state = 'idle';
     if (r.state !== 'idle') return;
     const i = this.dying.findIndex((d) => d.name === name);
     if (i >= 0) {
@@ -152,8 +166,9 @@ export class SheetStore<T> {
       return;
     }
     r.state = 'queued';
-    if (urgent) this.queue.unshift(name);
-    else this.queue.push(name);
+    r.tier = tier;
+    r.seq = this.requests;
+    this.queue.push(name);
     this.requests++;
     this.pump();
   }
@@ -181,30 +196,82 @@ export class SheetStore<T> {
   private pump(): void {
     const limit = this.o.concurrency ?? 4;
     while (this.running < limit && this.queue.length) {
-      const name = this.queue.shift() as string;
+      const name = this.next();
       const r = this.recs.get(name) as Rec<T>;
       r.state = 'loading';
       r.loads++;
       this.running++;
-      this.o.io.load(r.spec.image, r.spec.glow).then(
-        ({ sheet, bytes }) => {
-          r.sheet = sheet;
-          r.state = 'ready';
-          r.fails = 0;
-          this.budgets.get(r.spec.pool)?.add(name, bytes, this.o.now(), !!r.spec.pinned);
-          this.bump(r.spec.pool);
-        },
-        (err) => {
-          r.state = 'failed';
-          r.fails++;
-          r.failedAt = this.o.now();
-          this.o.onError?.(name, err);
-        },
-      ).finally(() => {
-        this.running--;
-        this.pump();
-      });
+      this.startLoad(name, r);
     }
+  }
+
+  /** Take the queued sheet with the lowest tier (oldest first within it). */
+  private next(): string {
+    let best = 0;
+    let br = this.recs.get(this.queue[0] as string) as Rec<T>;
+    for (let i = 1; i < this.queue.length; i++) {
+      const r = this.recs.get(this.queue[i] as string) as Rec<T>;
+      if (r.tier < br.tier || (r.tier === br.tier && r.seq < br.seq)) {
+        best = i;
+        br = r;
+      }
+    }
+    return this.queue.splice(best, 1)[0] as string;
+  }
+
+  private startLoad(name: string, r: Rec<T>): void {
+    const { image, glow } = r.spec;
+    const ms = this.o.loadTimeoutMs ?? 45_000;
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    /** Ends the slot's hold once: by the result, the error or the timeout, whichever comes first. */
+    const finish = (): boolean => {
+      if (settled) return false;
+      settled = true;
+      clearTimeout(timer);
+      this.running--;
+      return true;
+    };
+    const fail = (err: unknown): void => {
+      r.state = 'failed';
+      r.fails++;
+      r.failedAt = this.o.now();
+      this.o.onError?.(name, err);
+    };
+    if (ms > 0) {
+      timer = setTimeout(() => {
+        if (!finish()) return;
+        r.stale = true;
+        fail(new Error(`Sheet "${name}" did not load within ${ms} ms`));
+        this.pump();
+      }, ms);
+    }
+    this.o.io.load(image, glow).then(
+      ({ sheet, bytes }) => {
+        // Timed out already: nothing else can have started (see `stale`), so keep the late success.
+        if (!finish()) {
+          r.stale = false;
+          if (r.state !== 'failed') {
+            this.o.io.unload(name, sheet, image, glow);
+            return;
+          }
+        }
+        r.sheet = sheet;
+        r.state = 'ready';
+        r.fails = 0;
+        this.budgets.get(r.spec.pool)?.add(name, bytes, this.o.now(), !!r.spec.pinned);
+        this.bump(r.spec.pool);
+        this.pump();
+      },
+      (err) => {
+        if (!finish()) {
+          r.stale = false; // the abandoned attempt is over: a retry may start after the back-off
+          return;
+        }
+        fail(err);
+        this.pump();
+      },
+    );
   }
 
   private evict(name: string): void {
