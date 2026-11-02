@@ -15,7 +15,7 @@ import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
 import { IntentC, PickupC, TaskC } from './components';
-import { airLeftSec } from './airNeed';
+import { airDraining, airLeftSec } from './airNeed';
 import { airTurn } from './machines/air';
 import { hazardHolds } from './hazard';
 import { escapeTurn } from './machines/escape';
@@ -42,7 +42,7 @@ const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
 
 /** Keep the pickup request (`PickupC`) in step with the air drive being blocked: set, with its alert, when no source can be reached. */
 function pickupRequest(sim: Sim, id: number): void {
-  const want = sim.world.get(id, IntentC)?.blocked === 'air';
+  const want = sim.world.get(id, IntentC)?.blocked === 'air' && airDraining(sim, id); // only a draining tank with no source in reach
   if (want === sim.world.has(id, PickupC)) return;
   if (!want) {
     sim.world.remove(id, PickupC);

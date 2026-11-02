@@ -95,6 +95,31 @@ describe('air drive', () => {
     expect(ev.filter((e) => e.type === 'suit.airOut')).toEqual([]);
   });
 
+  it('a refill whose way crosses breathable air: no false pickup request, and a competing need does not take it over', () => {
+    const { sim, c, job } = hullWork();
+    sim.world.get(c, SuitC)!.air = 0.25 * suitDef(sim).airSec;
+    let inside = false;
+    let tired = false;
+    const ev = run(sim, 90 * TICK_HZ, () => {
+      const a = sim.world.get(c, AssignmentC);
+      const kind = a && sim.world.get(a.jobId, JobC)?.kind;
+      if (kind === 'refill' && !thinHere(sim, c)) {
+        inside = true;
+        if (!tired) {
+          sim.world.get(c, NeedsC)!.rest = 5; // tired enough to drop anything else for bed
+          tired = true;
+        }
+      }
+      expect(sim.world.has(c, PickupC)).toBe(false);
+      if (inside) expect(kind === 'refill' || a?.jobId === job).toBe(true); // the refill keeps them until it hands the job back
+      return inside && a?.jobId === job;
+    });
+    expect(inside).toBe(true); // the way to the airlock's suit tile is through pressurized air
+    expect(ev.filter((e) => e.type === 'crew.airUnreachable')).toEqual([]);
+    expect(sim.world.get(c, AssignmentC)?.jobId).toBe(job);
+    expect(suitAir(sim, c)).toBeGreaterThan(0.9 * suitDef(sim).airSec);
+  });
+
   it('with no source in reach the drive is blocked and the pickup request goes out, once, with the air left', () => {
     const { sim, c } = hullWork();
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false; // no airlock to fill at: no source

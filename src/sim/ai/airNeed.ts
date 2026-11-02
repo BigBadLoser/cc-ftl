@@ -1,4 +1,4 @@
-import { PositionC } from '../crew/components';
+import { AssignmentC, JobC, PositionC } from '../crew/components';
 import { airValue } from '../eva/air';
 import { nearestAirSource } from '../eva/sources';
 import { isSuited, isThin, needsAir, suitAir, suitDef } from '../eva/suit';
@@ -71,8 +71,17 @@ export function airMargin(sim: Sim, id: number): number | undefined {
   return 1000 + Math.min(1000, Math.floor((1000 * (air - refill)) / tank));
 }
 
-/** The `airSource` input: 1000 when a source can be reached, 0 when none can; undefined while the need does not apply. */
+/** True while the crew member is on a refill errand (the air drive's task, or a player's refill order). */
+export function refilling(sim: Sim, id: number): boolean {
+  return sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'refill';
+}
+
+/**
+ * The `airSource` input: 1000 when a source can be reached, 0 when none can. A refill under way has its source (the errand's target), even
+ * where its way crosses breathable air and the tank is not draining. Otherwise undefined while the need does not apply.
+ */
 export function airSourceInput(sim: Sim, id: number): number | undefined {
+  if (refilling(sim, id)) return 1000;
   if (!airDraining(sim, id)) return undefined;
   return sourceTicks(sim, id) >= 0 ? 1000 : 0;
 }
