@@ -180,6 +180,8 @@ describe('digging, levelling and building on rock', () => {
     g.set('ore', 9, 4, 1);
     g.set('oreAmt', 9, 4, 30);
     spawnCrew(sim, ship, ['role.engineer']);
+    // The digs open the room to vacuum: suited, the engineer keeps digging instead of walking off for air (the hazard interrupt).
+    for (const c of sim.world.query(CrewC)) sim.enqueue({ type: 'suit.set', crew: c, worn: true });
     sim.enqueue({ type: 'job.build', ship, x: 15, y: 4, struct: Struct.Floor });
     sim.enqueue({ type: 'job.build', ship, x: 16, y: 6, struct: Struct.Floor });
     sim.enqueue({ type: 'job.build', ship, x: 10, y: 4, struct: Struct.Wall });

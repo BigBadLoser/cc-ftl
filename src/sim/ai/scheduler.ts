@@ -16,6 +16,7 @@ import { astar, dijkstraFrom } from './navSearch';
 import { goalTiles, isFallbackStop, isGoalTile, octileBound, reaches, startLabels, viewOf, type View } from './navView';
 import { reserveJob } from './task';
 import { AirAdmission } from './admitAir';
+import { IntentC } from './components';
 
 /**
  * The job scheduler (docs/CREW_AI.md 7.1 and 7.4, Phase 2). Free crew are matched to open jobs together, one priority level at a time: of
@@ -40,6 +41,8 @@ class Walker {
   readonly ship: number;
   readonly prio: Priorities;
   readonly modes: WalkMode[];
+  /** A job this crew member is kept off for now (`Intent.avoid`), or 0. */
+  readonly avoid: number;
   private views: (View | null)[] = [];
   private starts: number[][] = [];
   private src: SuitSource | null | undefined;
@@ -48,6 +51,8 @@ class Walker {
     this.ship = shipIdOf(sim, pos);
     this.prio = sim.world.get(id, PrioritiesC) as Priorities;
     this.modes = siteWalkModes(sim, id, this.ship);
+    const avoid = sim.world.get(id, IntentC)?.avoid;
+    this.avoid = avoid && sim.tick < avoid.until ? avoid.job : 0;
   }
   /** A suit source as the pass began (the cheap filter of `modeFor`); `bookSource` looks again when a match is accepted. */
   source(): SuitSource | null {
@@ -245,7 +250,7 @@ export function assignJobs(sim: Sim, ids: number[]): Set<number> {
     for (const w of walkers) {
       if (taken.has(w.id)) continue;
       for (const j of jobs) {
-        if (assigned.has(j.id) || j.ship !== w.ship) continue;
+        if (assigned.has(j.id) || j.ship !== w.ship || j.id === w.avoid) continue;
         const admit = admitLevel(sim, w.id, w.pos, w.prio, j.job, level);
         if (!admit) continue;
         const k = w.modeFor(j.goal);

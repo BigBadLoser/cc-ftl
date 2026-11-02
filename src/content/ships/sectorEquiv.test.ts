@@ -292,4 +292,7 @@ describe('sector refactor equivalence', () => {
 // the breach. On the legacy picker it still gives 2cf7530b. The combat run makes the same assignments and is unchanged.
 // Repinned for salvage items (#268): the starter crate holds metal, electronics and polymer where it held scrap (the hashed world holds storage), and the
 // galley prints rations from polymer and water. Both hashes change by that alone.
-const EXPECTED = { combat: '9ae6c3d8', disaster: 'fe8751b2' };
+// Repinned `disaster` for crew AI Phase 3 (#194): crew walk off burning and airless tiles (the hazard interrupt; with only that the run
+// gives 5369b5f9) and a crew member whose mood the fire and smoke sour takes a break in the mess when idle (the leisure drive; alone,
+// cb93b66e). With both switched off in the policies it still gives fe8751b2. The combat run has neither and is unchanged.
+const EXPECTED = { combat: '9ae6c3d8', disaster: '521afe25' };

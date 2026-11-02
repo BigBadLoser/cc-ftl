@@ -517,26 +517,8 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
 
 `ai/policy.ts` (`policy.legacy`) is gone, with `wantsToEat`, `SLEEP_BELOW`, `HUNGER_EAT_BELOW`, `HUNGER_EAT_URGENT` and `OPERATOR_EXHAUSTED_BELOW`: the thresholds are policy data now. The robot mend hold stays inline in the scheduler's turn (an interrupt in the design, reading 5 of Phase 1). Acceptance: `npm run ai:diff` recordings of all seven profile scenarios, seeds 1 and 2, are IDENTICAL to `main`; pinned hashes unchanged.
 
-## 11. AI debug inspector
+**B: hazard interrupt and leisure.**
 
-Part of the plan, grown per phase. It reads the sim and never mutates it.
-- **Core** (`src/sim/ai/explain.ts`, pure): `explainCrew(sim, id)` returns `{policy, drive, scores[], latched, interrupt, task: {machine, state path, class, bb, holds}, job: {id, kind, tuple breakdown (level, urgency, cost, affinity, EVA, relief)}}`. `explainJob(sim, id)` returns `{holder, candidates: [{crew, tuple}|{crew, rejected}]}` where `rejected` is one of `wrongShip`, `yardOnly`, `selfTarget`, `needsMaterials`, `errand`, `robotSkill`, `priorityOff`, `operateLevel`, `unreachable`, `noSuit`, `reserved`, `avoid`, `drive`, `interrupt`, `outranked(by crew, tuple)`. It recomputes with the scheduler's own pure scoring functions: no trace state, no cost while closed.
-- **Optional trace sink**: `sim.aiTrace` (not saved, like the profiler `Probe`): when set by the app, the scheduler reports each pair outcome at decision time so "why was X chosen at tick t" is available, not just "what would be chosen now". It never influences the sim.
-- **Panel**: `app/aiSnapshot.ts` (like `crewSnapshot.ts`) and `ui/AiInspector.svelte` as a debug tab only (decision 8): per crew, drive bars, chosen drive, state path (`haul / ToDest`), reservation and score breakdown. Per job: candidate table.
-- **Agent-readable**: `window.__ai` with `crew(id)`, `job(id)`, `dump()` (all crew plus open jobs, plus `auditReservations` result), installed with `?perf` or `?ai`, mirroring `window.__perf`; and `npm run ai:dump -- --scenario <s> --ticks <n>` for headless runs.
-
-## 12. Decisions from review
-
-All nine former open questions are closed; nothing is open.
-
-| # | Decision |
-| --- | --- |
-| 1 | Selective same-level emergency preemption with hysteresis (section 7.1) |
-| 2 | Phase 2 behaviour changes accepted; priority 0 ends a task only at a safe point |
-| 3 | After Phase 1, judge by decision-diff review and behavioural tolerances; no silent hash repinning |
-| 4 | `hazard` interrupt added (Phase 3); `cover` drive deferred; fleeing stays in combat code |
-| 5 | Pilots, `EmbarkOrder`, `seatHelms` stay forced states initially |
-| 6 | No job aging until starvation is demonstrated |
-| 7 | Suit-errand job entities kept during the migration |
-| 8 | Debug inspector only; no crew-inspector card |
-| 9 | Phase 0 starts now; the Opus agent runs the Phase 2 scheduler benchmarking |
+- *Hazard* (`ai/hazard.ts`, `crew/hazard.ts`, `ai/machines/escape.ts`): the tile harm the vitals system deals (`tileHarm`, moved out of `vitals.ts` unchanged) is split into hazard bits (air, heat, cold, fire). `hazardHolds` is true while the crew member's own tile has a hazard their task does not tolerate and they have stopped there (a walk through is obeyed) or are already escaping. Tolerance: `extinguish` tolerates fire and heat, a breach seal (firefighting wall build) thin air and cold, a carried patient (`finish`) everything; a suit with air already removes thin air and CO2. The scheduler's turn handles it before anything else (a sleeper or eater included): `escapeTurn` searches breadth first for the nearest safe tile (`EscapeGoal`, the hook #286 extends with air sources), plans the walk, and only then aborts the task (`abortTask('hazard')`: bed, load and need dropped) and starts a jobless `escape/Walk` task. With nowhere safer to go the crew member carries on. The job left behind goes to `Intent.avoid` for 10 s (the scheduler skips that pair), so a burning site is not walked straight back to. The need planners skip destinations that would harm the crew member (`unsafeFor`): a bed (the claimed one is dropped once it is unsafe; with no safe bed they sleep on the safe floor they escaped to), a meal spot, a charging cradle and a break spot, so an escaped sleeper does not walk back into the fire. A drafted crew member whose order is done is stepped off without a task and keeps the draft. `interruptSystem` reports `hazard` at precedence 4 (owner `executor`); fighting crew stay with the fight code (not yet hazard-aware). A policy opts in with `escapeHazards` (all four content policies; bare test content keeps crew put).
+- *Leisure* (`ai/machines/leisure.ts`): `policy.colonist` has a `leisure` drive on mood (latched below 40, released at 55) scoring 90, under work's 100. Drives ranked below work are tried in the idle turn only, after the scheduler found the crew member no job and after suit stowing and site vacating, so a break never keeps anyone from work, and a job found later replaces it. The break walks to a random tile in the nearest working galley's room (else beside the nearest crewmate) and rests `LEISURE_SEC` (20 s). Mood hook: a finished break sets `Mood.relax` (`MOOD_RELAX_SEC` 300 s) for a `relaxed` factor of `MOOD_RELAX_POINTS` (+8).
+- Repins: `sectorEquiv` `disaster` (both behaviours; each alone and neither are recorded in the comment). Tests that are about something else keep crew still: `lifeSupportOxygen` (policies without escape and leisure), `outposts` dig (the engineer is suited).

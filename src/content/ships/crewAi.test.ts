@@ -206,7 +206,7 @@ describe('crew AI phase 1', () => {
     const job = sim.world.get(hauler!, AssignmentC)!.jobId;
     expect(x).toMatchObject({ policy: 'policy.colonist', drive: 'work', assignment: job, task: { job: { id: job, kind: 'haul' }, holds: [`job ${job}`] } });
     expect(x.task!.path).toMatch(/^haul\/(ToSource|ToDest|Deposit)$/);
-    expect(x.scores).toEqual({ sleep: 0, eat: 0, work: 100 });
+    expect(x.scores).toMatchObject({ sleep: 0, eat: 0, work: 100 });
   });
 
   /**

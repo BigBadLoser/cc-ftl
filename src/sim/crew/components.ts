@@ -243,6 +243,8 @@ export interface Mood {
   factors: MoodFactor[];
   /** Seconds left of the hot-meal bonus. */
   meal: number;
+  /** Seconds left of the bonus from a break (the leisure drive); absent = none. */
+  relax?: number;
   /** Seconds left of the sleep memory, and whether it was in a bed (1) or on the floor (-1). */
   sleep: number;
   bed: 1 | -1;

@@ -123,6 +123,11 @@ export const MOOD_BREAKDOWN_BELOW = 10;
 /** Seconds a hot galley meal, a night in a bed or a night on the floor keeps affecting mood. */
 export const MOOD_MEAL_SEC = 300;
 export const MOOD_SLEEP_SEC = 600;
+/** A break (the leisure drive) lifts mood by this much for MOOD_RELAX_SEC seconds. */
+export const MOOD_RELAX_POINTS = 8;
+export const MOOD_RELAX_SEC = 300;
+/** Seconds a crew member on a break rests at the spot before the break counts. */
+export const LEISURE_SEC = 20;
 /** Another living crew member within this many tiles counts as company; alone this many seconds is lonely. */
 export const MOOD_COMPANY_RADIUS = 7;
 export const MOOD_LONELY_SEC = 120;
