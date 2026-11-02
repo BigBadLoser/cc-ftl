@@ -8,7 +8,9 @@ import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { forgetAirSearch } from '../airNeed';
 import { TaskC } from '../components';
-import { abortTask, isCarrying } from '../task';
+import { abortTask, isCarrying, syncTask } from '../task';
+import { TICK_HZ } from '../../time';
+import { NEST_HOLD_SEC } from '../../tuning';
 import { navigateTurn } from './navigate';
 import { startRefill } from './refill';
 
@@ -23,6 +25,14 @@ export function airTurn(sim: Sim, id: number, _crew: Crew, pos: Position, holdsJ
   const a = holdsJob ? sim.world.get(id, AssignmentC) : undefined;
   const job = a && sim.world.get(a.jobId, JobC);
   if (a && job?.kind === 'refill') {
+    // A job parked this long (NEST_HOLD_SEC: a long way to the source, a queue at it) is let go, as an abort would: others may take it.
+    if (job.resume && sim.tick - (job.heldSince ?? sim.tick) > NEST_HOLD_SEC * TICK_HZ) {
+      const parent = sim.world.get(job.resume, JobC);
+      if (parent?.reservedBy === id) parent.reservedBy = 0;
+      delete job.resume;
+      delete job.heldSince;
+      syncTask(sim, id);
+    }
     navigateTurn(sim, id, pos, a.jobId, job);
     return true;
   }

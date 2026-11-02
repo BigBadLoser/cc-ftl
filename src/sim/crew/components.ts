@@ -136,6 +136,8 @@ export interface Job {
   craft?: { recipe: string };
   /** For suitUp: the job the crew member reserved first and picks up again once the suit is on. */
   resume?: number;
+  /** For a refill that parked a job (`resume`): the tick it did; after NEST_HOLD_SEC the parked job is let go. */
+  heldSince?: number;
   /** For suitUp / suitOff: the crew member this personal errand belongs to (nobody else may take it). */
   errandFor?: number;
   /** For a shipyard order's build jobs: the order (`YardOrder.id`) that paid for them (yard/). */

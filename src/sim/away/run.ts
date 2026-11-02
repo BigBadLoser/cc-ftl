@@ -1,5 +1,8 @@
 import { shipById } from '../combat/ships';
-import { DeadC, JobC } from '../crew/components';
+import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
+import { AllegianceC } from '../fight/components';
+import { shipIdOf } from '../regions';
 import { regionAirlock } from '../ferry/pick';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
@@ -88,6 +91,9 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   delete r.boardedAt;
   go(r, 'fly');
   sim.events.emit({ type: 'away.departed', ship: r.site, vehicle: id, crew: [...aboard], home: false });
+  // Nobody able is left aboard the home ship: a line in the ship's log (the player may want some cover kept back).
+  const left = sim.world.query(CrewC, PositionC).some((c) => !isIncapacitated(sim, c) && !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(c, PositionC)!) === home);
+  if (!left && aboard.length > 0) sim.events.emit({ type: 'away.homeEmpty', ship: home, site: r.site });
 }
 
 /** On the way to the site (or to the crew member a pickup run fetches). A site gone meanwhile ends the run at home. */

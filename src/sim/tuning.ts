@@ -333,6 +333,8 @@ export const AIR_CRITICAL_FRAC = 0.1;
 export const AIR_CRITICAL_TRAVEL = 1.2;
 export const AIR_CRITICAL_PAD_SEC = 10;
 export const AIR_EVAL_TICKS = 20;
+/** A job parked while its holder refills (the nested refill) is let go after this many seconds (a long way to the source, a queue). */
+export const NEST_HOLD_SEC = 120;
 /** Travel time: seconds to pass a plain door (a door swings open as the walker steps into it, so none today), and the dock or launch time added to a flight. */
 export const DOOR_PASS_SEC = 0;
 export const FLIGHT_DOCK_SEC = 6;
