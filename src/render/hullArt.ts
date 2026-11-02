@@ -1,4 +1,8 @@
+import type { World } from "../sim/ecs";
 import type { Grid } from "../sim/grid";
+import { ModuleC } from "../sim/modules/components";
+import { hullRow } from "../sim/modules/footprint";
+import type { ModuleDef } from "../sim/registry";
 import { Struct } from "../sim/structure";
 import { hullKey, hullKeyGeneric, hullKeyName, hullOutline, type Front } from "./hullKey";
 import { motifColours, SCHEMES } from "./roofArt";
@@ -153,3 +157,20 @@ export function hullPaintParam(search: string): HullPaint | null {
   const m = v?.match(/^([0-9a-f]{6}),([0-9a-f]{6})$/i);
   return m ? { armour: parseInt(m[1]!, 16), deco: parseInt(m[2]!, 16) } : null;
 }
+
+/**
+ * Hull tiles an engine's bulkhead stands on: its hull row's inner tiles (the two end tiles keep their hull wall, the
+ * sprite stops inside them). Global tiles; `inside` limits the engines to one region.
+ */
+export function engineHullTiles(world: World, defs: Readonly<Record<string, ModuleDef>>, inside: (x: number, y: number) => boolean): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (const id of world.query(ModuleC)) {
+    const m = world.get(id, ModuleC);
+    const def = m && defs[m.def];
+    if (!m || !def?.hullEdge || !inside(m.x, m.y)) continue;
+    const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
+    out.push(...row.slice(1, -1));
+  }
+  return out;
+}
+

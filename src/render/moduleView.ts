@@ -11,6 +11,8 @@ import { cut, STRIP_W, stripFrame, type StripCrop } from './moduleStrips';
 import type { Art } from './assets/fallback';
 import { pickParts } from './partPick';
 import { iso, depthKey } from './iso';
+import { HullSprite } from './hullPaint';
+import type { HullPaint } from './hullArt';
 import type { Layers } from './layers';
 import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
@@ -40,6 +42,8 @@ export interface ModuleViewHost {
   ruin?(): ShipRuin | undefined;
   /** The ship's livery (its containers wear the scheme's colours and a company logo); none = bare plating. */
   livery?(): { scheme: string; seed: number } | null;
+  /** The ship's hull paint: the hull layers (an engine's bulkhead, an airlock's hull block) wear it like the hull. */
+  hullPaint?(): HullPaint;
 }
 
 export interface ModuleView {
@@ -61,6 +65,8 @@ interface Part {
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
+  /** A hull layer's part: a HullSprite recoloured by the hull paint (hullPaint.ts). */
+  paint?: boolean;
   /** False while the current frame of an animated layer has no glow (flicker-off). */
   lit?: boolean;
   /** A depth strip: the frame columns it shows, and the anchor and width of the frame it was cut from (see `stripFrame`). */
@@ -119,6 +125,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   const lastProgress = new Map<number, { value: number; at: number }>();
   const bayAnim = createBayAnimator();
   const collarAnim = createCollarAnimator();
+  /** True while build() makes a hull layer's parts. */
+  let painting = false;
 
   function dropEntry(e: Entry): void {
     e.mark?.destroy({ children: true });
@@ -135,14 +143,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const h = s.tex.height;
     const x = Math.round(p.x + (flip ? s.ax : -s.ax));
     const y = Math.round(p.y - s.ay);
-    const mk = (tex: typeof s.tex) => {
-      const spr = new Sprite(tex);
+    const mk = (tex: typeof s.tex, paint = false) => {
+      const spr = paint ? new HullSprite(tex) : new Sprite(tex);
       spr.position.set(x, y);
       if (flip) spr.scale.x = -1;
       return spr;
     };
     const sch = overlay && SCHEMES[host.livery?.()?.scheme ?? ''];
-    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex);
+    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex, painting);
     if (sch && overlay) spr.position.set(x, y);
     spr.zIndex = key;
     L.sorted.addChild(spr);
@@ -160,7 +168,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       }
     }
     const x0 = flip ? x - w : x;
-    return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art };
+    return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art, paint: painting };
   }
 
   function build(m: Module, def: ModuleDefs[string], layers: { layer: ModuleLayer; art: Art }[], roofed: boolean): Part[] {
@@ -170,6 +178,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
       const from = out.length;
+      painting = layer.tiles === 'hull' && !!host.hullPaint;
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (layer.at) {
         const k = key(layer.at.x, layer.at.y);
@@ -218,6 +227,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
       for (let j = from; j < out.length; j++) out[j]!.li = i;
     });
+    painting = false;
     return out;
   }
 
@@ -373,7 +383,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         // A wreck without its own damaged / destroyed art is darkened instead.
         const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
-          p.spr.tint = mulColor(tint, p.art);
+          p.spr.tint = mulColor(tint, p.paint ? (host.hullPaint?.().deco ?? p.art) : p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }

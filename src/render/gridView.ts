@@ -3,7 +3,6 @@ import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
-import { hullRow } from "../sim/modules/footprint";
 import { airlockDoorTiles } from "./airlockArt";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
@@ -18,7 +17,7 @@ import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
 import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { HullSprite } from "./hullPaint";
 import { iso } from "./iso";
-import { bellyIds, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
+import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
 
 export type { CutawayMode };
 
@@ -139,17 +138,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
 
   /** Tile indices of the engine hull rows the bulkhead covers (walls up / roofed: it stands there in place of the hull wall). */
   function engineHull(): Set<number> {
-    const out = new Set<number>();
     const { world, modules } = host.overlayWorld;
-    for (const id of world.query(ModuleC)) {
-      const m = world.get(id, ModuleC);
-      const def = m && modules[m.def];
-      if (!m || !def?.hullEdge || !grid.inBounds(m.x, m.y)) continue;
-      // The bulkhead spans the row's inner tiles; the two end tiles keep their hull wall (the sprite stops inside them).
-      const row = hullRow(def, m.x, m.y, m.rot).sort((a, b) => a.x + a.y - (b.x + b.y));
-      for (const t of row.slice(1, -1)) out.add((t.y - grid.y0) * width + (t.x - grid.x0)); // region-local index
-    }
-    return out;
+    const tiles = engineHullTiles(world, modules, (x, y) => grid.inBounds(x, y));
+    return new Set(tiles.map((t) => (t.y - grid.y0) * width + (t.x - grid.x0))); // region-local index
   }
 
   /** Door tiles of the docking airlocks (outer and inner): the airlock's own sprites (hull block, pod housing) stand there. */
