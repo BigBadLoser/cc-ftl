@@ -7,6 +7,7 @@ import { InertC, StunC } from '../robots/components';
 import type { Sim } from '../sim';
 import { InterruptC, TaskC } from './components';
 import { AI_LOG_KEEP } from './log';
+import { hazardHolds } from './hazard';
 import type { Interrupt, InterruptReason } from './types';
 
 /**
@@ -15,14 +16,15 @@ import type { Interrupt, InterruptReason } from './types';
  * whom it disagrees with the legacy test the scheduler still uses (`DraftedC`, `isIncapacitated`, `isOffDuty`). It aborts
  * nothing. `heldForMend` is reported but not compared: the legacy code handles it inside the scheduler's turn.
  *
- *   1 dead (not in the loop: corpses get none)  2 downed, carried, inert, stunned  3 floating (EVA transfer)  4 drafted
- *   5 heldForMend  6 fight (fighting, fetching or stowing a weapon, surrendered, invading)
+ *   1 dead (not in the loop: corpses get none)  2 downed, carried, inert, stunned  3 floating (EVA transfer)  4 hazard (ai/hazard.ts;
+ *   not while fighting)  5 drafted  6 heldForMend  7 fight (fighting, fetching or stowing a weapon, surrendered, invading)
  */
 export function interruptSystem(sim: Sim): void {
   const mend = mendTargets(sim);
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
     const reason = detect(sim, id, mend);
-    const legacy = sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id);
+    // What the scheduler's turn keeps out of the normal loop: the legacy tests plus the hazard interrupt it applies itself.
+    const legacy = sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id) || reason === 'hazard';
     const forced = reason !== null && reason !== 'heldForMend';
     if (forced !== legacy) {
       sim.aiLog.interruptMismatches++;
@@ -60,10 +62,13 @@ export function detect(sim: Sim, id: number, mend?: ReadonlySet<number>): Interr
   if (sim.world.has(id, InertC)) return 'inert';
   if (sim.world.has(id, StunC)) return 'stunned';
   if (sim.world.has(id, EvaFloatC)) return 'floating';
+  // Fighting crew are steered by the fight code, which keeps them where the fight is (not yet hazard-aware).
+  const f = sim.world.get(id, FighterC);
+  const fighting = (f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, StowOrderC) || sim.world.has(id, SurrenderedC) || isBoarding(sim, id);
+  if (!fighting && hazardHolds(sim, id)) return 'hazard';
   if (sim.world.has(id, DraftedC)) return 'drafted';
   if (mend ? mend.has(id) : mendTargets(sim).has(id)) return 'heldForMend';
-  const f = sim.world.get(id, FighterC);
-  if ((f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, StowOrderC) || sim.world.has(id, SurrenderedC) || isBoarding(sim, id)) return 'fight';
+  if (fighting) return 'fight';
   return null;
 }
 
@@ -78,6 +83,8 @@ function shape(sim: Sim, id: number, reason: InterruptReason): Pick<Interrupt, '
       return { mode: job?.kind === 'operate' ? 'hold' : 'abort', owner: 'drafted' };
     }
     case 'heldForMend': return { mode: 'abort', owner: 'none' };
+    // The escape task is stepped under the interrupt (owner executor); a drafted crew member is stepped off by it too.
+    case 'hazard': return { mode: 'abort', owner: 'executor' };
     case 'fight': return { mode: sim.world.get(id, TaskC)?.class === 'finish' ? 'hold' : 'abort', owner: 'fight' };
     default: return { mode: 'abort', owner: 'none' };
   }

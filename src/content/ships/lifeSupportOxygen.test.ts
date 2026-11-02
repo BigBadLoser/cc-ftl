@@ -6,9 +6,18 @@ import { content } from '../index';
 const OX = 'item.oxygen';
 const stores = (sim: Sim): number => sim.world.query(StorageC).reduce((n, id) => n + storageCount(sim, id, OX), 0);
 
+/**
+ * Crew stay where they stand: walking out of the drained room (the hazard interrupt) or off to the mess for a break (thin air
+ * sours the mood) would open its doors and let the air through, and the test is about the life support alone.
+ */
+const standStill = {
+  ...content,
+  policies: Object.fromEntries(Object.entries(content.policies).map(([k, p]) => [k, { ...p, escapeHazards: undefined, drives: p.drives.filter((d) => d.id !== 'leisure') }])),
+};
+
 /** The starter ship with its life support room's air drained, with or without bottled oxygen in the stores; returns the room's air after 4 s. */
 function refill(oxygen: boolean): { air: number; used: number } {
-  const sim = newGame(7, content);
+  const sim = newGame(7, standStill);
   if (!oxygen) for (const id of sim.world.query(StorageC)) storageTake(sim, id, OX, 999);
   for (let i = 0; i < 20; i++) sim.step(); // rooms are found on the first ticks
   const g = shipGrid(sim, homeShip(sim))!;

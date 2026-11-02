@@ -18,6 +18,7 @@ export function moodSystem(sim: Sim): void {
     const dt = MOOD_INTERVAL / 20;
     m.meal = Math.max(0, m.meal - dt);
     m.sleep = Math.max(0, m.sleep - dt);
+    if (m.relax) m.relax = Math.max(0, m.relax - dt);
     m.alone = hasCompany(sim, id) ? 0 : m.alone + dt;
     advanceTraitMemory(sim, id, m, dt);
     m.factors = moodFactors(sim, id, m);

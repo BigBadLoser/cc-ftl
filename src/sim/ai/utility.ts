@@ -158,6 +158,7 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
     intent = { policy: policy.id, drive: 'work', since: sim.tick, scores: policy.drives.map(() => 0), nextEval: sim.tick, latched: 0 };
     sim.world.add(id, IntentC, intent);
   }
+  if (intent.avoid && sim.tick >= intent.avoid.until) delete intent.avoid;
   intent.nextEval = sim.tick + 1; // every tick: the drives are cheap to read, and a need is answered the tick it arises
   const driven = view.atPost || traitFlag(sim, id, 'workaholic'); // a Workaholic keeps going like an operator at a console
   const scored = policy.drives.map((d, i) => scoreDrive(sim, id, d, i, intent, driven, view));

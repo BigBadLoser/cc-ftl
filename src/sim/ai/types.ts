@@ -8,7 +8,7 @@
 export type DriveId = 'work' | 'sleep' | 'eat' | 'recharge' | 'leisure' | 'idle';
 
 /** The executor machines (section 6). `generic` covers simple jobs and jobless walks. */
-export type MachineId = 'generic' | 'haul' | 'rescue' | 'eva' | 'eat' | 'sleep' | 'charge';
+export type MachineId = 'generic' | 'haul' | 'rescue' | 'eva' | 'eat' | 'sleep' | 'charge' | 'escape' | 'leisure';
 
 /** How a task may be interrupted (section 5): abandon now, at a safe point, only when done, or only by hard reasons. */
 export type TaskClass = 'any' | 'safe' | 'finish' | 'hold';
@@ -70,12 +70,14 @@ export interface Intent {
   nextEval: number;
   /** Bit i set: drive i of the policy is latched on (Schmitt trigger between `enter` and `exit`). */
   latched?: number;
+  /** A job the scheduler does not give this crew member until the tick (left for a hazard on its site: no walking straight back). */
+  avoid?: { job: number; until: number };
   /** A drive that wants to act but whose `requires` failed with `onMissing: 'block'` (it keeps its score; alerts and the inspector read it). */
   blocked?: DriveId;
 }
 
 /** Why a crew member is out of the normal loop (L0), in precedence order (section 5). */
-export type InterruptReason = 'dead' | 'downed' | 'carried' | 'inert' | 'stunned' | 'floating' | 'drafted' | 'heldForMend' | 'fight';
+export type InterruptReason = 'dead' | 'downed' | 'carried' | 'inert' | 'stunned' | 'floating' | 'hazard' | 'drafted' | 'heldForMend' | 'fight';
 
 export interface Interrupt {
   reason: InterruptReason;
@@ -140,4 +142,6 @@ export interface PolicyDef {
   crew: CrewKind[];
   /** The drives, in tie-break order (an equal score goes to the earlier drive); also the order of `Intent.scores`. */
   drives: DriveDef[];
+  /** Walk off a tile that harms them (the `hazard` interrupt, ai/hazard.ts), drafted or not. Absent: stand where they are. */
+  escapeHazards?: true;
 }

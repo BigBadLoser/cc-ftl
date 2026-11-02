@@ -6,7 +6,7 @@ import {
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
-import type { Grid } from '../grid';
+import { tileHarm } from '../crew/hazard';
 import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
 import { skillOf } from '../combat/operators';
@@ -15,25 +15,9 @@ import type { Sim } from '../sim';
 import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import {
-  BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, CO2_HARM_ABOVE, CO2_HARM_PER_SEC,
-  COLD_BELOW, FIRE_CREW_DAMAGE, GET_UP_HP, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, REGEN_PER_SEC,
-  SKILL_STEP, STARVE_HARM_PER_SEC, TEMP_HARM_PER_SEC, XP_PER_HP_HEALED,
+  BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, GET_UP_HP, REGEN_PER_SEC, SKILL_STEP, STARVE_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
 import { grantXp } from '../crew/xp';
-
-/** Harm per second from the tile a crew member stands on: thin air, CO2, heat, cold and fire. `suited` (with air in the tank) or airless skips thin air and CO2; a suit also insulates against cold. */
-function harmPerSec(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
-  let harm = 0;
-  const o2 = grid.get('o2', x, y);
-  const co2 = grid.get('co2', x, y);
-  const temp = grid.get('temp', x, y);
-  if (!suited && !airless && o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
-  if (!suited && !airless && co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
-  if (temp > HOT_ABOVE) harm += (temp - HOT_ABOVE) * TEMP_HARM_PER_SEC;
-  if (!airless && !suited && temp < COLD_BELOW) harm += (COLD_BELOW - temp) * TEMP_HARM_PER_SEC;
-  harm += (FIRE_CREW_DAMAGE * grid.get('fire', x, y)) / 255;
-  return harm;
-}
 
 /**
  * Living crew breathe (use O2, emit CO2 on their tile) and take environmental harm. At 0 hp they
@@ -76,7 +60,7 @@ export function vitalsSystem(sim: Sim): void {
       grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);
     }
 
-    const harm = harmPerSec(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
+    const harm = tileHarm(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
     if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.
