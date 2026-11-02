@@ -1,6 +1,6 @@
 import { abortTask } from '../ai/task';
 import { BodyC } from '../body';
-import { CrewC, DraftedC, PositionC, type Crew, type Position } from '../crew/components';
+import { CarriedC, CrewC, DeadC, DraftedC, PositionC, type Crew, type Position } from '../crew/components';
 import { isIncapacitated, isSettled, origin } from '../crew/helpers';
 import { AirlockC } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
@@ -10,7 +10,7 @@ import { nearestExterior, tileCentre, tileFrame, vehicleSuits } from '../eva/shu
 import { isSuited, suitAir, suitDef, suitTile } from '../eva/suit';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
-import { SALVAGE_REFILL_FRAC } from '../tuning';
+import { SALVAGE_REFILL_FRAC, SALVAGE_RESCUE_FRAC } from '../tuning';
 import { AboardC, EmbarkOrderC, VehicleC } from '../vehicles/components';
 import { boardCrew } from '../vehicles/lifecycle';
 import { SalvageCrewC } from './components';
@@ -146,6 +146,15 @@ export function tendWorker(sim: Sim, crew: number, ship: number, vehicle: number
     return;
   }
   if (due && !sim.world.get(crew, DraftedC)?.target) walkTo(sim, crew, ship, at);
+}
+
+/**
+ * True if a team member out on the wreck is nearly out of air: whatever kept them from a refill (cut off from the shuttle's side with no
+ * airlock to walk to, boxed in, downed), the hovering shuttle picks them up (`carryAboard`) before the tank runs dry.
+ */
+export function needsRescue(sim: Sim, crew: number): boolean {
+  if (!isSuited(sim, crew) || sim.world.has(crew, EvaFloatC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)) return false;
+  return suitAir(sim, crew) < suitDef(sim).airSec * SALVAGE_RESCUE_FRAC;
 }
 
 /** Carry a team member aboard as is (the end of a recall that ran out of time: downed, boxed in, or cut off from the shuttle's side). */

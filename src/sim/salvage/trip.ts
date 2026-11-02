@@ -1,5 +1,6 @@
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
 import { BodyC } from '../body';
 import { outsideCrew } from '../eva/shuttle';
@@ -16,7 +17,7 @@ import { SalvageCrewC, SalvageOrderC, SalvageTripC, type SalvageBlock, type Salv
 import { partCount, partsOf, salvageJobs } from './plan';
 import { destroyJob } from '../items/stacks';
 import { liveBox, needsHome, pickTeam, pickTeamShuttle, playerCrewOn, tripFor } from './team';
-import { aboard, carryAboard, handBack, headBack, release, REPEAT, sendOut, tendWorker } from './teamCrew';
+import { aboard, carryAboard, handBack, headBack, needsRescue, release, REPEAT, sendOut, tendWorker } from './teamCrew';
 import { haulsTo, looseOn, planCarry, runCrew, runDue, startRun, stepRun } from './cargoRun';
 
 const sec = (n: number): number => n * TICK_HZ;
@@ -214,15 +215,18 @@ function work(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
   else if (onStation && runDue(sim, id, t.ship, planCarry(sim, id, t.ship))) startRun(sim, id, t);
   const called = runCrew(t);
   for (const c of t.crew) {
-    if (called.includes(c)) continue;
-    if (aboard(sim, c, id)) {
-      if (due(t) && onStation && !t.run) sendOut(sim, c, id);
+    // Out on the wreck nearly out of air (stuck with no way to a refill): picked up, and sent out again in a fresh suit.
+    if (!aboard(sim, c, id) && needsRescue(sim, c)) carryAboard(sim, c, id);
+    else if (called.includes(c)) continue;
+    else if (aboard(sim, c, id)) {
+      if (due(t) && onStation && !t.run && !isIncapacitated(sim, c)) sendOut(sim, c, id);
     } else tendWorker(sim, c, t.ship, id, due(t));
   }
 }
 
 function recall(sim: Sim, id: number, v: Vehicle, t: SalvageTrip): void {
   keepClose(sim, id, v, t);
+  for (const c of t.crew) if (!aboard(sim, c, id) && needsRescue(sim, c)) carryAboard(sim, c, id);
   const out = t.crew.filter((c) => !aboard(sim, c, id));
   if (out.length > 0 && t.timer <= sec(RECALL_SEC)) {
     for (const c of out) headBack(sim, c, t.ship, id, due(t));

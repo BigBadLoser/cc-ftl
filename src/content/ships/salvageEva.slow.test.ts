@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { AboardC, CrewC, PositionC, ShipC, StorageC, Struct, VehicleC, deserialize, placementError, removeModule, serialize, shipGrid, spawnModule, suitDef, suitTile, writeStruct, type SimEvent } from '../../sim';
 import { shipIdOf } from '../../sim/regions';
 import { SalvageCrewC, SalvageTripC } from '../../sim/salvage/components';
-import { SuitC } from '../../sim/eva/components';
+import { EvaFloatC, SuitC } from '../../sim/eva/components';
 import { NeedsC } from '../../sim/crew/components';
 import { vehicleSuits } from '../../sim/eva/shuttle';
 import { carryAboard } from '../../sim/salvage/teamCrew';
+import { StunC } from '../../sim/robots/components';
 import { content } from '../index';
 import { shuttleOf, storages } from './ferryFixture';
 import { looseScrap, of, play, scrapHome, setup, smallHold } from './salvageEvaFixture';
@@ -190,5 +191,35 @@ describe('salvage teams: the shuttle and EVA loop', () => {
     expect(left).toBe(false);
     expect(departed).toBe(true);
     expect(sim.world.get(boxed, AboardC)?.vehicle).toBe(shuttle);
+  });
+
+  it('picks up a worker stuck on the wreck before their air runs out, and the shift goes on', () => {
+    const { sim, wreck } = setup(3);
+    sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
+    const shuttle = shuttleOf(sim);
+    const all: SimEvent[] = [];
+    let stuck = 0;
+    let carried = false;
+    for (let i = 0; i < 20 * 60 * 15 && !carried; i++) {
+      for (const c of sim.world.query(SalvageCrewC)) {
+        const n = sim.world.get(c, NeedsC);
+        if (n) [n.rest, n.hunger] = [100, 100];
+      }
+      all.push(...play(sim, 1));
+      const trip = sim.world.get(shuttle, SalvageTripC);
+      if (stuck) carried = sim.world.get(stuck, AboardC)?.vehicle === shuttle;
+      else if (trip?.phase === 'work' && !trip.run) {
+        // A worker on the wreck is put out of action, low on air: they cannot walk or float to a refill.
+        const c = trip.crew.find((m) => shipIdOf(sim, sim.world.get(m, PositionC)) === wreck && !sim.world.has(m, EvaFloatC));
+        if (c === undefined) continue;
+        sim.world.add(c, StunC, { until: sim.tick + 20 * 60 * 60 });
+        sim.world.get(c, SuitC)!.air = suitDef(sim).airSec * 0.3;
+        stuck = c;
+      }
+    }
+    expect(stuck).not.toBe(0);
+    expect(of(all, 'suit.airOut')).toEqual([]);
+    expect(carried).toBe(true);
+    expect(sim.world.get(shuttle, SalvageTripC)?.phase).toBe('work');
   });
 });

@@ -375,3 +375,5 @@ export const SALVAGE_TEAM_HUNGER = 35;
 export const SALVAGE_TEAM_GO = 60;
 /** A salvage team member goes to refill the suit (at the hovering shuttle or an airlock on the wreck) below this share of a full tank. */
 export const SALVAGE_REFILL_FRAC = 0.4;
+/** A salvage team member still out on the wreck with less air than this share of a full tank (stuck: no way to a refill) is picked up by the shuttle. */
+export const SALVAGE_RESCUE_FRAC = 0.1;
