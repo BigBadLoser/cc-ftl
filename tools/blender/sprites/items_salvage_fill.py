@@ -76,17 +76,20 @@ def tech(m, f, k=1.0):
 
 def energy(m, f, k=1.0):
     def cell(x, y, h):
-        m.cyl((x * k, y * k, (f - 0.01) * k), 0.028 * k, h * k, "svEk", sides=10)          # cells stand over the rim
-        m.cyl((x * k, y * k, (f - 0.01 + h * 0.55) * k), 0.031 * k, 0.04 * k, "svEband", sides=10)
-        m.cyl((x * k, y * k, (f - 0.01 + h) * k), 0.02 * k, 0.01 * k, "svEglow", sides=8)
+        """A spent power cell standing up: pale casing, a dark band, a pale cyan cap with a faint glowing core."""
+        z = f - 0.01
+        m.cyl((x * k, y * k, z * k), 0.028 * k, h * k, "svEcell", sides=10)
+        m.cyl((x * k, y * k, (z + h * 0.5) * k), 0.03 * k, 0.03 * k, "svEk", sides=10)
+        m.cyl((x * k, y * k, (z + h) * k), 0.022 * k, 0.012 * k, "svEk", sides=10, top="svEcap")
+        m.cyl((x * k, y * k, (z + h + 0.012) * k), 0.01 * k, 0.004 * k, "svEglow", sides=6)
     for x, y, h in ((-0.05, -0.1, 0.13), (0.045, -0.085, 0.12), (-0.05, -0.02, 0.15), (0.05, 0.0, 0.12),
                     (-0.04, 0.07, 0.13), (0.045, 0.085, 0.14)):
         cell(x, y, h)
     p0, p1 = (0.0, 0.03, f + 0.02), (0.035, 0.1, f + 0.17)                            # one cell tipped up tall
-    _tube(m, p0, p1, 0.03, "svEk", k, cap="svEglow", sides=10)
-    t = 0.7
-    _tube(m, tuple(a + (b - a) * t for a, b in zip(p0, p1)), tuple(a + (b - a) * (t + 0.12) for a, b in zip(p0, p1)),
-          0.032, "svEband", k, sides=10)
+    _tube(m, p0, p1, 0.03, "svEcell", k, cap="svEcap", sides=10)
+    t = 0.45
+    _tube(m, tuple(a + (b - a) * t for a, b in zip(p0, p1)), tuple(a + (b - a) * (t + 0.15) for a, b in zip(p0, p1)),
+          0.032, "svEk", k, sides=10)
     _ring(m, (0.0, -0.06, f + 0.16), 0.045, 0.012, 0.9, "svEcu", k, arc=0.7)       # broken coil
 
 
@@ -106,18 +109,14 @@ def weapons(m, f, k=1.0):
 
 
 def comfort(m, f, k=1.0):
-    for x, y, rz, sx, sy, sz in ((-0.04, -0.07, 0.3, 0.09, 0.1, 0.06), (0.04, 0.06, -0.2, 0.08, 0.09, 0.055),
-                                 (-0.03, 0.08, 0.6, 0.07, 0.06, 0.05)):                # foam blocks
-        m.box((x * k, y * k, (f - 0.005) * k), (sx * k, sy * k, sz * k), "svCfoam2", top="svCfoam", rz=rz, base=True)
-    _plate(m, -0.03, 0.0, f + 0.075, 0.25, 0.3, 0.1, 0.2, 0.12, "svCteal", k)           # torn fabric
-    _plate(m, 0.06, -0.03, f + 0.06, -0.5, -0.3, 0.2, 0.12, 0.09, "svCmar", k)
-    m.box((0.045 * k, -0.05 * k, f * k), (0.035 * k, 0.12 * k, 0.15 * k), "svCmar", top="svCfoam",  # cushion on edge
-          rz=0.2, rx=0.25, base=True)
-    c, R, turns, h = (-0.045, 0.04, f + 0.075), 0.026, 4, 0.12                         # a bare spring, bright
-    pts = [(c[0] + R * math.cos(a), c[1] + R * math.sin(a), c[2] + h * a / (turns * math.tau))
-           for a in (i * math.tau / 8 for i in range(turns * 8 + 1))]
-    for a, b in zip(pts, pts[1:]):
-        _tube(m, a, b, 0.009, "svB0", k, sides=5)
+    for x, y, rz, sx, sy, sz in ((-0.05, -0.08, 0.3, 0.08, 0.09, 0.06), (0.05, 0.08, -0.2, 0.07, 0.08, 0.05)):
+        m.box((x * k, y * k, (f - 0.005) * k), (sx * k, sy * k, sz * k), "svCfoam2", top="svCfoam", rz=rz,
+              base=True, bevel=0.012 * k)                                             # foam chunks
+    m.box((0.0, 0.0, (f + 0.01) * k), (0.15 * k, 0.17 * k, 0.05 * k), "svCfoam2", top="svCfoam", rz=0.15,
+          rx=0.15, base=True, bevel=0.02 * k)                                         # a cream seat cushion lying
+    m.box((-0.03 * k, -0.02 * k, f * k), (0.045 * k, 0.17 * k, 0.17 * k), "svCmar", top="svCmar", rz=0.35,
+          ry=-0.3, base=True, bevel=0.02 * k)                                         # a maroon back cushion on edge
+    _plate(m, 0.04, 0.03, f + 0.09, -0.3, 0.45, 0.2, 0.15, 0.1, "svCteal", k)           # torn teal fabric over it
 
 
 CONTENTS = {"hull": hull, "tech": tech, "energy": energy, "weapons": weapons, "comfort": comfort}

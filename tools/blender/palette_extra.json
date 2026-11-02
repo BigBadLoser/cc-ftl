@@ -1293,9 +1293,9 @@
   "set": "salvage_energy"
  },
  "svEglow": {
-  "hex": "#b6f27a",
-  "set": "salvage_energy",
-  "emissive": 0.8
+  "hex": "#7fe9ff",
+  "emissive": 1.0,
+  "set": "salvage_energy"
  },
  "svWbr": {
   "hex": "#c9a23a",
@@ -1328,5 +1328,13 @@
  "svTsc2": {
   "hex": "#3d5a78",
   "set": "salvage_tech"
+ },
+ "svEcell": {
+  "hex": "#c9ced3",
+  "set": "salvage_energy"
+ },
+ "svEcap": {
+  "hex": "#8fe3f0",
+  "set": "salvage_energy"
  }
 }
