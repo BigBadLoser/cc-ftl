@@ -112,7 +112,7 @@ export interface DriveDef {
    */
   enter?: number;
   exit?: number;
-  /** A trait effect that replaces `enter` (and an `exit` equal to it) when the crew member has it (a Glutton eats sooner). */
+  /** A trait effect that replaces `enter` when the crew member has it (a Glutton eats sooner); `exit` still holds, never below it. */
   enterTrait?: DriveTraitKey;
   /**
    * Below this input the drive is urgent: it overrides a `hold` task (an operator at a console leaves it) and is the only
