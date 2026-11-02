@@ -77,7 +77,7 @@ export function donSuit(sim: Sim, crew: number, airlock: number): boolean {
   const a = sim.world.get(airlock, AirlockC);
   if (!a || airlockSuits(sim, airlock) <= 0 || sim.world.has(crew, SuitC)) return false;
   a.suits = airlockSuits(sim, airlock) - 1;
-  sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, airlock });
+  sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec });
   sim.events.emit({ type: 'suit.donned', crew, airlock });
   return true;
 }

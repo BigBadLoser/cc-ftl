@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, HealthC, ModuleC, PositionC, SuitC, airlockSuits, airlockTiles, isTileWalkable, newGame, suitAir, suitDef,
+  AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockSuits, airlockTiles, isTileWalkable, newGame, suitAir, suitDef,
   type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
@@ -40,7 +40,6 @@ describe('EVA content', () => {
     sim.enqueue({ type: 'eva.suitUp', crew: eng, airlock: lock });
     const ev = run(sim, 20 * 40);
     expect(ev.filter((e) => e.type === 'command.rejected')).toEqual([]);
-    expect(sim.world.get(eng, SuitC)?.airlock).toBe(lock);
     expect(airlockSuits(sim, lock)).toBe(2);
 
     const collar = airlockTiles(content.modules['module.airlock'] as ModuleDef, sim.world.get(lock, ModuleC)!).collar!;

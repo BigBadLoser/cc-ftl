@@ -310,6 +310,20 @@ export const EVA_AIR_LOW_FRAC = 0.25;
 export const DEFAULT_SUIT = {
   airSec: 600, donSec: 5, doffSec: 3, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, floatSpeed: 1.5, floatRange: 6,
 } as const;
+/** Air stores (#286): an airlock holds this many full tanks, a shuttle this many; an airlock's refills one tank per AIRLOCK_AIR_REFILL_SEC on a ship with life support. */
+export const AIRLOCK_AIR_TANKS = 3;
+export const VEHICLE_AIR_TANKS = 6;
+export const AIRLOCK_AIR_REFILL_SEC = 300;
+/** A shuttle docked at an airlock draws one tank from its store per this many seconds. */
+export const VEHICLE_AIR_DOCK_FILL_SEC = 10;
+/** Seconds to swap a tank at an airlock's suit tile or at a shuttle's hatch. */
+export const REFILL_FILL_SEC = 3;
+/** Partial work (admission): a crew member is admitted for one work stint of this many seconds, and keeps this reserve of air when they would turn back. */
+export const STINT_SEC = 60;
+export const AIR_RESERVE_SEC = 30;
+/** Travel time: seconds to pass a plain door (a door swings open as the walker steps into it, so none today), and the dock or launch time added to a flight. */
+export const DOOR_PASS_SEC = 0;
+export const FLIGHT_DOCK_SEC = 6;
 /** Extra path steps an automatic job that needs vacuum counts for when crew choose between jobs (they prefer no EVA). */
 export const EVA_JOB_PENALTY = 30;
 
