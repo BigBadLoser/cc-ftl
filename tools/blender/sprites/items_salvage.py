@@ -26,9 +26,17 @@ LIP = 0.014         # the bright lip along the top of the outer wall
 
 Q = math.pi / 2       # a quarter turn: content tables are written long side along x and turned onto the long y
 
-# Colours: the family's own palette set (palette_extra.json "salvage"): a cool blue steel ramp svS0 (light) .. svS4,
-# warm plum darks svP1 .. svP3 in place of black, bright steel svB0 .. svB3 for contents, rust svR1/svR2.
-TAGS = {"hull": "svP2", "tech": "polyB", "energy": "hazY", "weapons": "medRed", "comfort": "pcb"}
+# Colours: each scrap type has its own crate ramp sv<K>S0 (light) .. sv<K>S4 and tag colour in its own palette set
+# (palette_extra.json "salvage_<kind>"), sharing set "salvage": warm darks svP1 .. svP3 in place of black, bright steel
+# svB0 .. svB3 for contents, rust svR1/svR2. A sprite renders on its type's set and the shared one only (`palette`).
+KEYS = {"hull": "H", "tech": "T", "energy": "E", "weapons": "W", "comfort": "C"}
+TAG = __import__("os").environ.get("SALVAGE_TAG", "B")      # review only: A = bright same-hue tag, B = contrast tag
+
+
+def palette(sid):
+    """Palette selection of a sprite id: its scrap type's set plus the shared salvage set."""
+    kind = sid.split(".")[1].removeprefix("scrap_")
+    return f"only:salvage+salvage_{kind}"
 
 
 def _profile(ex, ey, r, n=None):
@@ -52,21 +60,24 @@ def _ring(m, pts, z0, z1, col, outward):
         m.poly(q if outward else q[::-1], col(i) if callable(col) else col, flip=True)
 
 
-def crate(m, tag, k=1.0):
-    """The shared crate body, scaled by k, with its type tag colour `tag`: one hollow shell, flat closed bottom, a warm
-    dark bottom band that separates stacked levels, mid blue steel faces, a bright lip and rim, the camera-facing
-    corner picked out bright, a dark plum inside, and the tag panel on both faces the camera sees."""
+def crate(m, kind, k=1.0):
+    """The shared crate body, scaled by k, in the colours of scrap type `kind`: one hollow shell, flat closed bottom, a
+    warm dark bottom band that separates stacked levels, mid-tone faces, a bright lip and rim, the camera-facing corner
+    picked out bright, a dark inside, and the type's tag panel on both faces the camera sees."""
+    K = KEYS[kind]
+    c = lambda n: f"sv{K}S{n}"                                                                  # noqa: E731
+    tag = f"sv{K}tag{TAG}"
     sx, sy, h, t, r, b, lip = SX * k, SY * k, H * k, T * k, R * k, BAND * k, LIP * k
     ex, ey = sx / 2, sy / 2
     out, inn = _profile(ex, ey, r), _profile(ex - t, ey - t, r - t)
-    front = lambda i: "svS2" if i < SEG else "svS3"                                           # noqa: E731
+    front = lambda i: c(2) if i < SEG else c(3)                                           # noqa: E731
     _ring(m, out, 0, b, "svP2", True)                                                        # dark bottom band
     _ring(m, out, b, h - lip, front, True)
-    _ring(m, out, h - lip, h, "svS0", True)                                                  # bright lip
+    _ring(m, out, h - lip, h, c(0), True)                                                  # bright lip
     _ring(m, inn, FILL * k, h, "svP1", False)                                                # inner skin
     for i in range(len(out)):                                                                # rim
         j = (i + 1) % len(out)
-        m.poly([core.G(*out[i], h), core.G(*out[j], h), core.G(*inn[j], h), core.G(*inn[i], h)], "svS2", flip=True)
+        m.poly([core.G(*out[i], h), core.G(*out[j], h), core.G(*inn[j], h), core.G(*inn[i], h)], c(2), flip=True)
     m.poly([core.G(*p, FILL * k) for p in inn], "svP3", flip=True)                           # interior floor
     m.poly([core.G(*p, 0) for p in out][::-1], "svP3", flip=True)                            # flat bottom
     # the faces the camera sees are +x (long, lower right) and +y (short, lower left): the type tag, a centred panel
@@ -110,8 +121,8 @@ def hull_contents(m, k=1.0):
     (the crate's read at 1x: bright bars against the dark inside). The tallest two stand over the rim."""
     f = FILL
     for u, v, z, rz, rx, ry, w, d, col in (                        # the bed: dark plates lying on the floor
-            (-0.06, -0.02, f + 0.015, 0.1, 0.2, 0.0, 0.15, 0.1, "svS4"),
-            (0.07, 0.03, f + 0.02, -0.2, -0.2, 0.1, 0.13, 0.09, "svS3"),
+            (-0.06, -0.02, f + 0.015, 0.1, 0.2, 0.0, 0.15, 0.1, "svP1"),
+            (0.07, 0.03, f + 0.02, -0.2, -0.2, 0.1, 0.13, 0.09, "svB3"),
             (0.02, -0.04, f + 0.03, 0.5, 0.0, -0.2, 0.11, 0.07, "svR2")):
         _plate(m, u, v, z, rz, rx, ry, w, d, col, k)
     for u, v, z, rz, ry, L in (                                     # three bars fanning up the same way, one lying
@@ -128,9 +139,9 @@ CONTENTS = {"hull": hull_contents}
 def unit(kind):
     def build():
         m = core.Mesh(f"scrap_{kind}_unit")
-        crate(m, TAGS[kind])
+        crate(m, kind)
         n = len(m.v)
-        CONTENTS[kind](m)
+        CONTENTS.get(kind, hull_contents)(m)          # review: types without their own contents yet show hull's
         inside(m, n)
         ob = m.build()
         return [ob]
@@ -138,4 +149,4 @@ def unit(kind):
 
 
 def jobs():
-    return [(f"item.scrap_{kind}.unit", (1, 1), "prop", unit(kind)) for kind in CONTENTS]
+    return [(f"item.scrap_{kind}.unit", (1, 1), "prop", unit(kind)) for kind in KEYS]

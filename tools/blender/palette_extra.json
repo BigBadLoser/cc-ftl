@@ -1100,36 +1100,16 @@
  "rkDM": {
   "hex": "#3f3a35"
  },
- "svS0": {
-  "hex": "#b0b8d4",
-  "set": "salvage"
- },
- "svS1": {
-  "hex": "#8a96ba",
-  "set": "salvage"
- },
- "svS2": {
-  "hex": "#67729a",
-  "set": "salvage"
- },
- "svS3": {
-  "hex": "#4b5478",
-  "set": "salvage"
- },
- "svS4": {
-  "hex": "#363c58",
-  "set": "salvage"
- },
  "svP1": {
-  "hex": "#3c2c38",
+  "hex": "#3a322e",
   "set": "salvage"
  },
  "svP2": {
-  "hex": "#2a1f28",
+  "hex": "#29231f",
   "set": "salvage"
  },
  "svP3": {
-  "hex": "#1c1418",
+  "hex": "#1a1614",
   "set": "salvage"
  },
  "svB0": {
@@ -1155,5 +1135,146 @@
  "svR2": {
   "hex": "#6a3524",
   "set": "salvage"
+ },
+ "svHS0": {
+  "hex": "#c3c6c9",
+  "set": "salvage_hull"
+ },
+ "svHS1": {
+  "hex": "#9a9ea4",
+  "set": "salvage_hull"
+ },
+ "svHS2": {
+  "hex": "#757a81",
+  "set": "salvage_hull"
+ },
+ "svHS3": {
+  "hex": "#575b61",
+  "set": "salvage_hull"
+ },
+ "svHS4": {
+  "hex": "#3f4247",
+  "set": "salvage_hull"
+ },
+ "svHtagA": {
+  "hex": "#d4d8dc",
+  "set": "salvage_hull"
+ },
+ "svHtagB": {
+  "hex": "#1c1917",
+  "set": "salvage_hull"
+ },
+ "svTS0": {
+  "hex": "#b0b8d4",
+  "set": "salvage_tech"
+ },
+ "svTS1": {
+  "hex": "#8a96ba",
+  "set": "salvage_tech"
+ },
+ "svTS2": {
+  "hex": "#67729a",
+  "set": "salvage_tech"
+ },
+ "svTS3": {
+  "hex": "#4b5478",
+  "set": "salvage_tech"
+ },
+ "svTS4": {
+  "hex": "#363c58",
+  "set": "salvage_tech"
+ },
+ "svTtagA": {
+  "hex": "#5fc8e8",
+  "set": "salvage_tech"
+ },
+ "svTtagB": {
+  "hex": "#3f9a5c",
+  "set": "salvage_tech"
+ },
+ "svES0": {
+  "hex": "#d8c27a",
+  "set": "salvage_energy"
+ },
+ "svES1": {
+  "hex": "#b49c4e",
+  "set": "salvage_energy"
+ },
+ "svES2": {
+  "hex": "#8f7a35",
+  "set": "salvage_energy"
+ },
+ "svES3": {
+  "hex": "#6b5a26",
+  "set": "salvage_energy"
+ },
+ "svES4": {
+  "hex": "#4a3e1b",
+  "set": "salvage_energy"
+ },
+ "svEtagA": {
+  "hex": "#ffd84a",
+  "set": "salvage_energy",
+  "emissive": 1.2
+ },
+ "svEtagB": {
+  "hex": "#1c1917",
+  "set": "salvage_energy"
+ },
+ "svWS0": {
+  "hex": "#bdbd94",
+  "set": "salvage_weapons"
+ },
+ "svWS1": {
+  "hex": "#93946c",
+  "set": "salvage_weapons"
+ },
+ "svWS2": {
+  "hex": "#707251",
+  "set": "salvage_weapons"
+ },
+ "svWS3": {
+  "hex": "#55573d",
+  "set": "salvage_weapons"
+ },
+ "svWS4": {
+  "hex": "#3d3f2c",
+  "set": "salvage_weapons"
+ },
+ "svWtagA": {
+  "hex": "#c9cc8e",
+  "set": "salvage_weapons"
+ },
+ "svWtagB": {
+  "hex": "#b8352d",
+  "set": "salvage_weapons"
+ },
+ "svCS0": {
+  "hex": "#d6ab8a",
+  "set": "salvage_comfort"
+ },
+ "svCS1": {
+  "hex": "#b3876a",
+  "set": "salvage_comfort"
+ },
+ "svCS2": {
+  "hex": "#8f6650",
+  "set": "salvage_comfort"
+ },
+ "svCS3": {
+  "hex": "#6c4b3b",
+  "set": "salvage_comfort"
+ },
+ "svCS4": {
+  "hex": "#4c3429",
+  "set": "salvage_comfort"
+ },
+ "svCtagA": {
+  "hex": "#efdcc0",
+  "set": "salvage_comfort"
+ },
+ "svCtagB": {
+  "hex": "#3f8f8a",
+  "set": "salvage_comfort"
  }
 }

@@ -238,10 +238,11 @@ _STATES = {}
 def _palette(sel):
     """A selection's palette entries: the game palette (False), it plus the extras that name no "set" (True), or those
     plus the extras of a named set (a family's own colours: adding them changes no other family's palette), or
-    "only:<set>": that set's extras alone, so every pixel lands on one of the family's own ramps (no stray hue from
-    another family's colours)."""
+    "only:<set>[+<set>...]": those sets' extras alone, so every pixel lands on one of the family's own ramps (no stray
+    hue from another family's colours)."""
     if isinstance(sel, str) and sel.startswith("only:"):
-        return {k: v for k, v in EXTRA.items() if v.get("set") == sel[5:]}
+        sets = sel[5:].split("+")
+        return {k: v for k, v in EXTRA.items() if v.get("set") in sets}
     if not sel:
         return dict(_BASE_PAL)
     out = {**_BASE_PAL, **{k: v for k, v in EXTRA.items() if not v.get("set")}}
