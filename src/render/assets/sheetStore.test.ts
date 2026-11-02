@@ -254,7 +254,7 @@ describe('SheetStore load timeout', () => {
       vi.useRealTimers();
     }
   });
-  it('unloads a result that arrives after the timeout and leaves the record alone', async () => {
+  it('keeps a result that arrives after the timeout when no retry has started', async () => {
     vi.useFakeTimers();
     try {
       const h = hung();
@@ -264,10 +264,26 @@ describe('SheetStore load timeout', () => {
       expect(h.store.state('a')).toBe('failed');
       h.release.get('a.png')?.();
       await vi.advanceTimersByTimeAsync(0);
-      expect(h.unloaded).toEqual(['a']);
+      expect(h.unloaded).toEqual([]);
+      expect(h.store.state('a')).toBe('ready');
+      expect(h.store.stats().pools.env?.resident).toBe(10);
+      expect(h.store.stats().failed).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('asks for a failed sheet again once its back-off has passed (what the atlas lookups rely on)', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = hung();
+      h.stuck.add('a.png');
+      h.store.request('a');
+      await vi.advanceTimersByTimeAsync(1000);
+      h.store.request('a', true);
       expect(h.store.state('a')).toBe('failed');
-      expect(h.store.isReady('a')).toBe(false);
-      expect(h.store.stats().pools.env?.resident).toBe(0);
+      await vi.advanceTimersByTimeAsync(150);
+      h.store.request('a', true);
+      expect(h.store.state('a')).toBe('loading');
     } finally {
       vi.useRealTimers();
     }

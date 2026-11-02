@@ -224,8 +224,8 @@ export class SheetStore<T> {
     }
     this.o.io.load(image, glow).then(
       ({ sheet, bytes }) => {
-        if (!finish()) {
-          // Timed out already (a retry may be under way): the state is not ours to touch, only the sheet to free.
+        // Timed out already: keep a late success if nothing took over (no retry started), else free it (a retry owns the record).
+        if (!finish() && r.state !== 'failed') {
           this.o.io.unload(name, sheet, image, glow);
           return;
         }

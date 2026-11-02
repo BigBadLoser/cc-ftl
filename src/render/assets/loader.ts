@@ -355,7 +355,11 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     firstOf(ids) {
       for (const id of ids) {
         const sheet = staticSheet(id);
-        if (!sheet || store.state(sheet) === 'failed') continue;
+        if (!sheet) continue;
+        if (store.state(sheet) === 'failed') {
+          store.request(sheet, true); // retried once its back-off has passed; the fallback ids draw meanwhile
+          if (store.state(sheet) === 'failed') continue;
+        }
         return atlas.stat(id);
       }
       return undefined;
@@ -363,7 +367,11 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     loading(ids) {
       for (const id of ids) {
         const sheet = staticSheet(id);
-        if (!sheet || store.state(sheet) === 'failed') continue;
+        if (!sheet) continue;
+        if (store.state(sheet) === 'failed') {
+          store.request(sheet, true); // retried once its back-off has passed; the fallback ids draw meanwhile
+          if (store.state(sheet) === 'failed') continue;
+        }
         return store.state(sheet) !== 'ready';
       }
       return false;
