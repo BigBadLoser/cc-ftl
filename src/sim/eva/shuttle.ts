@@ -9,6 +9,8 @@ import { Struct, isEvaWalkable } from '../structure';
 import { suitDef } from './suit';
 import { shipById } from '../combat/ships';
 import { shipGrid } from '../regions';
+import { BodyC } from '../body';
+import { VehicleC } from '../vehicles/components';
 
 /** EVA suits stowed aboard a shuttle (its def's `eva.suits` until the first one is used). */
 export function vehicleSuits(sim: Sim, v: Vehicle): number {
@@ -48,4 +50,17 @@ export function nearestExterior(sim: Sim, shipId: number, at: { x: number; y: nu
 /** Ticks to drift `dist` tiles. */
 export function floatTicks(sim: Sim, dist: number): number {
   return Math.max(1, Math.round((dist / suitDef(sim).floatSpeed) * TICK_HZ));
+}
+
+/**
+ * The staging tile of a hovering shuttle: the hull tile of the ship it hovers beside nearest to its hatch, within an easy float (suited crew
+ * land and board there, and loot carried to the shuttle is handed in there). Null unless it holds station beside a ship.
+ */
+export function hatchSpot(sim: Sim, vehicle: number): { shipId: number; x: number; y: number } | null {
+  const v = sim.world.get(vehicle, VehicleC);
+  const body = sim.world.get(vehicle, BodyC);
+  if (!v || !body || v.state !== 'flying' || v.dest || !v.hover) return null;
+  const frame = tileFrame(sim, v.hover, body.x, body.y);
+  const spot = frame ? nearestExterior(sim, v.hover, frame, 1)[0] : undefined;
+  return spot && spot.d <= suitDef(sim).floatRange - 0.75 ? { shipId: v.hover, x: spot.x, y: spot.y } : null;
 }
