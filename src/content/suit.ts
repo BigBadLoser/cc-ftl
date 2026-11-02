@@ -2,11 +2,11 @@ import type { SuitDef } from '../sim';
 
 /**
  * The EVA spacesuit. Kept at an airlock (module.airlock holds `airlock.suits` of them), put on and taken off there.
- * A tank lasts four game minutes of thin air or open space and refills when the suit is stowed. Suited crew walk 20%
+ * A tank lasts ten game minutes of thin air or open space and refills when the suit is stowed. Suited crew walk 20%
  * slower, work 10% slower and land 20% fewer hand-weapon hits. Off a hovering shuttle they drift 1.5 tiles/s across gaps up to 6 tiles.
  */
 export const suit = {
-  airSec: 240,
+  airSec: 600,
   donSec: 5,
   doffSec: 3,
   moveMult: 0.8,

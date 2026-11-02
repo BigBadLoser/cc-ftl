@@ -147,7 +147,7 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     hatch, climb in and the suit is stowed. The float is short on purpose (6 tiles at most, 1.5 tiles/s), so the shuttle
     has to get close. The shuttle cannot leave while crew are outside.
 - **Limits.**
-  - The tank lasts 4 game minutes of thin air (a breached room, the airlock, the hull outside). It does not drain in breathable air, and refills only when the
+  - The tank lasts 10 game minutes of thin air (a breached room, the airlock, the hull outside). It does not drain in breathable air, and refills only when the
     suit is stowed at an airlock.
   - A tank that runs dry hurts exactly like vacuum without a suit. The crew card and an alert warn at 25%, and a bar flashes
     over the wearer's head.
