@@ -280,3 +280,52 @@ def piece(o):
         T.VARIANT = was
     own = [housing(o)]
     return own, own + hull
+
+
+def end_cut(o, hull):
+    """Walls down: the engine's two hull tiles stand full height (the whole assembly shows), their neighbours cut to
+    the belly, so the hull's open ends (a piece builds no face on its tile's edge: the next tile's) are closed with
+    its section as a black cut (wall3d.CUT, the cut tops' tone). `hull`: the two tiles' objects, placed (piece's -1
+    and 0); one mesh, both ends (only the one facing the camera shows). The section is the hull cut at the end's
+    plane, filled per column from the floor up to the top surface, back to the block's back face (its outline is
+    open underneath)."""
+    import bmesh
+    import bpy
+    from mathutils import Vector
+    dx, dy = X.STRAIGHT[(5, 2) if o == 2 else (10, 1)]
+    out = (1, 0) if o == 2 else (0, 1)
+    ov = core.G(out[0], out[1], 0.0)
+    rv = core.G(dx, dy, 0.0)
+    bpy.context.view_layer.update()
+    bm = bmesh.new()
+    for ob in hull:
+        if ob.type == "MESH":
+            me = ob.data.copy()
+            me.transform(ob.matrix_world)
+            bm.from_mesh(me)
+            bpy.data.meshes.remove(me)
+    m = core.Mesh("hull_engine_end_cut", flat=True)
+    for s, sign in ((-1.5, -1), (0.5, 1)):
+        co = rv * s
+        t = bm.copy()
+        res = bmesh.ops.bisect_plane(t, geom=t.verts[:] + t.edges[:] + t.faces[:], dist=1e-5, plane_co=co,
+                                     plane_no=rv)
+        segs = [tuple((v.co.dot(ov), v.co.z) for v in e.verts) for e in res["geom_cut"]
+                if isinstance(e, bmesh.types.BMEdge)]
+        t.free()
+        if not segs:
+            continue
+        pts = [p for sg in segs for p in sg]
+        d0, d1 = min(d for d, z in pts if z < 1e-3), max(d for d, _ in pts)
+        n = int(round((d1 - d0) * 128))
+        at = co + rv * (sign * 0.004)                   # (just out of the hull's own faces on the tile's edge)
+        for i in range(n):
+            da, db = d0 + (d1 - d0) * i / n, d0 + (d1 - d0) * (i + 1) / n
+            dm = (da + db) / 2
+            zs = [a[1] + (b[1] - a[1]) * (dm - a[0]) / (b[0] - a[0]) for a, b in segs if (a[0] - dm) * (b[0] - dm) < 0]
+            if zs:
+                q = [at + ov * da, at + ov * db, at + ov * db + Vector((0, 0, max(zs))),
+                     at + ov * da + Vector((0, 0, max(zs)))]
+                m.poly(q if sign > 0 else q[::-1], T.CUT)
+    bm.free()
+    return m.build()
