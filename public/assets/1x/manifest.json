@@ -52630,7 +52630,7 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 139,
+    "x": 177,
     "y": 1,
     "w": 18,
     "h": 17
@@ -55230,14 +55230,14 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 158,
+    "x": 196,
     "y": 1,
-    "w": 16,
-    "h": 15
+    "w": 18,
+    "h": 17
    },
    "anchor": {
-    "x": 8,
-    "y": 11
+    "x": 9,
+    "y": 12
    },
    "footprint": [
     1,
@@ -55266,14 +55266,14 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 175,
+    "x": 139,
     "y": 1,
-    "w": 16,
-    "h": 15
+    "w": 18,
+    "h": 18
    },
    "anchor": {
-    "x": 8,
-    "y": 11
+    "x": 9,
+    "y": 13
    },
    "footprint": [
     1,
@@ -55304,14 +55304,14 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 192,
+    "x": 158,
     "y": 1,
-    "w": 16,
-    "h": 15
+    "w": 18,
+    "h": 18
    },
    "anchor": {
-    "x": 8,
-    "y": 11
+    "x": 9,
+    "y": 13
    },
    "footprint": [
     1,
@@ -55340,14 +55340,14 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 209,
+    "x": 215,
     "y": 1,
-    "w": 16,
-    "h": 14
+    "w": 18,
+    "h": 17
    },
    "anchor": {
-    "x": 8,
-    "y": 10
+    "x": 9,
+    "y": 12
    },
    "footprint": [
     1,
@@ -55376,14 +55376,14 @@
    "kind": "static",
    "sheet": "salvage",
    "frame": {
-    "x": 226,
+    "x": 234,
     "y": 1,
-    "w": 16,
-    "h": 14
+    "w": 18,
+    "h": 17
    },
    "anchor": {
-    "x": 8,
-    "y": 10
+    "x": 9,
+    "y": 12
    },
    "footprint": [
     1,

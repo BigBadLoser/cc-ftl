@@ -63,7 +63,7 @@ def _ring(m, pts, z0, z1, col, outward):
         m.poly(q if outward else q[::-1], col(i) if callable(col) else col, flip=True)
 
 
-def crate(m, kind, k=1.0):
+def crate(m, kind, k=1.0, band="svP2"):
     """The shared crate body, scaled by k, in the colours of scrap type `kind`: one hollow shell, flat closed bottom, a
     warm dark bottom band that separates stacked levels, mid-tone faces, a bright lip and rim, the camera-facing corner
     picked out bright, a dark inside, and the type's tag panel on both faces the camera sees."""
@@ -74,7 +74,7 @@ def crate(m, kind, k=1.0):
     ex, ey = sx / 2, sy / 2
     out, inn = _profile(ex, ey, r), _profile(ex - t, ey - t, r - t)
     front = lambda i: c(2) if i < SEG else c(3)                                           # noqa: E731
-    _ring(m, out, 0, b, "svP2", True)                                                        # dark bottom band
+    _ring(m, out, 0, b, band or c(4), True)                                                   # dark bottom band
     _ring(m, out, b, h - lip, front, True)
     _ring(m, out, h - lip, h, c(0), True)                                                  # bright lip
     _ring(m, inn, FILL * k, h, "svP1", False)                                                # inner skin
@@ -106,13 +106,13 @@ def inside(m, start, k=1.0, slack=0.004):
                          + ", ".join(f"({x:.3f}, {y:.3f}, {z:.3f})" for x, y, z in bad[:4]))
 
 
-HELD = 0.55          # .held: the unit scaled down to a crate a crew member carries in both arms
+HELD = 0.63          # .held: the unit scaled down to a crate a crew member carries in both arms (the held bale's size)
 
 
 def unit(kind, k=1.0):
     def build():
         m = core.Mesh(f"scrap_{kind}_{'held' if k < 1 else 'unit'}")
-        crate(m, kind, k)
+        crate(m, kind, k, band="svP2" if k == 1.0 else None)   # carried: no dark band, which reads as a gap over the hands
         n = len(m.v)
         CONTENTS[kind](m, FILL, k)
         inside(m, n, k)
@@ -153,4 +153,4 @@ def jobs():
     out = []
     for kind in KEYS:
         out += [(f"item.scrap_{kind}.unit", (1, 1), "prop", unit(kind)), (f"item.scrap_{kind}.held", (1, 1), "prop", unit(kind, HELD))]
-    return out + [("item.cloth.unit", (1, 1), "prop", cloth()), ("item.cloth.held", (1, 1), "prop", cloth(HELD * 1.15, 2))]
+    return out + [("item.cloth.unit", (1, 1), "prop", cloth()), ("item.cloth.held", (1, 1), "prop", cloth(0.6325, 2))]
