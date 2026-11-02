@@ -57,7 +57,8 @@ def jobs(name):
         return props_ + logistics.SPRITES + itemart.SPRITES, False
     if name == "walls":
         from . import envtiles
-        return envtiles.SPRITES, lambda sid: not sid.startswith("tile.floor")
+        return envtiles.SPRITES, lambda sid: False if sid.startswith("tile.floor") else "walls"   # (palette set
+        #   "walls": the relief walls', hull's, doors' and faction looks' own colours, in no other family's palette)
     if name == "consoles":
         from . import consoles
         return consoles.jobs(), True
@@ -95,7 +96,7 @@ def jobs(name):
         return jobs, True
     if name == "structure":
         from . import structure
-        return structure.jobs(), True
+        return structure.jobs(), "walls"
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True
@@ -153,7 +154,7 @@ def jobs(name):
         return derelict_sac.SPRITES, True
     if name == "derelict":
         from . import derelict
-        return derelict.SPRITES, True
+        return derelict.SPRITES, lambda sid: "walls" if sid.startswith("tile.") else True     # (breached walls)
     if name == "decay":
         from . import derelict_more
         return derelict_more.SPRITES, True
