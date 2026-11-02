@@ -20,7 +20,7 @@ ACCESS = (1, 2)
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BASE = 0.06          # dark plinth band
-RND = 0.1            # rounding of the shell's long top edges
+RND = 0.0            # rounding of the shell's long top edges (sharp, by the user's call)
 
 
 def rotated_point(x, y, rotation):
@@ -71,6 +71,8 @@ class _Build:
         past D = db, where a narrower shell (d0 .. db, same rounding) carries on; False leaves the end open."""
         def ring(h, d0=d0, d1=d1):
             r = min(rnd, (h - BASE) * 0.5, (d1 - d0) * 0.5)
+            if r <= 0:
+                return [(d0, BASE), (d0, h), (d1, h), (d1, BASE)]
             pts = [(d0, BASE)]
             for k in range(seg + 1):
                 a = math.pi - (math.pi / 2) * k / seg
@@ -94,7 +96,7 @@ class _Build:
             if cap is not None:                                  # only the part the narrower shell does not cover
                 h = max(z for _, z in r)
                 nb = ring(h, d0, cap)
-                arc = nb[seg + 2:2 * seg + 3]                     # its front arc: (cap - r, h) .. (cap, h - r)
+                arc = nb[len(nb) // 2:-1]                         # its front arc: (cap - r, h) .. (cap, h - r), or the corner
                 r = [arc[0]] + [p for p in r if p[0] > arc[0][0] + 1e-9] + [(cap, BASE)] + arc[:0:-1]
             a, b = self.P(L, dm, 0.5), self.P(L + s, dm, 0.5)
             self.face([self.P(L, d, z) for d, z in r], col, (b[0] - a[0], b[1] - a[1], b[2] - a[2]), top)
