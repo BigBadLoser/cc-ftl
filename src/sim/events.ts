@@ -97,6 +97,11 @@ export type SimEvent =
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
   /** Derelict salvage: an order was given or changed; it cannot run while something hostile is aboard (and runs again when cleared); it finished (`removed`: nothing was left, the wreck is gone). */
+  | { type: 'away.opened'; ship: number; vehicle: number }
+  | { type: 'away.closed'; ship: number; vehicle: number; reason: 'closed' | 'lost' }
+  /** The site's shuttle left: for the site (`home` false) or for home. */
+  | { type: 'away.departed'; ship: number; vehicle: number; crew: number[]; home: boolean }
+  | { type: 'away.returned'; ship: number; vehicle: number; crew: number[] }
   | { type: 'salvage.ordered'; ship: number; types: string[] }
   | { type: 'salvage.blocked'; ship: number; reason: string }
   | { type: 'salvage.done'; ship: number; removed: boolean }

@@ -17,6 +17,8 @@ import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
 import { IntentC, PickupC, TaskC } from './components';
 import { airDraining, airLeftSec, airMargin } from './airNeed';
 import { airTurn } from './machines/air';
+import { returnTurn } from './machines/return';
+import { siteUnderFoot } from '../away/crew';
 import { hazardHolds } from './hazard';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
@@ -28,8 +30,10 @@ type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: bool
 /** The need machines a drive may start (`DriveDef.task`). A new need is a machine plus its turn here. */
 const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
   eva: airTurn, // the air drive: the refill errand
+  return: returnTurn, // an away crew member heads for their site's shuttle
   charge: chargeTurn,
-  sleep: (sim, id, crew, pos, holdsJob) => (sleepTurn(sim, id, crew, pos, holdsJob), true),
+  // Never on an away site (#286): there the return drive takes them home to sleep; no lying down on a wreck's floor.
+  sleep: (sim, id, crew, pos, holdsJob) => !siteUnderFoot(sim, id) && (sleepTurn(sim, id, crew, pos, holdsJob), true),
   eat: (sim, id, crew, pos) => eatTurn(sim, id, crew, pos),
   leisure: (sim, id, crew, pos) => leisureTurn(sim, id, crew, pos),
 };

@@ -146,6 +146,8 @@ export interface Job {
   yardOnly?: true;
   /** Derelict salvage: a deconstruct or moduleDecon job of the salvage order; finishing it spills scrap of this type instead of the refund. */
   scrap?: ScrapType;
+  /** For 'passage' jobs: the away site (ShipC entity) the seat goes to. */
+  site?: number;
   /** sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them. */
   holder?: number;
 }
@@ -166,7 +168,9 @@ export type JobKind =
   /** patrol: walk to a patrol stop and stand watch there for `work` ticks (a ship director posts them for its guards). */
   | 'patrol'
   /** forceDoor: free a jammed door at (x, y) (player-ordered, worked from beside it). */
-  | 'forceDoor';
+  | 'forceDoor'
+  /** passage: a seat on the shuttle `target` serving the away site `site`, taken at its boarding tile (x, y) (away/passage.ts). */
+  | 'passage';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

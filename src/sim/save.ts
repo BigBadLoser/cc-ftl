@@ -99,8 +99,10 @@ import { newYard, type YardState } from './yard/types';
  * v81 (crew AI Phase 3): the `eat` and `bedClaim` stores are gone: a meal is the eat task's blackboard and a sleep's bed claim
  *   the sleep task's hold, so `Task` is the saved truth for both; `Intent` gains `latched`, `blocked` and `avoid`; `Mood.relax`.
  * v82 (air drive, #286 slice 1): `Intent.air` (the nearest-source search), the `pickup` store (`PickupC`).
+ * v83 (away sites, #286 slice 2a): `AwaySiteC`, `SiteRunC`, `AwayC`; job kind `passage` with `Job.site`; the colonist policy's `return` drive
+ *   (`Intent.scores` and `latched` follow the drive list).
  */
-export const SAVE_VERSION = 82;
+export const SAVE_VERSION = 83;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

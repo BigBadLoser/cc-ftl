@@ -46,12 +46,21 @@ const air = {
   requires: ['airSource'], onMissing: 'block', keepWhileTask: true, task: 'eva',
 } satisfies DriveDef;
 
+/**
+ * An away crew member (#286) heads back aboard their site's shuttle to go home: due when tired or hungry (rest 25, hunger 35: above the
+ * sleep and eat drives, which it outranks on a tie, so they get home before they drop), urgent when hurt, when the site closes or a fight
+ * starts. Absent anywhere but on their site.
+ */
+const goHome = {
+  id: 'return', input: 'awayReturn', curve: [[0, 1000]], enter: 1000, urgent: { below: 500 }, task: 'return',
+} satisfies DriveDef;
+
 /** Work whenever no need wants the crew member: the scheduler finds them a job. */
 const work = { id: 'work', curve: [[0, 100]], task: 'job' } satisfies DriveDef;
 
 export const policies = {
   'policy.robot': { id: 'policy.robot', crew: ['robot'], escapeHazards: true, drives: [recharge, work] },
-  'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, sleep, eat, work, leisure] },
+  'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, goHome, sleep, eat, work, leisure] },
   // Station crew get hungry and eat too; the hunger floor that keeps them from starving is the needs system's.
   'policy.station': { id: 'policy.station', crew: ['station'], escapeHazards: true, drives: [air, sleep, eat, work] },
   // Enemy ship crew tire but have no hunger.

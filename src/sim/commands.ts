@@ -11,6 +11,9 @@ export type Command =
   /** Order a derelict (a wreck with ruin data) stripped of the ticked scrap types; the crew run it as ordinary jobs (sim/salvage). Orders again to change the types. */
   | { type: 'salvage.order'; ship: number; types: ScrapType[] }
   | { type: 'salvage.cancel'; ship: number }
+  /** Away sites (#286): open one on a ship with a free shuttle (debug only until a feature opens sites), and call its party home. */
+  | { type: 'away.open'; ship: number; vehicle?: number }
+  | { type: 'away.recall'; ship: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }

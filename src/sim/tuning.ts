@@ -405,3 +405,23 @@ export const SALVAGE_REFILL_FRAC = 0.4;
 export const SALVAGE_RESCUE_FRAC = 0.1;
 /** A cargo run turns back (skipping the unload) when someone left on the wreck is out of action, or below this share of a tank (not managing to refill). */
 export const SALVAGE_RUN_BACK_FRAC = 0.2;
+
+// --- Away sites (sim/away, #286 slice 2a) ---
+/** A passage is open only to crew with rest and hunger (a robot's charge) at or above this. */
+export const AWAY_GO = 60;
+/** An away crew member wants to go home below this rest or this hunger (just above where they would sleep or go to eat). */
+export const AWAY_HOME_REST = 25;
+export const AWAY_HOME_HUNGER = 35;
+/** An away crew member below this share of their health goes home urgently. */
+export const AWAY_HOME_HEALTH = 0.5;
+/** Seconds the shuttle waits at home for passengers on their way once someone is aboard, and the least it waits for others to take a seat. */
+export const AWAY_BOARD_WAIT_SEC = 60;
+export const AWAY_BOARD_MIN_SEC = 5;
+/** Longest stop at home between two legs of a round trip while part of the party stays out (the departure check counts on it). */
+export const AWAY_TURNAROUND_SEC = 60;
+/** The departure check: a worker staying out with no other source must have this many round trips of air, plus the walk to the hatch and AIR_RESERVE_SEC. */
+export const AWAY_DEPART_MARGIN = 1.25;
+/** Seconds a closing site waits for its party to come aboard before the shuttle lifts whoever is still out. */
+export const AWAY_LIFT_SEC = 90;
+/** An idle away crew member farther than this many tiles from the shuttle's hatch spot walks back to wait beside it. */
+export const AWAY_WAIT_TILES = 4;

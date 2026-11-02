@@ -11,6 +11,7 @@ import { TaskC } from '../components';
 import type { Task } from '../types';
 import { clearJoblessTask, derivable, setJoblessTask, syncTask } from '../task';
 import { stowSuit } from './eva';
+import { waitBySite } from './return';
 
 /**
  * Jobless walks (generic machine, no job: `Navigate`): with nothing to do a crew member stows a worn suit, steps off a site
@@ -33,6 +34,7 @@ export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position, idleDr
     t = sim.world.get(id, TaskC);
   }
 
+  if (waitBySite(sim, id, pos)) return; // on an away site: wait by the shuttle, suited
   if (stowSuit(sim, id, pos)) return;
   if (isSettled(pos) && vacateSite(sim, id, pos)) return setJoblessTask(sim, id, 'idle', 'generic', 'Navigate');
   if (idleDrives?.()) return;

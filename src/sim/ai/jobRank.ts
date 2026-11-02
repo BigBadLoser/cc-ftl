@@ -3,6 +3,7 @@ import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { operateAffinity } from '../combat/operators';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
+import { passageTiles } from '../away/crew';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';
@@ -57,9 +58,9 @@ export function repairUrgency(sim: Sim, job: Job): number {
 /**
  * Integer terms added to the path cost (x10 units, 10 per tile) of a pair: the EVA penalty for a thin-air walk, the relief penalty (a relief
  * takes the console only when nothing else of their rank waits), minus the operator's affinity for the console. They reorder pairs only
- * within one (level, urgency). Every term must be known from (crew, job, walk mode) before any search, so the bounded and the exact searches
+ * within one (level, urgency). A passage adds its flight to the away site (`passageTiles`). Every term must be known from (crew, job, walk mode) before any search, so the bounded and the exact searches
  * see the same tuple. A trait cost (docs/TRAITS.md section 5, e.g. a phobia of the job's room) is added here.
  */
 export function pairCost(sim: Sim, crewId: number, job: Job, thin: boolean, relief: boolean): number {
-  return 10 * ((thin ? EVA_JOB_PENALTY : 0) + (relief ? RELIEF_PENALTY : 0) - operateAffinity(sim, crewId, job));
+  return 10 * ((thin ? EVA_JOB_PENALTY : 0) + (relief ? RELIEF_PENALTY : 0) - operateAffinity(sim, crewId, job) + passageTiles(sim, crewId, job));
 }
