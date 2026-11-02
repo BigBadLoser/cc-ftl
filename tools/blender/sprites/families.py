@@ -46,6 +46,8 @@
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
+  salvage   the scrap crates of derelict salvage and cloth: .unit (the game stacks units on a slot grid) and .held
+            (items_salvage.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -190,6 +192,9 @@ def jobs(name):
         from .items_kit import jobs as item_jobs
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
         return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+    if name == "salvage":
+        from . import items_salvage
+        return items_salvage.jobs(), True
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
@@ -203,5 +208,5 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "storage_ore")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore")
 ALL = RENDERED + ("sol", "damage_sol")
