@@ -233,12 +233,18 @@ describe('scene observer', () => {
     expect(leaveBlocker(sim)).toBe('crewAway');
   });
 
-  it('a shuttle stowed in a prize\'s bay is away too: leaving lifts only the player\'s own ship', () => {
+  it('crew sitting in a shuttle stowed in a prize\'s bay are away; the empty shuttle stays with the prize', () => {
     const { sim, skiff } = inScene(3);
     expect(leaveBlocker(sim)).toBeNull();
     (sim.world.get(skiff, ShipC) as { faction: string }).faction = 'player'; // taken as a prize
     const shuttle = sim.world.createEntity();
-    sim.world.add(shuttle, VehicleC, { homeShip: skiff, state: 'stowed' } as Vehicle);
+    const v = { homeShip: skiff, state: 'stowed', pilot: 0, passengers: [] as number[] } as unknown as Vehicle;
+    sim.world.add(shuttle, VehicleC, v);
+    expect(leaveBlocker(sim)).toBeNull();
+    const crew = sim.world.query(CrewC, PositionC).find((id) => sim.world.get(id, AllegianceC)?.faction === 'player') as number;
+    sim.world.remove(crew, PositionC);
+    sim.world.add(crew, AboardC, { vehicle: shuttle });
+    v.pilot = crew;
     expect(leaveBlocker(sim)).toBe('crewAway');
   });
 

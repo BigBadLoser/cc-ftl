@@ -85,10 +85,11 @@ export function crewAway(sim: Sim): boolean {
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC);
     if (!v || vehicleFaction(sim, v) !== 'player') continue;
-    // Stowed in a bay: home only in the departing ship's (a prize's shuttle, and whoever sits in it, would be left behind). Crew embarked in a
-    // shuttle have no position: they go wherever it goes.
+    // Stowed in a bay: a shuttle in another ship's bay (a prize's) stays with that ship, like the prize itself; only player crew sitting in it
+    // (embarked crew have no position) would be left behind.
     if (v.state === 'stowed') {
-      if (!mine(v.homeShip)) return true;
+      const aboard = [v.pilot, ...v.passengers].some((c) => c !== 0 && sim.world.get(c, AllegianceC)?.faction === 'player');
+      if (!mine(v.homeShip) && aboard) return true;
       continue;
     }
     const dock = v.state === 'docked' ? sim.world.get(v.dock, ModuleC) : undefined;
