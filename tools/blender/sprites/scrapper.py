@@ -306,13 +306,13 @@ def yoke(b):
 
 
 def top_plate(b):
-    """The plate lying on the drum, centred on it, running back from the yoke's top to above the mouth shroud
-    (measured on the drum tile). Its front edge is notched in the middle; near the mouth end its top slopes up about
-    4 px and runs on level to the end, bent like a strap: the same thickness all the way."""
+    """The plate lying on the drum, centred on it, running back from the yoke's top to end flush with the mouth
+    shroud's face (measured on the drum tile). Its front edge is notched in the middle; near the mouth end it slopes up
+    about 4 px and runs on level to the end, bent like a strap: the same thickness all the way."""
     w, notch = 0.185, 0.12                                              # half width, notch depth
     Db, Df, Dn = DRUM_D - w, DRUM_D + w, DRUM_D + w - notch
-    poly = [(2.15, Db), (2.27, Db), (2.35, Db), (2.38, Db), (2.6, Db), (2.8, Db), (2.8, Df), (2.6, Df), (2.6, Dn),
-            (2.38, Dn), (2.38, Df), (2.35, Df), (2.27, Df), (2.15, Df)]
+    poly = [(2.04, Db), (2.27, Db), (2.35, Db), (2.38, Db), (2.6, Db), (2.8, Db), (2.8, Df), (2.6, Df), (2.6, Dn),
+            (2.38, Dn), (2.38, Df), (2.35, Df), (2.27, Df), (2.04, Df)]
     caps = [(0, 1, 12, 13), (1, 2, 11, 12), (2, 3, 9, 10, 11), (3, 4, 8, 9), (4, 5, 6, 7, 8)]
     lo, hi, t = 0.92, 0.92 + 0.1, 0.15                                  # 0.1 = about 4 px of height; thickness
     top = lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08  # noqa: E731
