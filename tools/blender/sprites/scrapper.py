@@ -66,11 +66,12 @@ class _Build:
         ln = math.sqrt(sum(v * v for v in n)) or 1.0
         self.m.poly([core.G(*p) for p in pts], top if top and n[2] / ln > 0.7 else col, flip=True)
 
-    def loft(self, rings, col=BODY, top=None, caps=(True, True)):
+    def loft(self, rings, col=BODY, top=None, caps=(True, True), skip=()):
         """A shell swept along L through cross-sections across D: rings = [(L, [(d, z), ...]), ...], L increasing, every
         ring with the same number of points (bottom-back corner first, round the top, bottom-front corner last). A
         point pair that coincides in one ring and not the next makes a triangle (a step's side wall). caps, per end:
-        True closes the whole end, False leaves it open (another piece carries on), a [(d, z), ...] closes that part."""
+        True closes the whole end, False leaves it open (another piece carries on), a [(d, z), ...] closes that part.
+        skip lists (segment, side) faces to leave out, for a wall that is built with an opening in it."""
         dm = sum(d for d, _ in rings[0][1]) / len(rings[0][1])
         # Every side face is wound the same way by the ring order, so one sign (from the back wall, which faces -D)
         # orients them all: a centroid test cannot tell which way a wall on the row boundary faces.
@@ -78,8 +79,10 @@ class _Build:
         w = [self.P(La, *ra[0]), self.P(La, *ra[1]), self.P(Lb, *rb[1]), self.P(Lb, *rb[0])]
         n0, o0 = _normal(w), [x - y for x, y in zip(self.P(La, ra[0][0] - 1, 0.5), self.P(La, ra[0][0], 0.5))]
         sign = 1 if sum(x * y for x, y in zip(n0, o0)) > 0 else -1
-        for (La, ra), (Lb, rb) in zip(rings, rings[1:]):
+        for k, ((La, ra), (Lb, rb)) in enumerate(zip(rings, rings[1:])):
             for j in range(len(ra) - 1):
+                if (k, j) in skip:
+                    continue
                 q = [self.P(La, *ra[j]), self.P(La, *ra[j + 1]), self.P(Lb, *rb[j + 1]), self.P(Lb, *rb[j])]
                 q = [p for i, p in enumerate(q) if math.dist(p, q[i - 1]) > 1e-9]
                 if len(q) < 3:
@@ -302,6 +305,26 @@ def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
     b.face([b.P(L1, d, z) for d, z in outer], GMD, fwd)                                                   # outer cap
 
 
+RECESS_L, RECESS_Z, RECESS_DEPTH = (2.32, 2.87), (0.52, 1.06), 0.3
+
+
+def recess(b, DM, h1):
+    """The recess in the bay's back wall (the hopper's opening, measured on the ref's hopper tile, link 07): the wall
+    at D = DM around the opening, and the opening's sides, ceiling, floor and back, dark for now (it glows later)."""
+    (L0, L1), (z0, z1), d = RECESS_L, RECESS_Z, RECESS_DEPTH
+    def wall(pts, col, n):                                              # pts as (L, D, z); n = normal in (L, D, z)
+        a, c = b.P(*pts[0]), b.P(pts[0][0] + n[0], pts[0][1] + n[1], pts[0][2] + n[2])
+        b.face([b.P(*p) for p in pts], col, (c[0] - a[0], c[1] - a[1], c[2] - a[2]))
+    fwd = (0, 1, 0)                                                     # the bay wall faces +D
+    wall([(L0, DM, BASE), (L1, DM, BASE), (L1, DM, z0), (L0, DM, z0)], BODY, fwd)                 # below
+    wall([(L0, DM, z1), (L1, DM, z1), (L1, DM, h1), (3.0 - STEP, DM, TOP), (L0, DM, TOP)], BODY, fwd)  # above
+    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], DARK, fwd)     # back
+    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM, z0), (L0, DM, z0)], DARK, (0, 0, 1))       # floor
+    wall([(L0, DM - d, z1), (L1, DM - d, z1), (L1, DM, z1), (L0, DM, z1)], DARK, (0, 0, -1))      # ceiling
+    wall([(L0, DM - d, z0), (L0, DM, z0), (L0, DM, z1), (L0, DM - d, z1)], DARK, (1, 0, 0))       # sides
+    wall([(L1, DM - d, z0), (L1, DM, z0), (L1, DM, z1), (L1, DM - d, z1)], DARK, (-1, 0, 0))
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -330,13 +353,12 @@ def yoke(b):
 
 def top_plate(b):
     """The plate lying on the drum, centred on it, running back from the yoke's top to end flush with the mouth
-    shroud's face (measured on the drum tile). Its front edge is notched in the middle; near the mouth end it slopes up
-    about 4 px and runs on level to the end, bent like a strap: the same thickness all the way."""
-    w, notch = 0.185, 0.12                                              # half width, notch depth
-    Db, Df, Dn = DRUM_D - w, DRUM_D + w, DRUM_D + w - notch
-    poly = [(2.04, Db), (2.27, Db), (2.35, Db), (2.38, Db), (2.6, Db), (2.8, Db), (2.8, Df), (2.6, Df), (2.6, Dn),
-            (2.38, Dn), (2.38, Df), (2.35, Df), (2.27, Df), (2.04, Df)]
-    caps = [(0, 1, 12, 13), (1, 2, 11, 12), (2, 3, 9, 10, 11), (3, 4, 8, 9), (4, 5, 6, 7, 8)]
+    shroud's face (measured on the drum tile). Near the mouth end it slopes up about 4 px and runs on level to the
+    end, bent like a strap: the same thickness all the way."""
+    w = 0.185                                                           # half width
+    Db, Df = DRUM_D - w, DRUM_D + w
+    poly = [(2.04, Db), (2.27, Db), (2.35, Db), (2.8, Db), (2.8, Df), (2.35, Df), (2.27, Df), (2.04, Df)]
+    caps = [(0, 1, 6, 7), (1, 2, 5, 6), (2, 3, 4, 5)]
     lo, hi, t = 0.92, 0.92 + 0.1, 0.15                                  # 0.1 = about 4 px of height; thickness
     top = lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08  # noqa: E731
     plate_z(b, poly, lambda L: top(L) - t, top, GMD, caps)
@@ -362,7 +384,11 @@ def scrapper(rot):
     bay_wall = lambda h: [(DM, BASE), (DM, h), (D1, h), (D1, BASE)]                           # noqa: E731
     b.loft([(0.03, full(WALL)), (0.5, full(EDGE)), (1.0, full(EDGE)), (1.0 + STEP, full(TOP)), (2.0 - STEP, full(TOP)),
             (2.0, stepped(TOP, EDGE))], caps=(True, bay_wall(EDGE)))                          # hatch end half
-    b.loft([(2.0, back(TOP)), (3.0 - STEP, back(TOP)), (3.0, back(EDGE))], caps=(False, False))  # behind the bay
+    # behind the bay, its bay wall (side 2) built with the recess cut into it
+    r0, r1, h1 = RECESS_L[0], RECESS_L[1], TOP + (EDGE - TOP) * (RECESS_L[1] - (3.0 - STEP)) / STEP
+    b.loft([(2.0, back(TOP)), (r0, back(TOP)), (3.0 - STEP, back(TOP)), (r1, back(h1)), (3.0, back(EDGE))],
+           caps=(False, False), skip={(1, 2), (2, 2)})
+    recess(b, DM, h1)
     b.loft([(3.0, full(EDGE)), (3.5, full(EDGE)), (3.97, full(WALL))], caps=(bay_wall(EDGE), True))  # far end tile
     # the two hatches on the hatch-end slope, one per row: a frame lying on the slope, two sliding door leaves
     for r0, r1 in ((D0, DM), (DM, D1)):
