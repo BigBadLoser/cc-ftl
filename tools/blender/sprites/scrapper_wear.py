@@ -108,3 +108,39 @@ def wear(b, names, top_z, seed=7, run_k=0.7, dust_k=0.7, low_z=0.35, run_col="ru
         col = col.lerp(rust, min(0.9, run_k * run * up + top_rust))
         col = col.lerp(dust, dust_k * min(0.7, 0.7 * low + 0.35 * _s((blot - 0.45) / 0.4)))
         m.f[i] = (idx, tuple(col), own, glow)
+
+
+def drum_wear(b, dark, light, axis, bands, seed=3):
+    """The drum's and yoke's wear: not streaks but rust of varied shades, in soft patches round and along the drum.
+    dark, light: the drum's two rust names (the drum and yoke, the raised bands); axis: (D, z) of the drum's axis;
+    bands: (L0, L1) of each raised band. The dark rust lifts to the light one in patches and sinks to grime in others
+    and in the creases beside each band and low on the drum; the bands brighten toward a raw orange rust in patches."""
+    names = (dark, light)
+    want = {core.lin(c): c for c in names}
+    lit, deep, raw, grime = (Vector(core.lin(c)) for c in (light, dark, "scBodyS", "grime"))
+    O = Vector(b.P(0, 0, 0))
+    eL, eD = Vector(b.P(1, 0, 0)) - O, Vector(b.P(0, 1, 0)) - O
+    det = eL.x * eD.y - eL.y * eD.x
+    ph = np.random.default_rng(seed).uniform(0, math.tau, 6)
+    m = b.m
+    for i, (idx, col, own, glow) in enumerate(m.f):
+        name = want.get(tuple(col))
+        if name is None:
+            continue
+        P = [Vector(m.v[j]) for j in idx]
+        p = sum(P, Vector()) / len(P)
+        x, y = p.x - O.x, -p.y - O.y
+        L, D, z = (x * eD.y - y * eD.x) / det, (eL.x * y - eL.y * x) / det, p.z
+        a = math.atan2(z - axis[1], D - axis[0])                        # round the drum
+        n1 = 0.5 + 0.5 * math.sin(11.0 * L + 2.0 * a + ph[0]) * math.cos(3.0 * a - 7.0 * L + ph[1])
+        n2 = 0.5 + 0.5 * math.sin(17.0 * L - 3.0 * a + ph[2]) * math.sin(5.0 * a + 13.0 * L + ph[3])
+        crease = max((math.exp(-(min(abs(L - e) for e in (L0, L1)) / 0.025) ** 2) for L0, L1 in bands), default=0)
+        low = _s((axis[1] - 0.15 - z) / 0.2)
+        c = Vector(col)
+        if name == dark:
+            c = c.lerp(lit, 0.55 * _s((n1 - 0.55) / 0.25))
+            c = c.lerp(grime, min(0.75, 0.6 * _s((n2 - 0.6) / 0.25) + 0.6 * crease + 0.4 * low))
+        else:
+            c = c.lerp(raw, 0.5 * _s((n1 - 0.6) / 0.25))
+            c = c.lerp(deep, min(0.7, 0.6 * _s((n2 - 0.55) / 0.25) + 0.3 * low))
+        m.f[i] = (idx, tuple(c), own, glow)

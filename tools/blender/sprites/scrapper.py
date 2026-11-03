@@ -493,6 +493,7 @@ def levers(b, Dc, zc, r, spacing=0.236, w=0.06, t=0.04, gap=0.003, wrap=130, n=8
         plate_L(b, poly, Lc - w / 2, Lc + w / 2, DARK, caps)
 
 
+DRUM_BANDS = ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76))   # the drum's raised bands along L
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -502,7 +503,7 @@ def drum(b):
     yoke (later), with two wide raised bands and a narrow one next to the shroud."""
     mouth(b, 2.04, 2.2, 0.12)                                                      # hollow mouth shroud
     b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, RUST_D, sides=20)                        # drum
-    for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
+    for L0, L1 in DRUM_BANDS:                                                      # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST, sides=20)
     rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                      # squared end shroud, under the yoke
     yoke(b)
@@ -591,13 +592,14 @@ def scrapper(rot):
     seams(b, BODY_D)
     panels(b, BODY_D, BODY, BODY_S)
     if os.environ.get("SCRAPPER_WEAR", "1") != "0":
-        from .scrapper_wear import fine, wear
-        names = os.environ.get("SCRAPPER_WEAR_ON", "body").split(",")
-        cols = {"body": (BODY, BODY_S, BODY_D), "drum": (RUST, RUST_D)}
-        sel = [c for k in names for c in cols[k]]
+        from .scrapper_wear import drum_wear, fine, wear
+        sel = (BODY, BODY_S, BODY_D)
         fine(b.m, sel)
         rk, dk, tk = (float(x) for x in os.environ.get("SCRAPPER_WEAR_K", "0.7,0.7,0.55").split(","))
         wear(b, sel, _top, run_k=rk, dust_k=dk, top_k=tk)
+        if os.environ.get("SCRAPPER_DRUM_WEAR", "1") != "0":
+            fine(b.m, (RUST, RUST_D), grid=0.04)
+            drum_wear(b, RUST_D, RUST, (DRUM_D, DRUM_Z), DRUM_BANDS)
     return [b.m.build()]
 
 
