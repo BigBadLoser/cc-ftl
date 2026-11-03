@@ -92,7 +92,7 @@ void main(void) {
   if (r > (breakAge >= 0.0 ? 1.08 : 1.0)) discard;
   vec2 cell = cellAt(p);
   vec2 cr = cellAt(p + vec2(uPx, 0.0)), cd = cellAt(p + vec2(0.0, uPx));
-  bool line = r < 1.0 && r > 0.2 && (cr != cell || cd != cell);
+  bool line = r < 1.0 && (cr != cell || cd != cell);
   float ch = hash(cell);
   float ring = ringOf(cell);
   if (line) ring = min(ring, min(ringOf(cr), ringOf(cd)));   // a line edging a lit cell is lit
