@@ -7,8 +7,11 @@ import type { ItemQty } from '../registry';
  */
 export type VehicleState = 'stowed' | 'flying' | 'docked';
 
-/** Where a flying vehicle is headed. `bay` is its home bay. */
-export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; ship: number };
+/**
+ * Where a flying vehicle is headed. `bay` is its home bay. A hover's `box` (sector tiles) replaces the ship's bounding box when the hover point
+ * is worked out: a salvage shuttle keeps close to the hull that is left of a wreck.
+ */
+export type VehicleDest = { type: 'dock'; airlock: number } | { type: 'bay' } | { type: 'hover'; ship: number; box?: { x: number; y: number; w: number; h: number } };
 
 /**
  * A shuttle: an entity, never a grid. It has no tiles; crew who embark are hidden (see AboardC) and listed in `pilot` /
@@ -35,6 +38,8 @@ export interface Vehicle {
   hover?: number;
   /** EVA suits stowed aboard. Absent = the def's `eva.suits`. */
   suits?: number;
+  /** Seconds of suit air in its store (a refill at the hatch draws from it). Absent = the full store. */
+  air?: number;
   /** Trade: the hold is sealed outbound cargo (being loaded or flown to a buyer); the cargo planner must not unload it. */
   outbound?: boolean;
   /** Trade: the shuttle is on a trade run and flies itself, so launching, undocking and returning need no pilot. Cleared when it is back in its bay. */

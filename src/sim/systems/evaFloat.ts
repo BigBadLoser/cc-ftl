@@ -2,6 +2,8 @@ import { CrewC, DeadC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
 import { vehicleSuits } from '../eva/shuttle';
+import { refillFromVehicle } from '../eva/air';
+import { shuttleBeside } from '../eva/refillFloat';
 import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
@@ -19,7 +21,9 @@ export function evaFloatSystem(sim: Sim): void {
       sim.world.remove(id, EvaFloatC);
       continue;
     }
-    if (--f.ticks > 0) continue;
+    --f.ticks;
+    if (f.mode === 'refill' && f.ticks === Math.floor(f.total / 2) && shuttleBeside(sim, id, f.vehicle)) refillFromVehicle(sim, id, f.vehicle); // the turn at the hatch: swap tanks, unless the shuttle has left
+    if (f.ticks > 0) continue;
     sim.world.remove(id, EvaFloatC);
     if (f.mode !== 'back') continue;
     const v = sim.world.get(f.vehicle, VehicleC);

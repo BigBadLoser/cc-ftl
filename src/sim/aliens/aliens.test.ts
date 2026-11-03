@@ -151,7 +151,7 @@ describe('egg sacs', () => {
     run(sim, 3 * TICK_HZ);
     expect(sac(sim, near).hp).toBe(sac(sim, near).max); // not drafted: no auto fire
     sim.enqueue({ type: 'crew.draft', id: idle, drafted: true });
-    const ev = run(sim, 2 * TICK_HZ, () => sac(sim, near).hp < sac(sim, near).max);
+    const ev = run(sim, 6 * TICK_HZ, () => sac(sim, near).hp < sac(sim, near).max); // a miss is possible: run until the first hit
     expect(of(ev, 'crew.attacked').some((e) => e.crew === idle && e.target === near)).toBe(true);
     expect(sim.world.get(idle, PositionC)).toMatchObject({ x: 2, y: 3 });
     const hits = of(ev, 'crew.hit').filter((e) => e.crew === idle).length;

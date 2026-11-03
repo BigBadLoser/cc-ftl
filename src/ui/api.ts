@@ -523,7 +523,7 @@ export type UiSubject =
 
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
-  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.starving'
+  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'crew.starving'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed';
 
 export type UiLogKind =
@@ -1017,6 +1017,33 @@ export interface UiDerelict {
   power: 'emergency' | 'off';
   /** Doors still jammed. */
   jammed: number;
+  /** The salvage panel's data. */
+  salvage: UiSalvage;
+  /** Who is aboard that is not a derelict's crew: the player's crew standing on it. */
+  crewAboard: number;
+}
+
+export type UiScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
+
+/** One scrap type of a wreck: the parts left and what they would make at a scrapper (averages). */
+export interface UiSalvageType {
+  type: UiScrapType;
+  parts: number;
+  /** Item display names and counts, e.g. electronics 30. */
+  materials: { name: string; count: number }[];
+}
+
+/** A wreck's salvage panel: what can be stripped, and the running order, if any. */
+export interface UiSalvage {
+  types: UiSalvageType[];
+  order: null | {
+    types: UiScrapType[];
+    status: 'running' | 'blocked';
+    /** The block, in words ("hostiles aboard"); '' while running. */
+    block: string;
+    done: number;
+    total: number;
+  };
 }
 
 export interface UiShuttles {

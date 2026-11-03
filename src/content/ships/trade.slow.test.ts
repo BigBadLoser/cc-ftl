@@ -226,13 +226,13 @@ describe('trade, end to end', () => {
   it('an order bigger than the hold is accepted as several trips, the first one held (more in tradeTrips.slow.test.ts)', () => {
     const { sim, ship } = withCivilian('mining');
     const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0] as number)!;
-    storageAdd(sim, crate, 'item.scrap', 90);
+    storageAdd(sim, crate, 'item.scrap_hull', 90);
     sim.enqueue({ type: 'trade.hail', ship });
     run(sim, 2);
-    const deal = accept(sim, ship, [{ item: 'item.scrap', count: 80 }], []);
+    const deal = accept(sim, ship, [{ item: 'item.scrap_hull', count: 80 }], []);
     expect(deal().trip).toMatchObject({ n: 1, of: 2 });
-    expect(deal().give).toEqual([{ item: 'item.scrap', count: 40 }]);
-    expect(deal().trip!.rest[0]!.give).toEqual([{ item: 'item.scrap', count: 40 }]);
+    expect(deal().give).toEqual([{ item: 'item.scrap_hull', count: 40 }]);
+    expect(deal().trip!.rest[0]!.give).toEqual([{ item: 'item.scrap_hull', count: 40 }]);
   });
 
   it('calling off a deal before the shuttle leaves restores everything; one in transit cannot be recalled', () => {

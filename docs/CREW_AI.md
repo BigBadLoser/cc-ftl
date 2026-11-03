@@ -500,26 +500,42 @@ Scope: data-driven engine and `policies` content; drives (sleep, eat, recharge, 
 
 Acceptance: with `policy.legacy`-equivalent data the decisions match Phase 2 on the replay scenes; thresholds and hysteresis covered by unit tests (no flip-flop within `minDwell`, latch exit only at `exit`); new drives covered by scenario tests; leisure never starves work: an idle-with-work counter under 1%. Risks: tuning surface grows; hazard response thrash in breach repair (tolerance flags and `avoid`).
 
-## 11. AI debug inspector
+#### Phase 3 as built (issue #194, branch `ai/phase3`)
 
-Part of the plan, grown per phase. It reads the sim and never mutates it.
-- **Core** (`src/sim/ai/explain.ts`, pure): `explainCrew(sim, id)` returns `{policy, drive, scores[], latched, interrupt, task: {machine, state path, class, bb, holds}, job: {id, kind, tuple breakdown (level, urgency, cost, affinity, EVA, relief)}}`. `explainJob(sim, id)` returns `{holder, candidates: [{crew, tuple}|{crew, rejected}]}` where `rejected` is one of `wrongShip`, `yardOnly`, `selfTarget`, `needsMaterials`, `errand`, `robotSkill`, `priorityOff`, `operateLevel`, `unreachable`, `noSuit`, `reserved`, `avoid`, `drive`, `interrupt`, `outranked(by crew, tuple)`. It recomputes with the scheduler's own pure scoring functions: no trace state, no cost while closed.
-- **Optional trace sink**: `sim.aiTrace` (not saved, like the profiler `Probe`): when set by the app, the scheduler reports each pair outcome at decision time so "why was X chosen at tick t" is available, not just "what would be chosen now". It never influences the sim.
-- **Panel**: `app/aiSnapshot.ts` (like `crewSnapshot.ts`) and `ui/AiInspector.svelte` as a debug tab only (decision 8): per crew, drive bars, chosen drive, state path (`haul / ToDest`), reservation and score breakdown. Per job: candidate table.
-- **Agent-readable**: `window.__ai` with `crew(id)`, `job(id)`, `dump()` (all crew plus open jobs, plus `auditReservations` result), installed with `?perf` or `?ai`, mirroring `window.__perf`; and `npm run ai:dump -- --scenario <s> --ticks <n>` for headless runs.
+Planned as three PRs: (A) the engine and `policies` content with Phase 2-equivalent data; (B) the new drives (leisure with mood hooks) and the `hazard` interrupt; (C) `EatC`/`BedClaimC` folded into `Task` (`SAVE_VERSION`), nested need tasks and the inspector's drive scores.
 
-## 12. Decisions from review
+**A: the engine.** `src/sim/ai/utility.ts` interprets `content/policies.ts` (`PolicyDef`/`DriveDef` in `ai/types.ts`; `ContentRegistry.policies`, absent = `policy.none`, work only):
 
-All nine former open questions are closed; nothing is open.
+- *Inputs* are a reader table (`INPUTS`): `rest`, `hunger`, `charge`, `robotUpkeep` (0 when `wantsBay`), `health`, `air` (suit tank per mille), `mood`, `food` (a predicate). Needs are read in tenths, floored at the reader; `undefined` means the crew member has no such need and the drive scores 0. A new input (#286's `airMargin`, `away`) is a reader plus its name in `DriveInput`.
+- *Score*: an integer piecewise-linear `curve` over the input. A drive with `enter` is latched (bit i of `Intent.latched`): on below `enter`, off at `exit` (no `exit`: no hysteresis). `enterTrait` swaps in a trait threshold (a Glutton's `eatBelow`).
+- *Driven*: a crew member holding a console, or a Workaholic, answers a drive only below its `urgent.below` (today's operator thresholds, 5 and 10). An urgent drive also ignores `minDwell` and `margin`.
+- *Classes*: a `finish` task (a carried patient) holds back every need unless the drive sets `urgent.breaksFinish` (air, #286). This is narrower than the #286 note's "urgent overrides `finish`": sleep and eat keep today's rule that a rescuer never drops a patient, and a test checks nothing else breaks `finish`.
+- *`requires`*: inputs that must read above 0; on failure `onMissing: 'damp'` zeroes the score, `'block'` keeps it and sets `Intent.blocked` (the air drive's pickup request reads it).
+- *`keepWhileTask`*: the drive keeps its score while its own task is under way (a meal being walked to).
+- *Ranking*: by score, ties by policy order; the current drive stays first while `minDwell` or `margin` holds it. The scheduler's turn tries the ranked drives in order through `NEED_TURNS` (machine id to turn): a need that cannot start (no bay, no food) falls through to the next, and `work` hands the crew member to `assignJobs`. `Intent.drive` is the drive actually served.
+- *Policies* by crew kind (`crewKind`: robot by battery species, station by `StationCrewC`, colonist by player allegiance, npc otherwise): `policy.robot` (recharge, work), `policy.colonist` and `policy.station` (sleep, eat, work), `policy.npc` (sleep, work). Yard contractors stay under their faction's policy for now. Evaluation runs every tick (cheap reads; the design's `EVAL_TICKS` stagger is not needed yet).
 
-| # | Decision |
-| --- | --- |
-| 1 | Selective same-level emergency preemption with hysteresis (section 7.1) |
-| 2 | Phase 2 behaviour changes accepted; priority 0 ends a task only at a safe point |
-| 3 | After Phase 1, judge by decision-diff review and behavioural tolerances; no silent hash repinning |
-| 4 | `hazard` interrupt added (Phase 3); `cover` drive deferred; fleeing stays in combat code |
-| 5 | Pilots, `EmbarkOrder`, `seatHelms` stay forced states initially |
-| 6 | No job aging until starvation is demonstrated |
-| 7 | Suit-errand job entities kept during the migration |
-| 8 | Debug inspector only; no crew-inspector card |
-| 9 | Phase 0 starts now; the Opus agent runs the Phase 2 scheduler benchmarking |
+`ai/policy.ts` (`policy.legacy`) is gone, with `wantsToEat`, `SLEEP_BELOW`, `HUNGER_EAT_BELOW`, `HUNGER_EAT_URGENT` and `OPERATOR_EXHAUSTED_BELOW`: the thresholds are policy data now. The robot mend hold stays inline in the scheduler's turn (an interrupt in the design, reading 5 of Phase 1). Acceptance: `npm run ai:diff` recordings of all seven profile scenarios, seeds 1 and 2, are IDENTICAL to `main`; pinned hashes unchanged.
+
+**B: hazard interrupt and leisure.**
+
+- *Hazard* (`ai/hazard.ts`, `crew/hazard.ts`, `ai/machines/escape.ts`): the tile harm the vitals system deals (`tileHarm`, moved out of `vitals.ts` unchanged) is split into hazard bits (air, heat, cold, fire). `hazardHolds` is true while the crew member's own tile has a hazard their task does not tolerate and they have stopped there (a walk through is obeyed) or are already escaping. Tolerance: `extinguish` tolerates fire and heat, a breach seal (firefighting wall build) thin air and cold, a carried patient (`finish`) everything; a suit with air already removes thin air and CO2. The scheduler's turn handles it before anything else (a sleeper or eater included): `escapeTurn` searches breadth first for the nearest safe tile (`EscapeGoal`, the hook #286 extends with air sources), plans the walk, and only then aborts the task (`abortTask('hazard')`: bed, load and need dropped) and starts a jobless `escape/Walk` task. With nowhere safer to go the crew member carries on. The job left behind goes to `Intent.avoid` for 10 s (the scheduler skips that pair), so a burning site is not walked straight back to. The need planners skip destinations that would harm the crew member (`unsafeFor`): a bed (the claimed one is dropped once it is unsafe; with no safe bed they sleep on the safe floor they escaped to), a meal spot, a charging cradle and a break spot, so an escaped sleeper does not walk back into the fire. A drafted crew member whose order is done is stepped off without a task and keeps the draft. `interruptSystem` reports `hazard` at precedence 4 (owner `executor`); fighting crew stay with the fight code (not yet hazard-aware). A policy opts in with `escapeHazards` (all four content policies; bare test content keeps crew put).
+- *Leisure* (`ai/machines/leisure.ts`): `policy.colonist` has a `leisure` drive on mood (latched below 40, released at 55) scoring 90, under work's 100. Drives ranked below work are tried in the idle turn only, after the scheduler found the crew member no job and after suit stowing and site vacating, so a break never keeps anyone from work, and a job found later replaces it. The break walks to a random tile in the nearest working galley's room (else beside the nearest crewmate) and rests `LEISURE_SEC` (20 s). Mood hook: a finished break sets `Mood.relax` (`MOOD_RELAX_SEC` 300 s) for a `relaxed` factor of `MOOD_RELAX_POINTS` (+8).
+- Repins: `sectorEquiv` `disaster` (both behaviours; each alone and neither are recorded in the comment). Tests that are about something else keep crew still: `lifeSupportOxygen` (policies without escape and leisure), `outposts` dig (the engineer is suited).
+
+**C: need tasks are the saved truth.**
+
+- `EatC` and `BedClaimC` are gone (SAVE_VERSION 81):
+  - A sleep's bed claim is the sleep task's `bed` hold. `claimBed`, `releaseBedClaim` and `claimedBed` live in `ai/task.ts`.
+  - A meal is the eat task's blackboard. `startMeal`, `mealOf` and `endMeal` live in `ai/task.ts`. The blackboard holds the spot (`tile`), whether it is a galley (`hot`, plain data, so a meal outlives its galley across a cut) and the ration (`item`), plus `n`: the ticks of eating left, or -1 while walking. The needs system counts `n` down.
+  - `deriveTask` now mirrors only job assignments, a hold-less sleep on the floor and charging; `keepsSameNeed` leaves the sleep and eat tasks as their own truth.
+  - The reservation audit compares holds for job tasks only.
+  - `sectorEquiv` rebuilds the old `bedClaim` and `eat` stores from the tasks for its legacy-shape hash, so both pinned hashes are unchanged.
+- `explainCrew` also reports `latched`, `blocked` and `avoid`.
+
+**The air drive (#286 slice 1).** The first drive that nests and the first that breaks a `finish` task.
+- `air` (first in colonist, station and npc policies) reads `airMargin` and `airSource` (`ai/airNeed.ts`).
+- Refill nests through the errand's `resume`: the job stays reserved and resumes when the tank is full.
+- Critical (`urgent.below` 500, `breaksFinish`) sets a carried patient down.
+- A blocked drive (`onMissing: 'block'`) raises the pickup request (`PickupC`, alert `crew.airUnreachable`).
+- See ARCHITECTURE.md "Slice 1 is built".

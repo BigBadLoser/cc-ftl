@@ -31,6 +31,10 @@ const all = (v: number): Priorities => ({
   firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
 });
 const content: ContentRegistry = {
+  // Crew sleep below rest 20 and otherwise work (content/policies.ts holds the game's policies; sim tests cannot import it).
+  policies: {
+    'policy.t': { id: 'policy.t', crew: ['colonist', 'npc', 'station'], drives: [{ id: 'sleep', input: 'rest', curve: [[0, 1000]], enter: 200, task: 'sleep' }, { id: 'work', curve: [[0, 100]], task: 'job' }] },
+  },
   ships: { 'ship.t': { name: 't', rows } },
   roles: {
     'role.engineer': { name: 'E', priorities: { ...all(4), construction: 1 } },

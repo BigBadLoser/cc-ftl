@@ -8,6 +8,8 @@
     disabled?: boolean;
     /** Drawn as a destructive action. */
     danger?: boolean;
+    /** Drawn as a commit (green edge): it changes the game for good. */
+    commit?: boolean;
     confirm?: { warning: string; label: string; cancel: string };
   }
 </script>
@@ -21,8 +23,8 @@
    * else it needs to show (`children`, such as a progress bar), and its buttons as one full-width group. `resetKey`: a
    * pending confirmation is dropped when it changes (another object selected).
    */
-  let { message, alert = false, buttons, testid, resetKey, children }: {
-    message: string; alert?: boolean; buttons: InspectorButton[]; testid?: string; resetKey?: unknown; children?: Snippet;
+  let { message, alert = false, buttons, testid, resetKey, children, footer }: {
+    message: string; alert?: boolean; buttons: InspectorButton[]; testid?: string; resetKey?: unknown; children?: Snippet; footer?: Snippet;
   } = $props();
 
   let pending = $state<InspectorButton | null>(null);
@@ -50,10 +52,11 @@
       <button class="danger" data-testid={pending.testid} onclick={() => pending && tap(pending)}>{pending.confirm.label}</button>
     {:else}
       {#each buttons as b (b.testid)}
-        <button class:danger={b.danger} title={b.title} disabled={b.disabled} data-testid={b.testid} onclick={() => tap(b)}>{b.label}</button>
+        <button class:danger={b.danger} class:commit={b.commit} title={b.title} disabled={b.disabled} data-testid={b.testid} onclick={() => tap(b)}>{b.label}</button>
       {/each}
     {/if}
   </div>
+  {@render footer?.()}
 </div>
 
 <style>
@@ -66,5 +69,6 @@
   /* Full width, the buttons sharing it equally, spaced like the inspectors' other button grids. */
   .group { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
   .group button { min-height: 32px; padding: 0 14px; }
+  .group button.commit { background: var(--go-fill); border-color: var(--go-edge); }
   .group button.danger { border-color: var(--red); color: var(--red); }
 </style>

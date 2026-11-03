@@ -38,10 +38,13 @@ const content: ContentRegistry = {
     reactor: mod({ power: 20 }),
   },
   crewNames: [],
-  items: { scrap: item(100), metal: item(100), poly: item(50, 0.8) },
+  items: { scrap: item(100), metal: item(100), gem: item(100), poly: item(50, 0.8) },
   recipes: {
     metal: { name: 'Metal', station: 'fab', inputs: [{ item: 'scrap', count: 2 }], outputs: [{ item: 'metal', count: 1 }], work: 20 },
     refine: { name: 'Refine', station: 'fab', inputs: [{ item: 'scrap', count: 2 }], outputs: [{ item: 'metal', count: 1 }], work: 20, category: 'refining' },
+    sure: { name: 'Sure', station: 'fab', inputs: [{ item: 'scrap', count: 2 }], outputs: [{ item: 'metal', count: 1 }], extras: [{ item: 'gem', count: 2, chance: 1 }], work: 20 },
+    never: { name: 'Never', station: 'fab', inputs: [{ item: 'scrap', count: 2 }], outputs: [{ item: 'metal', count: 1 }], extras: [{ item: 'gem', count: 2, chance: 0 }], work: 20 },
+    maybe: { name: 'Maybe', station: 'fab', inputs: [{ item: 'scrap', count: 1 }], outputs: [{ item: 'metal', count: 1 }], extras: [{ item: 'gem', count: 1, chance: 0.5 }], work: 5 },
     other: { name: 'Other', station: 'nope', inputs: [], outputs: [], work: 20 },
   },
   structCosts: {},
@@ -205,5 +208,30 @@ describe('fire and items', () => {
     run(sim, 40);
     expect(totalStock(sim, 'poly')).toBeLessThan(30);
     expect(totalStock(sim, 'scrap')).toBe(30);
+  });
+
+  it('rolls a recipe\'s rare extras per batch: chance 1 always drops, chance 0 never', () => {
+    const a = setup(20);
+    a.sim.enqueue({ type: 'production.add', moduleId: a.fab, recipe: 'sure', mode: 'count', target: 2 });
+    run(a.sim, 1200);
+    expect(totalStock(a.sim, 'gem')).toBe(4);
+    const b = setup(20);
+    b.sim.enqueue({ type: 'production.add', moduleId: b.fab, recipe: 'never', mode: 'count', target: 2 });
+    run(b.sim, 1200);
+    expect(totalStock(b.sim, 'gem')).toBe(0);
+    expect(totalStock(b.sim, 'metal')).toBe(2);
+  });
+
+  it('a middling extra chance rolls from the seeded rng: same seed, same drops, and some of each', () => {
+    const go = (): number => {
+      const r = setup(20);
+      r.sim.enqueue({ type: 'production.add', moduleId: r.fab, recipe: 'maybe', mode: 'count', target: 12 });
+      run(r.sim, 3000);
+      return totalStock(r.sim, 'gem');
+    };
+    const first = go();
+    expect(go()).toBe(first);
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThan(12);
   });
 });

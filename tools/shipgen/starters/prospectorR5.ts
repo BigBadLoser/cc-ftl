@@ -66,7 +66,7 @@ export const variants: Variant[] = [
         { def: 'module.pod_bay', x: 11, y: 17, rot: 0, vehicle: 'vehicle.mining_pod' },
         { def: 'module.storage_pallet', x: 16, y: 17, rot: 0 },
         { def: 'module.storage_rack', x: 11, y: 23, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage_rack', x: 13, y: 23, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
+        { def: 'module.storage_rack', x: 13, y: 23, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
         { def: 'module.storage_rack', x: 15, y: 23, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.airlock', x: 18, y: 21, rot: 2 },
         { def: 'module.light', x: 15, y: 16, rot: 0 },
@@ -155,7 +155,7 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 21, y: 8, rot: 0 },
         // Ore car: racks, shield, the airlock
         { def: 'module.storage_rack', x: 22, y: 10, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage_rack', x: 24, y: 10, rot: 0, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
+        { def: 'module.storage_rack', x: 24, y: 10, rot: 0, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
         { def: 'module.airlock', x: 24, y: 12, rot: 2 },
         { def: 'module.shieldGen', x: 21, y: 13, rot: 0 },
         { def: 'module.light', x: 27, y: 12, rot: 0 },
@@ -247,7 +247,7 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 29, y: 12, rot: 0 },
         // Boom: racks
         { def: 'module.storage_rack', x: 11, y: 18, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage_rack', x: 13, y: 20, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
+        { def: 'module.storage_rack', x: 13, y: 20, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
         { def: 'module.light', x: 14, y: 18, rot: 0 },
         { def: 'module.light', x: 11, y: 20, rot: 0 },
         // Bucket: the pod bay, a rack, the burst laser
@@ -329,7 +329,7 @@ export const variants: Variant[] = [
         { def: 'module.engine', x: 31, y: 5, rot: 1 },
         { def: 'module.reactor', x: 28, y: 5, rot: 0 },
         { def: 'module.storage_rack', x: 28, y: 11, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage_rack', x: 30, y: 11, rot: 0, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
+        { def: 'module.storage_rack', x: 30, y: 11, rot: 0, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
         { def: 'module.light', x: 28, y: 9, rot: 0 },
         { def: 'module.light', x: 33, y: 10, rot: 0 },
         // Engine room (south): an engine, a reactor, the shield, a rack, the airlock
@@ -422,7 +422,7 @@ export const variants: Variant[] = [
         // Pod hangar: the pod bay, racks, the airlock
         { def: 'module.pod_bay', x: 23, y: 20, rot: 0, vehicle: 'vehicle.mining_pod' },
         { def: 'module.storage_rack', x: 26, y: 20, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage_rack', x: 26, y: 25, rot: 2, stock: [{ item: 'item.scrap', count: 80 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
+        { def: 'module.storage_rack', x: 26, y: 25, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
         { def: 'module.storage_rack', x: 28, y: 25, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.airlock', x: 30, y: 23, rot: 2 },
         { def: 'module.light', x: 23, y: 24, rot: 0 },

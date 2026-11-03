@@ -96,6 +96,13 @@ export type SimEvent =
   | { type: 'ship.recovered'; ship: number }
   | { type: 'ship.destroyed'; ship: number }
   | { type: 'ship.fled'; ship: number }
+  /** Derelict salvage: an order was given or changed; it cannot run while something hostile is aboard (and runs again when cleared); it finished (`removed`: nothing was left, the wreck is gone). */
+  | { type: 'salvage.ordered'; ship: number; types: string[] }
+  | { type: 'salvage.blocked'; ship: number; reason: string }
+  | { type: 'salvage.done'; ship: number; removed: boolean }
+  | { type: 'salvage.teamSent'; ship: number; vehicle: number; crew: number[] }
+  | { type: 'salvage.teamHome'; ship: number; vehicle: number; reason: string }
+  | { type: 'salvage.cargoRun'; ship: number; vehicle: number; pilot: number; riders: number[] }
   /** A ship's heat hit the maximum: lockout (no weapons, no shields) until it cools. */
   | { type: 'combat.overheated'; ship: number }
   /** A ship started venting heat (shields down, weapons held). */
@@ -183,6 +190,8 @@ export type SimEvent =
   | { type: 'suit.doffed'; crew: number; airlock: number }
   | { type: 'suit.airLow'; crew: number }
   | { type: 'suit.airOut'; crew: number }
+  /** A suited crew member in thin air can reach no air source (the pickup request, #286); `sec` of air left. */
+  | { type: 'crew.airUnreachable'; crew: number; sec: number }
   /** Event system: an event started (`notice` is the notice id for notices with a lead, else 0), a choice resolved it, an effect was applied (`text` '' = nothing to show). */
   | { type: 'story.started'; event: string; mode: 'decision' | 'notice'; notice: number }
   | { type: 'story.resolved'; event: string; choice: string; success: boolean | null }

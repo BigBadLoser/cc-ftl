@@ -12,6 +12,8 @@ import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { EvaFloatC } from './components';
 import { floatTicks, nearestExterior, tileCentre, tileFrame, vehicleSuits } from './shuttle';
 import { findSuitStow } from './errands';
+import { hatchFace } from './hatch';
+import { refillOrder } from './refillOrder';
 import { startErrand } from '../ai/machines/eva';
 import { planWalk } from './route';
 import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from './suit';
@@ -71,6 +73,11 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (!airlock || !steps) return reject(sim, cmd.type, 'unreachable');
     errand(sim, cmd.crew, 'suitOff', airlock, steps, shipIdOf(sim, pos));
   },
+  'eva.refill': (sim, cmd) => {
+    if (!ready(sim, cmd.type, cmd.crew)) return;
+    const why = refillOrder(sim, cmd.crew, cmd.airlock, cmd.vehicle);
+    if (why) reject(sim, cmd.type, why);
+  },
   'eva.out': (sim, cmd) => {
     const v = sim.world.get(cmd.vehicle, VehicleC);
     const body = sim.world.get(cmd.vehicle, BodyC);
@@ -129,13 +136,4 @@ function errand(sim: Sim, crew: number, kind: 'suitUp' | 'suitOff', airlock: num
   drafted.target = null;
   delete drafted.planned;
   startErrand(sim, crew, kind, { airlock, steps }, shipId);
-}
-
-/** The point of the shuttle's hull-facing side (2.6 tiles from its centre toward the hull tile), in sector tiles: drifting crew start and end there, in view rather than under the sprite. */
-function hatchFace(frame: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } {
-  const dx = to.x - frame.x;
-  const dy = to.y - frame.y;
-  const d = Math.hypot(dx, dy);
-  const k = d > 0 ? Math.min(2.6, Math.max(0, d - 0.5)) / d : 0;
-  return { x: frame.x + dx * k, y: frame.y + dy * k };
 }

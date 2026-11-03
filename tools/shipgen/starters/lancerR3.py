@@ -2,7 +2,7 @@
 from common import *  # noqa: F401,F403
 
 CREW = ['role.gunner', 'role.gunner', 'role.pilot', 'role.engineer']
-HOLD = [STOCK_BUILD, [{'item': 'item.scrap', 'count': 60}, {'item': 'item.ice', 'count': 10}, {'item': 'item.missile', 'count': 16}, {'item': 'item.ration', 'count': 12}], STOCK_ARMS]
+HOLD = [STOCK_BUILD, [{'item': 'item.metal', 'count': 60}, {'item': 'item.ice', 'count': 10}, {'item': 'item.missile', 'count': 16}, {'item': 'item.ration', 'count': 12}], STOCK_ARMS]
 
 def trident():
     s = Ship('L3 TRIDENT', 32, 27, CREW, 'three prongs: missile on the long one, lasers on the outer two')

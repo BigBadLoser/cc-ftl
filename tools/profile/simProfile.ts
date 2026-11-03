@@ -86,7 +86,8 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
   profiler.stopRecording();
   const m = metrics?.summary();
   const summary = { ...profiler.summary(40), scenario: name, seed: opts.seed, ...(m ? { metrics: m } : {}) };
-  const report = formatReport(profiler.summary(40), opts.rows) + (m ? `\n\n${formatMetrics(m)}` : '');
+  const extra = opts.scenario ? getScenario(opts.scenario).report?.(sim, sim.tick - startTick) : undefined;
+  const report = formatReport(profiler.summary(40), opts.rows) + (m ? `\n\n${formatMetrics(m)}` : '') + (extra ? `\n\n${extra}` : '');
   return { summary, report, tick: sim.tick, entities: sim.world.entityCount, startTick, ...(m ? { metrics: m } : {}), ...(decisions ? { decisions: decisions.decisions } : {}), ...(board ? { board } : {}) };
 }
 

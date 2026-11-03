@@ -145,7 +145,7 @@ describe('suits at the airlock', () => {
     const ev = run(sim, 40);
     expect(sim.world.has(c, SuitC)).toBe(false); // still walking / fitting
     run(sim, 200, ev);
-    expect(sim.world.get(c, SuitC)).toEqual({ worn: true, air: DEFAULT_SUIT.airSec, airlock: lock });
+    expect(sim.world.get(c, SuitC)).toEqual({ worn: true, air: DEFAULT_SUIT.airSec });
     expect(airlockSuits(sim, lock)).toBe(2);
     expect(ev.filter((e) => e.type === 'suit.donned')).toEqual([{ type: 'suit.donned', crew: c, airlock: lock }]);
     expect(sim.world.query(JobC)).toHaveLength(0);

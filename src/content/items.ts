@@ -2,7 +2,14 @@ import type { ItemDef } from '../sim';
 
 /** Raw and refined resources. Stack sizes are units per floor stack or storage slot. */
 export const items = {
-  'item.scrap': { name: 'Scrap', tags: ['raw', 'salvage'], stackSize: 100, price: 2 },
+  // Salvage (DESIGN.md "Salvaging derelicts"): stripped from derelicts by type, processed at a scrapper. Placeholder art: the old scrap pile.
+  'item.scrap_hull': { name: 'Hull scrap', tags: ['raw', 'scrap'], stackSize: 100, price: 3 },
+  'item.scrap_tech': { name: 'Tech scrap', tags: ['raw', 'scrap'], stackSize: 100, price: 3 },
+  'item.scrap_energy': { name: 'Energy scrap', tags: ['raw', 'scrap'], stackSize: 100, price: 3 },
+  'item.scrap_weapons': { name: 'Weapons scrap', tags: ['raw', 'scrap'], stackSize: 100, price: 3 },
+  'item.scrap_comfort': { name: 'Comfort scrap', tags: ['raw', 'scrap'], stackSize: 100, price: 3 },
+  // Woven stuff; Comfort scrap is its first source (a loom-type module will make it later).
+  'item.cloth': { name: 'Cloth', tags: ['refined', 'building'], stackSize: 50, price: 6, flammability: 0.5 },
   'item.metal': { name: 'Metal', tags: ['refined', 'building'], stackSize: 100, price: 8 },
   'item.electronics': { name: 'Electronics', tags: ['refined', 'components'], stackSize: 50, price: 16 },
   // Flammable: loose polymer on a burning tile burns and feeds the fire.
@@ -16,7 +23,7 @@ export const items = {
   // Split from ice at a refinery.
   'item.water': { name: 'Water', tags: ['refined', 'life'], stackSize: 50, price: 4 },
   'item.oxygen': { name: 'Oxygen', tags: ['refined', 'life'], stackSize: 50, price: 5 },
-  // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley from scrap. Flammable packaging.
+  // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley. Flammable packaging.
   'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, price: 5, flammability: 0.2, food: { nutrition: 50 } },
   // Ammo for missile launchers. Explosive: loose missiles fuel fires.
   // Starship fuel: every jump on the starmap burns some (more for long routes; hyperlanes are cheaper per distance).

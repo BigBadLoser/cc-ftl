@@ -42,6 +42,7 @@ import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
 import type { BlackMarketDef } from './blackmarket/defs';
 import type { TraitDef } from './crew/traitDef';
+import type { PolicyDef } from './ai/types';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
 export interface ContentRegistry {
@@ -56,6 +57,8 @@ export interface ContentRegistry {
   crewNames: string[];
   /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
   traits?: Record<string, TraitDef>;
+  /** Crew AI policies (content/policies.ts, docs/CREW_AI.md section 8) by id. Absent: every crew member only works. */
+  policies?: Record<string, PolicyDef>;
   /** Item content id (e.g. 'item.metal') to definition. */
   items: Record<string, ItemDef>;
   /** Recipe content id to definition. */
@@ -158,7 +161,7 @@ export interface VehicleDef {
   /** Cargo hold: total item units it carries besides its crew (hauled in and out at its boarding tile). Absent = none. */
   cargo?: number;
   /** EVA from a hovering shuttle: suits stowed aboard (the hatch works like an airlock for them) and how far off a target's hull it holds station (tiles). */
-  eva?: { suits: number; hoverGap: number };
+  eva?: { suits: number; hoverGap: number; /** Seconds of suit air its store holds (default VEHICLE_AIR_TANKS tanks). */ airStore?: number };
   /** Size across in tiles (render footprint; a mining pod nearly fills its 3x3 bay). Absent = the art's own size. */
   size?: number;
   /** A mining laser: ore units cut per second while it holds over an ore tile (mining pods, see systems/mining.ts). */
@@ -278,6 +281,8 @@ export interface RecipeDef {
   station: string;
   inputs: ItemQty[];
   outputs: ItemQty[];
+  /** Rare extra outputs: each is rolled once per finished batch with the sim's seeded rng (deterministic), `chance` 0..1. */
+  extras?: { item: string; count: number; chance: number }[];
   /** Ticks of work at workSpeed 1. */
   work: number;
   /** Work category of the craft job (default 'crafting'; refinery recipes use 'refining'). */
@@ -383,6 +388,9 @@ export interface AirlockLayout {
  * top-left of its rotated bounding box. Offsets (`access`) are in rotation-0 local tiles.
  */
 /** Build catalog tab of a module (tool cards live in their own tabs: structure tools in Structure, rock tools in Mining). */
+/** What a derelict's part strips into (DESIGN.md "Salvaging derelicts"); the item is `item.scrap_<type>`. */
+export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
+
 export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
@@ -408,6 +416,8 @@ export interface ModuleDef {
    * console's chair and the free floor beside it. All other footprint tiles of a solid module block walking.
    */
   openTiles?: readonly (readonly [number, number])[];
+  /** Scrap type stripping this module from a derelict gives. Absent = salvage leaves it alone (robot modules). */
+  scrap?: ScrapType;
   /** Positive supplies power, negative draws it (units per second). */
   power: number;
   /** Power-shedding order 1 (served first) .. 5 when the ship is short of power. Default DEFAULT_POWER_PRIORITY. */
@@ -461,7 +471,7 @@ export interface ModuleDef {
    * Placing it turns the door tiles into doors. Cycling takes `cycleSec` and moves the chamber's air to or from the ship,
    * so crew passing never vents the ship.
    */
-  airlock?: { cycleSec: number; layout?: AirlockLayout; /** Spacesuits stowed in the airlock at build time (default 0). Crew put one on and take it off here. */ suits?: number };
+  airlock?: { cycleSec: number; layout?: AirlockLayout; /** Spacesuits stowed in the airlock at build time (default 0). Crew put one on and take it off here. */ suits?: number; /** Seconds of suit air its store holds (default AIRLOCK_AIR_TANKS tanks). */ airStore?: number };
   /**
    * Vehicle bay: a pit the vehicle sits in (solid, nothing walkable inside; it launches through hatch doors in the pit
    * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for

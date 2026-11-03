@@ -46,7 +46,7 @@ function shuttleLoad(sim: Sim): number {
 }
 
 /**
- * Auto-ferry for salvage. On a prize or a ruined derelict where the player's crew work, whatever loot (storage and loose stacks)
+ * Auto-ferry for salvage. On a prize or a wreck where the player's crew work, whatever loot (storage and loose stacks)
  * has piled up is queued as one transfer to the home ship: when it fills a shuttle, or when the salvage has gone quiet (no open
  * jobs there and the pile has not changed for a while). One open salvage order per site; later loot makes a new one.
  */

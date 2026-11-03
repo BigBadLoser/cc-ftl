@@ -107,7 +107,7 @@ export const stations = {
   'station.mining': {
     name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
-    stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap', min: 0, max: 6 }, { item: 'item.iron_ore', min: 4, max: 14 }, { item: 'item.rare_ore', min: 0, max: 4 }],
+    stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap_hull', min: 0, max: 6 }, { item: 'item.iron_ore', min: 4, max: 14 }, { item: 'item.rare_ore', min: 0, max: 4 }],
     tiers: tiers({ cages: per(1, 1, 2), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6), shapes: SHAPES.mining }),
     rooms: [
       room('industry', n(2, 'module.refinery'), 10, 7, per(1, 2, 4), [{ item: 'item.iron_ore', min: 300, max: 3000 }, { item: 'item.ice', min: 150, max: 1500 }, { item: 'item.rare_ore', min: 150, max: 1500 }]),
@@ -146,7 +146,7 @@ export const stations = {
     weapons: { light: [{ value: 'module.burstLaser', weight: 2 }, { value: 'module.incendiaryLauncher', weight: 1 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
     shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 1, max: 3, jitter: 0.5, label: 'adapter plating' },
-    stock: [{ item: 'item.scrap', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }, { item: 'item.electronics', min: 0, max: 3 }],
+    stock: [{ item: 'item.scrap_hull', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({
       crew: 0.8, guns: per(1, 3, 6), heavyPct: 15, shields: per(0, 1, 1), pd: per(0, 1, 1), crates: per(8, 16, 30), docks: per(2, 3, 3),
       shapes: SHAPES.pirate,

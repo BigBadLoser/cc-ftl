@@ -13,6 +13,7 @@ import { vehicleDefOf } from '../vehicles/lifecycle';
 import { MiningPodC } from '../mining/components';
 import { outsideCrew } from '../eva/shuttle';
 import { FerryC } from './components';
+import { SalvageTripC } from '../salvage/components';
 
 /** True for a player region a run can start or end at: the home ship or a claimed base. */
 export function isFerryRegion(sim: Sim, ship: number): boolean {
@@ -21,12 +22,12 @@ export function isFerryRegion(sim: Sim, ship: number): boolean {
 }
 
 /**
- * True for a region a run can load from: a ferry region, or a salvage site (a captured prize or a ruined derelict), whose
+ * True for a region a run can load from: a ferry region, or a salvage site (a captured prize or any wreck), whose
  * loose stacks and storage the crew there can haul and a hovering shuttle can swap.
  */
 export function isPickupRegion(sim: Sim, ship: number): boolean {
   const s = sim.world.get(ship, ShipC);
-  return isFerryRegion(sim, ship) || (!!s && (s.state === 'prize' || (s.state === 'wreck' && !!s.ruin)));
+  return isFerryRegion(sim, ship) || (!!s && (s.state === 'prize' || s.state === 'wreck'));
 }
 
 /** Units of every item in a region's storage modules and loose on its floor, ascending by item id. */
@@ -67,12 +68,12 @@ export function ferryMode(sim: Sim, ship: number, vehicle: number): 'dock' | 'ho
   return v && v.homeShip !== ship && vehicleDefOf(sim, v)?.eva ? 'hover' : null;
 }
 
-/** True if a shuttle is free for a new run: not a pod, not on a trade run, another run or a boarding, nobody of it out on EVA. */
+/** True if a shuttle is free for a new run: not a pod, not on a trade run, another run, a salvage shift or a boarding, nobody of it out on EVA. */
 export function ferryFree(sim: Sim, vehicle: number): boolean {
   const v = sim.world.get(vehicle, VehicleC);
   const def = v && vehicleDefOf(sim, v);
   if (!v || !def || def.class === 'pod' || (def.cargo ?? 0) <= 0) return false;
-  if (!isFerryRegion(sim, v.homeShip) || sim.world.has(vehicle, FerryC) || sim.world.has(vehicle, MiningPodC) || boardingReserved(sim, vehicle)) return false;
+  if (!isFerryRegion(sim, v.homeShip) || sim.world.has(vehicle, FerryC) || sim.world.has(vehicle, SalvageTripC) || sim.world.has(vehicle, MiningPodC) || boardingReserved(sim, vehicle)) return false;
   if (sim.trade.deals.some((d) => d.vehicle === vehicle && isLive(d)) || v.outbound) return false;
   if (outsideCrew(sim, vehicle).length > 0) return false;
   return !v.home || v.state !== 'stowed' || (sim.world.has(v.home, VehicleBayC) && !!sim.world.get(v.home, ModuleC) && (sim.world.get(v.home, ModuleC)?.hp ?? 0) > 0);

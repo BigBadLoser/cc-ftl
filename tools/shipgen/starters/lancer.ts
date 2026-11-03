@@ -42,7 +42,7 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 8, y: 4, rot: 0 },
         // Middle tine: the missile launcher, a locker
         { def: 'module.missileLauncher', x: 2, y: 12, rot: 0 },
-        { def: 'module.storage', x: 11, y: 11, rot: 0, stock: [{ item: 'item.scrap', count: 60 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 11, y: 11, rot: 0, stock: [{ item: 'item.metal', count: 15 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 8 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.light', x: 7, y: 13, rot: 0 },
         { def: 'module.light', x: 3, y: 11, rot: 0 },
         // South tine: a burst laser, a locker
@@ -166,7 +166,7 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 14, y: 19, rot: 0 },
         // Magazine: stores, life support
         { def: 'module.storage', x: 17, y: 17, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 18, y: 17, rot: 0, stock: [{ item: 'item.scrap', count: 60 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 18, y: 17, rot: 0, stock: [{ item: 'item.metal', count: 15 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 8 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 19, y: 17, rot: 0, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.lifeSupport', x: 21, y: 17, rot: 0 },
         { def: 'module.light', x: 18, y: 19, rot: 0 },
@@ -256,7 +256,7 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 16, y: 12, rot: 0 },
         // Magazine: stores
         { def: 'module.storage', x: 15, y: 17, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 16, y: 17, rot: 0, stock: [{ item: 'item.scrap', count: 60 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 16, y: 17, rot: 0, stock: [{ item: 'item.metal', count: 15 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 8 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 18, y: 17, rot: 0, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 19, y: 20, rot: 0 },
         // South turret: a burst laser
@@ -359,7 +359,7 @@ export const variants: Variant[] = [
         { def: 'module.light', x: 14, y: 15, rot: 0 },
         // Magazine: stores
         { def: 'module.storage', x: 18, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-        { def: 'module.storage', x: 19, y: 13, rot: 0, stock: [{ item: 'item.scrap', count: 60 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
+        { def: 'module.storage', x: 19, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 15 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 8 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
         { def: 'module.storage', x: 20, y: 13, rot: 0, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
         { def: 'module.light', x: 22, y: 15, rot: 0 },
         // Reactor room: two reactors, life support

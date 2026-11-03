@@ -167,7 +167,7 @@ describe('hailing', () => {
     expect(hailVerdict(sim, pirate)).toMatchObject({ answers: true, score: 0 });
     expect(hailVerdict(sim, drone).answers).toBe(false);
     // Offers need an answered hail.
-    sim.enqueue({ type: 'trade.offer', ship: drone, give: [], get: [{ item: 'item.scrap', count: 1 }] });
+    sim.enqueue({ type: 'trade.offer', ship: drone, give: [], get: [{ item: 'item.scrap_hull', count: 1 }] });
     expect(rejected(run(sim, 2))).toEqual(['notAnswered']);
   });
 

@@ -9,10 +9,12 @@ const CLASSES: Record<MachineId, Record<string, TaskClass>> = {
   generic: { Navigate: 'any', Work: 'any' },
   haul: { ToSource: 'any', Take: 'any', ToDest: 'safe', Deposit: 'safe' },
   rescue: { ToPatient: 'any', Lift: 'any', ToBed: 'finish', Lay: 'finish' },
-  eva: { Wait: 'any', ToAirlock: 'any', Don: 'safe', Doff: 'safe' },
+  eva: { Wait: 'any', ToAirlock: 'any', Don: 'safe', Doff: 'safe', Fill: 'finish' },
   eat: { Walk: 'any', Consume: 'safe' },
   sleep: { ClaimBed: 'any', Walk: 'any', Sleep: 'any' },
   charge: { Walk: 'any', Charge: 'any' },
+  escape: { Walk: 'any' },
+  leisure: { Walk: 'any', Relax: 'any' },
 };
 
 /** Every (machine, state) pair the executor uses, for tests that must cover each one. */

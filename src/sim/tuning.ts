@@ -97,10 +97,6 @@ export const REGEN_PER_SEC = 0.1;
 export const BED_REST_MULT = 2;
 
 // --- Hunger and mood ---
-/** Hungry crew (not drafted, not mid-job unless operating) go and eat below this hunger (0..100, 100 = fed). */
-export const HUNGER_EAT_BELOW = 35;
-/** Operators of a console keep their post until hunger is this low. */
-export const HUNGER_EAT_URGENT = 10;
 /** Seconds a meal takes once the crew member is at the galley or the crate. */
 export const EAT_SEC = 4;
 /** Hp per second lost at zero hunger. Slow: a full-health crew member lasts about 33 minutes. */
@@ -127,6 +123,11 @@ export const MOOD_BREAKDOWN_BELOW = 10;
 /** Seconds a hot galley meal, a night in a bed or a night on the floor keeps affecting mood. */
 export const MOOD_MEAL_SEC = 300;
 export const MOOD_SLEEP_SEC = 600;
+/** A break (the leisure drive) lifts mood by this much for MOOD_RELAX_SEC seconds. */
+export const MOOD_RELAX_POINTS = 8;
+export const MOOD_RELAX_SEC = 300;
+/** Seconds a crew member on a break rests at the spot before the break counts. */
+export const LEISURE_SEC = 20;
 /** Another living crew member within this many tiles counts as company; alone this many seconds is lonely. */
 export const MOOD_COMPANY_RADIUS = 7;
 export const MOOD_LONELY_SEC = 120;
@@ -204,8 +205,6 @@ export const RELIEF_PENALTY = 1000;
 export const SCHED_CADENCE = 20;
 /** A free crew member with more candidate jobs than this in one walk mode is costed by one multi-goal Dijkstra; fewer, by lazy A* per job. */
 export const SCHED_DIJKSTRA_ABOVE = 6;
-/** Operators keep manning their console until rest drops below this. */
-export const OPERATOR_EXHAUSTED_BELOW = 5;
 /**
  * Deployable roof parts gate gameplay: weapons cannot charge or fire, shields cannot come up or regenerate and
  * point defence cannot roll until the part is fully deployed. Set false to keep the animation but drop the gating.
@@ -306,10 +305,37 @@ export const HACK_HOLD_RADIUS = 1;
 export const EVA_THIN_AIR_BELOW = 8;
 /** The suit's warning fires when the tank falls to this fraction. */
 export const EVA_AIR_LOW_FRAC = 0.25;
-/** The default suit (content/suit.ts overrides it): a tank lasts 4 minutes, donning takes 5 s, a suited crew member is 20% slower. */
+/** The default suit (content/suit.ts overrides it): a tank lasts 10 minutes, donning takes 5 s, a suited crew member is 20% slower. */
 export const DEFAULT_SUIT = {
-  airSec: 240, donSec: 5, doffSec: 3, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, floatSpeed: 1.5, floatRange: 6,
+  airSec: 600, donSec: 5, doffSec: 3, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, floatSpeed: 1.5, floatRange: 6,
 } as const;
+/** Air stores (#286): an airlock holds this many full tanks, a shuttle this many; an airlock's refills one tank per AIRLOCK_AIR_REFILL_SEC on a ship with life support. */
+export const AIRLOCK_AIR_TANKS = 3;
+export const VEHICLE_AIR_TANKS = 6;
+export const AIRLOCK_AIR_REFILL_SEC = 300;
+/** A shuttle docked at an airlock draws one tank from its store per this many seconds. */
+export const VEHICLE_AIR_DOCK_FILL_SEC = 10;
+/** Seconds to swap a tank at an airlock's suit tile or at a shuttle's hatch. */
+export const REFILL_FILL_SEC = 3;
+/** Partial work (admission): a crew member is admitted for one work stint of this many seconds, and keeps this reserve of air when they would turn back. */
+export const STINT_SEC = 60;
+export const AIR_RESERVE_SEC = 30;
+/**
+ * The air drive (#286 slice 1, docs/DESIGN.md "Air as a need"), for a suited crew member whose tank drains (in thin air). Refill when the
+ * air left is under the larger of AIR_REFILL_FRAC of a tank and AIR_REFILL_TRAVEL x the travel time to the nearest source + AIR_REFILL_PAD_SEC;
+ * critical (it overrides every task, a carried patient included) under the larger of AIR_CRITICAL_FRAC and AIR_CRITICAL_TRAVEL x + AIR_CRITICAL_PAD_SEC.
+ * The nearest source is searched again every AIR_EVAL_TICKS.
+ */
+export const AIR_REFILL_FRAC = 0.3;
+export const AIR_REFILL_TRAVEL = 1.5;
+export const AIR_REFILL_PAD_SEC = 30;
+export const AIR_CRITICAL_FRAC = 0.1;
+export const AIR_CRITICAL_TRAVEL = 1.2;
+export const AIR_CRITICAL_PAD_SEC = 10;
+export const AIR_EVAL_TICKS = 20;
+/** Travel time: seconds to pass a plain door (a door swings open as the walker steps into it, so none today), and the dock or launch time added to a flight. */
+export const DOOR_PASS_SEC = 0;
+export const FLIGHT_DOCK_SEC = 6;
 /** Extra path steps an automatic job that needs vacuum counts for when crew choose between jobs (they prefer no EVA). */
 export const EVA_JOB_PENALTY = 30;
 
@@ -358,3 +384,24 @@ export const XP_PER_WORK_SEC = 1;
 export const XP_PER_HP_HEALED = 2;
 /** Hand weapons: 1 XP per this much damage dealt (gunnery for ranged, melee for the rest). */
 export const XP_DAMAGE_PER_XP = 4;
+
+// --- Derelict salvage (sim/salvage) ---
+/** A stripped part gives scrap worth this fraction of its build cost (items counted; stochastic rounding), always below the full cost. */
+export const SALVAGE_FRAC = 0.4;
+/** The salvage planner looks at each ordered wreck this often (ticks). */
+export const SALVAGE_EVERY = 10;
+/** Most stripping jobs open at once on one wreck (the crew take the rest as these finish). */
+export const SALVAGE_JOBS_OPEN = 8;
+/** Most crew one salvage shift sends to a wreck (also capped by the shuttle's suits and seats, and by half the able crew aboard). */
+export const SALVAGE_TEAM = 3;
+/** A salvage team member comes home below this rest, or this hunger (0..100: just above where they would sleep or go to eat). */
+export const SALVAGE_TEAM_REST = 25;
+export const SALVAGE_TEAM_HUNGER = 35;
+/** A shift only takes crew with rest and hunger at or above this. */
+export const SALVAGE_TEAM_GO = 60;
+/** A salvage team member goes to refill the suit (at the hovering shuttle or an airlock on the wreck) below this share of a full tank. */
+export const SALVAGE_REFILL_FRAC = 0.4;
+/** A salvage team member still out on the wreck with less air than this share of a full tank (stuck: no way to a refill) is picked up by the shuttle. */
+export const SALVAGE_RESCUE_FRAC = 0.1;
+/** A cargo run turns back (skipping the unload) when someone left on the wreck is out of action, or below this share of a tank (not managing to refill). */
+export const SALVAGE_RUN_BACK_FRAC = 0.2;

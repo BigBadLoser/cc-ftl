@@ -28,6 +28,7 @@
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
+  storage_scrap scrap storage: the barred cage full of salvage, 2x2 and 2x3, 4 rotations, 4 fills (ore_cage.py, scrap.py)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
   wallprops pieces on a wall run's face: pipes, cable tray, conduit, vents, panels, signs, a terminal (wallprops.py)
   hazards   looping hazards (.f0 .. .f3): sparking cables (wall and floor), a steam leak, an emergency beacon (hazards.py)
@@ -45,6 +46,8 @@
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
+  salvage   the scrap crates of derelict salvage and cloth: .unit (the game stacks units on a slot grid) and .held
+            (items_salvage.py)
   hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
             each piece with its tint mask (hulltiles.py)
 Crew layers are built separately (`crew`)."""
@@ -192,9 +195,15 @@ def jobs(name):
         from .items_kit import jobs as item_jobs
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
         return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+    if name == "salvage":
+        from . import items_salvage
+        return items_salvage.jobs(), items_salvage.palette
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
+    if name == "storage_scrap":
+        from . import scrap
+        return scrap.jobs(), True
     if name == "hull":
         from . import hulltiles
         return hulltiles.jobs(), "hull"                 # (its own palette set: palette_extra "set": "hull")
@@ -205,5 +214,6 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "storage_ore", "hull")
+            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
+            "hull")
 ALL = RENDERED + ("sol", "damage_sol")

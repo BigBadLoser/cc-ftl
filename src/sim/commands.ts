@@ -1,6 +1,6 @@
 import type { Faction } from './combat/components';
 import type { WorkCategory } from './crew/components';
-import type { ItemQty, SkillName } from './registry';
+import type { ItemQty, ScrapType, SkillName } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
 export type Command =
@@ -8,6 +8,9 @@ export type Command =
   | { type: 'debug.spawnMarker'; x: number; y: number }
   | { type: 'debug.setStruct'; ship: number; x: number; y: number; kind: number }
   | { type: 'job.build'; ship: number; x: number; y: number; struct: number }
+  /** Order a derelict (a wreck with ruin data) stripped of the ticked scrap types; the crew run it as ordinary jobs (sim/salvage). Orders again to change the types. */
+  | { type: 'salvage.order'; ship: number; types: ScrapType[] }
+  | { type: 'salvage.cancel'; ship: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }
@@ -50,6 +53,8 @@ export type Command =
   | { type: 'eva.suitUp'; crew: number; airlock: number }
   /** Drafted, suited crew walk to an airlock (default: the nearest on their grid) and take the suit off; it returns there with a full tank. */
   | { type: 'eva.suitOff'; crew: number; airlock?: number }
+  /** Drafted, suited crew fill their tank: at `airlock`, or at the hatch of the shuttle `vehicle` hovering within float range, else at the nearest source they can reach. Only a source with air in its store counts. */
+  | { type: 'eva.refill'; crew: number; airlock?: number; vehicle?: number }
   /** Fly a shuttle to hold station a few tiles off another ship's hull (`ship`: its ShipC entity id; launching a stowed one first). Needs a pilot. */
   | { type: 'vehicle.hover'; vehicle: number; ship: number }
   /** Crew aboard a hovering shuttle (default: all passengers) put on suits from its stock and float out to the target's hull. */

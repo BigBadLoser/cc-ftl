@@ -2,7 +2,7 @@
 from common import *  # noqa: F401,F403
 
 CREW = ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic']
-STOCK = [STOCK_BUILD, [{'item': 'item.scrap', 'count': 80}, {'item': 'item.ice', 'count': 10}, {'item': 'item.ration', 'count': 12}], STOCK_ARMS]
+STOCK = [STOCK_BUILD, [{'item': 'item.metal', 'count': 80}, {'item': 'item.ice', 'count': 10}, {'item': 'item.ration', 'count': 12}], STOCK_ARMS]
 
 
 def kestrel():

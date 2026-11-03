@@ -6,6 +6,7 @@
   import PrizePanel from './PrizePanel.svelte';
   import ShipMeters from './ShipMeters.svelte';
   import StationInfo from './StationInfo.svelte';
+  import SalvagePanel from './SalvagePanel.svelte';
   import TradeList from './TradeList.svelte';
   import Icon, { type IconName } from './Icon.svelte';
 
@@ -29,7 +30,7 @@
   const name = $derived(prize?.name ?? foe?.name ?? partner?.name ?? shuttles.targets.find((t) => t.ship === ship)?.name ?? `Ship ${ship}`);
   const derelict = $derived(shuttles.targets.find((t) => t.ship === ship)?.derelict);
   const icon = $derived<IconName>(derelict ? 'derelict' : prize ? 'prize' : foe ? 'skull' : partner?.station ? 'station' : 'ship');
-  const sub = $derived(derelict ? 'Derelict' : prize ? 'prize' : foe ? foe.state : partner ? partner.role || partner.kind : '');
+  const sub = $derived(derelict ? 'WRECK' : prize ? 'prize' : foe ? foe.state : partner ? partner.role || partner.kind : '');
 </script>
 
 <div data-testid="grid-panel">
@@ -42,6 +43,12 @@
       <span class="cell" class:warn={derelict.power === 'off'} title="Power"><Icon name="power" size={18} /><b data-testid="der-power">{derelict.power === 'off' ? 'No power' : 'Emergency'}</b></span>
       {#if derelict.jammed}<span class="cell warn wide" title="Jammed doors: select one to force it"><Icon name="door" size={18} /><b>{derelict.jammed} jammed {derelict.jammed === 1 ? 'door' : 'doors'}</b></span>{/if}
     </div>
+    <dl data-testid="derelict-rows">
+      <dt>Status</dt><dd>{derelict.air === 'vacuum' ? 'Derelict, breached' : 'Derelict'}</dd>
+      <dt>Crew aboard</dt><dd>{derelict.crewAboard || 'none'}</dd>
+    </dl>
+    <h4>Salvage</h4>
+    <SalvagePanel {api} {ship} salvage={derelict.salvage} />
   {/if}
   {#if foe}<ShipMeters ship={foe} compact />{/if}
   {#if prize}<PrizePanel {api} {ship} />{/if}
@@ -54,6 +61,9 @@
 </div>
 
 <style>
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 6px 0; }
+  dt { color: var(--dim); } dd { margin: 0; text-align: right; }
+  h4 { margin: 10px 0 4px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; color: var(--dim); }
   .dim { color: var(--dim); margin: 4px 0; }
   .der { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); min-height: 20px; }

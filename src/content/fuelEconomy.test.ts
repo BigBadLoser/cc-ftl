@@ -205,7 +205,7 @@ describe('review fixes', () => {
     const storeOf = (ship: number): number[] => sim.world.query(StorageC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship);
     expect(storeOf(second).length).toBeGreaterThan(0);
     const before = fuelStock(sim, second);
-    for (const id of storeOf(flown)) storageAdd(sim, id, 'item.scrap', 100000);
+    for (const id of storeOf(flown)) storageAdd(sim, id, 'item.scrap_hull', 100000);
     sim.enqueue({ type: 'galaxy.distress' });
     run(sim, 1);
     turns(sim, DISTRESS_TURNS);

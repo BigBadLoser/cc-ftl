@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, ShipC, Struct, TaskC,
+  AssignmentC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, PrioritiesC, ShipC, Struct, SuitC, TaskC,
   deserialize, findPath, homeShip, isSuited, isThin, liftShip, newGame, placementError, removeModule, serialize, shipGrid, spawnModule,
   stampPacket, type Sim,
 } from '../../sim';
+import { claimedBed } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';
 import { machineStates } from '../../sim/ai/classes';
 import { killCrew } from '../../sim/crew/death';
@@ -91,11 +92,42 @@ function bedless(seed: number, lifted = false): Sim {
   return sim;
 }
 
+/**
+ * A fire under a crew member's feet (the hazard interrupt's escape) and a glum crew member with no work enabled (tired and
+ * peckish: a break). */
+function hazard(seed: number): Sim {
+  const sim = newGame(seed, content, 'ship.starter', false);
+  run(sim, 2);
+  const crew = sim.world.query(CrewC);
+  const at = sim.world.get(crew[0]!, PositionC)!;
+  sim.enqueue({ type: 'debug.ignite', ship: homeShip(sim), x: at.x, y: at.y });
+  sim.world.get(crew[3]!, NeedsC)!.rest = 29.9; // tired (under 30) but some way off sleep (20)
+  sim.world.get(crew[3]!, NeedsC)!.hunger = 40;
+  const prio = sim.world.get(crew[3]!, PrioritiesC)!;
+  for (const k of Object.keys(prio)) (prio as Record<string, number>)[k] = 0; // no job ever takes them off the break
+  return sim;
+}
+
+/** A drafted, suited crew member with a low tank ordered to refill at the starter airlock: the refill machine (`eva/ToAirlock`, `eva/Fill`). */
+function refill(seed: number): Sim {
+  const sim = newGame(seed, content, 'ship.starter', false);
+  run(sim, 2);
+  const c = sim.world.query(CrewC)[0]!;
+  sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+  sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+  run(sim, 2);
+  sim.world.get(c, SuitC)!.air = 120;
+  sim.enqueue({ type: 'eva.refill', crew: c });
+  return sim;
+}
+
 const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'busy', make: () => busy(1), ticks: 2000 },
   { name: 'robot', make: () => robot(1), ticks: 400 },
   { name: 'bedless 1', make: () => bedless(1), ticks: 900 },
   { name: 'bedless 2', make: () => bedless(2, true), ticks: 300 },
+  { name: 'hazard', make: () => hazard(1), ticks: 600 },
+  { name: 'refill', make: () => refill(1), ticks: 400 },
 ];
 
 /**
@@ -172,7 +204,7 @@ describe('crew AI phase 1: every executor state', () => {
     const task = sim.world.get(crew, TaskC)!;
     const job = sim.world.get(task.job, JobC);
     switch (how) {
-      case 'draft': sim.enqueue({ type: 'crew.draft', id: crew, drafted: true }); return true;
+      case 'draft': if (sim.world.has(crew, DraftedC)) return false; sim.enqueue({ type: 'crew.draft', id: crew, drafted: true }); return true;
       case 'down': sim.world.get(crew, HealthC)!.hp = 0; return true;
       case 'kill': killCrew(sim, crew); return true;
       case 'destroyJob': if (!job) return false; destroyJob(sim, task.job); return true;
@@ -232,7 +264,7 @@ describe('crew AI phase 1: every executor state', () => {
         if (how === 'draft' || how === 'down' || how === 'kill') {
           expect(sim.world.has(c, AssignmentC), at).toBe(false);
           expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.reservedBy === c), at).toEqual([]);
-          expect(sim.world.has(c, BedClaimC), at).toBe(false);
+          expect(claimedBed(sim, c), at).toBe(0);
         }
         if (how === 'kill') expect(sim.world.has(c, TaskC), at).toBe(false);
         for (const id of sim.world.query(CrewC)) {

@@ -13,7 +13,7 @@ export interface TraitEffects {
   hungerMult?: number;
   /** crew/mood.ts: the food factors (well fed, hot meal) are worth this much. */
   foodMoodMult?: number;
-  /** crew/eating.ts: goes to eat below this hunger instead of HUNGER_EAT_BELOW (not at a console). */
+  /** The eat drive (content/policies.ts `enterTrait`): goes to eat below this hunger instead of the drive's own threshold (not at a console). */
   eatBelow?: number;
   /** crew/spawn.ts: max hp at creation. */
   maxHpMult?: number;

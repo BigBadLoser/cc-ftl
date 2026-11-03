@@ -15,7 +15,7 @@ import { COWARD_FLEE_BELOW, XP_DAMAGE_PER_XP } from '../tuning';
 import { grantXp } from '../crew/xp';
 import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
-import { isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
+import { isBoarding, isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
 import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
@@ -117,7 +117,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   if (foes.length === 0 && !sac && !autoSac) {
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
-    if (invader && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
+    if (invader && isBoarding(sim, id) && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
       const shipId = shipIdOf(sim, pos);
       // Zealot raiders go for the AI core when the ship has one; otherwise they board like anyone else.
       const core = sim.world.has(id, CoreRaiderC) ? coreObjective(sim, shipId, pos) : null;

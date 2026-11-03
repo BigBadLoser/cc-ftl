@@ -2,6 +2,7 @@ import type { Sim } from './sim';
 import { NOOP_PROBE, type Probe } from './probe';
 import { airlockSystem } from './systems/airlock';
 import { suitsSystem } from './systems/suits';
+import { airStoresSystem } from './systems/airStores';
 import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
@@ -76,6 +77,8 @@ import { tradeSystem } from './systems/trade';
 import { yardSystem } from './yard/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
+import { salvageSystem } from './salvage/system';
+import { salvageTripSystem } from './salvage/trip';
 import { truceSystem } from './systems/truce';
 
 /** One step of the tick. Reads and writes world components and grid fields only. */
@@ -119,6 +122,8 @@ export const pipeline: readonly System[] = [
   alertsSystem,
   // Suit air drains on the final environment; vitals then sees which tanks ran dry.
   suitsSystem,
+  // Air stores (airlocks, shuttles) top up once a second; nothing reads them but refills.
+  airStoresSystem,
   // Vitals after the environment is final: breathing, harm, downing, bleeding, dying.
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
@@ -130,6 +135,8 @@ export const pipeline: readonly System[] = [
   // Economy planners, in dependency order: drop dead hauls (frees reservations), open craft jobs,
   // then supply (jobs get first claim on stock), then clear the floor with what is left unclaimed.
   haulCleanupSystem,
+  // Salvage orders on derelicts: block on hostiles, keep stripping jobs open, remove a stripped wreck (before supply and the scheduler hand jobs out).
+  salvageSystem,
   craftJobsSystem,
   // Research jobs next to the craft jobs: the active project is paid from stock, which must happen before supply claims it for builds.
   researchJobsSystem,
@@ -173,6 +180,8 @@ export const pipeline: readonly System[] = [
   yardSystem,
   // Base-logistics runs: shuttles carry cargo and crew between the home ship and claimed bases (ordinary vehicle commands, next tick).
   ferrySystem,
+  // Salvage teams: a shuttle carries a few suited crew to a wreck under a salvage order, hovers as their refill point and takes the loose scrap home.
+  salvageTripSystem,
   // Transfer orders (queue) take free shuttles and pilots and start the runs above; they book trips the ferry flow just settled.
   logisticsSystem,
   // Work last (the executor's work step, sim/ai): completed jobs change the grid, which rooms picks up next tick.

@@ -9,6 +9,7 @@
 import { content } from '../../src/content';
 import { newGame, homeShip, shipGrid, ShipC, CrewC, PositionC, type Sim, type Command } from '../../src/sim';
 import { Struct } from '../../src/sim/structure';
+import { prepareBench, scrapHome, type Bench } from '../../src/content/ships/salvageBench';
 
 export interface Scenario {
   name: string;
@@ -19,6 +20,8 @@ export interface Scenario {
   populate: boolean;
   /** Queue debug commands and step the sim until the board is set. Must be deterministic for a seed. */
   setup(sim: Sim): void;
+  /** Extra lines for the end of the `profile:sim` report: what the scenario measures (`ticks` is how long the run lasted after setup). */
+  report?(sim: Sim, ticks: number): string;
 }
 
 type Tile = { x: number; y: number };
@@ -153,7 +156,7 @@ const SCENARIOS: Scenario[] = [
     populate: false,
     setup(sim) {
       const hub = spawnStation(sim, 'hub');
-      const items = ['item.metal', 'item.scrap', 'item.ration'].filter((i) => i in content.items);
+      const items = ['item.metal', 'item.scrap_hull', 'item.ration'].filter((i) => i in content.items);
       const cmds: Command[] = [];
       const floor = (ship: number): Tile[] => {
         const g = shipGrid(sim, ship)!;
@@ -180,6 +183,24 @@ const SCENARIOS: Scenario[] = [
       spawnStation(sim, 'station');
     },
   },
+  ...([[6, false], [4, false], [6, true], [4, true]] as const).map(([crew, airlock]): Scenario => {
+    const benches = new WeakMap<Sim, Bench>();
+    return {
+      name: `salvageBench${crew === 4 ? '4' : ''}${airlock ? 'Lock' : ''}`,
+      description: `The salvage throughput bench (docs/ARCHITECTURE.md "Throughput check"): ${crew} crew, a wreck ${airlock ? 'with' : 'without'} an airlock, every scrap type ordered. The report ends with scrap brought home per game hour; run 144000 ticks for the 2 game hours of the baseline.`,
+      ticks: 144000,
+      populate: false,
+      setup(sim) {
+        benches.set(sim, prepareBench(sim, { crew, airlock }));
+      },
+      report(sim, ticks) {
+        const b = benches.get(sim);
+        if (!b) return '';
+        const scrap = scrapHome(sim, b.home) - b.start;
+        return `salvage bench: ${scrap} scrap units home in ${ticks} ticks = ${((scrap / Math.max(1, ticks)) * 72000).toFixed(1)} per game hour`;
+      },
+    };
+  }),
 ];
 
 export const scenarioNames = (): string[] => SCENARIOS.map((s) => s.name);

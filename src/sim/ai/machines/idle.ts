@@ -22,8 +22,11 @@ import { stowSuit } from './eva';
 const WANDER_CHANCE = 0.005;
 const WANDER_RADIUS = 3;
 
-/** The idle turn, after the scheduler found no job: stow the suit, vacate a site, stroll (station crew) or wander. */
-export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position): void {
+/**
+ * The idle turn, after the scheduler found no job: stow the suit, vacate a site, then the drives ranked below work (`idleDrives`:
+ * a break), else stroll (station crew) or wander.
+ */
+export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position, idleDrives?: () => boolean): void {
   let t = sim.world.get(id, TaskC);
   if (t && derivable(t)) {
     syncTask(sim, id, true); // a meal given up this turn (no food, no way there) ends its task
@@ -32,6 +35,7 @@ export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position): void 
 
   if (stowSuit(sim, id, pos)) return;
   if (isSettled(pos) && vacateSite(sim, id, pos)) return setJoblessTask(sim, id, 'idle', 'generic', 'Navigate');
+  if (idleDrives?.()) return;
   if (strollTurn(sim, id, pos)) return setJoblessTask(sim, id, 'leisure', 'generic', 'Navigate');
   wander(sim, id, pos, crew, t);
 }

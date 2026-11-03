@@ -5,7 +5,7 @@ import type { Modifier, ModifierSource } from '../stats';
 import type { Sim } from '../sim';
 import {
   LIGHT_DARK_BELOW, MOOD_BASE, MOOD_BREAKDOWN_BELOW, MOOD_COMPANY_RADIUS, MOOD_LONELY_SEC, MOOD_LOW, MOOD_LOW_WORK_MULT,
-  MOOD_MEAL_SEC, MOOD_SLEEP_SEC, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT, O2_ALERT_BELOW, O2_HARM_BELOW,
+  MOOD_MEAL_SEC, MOOD_RELAX_POINTS, MOOD_RELAX_SEC, MOOD_SLEEP_SEC, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT, O2_ALERT_BELOW, O2_HARM_BELOW,
 } from '../tuning';
 import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type MoodFactor } from './components';
 import { applyTraitMood, TRAIT_MOOD_LABELS } from './traitMood';
@@ -18,7 +18,7 @@ export const MOOD_LABELS: Readonly<Record<string, string>> = {
   exhausted: 'Exhausted', tired: 'Tired', rested: 'Rested',
   hotMeal: 'Hot meal at the galley', bed: 'Slept in a bed', floor: 'Slept on the floor',
   dark: 'Dark room', thinAir: 'Thin air', staleAir: 'Stale air', smoky: 'Smoky room', temperature: 'Uncomfortable temperature',
-  company: 'Company', lonely: 'Lonely',
+  company: 'Company', lonely: 'Lonely', relaxed: 'Took a break',
   ...TRAIT_MOOD_LABELS,
 };
 
@@ -38,6 +38,11 @@ export function ensureMood(sim: Sim, id: number): Mood {
 /** A meal just ended; a galley meal is a hot one and lifts mood for a while. */
 export function noteMeal(sim: Sim, id: number, galley: boolean): void {
   if (hasMood(sim, id)) ensureMood(sim, id).meal = galley ? MOOD_MEAL_SEC : 0;
+}
+
+/** A break (the leisure drive's walk and rest, ai/machines/leisure.ts) just ended: mood lifts for a while. */
+export function noteLeisure(sim: Sim, id: number): void {
+  if (hasMood(sim, id)) ensureMood(sim, id).relax = MOOD_RELAX_SEC;
 }
 
 /** A sleep just ended, in a bed or on the floor. */
@@ -65,6 +70,7 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
   else if (rest < 30) add('tired', -8);
   else if (rest >= 85) add('rested', 4);
   if (m.meal > 0) add('hotMeal', 6);
+  if ((m.relax ?? 0) > 0) add('relaxed', MOOD_RELAX_POINTS);
   if (m.sleep > 0) add(m.bed > 0 ? 'bed' : 'floor', m.bed > 0 ? 5 : -6);
 
   const pos = sim.world.get(id, PositionC);

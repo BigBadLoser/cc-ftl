@@ -49,7 +49,7 @@ jobs:
           test -f wiki/dist/reference/modules/fabricator/index.html
           test -f wiki/dist/guides/first-hour/index.html
           grep -q 'Pause / resume' wiki/dist/guides/controls/index.html
-          grep -q 'Smelt metal' wiki/dist/reference/modules/fabricator/index.html
+          grep -q 'Machine spare parts' wiki/dist/reference/modules/fabricator/index.html
           grep -q 'Refine iron ore' wiki/dist/reference/modules/refinery/index.html
           test -s wiki/dist/generated/previews/module-reactor.png
           test -s wiki/dist/generated/previews/module-engine-mk2.png

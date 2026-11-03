@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
-  type RoleDef,
+  type RoleDef, type Task,
 } from '../../sim';
 import { content } from '../index';
 
@@ -29,7 +29,20 @@ function fnv(s: string, h = 0x811c9dc5): number {
  */
 function legacyWorld(sim: Sim): unknown {
   const data = sim.world.serialize();
-  const stores = { ...data.stores };
+  // Crew AI Phase 3 folded the meal (`EatC`) and the sleep's bed claim (`BedClaimC`) into the task (SAVE_VERSION 81): rebuild those
+  // stores from it, in their old key order, and put them back in the stores' sorted order. Both hashes are unchanged by the fold.
+  const tasks = (data.stores.task ?? []) as [number, Task][];
+  const folded: Record<string, [number, unknown][]> = {
+    bedClaim: tasks.flatMap(([id, t]) => {
+      const bed = t.machine === 'sleep' ? t.holds.find((h) => h.kind === 'bed')?.id : undefined;
+      return bed ? [[id, { bed }] as [number, unknown]] : [];
+    }),
+    eat: tasks.flatMap(([id, t]) => (t.machine === 'eat' && t.job === 0
+      ? [[id, { x: t.bb.tile?.x, y: t.bb.tile?.y, galley: !!t.bb.hot, item: t.bb.item, left: t.bb.n }] as [number, unknown]] : [])),
+  };
+  const merged: Record<string, unknown[]> = { ...data.stores };
+  for (const [k, rows] of Object.entries(folded)) if (rows.length > 0) merged[k] = rows; // in the pinned runs an empty one was absent
+  const stores = Object.fromEntries(Object.keys(merged).sort().map((k) => [k, merged[k]])) as typeof data.stores;
   const bodies = new Map((stores.body ?? []) as [number, Body][]);
   delete stores.body;
   // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.
@@ -42,7 +55,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'salvageOrder', 'salvageTrip', 'salvageCrew', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     // `heat` (combat heat, #185) is a new empty field in the same way.
@@ -290,4 +303,9 @@ describe('sector refactor equivalence', () => {
 // Repinned `disaster` for the job scheduler (#194 Phase 2): free crew are matched to jobs together, the nearest crew member first (was: each in id order
 // takes their own best job), and a pass is skipped while its inputs are unchanged (at most SCHED_CADENCE ticks), so other crew put out the fire and seal
 // the breach. On the legacy picker it still gives 2cf7530b. The combat run makes the same assignments and is unchanged.
-const EXPECTED = { combat: '3650e115', disaster: '971586b4' };
+// Repinned for salvage items (#268): the starter crate holds metal, electronics and polymer where it held scrap (the hashed world holds storage), and the
+// galley prints rations from polymer and water. Both hashes change by that alone.
+// Repinned `disaster` for crew AI Phase 3 (#194): crew walk off burning and airless tiles (the hazard interrupt; with only that the run
+// gives 5369b5f9) and a crew member whose mood the fire and smoke sour takes a break in the mess when idle (the leisure drive; alone,
+// cb93b66e). With both switched off in the policies it still gives fe8751b2. The combat run has neither and is unchanged.
+const EXPECTED = { combat: '9ae6c3d8', disaster: '521afe25' };

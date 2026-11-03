@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BedClaimC, CrewC, EatC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
+  AssignmentC, CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 import { CarryingC } from '../items/components';
 import { ModuleC } from '../modules/components';
@@ -13,7 +13,7 @@ import { auditReservations } from './audit';
 import { classOf, machineStates } from './classes';
 import { IntentC, InterruptC, TaskC } from './components';
 import { explainCrew, taskPath } from './explain';
-import { abortTask, attachJob, reserveJob, syncTask, type AbortReason } from './task';
+import { abortTask, attachJob, claimBed, claimedBed, mealOf, reserveJob, startMeal, syncTask, type AbortReason } from './task';
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
@@ -91,12 +91,11 @@ describe('task API', () => {
       const sim = make();
       const c = spawn(sim, 1, 1);
       const b = bed(sim, 3, 3);
-      (sim.world.get(b, ModuleC) as { reservedBy: number }).reservedBy = c;
-      sim.world.add(c, BedClaimC, { bed: b });
+      claimBed(sim, c, b);
       sim.world.add(c, CarryingC, { item: 'item.metal', count: 3 });
       (sim.world.get(c, CrewC) as { activity: string }).activity = 'sleeping';
       abortTask(sim, c, reason);
-      expect(sim.world.has(c, BedClaimC), reason).toBe(!want.bed);
+      expect(claimedBed(sim, c) !== 0, reason).toBe(!want.bed);
       expect(sim.world.get(b, ModuleC)?.reservedBy, reason).toBe(want.bed ? 0 : c);
       expect(sim.world.has(c, CarryingC), reason).toBe(!want.load);
       expect(sim.world.get(c, CrewC)?.activity, reason).toBe(want.wake ? 'idle' : 'sleeping');
@@ -107,7 +106,7 @@ describe('task API', () => {
     const sim = make();
     const c = spawn(sim, 1, 1);
     reserveJob(sim, c, job(sim));
-    sim.world.add(c, IntentC, { policy: 'policy.legacy', drive: 'work', since: 0, scores: [0, 0, 0, 1000], nextEval: 1 });
+    sim.world.add(c, IntentC, { policy: 'policy.colonist', drive: 'work', since: 0, scores: [0, 0, 1000], nextEval: 1 });
     sim.world.add(c, InterruptC, { reason: 'downed', mode: 'abort', owner: 'none', since: 0 });
     abortTask(sim, c, 'dead');
     expect([TaskC, IntentC, InterruptC].map((k) => sim.world.has(c, k))).toEqual([false, false, false]);
@@ -148,12 +147,12 @@ describe('task API', () => {
     expect(r.pendingSweep).toBe(1); // the job the errand set aside (the errand itself was released)
   });
 
-  it('need tasks mirror the legacy components: bed claim, sleeping, meal', () => {
+  it('need tasks are their own truth: the bed claim is the sleep task hold, the meal the eat task', () => {
     const sim = make();
     const c = spawn(sim, 1, 1);
     const b = bed(sim, 3, 3);
-    (sim.world.get(b, ModuleC) as { reservedBy: number }).reservedBy = c;
-    sim.world.add(c, BedClaimC, { bed: b });
+    claimBed(sim, c, b);
+    expect(sim.world.get(b, ModuleC)?.reservedBy).toBe(c);
     syncTask(sim, c);
     expect(sim.world.get(c, TaskC)).toMatchObject({ job: 0, drive: 'sleep', machine: 'sleep', state: 'Walk', holds: [{ kind: 'bed', id: b }] });
     (sim.world.get(c, CrewC) as { activity: string }).activity = 'sleeping';
@@ -161,11 +160,14 @@ describe('task API', () => {
     expect(sim.world.get(c, TaskC)?.state).toBe('Sleep');
     expect(auditReservations(sim).problems).toEqual([]);
     abortTask(sim, c, 'drafted');
-    sim.world.add(c, EatC, { x: 2, y: 2, galley: false, item: 'item.metal', left: -1 });
+    expect(sim.world.get(b, ModuleC)?.reservedBy).toBe(0);
     (sim.world.get(c, CrewC) as { activity: string }).activity = 'idle';
     syncTask(sim, c);
+    expect(sim.world.has(c, TaskC)).toBe(false);
+    startMeal(sim, c, { x: 2, y: 2 }, false, 'item.metal');
+    syncTask(sim, c);
     expect(sim.world.get(c, TaskC)).toMatchObject({ machine: 'eat', state: 'Walk', class: 'any' });
-    (sim.world.get(c, EatC) as { left: number }).left = 30;
+    mealOf(sim, c)!.bb.n = 30;
     syncTask(sim, c);
     expect(sim.world.get(c, TaskC)).toMatchObject({ machine: 'eat', state: 'Consume', class: 'safe' });
   });
