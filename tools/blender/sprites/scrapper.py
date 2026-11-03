@@ -23,7 +23,7 @@ STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "g
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
 RUST, RUST_D = "rust", "rustD"  # the drum and yoke (dark) with lighter raised bands
 HW, HW_D = "scSteel", "scSteelD"   # the hardware: blue steel (piston, nozzle, door frames, bolts, screws); levers a shade down
-LAMP = "orange"   # the door frames' lamps (emissive)
+LAMP, LAMP_OFF = "orange", "scBodyD"   # the door frames' lamps: lit (emissive), and dark while unpowered
 BODY_S2 = "scBodyS2"  # a step below BODY_S: the recess frame
 BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
@@ -360,7 +360,7 @@ def recess(b, DM):
              (-mo[0] if i % 2 else 0, 0, 0 if i % 2 else -mo[2]))
 
 
-def screen(b, D1):
+def screen(b, D1, state="idle", frame=0):
     """The screen on the hatch-end block's front face beside the bay (placed after the ref's R0 view): a wedge-shaped
     housing like a sun shade, standing out 1 px at its foot and further at its top, its sides sloping between them, on
     a dark mounting plate flush with the wall about 3 px bigger all round with a screw in each corner; the screen is
@@ -400,9 +400,16 @@ def screen(b, D1):
     def lit(u0, u1, t0, t1):
         a0, a1 = L0 + i + sw * u0, L0 + i + sw * u1
         b.face([on2(a0, t0), on2(a1, t0), on2(a1, t1), on2(a0, t1)], LAMP, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))
+    if state == "unpowered":                                            # off: a blank screen
+        return
     lit(0.12, 0.5, 0.58, 0.74)
     lit(0.12, 0.38, 0.26, 0.42)
-    lit(0.68, 0.86, 0.26, 0.58)
+    if state == "idle":                                                 # standing by: the gauge low
+        lit(0.68, 0.86, 0.26, 0.34)
+        return
+    lit(0.68, 0.86, 0.26, (0.4, 0.5, 0.6, 0.74)[frame])                 # working: the gauge climbs each frame
+    if frame % 2 == 0:                                                  # and a cursor blinks after the second line
+        lit(0.44, 0.52, 0.26, 0.42)
 
 
 DOOR_W, DOOR_H = 0.58, 0.435
@@ -410,7 +417,7 @@ DOOR_DEPTH = 0.3
 DOOR_L = [(c - DOOR_W / 2, c + DOOR_W / 2) for c in (1.5, 3.5)]        # front row, each centred in its tile
 
 
-def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
+def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH, lamp=None):
     """A doorway in the front wall (measured on the ref's tiles, links 03 and 08; centred in its tile): the wall above
     it, a dark passage running in at floor level, and a raised frame 2 px wide round its sides and top."""
     zt = DOOR_H
@@ -434,7 +441,7 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
         b.prism_D(prof, D1, D1 + lip, HW)
     Lc, zc = (L0 + L1) / 2, zt + wz / 2                                 # three lamps along the frame's top bar
     for dl in (-0.15, 0.0, 0.15):
-        b.box(Lc + dl - 0.022, Lc + dl + 0.022, D1 + lip, D1 + lip + 0.012, zc - 0.016, zc + 0.016, LAMP)
+        b.box(Lc + dl - 0.022, Lc + dl + 0.022, D1 + lip, D1 + lip + 0.012, zc - 0.016, zc + 0.016, lamp or LAMP)
 
 
 def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.13, flare=0.04, chamfer=0.09):
@@ -515,6 +522,7 @@ def levers(b, Dc, zc, r, spacing=0.236, w=0.06, t=0.04, gap=0.003, wrap=130, n=8
 
 
 DRUM_SIDES, DRUM_BOLTS = 32, 8
+DRUM_STEP = 360 / DRUM_SIDES      # degrees the drum turns per active frame: 4 frames span one bolt's spacing, so they loop
 DRUM_BANDS = ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76))   # the drum's raised bands along L
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
@@ -559,8 +567,11 @@ def top_plate(b):
     plate_z(b, poly, lambda L: top(L) - t, top, RUST_D, caps)
 
 
-def scrapper(rot):
-    b = _Build(rot, f"scrapper_{rot}")
+def scrapper(rot, state="idle", frame=0):
+    """state: unpowered (lamps and screen dark), idle (lit, standing by) or active (frame 0..3: the drum turns a
+    side each frame, the screen's gauge climbs)."""
+    b = _Build(rot, f"scrapper_{rot}_{state}_{frame}")
+    lamp = LAMP_OFF if state == "unpowered" else LAMP
     if os.environ.get("SCRAPPER_PART") == "drum":       # preview aid: the drum alone, to lay over the ref's drum tile
         drum(b)
         return [b.m.build()]
@@ -584,7 +595,7 @@ def scrapper(rot):
     b.loft([(0.03, full(WALL)), (0.5, full(EDGE)), (1.0, full(EDGE)), (1.0 + STEP, full(TOP)), (d0, full(TOP)),
             (d1, full(TOP)), (2.0 - STEP, full(TOP)), (2.0, stepped(TOP, EDGE))], caps=(True, bay_wall(EDGE)),
            skip={(4, 4)})                                                                     # hatch end half
-    doorway(b, d0, d1, D1, lambda L: TOP)
+    doorway(b, d0, d1, D1, lambda L: TOP, lamp=lamp)
     # behind the bay, its bay wall (side 2) built with the recess cut into it
     Ls = sorted({2.0, *RECESS_L, 3.0 - STEP, 3.0})
     b.loft([(L, back(_bay_back_h(L))) for L in Ls], caps=(False, False),
@@ -594,7 +605,7 @@ def scrapper(rot):
     far_h = lambda L: EDGE if L <= 3.5 else EDGE + (WALL - EDGE) * (L - 3.5) / 0.47           # noqa: E731
     b.loft([(L, full(far_h(L))) for L in (3.0, d0, 3.5, d1, 3.97)], caps=(bay_wall(EDGE), True),
            skip={(1, 4), (2, 4)})                                                             # far end tile
-    doorway(b, d0, d1, D1, far_h, knee=(3.5, EDGE))
+    doorway(b, d0, d1, D1, far_h, knee=(3.5, EDGE), lamp=lamp)
     # the two hatches on the hatch-end slope, one per row: a frame lying on the slope, two sliding door leaves
     for r0, r1 in ((D0, DM), (DM, D1)):
         hatch(b, (0.03, WALL), (0.5, EDGE), r0, r1)
@@ -609,9 +620,9 @@ def scrapper(rot):
     slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, HW)     # chamfer up from the flange to the barrel
     slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, HW)                    # nozzle barrel
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
-    turn = math.radians(float(os.environ.get("SCRAPPER_SPIN", "0")))   # preview of the active state's frames
+    turn = math.radians(DRUM_STEP * frame) if state == "active" else 0.0
     drum(b, turn)
-    screen(b, D1)
+    screen(b, D1, state, frame)
     dial(b)
     vent(b)
     piston(b)
@@ -651,8 +662,12 @@ def _top(L, D):
 
 
 def jobs():
+    """Every rotation in each state: idle (the base id), .unpowered, and the active frames (.active, .active.f1..f3)."""
     out = []
     for r in range(4):
         fp = FOOTPRINT if r % 2 == 0 else FOOTPRINT[::-1]
-        out.append((f"module.scrapper.blockout.r{r}", fp, "prop", lambda r=r: scrapper(r)))
+        base = f"module.scrapper.blockout.r{r}"
+        for state, frame, aid in [("idle", 0, base), ("unpowered", 0, base + ".unpowered")] + \
+                [("active", f, base + ".active" + (f".f{f}" if f else "")) for f in range(4)]:
+            out.append((aid, fp, "prop", lambda r=r, s=state, f=frame: scrapper(r, s, f)))
     return out
