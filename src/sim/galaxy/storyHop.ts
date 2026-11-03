@@ -13,6 +13,16 @@ function noteSignal(sim: Sim): void {
   if (!a || !recipe || sim.galaxy.signal?.event === a.event) return;
   sim.galaxy.signal = storySpec(sim, a.event, recipe);
   sim.story.scene = null; // a stale request (an event answered outside a trip) never opens this one
+}
+
+/** A remote hail answered on the signal: its ships know you are coming and hold station once you drop out. */
+function noteHails(sim: Sim): void {
+  const a = sim.story.active;
+  const spec = sim.galaxy.signal;
+  if (!a || spec?.event !== a.event) return;
+  const def = sim.content.events?.[a.event];
+  if (!(a.done ?? []).some((id) => def?.choices?.find((c) => c.id === id)?.remote === 'hail')) return;
+  for (const s of spec.ships) s.hailed = true;
   sim.galaxy.rev++;
 }
 
@@ -65,6 +75,7 @@ export function storyHold(sim: Sim, t: Travel, resume: (sim: Sim, t: Travel) => 
   if (t.phase !== 'story') return false;
   if (sim.story.active) {
     noteSignal(sim); // a decision queued behind the one answered
+    noteHails(sim);
     return true;
   }
   if (investigate(sim)) return true;

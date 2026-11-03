@@ -1,23 +1,33 @@
 import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
-import type { UiStory } from '../ui/api';
+import type { UiIntel, UiStory } from '../ui/api';
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
 const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
 
 /** What the remote actions taken on a signal reveal about its scene: a scan reads hulls and crew, a hail gets each ship's stock and wallet. */
-function factsOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remoteOf: (choice: string) => string | undefined): string[] {
+function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remoteOf: (choice: string) => string | undefined): UiIntel[] {
   if (!spec) return [];
   const acts = new Set(done.map(remoteOf));
-  const out: string[] = [];
+  const out: UiIntel[] = [];
   for (const s of spec.ships) {
-    const name = s.contact.name ?? 'Unknown ship';
+    const ship = s.contact.name ?? 'Unknown ship';
     if (acts.has('scan')) {
-      const hull = s.family ? `${s.family} hull` : 'hull';
-      out.push(`Scan: ${name}, ${ownerName(sim, s.contact.faction)} transponder, ${hull}, ${s.crew ?? '?'} aboard.`);
+      out.push({
+        kind: 'scan', ship, rows: [
+          { label: 'Transponder', value: ownerName(sim, s.contact.faction) },
+          { label: 'Hull', value: s.family ? `${s.family[0]?.toUpperCase()}${s.family.slice(1)} class` : 'Unknown' },
+          { label: 'Crew aboard', value: s.crew === undefined ? 'Unclear' : String(s.crew) },
+          { label: 'Drive', value: s.stay === undefined ? 'Cold' : s.hailed ? 'Cold: holding station for you' : 'Cold, not for long' },
+        ],
+      });
     }
     if (acts.has('hail')) {
-      const stock = (s.cargo ?? []).map((q) => `${q.count} ${itemName(sim, q.item)}`).join(', ');
-      out.push(`Hail: "${name} here. Got ${stock || 'not much'} to trade${s.credits !== undefined ? `, and ${s.credits} credits to buy with` : ''}."`);
+      out.push({
+        kind: 'hail', ship, rows: [],
+        quote: `${ship} here. Pull alongside if you want to deal; we hold station for you.`,
+        stock: (s.cargo ?? []).map((q) => ({ item: q.item, name: itemName(sim, q.item), count: q.count })),
+        ...(s.credits !== undefined ? { credits: s.credits } : {}),
+      });
     }
   }
   return out;
@@ -36,15 +46,17 @@ export function buildStory(sim: Sim): UiStory {
           event: active.event,
           title: def.title,
           text: def.text,
-          facts: factsOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote),
+          intel: intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote),
           choices: (def.choices ?? []).map((c) => {
-            const reasons = done.includes(c.id) ? ['Done'] : unmetReasons(sim, c);
+            const taken = done.includes(c.id);
+            const reasons = taken ? [] : unmetReasons(sim, c);
             const odds = c.check ? checkOdds(sim, c.check) : null;
             return {
               id: c.id,
               label: c.label,
               hint: c.hint ?? null,
-              enabled: reasons.length === 0,
+              enabled: !taken && reasons.length === 0,
+              ...(taken ? { done: true } : {}),
               reasons,
               odds: odds ? { pct: Math.round(odds.chance * 100), label: odds.label } : null,
               cost: (c.cost ?? []).map((q) => `${q.count}x ${itemName(sim, q.item)}`),

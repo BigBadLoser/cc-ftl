@@ -314,6 +314,8 @@ export interface UiEventGrid {
   tone: Tone;
   /** Scene ships still in the grid, and how many of them are hostile and active. */
   ships: number;
+  /** Each ship of the scene (a fleet's, or a story encounter's), with what it is doing: its entity (0 once gone) for a click to find it. */
+  roster: { ship: number; name: string; owner: string; status: string; tone: 'red' | 'amber' | 'green' | 'cyan' | 'dim' }[];
   hostiles: number;
   /** The ship is still being placed (the deploy picker is up). */
   deploying: boolean;

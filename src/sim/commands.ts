@@ -153,6 +153,12 @@ export type Command =
   /** Fire every charged weapon of the ship now. */
   | { type: 'combat.fireVolley'; ship: number }
   /**
+   * Battle stations on or off (the player's combat view at any time). On: the player's consoles are manned with no fight on and every weapon of
+   * the player's ships goes on hold (`holdAll`). Off: the holds are lifted and aims at ships not hostile to the player are dropped, so nothing fires
+   * on a neutral by itself.
+   */
+  | { type: 'combat.battleStations'; on: boolean }
+  /**
    * Flee: leave the node with a fully charged FTL drive. The player's ship spends the charge and enters hyperspace adrift, with no route and no fuel
    * spent (`Travel.phase` 'adrift'); `galaxy.jump` then picks where to go. In an event grid it just leaves the grid. AI ships just leave (state 'fled').
    */

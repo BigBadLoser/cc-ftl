@@ -45,7 +45,7 @@ export const events = {
     scene: {
       persistence: 'transient',
       ships: [{
-        owner: 'traders', shipgen: 'faction.civilian', family: 'mining', stance: 'neutral', crew: [1, 3], credits: [120, 420],
+        owner: 'traders', shipgen: 'faction.civilian', family: 'mining', stance: 'neutral', crew: [1, 3], credits: [120, 420], leaveAfterSec: [100, 160],
         cargo: {
           lines: [2, 4],
           pool: [

@@ -1,5 +1,4 @@
 import { ShipC } from '../combat/components';
-import { aimedByPlayer } from '../combat/dormant';
 import { playerCrewOn } from '../away/crew';
 import type { Sim } from '../sim';
 import { applyEffect } from '../story/effects';
@@ -10,7 +9,7 @@ import type { SceneFact, SceneRuleDef, Stance } from './types';
 
 /**
  * The outcome observer (DESIGN.md "Physical encounters", part c). Once a second in an event grid it reads facts about the scene's ships from sim
- * state (never from the event stream, which is output only): a finished deal with it, the player's guns on it or its hull hit, player crew aboard,
+ * state (never from the event stream, which is output only): a finished deal with it, a shot the player fired on it, player crew aboard,
  * taken, wrecked, fled; at leave, still there. Each rule (shared `sceneRules`, overridden per encounter) fires once per ship: its effects apply and its
  * log line goes out as `scene.observed`. No rule says how a scene ends; it only says what the world makes of what happened.
  */
@@ -36,15 +35,14 @@ export function rulesFor(sim: Sim, ev: EventGrid): [string, SceneRuleDef][] {
 }
 
 /** The facts true of one ship right now. */
-function factsOf(sim: Sim, ev: EventGrid, w: Watched, aimed: Set<number>): Set<SceneFact> {
+function factsOf(sim: Sim, ev: EventGrid, w: Watched): Set<SceneFact> {
   const out = new Set<SceneFact>();
   const id = w.contact.ship;
   const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
   if (id === undefined || !ship) return out;
-  const start = ev.watch.hull[w.contact.id];
-  if (start === undefined) ev.watch.hull[w.contact.id] = ship.integrity;
   if (sim.trade.deals.some((d) => d.ship === id && d.phase === 'done')) out.add('traded');
-  if (aimed.has(id) || (start !== undefined && ship.integrity < start - 1e-6)) out.add('attacked');
+  // Fired on by the player: the shot that provoked it (aiming alone is nothing; a hit from someone else is not the player's doing).
+  if (ship.provoked === 'fired') out.add('attacked');
   if (playerCrewOn(sim, id)) out.add('boarded');
   if (ship.state === 'prize') out.add('captured');
   if (ship.state === 'wreck') out.add('destroyed');
@@ -73,9 +71,8 @@ const stanceOk = (rule: SceneRuleDef, w: Watched): boolean => !rule.stance || ru
 export function observeScene(sim: Sim, ev: EventGrid): void {
   const rules = rulesFor(sim, ev);
   if (!rules.length) return;
-  const aimed = aimedByPlayer(sim);
   for (const w of watched(ev)) {
-    const facts = factsOf(sim, ev, w, aimed);
+    const facts = factsOf(sim, ev, w);
     for (const [id, rule] of rules) if (rule.on !== 'timer' && rule.on !== 'left' && facts.has(rule.on) && stanceOk(rule, w)) fire(sim, ev, id, rule, w);
   }
   for (const t of ev.scene.timers) {

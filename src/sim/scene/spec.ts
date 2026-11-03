@@ -52,6 +52,7 @@ function buildShip(sim: Sim, r: SceneShipRecipe, rng: Rng, depth: number, key: r
   if (r.crew) ship.crew = roll(rng, r.crew);
   if (r.cargo) ship.cargo = rollCargo(rng, r.cargo);
   if (r.credits) ship.credits = roll(rng, r.credits);
+  if (r.leaveAfterSec) ship.stay = roll(rng, r.leaveAfterSec);
   return ship;
 }
 

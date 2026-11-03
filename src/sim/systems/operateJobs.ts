@@ -45,8 +45,8 @@ export function operateJobsSystem(sim: Sim): void {
     if (job.reservedBy) abortTask(sim, job.reservedBy, 'cancelled');
     sim.world.destroyEntity(jobId);
   }
-  // Nothing to open outside combat unless a charge order stands.
-  if (!sim.sector.inCombat && !sim.world.query(CombatC).some((id) => sim.world.get(id, CombatC)?.ftlOrder)) return;
+  // Nothing to open outside combat unless a charge order or battle stations stand.
+  if (!sim.sector.inCombat && !sim.sector.stations && !sim.world.query(CombatC).some((id) => sim.world.get(id, CombatC)?.ftlOrder)) return;
   const fresh = new Set<number>();
   for (const id of sim.world.query(ModuleC)) {
     if (open.has(id) || !consoleNeeded(sim, id)) continue;
@@ -64,6 +64,9 @@ export function operateJobsSystem(sim: Sim): void {
   seatHelms(sim, fresh);
 }
 
+/** Consoles are manned as in a fight: a fight, or the player's battle stations. */
+const manning = (sim: Sim): boolean => sim.sector.inCombat || !!sim.sector.stations;
+
 /** A console that exists, is intact and is on a ship still in play. */
 function stationUsable(sim: Sim, id: number): boolean {
   const m = sim.world.get(id, ModuleC);
@@ -74,8 +77,8 @@ function consoleNeeded(sim: Sim, id: number): boolean {
   const m = sim.world.get(id, ModuleC);
   const console = m && sim.content.modules[m.def]?.console;
   if (!m || !console) return false;
-  // Outside combat only an ordered drive charge (`ftl.charge`) needs a console: the helm.
-  if (!sim.sector.inCombat && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m)))) return false;
+  // Outside combat only an ordered drive charge (`ftl.charge`) needs a console (the helm), or battle stations (the player's own consoles).
+  if (!sim.sector.inCombat && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m))) && !(sim.sector.stations && shipById(sim, shipIdOf(sim, m))?.faction === 'player')) return false;
   if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) return false;
   return shipById(sim, shipIdOf(sim, m))?.state === 'active';
 }
@@ -88,7 +91,7 @@ function consoleNeeded(sim: Sim, id: number): boolean {
 function yieldToOperator(sim: Sim, holder: number): void {
   const prio = sim.world.get(holder, PrioritiesC);
   const pos = sim.world.get(holder, PositionC);
-  if (!sim.sector.inCombat || !prio || !pos) return;
+  if (!manning(sim) || !prio || !pos) return;
   const ship = shipIdOf(sim, pos);
   // work they rank above operating (a fire, a downed crew member, a repair) calls a relief off the console, if they can take it
   for (const id of sim.world.query(JobC)) {
@@ -113,7 +116,7 @@ function isRelief(sim: Sim, crew: number): boolean {
  * them: the scheduler (`scheduleSystem`) then picks the best job, which is the console.
  */
 function callOperator(sim: Sim, job: Job): void {
-  if (!sim.sector.inCombat) return;
+  if (!manning(sim)) return;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   const kind = m && sim.content.modules[m.def]?.console;
   if (!kind) return;

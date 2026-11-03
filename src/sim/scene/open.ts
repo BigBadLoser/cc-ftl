@@ -1,4 +1,7 @@
-import type { Faction } from '../combat/components';
+import { CombatC, ShipC, type Faction } from '../combat/components';
+import { liftShip } from '../sector/packet';
+import { isLive } from '../trade/deals';
+import { FTL_CHARGE_SEC } from '../tuning';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { ensureTrader } from '../trade/traders';
@@ -30,13 +33,49 @@ function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
 
 /** Open a scene in the (fresh) event grid: spawn its ships and start its timers. */
 export function openScene(sim: Sim, spec: SceneSpec): void {
-  for (const s of spec.ships) if (s.contact.ship === undefined) spawnSceneShip(sim, s);
+  for (const s of spec.ships) {
+    if (s.stay !== undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
+    if (s.contact.ship === undefined) spawnSceneShip(sim, s);
+  }
   for (const t of spec.timers) t.at = sim.tick + Math.round(t.afterSec * TICK_HZ);
 }
 
-/** Retry the scene's ships that found no room. True when one came. */
+/**
+ * Once a second: lift the scene's ships that jumped away (the observer has already seen them go; they are not respawned) and retry the ones that found
+ * no room. True when something changed.
+ */
 export function tendScene(sim: Sim, spec: SceneSpec): boolean {
   let changed = false;
-  for (const s of spec.ships) if (s.contact.ship === undefined && spawnSceneShip(sim, s)) changed = true;
+  for (const s of spec.ships) {
+    const id = s.contact.ship;
+    if (id !== undefined && sim.world.get(id, ShipC)?.state === 'fled') {
+      liftShip(sim, id);
+      sim.trade.hails = sim.trade.hails.filter((h) => h.ship !== id);
+      sim.trade.offers = sim.trade.offers.filter((o) => o.ship !== id);
+      s.contact.ship = undefined;
+      s.gone = 'fled';
+      changed = true;
+    } else if (id === undefined && !s.gone && spawnSceneShip(sim, s)) changed = true;
+  }
   return changed;
+}
+
+/**
+ * A neutral scene ship moves on when its business here is done (`leaveAt`): like a scene director, it gives the ship a standing drive-charge order (the
+ * ordinary helm job seats one of its crew), and once the drive is charged the ship jumps out through the ordinary `combat.flee`, as a fleeing NPC does. One that was hailed holds station; so does one in the middle of a deal. Hostile ones are the combat AI's.
+ */
+export function departScene(sim: Sim, spec: SceneSpec): void {
+  for (const s of spec.ships) {
+    const id = s.contact.ship;
+    const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
+    if (id === undefined || !ship) continue;
+    if (!s.hailed && sim.trade.hails.some((h) => h.ship === id && h.answered)) s.hailed = true;
+    if (s.hailed || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
+    if (sim.trade.deals.some((d) => d.ship === id && isLive(d))) continue;
+    const combat = sim.world.get(id, CombatC);
+    if (!combat) continue;
+    // Its own crew charge the drive as any crew does (a standing charge order seats a pilot at the helm), then it jumps.
+    if (combat.ftl + 1e-9 >= FTL_CHARGE_SEC) sim.enqueue({ type: 'combat.flee', ship: id });
+    else combat.ftlOrder ??= { jump: null };
+  }
 }

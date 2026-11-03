@@ -36,7 +36,7 @@
 
 <Frame
   title={enemy.name}
-  tone="hostile"
+  tone={enemy.neutral ? 'normal' : 'hostile'}
   style="width:290px; pointer-events:auto; background: var(--panel)"
   testid="enemy-card"
   lesson={anchor('combat.enemy')}

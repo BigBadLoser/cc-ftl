@@ -74,6 +74,7 @@ export const ACTIONS = [
   a('combat.flee', 'combat', 'Flee', ['KeyF'], 'combat'),
   a('combat.board', 'combat', 'Board the enemy ship (party picker)', ['KeyB'], 'combat'),
   a('combat.swap', 'combat', 'Swap main view and inset', ['Tab'], 'combat'),
+  a('combat.stations', 'combat', 'Battle stations / stand down', ['KeyC']),
 
   a('ui.confirm', 'menus', 'Confirm (Got it, Deploy)', ['Enter']),
   a('ui.menu', 'menus', 'Cancel / menu', ['Escape'], 'global', { fixed: true }),

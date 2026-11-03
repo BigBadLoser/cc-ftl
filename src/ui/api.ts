@@ -506,12 +506,26 @@ export interface UiStoryChoice {
   odds: { pct: number; label: string } | null;
   /** Items it spends, e.g. "20x Scrap". */
   cost: string[];
+  /** A remote action already taken (scan, hail): shown as done, not as a locked choice. */
+  done?: boolean;
+}
+
+/** What a remote action revealed about one ship of a signal's scene. */
+export interface UiIntel {
+  kind: 'scan' | 'hail';
+  ship: string;
+  /** A scan: labelled readings (transponder, hull, crew aboard). */
+  rows: { label: string; value: string }[];
+  /** A hail: what they say, the goods they offer and the credits they have to buy with. */
+  quote?: string;
+  stock?: { item: string; name: string; count: number }[];
+  credits?: number;
 }
 
 /** The event system as the UI sees it: the open decision (the game pauses on it) and the last result. */
 export interface UiStory {
-  /** `facts`: what remote actions (a scan, a hail) have revealed about the signal's scene so far, one line each. */
-  active: { event: string; title: string; text: string; choices: UiStoryChoice[]; facts: string[] } | null;
+  /** `intel`: what remote actions (a scan, a hail) have revealed about the signal's scene so far. */
+  active: { event: string; title: string; text: string; choices: UiStoryChoice[]; intel: UiIntel[] } | null;
   last: { tick: number; title: string; choice: string; success: boolean | null; text: string; lines: string[] } | null;
 }
 
@@ -644,6 +658,8 @@ export interface UiShipCombat {
   state: 'active' | 'disabled' | 'wreck' | 'fled' | 'prize';
   /** A dormant hostile (pirate den) not yet provoked: listed (it can be targeted) but it does not light the hostiles button. */
   dormant?: boolean;
+  /** Not hostile to the player (listed at battle stations): aiming at it does nothing, a shot fired at it turns it hostile. */
+  neutral?: boolean;
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
@@ -707,8 +723,10 @@ export interface UiAiming {
 
 export interface UiCombat {
   inCombat: boolean;
+  /** Battle stations (`combat.battleStations`): the combat view is up with no fight on (or kept up through one). */
+  stations?: boolean;
   player: (UiShipCombat & { weapons: UiWeapon[]; consoles: UiConsole[]; /** Why the weapons are not firing ("No targets", "Weapons console unmanned"), null while they are. */ holdAll: boolean; idle: string | null; /** Enemy shots committed to or flying at your ship, soonest first. */ incoming: UiIncoming[] }) | null;
-  /** Hostile ships (not fled), nearest first. */
+  /** Hostile ships (not fled), nearest first; at battle stations the other ships in play follow them (`neutral`). */
   enemies: UiShipCombat[];
 }
 

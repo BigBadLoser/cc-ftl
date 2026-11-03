@@ -149,12 +149,15 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.
       enemies.push(isDormant(s) ? { ...base, dormant: true } : { ...base, charges: enemyWeapons(sim, id) });
+    } else if (sim.sector.stations && s.faction !== 'player' && (s.state === 'active' || s.state === 'disabled')) {
+      enemies.push({ ...base, neutral: true, charges: enemyWeapons(sim, id) });
     }
   }
-  if (me) enemies.sort((a, b) => dist(sim, me, a.ship) - dist(sim, me, b.ship));
+  // Hostiles first, then the ships listed only at battle stations; nearest first within each.
+  if (me) enemies.sort((a, b) => Number(!!a.neutral) - Number(!!b.neutral) || dist(sim, me, a.ship) - dist(sim, me, b.ship));
   // A ship in hyperspace or waiting to deploy is not in any fight, whatever is archived or placed in the empty sector.
   if (sim.sector.state !== 'active') return { inCombat: false, player: null, enemies: [] };
-  return { inCombat: sim.sector.inCombat, player, enemies };
+  return { inCombat: sim.sector.inCombat, ...(sim.sector.stations ? { stations: true } : {}), player, enemies };
 }
 
 function dist(sim: Sim, me: { x: number; y: number }, ship: number): number {

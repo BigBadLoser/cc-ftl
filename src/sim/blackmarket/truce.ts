@@ -1,5 +1,6 @@
-import { CombatC, ShipC, WeaponC, type Faction } from '../combat/components';
+import { CombatC, ShipC, WeaponC } from '../combat/components';
 import { wake } from '../combat/dormant';
+import { turnCrew } from '../combat/turn';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { AllegianceC, PrisonerC } from '../fight/components';
 import { nodeState } from '../galaxy/state';
@@ -77,14 +78,6 @@ export function aggression(sim: Sim): boolean {
     if (live.has(shipIdOf(sim, sim.world.get(id, PositionC)))) return true;
   }
   return false;
-}
-
-/** Crew allegiance of a ship's people, from one faction to another. */
-function turnCrew(sim: Sim, ship: number, from: Faction, to: Faction): void {
-  for (const id of sim.world.query(CrewC, AllegianceC, PositionC)) {
-    const a = sim.world.get(id, AllegianceC);
-    if (a?.faction === from && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) a.faction = to;
-  }
 }
 
 /** During a ban every ship here (and its people) turns hostile to the player and wakes; when it ends they go back to what they were. */

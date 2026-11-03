@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiStory } from './api';
   import { Dialog } from './kit';
+  import Icon from './Icon.svelte';
+  import ItemIcon from './ItemIcon.svelte';
 
   /** `hold` keeps popups back (while the starmap animates a jump); they show once it clears. */
   let { api, hold = false }: { api: UiApi; hold?: boolean } = $props();
@@ -23,7 +25,8 @@
   );
 
   const active = $derived(story.active);
-  const result = $derived(!active && story.last && story.last.tick !== seenTick ? story.last : null);
+  // A choice with nothing to report (no text, no effects shown: dropping out into a scene) needs no card.
+  const result = $derived(!active && story.last && story.last.tick !== seenTick && (story.last.text || story.last.lines.length) ? story.last : null);
 
   function pick(id: string) {
     if (busy) return;
@@ -37,15 +40,28 @@
 {:else if active}
   <Dialog open title={active.title} dismissable={false} testId="story-modal">
     <p class="text">{active.text}</p>
-    {#if active.facts.length}<ul class="facts" data-testid="story-facts">{#each active.facts as f, i (i)}<li>{f}</li>{/each}</ul>{/if}
+    {#each active.intel as it, i (i)}
+      <section class="intel {it.kind}" data-testid="story-intel" data-kind={it.kind}>
+        <header><Icon name={it.kind === 'scan' ? 'target' : 'hail'} size={14} /><span class="tag">{it.kind === 'scan' ? 'Scan' : 'Hail answered'}</span><b>{it.ship}</b></header>
+        {#if it.rows.length}<dl>{#each it.rows as r (r.label)}<dt>{r.label}</dt><dd>{r.value}</dd>{/each}</dl>{/if}
+        {#if it.quote}<p class="quote">"{it.quote}"</p>{/if}
+        {#if it.stock?.length || it.credits !== undefined}
+          <div class="stock">
+            {#each it.stock ?? [] as q (q.item)}<span class="chip" title={q.name}><ItemIcon {api} item={q.item} size={20} />{q.name}<em>×{q.count}</em></span>{/each}
+            {#if it.credits !== undefined}<span class="chip cr" title="Credits to buy with"><Icon name="credits" size={14} />{it.credits}</span>{/if}
+          </div>
+        {/if}
+      </section>
+    {/each}
     <div class="choices">
       {#each active.choices as c (c.id)}
-        <button class="choice" class:locked={!c.enabled} disabled={!c.enabled || busy} data-testid="story-choice" data-choice={c.id} onclick={() => pick(c.id)}>
+        <button class="choice" class:locked={!c.enabled && !c.done} class:done={c.done} disabled={!c.enabled || busy} data-testid="story-choice" data-choice={c.id} onclick={() => pick(c.id)}>
           <span class="label">{c.label}</span>
           {#if c.hint}<span class="hint">{c.hint}</span>{/if}
           {#if c.odds}<span class="odds" data-testid="story-odds">{c.odds.label}</span>{/if}
           {#if c.cost.length}<span class="cost">Costs {c.cost.join(', ')}</span>{/if}
           {#each c.reasons as r (r)}<span class="reason">{r}</span>{/each}
+          {#if c.done}<span class="did"><Icon name="check" size={12} />Done</span>{/if}
         </button>
       {/each}
     </div>
@@ -62,7 +78,24 @@
 
 <style>
   .text { margin: 0 0 12px; color: var(--text); line-height: 1.45; }
-  .facts { margin: 0 0 12px; padding-left: 18px; color: var(--ink-accent); font-size: 13px; line-height: 1.4; }
+  /* Revealed intel: a readout per ship, set off from the story text by a cyan edge (a hail's in green), like the inspector's sections. */
+  .intel { margin: 0 0 10px; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); border-left: 2px solid var(--cyan); display: grid; gap: 6px; }
+  .intel.hail { border-left-color: var(--green); }
+  .intel header { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-accent); }
+  .intel.hail header { color: var(--green); }
+  .intel .tag { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
+  .intel header b { color: var(--text); font-weight: 600; margin-left: auto; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 0; font-size: 13px; }
+  dt { color: var(--dim); }
+  dd { margin: 0; color: var(--text); }
+  .quote { margin: 0; font-size: 13px; font-style: italic; color: var(--text); line-height: 1.4; }
+  .stock { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 2px; font-size: 12px; background: var(--panel-3); border: 1px solid var(--line); }
+  .chip em { font-style: normal; color: var(--dim); }
+  .chip.cr { padding-left: 6px; color: var(--amber); }
+  .choice.done:not(.locked) { background: transparent; border-style: solid; border-color: var(--line); color: var(--dim); opacity: 1; }
+  .choice.done:not(.locked) .label { color: var(--dim); }
+  .did { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-size: 12px; }
   .choices { display: grid; gap: 8px; }
   .choice { display: grid; gap: 2px; text-align: left; padding: 9px 12px; min-height: 44px; }
   .label { font-weight: 600; }

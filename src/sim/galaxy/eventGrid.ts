@@ -20,7 +20,7 @@ import { shipIdOf } from '../regions';
 import { VehicleC } from '../vehicles/components';
 import { vehicleFaction } from '../vehicles/lifecycle';
 import { observeLeave, observeScene } from '../scene/observer';
-import { openScene, tendScene } from '../scene/open';
+import { departScene, openScene, tendScene } from '../scene/open';
 import type { SceneSpec } from '../scene/types';
 
 /**
@@ -54,7 +54,7 @@ export function enterEvent(sim: Sim, kind: EventGrid['kind'], scene: SceneSpec, 
   if (!t || (scene.fleet && !f) || sim.sector.state !== 'hyperspace' || g.event) return false;
   if (f) g.fleets = g.fleets.filter((x) => x !== f);
   const id = encounter?.id ?? g.nextFleet++;
-  g.event = { id, kind, scene, watch: { fired: [], hull: {} }, fled: [], ...(encounter ? { encounter: { ...encounter } } : {}), ...(f ? { fleet: f } : {}) };
+  g.event = { id, kind, scene, watch: { fired: [] }, fled: [], ...(encounter ? { encounter: { ...encounter } } : {}), ...(f ? { fleet: f } : {}) };
   // A story decision keeps the phase it held (a scene drawn at the hop's end resumes the trip after it); an open grid's trip goes on with the hop.
   t.held = t.phase === 'story' ? t.held ?? 'hop' : t.phase === 'event' ? 'hop' : t.phase;
   t.phase = 'event';
@@ -178,4 +178,5 @@ export function tendEvent(sim: Sim): void {
   observeScene(sim, ev);
   if (ev.fleet && tendFleet(sim, ev.fleet, sim.galaxy.current, ev.fled)) sim.galaxy.rev++;
   if (tendScene(sim, ev.scene)) sim.galaxy.rev++;
+  departScene(sim, ev.scene);
 }

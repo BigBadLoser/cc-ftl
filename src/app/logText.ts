@@ -65,7 +65,7 @@ export function createDescriber(sim: Sim) {
       case 'ship.fled': return { kind: e.type, tone: 'info', text: `${shipName(e.ship)} jumped away` };
       case 'station.alarm': return { kind: 'combat', tone: 'bad', text: `Alarm on ${shipName(e.ship)}: ${e.reason}`, ...onShip(e.ship) };
       case 'station.calm': return { kind: 'combat', tone: 'info', text: `${shipName(e.ship)} stands down its alarm`, ...onShip(e.ship) };
-      case 'ship.provoked': return { kind: 'combat', tone: 'bad', text: `${shipName(e.ship)} is roused: its guns turn on you`, ...onShip(e.ship) };
+      case 'ship.provoked': return { kind: 'combat', tone: 'bad', text: e.reason === 'fired' ? `${shipName(e.ship)} was fired on: it turns hostile` : e.reason === 'boarded' ? `${shipName(e.ship)} was boarded: it turns hostile` : `${shipName(e.ship)} is roused: its guns turn on you`, ...onShip(e.ship) };
       case 'ship.captured': return { kind: e.type, tone: e.by === 'player' ? 'good' : 'bad', text: e.by === 'player' ? `${shipName(e.ship)} captured` : `${shipName(e.ship)} was captured`, ...onShip(e.ship) };
       case 'eggsac.hatched': return { kind: 'creatures', tone: 'bad', text: `Hostile creatures aboard ${shipName(e.ship)}`, subject: tileAt(e.x, e.y) };
       case 'container.detached': return { kind: 'container', tone: 'info', text: 'A cargo container broke loose', subject: tileAt(e.x, e.y) };

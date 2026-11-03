@@ -11,6 +11,7 @@ import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
 import { outpostSystem } from './systems/outposts';
 import { dormancySystem } from './systems/dormancy';
+import { provocationSystem } from './systems/provocation';
 import { stationAlarmSystem } from './systems/stationAlarm';
 import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
@@ -190,6 +191,8 @@ export const pipeline: readonly System[] = [
   // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
   // decides whether consoles are needed next tick).
   dormancySystem,
+  // Boarding a ship that is not hostile turns it (and the ships with it) hostile; firing on one does as the shot leaves (firing system).
+  provocationSystem,
   // Black-market truce: a breach (the player firing on or boarding anyone at a truce node) bans them; everyone turns hostile while it lasts.
   truceSystem,
   // Station alarms: intruders, attacks and hazards make the station's people hostile to the culprits (fight code acts on it).

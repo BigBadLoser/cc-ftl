@@ -31,6 +31,11 @@ export interface SceneShipRecipe {
   cargo?: { lines: Range; pool: { item: string; min: number; max: number }[] };
   /** Its wallet (absent: its trader kind's). */
   credits?: Range;
+  /**
+   * A neutral ship's business here takes this long, rolled in seconds: then it charges its drive and jumps out (`combat.flee`), unless it was hailed
+   * (from the signal or in the pocket), which makes it hold station. Absent: it stays.
+   */
+  leaveAfterSec?: Range;
 }
 
 /** A timer of a scene: it comes due `afterSec` after the scene opens. The observer reads it (fact 'timer'); it is not a script. */
@@ -57,6 +62,13 @@ export interface SceneShip {
   crew?: number;
   cargo?: ItemQty[];
   credits?: number;
+  /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set when the scene opens. */
+  stay?: number;
+  leaveAt?: number;
+  /** Hailed (by the signal's remote hail, or answering a hail in the pocket): it holds station. */
+  hailed?: true;
+  /** It jumped away: its entity is gone from the pocket and it is not respawned. */
+  gone?: 'fled';
 }
 
 export interface SceneTimer {
@@ -100,10 +112,8 @@ export interface SceneRuleDef {
   tone?: 'good' | 'warn' | 'bad' | 'info';
 }
 
-/** What the observer has seen in an open scene: per ship (index into the scene's ships, fleet ships after them) the integrity it started with. */
+/** What the observer has seen in an open scene. */
 export interface SceneWatch {
-  /** Rule firings so far, `<rule>#<ship index>` (`<rule>` alone for a timer). */
+  /** Rule firings so far, `<rule>#<contact id>` (`<rule>` alone for a timer). */
   fired: string[];
-  /** Integrity of each ship when first seen (its contact id -> 0..1): a drop below it means it was hit. */
-  hull: Record<number, number>;
 }

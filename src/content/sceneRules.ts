@@ -7,12 +7,13 @@ import type { SceneRuleDef } from '../sim';
  */
 export const sceneRules = {
   traded: { on: 'traded', stance: ['neutral', 'helpless'], effects: [{ type: 'reputation', faction: 'owner', delta: 1 }], log: 'A fair trade with the {ship}: they will remember it', tone: 'good' },
-  attacked: { on: 'attacked', stance: ['neutral', 'helpless'], effects: [{ type: 'flag', flag: 'attacked_neutral', op: 'add' }], log: 'You turned your guns on the {ship}', tone: 'bad' },
+  attacked: { on: 'attacked', stance: ['neutral', 'helpless'], effects: [{ type: 'flag', flag: 'attacked_neutral', op: 'add' }], log: 'You fired on the {ship}', tone: 'bad' },
   boarded: {
     on: 'boarded', stance: ['neutral', 'helpless'],
     effects: [{ type: 'reputation', faction: 'owner', delta: -1 }, { type: 'flag', flag: 'boarded_neutral', op: 'add' }],
     log: 'Your crew boarded the {ship} uninvited', tone: 'bad',
   },
   captured: { on: 'captured', effects: [{ type: 'flag', flag: 'ships_taken', op: 'add' }], log: 'The {ship} is yours now', tone: 'warn' },
+  fled: { on: 'fled', log: 'The {ship} jumped away', tone: 'info' },
   destroyed: { on: 'destroyed', stance: ['neutral', 'helpless'], log: 'The {ship} is a dead hull now, open to stripping', tone: 'bad' },
 } satisfies Record<string, SceneRuleDef>;
