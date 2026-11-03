@@ -9,6 +9,7 @@ import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
 import { partyOut } from './depart';
 import { siteShuttleOk } from './handlers';
+import { freeSeats } from './passage';
 
 /**
  * Pickups and lost shuttles (docs/DESIGN.md "No source reachable: ask early" and "Failures", #286 slice 2b). A crew member out of air reach
@@ -35,9 +36,15 @@ export function answerPickups(sim: Sim, vehicle: number): number {
   return first;
 }
 
-/** A free shuttle that can fly a pickup or take over a site: lowest id, stowed at home, with a tank of air to share. */
+/**
+ * A free shuttle that can fly a pickup or take over a site: lowest id, stowed at home, with a tank of air to share and a free seat (crew
+ * embarked by hand may fill it: Codex 4449367460).
+ */
 function freeShuttle(sim: Sim): number {
-  return [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((id) => siteShuttleOk(sim, id) && hasTank(sim, vehicleAir(sim, sim.world.get(id, VehicleC)!))) ?? 0;
+  return [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((id) => {
+    const v = sim.world.get(id, VehicleC)!;
+    return siteShuttleOk(sim, id) && hasTank(sim, vehicleAir(sim, v)) && freeSeats(sim, v) > 0;
+  }) ?? 0;
 }
 
 /**

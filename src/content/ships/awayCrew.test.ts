@@ -4,6 +4,7 @@ import { AirlockC } from '../../sim/modules/airlock';
 import { content } from '../index';
 import { placementError, shipGrid, spawnModule } from '../../sim';
 import { nearestExterior } from '../../sim/eva/shuttle';
+import { boardCrew, occupants, vehicleDefOf } from '../../sim/vehicles/lifecycle';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { SuitC } from '../../sim/eva/components';
 import { shipIdOf } from '../../sim/regions';
@@ -20,6 +21,27 @@ function wreckAirlock(sim: Sim, wreck: number): number {
     }
   }
   throw new Error('no room for an airlock');
+}
+
+/** A crew member out on the home ship's hull in a suit under the refill line, with no airlock holding air: out of air reach. */
+function outOfReach(): { sim: Sim; home: number; shuttle: number; c: number } {
+  const { sim, home } = setup();
+  const shuttle = shuttleOf(sim);
+  const [c] = crewOn(sim, home) as [number];
+  for (const id of sim.world.query(AirlockC)) sim.world.get(id, AirlockC)!.air = 0;
+  const s = sim.world.get(home, ShipC)!;
+  const spot = nearestExterior(sim, home, { x: s.x + s.width / 2, y: s.y - 1 }, 1)[0]!;
+  Object.assign(sim.world.get(c, PositionC)!, { x: spot.x, y: spot.y, toX: spot.x, toY: spot.y, progress: 0 });
+  sim.world.get(c, PathC)!.steps = [];
+  sim.world.add(c, SuitC, { worn: true, air: 150 });
+  return { sim, home, shuttle, c };
+}
+
+/** Fill the shuttle's seats with new crew embarked by hand. */
+function fill(sim: Sim, home: number, shuttle: number, c: number): void {
+  const v = sim.world.get(shuttle, VehicleC)!;
+  const at = sim.world.get(crewOn(sim, home).find((o) => o !== c)!, PositionC)!;
+  while (occupants(v).length < (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) boardCrew(sim, createCrew(sim, home, 'role.engineer', { x: at.x, y: at.y }, { faction: 'player', rest: 100 }), shuttle);
 }
 
 const isRobot = (sim: Sim, c: number): boolean => sim.world.get(c, CrewC)?.species === 'species.robot';
@@ -44,16 +66,7 @@ describe('away sites: who goes (#286 slice 2b)', () => {
   });
 
   it('a crew member out of air reach on the home ship is fetched by a pickup run and brought in', () => {
-    const { sim, home } = setup();
-    const shuttle = shuttleOf(sim);
-    const [c] = crewOn(sim, home) as [number];
-    // Out on the home ship's hull in a suit, and no airlock with air to refill at: out of air reach.
-    for (const id of sim.world.query(AirlockC)) sim.world.get(id, AirlockC)!.air = 0;
-    const s = sim.world.get(home, ShipC)!;
-    const spot = nearestExterior(sim, home, { x: s.x + s.width / 2, y: s.y - 1 }, 1)[0]!;
-    Object.assign(sim.world.get(c, PositionC)!, { x: spot.x, y: spot.y, toX: spot.x, toY: spot.y, progress: 0 });
-    sim.world.get(c, PathC)!.steps = [];
-    sim.world.add(c, SuitC, { worn: true, air: 150 }); // under the refill line
+    const { sim, home, shuttle, c } = outOfReach();
     const all = play(sim, 20 * 300, (a) => of(a, 'away.pickup').length > 0 && !sim.world.has(shuttle, SiteRunC));
     expect(of(all, 'crew.airUnreachable').map((e) => e.crew)).toContain(c);
     expect(of(all, 'away.pickup')).toMatchObject([{ ship: home, vehicle: shuttle, crew: [c] }]);
@@ -62,6 +75,25 @@ describe('away sites: who goes (#286 slice 2b)', () => {
     expect(sim.world.get(shuttle, VehicleC)).toMatchObject({ state: 'stowed', autopilot: false });
     expect(shipIdOf(sim, sim.world.get(c, PositionC)!)).toBe(home);
     expect(sim.world.has(c, SuitC)).toBe(false); // came in through the shuttle: the suit is in its stock
+  });
+
+  it('a shuttle full of crew embarked by hand is not sent on a pickup (Codex 4449367460)', () => {
+    const { sim, home, shuttle, c } = outOfReach();
+    fill(sim, home, shuttle, c);
+    const all = play(sim, 20 * 30);
+    expect(of(all, 'crew.airUnreachable').map((e) => e.crew)).toContain(c);
+    expect(of(all, 'away.pickup')).toEqual([]); // no seat for them: the request stays open for another shuttle
+    expect(sim.world.has(c, AwayC)).toBe(false);
+  });
+
+  it('a pickup shuttle filled on the way gives the request up, so another can take it (Codex 4449367460)', () => {
+    const { sim, home, shuttle, c } = outOfReach();
+    const all = play(sim, 20 * 30, (a) => of(a, 'away.pickup').length > 0);
+    expect(of(all, 'away.pickup')).toHaveLength(1);
+    fill(sim, home, shuttle, c);
+    play(sim, 20 * 120, () => sim.world.get(shuttle, SiteRunC)?.phase === 'home' || !sim.world.has(shuttle, SiteRunC));
+    expect(sim.world.has(c, AwayC)).toBe(false);
+    expect(sim.world.get(shuttle, SiteRunC)?.ending ?? true).toBe(true);
   });
 
   it('a site whose shuttle run is gone takes another free shuttle, which brings the party on', () => {

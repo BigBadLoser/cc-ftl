@@ -125,11 +125,18 @@ function homeLeg(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
 
 /**
  * A pickup run beside the requester's grid: it holds station by them until they come aboard (the return drive), lifting them after
- * AWAY_LIFT_SEC if they cannot; then home, where the run ends. Given up when they are gone or dead.
+ * AWAY_LIFT_SEC if they cannot; then home, where the run ends. Given up when they are gone or dead, or when it has no seat for them
+ * (the request is then free for another shuttle).
  */
 function pickup(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   const c = r.pickup ?? 0;
   const out = partyOut(sim, id).includes(c) && !sim.world.has(c, DeadC);
+  if (out && freeSeats(sim, v) === 0) {
+    // No seat for them after all (filled meanwhile): give the request up so another shuttle can take it, and go home.
+    sim.world.remove(c, AwayC);
+    r.ending = true;
+    return go(r, 'home');
+  }
   if (out && !hovering(v, r.site) && !(v.dest?.type === 'hover' && v.dest.ship === r.site)) return go(r, 'fly');
   if (out && r.timer > sec(AWAY_LIFT_SEC) && settled(sim, id, v)) lift(sim, c, id);
   if (partyOut(sim, id).length > 0 || !settled(sim, id, v)) return;
