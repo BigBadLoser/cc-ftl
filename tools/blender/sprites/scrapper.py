@@ -367,7 +367,7 @@ def screen(b, D1):
     set into its front inside a bezel."""
     L0, L1, z0, z1, top, bot = 1.28, 1.80, 0.849, 1.18, 0.122, 0.028   # how far the top and foot edges stand out
     m = 0.082                                                           # mounting plate margin, about 3 px
-    plate = [b.P(L, D1 + 0.002, z) for L, z in ((L0 - m, z0 - m), (L1 + m, z0 - m), (L1 + m, z1 + m), (L0 - m, z1 + m))]
+    plate = [b.P(L, D1 + 0.002, z) for L, z in _rrect((L0 + L1) / 2, (z0 + z1) / 2, (L1 - L0) / 2 + m, (z1 - z0) / 2 + m, 0.05)]
     fwd = [x - y for x, y in zip(b.P(L0, D1 + 1, z0), b.P(L0, D1, z0))]
     b.face(plate, HW, fwd)
     sl, sz = 0.02, 0.018                                                # a screw head: about 1 px, at each corner
@@ -480,10 +480,10 @@ def vent(b, L=2.3, D=0.5, r=0.2):
     clear of the linkage at the front; in line with the dial across the machine): a low rim round a dark grille."""
     cyl_z(b, L, D, TOP, TOP + 0.03, r, BODY_S2, BODY_S)
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
-    ri, w, zg = r - 0.04, 0.045, TOP + 0.036                            # grey slats across the grille, along L
-    for d in (-0.1, 0.0, 0.1):
+    ri, w = r - 0.04, 0.045                                             # two grey slats standing over the grille
+    for d in (-0.055, 0.055):
         hl = math.sqrt(max(0.0, ri * ri - (abs(d) + w / 2) ** 2)) - 0.01
-        b.face([b.P(L + u, D + d + v, zg) for u, v in ((-hl, -w / 2), (hl, -w / 2), (hl, w / 2), (-hl, w / 2))], GM, (0, 0, 1))
+        b.box(L - hl, L + hl, D + d - w / 2, D + d + w / 2, TOP + 0.033, TOP + 0.055, GM)
 
 
 def piston(b, L0=2.0 + STEP - 0.084, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.077):
