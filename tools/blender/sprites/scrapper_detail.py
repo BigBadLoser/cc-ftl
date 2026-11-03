@@ -65,50 +65,66 @@ def rivet_wall(b, D, side, L, z, col, r=0.022, rz=0.02, h=0.022):
     b.box(L - r, L + r, d0, d1, z - rz, z + rz, col)
 
 
-def rivet_end(b, L, side, D, z, col, r=0.022, rz=0.02, h=0.022):
-    """A rivet head on the end wall at L."""
-    l0, l1 = sorted((L, L + side * h))
-    b.box(l0, l1, D - r, D + r, z - rz, z + rz, col)
+KINKS = (0.5, 1.0, 1.0 + S.STEP, 2.0 - S.STEP, 2.0, 3.0 - S.STEP, 3.0, 3.5)
 
 
-def rivets(b, col, step=0.2, gap=0.05):
-    """Rows of rivets beside the wall seams, gap off each line, about every step."""
+def _outline(D, L0, L1, z0, mz):
+    """The (L, z) outline of a panel on the long wall at D between L0 and L1, from z0 up to mz below the wall's top:
+    ccw, its first edge the bottom; where the end slope cuts below it, it comes to a point."""
+    u = lambda L: S._top(L, D) - mz                                     # noqa: E731
+    Ls = sorted({L0, L1, *(k for k in KINKS if L0 < k < L1)})
+    pts = []
+    for a, c in zip(Ls, Ls[1:]):
+        ua, uc = u(a), u(c)
+        if ua >= z0:
+            pts.append((a, ua))
+        if (ua - z0) * (uc - z0) < 0:                                   # the top crosses the bottom line
+            pts.append((a + (c - a) * (z0 - ua) / (uc - ua), z0))
+    if u(Ls[-1]) >= z0:
+        pts.append((Ls[-1], u(Ls[-1])))
+    if len(pts) < 2:
+        return []
+    top = pts[::-1]                                                     # right to left along the top
+    lo, hi = min(p[0] for p in pts), max(p[0] for p in pts)
+    out = [(lo, z0), (hi, z0)]
+    out += [p for p in top if not (p[1] == z0 and p[0] in (lo, hi))]
+    return out
+
+
+def panel(b, D, side, poly, col, lit, t=0.035, hb=0.026):
+    """A recessed panel on the long wall at D with the (L, z) outline poly (ccw, bottom edge first), painted the way
+    the belt is: its top and sides in shadow (col), t wide inside the outline; its bottom a lit bevel facing up."""
+    d, dd = D + side * OFF, D + side * (OFF + hb)
+    (a, z0), (c, _) = poly[0], poly[1]
+    _paint(b, [(a, d, z0 + hb), (c, d, z0 + hb), (c, dd, z0), (a, dd, z0)], lit, (0, side, 1))
+    n = len(poly)
+    for k in range(1, n):
+        (pL, pz), (qL, qz) = poly[k], poly[(k + 1) % n]
+        dL, dz = qL - pL, qz - pz
+        ln = (dL * dL + dz * dz) ** 0.5 or 1.0
+        iL, iz = -dz / ln * t, dL / ln * t                              # inward (left of the ccw edge)
+        _paint(b, [(pL, d, pz), (qL, d, qz), (qL + iL, d, qz + iz), (pL + iL, d, pz + iz)], col, (0, side, 0))
+
+
+def panels(b, col, lit, rivet, m=0.11, mz=0.09, rm=0.05):
+    """Recessed panels on the long walls, one in each plate the seams mark out, under the belt and over it (pointed
+    where the end slopes cut in), m in from the seams and mz in from the belt, the plinth and the top; a rivet off
+    each corner, rm out from it."""
     D0, D1 = 0.03, 1.97
-    def run(a, c):                                                      # evenly spaced points strictly inside a..c
-        n = max(1, round((c - a) / step))
-        return [a + (c - a) * (k + 0.5) / n for k in range(n)]
-    for D, side, spans in ((D0, -1, ((0.03, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 3.97))),
-                           (D1, 1, ((0.03, 1.0), (1.0, 2.0), (3.0, 3.97)))):
-        for L0, L1 in spans:                                            # under the belt
-            for L in run(L0 + 0.05, L1 - 0.05):
-                rivet_wall(b, D, side, L, S.WALL - gap, col)
-    for L in (1.0, 2.0, 3.0):                                           # beside the tile-join seams
-        for z in run(S.BASE + 0.05, S.WALL - 0.1):
-            rivet_wall(b, D0, -1, L + gap, z, col)
-    for z in run(S.BASE + 0.05, S.WALL - 0.1):
-        rivet_wall(b, D1, 1, 1.0 + gap, z, col)
-        for L, side in ((0.03, -1), (3.97, 1)):
-            rivet_end(b, L, side, 1.0 + gap, z, col)
-
-
-def panel_wall(b, D, side, L0, L1, z0, z1, col, lit, w=0.04, h=0.03, hb=0.026):
-    """A recessed panel on the long wall at D, painted the way the belt is: its top edge and sides in shadow (col), its
-    bottom edge a lit bevel facing up (lit), as a plate pressed in reads from above."""
-    d = D + side * OFF
-    def paint(q, c, out):
-        _paint(b, q, c, out)
-    paint([(L0, d, z1 - h), (L1, d, z1 - h), (L1, d, z1), (L0, d, z1)], col, (0, side, 0))           # top
-    for a, c in ((L0, L0 + w), (L1 - w, L1)):                                                     # sides
-        paint([(a, d, z0), (c, d, z0), (c, d, z1 - h), (a, d, z1 - h)], col, (0, side, 0))
-    dd = D + side * (OFF + hb)                                                                    # bottom bevel
-    paint([(L0, d, z0 + hb), (L1, d, z0 + hb), (L1, dd, z0), (L0, dd, z0)], lit, (0, side, 1))
-
-
-def panels(b, col, lit, m=0.11, mz=0.09):
-    """Recessed panels on the long walls, one in each plate the seams mark out under the belt, m in from the seams
-    (clear of the rivet rows beside them) and mz in from the belt and the plinth."""
-    D0, D1 = 0.03, 1.97
-    for D, side, spans in ((D0, -1, ((0.03, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 3.97))),
-                           (D1, 1, ((0.03, 1.0),))):
-        for L0, L1 in spans:
-            panel_wall(b, D, side, L0 + m, L1 - m, S.BASE + mz, S.WALL - mz, col, lit)
+    back = ((0.03, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 3.97))
+    plates = [(D0, -1, sp, lo) for sp in back for lo in (True, False)]
+    plates += [(D1, 1, (0.03, 1.0), True), (D1, 1, (0.03, 1.0), False), (D1, 1, (3.0, 3.97), False)]
+    for D, side, (L0, L1), lower in plates:
+        if lower:
+            z0, z1 = S.BASE + mz, S.WALL - mz
+            poly = [(L0 + m, z0), (L1 - m, z0), (L1 - m, z1), (L0 + m, z1)]
+        else:
+            poly = _outline(D, L0 + m, L1 - m, S.WALL + mz, mz)
+        if len(poly) < 3:
+            continue
+        panel(b, D, side, poly, col, lit)
+        cL, cz = sum(p[0] for p in poly) / len(poly), sum(p[1] for p in poly) / len(poly)
+        for pL, pz in poly:
+            vL, vz = pL - cL, pz - cz
+            ln = (vL * vL + vz * vz) ** 0.5 or 1.0
+            rivet_wall(b, D, side, pL + vL / ln * rm, pz + vz / ln * rm, rivet)
