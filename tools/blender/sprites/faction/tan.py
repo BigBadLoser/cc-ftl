@@ -17,7 +17,7 @@ GROOVES = (0, 10, 21)               # the face's upright grooves, by pixel colum
 SLAT = 4 * PZ                       # the slats' pitch: a dark line, a lit one, 2 px of face
 END = {"x": "fTX5", "y": "fTX4"}    # a free end's section, on an x / y end face; its front edge's highlight
 END_EDGE = {"x": "fTX3", "y": "fTX2"}
-SEAM = "fTS8"                        # the ramp's seams
+SEAM = "fTS3"                        # the ramp's seams
 SHADES = ("fTS0", "fTS1", "fTS2", "fTS3", "fTS8", "fTS7", "fTS4", "fTS5", "fTS6")   # the face's tones, light to dark
 
 
