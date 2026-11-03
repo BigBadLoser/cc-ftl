@@ -120,11 +120,12 @@ def tan(hull):
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 
 
-# the base ramp's plates, (u0, u1, d0, d1) as fractions of the tile and of the plates' run: one down the tile's left,
-# two small squares against the wall beside it, and one L-shaped plate under them up the tile's right side (its two
-# parts: the edges it shows lit / dark)
-PLATES = ((0.0, 0.29, 0.0, 1.0, "tlbr"), (0.31, 0.52, 0.07, 0.47, "tlbr"), (0.54, 0.75, 0.07, 0.47, "tlbr"),
-          (0.77, 1.0, 0.0, 0.5, "tlr"), (0.31, 1.0, 0.5, 1.0, "tlbr"))
+# the base ramp's plates, symmetric about the tile's middle: (u0, u1, d0, d1) as fractions of the tile and of the
+# plates' run (the joints, a px, centred on the cuts): a plate down each side, two squares against the wall between
+# them over one wide plate
+CUT_U, CUT_D = (0.25, 0.5, 0.75), 0.55
+PLATES = ((0.0, 0.25, 0.0, 1.0), (0.25, 0.5, 0.0, CUT_D), (0.5, 0.75, 0.0, CUT_D), (0.75, 1.0, 0.0, 1.0),
+          (0.25, 0.75, CUT_D, 1.0))
 
 
 def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
@@ -139,21 +140,18 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
     plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
     plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
     T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the plates)
-    for f0, f1, g0, g1, sides in PLATES:
-        pu0, pu1 = u0 + f0 * w + (L if f0 == 0.0 else 0.0), u0 + f1 * w
-        pd0, pd1 = top + E + g0 * (end - top - E), top + g1 * (end - top - E) - (E if g1 < 1.0 else 0.0)
-        if f0 == 0.77:                                  # (the L's upright part runs on down into its foot)
-            pd1 += 2 * E
+    span = end - E - top
+    for f0, f1, g0, g1 in PLATES:                       # (a joint at the tile's left edge, none at the wall)
+        pu0 = u0 + f0 * w + (L if f0 == 0.0 else L / 2)
+        pu1 = u0 + f1 * w - (0.0 if f1 == 1.0 else L / 2)
+        pd0 = top + g0 * span + (0.0 if g0 == 0.0 else E / 2)
+        pd1 = top + g1 * span - (0.0 if g1 == 1.0 else E / 2)
         plate(q(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
         r = 3 * PAINT
-        if "b" in sides:
-            plate(q(pu0, pu1, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)
-        if "r" in sides:
-            plate(q(pu1 - L, pu1, pd0, pd1), r, 2, 2 * PAINT, FACE)
-        if "t" in sides:
-            plate(q(pu0 + L, pu1 - L, pd0, pd0 + E), r, 5, 2 * PAINT, "wall")
-        if "l" in sides:
-            plate(q(pu0, pu0 + L, pd0 + E, pd1 - E), r, 5, 2 * PAINT, "wall")
+        plate(q(pu0, pu1, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)              # (its foot and right edge shaded,
+        plate(q(pu1 - L, pu1, pd0, pd1), r, 2, 2 * PAINT, FACE)              # its top and left edge lit)
+        plate(q(pu0 + L, pu1 - L, pd0, pd0 + E), r, 5, 2 * PAINT, "wall")
+        plate(q(pu0, pu0 + L, pd0 + E, pd1 - E), r, 5, 2 * PAINT, "wall")
 
 
 TAN_RAMPS = (Design("plates", ramp=tan_plate),)
