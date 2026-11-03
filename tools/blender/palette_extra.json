@@ -3719,5 +3719,21 @@
   "hex": "#9c745c",
   "set": "tan",
   "aa": "tan"
+ },
+ "fTC0": {
+  "hex": "#1c2c3c",
+  "set": "tan"
+ },
+ "fTC1": {
+  "hex": "#1cac4c",
+  "set": "tan"
+ },
+ "fTC2": {
+  "hex": "#cc1c1c",
+  "set": "tan"
+ },
+ "fTC3": {
+  "hex": "#ecdc3c",
+  "set": "tan"
  }
 }

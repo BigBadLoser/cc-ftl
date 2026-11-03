@@ -7,8 +7,8 @@ from .. import wall3d as T
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, PZ, body, flat, prism
 from .shell import FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
-from ..relief_style import Design
 from .tan_ramps import BLUE, FACE, OUTER, TAN_RAMPS
+from .tan_tops import TAN_TOPS
 
 HEAD_D, HEAD_H = PX, 11 * PZ       # the header block: its depth (2 px of lit top), its front (a lit edge, 10 of face)
 LIP_D, LIP_TOP = PX / 2, 6 * PZ    # the lip at the face's foot: its depth (a px of lit top), its top over the slope's
@@ -125,6 +125,10 @@ def tan(hull):
         band(a, b, zl0, zl0 + PZ, "fTS4", LIP_D)
         if not full:
             return
+        alt = T.fill("body")                            # (a face design's own face over the lip)
+        if alt:
+            alt(k, ax, plane, a, b, mit, zl1, z1, band, sd)
+            return
         # the header block: its pale top, a lit edge on its front, a shadow 2 px under it
         zh0 = z1 - HEAD_H
         for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile edge,
@@ -164,9 +168,6 @@ def tan(hull):
                 if u0 - 1e-6 <= g[0] and g[1] <= u1 + 1e-6:
                     band(g[0], g[1], zl1, zs0, "fTS4", PAINT)   # (over the bands across it)
     return face
-
-
-TAN_TOPS = (Design("plain"),)                  # its face designs, the base first
 
 
 class Tan(Faction):

@@ -114,7 +114,8 @@ TONES = {"fB": {"fBG": "#1c2444",      # a look's own single tones, on bin centr
          "fD": {"fDM1": "#6c343c", "fDM2": "#5c2c34", "fDM3": "#4c242c"},
          "fT": {"fTS0": "#dcccac", "fTS1": "#bca46c", "fTS2": "#ac8c64",     # tan's face, picked off the ref (no
                 "fTS3": "#a48464", "fTS4": "#6c4c4c", "fTS5": "#543c3c",     # one hue: its lights pale straw, its
-                "fTS6": "#3c2c2c", "fTS7": "#8c6c5c", "fTS8": "#9c745c"}}    # darks maroon brown), on bin centres;
+                "fTS6": "#3c2c2c", "fTS7": "#8c6c5c", "fTS8": "#9c745c",
+                "fTC0": "#1c2c3c", "fTC1": "#1cac4c", "fTC2": "#cc1c1c", "fTC3": "#ecdc3c"}}    # darks maroon brown), on bin centres;
                                                                             # 7, 8: soft shadows (between 3 and 4)   # drone's maroon (its red block): lit,
                                                                             # front, shade
 
