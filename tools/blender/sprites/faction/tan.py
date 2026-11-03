@@ -141,8 +141,8 @@ PLATES = ((0.0, 0.25, 0.0, 1.0), (0.25, 0.5, 0.0, CUT_D), (0.5, 0.75, 0.0, CUT_D
 
 
 def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
-    """The base ramp: a blue line along the wall, then pale cushions in brown joints, each lit along its top and left
-    edges and shaded along its foot and right edge, then the blue toe."""
+    """The base ramp: a blue line along the wall, then pale cushions in brown joints, each shaded along its foot and
+    right edge, then the blue toe."""
     w, E, L = u1 - u0, EDGE, LINE
     top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the cushions' end, over the toe)
     nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
@@ -160,10 +160,8 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
         pd1 = top + g1 * span - (0.0 if g1 == 1.0 else E / 2)
         plate(q(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
         r = 3 * PAINT
-        plate(q(pu0, pu1, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)              # (its foot and right edge shaded,
-        plate(q(pu1 - L, pu1, pd0, pd1), r, 2, 2 * PAINT, FACE)              # its top and left edge lit)
-        plate(q(pu0 + L, pu1 - L, pd0, pd0 + E), r, 5, 2 * PAINT, "wall")
-        plate(q(pu0, pu0 + L, pd0 + E, pd1 - E), r, 5, 2 * PAINT, "wall")
+        plate(q(pu0, pu1, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)              # (its foot and right edge shaded;
+        plate(q(pu1 - L, pu1, pd0, pd1), r, 2, 2 * PAINT, FACE)              # no lit rims)
 
 
 TAN_RAMPS = (Design("cushions", ramp=tan_plate),)
