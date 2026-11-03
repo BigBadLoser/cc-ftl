@@ -121,11 +121,13 @@ def cushions(layout, extra=None):
     return ramp
 
 
-# the grille design: a wide cushion, a raised grille between it and a narrow one (a frame and a lattice of bars,
-# their tops lit, their sides in the face's brown as they face, over a brown floor)
-G_L, G_R = 8 / 32, 25 / 32                      # the gap between the cushions, across the tile
-G_D0, G_D1 = 0.03, 0.97                         # the grille fills it, down the slope from to
-G_H = 2 * PX                                    # how far it stands proud
+# the grille design: a wide cushion, then an air vent sunk a px into the slope between it and a narrow one: slats down
+# the slope over its left two thirds (their tops pale, a mid tan between them, the last one lit along its right), the
+# rest of its floor plain in shadow; its inner walls along its top and left (the ones seen) dark
+G_L, G_R = 8 / 32, 25 / 32                      # the vent, across the tile
+G_D0, G_D1 = 0.04, 0.96                         # and down the slope
+G_SLATS = 0.62                                  # the slats' share of it, from its left
+G_H = PX / 4                                    # the slats' height
 
 
 def grille(paint, solid, U, D):
@@ -133,19 +135,18 @@ def grille(paint, solid, U, D):
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
-    gu0, gu1, gd0, gd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)          # (the gap, a joint in)
-    paint(q(gu0, gu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # brown under the grille
-    for ua, ub, da, db in ((gu0, gu1, gd0, gd0 + E), (gu0, gu1, gd1 - E, gd1),     # its frame
-                           (gu0, gu0 + L, gd0, gd1), (gu1 - L, gu1, gd0, gd1)):
-        solid(q(ua, ub, da, db), G_H, "fTW1", FACE, 3)
-    n = int(round((G_R - G_L) * 32 / 2))
-    for i in range(1, n):                                                           # its bars down the slope (a
-        ua = gu0 + 2 * i * L - L / 2                                                # px, every two)
-        solid(q(ua, ua + L, gd0, gd1), G_H, "fTW1", FACE, 3)
-    d = gd0 + 3 * E
-    while d < gd1 - 2 * E:                                                          # and across it
-        solid(q(gu0, gu1, d, d + E), G_H, "fTW1", FACE, 3)
-        d += 3 * E
+    gu0, gu1, gd0, gd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)         # (a joint in from the cushions)
+    gs = gu0 + G_SLATS * (gu1 - gu0)
+    paint(q(gu0, gu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # its surround
+    paint(q(gs, gu1, gd0, gd1), "fTS3", 2.0)                                        # its floor in shadow
+    paint(q(gu0, gs, gd0, gd1), "fTS2", 2.0)                                        # mid tan under the slats
+    n = int((gs - gu0) / (2 * L))
+    for i in range(n):                                                              # the slats (a px, every two)
+        ua = gu0 + (2 * i + 1) * L
+        solid(q(ua, ua + L, gd0 + E, gd1), G_H, "fTW0", FACE, 4)
+    paint(q(gs - L, gs, gd0 + E, gd1), "fTW0", 3.0)                                 # the last one lit
+    paint(q(gu0, gu1, gd0, gd0 + E), "fTS5", 3.0)                                   # its top inner wall (under the
+    paint(q(gu0, gu0 + L, gd0, gd1), "fTS4", 3.0)                                   # slope's edge) and its left
 
 
 GRILLE = (((0.0, G_L, 0.0, 1.0, "abcd"),), ((G_R, 1.0, 0.0, 1.0, "abcd"),))
