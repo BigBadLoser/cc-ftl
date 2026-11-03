@@ -14,12 +14,15 @@ import type { WallLevel } from './tiles';
 
 /**
  * The docking airlock's art (tools/blender/sprites/airlock.py): every part is a 1x1 sprite anchored at its own tile, so it
- * sorts against the crew by that tile. Never cut away: only the hull block follows the wall view level (`hull.r{n}.{up,cut,low}`),
- * the pod, unloaders and collar are drawn whole at every level.
+ * sorts against the crew by that tile. Never cut away: only the door tile's hull follows the wall view level (`hull.r{n}.{up,cut,low}`;
+ * on a hull row facing the camera it is the full exterior hull at every level), the pod, unloaders, brace and collar are drawn
+ * whole at every level.
  *
  *  - housing `.closed|.f1|.f2|.open` on the pod tile (the inner door), light `.red|.green` over it
- *  - hull block on the hull tile (replaces the door the wall renderer would draw there)
- *  - collar `.closed|.f1|.f2|.open[.docked]` one tile past the hull, sorted like an engine bell (the iris hatch, the outer door)
+ *  - the door tile's hull (replaces the door the wall renderer would draw there; roofed, the hull's own piece stands there)
+ *  - brace (camera-facing hull rows: the rib and clamp block from the collar's clamp ring over the hull's top) on the hull tile
+ *  - collar `.closed|.f1|.f2|.open[.docked]` one tile past the hull, sorted like an engine bell (its clamp ring, the iris hatch:
+ *    the outer door)
  *  - unloader `.back` and `.front[.loaded]` on the two body tiles of each unloader, `keepout` on the tile in front of a chute,
  *    `walk` marks on the two tiles in front of the pod (deck marks, under the crew)
  */
@@ -125,8 +128,8 @@ export interface AirlockView {
 }
 
 /**
- * Sprite layers of a docking airlock (a def with `airlock.layout`), bottom first. Under a roof only the hull block and the
- * collar show (the pod and unloaders are inside).
+ * Sprite layers of a docking airlock (a def with `airlock.layout`), bottom first. Under a roof only the brace and the collar
+ * show (the pod and unloaders are inside; the hull's own piece covers the door tile).
  */
 export function airlockLayers(world: World, id: number, m: Module, def: ModuleDef, view: AirlockView): ModuleLayer[] {
   const a = world.get(id, AirlockC);
@@ -158,7 +161,9 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
   out_.push(part('housing', frames.inner, t.inner));
   const working = m.enabled && m.hp > 0 && m.powered;
   out_.push(part('light', working && !cycling ? 'green' : 'red', t.inner, { dz: 0.01 }));
-  out_.push(part('hull', view.roofed ? 'up' : view.level, t.outer, { tiles: 'hull', roofVisible: true }));
+  if (!view.roofed) out_.push(part('hull', view.level, t.outer, { tiles: 'hull' }));
+  // The brace stands on the hull's outside: over the door tile's hull (and, roofed, the hull's own piece there).
+  out_.push(part('brace', null, t.outer, { roofVisible: true, optional: true, out: true }));
   out_.push(part('collar', `${collar.frame}${collar.docked ? '.docked' : ''}`, t.collar, { out: true, roofVisible: true }));
   return out_;
 }

@@ -231,6 +231,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           const own = gapAt(x, y) || airlocks.has(idx);
           const drew = hull && (!airlocks.has(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own) : false;
           const special = own && !drew;
+          // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
+          if (hull && ghosts && airlocks.has(idx)) drawHull(hull, x, y, k, ci, v, true);
           // Under an engine's bulkhead (walls up / roofed) the hull's belly still runs below the deck.
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).

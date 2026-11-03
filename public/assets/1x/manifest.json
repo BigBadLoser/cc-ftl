@@ -56505,36 +56505,73 @@
     2
    ]
   },
-  "module.airlock.collar.r0.closed": {
+  "module.airlock.brace.r1": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2785,
+    "x": 3645,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 57,
+    "h": 69
    },
    "anchor": {
-    "x": 38,
-    "y": 68
+    "x": 24,
+    "y": 97
    },
    "footprint": [
     1,
     1
    ]
   },
+  "module.airlock.brace.r2": {
+   "kind": "static",
+   "sheet": "airlock",
+   "frame": {
+    "x": 3703,
+    "y": 1,
+    "w": 57,
+    "h": 69
+   },
+   "anchor": {
+    "x": 33,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.airlock.collar.r0.closed": {
+   "kind": "static",
+   "sheet": "airlock",
+   "frame": {
+    "x": 1509,
+    "y": 1,
+    "w": 65,
+    "h": 72
+   },
+   "anchor": {
+    "x": 38,
+    "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "module.airlock.collar.r0.closed.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1681,
+    "x": 1575,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -56546,32 +56583,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2851,
+    "x": 1644,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r0.f1.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1750,
+    "x": 1710,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -56583,32 +56621,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2917,
+    "x": 1779,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r0.f2.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1819,
+    "x": 1845,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -56620,32 +56659,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2983,
+    "x": 1914,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r0.open.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1888,
+    "x": 1980,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 38,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -56657,32 +56697,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3049,
+    "x": 2589,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r1.closed.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2233,
+    "x": 2654,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56694,32 +56735,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3115,
+    "x": 2721,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r1.f1.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2302,
+    "x": 2786,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56731,32 +56773,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3181,
+    "x": 2853,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r1.f2.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2371,
+    "x": 2918,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56768,32 +56811,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3247,
+    "x": 2985,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r1.open.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2440,
+    "x": 3050,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 38,
-    "y": 74
+    "x": 37,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56805,32 +56849,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3313,
+    "x": 3117,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
     "x": 27,
-    "y": 74
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r2.closed.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2509,
+    "x": 3182,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 30,
-    "y": 74
+    "x": 29,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56842,32 +56887,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3379,
+    "x": 3249,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
     "x": 27,
-    "y": 74
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r2.f1.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2578,
+    "x": 3314,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 30,
-    "y": 74
+    "x": 29,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56879,32 +56925,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3445,
+    "x": 3381,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
     "x": 27,
-    "y": 74
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r2.f2.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2647,
+    "x": 3446,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 30,
-    "y": 74
+    "x": 29,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56916,32 +56963,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3511,
+    "x": 3513,
     "y": 1,
-    "w": 65,
-    "h": 68
+    "w": 64,
+    "h": 70
    },
    "anchor": {
     "x": 27,
-    "y": 74
+    "y": 60
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r2.open.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2716,
+    "x": 3578,
     "y": 1,
-    "w": 68,
-    "h": 69
+    "w": 66,
+    "h": 70
    },
    "anchor": {
-    "x": 30,
-    "y": 74
+    "x": 29,
+    "y": 60
    },
    "footprint": [
     1,
@@ -56953,32 +57001,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3577,
+    "x": 2049,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 27,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r3.closed.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1957,
+    "x": 2115,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 30,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -56990,32 +57039,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3643,
+    "x": 2184,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 27,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r3.f1.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2026,
+    "x": 2250,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 30,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -57027,32 +57077,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3709,
+    "x": 2319,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 27,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r3.f2.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2095,
+    "x": 2385,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 30,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -57064,32 +57115,33 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3775,
+    "x": 2454,
     "y": 1,
     "w": 65,
-    "h": 68
+    "h": 72
    },
    "anchor": {
     "x": 27,
-    "y": 68
+    "y": 56
    },
    "footprint": [
     1,
     1
-   ]
+   ],
+   "glow": true
   },
   "module.airlock.collar.r3.open.docked": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 2164,
+    "x": 2520,
     "y": 1,
     "w": 68,
-    "h": 70
+    "h": 72
    },
    "anchor": {
     "x": 30,
-    "y": 70
+    "y": 56
    },
    "footprint": [
     1,
@@ -57101,7 +57153,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 817,
+    "x": 645,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57119,7 +57171,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 871,
+    "x": 699,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57137,7 +57189,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 925,
+    "x": 753,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57155,7 +57207,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 979,
+    "x": 807,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57173,7 +57225,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1249,
+    "x": 1077,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57191,7 +57243,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1303,
+    "x": 1131,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57209,7 +57261,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1357,
+    "x": 1185,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57227,7 +57279,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1411,
+    "x": 1239,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57245,7 +57297,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1465,
+    "x": 1293,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57263,7 +57315,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1519,
+    "x": 1347,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57281,7 +57333,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1573,
+    "x": 1401,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57299,7 +57351,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1627,
+    "x": 1455,
     "y": 1,
     "w": 53,
     "h": 79
@@ -57317,7 +57369,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1033,
+    "x": 861,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57335,7 +57387,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1087,
+    "x": 915,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57353,7 +57405,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1141,
+    "x": 969,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57371,7 +57423,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1195,
+    "x": 1023,
     "y": 1,
     "w": 53,
     "h": 81
@@ -57391,178 +57443,169 @@
    "frame": {
     "x": 1,
     "y": 1,
-    "w": 67,
+    "w": 64,
     "h": 112
    },
    "anchor": {
-    "x": 35,
+    "x": 32,
     "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r0.low": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 681,
-    "y": 1,
-    "w": 67,
-    "h": 92
+    "x": 392,
+    "y": 114,
+    "w": 53,
+    "h": 38
    },
    "anchor": {
-    "x": 35,
-    "y": 77
+    "x": 21,
+    "y": 28
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r0.up": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 69,
+    "x": 66,
     "y": 1,
-    "w": 67,
+    "w": 64,
     "h": 112
    },
    "anchor": {
-    "x": 35,
+    "x": 32,
     "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r1.cut": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 273,
+    "x": 261,
     "y": 1,
-    "w": 67,
-    "h": 93
+    "w": 63,
+    "h": 111
    },
    "anchor": {
-    "x": 35,
-    "y": 78
+    "x": 32,
+    "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r1.low": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 341,
+    "x": 325,
     "y": 1,
-    "w": 67,
-    "h": 93
+    "w": 63,
+    "h": 111
    },
    "anchor": {
-    "x": 35,
-    "y": 78
+    "x": 32,
+    "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r1.up": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 409,
+    "x": 389,
     "y": 1,
-    "w": 67,
-    "h": 93
+    "w": 63,
+    "h": 111
    },
    "anchor": {
-    "x": 35,
-    "y": 78
+    "x": 32,
+    "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r2.cut": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 477,
+    "x": 453,
     "y": 1,
-    "w": 67,
-    "h": 93
+    "w": 63,
+    "h": 111
    },
    "anchor": {
-    "x": 32,
-    "y": 78
+    "x": 31,
+    "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r2.low": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 545,
+    "x": 517,
     "y": 1,
-    "w": 67,
-    "h": 93
+    "w": 63,
+    "h": 111
    },
    "anchor": {
-    "x": 32,
-    "y": 78
+    "x": 31,
+    "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r2.up": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 613,
+    "x": 581,
     "y": 1,
-    "w": 67,
-    "h": 93
+    "w": 63,
+    "h": 111
    },
    "anchor": {
-    "x": 32,
-    "y": 78
+    "x": 31,
+    "y": 96
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r3.cut": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 137,
+    "x": 131,
     "y": 1,
-    "w": 67,
+    "w": 64,
     "h": 112
    },
    "anchor": {
@@ -57578,28 +57621,27 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 749,
-    "y": 1,
-    "w": 67,
-    "h": 92
+    "x": 446,
+    "y": 114,
+    "w": 53,
+    "h": 38
    },
    "anchor": {
     "x": 32,
-    "y": 77
+    "y": 28
    },
    "footprint": [
     1,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.airlock.hull.r3.up": {
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 205,
+    "x": 196,
     "y": 1,
-    "w": 67,
+    "w": 64,
     "h": 112
    },
    "anchor": {
@@ -57615,7 +57657,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 453,
+    "x": 500,
     "y": 114,
     "w": 54,
     "h": 28
@@ -57633,7 +57675,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 508,
+    "x": 555,
     "y": 114,
     "w": 54,
     "h": 28
@@ -57651,7 +57693,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 563,
+    "x": 610,
     "y": 114,
     "w": 54,
     "h": 28
@@ -57669,7 +57711,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 618,
+    "x": 665,
     "y": 114,
     "w": 54,
     "h": 28
@@ -57687,7 +57729,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 893,
+    "x": 940,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57706,7 +57748,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 907,
+    "x": 954,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57725,7 +57767,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 921,
+    "x": 968,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57744,7 +57786,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 935,
+    "x": 982,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57763,7 +57805,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 949,
+    "x": 996,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57782,7 +57824,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 963,
+    "x": 1010,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57801,7 +57843,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 977,
+    "x": 1024,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57820,7 +57862,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 991,
+    "x": 1038,
     "y": 114,
     "w": 13,
     "h": 7
@@ -57839,7 +57881,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 229,
+    "x": 168,
     "y": 114,
     "w": 55,
     "h": 51
@@ -57857,7 +57899,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 123,
+    "x": 62,
     "y": 114,
     "w": 52,
     "h": 53
@@ -57876,8 +57918,8 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 1,
-    "y": 114,
+    "x": 3989,
+    "y": 1,
     "w": 60,
     "h": 54
    },
@@ -57895,7 +57937,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 341,
+    "x": 280,
     "y": 114,
     "w": 55,
     "h": 46
@@ -57913,7 +57955,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3841,
+    "x": 3761,
     "y": 1,
     "w": 52,
     "h": 58
@@ -57931,7 +57973,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3894,
+    "x": 3814,
     "y": 1,
     "w": 60,
     "h": 58
@@ -57949,7 +57991,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 397,
+    "x": 336,
     "y": 114,
     "w": 55,
     "h": 46
@@ -57967,7 +58009,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 3955,
+    "x": 3875,
     "y": 1,
     "w": 52,
     "h": 58
@@ -57985,7 +58027,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 4008,
+    "x": 3928,
     "y": 1,
     "w": 60,
     "h": 58
@@ -58003,7 +58045,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 285,
+    "x": 224,
     "y": 114,
     "w": 55,
     "h": 51
@@ -58021,7 +58063,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 176,
+    "x": 115,
     "y": 114,
     "w": 52,
     "h": 53
@@ -58040,7 +58082,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 62,
+    "x": 1,
     "y": 114,
     "w": 60,
     "h": 54
@@ -58059,7 +58101,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 673,
+    "x": 720,
     "y": 114,
     "w": 54,
     "h": 28
@@ -58077,7 +58119,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 728,
+    "x": 775,
     "y": 114,
     "w": 54,
     "h": 28
@@ -58095,7 +58137,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 783,
+    "x": 830,
     "y": 114,
     "w": 54,
     "h": 28
@@ -58113,7 +58155,7 @@
    "kind": "static",
    "sheet": "airlock",
    "frame": {
-    "x": 838,
+    "x": 885,
     "y": 114,
     "w": 54,
     "h": 28
