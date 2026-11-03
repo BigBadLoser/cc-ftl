@@ -1,11 +1,10 @@
 import { reaches, startLabels, viewOf } from '../ai/navView';
 import { shipGrid, shipIdAt } from '../regions';
 import type { Sim } from '../sim';
-import { Struct } from '../structure';
 import { cargoAdd, cargoSpace } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
 import { ItemStackC, StagingC, type ItemStack, type Staging } from './components';
-import { crateUnits, stackSizeOf, takeFromStack } from './stacks';
+import { crateUnits, holdsGoods, stackSizeOf, takeFromStack } from './stacks';
 import { refKey, type Reservations } from './stock';
 
 /**
@@ -14,13 +13,6 @@ import { refKey, type Reservations } from './stock';
  * destination; its reservation is the haul job itself (items/stock.ts), released when the job ends. One stack per tile: a full stack
  * overflows to the next tile of the zone, in the zone's tile order.
  */
-
-/** True if goods can lie on the tile: bare floor or open ground, no module (the rule `spillItems` puts stacks down by). */
-function stackable(grid: NonNullable<ReturnType<typeof shipGrid>>, x: number, y: number): boolean {
-  if (!grid.inBounds(x, y)) return false;
-  const kind = grid.get('struct', x, y);
-  return (kind === Struct.Floor || kind === Struct.Ground) && (!grid.has('module') || grid.get('module', x, y) === 0);
-}
 
 /**
  * The `n` tiles of the ship nearest to `at` (ties: row, then column) where goods can lie and that a suited walker at `at` can walk to
@@ -35,7 +27,7 @@ export function zoneTilesNear(sim: Sim, ship: number, at: { x: number; y: number
   const all: { x: number; y: number; d: number }[] = [];
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
     for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
-      if ((x === at.x && y === at.y) || grid.get('ship', x, y) !== ship || !stackable(grid, x, y)) continue;
+      if ((x === at.x && y === at.y) || grid.get('ship', x, y) !== ship || !holdsGoods(grid, x, y)) continue;
       all.push({ x, y, d: (x - at.x) ** 2 + (y - at.y) ** 2 });
     }
   }
@@ -51,7 +43,7 @@ export function zoneTilesNear(sim: Sim, ship: number, at: { x: number; y: number
 /** True while every tile of the zone can still hold goods (a tile stripped or built on makes the zone stale). */
 export function zoneIntact(sim: Sim, ship: number, z: Staging): boolean {
   const grid = shipGrid(sim, ship);
-  return !!grid && z.tiles.length > 0 && z.tiles.every((t) => stackable(grid, t.x, t.y));
+  return !!grid && z.tiles.length > 0 && z.tiles.every((t) => holdsGoods(grid, t.x, t.y));
 }
 
 /** True if the stack lies on a tile of its ship's staging zone. */
@@ -84,7 +76,7 @@ export function stagingRoom(sim: Sim, ship: number, item: string, res: Reservati
   const max = stackSizeOf(sim, item);
   let tiles = 0;
   for (const t of z.tiles) {
-    if (!stackable(grid, t.x, t.y)) continue;
+    if (!holdsGoods(grid, t.x, t.y)) continue;
     const s = sim.world.get(grid.get('item', t.x, t.y), ItemStackC);
     if (!s) tiles += max;
     else if (s.item === item && !s.job) tiles += Math.max(0, max - s.count);
@@ -99,7 +91,7 @@ export function stageTile(sim: Sim, ship: number, item: string): { x: number; y:
   const grid = shipGrid(sim, ship);
   if (!z || !grid?.has('item')) return null;
   const max = stackSizeOf(sim, item);
-  const open = z.tiles.filter((t) => stackable(grid, t.x, t.y));
+  const open = z.tiles.filter((t) => holdsGoods(grid, t.x, t.y));
   const stack = (t: { x: number; y: number }): ItemStack | undefined => sim.world.get(grid.get('item', t.x, t.y), ItemStackC);
   return open.find((t) => stack(t)?.item === item && !stack(t)?.job && stack(t)!.count < max) ?? open.find((t) => !stack(t)) ?? null;
 }

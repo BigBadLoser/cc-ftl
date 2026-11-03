@@ -3,7 +3,7 @@
  * a sealed wreck with or without an airlock, and nothing else to do at home. `play` runs it; `scrapHome` is what is measured. Tooling and
  * the slow test read it; salvage's own code is not touched.
  */
-import { CrewC, DeadC, ItemStackC, PositionC, StorageC, VehicleC, homeShip, newGame, placementError, ShipC, shipGrid, spawnModule, stampShip, type ScrapType, type Sim, type WorkCategory } from '../../sim';
+import { CrewC, DeadC, ItemStackC, PositionC, StorageC, VehicleC, homeShip, storageAdd, newGame, placementError, ShipC, shipGrid, spawnModule, stampShip, type ScrapType, type Sim, type WorkCategory } from '../../sim';
 import { shipIdAt, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { storages } from './ferryFixture';
@@ -78,6 +78,27 @@ function addAirlock(sim: Sim, wreck: number): void {
   throw new Error('no room for an airlock on the bench wreck');
 }
 
+/** Rations for the bench's crew: a locker of their own on the home ship (so the scrap keeps the ship's storage), full. */
+export const BENCH_RATIONS = 200;
+
+/**
+ * Rations and beds enough (the bench measures salvage, not the galley): without this six crew eat the starter stock in about 80 game
+ * minutes, after which nobody is fed enough for a passage and the site stops.
+ */
+function stockRations(sim: Sim, home: number): void {
+  const g = shipGrid(sim, home)!;
+  for (let y = g.y0; y < g.y0 + g.height; y++) {
+    for (let x = g.x0; x < g.x0 + g.width; x++) {
+      if (placementError(sim, home, 'module.storage_locker', x, y, 0)) continue;
+      const id = spawnModule(sim, 'module.storage_locker', x, y, 0);
+      sim.world.get(id, StorageC)!.filter = ['item.ration'];
+      storageAdd(sim, id, 'item.ration', BENCH_RATIONS);
+      return;
+    }
+  }
+  throw new Error('no room for a ration locker on the bench home ship');
+}
+
 /** Build the bench on a fresh game: crew, priorities, the wreck, and the salvage order for every scrap type. */
 export const setupBench = (seed: number, o: BenchOpts): Bench => prepareBench(newGame(seed, content), o);
 
@@ -99,6 +120,7 @@ export function prepareBench(sim: Sim, o: BenchOpts): Bench {
     for (const cat of ['construction', 'hauling'] as WorkCategory[]) sim.enqueue({ type: 'crew.setPriority', id: c, category: cat, value: level });
   });
   sim.galaxy.nextArrival = Number.MAX_SAFE_INTEGER; // no scavengers or raiders jump in during the 2 hours: the bench measures salvage, not whatever else the node rolls
+  stockRations(sim, home);
   const wreck = stampWreck(sim, home);
   if (o.airlock) addAirlock(sim, wreck);
   for (let i = 0; i < 5; i++) {

@@ -4,8 +4,8 @@ import { BENCH_HOURS, BENCH_TICKS, formatBench, runBench, setupBench } from './s
 
 /**
  * The salvage throughput bench (docs/ARCHITECTURE.md "Throughput check", #286). It runs the real salvage loop on a big derelict for 2 game hours and
- * reads the scrap brought home. The numbers in `salvageBench.baseline.ts` were measured on today's salvage trip code before slice 0 changed anything;
- * slices 2 and 3 must not fall below them (the mean at least the baseline, each seed at least 90% of its own).
+ * reads the scrap brought home. The numbers in `salvageBench.baseline.ts` were measured on slice 3's staging (the old salvage-team baseline no
+ * longer applies); later changes must not fall below them (the mean at least the baseline, each seed at least 90% of its own).
  *
  * One run is a few minutes of wall time, so the 12 runs (4 variants x seeds 1-3) are not in the default slow tier. `SALVAGE_BENCH=1 npx vitest run
  * salvageBench` runs them all; `SALVAGE_BENCH_ONLY=6lock:2` runs one (variant:seed). `npm run profile:sim -- --scenario salvageBench --ticks 144000`

@@ -428,14 +428,25 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   leaves the site:
   - **at once** for an urgent passenger, or to serve a pickup (a pickup moves the hover point; it needs no trip unless the
     person is hurt);
-  - **otherwise only when** one of these holds:
-    - the hold is full and loot is waiting;
+  - **otherwise only when** one of these holds (and once the shuttle has loaded what the staging zone holds, below):
+    - the hold is full;
     - rotation is due: non-urgent passengers fill half the seats, or free seats exist that crew at home would take;
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
   At home it drops off those going home, unloads the hold (the existing cargo hauls) and refills its air. Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
+- **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
+  - each away site has a **staging zone**, a few floor tiles beside the shuttle's drop-off point (the hatch drop point when it
+    hovers, inside the airlock when it docks), holding about two hold loads. It belongs to the away site, not to salvage, so
+    mining and boarding loot can use it too;
+  - the party hauls loose loot into the zone, whether the shuttle is there or away. Hauling **gathers** everywhere, the home ship
+    included: a hauler picks up several nearby loose stacks up to their carry capacity and walks to the destination once. A full
+    stack in the zone overflows to the next tile; the crates show it filling;
+  - while the shuttle is at the site it **loads** the zone into its hold, one crate every 2 s;
+  - trips are for crew (rotation, needs, hurt) or a full hold. A batch trip first finishes loading; an urgent trip goes at once.
+    No trip waits on a haul or drops it: the loads go into the zone, which stays;
+  - away crew no longer use the wreck's lockers. The ordinary ferry keeps its rule elsewhere.
 - **The shuttle never strands anyone.** It may leave the site only if every party member staying out is safe, as defined in
   ARCHITECTURE.md ("Away sites and the air drive", "Departure check"). In short, each staying worker must either have another source they can reach (an airlock with
   air left, another shuttle) or enough air to last the whole round trip with a margin. The shuttle settles that before it
@@ -469,7 +480,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   drop), so the first trip already has a hauling seat.
 - The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
 - The wreck stays until the party has left its side, then goes as today.
-- **Throughput.** Scrap brought home per game hour must be no worse than today's salvage teams (ARCHITECTURE.md "Away sites and the air drive", "Throughput check").
+- **Throughput.** Scrap brought home per game hour is held to the bench's baseline (ARCHITECTURE.md "Away sites and the air drive", "Throughput check"). With staging (slice 3) it was re-based: 6 crew bring home about 380 units a game hour (the salvage teams: about 370), and more crew is never slower.
 
 #### How the general design covers each salvage special case
 

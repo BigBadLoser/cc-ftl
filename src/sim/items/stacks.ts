@@ -49,6 +49,13 @@ for (let dy = -SPILL_RADIUS; dy <= SPILL_RADIUS; dy++) {
 }
 SPIRAL.sort((a, b) => (a.dx ** 2 + a.dy ** 2) - (b.dx ** 2 + b.dy ** 2) || a.dy - b.dy || a.dx - b.dx);
 
+/** True if goods can lie on the tile: bare floor or open ground, no module (one stack per tile, `item` field). */
+export function holdsGoods(grid: NonNullable<ReturnType<typeof shipGrid>>, x: number, y: number): boolean {
+  if (!grid.inBounds(x, y)) return false;
+  const kind = grid.get('struct', x, y);
+  return (kind === Struct.Floor || kind === Struct.Ground) && (!grid.has('module') || grid.get('module', x, y) === 0);
+}
+
 /**
  * Put items on the floor at the nearest tile with room: bare floor or open ground (no module, no door) that is
  * empty or holds the same item below its stack size. Returns how many units found no room (lost). `job`: new stacks are that delivery's crate.
@@ -63,9 +70,7 @@ export function spillItems(sim: Sim, shipId: number, x: number, y: number, item:
     const tx = x + dx;
     const ty = y + dy;
     if (!grid.inBounds(tx, ty)) continue;
-    const kind = grid.get('struct', tx, ty);
-    if (kind !== Struct.Floor && kind !== Struct.Ground) continue;
-    if (grid.has('module') && grid.get('module', tx, ty) !== 0) continue;
+    if (!holdsGoods(grid, tx, ty)) continue;
     const existing = grid.get('item', tx, ty);
     const stack = existing ? sim.world.get(existing, ItemStackC) : undefined;
     if (stack) {
