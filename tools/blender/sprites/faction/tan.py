@@ -70,6 +70,35 @@ def _panels(a, b):
     return out
 
 
+HEAD_CURVE = 3                                  # the header cushions' corners: their curve's radius, in px
+
+
+def _header(a, b, mit, lo_free, hi_free):
+    """The header over [a, b] as a cushion: (u0, u1, mitre, its top and foot in by r) slices, square where the face
+    turns a corner (mitred), else in half a px at a tile edge (a px at a free end), its corners curved in half px
+    slices; and (u0, u1, False, None) over each end's outline (the gap and the curve, on the face behind)."""
+    C, h = HEAD_CURVE, LINE / 2
+    rnd = (mit[0] == 0.0, mit[1] == 0.0)
+    ha = a + ((LINE if lo_free else LINE / 2) if rnd[0] else 0.0)
+    hb = b - ((LINE if hi_free else LINE / 2) if rnd[1] else 0.0)
+    ma, mb = ha + (C * LINE if rnd[0] else 0.0), hb - (C * LINE if rnd[1] else 0.0)
+    out = [(ma, mb, (0.0 if rnd[0] else mit[0], 0.0 if rnd[1] else mit[1]), 0.0)]
+
+    def ins(x):                                         # (x px from the end: the curve's inset there, in z)
+        return (C - math.sqrt(max(0.0, C * C - (C - x) ** 2))) * PZ
+    for i in range(2 * C):
+        x = (i + 0.5) / 2
+        if rnd[0]:
+            out.append((ha + i * h, ha + (i + 1) * h, (False, False), ins(x)))
+        if rnd[1]:
+            out.append((hb - (i + 1) * h, hb - i * h, (False, False), ins(x)))
+    if rnd[0]:
+        out.append((a, ma, False, None))
+    if rnd[1]:
+        out.append((mb, b, False, None))
+    return out
+
+
 def tan(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -99,13 +128,16 @@ def tan(hull):
             return
         # the header block: its pale top, a lit edge on its front, a shadow 2 px under it
         zh0 = z1 - HEAD_H
-        ha, hb = a + (LINE if back else 0.0), b - (LINE if end1 else 0.0)  # (at a free end its last column a px
-        for u0, u1, m, r in ((ha, hb, mit, 0.0), (a, ha, (mit[0], False), PZ), (hb, b, (False, mit[1]), PZ)):
-            if u1 - u0 > 1e-6:                          # shorter top and bottom: its corners rounded)
-                prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
-                      FACE, 3, cols=[False, None, sd("fTS0", ax), False], mitre=m)
-                if not r:                               # (its lit edge stops short of a rounded end)
-                    band(u0, u1, z1 - PZ, z1, "fTS1", HEAD_D)
+        for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile edge,
+            if r is not None:                                   # a px at a free end, its corners curved, the face
+                continue                                        # behind the gap and the curves the block's outline)
+            band(u0, u1, zh0, z1, OUTER)
+        for u0, u1, m, r in _header(a, b, mit, back, end1):
+            if r is None:
+                continue
+            prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
+                  FACE, 3, cols=[False, None, sd("fTS0", ax), False], mitre=m)
+            band(u0, u1, z1 - r - PZ, z1 - r, "fTS1", HEAD_D)
         zs0 = zh0 - _hid(HEAD_D)                        # (the face's first row seen under the header)
         band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
         band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
