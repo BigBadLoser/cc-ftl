@@ -36,13 +36,13 @@ def wall_h(b, D, side, L0, L1, z, col, w=3 * PXZ):
     b.face([b.P(*p) for p in q], S.BODY, tuple(b.P(0, side, 1)[k] - b.P(0, 0, 0)[k] for k in range(3)))
 
 
-def top_L(b, D, Ls, col, w=0.1):
-    """A seam along L lying on the top at D, through the breakpoints Ls (the top's height between them is linear)."""
+def top_L(b, D, Ls, col, w=0.05):
+    """A seam along L painted on the top at D, through the breakpoints Ls (the top's height between them is linear).
+    w: about 1.5 px across on screen, so it reads as an unbroken line."""
     for L0, L1 in zip(Ls, Ls[1:]):
-        z0, z1 = S._top(L0 + 1e-4, D), S._top(L1 - 1e-4, D)
-        dz, dL = z1 - z0, L1 - L0
-        ln = (dz * dz + dL * dL) ** 0.5
-        groove(b, (L0, D, z0), (L1, D, z1), (-dz / ln, 0, dL / ln), (0, 1, 0), col, w)
+        z0, z1 = S._top(L0 + 1e-4, D) + OFF, S._top(L1 - 1e-4, D) + OFF
+        q = [(L0, D - w / 2, z0), (L1, D - w / 2, z1), (L1, D + w / 2, z1), (L0, D + w / 2, z0)]
+        b.face([b.P(*p) for p in q], col, tuple(b.P(0, 0, 1)[k] - b.P(0, 0, 0)[k] for k in range(3)))
 
 
 def seams(b, col):
