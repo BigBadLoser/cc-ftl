@@ -9,6 +9,8 @@ describe('station life over a long stretch', () => {
     sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'hub', seed: 6 });
     sim.step();
     const st = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+    // Rest now lasts about half an hour of awake time (#278), so a hub's crew would not tire inside the run: start a tenth of them tired to see the sleep schedule.
+    for (const [n, c] of sim.world.query(StationCrewC).entries()) if (n % 10 === 0) sim.world.get(c, NeedsC)!.rest = 15;
     const ev: SimEvent[] = [];
     const activities = new Set<string>();
     // The first meal comes at about tick 6800 and hunger levels off near 26 by tick 8000, so 9000 ticks show every property; more only repeats the plateau.
