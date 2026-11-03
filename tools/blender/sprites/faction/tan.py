@@ -97,14 +97,14 @@ def tan(hull):
         zt = zs0 - 6.5 * PZ                             # (3 px of face, then the slats and the panel; the half px
                                                         # lands the 1 px lines on whole rows: clean 2:1 steps)
         for u0, u1, mid, (g0, g1) in _panels(a, b):
-            if not mid:                                 # either side of the panel: slats, from the top a dark line,
-                z = zt                                  # a lit one, 2 px of face; a groove up each tile's edge
-                while z - 2 * PZ >= zl1 - 1e-6:
-                    band(u0, u1, z - PZ, z, "fTS4")
-                    band(u0, u1, z - 2 * PZ, z - PZ, "fTS1")
-                    z -= SLAT
-                if u0 - 1e-6 <= g0 and g0 + LINE <= u1 + 1e-6:
-                    band(g0, g0 + LINE, zl1, zt, "fTS4")
+            if not mid:                                 # either side of the panel: slats up from the lip, each a
+                z = zl1                                 # dark seam over a lit line (the first seam on the lip, its
+                while z + PZ <= zt + 1e-6:              # lit line under it hidden), 2 px of face between
+                    band(u0, u1, z, z + PZ, "fTS4")
+                    band(u0, u1, z - PZ, z, "fTS1")
+                    z += SLAT
+                if u0 - 1e-6 <= g0 and g0 + LINE <= u1 + 1e-6:     # a groove up each tile's edge to the header
+                    band(g0, g0 + LINE, zl1, zs0, "fTS4")
                 continue
             zp0, zp1 = zl1 + PZ, zt - PZ                # the centre panel, flush: a groove round it, a 2 px bevel lit
             band(u0, u1, zp1, zt, "fTS4")               # along its top, a soft shadow along its foot
@@ -112,9 +112,9 @@ def tan(hull):
             band(u0, u1, zp0 + PZ, zp0 + 3 * PZ, "fTS8")
             band(u0, u1, zp0 + PZ, zp0 + 2 * PZ, "fTS7")
             band(u0, u1, zl1, zp0 + PZ, "fTS4")
-            for gu in (g0, g1 - LINE):
+            for gu in (g0, g1 - LINE):                  # (its side grooves on up to the header)
                 if u0 - 1e-6 <= gu and gu + LINE <= u1 + 1e-6:
-                    band(gu, gu + LINE, zl1, zt, "fTS4")
+                    band(gu, gu + LINE, zl1, zs0, "fTS4")
     return face
 
 
