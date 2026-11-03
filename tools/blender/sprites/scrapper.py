@@ -666,7 +666,7 @@ def jobs():
     out = []
     for r in range(4):
         fp = FOOTPRINT if r % 2 == 0 else FOOTPRINT[::-1]
-        base = f"module.scrapper.blockout.r{r}"
+        base = f"module.scrapper.r{r}"
         for state, frame, aid in [("idle", 0, base), ("unpowered", 0, base + ".unpowered")] + \
                 [("active", f, base + ".active" + (f".f{f}" if f else "")) for f in range(4)]:
             out.append((aid, fp, "prop", lambda r=r, s=state, f=frame: scrapper(r, s, f)))
