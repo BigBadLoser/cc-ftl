@@ -36,12 +36,26 @@ function insideTile(sim: Sim, base: number): { x: number; y: number } {
 }
 
 describe('a woken hostile outpost defends like a woken pirate den', () => {
-  it('aimed at: wakes, the node goes into combat, its turret shoots the aggressor', () => {
+  it('aimed at, it sleeps on; fired on: wakes, the node goes into combat, its turret shoots the aggressor', () => {
     const { sim, base } = spawn('dug', 'pirate');
+    const me = homeShip(sim);
     expect(sim.world.has(base, CombatC)).toBe(false);
     discoverOutpost(sim, base, 'proximity');
-    sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: base, targetModuleId: 0 });
-    const log = run(sim, 600);
+    // An aim alone, ship-wide and then with weapons held at battle stations, is no hostile act (user ruling, #173).
+    sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: base, targetModuleId: 0 });
+    expect(run(sim, 300)).not.toContain('ship.provoked');
+    sim.enqueue({ type: 'combat.battleStations', on: true });
+    expect(run(sim, 5 * 20)).not.toContain('ship.provoked'); // the turrets run out
+    expect(isDormant(sim.world.get(base, ShipC))).toBe(true);
+    // The shot that leaves is.
+    for (const w of sim.world.query(WeaponC, ModuleC)) if (shipIdOf(sim, sim.world.get(w, ModuleC)!) === me) sim.world.get(w, WeaponC)!.charge = 1;
+    sim.enqueue({ type: 'combat.fireVolley', ship: me });
+    const log: string[] = [];
+    for (let i = 0; i < 200 && !log.includes('weapon.fired'); i++) run(sim, 1, log);
+    // It wakes as the shot leaves (a hostile act through combat/provoke.ts), before anything lands.
+    expect(log).toContain('ship.provoked');
+    expect(isDormant(sim.world.get(base, ShipC))).toBe(false);
+    run(sim, 600, log);
     expect(log).toContain('ship.provoked');
     expect(log).toContain('combat.started');
     expect(isDormant(sim.world.get(base, ShipC))).toBe(false);

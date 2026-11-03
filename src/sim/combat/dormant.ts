@@ -2,9 +2,7 @@ import type { Sim } from '../sim';
 import { discoverOutpost } from '../outposts/state';
 import { shieldCapacity } from './ships';
 import { newHeat } from './heat';
-import { ModuleC } from '../modules/components';
-import { shipIdOf } from '../regions';
-import { CombatC, ShipC, WeaponC, type Combat, type Ship } from './components';
+import { CombatC, ShipC, type Combat, type Ship } from './components';
 
 /**
  * Dormant ships (pirate dens, asteroid outposts): quiet until provoked. `ShipC.dormant` holds the integrity the ship had when
@@ -13,8 +11,11 @@ import { CombatC, ShipC, WeaponC, type Combat, type Ship } from './components';
  * a `CombatC`: dens do, outposts get one on waking.
  */
 
-/** Why a dormant ship woke: aimed at, damaged, boarded (dormancySystem); dug into or breached (outpost-only triggers). */
-export type WakeReason = 'aimed' | 'damaged' | 'boarded' | 'dug' | 'breach';
+/**
+ * Why a dormant ship woke: fired on or boarded (a hostile act: combat/provoke.ts), damaged (dormancySystem), a truce ban (blackmarket/truce.ts), dug
+ * into or breached (outpost-only triggers). Aiming at it does not wake it (user ruling, #173).
+ */
+export type WakeReason = 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach';
 
 /** True for a ship that has not been provoked: never a combatant. */
 export function isDormant(ship: Ship | undefined): boolean {
@@ -39,20 +40,4 @@ export function wake(sim: Sim, id: number, reason: WakeReason): void {
     sim.world.add(id, CombatC, combat);
   }
   sim.events.emit({ type: 'ship.provoked', ship: id, reason });
-}
-
-/** Ships a player ship aims at, ship-wide or with any weapon: what counts as being fired on (dormancy wakes on it, the scene observer reads it). */
-export function aimedByPlayer(sim: Sim): Set<number> {
-  const aimedAt = new Set<number>();
-  for (const id of sim.world.query(ShipC, CombatC)) {
-    if (sim.world.get(id, ShipC)?.faction !== 'player') continue;
-    const t = sim.world.get(id, CombatC)?.target;
-    if (t?.ship) aimedAt.add(t.ship);
-  }
-  for (const id of sim.world.query(WeaponC, ModuleC)) {
-    const t = sim.world.get(id, WeaponC)?.target;
-    if (!t?.ship) continue;
-    if (sim.world.get(shipIdOf(sim, sim.world.get(id, ModuleC)), ShipC)?.faction === 'player') aimedAt.add(t.ship);
-  }
-  return aimedAt;
 }

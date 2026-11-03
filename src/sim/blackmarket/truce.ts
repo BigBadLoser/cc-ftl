@@ -60,7 +60,7 @@ export function applyBan(sim: Sim, node: string): void {
       turnCrew(sim, id, s.faction, 'hostile');
       s.faction = 'hostile';
     } else if (ban && s.faction === 'hostile') {
-      wake(sim, id, 'aimed');
+      wake(sim, id, 'ban');
     }
     if (!ban && s.banned !== undefined && s.faction !== 'hostile') delete s.banned;
     else if (!ban && s.banned !== undefined) {
@@ -70,7 +70,7 @@ export function applyBan(sim: Sim, node: string): void {
       const combat = sim.world.get(id, CombatC);
       if (combat) combat.target = null;
     }
-    if (ban && s.banned !== undefined) wake(sim, id, 'aimed');
+    if (ban && s.banned !== undefined) wake(sim, id, 'ban');
   }
 }
 

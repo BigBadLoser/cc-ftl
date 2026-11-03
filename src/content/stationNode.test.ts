@@ -5,6 +5,7 @@ import {
 } from '../sim';
 import { stationAirlock } from '../sim/trade/stationDock';
 import { shipIdOf } from '../sim/regions';
+import { hostileAct } from '../sim/combat/provoke';
 import { content } from './index';
 
 function run(sim: Sim, n: number): string[] {
@@ -101,8 +102,11 @@ describe('stations in the node', () => {
     expect(quiet).not.toContain('combat.started');
     expect(sim.sector.inCombat).toBe(false);
     expect(sim.world.get(station, CombatC)!.target).toBeNull();
-    // The player aims at it: it wakes, the node goes into combat and its guns come round.
+    // The player aims at it: an aim alone is no hostile act (#173), it sleeps on.
     sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: station, targetModuleId: 0 });
+    expect(run(sim, 60)).not.toContain('ship.provoked');
+    // A shot fired at it (the firing system's hostile act): it wakes, the node goes into combat and its guns come round.
+    hostileAct(sim, station, 'fired');
     const log = run(sim, 60);
     expect(log).toContain('ship.provoked');
     expect(log).toContain('combat.started');
