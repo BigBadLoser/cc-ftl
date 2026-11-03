@@ -110,6 +110,9 @@ void main(void) {
   if (line) ring = min(ring, min(ringOf(cr), ringOf(cd)));   // a line edging a lit cell is lit
   float t = clamp((r - 0.25) / 0.75, 0.0, 1.0);
   float rows = downAge >= 0.0 ? downRows : uLit;
+  // lit rings: one per layer, plus one more under the first so a single layer still reads (n > 0: n + 1)
+  float lit = rows > 0.5 ? rows + 1.0 : 0.0;
+  float litWas = rows + 2.0;                                   // before a break took one layer
   float regenRow = regenAge >= 0.0 ? 1.0 : 0.0;
 
   // the sheen: clear middle, near solid toward the rim, deep blue at the edge
@@ -121,18 +124,18 @@ void main(void) {
     float la = floor((0.25 + 0.6 * pow(t, 1.4)) * 4.0 + 0.5) / 4.0 * (0.4 + 0.3 * uOver);
     col = mix(col, H1, al > la ? 0.45 + 0.3 * uOver : 1.0);
     al = max(al, la);
-    if (ring < rows - regenRow) {                             // one lit ring of cells per layer, from the rim in
+    if (ring < lit - (rows > 1.5 ? regenRow : 2.0 * regenRow)) {                              // the lit rings, from the rim in
       col = mix(H1, H0, 0.35 + 0.6 * uOver);
       al = 1.0;
       glow = H1 * (0.6 + 0.5 * uOver);
     }
-  } else if (r < 1.0 && ring < rows - regenRow) {    // and a faint fill inside the lit cells
+  } else if (r < 1.0 && ring < lit - (rows > 1.5 ? regenRow : 2.0 * regenRow)) {     // and a faint fill inside the lit cells
     col = mix(col, H1, 0.35 + 0.3 * uOver);
     al = max(al, 0.18 + 0.15 * uOver);
   }
 
   if (breakAge >= 0.0) {                                       // the lost ring flashes, its cells drop out, shards drift off
-    bool lost = r < 1.0 && ring > rows - 0.5 && ring < rows + 0.5;
+    bool lost = r < 1.0 && ring > lit - 0.5 && ring < litWas - 0.5;   // the last layer takes both its rings
     bool stay = ch > breakAge * 1.4;                           // each cell of it goes out at its own moment
     if (lost && breakAge < 0.15) { col = line ? W : mix(col, H1, 0.4); al = line ? 1.0 : max(al, 0.3); glow += line ? H0 * 0.9 : H1 * 0.15; }
     else if (lost && stay && line) { col = breakAge < 0.5 ? H0 : H1; al = 1.0 - 0.3 * breakAge; glow += H1 * 0.6; }
@@ -183,7 +186,7 @@ void main(void) {
     }
   }
 
-  if (regenAge >= 0.0 && r < 1.0 && ring > rows - 1.5 && ring < rows - 0.5) {
+  if (regenAge >= 0.0 && r < 1.0 && ring > (rows > 1.5 ? lit - 1.5 : -0.5) && ring < lit - 0.5) {   // the first layer sweeps on both
     float a = (atan(l.y / uAx.y, l.x / uAx.x) + 3.14159) / 6.28318;   // a new row sweeps on round the rim
     bool head = a < regenAge && a > regenAge - 0.08;
     if (line && a < regenAge) { col = a > regenAge - 0.25 ? H0 : mix(H1, H0, 0.35); al = 1.0; glow += H1 * (a > regenAge - 0.25 ? 0.9 : 0.6); }

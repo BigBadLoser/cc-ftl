@@ -710,16 +710,22 @@ palette.json    the single palette, read by Blender scripts and the game
     single frame for the shots, the old one-sprite flash.
 - **Shield dome (#301; `render/shieldView.ts`, `shieldDome.ts`, `shieldFit.ts`, `shieldState.ts`; art family `fx_shield`).**
   A ship with shield layers up wears a dome round its hull, in the sector air layer (main view and combat panel alike).
-  - Fit (`shieldFit.ts`): the ellipse is fitted to the hull's tiles (corners at floor and roof height), turned to their long
-    axis, grown until every point is inside, padded; a long thin hull keeps an oval (`MIN_ASPECT`). No grid: the bounding box.
+  - Fit (`shieldFit.ts`): the bubble is a 3D ellipsoid standing on the ship's grid, its axes along the grid (tiles) and up
+    (height units, `Z_PX` px each), sized so every hull tile corner at floor and roof height is inside, then padded
+    (`MARGIN`); a thin hull keeps an oval (`MIN_ASPECT`) and the height is at least `MIN_RISE` of the narrow axis so it reads
+    as a dome. Its outline on screen is the ellipsoid's isometric projection (an ellipse: centre, axes, turn), which the
+    effects work in; `body` maps a screen point inside it back to the front of the shell in the unit-sphere frame. No grid:
+    the bounding box from floor to roof.
   - Drawn by a shader (`shieldDome.ts`), one quad per ship, because it has to fit every hull: a sheen clear in the middle
-    and near solid at the deep-blue rim, a 1 art px hex lattice packed toward the rim like a sphere (`HEX` art px cells),
-    and one lit row of cells per layer from the rim in (a whole ring of cells each, `RING` hex sizes deep on the unwarped sphere; the HUD pips give the exact count). It
-    works in screen-aligned art pixels, so it sits with the pixel art. Colours are the `fxH*` / `fxI*` ramps plus a deeper
-    rim blue.
+    and near solid at the deep-blue rim, and a 1 art px hex lattice lying on the shell (laid round it from the top, cells
+    `HEX_TILES` across), so it squashes with the view like the floor. Lit rings of cells count the layers from the outline
+    in: one per layer plus one under the first, so a single layer still reads (a ring is `RING` cell sizes of turn away
+    from the outline; the HUD pips give the exact count). It works in screen-aligned art pixels, so it sits with the pixel
+    art. Colours are the `fxH*` / `fxI*` ramps plus a deeper rim blue. The render lab's `shield` panel draws it on a
+    stand-in hull (`docs/RENDER_LAB.md`).
   - Effects, all in the shader and stepped at 12 fps (`shieldState.ts` `DOME_SEC`, `DOME_FPS`): a hit absorbed (a ring of lit
-    cells runs out), ion (the outer row turns violet and drains into the hit), a mass-driver pierce (a hole torn round the
-    hit, closing again), a layer breaking (the outer row flashes, its cells drop out, shards drift off), a layer returning (a
+    cells runs out), ion (the rim rows near the hit turn violet and drain along the rim), a mass-driver pierce (a hole torn round
+    the hit, closing again), a layer breaking (the ring it lit flashes white, its cells drop out, shards drift off), a layer returning (a
     new row sweeps on round the rim), shields down on a vent or lockout (the lattice sputters out with sparks), overcharge (a
     pulse). Up to `DOME_HITS` hits at once. Missiles pass through with no reaction.
   - Breaks and returns come from diffing `shield.layers` each frame (the sim has no event for a layer coming back); a drop
