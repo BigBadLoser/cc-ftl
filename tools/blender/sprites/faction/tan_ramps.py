@@ -128,7 +128,7 @@ def cushions(layout, extra=None):
 G_L, G_R = 8 / 32, 25 / 32                      # the body, across the tile
 G_D0, G_D1 = 0.03, 0.97                         # and down the slope
 G_H, G_SINK = 2 * PX, PX / 2                    # its height; the vent's depth in it (a px)
-G_RIM = 1.0                                     # the rim round the vent, in px
+G_RIM, G_RIM_D = 1.0, 2.0                       # the rim round the vent, in px: at its sides, at its top and foot
 
 
 def grille(paint, solid, U, D):
@@ -140,7 +140,7 @@ def grille(paint, solid, U, D):
     paint(q(bu0, bu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # (the slope round it)
     fl = G_H - G_SINK
     solid(q(bu0, bu1, bd0, bd1), fl, "fTS2", FACE, 4)                               # the body, to the vent's floor
-    ru, rd = G_RIM * L, G_RIM * E
+    ru, rd = G_RIM * L, G_RIM_D * E
     vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
     for ua, ub, da, db in ((bu0, bu1, bd0, vd0), (bu0, bu1, vd1, bd1),             # the rim round it, up to the
                            (bu0, vu0, vd0, vd1), (vu1, bu1, vd0, vd1)):             # body's top
