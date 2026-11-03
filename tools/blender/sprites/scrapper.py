@@ -435,14 +435,14 @@ def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, cham
     for i in range(8):
         j = (i + 1) % 8
         (a0, a1), (c0, c1), (e0, e1), (f0, f1) = outer[i], outer[j], inner[i], inner[j]
-        b.face([b.P(a0, a1, z1), b.P(c0, c1, z1), b.P(f0, f1, z1), b.P(e0, e1, z1)], BODY_S2, (0, 0, 1))       # rim top
+        b.face([b.P(a0, a1, z1), b.P(c0, c1, z1), b.P(f0, f1, z1), b.P(e0, e1, z1)], BODY_S, (0, 0, 1))       # rim top
         (g0, g1), (h0, h1) = foot[i], foot[j]
         q = [b.P(g0, g1, TOP), b.P(h0, h1, TOP), b.P(c0, c1, z1), b.P(a0, a1, z1)]                         # outside
         m = [sum(p[x] for p in q) / 4 for x in range(3)]
-        b.face(q, BODY_S2, (m[0] - ce[0], m[1] - ce[1], 0))
+        b.face(q, BODY_S, (m[0] - ce[0], m[1] - ce[1], 0))
         q = [b.P(e0, e1, zf), b.P(f0, f1, zf), b.P(f0, f1, z1), b.P(e0, e1, z1)]                           # inside
         m = [sum(p[x] for p in q) / 4 for x in range(3)]
-        b.face(q, BODY_S2, (ce[0] - m[0], ce[1] - m[1], 0))
+        b.face(q, BODY_S, (ce[0] - m[0], ce[1] - m[1], 0))
     b.face([b.P(d0, d1, zf) for d0, d1 in inner], LIGHT, (0, 0, 1))                                      # gauge face
 
 
@@ -474,7 +474,7 @@ def piston(b, L0=2.0 + STEP - 0.084, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.07
     z = TOP + r - sink
     D = wall - math.sqrt(r * r - (r - sink) ** 2)                      # its line on the top falls on the front edge
     cap = 0.06                                                          # the knob is part of the span, so the whole
-    b.cyl_L(D, z, r, L0 + cap, L1, BODY, sides=14)                        # piston is centred, knob included
+    b.cyl_L(D, z, r, L0 + cap, L1, {"rust": RUST, "steel": STEEL, "orange": BODY}[os.environ.get("SCRAPPER_PISTON", "rust")], sides=14)                        # piston is centred, knob included
     b.cyl_L(D, z, r + 0.02, L0, L0 + cap, DARK, sides=14)
     levers(b, D, z, r)
 
@@ -600,7 +600,7 @@ def scrapper(rot):
     panels(b, BODY_D, BODY, BODY_S)
     if os.environ.get("SCRAPPER_WEAR", "1") != "0":
         from .scrapper_wear import drum_wear, fine, wear
-        sel = (BODY, BODY_S, BODY_D)
+        sel = (BODY, BODY_S, BODY_D, BODY_S2)
         fine(b.m, sel)
         rk, dk, tk = (float(x) for x in os.environ.get("SCRAPPER_WEAR_K", "0.7,0.7,0.55").split(","))
         wear(b, sel, _top, run_k=rk, dust_k=dk, top_k=tk)
