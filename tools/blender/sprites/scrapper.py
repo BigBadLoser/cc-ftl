@@ -153,7 +153,7 @@ def hatch(b, A, B, r0, r1):
     dark backing with a seam between them running up the slope."""
     ln = math.dist(A, B)
     u = ((B[0] - A[0]) / ln, (B[1] - A[1]) / ln)                       # up the slope
-    n = (-u[1], u[0])                                                  # out of it (toward -L and up)
+    n = (-u[1], u[0]) if u[0] > 0 else (u[1], -u[0])                   # out of it (up, and away from the body)
     S = lambda s, d, t: b.P(A[0] + u[0] * s + n[0] * t, d, A[1] + u[1] * s + n[1] * t)   # noqa: E731  s along, t out
     def out(s, d, t, ds, dd, dt):
         p, q = S(s, d, t), S(s + ds, d + dd, t + dt)
@@ -203,6 +203,11 @@ def scrapper(rot):
     # the two hatches on the hatch-end slope, one per row: a frame lying on the slope, two sliding door leaves
     for r0, r1 in ((D0, DM), (DM, D1)):
         hatch(b, (0.03, WALL), (0.5, EDGE), r0, r1)
+    hatch(b, (3.97, WALL), (3.5, EDGE), D0, DM)                         # far end: one hatch, back row
+    # far end, front row: the exhaust, a housing standing out of the slope's top and a nozzle pointing out of the end
+    b.box(3.45, 3.72, DM + 0.14, D1 - 0.14, 0.8, EDGE + 0.12, GMD, GM)
+    b.cyl_L((DM + D1) / 2, 0.84, 0.17, 3.7, 3.86, GMD, sides=12)
+    b.cyl_L((DM + D1) / 2, 0.84, 0.12, 3.84, 3.98, GM, sides=12)
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
