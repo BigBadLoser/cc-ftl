@@ -223,6 +223,22 @@ describe('air drive', () => {
     expect(ev.filter((e) => e.type === 'crew.airUnreachable')).toHaveLength(1);
   });
 
+  it('a sleeper past the sleep exit whose air is merely low still wakes for urgent hunger (#278)', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const c = sim.world.query(CrewC)[1] as number;
+    sim.world.get(c, NeedsC)!.rest = 5;
+    run(sim, 600, () => sim.world.get(c, CrewC)!.activity === 'sleeping');
+    expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
+    sim.world.get(c, NeedsC)!.rest = 30;
+    sim.world.get(c, NeedsC)!.hunger = 8;
+    sim.world.add(c, SuitC, { worn: true, air: 0.3 * suitDef(sim).airSec }); // below the refill line, above critical
+    const grid = shipGrid(sim, homeShip(sim))!;
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) grid.set('o2', x, y, 0);
+    run(sim, 3 * TICK_HZ);
+    expect(sim.world.get(c, CrewC)!.activity).not.toBe('sleeping');
+  });
+
   it('an empty tank where no tile is breathable: the hazard sends them to the airlock to refill', () => {
     const { sim, c } = hullWork();
     const grid = shipGrid(sim, homeShip(sim))!;

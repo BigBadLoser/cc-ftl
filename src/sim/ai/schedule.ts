@@ -51,10 +51,16 @@ const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
  * an air source in reach) and beats the current drive (`harmsSooner` between two urgent ones). One evaluation, no second set of rules.
  */
 function wakeForNeed(sim: Sim, id: number, own: MachineId): boolean {
-  const top = evaluateIntent(sim, id, { atPost: false, underway: underway(sim, id), finishing: () => false })[0];
-  if (!top || top.task === own || top.task === 'job' || !top.urgent || !top.input) return false;
-  const x = readInput(sim, id, top.input);
-  return x !== undefined && isUrgent(top, x);
+  // The first urgent drive of the ranking: a non-urgent drive ahead of it (air above its refill line, with the sleep drive closed past its
+  // exit) does not hide it.
+  const ranked = evaluateIntent(sim, id, { atPost: false, underway: underway(sim, id), finishing: () => false });
+  for (const d of ranked) {
+    if (!d.urgent || !d.input) continue;
+    const x = readInput(sim, id, d.input);
+    if (x === undefined || !isUrgent(d, x)) continue;
+    return d.task !== own && d.task !== 'job';
+  }
+  return false;
 }
 
 /** Keep the pickup request (`PickupC`) in step with the air drive being blocked: set, with its alert, when no source can be reached. */
