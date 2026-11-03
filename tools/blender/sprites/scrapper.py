@@ -380,6 +380,33 @@ def screen(b, D1):
            vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))
 
 
+DOOR_W, DOOR_H = 0.65, 0.55
+DOOR_L = [(c - DOOR_W / 2, c + DOOR_W / 2) for c in (1.5, 3.5)]        # centred in their tiles, front row
+
+
+def doorway(b, L0, L1, D1, wall_h, knee=None, depth=0.3):
+    """A doorway in the front wall (measured on the ref's tiles, links 03 and 08; centred in its tile): the wall above
+    it, a dark passage running in from the plinth band, and a raised frame 2 px wide round its sides and top."""
+    zt = DOOR_H
+    def wall(pts, col, n):                                              # pts as (L, D, z); n = normal in (L, D, z)
+        a, c = b.P(*pts[0]), b.P(pts[0][0] + n[0], pts[0][1] + n[1], pts[0][2] + n[2])
+        b.face([b.P(*p) for p in pts], col, (c[0] - a[0], c[1] - a[1], c[2] - a[2]))
+    kn = [(knee[0], D1, knee[1])] if knee and L0 < knee[0] < L1 else []
+    wall([(L0, D1, zt), (L1, D1, zt), (L1, D1, wall_h(L1)), *kn, (L0, D1, wall_h(L0))], BODY, (0, 1, 0))   # above
+    Db = D1 - depth
+    wall([(L0, Db, BASE), (L1, Db, BASE), (L1, Db, zt), (L0, Db, zt)], DARK, (0, 1, 0))                    # back
+    fl = BASE + 0.003                                                   # just above the plinth's top
+    wall([(L0, Db, fl), (L1, Db, fl), (L1, D1, fl), (L0, D1, fl)], DARK, (0, 0, 1))                        # floor
+    wall([(L0, Db, zt), (L1, Db, zt), (L1, D1, zt), (L0, D1, zt)], DARK, (0, 0, -1))                       # ceiling
+    wall([(L0, Db, BASE), (L0, D1, BASE), (L0, D1, zt), (L0, Db, zt)], DARK, (1, 0, 0))                    # sides
+    wall([(L1, Db, BASE), (L1, D1, BASE), (L1, D1, zt), (L1, Db, zt)], DARK, (-1, 0, 0))
+    wl, wz, lip = 0.056, 0.051, 0.035                                   # frame: 2 px each way, proud of the wall
+    for prof in ([(L0 - wl, BASE), (L0, BASE), (L0, zt), (L0 - wl, zt)],
+                 [(L1, BASE), (L1 + wl, BASE), (L1 + wl, zt), (L1, zt)],
+                 [(L0 - wl, zt), (L1 + wl, zt), (L1 + wl, zt + wz), (L0 - wl, zt + wz)]):
+        b.prism_D(prof, D1, D1 + lip, GMD)
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -437,14 +464,21 @@ def scrapper(rot):
     stepped = lambda hb, hf: [(D0, BASE), (D0, hb), (DM, hb), (DM, hf), (D1, hf), (D1, BASE)]  # noqa: E731
     back = lambda h: [(D0, BASE), (D0, h), (DM, h), (DM, BASE)]                               # noqa: E731
     bay_wall = lambda h: [(DM, BASE), (DM, h), (D1, h), (D1, BASE)]                           # noqa: E731
-    b.loft([(0.03, full(WALL)), (0.5, full(EDGE)), (1.0, full(EDGE)), (1.0 + STEP, full(TOP)), (2.0 - STEP, full(TOP)),
-            (2.0, stepped(TOP, EDGE))], caps=(True, bay_wall(EDGE)))                          # hatch end half
+    d0, d1 = DOOR_L[0]                                                  # the doorway in the front wall (side 4)
+    b.loft([(0.03, full(WALL)), (0.5, full(EDGE)), (1.0, full(EDGE)), (1.0 + STEP, full(TOP)), (d0, full(TOP)),
+            (d1, full(TOP)), (2.0 - STEP, full(TOP)), (2.0, stepped(TOP, EDGE))], caps=(True, bay_wall(EDGE)),
+           skip={(4, 4)})                                                                     # hatch end half
+    doorway(b, d0, d1, D1, lambda L: TOP)
     # behind the bay, its bay wall (side 2) built with the recess cut into it
     Ls = sorted({2.0, *RECESS_L, 3.0 - STEP, 3.0})
     b.loft([(L, back(_bay_back_h(L))) for L in Ls], caps=(False, False),
            skip={(k, 2) for k in range(len(Ls) - 1) if RECESS_L[0] <= Ls[k] < RECESS_L[1]})
     recess(b, DM)
-    b.loft([(3.0, full(EDGE)), (3.5, full(EDGE)), (3.97, full(WALL))], caps=(bay_wall(EDGE), True))  # far end tile
+    d0, d1 = DOOR_L[1]
+    far_h = lambda L: EDGE if L <= 3.5 else EDGE + (WALL - EDGE) * (L - 3.5) / 0.47           # noqa: E731
+    b.loft([(L, full(far_h(L))) for L in (3.0, d0, 3.5, d1, 3.97)], caps=(bay_wall(EDGE), True),
+           skip={(1, 4), (2, 4)})                                                             # far end tile
+    doorway(b, d0, d1, D1, far_h, knee=(3.5, EDGE))
     # the two hatches on the hatch-end slope, one per row: a frame lying on the slope, two sliding door leaves
     for r0, r1 in ((D0, DM), (DM, D1)):
         hatch(b, (0.03, WALL), (0.5, EDGE), r0, r1)
