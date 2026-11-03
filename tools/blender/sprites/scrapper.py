@@ -348,27 +348,29 @@ def recess(b, DM):
 
 def screen(b, D1):
     """The screen on the hatch-end block's front face beside the bay (placed after the ref's R0 view): a wedge-shaped
-    housing like a sun shade, flush with the wall at its foot and standing out at its top, its sides sloping between
+    housing like a sun shade, standing out 1 px at its foot and further at its top, its sides sloping between
     them, on a dark mounting plate flush with the wall about 2 px bigger all round; the screen is set into its front
     inside a bezel."""
-    L0, L1, z0, z1, top = 1.34, 1.86, 0.9, 1.18, 0.122                  # top: how far the top edge stands out
+    L0, L1, z0, z1, top, bot = 1.34, 1.86, 0.849, 1.18, 0.122, 0.028   # how far the top and foot edges stand out
     m = 0.055                                                           # mounting plate margin, about 2 px
     plate = [b.P(L, D1 + 0.002, z) for L, z in ((L0 - m, z0 - m), (L1 + m, z0 - m), (L1 + m, z1 + m), (L0 - m, z1 + m))]
     fwd = [x - y for x, y in zip(b.P(L0, D1 + 1, z0), b.P(L0, D1, z0))]
     b.face(plate, DARK, fwd)
-    f0, f1 = (L0, D1, z0), (L1, D1, z0)                                 # the foot, on the wall
+    f0, f1 = (L0, D1 + bot, z0), (L1, D1 + bot, z0)                     # the foot's front edge
+    g0, g1 = (L0, D1, z0), (L1, D1, z0)                                 # the foot's back edge, on the wall
     t0, t1 = (L0, D1 + top, z1), (L1, D1 + top, z1)                     # the top's front edge
     w0, w1 = (L0, D1, z1), (L1, D1, z1)                                 # the top's back edge, on the wall
     vec = lambda a, c: [x - y for x, y in zip(b.P(*c), b.P(*a))]  # noqa: E731
     b.face([b.P(*p) for p in (w0, w1, t1, t0)], GM, (0, 0, 1))                              # top
-    b.face([b.P(*p) for p in (f0, w0, t0)], GMD, vec((L0, D1, z0), (L0 - 1, D1, z0)))       # sides
-    b.face([b.P(*p) for p in (f1, w1, t1)], GMD, vec((L1, D1, z0), (L1 + 1, D1, z0)))
-    h = z1 - z0
-    ln = math.hypot(top, h)
-    nd, nz = h / ln, -top / ln                                          # the front's normal: out, and down
+    b.face([b.P(*p) for p in (g0, f0, t0, w0)], GMD, vec((L0, D1, z0), (L0 - 1, D1, z0)))   # sides
+    b.face([b.P(*p) for p in (g1, f1, t1, w1)], GMD, vec((L1, D1, z0), (L1 + 1, D1, z0)))
+    b.face([b.P(*p) for p in (g0, g1, f1, f0)], GMD, (0, 0, -1))                            # foot
+    h, dd = z1 - z0, top - bot
+    ln = math.hypot(dd, h)
+    nd, nz = h / ln, -dd / ln                                           # the front's normal: out, and down
     b.face([b.P(*p) for p in (f0, f1, t1, t0)], GMD, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))   # front
     i, e = 0.045, 0.003                                                 # bezel (about 2 px); lift off the front
-    on = lambda L, t: b.P(L, D1 + top * t + nd * e, z0 + h * t + nz * e)   # noqa: E731  t: 0..1 up the front
+    on = lambda L, t: b.P(L, D1 + bot + dd * t + nd * e, z0 + h * t + nz * e)   # noqa: E731  t: 0..1 up the front
     tb = i / ln
     b.face([on(L0 + i, tb), on(L1 - i, tb), on(L1 - i, 1 - tb), on(L0 + i, 1 - tb)], DARK,
            vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))
