@@ -178,7 +178,7 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
         return top + g * span - (0.0 if g == 1.0 else E / 2)
     plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
     plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
-    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the cushions;
+    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS8")   # the joints (under the cushions;
     r, sh = 3 * PAINT, 2 * PAINT                                            # the last, over the toe, a px: no foot
                                                                             # shading on the Ls over it)
     for f0, f1 in SQUARES:
