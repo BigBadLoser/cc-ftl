@@ -114,7 +114,7 @@ def tan(hull):
                     z += SLAT
                 for g in gs:                            # a groove up each tile's edge to the header
                     if u0 - 1e-6 <= g[0] and g[1] <= u1 + 1e-6:
-                        band(g[0], g[1], zl1, zs0, "fTS4")
+                        band(g[0], g[1], zl1, zs0, "fTS4", PAINT)   # (over the bands across it)
                 continue
             zp0, zp1 = zl1 + PZ, zt - PZ                # the centre panel, flush: a groove round it, a 2 px bevel lit
             band(u0, u1, zp1, zt, "fTS4")               # along its top, a soft shadow along its foot
@@ -124,7 +124,7 @@ def tan(hull):
             band(u0, u1, zl1, zp0 + PZ, "fTS4")
             for g in gs:                                # (its side grooves on up to the header)
                 if u0 - 1e-6 <= g[0] and g[1] <= u1 + 1e-6:
-                    band(g[0], g[1], zl1, zs0, "fTS4")
+                    band(g[0], g[1], zl1, zs0, "fTS4", PAINT)   # (over the bands across it)
     return face
 
 
