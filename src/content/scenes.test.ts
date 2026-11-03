@@ -233,6 +233,15 @@ describe('scene observer', () => {
     expect(leaveBlocker(sim)).toBe('crewAway');
   });
 
+  it('a shuttle stowed in a prize\'s bay is away too: leaving lifts only the player\'s own ship', () => {
+    const { sim, skiff } = inScene(3);
+    expect(leaveBlocker(sim)).toBeNull();
+    (sim.world.get(skiff, ShipC) as { faction: string }).faction = 'player'; // taken as a prize
+    const shuttle = sim.world.createEntity();
+    sim.world.add(shuttle, VehicleC, { homeShip: skiff, state: 'stowed' } as Vehicle);
+    expect(leaveBlocker(sim)).toBe('crewAway');
+  });
+
   it('an encounter may switch a shared rule off', () => {
     const off = { ...content, events: { ...content.events, 'event.trader_swap': { ...content.events['event.trader_swap'], scene: { ...content.events['event.trader_swap'].scene, rules: { attacked: null } } } } };
     const { sim, skiff } = inScene(3, off as typeof content);
