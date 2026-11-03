@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, START_NODE, ShipC, VehicleC, deserialize, galaxyIndex, homeShip, serialize, type Sim } from '../../sim';
 import { giveItems } from '../../sim/story/effects';
-import { placementError, shipGrid, spawnModule } from '../../sim';
+import { ModuleC, placementError, shipGrid, spawnModule } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
 import { SourceReach, airSources } from '../../sim/eva/sources';
 import { content } from '../index';
@@ -60,7 +60,13 @@ describe('away sites', () => {
     const g = shipGrid(sim, wreck)!;
     for (let rot = 0; rot < 4; rot++) {
       for (let y = g.y0; y < g.y0 + g.height; y++) {
-        for (let x = g.x0; x < g.x0 + g.width; x++) if (!placementError(sim, wreck, 'module.airlock', x, y, rot)) return spawnModule(sim, 'module.airlock', x, y, rot);
+        for (let x = g.x0; x < g.x0 + g.width; x++) {
+          if (placementError(sim, wreck, 'module.airlock', x, y, rot)) continue;
+          // Working (powered), so its outer door opens: a dead airlock is no way in from the hull (#292).
+          const lock = spawnModule(sim, 'module.airlock', x, y, rot);
+          sim.world.get(lock, ModuleC)!.powered = true;
+          return lock;
+        }
       }
     }
     throw new Error('no room for an airlock');

@@ -1,9 +1,8 @@
 import { walkSignature, type PathGoal, type PathOpts, type Tile } from '../crew/pathfind';
-import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
+import { passAt, type WalkInfo } from '../modules/walk';
 import { shipGrid } from '../regions';
-import type { ShipGrid } from '../shipGrid';
 import type { Sim } from '../sim';
-import { DoorJam, Struct, isEvaWalkable, isWalkable } from '../structure';
+import { Struct, isWalkable } from '../structure';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
 
 /**
@@ -61,7 +60,7 @@ export function viewOf(sim: Sim, ship: number, opts: PathOpts): View | null {
     const x = x0 + (i % w), y = y0 + Math.floor(i / w);
     mult[i] = isWalkable(kind) ? 1 : EXTERIOR;
     door[i] = kind === Struct.Door ? 1 : 0;
-    pass[i] = walkable(sim, grid, kind, x, y, jam?.[i], mods?.[i], infos, opts) ? 1 : 0;
+    pass[i] = passAt(sim, grid, x, y, kind, jam?.[i], mods?.[i], infos, !!opts.suited) ? 1 : 0;
     if (pass[i] && o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW) {
       pass[i] = 0;
       thinOnly[i] = 1;
@@ -71,16 +70,6 @@ export function viewOf(sim: Sim, ship: number, opts: PathOpts): View | null {
   const view: View = { x0, y0, w, h, pass, thinOnly, mult, door, label: labels(pass, w, h), hash: hash >>> 0 };
   views.set(key, { sig, view });
   return view;
-}
-
-/** `findPath`'s walk predicate, thin air aside. */
-function walkable(sim: Sim, grid: ShipGrid, kind: number, x: number, y: number, jam: number | undefined, mod: number | undefined, infos: Map<number, WalkInfo>, opts: PathOpts): boolean {
-  if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(grid, x, y))) return false;
-  if (jam === DoorJam.Shut) return false;
-  if (!mod) return true;
-  let info = infos.get(mod);
-  if (!info) infos.set(mod, (info = walkInfo(sim, mod)));
-  return !info.solid || info.open.has(y * OPEN_KEY + x);
 }
 
 function labels(pass: Uint8Array, w: number, h: number): Int32Array {
