@@ -437,6 +437,26 @@ def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, cham
     b.face([b.P(d0, d1, zf) for d0, d1 in inner], LIGHT, (0, 0, 1))                                      # gauge face
 
 
+def cyl_z(b, L, D, z0, z1, r, col, top=None, sides=16):
+    """An upright cylinder standing on the top from z0 to z1."""
+    ring = lambda z: [b.P(L + r * math.cos((i + .5) * math.tau / sides), D + r * math.sin((i + .5) * math.tau / sides), z)  # noqa: E731
+                      for i in range(sides)]
+    lo, hi, ce = ring(z0), ring(z1), b.P(L, D, z0)
+    for i in range(sides):
+        j = (i + 1) % sides
+        q = [lo[i], lo[j], hi[j], hi[i]]
+        m = [sum(p[x] for p in q) / 4 for x in range(3)]
+        b.face(q, col, (m[0] - ce[0], m[1] - ce[1], 0))
+    b.face(hi, top or col, (0, 0, 1))
+
+
+def vent(b, L=2.3, D=0.38, r=0.17):
+    """The round vent on top of the block behind the bay (after the ref's hopper tile, link 07, where it sits toward
+    the back and the hatch end, clear of the linkage at the front): a low rim round a dark grille."""
+    cyl_z(b, L, D, TOP, TOP + 0.03, r, GMD, GM)
+    cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -529,6 +549,7 @@ def scrapper(rot):
     drum(b)
     screen(b, D1)
     dial(b)
+    vent(b)
     return [b.m.build()]
 
 
