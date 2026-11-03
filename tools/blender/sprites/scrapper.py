@@ -21,6 +21,7 @@ ACCESS = (1, 2)
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
+BODY_S2 = "scBodyS2"  # a step below BODY_S: the recess frame
 BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
 
@@ -347,11 +348,11 @@ def recess(b, DM):
     for i in range(4):
         j = (i + 1) % 4
         (oa, ob), (oc, od), (ia, ib), (ic, id_) = outer[i], outer[j], inner[i], inner[j]
-        wall([(oa, DM + lip, ob), (oc, DM + lip, od), (ic, DM + lip, id_), (ia, DM + lip, ib)], GMD, fwd)   # face
+        wall([(oa, DM + lip, ob), (oc, DM + lip, od), (ic, DM + lip, id_), (ia, DM + lip, ib)], BODY_S2, fwd)   # face
         mo = ((oa + oc) / 2 - 2.5, 0, (ob + od) / 2 - (z0 + z1) / 2)                                     # outward
-        wall([(oa, DM, ob), (oc, DM, od), (oc, DM + lip, od), (oa, DM + lip, ob)], GMD,
+        wall([(oa, DM, ob), (oc, DM, od), (oc, DM + lip, od), (oa, DM + lip, ob)], BODY_S2,
              (mo[0] if i % 2 else 0, 0, 0 if i % 2 else mo[2]))
-        wall([(ia, DM, ib), (ic, DM, id_), (ic, DM + lip, id_), (ia, DM + lip, ib)], GMD,
+        wall([(ia, DM, ib), (ic, DM, id_), (ic, DM + lip, id_), (ia, DM + lip, ib)], BODY_S2,
              (-mo[0] if i % 2 else 0, 0, 0 if i % 2 else -mo[2]))
 
 

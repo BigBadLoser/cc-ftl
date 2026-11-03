@@ -1392,5 +1392,9 @@
  "scRec4": {
   "hex": "#1f2328",
   "set": "scrapper"
+ },
+ "scBodyS2": {
+  "hex": "#7d461d",
+  "set": "scrapper"
  }
 }
