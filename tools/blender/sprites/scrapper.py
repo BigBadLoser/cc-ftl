@@ -379,19 +379,30 @@ def screen(b, D1):
     t0, t1 = (L0, D1 + top, z1), (L1, D1 + top, z1)                     # the top's front edge
     w0, w1 = (L0, D1, z1), (L1, D1, z1)                                 # the top's back edge, on the wall
     vec = lambda a, c: [x - y for x, y in zip(b.P(*c), b.P(*a))]  # noqa: E731
-    b.face([b.P(*p) for p in (w0, w1, t1, t0)], BODY_S, (0, 0, 1))                              # top
-    b.face([b.P(*p) for p in (g0, f0, t0, w0)], BODY_S2, vec((L0, D1, z0), (L0 - 1, D1, z0)))   # sides
-    b.face([b.P(*p) for p in (g1, f1, t1, w1)], BODY_S2, vec((L1, D1, z0), (L1 + 1, D1, z0)))
-    b.face([b.P(*p) for p in (g0, g1, f1, f0)], BODY_S2, (0, 0, -1))                            # foot
+    b.face([b.P(*p) for p in (w0, w1, t1, t0)], HW, (0, 0, 1))                              # top
+    b.face([b.P(*p) for p in (g0, f0, t0, w0)], HW, vec((L0, D1, z0), (L0 - 1, D1, z0)))   # sides
+    b.face([b.P(*p) for p in (g1, f1, t1, w1)], HW, vec((L1, D1, z0), (L1 + 1, D1, z0)))
+    b.face([b.P(*p) for p in (g0, g1, f1, f0)], HW, (0, 0, -1))                            # foot
     h, dd = z1 - z0, top - bot
     ln = math.hypot(dd, h)
     nd, nz = h / ln, -dd / ln                                           # the front's normal: out, and down
-    b.face([b.P(*p) for p in (f0, f1, t1, t0)], BODY_S2, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))   # front
+    b.face([b.P(*p) for p in (f0, f1, t1, t0)], HW, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))   # front
     i, e = 0.045, 0.003                                                 # bezel (about 2 px); lift off the front
     on = lambda L, t: b.P(L, D1 + bot + dd * t + nd * e, z0 + h * t + nz * e)   # noqa: E731  t: 0..1 up the front
     tb = i / ln
     b.face([on(L0 + i, tb), on(L1 - i, tb), on(L1 - i, 1 - tb), on(L0 + i, 1 - tb)], DARK,
            vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))
+    # a readout lit on it: two lines of text on its left, a gauge two-thirds full on its right; strokes about 1.5 px
+    # with as much gap between, so they stay apart at this size
+    e2 = 0.007
+    on2 = lambda L, t: b.P(L, D1 + bot + dd * t + nd * e2, z0 + h * t + nz * e2)   # noqa: E731
+    sw = (L1 - L0) - 2 * i                                              # the screen's width
+    def lit(u0, u1, t0, t1):
+        a0, a1 = L0 + i + sw * u0, L0 + i + sw * u1
+        b.face([on2(a0, t0), on2(a1, t0), on2(a1, t1), on2(a0, t1)], LAMP, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))
+    lit(0.12, 0.5, 0.58, 0.74)
+    lit(0.12, 0.38, 0.26, 0.42)
+    lit(0.68, 0.86, 0.26, 0.58)
 
 
 DOOR_W, DOOR_H = 0.58, 0.435
@@ -464,11 +475,15 @@ def cyl_z(b, L, D, z0, z1, r, col, top=None, sides=16):
     b.face(hi, top or col, (0, 0, 1))
 
 
-def vent(b, L=2.3, D=0.5, r=0.17):
+def vent(b, L=2.3, D=0.5, r=0.2):
     """The round vent on top of the block behind the bay (after the ref's hopper tile, link 07: toward the hatch end,
     clear of the linkage at the front; in line with the dial across the machine): a low rim round a dark grille."""
     cyl_z(b, L, D, TOP, TOP + 0.03, r, BODY_S2, BODY_S)
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
+    ri, w, zg = r - 0.04, 0.045, TOP + 0.036                            # grey slats across the grille, along L
+    for d in (-0.1, 0.0, 0.1):
+        hl = math.sqrt(max(0.0, ri * ri - (abs(d) + w / 2) ** 2)) - 0.01
+        b.face([b.P(L + u, D + d + v, zg) for u, v in ((-hl, -w / 2), (hl, -w / 2), (hl, w / 2), (-hl, w / 2))], GM, (0, 0, 1))
 
 
 def piston(b, L0=2.0 + STEP - 0.084, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.077):
