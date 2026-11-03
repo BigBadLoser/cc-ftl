@@ -273,15 +273,113 @@ FTL's decision-making with physical consequences, in a shared sector.
 ## Exploration & events
 
 - Away teams board derelicts and stations (they're grids in the same world).
-- **Events are data:** trigger context, text, choices with **requirements** (species, implant, skill,
-  module, item, reputation, cost), outcomes as effect lists.
-- Outcomes can be **physical**: spawn a derelict to explore, a fire, a boarding party, a combat.
+- **Events are data:** trigger context, signal text, remote actions with **requirements** (species, implant, skill,
+  module, item, reputation), scene specs and outcome rules as data.
 - **Persistent flags and arcs:** the pirate you spared comes back; the corp you robbed puts out a bounty.
-- **Skill checks show their odds.**
+- **Skill checks show their odds** (scans and remote reads).
 - Event pools are weighted by danger tier and faction territory (the current node's, set on every jump).
-- **Story events happen in transit** only: a hop of a hyperspace trip may draw one (never the hop that is interdicted), and the trip is held until you answer. Nothing starts while the ship idles in a node. Hostile arrivals and NPC traffic are node-local happenings, not story events.
-- **Presentation:** decisions pause in a modal; flavour and optional leads arrive in-world and can be
-  ignored.
+- **Presentation:** a signal pauses in a small window; flavour and optional leads arrive in-world and can be ignored.
+
+### Physical encounters (user decisions, 2026-11-03; not built yet)
+
+Issue #173. Build after #287, which generalises away-site owners. Scenes replace the stubbed `physical` outcome.
+
+**Principle: emergent objectives.** The game creates situations, constraints and opportunities, and the player decides what to do.
+An encounter is a part of a living world, not a quest dressed as a scene. The scene says what exists and under what conditions.
+It never says how it ends.
+
+**Flow.** Signal, investigate, scene, consequences.
+1. **Signal (transit only).** A hop of a hyperspace trip may draw an encounter (never the interdicted hop). A window opens with what the
+   sensors caught.
+2. **Remote actions only:** scan, hail, or ignore. A scan or hail may reveal facts (crew count, cargo, a lying story) and nothing else
+   happens. Ignore continues the trip, and nothing was spawned.
+3. **Investigate.** Any other answer drops the ship out mid-lane into a temporary pocket scene (the event grid `enterEvent` opens today).
+4. **Scene.** The player acts through interactions the game already has. The sim decides what happens.
+5. **Leave.** The trip resumes at the same hop. Leaving is **blocked while crew or a shuttle are away**. There is no universal penalty
+   for leaving. What it costs depends on what you committed to (a passenger you promised to carry, a repair you began). Explicit
+   abandonment comes later.
+
+**Three parts, kept separate.**
+- **(a) Triggers.** Which encounter is offered. Today the transit draw (`storyAtHop`, `drawEvent`). Later the in-node pool of #300
+  (flares, nebula blackouts, arrivals and departures), which never draws transit events and is never drawn by them.
+  **Danger tiers decide which encounters can appear** (a derelict at danger 0 to 3, an ambush at 1 or more, raiders around a
+  freighter only deeper). They do not scale every ship, crew or reward.
+- **(b) Scene specs (new).** Data saying what exists and its conditions. One spec, shared by story encounters and fleet encounters;
+  `enterEvent` and `leaveEvent` are generalised from Fleet and Encounter to take it, and a fleet encounter becomes a spec built from the fleet.
+  - **A spec holds:** ships (faction, role, crew, cargo, stance: hostile, neutral, helpless, and a story the crew tell); derelicts (ruin
+    level, cause, infestation); drifting containers; boarders; a patient; optional timers.
+  - **Seeding.** A scene id is built from the world seed, the event id and the hop, so the same signal gives the same scene on a reload.
+    Names, hulls and cargo come from the existing generators (`spawnContact`, `spawnShip`, `spawnDerelict`, `spawnDriftingContainer`).
+- **(c) Outcome observer (new).** It watches sim events (repaired, boarded, captured, destroyed, traded with, salvaged, left, patient
+  boarded or died). Reputation, flags and log lines come out of it, by rule data per scene (`on: captured -> rep -X, flag Y`). No script says
+  "if you chose help, then...". Trading, boarding, capture, salvage and combat already emit what it needs; gaps are filled by new events,
+  not new interactions.
+
+**Interactions reused.** Hail and trade (`trade.hail`, couriers, deals); boarding and capture (`orderLaunch`, `capturePrize`, surrender,
+rescue); a salvage or explore order on an away site (`away.open`, owner generalised by #287); combat; the pickup and rescue jobs.
+
+**Persistence.**
+- **Transient** (traders, ambushes, a freighter): wiped on leave. Ships still alive go back to the map as descriptors, as fleet encounters
+  do today. Salvage not taken is lost. What you took stays with you.
+- **Persistent discovery** (derelicts, facilities): **cleared on leave for now.** The scene id is stable and the spec records "discovery",
+  so it can later get a node record and a map marker, and be regenerated from its seed plus a saved diff **(new, later)**.
+
+**Passengers (new state).** A rescued person aboard who is not crew. A passenger can ask for transport to a place, pay on arrival, leave
+at a port, or offer to join. They need a bed and air, and can die. Hiring today is port-only; the offer is the only way they become crew.
+
+**Timers (new, optional).** A scene may carry timers (a reactor, raiders on the way, a bleeding patient). The sim reads them; they are not
+scripts. Not every scene has one.
+
+**Order of building, each checked in play before the next:** 1. shared scene infrastructure and the outcome observer; 2. trader skiff;
+3. derelict (the first major gameplay milestone); 4. pirate ambush; 5. distress freighter; 6. medical pod with passengers.
+
+**First batch.**
+
+- **Trader skiff** (`trader_swap`). Eligible: any danger.
+  - Signal: an unknown skiff on the lane, transponder on.
+  - Remote: hail (opens a trade preview of its stock), scan, ignore.
+  - Scene: one neutral skiff, a small odd stock, a crew of 1 to 3. If hailed, it holds station.
+  - Approaches: trade; barter; board and rob it; fire on it; wave and leave.
+  - Observed: traded -> small reputation with traders; boarded or captured -> reputation loss, flag; destroyed -> a wreck to strip, reputation loss.
+  - Persistence: transient. Timer: no.
+- **Derelict** (`derelict_sighting`, `notice_beacon` lead). Eligible: danger 0 to 3, an EVA shuttle stowed.
+  - Signal: a dead hull, power signature unclear.
+  - Remote: scan (reveals ruin level, a hint of life signs or machines; +3 electronics from a hacking scan), ignore.
+  - Scene: one derelict, ruin level from its cause, maybe infested or holding a rogue bot; loose containers. Hazards are conditions of the
+    hull (thin air, fires, locked doors), not set pieces.
+  - Approaches: open an away site and run a salvage order; send a team to explore; strip the hull; leave it.
+  - Observed: salvaged -> items, `derelicts_found` (gets a reader); infestation killed -> flag; crew lost -> log; left -> flag only.
+  - Persistence: **persistent discovery**, cleared on leave for now. Timer: no.
+- **Pirate ambush** (`pirate_returns`, once, after sparing a pirate; flag-queued, still waits for transit).
+  - Signal: a skiff hails you, claiming a debt owed. The story sometimes does not add up (a name that changes, a transponder that lags).
+  - Remote: scan (sensors show weapons, a boarding craft, extra crew, and your crew's skills sharpen the read), hail for more talk, ignore.
+  - Scene: the pirate's skiff, trap or honest (set by the scene seed). A trap has a boarding party of 3 and a shuttle, not yet hostile.
+  - Approaches: trade and listen (+4 missiles if honest); keep crew at the airlock; strike first; refuse docking and run.
+  - Observed: honest and traded -> reputation, flag cleared; ambush boarded -> flag; boarders killed or subdued -> reputation with pirates falls,
+    their loot; skiff destroyed or captured -> flag.
+  - Persistence: transient. Timer: no (the boarding comes when you let them dock). Needs a boarding trigger outside combat **(new)**: a docked party turns hostile.
+- **Distress freighter** (`distress_call`).
+  - Signal: a drifting freighter's call, cause uncertain (reactor, raid, drive).
+  - Remote: hail (get the crew's story and what they offer), scan (hull and cargo, whether raiders are near), ignore.
+  - Scene: a crippled freighter (traders, helpless) with crew and cargo. Deeper, raiders may already circle it (scene seed).
+  - Approaches: repair it; rob it; capture it; attack it; leave with a promise; take survivors.
+  - Observed: repaired -> reputation, gift by hail; boarded and robbed -> reputation loss; captured -> prize rules; destroyed -> wreck; left
+    while repairing -> its fate follows its own timer.
+  - Persistence: transient. Timer: **yes** (a failing reactor, or raiders on an arrival clock when present).
+- **Medical pod** (`medical_emergency`). Eligible: a bed aboard.
+  - Signal: a pod beacon with a faint life sign.
+  - Remote: scan (patient's injury, species, skills hinted), ignore.
+  - Scene: a drifting pod and its one patient (named, hurt, species, 1 to 3 skills).
+  - Approaches: fetch the pod by shuttle or crew; treat them; bring them to a port; sell them; leave them.
+  - Observed: boarded -> passenger state; treated -> reward and goodwill; died -> log; delivered -> payment; offers to join -> recruit prompt.
+  - Persistence: transient. Timer: **yes** (a bleeding patient).
+
+**Settled (user, 2026-11-03).**
+- A persistent derelict gets a map marker as soon as it is found.
+- A passenger's transport request shows as a job card in the jobs panel, to accept or refuse.
+- Observer rules are shared by default (one "helped a ship in trouble" rule for every encounter where you help a ship), and an
+  encounter may add or override a rule when it has a reason (robbing the pirate you once spared sets a "betrayed" flag). The world
+  reacts the same way to the same action wherever it happens.
 
 ### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
 
