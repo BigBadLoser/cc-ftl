@@ -221,7 +221,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const SL = createLayers(false);
   stage.addChild(SL.world);
   const sectorParticles = createParticles(atlas, SL);
-  const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules });
+  const fx = createSectorFx(world, atlas, SL, sectorParticles, { weapons: content.weapons, modules: content.modules }, (id) => (sector ? shipGridOf(sector, world, id) : undefined));
   // Asteroids (rock sprites, asteroidView.ts): one region layer set in the sector frame, under every ship's tiles.
   const rockLayers = W.region(false);
   rockLayers.setOrigin(0, 0, 0);

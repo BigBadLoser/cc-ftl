@@ -404,7 +404,7 @@ palette.json    the single palette, read by Blender scripts and the game
   crew, see below), `aliens`, `robot_bay`, `env` (props,
   economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
-  below), `structure` (faction tile looks, see below), `galley`
+  below), `fx_shield` (the shield dome's sprite pieces, see "Shield dome"), `structure` (faction tile looks, see below), `galley`
   (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below), `cargo` (a delivery job's sealed hard case, `item.cargo_crate.l` and `.held`, `sprites/cargo.py`), `items` (the item pack, sheet `items`: `item.<id>.s/.m/.l/.held` for the items `env` does not draw, `sprites/items_now.py`, and for planned items not yet in content, `items_tech.py`, `items_materials.py`, `items_parts.py`, `items_goods.py`; shared shapes in `items_kit.py`) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Ore refinery (`sheet refinery`, not a `families.py` family):** a 3x4 prop with 4 rotations x idle, `.unpowered`, and a 4-frame
@@ -689,9 +689,8 @@ palette.json    the single palette, read by Blender scripts and the game
       breach), `impact.ion` 6, `impact.fire` 7. Missiles use `explosion_large`, point-defence intercepts `explosion_small`.
     - Explosions, 12 frames each: `explosion_small`, `explosion`, `explosion_large`, `explosion_huge` (a ship breaking up:
       chain several at staggered times and positions, and throw `debris.{a,b,c}`, 8 tumble frames each, under gravity).
-    - `ion_disabled` 4 (loop, drawn at roof height over a module ion has disabled), `shield_hit` 6 (at the point a shot
-      meets the bubble), `shield_edge` 4 (loop: a rim piece to lay round the bubble's ellipse, turned to its tangent,
-      replacing the drawn ellipse).
+    - `ion_disabled` 4 (loop, drawn at roof height over a module ion has disabled). `shield_hit` 6 and `shield_edge` 4 are
+      unused: the shield dome replaced them (below).
     - `fire` 8 (loop on a burning floor tile): same ids as the old fire, so `fxView` picks it up as is.
     - `decal.scorch.{0,1,2}`, `decal.breach`: static marks in the floor plane for damaged floor or roof tiles.
     - Crew fights (replace what `fightFx.ts` draws): `hand.muzzle.{sidearm,rifle,ion}` 3, `hand.tracer` 2, `hand.tracer.ion` 4,
@@ -709,6 +708,32 @@ palette.json    the single palette, read by Blender scripts and the game
     `fx.ember`, `fx.puff.*`, `fx.ice`) stay in env.
   - Until the renderer is updated, the shots and fire already show in game (same ids) but drawn the old way: additive,
     single frame for the shots, the old one-sprite flash.
+- **Shield dome (#301; `render/shieldView.ts`, `shieldDome.ts`, `shieldFit.ts`, `shieldState.ts`; art family `fx_shield`).**
+  A ship with shield layers up wears a dome round its hull, in the sector air layer (main view and combat panel alike).
+  - Fit (`shieldFit.ts`): the bubble is a 3D ellipsoid standing on the ship's grid, its axes along the grid (tiles) and up
+    (height units, `Z_PX` px each), sized so every hull tile corner at floor and roof height is inside, then padded
+    (`MARGIN`); a thin hull keeps an oval (`MIN_ASPECT`) and the height is at least `MIN_RISE` of the narrow axis so it reads
+    as a dome. Its outline on screen is the ellipsoid's isometric projection (an ellipse: centre, axes, turn), which the
+    effects work in; `body` maps a screen point inside it back to the front of the shell in the unit-sphere frame. No grid:
+    the bounding box from floor to roof.
+  - Drawn by a shader (`shieldDome.ts`), one quad per ship, because it has to fit every hull: a sheen clear in the middle
+    and near solid at the deep-blue rim, and a 1 art px hex lattice lying on the shell (laid round it from the top, cells
+    `HEX_TILES` across), so it squashes with the view like the floor. Lit rings of cells count the layers from the outline
+    in: one per layer plus one under the first, so a single layer still reads (a ring is `RING` cell sizes of turn away
+    from the outline; the HUD pips give the exact count). It works in screen-aligned art pixels, so it sits with the pixel
+    art. Colours are the `fxH*` / `fxI*` ramps plus a deeper rim blue. The render lab's `shield` panel draws it on a
+    stand-in hull (`docs/RENDER_LAB.md`).
+  - Effects, all in the shader and stepped at 12 fps (`shieldState.ts` `DOME_SEC`, `DOME_FPS`): a hit absorbed (a ring of lit
+    cells runs out), ion (the rim rows near the hit turn violet and drain along the rim), a mass-driver pierce (a hole torn round
+    the hit, closing again), a layer breaking (the ring it lit flashes white, its cells drop out, shards drift off), a layer returning (a
+    new row sweeps on round the rim), shields down on a vent or lockout (the lattice sputters out with sparks), overcharge (a
+    pulse). Up to `DOME_HITS` hits at once. Missiles pass through with no reaction.
+  - Breaks and returns come from diffing `shield.layers` each frame (the sim has no event for a layer coming back); a drop
+    to 0 while venting or locked out is a collapse, any other drop a break. Hits come from `projectile.shieldHit` (ion when
+    the weapon has a `shieldDrain` effect) and from a `projectile.hit` through raised shields by a weapon that does not
+    bypass them (the mass driver's pierce). The hit lands on the rim facing where the shot came from.
+  - Sprite pieces (`fx_shield`, `sprites/fx_shield.py`), additive, at the hit point: `shield_flash` 10, `shield_flash.ion`
+    10, `shield_pierce` 12 (turned along the shot), played at 14 fps.
 - **Starmap art (`starmap` family, sheet `starmap`; `sprites/starmap.py`, `starmap_kit.py`, `starmap_bodies.py`,
   `starmap_icons.py`, `starmap_fleets.py`; preview `review/starmap_preview.py`):** pipeline
   sprites for the pictures the starmap shows, drawn by the Pixi starmap view (below). Lanes, node pips and territory outlines are

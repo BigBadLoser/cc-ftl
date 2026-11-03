@@ -63,7 +63,6 @@ export const FALLBACK: Record<string, Fallback> = {
   'fx.missile': { ids: ['fx.ember'], tint: 0xffffff, scale: 8 },
   'fx.ion_bolt': { ids: ['fx.spark'], tint: 0x66ccff, scale: 10 },
   'fx.fire_shell': { ids: ['fx.ember'], tint: 0xff7a2a, scale: 8 },
-  'fx.shield_hit': { ids: ['fx.ice'], tint: 0x66e0ff, scale: 4 },
   'fx.explosion_small': { ids: ['fx.ember'], tint: 0xffb24a, scale: 8 },
   'fx.pd_shot': { ids: ['fx.spark'], tint: 0xffffff, scale: 2 },
 };
