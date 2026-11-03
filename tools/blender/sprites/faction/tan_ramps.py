@@ -15,6 +15,8 @@ OUTER = "fTS7"                                  # the block's outer joints (its 
 INNER = "fTS8"                                  # the joints between its cushions
 GAP = 0.7                                       # the inner joints' width, in px (under one: AA softens them)
 CUT_D = 0.55
+ROUND = 2                                       # a cushion's other corners: rounded on it (its joints straight), this
+ROUND_TONE = "fTS2"                             # radius in px, in a tone between the cushion's and the joints'
 
 # a layout: its cushions, each one or more rects (u0, u1, d0, d1, corners) as fractions of the tile (u) and of the
 # block's run (d), the corners to round of a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1) (one on the block's outline
@@ -58,15 +60,12 @@ def cushions(layout):
         def D1(g):
             return top + g * span - (0.0 if g == 1.0 else JE / 2)
 
-        def corner(x, y, sx, sy, curve):                # (a corner (x, y), the rect inward along sx, sy: a curve,
-            if curve:                                   # or the corner px clipped off, a cut that covers it whole)
-                rl, re = CURVE * L, CURVE * E
-                cx, cy = x + sx * rl, y + sy * re
-                pts = [(cx - sx * rl * math.cos(t), cy - sy * re * math.sin(t))
-                       for t in (i * math.pi / 12 for i in range(7))]
-            else:
-                pts = [(x, y + sy * 1.5 * E), (x + sx * 1.5 * L, y)]
+        def arc(x, y, sx, sy, rad):                     # (a corner (x, y), the rect inward along sx, sy: a quarter
+            rl, re = rad * L, rad * E                   # circle rad px round it, from its side along d to along u)
+            cx, cy = x + sx * rl, y + sy * re
+            pts = [(cx - sx * rl * math.cos(t), cy - sy * re * math.sin(t)) for t in (i * math.pi / 12 for i in range(7))]
             return pts if sx * sy > 0 else pts[::-1]
+        fillets = []
 
         def rect(f0, f1, g0, g1, rc):                   # (a cushion's rect, the corners rc rounded)
             ua, ub, da, db = U0(f0), U1(f1), D0(g0), D1(g1)
@@ -74,7 +73,12 @@ def cushions(layout):
             for ch, (x, y, sx, sy, f, g) in zip("abcd", ((ua, da, 1, 1, f0, g0), (ub, da, -1, 1, f1, g0),
                                                          (ub, db, -1, -1, f1, g1), (ua, db, 1, -1, f0, g1))):
                 outl = not _raw(f) and f in (0.0, 1.0) and g in (0.0, 1.0)
-                out += corner(x, y, sx, sy, outl) if ch in rc else [(x, y)]
+                if ch in rc and outl:                   # (the block's outer corners: cut on a curve)
+                    out += arc(x, y, sx, sy, CURVE)
+                    continue
+                out.append((x, y))
+                if ch in rc:                            # (the others: square, a round shaded on them)
+                    fillets.append([(x, y)] + arc(x, y, sx, sy, ROUND))
             return out
         plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                     # the blue line under the lip
         plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)           # the toe band, on to the toe
@@ -98,6 +102,8 @@ def cushions(layout):
         for cu in layout:
             for f0, f1, g0, g1, rc in cu:
                 plate(rect(f0, f1, g0, g1, rc), 2 * PAINT, 2, PAINT, "wall")
+        for poly in fillets:
+            T.plate(k, poly, pt, nrm, 0.0, 3 * PAINT, FACE, 0, 2 * PAINT, fixed=ROUND_TONE)
     return ramp
 
 
