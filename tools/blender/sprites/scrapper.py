@@ -12,6 +12,7 @@ Origin of the sprite = centre of the front-most footprint tile (like the refiner
 does: (x, y) -> (H - y, x) per step, W and H swapping.
 """
 import math
+import os
 
 from . import core
 
@@ -224,8 +225,43 @@ def hatch(b, A, B, r0, r1):
         b.prism_D(L_z, d0, d1, PLATE)
 
 
+def rr_prism_L(b, L0, L1, dc, zc, h, r, col, cap0=None):
+    """A rounded square (half size h, corner radius r) in the (D, z) plane centred on (dc, zc), extruded along L from L0
+    to L1. cap0 colours the L0 end (the mouth face) when given."""
+    ring = _rrect(dc, zc, h, h, r)
+    a, c = [b.P(L0, d, z) for d, z in ring], [b.P(L1, d, z) for d, z in ring]
+    ax = b.P((L0 + L1) / 2, dc, zc)
+    m = len(ring)
+    for i in range(m):
+        j = (i + 1) % m
+        q = [a[i], a[j], c[j], c[i]]
+        ce = [sum(p[k] for p in q) / 4 for k in range(3)]
+        b.face(q, col, (ce[0] - ax[0], ce[1] - ax[1], ce[2] - ax[2]))
+    e0, e1 = b.P(L0, dc, zc), b.P(L1, dc, zc)
+    dv = (e1[0] - e0[0], e1[1] - e0[1], e1[2] - e0[2])
+    b.face(a, cap0 or col, (-dv[0], -dv[1], -dv[2]))
+    b.face(c, col, dv)
+
+
+DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
+
+
+def drum(b):
+    """The drum lying along L in the bay, measured on the ref's drum tile (link 05): a rounded-square mouth shroud at
+    the hatch end, its open face toward the hatch-end block (D 1.25..1.97, z 0.03..0.76), then the drum running to the
+    yoke (later), with two wide raised bands and a narrow one next to the shroud."""
+    rr_prism_L(b, 2.04, 2.2, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                    # mouth shroud
+    rr_prism_L(b, 2.02, 2.04, DRUM_D, DRUM_Z, 0.29, 0.09, DARK)                    # the mouth, dark
+    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.9, GM, sides=20)                          # drum
+    for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
+        b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, GMD, sides=20)
+
+
 def scrapper(rot):
     b = _Build(rot, f"scrapper_{rot}")
+    if os.environ.get("SCRAPPER_PART") == "drum":       # preview aid: the drum alone, to lay over the ref's drum tile
+        drum(b)
+        return [b.m.build()]
     # plinth band under the shells (not under the open bay)
     b.box(0.03, 2.0, 0.03, 1.97, 0, BASE, BODY_D)
     b.box(2.0, 3.0, 0.03, 1.0, 0, BASE, BODY_D)
@@ -257,10 +293,7 @@ def scrapper(rot):
     slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, GM)     # chamfer up from the flange to the barrel
     slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, GM)                    # nozzle barrel
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
-    # bay: cradle and drum
-    b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
-    b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
-    b.cyl_L(1.5, 0.43, 0.51, 2.86, 3.0, GMD, sides=8)
+    drum(b)
     return [b.m.build()]
 
 
