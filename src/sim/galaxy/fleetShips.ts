@@ -7,6 +7,7 @@ import { spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
 import { nodesWithin } from './graph';
 import { owe } from './portIndex';
+import { nodeState } from './state';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
 
@@ -158,6 +159,14 @@ export function tendFleets(sim: Sim): void {
   }
   if (changed) g.rev++;
   warmFleets(sim);
+}
+
+/** The descriptor a ship in the active sector was made from: a pocket's fleet or scene, a travelling fleet, else the node's contacts. */
+export function contactOf(sim: Sim, ship: number): Contact | undefined {
+  const g = sim.galaxy;
+  const owns = (cs: readonly Contact[]): Contact | undefined => cs.find((c) => c.ship === ship);
+  return owns(g.event?.fleet?.ships ?? []) ?? owns(g.event?.scene.ships.map((s) => s.contact) ?? []) ?? g.fleets.map((f) => owns(f.ships)).find(Boolean)
+    ?? owns(nodeState(sim, g.current).contacts);
 }
 
 /**

@@ -109,7 +109,7 @@ import { newYard, type YardState } from './yard/types';
  * v86 (boarding on away sites, #287): `RecallC`, `BoardLaunchC` and `BoardHoldC` gone (a boarding is an away site); `AwaySite.fight`,
  *   `standBy`, `dock`, `invited`; `Away.recall`; a passage's `Job.holder`.
  * v87 (physical encounters, #173): `EventGrid` holds a `scene` (SceneSpec) and the observer's `watch`, its `encounter` and `fleet` are optional
- *   and `kind` may be 'scene'; `galaxy.signal`; `story.scene`; `ActiveEvent.done`.
+ *   and `kind` may be 'scene'; `galaxy.signal`; `story.scene`; `ActiveEvent.done`; `Ship.provoked`, `Contact.provoked`; `Sector.stations`.
  */
 export const SAVE_VERSION = 87;
 

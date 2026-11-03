@@ -12,6 +12,10 @@ import { STORY_HOP_CHANCE } from '../sim/galaxy/tuning';
 import { ModuleC } from '../sim/modules/components';
 import { WeaponC } from '../sim/combat/components';
 import { shipIdOf } from '../sim/regions';
+import { materialiseFleet, liftFleet } from '../sim/galaxy/fleetShips';
+import { isHostileFaction } from '../sim/galaxy/standing';
+import { provoke } from '../sim/combat/provoke';
+import type { Fleet } from '../sim/galaxy/types';
 import { content } from '.';
 
 /** Physical encounters (#173): a signal's remote actions, investigating into a scene in a pocket, the observer, leaving, save and load. */
@@ -330,5 +334,24 @@ describe('provoking a neutral', () => {
     expect(sim.sector.stations).toBeUndefined();
     expect(sim.world.get(me, CombatC)?.target).toBeNull();
     expect(sim.world.query(WeaponC).every((id) => sim.world.get(id, WeaponC)?.mode !== 'hold' || sim.world.get(id, WeaponC)?.restore === undefined)).toBe(true);
+  });
+
+  it('a provoked fleet stays hostile: lifted out of the node and made real again, it comes back on its owner\'s combat side', () => {
+    const sim = newGame(24, content);
+    const g = sim.galaxy;
+    const f = g.fleets.find((x) => x.ships.length > 0 && !isHostileFaction(sim, x.faction)) as Fleet;
+    Object.assign(f, { node: g.current, from: g.current, route: [], dwell: 99, synced: g.turn });
+    materialiseFleet(sim, f);
+    const first = f.ships[0]?.ship as number;
+    expect(sim.world.get(first, ShipC)?.faction).toBe('neutral');
+    provoke(sim, first, 'fired');
+    const side = sim.world.get(first, ShipC)?.faction;
+    expect(side).not.toBe('neutral');
+    liftFleet(sim, f);
+    const back = deserialize(serialize(sim), content);
+    const again = back.galaxy.fleets.find((x) => x.id === f.id) as Fleet;
+    materialiseFleet(back, again);
+    for (const c of again.ships) if (c.ship !== undefined) expect(back.world.get(c.ship, ShipC)?.faction).toBe(side);
+    expect(again.ships.some((c) => c.ship !== undefined)).toBe(true);
   });
 });

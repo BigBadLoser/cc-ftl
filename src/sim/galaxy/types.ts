@@ -119,6 +119,8 @@ export interface Contact {
   bounty?: number;
   /** A hired escort (roster.ts `FleetGroupDef.escort`): the faction that pays it. It flies on that faction's side in a fight; `faction` stays its own. */
   hired?: string;
+  /** Provoked by the player (combat/provoke.ts): it stays hostile, so it comes back on its owner's combat side whenever it is made real again. */
+  provoked?: true;
 }
 
 export interface NodeState {
