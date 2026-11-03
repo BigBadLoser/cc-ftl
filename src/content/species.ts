@@ -36,8 +36,8 @@ export const species = {
     name: 'Human',
     moveSpeed: 2.5,
     workSpeed: 1,
-    // Rest drains in a few minutes so sleeping is easy to observe while testing.
-    restDecay: 0.6,
+    // Rest drains slowly: about 20 minutes awake (a full sleep takes about 7 in a bed).
+    restDecay: 0.06,
     carryCapacity: 40,
     // Fed to hungry in about 9 minutes (hungry crew eat below 35), starving after about 14.
     hunger: { decayPerSec: 0.12 },
@@ -48,7 +48,7 @@ export const species = {
     name: 'Augmented human',
     moveSpeed: 2.5,
     workSpeed: 1,
-    restDecay: 0.6,
+    restDecay: 0.06,
     carryCapacity: 40,
     maxHp: 130,
     armor: 0.1,

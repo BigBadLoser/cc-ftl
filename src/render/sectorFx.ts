@@ -1,18 +1,21 @@
 import { Graphics, Sprite, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
+import type { GridLike } from '../sim/grid';
 import type { SimEvent } from '../sim/events';
 import { ModuleC } from '../sim/modules/components';
 import { rotatedSize } from '../sim/modules/footprint';
-import { ProjectileC, ShipC, type Ship } from '../sim/combat/components';
+import { CombatC, ProjectileC, ShipC, type Ship } from '../sim/combat/components';
 import type { ModuleDef, WeaponDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { IMPACT_H, MUZZLE_H } from './heights';
-import { ART_SCALE as S, TILE_W } from './iso';
+import { ART_SCALE as S } from './iso';
 import { sectorArt } from './sectorPos';
 import type { Layers } from './layers';
 import type { EmitterDef, Particles } from './fx/particles';
 import { onShip } from './regionRules';
+import { animNow } from './animClock';
+import { createShieldView } from './shieldView';
 
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
@@ -24,7 +27,6 @@ export interface SectorFx {
 const WEAPON_COLOR: Readonly<Record<string, number>> = {
   'weapon.burstLaser': 0xff5a4a, 'weapon.massDriver': 0xffd27a, 'weapon.missile': 0xffe9c0, 'weapon.ion': 0x66ccff, 'weapon.incendiary': 0xff8a3a,
 };
-const SHIELD_COLOR = 0x66e0ff;
 /** Emitter defs are cached by value: the particle system keeps per-def texture lists. */
 const defs = new Map<string, EmitterDef>();
 const cached = (key: string, make: () => EmitterDef): EmitterDef => {
@@ -69,8 +71,10 @@ const TRACER_LIFE = 0.2;
 export function createSectorFx(
   world: World, atlas: Atlas, L: Layers, particles: Particles,
   content: { weapons: Readonly<Record<string, WeaponDef>>; modules: Readonly<Record<string, ModuleDef>> },
+  hull: (ship: number) => GridLike | undefined = () => undefined,
 ): SectorFx {
-  const shots = new Map<number, { spr: Sprite; x: number; y: number }>();
+  const shots = new Map<number, { spr: Sprite; x: number; y: number; from: { x: number; y: number } }>();
+  const shields = createShieldView(world, atlas, { dome: L.fx, add: L.fxAdd }, hull);
   const flashes: Flash[] = [];
   const tracers: Tracer[] = [];
   const floaters: Floater[] = [];
@@ -104,18 +108,6 @@ export function createSectorFx(
     flashes.push({ spr, age: 0, life: FLASH_LIFE, grow: 0.8, peak });
   }
 
-  function bubble(s: Ship): void {
-    const c = secArt(s.x + s.width / 2, s.y + s.height / 2);
-    const k = (s.width + s.height) / 2;
-    const rx = ((s.width + s.height) * TILE_W) / 4 + 10 * S;
-    const g = new Graphics();
-    g.ellipse(0, 0, rx, rx / 2).stroke({ width: 3 * S, color: 0x9fefff, alpha: 1 });
-    g.position.set(Math.round(c.x), Math.round(c.y));
-    L.sorted.addChild(g);
-    flashes.push({ spr: g, age: 0, life: 0.45, grow: 0, peak: 1 });
-    particles.burst(burst(SHIELD_COLOR, 70), c.x, c.y, 10, k * 24);
-  }
-
   function say(text: string, sx: number, sy: number, fill: number): void {
     const p = secArt(sx, sy);
     const t = new Text({
@@ -141,13 +133,16 @@ export function createSectorFx(
           particles.burst(burst(colorOf(e.weapon), 60), c.x, c.y - MUZZLE_H, 8, 6);
           flash('fx.pd_shot', c.x, c.y - MUZZLE_H, 2);
         } else if (e.type === 'projectile.shieldHit') {
-          const s = ship(e.ship);
-          if (s) bubble(s);
+          const drain = content.weapons[e.weapon]?.effects.some((f) => f.type === 'shieldDrain');
+          shields.hit(e.ship, drain ? 'ion' : 'absorb', shots.get(e.projectile)?.from);
         } else if (e.type === 'projectile.hit') {
           const s = ship(e.ship);
           if (!s) continue;
           const c = tileArt(e.x, e.y);
           const col = colorOf(e.weapon);
+          // A shot that reached the hull through raised shields without bypassing them tore through a layer (mass driver).
+          const w = content.weapons[e.weapon];
+          if (w && !w.shield.bypass && (world.get(e.ship, CombatC)?.shield.layers ?? 0) > 0) shields.hit(e.ship, 'pierce', shots.get(e.projectile)?.from);
           particles.burst(burst(col, 90), c.x, c.y - 10 * S, 14, 8);
           particles.burst(burst(0xffffff, 60), c.x, c.y - 10 * S, 6, 6);
           flash('fx.explosion_small', c.x, c.y - 10 * S, 1);
@@ -166,6 +161,7 @@ export function createSectorFx(
       }
     },
     update(dt, alpha) {
+      shields.update(dt, animNow());
       const seen = new Set<number>();
       for (const id of world.query(ProjectileC)) {
         const p = world.get(id, ProjectileC);
@@ -183,7 +179,7 @@ export function createSectorFx(
           spr.tint = art.tint;
           spr.blendMode = 'add';
           L.sorted.addChild(spr);
-          shots.set(id, (sh = { spr, x: a.x, y: a.y }));
+          shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0) }));
         }
         sh.x = a.x;
         sh.y = a.y;
@@ -232,6 +228,7 @@ export function createSectorFx(
       }
     },
     dispose() {
+      shields.dispose();
       for (const s of shots.values()) s.spr.destroy();
       for (const f of flashes) f.spr.destroy();
       for (const f of floaters) f.text.destroy();

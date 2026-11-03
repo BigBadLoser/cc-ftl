@@ -10,6 +10,8 @@ const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const TPS = 20;
 
+const CATEGORIES = ['firefighting', 'medical', 'operating', 'repair', 'construction', 'hauling', 'refining', 'crafting', 'research', 'cooking', 'patrol'] as const;
+
 interface Result {
   /** Seconds until the first player crew member went down (Infinity if none did). */
   firstDownSec: number;
@@ -32,13 +34,15 @@ const downCount = (sim: Sim, dead = false): number =>
 
 /**
  * Starter vs raider with a fixed seed. 'manned': the crew keep their default jobs and the player keeps the
- * weapons on a living raider reactor (retargeting every 5 s). 'unmanned': no one is allowed to operate a console, so
- * nothing of the player's fires, and the shield and helm do not help.
+ * weapons on a living raider reactor (retargeting every 5 s). 'unmanned': the crew are aboard but do nothing (every work
+ * priority is 0: no consoles, no repairs, no fire fighting), so nothing of the player's fires, the shield and helm do not help and
+ * damage is never mended. They are there only for the "loses no crew" check. (Operating alone was enough while crew slept through
+ * the fight; with the slower rest drain of #278 awake crew repaired the hits and the ship barely lost integrity.)
  */
 function fight(seed: number, mode: 'manned' | 'unmanned', minutes: number): Result {
   const sim = newGame(seed, content);
   if (mode === 'unmanned') {
-    for (const id of sim.world.query(CrewC)) sim.enqueue({ type: 'crew.setPriority', id, category: 'operating', value: 0 });
+    for (const id of sim.world.query(CrewC)) for (const category of CATEGORIES) sim.enqueue({ type: 'crew.setPriority', id, category, value: 0 });
   }
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
   const r: Result = {

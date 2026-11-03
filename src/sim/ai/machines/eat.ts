@@ -42,6 +42,13 @@ export function dropMeal(sim: Sim, id: number): void {
   syncTask(sim, id);
 }
 
+/** Could a meal start now: food aboard and a spot (a working galley or a crate with it) the crew member can reach? (A sleeper is woken for it only then.) */
+export function canStartMeal(sim: Sim, id: number, pos: Position): boolean {
+  const shipId = shipIdOf(sim, pos);
+  const item = foodOn(sim, shipId);
+  return !!item && !!pickSpot(sim, id, shipId, origin(pos), item);
+}
+
 /** Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item` (never a tile that harms the eater). */
 function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: string): { x: number; y: number; galley: boolean; steps: Tile[] } | null {
   let galley: { x: number; y: number; galley: boolean; steps: Tile[] } | null = null;

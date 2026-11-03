@@ -305,7 +305,22 @@ describe('emergency arming: unarmed crew fetch weapons from storage when boarder
   });
 
   it('a crew member drafted beside the locker mid-stow keeps the weapon', { timeout: 60000 }, () => {
-    const { sim, volunteers } = almostStandDown();
+    const { sim, volunteers, storages } = almostStandDown();
+    // Start the volunteers away from every locker. Crew now stay awake and idle where they armed, often beside the locker, and then the
+    // stow order is placed and finished in one tick, so there is no walk in which to catch them.
+    const grid = shipGrid(sim, ownShip(sim))!;
+    const mods = storages.map((s) => sim.world.get(s, ModuleC)!);
+    let far: { x: number; y: number } | null = null;
+    for (let y = grid.y0; y < grid.y0 + grid.height && !far; y++) {
+      for (let x = grid.x0; x < grid.x0 + grid.width && !far; x++) {
+        if (grid.get('struct', x, y) === Struct.Floor && !grid.get('module', x, y) && mods.every((m) => Math.max(Math.abs(m.x - x), Math.abs(m.y - y)) >= 4)) far = { x, y };
+      }
+    }
+    expect(far).not.toBeNull();
+    for (const c of volunteers) {
+      sim.world.add(c, PositionC, { x: far!.x, y: far!.y, toX: far!.x, toY: far!.y, progress: 0, facing: 0 });
+      sim.world.add(c, PathC, { steps: [] });
+    }
     let v = 0;
     for (let i = 0; i < 20 * 60 && !v; i++) {
       run(sim, 1);

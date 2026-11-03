@@ -27,7 +27,7 @@ export const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 8, m
 export const content: ContentRegistry = {
   ships: {}, roles: {}, crewNames: [], items: {}, recipes: {}, structCosts: {},
   species: {
-    'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 },
+    'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.06 },
     'species.robot': { name: 'R', moveSpeed: 2, workSpeed: 1, restDecay: 0, airless: true },
   },
   modules: { airlock: airlockDef, lifeSupport: lifeSupportDef },

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Render lab</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; background: #07090d; color: #c9d4e0; font: 12px/1.4 ui-monospace, monospace; }
+      #bar { padding: 8px 12px; border-bottom: 1px solid #1c2430; }
+      #bar a { color: #66e0ff; margin-right: 14px; }
+      #stage { position: relative; }
+      .lab-label { position: absolute; padding: 1px 4px; box-sizing: border-box; color: #8fa3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+      .lab-label b { color: #e6eef6; font-weight: 600; }
+      #msg { padding: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="bar"></div>
+    <div id="stage"></div>
+    <div id="msg"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

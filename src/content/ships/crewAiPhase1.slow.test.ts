@@ -78,7 +78,7 @@ function robot(seed: number): Sim {
   return sim;
 }
 
-function bedless(seed: number, lifted = false): Sim {
+function bedless(seed: number, lifted = false, tired = true): Sim {
   const sim = newGame(seed, content, 'ship.starter', false);
   run(sim, 2);
   const crew = sim.world.query(CrewC);
@@ -89,7 +89,7 @@ function bedless(seed: number, lifted = false): Sim {
   // the lowest id, two tiles away, at their fourth level.
   for (let i = 0; lifted && i < 600 && !sim.world.has(crew[2]!, CarriedC); i++) run(sim, 1);
   for (const id of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(id, ModuleC)!.def]?.bed) removeModule(sim, id);
-  for (const c of crew) sim.world.get(c, NeedsC)!.rest = 5;
+  for (const c of crew) if (tired) sim.world.get(c, NeedsC)!.rest = 5;
   return sim;
 }
 
@@ -137,6 +137,9 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'robot', make: () => robot(1), ticks: 400 },
   { name: 'bedless 1', make: () => bedless(1), ticks: 900 },
   { name: 'bedless 2', make: () => bedless(2, true), ticks: 300 },
+  // Rested crew, no bed: the rescue reaches the patient with nowhere to lay them (`rescue/Lift`). Tired crew used to wake from a floor sleep within
+  // the 900 ticks of 'bedless 1' and reach it there; a floor sleep now takes about 15 minutes (#278), so the tired board no longer gets that far.
+  { name: 'bedless rested', make: () => bedless(1, false, false), ticks: 900 },
   { name: 'hazard', make: () => hazard(1), ticks: 600 },
   { name: 'refill', make: () => refill(1), ticks: 400 },
   { name: 'away', make: awayReturn, ticks: 400 },
