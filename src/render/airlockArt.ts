@@ -19,7 +19,8 @@ import type { WallLevel } from './tiles';
  * neighbour, full height at every level, closed by end cuts with the neighbours' cut hull past them), the pod, unloaders, brace and collar are drawn whole at every level.
  *
  *  - housing `.closed|.f1|.f2|.open` on the pod tile (the inner door), light `.red|.green` over it
- *  - the door tile's hull (replaces the door the wall renderer would draw there; roofed, the hull's own piece stands there),
+ *  - the door tile's hull (replaces the door the wall renderer would draw there; roofed, the hull's own piece stands there,
+ *    this block only where the hull has no art: `hullFallback`),
  *    facing the camera the whole hull row at its front tile (its end cuts and the neighbours' cut hull past them: the grid
  *    leaves those tiles' own cut top out, `airlockRowTiles`)
  *  - brace (camera-facing hull rows: the rib and clamp block from the collar's clamp ring over the hull's top) on the hull tile
@@ -185,7 +186,10 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
   out_.push(part('light', working && !cycling ? 'green' : 'red', t.inner, { dz: 0.01 }));
   const near = out.x > 0 || out.y > 0;
   const front = near ? { x: t.outer.x + Math.abs(out.y), y: t.outer.y + Math.abs(out.x) } : t.outer;
-  if (!view.roofed) {
+  {
+    // Roofed, the door tile takes the new hull's base piece (gridView); this block only where the hull has no art there.
+    const roof: Partial<ModuleLayer> = view.roofed ? { roofVisible: true, hullFallback: t.outer } : {};
+    const level = view.roofed ? 'up' : view.level;
     // Facing the camera (east / south) the hull row is the engine's: full height in every view over the door tile and half
     // of either neighbour, closed by end cuts with the neighbours' cut hull past them (one Blender scene; the grid leaves
     // those tiles' own cut top out), anchored at the row's front tile.
@@ -193,7 +197,7 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
     // pieces do: the armour over it, the deco over its deco layer (`.tint`). Just over the front neighbour's belly cut top
     // (gridView: its tile's depth + 0.001, the solid module's key 0.05 under it), which would otherwise paint over the row's
     // foot; under the brace and collar (+0.5).
-    const hull = part('hull', view.level, front, { tiles: 'hull', ...(near ? { paint: 'armour' as const, dz: 0.06 } : {}) });
+    const hull = part('hull', level, front, { tiles: 'hull', ...roof, ...(near ? { paint: 'armour' as const, dz: 0.06 } : {}) });
     out_.push(hull);
     if (near) {
       out_.push({ ...hull, chain: hull.chain.map((c) => `${c}.tint`), key: `${hull.key}.tint`, paint: 'deco', optional: true, dz: 0.0602 });

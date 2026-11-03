@@ -204,6 +204,9 @@ export interface ModuleLayer {
   anim?: string;
   /** Stays drawn on a roofed ship (hull block, collar); the other parts are under the roof. */
   roofVisible?: boolean;
+  /** Roofed, dropped where the grid draws the new hull's exterior piece on this tile (the airlock's hull block stays
+   *  only where the hull has no art there, e.g. in a region with rock walls). */
+  hullFallback?: { x: number; y: number };
   /** Always recoloured by this colour of the ship's hull paint, as the hull's own pieces are (an engine's end cut: the cut tops' black). */
   paint?: 'armour' | 'deco';
 }
