@@ -76,8 +76,10 @@ vec2 cellAt(vec2 p) {
 // Which ring of cells, counted from the rim in, a cell sits in (by its centre on the unwarped sphere).
 float ringOf(vec2 c) {
   vec2 w = vec2(1.73205 * (c.x + 0.5 * c.y), 1.5 * c.y) * HEX * uPx;
+  if (dot(w, w) < 1.0) return 99.0;                          // the centre cell is in no ring
   float e = max(length(w / uAx), 0.001);
-  return floor(max((1.0 / e - 1.0) * length(w), 0.0) / (RING * HEX * uPx));
+  // the half cells the rim cuts belong to the outer ring with the first whole row inside them
+  return floor(max((1.0 / e - 1.0) * length(w) / (RING * HEX * uPx) - 0.6, 0.0));
 }
 float hash(vec2 v) { return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453); }
 float hash1(float v) { return fract(sin(v * 91.3458) * 47453.5453); }
@@ -94,7 +96,6 @@ void main(void) {
   float ch = hash(cell);
   float ring = ringOf(cell);
   if (line) ring = min(ring, min(ringOf(cr), ringOf(cd)));   // a line edging a lit cell is lit
-  bool outer = ring < 0.5;
   float t = clamp((r - 0.25) / 0.75, 0.0, 1.0);
   float rows = downAge >= 0.0 ? downRows : uLit;
   float regenRow = regenAge >= 0.0 ? 1.0 : 0.0;
@@ -118,10 +119,12 @@ void main(void) {
     al = max(al, 0.18 + 0.15 * uOver);
   }
 
-  if (breakAge >= 0.0) {                                       // the outer row flashes, its cells drop out, shards drift off
-    outer = outer && line;
-    if (outer && breakAge < 0.1) { col = W; al = 1.0; glow += H0 * 0.5; }
-    else if (outer && ch > breakAge * 1.2) { col = breakAge < 0.5 ? H0 : H1; al = max(al, 1.0 - 0.4 * breakAge); glow += H1 * 0.4; }
+  if (breakAge >= 0.0) {                                       // the lost ring flashes, its cells drop out, shards drift off
+    bool lost = r < 1.0 && ring > rows - 0.5 && ring < rows + 0.5;
+    bool stay = ch > breakAge * 1.4;                           // each cell of it goes out at its own moment
+    if (lost && breakAge < 0.15) { col = line ? W : mix(col, H0, 0.7); al = line ? 1.0 : max(al, 0.6); glow += H0 * (line ? 0.9 : 0.4); }
+    else if (lost && stay && line) { col = breakAge < 0.5 ? H0 : H1; al = 1.0 - 0.3 * breakAge; glow += H1 * 0.6; }
+    else if (lost && stay) { col = mix(col, H1, 0.5); al = max(al, 0.35 * (1.0 - breakAge)); }
     float ang = atan(l.y / uAx.y, l.x / uAx.x);
     for (int j = 0; j < 70; j++) {
       float fj = float(j);
