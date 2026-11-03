@@ -8,7 +8,7 @@ import type { WorkCategory } from '../crew/components';
  * absent, the site counts the open jobs on its grid.
  */
 export interface AwaySite {
-  owner: 'debug' | 'salvage';
+  owner: 'debug' | 'salvage' | 'boarding';
   status: 'open' | 'closing';
   vehicle: number;
   since: number;
@@ -18,6 +18,17 @@ export interface AwaySite {
    * be unloaded at home (the loot waits on the site); `stranded`, its shuttle is lost and no other free one can come.
    */
   block?: 'noCrew' | 'noRoom' | 'stranded';
+  /** What a fight in the node does to the site (the owner's choice): absent, the party is called home; `stay`, it carries on (boarding). */
+  fight?: 'stay';
+  /** The party lands standing by for orders (drafted, as boarders are), not handed to the crew AI's jobs. */
+  standBy?: true;
+  /** The airlock of the site the owner wants the shuttle docked at (it takes any other free one, else hovers, when this one cannot). */
+  dock?: number;
+  /**
+   * A named party (the player picked them): the site's passages are theirs alone, one each, held for them at once. Consumed when the shuttle
+   * first leaves home: whoever is not aboard by then stays (`away.leftBehind`).
+   */
+  invited?: number[];
 }
 export const AwaySiteC = defineComponent<AwaySite>('awaySite');
 
@@ -59,7 +70,8 @@ export const SiteRunC = defineComponent<SiteRun>('siteRun');
  * list. `cat`: the work category of the passage they took. `landing`: sent out of the hatch, handed to the crew AI once on the hull.
  * `home`: came aboard to go home (waits for the next trip). `lastCall`: the departure check found them short: they refill now. `ride`: still
  * short after the last call: they come aboard for the round trip and go out again on the way back. `pickup`: a shuttle came for them (they
- * are out of air reach): they come aboard. `downAt`: the tick they were found downed out on the site (the lift's clock).
+ * are out of air reach): they come aboard. `downAt`: the tick they were found downed out on the site (the lift's clock). `recall`: the player
+ * called them home (`crew.recall`): they come aboard, and the trip that takes them is urgent.
  */
 export interface Away {
   site: number;
@@ -71,5 +83,6 @@ export interface Away {
   ride?: true;
   pickup?: true;
   downAt?: number;
+  recall?: true;
 }
 export const AwayC = defineComponent<Away>('away');

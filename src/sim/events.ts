@@ -108,6 +108,7 @@ export type SimEvent =
   | { type: 'away.stranded'; ship: number; crew: number[] }
   /** A shuttle left for an away site with nobody able left aboard the home ship `ship` (a log line). */
   | { type: 'away.homeEmpty'; ship: number; site: number }
+  | { type: 'away.leftBehind'; ship: number; vehicle: number; crew: number[] }
   | { type: 'salvage.ordered'; ship: number; types: string[] }
   | { type: 'salvage.blocked'; ship: number; reason: string }
   | { type: 'salvage.done'; ship: number; removed: boolean }

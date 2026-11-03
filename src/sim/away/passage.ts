@@ -1,6 +1,8 @@
-import { CrewC, DeadC, JobC, PositionC, PrioritiesC, type Job, type WorkCategory } from '../crew/components';
+import { CrewC, DeadC, JobC, PathC, PositionC, PrioritiesC, type Job, type Path, type WorkCategory } from '../crew/components';
+import { abortTask, attachJob } from '../ai/task';
+import { planWalk } from '../eva/route';
 import { isEmergency } from '../ai/emergency';
-import { isSettled } from '../crew/helpers';
+import { isIncapacitated, isSettled, origin } from '../crew/helpers';
 import { vehicleSuits } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
 import { destroyJob } from '../items/stacks';
@@ -11,7 +13,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { boardCrew, occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { shipIdOf } from '../regions';
-import { AwayC } from './components';
+import { AwayC, AwaySiteC } from './components';
 import { allocateSeats, siteDemand } from './seats';
 
 /**
@@ -49,10 +51,55 @@ export function dropPassages(sim: Sim, vehicle: number): void {
 }
 
 /**
+ * The seats of a named party (`AwaySite.invited`, picked by the player): one passage for each invitee not aboard yet, held for them at once
+ * and walked to (no choice of the scheduler's). An invitee who lets go of theirs (downed, a way cut off, a drive took them off it) stays
+ * home: they leave the list, and the player hears of it (`away.leftBehind`). Such a seat is not for the site's work: it is in 'patrol'
+ * (standing by).
+ */
+function postInvited(sim: Sim, vehicle: number, site: number): void {
+  const s = sim.world.get(site, AwaySiteC);
+  const at = boardingTile(sim, vehicle);
+  if (!s?.invited || !at) return;
+  const mine = passagesOf(sim, vehicle);
+  const left: number[] = [];
+  for (const c of [...s.invited]) {
+    if (sim.world.has(c, AwayC)) continue; // aboard: of the party now
+    const job = mine.find((j) => sim.world.get(j, JobC)?.holder === c);
+    const pos = sim.world.get(c, PositionC);
+    const fit = !!pos && sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !isIncapacitated(sim, c);
+    if (job && fit && sim.world.get(job, JobC)?.reservedBy === c) continue;
+    const plan = !job && fit ? planWalk(sim, c, at.shipId, origin(pos), { x: at.x, y: at.y }) : null;
+    if (!plan) {
+      if (job) destroyJob(sim, job);
+      s.invited.splice(s.invited.indexOf(c), 1);
+      if (sim.world.has(c, CrewC) && !sim.world.has(c, DeadC)) left.push(c);
+      continue;
+    }
+    abortTask(sim, c, 'order');
+    const id = sim.world.createEntity();
+    sim.world.add(id, JobC, { category: 'patrol', kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: c, holder: c, target: vehicle, site });
+    attachJob(sim, c, id);
+    (sim.world.get(c, PathC) as Path).steps = plan.steps;
+  }
+  if (left.length) sim.events.emit({ type: 'away.leftBehind', ship: site, vehicle, crew: left });
+}
+
+/** The named party's time is up (the shuttle leaves, or nobody came): invitees not aboard stay home (`away.leftBehind`), the list ends. */
+export function endInvites(sim: Sim, vehicle: number, site: number): void {
+  const s = sim.world.get(site, AwaySiteC);
+  if (!s?.invited) return;
+  const left = s.invited.filter((c) => !sim.world.has(c, AwayC) && sim.world.has(c, CrewC) && !sim.world.has(c, DeadC));
+  for (const j of passagesOf(sim, vehicle)) if (left.includes(sim.world.get(j, JobC)?.holder ?? 0)) destroyJob(sim, j);
+  delete s.invited;
+  if (left.length) sim.events.emit({ type: 'away.leftBehind', ship: site, vehicle, crew: left });
+}
+
+/**
  * Keep the passages in step with the free seats and the site's demand: the passages already taken stand, the open ones are posted again
  * when the categories wanted change. None while `want` is false (the site wants nobody now).
  */
 export function postPassages(sim: Sim, vehicle: number, site: number, want: boolean): void {
+  if (want) postInvited(sim, vehicle, site);
   const v = sim.world.get(vehicle, VehicleC);
   const at = boardingTile(sim, vehicle);
   const all = passagesOf(sim, vehicle);

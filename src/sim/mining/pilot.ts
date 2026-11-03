@@ -1,6 +1,6 @@
 import { AllegianceC } from '../fight/components';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
-import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
+import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { shipById } from '../combat/ships';
 import { shipIdOf } from '../regions';
@@ -27,7 +27,7 @@ function reserved(sim: Sim): Set<number> {
 
 /**
  * The crew member to fly a pod: on its home ship, of that ship's side, able, not drafted (a free schedule), not already
- * reserved by another order (or in `exclude`) or walking to a vehicle. Highest piloting first, then the lowest id. 0 for none.
+ * reserved by another order (or in `exclude`) or walking to a vehicle (an away site's passage included). Highest piloting first, then the lowest id. 0 for none.
  */
 export function pickPilot(sim: Sim, v: Vehicle, exclude?: ReadonlySet<number>): number {
   const faction = shipById(sim, v.homeShip)?.faction;
@@ -36,6 +36,7 @@ export function pickPilot(sim: Sim, v: Vehicle, exclude?: ReadonlySet<number>): 
   let bestSkill = -Infinity;
   for (const id of [...sim.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
     if (taken.has(id) || exclude?.has(id) || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC) || sim.world.has(id, EmbarkOrderC) || sim.world.has(id, AboardC)) continue;
+    if (sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'passage') continue; // on the way to an away site's shuttle
     if (isIncapacitated(sim, id) || sim.world.get(id, AllegianceC)?.faction !== faction) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== v.homeShip) continue;
     const skill = stat(sim, id, 'piloting');

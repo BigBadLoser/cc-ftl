@@ -91,12 +91,25 @@ function sendOut(sim: Sim, id: number, v: Vehicle, keepRiders: boolean): void {
     const suit = needsAir(sim, c) && !!grid && isThin(grid, at.x, at.y);
     if (suit && vehicleSuits(sim, v) <= 0) continue;
     unboardCrew(sim, c, id, at);
-    if (sim.world.remove(c, DraftedC)) (sim.world.get(c, CrewC) as Crew).activity = 'idle'; // crew at work, not boarders
+    standBy(sim, c, !!sim.world.get(away.site, AwaySiteC)?.standBy);
     if (!suit) continue;
     v.suits = vehicleSuits(sim, v) - 1;
     sim.world.add(c, SuitC, { worn: true, air: suitDef(sim).airSec });
     sim.events.emit({ type: 'suit.donned', crew: c, airlock: 0 });
   }
+}
+
+/**
+ * A crew member landed on a site: drafted, standing by for orders, on a site whose owner wants that (boarders), else undrafted and at the
+ * crew AI's work.
+ */
+export function standBy(sim: Sim, c: number, drafted: boolean): void {
+  const crew = sim.world.get(c, CrewC) as Crew | undefined;
+  if (!crew) return;
+  if (drafted) {
+    sim.world.add(c, DraftedC, { target: null });
+    crew.activity = 'drafted';
+  } else if (sim.world.remove(c, DraftedC)) crew.activity = 'idle';
 }
 
 /** Off station (knocked off, or a pickup wants it hovering while docked): back to 'fly'. True if so. */

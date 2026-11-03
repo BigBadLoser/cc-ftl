@@ -1,5 +1,6 @@
 import { CrewC, ModuleC, ShipC, type Sim, type SimEvent } from '../sim';
 import { homeShip } from '../sim/index';
+import { factionsHostile } from '../sim/combat/factions';
 import type { LogEntry } from './logText';
 import { crewSubject, shipSubject } from './subjects';
 
@@ -16,6 +17,7 @@ export function describeBoarding(sim: Sim, e: SimEvent): LogEntry | null {
   const crew = (id: number) => sim.world.get(id, CrewC)?.name ?? 'A boarder';
   const module = (id: number) => sim.content.modules[sim.world.get(id, ModuleC)?.def ?? '']?.name ?? 'module';
   const shipName = (id: number) => sim.world.get(id, ShipC)?.name ?? 'the enemy ship';
+  const hostile = (id: number) => factionsHostile('player', sim.world.get(id, ShipC)?.faction ?? 'player');
   const who = (ids: number[]) => (ids.length === 1 ? crew(ids[0] as number) : `${ids.length} crew`);
   const at = (id: number) => { const s = crewSubject(sim, id); return s ? { subject: s } : {}; };
   switch (e.type) {
@@ -32,7 +34,13 @@ export function describeBoarding(sim: Sim, e: SimEvent): LogEntry | null {
       const left = e.left.map((l) => `${crew(l.crew)} ${recallReason(l.reason)}`);
       return { kind: 'boarding', tone: left.length ? 'warn' : 'info', text: `Recalling ${who(e.crew)} to the shuttle${left.length ? `; ${left.join(', ')}` : ''}`, ...(shipSubject(sim, e.ship) ? { subject: shipSubject(sim, e.ship)! } : {}) };
     }
-    case 'crew.recalled': return { kind: 'boarding', tone: 'good', text: `${who(e.crew)} back aboard`, subject: { kind: 'ship', id: homeShip(sim) } };
+    // A boarding is an away site on the enemy ship (#287): its trips home and those who stayed behind at the launch.
+    case 'away.returned':
+      if (!hostile(e.ship)) return null;
+      return { kind: 'boarding', tone: 'good', text: `${who(e.crew)} back aboard`, subject: { kind: 'ship', id: homeShip(sim) } };
+    case 'away.leftBehind':
+      if (!hostile(e.ship)) return null;
+      return { kind: 'boarding', tone: 'warn', text: `${e.crew.map(crew).join(', ')} did not reach the shuttle in time: staying home`, ...at(e.crew[0] as number) };
     case 'crew.recallFailed': {
       if (!e.crew.length) return null;
       return { kind: 'boarding', tone: 'bad', text: `${e.crew.map(crew).join(', ')} ${recallReason(e.reason)}: still on the enemy ship` };

@@ -15,6 +15,7 @@ import {
   AWAY_GO, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
 } from '../tuning';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
+import { fightCalls } from './phase';
 
 /**
  * The crew side of away sites (docs/DESIGN.md "Away sites", #286 slice 2a): who may take a passage, and the return drive's input. No site
@@ -62,7 +63,7 @@ export function siteSpot(sim: Sim, vehicle: number, shipId: number): { x: number
 export function siteRecalled(sim: Sim, site: number): boolean {
   const s = sim.world.get(site, AwaySiteC);
   const run = s && sim.world.get(s.vehicle, SiteRunC);
-  return !s || s.status === 'closing' || !run || run.phase === 'recall' || sim.sector.inCombat;
+  return !s || s.status === 'closing' || !run || run.phase === 'recall' || fightCalls(sim, site);
 }
 
 /**
@@ -89,7 +90,7 @@ export function awayReturn(sim: Sim, id: number): number | undefined {
   const site = siteUnderFoot(sim, id);
   if (!site) return undefined;
   const away = sim.world.get(id, AwayC);
-  if (siteRecalled(sim, site) || away?.ride || away?.pickup || hurt(sim, id)) return 0;
+  if (siteRecalled(sim, site) || away?.ride || away?.pickup || away?.recall || hurt(sim, id)) return 0;
   return needBelow(sim, id, AWAY_HOME_REST, AWAY_HOME_HUNGER, AWAY_HOME_CHARGE) ? 500 : 1000;
 }
 
@@ -98,7 +99,7 @@ export function awayReturn(sim: Sim, id: number): number | undefined {
  * line (AWAY_URGENT_*: where they would sleep, eat or charge; needs keep running aboard), so nobody sleeps or starves in a seat.
  */
 export function passengerUrgent(sim: Sim, id: number): boolean {
-  return hurt(sim, id) || needBelow(sim, id, AWAY_URGENT_REST, AWAY_URGENT_HUNGER, AWAY_URGENT_CHARGE);
+  return !!sim.world.get(id, AwayC)?.recall || hurt(sim, id) || needBelow(sim, id, AWAY_URGENT_REST, AWAY_URGENT_HUNGER, AWAY_URGENT_CHARGE);
 }
 
 /**
@@ -107,6 +108,7 @@ export function passengerUrgent(sim: Sim, id: number): boolean {
  */
 export function passageFits(sim: Sim, crew: number, job: Job): boolean {
   if (job.kind !== 'passage') return true;
+  if (job.holder && job.holder !== crew) return false; // a named party's seat (`AwaySite.invited`)
   if (sim.world.has(crew, AwayC) || sim.world.get(crew, AllegianceC)?.faction !== 'player' || (job.airless && needsAir(sim, crew))) return false;
   return sim.world.has(crew, NeedsC) && !needBelow(sim, crew, AWAY_GO, AWAY_GO, AWAY_GO);
 }

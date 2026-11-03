@@ -9,6 +9,7 @@ import { shipById } from '../combat/ships';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
 import { YardCrewC } from '../yard/types';
+import { AwayC } from '../away/components';
 
 /**
  * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), or one
@@ -52,9 +53,14 @@ export function onWreck(sim: Sim, crew: number): boolean {
   return !!pos && shipById(sim, shipIdOf(sim, pos))?.state === 'wreck';
 }
 
-/** An invader that is still boarding: on a wreck an invader is just crew at work, so it takes jobs like anyone (the fight code still counts it as an invader). */
+/**
+ * An invader that is still boarding: on a wreck an invader is just crew at work, so it takes jobs like anyone (the fight code still counts it
+ * as an invader). Nor is one of an away party on the way back aboard (recalled, fetched, riding out a trip: `Away`): the crew AI's return
+ * drive takes them to the shuttle, not the fight code to the bridge.
+ */
 export function isBoarding(sim: Sim, crew: number): boolean {
-  return isInvader(sim, crew) && !onWreck(sim, crew);
+  const away = sim.world.get(crew, AwayC);
+  return isInvader(sim, crew) && !onWreck(sim, crew) && !(away && (away.recall || away.pickup || away.ride));
 }
 
 /** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */

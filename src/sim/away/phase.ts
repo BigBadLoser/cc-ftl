@@ -29,7 +29,10 @@ export const atSite = (sim: Sim, v: Vehicle, site: number): boolean => hovering(
 /** True once the shuttle is home: stowed in its bay, or docked at an airlock of its home ship (its bay is gone). */
 export const atHome = (sim: Sim, v: Vehicle): boolean => v.state === 'stowed' || dockedShip(sim, v) === v.homeShip;
 
-/** True while the site still wants workers: open, its ship there, and no fight in the node. */
+/** True while a fight calls the site's party in: one is on in the node and the site's owner did not ask to carry on through it. */
+export const fightCalls = (sim: Sim, site: number): boolean => sim.sector.inCombat && sim.world.get(site, AwaySiteC)?.fight !== 'stay';
+
+/** True while the site still wants workers: open, its ship there, and no fight calling the party in. */
 export function wanted(sim: Sim, site: number): boolean {
-  return sim.world.get(site, AwaySiteC)?.status === 'open' && !!shipById(sim, site) && !sim.sector.inCombat;
+  return sim.world.get(site, AwaySiteC)?.status === 'open' && !!shipById(sim, site) && !fightCalls(sim, site);
 }
