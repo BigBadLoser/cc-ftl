@@ -227,7 +227,7 @@ def hatch(b, A, B, r0, r1):
         b.face([S(is_, id_, 0), S(is2, id2, 0), S(is2, id2, lip), S(is_, id_, lip)], BODY_S2,
                out((is_ + is2) / 2, (id_ + id2) / 2, lip / 2, sc - (is_ + is2) / 2, dc - (id_ + id2) / 2, 0))
     b.face([S(s_, d_, 0.004) for s_, d_ in inner], DARK, out(sc, dc, 0, 0, 0, 1))      # backing, the seam shows it
-    ls, ld, gap = hs - ws, hd - wd, 0.009                                   # leaves fill the opening, recessed
+    ls, ld, gap = hs - ws, hd - wd, 0.024     # leaves fill the opening, recessed; the gap about 1.5 px so it reads unbroken
     for d0, d1 in ((dc - ld, dc - gap), (dc + gap, dc + ld)):
         pr = [(sc - ls, 0.004), (sc + ls, 0.004), (sc + ls, 0.016), (sc - ls, 0.016)]
         c = [(s_, t) for s_, t in pr]
