@@ -140,6 +140,7 @@ EDGE = 0.4 / 32                                 # (a px down the slope, about: 2
 # of the cushions' run (d); the joints, a px, centred on the cuts: two squares against the wall, an L either side of
 # them (down the tile's side, then in along the toe to the middle)
 CUT_D = 0.55
+SHADE_EDGES = False                             # a shaded strip along each cushion's foot and right edge
 GAP = 0.5                                       # the joints' width, in px (under one: AA softens them)
 SQUARES = ((0.25, 0.5), (0.5, 0.75))
 # each L: its rects ((u0, u1, d0, d1), its rounded corners: a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1)); a u0 / u1 of
@@ -186,14 +187,15 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
     for f0, f1 in SQUARES:
         pu0, pu1, pd0, pd1 = U0(f0), U1(f1), D0(0.0), D1(CUT_D)
         plate(rq(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
-        plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, sh, FACE)            # (its foot and right edge shaded, short
-        plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, sh, FACE)            # of the corners)
+        if SHADE_EDGES:                                 # (its foot and right edge shaded, short of the corners)
+            plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, sh, FACE)
+            plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, sh, FACE)
     for rects, shades in ELLS:
         for (f0, f1, g0, g1), rc in rects:
             pu0 = u0 + 0.125 * w if f0 is None else U0(f0)
             pu1 = u0 + 0.875 * w if f1 is None else U1(f1)
             plate(rq(pu0, pu1, D0(g0), D1(g1), rc), 2 * PAINT, 2, PAINT, "wall")
-        for f, g0, g1 in shades:                        # (its right edges shaded, short of a rounded corner)
+        for f, g0, g1 in shades if SHADE_EDGES else ():  # (its right edges shaded, short of a rounded corner)
             pd0 = D0(g0) + (E if g0 == 0.0 or g0 == CUT_D and f == 0.5 else 0.0)
             pd1 = D1(g1) - E if g1 == 1.0 else D0(g1)  # (down to the L's inner corner)
             plate(q(U1(f) - L, U1(f), pd0, pd1), r, 2, sh, FACE)
