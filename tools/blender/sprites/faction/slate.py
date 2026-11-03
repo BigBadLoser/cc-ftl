@@ -2,17 +2,19 @@
 (the middle one set back a px, its top sloping down 2 px to the front) over a painted blue stripe; a lit lip at the
 face's foot with a groove over it; its ramp light grey over a blue plate, the foot blue."""
 from .. import wall3d as T
+from ..relief_style import Design
 from .base import Faction, _style
-from .parts import PAINT, PX, PZ, body, prism
+from .parts import LINE, PAINT, PX, PZ, body, prism
 from .shell import NO, FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
 
 FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's light grey)
 BLUE = "ochre"                      # the trim's
 RAIL_D, MID_D = PX, PX / 2          # the rail's depth: its end blocks' (2 px: a PX shows 2 px down a lit face), its
                                     # middle block's (set back a px)
-RAIL_H = 6 * PZ                     # the rail's front
+RAIL_H = 7 * PZ                     # the rail's front
 END_W = 0.25                        # its end blocks along a tile (the middle block between them)
-LIP_D, LIP_H = PX, 2 * PZ           # the lip at the face's foot: its depth, its top over the ramp's top
+LIP_D, LIP_H = 1.5 * PX, 2 * PZ     # the lip at the face's foot: its depth (a 3 px top), its top over the ramp's
+                                    # top
 
 
 class SlateTones(Feature):
@@ -53,25 +55,24 @@ def slate(hull):
         if endf:
             _end_section(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
         if not endf:
-            T.run(k, ax, plane, a, b, pe, zs - 0.02, zs + LIP_H, LIP_D, FACE, 3, 0)            # the lip, its
-            T.paint(k, ax, plane, a, b, zs - 0.02, zs, LIP_D, FACE, 1)                         # foot dark
+            T.run(k, ax, plane, a, b, pe, zs - PZ, zs + LIP_H, LIP_D, FACE, 3, 0)              # the lip, its
+            T.paint(k, ax, plane, a, b, zs - PZ, zs, LIP_D, FACE, 1)                           # foot dark
             zg = zs + LIP_H + 2 * PZ                                                           # its groove
             if zg + 4 * PZ < top - 0.03:
                 for g0, g1, lvl in ((zg, zg + PZ, 4), (zg + PZ, zg + 3 * PZ, 1), (zg + 3 * PZ, zg + 4 * PZ, 4)):
                     T.paint(k, ax, plane, a, b, g0, g1, 0.0, FACE, lvl)
-            if full:                                                                           # a faint line
-                T.paint(k, ax, plane, a, b, zg + 10 * PZ, zg + 11 * PZ, 0.0, FACE, 4)
+            if full:                                                    # a faint line, 7 px under the stripe
+                T.paint(k, ax, plane, a, b, zst - 14 * PZ, zst - 13 * PZ, 0.0, FACE, 4)
         if not full:
             return
-        T.paint(k, ax, plane, a, b, zst, zst + 2 * PZ, 0.0, FACE, 1)                           # the rail's shadow
-                                                                                               # (2 px under the set-back
-                                                                                               # middle, 1 under the ends)
+        T.paint(k, ax, plane, a, b, zst, zst + PZ, 0.0, BLUE, 1)                               # the rail's shadow
         T.run(k, ax, plane, a, b, pe, zst - 6 * PZ, zst, PAINT, BLUE, 3, 0)                    # the stripe ...
         T.paint(k, ax, plane, a, b, zst - PZ, zst, PAINT, BLUE, 4)                             # ... lit on top
         for u0, u1, mid in _blocks(a, b):                                                      # the rail
             d = MID_D if mid else RAIL_D
-            prof = [(0.0, z0), (d, z0), (d, z1 - 2 * PZ), (0.0, z1)] if mid else \
-                [(0.0, z0), (d, z0), (d, z1), (0.0, z1)]
+            zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
+            prof = [(0.0, zb), (d, zb), (d, z1 - 2 * PZ), (0.0, z1)] if mid else \
+                [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]                                       # ends' line)
             m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
             prism(k, ax, plane, u0, u1, prof, BLUE, 3, mitre=m)
             zt = z1 - 2 * PZ if mid else z1                                                    # its front's top
@@ -79,11 +80,30 @@ def slate(hull):
     return face
 
 
+SPLIT = 0.55                                    # the ramp's blue plate from here down the run, a px of seam over it
+EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
+
+
+def slate_plate(plate, u0, u1, run_, **_):
+    """The base ramp's groove across the blue plate: a px line 4 px into it, half the tile wide, a 2 px tick down at
+    each end (in the plate's front tone)."""
+    uc, dg = (u0 + u1) / 2, SPLIT * run_ + 4 * EDGE
+    w = min(0.25, (u1 - u0) / 2 - 0.06)
+    for q in ((uc - w, uc + w, dg, dg + EDGE), (uc - w, uc - w + LINE, dg, dg + 3 * EDGE),
+              (uc + w - LINE, uc + w, dg, dg + 3 * EDGE)):
+        plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, "ochre")
+
+
+SLATE_RAMPS = (Design("plates", ramp=slate_plate),)
+
+
 class Slate(Faction):
     pre = "fG"
 
     def relief(self, sprite):
         return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
-                      ramp_bands=((0.55, BLUE, 3, 1 / 32),), toe_lvl={"wall": "fGT2", "blue": "fGT2"},
+                      ramp_bands=((0.0, None, 3, 0.0), (0.21, None, 2, 0.0), (SPLIT, BLUE, 4, EDGE),
+                                  (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (lit at the top, a seam, the
+                      toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,      # blue plate's lit edge)
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 3), FaceHoles(),
                                 SlateTones()))
