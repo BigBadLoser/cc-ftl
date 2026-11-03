@@ -23,7 +23,7 @@ import { siteUnderFoot } from '../away/crew';
 import { hazardHolds } from './hazard';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
-import { evaluateIntent, isUrgent, policyOf, readInput, serveDrive, type TaskView } from './utility';
+import { evaluateIntent, isUrgent, readInput, serveDrive, type TaskView } from './utility';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
 type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
