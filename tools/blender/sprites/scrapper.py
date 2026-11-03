@@ -457,9 +457,10 @@ def vent(b, L=2.3, D=0.5, r=0.17):
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
 
 
-def piston(b, L0=2.1, L1=2.6, D=0.86, r=0.08):
+def piston(b, L0=2.1, L1=2.6, r=0.11, wall=1.0):
     """The piston lying along the front edge of the top behind the bay, above the recess (after the ref's hopper
-    tile), with a dark knob capping its hatch-end side."""
+    tile), tangent to the bay's back wall (D = wall), with a dark knob capping its hatch-end side."""
+    D = wall - r
     b.cyl_L(D, TOP + r, r, L0, L1, GM, sides=12)
     b.cyl_L(D, TOP + r, r + 0.02, L0 - 0.06, L0, DARK, sides=12)
 
