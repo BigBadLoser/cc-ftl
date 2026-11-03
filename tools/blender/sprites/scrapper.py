@@ -21,7 +21,7 @@ ACCESS = (1, 2)
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
-RUST, RUST_D = "rust", "rustD"  # the drum and its bands
+RUST, RUST_D = "rust", "rustD"  # the drum and yoke (dark) with lighter raised bands
 BODY_S2 = "scBodyS2"  # a step below BODY_S: the recess frame
 BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
@@ -501,9 +501,9 @@ def drum(b):
     the hatch end, its open face toward the hatch-end block (D 1.25..1.97, z 0.03..0.76), then the drum running to the
     yoke (later), with two wide raised bands and a narrow one next to the shroud."""
     mouth(b, 2.04, 2.2, 0.12)                                                      # hollow mouth shroud
-    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, RUST, sides=20)                        # drum
+    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, RUST_D, sides=20)                        # drum
     for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
-        b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST_D, sides=20)
+        b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST, sides=20)
     rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                      # squared end shroud, under the yoke
     yoke(b)
 
@@ -515,7 +515,7 @@ def yoke(b):
     poly = [(1.24, 0.92), (1.81, 0.92), (2.156, 0.676), (2.156, 0.27), (2.06, 0.0), (2.0, 0.0),   # outer, back to foot
             (2.0, 0.27), (2.0, 0.62), (1.76, 0.79), (1.24, 0.79)]                                 # inner, foot to back
     caps = [(0, 1, 8, 9), (1, 2, 7, 8), (2, 3, 6, 7), (3, 4, 5, 6)]
-    plate_L(b, poly, 2.8, 3.0, GMD, caps)
+    plate_L(b, poly, 2.8, 3.0, RUST_D, caps)
     top_plate(b)
 
 
