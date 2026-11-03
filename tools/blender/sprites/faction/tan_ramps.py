@@ -115,19 +115,20 @@ def cushions(layout, extra=None):
         if extra:                                       # (paint: flat, rise in PAINTs; solid: a part rise proud
             extra(lambda poly, tone, rise: T.plate(k, poly, pt, nrm, 0.0, rise * PAINT, FACE, 0, (rise - 0.25) * PAINT,
                                                    fixed=tone),                    # of the slope, its top in a tone,
-                  lambda poly, rise, top_, fam="wall", lvl=2: T.plate(k, poly, pt, nrm, 0.0, rise, fam, lvl, PAINT,
-                                                                       fixed=top_),     # its sides lit as they face)
+                  lambda poly, rise, top_, fam="wall", lvl=2, base=PAINT: T.plate(k, poly, pt, nrm, 0.0, rise, fam, lvl,
+                                                                                   base, fixed=top_),  # (its sides
+                                                                                                       # lit as they
+                                                                                                       # face)
                   lambda f: u0 + f * w, lambda g: top + g * span)
     return ramp
 
 
-# the grille design: a wide cushion, then an air vent sunk a px into the slope between it and a narrow one: slats down
-# the slope over its left two thirds (their tops pale, a mid tan between them, the last one lit along its right), the
-# rest of its floor plain in shadow; its inner walls along its top and left (the ones seen) dark
-G_L, G_R = 8 / 32, 25 / 32                      # the vent, across the tile
-G_D0, G_D1 = 0.04, 0.96                         # and down the slope
-G_SLATS = 0.62                                  # the slats' share of it, from its left
-G_H = PX / 4                                    # the slats' height
+# the grille design: a wide cushion, then a raised body between it and a narrow one (its sides shaded as they face),
+# an air vent sunk a px into its top: a rim of the body round it, slats down the slope standing up from its floor
+G_L, G_R = 8 / 32, 25 / 32                      # the body, across the tile
+G_D0, G_D1 = 0.03, 0.97                         # and down the slope
+G_H, G_SINK = 2 * PX, PX / 2                    # its height; the vent's depth in it (a px)
+G_RIM = 1.0                                     # the rim round the vent, in px
 
 
 def grille(paint, solid, U, D):
@@ -135,18 +136,20 @@ def grille(paint, solid, U, D):
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
-    gu0, gu1, gd0, gd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)         # (a joint in from the cushions)
-    gs = gu0 + G_SLATS * (gu1 - gu0)
-    paint(q(gu0, gu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # its surround
-    paint(q(gs, gu1, gd0, gd1), "fTS3", 2.0)                                        # its floor in shadow
-    paint(q(gu0, gs, gd0, gd1), "fTS2", 2.0)                                        # mid tan under the slats
-    n = int((gs - gu0) / (2 * L))
+    bu0, bu1, bd0, bd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)          # (a joint in from the cushions)
+    paint(q(bu0, bu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # (the slope round it)
+    fl = G_H - G_SINK
+    solid(q(bu0, bu1, bd0, bd1), fl, "fTS2", FACE, 3)                               # the body, to the vent's floor
+    ru, rd = G_RIM * L, G_RIM * E
+    vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
+    for ua, ub, da, db in ((bu0, bu1, bd0, vd0), (bu0, bu1, vd1, bd1),             # the rim round it, up to the
+                           (bu0, vu0, vd0, vd1), (vu1, bu1, vd0, vd1)):             # body's top
+        solid(q(ua, ub, da, db), G_H, "fTW2", FACE, 3, fl)
+    n = int((vu1 - vu0) / (2 * L))
     for i in range(n):                                                              # the slats (a px, every two)
-        ua = gu0 + (2 * i + 1) * L
-        solid(q(ua, ua + L, gd0 + E, gd1), G_H, "fTW0", FACE, 4)
-    paint(q(gs - L, gs, gd0 + E, gd1), "fTW0", 3.0)                                 # the last one lit
-    paint(q(gu0, gu1, gd0, gd0 + E), "fTS5", 3.0)                                   # its top inner wall (under the
-    paint(q(gu0, gu0 + L, gd0, gd1), "fTS4", 3.0)                                   # slope's edge) and its left
+        ua = vu0 + (2 * i + 1) * L
+        if ua + L <= vu1 - L / 2:
+            solid(q(ua, ua + L, vd0, vd1), G_H, "fTW0", FACE, 4, fl)
 
 
 GRILLE = (((0.0, G_L, 0.0, 1.0, "abcd"),), ((G_R, 1.0, 0.0, 1.0, "abcd"),))
