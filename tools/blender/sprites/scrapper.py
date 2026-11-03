@@ -348,14 +348,18 @@ def recess(b, DM):
 
 def screen(b, D1):
     """The screen on the hatch-end block's front face beside the bay (placed after the ref's R0 view): a wedge-shaped
-    housing like a sun shade, standing out 1 px at its foot and further at its top, its sides sloping between
-    them, on a dark mounting plate flush with the wall about 2 px bigger all round; the screen is set into its front
-    inside a bezel."""
-    L0, L1, z0, z1, top, bot = 1.34, 1.86, 0.849, 1.18, 0.122, 0.028   # how far the top and foot edges stand out
-    m = 0.055                                                           # mounting plate margin, about 2 px
+    housing like a sun shade, standing out 1 px at its foot and further at its top, its sides sloping between them, on
+    a dark mounting plate flush with the wall about 3 px bigger all round with a screw in each corner; the screen is
+    set into its front inside a bezel."""
+    L0, L1, z0, z1, top, bot = 1.28, 1.80, 0.849, 1.18, 0.122, 0.028   # how far the top and foot edges stand out
+    m = 0.082                                                           # mounting plate margin, about 3 px
     plate = [b.P(L, D1 + 0.002, z) for L, z in ((L0 - m, z0 - m), (L1 + m, z0 - m), (L1 + m, z1 + m), (L0 - m, z1 + m))]
     fwd = [x - y for x, y in zip(b.P(L0, D1 + 1, z0), b.P(L0, D1, z0))]
     b.face(plate, DARK, fwd)
+    sl, sz = 0.02, 0.018                                                # a screw head: about 1 px, at each corner
+    for L in (L0 - m / 2, L1 + m / 2):
+        for z in (z0 - m / 2, z1 + m / 2):
+            b.face([b.P(L + u, D1 + 0.004, z + v) for u, v in ((-sl, -sz), (sl, -sz), (sl, sz), (-sl, sz))], GM, fwd)
     f0, f1 = (L0, D1 + bot, z0), (L1, D1 + bot, z0)                     # the foot's front edge
     g0, g1 = (L0, D1, z0), (L1, D1, z0)                                 # the foot's back edge, on the wall
     t0, t1 = (L0, D1 + top, z1), (L1, D1 + top, z1)                     # the top's front edge
