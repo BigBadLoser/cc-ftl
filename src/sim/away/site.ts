@@ -15,7 +15,7 @@ import { boardingTile, hoverPoint } from '../vehicles/geometry';
 import { boardCrew, occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { AwayC, AwaySiteC, type SiteRun } from './components';
 import { partyOut } from './depart';
-import { siteSpot } from './crew';
+import { fetching, siteSpot } from './crew';
 import { REPEAT, atSite, due, go, hovering, sec, wanted } from './phase';
 import { answerPickups, boxAround } from './pickup';
 import { departStep, partyAboard, settled, tripDue } from './trips';
@@ -152,9 +152,12 @@ export function depart(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
 
 /** Everyone is called aboard (the site closes, is gone, or a fight started); after AWAY_LIFT_SEC whoever is still out is lifted. */
 export function recall(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
-  holdStation(sim, id, v, r, 0);
   const out = partyOut(sim, id);
   const gone = !shipById(sim, r.site);
+  // With no hull left to hover beside (the last floor is down), the call home is answered as a pickup: the shuttle comes beside whoever
+  // is still out and they float in from where they stand.
+  if (!gone && !liveBox(sim, r.site)) for (const c of out) sim.world.get(c, AwayC)!.pickup = true;
+  holdStation(sim, id, v, r, fetching(sim, id));
   for (const c of partyAboard(sim, v)) {
     const away = sim.world.get(c, AwayC)!;
     // Aboard and not on the way out (a queued `eva.out` runs the next tick; one still aboard after that was refused): home with the rest

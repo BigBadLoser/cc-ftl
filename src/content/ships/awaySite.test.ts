@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, START_NODE, ShipC, VehicleC, deserialize, galaxyIndex, homeShip, serialize, type Sim } from '../../sim';
 import { giveItems } from '../../sim/story/effects';
-import { ModuleC, placementError, shipGrid, spawnModule } from '../../sim';
+import { ModuleC, Struct, placementError, shipGrid, spawnModule, writeStruct } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
 import { SourceReach, airSources } from '../../sim/eva/sources';
 import { content } from '../index';
@@ -10,7 +10,7 @@ import { departCheck, unsafeMembers } from '../../sim/away/depart';
 import { awayLeaks } from '../../sim/away/owned';
 import { drawAir, setAirHolds, sourceSupply } from '../../sim/eva/airLedger';
 import { passagesOf } from '../../sim/away/passage';
-import { AirHoldsC, SuitC } from '../../sim/eva/components';
+import { AirHoldsC, EvaFloatC, SuitC } from '../../sim/eva/components';
 import { ferryFree } from '../../sim/ferry/pick';
 import { shipIdOf } from '../../sim/regions';
 import { AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_LIFT_SEC } from '../../sim/tuning';
@@ -220,6 +220,24 @@ describe('away sites', () => {
     expect(sim.world.has(shuttle, SiteRunC)).toBe(false);
     expect(sim.world.get(shuttle, VehicleC)).toMatchObject({ state: 'stowed', autopilot: false });
     expect(passagesOf(sim, shuttle)).toEqual([]);
+  });
+
+  it('a recall with no hull left to hover beside fetches whoever is out like a pickup: they float in long before the lift', () => {
+    const { sim, wreck, shuttle, party } = landed();
+    // The last floor is down: nothing is left to stand on, and the party floats where the wreck was.
+    const g = shipGrid(sim, wreck)!;
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) writeStruct(g, x, y, Struct.Space);
+    sim.enqueue({ type: 'away.recall', ship: wreck });
+    const start = sim.tick;
+    let floated = false;
+    const all = play(sim, 20 * (AWAY_LIFT_SEC + 200), (a) => {
+      if (party.some((c) => sim.world.get(c, EvaFloatC)?.mode === 'back')) floated = true;
+      return of(a, 'away.departed').length > 0;
+    });
+    expect(floated).toBe(true); // they came aboard by the hatch, not by the lift
+    expect(of(all, 'away.departed')).toMatchObject([{ ship: wreck, vehicle: shuttle, home: true }]);
+    expect(sim.tick - start).toBeLessThan(20 * (AWAY_LIFT_SEC / 2)); // well under the lift
+    for (const c of party) expect(sim.world.has(c, AboardC)).toBe(true);
   });
 
   it('home cover: a crew member who could take an open emergency at home is not given a passage', () => {
