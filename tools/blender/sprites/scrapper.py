@@ -409,10 +409,10 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
         b.prism_D(prof, D1, D1 + lip, GMD)
 
 
-def dial(b, Lc=1.5, Dc=0.5, r=0.36, h=0.16, rim=0.08, sink=0.03, flare=0.05, chamfer=0.09):
+def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, chamfer=0.09):
     """The dial on top of the hatch-end block (after the ref's tile, link 04, centred on the back-row tile): a square
     housing with small cut corners standing h above the top, its sides sloping out (flare) to its foot, its gauge face
-    sunk into it inside a rim."""
+    sunk into it inside a rim. Its foot stays on the flat top (L 1 + STEP .. 2 - STEP), clear of the slopes."""
     def oct_(rr):                                                       # a square, half size rr, corners cut by ch
         ch = chamfer + (rr - r) * (math.sqrt(2) - 1)                    # (parallel offsets keep the cuts at 45 deg)
         return [(Lc + x, Dc + y) for x, y in ((rr, -rr + ch), (rr, rr - ch), (rr - ch, rr), (-rr + ch, rr),
