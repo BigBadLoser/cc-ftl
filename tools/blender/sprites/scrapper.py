@@ -247,11 +247,12 @@ def scrapper(rot):
     hatch(b, (3.97, WALL), (3.5, EDGE), D0, DM)                         # far end: one hatch, back row
     # far end, front row: the exhaust, a housing standing out of the slope's top and a nozzle pointing out of the end
     fA, fB = (3.97, WALL), (3.5, EDGE)
-    b.prism_D(exhaust_housing(fA, fB), DM + 0.1, D1 - 0.1, GMD, GM)
-    fm = math.dist(fA, fB) / 2
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.17, 0, 0.04, GMD)             # flange, foot flat on the slope
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.13, 0.04, 0.195, GM)          # nozzle barrel
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.08, 0.195, 0.2, DARK)         # bore
+    px, fm, dc = 0.028, math.dist(fA, fB) / 2, (DM + D1) / 2             # px: one pixel across D at 1x
+    flange = 0.17 + px / 2
+    b.prism_D(exhaust_housing(fA, fB), dc - flange - px, dc + flange + px, GMD, GM)   # a pixel wider than the flange
+    slope_cyl(b, fA, fB, fm, dc, flange, 0, 0.04, GMD)                       # flange, foot flat on the slope
+    slope_cyl(b, fA, fB, fm, dc, 0.13 + px / 2, 0.04, 0.195, GM)            # nozzle barrel
+    slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.195, 0.2, DARK)           # bore
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
