@@ -530,7 +530,7 @@ def top_plate(b):
     caps = [(0, 1, 6, 7), (1, 2, 5, 6), (2, 3, 4, 5)]
     lo, hi, t = 0.92, 0.92 + 0.1, 0.15                                  # 0.1 = about 4 px of height; thickness
     top = lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08  # noqa: E731
-    plate_z(b, poly, lambda L: top(L) - t, top, RUST, caps)
+    plate_z(b, poly, lambda L: top(L) - t, top, RUST_D, caps)
 
 
 def scrapper(rot):
