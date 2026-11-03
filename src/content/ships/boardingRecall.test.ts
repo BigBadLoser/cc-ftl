@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { SuitC, AboardC, DraftedC, ModuleC, PathC, PositionC, VehicleC, deserialize, placementError, serialize, spawnModule, stampShip, type Sim } from '../../sim';
+import { SuitC, AboardC, DraftedC, EquipC, FighterC, HealthC, ModuleC, StunC, PathC, PositionC, VehicleC, deserialize, placementError, serialize, spawnModule, stampShip, type Sim } from '../../sim';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { orderLaunch } from '../../sim/boarding/launch';
 import { nearestExterior } from '../../sim/eva/shuttle';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
-import { airlockOf, crewOn, dockParty, launchParty, modulesOf, nth, of, run, setup, shuttleOf } from './boardingFixture';
+import { airlockOf, crewOn, dockParty, launchParty, modulesOf, nth, of, raiderCrew, run, setup, shuttleOf } from './boardingFixture';
 
 const home = (sim: Sim, c: number): boolean => shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 1);
 
@@ -68,14 +68,56 @@ describe('recall', () => {
     expect(party.every((c) => home(sim, c))).toBe(true);
   });
 
-  it('fails with a reason and leaves the crew put when they are of no party (landed by hand), or on their own ship', () => {
+  it('a boarder recalled under fire walks back to the shuttle: the fight does not send them hunting the defender', () => {
     const sim = setup();
-    const { party } = dockParty(sim);
+    const { shuttle, party } = launchParty(sim, 1);
+    const c = party[0]!;
+    sim.world.add(c, EquipC, { weapon: 'item.rifle' }); // armed: it would fight back
+    const at = sim.world.get(c, PositionC)!;
+    const raider = raiderCrew(sim)[0]!; // a defender wakes up beside them; both outlast the fight
+    sim.world.remove(raider, StunC);
+    sim.world.add(raider, PositionC, { x: at.x, y: at.y - 1, toX: at.x, toY: at.y - 1, progress: 0, facing: 0 });
+    for (const id of [c, raider]) sim.world.get(id, HealthC)!.max = sim.world.get(id, HealthC)!.hp = 100000;
+    run(sim, 200, () => (sim.world.get(c, FighterC)?.mode ?? 'idle') !== 'idle');
+    expect(sim.world.get(c, FighterC)?.mode).not.toBe('idle'); // in the fight
+    sim.enqueue({ type: 'crew.recall', ids: party });
+    const out = run(sim, 2000, () => home(sim, c) && !sim.world.has(shuttle, SiteRunC));
+    expect(of(out, 'crew.recallStarted')).toHaveLength(1);
+    expect(home(sim, c)).toBe(true);
+  });
+
+  it('a party landed by hand (shuttle panel, no launch) is recalled the same way: it joins a boarding site, the shuttle brings everyone home', () => {
+    const sim = setup();
+    const { shuttle, pilot, party } = dockParty(sim);
+    sim.enqueue({ type: 'crew.sabotage', ids: party, module: modulesOf(sim, 2, 'module.reactor')[0]! });
+    run(sim, 100);
+    sim.enqueue({ type: 'crew.recall', ids: party });
+    const out = run(sim, 3000, () => !sim.world.has(shuttle, SiteRunC) && [...party, pilot].every((c) => home(sim, c)));
+    expect(of(out, 'command.rejected')).toEqual([]);
+    expect(of(out, 'crew.recallFailed')).toEqual([]);
+    expect(of(out, 'crew.recallStarted')).toEqual([{ type: 'crew.recallStarted', vehicle: shuttle, ship: nth(sim, 2), crew: [...party].sort((a, b) => a - b), left: [] }]);
+    expect(of(out, 'crew.sabotageEnded').map((e) => e.reason)).toEqual(['cancelled', 'cancelled']);
+    expect(of(out, 'away.opened')).toMatchObject([{ ship: nth(sim, 2), vehicle: shuttle }]);
+    expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
+    for (const c of [...party, pilot]) {
+      expect(home(sim, c)).toBe(true); // the one left sitting in the shuttle comes home with it
+      expect(sim.world.has(c, AwayC)).toBe(false);
+      expect(sim.world.has(c, AboardC)).toBe(false);
+    }
+    expect(sim.world.has(nth(sim, 2), AwaySiteC)).toBe(false);
+  });
+
+  it('fails with a reason and leaves the crew put when no shuttle of theirs is docked at the ship, or they are on their own ship', () => {
+    const sim = setup();
+    const { shuttle, party } = dockParty(sim);
+    sim.enqueue({ type: 'vehicle.undock', vehicle: shuttle });
+    run(sim, 30, () => sim.world.get(shuttle, VehicleC)!.state !== 'docked');
     const where = party.map((c) => ({ ...sim.world.get(c, PositionC)! }));
     sim.enqueue({ type: 'crew.recall', ids: party });
     const out = run(sim, 60);
     expect(of(out, 'command.rejected')).toEqual([{ type: 'command.rejected', command: 'crew.recall', reason: 'notAboard' }]);
     expect(of(out, 'crew.recallFailed')).toEqual([{ type: 'crew.recallFailed', vehicle: 0, crew: [...party].sort((a, b) => a - b), reason: 'notAboard' }]);
+    expect(sim.world.has(nth(sim, 2), AwaySiteC)).toBe(false);
     party.forEach((c, i) => expect(sim.world.get(c, PositionC)).toMatchObject({ x: where[i]!.x, y: where[i]!.y }));
     sim.enqueue({ type: 'crew.recall', ids: crewOn(sim, 1) });
     expect(of(run(sim, 5), 'command.rejected').map((e) => e.reason)).toEqual(['notAboard']);

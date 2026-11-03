@@ -1217,16 +1217,21 @@ stranded rules). Enemy boarders (`systems/boardingAi.ts`) stay NPC doctrine.
     refuse a fight; the site's own run picks up under fire.
   - `standBy`: the party lands drafted (`standBy` in `site.ts`; the `drafted.away` sweep keeps the draft on such a site).
   - `dock`: the airlock `flyTo` docks at while `dockError` allows; else any free one, else it hovers and the party goes out of the hatch.
-  - `invited` (a named party): `postInvited` (passage.ts) holds one passage per invitee at once (`Job.holder`, attached and walked, drafted
-    or not; `passageFits` lets nobody else take it). An invitee who lets go of it stays home; at the first departure, or after
+  - `invited` (a named party): `postInvited` (passage.ts) holds one passage per invitee at once (`Job.holder`, attached and walked;
+    `passageFits` lets nobody else take it). The pick is an order: a sleeping invitee wakes, and one not drafted already is held drafted (`Drafted.away`, walked
+    as an errand by `drafted.ts`), so no need, emergency or job takes them off it; the `drafted.away` sweep keeps that hold while they are
+    invited and not aboard. An invitee who lets go of it (dead, downed, cut off, or a player order such as a move) stays home; at the first departure, or after
     `AWAY_INVITE_WAIT_SEC` (75) with nobody aboard, `endInvites` drops the rest (`away.leftBehind`). Owned row: ends when the run leaves
     'board'.
 - **Recall** (`recall.ts` -> `away/recall.ts` `recallCrew`, `crew.recall`): party members out on their site are undrafted, their sabotage
   cancelled, and marked `Away.recall` (owned row: ends with the party; stale only if they stand off their site). `awayReturn` is 0 for
-  them, `passengerUrgent` true: the trip home leaves at once, and the run goes back for anyone who stays. `isBoarding` is false for a party
-  member on the way back aboard (`recall`, `pickup`, `ride`), so the crew AI's return drive steers them, not the fight code.
+  them, `passengerUrgent` true: the trip home leaves at once, and the run goes back for anyone who stays. A party member on the way back aboard
+  (`recall`, `pickup`, `ride`: `headingAboard` in fight/relations.ts) is not boarding (`isBoarding`), and `stepFighter` leaves them idle
+  (no hunting, no fleeing), so the crew AI's return drive steers them, also under fire.
   `crew.recallStarted` / `crew.recallFailed` (`noCrew`, `notAboard`, `incapacitated`) at the order; `away.returned` is the "back aboard"
-  log line. A party landed by hand (shuttle panel) is of no site and is not recalled.
+  log line. A party landed by hand (shuttle panel, no launch) joins a boarding site when recalled (`joinLanded` in `boarding/recall.ts`):
+  the ship's site if one is open, else one opened for the lowest free shuttle of their side docked there (its run starts in 'fly' and
+  finds itself at the site; those still sitting in it are of the party, `Away.home`). With no such shuttle they are `notAboard`.
 - **Owner** (`site.ts`, `boardingSiteSystem`): a boarding site closes once `invited` is consumed and nobody of its party is left.
 - **Gone:** `RecallC`, `BoardLaunchC`, `BoardHoldC`, `launchSystem`, `recallSystem`, `RECALL_BOARD_TICKS` (SAVE 86). `boardingReserved` only
   marks a shuttle docked at a hostile ship (landed by hand).

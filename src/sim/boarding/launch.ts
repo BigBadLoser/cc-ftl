@@ -1,4 +1,4 @@
-import { AwayC, AwaySiteC, SiteRunC } from '../away/components';
+import { AwayC, AwaySiteC, SiteRunC, type AwaySite } from '../away/components';
 import { openSite } from '../away/handlers';
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC } from '../crew/components';
@@ -42,9 +42,13 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   if (sim.world.has(ship, AwaySiteC)) return 'siteOpen'; // one site per ship: a party already boards it
   const opened = openSite(sim, ship, 'boarding', vehicle);
   if (opened === 'noShuttle') return 'notStowed';
-  Object.assign(sim.world.get(ship, AwaySiteC)!, { demand: {}, fight: 'stay', standBy: true, dock: airlock, invited: ids });
+  Object.assign(sim.world.get(ship, AwaySiteC)!, boardingSite(airlock), { invited: ids });
   return null;
 }
+
+/** What makes an away site a boarding: no work demand (no rotation), it carries on through the fight it is part of, its party lands
+ * drafted (standing by for orders), and its shuttle docks at `airlock` (another one, or the hatch, if that one is lost). */
+export const boardingSite = (airlock: number): Pick<AwaySite, 'demand' | 'fight' | 'standBy' | 'dock'> => ({ demand: {}, fight: 'stay', standBy: true, dock: airlock });
 
 /** The shuttle whose boarding launch has picked `crew` and not taken them aboard yet (0 if none): the party is reserved from the order on. */
 export function launchOf(sim: Sim, crew: number): number {

@@ -59,8 +59,16 @@ export function onWreck(sim: Sim, crew: number): boolean {
  * drive takes them to the shuttle, not the fight code to the bridge.
  */
 export function isBoarding(sim: Sim, crew: number): boolean {
+  return isInvader(sim, crew) && !onWreck(sim, crew) && !headingAboard(sim, crew);
+}
+
+/**
+ * True for a party member on the way back aboard their site's shuttle (called home by the player, fetched, or riding the round trip): the
+ * crew AI's return drive steers them, and the fight code neither sends them hunting nor fleeing (fighter.ts), so the walk is theirs.
+ */
+export function headingAboard(sim: Sim, crew: number): boolean {
   const away = sim.world.get(crew, AwayC);
-  return isInvader(sim, crew) && !onWreck(sim, crew) && !(away && (away.recall || away.pickup || away.ride));
+  return !!away && !!(away.recall || away.pickup || away.ride);
 }
 
 /** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */

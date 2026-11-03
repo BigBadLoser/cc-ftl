@@ -1,5 +1,6 @@
-import { CrewC, DeadC, JobC, PathC, PositionC, PrioritiesC, type Job, type Path, type WorkCategory } from '../crew/components';
+import { CrewC, DeadC, DraftedC, JobC, PathC, PositionC, PrioritiesC, type Crew, type Job, type Path, type WorkCategory } from '../crew/components';
 import { abortTask, attachJob } from '../ai/task';
+import { wakeUp } from '../ai/machines/sleep';
 import { planWalk } from '../eva/route';
 import { isEmergency } from '../ai/emergency';
 import { isIncapacitated, isSettled, origin } from '../crew/helpers';
@@ -52,8 +53,8 @@ export function dropPassages(sim: Sim, vehicle: number): void {
 
 /**
  * The seats of a named party (`AwaySite.invited`, picked by the player): one passage for each invitee not aboard yet, held for them at once
- * and walked to (no choice of the scheduler's). An invitee who lets go of theirs (downed, a way cut off, a drive took them off it) stays
- * home: they leave the list, and the player hears of it (`away.leftBehind`). Such a seat is not for the site's work: it is in 'patrol'
+ * and walked to (no choice of the scheduler's), drafted while they walk unless the player has drafted them already. An invitee who lets go
+ * of theirs (downed or dead, a way cut off, or ordered elsewhere by the player) stays home: they leave the list, and the player hears of it (`away.leftBehind`). Such a seat is not for the site's work: it is in 'patrol'
  * (standing by).
  */
 function postInvited(sim: Sim, vehicle: number, site: number): void {
@@ -75,11 +76,19 @@ function postInvited(sim: Sim, vehicle: number, site: number): void {
       if (sim.world.has(c, CrewC) && !sim.world.has(c, DeadC)) left.push(c);
       continue;
     }
+    const crew = sim.world.get(c, CrewC) as Crew;
+    if (crew.activity === 'sleeping') wakeUp(sim, c, crew); // the order wakes them (and lets go of the bed)
     abortTask(sim, c, 'order');
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, { category: 'patrol', kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: c, holder: c, target: vehicle, site });
     attachJob(sim, c, id);
     (sim.world.get(c, PathC) as Path).steps = plan.steps;
+    // The player's pick is an order: the invitee is held (drafted, walking their passage as an errand: drafted.ts) so no need, emergency
+    // or job takes them off it. The hold is the away code's (`Drafted.away`, released in owned.ts once they are aboard or left behind).
+    if (!sim.world.has(c, DraftedC)) {
+      sim.world.add(c, DraftedC, { target: null, away: true });
+      crew.activity = 'drafted';
+    }
   }
   if (left.length) sim.events.emit({ type: 'away.leftBehind', ship: site, vehicle, crew: left });
 }

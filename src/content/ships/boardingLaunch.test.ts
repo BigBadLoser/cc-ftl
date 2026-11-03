@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AssignmentC, DraftedC, FerryC, JobC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
+import { AboardC, AssignmentC, CrewC, DraftedC, FerryC, JobC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { passagesOf } from '../../sim/away/passage';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
@@ -104,6 +104,61 @@ describe('boarding.launch', () => {
       expect(sim.world.has(c, DraftedC)).toBe(false);
       expect(sim.world.has(c, AwayC)).toBe(false);
     }
+  });
+
+  it('the picked party is held for the launch: drafted while they walk, an emergency at home does not take them off it', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const home = crewOn(sim, 1);
+    const party = home.slice(0, 3);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    for (const c of party) {
+      expect(sim.world.get(c, DraftedC)).toMatchObject({ target: null, away: true }); // the launch's hold, not the player's draft
+      expect(heldPassage(sim, c)).toBe(true);
+    }
+    // A fire breaks out at home, by the crew who stay, and the party is hungry: neither calls them off.
+    const stay = sim.world.get(home[home.length - 1]!, PositionC)!;
+    sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), x: Math.round(stay.x), y: Math.round(stay.y) });
+    for (const c of party) sim.enqueue({ type: 'debug.setCrew', id: c, hunger: 5 });
+    const onEnemy = (c: number) => !sim.world.has(c, AboardC) && sim.world.has(c, PositionC) && shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 2);
+    const events = run(sim, 3000, () => party.every(onEnemy));
+    expect(of(events, 'away.leftBehind')).toEqual([]);
+    expect(party.every(onEnemy)).toBe(true);
+    for (const c of party) expect(sim.world.get(c, DraftedC)?.away).toBeUndefined(); // landed: standing by on the player's draft
+  });
+
+  it('a sleeping crew member picked for the party wakes up and goes', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    const sleeper = party[1]!;
+    sim.enqueue({ type: 'debug.setCrew', id: sleeper, rest: 0 });
+    run(sim, 2000, () => sim.world.get(sleeper, CrewC)!.activity === 'sleeping');
+    expect(sim.world.get(sleeper, CrewC)!.activity).toBe('sleeping');
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    const onEnemy = (c: number) => !sim.world.has(c, AboardC) && sim.world.has(c, PositionC) && shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 2);
+    const events = run(sim, 3000, () => party.every(onEnemy));
+    expect(of(events, 'away.leftBehind')).toEqual([]);
+    expect(party.every(onEnemy)).toBe(true);
+  });
+
+  it('a picked crew member the player orders elsewhere before take-off stays home, on the player\'s draft, and the player hears of it', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    const [gone, kept] = party as [number, number];
+    const at = sim.world.get(gone, PositionC)!;
+    sim.enqueue({ type: 'crew.moveTo', id: gone, x: Math.round(at.x), y: Math.round(at.y) });
+    const events = run(sim, 3);
+    expect(of(events, 'away.leftBehind')).toMatchObject([{ vehicle: shuttle, crew: [gone] }]);
+    expect(heldPassage(sim, gone)).toBe(false);
+    expect(sim.world.get(gone, DraftedC)).toBeDefined();
+    expect(sim.world.get(gone, DraftedC)?.away).toBeUndefined(); // the player's draft now
+    expect(heldPassage(sim, kept)).toBe(true);
+    expect(sim.world.get(nth(sim, 2), AwaySiteC)?.invited).toEqual([kept]);
   });
 
   it('a party whose shuttle is destroyed before take-off is let go: no one stays drafted or walking', () => {
