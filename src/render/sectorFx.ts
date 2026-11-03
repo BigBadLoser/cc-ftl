@@ -74,7 +74,7 @@ export function createSectorFx(
   hull: (ship: number) => GridLike | undefined = () => undefined,
 ): SectorFx {
   const shots = new Map<number, { spr: Sprite; x: number; y: number; from: { x: number; y: number } }>();
-  const shields = createShieldView(world, atlas, L.fxAdd, hull);
+  const shields = createShieldView(world, atlas, { dome: L.fx, add: L.fxAdd }, hull);
   const flashes: Flash[] = [];
   const tracers: Tracer[] = [];
   const floaters: Floater[] = [];

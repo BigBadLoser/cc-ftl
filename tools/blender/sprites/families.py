@@ -41,7 +41,7 @@
   pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
   mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
-  fx_shield the shield bubble's pieces: rim shells per layer, ripple, break, regen, down, ion drain, pierce (fx_shield.py)
+  fx_shield the shield dome's sprite pieces: hit flashes (shield, ion) and the mass-driver tear; the dome is a shader (fx_shield.py)
   starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
   backdrop  the node's central body drawn large behind the main view: backdrop.body.<kind>.v<n>, 320 px frame (backdrop_bodies.py,
             backdrop_pulsar.py)
