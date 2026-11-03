@@ -587,8 +587,9 @@ def scrapper(rot):
     dial(b)
     vent(b)
     piston(b)
-    from .scrapper_detail import rivets, seams
+    from .scrapper_detail import panels, rivets, seams
     seams(b, BODY_D)
+    panels(b, BODY_D, BODY)
     if os.environ.get("SCRAPPER_RIVETS", "1") != "0":
         rivets(b, BODY_S)
     if os.environ.get("SCRAPPER_WEAR", "1") != "0":

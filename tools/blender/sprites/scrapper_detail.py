@@ -89,3 +89,26 @@ def rivets(b, col, step=0.2, gap=0.05):
         rivet_wall(b, D1, 1, 1.0 + gap, z, col)
         for L, side in ((0.03, -1), (3.97, 1)):
             rivet_end(b, L, side, 1.0 + gap, z, col)
+
+
+def panel_wall(b, D, side, L0, L1, z0, z1, col, lit, w=0.04, h=0.03, hb=0.026):
+    """A recessed panel on the long wall at D, painted the way the belt is: its top edge and sides in shadow (col), its
+    bottom edge a lit bevel facing up (lit), as a plate pressed in reads from above."""
+    d = D + side * OFF
+    def paint(q, c, out):
+        _paint(b, q, c, out)
+    paint([(L0, d, z1 - h), (L1, d, z1 - h), (L1, d, z1), (L0, d, z1)], col, (0, side, 0))           # top
+    for a, c in ((L0, L0 + w), (L1 - w, L1)):                                                     # sides
+        paint([(a, d, z0), (c, d, z0), (c, d, z1 - h), (a, d, z1 - h)], col, (0, side, 0))
+    dd = D + side * (OFF + hb)                                                                    # bottom bevel
+    paint([(L0, d, z0 + hb), (L1, d, z0 + hb), (L1, dd, z0), (L0, dd, z0)], lit, (0, side, 1))
+
+
+def panels(b, col, lit, m=0.11, mz=0.09):
+    """Recessed panels on the long walls, one in each plate the seams mark out under the belt, m in from the seams
+    (clear of the rivet rows beside them) and mz in from the belt and the plinth."""
+    D0, D1 = 0.03, 1.97
+    for D, side, spans in ((D0, -1, ((0.03, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 3.97))),
+                           (D1, 1, ((0.03, 1.0),))):
+        for L0, L1 in spans:
+            panel_wall(b, D, side, L0 + m, L1 - m, S.BASE + mz, S.WALL - mz, col, lit)
