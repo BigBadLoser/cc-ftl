@@ -5,6 +5,7 @@ import { CrewC, DeadC, HealthC, NeedsC, PositionC, type Job } from '../crew/comp
 import { TICK_HZ } from '../time';
 import { AboardC, VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
+import { vehicleFaction } from '../vehicles/lifecycle';
 import { hatchSpot } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
 import { AllegianceC } from '../fight/components';
@@ -102,6 +103,12 @@ export function passengerUrgent(sim: Sim, id: number): boolean {
   return !!sim.world.get(id, AwayC)?.recall || hurt(sim, id) || needBelow(sim, id, AWAY_URGENT_REST, AWAY_URGENT_HUNGER, AWAY_URGENT_CHARGE);
 }
 
+/** True if the crew member is of the side of the shuttle (its home ship's): its passages, pickups and seats are theirs. */
+export function ofSide(sim: Sim, crew: number, vehicle: number): boolean {
+  const v = sim.world.get(vehicle, VehicleC);
+  return !!v && sim.world.get(crew, AllegianceC)?.faction === vehicleFaction(sim, v);
+}
+
 /**
  * The passage checks of `jobFits`: a player crew member not already of a party, every need they have at AWAY_GO or more (rested, fed or
  * charged enough to stay a while). A seat beyond the shuttle's suits (`airless`) is for crew who do not breathe.
@@ -109,7 +116,7 @@ export function passengerUrgent(sim: Sim, id: number): boolean {
 export function passageFits(sim: Sim, crew: number, job: Job): boolean {
   if (job.kind !== 'passage') return true;
   if (job.holder && job.holder !== crew) return false; // a named party's seat (`AwaySite.invited`)
-  if (sim.world.has(crew, AwayC) || sim.world.get(crew, AllegianceC)?.faction !== 'player' || (job.airless && needsAir(sim, crew))) return false;
+  if (sim.world.has(crew, AwayC) || !ofSide(sim, crew, job.target ?? 0) || (job.airless && needsAir(sim, crew))) return false;
   return sim.world.has(crew, NeedsC) && !needBelow(sim, crew, AWAY_GO, AWAY_GO, AWAY_GO);
 }
 

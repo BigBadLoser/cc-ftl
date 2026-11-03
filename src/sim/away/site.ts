@@ -88,7 +88,7 @@ function sendOut(sim: Sim, id: number, v: Vehicle, keepRiders: boolean): void {
       sim.enqueue({ type: 'eva.out', vehicle: id, crew: c });
       continue;
     }
-    const suit = needsAir(sim, c) && !!grid && isThin(grid, at.x, at.y);
+    const suit = needsAir(sim, c) && ((!!grid && isThin(grid, at.x, at.y)) || !!sim.world.get(away.site, AwaySiteC)?.outside);
     if (suit && vehicleSuits(sim, v) <= 0) continue;
     unboardCrew(sim, c, id, at);
     standBy(sim, c, !!sim.world.get(away.site, AwaySiteC)?.standBy);
@@ -135,8 +135,10 @@ function beside(sim: Sim, id: number, v: Vehicle, r: SiteRun): boolean {
   watchDowned(sim, id);
   const spot = onStation && siteSpot(sim, id, r.site);
   if (!spot) return false;
-  keepZone(sim, r.site, id, spot);
-  loadStep(sim, r.site, id, r.lastTrip);
+  if (!sim.world.get(r.site, AwaySiteC)?.noLoot) {
+    keepZone(sim, r.site, id, spot);
+    loadStep(sim, r.site, id, r.lastTrip);
+  }
   return true;
 }
 

@@ -513,8 +513,12 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   - airlock store 3 tanks (refilling 1 per 5 min with life support), shuttle store 6 tanks.
 - **A general "send a party here" order** comes only when a second feature needs it. Until then `away.open` is a debug
   command.
-- **Planned follow-up (not in #286):** move boarding launch/recall and the shipyard's contractors onto away sites. Open a
-  GitHub issue for it when slice 3 lands, so it isn't forgotten.
+- **Follow-up (#287):** boarding launch and recall run on away sites (user decisions via the orchestrator, 2026-11-03): the
+  player's pick is the site's named party, a boarding site carries on through its fight (`fight: 'stay'`), the party lands
+  drafted, `crew.recall` calls members home on the site's run (an urgent trip; the run comes back for those who stay), and the
+  site closes when nobody of the party is left. The boarding shuttle flies itself (no pilot pick). The shipyard's contractors
+  are an away site on the player's ship (owner 'yard', the station's shuttle, the contractors its party) and draw air like
+  anyone: a crew member draws a docked shuttle of their own side or run before the airlock's store.
 ---
 
 ## Starmap and factions

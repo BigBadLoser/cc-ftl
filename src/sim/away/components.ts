@@ -8,7 +8,7 @@ import type { WorkCategory } from '../crew/components';
  * absent, the site counts the open jobs on its grid.
  */
 export interface AwaySite {
-  owner: 'debug' | 'salvage' | 'boarding';
+  owner: 'debug' | 'salvage' | 'boarding' | 'yard';
   status: 'open' | 'closing';
   vehicle: number;
   since: number;
@@ -29,6 +29,10 @@ export interface AwaySite {
    * first leaves home: whoever is not aboard by then stays (`away.leftBehind`).
    */
   invited?: number[];
+  /** The party's work is outside the hull: they land suited from the shuttle's stock even where they step out into air (the shipyard). */
+  outside?: true;
+  /** Nothing on the site is the party's to take home: no staging zone, no hauls into it, nothing loaded (a yard building on your own ship). */
+  noLoot?: true;
 }
 export const AwaySiteC = defineComponent<AwaySite>('awaySite');
 

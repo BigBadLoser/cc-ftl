@@ -9,8 +9,8 @@
   import './steel.css';
 
   /**
-   * The BOARD party picker (issue #205): which shuttle, which crew (the first one picked flies it) and which airlock of the enemy ship.
-   * Confirm sends one `boarding.launch`; the sim walks the crew to the bay, flies the shuttle and steps the passengers out. The game keeps
+   * The BOARD party picker (issue #205): which shuttle, which crew and which airlock of the enemy ship. Confirm sends one
+   * `boarding.launch`; the sim walks the crew to the bay, the shuttle flies itself there (#287) and the party steps out. The game keeps
    * running behind it, as it does behind the flee confirmation.
    */
   let { api, plan, enemyName, open, onClose }: { api: UiApi; plan: BoardPlan; enemyName: string; open: boolean; onClose: () => void } = $props();
@@ -82,7 +82,7 @@
       <p class="one"><Icon name="shuttle" size={16} /><b>{chosen.name}</b><span>{chosen.reason ?? `${seats} seats`}</span></p>
     {/if}
 
-    <div class="sec">Party <span class="n" data-testid="board-seats">{picked.length}/{seats}</span><small>first picked flies it over</small></div>
+    <div class="sec">Party <span class="n" data-testid="board-seats">{picked.length}/{seats}</span></div>
     <ul class="crew" data-testid="board-crew">
       {#each plan.crew as c (c.id)}
         {@const at = picked.indexOf(c.id)}
@@ -90,7 +90,7 @@
           <label title={c.reason ?? ''}>
             <input type="checkbox" checked={at >= 0} disabled={!!c.reason || (at < 0 && picked.length >= seats)} onchange={() => toggle(c.id)} data-testid="board-crew-{c.id}" />
             <span class="nm">{c.name}</span><small>{c.role}</small>
-            <span class="role">{at === 0 ? 'pilot' : at > 0 ? 'boarder' : c.reason ?? ''}</span>
+            <span class="role">{at >= 0 ? 'boarder' : c.reason ?? ''}</span>
             <span class="hp" style:--w="{Math.round(c.hp * 100)}%"><i></i></span>
           </label>
         </li>

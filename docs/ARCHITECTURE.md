@@ -1203,6 +1203,43 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   - Commands: `away.open {ship}` (debug only) and `away.recall {ship}`. Combat sets `paused` and evacuates.
   - Events: `away.opened|closed|departed|returned|stranded|pickup`. The salvage `teamSent|teamHome|cargoRun` events go.
 
+### Boarding (#287), `src/sim/boarding/`
+
+A boarding is an away site on the enemy ship; boarding code keeps only what is boarding's own (targets, sabotage, capture, the
+stranded rules). Enemy boarders (`systems/boardingAi.ts`) stay NPC doctrine.
+
+- **Launch** (`launch.ts`, `boarding.launch`): the order checks the shuttle (player's, free, stowed, empty), the party (the player's,
+  not of a party nor picked by another launch: `launchOf`), the airlock (hostile ship, `dockError`) and that no site is open on that ship
+  (`siteOpen`), then `openSite(ship, 'boarding', vehicle)` with: `demand: {}` (no work seats, no rotation), `fight: 'stay'`,
+  `standBy: true`, `dock: airlock`, `invited: party`.
+- **Site fields the owner chooses** (general, no owner checks in `away/`):
+  - `fight: 'stay'`: a fight does not call the party in (`fightCalls`, read by `wanted` and `siteRecalled`). Free pickup runs still
+    refuse a fight; the site's own run picks up under fire.
+  - `standBy`: the party lands drafted (`standBy` in `site.ts`; the `drafted.away` sweep keeps the draft on such a site).
+  - `dock`: the airlock `flyTo` docks at while `dockError` allows; else any free one, else it hovers and the party goes out of the hatch.
+  - `invited` (a named party): `postInvited` (passage.ts) holds one passage per invitee at once (`Job.holder`, attached and walked, drafted
+    or not; `passageFits` lets nobody else take it). An invitee who lets go of it stays home; at the first departure, or after
+    `AWAY_INVITE_WAIT_SEC` (75) with nobody aboard, `endInvites` drops the rest (`away.leftBehind`). Owned row: ends when the run leaves
+    'board'.
+- **Recall** (`recall.ts` -> `away/recall.ts` `recallCrew`, `crew.recall`): party members out on their site are undrafted, their sabotage
+  cancelled, and marked `Away.recall` (owned row: ends with the party; stale only if they stand off their site). `awayReturn` is 0 for
+  them, `passengerUrgent` true: the trip home leaves at once, and the run goes back for anyone who stays. `isBoarding` is false for a party
+  member on the way back aboard (`recall`, `pickup`, `ride`), so the crew AI's return drive steers them, not the fight code.
+  `crew.recallStarted` / `crew.recallFailed` (`noCrew`, `notAboard`, `incapacitated`) at the order; `away.returned` is the "back aboard"
+  log line. A party landed by hand (shuttle panel) is of no site and is not recalled.
+- **Owner** (`site.ts`, `boardingSiteSystem`): a boarding site closes once `invited` is consumed and nobody of its party is left.
+- **Gone:** `RecallC`, `BoardLaunchC`, `BoardHoldC`, `launchSystem`, `recallSystem`, `RECALL_BOARD_TICKS` (SAVE 86). `boardingReserved` only
+  marks a shuttle docked at a hostile ship (landed by hand).
+- **The shuttle flies itself** (autopilot, user decision 2026-11-03): the first pick is a passenger like the rest (BoardPicker shows no pilot).
+
+### Sides (#287)
+
+The away code asks "the shuttle's side" where it used to ask "the player's": `ofSide(crew, vehicle)` (crew faction = `vehicleFaction`) for passages,
+pickup shuttles (`freeShuttle`) and the "nobody left at home" line; `siteShuttleOk` wants a bay on the shuttle's own home ship. The air ledger's
+`suppliesTo(shuttle, crew)`: of the crew member's side, or the shuttle serving their site; such a shuttle docked at an airlock is drawn first, then the
+store (`drawAir`, `sourceSupply`; `side` for the departure check's per-store supply). `airStoresSystem` tops a docked shuttle up only from an airlock of
+its own side's ship. `stowSuit` leaves any away party member's suit on (it is the shuttle's).
+
 ### Salvage (slice 3)
 
 Built (see "Derelict salvage", "On an away site"). Where the code differs from this plan: `handlers.ts` does not touch the site; the
@@ -2359,11 +2396,15 @@ no floorless wall stubs. What the cap does not reach stays as truss (open scaffo
 (`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
 danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
 against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
-and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle with `YardDef.crew` contractors,
-neutral allegiance, `YardCrewC`, to a free player airlock), `fly`, `work` (the crew step out in the shuttle's suits and take the jobs through the normal crew AI;
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle made beside the station with
+`YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`; since #287 it is an away site on the player's ship, owner 'yard', the contractors its party from
+the start: `dock` the order's airlock, `outside` (they land suited from the shuttle's stock), `noLoot`, no demand; the site's run flies, lands them, takes the
+tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
 the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
-is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall`, `home`, `done`.
-Suits are the contractors' own and never run dry. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
+is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall` (the site closes: its run
+calls them aboard, lifting whoever cannot come), `home` (the run ends at the station, where those aboard step out), `done` (`dismiss` ends the run if it still stands and
+removes the crew and shuttle). Their air is the air drive's like anyone's: the ledger gives a crew member a docked shuttle's air first when it is of their side or
+serves their site (`suppliesTo`), so contractors draw the station shuttle before the player's airlock store, and the player's crew never draw a foreign shuttle. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
 (`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
 (`abortYards`). Save v61. UI: the station panel's
 Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.

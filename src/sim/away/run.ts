@@ -1,7 +1,6 @@
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import { regionAirlock } from '../ferry/pick';
 import type { Sim } from '../sim';
@@ -11,6 +10,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayWorking } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
+import { ofSide } from './crew';
 import { endRun } from './end';
 import { planCarry } from './haul';
 import { stagedStacks } from '../items/staging';
@@ -101,7 +101,7 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   go(r, 'fly');
   sim.events.emit({ type: 'away.departed', ship: r.site, vehicle: id, crew: [...aboard], home: false });
   // Nobody able is left aboard the home ship: a line in the ship's log (the player may want some cover kept back).
-  const left = sim.world.query(CrewC, PositionC).some((c) => !isIncapacitated(sim, c) && !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(c, PositionC)!) === home);
+  const left = sim.world.query(CrewC, PositionC).some((c) => !isIncapacitated(sim, c) && !sim.world.has(c, DeadC) && ofSide(sim, c, id) && shipIdOf(sim, sim.world.get(c, PositionC)!) === home);
   if (!left && aboard.length > 0) sim.events.emit({ type: 'away.homeEmpty', ship: home, site: r.site });
 }
 
@@ -194,7 +194,10 @@ export function awaySystem(sim: Sim): void {
     }
   }
   // Staging goes on whether the shuttle is at the site or away: the party hauls loose loot into the zone (away/haul.ts).
-  for (const ship of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) if (sim.world.get(ship, AwaySiteC)!.status === 'open') planCarry(sim, ship);
+  for (const ship of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) {
+    const s = sim.world.get(ship, AwaySiteC)!;
+    if (s.status === 'open' && !s.noLoot) planCarry(sim, ship);
+  }
   // Away-owned holds and flags whose owner is gone end here, and only here (away/owned.ts).
   releaseOwned(sim);
 }

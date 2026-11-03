@@ -3,13 +3,12 @@ import { BUILD_TICKS, createJob } from '../crew/handlers';
 import { CrewC, DraftedC, JobC, PositionC } from '../crew/components';
 import { isSettled } from '../crew/helpers';
 import { Struct } from '../structure';
-import { sendToEmbark } from '../vehicles/embark';
-import { AboardC, EmbarkOrderC, VehicleC } from '../vehicles/components';
-import { dockError } from '../vehicles/handlers';
-import { boardCrew } from '../vehicles/lifecycle';
+import { AwaySiteC } from '../away/components';
+import { shipIdOf } from '../regions';
+import { VehicleC } from '../vehicles/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { alive, dismiss, landCrew, launchShuttle, stowSuit, topUpAir } from './crew';
+import { alive, dismiss, launchShuttle, yardRun } from './crew';
 import { payStation, refund } from './money';
 import { builtCount, dropJobs, earned, jobsOf, totalTiles } from './progress';
 import { postHullJobs } from './jobs';
@@ -17,10 +16,12 @@ import { isLiveOrder, type YardOrder } from './types';
 
 /** Ticks between repeats of an order the crew or shuttle has not obeyed yet. */
 const REPEAT = 20;
-/** Seconds the shuttle gets to dock, the crew to climb back in, and the shuttle to fly home; seconds without a finished tile before the work is called stalled. */
+/**
+ * Seconds the crew get to land, and the run to bring them home after the site closes (its own lift after AWAY_LIFT_SEC included); seconds
+ * without a finished tile before the work is called stalled.
+ */
 const FLY_SEC = 120;
-const RECALL_SEC = 90;
-const HOME_SEC = 120;
+const HOME_SEC = 300;
 const STALL_SEC = 600;
 const SEAL_SEC = 60;
 /** Finished orders kept for the readout. */
@@ -76,8 +77,8 @@ export function abortYards(sim: Sim, reason: string): void {
 }
 
 /**
- * Work is over (done, called off, stalled, in the way of a fight): the open jobs go, the unbuilt part of the price is refunded, and the crew are recalled
- * to the shuttle (or, if they never landed, the shuttle just turns for home). The built part stays in escrow until the shuttle is back.
+ * Work is over (done, called off, stalled, in the way of a fight): the open jobs go, the unbuilt part of the price is refunded, and the site
+ * closes: its run calls the crew aboard and flies them home (`recall`). The built part stays in escrow until the shuttle is back.
  */
 export function finishOrder(sim: Sim, o: YardOrder, reason: string): void {
   if (o.phase === 'recall' || o.phase === 'home' || !isLiveOrder(o)) return;
@@ -85,9 +86,14 @@ export function finishOrder(sim: Sim, o: YardOrder, reason: string): void {
   dropJobs(sim, o);
   refundUnbuilt(sim, o);
   if (reason) o.reason = reason;
-  o.phase = o.crew.some((id) => sim.world.get(id, AboardC)?.vehicle !== o.vehicle && alive(sim, id)) ? 'recall' : 'home';
+  const site = sim.world.get(o.ship, AwaySiteC);
+  if (site?.vehicle === o.vehicle) site.status = 'closing';
+  o.phase = 'recall';
   o.timer = 0;
 }
+
+/** True once a contractor stands on the player's ship (landed off the shuttle). */
+const landed = (sim: Sim, o: YardOrder): boolean => o.crew.some((id) => alive(sim, id) && shipIdOf(sim, sim.world.get(id, PositionC)) === o.ship);
 
 /** The gap whose outside tile is nearest to a tile. */
 function nearestGap(o: YardOrder, at: { x: number; y: number }): YardOrder['gaps'][number] | undefined {
@@ -108,22 +114,19 @@ function step(sim: Sim, o: YardOrder): void {
       o.timer = 0;
       return;
     case 'fly': {
-      if (!v) return endNow(sim, o, 'lost');
-      if (v.state === 'docked' && v.dock === o.airlock) {
-        if (landCrew(sim, o)) {
-          o.phase = 'work';
-          o.timer = 0;
-          o.stall = 0;
-          o.built = builtTotal(sim, o);
-        }
+      // The site's run flies the crew over and lands them (docked at the order's airlock, or any other, or out of the hatch).
+      if (!v || !yardRun(sim, o)) return endNow(sim, o, 'lost');
+      if (landed(sim, o)) {
+        o.phase = 'work';
+        o.timer = 0;
+        o.stall = 0;
+        o.built = builtTotal(sim, o);
         return;
       }
-      if (dockError(sim, o.vehicle, o.airlock) !== null || o.timer > FLY_SEC * TICK_HZ) return finishOrder(sim, o, 'noDock');
-      if (!v.dest && o.timer % REPEAT === 1) v.dest = { type: 'dock', airlock: o.airlock };
+      if (o.timer > FLY_SEC * TICK_HZ) return finishOrder(sim, o, 'noDock');
       return;
     }
     case 'work': {
-      topUpAir(sim, o);
       if (!o.crew.some((id) => alive(sim, id))) return endNow(sim, o, 'crew lost');
       if (sim.sector.inCombat) return finishOrder(sim, o, 'combat');
       if (o.stage === 'truss' && jobsOf(sim, o).length === 0) postHullJobs(sim, o); // the planning pass is done: turn trusses into hull
@@ -143,7 +146,6 @@ function step(sim: Sim, o: YardOrder): void {
       return;
     }
     case 'seal': {
-      topUpAir(sim, o);
       if (!o.crew.some((id) => alive(sim, id))) return endNow(sim, o, 'crew lost');
       if (sim.sector.inCombat) return finishOrder(sim, o, 'combat');
       // Everyone walks out to the open tile beyond a gap and waits there, so the closing wall is built from outside: the yard's crew, and any of the
@@ -181,34 +183,17 @@ function step(sim: Sim, o: YardOrder): void {
       return;
     }
     case 'recall': {
-      topUpAir(sim, o);
-      if (!v) return endNow(sim, o, 'lost');
-      const out = o.crew.filter((id) => alive(sim, id) && sim.world.get(id, AboardC)?.vehicle !== o.vehicle);
-      if (out.length > 0 && o.timer <= RECALL_SEC * TICK_HZ) {
-        if (o.timer % REPEAT === 1) for (const id of out) if (!sim.world.has(id, EmbarkOrderC)) sendToEmbark(sim, id, o.vehicle);
-        return;
-      }
-      // Anyone left behind (downed, or boxed in) is carried aboard by the yard.
-      for (const id of out) boardCrew(sim, id, o.vehicle);
-      for (const id of o.crew) stowSuit(sim, o, id);
-      o.phase = 'home';
-      o.timer = 0;
+      // The site is closing: its run calls everyone aboard (lifting whoever cannot come after AWAY_LIFT_SEC) and flies them home.
+      if (!v) return close(sim, o, '');
+      if (yardRun(sim, o)?.phase === 'home' || !yardRun(sim, o)) {
+        o.phase = 'home';
+        o.timer = 0;
+      } else if (o.timer > HOME_SEC * TICK_HZ) return close(sim, o, '');
       return;
     }
     case 'home': {
-      if (!v) return close(sim, o, '');
-      for (const id of o.crew) stowSuit(sim, o, id);
-      if (v.state === 'docked') {
-        if (o.timer % REPEAT === 1) sim.enqueue({ type: 'vehicle.undock', vehicle: o.vehicle });
-        return;
-      }
-      if (v.dest?.type === 'dock') v.dest = null; // it never got there: turn for home
-      if (v.hover === o.station && !v.dest) return close(sim, o, '');
-      if (!v.dest) {
-        v.hover = 0;
-        v.dest = { type: 'hover', ship: o.station };
-      }
-      if (o.timer > HOME_SEC * TICK_HZ) close(sim, o, '');
+      // Home once the run has ended there (the crew who came home stepped out at the station); the yard then dismisses them.
+      if (!v || !yardRun(sim, o) || o.timer > HOME_SEC * TICK_HZ) return close(sim, o, '');
       return;
     }
     default:
