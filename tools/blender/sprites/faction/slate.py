@@ -13,8 +13,8 @@ RAIL_D, MID_D = PX, PX / 2          # the rail's depth: its end blocks' (2 px: a
                                     # middle block's (set back a px)
 RAIL_H = 7 * PZ                     # the rail's front
 END_W = 0.25                        # its end blocks along a tile (the middle block between them)
-LIP_D, LIP_H = 1.5 * PX, 2 * PZ     # the lip at the face's foot: its depth (a 3 px top), its top over the ramp's
-                                    # top
+LIP_D, LIP_H = PX / 2, 2 * PZ       # the lip at the face's foot: its depth (a px), its top over the ramp's top
+MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
 
 
 class SlateTones(Feature):
@@ -59,7 +59,7 @@ def slate(hull):
             T.paint(k, ax, plane, a, b, zs - PZ, zs, LIP_D, FACE, 1)                           # foot dark
             zg = zs + LIP_H + 2 * PZ                                                           # its groove
             if zg + 4 * PZ < top - 0.03:
-                for g0, g1, lvl in ((zg, zg + PZ, 4), (zg + PZ, zg + 3 * PZ, 1), (zg + 3 * PZ, zg + 4 * PZ, 4)):
+                for g0, g1, lvl in ((zg, zg + 2 * PZ, 1), (zg + 2 * PZ, zg + 3 * PZ, 4)):     # (lit over it)
                     T.paint(k, ax, plane, a, b, g0, g1, 0.0, FACE, lvl)
             if full:                                                    # a faint line, 7 px under the stripe
                 T.paint(k, ax, plane, a, b, zst - 14 * PZ, zst - 13 * PZ, 0.0, FACE, 4)
@@ -71,11 +71,14 @@ def slate(hull):
         for u0, u1, mid in _blocks(a, b):                                                      # the rail
             d = MID_D if mid else RAIL_D
             zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
-            prof = [(0.0, zb), (d, zb), (d, z1 - 2 * PZ), (0.0, z1)] if mid else \
+            prof = [(0.0, zb), (d, zb), (d, z1 - MID_DROP), (0.0, z1)] if mid else \
                 [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]                                       # ends' line)
             m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
-            prism(k, ax, plane, u0, u1, prof, BLUE, 3, mitre=m)
-            zt = z1 - 2 * PZ if mid else z1                                                    # its front's top
+            inner = "fGT3" if ax == "y" else "fGT4"     # (an end block's side by the middle: a step under its front)
+            cap = None if mid else (inner if abs(u0 % 1.0 - END_W) < 1e-6 else None,
+                                    inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
+            prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
+            zt = z1 - MID_DROP if mid else z1                                                  # its front's top
             T.paint(k, ax, plane, u0, u1, zt - PZ, zt, d, BLUE, 5)                             # edge lit
     return face
 
