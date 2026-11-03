@@ -137,19 +137,48 @@ class _Build:
 WALL, EDGE, TOP, STEP = 0.62, 1.16, 1.33, 0.15
 
 
+def _rrect(sc, dc, hs, hd, r, seg=3):
+    """A rounded rectangle in the slope's (s, D) plane, counter-clockwise: centre, half extents, corner radius."""
+    pts = []
+    for cs, cd, a0 in ((hs - r, hd - r, 0.0), (-hs + r, hd - r, 0.5), (-hs + r, -hd + r, 1.0), (hs - r, -hd + r, 1.5)):
+        for k in range(seg + 1):
+            a = (a0 + 0.5 * k / seg) * math.pi
+            pts.append((sc + cs + r * math.cos(a), dc + cd + r * math.sin(a)))
+    return pts
+
+
 def hatch(b, A, B, r0, r1):
-    """A hatch on the slope from A to B (L, z points), in the row r0 .. r1: a dark frame lying on the slope and two
-    sliding door leaves standing a little proud of it, a seam between them running up the slope."""
+    """A hatch on the slope from A to B (L, z points), in the row r0 .. r1: a raised frame 2 px wide with rounded
+    corners standing proud of the slope, and inside it, recessed below the frame's lip, two sliding door leaves on a
+    dark backing with a seam between them running up the slope."""
     ln = math.dist(A, B)
     u = ((B[0] - A[0]) / ln, (B[1] - A[1]) / ln)                       # up the slope
     n = (-u[1], u[0])                                                  # out of it (toward -L and up)
-    def slab(s0, s1, t0, t1, D0, D1, col):
-        p = lambda s, t: (A[0] + u[0] * s * ln + n[0] * t, A[1] + u[1] * s * ln + n[1] * t)  # noqa: E731
-        b.prism_D([p(s0, t0), p(s1, t0), p(s1, t1), p(s0, t1)], D0, D1, col)
-    slab(0.07, 0.93, -0.01, 0.025, r0 + 0.1, r1 - 0.1, GMD)                                  # frame
-    mid = (r0 + r1) / 2
-    for D0, D1 in ((r0 + 0.15, mid - 0.012), (mid + 0.012, r1 - 0.15)):
-        slab(0.13, 0.87, 0.0, 0.045, D0, D1, PLATE)                                          # door leaves
+    S = lambda s, d, t: b.P(A[0] + u[0] * s + n[0] * t, d, A[1] + u[1] * s + n[1] * t)   # noqa: E731  s along, t out
+    def out(s, d, t, ds, dd, dt):
+        p, q = S(s, d, t), S(s + ds, d + dd, t + dt)
+        return (q[0] - p[0], q[1] - p[1], q[2] - p[2])
+    sc, dc = ln * 0.5, (r0 + r1) / 2
+    hs, hd = ln * 0.45, (r1 - r0) * 0.41                               # outer half extents: most of the slope and row
+    ws, wd, rad, lip = 0.045, 0.055, 0.06, 0.035                        # frame width (2 px each way), corner radius, height
+    outer = _rrect(sc, dc, hs, hd, rad)
+    inner = _rrect(sc, dc, hs - ws, hd - wd, rad - min(ws, wd) * 0.5)
+    m = len(outer)
+    for i in range(m):                                                  # frame: top, outer wall, inner wall
+        j = (i + 1) % m
+        (os_, od), (os2, od2), (is_, id_), (is2, id2) = outer[i], outer[j], inner[i], inner[j]
+        b.face([S(os_, od, lip), S(os2, od2, lip), S(is2, id2, lip), S(is_, id_, lip)], GMD, out(sc, dc, 0, 0, 0, 1))
+        b.face([S(os_, od, 0), S(os2, od2, 0), S(os2, od2, lip), S(os_, od, lip)], GMD,
+               out(sc, dc, lip / 2, (os_ + os2) / 2 - sc, (od + od2) / 2 - dc, 0))
+        b.face([S(is_, id_, 0), S(is2, id2, 0), S(is2, id2, lip), S(is_, id_, lip)], GMD,
+               out((is_ + is2) / 2, (id_ + id2) / 2, lip / 2, sc - (is_ + is2) / 2, dc - (id_ + id2) / 2, 0))
+    b.face([S(s_, d_, 0.004) for s_, d_ in inner], DARK, out(sc, dc, 0, 0, 0, 1))      # backing, the seam shows it
+    ls, ld, gap = hs - ws, hd - wd, 0.009                                   # leaves fill the opening, recessed
+    for d0, d1 in ((dc - ld, dc - gap), (dc + gap, dc + ld)):
+        pr = [(sc - ls, 0.004), (sc + ls, 0.004), (sc + ls, 0.016), (sc - ls, 0.016)]
+        c = [(s_, t) for s_, t in pr]
+        L_z = [(A[0] + u[0] * s_ + n[0] * t, A[1] + u[1] * s_ + n[1] * t) for s_, t in c]
+        b.prism_D(L_z, d0, d1, PLATE)
 
 
 def scrapper(rot):
