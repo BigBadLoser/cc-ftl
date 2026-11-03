@@ -6,11 +6,14 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
-- Derelict salvage: select a wreck and tick the scrap types to strip. Shuttle teams and suited crew carry the scrap home. ([#273](https://github.com/BigBadLoser/cc-ftl/pull/273), [#275](https://github.com/BigBadLoser/cc-ftl/pull/275), [#277](https://github.com/BigBadLoser/cc-ftl/pull/277))
+- Derelict salvage: select a wreck and tick the scrap types to strip. A shuttle takes a suited party out, makes trips home with the loot and the crew who need a rest, and brings everyone back when the wreck is done. ([#273](https://github.com/BigBadLoser/cc-ftl/pull/273), [#275](https://github.com/BigBadLoser/cc-ftl/pull/275), [#277](https://github.com/BigBadLoser/cc-ftl/pull/277), [#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
 - Scrap items (hull, tech, energy, weapons, comfort) and cloth, with new art. A 4x2 scrapper module turns scrap into materials such as metal, electronics and parts, and scrap cages store it. ([#272](https://github.com/BigBadLoser/cc-ftl/pull/272), [#279](https://github.com/BigBadLoser/cc-ftl/pull/279), [#283](https://github.com/BigBadLoser/cc-ftl/pull/283), [#296](https://github.com/BigBadLoser/cc-ftl/pull/296))
 
 ### Changed
 
+- Salvage reworked: the crew stage the loot beside the shuttle's landing zone, and the shuttle loads it crate by crate, also when nobody of the party is left out there. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
+- Haulers gather several nearby piles going to the same place before they walk, on every ship. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
+- Robots ride shuttles to away sites and work there without a suit. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
 - Crew on your side gain skill XP from routine work and level up, up to +5. ([#251](https://github.com/BigBadLoser/cc-ftl/pull/251))
 - Pyrophobic crew lose mood when a fire burns within six tiles. The "Afraid of the void" trait is renamed Space-sick, and space-sick crew lose mood on a spacewalk. ([#253](https://github.com/BigBadLoser/cc-ftl/pull/253))
 - Crew leave tiles that will hurt them (fire, bad air, extreme heat or cold) instead of standing in them. ([#290](https://github.com/BigBadLoser/cc-ftl/pull/290))
@@ -22,6 +25,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Crew no longer try to walk through doors that cannot open, such as a jammed door or a dead airlock. ([#292](https://github.com/BigBadLoser/cc-ftl/issues/292), [#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
 - Crew no longer stop in doorways when they fetch equipment. ([#255](https://github.com/BigBadLoser/cc-ftl/pull/255))
 - Closed weapon hatches and deployed turrets on enemy ships no longer clip under the roof plating. ([#262](https://github.com/BigBadLoser/cc-ftl/pull/262))
 - Ships no longer disappear in the new-game ship preview. ([#270](https://github.com/BigBadLoser/cc-ftl/pull/270))
