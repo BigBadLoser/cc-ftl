@@ -147,6 +147,28 @@ def _rrect(sc, dc, hs, hd, r, seg=3):
     return pts
 
 
+def slope_cyl(b, A, B, s, d, r, t0, t1, col, sides=16, top=None):
+    """A cylinder standing on the slope from A to B (L, z points): axis along the slope's normal at (s along, D = d),
+    ends parallel to the slope from t0 to t1 out of it, so its foot sits flat on the slope."""
+    ln = math.dist(A, B)
+    u = ((B[0] - A[0]) / ln, (B[1] - A[1]) / ln)
+    n = (-u[1], u[0]) if u[0] > 0 else (u[1], -u[0])
+    S = lambda s_, d_, t: b.P(A[0] + u[0] * s_ + n[0] * t, d_, A[1] + u[1] * s_ + n[1] * t)   # noqa: E731
+    ring = lambda t: [S(s + r * math.cos((i + .5) * math.tau / sides), d + r * math.sin((i + .5) * math.tau / sides), t)  # noqa: E731
+                      for i in range(sides)]
+    a_, b_ = ring(t0), ring(t1)
+    ax = S(s, d, (t0 + t1) / 2)
+    for i in range(sides):
+        j = (i + 1) % sides
+        q = [a_[i], a_[j], b_[j], b_[i]]
+        c = [sum(p[k] for p in q) / 4 for k in range(3)]
+        b.face(q, col, (c[0] - ax[0], c[1] - ax[1], c[2] - ax[2]))
+    e0, e1 = S(s, d, t0), S(s, d, t1)
+    dv = (e1[0] - e0[0], e1[1] - e0[1], e1[2] - e0[2])
+    b.face(a_, col, (-dv[0], -dv[1], -dv[2]))
+    b.face(b_, top or col, dv)
+
+
 def hatch(b, A, B, r0, r1):
     """A hatch on the slope from A to B (L, z points), in the row r0 .. r1: a raised frame 2 px wide with rounded
     corners standing proud of the slope, and inside it, recessed below the frame's lip, two sliding door leaves on a
@@ -205,9 +227,11 @@ def scrapper(rot):
         hatch(b, (0.03, WALL), (0.5, EDGE), r0, r1)
     hatch(b, (3.97, WALL), (3.5, EDGE), D0, DM)                         # far end: one hatch, back row
     # far end, front row: the exhaust, a housing standing out of the slope's top and a nozzle pointing out of the end
-    b.box(3.45, 3.72, DM + 0.14, D1 - 0.14, 0.8, EDGE + 0.12, GMD, GM)
-    b.cyl_L((DM + D1) / 2, 0.84, 0.17, 3.7, 3.86, GMD, sides=12)
-    b.cyl_L((DM + D1) / 2, 0.84, 0.12, 3.84, 3.98, GM, sides=12)
+    fA, fB, fm = (3.97, WALL), (3.5, EDGE), math.dist((3.97, WALL), (3.5, EDGE)) / 2
+    b.box(3.3, 3.56, DM + 0.14, D1 - 0.14, 0.9, EDGE + 0.12, GMD, GM)
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.3, 0, 0.05, GMD)              # flange, foot flat on the slope
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.24, 0.05, 0.16, GM)           # nozzle barrel
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.15, 0.16, 0.165, DARK)        # bore
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
