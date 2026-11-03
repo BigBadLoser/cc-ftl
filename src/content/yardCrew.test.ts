@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
+  AirlockC, CrewC, ItemStackC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
 } from '../sim';
 import { jobFits } from '../sim/crew/jobFit';
 import { drawAir, sourceSupply } from '../sim/eva/airLedger';
 import { SuitC } from '../sim/eva/components';
+import { spillItems } from '../sim/items/stacks';
 import { suitDef } from '../sim/eva/suit';
 import { AllegianceC } from '../sim/fight/components';
 import { content } from './index';
@@ -173,5 +174,23 @@ describe('the yard crew', () => {
     lock.air = 0;
     expect(sourceSupply(sim, { kind: 'airlock', id: order.airlock }, { for: ours })).toBe(0);
     expect(sourceSupply(sim, { kind: 'airlock', id: order.airlock }, { for: contractor })).toBe(tank * 1.5);
+  }, 120000);
+
+  it('the yard site on the player ship leaves the ship crew hauling its loose items (the site carries no loot)', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    run(sim, 1);
+    const order = sim.yard.orders[0]!;
+    run(sim, 2000, () => order.phase === 'work');
+    const ours = sim.world.query(CrewC).find((c) => !sim.world.has(c, YardCrewC) && sim.world.get(c, AllegianceC)?.faction === 'player')!;
+    const at = sim.world.get(ours, PositionC)!;
+    const before = new Set(sim.world.query(ItemStackC));
+    expect(spillItems(sim, me, Math.round(at.x), Math.round(at.y), 'item.metal', 5)).toBe(0);
+    const stack = sim.world.query(ItemStackC).find((s) => !before.has(s))!;
+    expect(stack).toBeDefined();
+    const hauled = (): boolean => sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.haul?.src.id === stack);
+    run(sim, 60, hauled);
+    expect(hauled()).toBe(true);
   }, 120000);
 });
