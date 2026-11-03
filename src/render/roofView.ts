@@ -4,6 +4,7 @@ import { CHUNK_SIZE, type Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
 import { footprintTiles, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
+import { exteriorIds, gridHullKeys } from './hullArt';
 import { buildRoofPlating, hasRoofArt, roofPlan, type Livery, type RoofPiece, type RoofPlan } from './roofPlating';
 import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
 import { resolveArt } from './assets/fallback';
@@ -145,7 +146,11 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     v.fireKey = -1;
     // Stand-in roof parts replace the plates above their module; real parts sit on the plating.
     const real = hasRoofArt(atlas);
+    // The new hull's tiles carry their own top (hullArt.exteriorIds: its piece, or the piece and a roof stand-in).
+    const hull = gridHullKeys(grid, tiles.wallAt, W, H);
+    const has = (id: string) => !!atlas.stat(id);
     v.pieces = buildRoofPlating(tiles.kindAt, W, H, atlas, L, livery, plan, (x, y) => {
+      if (hull && exteriorIds(hull, x, y, has)) return true;
       if (real) return false;
       const mod = tiles.get('module', x, y); // local tile
       return !!(mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset);
@@ -171,7 +176,15 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       if (k !== key) {
         key = k;
         replan();
-        chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}`, buildChunk);
+        const hull = gridHullKeys(grid, tiles.wallAt, W, H);
+        const hullIn = (c: ChunkRef) => {
+          if (!hull) return '';
+          const r = tiles.chunkRect(c);
+          let k = '';
+          for (let y = r.y0; y < r.y1; y++) for (let x = r.x0; x < r.x1; x++) k += `${hull.at(x, y)}/`;
+          return k;
+        };
+        chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}|${hullIn(c)}`, buildChunk);
         fireRev = -1;
       }
       let pk = '';

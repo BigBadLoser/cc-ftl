@@ -49,6 +49,8 @@
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
   salvage   the scrap crates of derelict salvage and cloth: .unit (the game stacks units on a slot grid) and .held
             (items_salvage.py)
+  hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
+            each piece with its tint mask (hulltiles.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -61,7 +63,8 @@ def jobs(name):
         return props_ + logistics.SPRITES + itemart.SPRITES, False
     if name == "walls":
         from . import envtiles
-        return envtiles.SPRITES, lambda sid: not sid.startswith("tile.floor")
+        return envtiles.SPRITES, lambda sid: False if sid.startswith("tile.floor") else "walls+hull"   # (palette sets
+        #   "walls" and "hull": the relief walls', hull's, doors' and faction looks' colours, no other family's)
     if name == "consoles":
         from . import consoles
         return consoles.jobs(), True
@@ -99,7 +102,7 @@ def jobs(name):
         return jobs, True
     if name == "structure":
         from . import structure
-        return structure.jobs(), True
+        return structure.jobs(), "walls+hull"
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True
@@ -157,7 +160,7 @@ def jobs(name):
         return derelict_sac.SPRITES, True
     if name == "derelict":
         from . import derelict
-        return derelict.SPRITES, True
+        return derelict.SPRITES, lambda sid: "walls+hull" if sid.startswith("tile.") else True   # (breached walls)
     if name == "decay":
         from . import derelict_more
         return derelict_more.SPRITES, True
@@ -205,6 +208,9 @@ def jobs(name):
     if name == "storage_scrap":
         from . import scrap
         return scrap.jobs(), True
+    if name == "hull":
+        from . import hulltiles
+        return hulltiles.jobs(), "hull"                 # (its own palette set: palette_extra "set": "hull")
     raise KeyError(name)
 
 
@@ -213,5 +219,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "scrapper")
+            "hull", "scrapper")
 ALL = RENDERED + ("sol", "damage_sol")

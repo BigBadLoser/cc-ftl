@@ -1,9 +1,9 @@
 """Wall and hull blocks (grid frame, origin = tile centre at floor level). Surface colours: wallart.py.
 
-Profile (after Space Haven, measured): a vertical wall with a flat cap stands on a straight sloped SKIRT (rise SKIRT * HF
-at 55 degrees). A partition is a TW band set back from the tile's far edges (-x, -y: away from the camera, which sees +x,
-+y and the tops) by wall_back(), with an arm to every connected side; its front skirt toe reaches the tile's near edge,
-and a back skirt stays hidden behind it. The far hull is a thicker strip along the far edges whose skirt also reaches the
+Profile (after Space Haven, on the pixel grid): a vertical wall with a flat cap stands on a straight sloped skirt (RAMP_PX
+art px a cell over RAMP_CELLS: about 58 degrees, 22 px). A partition is a TW band set back from the tile's far edges (-x,
+-y: away from the camera, which sees +x, +y and the tops) by wall_back(), with an arm to every connected side; its front
+skirt toe reaches the tile's near edge, and a back skirt behind it reaches the far edge. The far hull is a thicker strip along the far edges whose skirt also reaches the
 near edge; an arm off a straight hull run is a partition. Skirts are mitred at corners and ends (L-inf distance).
 
 View levels (LEVELS): up = everything full height; cut = partitions cut CUT above the skirt (black cut cap), the rear
@@ -24,8 +24,6 @@ GN = 32
 # derived from HF when a piece is built, so HF stays the single height knob.
 HF = 1.85          # interior wall height (chosen by the user)
 ROOF_T = 0.2       # roof slab thickness
-SKIRT = 0.30       # skirt rise as a fraction of HF (Space Haven: about 0.3 of the wall), the same in every view level
-SLOPE = math.tan(math.radians(55))   # skirt rise / run (Space Haven: 55 degrees)
 CUT = 0.2          # cutaway: the wall face kept above the skirt
 T = TW = 10 / 32   # partition thickness (Space Haven: cap 19-22 px on a 64 px tile, minus a 2 px outline: ~0.30)
 ZG = 0.30          # ghost hull: front rim top AND rear crest height (one value, so they meet flush at corners)
@@ -37,6 +35,7 @@ DZ = 1 / 40        # vertical face row height (about 1 px)
 BIT = {"n": 1, "e": 2, "s": 4, "w": 8}
 EDGES = {"f": "y0y1x0x1", "se": "y0x0", "nw": "y1x1", "ne": "y1x0", "sw": "y0x1"}
 TRI = {"se": (0, 1, 3), "nw": (1, 2, 3), "ne": (0, 2, 3), "sw": (0, 1, 2)}   # kept corners of a half cell
+HALF_OPP = {"se": "nw", "nw": "se", "ne": "sw", "sw": "ne"}
 LEVELS = ("up", "cut", "low")        # walls up / cutaway / shortest (see wall_top)
 
 
@@ -45,17 +44,31 @@ def hull_top():
     return HF + ROOF_T
 
 
+# The skirt (ramp) on the pixel grid: it falls RAMP_PX art px a cell over RAMP_CELLS cells onto an upright FOOT_PX foot,
+# so its edges step evenly on screen (3 rows to 2 px across a wall's end: no odd steps), and the two skirts and the TW
+# wall centred between them fill the tile exactly (the back skirt's foot on the far edge, the front's on the near).
+RAMP_PX = 2
+RAMP_CELLS = (GN - round(TW * GN)) // 2            # (11: the TW wall centred, both toes on the edges)
+FOOT_PX = 4                                       # every skirt ends in an upright foot this high
+ZART = 64 / math.sqrt(2) * math.cos(math.radians(30))   # art px a unit of height (the 64 px baseline's)
+
+
+def foot():
+    return FOOT_PX / ZART
+
+
 def skirt_top(level="up"):
-    return SKIRT * HF
+    return (RAMP_CELLS * RAMP_PX + FOOT_PX) / ZART
 
 
 def skirt_run(level="up"):
-    return skirt_top() / SLOPE
+    return RAMP_CELLS / GN
 
 
 def hull_thick():
-    """The far hull stands at the tile's far edge; its skirt toe reaches the near edge (Space Haven)."""
-    return max(TW, 1.0 - skirt_run())
+    """The far hull stands at the tile's far edge, its face where a partition's is (wall_back() + TW: the same cell, so
+    its inside face is the partitions' and their pieces line up); its skirt toe reaches the near edge (Space Haven)."""
+    return wall_back() + TW
 
 
 def wall_back():
@@ -142,6 +155,7 @@ class Spec:
     drop_z = DROP
     part = None                  # None = whole piece; "rim" = the tops only; "belly" = the dropped faces (to the top)
     diag = False                 # 'se' half cells get a camera-facing 45 degree face (reaching -DROP)
+    skirt_halves = False         # half cells carry the skirt on their open half (a cut set into a skirt)
 
     def cover(self, i, j):
         return None
@@ -189,6 +203,18 @@ def _polys(Pz, cv):
     return [[Pz[0], Pz[1], Pz[3]], [Pz[1], Pz[2], Pz[3]]]
 
 
+def _skirt_polys(Pz, zc):
+    """A skirt cell's two triangles, split along the diagonal whose midpoint height is nearer the true height at the
+    cell's centre zc: where two skirts meet in an inside corner the crease runs along a cell diagonal, and the split
+    across it sawtoothed the crease."""
+    z = [p[2] for p in Pz]
+    if abs(z[0] + z[2] - z[1] - z[3]) < 1e-9:
+        return [Pz]
+    if abs((z[0] + z[2]) / 2 - zc) <= abs((z[1] + z[3]) / 2 - zc):
+        return [[Pz[0], Pz[1], Pz[2]], [Pz[0], Pz[2], Pz[3]]]
+    return [[Pz[0], Pz[1], Pz[3]], [Pz[1], Pz[2], Pz[3]]]
+
+
 def _face(m, sp, face, a, b, za, zt):
     """Vertical face over the ground segment a -> b (screen left to right), bottoms za, tops zt (per endpoint)."""
     h = max(zt[0] - za[0], zt[1] - za[1])
@@ -204,6 +230,29 @@ def _face(m, sp, face, a, b, za, zt):
         if col is None:
             continue
         m.poly([core.G(a[0], a[1], p0), core.G(b[0], b[1], p1), core.G(b[0], b[1], q1), core.G(a[0], a[1], q0)], col)
+
+
+def _foot_faces(m, sp, cov, i, j, P, ft):
+    """A skirt ending in an upright foot ft high (Spec.foot): the faces closing skirt cell (i, j) off where its toe
+    is (the next cell has no skirt, or the tile ends there, at the foot's height), and where the tile's back edges cut
+    a ramp short of its toe (out of the camera's sight, but so the piece is a closed body)."""
+    def empty(ci, cj):
+        if not (0 <= ci < GN and 0 <= cj < GN):
+            return True
+        if cov[ci][cj] is not None or sp.skip_skirt(ci, cj):
+            return False
+        x0, y0 = ci / GN - 0.5, cj / GN - 0.5
+        return all(sp.skirtz(x, y) < 1e-9 for x, y in ((x0, y0), (x0 + 1 / GN, y0), (x0, y0 + 1 / GN),
+                                                         (x0 + 1 / GN, y0 + 1 / GN)))
+    for face, a, b, nb, back in (("y", P[3], P[2], (i, j + 1), False), ("x", P[2], P[1], (i + 1, j), False),
+                                 ("y", P[1], P[0], (i, j - 1), True), ("x", P[0], P[3], (i - 1, j), True)):
+        za, zb = sp.skirtz(*a), sp.skirtz(*b)
+        if za < 1e-6 or zb < 1e-6 or not empty(*nb):
+            continue
+        at_toe = abs(za - ft) < 1e-6 and abs(zb - ft) < 1e-6
+        off = not (0 <= nb[0] < GN and 0 <= nb[1] < GN)
+        if at_toe or (back and off):
+            _face(m, sp, face, a, b, (0.0, 0.0), (za, zb))
 
 
 def emit(m, sp):
@@ -223,12 +272,18 @@ def emit(m, sp):
                 Pz = [(x, y, sp.topz(x, y) if ct is None else ct) for x, y in P]
                 for poly in _polys(Pz, cv):
                     m.poly([core.G(*p) for p in poly], sp.col_top(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
+                if cv != "f" and sp.skirt_halves and not sp.skip_skirt(i, j):
+                    poly = [(x, y, sp.skirtz(x, y)) for x, y in (P[k] for k in TRI[HALF_OPP[cv]])]
+                    m.poly([core.G(*p) for p in poly], sp.col_skirt(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
             elif not sp.skip_skirt(i, j):
                 Pz = [(x, y, sp.skirtz(x, y)) for x, y in P]
                 if max(p[2] for p in Pz) < 1e-9:
                     continue
-                for poly in _polys(Pz, None):
+                for poly in _skirt_polys(Pz, sp.skirtz((x0 + x1) / 2, (y0 + y1) / 2)):
                     m.poly([core.G(*p) for p in poly], sp.col_skirt(i, j, _kind(poly), (x0 + x1) / 2, (y0 + y1) / 2))
+                ft = getattr(sp, "foot", 0.0)
+                if ft:
+                    _foot_faces(m, sp, cov, i, j, P, ft)
     for j in range(GN):
         for i in range(GN):
             cv = cov[i][j]
@@ -279,7 +334,7 @@ class Strip(Spec):
         self.mask, self.fam, self.level, self.variant, self.corners = mask, fam, level, variant, corners
         self.full = level == "up"
         t, self.top, self.zs = profile(fam, level)
-        self.run = skirt_run()
+        self.run, self.foot = skirt_run(), foot()
         p0 = -0.5 + wall_back()
         p1 = p0 + TW
         wt = wall_top("wall", level)
@@ -342,7 +397,8 @@ class Strip(Spec):
         for r in self.rects:
             x0, x1, y0, y1 = r[0]
             d = max(x0 - x, x - x1, y0 - y, y - y1, 0.0)
-            z = max(z, self.zs * max(0.0, 1.0 - d / self.run))
+            if d <= self.run + 1e-9:                    # (down to its foot at the toe)
+                z = max(z, self.foot + (self.zs - self.foot) * (1.0 - d / self.run))
         return z
 
     def col_top(self, i, j, kind, x, y):
@@ -363,6 +419,8 @@ class Strip(Spec):
         return A.wall_skirt(kind, s, d, run, True)
 
     def col_face(self, face, x, y, z):
+        if z < self.foot - 1e-6:                        # the skirt's upright foot: the skirt's mid tone
+            return A.ramp("blue" if self._dist(x, y)[1][1] == "hull" else "wall", face)["M"]
         e = 0.5 / GN
         r = self._rect_at(x, y - e) if face == "y" else self._rect_at(x - e, y)
         s = x + 0.5 if face == "y" else 0.5 - y

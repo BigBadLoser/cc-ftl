@@ -16,10 +16,30 @@ and low (shortest: partitions are skirt-high stubs, every hull side is a ghost).
   ghost as tile.hull.ghost.m{6|7|14|15}c2[.r*] (SE diagonal solid: no dip toward it).
 - End faces where a wall butts into a ghost: tile.{fam}.{full.|low.|}end.{s|e}[.c{bits}] (the fills reaching that edge).
 - The belly alone for a door in the near hull (tile.hull.drop.{s|e}); doors, never cut (tile.door.{x|y}[.open])."""
-from .doors import door
+import re
+
+from .door_block import door                   # the metal door (door_block, its metal look)
 from .floors import floor
 from .hull import drop, out_block, vert
-from .walls import block, corner_sets, end_face
+from .wall3d import block, end_face, hull_cap, hull_cap_end    # the relief walls (wall3d.py)
+from .wall3d_variants import PAIRS
+from .walls import corner_sets
+
+def _plain(fn):
+    """A default partition piece built in the plain look's relief (faction.base.plain_relief: its free ends stop square,
+    as every look's), unless a look's relief is already set (structure.py wraps the same builders)."""
+    def build():
+        from . import wall3d
+        if wall3d.STYLE is not None:
+            return fn()
+        from .faction.base import plain_relief
+        wall3d.STYLE = plain_relief()
+        try:
+            return fn()
+        finally:
+            wall3d.STYLE = None
+    return build
+
 
 FLOORS = "abcdefgh"
 PRE = {"up": "full.", "cut": "", "low": "low."}
@@ -29,17 +49,32 @@ for _m in range(16):
         _id = f"m{_m}c{_c}" if _c else f"m{_m}"
         for _lv, _pre in PRE.items():
             SPRITES.append((f"tile.wall.{_pre}{_id}", (1, 1), "block",
-                            lambda m=_m, lv=_lv, c=_c: block(m, "wall", level=lv, corners=c)))
-        for _lv in ("up", "cut"):
-            for _v in (0, 1):
-                SPRITES.append((f"tile.hull.{PRE[_lv]}{_id}{'.v1' if _v else ''}", (1, 1), "block",
-                                lambda m=_m, lv=_lv, v=_v, c=_c: block(m, "hull", v, level=lv, corners=c)))
+                            _plain(lambda m=_m, lv=_lv, c=_c: block(m, "wall", level=lv, corners=c))))
+        for _v in (0, 1):                           # the far hull over a partition (wall3d.hull_cap: the renderer
+            SPRITES.append((f"tile.hull.cap.{_id}{'.v1' if _v else ''}", (1, 1), "over",    # draws it over
+                            lambda m=_m, v=_v, c=_c: hull_cap(m, v, corners=c)))         # tile.wall.full.m*)
     for _c in ((0, 2) if _m & 6 == 6 else (0,)):   # rear ghost: c2 = the SE diagonal is solid (no dip toward it)
         for _r in (0, 1, 8, 9):                    # ... and which unconnected N / W sides face a room
             if _r & _m:
                 continue
             SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
                             lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
+def _variant(fn, tr):
+    """fn built as a straight piece's variant (wall3d.VARIANT = tr)."""
+    def build():
+        from . import wall3d
+        wall3d.VARIANT = tr
+        try:
+            return fn()
+        finally:
+            wall3d.VARIANT = (0, 0)
+    return build
+
+
+for _m in (10, 5):                                                          # straight runs' variants .a1 .. .a7
+    for _n, _tr in enumerate(PAIRS, 1):                                     # (wall3d_variants; the renderer picks
+        SPRITES.append((f"tile.wall.full.m{_m}.a{_n}", (1, 1), "block",     # one a tile)
+                        _variant(lambda m=_m: block(m, "wall", level="up"), _tr)))
 OUT_MASK = {1: 4, 2: 2, 3: 6, 4: 0}    # mask bits that must be clear for each outward set (4: concave corner)
 for _o, _clear in OUT_MASK.items():
     for _m in range(16):
@@ -53,6 +88,8 @@ for _o, _clear in OUT_MASK.items():
             SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}.v1", (1, 1), "block",
                             lambda m=_m, o=_o: out_block(m, o, 1, "belly")))
 SPRITES.append(("tile.hull.ghost.vert", (1, 1), "ghost", vert))
+SPRITES.append(("tile.hull.full.m15", (1, 1), "block", lambda: block(15, "hull", level="up")))   # (the engine's
+#   stand-in, render/assets/fallback.ts: the far hull itself is tile.wall.full.m* + tile.hull.cap.m*, tiles.ts)
 END_CORNERS = {"s": (0, 2, 4, 6), "e": (0, 1, 2, 3)}   # the corner fills reaching each end face's edge
 for _s in ("s", "e"):
     for _lv, _pre in PRE.items():
@@ -60,10 +97,45 @@ for _s in ("s", "e"):
             _cs = f".c{_c}" if _c else ""
             SPRITES.append((f"tile.wall.{_pre}end.{_s}{_cs}", (1, 1), "block",
                             lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c)))
-            if _lv != "low":
-                SPRITES.append((f"tile.hull.{_pre}end.{_s}{_cs}", (1, 1), "block",
-                                lambda s=_s, lv=_lv, c=_c: end_face("hull", s, lv, c)))
+    for _c in END_CORNERS[_s]:                      # the far hull's end over tile.wall.full.end.* (wall3d.hull_cap_end)
+        SPRITES.append((f"tile.hull.cap.end.{_s}{f'.c{_c}' if _c else ''}", (1, 1), "block",
+                        lambda s=_s, c=_c: hull_cap_end(s, c)))
     SPRITES.append((f"tile.hull.drop.{_s}", (1, 1), "block", lambda s=_s: drop(s)))
 for _ax in ("x", "y"):
-    SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False)),
-                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True))]
+    SPRITES += [(f"tile.door.{_ax}", (1, 1), "block", lambda a=_ax: door(a, False, leaf="halves", look="metal")),
+                (f"tile.door.{_ax}.open", (1, 1), "block", lambda a=_ax: door(a, True, leaf="halves", look="metal"))]
+
+
+STEPS = {1: (0, -1), 2: (1, 0), 4: (0, 1), 8: (-1, 0)}    # a mask bit's neighbour (N1 E2 S4 W8)
+_WALL = re.compile(r"^tile\.wall\.(full\.|low\.)?m(\d+)")
+
+
+def _with_runs(fn, mask, level):
+    """A wall piece as env_build "wide" (own, wide): the piece, and on each connected side the wall's straight run one
+    tile on, so a px on a tile edge (anti-aliased: env_build.AA) resolves against the wall running on there, not the
+    empty canvas, and the tiles meet without specks. The runs are built plain (no straight-run variant) and in the
+    look's style (a faction look wraps the whole build)."""
+    def build():
+        from mathutils import Matrix
+        from . import core, wall3d
+        own = fn()
+        extra, tv = [], wall3d.VARIANT
+        wall3d.VARIANT = (0, 0)
+        try:
+            for bit, (dx, dy) in STEPS.items():
+                if mask & bit:
+                    for o in block(10 if bit in (2, 8) else 5, "wall", level=level):
+                        o.data.transform(Matrix.Translation(core.G(dx, dy, 0.0)))
+                        o.data.update()
+                        extra.append(o)
+        finally:
+            wall3d.VARIANT = tv
+        return own, own + extra
+    return build
+
+
+for _k, (_sid, _fp, _kind, _fn) in enumerate(SPRITES):     # every wall piece by mask, at each level, with its runs
+    _mm = _WALL.match(_sid)
+    if _mm and _kind == "block":
+        SPRITES[_k] = (_sid, _fp, "wide", _with_runs(_fn, int(_mm.group(2)), {"full.": "up", "low.": "low"}.get(
+            _mm.group(1) or "", "cut")))

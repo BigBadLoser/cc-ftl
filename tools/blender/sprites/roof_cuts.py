@@ -1,8 +1,7 @@
 """Cut roof plates: the roof slab covers the hull walls too, and its outer edge lines up with the hull's OUTER face.
 
 The far hull's outer face is its tile edge, so full plates fit there. The near hull (camera side) stands at the inner
-edge of its tile and is HULL cells thick (walls.Strip covers the cells whose centre lies within walls.hull_thick() =
-0.61 of the inner edge: 20 of 32). An engine's hull row is the same production hull wall (engine_kestrel_h185
+edge of its tile and is HULL cells thick (walls.hull_thick(): the partitions' face, 19 of 32). An engine's hull row is the same production hull wall (engine_kestrel_h185
 model.hull), so it takes the same cuts. The cut plates
 are the production base tiles (same module rule, patch and inset plates, girders) clipped at that line, with the slab's
 camera-facing side (lit lip + face down to the walls' top, like roof.edge.s / .e) on the cut:
@@ -14,9 +13,10 @@ The renderer (src/render/roofArt.ts roofCut) picks them; a cut side gets no sepa
 from . import core
 from . import roof_layout as rl
 from . import roofs
+from . import walls
 
 GN = rl.GN
-HULL = 20
+HULL = round(walls.hull_thick() * GN)
 EPS = 1e-6
 
 

@@ -2,8 +2,9 @@
 applied to each pack's own model, rendered in a Blender job per pack like sol_pack (the packs' scripts each bring their
 own `model` module, so they cannot share one Blender).
 
-  engine     module.engine.{machine,machine.open,bell}.r<n>.{damaged,damaged.flicker,destroyed} (the hull wall is not
-             damaged: it is the ship's wall; the bell gets no flicker frame, it has no lights when idle)
+  engine     module.engine.{machine,machine.open,bell}.r<n>.{damaged,damaged.flicker,destroyed}, stage 8 at r1 / r2 as
+             sol_pack (the hull wall, thruster block and end cut are not damaged: they are the ship's wall; the bell
+             gets no flicker frame, it has no lights when idle)
   ai_core    module.ai_core.r<n>.{damaged,damaged.flicker,destroyed}
   shields    module.shield_gen[_small].r<n>.{damaged,damaged.flicker,destroyed}
 
@@ -33,7 +34,9 @@ def _jobs(kind, rots):
             fp = [4, 5] if r % 2 == 0 else [5, 4]
             for part in ("machine", "machine.open", "bell"):
                 lv = LEVELS if part != "bell" else ("damaged", "destroyed")
-                out.append((f"module.engine.{part}.r{r}", fp, lambda r=r, p=part: model.machine(r, False, 7, part=p), lv))
+                stage = 8 if r in (1, 2) else 7                              # (sol_pack's: the block where it shows)
+                build = lambda r=r, p=part, s=stage: model.machine(r, False, s, part=p)  # noqa: E731
+                out.append((f"module.engine.{part}.r{r}", fp, build, lv))
         elif kind == "ai_core":
             out.append((f"module.ai_core.r{r}", [2, 2], lambda r=r: model.core_module(r, False, 2), LEVELS))
         else:

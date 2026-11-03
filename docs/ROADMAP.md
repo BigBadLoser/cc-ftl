@@ -2,6 +2,14 @@
 
 Planned feature work, in rough order. No dates: the order changes as the game takes shape. Shipped work moves to the [changelog](../CHANGELOG.md).
 
+## Current goals
+
+These aren't features. They're the aims we use to choose which features to build next.
+
+- **Physical encounters.** Encounters happen with real ships, crew and salvage you can see and act on, not just text outcomes. First, the stubbed outcomes get implemented, then several new encounters are added.
+- **Discovery and rewards.** Exploring turns up valuable equipment, unusual resources and useful information.
+- **World opportunities.** Better points of interest, more variation between regions, and better information about what's nearby.
+
 ## Now
 
 - **Away sites and salvage, rebuilt.** Crew work off the ship on wrecks, stage loot at the shuttle, and haul several piles per trip. Crew get air and suit needs like any other drive. ([#286](https://github.com/BigBadLoser/cc-ftl/issues/286), PR [#297](https://github.com/BigBadLoser/cc-ftl/pull/297); also [#268](https://github.com/BigBadLoser/cc-ftl/issues/268))
@@ -15,7 +23,7 @@ Planned feature work, in rough order. No dates: the order changes as the game ta
 
 ## Later: major features
 
-Not in order.
+Not in order, except that the two weapon items come first.
 
 - **Ship weapon upgrades.** Slot upgrades into ship weapons.
 - **More ship weapon types.** Flak and other new weapon families.

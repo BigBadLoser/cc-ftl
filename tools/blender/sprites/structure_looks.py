@@ -2,13 +2,14 @@
 structure_scrap).
 
 Every look keeps the default tile geometry; it maps the default colour roles to its own ramps and paints a few pattern
-overlays in surface coordinates (restyle.Poly: kind, s, z). Heights used below (tiles): skirt top 0.555, cut walls
+overlays in surface coordinates (restyle.Poly: kind, s, z). Heights used below (tiles): skirt top ZS (about 0.56), cut walls
 0.755, full walls 1.85, far hull 2.05, the ghost belly from 0.3 down to -1.5."""
 import math
 
+from . import walls as W
 from .restyle import Look, hexgrid, ramp
 
-ZS = 0.555                       # skirt top (walls.skirt_top())
+ZS = W.skirt_top()               # skirt top
 ZD = ZS + 0.37 * (2.05 - ZS)     # top of the far hull's lower (drawer) course (wallart.hull_inner_face)
 C = 1 / 32                       # one cell
 
