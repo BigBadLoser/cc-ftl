@@ -464,8 +464,9 @@ def piston(b, L0=2.0 + STEP, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.077):
     over the bay's back wall above it; a dark knob caps its hatch-end side."""
     z = TOP + r - sink
     D = wall - math.sqrt(r * r - (r - sink) ** 2)                      # its line on the top falls on the front edge
-    b.cyl_L(D, z, r, L0, L1, GM, sides=14)
-    b.cyl_L(D, z, r + 0.02, L0 - 0.06, L0, DARK, sides=14)
+    cap = 0.06                                                          # the knob is part of the span, so the whole
+    b.cyl_L(D, z, r, L0 + cap, L1, GM, sides=14)                        # piston is centred, knob included
+    b.cyl_L(D, z, r + 0.02, L0, L0 + cap, DARK, sides=14)
 
 
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
