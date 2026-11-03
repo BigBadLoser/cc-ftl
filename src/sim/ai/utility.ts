@@ -206,7 +206,11 @@ function rank(sim: Sim, intent: Intent, scored: Scored[]): DriveDef[] {
   const dwelling = sim.tick - intent.since < (cur.def.minDwell ?? 0);
   // An urgent drive runs ahead of a current drive that is not urgent however the scores and policy order tie (else a sleeper woken for hunger
   // would just fall asleep again). Between two urgent drives, or two ordinary ones, the current stays unless the usual margin is cleared.
-  const beats = (s: Scored, above: boolean): boolean => (s.urgent && !cur.urgent) || (above && (s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0))));
+  // Two urgent drives: the one whose need harms at zero goes first (starving before tiredness); neither or both, the current stays.
+  const beats = (s: Scored, above: boolean): boolean =>
+    (s.urgent && !cur.urgent) || (s.urgent && cur.urgent && !!s.def.harmsAtZero && !cur.def.harmsAtZero) ||
+    (above && !cur.urgent && (s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0)))) ||
+    (above && cur.urgent && !s.urgent && !dwelling && s.score >= cur.score + (cur.def.margin ?? 0));
   const beaters = open.filter((s, k) => k !== at && beats(s, k < at));
   return [...beaters, cur, ...open.filter((s, k) => k !== at && !beaters.includes(s))].map((s) => s.def);
 }

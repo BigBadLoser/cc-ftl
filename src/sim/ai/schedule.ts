@@ -52,18 +52,16 @@ const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
  */
 function urgentElsewhere(sim: Sim, id: number, own: MachineId): boolean {
   const drives = policyOf(sim, id).drives;
-  // Their own need is urgent too: they finish it first (the ranking keeps the current drive between two urgent ones, so a wake would only bounce).
-  for (const d of drives) {
-    if (d.task !== own || !d.urgent || !d.input) continue;
-    const x = readInput(sim, id, d.input);
-    if (x !== undefined && x < d.urgent.below) return false;
-  }
-  for (const d of drives) {
-    if (!d.urgent || !d.input || d.task === own || d.task === 'job') continue;
-    const x = readInput(sim, id, d.input);
-    if (x !== undefined && x < d.urgent.below) return true;
-  }
-  return false;
+  const isUrgent = (d: DriveDef): boolean => {
+    const x = d.urgent && d.input ? readInput(sim, id, d.input) : undefined;
+    return x !== undefined && x < (d.urgent?.below ?? 0);
+  };
+  // Their own need is urgent too: they finish it first, unless the other would harm them at zero and theirs would not (the ranking keeps the
+  // current drive between two urgent ones, so a wake that the ranking would not honour only bounces).
+  const mine = drives.find((d) => d.task === own);
+  const ownUrgent = !!mine && isUrgent(mine);
+  if (ownUrgent && mine.harmsAtZero) return false;
+  return drives.some((d) => d.urgent && d.input && d.task !== own && d.task !== 'job' && (!ownUrgent || d.harmsAtZero) && isUrgent(d));
 }
 
 /** Keep the pickup request (`PickupC`) in step with the air drive being blocked: set, with its alert, when no source can be reached. */

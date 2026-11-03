@@ -20,7 +20,7 @@ const sleep = {
 
 /** Hunger below 35: walk to a galley (or a crate with food) and eat. A trip under way is finished whatever hunger reads. */
 const eat = {
-  id: 'eat', input: 'hunger', curve: [[0, 1000]], enter: 350, enterTrait: 'eatBelow', urgent: { below: 100 }, keepWhileTask: true, task: 'eat',
+  id: 'eat', input: 'hunger', curve: [[0, 1000]], enter: 350, enterTrait: 'eatBelow', urgent: { below: 100 }, harmsAtZero: true, keepWhileTask: true, task: 'eat',
 } satisfies DriveDef;
 
 /** A battery robot whose battery is low, or which is damaged with a repair item aboard, goes to its bay. */
@@ -42,7 +42,7 @@ const leisure = {
  * patient included. The refill nests: the job is kept and resumed. With no source in reach the drive is blocked (the pickup request).
  */
 const air = {
-  id: 'air', input: 'airMargin', curve: [[0, 1000]], enter: 1000, urgent: { below: 500, breaksFinish: true },
+  id: 'air', input: 'airMargin', curve: [[0, 1000]], enter: 1000, urgent: { below: 500, breaksFinish: true }, harmsAtZero: true,
   requires: ['airSource'], onMissing: 'block', keepWhileTask: true, task: 'eva',
 } satisfies DriveDef;
 
