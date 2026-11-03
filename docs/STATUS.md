@@ -50,6 +50,8 @@ Last updated: 2026-11-01.
 
 ## Open work, in order
 
+The planned feature order lives in [ROADMAP.md](ROADMAP.md); the list below is the older engineering backlog.
+
 1. The "In progress" list above.
 2. Engine Mk II/III art (#105).
 3. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
