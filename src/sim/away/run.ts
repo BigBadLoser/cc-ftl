@@ -1,22 +1,23 @@
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import { regionAirlock } from '../ferry/pick';
 import type { Sim } from '../sim';
-import { AWAY_BOARD_MIN_SEC, AWAY_BOARD_WAIT_SEC, AWAY_LIFT_SEC, AWAY_TURNAROUND_SEC } from '../tuning';
+import { AWAY_BOARD_MIN_SEC, AWAY_BOARD_WAIT_SEC, AWAY_INVITE_WAIT_SEC, AWAY_LIFT_SEC, AWAY_TURNAROUND_SEC } from '../tuning';
 import { cargoCount } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayWorking } from '../vehicles/geometry';
+import { dockError } from '../vehicles/handlers';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
+import { ofSide } from './crew';
 import { endRun } from './end';
 import { planCarry } from './haul';
 import { stagedStacks } from '../items/staging';
 import { releaseOwned } from './owned';
 import { partyOut } from './depart';
-import { boardPassengers, calledBack, dropPassages, freeSeats, letOut, passagesOf, postPassages } from './passage';
-import { atHome, atSite, due, go, hovering, sec, wanted } from './phase';
+import { boardPassengers, calledBack, dropPassages, endInvites, freeSeats, letOut, passagesOf, postPassages } from './passage';
+import { atHome, atSite, due, go, hovering, sec, wanted, wayHome } from './phase';
 import { boxAround, replaceLostShuttles, startPickupRuns } from './pickup';
 import { depart, lift, recall, stay } from './site';
 import { mustTurnBack, partyAboard, settled } from './trips';
@@ -28,7 +29,8 @@ import { mustTurnBack, partyAboard, settled } from './trips';
 function flyTo(sim: Sim, id: number, v: Vehicle, r: SiteRun, fetch: number): void {
   if (!due(r)) return;
   if (v.state === 'docked') return sim.enqueue({ type: 'vehicle.undock', vehicle: id });
-  const lock = fetch ? 0 : regionAirlock(sim, r.site, id);
+  const want = sim.world.get(r.site, AwaySiteC)?.dock ?? 0;
+  const lock = fetch ? 0 : want && dockError(sim, id, want) === null ? want : regionAirlock(sim, r.site, id);
   if (lock) {
     if (v.dest?.type !== 'dock' || v.dest.airlock !== lock) sim.enqueue({ type: 'vehicle.dock', vehicle: id, airlock: lock });
     return;
@@ -67,8 +69,10 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   if (r.timer === 1) r.held = cargoCount(v);
   // Loot staged at the site and nobody going: the shuttle fetches it alone (loading needs no crew), once nobody is on the way to a seat.
   const cargoRun = want && aboard.length === 0 && out.length === 0 && stagedStacks(sim, r.site).length > 0;
+  // A named party that has not come by AWAY_INVITE_WAIT_SEC: those not aboard stay home (with someone aboard the general wait below rules).
+  if (site?.invited && aboard.length === 0 && r.timer >= sec(AWAY_INVITE_WAIT_SEC)) endInvites(sim, id, r.site);
   if (site) {
-    if (want && aboard.length === 0 && out.length === 0 && !cargoRun && r.timer > sec(AWAY_BOARD_WAIT_SEC)) site.block = 'noCrew';
+    if (want && aboard.length === 0 && out.length === 0 && !cargoRun && !site.invited && r.timer > sec(AWAY_BOARD_WAIT_SEC)) site.block = 'noCrew';
     else if (site.block === 'noCrew') delete site.block;
   }
   if (!want && out.length === 0) {
@@ -90,13 +94,14 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   if (site && (r.held ?? 0) > 0 && cargoCount(v) >= (r.held ?? 0)) site.block = 'noRoom';
   else if (site?.block === 'noRoom') delete site.block;
   delete r.held;
+  endInvites(sim, id, r.site);
   dropPassages(sim, id);
   v.autopilot = true;
   delete r.boardedAt;
   go(r, 'fly');
   sim.events.emit({ type: 'away.departed', ship: r.site, vehicle: id, crew: [...aboard], home: false });
   // Nobody able is left aboard the home ship: a line in the ship's log (the player may want some cover kept back).
-  const left = sim.world.query(CrewC, PositionC).some((c) => !isIncapacitated(sim, c) && !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(c, PositionC)!) === home);
+  const left = sim.world.query(CrewC, PositionC).some((c) => !isIncapacitated(sim, c) && !sim.world.has(c, DeadC) && ofSide(sim, c, id) && shipIdOf(sim, sim.world.get(c, PositionC)!) === home);
   if (!left && aboard.length > 0) sim.events.emit({ type: 'away.homeEmpty', ship: home, site: r.site });
 }
 
@@ -149,6 +154,25 @@ function pickup(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
 }
 
 /**
+ * A shuttle on its way home with no way into its home ship (its bay down, no airlock there free, or the ship gone) strands its party as a
+ * lost shuttle does: the site is `stranded` (the urgent alert, once, `noHome`) until a way in is back, which clears it. Only the site's own
+ * run marks it (a pickup run has no site); a lost shuttle's `stranded` is the run-less case (pickup.ts `replaceLostShuttles`).
+ */
+function noWayIn(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
+  const s = sim.world.get(r.site, AwaySiteC);
+  if (s?.vehicle !== id) return;
+  const stuck = r.phase === 'home' && !wayHome(sim, id, v);
+  if (!stuck) {
+    if (s.block === 'stranded') delete s.block;
+    return;
+  }
+  if (s.block === 'stranded') return;
+  s.block = 'stranded';
+  const crew = sim.world.query(AwayC).filter((c) => sim.world.get(c, AwayC)?.vehicle === id).sort((a, b) => a - b);
+  sim.events.emit({ type: 'away.stranded', ship: r.site, crew, noHome: true });
+}
+
+/**
  * Away sites (docs/DESIGN.md "Away sites", #286). Each site's shuttle runs on its own (autopilot, like ferry runs): at home it offers
  * passages and takes its passengers to the site; there it docks or hovers as their air source and the hold for loose loot, and brings
  * home those who come back aboard in batched round trips that leave only through the departure check (last call, riders), watched while
@@ -164,6 +188,7 @@ export function awaySystem(sim: Sim): void {
     const v = sim.world.get(id, VehicleC);
     if (!v) continue;
     r.timer++;
+    noWayIn(sim, id, v, r);
     switch (r.phase) {
       case 'board':
         board(sim, id, v, r);
@@ -189,7 +214,10 @@ export function awaySystem(sim: Sim): void {
     }
   }
   // Staging goes on whether the shuttle is at the site or away: the party hauls loose loot into the zone (away/haul.ts).
-  for (const ship of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) if (sim.world.get(ship, AwaySiteC)!.status === 'open') planCarry(sim, ship);
+  for (const ship of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) {
+    const s = sim.world.get(ship, AwaySiteC)!;
+    if (s.status === 'open' && !s.noLoot) planCarry(sim, ship);
+  }
   // Away-owned holds and flags whose owner is gone end here, and only here (away/owned.ts).
   releaseOwned(sim);
 }

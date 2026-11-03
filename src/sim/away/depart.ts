@@ -129,7 +129,7 @@ export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsa
       unsafe.push(m);
       continue;
     }
-    for (const s of others) if (!stores.has(key(s))) stores.set(key(s), sourceSupply(sim, s, { without: vehicle }));
+    for (const s of others) if (!stores.has(key(s))) stores.set(key(s), sourceSupply(sim, s, { without: vehicle, side: m }));
     leaning.push({ m, air, walk, need, sources: others });
   }
   // Each member leaning on a store has their top-ups set aside in the nearest of theirs that still holds them (ascending id).

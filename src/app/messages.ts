@@ -127,8 +127,7 @@ const REASONS: Record<string, string> = {
   tooMany: 'Too many already',
   shuttleBusy: 'That shuttle is busy with another job',
   crewBusy: 'Someone in that party is already picked for another launch',
-  aborted: 'Boarding called off: the shuttle lost its target or its pilot',
-  leftBehind: 'The shuttle left without crew who were too slow to reach it',
+  siteOpen: 'A party is already boarding that ship',
   courierBusy: 'Your shuttle is busy: it needs an empty hold and no other job',
 };
 

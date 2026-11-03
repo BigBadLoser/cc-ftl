@@ -106,8 +106,10 @@ import { newYard, type YardState } from './yard/types';
  *   `AwaySiteC {owner: 'salvage'}` on its wreck.
  * v85 (staging, #286 slice 3): `StagingC` (an away site's staging zone) on the site's ship; haul refs of kind `zone`; `HaulData.gathered`
  *   (a hauler collecting several stacks on one trip).
+ * v86 (boarding on away sites, #287): `RecallC`, `BoardLaunchC` and `BoardHoldC` gone (a boarding is an away site); `AwaySite.fight`,
+ *   `standBy`, `dock`, `invited`; `Away.recall`; a passage's `Job.holder`.
  */
-export const SAVE_VERSION = 85;
+export const SAVE_VERSION = 86;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

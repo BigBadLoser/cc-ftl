@@ -18,7 +18,7 @@ export function haulJobsSystem(sim: Sim): void {
   const res = reservations(sim);
   for (const id of sim.world.query(ItemStackC)) {
     const stack = sim.world.get(id, ItemStackC);
-    if (!stack || isCargo(sim, stack.item) || sim.world.has(shipIdAt(sim, stack.x, stack.y), AwaySiteC)) continue;
+    if (!stack || isCargo(sim, stack.item) || partyLoot(sim, shipIdAt(sim, stack.x, stack.y))) continue;
     const avail = stack.count - (res.out.get(refKey('floor', id, stack.item)) ?? 0);
     if (avail <= 0) continue;
     const dest = nearestStorageFor(sim, shipIdAt(sim, stack.x, stack.y), stack.item, stack, res);
@@ -32,3 +32,10 @@ export function haulJobsSystem(sim: Sim): void {
     makeHaul(sim, res, 'hauling', shipIdAt(sim, stack.x, stack.y), src, dest.ref, stack.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
   }
 }
+
+/** Loose items on a site whose party carries its loot off (away/haul.ts) are theirs, not the ship's haulers' (a `noLoot` site, such as a yard
+ * order on the player's own ship, leaves the ship's hauling alone). */
+const partyLoot = (sim: Sim, ship: number): boolean => {
+  const site = sim.world.get(ship, AwaySiteC);
+  return !!site && !site.noLoot;
+};

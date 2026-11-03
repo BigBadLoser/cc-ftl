@@ -62,4 +62,15 @@ export function dockParty(sim: Sim, passengers = 2): { shuttle: number; pilot: n
   return { shuttle, pilot, party };
 }
 
+/** A boarding by `boarding.launch` (#287: an away site on the raider): `n` crew flown to its airlock and landed, standing by. */
+export function launchParty(sim: Sim, n = 2): { shuttle: number; party: number[] } {
+  const shuttle = shuttleOf(sim, 1);
+  const party = crewOn(sim, 1).slice(0, n);
+  sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+  const landed = (c: number): boolean => !sim.world.has(c, AboardC) && shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 2);
+  run(sim, 3000, () => party.every(landed));
+  for (const c of party) expect(landed(c)).toBe(true);
+  return { shuttle, party };
+}
+
 export const defOf = (sim: Sim, id: number): ModuleDef => content.modules[sim.world.get(id, ModuleC)!.def as keyof typeof content.modules] as ModuleDef;

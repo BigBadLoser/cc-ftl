@@ -2,12 +2,11 @@ import { shipById } from '../combat/ships';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { PickupC } from '../ai/components';
 import { hasTank, vehicleAir } from '../eva/air';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
-import { fetching } from './crew';
+import { fetching, ofSide } from './crew';
 import { partyOut } from './depart';
 import { siteShuttleOk } from './handlers';
 import { freeSeats } from './passage';
@@ -36,25 +35,25 @@ export function answerPickups(sim: Sim, vehicle: number): number {
  * A free shuttle that can fly a pickup or take over a site: lowest id, stowed at home, with a tank of air to share and a free seat (crew
  * embarked by hand may fill it: Codex 4449367460).
  */
-function freeShuttle(sim: Sim): number {
+function freeShuttle(sim: Sim, crew: number): number {
   return [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((id) => {
     const v = sim.world.get(id, VehicleC)!;
-    return siteShuttleOk(sim, id) && hasTank(sim, vehicleAir(sim, v)) && freeSeats(sim, v) > 0;
+    return ofSide(sim, crew, id) && siteShuttleOk(sim, id) && hasTank(sim, vehicleAir(sim, v)) && freeSeats(sim, v) > 0;
   }) ?? 0;
 }
 
 /**
- * Pickup runs: each of the player's crew out of air reach who is of no party, on a ship in the node, and not fetched yet gets a free shuttle
- * (lowest id first). The shuttle runs as a site run with `pickup` set and no site: it hovers beside them, and the return drive brings them
+ * Pickup runs: each crew member out of air reach who is of no party, on a ship in the node, and not fetched yet gets a free shuttle
+ * (lowest id first, of their side). The shuttle runs as a site run with `pickup` set and no site: it hovers beside them, and the return drive brings them
  * aboard (they are of its party until they step out at home). None start during a fight.
  */
 export function startPickupRuns(sim: Sim): void {
   if (sim.sector.inCombat) return; // no shuttle goes out into a fight (sites are called in then too)
   const fetched = new Set(sim.world.query(SiteRunC).map((id) => sim.world.get(id, SiteRunC)?.pickup ?? 0));
   for (const c of [...sim.world.query(PickupC, CrewC, PositionC)].sort((a, b) => a - b)) {
-    if (fetched.has(c) || sim.world.has(c, AwayC) || sim.world.has(c, DeadC) || sim.world.get(c, AllegianceC)?.faction !== 'player') continue;
+    if (fetched.has(c) || sim.world.has(c, AwayC) || sim.world.has(c, DeadC)) continue;
     const grid = shipIdOf(sim, sim.world.get(c, PositionC)!);
-    const vehicle = shipById(sim, grid) ? freeShuttle(sim) : 0;
+    const vehicle = shipById(sim, grid) ? freeShuttle(sim, c) : 0;
     if (!vehicle) continue;
     sim.world.add(c, AwayC, { site: grid, vehicle, cat: 'hauling', pickup: true });
     sim.world.add(vehicle, SiteRunC, { site: grid, phase: 'fly', timer: 0, lastTrip: sim.tick, pickup: c });
@@ -81,7 +80,7 @@ export function replaceLostShuttles(sim: Sim): void {
       sim.events.emit({ type: 'away.closed', ship: site, vehicle: s.vehicle, reason: 'lost' });
       continue;
     }
-    const vehicle = freeShuttle(sim);
+    const vehicle = freeShuttle(sim, party[0] as number);
     if (!vehicle) {
       if (s.block !== 'stranded') sim.events.emit({ type: 'away.stranded', ship: site, crew: party });
       s.block = 'stranded';
