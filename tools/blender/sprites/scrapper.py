@@ -243,6 +243,23 @@ def rr_prism_L(b, L0, L1, dc, zc, h, r, col, cap0=None):
     b.face(c, col, dv)
 
 
+def plate_L(b, poly, L0, L1, col, caps):
+    """A flat (D, z) outline, which may be concave, extruded along L from L0 to L1. Sides are built per edge; each end
+    cap is laid as the given convex pieces (index lists into poly), so no faces sit inside the solid."""
+    area = sum(poly[i][0] * poly[i - 1][1] - poly[i - 1][0] * poly[i][1] for i in range(len(poly)))
+    sg = 1 if area < 0 else -1                                          # outward = sg * (dz, -dD) for edge (dD, dz)
+    for i in range(len(poly)):
+        (d0, z0), (d1, z1) = poly[i - 1], poly[i]
+        q = [b.P(L0, d0, z0), b.P(L0, d1, z1), b.P(L1, d1, z1), b.P(L1, d0, z0)]
+        o0, o1 = b.P(L0, (d0 + d1) / 2, (z0 + z1) / 2), b.P(L0, (d0 + d1) / 2 + sg * (z1 - z0), (z0 + z1) / 2 - sg * (d1 - d0))
+        b.face(q, col, (o1[0] - o0[0], o1[1] - o0[1], o1[2] - o0[2]))
+    e0, e1 = b.P(L0, 0, 0), b.P(L1, 0, 0)
+    dv = (e1[0] - e0[0], e1[1] - e0[1], e1[2] - e0[2])
+    for piece in caps:
+        b.face([b.P(L0, *poly[k]) for k in piece], col, (-dv[0], -dv[1], -dv[2]))
+        b.face([b.P(L1, *poly[k]) for k in piece], col, dv)
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -252,9 +269,20 @@ def drum(b):
     yoke (later), with two wide raised bands and a narrow one next to the shroud."""
     rr_prism_L(b, 2.04, 2.2, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                    # mouth shroud
     rr_prism_L(b, 2.02, 2.04, DRUM_D, DRUM_Z, 0.29, 0.09, DARK)                    # the mouth, dark
-    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.9, GM, sides=20)                          # drum
+    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, GM, sides=20)                          # drum
     for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, GMD, sides=20)
+    yoke(b)
+
+
+def yoke(b):
+    """The yoke at the drum's far end (measured on the drum tile): a C-shaped bracket across the machine that runs over
+    the drum, chamfers down at the front, drops past the drum's face (standing proud of the body's front) and plants a
+    foot on the floor, chamfered underneath. The top plate (later) runs back off its top."""
+    poly = [(1.24, 0.92), (1.81, 0.92), (2.156, 0.676), (2.156, 0.27), (2.06, 0.0), (2.0, 0.0),   # outer, back to foot
+            (2.0, 0.27), (2.0, 0.62), (1.76, 0.79), (1.24, 0.79)]                                 # inner, foot to back
+    caps = [(0, 1, 8, 9), (1, 2, 7, 8), (2, 3, 6, 7), (3, 4, 5, 6)]
+    plate_L(b, poly, 2.8, 3.0, GMD, caps)
 
 
 def scrapper(rot):
