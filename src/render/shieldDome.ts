@@ -118,36 +118,6 @@ void main(void) {
     al = max(al, 0.18 + 0.15 * uOver);
   }
 
-  // hits: x, y (bubble frame, world px), age 0..1 (<0 unused), kind (1 absorbed, 2 ion, 3 pierce)
-  float reach = clamp(uAx.x * 0.3, 60.0 * uPx, 160.0 * uPx);
-  for (int i = 0; i < ${DOME_HITS}; i++) {
-    vec4 h = uHit[i];
-    if (h.z < 0.0) continue;
-    float d = length(l - h.xy);
-    float k = h.z;
-    if (h.w < 1.5) {                                          // absorbed: a ring of lit cells runs out from the hit
-      float front = reach * k;
-      if (line && d < front) { col = mix(H1, H0, 0.6 * (1.0 - k)); al = max(al, 1.0 - 0.4 * k); glow += H1 * 0.7 * (1.0 - k); }
-      else if (d < front && r < 1.0) { col = mix(col, H1, 0.5 * (1.0 - k)); al = max(al, 0.35 * (1.0 - k)); }
-      if (line && abs(d - front) < 12.0 * uPx) { col = H0; al = 1.0; glow += H0 * 0.8 * (1.0 - 0.5 * k); }
-    } else if (h.w < 2.5) {                                   // ion: the outer row goes violet and drains into the hit
-      bool rimRow = ring < 1.5 && d < reach * (0.8 + 3.0 * k);
-      if (rimRow && line) { col = k < 0.6 ? I0 : I1; al = 1.0; glow = I1 * 0.8 * (1.0 - 0.6 * k); }
-      else if (rimRow && r < 1.0) { col = mix(col, I2, 0.7); al = max(al, 0.45 * (1.0 - 0.5 * k)); }
-      float front = reach * 1.5 * (1.0 - k);
-      if (line && d > front && d < reach * 1.5) { col = I1; al = 1.0; glow += I2 * 0.7 * (1.0 - k); }
-      else if (d > front && d < reach * 1.5 && r < 1.0) { col = mix(col, I2, 0.6); al = max(al, 0.35 * (1.0 - k)); }
-      if (line && abs(d - front) < 10.0 * uPx) { col = I0; al = 1.0; glow += I1 * 0.9; }
-    } else {                                                  // pierce: a hole torn round the hit, closing up again
-      float size = (k < 0.3 ? mix(10.0, 14.0, k / 0.3) : k < 0.6 ? mix(14.0, 10.0, (k - 0.3) / 0.3) : mix(10.0, 3.0, (k - 0.6) / 0.4)) * uPx;
-      vec2 q = l - h.xy * 0.97;
-      float hd = length(vec2(q.x, q.y * 1.4));
-      if (hd < size * (0.75 + 0.35 * ch)) { al = 0.0; glow = vec3(0.0); }
-      else if (line && d < size + 7.0 * uPx) { col = H0; al = 1.0; }
-    }
-  }
-
-  float frame12 = 0.0;
   if (breakAge >= 0.0) {                                       // the outer row flashes, its cells drop out, shards drift off
     outer = outer && line;
     if (outer && breakAge < 0.1) { col = W; al = 1.0; glow += H0 * 0.5; }
@@ -165,6 +135,36 @@ void main(void) {
       if (dd.x + dd.y < 1.4 * (1.0 - 0.4 * age) + 0.5) { col = age < 0.4 ? H0 : age < 0.75 ? H1 : H2; al = 1.0 - 0.5 * age; }
     }
     if (r >= 1.0 && al <= 0.0) discard;
+  }
+
+  // the hit drawn over the break it caused (a laser or a drain that took the layer)
+  // hits: x, y (bubble frame, world px), age 0..1 (<0 unused), kind (1 absorbed, 2 ion, 3 pierce)
+  float reach = clamp(uAx.x * 0.3, 60.0 * uPx, 160.0 * uPx);
+  for (int i = 0; i < ${DOME_HITS}; i++) {
+    vec4 h = uHit[i];
+    if (h.z < 0.0) continue;
+    float d = length(l - h.xy);
+    float k = h.z;
+    if (h.w < 1.5) {                                          // absorbed: a ring of lit cells runs out from the hit
+      float front = reach * k;
+      if (line && d < front) { col = mix(H1, H0, 0.6 * (1.0 - k)); al = max(al, 1.0 - 0.4 * k); glow += H1 * 0.7 * (1.0 - k); }
+      else if (d < front && r < 1.0) { col = mix(col, mix(H1, H0, 0.3), 0.75 * (1.0 - k)); al = max(al, 0.6 * (1.0 - k)); glow += H1 * 0.25 * (1.0 - k); }
+      if (line && abs(d - front) < 12.0 * uPx) { col = H0; al = 1.0; glow += H0 * 0.8 * (1.0 - 0.5 * k); }
+    } else if (h.w < 2.5) {                                   // ion: the outer row goes violet and drains into the hit
+      bool rimRow = ring < 1.5 && d < reach * (0.8 + 3.0 * k);
+      if (rimRow && line) { col = k < 0.6 ? I0 : I1; al = 1.0; glow = I1 * 0.8 * (1.0 - 0.6 * k); }
+      else if (rimRow && r < 1.0) { col = mix(col, I2, 0.7); al = max(al, 0.45 * (1.0 - 0.5 * k)); }
+      float front = reach * 1.5 * (1.0 - k);
+      if (line && d > front && d < reach * 1.5) { col = I1; al = 1.0; glow += I2 * 0.7 * (1.0 - k); }
+      else if (d > front && d < reach * 1.5 && r < 1.0) { col = mix(col, I2, 0.6); al = max(al, 0.35 * (1.0 - k)); }
+      if (line && abs(d - front) < 10.0 * uPx) { col = I0; al = 1.0; glow += I1 * 0.9; }
+    } else {                                                  // pierce: a hole torn round the hit, closing up again
+      float size = (k < 0.3 ? mix(10.0, 14.0, k / 0.3) : k < 0.6 ? mix(14.0, 10.0, (k - 0.3) / 0.3) : mix(10.0, 3.0, (k - 0.6) / 0.4)) * uPx;
+      vec2 q = l - h.xy * 0.97;
+      float hd = length(vec2(q.x, q.y * 1.4));
+      if (hd < size * (0.75 + 0.35 * ch)) { al = 0.0; glow = vec3(0.0); }
+      else if (line && d < size + 7.0 * uPx) { col = H0; al = 1.0; }
+    }
   }
 
   if (regenAge >= 0.0 && r < 1.0 && ring > rows - 1.5 && ring < rows - 0.5) {
