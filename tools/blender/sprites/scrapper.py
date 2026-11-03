@@ -457,12 +457,13 @@ def vent(b, L=2.3, D=0.5, r=0.17):
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
 
 
-def piston(b, L0=2.1, L1=2.6, r=0.11, wall=1.0):
+def piston(b, L0=2.1, L1=2.6, r=0.15, wall=1.0, sink=0.077):
     """The piston lying along the front edge of the top behind the bay, above the recess (after the ref's hopper
-    tile), tangent to the bay's back wall (D = wall), with a dark knob capping its hatch-end side."""
-    D = wall - r
-    b.cyl_L(D, TOP + r, r, L0, L1, GM, sides=12)
-    b.cyl_L(D, TOP + r, r + 0.02, L0 - 0.06, L0, DARK, sides=12)
+    tile): tangent to the bay's back wall (D = wall) and sunk about 3 px into the top, with a dark knob capping its
+    hatch-end side."""
+    D, z = wall - r, TOP + r - sink
+    b.cyl_L(D, z, r, L0, L1, GM, sides=14)
+    b.cyl_L(D, z, r + 0.02, L0 - 0.06, L0, DARK, sides=14)
 
 
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
