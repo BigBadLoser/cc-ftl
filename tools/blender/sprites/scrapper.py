@@ -380,7 +380,7 @@ def screen(b, D1):
            vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))
 
 
-DOOR_W, DOOR_H = 0.65, 0.55
+DOOR_W, DOOR_H = 0.58, 0.435
 DOOR_DEPTH = 0.3
 # front row: the first centred in its tile, the far one moved toward the end to clear the yoke, which stands out in
 # front of the body and would hide its near side
