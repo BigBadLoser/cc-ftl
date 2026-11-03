@@ -14,11 +14,15 @@ LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot
 SLAT_D, SLAT_H, SLAT_P = PX / 2, 2 * PZ, 4 * PZ   # a slat: its depth (a px of lit top), its front, its pitch
 PANEL_D = PX                        # the raised centre panel's depth
 PANEL_W = 1 / 3                     # ... its width (a tile's middle third)
+END = {"x": "fTX5", "y": "fTX4"}    # a free end's section, on an x / y end face; its front edge's highlight
+END_EDGE = {"x": "fTX3", "y": "fTX2"}
 
 
 class TanTones(Feature):
     """The shell's faces in the face's tan (the second tone); the dark outlines at the foot and under the top stay."""
     def col_face(self, sp, face, x, y, z):
+        if sp.end_face(face, x if face == "x" else y):  # (a free end: its section's slate blue)
+            return END[face]
         c = T.Shell.col_face(sp, face, x, y, z)
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
@@ -26,6 +30,9 @@ class TanTones(Feature):
         if z < sp.zs + 0.02 or z > top - 0.03:
             return c
         return T.RAMPS[FACE][1 if face == "x" else 0][3]
+
+    def end_tone(self, sp, fam, ox):                    # (the ramps' caps at a free end: its section's)
+        return END[ox]
 
 
 def _panels(a, b):
@@ -48,8 +55,14 @@ def tan(hull):
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
         rt = min(top, T.W.wall_top("wall", "up")) if full else top
         z1 = rt - 0.031                                 # the header's top (under the cap's black: Faction.paint)
-        if endf:
-            _end_section(k, ax, plane, a, b, zs, top, F)
+        if endf:                                        # a wall's free end: its section in the slate blue
+            _end_section(k, ax, plane, a, b, zs, top, F, col=END[ax], edge=END_EDGE[ax])
+            sh = T.SHELL                                # (its feet too, over the section's in the face's colour)
+            run, ft = getattr(sh, "run", T.W.skirt_run()), getattr(sh, "foot", 0.0)
+            if ft > 0.0035:
+                k.poly([T.P(ax, plane, u, z, 2 * PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035),
+                                                                     (b + run, ft), (a - run, ft))],
+                       F, 2, T.OUT(ax), fixed=END[ax])
             return
         lit = "fTS0" if ax == "y" else "fTS1"           # (a lit top: the ramp's palest)
         # the foot: a blue line, a dark one, the lip over them
