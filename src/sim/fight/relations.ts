@@ -1,5 +1,5 @@
 import { shipIdOf } from '../regions';
-import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../crew/components';
+import { AssignmentC, CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../crew/components';
 import { factionsHostile, rogueAlly } from '../combat/factions';
 
 import { InertC, StunC } from '../robots/components';
@@ -9,6 +9,7 @@ import { shipById } from '../combat/ships';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
 import { YardCrewC } from '../yard/types';
+import { AwayC } from '../away/components';
 
 /**
  * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), or one
@@ -52,9 +53,25 @@ export function onWreck(sim: Sim, crew: number): boolean {
   return !!pos && shipById(sim, shipIdOf(sim, pos))?.state === 'wreck';
 }
 
-/** An invader that is still boarding: on a wreck an invader is just crew at work, so it takes jobs like anyone (the fight code still counts it as an invader). */
+/**
+ * An invader that is still boarding: on a wreck an invader is just crew at work, so it takes jobs like anyone (the fight code still counts it
+ * as an invader). Nor is one of an away party on the way back aboard (recalled, fetched, riding out a trip: `Away`): the crew AI's return
+ * drive takes them to the shuttle, not the fight code to the bridge.
+ */
 export function isBoarding(sim: Sim, crew: number): boolean {
-  return isInvader(sim, crew) && !onWreck(sim, crew);
+  return isInvader(sim, crew) && !onWreck(sim, crew) && !headingAboard(sim, crew);
+}
+
+/**
+ * True for crew under an away order to go aboard a site's shuttle: a party member called home by the player, fetched or riding the round
+ * trip, or a named invitee walking to the seat held for them (a passage job held by its `holder`, away/passage.ts). Their walk is theirs:
+ * the fight code neither sends them hunting nor fleeing (fighter.ts), and a party member on the way back is not boarding (`isBoarding`).
+ */
+export function headingAboard(sim: Sim, crew: number): boolean {
+  const away = sim.world.get(crew, AwayC);
+  if (away) return !!(away.recall || away.pickup || away.ride);
+  const job = sim.world.get(sim.world.get(crew, AssignmentC)?.jobId ?? 0, JobC);
+  return job?.kind === 'passage' && job.holder === crew;
 }
 
 /** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */

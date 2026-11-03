@@ -157,7 +157,10 @@ export interface Job {
   site?: number;
   /** For 'passage' jobs: a seat beyond the shuttle's suits, for crew who do not breathe. */
   airless?: true;
-  /** sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them. */
+  /**
+   * sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them.
+   * passage: the crew member of a named party the seat is for (only they take it, `AwaySite.invited`).
+   */
   holder?: number;
 }
 export const JobC = defineComponent<Job>('job');

@@ -235,8 +235,6 @@ export const BOARDING_LOAD_TICKS = 600;
  * tools alike (melee and ranged are the same). A reactor (200 hp) falls to one boarder in 25 s, a weapon (80 hp) in 10 s.
  */
 export const SABOTAGE_PER_SEC = 8;
-/** Ticks a recalled party gets to reach the docked shuttle before it leaves with whoever has boarded (the rest stay put). */
-export const RECALL_BOARD_TICKS = 600;
 
 /** Zealot core raid (capture/coreRaid.ts): ticks raiders must hold an AI core undisturbed to tear it out, how close they stand, and how close a defender must be to stop them. */
 export const CORE_RAID_HOLD_TICKS = 40 * 20;
@@ -408,6 +406,8 @@ export const AWAY_HOME_HEALTH = 0.5;
 /** Seconds the shuttle waits at home for passengers on their way once someone is aboard, and the least it waits for others to take a seat. */
 export const AWAY_BOARD_WAIT_SEC = 60;
 export const AWAY_BOARD_MIN_SEC = 5;
+/** Seconds a named party (`AwaySite.invited`) gets to reach the shuttle before it leaves without those still on their way. */
+export const AWAY_INVITE_WAIT_SEC = 75;
 /** Longest stop at home between two legs of a round trip while part of the party stays out (the departure check counts on it). */
 export const AWAY_TURNAROUND_SEC = 60;
 /** The departure check: a worker staying out with no other source must have this many round trips of air, plus the walk to the hatch and AIR_RESERVE_SEC. */

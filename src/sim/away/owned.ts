@@ -5,6 +5,7 @@ import { AirHoldsC, EvaFloatC, SuitC, type AirHold } from '../eva/components';
 import { StagingC } from '../items/components';
 import { destroyJob } from '../items/stacks';
 import { AirlockC } from '../modules/airlock';
+import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC, type Away, type SitePhase } from './components';
@@ -18,7 +19,7 @@ import { AwayC, AwaySiteC, SiteRunC, type Away, type SitePhase } from './compone
  *
  * | State | Owner | Released when |
  * | `AwayC` (party, pickup requester) | the run of `vehicle`, else the site | dead, or neither the run nor the site's claim stands |
- * | `Drafted.away` (the hold for a float) | the float (`EvaFloatC`) | no float: the draft ends, or stays the player's if they gave an order |
+ * | `Drafted.away` (the hold for a float, or for an invitee) | the float (`EvaFloatC`); the site's `invited` | no float and not invited (or aboard): the draft ends, or stays the player's if they gave an order |
  * | `Suit.vehicle` of a party member | the drift out of the hatch | landed (on a tile, not floating) |
  * | `Away.landing` | the drift out | landed |
  * | `Away.lastCall` | the run's 'depart' phase | the phase ends, or they are aboard |
@@ -26,6 +27,8 @@ import { AwayC, AwaySiteC, SiteRunC, type Away, type SitePhase } from './compone
  * | `Away.pickup` | a shuttle answering their request | they are aboard (or floating in) |
  * | `Away.downAt` | their being down out on the site | back on their feet, or aboard |
  * | `Away.home` of a member out | coming aboard | out on a tile and not floating |
+ * | `Away.recall` | the player's recall (`crew.recall`) | they stand somewhere other than their site (aboard, it rides home with them) |
+ * | `AwaySite.invited` (a named party) | the run's first stop at home ('board') | the run leaves 'board' (those not aboard stay) |
  * | `SiteRun.returnBy`, `AirHoldsC` | the trip away from the site | the run is beside the site again, or gone |
  * | an `AirHold` | a party member out, a source | they left the party or came aboard; the source is gone |
  * | `SiteRun.boardedAt`, `held` | the stop at home ('board') | the stop ends |
@@ -81,11 +84,17 @@ const RULES: readonly Rule[] = [
   },
   {
     name: 'drafted.away',
-    find: (sim) => sim.world.query(DraftedC).filter((c) => !!sim.world.get(c, DraftedC)!.away && !sim.world.has(c, EvaFloatC)),
+    find: (sim) => {
+      const invited = new Set<number>();
+      for (const s of sim.world.query(AwaySiteC)) for (const c of sim.world.get(s, AwaySiteC)!.invited ?? []) if (!sim.world.has(c, AwayC)) invited.add(c);
+      return sim.world.query(DraftedC).filter((c) => !!sim.world.get(c, DraftedC)!.away && !sim.world.has(c, EvaFloatC) && !invited.has(c));
+    },
     release: (sim, c) => {
       const d = sim.world.get(c, DraftedC)!;
-      // A draft the player gave an order to meanwhile is theirs (Codex 4449530810): only the away mark goes.
-      if (d.target !== null) return void delete d.away;
+      // A draft the player gave an order to meanwhile is theirs (Codex 4449530810), and so is one landed on a site whose party stands by
+      // for orders (boarders): only the away mark goes.
+      const site = sim.world.get(c, AwayC)?.site ?? 0;
+      if (d.target !== null || (sim.world.get(site, AwaySiteC)?.standBy && sim.world.has(c, PositionC))) return void delete d.away;
       sim.world.remove(c, DraftedC);
       const crew = sim.world.get(c, CrewC) as Crew | undefined;
       if (crew?.activity === 'drafted') crew.activity = 'idle';
@@ -102,6 +111,16 @@ const RULES: readonly Rule[] = [
   flag('pickup', (sim, c) => !onTile(sim, c)),
   flag('downAt', (sim, c) => aboard(sim, c) || !isIncapacitated(sim, c)),
   flag('home', (sim, c) => onTile(sim, c)),
+  // The player's recall stands until they come aboard; one standing anywhere but their site (they left it) has no use for it.
+  flag('recall', (sim, c, a) => onTile(sim, c) && shipIdOf(sim, sim.world.get(c, PositionC)) !== a.site),
+  {
+    name: 'awaySite.invited',
+    find: (sim) => sim.world.query(AwaySiteC).filter((s) => {
+      const site = sim.world.get(s, AwaySiteC)!;
+      return site.invited !== undefined && sim.world.get(site.vehicle, SiteRunC)?.phase !== 'board';
+    }),
+    release: (sim, s) => void delete sim.world.get(s, AwaySiteC)!.invited,
+  },
   {
     name: 'siteRun.returnBy',
     find: (sim) => sim.world.query(SiteRunC).filter((id) => {

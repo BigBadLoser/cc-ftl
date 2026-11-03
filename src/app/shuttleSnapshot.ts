@@ -201,8 +201,10 @@ function salvageInfo(sim: Sim, id: number): UiSalvage {
   const h = hostilesAboard(sim, id);
   const why = [h.crew ? 'hostiles aboard' : '', h.sacs ? 'egg sacs aboard' : '', h.nests ? 'nests aboard' : ''].filter(Boolean).join(', ');
   // The site's own hold-ups show while the order runs: the hold could not be unloaded at home, or its shuttle is lost with none to replace it.
-  const site = sim.world.get(id, AwaySiteC)?.block;
-  const held = site === 'noRoom' ? 'no room at home for the loot' : site === 'stranded' ? 'shuttle lost: crew stranded' : '';
+  const s = sim.world.get(id, AwaySiteC);
+  const site = s?.block;
+  const lost = !sim.world.has(s?.vehicle ?? 0, SiteRunC); // stranded with its run alive: the shuttle has no way home (away/run.ts noWayIn)
+  const held = site === 'noRoom' ? 'no room at home for the loot' : site === 'stranded' ? (lost ? 'shuttle lost: crew stranded' : 'shuttle cannot get home') : '';
   const block = o.status !== 'blocked' ? held : o.block === 'noShuttle' ? 'no free shuttle with suits' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard';
   return { types, order: { types: [...o.types], status: o.status, block, done: o.done ?? 0, total: (o.done ?? 0) + left } };
 }

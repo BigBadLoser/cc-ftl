@@ -2,7 +2,8 @@ import { AssignmentC, CombatC, CrewC, DeadC, DownedC, HealthC, JobC, ModuleC, Po
 import { footprintTiles } from '../sim/modules/footprint';
 import { targetableVehicle, weaponAntiVehicle } from '../sim/combat/targets';
 import { playerCrewAboard } from '../sim/boarding/aboard';
-import { RecallC, SabotageOrderC } from '../sim/boarding/components';
+import { SabotageOrderC } from '../sim/boarding/components';
+import { AwayC } from '../sim/away/components';
 import { FighterC } from '../sim/fight/components';
 import { homeShip } from '../sim/index';
 import { shipGrid, shipIdOf } from '../sim/regions';
@@ -17,12 +18,10 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
     const ship = sim.world.get(id, ShipC);
     if (!ship || id === home || ship.faction === 'player') continue;
     const aboard = playerCrewAboard(sim, id);
-    // A recalled party stays listed ('returning') while the shuttle flies it home; the recall ends when it docks or stows.
-    const flying: number[] = [];
-    for (const v of sim.world.query(VehicleC)) {
-      const rc = sim.world.get(v, RecallC);
-      if (rc && rc.ship === id) for (const c of rc.crew) if (sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !aboard.crew.includes(c)) flying.push(c);
-    }
+    // The party of the boarding site on this ship: one recalled, or aboard its shuttle, is listed 'returning' until they step out at home.
+    const ofSite = sim.world.query(AwayC).filter((c) => sim.world.get(c, AwayC)!.site === id && sim.world.has(c, CrewC) && !sim.world.has(c, DeadC));
+    const returning = new Set(ofSite.filter((c) => sim.world.get(c, AwayC)!.recall || !sim.world.has(c, PositionC)));
+    const flying = ofSite.filter((c) => !aboard.crew.includes(c) && !sim.world.has(c, PositionC));
     if (!aboard.crew.length && !flying.length) continue;
     const name = (c: number): string => sim.world.get(c, CrewC)?.name ?? 'Crew';
     // Health as a 0..1 fraction; it is kept while the crew member rides the shuttle (only the position goes).
@@ -30,8 +29,6 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
       const h = sim.world.get(c, HealthC);
       return h ? Math.round((h.hp / Math.max(1, h.max)) * 100) / 100 : 1;
     };
-    const returning = new Set<number>();
-    for (const v of sim.world.query(VehicleC)) for (const c of sim.world.get(v, RecallC)?.crew ?? []) returning.add(c);
     const party: UiBoarding['party'] = aboard.crew.map((c) => {
       const jobId = sim.world.get(c, AssignmentC)?.jobId;
       const job = jobId ? sim.world.get(jobId, JobC) : undefined;
