@@ -154,13 +154,14 @@ void main(void) {
       else if (d < front && r < 1.0) { col = mix(col, mix(H1, H0, 0.3), 0.75 * (1.0 - k)); al = max(al, 0.6 * (1.0 - k)); glow += H1 * 0.25 * (1.0 - k); }
       if (line && abs(d - front) < 12.0 * uPx) { col = H0; al = 1.0; glow += H0 * 0.8 * (1.0 - 0.5 * k); }
     } else if (h.w < 2.5) {                                   // ion: the outer row goes violet and drains into the hit
-      bool rimRow = ring < 1.5 && d < reach * (0.8 + 3.0 * k);
-      if (rimRow && line) { col = k < 0.6 ? I0 : I1; al = 1.0; glow = I1 * 0.8 * (1.0 - 0.6 * k); }
-      else if (rimRow && r < 1.0) { col = mix(col, I2, 0.7); al = max(al, 0.45 * (1.0 - 0.5 * k)); }
-      float front = reach * 1.5 * (1.0 - k);
-      if (line && d > front && d < reach * 1.5) { col = I1; al = 1.0; glow += I2 * 0.7 * (1.0 - k); }
-      else if (d > front && d < reach * 1.5 && r < 1.0) { col = mix(col, I2, 0.6); al = max(al, 0.35 * (1.0 - k)); }
-      if (line && abs(d - front) < 10.0 * uPx) { col = I0; al = 1.0; glow += I1 * 0.9; }
+      // kept to the rim rows near the hit, so it reads as a drain, not a wash over the bubble
+      bool near = r < 1.0 && ring < 2.5;
+      bool rimRow = near && ring < 1.5 && d < reach * (0.7 + 2.2 * k);
+      if (rimRow && line) { col = k < 0.6 ? I0 : I1; al = 1.0; glow = I1 * 0.6 * (1.0 - 0.6 * k); }
+      else if (rimRow) { col = mix(col, I2, 0.45); al = max(al, 0.3 * (1.0 - 0.5 * k)); }
+      float front = reach * (1.0 - k);
+      if (near && line && d > front && d < reach) { col = mix(col, I1, 0.75); al = max(al, 0.85 * (1.0 - 0.5 * k)); glow += I2 * 0.4 * (1.0 - k); }
+      if (near && line && abs(d - front) < 8.0 * uPx) { col = I0; al = 1.0; glow += I1 * 0.6; }
     } else {                                                  // pierce: a hole torn round the hit, closing up again
       float size = (k < 0.3 ? mix(10.0, 14.0, k / 0.3) : k < 0.6 ? mix(14.0, 10.0, (k - 0.3) / 0.3) : mix(10.0, 3.0, (k - 0.6) / 0.4)) * uPx;
       vec2 q = l - h.xy * 0.97;

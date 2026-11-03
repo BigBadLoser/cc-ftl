@@ -6,7 +6,7 @@ import { ART_SCALE as S, TILE_H, TILE_W } from './iso';
 import { sectorArt } from './sectorPos';
 
 /** Margin between the hull's fitted ellipse and the bubble's rim (world px). */
-const MARGIN = 8 * S;
+const MARGIN = 24 * S;
 
 /** An ellipse in sector art px: centre, semi-axes, and the rotation of its rx axis. */
 export interface Fit {
