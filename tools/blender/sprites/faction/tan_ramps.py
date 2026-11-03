@@ -124,7 +124,7 @@ def cushions(layout, extra=None):
 # the grille design: a wide cushion, a raised grille between it and a narrow one (a frame and a lattice of bars,
 # their tops lit, their sides in the face's brown as they face, over a brown floor)
 G_L, G_R = 8 / 32, 25 / 32                      # the gap between the cushions, across the tile
-G_U0, G_U1, G_D0, G_D1 = 9 / 32, 20 / 32, 0.08, 0.92    # the grille in it
+G_D0, G_D1 = 0.03, 0.97                         # the grille fills it, down the slope from to
 G_H = 2 * PX                                    # how far it stands proud
 
 
@@ -133,13 +133,12 @@ def grille(paint, solid, U, D):
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
-    paint(q(U(G_L) + L / 2, U(G_R) - L / 2, D(0.0), D(1.0)), "fTS3", 1.75)        # the gap's floor
-    gu0, gu1, gd0, gd1 = U(G_U0), U(G_U1), D(G_D0), D(G_D1)
-    paint(q(gu0, gu1, gd0, gd1), "fTS3", 2.25)                                      # brown under the grille
+    gu0, gu1, gd0, gd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)          # (the gap, a joint in)
+    paint(q(gu0, gu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # brown under the grille
     for ua, ub, da, db in ((gu0, gu1, gd0, gd0 + E), (gu0, gu1, gd1 - E, gd1),     # its frame
                            (gu0, gu0 + L, gd0, gd1), (gu1 - L, gu1, gd0, gd1)):
         solid(q(ua, ub, da, db), G_H, "fTW1", FACE, 3)
-    n = int(round((G_U1 - G_U0) * 32 / 2))
+    n = int(round((G_R - G_L) * 32 / 2))
     for i in range(1, n):                                                           # its bars down the slope (a
         ua = gu0 + 2 * i * L - L / 2                                                # px, every two)
         solid(q(ua, ua + L, gd0, gd1), G_H, "fTW1", FACE, 3)
