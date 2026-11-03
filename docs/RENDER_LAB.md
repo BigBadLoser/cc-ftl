@@ -10,7 +10,7 @@ only when the thing to judge is how it sits in a real scene. Code: `tools/lab/` 
 | Goal | How |
 | --- | --- |
 | Look at it in a browser | `npm run dev`, open `/tools/lab/` (the index lists the panels and their options) |
-| Screenshot a panel | `npm run lab -- --panel sprites [--query "&ids=fx.&zoom=2"] [--out file.png]` |
+| Screenshot a panel | `npm run lab -- --panel shield [--query "&effects=ion&zoom=0.5"] [--out file.png]` |
 | Several shots in one browser | `npm run lab -- --batch shots.json` (a list of `{ panel, query, out }`) |
 | Use a dev server already running | add `--url http://localhost:5173/` (otherwise it starts one on a free port and stops it by PID) |
 
@@ -25,6 +25,8 @@ move in a browser).
 
 - `sprites`: any static sprites by id prefix (`ids=fx.shield_,fx.hit`), each animation on its own row with a playing
   cell and then every frame, anchors lined up; `glow=on|off|only`, `anchor`, `fps=14`.
+- `shield`: the combat shield dome (#301): layer counts at rest, then every effect as a strip of stills through its
+  length (`effects=`, `frames=8`, `rx`, `ry`, `rot`, `rest=1,2,3,4`).
 
 ## Add a panel
 
@@ -34,5 +36,5 @@ display objects once and returns `(t) => void` to set them to a time. Put it in 
 in `tools/lab/panels.ts`.
 
 Drive a panel through the code the game uses (export a small pure helper from the render module if the logic sits
-inside a view), not a copy of it, so the lab can't drift from the game. Stand-in
+inside a view, as `paintDome` does for the shield), not a copy of it, so the lab can't drift from the game. Stand-in
 drawing behind the subject (a placeholder hull, a grid) is fine: it is debug drawing.

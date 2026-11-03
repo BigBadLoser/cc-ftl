@@ -20,17 +20,19 @@ export interface ShieldView {
 }
 
 const KIND_CODE: Readonly<Record<ShieldHitKind, number>> = { absorb: 1, ion: 2, pierce: 3 };
-const SPRITE: Readonly<Record<ShieldHitKind, { art: string; frames: number }>> = {
+/** The fx_shield sprite piece each kind of hit shows. */
+export const SHIELD_SPRITE: Readonly<Record<ShieldHitKind, { art: string; frames: number }>> = {
   absorb: { art: 'fx.shield_flash', frames: 10 },
   ion: { art: 'fx.shield_flash.ion', frames: 10 },
   pierce: { art: 'fx.shield_pierce', frames: 12 },
 };
 /** Sprite pieces play at this rate. */
-const SPRITE_FPS = 14;
+export const SPRITE_FPS = 14;
 /** One overcharge pulse, ms. */
 const OVERCHARGE_MS = 900;
 
-interface Hit {
+/** A hit on the bubble: where on the rim (bubble frame), when (animation ms) and what kind. */
+export interface DomeHit {
   lx: number;
   ly: number;
   at: number;
@@ -42,7 +44,7 @@ interface Dome {
   mesh: Mesh<Geometry, Shader>;
   u: DomeUniforms;
   state: DomeState;
-  hits: Hit[];
+  hits: DomeHit[];
   seen: boolean;
 }
 interface Piece {
@@ -50,6 +52,37 @@ interface Piece {
   art: string;
   frames: number;
   age: number;
+}
+
+const hitSec = (h: DomeHit): number => (h.kind === 'pierce' ? DOME_SEC.pierce : DOME_SEC.hit);
+
+/**
+ * Set a dome's uniforms for the moment `now` (animation ms) from its state, its hits (the latest DOME_HITS are drawn) and
+ * whether the shields are overcharged. Returns whether the dome has anything to draw. The render lab draws through this too.
+ */
+export function paintDome(u: DomeUniforms, st: DomeState, hits: readonly DomeHit[], overcharged: boolean, now: number): boolean {
+  u.uLit = Math.min(st.layers, 8);
+  const pulse = Math.floor((now / OVERCHARGE_MS) * DOME_FPS * (OVERCHARGE_MS / 1000)) / (DOME_FPS * (OVERCHARGE_MS / 1000));
+  u.uOver = overcharged && st.layers > 0 ? 0.5 - 0.5 * Math.cos(pulse * Math.PI * 2) : 0;
+  const ev = u.uEv;
+  ev[0] = domeAge(st.breakAt, DOME_SEC.break, now);
+  ev[1] = domeAge(st.regenAt, DOME_SEC.regen, now);
+  ev[2] = domeAge(st.downAt, DOME_SEC.down, now);
+  ev[3] = st.downRows;
+  u.uEv = ev;
+  const h = u.uHit;
+  let live = 0;
+  for (let i = 0; i < DOME_HITS; i++) {
+    const x = hits[hits.length - 1 - i];
+    const age = x ? domeAge(x.at, hitSec(x), now) : -1;
+    if (age >= 0) live++;
+    h[i * 4] = x?.lx ?? 0;
+    h[i * 4 + 1] = x?.ly ?? 0;
+    h[i * 4 + 2] = age;
+    h[i * 4 + 3] = x ? KIND_CODE[x.kind] : 0;
+  }
+  u.uHit = h;
+  return domeVisible(st, now) || live > 0;
 }
 
 /**
@@ -115,28 +148,8 @@ export function createShieldView(
       drop(id, d);
       return;
     }
-    const st = d.state;
-    const u = d.u;
-    u.uLit = Math.min(st.layers, 8);
-    const pulse = Math.floor((now / OVERCHARGE_MS) * DOME_FPS * (OVERCHARGE_MS / 1000)) / (DOME_FPS * (OVERCHARGE_MS / 1000));
-    u.uOver = c.heat.overcharge.shields.left > 0 && st.layers > 0 ? 0.5 - 0.5 * Math.cos(pulse * Math.PI * 2) : 0;
-    const ev = u.uEv;
-    ev[0] = domeAge(st.breakAt, DOME_SEC.break, now);
-    ev[1] = domeAge(st.regenAt, DOME_SEC.regen, now);
-    ev[2] = domeAge(st.downAt, DOME_SEC.down, now);
-    ev[3] = st.downRows;
-    u.uEv = ev;
-    const h = u.uHit;
-    d.hits = d.hits.filter((x) => domeAge(x.at, x.kind === 'pierce' ? DOME_SEC.pierce : DOME_SEC.hit, now) >= 0);
-    for (let i = 0; i < DOME_HITS; i++) {
-      const x = d.hits[d.hits.length - 1 - i];
-      h[i * 4] = x?.lx ?? 0;
-      h[i * 4 + 1] = x?.ly ?? 0;
-      h[i * 4 + 2] = x ? domeAge(x.at, x.kind === 'pierce' ? DOME_SEC.pierce : DOME_SEC.hit, now) : -1;
-      h[i * 4 + 3] = x ? KIND_CODE[x.kind] : 0;
-    }
-    u.uHit = h;
-    d.mesh.visible = domeVisible(st, now) || d.hits.length > 0;
+    d.hits = d.hits.filter((x) => domeAge(x.at, hitSec(x), now) >= 0);
+    d.mesh.visible = paintDome(d.u, d.state, d.hits, c.heat.overcharge.shields.left > 0, now);
   }
 
   let clock = 0;
@@ -149,7 +162,7 @@ export function createShieldView(
       const p = rimPoint(fit, from);
       d?.hits.push({ lx: p.lx, ly: p.ly, at: clock, kind });
       const spr = pool.pop() ?? new Sprite();
-      const art = SPRITE[kind];
+      const art = SHIELD_SPRITE[kind];
       if (!place(spr, `${art.art}.0`)) {
         pool.push(spr);
         return;
