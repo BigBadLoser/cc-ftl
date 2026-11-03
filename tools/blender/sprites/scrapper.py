@@ -19,6 +19,7 @@ FOOTPRINT = (4, 2)
 ACCESS = (1, 2)
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
+BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
 BASE = 0.06          # dark plinth band
 
 
@@ -64,7 +65,7 @@ class _Build:
         ln = math.sqrt(sum(v * v for v in n)) or 1.0
         self.m.poly([core.G(*p) for p in pts], top if top and n[2] / ln > 0.7 else col, flip=True)
 
-    def loft(self, rings, col=STEEL, top=STEEL_T, caps=(True, True)):
+    def loft(self, rings, col=BODY, top=None, caps=(True, True)):
         """A shell swept along L through cross-sections across D: rings = [(L, [(d, z), ...]), ...], L increasing, every
         ring with the same number of points (bottom-back corner first, round the top, bottom-front corner last). A
         point pair that coincides in one ring and not the next makes a triangle (a step's side wall). caps, per end:
@@ -154,9 +155,9 @@ def hatch(b, A, B, r0, r1):
 def scrapper(rot):
     b = _Build(rot, f"scrapper_{rot}")
     # plinth band under the shells (not under the open bay)
-    b.box(0.03, 2.0, 0.03, 1.97, 0, BASE, GMD, DARK)
-    b.box(2.0, 3.0, 0.03, 1.0, 0, BASE, GMD, DARK)
-    b.box(3.0, 3.97, 0.03, 1.97, 0, BASE, GMD, DARK)
+    b.box(0.03, 2.0, 0.03, 1.97, 0, BASE, BODY_D)
+    b.box(2.0, 3.0, 0.03, 1.0, 0, BASE, BODY_D)
+    b.box(3.0, 3.97, 0.03, 1.97, 0, BASE, BODY_D)
     # One body sloped at both ends; the bay (L 2..3, front row) is cut out of it. Profile along L, the same for both rows
     # and symmetric end to end: end wall WALL, slope up to EDGE by 0.5 in, flat; the centre two tiles (L 1..3) rise to
     # TOP with a short slope (STEP long) inside each end of them. The bay's top edges slope the same way: the front row

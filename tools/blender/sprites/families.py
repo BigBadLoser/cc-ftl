@@ -200,7 +200,7 @@ def jobs(name):
         return tip_bin.jobs(), True
     if name == "scrapper":      # preview-only blockout (scrapper.py): not part of `all`
         from . import scrapper
-        return scrapper.jobs(), True
+        return scrapper.jobs(), "scrapper"
     if name == "storage_scrap":
         from . import scrap
         return scrap.jobs(), True

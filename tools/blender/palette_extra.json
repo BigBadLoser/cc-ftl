@@ -1364,5 +1364,13 @@
  "svKredD": {
   "hex": "#8e2a24",
   "set": "salvage_cloth"
+ },
+ "scBody": {
+  "hex": "#c76a28",
+  "set": "scrapper"
+ },
+ "scBodyD": {
+  "hex": "#6b3519",
+  "set": "scrapper"
  }
 }
