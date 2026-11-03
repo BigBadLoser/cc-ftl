@@ -42,6 +42,9 @@ class Style:
                                           # the ramp; None: its darkest (the joint the plates leave); or {family:
                                           # palette name}
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
+    ramp_bands: tuple = ()                # the ramp's plates split in bands down the run, after the first (the
+                                          # face's family, level 2): (from (a fraction of the run), family (None:
+                                          # the face's), level, the joint left open before it (down the run)) each
     ramp_solid: bool = False              # the ramp built as one solid along each face
                                           # (faction.shell.LookShell.ramp) instead of the shell's height grid
     chamfer: Optional[float] = None       # an outer corner's chamfer along each axis (the shell must match); None:

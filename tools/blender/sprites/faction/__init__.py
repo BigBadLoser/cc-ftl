@@ -9,6 +9,8 @@ ramps). Floors, caps and ghosts keep the default geometry and take the faction's
             (v1 coral, v2 blue, v3 amber, v4 green)
   bastion   after set 8: slate armour, a heavy cornice, a louvred bay recessed between posts over a sloped sill
             (not tied to a faction yet)
+  slate     after set 2 (a working name): a mid-grey wall under a bright blue rail and stripe, its ramp light grey
+            over a blue plate
   scrap.pN  the default layout with mismatched bolted patch plates, rusty colours (see docs/STRUCTURE_LOOKS.md for
             scrapper ships built from donor looks)
 
@@ -24,16 +26,19 @@ from .civil import Civil
 from .drone import Drone
 from .navy import Navy
 from .scrap import Scrap
+from .slate import Slate
 
 
 def look(name):
-    """navy | drone | civil.v1..v4 | bastion | scrap.p1..p4."""
+    """navy | drone | civil.v1..v4 | bastion | slate | scrap.p1..p4."""
     if name == "navy":
         return Navy()
     if name == "drone":
         return Drone()
     if name == "bastion":
         return Bastion()
+    if name == "slate":
+        return Slate()
     if name.startswith("civil.v"):
         return Civil(int(name[-1]))
     if name.startswith("scrap.p"):
