@@ -255,8 +255,8 @@ def scrapper(rot):
     slope_cyl(b, fA, fB, fm, dc, flange, 0, 0.04, GMD)                       # flange, foot flat on the slope
     barrel = 0.13 + px / 2
     slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, GM)     # chamfer up from the flange to the barrel
-    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.27, GM)                    # nozzle barrel
-    slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.27, 0.275, DARK)          # bore
+    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, GM)                    # nozzle barrel
+    slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
