@@ -15,7 +15,7 @@ import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
 import { IntentC, PickupC, TaskC } from './components';
-import { airDraining, airMargin } from './airNeed';
+import { airDraining } from './airNeed';
 import { airLeft } from '../eva/airLedger';
 import { airTurn } from './machines/air';
 import { returnTurn } from './machines/return';
@@ -23,7 +23,7 @@ import { siteUnderFoot } from '../away/crew';
 import { hazardHolds } from './hazard';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
-import { evaluateIntent, policyOf, serveDrive, type TaskView } from './utility';
+import { evaluateIntent, policyOf, readInput, serveDrive, type TaskView } from './utility';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
 type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
@@ -45,11 +45,18 @@ const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
   return sim.world.get(id, TaskC)?.machine === machine && machine === 'eat';
 };
 
-/** True when the crew member's air drive is urgent (critical: under its `urgent.below`), read from their policy's data. */
-function airCritical(sim: Sim, id: number): boolean {
-  const d = policyOf(sim, id).drives.find((d) => d.input === 'airMargin');
-  const x = d?.urgent ? airMargin(sim, id) : undefined;
-  return x !== undefined && x < (d?.urgent?.below ?? 0);
+/**
+ * True when a drive of the crew member's policy other than the one whose task they are in (`own`: 'sleep' or 'eat') is urgent, read from the
+ * policy's data: air under its critical margin, hunger under its starving line, rest, and so on. Any such need wakes a sleeper or an eater so the drives
+ * below can serve it (a drive with `task: 'job'` is never one: it has no need of its own).
+ */
+function urgentElsewhere(sim: Sim, id: number, own: MachineId): boolean {
+  for (const d of policyOf(sim, id).drives) {
+    if (!d.urgent || !d.input || d.task === own || d.task === 'job') continue;
+    const x = readInput(sim, id, d.input);
+    if (x !== undefined && x < d.urgent.below) return true;
+  }
+  return false;
 }
 
 /** Keep the pickup request (`PickupC`) in step with the air drive being blocked: set, with its alert, when no source can be reached. */
@@ -91,9 +98,9 @@ export function scheduleSystem(sim: Sim): void {
       if (escapeTurn(sim, id, sim.world.get(id, PositionC) as Position)) continue;
       if (sim.world.get(id, TaskC)?.machine === 'escape') clearJoblessTask(sim, id);
     }
-    // Critical air ends a sleep or a meal (a suited crew member whose room lost its air): they get up and the drives below send them to
-    // refill. Charging is a robot's, which does not breathe.
-    if ((crew.activity === 'sleeping' || crew.activity === 'eating') && airCritical(sim, id)) abortTask(sim, id, 'air');
+    // Any other need gone urgent ends a sleep or a meal (a suited crew member whose room lost its air, a sleeper who is starving): they get up
+    // and the drives below serve it; sleep resumes through its own drive afterwards. Charging is a robot's, which does not breathe.
+    if ((crew.activity === 'sleeping' || crew.activity === 'eating') && urgentElsewhere(sim, id, crew.activity === 'sleeping' ? 'sleep' : 'eat')) abortTask(sim, id, 'urgentNeed');
     // Asleep, charging or eating: the need's own machine ends it (wakeUp, endCharge, finishMeal keep the mirror).
     if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') continue;
     const pos = sim.world.get(id, PositionC) as Position;
