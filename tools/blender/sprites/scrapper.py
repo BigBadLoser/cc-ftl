@@ -220,10 +220,10 @@ def hatch(b, A, B, r0, r1):
     for i in range(m):                                                  # frame: top, outer wall, inner wall
         j = (i + 1) % m
         (os_, od), (os2, od2), (is_, id_), (is2, id2) = outer[i], outer[j], inner[i], inner[j]
-        b.face([S(os_, od, lip), S(os2, od2, lip), S(is2, id2, lip), S(is_, id_, lip)], GMD, out(sc, dc, 0, 0, 0, 1))
-        b.face([S(os_, od, 0), S(os2, od2, 0), S(os2, od2, lip), S(os_, od, lip)], GMD,
+        b.face([S(os_, od, lip), S(os2, od2, lip), S(is2, id2, lip), S(is_, id_, lip)], BODY_S2, out(sc, dc, 0, 0, 0, 1))
+        b.face([S(os_, od, 0), S(os2, od2, 0), S(os2, od2, lip), S(os_, od, lip)], BODY_S2,
                out(sc, dc, lip / 2, (os_ + os2) / 2 - sc, (od + od2) / 2 - dc, 0))
-        b.face([S(is_, id_, 0), S(is2, id2, 0), S(is2, id2, lip), S(is_, id_, lip)], GMD,
+        b.face([S(is_, id_, 0), S(is2, id2, 0), S(is2, id2, lip), S(is_, id_, lip)], BODY_S2,
                out((is_ + is2) / 2, (id_ + id2) / 2, lip / 2, sc - (is_ + is2) / 2, dc - (id_ + id2) / 2, 0))
     b.face([S(s_, d_, 0.004) for s_, d_ in inner], DARK, out(sc, dc, 0, 0, 0, 1))      # backing, the seam shows it
     ls, ld, gap = hs - ws, hd - wd, 0.009                                   # leaves fill the opening, recessed
@@ -377,14 +377,14 @@ def screen(b, D1):
     t0, t1 = (L0, D1 + top, z1), (L1, D1 + top, z1)                     # the top's front edge
     w0, w1 = (L0, D1, z1), (L1, D1, z1)                                 # the top's back edge, on the wall
     vec = lambda a, c: [x - y for x, y in zip(b.P(*c), b.P(*a))]  # noqa: E731
-    b.face([b.P(*p) for p in (w0, w1, t1, t0)], GM, (0, 0, 1))                              # top
-    b.face([b.P(*p) for p in (g0, f0, t0, w0)], GMD, vec((L0, D1, z0), (L0 - 1, D1, z0)))   # sides
-    b.face([b.P(*p) for p in (g1, f1, t1, w1)], GMD, vec((L1, D1, z0), (L1 + 1, D1, z0)))
-    b.face([b.P(*p) for p in (g0, g1, f1, f0)], GMD, (0, 0, -1))                            # foot
+    b.face([b.P(*p) for p in (w0, w1, t1, t0)], BODY_S, (0, 0, 1))                              # top
+    b.face([b.P(*p) for p in (g0, f0, t0, w0)], BODY_S2, vec((L0, D1, z0), (L0 - 1, D1, z0)))   # sides
+    b.face([b.P(*p) for p in (g1, f1, t1, w1)], BODY_S2, vec((L1, D1, z0), (L1 + 1, D1, z0)))
+    b.face([b.P(*p) for p in (g0, g1, f1, f0)], BODY_S2, (0, 0, -1))                            # foot
     h, dd = z1 - z0, top - bot
     ln = math.hypot(dd, h)
     nd, nz = h / ln, -dd / ln                                           # the front's normal: out, and down
-    b.face([b.P(*p) for p in (f0, f1, t1, t0)], GMD, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))   # front
+    b.face([b.P(*p) for p in (f0, f1, t1, t0)], BODY_S2, vec((L0, D1, z0), (L0, D1 + nd, z0 + nz)))   # front
     i, e = 0.045, 0.003                                                 # bezel (about 2 px); lift off the front
     on = lambda L, t: b.P(L, D1 + bot + dd * t + nd * e, z0 + h * t + nz * e)   # noqa: E731  t: 0..1 up the front
     tb = i / ln
@@ -435,14 +435,14 @@ def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, cham
     for i in range(8):
         j = (i + 1) % 8
         (a0, a1), (c0, c1), (e0, e1), (f0, f1) = outer[i], outer[j], inner[i], inner[j]
-        b.face([b.P(a0, a1, z1), b.P(c0, c1, z1), b.P(f0, f1, z1), b.P(e0, e1, z1)], GMD, (0, 0, 1))       # rim top
+        b.face([b.P(a0, a1, z1), b.P(c0, c1, z1), b.P(f0, f1, z1), b.P(e0, e1, z1)], BODY_S2, (0, 0, 1))       # rim top
         (g0, g1), (h0, h1) = foot[i], foot[j]
         q = [b.P(g0, g1, TOP), b.P(h0, h1, TOP), b.P(c0, c1, z1), b.P(a0, a1, z1)]                         # outside
         m = [sum(p[x] for p in q) / 4 for x in range(3)]
-        b.face(q, GMD, (m[0] - ce[0], m[1] - ce[1], 0))
+        b.face(q, BODY_S2, (m[0] - ce[0], m[1] - ce[1], 0))
         q = [b.P(e0, e1, zf), b.P(f0, f1, zf), b.P(f0, f1, z1), b.P(e0, e1, z1)]                           # inside
         m = [sum(p[x] for p in q) / 4 for x in range(3)]
-        b.face(q, GMD, (ce[0] - m[0], ce[1] - m[1], 0))
+        b.face(q, BODY_S2, (ce[0] - m[0], ce[1] - m[1], 0))
     b.face([b.P(d0, d1, zf) for d0, d1 in inner], LIGHT, (0, 0, 1))                                      # gauge face
 
 
@@ -462,7 +462,7 @@ def cyl_z(b, L, D, z0, z1, r, col, top=None, sides=16):
 def vent(b, L=2.3, D=0.5, r=0.17):
     """The round vent on top of the block behind the bay (after the ref's hopper tile, link 07: toward the hatch end,
     clear of the linkage at the front; in line with the dial across the machine): a low rim round a dark grille."""
-    cyl_z(b, L, D, TOP, TOP + 0.03, r, GMD, GM)
+    cyl_z(b, L, D, TOP, TOP + 0.03, r, BODY_S2, BODY_S)
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
 
 
@@ -474,7 +474,7 @@ def piston(b, L0=2.0 + STEP - 0.084, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.07
     z = TOP + r - sink
     D = wall - math.sqrt(r * r - (r - sink) ** 2)                      # its line on the top falls on the front edge
     cap = 0.06                                                          # the knob is part of the span, so the whole
-    b.cyl_L(D, z, r, L0 + cap, L1, GM, sides=14)                        # piston is centred, knob included
+    b.cyl_L(D, z, r, L0 + cap, L1, BODY, sides=14)                        # piston is centred, knob included
     b.cyl_L(D, z, r + 0.02, L0, L0 + cap, DARK, sides=14)
     levers(b, D, z, r)
 
@@ -583,11 +583,11 @@ def scrapper(rot):
     fA, fB = (3.97, WALL), (3.5, EDGE)
     px, fm, dc = 0.028, math.dist(fA, fB) / 2, (DM + D1) / 2             # px: one pixel across D at 1x
     flange = 0.17 + px / 2
-    b.prism_D(exhaust_housing(fA, fB), dc - flange - px, dc + flange + px, GMD, GM)   # a pixel wider than the flange
-    slope_cyl(b, fA, fB, fm, dc, flange, 0, 0.04, GMD)                       # flange, foot flat on the slope
+    b.prism_D(exhaust_housing(fA, fB), dc - flange - px, dc + flange + px, RUST_D, RUST)   # a pixel wider than the flange
+    slope_cyl(b, fA, fB, fm, dc, flange, 0, 0.04, RUST_D)                       # flange, foot flat on the slope
     barrel = 0.13 + px / 2
-    slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, GM)     # chamfer up from the flange to the barrel
-    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, GM)                    # nozzle barrel
+    slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, STEEL)     # chamfer up from the flange to the barrel
+    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, STEEL)                    # nozzle barrel
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
     turn = math.radians(float(os.environ.get("SCRAPPER_SPIN", "0")))   # preview of the active state's frames
     drum(b, turn)
