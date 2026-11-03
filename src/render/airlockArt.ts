@@ -168,12 +168,14 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
     // Facing the camera (east / south) the hull row is the engine's: full height in every view over the door tile and half
     // of either neighbour, closed by end cuts, anchored at the row's front tile (so it sorts over the neighbours' cut tops).
     // Unlike the engine's (behind its steel thruster block) it shows whole, so it wears the hull's paint as the hull's
-    // pieces do: the armour over it, the deco over its deco layer (`.tint`).
-    const hull = part('hull', view.level, front, { tiles: 'hull', ...(near ? { paint: 'armour' as const, dz: 0 } : {}) });
+    // pieces do: the armour over it, the deco over its deco layer (`.tint`). Just over the front neighbour's belly cut top
+    // (gridView: its tile's depth + 0.001, the solid module's key 0.05 under it), which would otherwise paint over the row's
+    // foot; under the brace and collar (+0.5).
+    const hull = part('hull', view.level, front, { tiles: 'hull', ...(near ? { paint: 'armour' as const, dz: 0.06 } : {}) });
     out_.push(hull);
     if (near) {
-      out_.push({ ...hull, chain: hull.chain.map((c) => `${c}.tint`), key: `${hull.key}.tint`, paint: 'deco', optional: true, dz: 0.0002 });
-      out_.push(part('end', null, front, { tiles: 'hull', optional: true, paint: 'armour', dz: 0.0005 }));
+      out_.push({ ...hull, chain: hull.chain.map((c) => `${c}.tint`), key: `${hull.key}.tint`, paint: 'deco', optional: true, dz: 0.0602 });
+      out_.push(part('end', null, front, { tiles: 'hull', optional: true, paint: 'armour', dz: 0.0605 }));
     }
   }
   // The brace stands on the hull's outside, over the hull row (roofed, over the hull's own pieces), at the row's front tile.
