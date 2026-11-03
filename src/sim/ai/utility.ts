@@ -201,12 +201,14 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
 function rank(sim: Sim, intent: Intent, scored: Scored[]): DriveDef[] {
   const open = scored.filter((s) => s.open).sort((a, b) => b.score - a.score || a.i - b.i);
   const at = open.findIndex((s) => s.def.id === intent.drive);
-  if (at <= 0) return open.map((s) => s.def);
+  if (at < 0) return open.map((s) => s.def);
   const cur = open[at] as Scored;
   const dwelling = sim.tick - intent.since < (cur.def.minDwell ?? 0);
-  const beats = (s: Scored): boolean => s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0));
-  const above = open.slice(0, at);
-  return [...above.filter(beats), cur, ...above.filter((s) => !beats(s)), ...open.slice(at + 1)].map((s) => s.def);
+  // An urgent drive runs ahead of a current drive that is not urgent however the scores and policy order tie (else a sleeper woken for hunger
+  // would just fall asleep again). Between two urgent drives, or two ordinary ones, the current stays unless the usual margin is cleared.
+  const beats = (s: Scored, above: boolean): boolean => (s.urgent && !cur.urgent) || (above && (s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0))));
+  const beaters = open.filter((s, k) => k !== at && beats(s, k < at));
+  return [...beaters, cur, ...open.filter((s, k) => k !== at && !beaters.includes(s))].map((s) => s.def);
 }
 
 /** Record the drive the crew member is serving this tick. */

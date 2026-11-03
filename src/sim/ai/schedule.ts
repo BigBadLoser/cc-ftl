@@ -51,7 +51,14 @@ const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
  * below can serve it (a drive with `task: 'job'` is never one: it has no need of its own).
  */
 function urgentElsewhere(sim: Sim, id: number, own: MachineId): boolean {
-  for (const d of policyOf(sim, id).drives) {
+  const drives = policyOf(sim, id).drives;
+  // Their own need is urgent too: they finish it first (the ranking keeps the current drive between two urgent ones, so a wake would only bounce).
+  for (const d of drives) {
+    if (d.task !== own || !d.urgent || !d.input) continue;
+    const x = readInput(sim, id, d.input);
+    if (x !== undefined && x < d.urgent.below) return false;
+  }
+  for (const d of drives) {
     if (!d.urgent || !d.input || d.task === own || d.task === 'job') continue;
     const x = readInput(sim, id, d.input);
     if (x !== undefined && x < d.urgent.below) return true;
