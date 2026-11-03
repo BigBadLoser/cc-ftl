@@ -141,7 +141,7 @@ EDGE = 0.4 / 32                                 # (a px down the slope, about: 2
 # them (down the tile's side, then in along the toe to the middle)
 CUT_D = 0.55
 SHADE_EDGES = False                             # a shaded strip along each cushion's foot and right edge
-GAP = 0.5                                       # the joints' width, in px (under one: AA softens them)
+GAP = 0.7                                       # the joints' width, in px (under one: AA softens them)
 SQUARES = ((0.25, 0.5), (0.5, 0.75))
 # each L: its rects ((u0, u1, d0, d1), its rounded corners: a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1)); a u0 / u1 of
 # None runs into the L's other rect, under it (no joint); then its shaded right edges ((u1, d0, d1) as fractions)
