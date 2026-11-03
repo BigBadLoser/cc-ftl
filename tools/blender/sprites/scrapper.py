@@ -404,7 +404,7 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
     s0, s1 = L0 + 0.003, L1 - 0.003                                     # sides, just in front of the plinth's ends
     wall([(s0, Db, fl), (s0, D1, fl), (s0, D1, zt), (s0, Db, zt)], DARK, (1, 0, 0))
     wall([(s1, Db, fl), (s1, D1, fl), (s1, D1, zt), (s1, Db, zt)], DARK, (-1, 0, 0))
-    wl, wz, lip = 0.056, 0.051, 0.035                                   # frame: 2 px each way, proud of the wall
+    wl, wz, lip = 0.056, 0.051, 0.063                                   # frame: 2 px each way, 2 px proud of the wall
     for prof in ([(L0 - wl, 0), (L0, 0), (L0, zt), (L0 - wl, zt)],
                  [(L1, 0), (L1 + wl, 0), (L1 + wl, zt), (L1, zt)],
                  [(L0 - wl, zt), (L1 + wl, zt), (L1 + wl, zt + wz), (L0 - wl, zt + wz)]):
