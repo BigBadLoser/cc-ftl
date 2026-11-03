@@ -309,6 +309,8 @@ def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
 
 
 RECESS_W, RECESS_Z, RECESS_DEPTH = 0.55, (0.52, 1.06), 0.9
+RECESS_BANDS = (0.0, 0.06, 0.12, 0.2, 0.3)              # depths where the passage walls step darker
+RECESS_FADE = (LIGHT, "scRec1", "scRec2", "scRec3", "scRec4")
 RECESS_L = (2.5 - RECESS_W / 2, 2.5 + RECESS_W / 2)                    # centred in the bay's back wall
 
 
@@ -329,11 +331,15 @@ def recess(b, DM):
     knee = [(3.0 - STEP, DM, TOP)] if L0 < 3.0 - STEP < L1 else []
     wall([(L0, DM, BASE), (L1, DM, BASE), (L1, DM, z0), (L0, DM, z0)], BODY, fwd)                 # below
     wall([(L0, DM, z1), (L1, DM, z1), (L1, DM, _bay_back_h(L1)), *knee, (L0, DM, _bay_back_h(L0))], BODY, fwd)
-    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], LIGHT, fwd)    # far end
-    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM, z0), (L0, DM, z0)], LIGHT, (0, 0, 1))      # floor
-    wall([(L0, DM - d, z1), (L1, DM - d, z1), (L1, DM, z1), (L0, DM, z1)], LIGHT, (0, 0, -1))     # ceiling
-    wall([(L0, DM - d, z0), (L0, DM, z0), (L0, DM, z1), (L0, DM - d, z1)], LIGHT, (1, 0, 0))      # sides
-    wall([(L1, DM - d, z0), (L1, DM, z0), (L1, DM, z1), (L1, DM - d, z1)], LIGHT, (-1, 0, 0))
+    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], RECESS_FADE[-1], fwd)  # far end
+    # the passage fades into the dark as it runs in: its walls in bands, each a step darker than the last
+    cuts = [*RECESS_BANDS, d]
+    for (a, c), col in zip(zip(cuts, cuts[1:]), RECESS_FADE):
+        f, n = DM - c, DM - a                                           # far and near D of this band
+        wall([(L0, f, z0), (L1, f, z0), (L1, n, z0), (L0, n, z0)], col, (0, 0, 1))      # floor
+        wall([(L0, f, z1), (L1, f, z1), (L1, n, z1), (L0, n, z1)], col, (0, 0, -1))     # ceiling
+        wall([(L0, f, z0), (L0, n, z0), (L0, n, z1), (L0, f, z1)], col, (1, 0, 0))      # sides
+        wall([(L1, f, z0), (L1, n, z0), (L1, n, z1), (L1, f, z1)], col, (-1, 0, 0))
     # a raised frame round the opening, 2 px wide each way, standing `lip` proud of the wall
     wl, wz, lip = 0.056, 0.051, 0.035
     inner = [(L0, z0), (L1, z0), (L1, z1), (L0, z1)]
