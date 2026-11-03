@@ -5,7 +5,7 @@ import math
 
 from .. import wall3d as T
 from ..relief_style import Design
-from .parts import LINE, PAINT
+from .parts import LINE, PAINT, PX
 
 FACE = "rose"                                   # the face's family (its second tone: the wall family the cushions')
 BLUE = "ochre"                                  # the trim's: the line along the wall, the toe
@@ -37,8 +37,9 @@ def _raw(f):
 
 
 def cushions(layout, extra=None):
-    """A ramp design (relief_style.Design's ramp slot) laying the cushions of layout over the block; extra(paint, U,
-    D) paints more over it (paint(poly as (u, d), tone, rise in PAINTs); U, D a fraction of the tile / the run)."""
+    """A ramp design (relief_style.Design's ramp slot) laying the cushions of layout over the block; extra(paint,
+    solid, U, D) adds more (paint(poly as (u, d), tone, rise in PAINTs); solid(poly, rise, top tone): a raised part;
+    U, D a fraction of the tile / the run)."""
     def ramp(plate, u0, u1, run_, k=None, pt=None, ax="y", **_):
         w, E, L = u1 - u0, EDGE, LINE
         top, end = 0.02 + E, run_ - 0.045               # (under the blue line; the block's end, over the toe)
@@ -111,38 +112,41 @@ def cushions(layout, extra=None):
                 plate(rect(f0, f1, g0, g1, rc), 2 * PAINT, 2, PAINT, "wall")
         for poly in fillets:
             T.plate(k, poly, pt, nrm, 0.0, 3 * PAINT, FACE, 0, 2 * PAINT, fixed=ROUND_TONE)
-        if extra:
+        if extra:                                       # (paint: flat, rise in PAINTs; solid: a part rise proud
             extra(lambda poly, tone, rise: T.plate(k, poly, pt, nrm, 0.0, rise * PAINT, FACE, 0, (rise - 0.25) * PAINT,
-                                                   fixed=tone),
+                                                   fixed=tone),                    # of the slope, its top in a tone,
+                  lambda poly, rise, top_, fam="wall", lvl=2: T.plate(k, poly, pt, nrm, 0.0, rise, fam, lvl, PAINT,
+                                                                       fixed=top_),     # its sides lit as they face)
                   lambda f: u0 + f * w, lambda g: top + g * span)
     return ramp
 
 
-# the grille design: a wide cushion, a vent recessed between it and a narrow one (its floor a lattice of pale slats
-# down the slope under brown bars across it, a lit rim along its top and left, its right wall in shadow)
-G_L, G_R = 8 / 32, 25 / 32                     # the recess, across the tile
-G_U0, G_U1, G_D0, G_D1 = 10 / 32, 20 / 32, 0.1, 0.9     # the grille in it
+# the grille design: a wide cushion, a raised grille between it and a narrow one (a frame and a lattice of bars,
+# their tops lit, their sides in the face's brown as they face, over a brown floor)
+G_L, G_R = 8 / 32, 25 / 32                      # the gap between the cushions, across the tile
+G_U0, G_U1, G_D0, G_D1 = 9 / 32, 20 / 32, 0.08, 0.92    # the grille in it
+G_H = 2 * PX                                    # how far it stands proud
 
 
-def grille(paint, U, D):
+def grille(paint, solid, U, D):
     L, E = LINE, EDGE
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
-    paint(q(U(G_L) + L / 2, U(G_R) - L / 2, D(0.0), D(1.0)), "fTS3", 1.75)        # the recess, in shadow
-    paint(q(U(G_L) + L / 2, U(G_U1), D(0.0), D(1.0)), "fTS2", 2.0)                 # its floor, lit to the grille's
-    gu0, gu1, gd0, gd1 = U(G_U0), U(G_U1), D(G_D0), D(G_D1)                         # right
-    paint(q(gu0, gu1, gd0, gd1), "fTS2", 2.25)                                      # the grille: brown between
+    paint(q(U(G_L) + L / 2, U(G_R) - L / 2, D(0.0), D(1.0)), "fTS3", 1.75)        # the gap's floor
+    gu0, gu1, gd0, gd1 = U(G_U0), U(G_U1), D(G_D0), D(G_D1)
+    paint(q(gu0, gu1, gd0, gd1), "fTS3", 2.25)                                      # brown under the grille
+    for ua, ub, da, db in ((gu0, gu1, gd0, gd0 + E), (gu0, gu1, gd1 - E, gd1),     # its frame
+                           (gu0, gu0 + L, gd0, gd1), (gu1 - L, gu1, gd0, gd1)):
+        solid(q(ua, ub, da, db), G_H, "fTW1", FACE, 3)
     n = int(round((G_U1 - G_U0) * 32 / 2))
-    for i in range(n):                                                              # its slats (a px, every two)
-        ua = gu0 + (2 * i + 0.5) * L
-        paint(q(ua, ua + L, gd0 + E, gd1 - E), "fTW0", 2.5)
-    d = gd0 + 2 * E
-    while d < gd1 - E:                                                              # the bars across them
-        paint(q(gu0, gu1, d, d + E), "fTS3", 2.75)
+    for i in range(1, n):                                                           # its bars down the slope (a
+        ua = gu0 + 2 * i * L - L / 2                                                # px, every two)
+        solid(q(ua, ua + L, gd0, gd1), G_H, "fTW1", FACE, 3)
+    d = gd0 + 3 * E
+    while d < gd1 - 2 * E:                                                          # and across it
+        solid(q(gu0, gu1, d, d + E), G_H, "fTW1", FACE, 3)
         d += 3 * E
-    paint(q(gu0 - L, gu1, gd0 - E, gd0), "fTW1", 2.5)                               # its lit rim, along its top
-    paint(q(gu0 - L, gu0, gd0, gd1), "fTW1", 2.5)                                   # and left
 
 
 GRILLE = (((0.0, G_L, 0.0, 1.0, "abcd"),), ((G_R, 1.0, 0.0, 1.0, "abcd"),))
