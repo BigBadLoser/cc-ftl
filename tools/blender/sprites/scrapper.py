@@ -409,14 +409,15 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
         b.prism_D(prof, D1, D1 + lip, GMD)
 
 
-def dial(b, Lc=1.5, Dc=0.5, r=0.36, h=0.16, rim=0.08, sink=0.03, flare=0.05):
-    """The dial on top of the hatch-end block (after the ref's tile, link 04, centred on the back-row tile): an
-    octagonal housing standing h above the top, its sides sloping out (flare) to its foot, its gauge face sunk into
-    it inside a rim."""
-    oct_ = lambda rr: [(Lc + rr * math.cos(math.pi / 8 + k * math.pi / 4), Dc + rr * math.sin(math.pi / 8 + k * math.pi / 4))  # noqa: E731
-                       for k in range(8)]
-    k = 1 / math.cos(math.pi / 8)                                       # flat-to-flat half width r -> corner radius
-    outer, inner, foot = oct_(r * k), oct_((r - rim) * k), oct_((r + flare) * k)
+def dial(b, Lc=1.5, Dc=0.5, r=0.36, h=0.16, rim=0.08, sink=0.03, flare=0.05, chamfer=0.09):
+    """The dial on top of the hatch-end block (after the ref's tile, link 04, centred on the back-row tile): a square
+    housing with small cut corners standing h above the top, its sides sloping out (flare) to its foot, its gauge face
+    sunk into it inside a rim."""
+    def oct_(rr):                                                       # a square, half size rr, corners cut by ch
+        ch = chamfer + (rr - r) * (math.sqrt(2) - 1)                    # (parallel offsets keep the cuts at 45 deg)
+        return [(Lc + x, Dc + y) for x, y in ((rr, -rr + ch), (rr, rr - ch), (rr - ch, rr), (-rr + ch, rr),
+                                              (-rr, rr - ch), (-rr, -rr + ch), (-rr + ch, -rr), (rr - ch, -rr))]
+    outer, inner, foot = oct_(r), oct_(r - rim), oct_(r + flare)
     z1, zf = TOP + h, TOP + h - sink
     ce = b.P(Lc, Dc, TOP)
     for i in range(8):
