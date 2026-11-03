@@ -6,7 +6,7 @@ import { isSuited, suitDef, suitTile } from '../../eva/suit';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
-import { YardCrewC } from '../../yard/types';
+import { AwayC } from '../../away/components';
 import { attachJob, setJoblessTask } from '../task';
 
 /**
@@ -60,8 +60,8 @@ export function sweepErrands(sim: Sim): void {
 
 /** A suited crew member with nothing to do walks to an airlock and takes the suit off, so the suit is free for the next one. */
 export function stowSuit(sim: Sim, id: number, pos: Position): boolean {
-  // The shipyard's contractors keep their suits on until their shuttle.
-  if (!isSuited(sim, id) || sim.world.has(id, YardCrewC)) return false;
+  // An away party keeps the suits it went out in on until its shuttle (the shipyard's contractors, boarders, a salvage party).
+  if (!isSuited(sim, id) || sim.world.has(id, AwayC)) return false;
   if (!isSettled(pos) || (sim.tick + id) % 20 !== 0) {
     setJoblessTask(sim, id, 'idle', 'eva', 'Wait'); // look for an airlock every second or so; meanwhile stand still
     return true;

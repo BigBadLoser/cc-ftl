@@ -1007,6 +1007,7 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
 - **Rescue on a site** (`rescue.ts`): `rescueSpot` (the party member on their site with no free bed there: the shuttle's hatch spot or docked airlock tile). Autojobs posts the rescue; `jobWork` carries the patient there and `handInPatient` boards them (`home`, downed: an urgent trip). A downed member left uncarried for `AWAY_LIFT_SEC` is lifted (`watchDowned`, clock `AwayC.downAt`); the closing lift stays.
 - **Pickups.** A party member out with `PickupC` gets `AwayC.pickup` (`answerPickups`): the run holds station by them (`holdStation` aims the hover box, their own tile, at them; a docked shuttle undocks to hover), and their tile is the hatch spot (`fetching`, `hatchSpot(…, at)`: the hull near them may be gone). A recall with no hull left to hover beside (`liveBox` null) answers everyone still out the same way, and `awayReturn` 0 brings them aboard as `home`. Anyone else of the player's crew with `PickupC` gets a **pickup run** (`startPickupRuns`, not in a fight): the lowest free stowed EVA shuttle with a tank of air gets `SiteRunC {site: their grid, pickup: crew}` and they get `AwayC {pickup}`; it flies to hover beside them (`vehicle.hover` takes a `box`, which also allows the home ship), waits in `pickup` until they are aboard (lifted after `AWAY_LIFT_SEC`), flies home and ends. Event `away.pickup`.
 - **Shuttle loss** (`replaceLostShuttles`): a site whose shuttle run is gone keeps its party (`AwayC` stays while the site names a vehicle); another free shuttle takes the run over (`board`, party rewired, `away.pickup`), else `AwaySite.block = 'stranded'` and `away.stranded` (an urgent alert, cleared when a shuttle comes). A site with nobody left closes (`lost`).
+- **No way home** (`noWayIn` in run.ts, #287): the site's own run in 'home' whose shuttle has no way into its home ship (`wayHome` in phase.ts: bay down, no free home airlock, or the ship gone) sets the same `block = 'stranded'` and `away.stranded` with `noHome` (alert "Shuttle cannot get home"), cleared as soon as a way in is back. With a live run the block is this case; with none it is a lost shuttle (`replaceLostShuttles` skips sites whose run stands). `crew.recall` refuses `noHome` up front.
 - **Docking at site airlocks.** `flyTo` docks at a free working airlock of the site (`regionAirlock`) when it has one (not on a pickup), else hovers. Docked, passengers step out at the airlock's inside tile (undrafted; a suit from stock for breathers if the tile is thin), and the return machine walks them to it and steps them in (`stepAboard`). `siteSpot` is the boarding point either way (hatch spot or docked tile), used by the return machine, the departure check and the rescue.
 - **Crew who don't breathe** (#284): no robot branch. `passageFits` checks every need the crew member has at `AWAY_GO` (a missing need is satisfied); `awayReturn` the same with the home lines (charge `AWAY_HOME_CHARGE` 30). Seats are capacity + 1; the first `freeSuits` passages are suited, the rest `Job.airless` (only for crew who need no air). `eva.out` floats airless crew out without a suit, `eva.board` takes them in unsuited, and the float back stows a suit only if one was worn. `walksOutside` (suited or airless) replaces `isSuited` for exterior walking in `planWalk`/`siteWalkModes`, movement, idle and escape. `policy.robot` has the `return` drive.
 - **Hold and log.** The home stop waits for the unload (cargo still coming out, up to `AWAY_TURNAROUND_SEC`); a stop that empties none of the hold sets `block = 'noRoom'` (`SiteRun.held`). Leaving home with nobody able left aboard logs `away.homeEmpty`.
@@ -1221,6 +1222,50 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     the new `outsideCrew`.
   - Commands: `away.open {ship}` (debug only) and `away.recall {ship}`. Combat sets `paused` and evacuates.
   - Events: `away.opened|closed|departed|returned|stranded|pickup`. The salvage `teamSent|teamHome|cargoRun` events go.
+
+### Boarding (#287), `src/sim/boarding/`
+
+A boarding is an away site on the enemy ship; boarding code keeps only what is boarding's own (targets, sabotage, capture, the
+stranded rules). Enemy boarders (`systems/boardingAi.ts`) stay NPC doctrine.
+
+- **Launch** (`launch.ts`, `boarding.launch`): the order checks the shuttle (player's, free, stowed, empty), the party (the player's,
+  not of a party nor picked by another launch: `launchOf`), the airlock (hostile ship, `dockError`) and that no site is open on that ship
+  (`siteOpen`), then `openSite(ship, 'boarding', vehicle)` with: `demand: {}` (no work seats, no rotation), `fight: 'stay'`,
+  `standBy: true`, `dock: airlock`, `invited: party`.
+- **Site fields the owner chooses** (general, no owner checks in `away/`):
+  - `fight: 'stay'`: a fight does not call the party in (`fightCalls`, read by `wanted` and `siteRecalled`). Free pickup runs still
+    refuse a fight; the site's own run picks up under fire.
+  - `standBy`: the party lands drafted (`standBy` in `site.ts`; the `drafted.away` sweep keeps the draft on such a site).
+  - `dock`: the airlock `flyTo` docks at while `dockError` allows; else any free one, else it hovers and the party goes out of the hatch.
+  - `invited` (a named party): `postInvited` (passage.ts) holds one passage per invitee at once (`Job.holder`, attached and walked;
+    `passageFits` lets nobody else take it). The pick is an order: a sleeping invitee wakes, and one not drafted already is held drafted (`Drafted.away`, walked
+    as an errand by `drafted.ts`), so no need, emergency or job takes them off it; the `drafted.away` sweep keeps that hold while they are
+    invited and not aboard. An invitee who lets go of it (dead, downed, cut off, or a player order such as a move) stays home; at the first departure, or after
+    `AWAY_INVITE_WAIT_SEC` (75) with nobody aboard, `endInvites` drops the rest (`away.leftBehind`). Owned row: ends when the run leaves
+    'board'.
+- **Recall** (`recall.ts` -> `away/recall.ts` `recallCrew`, `crew.recall`): party members out on their site are undrafted, their sabotage
+  cancelled, and marked `Away.recall` (owned row: ends with the party; stale only if they stand off their site). `awayReturn` is 0 for
+  them, `passengerUrgent` true: the trip home leaves at once, and the run goes back for anyone who stays. Crew under an away order to go aboard
+  (`headingAboard` in fight/relations.ts: a party member with `recall`, `pickup` or `ride`, or an invitee holding their passage) are left
+  idle by `stepFighter` (no hunting, no fleeing; a player's attack order still counts), and a party member on the way back is not boarding
+  (`isBoarding`), so their walk stands, also under fire.
+  `crew.recallStarted` / `crew.recallFailed` (`noCrew`, `notAboard`, `incapacitated`, `noHome`: the shuttle's bay is down and no home airlock is free, so the
+  party stays put rather than sit in a shuttle with nowhere to go) at the order; `away.returned` is the "back aboard"
+  log line. A party landed by hand (shuttle panel, no launch) joins a boarding site when recalled (`joinLanded` in `boarding/recall.ts`):
+  the ship's site if one is open, else one opened for the lowest free shuttle of their side docked there (its run starts in 'fly' and
+  finds itself at the site; those still sitting in it are of the party, `Away.home`). With no such shuttle they are `notAboard`.
+- **Owner** (`site.ts`, `boardingSiteSystem`): a boarding site closes once `invited` is consumed and nobody of its party is left.
+- **Gone:** `RecallC`, `BoardLaunchC`, `BoardHoldC`, `launchSystem`, `recallSystem`, `RECALL_BOARD_TICKS` (SAVE 86). `boardingReserved` only
+  marks a shuttle docked at a hostile ship (landed by hand).
+- **The shuttle flies itself** (autopilot, user decision 2026-11-03): the first pick is a passenger like the rest (BoardPicker shows no pilot).
+
+### Sides (#287)
+
+The away code asks "the shuttle's side" where it used to ask "the player's": `ofSide(crew, vehicle)` (crew faction = `vehicleFaction`) for passages,
+pickup shuttles (`freeShuttle`) and the "nobody left at home" line; `siteShuttleOk` wants a bay on the shuttle's own home ship. The air ledger's
+`suppliesTo(shuttle, crew)`: of the crew member's side, or the shuttle serving their site; such a shuttle docked at an airlock is drawn first, then the
+store (`drawAir`, `sourceSupply`; `side` for the departure check's per-store supply). `airStoresSystem` tops a docked shuttle up only from an airlock of
+its own side's ship. `stowSuit` leaves any away party member's suit on (it is the shuttle's).
 
 ### Salvage (slice 3)
 
@@ -2378,11 +2423,15 @@ no floorless wall stubs. What the cap does not reach stays as truss (open scaffo
 (`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
 danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
 against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
-and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle with `YardDef.crew` contractors,
-neutral allegiance, `YardCrewC`, to a free player airlock), `fly`, `work` (the crew step out in the shuttle's suits and take the jobs through the normal crew AI;
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle made beside the station with
+`YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`; since #287 it is an away site on the player's ship, owner 'yard', the contractors its party from
+the start: `dock` the order's airlock, `outside` (they land suited from the shuttle's stock), `noLoot`, no demand; the site's run flies, lands them, takes the
+tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
 the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
-is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall`, `home`, `done`.
-Suits are the contractors' own and never run dry. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
+is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall` (the site closes: its run
+calls them aboard, lifting whoever cannot come), `home` (the run ends at the station, where those aboard step out), `done` (`dismiss` ends the run if it still stands and
+removes the crew and shuttle). Their air is the air drive's like anyone's: the ledger gives a crew member a docked shuttle's air first when it is of their side or
+serves their site (`suppliesTo`), so contractors draw the station shuttle before the player's airlock store, and the player's crew never draw a foreign shuttle. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early
 (`yard.cancel`, combat, a stall, no dock), the built share paid to the station when the shuttle is home; leaving the node ends the order on the spot
 (`abortYards`). Save v61. UI: the station panel's
 Shipyard tab (`YardPane`: the quote, a Buy button, the order's progress). The panel does not paint: the plan is made in the build tools.

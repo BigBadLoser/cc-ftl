@@ -15,7 +15,7 @@ import { COWARD_FLEE_BELOW, XP_DAMAGE_PER_XP } from '../tuning';
 import { grantXp } from '../crew/xp';
 import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
-import { isBoarding, isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
+import { headingAboard, isBoarding, isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
 import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
@@ -103,6 +103,14 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const pos = sim.world.get(id, PositionC) as Position;
   const f = fighterOf(sim, id);
   if (f.cooldown > 0) f.cooldown--;
+  if (headingAboard(sim, id) && !(isPlayerControlled(sim, id) && f.ordered)) {
+    // Under an away order to go aboard (recalled, fetched, or a named invitee on the way to their seat): no hunting or fleeing that would
+    // take the walk over, the path stays theirs. The player's own attack order still does.
+    f.mode = 'idle';
+    f.target = 0;
+    delete f.goal;
+    return;
+  }
   const controlled = isPlayerControlled(sim, id);
   const invader = isInvader(sim, id);
   // A player order to attack an egg sac (not crew, so not among the foes): its footprint tile nearest to us.

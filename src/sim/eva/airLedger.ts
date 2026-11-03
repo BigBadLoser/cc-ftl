@@ -5,6 +5,8 @@ import { vehicleFaction } from '../vehicles/lifecycle';
 import { AirlockC } from '../modules/airlock';
 import { airlockAir, airValue, dockedAt, hasTank, vehicleAir } from './air';
 import { AirHoldsC, SuitC, type AirHold } from './components';
+import { AwayC } from '../away/components';
+import { AllegianceC } from '../fight/components';
 import { suitAir, suitDef } from './suit';
 
 /**
@@ -12,7 +14,8 @@ import { suitAir, suitDef } from './suit';
  * walk takes) it is the only place that answers the air questions, so admission, the air drive, the refill, the player's refill order and
  * the departure check cannot disagree:
  * - how much air a crew member has (`airLeft`) and whether a walk fits it with the reserve (`fitsReserve`);
- * - what a source can give (`sourceSupply`: an airlock's store, then a player shuttle docked there; a hovering shuttle's store), less what is
+ * - what a source can give (`sourceSupply`: a shuttle of the crew member's side or run docked there, then the airlock's store; a hovering
+ *   shuttle's store), less what is
  *   set aside there for others, and whether it counts as a source at all (`canGive`);
  * - the refill itself (`drawAir`), which takes from that same supply;
  * - air set aside for later refills (`AirHoldsC`): each hold is owned by an entity (a site's shuttle while it is away) and names the crew
@@ -46,42 +49,51 @@ export function tankShortfall(sim: Sim, crew: number): number {
 }
 
 /**
- * The player shuttle docked at this airlock that tops tanks up through it once the airlock's store runs dry, or undefined. `without` leaves
- * one shuttle out (the departure check: the shuttle about to leave gives nothing while it is away).
+ * True if the shuttle gives air to this crew member: one of its own side, or of the party of the site it serves (`Away.vehicle`). `crew` 0
+ * asks for anyone at all (a source search's candidates). A shuttle's air is its side's and its party's, whoever's airlock it is docked at.
  */
-export function dockedSupplier(sim: Sim, airlock: number, without = 0): Vehicle | undefined {
+function suppliesTo(sim: Sim, id: number, v: Vehicle, crew: number): boolean {
+  if (!crew) return true;
+  return sim.world.get(crew, AwayC)?.vehicle === id || vehicleFaction(sim, v) === (sim.world.get(crew, AllegianceC)?.faction ?? 'player');
+}
+
+/**
+ * The shuttle docked at this airlock that gives `crew` air through it (`suppliesTo`), or undefined. `without` leaves one shuttle out (the
+ * departure check: the shuttle about to leave gives nothing while it is away).
+ */
+export function dockedSupplier(sim: Sim, airlock: number, without = 0, crew = 0): Vehicle | undefined {
   const dock = dockedAt(sim, airlock);
   const v = dock && dock !== without ? sim.world.get(dock, VehicleC) : undefined;
-  return v && vehicleFaction(sim, v) === 'player' ? v : undefined;
+  return v && suppliesTo(sim, dock, v, crew) ? v : undefined;
 }
 
-/** A hovering source shuttle: a player's, not the one left out. */
-function sourceVehicle(sim: Sim, id: number, without: number): Vehicle | undefined {
+/** A hovering source shuttle that gives `crew` air, not the one left out. */
+function sourceVehicle(sim: Sim, id: number, without: number, crew: number): Vehicle | undefined {
   const v = id !== without ? sim.world.get(id, VehicleC) : undefined;
-  return v && vehicleFaction(sim, v) === 'player' ? v : undefined;
+  return v && suppliesTo(sim, id, v, crew) ? v : undefined;
 }
 
-/** All the air at the source, holds included. */
-function rawSupply(sim: Sim, s: SourceRef, without: number): number {
+/** All the air at the source for `crew` (0: for anyone), holds included. */
+function rawSupply(sim: Sim, s: SourceRef, without: number, crew: number): number {
   if (s.kind === 'airlock') {
-    const v = dockedSupplier(sim, s.id, without);
+    const v = dockedSupplier(sim, s.id, without, crew);
     return airlockAir(sim, s.id) + (v ? vehicleAir(sim, v) : 0);
   }
-  const v = sourceVehicle(sim, s.id, without);
+  const v = sourceVehicle(sim, s.id, without, crew);
   return v ? vehicleAir(sim, v) : 0;
 }
 
 /**
- * True if the source counts as one at all, for anyone: an airlock with air in its store, or with a player shuttle docked there holding a
- * full tank; a player shuttle holding a full tank (a shuttle with less is no longer a source). The walker-free half of `givesTo`, which
- * is what every per-walker question asks; this alone only picks the candidates a search starts from.
+ * True if the source counts as one at all, for anyone: an airlock with air in its store, or with a shuttle docked there holding a full
+ * tank; a shuttle holding a full tank (a shuttle with less is no longer a source). The walker-free half of `givesTo`, which is what every
+ * per-walker question asks (whose shuttle it is included); this alone only picks the candidates a search starts from.
  */
 export function canGive(sim: Sim, s: SourceRef, without = 0): boolean {
   if (s.kind === 'airlock') {
     const v = dockedSupplier(sim, s.id, without);
     return airlockAir(sim, s.id) > 0 || (!!v && hasTank(sim, vehicleAir(sim, v)));
   }
-  const v = sourceVehicle(sim, s.id, without);
+  const v = sourceVehicle(sim, s.id, without, 0);
   return !!v && hasTank(sim, vehicleAir(sim, v));
 }
 
@@ -112,11 +124,13 @@ function heldForOthers(sim: Sim, s: SourceRef, crew: number, owner: number): num
 
 /**
  * Seconds of air the source can give: `rawSupply` less what is held there for others. `for`: the crew member asking (their own holds are
- * theirs to draw). `without`: one shuttle left out, its own holds as well (the departure check of that shuttle, which sets them anew).
+ * theirs to draw, and the shuttle there counts if it gives them air). `side`: a crew member whose shuttles count, holds left as they are
+ * (the departure check, per store). `without`: one shuttle left out, its own holds as well (the departure check of that shuttle, which
+ * sets them anew).
  */
-export function sourceSupply(sim: Sim, s: SourceRef, opts: { without?: number; for?: number } = {}): number {
+export function sourceSupply(sim: Sim, s: SourceRef, opts: { without?: number; for?: number; side?: number } = {}): number {
   const without = opts.without ?? 0;
-  return Math.max(0, rawSupply(sim, s, without) - heldForOthers(sim, s, opts.for ?? 0, without));
+  return Math.max(0, rawSupply(sim, s, without, opts.side ?? opts.for ?? 0) - heldForOthers(sim, s, opts.for ?? 0, without));
 }
 
 /**
@@ -128,8 +142,8 @@ export function freeAirlockStore(sim: Sim, airlock: number): number {
 }
 
 /**
- * The refill: fill the crew member's tank at the source from what it can give them (`sourceSupply`): an airlock's store first, then a player
- * shuttle docked there; or a hovering shuttle's store (the tank swap at the hatch). Their own holds there are spent by what they take.
+ * The refill: fill the crew member's tank at the source from what it can give them (`sourceSupply`): a shuttle of their side or run docked
+ * there first, then the airlock's store; or a hovering shuttle's store (the tank swap at the hatch). Their own holds there are spent by what they take.
  * Returns the seconds put in. A suit that was made with no tank figure counts as full already.
  */
 export function drawAir(sim: Sim, crew: number, s: SourceRef): number {
@@ -143,12 +157,13 @@ export function drawAir(sim: Sim, crew: number, s: SourceRef): number {
     put(have - n);
     given += n;
   };
+  // A shuttle of their own side or run first (one docked at the airlock, or the hovering one), then the airlock's own store.
+  const v = s.kind === 'airlock' ? dockedSupplier(sim, s.id, 0, crew) : sourceVehicle(sim, s.id, 0, crew);
+  if (v) take(vehicleAir(sim, v), (left) => (v.air = left));
   if (s.kind === 'airlock') {
     const a = sim.world.get(s.id, AirlockC)!;
     take(airlockAir(sim, s.id), (left) => (a.air = left));
   }
-  const v = s.kind === 'airlock' ? dockedSupplier(sim, s.id) : sourceVehicle(sim, s.id, 0);
-  if (v) take(vehicleAir(sim, v), (left) => (v.air = left));
   suit.air = suitAir(sim, crew) + given;
   spendHolds(sim, crew, s, given);
   return given;

@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
+  AirlockC, CrewC, ItemStackC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
 } from '../sim';
 import { jobFits } from '../sim/crew/jobFit';
+import { drawAir, sourceSupply } from '../sim/eva/airLedger';
+import { SuitC } from '../sim/eva/components';
+import { spillItems } from '../sim/items/stacks';
+import { suitDef } from '../sim/eva/suit';
+import { AllegianceC } from '../sim/fight/components';
 import { content } from './index';
 import { outline, planHull, run, yardGame } from './yardFixture';
 
@@ -76,8 +81,9 @@ describe('the yard crew', () => {
     const { sim, station, me } = yardGame();
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     sim.enqueue({ type: 'yard.order', station });
-    run(sim, 300);
+    run(sim, 1);
     const order = sim.yard.orders[0]!;
+    run(sim, 2000, () => order.phase === 'work' && order.timer > 100); // the crew have landed (on the site's run) and are at work
     expect(order.phase).toBe('work');
     const back = deserialize(serialize(sim), content);
     expect(back.yard.orders[0]).toEqual(order);
@@ -138,5 +144,53 @@ describe('the yard crew', () => {
     expect(ours.length).toBeGreaterThan(0);
     run(sim, 700);
     expect(builtCount(sim, sim.yard.orders[0]!).truss).toBeGreaterThan(0);
+  }, 120000);
+
+  it('a contractor refilling at the player airlock the station shuttle is docked at draws the shuttle air first; the ship crew draw the airlock store', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    run(sim, 1);
+    const order = sim.yard.orders[0]!;
+    run(sim, 2000, () => order.phase === 'work');
+    const v = sim.world.get(order.vehicle, VehicleC)!;
+    expect(v).toMatchObject({ state: 'docked', dock: order.airlock });
+    const lock = sim.world.get(order.airlock, AirlockC)!;
+    const [contractor] = order.crew as [number];
+    const ours = sim.world.query(CrewC).find((c) => !sim.world.has(c, YardCrewC) && sim.world.get(c, AllegianceC)?.faction === 'player')!;
+    sim.world.add(ours, SuitC, { worn: true, air: 0 });
+    const tank = suitDef(sim).airSec;
+    for (const c of [contractor, ours]) sim.world.get(c, SuitC)!.air = tank / 2;
+    lock.air = tank * 2;
+    v.air = tank * 2;
+    // The contractor's own shuttle first: the player's store is left alone.
+    expect(drawAir(sim, contractor, { kind: 'airlock', id: order.airlock })).toBe(tank / 2);
+    expect(v.air).toBe(tank * 1.5);
+    expect(lock.air).toBe(tank * 2);
+    // The ship's own crew draw the airlock's store: the station's shuttle is not theirs to empty.
+    expect(drawAir(sim, ours, { kind: 'airlock', id: order.airlock })).toBe(tank / 2);
+    expect(lock.air).toBe(tank * 1.5);
+    expect(v.air).toBe(tank * 1.5);
+    lock.air = 0;
+    expect(sourceSupply(sim, { kind: 'airlock', id: order.airlock }, { for: ours })).toBe(0);
+    expect(sourceSupply(sim, { kind: 'airlock', id: order.airlock }, { for: contractor })).toBe(tank * 1.5);
+  }, 120000);
+
+  it('the yard site on the player ship leaves the ship crew hauling its loose items (the site carries no loot)', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    run(sim, 1);
+    const order = sim.yard.orders[0]!;
+    run(sim, 2000, () => order.phase === 'work');
+    const ours = sim.world.query(CrewC).find((c) => !sim.world.has(c, YardCrewC) && sim.world.get(c, AllegianceC)?.faction === 'player')!;
+    const at = sim.world.get(ours, PositionC)!;
+    const before = new Set(sim.world.query(ItemStackC));
+    expect(spillItems(sim, me, Math.round(at.x), Math.round(at.y), 'item.metal', 5)).toBe(0);
+    const stack = sim.world.query(ItemStackC).find((s) => !before.has(s))!;
+    expect(stack).toBeDefined();
+    const hauled = (): boolean => sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.haul?.src.id === stack);
+    run(sim, 60, hauled);
+    expect(hauled()).toBe(true);
   }, 120000);
 });

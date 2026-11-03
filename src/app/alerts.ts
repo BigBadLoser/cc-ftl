@@ -142,10 +142,11 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `au${e.crew}`, text: `No air in reach: ${crewName(e.crew)} (${left} left)`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !sim.world.has(e.crew, PickupC) };
       }
       case 'away.stranded': {
-        // The away site's shuttle is lost and no other free one can come (#286): the party waits on the site until one can.
+        // The away site's shuttle is lost and no other free one can come (#286), or it has no way into its home ship (bay down, no free
+        // airlock): the party waits until a shuttle or a way in is back.
         const ship = e.ship;
         return {
-          kind: e.type, key: `as${ship}`, text: `Crew stranded: ${sim.world.get(ship, ShipC)?.name ?? 'away site'}`, subject: e.crew[0] ? crewSubject(sim, e.crew[0]) : null,
+          kind: e.type, key: `as${ship}`, text: `${e.noHome ? 'Shuttle cannot get home' : 'Crew stranded'}: ${sim.world.get(ship, ShipC)?.name ?? 'away site'}`, subject: e.crew[0] ? crewSubject(sim, e.crew[0]) : null,
           resolved: () => sim.world.get(ship, AwaySiteC)?.block !== 'stranded',
         };
       }
