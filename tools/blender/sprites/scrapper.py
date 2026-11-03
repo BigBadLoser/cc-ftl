@@ -305,20 +305,28 @@ def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
     b.face([b.P(L1, d, z) for d, z in outer], GMD, fwd)                                                   # outer cap
 
 
-RECESS_L, RECESS_Z, RECESS_DEPTH = (2.32, 2.87), (0.52, 1.06), 0.3
+RECESS_W, RECESS_Z, RECESS_DEPTH = 0.55, (0.52, 1.06), 0.9
+RECESS_L = (2.5 - RECESS_W / 2, 2.5 + RECESS_W / 2)                    # centred in the bay's back wall
 
 
-def recess(b, DM, h1):
-    """The recess in the bay's back wall (the hopper's opening, measured on the ref's hopper tile, link 07): the wall
-    at D = DM around the opening, and the opening's sides, ceiling, floor and back, dark for now (it glows later)."""
+def _bay_back_h(L):
+    """Height of the block behind the bay at L: TOP, sloping down to EDGE over the last STEP before L 3."""
+    return TOP if L <= 3.0 - STEP else TOP + (EDGE - TOP) * (L - (3.0 - STEP)) / STEP
+
+
+def recess(b, DM):
+    """The opening in the bay's back wall (the hopper's, placed after the ref's hopper tile, link 07, but centred in
+    the wall): the wall at D = DM around it, and a passage running deep enough into the block (RECESS_DEPTH) that its
+    end never shows, dark for now (it glows later)."""
     (L0, L1), (z0, z1), d = RECESS_L, RECESS_Z, RECESS_DEPTH
     def wall(pts, col, n):                                              # pts as (L, D, z); n = normal in (L, D, z)
         a, c = b.P(*pts[0]), b.P(pts[0][0] + n[0], pts[0][1] + n[1], pts[0][2] + n[2])
         b.face([b.P(*p) for p in pts], col, (c[0] - a[0], c[1] - a[1], c[2] - a[2]))
     fwd = (0, 1, 0)                                                     # the bay wall faces +D
+    knee = [(3.0 - STEP, DM, TOP)] if L0 < 3.0 - STEP < L1 else []
     wall([(L0, DM, BASE), (L1, DM, BASE), (L1, DM, z0), (L0, DM, z0)], BODY, fwd)                 # below
-    wall([(L0, DM, z1), (L1, DM, z1), (L1, DM, h1), (3.0 - STEP, DM, TOP), (L0, DM, TOP)], BODY, fwd)  # above
-    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], DARK, fwd)     # back
+    wall([(L0, DM, z1), (L1, DM, z1), (L1, DM, _bay_back_h(L1)), *knee, (L0, DM, _bay_back_h(L0))], BODY, fwd)
+    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], DARK, fwd)     # far end
     wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM, z0), (L0, DM, z0)], DARK, (0, 0, 1))       # floor
     wall([(L0, DM - d, z1), (L1, DM - d, z1), (L1, DM, z1), (L0, DM, z1)], DARK, (0, 0, -1))      # ceiling
     wall([(L0, DM - d, z0), (L0, DM, z0), (L0, DM, z1), (L0, DM - d, z1)], DARK, (1, 0, 0))       # sides
@@ -385,10 +393,10 @@ def scrapper(rot):
     b.loft([(0.03, full(WALL)), (0.5, full(EDGE)), (1.0, full(EDGE)), (1.0 + STEP, full(TOP)), (2.0 - STEP, full(TOP)),
             (2.0, stepped(TOP, EDGE))], caps=(True, bay_wall(EDGE)))                          # hatch end half
     # behind the bay, its bay wall (side 2) built with the recess cut into it
-    r0, r1, h1 = RECESS_L[0], RECESS_L[1], TOP + (EDGE - TOP) * (RECESS_L[1] - (3.0 - STEP)) / STEP
-    b.loft([(2.0, back(TOP)), (r0, back(TOP)), (3.0 - STEP, back(TOP)), (r1, back(h1)), (3.0, back(EDGE))],
-           caps=(False, False), skip={(1, 2), (2, 2)})
-    recess(b, DM, h1)
+    Ls = sorted({2.0, *RECESS_L, 3.0 - STEP, 3.0})
+    b.loft([(L, back(_bay_back_h(L))) for L in Ls], caps=(False, False),
+           skip={(k, 2) for k in range(len(Ls) - 1) if RECESS_L[0] <= Ls[k] < RECESS_L[1]})
+    recess(b, DM)
     b.loft([(3.0, full(EDGE)), (3.5, full(EDGE)), (3.97, full(WALL))], caps=(bay_wall(EDGE), True))  # far end tile
     # the two hatches on the hatch-end slope, one per row: a frame lying on the slope, two sliding door leaves
     for r0, r1 in ((D0, DM), (DM, D1)):
