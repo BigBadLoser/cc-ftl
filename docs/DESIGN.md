@@ -374,10 +374,12 @@ scripts. Not every scene has one.
   - Observed: boarded -> passenger state; treated -> reward and goodwill; died -> log; delivered -> payment; offers to join -> recruit prompt.
   - Persistence: transient. Timer: **yes** (a bleeding patient).
 
-**Open questions.**
-1. Does a persistent derelict get a map marker as soon as it is found, or only if you scan it?
-2. Is passenger transport a job in the jobs panel, or a request that lives on the passenger?
-3. Can the observer's rules be shared across encounters (one "helped a ship" rule), or per scene?
+**Settled (user, 2026-11-03).**
+- A persistent derelict gets a map marker as soon as it is found.
+- A passenger's transport request shows as a job card in the jobs panel, to accept or refuse.
+- Observer rules are shared by default (one "helped a ship in trouble" rule for every encounter where you help a ship), and an
+  encounter may add or override a rule when it has a reason (robbing the pirate you once spared sets a "betrayed" flag). The world
+  reacts the same way to the same action wherever it happens.
 
 ### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
 
