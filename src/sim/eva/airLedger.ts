@@ -72,8 +72,9 @@ function rawSupply(sim: Sim, s: SourceRef, without: number): number {
 }
 
 /**
- * True if the source counts as one: an airlock with air in its store, or with a player shuttle docked there holding a full tank; a player
- * shuttle holding a full tank (a shuttle with less is no longer a source). Holds do not change it: the walk is the same.
+ * True if the source counts as one at all, for anyone: an airlock with air in its store, or with a player shuttle docked there holding a
+ * full tank; a player shuttle holding a full tank (a shuttle with less is no longer a source). The walker-free half of `givesTo`, which
+ * is what every per-walker question asks; this alone only picks the candidates a search starts from.
  */
 export function canGive(sim: Sim, s: SourceRef, without = 0): boolean {
   if (s.kind === 'airlock') {
@@ -82,6 +83,15 @@ export function canGive(sim: Sim, s: SourceRef, without = 0): boolean {
   }
   const v = sourceVehicle(sim, s.id, without);
   return !!v && hasTank(sim, vehicleAir(sim, v));
+}
+
+/**
+ * THE answer to "can this crew member get air at this source": it counts as a source (`canGive`) and, after what is held there for
+ * others, has some left for them (`sourceSupply`). Reach (`airSources`, admission's `SourceReach`) asks it per walker; `drawAir` then
+ * takes from that same supply. `without`: one shuttle left out (the departure check).
+ */
+export function givesTo(sim: Sim, s: SourceRef, crew: number, without = 0): boolean {
+  return canGive(sim, s, without) && sourceSupply(sim, s, { without, for: crew }) > 0;
 }
 
 const same = (h: AirHold, s: SourceRef): boolean => h.kind === s.kind && h.id === s.id;
@@ -107,6 +117,14 @@ function heldForOthers(sim: Sim, s: SourceRef, crew: number, owner: number): num
 export function sourceSupply(sim: Sim, s: SourceRef, opts: { without?: number; for?: number } = {}): number {
   const without = opts.without ?? 0;
   return Math.max(0, rawSupply(sim, s, without) - heldForOthers(sim, s, opts.for ?? 0, without));
+}
+
+/**
+ * Seconds of an airlock's own store free of every hold there: what a docked shuttle may top its store up from (`systems/airStores.ts`),
+ * so a shuttle that then leaves never carries off air set aside for a crew member.
+ */
+export function freeAirlockStore(sim: Sim, airlock: number): number {
+  return Math.max(0, airlockAir(sim, airlock) - heldForOthers(sim, { kind: 'airlock', id: airlock }, 0, 0));
 }
 
 /**

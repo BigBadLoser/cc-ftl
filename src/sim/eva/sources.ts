@@ -12,7 +12,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { REFILL_FILL_SEC } from '../tuning';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { canGive, sourceSupply } from './airLedger';
+import { canGive, givesTo } from './airLedger';
 import { hatchFace } from './hatch';
 import { hatchSpot, tileCentre } from './shuttle';
 import { airlockUsable, suitTile } from './suit';
@@ -20,7 +20,7 @@ import { airlockUsable, suitTile } from './suit';
 /**
  * Where a suited crew member can fill their tank, found by reachability on their grid (docs/DESIGN.md "Air as a need", #286). Two kinds:
  * the suit tile of a working airlock and the hatch spot of a player shuttle hovering beside the grid, within float range of a hull tile the
- * walker can reach; either counts while the air ledger says it can give (`canGive`). Part of the air module with `eva/airLedger.ts`: the only
+ * walker can reach; either counts for a walker while the air ledger says it gives to them (`givesTo`). Part of the air module with `eva/airLedger.ts`: the only
  * place reach to a source is worked out (the air drive, the refill order, admission and the departure check all ask here). The walk is the
  * suited one (`walkOpts` of anyone who can refill: they wear a suit).
  * `ticks` is the time to get there and be ready to fill (a walk, plus the drift out for a shuttle); `fillTicks` is the time at the source
@@ -89,8 +89,7 @@ export function airSources(sim: Sim, crew: number, opts: { without?: number } = 
   const pos = sim.world.get(crew, PositionC);
   if (!pos) return [];
   const shipId = shipIdOf(sim, pos);
-  // A source whose air is all set aside for others has nothing for this walker (`sourceSupply`).
-  const cands = sourceCandidates(sim, shipId, opts.without ?? 0).filter((c) => sourceSupply(sim, c, { without: opts.without, for: crew }) > 0);
+  const cands = sourceCandidates(sim, shipId, opts.without ?? 0).filter((c) => givesTo(sim, c, crew, opts.without));
   const view = cands.length > 0 ? viewOf(sim, shipId, { suited: true }) : null;
   if (!view || !shipGrid(sim, shipId)) return [];
   const goals = new Map<number, number[]>();
@@ -117,10 +116,11 @@ export function nearestAirSource(sim: Sim, crew: number, opts: { without?: numbe
 /**
  * Ticks from given tiles of a grid back to their nearest source, for many walkers and tiles at once (admission asks for every job's work
  * tile): one search out of each source to the tiles of `goals`, made the first time the grid is asked about. Same sources and walk as
- * `airSources`, run backwards; a tile no source reaches gets null.
+ * `airSources`, run backwards; a tile no source reaches gets null. The searches are shared by every walker, so each keeps its source and
+ * the source is asked per walker (`givesTo`): one whose air is all held for others is no way back for them (Codex 4450094854).
  */
 export class SourceReach {
-  private byShip = new Map<number, { view: View; from: { r: ReturnType<typeof dijkstraFrom>; tile: Tile; extra: number }[] } | null>();
+  private byShip = new Map<number, { view: View; from: { r: ReturnType<typeof dijkstraFrom>; src: Candidate }[] } | null>();
   constructor(
     private sim: Sim,
     private goals: (ship: number) => readonly PathGoal[],
@@ -132,11 +132,11 @@ export class SourceReach {
     if (!reach) return null;
     const key = indexOf(reach.view, tile.x, tile.y);
     let best: number | null = null;
-    for (const s of reach.from) {
-      if (!s.r.cost.has(key)) continue;
-      const path = s.r.steps(key); // from the source to the tile
-      const back = [...path.slice(0, -1).reverse(), s.tile];
-      const ticks = travelTicks(this.sim, walker, back, { from: path.length ? (path[path.length - 1] as Tile) : s.tile, shipId: ship, suited: true }) + s.extra;
+    for (const { r, src } of reach.from) {
+      if (!r.cost.has(key) || !givesTo(this.sim, src, walker)) continue;
+      const path = r.steps(key); // from the source to the tile
+      const back = [...path.slice(0, -1).reverse(), src.tile];
+      const ticks = travelTicks(this.sim, walker, back, { from: path.length ? (path[path.length - 1] as Tile) : src.tile, shipId: ship, suited: true }) + src.extra;
       if (best === null || ticks < best) best = ticks;
     }
     return best;
@@ -146,14 +146,14 @@ export class SourceReach {
     if (this.byShip.has(ship)) return this.byShip.get(ship)!;
     const view = viewOf(this.sim, ship, { suited: true });
     const sources = view ? sourceCandidates(this.sim, ship) : [];
-    let made: { view: View; from: { r: ReturnType<typeof dijkstraFrom>; tile: Tile; extra: number }[] } | null = null;
+    let made: { view: View; from: { r: ReturnType<typeof dijkstraFrom>; src: Candidate }[] } | null = null;
     if (view && sources.length > 0) {
       const goals = new Map<number, number[]>();
       const fallbacks = new Map<number, number[]>();
       for (const g of this.goals(ship)) {
         for (const t of goalTiles(view, g)) (isFallbackStop(view, g, t) ? fallbacks : goals).set(t, [t]); // keyed by tile
       }
-      made = { view, from: sources.map((s) => ({ r: dijkstraFrom(view, s.tile, goals, fallbacks), tile: s.tile, extra: s.extra })) };
+      made = { view, from: sources.map((src) => ({ r: dijkstraFrom(view, src.tile, goals, fallbacks), src })) };
     }
     this.byShip.set(ship, made);
     return made;

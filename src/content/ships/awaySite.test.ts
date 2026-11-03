@@ -3,12 +3,12 @@ import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, Positi
 import { giveItems } from '../../sim/story/effects';
 import { placementError, shipGrid, spawnModule } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
-import { airSources } from '../../sim/eva/sources';
+import { SourceReach, airSources } from '../../sim/eva/sources';
 import { content } from '../index';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { departCheck, unsafeMembers } from '../../sim/away/depart';
 import { awayLeaks } from '../../sim/away/owned';
-import { drawAir, setAirHolds } from '../../sim/eva/airLedger';
+import { drawAir, setAirHolds, sourceSupply } from '../../sim/eva/airLedger';
 import { passagesOf } from '../../sim/away/passage';
 import { AirHoldsC, SuitC } from '../../sim/eva/components';
 import { ferryFree } from '../../sim/ferry/pick';
@@ -133,6 +133,25 @@ describe('away sites', () => {
     expect(awayLeaks(sim)).toEqual([`airHolds:${shuttle}`]); // the run is beside the site: the trip that set it is over
     play(sim, 1);
     expect(sim.world.has(shuttle, AirHoldsC)).toBe(false);
+  });
+
+  it('air holds: a source whose air is all held for others is no way back for a walker, in admission as in the air drive (Codex 4450094854)', () => {
+    const { sim, wreck, party } = landed();
+    wreckAirlock(sim, wreck);
+    const [a, b] = party as [number, number];
+    const at = sim.world.get(a, PositionC)!;
+    const tile = { x: at.x, y: at.y };
+    const reach = (): SourceReach => new SourceReach(sim, () => [tile]);
+    const all = airSources(sim, a);
+    expect(all.length).toBeGreaterThan(0);
+    expect(reach().ticksFrom(a, wreck, tile)).not.toBeNull();
+    // Every source's whole supply held for b (by an owner of its own, so no run sweeps it).
+    const owner = sim.world.createEntity();
+    setAirHolds(sim, owner, all.map((s) => ({ crew: b, kind: s.kind, id: s.id, sec: sourceSupply(sim, s) })));
+    expect(airSources(sim, a)).toEqual([]);
+    expect(reach().ticksFrom(a, wreck, tile)).toBeNull(); // the old reach counted them all the same
+    expect(reach().ticksFrom(b, wreck, tile)).not.toBeNull(); // still b's
+    setAirHolds(sim, owner, []);
   });
 
   it('ownership: away-owned state whose owner is gone is released by the sweep, and the audit reports it until then', () => {

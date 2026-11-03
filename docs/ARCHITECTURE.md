@@ -976,7 +976,10 @@ admission until salvage moves onto this (slice 3), so salvage behaves exactly as
     `tankSec`, `tankShortfall`. *The reserve:* `fitsReserve(sec, air)` (`sec + AIR_RESERVE_SEC <= air`), the one reserve rule.
   - *Supply:* `sourceSupply(src, {without?, for?})`: an airlock's store plus a player shuttle docked there (`dockedSupplier`), or a
     hovering player shuttle's store; `without` leaves out one shuttle (and its own holds), and air held for others is taken off.
-    `canGive` says whether a source counts at all (an airlock with air, or a docked shuttle with a tank; a shuttle with a tank).
+    `canGive` says whether a source counts at all (an airlock with air, or a docked shuttle with a tank; a shuttle with a tank), for
+    anyone: it only picks where searches start. `givesTo(src, crew)` is the one per-walker answer (`canGive` and some supply left for
+    them): `airSources` and admission's `SourceReach` (whose cached searches keep each source and ask it per walker) both use it.
+    A docked shuttle tops itself up only from an airlock's `freeAirlockStore` (none of the held air).
   - *The refill:* `drawAir(crew, src)` takes the tank's shortfall from that same supply (airlock store first, then the docked shuttle)
     and spends the crew member's own holds there. Nothing else writes a store on a refill.
   - *Reach:* `airSources(crew, {without?})` (forward, one multi-goal search over the suited view, i.e. `walkOpts` of a suited walker)
