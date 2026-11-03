@@ -278,6 +278,30 @@ def plate_z(b, poly, z0, z1, col, caps):
         b.face([b.P(*poly[k], bot(poly[k][0])) for k in piece], col, (0, 0, -1))
 
 
+def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
+    """The mouth shroud: a rounded-square tube, its open face at L0 and its rim wall thick, hollow to depth, where a
+    dark back wall closes it; the outside runs on to L1, where it is capped."""
+    outer = _rrect(DRUM_D, DRUM_Z, h, h, r)
+    inner = _rrect(DRUM_D, DRUM_Z, h - wall, h - wall, r - wall / 2)
+    ax = lambda L: b.P(L, DRUM_D, DRUM_Z)  # noqa: E731
+    e0, e1 = ax(L0), ax(L1)
+    fwd = (e1[0] - e0[0], e1[1] - e0[1], e1[2] - e0[2])                # +L
+    back = (-fwd[0], -fwd[1], -fwd[2])
+    m = len(outer)
+    for i in range(m):
+        j = (i + 1) % m
+        (od, oz), (od2, oz2), (id_, iz), (id2, iz2) = outer[i], outer[j], inner[i], inner[j]
+        b.face([b.P(L0, od, oz), b.P(L0, od2, oz2), b.P(L0, id2, iz2), b.P(L0, id_, iz)], GMD, back)           # rim
+        q = [b.P(L0, od, oz), b.P(L0, od2, oz2), b.P(L1, od2, oz2), b.P(L1, od, oz)]                         # outside
+        c, a_ = [sum(p[k] for p in q) / 4 for k in range(3)], ax((L0 + L1) / 2)
+        b.face(q, GMD, (c[0] - a_[0], c[1] - a_[1], c[2] - a_[2]))
+        q = [b.P(L0, id_, iz), b.P(L0, id2, iz2), b.P(L0 + depth, id2, iz2), b.P(L0 + depth, id_, iz)]       # bore
+        c, a_ = [sum(p[k] for p in q) / 4 for k in range(3)], ax(L0 + depth / 2)
+        b.face(q, DARK, (a_[0] - c[0], a_[1] - c[1], a_[2] - c[2]))
+    b.face([b.P(L0 + depth, d, z) for d, z in inner], DARK, back)                                         # back wall
+    b.face([b.P(L1, d, z) for d, z in outer], GMD, fwd)                                                   # outer cap
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -285,8 +309,7 @@ def drum(b):
     """The drum lying along L in the bay, measured on the ref's drum tile (link 05): a rounded-square mouth shroud at
     the hatch end, its open face toward the hatch-end block (D 1.25..1.97, z 0.03..0.76), then the drum running to the
     yoke (later), with two wide raised bands and a narrow one next to the shroud."""
-    rr_prism_L(b, 2.04, 2.2, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                    # mouth shroud
-    rr_prism_L(b, 2.02, 2.04, DRUM_D, DRUM_Z, 0.29, 0.09, DARK)                    # the mouth, dark
+    mouth(b, 2.04, 2.2, 0.12)                                                      # hollow mouth shroud
     b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, GM, sides=20)                          # drum
     for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, GMD, sides=20)
