@@ -1398,7 +1398,11 @@
   "set": "scrapper"
  },
  "scSteel": {
-  "hex": "#8794a2",
+  "hex": "#7389a6",
+  "set": "scrapper"
+ },
+ "scSteelB": {
+  "hex": "#62799b",
   "set": "scrapper"
  }
 }
