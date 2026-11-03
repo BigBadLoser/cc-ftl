@@ -22,6 +22,7 @@ ACCESS = (1, 2)
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
 RUST, RUST_D = "rust", "rustD"  # the drum and yoke (dark) with lighter raised bands
+HW = os.environ.get("SCRAPPER_STEEL", "scSteel")   # the hardware's steel: piston, exhaust nozzle
 BODY_S2 = "scBodyS2"  # a step below BODY_S: the recess frame
 BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
@@ -474,7 +475,7 @@ def piston(b, L0=2.0 + STEP - 0.084, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.07
     z = TOP + r - sink
     D = wall - math.sqrt(r * r - (r - sink) ** 2)                      # its line on the top falls on the front edge
     cap = 0.06                                                          # the knob is part of the span, so the whole
-    b.cyl_L(D, z, r, L0 + cap, L1, {"rust": RUST, "steel": STEEL, "orange": BODY}[os.environ.get("SCRAPPER_PISTON", "rust")], sides=14)                        # piston is centred, knob included
+    b.cyl_L(D, z, r, L0 + cap, L1, HW, sides=14)                        # piston is centred, knob included
     b.cyl_L(D, z, r + 0.02, L0, L0 + cap, DARK, sides=14)
     levers(b, D, z, r)
 
@@ -586,8 +587,8 @@ def scrapper(rot):
     b.prism_D(exhaust_housing(fA, fB), dc - flange - px, dc + flange + px, RUST_D, RUST)   # a pixel wider than the flange
     slope_cyl(b, fA, fB, fm, dc, flange, 0, 0.04, RUST_D)                       # flange, foot flat on the slope
     barrel = 0.13 + px / 2
-    slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, STEEL)     # chamfer up from the flange to the barrel
-    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, STEEL)                    # nozzle barrel
+    slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, HW)     # chamfer up from the flange to the barrel
+    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, HW)                    # nozzle barrel
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
     turn = math.radians(float(os.environ.get("SCRAPPER_SPIN", "0")))   # preview of the active state's frames
     drum(b, turn)

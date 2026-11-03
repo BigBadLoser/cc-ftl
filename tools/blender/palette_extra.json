@@ -1396,5 +1396,9 @@
  "scBodyS2": {
   "hex": "#7d461d",
   "set": "scrapper"
+ },
+ "scSteel": {
+  "hex": "#8794a2",
+  "set": "scrapper"
  }
 }
