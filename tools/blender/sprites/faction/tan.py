@@ -104,7 +104,8 @@ def tan(hull):
         band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
         band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
         zt = zs0 - 6.5 * PZ                             # (3 px of face, then the slats and the panel)
-        ztop = zl1 + int((zt - PZ - zl1) / SLAT + 1e-6) * SLAT     # the slats' top seam, the panel's top level with it
+        ztop = zl1 + (int((zt - PZ - zl1) / SLAT + 1e-6) + 1) * SLAT   # the slats' top seam (a row up into the face
+                                                                        # under the shadow), the panel's top level with it
         for u0, u1, mid, gs in _panels(a, b):
             if not mid:                                 # either side of the panel: slats up from the lip, each a
                 z = zl1                                 # dark seam over a lit line (the first seam on the lip, its

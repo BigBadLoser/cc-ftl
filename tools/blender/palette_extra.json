@@ -3621,31 +3621,38 @@
  },
  "fTS0": {
   "hex": "#dcccac",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS1": {
   "hex": "#bca46c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS2": {
   "hex": "#ac8c64",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS3": {
   "hex": "#a48464",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS4": {
   "hex": "#6c4c4c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS5": {
   "hex": "#543c3c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS6": {
   "hex": "#3c2c2c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTX0": {
   "hex": "#9cacc4",
@@ -3705,10 +3712,12 @@
  },
  "fTS7": {
   "hex": "#8c6c5c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTS8": {
   "hex": "#9c745c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  }
 }
