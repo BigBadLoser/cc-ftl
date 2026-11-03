@@ -227,6 +227,9 @@ describe('scene observer', () => {
     expect(sim.story.reputation['traders']).toBe(before - 1);
     expect(sim.story.flags['boarded_neutral']).toBe(1);
     expect(sim.world.get(skiff, ShipC)).toMatchObject({ faction: 'hostile', provoked: 'boarded' });
+    // Taken as a prize it is the player's, but leaving lifts only the player's own ship: the crew on the prize are still away.
+    (sim.world.get(skiff, ShipC) as { faction: string }).faction = 'player';
+    expect(leaveBlocker(sim)).toBe('crewAway');
   });
 
   it('an encounter may switch a shared rule off', () => {

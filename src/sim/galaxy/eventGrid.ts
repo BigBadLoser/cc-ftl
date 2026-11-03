@@ -75,9 +75,13 @@ export function enterEvent(sim: Sim, kind: EventGrid['kind'], scene: SceneSpec, 
   return true;
 }
 
-/** True while a player crew member is off the player's ships (aboard another ship, out on EVA) or a player shuttle is out (flying, or docked elsewhere). */
+/**
+ * True while a player crew member is off the ship that leaves (aboard another ship, a captured prize included, or out on EVA) or a player shuttle is out
+ * (flying, or docked anywhere but that ship): leaving lifts only that ship and what stands or docks on it (`leaveEvent`), the rest is gone.
+ */
 export function crewAway(sim: Sim): boolean {
-  const mine = (ship: number): boolean => sim.world.get(ship, ShipC)?.faction === 'player';
+  const home = playerShipInfo(sim)?.id;
+  const mine = (ship: number): boolean => ship === home;
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC);
     if (!v || v.state === 'stowed' || vehicleFaction(sim, v) !== 'player') continue;
