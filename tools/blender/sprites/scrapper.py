@@ -262,18 +262,20 @@ def plate_L(b, poly, L0, L1, col, caps):
 
 def plate_z(b, poly, z0, z1, col, caps):
     """A flat (L, D) outline, which may be concave, extruded up from z0 to z1; caps as in plate_L. z1 may be a
-    function of L for a top that slopes along L (each cap piece must then lie where it is linear)."""
+    function of L for a top that slopes along L, and z0 likewise for a bent plate (each cap piece must then lie where
+    they are linear)."""
     top = z1 if callable(z1) else (lambda L: z1)  # noqa: E731
+    bot = z0 if callable(z0) else (lambda L: z0)  # noqa: E731
     area = sum(poly[i][0] * poly[i - 1][1] - poly[i - 1][0] * poly[i][1] for i in range(len(poly)))
     sg = 1 if area < 0 else -1
     for i in range(len(poly)):
         (l0, d0), (l1, d1) = poly[i - 1], poly[i]
-        q = [b.P(l0, d0, z0), b.P(l1, d1, z0), b.P(l1, d1, top(l1)), b.P(l0, d0, top(l0))]
-        o0, o1 = b.P((l0 + l1) / 2, (d0 + d1) / 2, z0), b.P((l0 + l1) / 2 + sg * (d1 - d0), (d0 + d1) / 2 - sg * (l1 - l0), z0)
+        q = [b.P(l0, d0, bot(l0)), b.P(l1, d1, bot(l1)), b.P(l1, d1, top(l1)), b.P(l0, d0, top(l0))]
+        o0, o1 = b.P((l0 + l1) / 2, (d0 + d1) / 2, 0), b.P((l0 + l1) / 2 + sg * (d1 - d0), (d0 + d1) / 2 - sg * (l1 - l0), 0)
         b.face(q, col, (o1[0] - o0[0], o1[1] - o0[1], o1[2] - o0[2]))
     for piece in caps:
         b.face([b.P(*poly[k], top(poly[k][0])) for k in piece], col, (0, 0, 1))
-        b.face([b.P(*poly[k], z0) for k in piece], col, (0, 0, -1))
+        b.face([b.P(*poly[k], bot(poly[k][0])) for k in piece], col, (0, 0, -1))
 
 
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
@@ -306,15 +308,15 @@ def yoke(b):
 def top_plate(b):
     """The plate lying on the drum, centred on it, running back from the yoke's top to above the mouth shroud
     (measured on the drum tile). Its front edge is notched in the middle; near the mouth end its top slopes up about
-    4 px and runs on level to the end."""
+    4 px and runs on level to the end, bent like a strap: the same thickness all the way."""
     w, notch = 0.185, 0.12                                              # half width, notch depth
     Db, Df, Dn = DRUM_D - w, DRUM_D + w, DRUM_D + w - notch
     poly = [(2.15, Db), (2.27, Db), (2.35, Db), (2.38, Db), (2.6, Db), (2.8, Db), (2.8, Df), (2.6, Df), (2.6, Dn),
             (2.38, Dn), (2.38, Df), (2.35, Df), (2.27, Df), (2.15, Df)]
     caps = [(0, 1, 12, 13), (1, 2, 11, 12), (2, 3, 9, 10, 11), (3, 4, 8, 9), (4, 5, 6, 7, 8)]
-    lo, hi = 0.92, 0.92 + 0.1                                           # 0.1 = about 4 px of height
-    plate_z(b, poly, 0.77, lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08,
-            GMD, caps)
+    lo, hi, t = 0.92, 0.92 + 0.1, 0.15                                  # 0.1 = about 4 px of height; thickness
+    top = lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08  # noqa: E731
+    plate_z(b, poly, lambda L: top(L) - t, top, GMD, caps)
 
 
 def scrapper(rot):
