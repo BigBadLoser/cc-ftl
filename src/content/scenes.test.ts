@@ -340,23 +340,28 @@ describe('provoking a neutral', () => {
     expect(sim.world.query(WeaponC).every((id) => sim.world.get(id, WeaponC)?.mode !== 'hold' || sim.world.get(id, WeaponC)?.restore === undefined)).toBe(true);
   });
 
-  it('a provoked fleet stays hostile: lifted out of the node and made real again, it comes back on its owner\'s combat side', () => {
+  it('a provoked fleet stays hostile: lifted out and made real again, or a ship that was waiting for room, it comes on its owner\'s combat side', () => {
     const sim = newGame(24, content);
     const g = sim.galaxy;
-    const f = g.fleets.find((x) => x.ships.length > 0 && !isHostileFaction(sim, x.faction)) as Fleet;
+    const f = g.fleets.find((x) => x.ships.length > 1 && !isHostileFaction(sim, x.faction)) as Fleet;
     Object.assign(f, { node: g.current, from: g.current, route: [], dwell: 99, synced: g.turn });
+    // One ship made real, the other still waiting for room in the sector.
+    const waiting = f.ships.splice(1);
     materialiseFleet(sim, f);
+    f.ships.push(...waiting);
     const first = f.ships[0]?.ship as number;
+    expect(waiting.every((c) => c.ship === undefined)).toBe(true);
     expect(sim.world.get(first, ShipC)?.faction).toBe('neutral');
     provoke(sim, first, 'fired');
     const side = sim.world.get(first, ShipC)?.faction;
     expect(side).not.toBe('neutral');
+    expect(f.ships.every((c) => c.provoked)).toBe(true);
     liftFleet(sim, f);
     const back = deserialize(serialize(sim), content);
     const again = back.galaxy.fleets.find((x) => x.id === f.id) as Fleet;
     materialiseFleet(back, again);
     for (const c of again.ships) if (c.ship !== undefined) expect(back.world.get(c.ship, ShipC)?.faction).toBe(side);
-    expect(again.ships.some((c) => c.ship !== undefined)).toBe(true);
+    expect(again.ships.every((c) => c.ship !== undefined)).toBe(true);
   });
 
   it('crew embarked on its own shuttle turn with the provoked ship', () => {

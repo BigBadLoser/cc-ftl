@@ -1,4 +1,4 @@
-import { contactOf, shipmates } from '../galaxy/fleetShips';
+import { shipGroup, shipmates } from '../galaxy/fleetShips';
 import type { Sim } from '../sim';
 import { ShipC } from './components';
 import { factionsHostile } from './factions';
@@ -21,13 +21,13 @@ export function provokable(sim: Sim, ship: number): boolean {
 /** Turn the ship and its shipmates hostile to the player, recording why on the ship. No-op for a ship that is not provokable. */
 export function provoke(sim: Sim, ship: number, why: 'fired' | 'boarded'): void {
   if (!provokable(sim, ship)) return;
+  // The whole group stays hostile, ships still waiting for room in the sector included: each comes back hostile when made real (spawnContact).
+  for (const c of shipGroup(sim, ship)) c.provoked = true;
   for (const mate of shipmates(sim, ship)) {
     const s = sim.world.get(mate, ShipC);
     if (!s || !provokable(sim, mate)) continue;
     turnShip(sim, mate, sim.content.galaxy?.factions[s.gen?.owner ?? '']?.combatFaction ?? 'hostile');
     if (mate === ship) s.provoked = why;
-    const c = contactOf(sim, mate);
-    if (c) c.provoked = true; // it stays hostile when lifted out and made real again (spawnContact)
     sim.events.emit({ type: 'ship.provoked', ship: mate, reason: why });
   }
 }
