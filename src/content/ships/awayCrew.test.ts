@@ -8,9 +8,9 @@ import { boardCrew, occupants, vehicleDefOf } from '../../sim/vehicles/lifecycle
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { SuitC } from '../../sim/eva/components';
 import { shipIdOf } from '../../sim/regions';
-import { crewOn, landed, siteWork } from './awayFixture';
+import { crewOn, landed, play, siteWork } from './awayFixture';
 import { shuttleOf } from './ferryFixture';
-import { of, play, setup } from './salvageEvaFixture';
+import { of, setup } from './salvageEvaFixture';
 
 /** A working airlock on the wreck's hull. */
 function wreckAirlock(sim: Sim, wreck: number): number {

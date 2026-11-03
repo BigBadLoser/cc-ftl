@@ -95,9 +95,7 @@ export function replaceLostShuttles(sim: Sim): void {
     s.vehicle = vehicle;
     for (const c of party) {
       const away = sim.world.get(c, AwayC)!;
-      away.vehicle = vehicle;
-      delete away.landing;
-      delete away.home;
+      away.vehicle = vehicle; // a `landing` or `home` of the lost shuttle's ends with it (away/owned.ts)
     }
     sim.world.add(vehicle, SiteRunC, { site, phase: 'board', timer: 0, lastTrip: sim.tick });
     sim.events.emit({ type: 'away.pickup', ship: site, vehicle, crew: party });

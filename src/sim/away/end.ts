@@ -3,18 +3,18 @@ import { haulsTo } from '../salvage/cargoRun';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
+import { releaseOwned } from './owned';
 import { dropPassages, letOut } from './passage';
 
 /**
- * End a site's run: its passages and hauls to the hold are withdrawn, the shuttle no longer flies itself, the party leaves it (crew still on
- * the site are ordinary crew there), and the site closes with it.
+ * End a site's run: its passages and hauls to the hold are withdrawn, the shuttle no longer flies itself, and the site closes with it. The
+ * party leaves it with the run (crew still on the site are ordinary crew there): their `AwayC` and its holds end in away/owned.ts.
  */
 export function endRun(sim: Sim, id: number, r: SiteRun, reason: 'closed' | 'lost'): void {
   dropPassages(sim, id);
   for (const j of haulsTo(sim, id)) destroyJob(sim, j);
   const v = sim.world.get(id, VehicleC);
   if (v) v.autopilot = false;
-  for (const c of [...sim.world.query(AwayC)].sort((a, b) => a - b)) if (sim.world.get(c, AwayC)?.vehicle === id) sim.world.remove(c, AwayC);
   sim.world.remove(id, SiteRunC);
   if (sim.world.get(r.site, AwaySiteC)?.vehicle === id) sim.world.remove(r.site, AwaySiteC);
   if (!r.pickup) sim.events.emit({ type: 'away.closed', ship: r.site, vehicle: id, reason });
@@ -35,4 +35,5 @@ export function endSplitRuns(sim: Sim, side: (id: number) => boolean): void {
     if (v && (v.state === 'stowed' || v.state === 'docked')) letOut(sim, id, (c) => sim.world.has(c, AwayC));
     endRun(sim, id, r, 'lost');
   }
+  releaseOwned(sim); // what the ended runs owned goes now, before either side is archived (nothing runs the sweep there)
 }

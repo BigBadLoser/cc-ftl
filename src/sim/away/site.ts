@@ -44,24 +44,6 @@ function holdStation(sim: Sim, id: number, v: Vehicle, r: SiteRun, fetch: number
   return false;
 }
 
-/**
- * Party members out on the site and not floating are the crew AI's: a suit still tied to the shuttle is untied (theirs: the shuttle may
- * leave), and those sent out of the hatch who have landed are let go (free to work).
- */
-function handOver(sim: Sim, vehicle: number): void {
-  for (const c of partyOut(sim, vehicle)) {
-    const away = sim.world.get(c, AwayC)!;
-    if (sim.world.has(c, EvaFloatC)) continue;
-    const suit = sim.world.get(c, SuitC);
-    if (suit?.vehicle === vehicle) delete suit.vehicle;
-    if (!away.landing) continue;
-    delete away.landing;
-    // Only the away code's own hold for the drift: a draft the player took over stays (Codex 4449530810).
-    const d = sim.world.get(c, DraftedC);
-    if (d?.away && d.target === null && sim.world.remove(c, DraftedC)) (sim.world.get(c, CrewC) as Crew).activity = 'idle';
-  }
-}
-
 /** Take a party member aboard where they are (downed with nobody to carry them, or still out when a closing site gives up waiting). */
 export function lift(sim: Sim, c: number, vehicle: number): void {
   const v = sim.world.get(vehicle, VehicleC);
@@ -81,9 +63,8 @@ export function lift(sim: Sim, c: number, vehicle: number): void {
 function watchDowned(sim: Sim, id: number): void {
   for (const c of partyOut(sim, id)) {
     const away = sim.world.get(c, AwayC)!;
-    if (!isIncapacitated(sim, c)) delete away.downAt;
-    else if (sim.world.has(c, CarriedC)) continue;
-    else if (sim.tick - (away.downAt ??= sim.tick) > sec(AWAY_LIFT_SEC)) lift(sim, c, id);
+    if (!isIncapacitated(sim, c) || sim.world.has(c, CarriedC)) continue; // `downAt` ends with their being down (away/owned.ts)
+    if (sim.tick - (away.downAt ??= sim.tick) > sec(AWAY_LIFT_SEC)) lift(sim, c, id);
   }
 }
 
@@ -131,12 +112,14 @@ function offStation(sim: Sim, id: number, v: Vehicle, r: SiteRun, fetch: number)
   return true;
 }
 
-/** The housekeeping of 'stay' and 'depart': station, hand-over, the downed, pickups, loot into the hold. Null when off station. */
+/**
+ * The housekeeping of 'stay' and 'depart': station, the downed, pickups, loot into the hold. Null when off station. (Those sent out of the
+ * hatch are the crew AI's once landed: the hand-over is the release of their drift's holds, away/owned.ts.)
+ */
 function beside(sim: Sim, id: number, v: Vehicle, r: SiteRun): { unplaced: number } | null {
   const fetch = answerPickups(sim, id);
   if (offStation(sim, id, v, r, fetch)) return null;
   const onStation = holdStation(sim, id, v, r, fetch);
-  handOver(sim, id);
   watchDowned(sim, id);
   if (!onStation || !siteSpot(sim, id, r.site)) return null;
   return { unplaced: planCarry(sim, id, r.site) };
@@ -170,12 +153,12 @@ export function depart(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
 /** Everyone is called aboard (the site closes, is gone, or a fight started); after AWAY_LIFT_SEC whoever is still out is lifted. */
 export function recall(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   holdStation(sim, id, v, r, 0);
-  handOver(sim, id);
   const out = partyOut(sim, id);
   const gone = !shipById(sim, r.site);
   for (const c of partyAboard(sim, v)) {
     const away = sim.world.get(c, AwayC)!;
-    // Aboard and not on the way out (a queued `eva.out` runs the next tick; one still aboard after that was refused): home with the rest.
+    // Aboard and not on the way out (a queued `eva.out` runs the next tick; one still aboard after that was refused): home with the rest
+    // (a refused drift is no drift: its `landing` goes with it).
     if (!away.landing || r.timer > 2) {
       away.home = true;
       delete away.landing;

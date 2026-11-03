@@ -7,15 +7,17 @@ import { airSources } from '../../sim/eva/sources';
 import { content } from '../index';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { departCheck, unsafeMembers } from '../../sim/away/depart';
+import { awayLeaks } from '../../sim/away/owned';
+import { drawAir, setAirHolds } from '../../sim/eva/airLedger';
 import { passagesOf } from '../../sim/away/passage';
-import { SuitC } from '../../sim/eva/components';
+import { AirHoldsC, SuitC } from '../../sim/eva/components';
 import { ferryFree } from '../../sim/ferry/pick';
 import { shipIdOf } from '../../sim/regions';
 import { AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_LIFT_SEC } from '../../sim/tuning';
 import { policies } from '../policies';
 import { shuttleOf } from './ferryFixture';
-import { of, play, setup } from './salvageEvaFixture';
-import { landed, siteWork } from './awayFixture';
+import { of, setup } from './salvageEvaFixture';
+import { crewOn, landed, play, siteWork } from './awayFixture';
 
 describe('away sites', () => {
   it('sends crew out on passages and hands them to the crew AI on the site, where they do its work', () => {
@@ -114,6 +116,35 @@ describe('away sites', () => {
     const r = departCheck(sim, shuttle);
     expect(r.unsafe).toEqual([]);
     expect(r.returnBy).toBeGreaterThan(sim.tick); // the shuttle must be back before the top-up set aside runs out
+  });
+
+  it('air holds: held air is for its crew member only, their refill spends it, and it ends once the shuttle is beside the site again', () => {
+    const { sim, wreck, shuttle, party } = landed();
+    const lock = wreckAirlock(sim, wreck);
+    sim.world.get(lock, AirlockC)!.air = 600;
+    const [a, b] = party as [number, number];
+    setAirHolds(sim, shuttle, [{ crew: a, kind: 'airlock', id: lock, sec: 500 }]);
+    sim.world.get(b, SuitC)!.air = 0;
+    expect(drawAir(sim, b, { kind: 'airlock', id: lock })).toBe(100); // only what is not held for a
+    sim.world.get(a, SuitC)!.air = 100;
+    expect(drawAir(sim, a, { kind: 'airlock', id: lock })).toBe(500);
+    expect(sim.world.has(shuttle, AirHoldsC)).toBe(false); // spent
+    setAirHolds(sim, shuttle, [{ crew: a, kind: 'airlock', id: lock, sec: 100 }]);
+    expect(awayLeaks(sim)).toEqual([`airHolds:${shuttle}`]); // the run is beside the site: the trip that set it is over
+    play(sim, 1);
+    expect(sim.world.has(shuttle, AirHoldsC)).toBe(false);
+  });
+
+  it('ownership: away-owned state whose owner is gone is released by the sweep, and the audit reports it until then', () => {
+    const { sim, home } = landed();
+    const [c] = crewOn(sim, home) as [number];
+    sim.world.add(c, AwayC, { site: 999999, vehicle: 999998, cat: 'hauling', landing: true });
+    sim.world.add(c, DraftedC, { target: null, away: true });
+    expect(awayLeaks(sim)).toEqual(expect.arrayContaining([`away:${c}`, `drafted.away:${c}`]));
+    play(sim, 1);
+    expect(awayLeaks(sim)).toEqual([]);
+    expect(sim.world.has(c, AwayC)).toBe(false);
+    expect(sim.world.has(c, DraftedC)).toBe(false);
   });
 
   it('a waiting passenger does not leave while a worker staying out is unsafe', () => {

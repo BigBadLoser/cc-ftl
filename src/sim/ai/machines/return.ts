@@ -70,9 +70,7 @@ function floatAboard(sim: Sim, id: number, crew: Crew, vehicle: number, pos: Pos
 function cameAboard(sim: Sim, id: number): void {
   const away = sim.world.get(id, AwayC);
   if (!away) return;
-  if (!away.ride) away.home = true;
-  delete away.pickup;
-  delete away.lastCall;
+  if (!away.ride) away.home = true; // a pickup and a last call end with coming aboard (away/owned.ts)
 }
 
 /** Step in at the airlock the shuttle is docked at: the suit goes into its stock. */

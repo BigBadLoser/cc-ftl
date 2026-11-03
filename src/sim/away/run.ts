@@ -1,11 +1,9 @@
 import { shipById } from '../combat/ships';
-import { CrewC, DeadC, DraftedC, JobC, PositionC, type Crew } from '../crew/components';
-import { EvaFloatC } from '../eva/components';
+import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import { regionAirlock } from '../ferry/pick';
-import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { AWAY_BOARD_MIN_SEC, AWAY_BOARD_WAIT_SEC, AWAY_LIFT_SEC, AWAY_TURNAROUND_SEC } from '../tuning';
 import { cargoCount } from '../vehicles/cargo';
@@ -13,6 +11,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayWorking } from '../vehicles/geometry';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
 import { endRun } from './end';
+import { releaseOwned } from './owned';
 import { partyOut } from './depart';
 import { boardPassengers, calledBack, dropPassages, freeSeats, letOut, passagesOf, postPassages } from './passage';
 import { atHome, atSite, due, go, hovering, sec, wanted } from './phase';
@@ -154,26 +153,6 @@ function pickup(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
  * jobs, the air drive refills them, the return drive takes them aboard. Vehicle orders go by command, applied next tick.
  */
 export function awaySystem(sim: Sim): void {
-  // A party member whose run is gone leaves the party, unless their site still stands (it asks for another shuttle, `replaceLostShuttles`).
-  for (const c of [...sim.world.query(AwayC)].sort((a, b) => a - b)) {
-    const away = sim.world.get(c, AwayC)!;
-    if (sim.world.has(c, DeadC)) sim.world.remove(c, AwayC);
-    else if (!sim.world.get(away.vehicle, SiteRunC) && sim.world.get(away.site, AwaySiteC)?.vehicle !== away.vehicle) sim.world.remove(c, AwayC);
-  }
-  // A hold the away code put on for a float (`Drafted.away`) ends once no float is behind it: landed, aboard and let out again, or the
-  // float dropped (no seat after all, the shuttle gone). One sweep, so such a hold can never be left behind (Codex 4449454958, 4449454964).
-  for (const c of [...sim.world.query(DraftedC, PositionC)].sort((a, b) => a - b)) {
-    const d = sim.world.get(c, DraftedC)!;
-    if (!d.away || d.target !== null || sim.world.has(c, EvaFloatC)) continue;
-    sim.world.remove(c, DraftedC);
-    const crew = sim.world.get(c, CrewC) as Crew;
-    if (crew.activity === 'drafted') crew.activity = 'idle';
-  }
-  // A passage whose shuttle no longer serves its site (the run ended, or a cut ended it) is withdrawn.
-  for (const j of [...sim.world.query(JobC)].sort((a, b) => a - b)) {
-    const job = sim.world.get(j, JobC)!;
-    if (job.kind === 'passage' && sim.world.get(job.target ?? 0, SiteRunC)?.site !== job.site) destroyJob(sim, j);
-  }
   replaceLostShuttles(sim);
   startPickupRuns(sim);
   for (const id of [...sim.world.query(SiteRunC)].sort((a, b) => a - b)) {
@@ -205,4 +184,6 @@ export function awaySystem(sim: Sim): void {
         break;
     }
   }
+  // Away-owned holds and flags whose owner is gone end here, and only here (away/owned.ts).
+  releaseOwned(sim);
 }

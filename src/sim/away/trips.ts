@@ -83,15 +83,6 @@ export function tripDue(sim: Sim, id: number, v: Vehicle, r: SiteRun, unplaced: 
 /** Able to answer the last call or come aboard to ride: on their feet, not carried, not held by the player. */
 const able = (sim: Sim, m: number): boolean => !isIncapacitated(sim, m) && !sim.world.has(m, CarriedC) && !sim.world.has(m, DraftedC) && sim.world.has(m, PositionC);
 
-/** Clear the last-call and ride marks of the party still out (the trip left or was called off). */
-function clearCalls(sim: Sim, id: number): void {
-  for (const m of partyOut(sim, id)) {
-    const away = sim.world.get(m, AwayC)!;
-    delete away.lastCall;
-    delete away.ride;
-  }
-}
-
 /**
  * One tick of a due trip (the 'depart' phase; `r.timer` counts from when it fell due). It leaves ('go', with `r.returnBy` set) once the
  * shuttle is settled and the departure check passes. Until then each worker it finds short and able gets the last call (their air drive
@@ -99,14 +90,11 @@ function clearCalls(sim: Sim, id: number): void {
  * of reach, held) keeps it waiting; after AWAY_DEPART_GIVEUP_SEC the trip is called off ('off') and the run stays.
  */
 export function departStep(sim: Sim, id: number, v: Vehicle, r: SiteRun): 'wait' | 'go' | 'off' {
-  if (r.timer > sec(AWAY_DEPART_GIVEUP_SEC)) {
-    clearCalls(sim, id);
-    return 'off';
-  }
+  // Leaving the phase ends the last call and the ride of those still out (away/owned.ts).
+  if (r.timer > sec(AWAY_DEPART_GIVEUP_SEC)) return 'off';
   if (settled(sim, id, v)) {
     const { unsafe, returnBy, holds } = departCheck(sim, id);
     if (unsafe.length === 0) {
-      clearCalls(sim, id);
       setAirHolds(sim, id, holds); // the top-ups the check counted on, set aside until the shuttle is back (away/owned.ts ends them)
       if (returnBy === undefined) delete r.returnBy;
       else r.returnBy = returnBy;
