@@ -145,11 +145,11 @@ def grille(paint, solid, U, D):
     for ua, ub, da, db in ((bu0, bu1, bd0, vd0), (bu0, bu1, vd1, bd1),             # the rim round it, up to the
                            (bu0, vu0, vd0, vd1), (vu1, bu1, vd0, vd1)):             # body's top
         solid(q(ua, ub, da, db), G_H, "fTW2", FACE, 3, fl)
-    n = int((vu1 - vu0) / (2 * L))
-    for i in range(n):                                                              # the slats (a px, every two)
-        ua = vu0 + (2 * i + 1) * L
-        if ua + L <= vu1 - L / 2:
-            solid(q(ua, ua + L, vd0, vd1), G_H, "fTW0", FACE, 4, fl)
+    n = int(((vu1 - vu0) / L - 1) / 2)                                              # the slats (a px, a px apart,
+    off = vu0 + ((vu1 - vu0) - (2 * n + 1) * L) / 2                                 # centred in it, a gap at each
+    for i in range(n):                                                              # side)
+        ua = off + (2 * i + 1) * L
+        solid(q(ua, ua + L, vd0, vd1), G_H, "fTW0", FACE, 4, fl)
 
 
 GRILLE = (((0.0, G_L, 0.0, 1.0, "abcd"),), ((G_R, 1.0, 0.0, 1.0, "abcd"),))
