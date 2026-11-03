@@ -299,15 +299,15 @@ def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
     for i in range(m):
         j = (i + 1) % m
         (od, oz), (od2, oz2), (id_, iz), (id2, iz2) = outer[i], outer[j], inner[i], inner[j]
-        b.face([b.P(L0, od, oz), b.P(L0, od2, oz2), b.P(L0, id2, iz2), b.P(L0, id_, iz)], GMD, back)           # rim
+        b.face([b.P(L0, od, oz), b.P(L0, od2, oz2), b.P(L0, id2, iz2), b.P(L0, id_, iz)], RUST_D, back)           # rim
         q = [b.P(L0, od, oz), b.P(L0, od2, oz2), b.P(L1, od2, oz2), b.P(L1, od, oz)]                         # outside
         c, a_ = [sum(p[k] for p in q) / 4 for k in range(3)], ax((L0 + L1) / 2)
-        b.face(q, GMD, (c[0] - a_[0], c[1] - a_[1], c[2] - a_[2]))
+        b.face(q, RUST_D, (c[0] - a_[0], c[1] - a_[1], c[2] - a_[2]))
         q = [b.P(L0, id_, iz), b.P(L0, id2, iz2), b.P(L0 + depth, id2, iz2), b.P(L0 + depth, id_, iz)]       # bore
         c, a_ = [sum(p[k] for p in q) / 4 for k in range(3)], ax(L0 + depth / 2)
         b.face(q, DARK, (a_[0] - c[0], a_[1] - c[1], a_[2] - c[2]))
     b.face([b.P(L0 + depth, d, z) for d, z in inner], DARK, back)                                         # back wall
-    b.face([b.P(L1, d, z) for d, z in outer], GMD, fwd)                                                   # outer cap
+    b.face([b.P(L1, d, z) for d, z in outer], RUST_D, fwd)                                                   # outer cap
 
 
 RECESS_W, RECESS_Z, RECESS_DEPTH = 0.55, (0.52, 1.06), 0.9
@@ -505,7 +505,7 @@ def drum(b):
     b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, RUST_D, sides=20)                        # drum
     for L0, L1 in DRUM_BANDS:                                                      # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST, sides=20)
-    rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                      # squared end shroud, under the yoke
+    rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, RUST_D)                      # squared end shroud, under the yoke
     yoke(b)
 
 
@@ -530,7 +530,7 @@ def top_plate(b):
     caps = [(0, 1, 6, 7), (1, 2, 5, 6), (2, 3, 4, 5)]
     lo, hi, t = 0.92, 0.92 + 0.1, 0.15                                  # 0.1 = about 4 px of height; thickness
     top = lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08  # noqa: E731
-    plate_z(b, poly, lambda L: top(L) - t, top, GMD, caps)
+    plate_z(b, poly, lambda L: top(L) - t, top, RUST, caps)
 
 
 def scrapper(rot):
