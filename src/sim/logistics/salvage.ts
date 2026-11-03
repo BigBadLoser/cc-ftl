@@ -1,9 +1,9 @@
 import { ShipC } from '../combat/components';
 import { homeShip } from '../combat/ships';
-import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
-import { AllegianceC } from '../fight/components';
+import { JobC } from '../crew/components';
+import { playerCrewOn } from '../away/crew';
 import { isFerryRegion, isPickupRegion, regionStock } from '../ferry/pick';
-import { shipIdAt, shipIdOf } from '../regions';
+import { shipIdAt } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { vehicleDefOf } from '../vehicles/lifecycle';
@@ -16,14 +16,6 @@ const LOOK_EVERY = 30;
 const QUIET_SEC = 20;
 /** Hold size assumed when the player has no shuttle yet. */
 const DEFAULT_LOAD = 40;
-
-/** True while someone of the player's side stands on the site: salvage is crew work, so an empty wreck is left alone. */
-function crewOn(sim: Sim, ship: number): boolean {
-  for (const id of sim.world.query(CrewC, PositionC)) {
-    if (!sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) return true;
-  }
-  return false;
-}
 
 /** True while a job (a haul, a deconstruction) is still open on the site's tiles. */
 function jobsOn(sim: Sim, ship: number): boolean {
@@ -60,7 +52,7 @@ export function salvageWatch(sim: Sim): void {
     if (t?.auto === 'salvage') open.add(t.from);
   }
   for (const site of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
-    if (site === home || isFerryRegion(sim, site) || !isPickupRegion(sim, site) || open.has(site) || !crewOn(sim, site)) continue;
+    if (site === home || isFerryRegion(sim, site) || !isPickupRegion(sim, site) || open.has(site) || !playerCrewOn(sim, site)) continue;
     const stock = regionStock(sim, site);
     const units = stock.reduce((n, l) => n + l.count, 0);
     if (units === 0) {

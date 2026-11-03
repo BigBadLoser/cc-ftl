@@ -1,7 +1,7 @@
 import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
 import { flightTicks, walkSpeed } from '../ai/travel';
-import { HealthC, NeedsC, PositionC, type Job } from '../crew/components';
+import { CrewC, DeadC, HealthC, NeedsC, PositionC, type Job } from '../crew/components';
 import { TICK_HZ } from '../time';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
@@ -20,6 +20,14 @@ import { AwayC, AwaySiteC, SiteRunC } from './components';
  * The crew side of away sites (docs/DESIGN.md "Away sites", #286 slice 2a): who may take a passage, and the return drive's input. No site
  * code moves crew about except the closing lift; the crew AI does (the return machine, ai/machines/return.ts).
  */
+
+/** True while a living crew member of the player's side stands on the ship (a site's wreck must not go while anyone is on it). */
+export function playerCrewOn(sim: Sim, ship: number): boolean {
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    if (!sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) return true;
+  }
+  return false;
+}
 
 /** The site a crew member is working on: they are of its party and stand on its grid. 0 otherwise. */
 export function siteUnderFoot(sim: Sim, id: number): number {

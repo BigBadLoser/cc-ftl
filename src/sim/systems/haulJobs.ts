@@ -1,3 +1,4 @@
+import { AwaySiteC } from '../away/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import { ItemStackC } from '../items/components';
 import { makeHaul, warnDue } from '../items/plan';
@@ -9,14 +10,15 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 /**
  * Clears the floor: every loose stack not already claimed gets a haul job to the nearest storage
  * module that accepts the item and has room (counting space already promised to other hauls).
- * With nowhere to put it, a debounced 'storage.full' event is emitted for that stack.
+ * With nowhere to put it, a debounced 'storage.full' event is emitted for that stack. Loot on an away site is not for the
+ * site's own storage: the site's run hauls it into its shuttle's hold (away/haul.ts `planCarry`).
  */
 export function haulJobsSystem(sim: Sim): void {
   if (sim.tick % PLAN_INTERVAL !== 0) return;
   const res = reservations(sim);
   for (const id of sim.world.query(ItemStackC)) {
     const stack = sim.world.get(id, ItemStackC);
-    if (!stack || isCargo(sim, stack.item)) continue;
+    if (!stack || isCargo(sim, stack.item) || sim.world.has(shipIdAt(sim, stack.x, stack.y), AwaySiteC)) continue;
     const avail = stack.count - (res.out.get(refKey('floor', id, stack.item)) ?? 0);
     if (avail <= 0) continue;
     const dest = nearestStorageFor(sim, shipIdAt(sim, stack.x, stack.y), stack.item, stack, res);

@@ -24,8 +24,8 @@ One line per section; read the index, then only the sections your task touches.
 - [Quality rules](#quality-rules): Sim systems get unit tests, plus scenario tests, for example "a 1-tile breach vents a 4×4 room
 - [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
-- [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck; salvageTripSystem sends suited teams by shuttle.
-- [Away sites and the air drive (#286; slices 0 to 2b built)](#away-sites-and-the-air-drive-286-slices-0-to-2b-built): Slices 0 to 2b built, slice 3 planned (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, batched round trips, pickups, lost shuttles), salvage on top, throughput bench, slices.
+- [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck; the order keeps an away site open on the wreck (its shuttle run brings the crew and takes the loot home).
+- [Away sites and the air drive (#286)](#away-sites-and-the-air-drive-286): Slices 0 to 3 built (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, batched round trips, pickups, lost shuttles), salvage on top, throughput bench, slices.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
@@ -894,36 +894,23 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 - **Reach.** While crew of the player's side stand on the wreck, `planJobs` skips parts none of them can reach (`reach.ts`: the scheduler's walk modes, components labelling, no search)
   and drops open jobs nobody holds that none of them can reach, so they never hold a place under the cap; a stage whose parts are all out of reach lets the next one
   start (modules sealed in a hall: the walls come down first). With nobody aboard nothing is judged out of reach.
-- **Teams (`trip.ts`, `team.ts`, `teamCrew.ts`, `cargoRun.ts`).** `salvageTripSystem` (after `ferrySystem`), outside combat: a running order with no team starts a
-  shift when a shuttle with suits is free (`ferryFree`, which also refuses a shuttle on a shift) in a bay on the home ship, and crew are free (`pickTeam`: player crew on
-  the bay's ship who breathe, not drafted, off duty or at a console, construction or hauling on, rest and hunger >= `SALVAGE_TEAM_GO`; builders first; at most
-  `SALVAGE_TEAM`, the suits and seats, and half the able crew aboard; the team must cover both construction and hauling, one member with both or a pair). Else the order is blocked `noShuttle` / `noCrew` (retried every few seconds), unless player crew
-  already stand on the wreck. `SalvageTripC` on the shuttle: `board` (the team walks to the bay; the first in flies it, no skill needed) -> `fly` (`vehicle.hover`) ->
-  `work` -> `recall` -> `home`.
-  - Work: everyone, the pilot too, goes out by `eva.out` and is handed back to the crew AI on the hull (`SalvageCrewC` marks them; they keep the suit on when idle).
-    Below `SALVAGE_REFILL_FRAC` of a tank they walk to the nearer refill point: an airlock still standing on the wreck (tank filled where they stand) or the hull beside
-    the shuttle (`eva.board`, then out again in a fresh suit). The shuttle keeps close: its hover point comes from the live extent of the hull (`liveBox`,
-    `VehicleDest.hover.box`), and it shifts over as that shrinks, never while someone floats.
-  - Loot: each loose stack on the wreck becomes an ordinary haul job into the hold (`HaulRef` 'vehicle'), handed in at the hovering shuttle's staging tile
-    (`cargoTile` -> `hatchSpot`: the hull tile nearest its hatch), so floors proceed once the stacks are carried off.
-  - Cargo run (`Trip.run`): when the hold has no room left for the loot still lying about and no haul is under way, one of the team (one aboard, else the one nearest)
-    floats back and flies it home; the cargo hauls unload it at the bay (60 s at most) and the pilot flies back. Suits of those staying out are let go of the shuttle
-    (`Suit.vehicle` cleared) so it may leave; while it is away they refill only at an airlock on the wreck, else they walk to the hull beside the shuttle's spot and wait.
-    With no airlock on the wreck, members below 70% air ride along (they come back out in fresh suits). A run whose hold could not be unloaded at all (no room aboard
-    the ship) ends the shift (`noRoom`): at home if the whole team is aboard, else it flies back and recalls the rest first. A shuttle on a shift is busy
-    for every other picker: ferry and logistics runs (`ferryFree`), trade couriers (`playerCourier`) and boarding launches (`orderLaunch`).
-  - The shift ends (`recall`) when the order is done and its loot carried off (or 2 min after it is done), cancelled or blocked by a hostile, when a fight starts, or when
-    a member falls below `SALVAGE_TEAM_REST` / `SALVAGE_TEAM_HUNGER`. Members float back (anyone who cannot after 90 s is carried aboard), the shuttle returns, the team
-    steps out at the bay and the cargo hauls unload the hold. Then a 10 s pause and a new shift.
-  - The last floors are taken from outside: suited crew stand on the hull ring beside them. `salvageSystem` keeps a finished wreck until the team has left its side
-    (`teamAt`). A team whose shuttle is destroyed is let go (`sweepOrphans`: tag off, suits no longer tied to it, undrafted). Events: `salvage.teamSent|teamHome|cargoRun`.
-    The shuttle panel shows the shift as its run (`UiShuttle.ferry`).
+- **On an away site (`site.ts`, #286 slice 3).** The salvage team code is gone; salvage sits on the general away site (below, "Away sites and the
+  air drive"). While an order runs and has work (stripping left, or loose loot to carry off), `tendSite` keeps an `AwaySiteC {owner: 'salvage'}`
+  open on the wreck: it opens one with the lowest free shuttle that can serve a site (`openSite`, `siteShuttleOk`: free by ferry rules, EVA,
+  in a bay on the home ship), else the order is blocked `noShuttle`; the site's `noCrew` (passages untaken) shows as the order's `noCrew`.
+  It writes the site's `demand` (`salvageDemand`): construction = the open stripping jobs nobody holds, hauling = the loose stacks, or 1 while
+  none lie loose but stripping jobs are open (the loot to come), so the first trip has a hauling seat. A hostile aboard, or no work left,
+  closes the site (`closing`: the party comes home, the run ends); a site whose order is gone (cancelled) is closed by `closeOrphanSites`.
+  The order finishes once no stripping is left and the open site has carried off the loose loot (loot it cannot take home, `noRoom` or
+  `stranded`, does not hold it open), and the wreck goes once the site has closed (its run ends with everyone home). Salvage code is now only what to cut, the loot and the hold's demand: the
+  crew, the trips, refills, pickups, rescue and the return are the site's. The panel shows the site's `noRoom` / `stranded` while the order
+  runs, and the shuttle panel the run's phase (`app/shuttleSnapshot.ts`).
 - **Guard.** `job.build`, `job.deconstruct`, `job.buildModule` and `job.deconstructModule` are rejected (`wreck`) on any ship in state 'wreck'; `job.forceDoor` still works.
   Crew of the player on a wreck are not 'boarding' (`isBoarding`: an invader on a wreck is off duty no longer), so they take jobs there like on any ship.
 
-## Away sites and the air drive (#286; slices 0 to 2b built)
+## Away sites and the air drive (#286)
 
-Slices 0 to 2b are built (below); slice 3 (salvage on sites) is planned. Gameplay side: DESIGN.md "Air, away sites and salvage (design for #286; not built yet)".
+Slices 0 to 3 are built (below). Gameplay side: DESIGN.md "Air, away sites and salvage (#286; built)".
 
 **Slice 0 is built** (branch `feat/air-sources-286`): `ai/travel.ts` (`travelTicks`, `flightTicks`; `floatTicks` re-exported), `eva/sources.ts`
 (`airSources`, `sourceCandidates`), `eva/air.ts` (stores, `refillFromAirlock` / `refillFromVehicle`), `systems/airStores.ts` (once a second),
@@ -931,15 +918,15 @@ Slices 0 to 2b are built (below); slice 3 (salvage on sites) is planned. Gamepla
 (`AirAdmission`, asked from the scheduler's `accept`), and the bench (`content/ships/salvageBench.ts`, scenarios `salvageBench*`, baseline in
 `salvageBench.baseline.ts`). Where the code differed from the plan: a plain door costs `DOOR_PASS_SEC` = 0 (doors open as the walker steps in, so
 there is no opening time to price); the refill is an errand job like a suit errand, not a Phase 3 machine; `Fill` at a hovering shuttle is the
-moment at the hull tile, the tank swap itself happens on an `EvaFloat {mode: 'refill'}` at the turn; salvage teams and yard crews are exempt from
-admission until salvage moves onto this (slice 3), so salvage behaves exactly as before.
+moment at the hull tile, the tank swap itself happens on an `EvaFloat {mode: 'refill'}` at the turn; salvage teams and yard crews were exempt from
+admission until slice 3, which dropped the exemption (salvage moved onto sites; the shipyard's contractors are asked like anyone).
 
 **Slice 1 is built** (branch `air/drive-286`):
 - **The drive.** `air` in `content/policies.ts` is first in the colonist, station and npc policies (robots have none). Its inputs live in `ai/airNeed.ts`:
   - `airMargin` maps the air left onto the two travel-time lines: 500 is critical, 1000 is refill.
   - `airSource` blocks the drive when no source can be reached.
   - The nearest-source search runs at most once per `AIR_EVAL_TICKS` and is kept in `Intent.air`, so a load reads the same numbers.
-  - The drive applies only while a suited tank drains: needs air, suited, standing on a thin tile. Salvage teams and yard crews are exempt until slice 3.
+  - The drive applies only while a suited tank drains: needs air, suited, standing on a thin tile. Everyone: the salvage team and yard crew exemptions went in slice 3.
 - **The turn.** `ai/machines/air.ts` `airTurn` is the drive's machine (`task: 'eva'`, the refill errand).
   - It nests: the errand's `resume` keeps the job reserved and hands it back.
   - A haul load is put down and the haul dropped.
@@ -998,7 +985,20 @@ admission until salvage moves onto this (slice 3), so salvage behaves exactly as
   member out, `SiteRun.returnBy` and `AirHoldsC` (the trip away from the site), `boardedAt`/`held` (the stop at home), `passage` jobs
   (the run serving the site). `awayLeaks` is the same rules as a pure audit; the away tests' `play` (`awayFixture.ts`) throws when a
   leak survives a tick. New away state goes in that table.
-- **Not yet:** the debug-site bench variant (the salvage bench still runs salvage's own trip code; slice 3 moves it onto sites and asserts throughput there).
+**Slice 3 is built** (branch `away/salvage-sites-286`): salvage on sites (see "Derelict salvage", "On an away site").
+- **Deleted:** `salvage/trip.ts`, `team.ts`, `teamCrew.ts`, `cargoRun.ts`, `SalvageTripC`, `SalvageCrewC`, `CargoRun`, `SalvageOrder.teamAt`,
+  `SALVAGE_TEAM*` and `SALVAGE_*_FRAC` (but `SALVAGE_FRAC`), events `salvage.teamSent|teamHome|cargoRun`, the salvage-team checks in
+  `ferryFree`, the courier and the boarding launch (a site's `SiteRunC` is the one busy mark), the salvage and yard exemptions in `airDraining`
+  and admission, and the salvage skip in `stowSuit`. `looseOn`, `haulsTo`, `planCarry`, `runDue` and `liveBox` moved to `away/haul.ts`.
+- **Seats by kind.** `postPassages` splits the suited seats by demand first and the airless ones after, so every category in demand gets a
+  suited seat before any gets a second (before, the suited seats went to the first categories in column order and a lone hauling seat could
+  end up airless, which no breather can take).
+- **The walk rule (#292).** A door that cannot open now is not a way through, for every walker: `passAt` (`modules/walk.ts`) is the one walk
+  predicate, used by `findPath`, the scheduler's navigation views (so reach, labelling and job feasibility) and `isTileWalkable` (movement,
+  the step itself). A door is shut for good when it is jammed shut, or it is a door of an airlock that does not work (`airlockWorking`:
+  enabled, intact, powered) and not the side it stands open on (`WalkInfo.shut`). `walkSignature` includes the dead airlocks
+  (`doorSignature`), so cached searches and views go stale when an airlock loses or regains power. A derelict's airlock is unpowered, so
+  its outer door is hull to anyone outside: crew no longer walk into it and wait (the bench's airlock variants scored 0 for that).
 
 ### Dependency on crew AI Phase 3
 
@@ -1144,6 +1144,10 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 
 ### Salvage (slice 3)
 
+Built (see "Derelict salvage", "On an away site"). Where the code differs from this plan: `handlers.ts` does not touch the site; the
+salvage system opens, tends and closes it (`salvage/site.ts`), so one place decides. The panel keeps the order's own blocks and shows the
+site's `noRoom` / `stranded` beside them.
+
 - **Keep:** `components.ts` (`SalvageOrderC` without `teamAt`; `SalvageBlock` filled from the site's block), `handlers.ts`
   (also opens and closes `AwaySiteC`), `system.ts` (`teamAt` becomes "party on or beside the wreck"; it writes
   `AwaySiteC.demand`), `plan.ts`, `reach.ts`, `yield.ts`, `remove.ts`, `counts.ts`, `guard.ts`.
@@ -1182,7 +1186,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 - Slice 0: `AirlockC.air`, `Vehicle.air`; `EvaFloat.mode` `'refill'`; `SuitC.airlock` removed.
 - Slice 1: `PickupC`; `Intent.air` (the kept source search); `SAVE_VERSION` 82. (`Intent.blocked` came with Phase 3; nested refill frames are the errand's `resume`, derived, nothing new saved.)
 - Slice 2 (2a and 2b, `SAVE_VERSION` 83): `AwaySiteC`, `SiteRunC` (2b: phases `depart`/`pickup`, `returnBy`, `pickup`, `held`), `AwayC` (2b: `lastCall`, `ride`, `pickup`, `downAt`); `Job.kind` `passage`, `Job.site`, `Job.airless`, `Job.heldSince`; the `pickup` store. `SuitC.vehicle` stays until slice 3 (salvage still uses it).
-- Slice 3: `SalvageTripC`, `SalvageCrewC`, `SalvageOrder.teamAt` removed.
+- Slice 3 (`SAVE_VERSION` 84): `SalvageTripC`, `SalvageCrewC`, `SalvageOrder.teamAt` removed.
 
 ### Slices
 

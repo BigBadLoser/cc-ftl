@@ -78,7 +78,6 @@ import { yardSystem } from './yard/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
 import { salvageSystem } from './salvage/system';
-import { salvageTripSystem } from './salvage/trip';
 import { awaySystem } from './away/run';
 import { truceSystem } from './systems/truce';
 
@@ -181,8 +180,6 @@ export const pipeline: readonly System[] = [
   yardSystem,
   // Base-logistics runs: shuttles carry cargo and crew between the home ship and claimed bases (ordinary vehicle commands, next tick).
   ferrySystem,
-  // Salvage teams: a shuttle carries a few suited crew to a wreck under a salvage order, hovers as their refill point and takes the loose scrap home.
-  salvageTripSystem,
   // Away sites: each site's shuttle offers passages at home, carries its party out and home, and never leaves anyone stranded.
   awaySystem,
   // Transfer orders (queue) take free shuttles and pilots and start the runs above; they book trips the ferry flow just settled.

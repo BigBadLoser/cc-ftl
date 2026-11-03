@@ -11,7 +11,7 @@ import { outsideCrew, vehicleSuits } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
-import { runDue } from '../salvage/cargoRun';
+import { runDue } from './haul';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { AWAY_DEPART_GIVEUP_SEC, AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC } from '../tuning';

@@ -15,7 +15,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
   - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
-  - [Air, away sites and salvage (design for #286; not built yet)](#air-away-sites-and-salvage-design-for-286-not-built-yet): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
+  - [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
 - [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
@@ -285,7 +285,7 @@ FTL's decision-making with physical consequences, in a shared sector.
 
 ### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
 
-Being rebuilt on general systems (#286): see [Air, away sites and salvage (design for #286; not built yet)](#air-away-sites-and-salvage-design-for-286-not-built-yet). What is below is what #277 built.
+Rebuilt on general systems (#286): see [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built). The salvage teams below are what #277 built; since #286 slice 3 an away site does their work.
 
 Salvage is one order from the inspector. The crew then run it on their own, like any other work.
 
@@ -323,10 +323,11 @@ Salvage is one order from the inspector. The crew then run it on their own, like
   fabricator recipes that turned scrap into metal, electronics or polymer give way to the scrapper. Rations will use
   hydroponics output once that works. Starting crates hold basic metal, electronics and polymer instead of scrap.
 
-### Air, away sites and salvage (design for #286; not built yet)
+### Air, away sites and salvage (#286; built)
 
-Salvage today has its own crew controller: team picking with builder/hauler roles, suits tied to a shuttle, refill trips,
-emergency pickups, cargo-run riders. This replaces it with three general pieces that other off-ship work can use later.
+Salvage had its own crew controller: team picking with builder/hauler roles, suits tied to a shuttle, refill trips,
+emergency pickups, cargo-run riders. This replaced it (built in #286 slices 0 to 3) with three general pieces that other off-ship work can use later.
+A door that cannot open (a derelict's unpowered airlock) is never a way through, for any crew member (#292).
 
 #### 1. Air as a need
 

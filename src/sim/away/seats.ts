@@ -1,7 +1,7 @@
 import { JobC, WORK_CATEGORIES, type WorkCategory } from '../crew/components';
 import { isErrand } from '../eva/errands';
 import { shipIdOf } from '../regions';
-import { looseOn } from '../salvage/cargoRun';
+import { looseOn } from './haul';
 import type { Sim } from '../sim';
 import { AwaySiteC } from './components';
 

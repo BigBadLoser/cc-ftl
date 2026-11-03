@@ -33,6 +33,26 @@ describe('salvage throughput bench', () => {
     expect(quick()).toEqual(a);
   }, 120000);
 
+  /**
+   * More crew is never slower: on each seed (and each wreck), 6 crew bring home at least what 4 do. Nothing at home competes for them, and
+   * each crew member of the 6 is at least as willing (three at priority 1, three at 3); the shuttle's seats and suits cap the party either way.
+   * `SALVAGE_BENCH_ONLY=more:2` (or `morelock:2`) runs one seed.
+   */
+  describe.skipIf(!full)('more crew is never slower (SALVAGE_BENCH=1)', () => {
+    for (const airlock of [false, true]) {
+      const key = airlock ? 'morelock' : 'more';
+      const seeds = [1, 2, 3].filter((s) => !only || only === `${key}:${s}`);
+      if (seeds.length === 0) continue;
+      it(`wreck ${airlock ? 'with' : 'without'} an airlock: 6 crew bring home at least what 4 do, seed by seed`, async () => {
+        for (const s of seeds) {
+          const [six, four] = [6, 4].map((crew) => runBench(setupBench(s, { crew: crew as 4 | 6, airlock }), BENCH_TICKS));
+          await record(`${key} seed ${s}: 6 crew ${six!.scrap}, 4 crew ${four!.scrap}`);
+          expect(six!.scrap).toBeGreaterThanOrEqual(four!.scrap);
+        }
+      }, 3600000);
+    }
+  });
+
   describe.skipIf(!full)('2 game hours (SALVAGE_BENCH=1)', () => {
     for (const v of VARIANTS) {
       const key = variantKey(v);
@@ -45,6 +65,7 @@ describe('salvage throughput bench', () => {
           const r = runBench(setupBench(s, v), BENCH_TICKS);
           await record(`${key} seed ${s}: ${formatBench(r)} | ${JSON.stringify({ scrap: r.scrap, stripped: r.stripped })}`);
           if (base[s - 1]) expect(r.perHour).toBeGreaterThanOrEqual(0.9 * (base[s - 1]!.scrap / BENCH_HOURS)); // no baseline recorded yet: just measure
+          if (v.airlock) expect(r.scrap).toBeGreaterThan(0); // #292: a dead airlock on the wreck no longer stalls the crew at its door
           perHour.push(r.perHour);
         }
         if (seeds.length === 3 && base.length === 3) expect(perHour.reduce((n, x) => n + x, 0) / 3).toBeGreaterThanOrEqual(base.reduce((n, b) => n + b.scrap, 0) / (3 * BENCH_HOURS));

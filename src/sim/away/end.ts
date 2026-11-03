@@ -1,5 +1,5 @@
 import { destroyJob } from '../items/stacks';
-import { haulsTo } from '../salvage/cargoRun';
+import { haulsTo } from './haul';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';

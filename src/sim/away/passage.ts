@@ -58,9 +58,12 @@ export function postPassages(sim: Sim, vehicle: number, site: number, want: bool
   const all = passagesOf(sim, vehicle);
   const taken = all.filter((j) => (sim.world.get(j, JobC) as Job).reservedBy !== 0);
   const open = all.filter((j) => !taken.includes(j));
-  const cats = want && v && at ? allocateSeats(siteDemand(sim, site), freeSeats(sim, v) - taken.length) : [];
-  // The first seats are suited ones, as far as suits go (anyone may take them); the rest are for crew who do not breathe.
-  const suited = v ? Math.max(0, freeSuits(sim, v) - taken.filter((j) => !(sim.world.get(j, JobC) as Job).airless).length) : 0;
+  // The first seats are suited ones, as far as suits go (anyone may take them); the rest are for crew who do not breathe. Each kind is split
+  // by the demand on its own, so every category in demand gets a suited seat before any gets a second (a breather can take it).
+  const seats = want && v && at ? Math.max(0, freeSeats(sim, v) - taken.length) : 0;
+  const suited = v ? Math.min(seats, Math.max(0, freeSuits(sim, v) - taken.filter((j) => !(sim.world.get(j, JobC) as Job).airless).length)) : 0;
+  const demand = seats > 0 ? siteDemand(sim, site) : {};
+  const cats = seats > 0 ? [...allocateSeats(demand, suited), ...allocateSeats(demand, seats - suited)] : [];
   const airless = (i: number): boolean => i >= suited;
   const same = open.length === cats.length && open.every((j, i) => {
     const job = sim.world.get(j, JobC) as Job;
