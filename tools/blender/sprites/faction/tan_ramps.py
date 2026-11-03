@@ -60,11 +60,11 @@ def cushions(layout):
         def D1(g):
             return top + g * span - (0.0 if g == 1.0 else JE / 2)
 
-        def arc(x, y, sx, sy, rad):                     # (a corner (x, y), the rect inward along sx, sy: a quarter
-            rl, re = rad * L, rad * E                   # circle rad px round it, from its side along d to along u)
+        def arc(x, y, sx, sy, rad, el=0.0, ee=0.0):    # (a corner (x, y), the rect inward along sx, sy: a quarter
+            rl, re = rad * L + el, rad * E + ee         # circle rad px round it (and el, ee more), from its side
             cx, cy = x + sx * rl, y + sy * re
             pts = [(cx - sx * rl * math.cos(t), cy - sy * re * math.sin(t)) for t in (i * math.pi / 12 for i in range(7))]
-            return pts if sx * sy > 0 else pts[::-1]
+            return pts if sx * sy > 0 else pts[::-1]   # along d to along u)
         fillets = []
 
         def rect(f0, f1, g0, g1, rc):                   # (a cushion's rect, the corners rc rounded)
@@ -80,9 +80,12 @@ def cushions(layout):
                 if ch in rc:                            # (the others: square, a round shaded on them)
                     fillets.append([(x, y)] + arc(x, y, sx, sy, ROUND))
             return out
-        plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                     # the blue line under the lip
-        plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)           # the toe band, on to the toe
-        T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed=OUTER)   # the joints, under the
+        plate(q(u0, u1, 0.0, run_ - 1 / 32), PAINT / 2, 2, 0.0, BLUE)       # the blue: a line under the lip, the
+        out = []                                                            # toe band, round the block's corners
+        for x, y, sx, sy, el, ee in ((u0, top, 1, 1, side[0], 0.0), (u1, top, -1, 1, side[1], 0.0),
+                                     (u1, end, -1, -1, side[1], E), (u0, end, 1, -1, side[0], E)):
+            out += arc(x, y, sx, sy, CURVE, el, ee)     # (the outline round the cushions' curves)
+        T.plate(k, out, pt, nrm, 0.0, PAINT, FACE, 0, PAINT / 2, fixed=OUTER)   # the joints, under the
         ulo, uhi, dhi = u0 + L, u1 - L, top + span - 2 * E                  # cushions: the block's outline, the
         for cu in layout:                                                   # inner ones lighter along each
             for f0, f1, g0, g1, _rc in cu:                                  # cushion's inner edges
