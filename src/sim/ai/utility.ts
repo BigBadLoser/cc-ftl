@@ -1,5 +1,6 @@
-import { HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
-import { foodOn } from '../crew/eating';
+import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
+import { foodOn, hungerDrainPerSec } from '../crew/eating';
+import { airLeft } from '../eva/airLedger';
 import { traitEffect, traitFlag } from '../crew/traits';
 import { SuitC } from '../eva/components';
 import { suitDef } from '../eva/suit';
@@ -111,6 +112,28 @@ export function policyOf(sim: Sim, id: number): PolicyDef {
 /** A policy by id (the inspector's view of `Intent.scores`). */
 export const policyById = (sim: Sim, id: string): PolicyDef => (id === NO_POLICY.id ? NO_POLICY : sim.content.policies?.[id] ?? NO_POLICY);
 
+/**
+ * Seconds until a harmful need reaches zero at its current drain, or undefined when the drive's need does no harm at zero (`harmsAtZero`).
+ * Read from the need's own rates: hunger at the species drain (halved asleep), air as the seconds left in the tank.
+ */
+export function secToHarm(sim: Sim, id: number, def: DriveDef): number | undefined {
+  if (!def.harmsAtZero) return undefined;
+  if (def.input === 'hunger') {
+    const drain = hungerDrainPerSec(sim, id, sim.world.get(id, CrewC)?.activity === 'sleeping');
+    return drain > 0 ? (sim.world.get(id, NeedsC)?.hunger ?? 0) / drain : Infinity;
+  }
+  if (def.input === 'airMargin') return airLeft(sim, id);
+  return Infinity;
+}
+
+/** Between two urgent drives: does `challenger` go before `current`? The one whose need harms sooner; a harmless need never goes first. Ties stay. */
+export function harmsSooner(sim: Sim, id: number, challenger: DriveDef, current: DriveDef): boolean {
+  const c = secToHarm(sim, id, challenger);
+  if (c === undefined) return false;
+  const k = secToHarm(sim, id, current);
+  return k === undefined || c < k;
+}
+
 /** What the caller knows about the crew member's task: the class gates and the drive's own task under way. */
 export interface TaskView {
   /** They hold a console (a `hold` task): only urgent drives move them. */
@@ -190,7 +213,7 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
   }
   if (blocked) intent.blocked = blocked;
   else delete intent.blocked;
-  return rank(sim, intent, scored);
+  return rank(sim, id, intent, scored);
 }
 
 /**
@@ -198,7 +221,7 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
  * does not beat it. A challenger ranked above it beats it when urgent, or once `minDwell` has passed and it clears `margin`.
  * So the order is: the challengers that beat it, the current drive, then everyone else, each part by score.
  */
-function rank(sim: Sim, intent: Intent, scored: Scored[]): DriveDef[] {
+function rank(sim: Sim, id: number, intent: Intent, scored: Scored[]): DriveDef[] {
   const open = scored.filter((s) => s.open).sort((a, b) => b.score - a.score || a.i - b.i);
   const at = open.findIndex((s) => s.def.id === intent.drive);
   if (at < 0) return open.map((s) => s.def);
@@ -206,9 +229,9 @@ function rank(sim: Sim, intent: Intent, scored: Scored[]): DriveDef[] {
   const dwelling = sim.tick - intent.since < (cur.def.minDwell ?? 0);
   // An urgent drive runs ahead of a current drive that is not urgent however the scores and policy order tie (else a sleeper woken for hunger
   // would just fall asleep again). Between two urgent drives, or two ordinary ones, the current stays unless the usual margin is cleared.
-  // Two urgent drives: the one whose need harms at zero goes first (starving before tiredness); neither or both, the current stays.
+  // Two urgent drives: the one whose need harms sooner goes first (a tank about to run dry before hunger, hunger before tiredness); neither harmful, the current stays.
   const beats = (s: Scored, above: boolean): boolean =>
-    (s.urgent && !cur.urgent) || (s.urgent && cur.urgent && !!s.def.harmsAtZero && !cur.def.harmsAtZero) ||
+    (s.urgent && !cur.urgent) || (s.urgent && cur.urgent && harmsSooner(sim, id, s.def, cur.def)) ||
     (above && !cur.urgent && (s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0)))) ||
     (above && cur.urgent && !s.urgent && !dwelling && s.score >= cur.score + (cur.def.margin ?? 0));
   const beaters = open.filter((s, k) => k !== at && beats(s, k < at));

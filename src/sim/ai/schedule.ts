@@ -23,7 +23,7 @@ import { siteUnderFoot } from '../away/crew';
 import { hazardHolds } from './hazard';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
-import { evaluateIntent, policyOf, readInput, serveDrive, type TaskView } from './utility';
+import { evaluateIntent, harmsSooner, policyOf, readInput, serveDrive, type TaskView } from './utility';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
 type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
@@ -56,12 +56,11 @@ function urgentElsewhere(sim: Sim, id: number, own: MachineId): boolean {
     const x = d.urgent && d.input ? readInput(sim, id, d.input) : undefined;
     return x !== undefined && x < (d.urgent?.below ?? 0);
   };
-  // Their own need is urgent too: they finish it first, unless the other would harm them at zero and theirs would not (the ranking keeps the
-  // current drive between two urgent ones, so a wake that the ranking would not honour only bounces).
+  // Their own need is urgent too: they finish it first, unless the other need harms sooner (the ranking's rule, `harmsSooner`: a wake it
+  // would not honour only bounces).
   const mine = drives.find((d) => d.task === own);
   const ownUrgent = !!mine && isUrgent(mine);
-  if (ownUrgent && mine.harmsAtZero) return false;
-  return drives.some((d) => d.urgent && d.input && d.task !== own && d.task !== 'job' && (!ownUrgent || d.harmsAtZero) && isUrgent(d));
+  return drives.some((d) => d.urgent && d.input && d.task !== own && d.task !== 'job' && isUrgent(d) && (!ownUrgent || harmsSooner(sim, id, d, mine)));
 }
 
 /** Keep the pickup request (`PickupC`) in step with the air drive being blocked: set, with its alert, when no source can be reached. */

@@ -134,7 +134,7 @@ export interface DriveDef {
    * also overrides a `finish` task (a carried patient is set down); only a drive that must (air) sets it.
    */
   urgent?: { below: number; breaksFinish?: true };
-  /** The need does harm to the crew member when it reaches zero (starving, suffocating). Between two urgent drives, one that harms goes first. */
+  /** The need does harm to the crew member when it reaches zero (starving, suffocating). Between two urgent drives the one that harms sooner goes first (`secToHarm`). */
   harmsAtZero?: true;
   /** A challenger must beat the current drive's score by this much to replace it. */
   margin?: number;
