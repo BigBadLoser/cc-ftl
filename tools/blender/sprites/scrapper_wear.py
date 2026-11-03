@@ -66,9 +66,11 @@ def fine(m, names, grid=GRID):
             m.f.append((list(range(base, base + len(c))), col, own, glow))
 
 
-def wear(b, names, top_z, seed=7, run_k=0.7, dust_k=0.7, low_z=0.35, run_col="rust", dust_col="grime", streaks=26):
+def wear(b, names, top_z, seed=7, run_k=0.7, dust_k=0.7, low_z=0.35, run_col="rust", dust_col="grime", streaks=26,
+         top_k=0.8):
     """Wear on b's faces whose colour is one of the palette names. top_z(L, D): the height of the top edge above a point
-    (where run-off starts); low_z: grime gathers below it; run_k, dust_k: how strong the run-off and grime are."""
+    (where run-off starts); low_z: grime gathers below it; run_k, dust_k, top_k: how strong the run-off, the grime
+    and the rust patches on the tops are."""
     want = {core.lin(c) for c in names}
     rust, dust = Vector(core.lin(run_col)), Vector(core.lin(dust_col))
     rng = np.random.default_rng(seed)
@@ -89,14 +91,20 @@ def wear(b, names, top_z, seed=7, run_k=0.7, dust_k=0.7, low_z=0.35, run_col="ru
         n = _newell(P)
         if n.length < 1e-9:
             continue
-        n.normalize()
+        n = -n.normalized()                                             # stored winding is mirrored (core.G, flip)
         up = 1 - _s((abs(n.z) - 0.5) / 0.3)                             # 1 on upright faces, 0 on flat ones
         t = (c.x + c.y) / 6.0 if abs(n.y) > abs(n.x) else (c.y + 4.0 + c.x) / 6.0   # along the face, for the streaks
         below = max(0.0, top_z(c.x, c.y) - c.z)
         run = sum(math.exp(-(((t - st + 0.5) % 1 - 0.5) / sw) ** 2) * 0.5 ** (below / ln) for st, ln, sw in runs)
         blot = 0.5 + 0.5 * math.sin(4.1 * c.x + 1.3) * math.sin(5.3 * c.y + 0.4) * math.cos(3.9 * c.z - 0.8)
         low = _s((low_z - c.z) / (low_z * 0.8))
+        flat = _s((n.z - 0.6) / 0.3)                                    # 1 on faces looking up
+        # on the tops: rust come through in soft patches, scuffed and pitted more where feet and loads go
+        patch = (0.5 + 0.5 * math.sin(6.3 * c.x + 0.7) * math.cos(7.9 * c.y - 1.1)
+                 * (0.6 + 0.4 * math.sin(2.3 * c.x + 3.1 * c.y + 2.0)))
+        pit = math.sin(c.x * 91.7 + c.y * 37.3 + c.z * 13.1) * 43758.5 % 1.0  # cell-sized hash: speckle
+        top_rust = flat * top_k * min(0.9, 1.1 * _s((patch - 0.42) / 0.3) + 0.5 * _s((pit - 0.8) / 0.1))
         col = Vector(col)
-        col = col.lerp(rust, min(0.75, run_k * run * up))
+        col = col.lerp(rust, min(0.9, run_k * run * up + top_rust))
         col = col.lerp(dust, dust_k * min(0.7, 0.7 * low + 0.35 * _s((blot - 0.45) / 0.4)))
         m.f[i] = (idx, tuple(col), own, glow)

@@ -587,14 +587,14 @@ def scrapper(rot):
     dial(b)
     vent(b)
     piston(b)
-    if os.environ.get("SCRAPPER_WEAR", "0") != "0":
+    if os.environ.get("SCRAPPER_WEAR", "1") != "0":
         from .scrapper_wear import fine, wear
         names = os.environ.get("SCRAPPER_WEAR_ON", "body").split(",")
         cols = {"body": (BODY, BODY_S, BODY_D), "drum": (RUST, RUST_D)}
         sel = [c for k in names for c in cols[k]]
         fine(b.m, sel)
-        rk, dk = (float(x) for x in os.environ.get("SCRAPPER_WEAR_K", "0.7,0.7").split(","))
-        wear(b, sel, _top, run_k=rk, dust_k=dk)
+        rk, dk, tk = (float(x) for x in os.environ.get("SCRAPPER_WEAR_K", "0.7,0.7,0.55").split(","))
+        wear(b, sel, _top, run_k=rk, dust_k=dk, top_k=tk)
     return [b.m.build()]
 
 
