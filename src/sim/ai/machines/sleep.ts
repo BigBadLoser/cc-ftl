@@ -2,6 +2,7 @@ import { findFreeBed, ownedBedPlan } from '../../crew/beds';
 import { PathC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath } from '../../crew/pathfind';
+import { walkOpts } from '../../eva/route';
 import { dropCarried } from '../../items/stacks';
 import { ModuleC } from '../../modules/components';
 import { shipIdOf } from '../../regions';
@@ -57,7 +58,7 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
   if (claim && bed) {
     if (isSettled(pos) && pos.x === bed.x && pos.y === bed.y) return fallAsleep(sim, id, crew);
     if (path.steps.length > 0 || !isSettled(pos)) return; // still walking to the bed
-    const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: bed.x, y: bed.y });
+    const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: bed.x, y: bed.y }, walkOpts(sim, id));
     if (steps && steps.length > 0) {
       path.steps = steps;
       return;

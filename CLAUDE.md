@@ -66,6 +66,10 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
      review runs). Fix whatever it finds; after a later merge of `main`, CI runs again on the push. CI and Codex review
      it, and only the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
+- `CHANGELOG.md` holds player-facing patch notes; refactors, tests and tooling stay out. When a PR with a player-visible
+  effect merges, add a line under "Unreleased" (New / Changed / Fixed) with its PR link. A Pages deploy is a release
+  named by its date: before the user runs the deploy, rename "Unreleased" to that date and start a new empty one. A
+  deploy implies no size; milestones and version numbers are labelled only when the user declares them.
 - GitHub issues track the work. Every bug or piece of work gets an issue (create one if none exists), and every PR
   links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
   (`Refs #N`). When work lands or stalls without a PR, comment on the issue.

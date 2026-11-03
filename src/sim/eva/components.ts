@@ -27,3 +27,19 @@ export interface Suit {
   vehicle?: number;
 }
 export const SuitC = defineComponent<Suit>('suit');
+
+/**
+ * Air set aside at a source for one crew member's later refills (the air ledger, `eva/airLedger.ts`): `sec` suit seconds at the airlock or
+ * shuttle `kind`/`id`. Nobody else can draw it; the crew member's refills there spend it.
+ */
+export interface AirHold {
+  crew: number;
+  kind: 'airlock' | 'vehicle';
+  id: number;
+  sec: number;
+}
+/** The holds an entity owns (a site's shuttle, set as it leaves the site). They end with the owner's reason for them (`releaseAirHolds`). */
+export interface AirHolds {
+  holds: AirHold[];
+}
+export const AirHoldsC = defineComponent<AirHolds>('airHolds');

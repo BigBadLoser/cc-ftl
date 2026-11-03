@@ -1,4 +1,5 @@
 import { findFreeBed } from '../crew/beds';
+import { rescueSpot } from '../away/rescue';
 import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
@@ -79,7 +80,7 @@ export function autoJobsSystem(sim: Sim): void {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos))) continue; // nowhere to take them
+    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos)) && !rescueSpot(sim, id)) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   robotJobs(sim, seen, (job) => addJob(sim, job));
@@ -107,7 +108,8 @@ function keepRescue(sim: Sim, job: Job): boolean {
   const pos = sim.world.get(target, PositionC);
   if (!downed || !pos || downed.stabilized) return false;
   const bed = sim.world.get(job.bed ?? 0, ModuleC);
-  const goal = sim.world.has(target, CarriedC) && bed ? bed : pos;
+  const spot = sim.world.has(target, CarriedC) && !bed ? rescueSpot(sim, target) : null;
+  const goal = sim.world.has(target, CarriedC) && bed ? bed : spot ?? pos;
   job.x = goal.x;
   job.y = goal.y;
   return true;

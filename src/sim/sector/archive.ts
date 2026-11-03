@@ -5,6 +5,7 @@ import type { Sim } from '../sim';
 import { newSectorGrid } from '../stamp';
 import type { PacketEntity } from './packet';
 import { cutLeaving } from './refs';
+import { endSplitRuns } from '../away/end';
 import { translated } from './translate';
 
 /**
@@ -29,6 +30,8 @@ export interface SectorArchive {
  */
 export function archiveSector(sim: Sim): SectorArchive {
   for (const id of [...sim.world.query(ProjectileC)]) sim.world.destroyEntity(id);
+  const live = new Set(sim.world.ids());
+  endSplitRuns(sim, (e) => live.has(e)); // a run whose home ship already lifted out ends before the freeze
   const ids = sim.world.ids();
   const kept = new Set(ids);
   const entities = ids.map((id) => ({ id, c: cutLeaving(translated(sim.world.detach(id), 0, 0), (e) => kept.has(e)) }));

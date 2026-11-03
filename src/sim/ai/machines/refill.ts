@@ -20,7 +20,7 @@ export function startRefill(sim: Sim, crew: number, src: AirSource, steps: reado
   sim.world.add(id, JobC, {
     category: 'operating', kind: 'refill', x: src.tile.x, y: src.tile.y, struct: 0, progress: 0, reservedBy: crew,
     work: Math.max(1, src.kind === 'airlock' ? Math.round(REFILL_FILL_SEC * TICK_HZ) : 1),
-    target: src.id, errandFor: crew, ...(resume ? { resume } : {}),
+    target: src.id, errandFor: crew, ...(resume ? { resume, heldSince: sim.tick } : {}),
   });
   attachJob(sim, crew, id);
   (sim.world.get(crew, PathC) as { steps: Tile[] }).steps = [...steps];

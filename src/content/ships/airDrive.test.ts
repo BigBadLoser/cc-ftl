@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  VehicleC, destroyVehicle,
   AirlockC, AssignmentC, CarriedC, CrewC, DownedC, HealthC, NeedsC, IntentC, JobC, ModuleC, PickupC, PositionC, ShipC, Struct, SuitC, TICK_HZ, homeShip, newGame, shipGrid,
   suitAir, suitDef, type Sim, type SimEvent,
 } from '../../sim';
@@ -8,6 +9,7 @@ import { auditReservations } from '../../sim/ai/audit';
 import { claimedBed } from '../../sim/ai/task';
 import { isThin } from '../../sim/eva/suit';
 import { content } from '../index';
+import { NEST_HOLD_SEC } from '../../sim/tuning';
 
 /**
  * The air drive (#286 slice 1; docs/DESIGN.md "Air as a need"): a suited crew member whose tank drains refills at the nearest source
@@ -95,6 +97,19 @@ describe('air drive', () => {
     expect(ev.filter((e) => e.type === 'suit.airOut')).toEqual([]);
   });
 
+  it('a job parked by a refill is let go after NEST_HOLD_SEC (#294 follow-up)', () => {
+    const { sim, c, job } = hullWork();
+    sim.world.get(c, SuitC)!.air = 0.25 * suitDef(sim).airSec;
+    run(sim, 10 * TICK_HZ, () => sim.world.get(sim.world.get(c, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'refill');
+    const refill = sim.world.get(c, AssignmentC)!.jobId;
+    expect(sim.world.get(refill, JobC)).toMatchObject({ kind: 'refill', resume: job });
+    sim.world.get(refill, JobC)!.heldSince = sim.tick - NEST_HOLD_SEC * TICK_HZ - 1; // as if the way to the source had been long
+    run(sim, 1);
+    expect(sim.world.get(refill, JobC)?.resume).toBeUndefined();
+    expect(sim.world.get(job, JobC)!.reservedBy).not.toBe(c); // free for anyone (or taken by someone else already)
+    expect(auditReservations(sim).problems).toEqual([]);
+  });
+
   it('a refill whose way crosses breathable air: no false pickup request, and a competing need does not take it over', () => {
     const { sim, c, job } = hullWork();
     sim.world.get(c, SuitC)!.air = 0.25 * suitDef(sim).airSec;
@@ -144,6 +159,7 @@ describe('air drive', () => {
   it('with no source in reach the drive is blocked and the pickup request goes out, once, with the air left', () => {
     const { sim, c } = hullWork();
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false; // no airlock to fill at: no source
+    for (const v of [...sim.world.query(VehicleC)]) destroyVehicle(sim, v); // and no shuttle to fetch them (pickup runs: awayCrew.test.ts)
     sim.world.get(c, SuitC)!.air = 0.25 * suitDef(sim).airSec;
     const ev = run(sim, 3 * AIR_TICKS);
     expect(sim.world.get(c, IntentC)!.blocked).toBe('air');

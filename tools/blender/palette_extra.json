@@ -3295,5 +3295,45 @@
  "svKredD": {
   "hex": "#8e2a24",
   "set": "salvage_cloth"
+ },
+ "scBody": {
+  "hex": "#c76a28",
+  "set": "scrapper"
+ },
+ "scBodyD": {
+  "hex": "#6b3519",
+  "set": "scrapper"
+ },
+ "scBodyS": {
+  "hex": "#9e5622",
+  "set": "scrapper"
+ },
+ "scRec1": {
+  "hex": "#a9afb6",
+  "set": "scrapper"
+ },
+ "scRec2": {
+  "hex": "#71777f",
+  "set": "scrapper"
+ },
+ "scRec3": {
+  "hex": "#41464d",
+  "set": "scrapper"
+ },
+ "scRec4": {
+  "hex": "#1f2328",
+  "set": "scrapper"
+ },
+ "scBodyS2": {
+  "hex": "#7d461d",
+  "set": "scrapper"
+ },
+ "scSteel": {
+  "hex": "#5b6f8e",
+  "set": "scrapper"
+ },
+ "scSteelD": {
+  "hex": "#485a7a",
+  "set": "scrapper"
  }
 }

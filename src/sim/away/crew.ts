@@ -1,0 +1,106 @@
+import { BodyC } from '../body';
+import { shipById } from '../combat/ships';
+import { flightTicks, walkSpeed } from '../ai/travel';
+import { HealthC, NeedsC, PositionC, type Job } from '../crew/components';
+import { TICK_HZ } from '../time';
+import { VehicleC } from '../vehicles/components';
+import { boardingTile } from '../vehicles/geometry';
+import { hatchSpot } from '../eva/shuttle';
+import { needsAir } from '../eva/suit';
+import { AllegianceC } from '../fight/components';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { isIncapacitated } from '../crew/helpers';
+import {
+  AWAY_GO, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
+} from '../tuning';
+import { AwayC, AwaySiteC, SiteRunC } from './components';
+
+/**
+ * The crew side of away sites (docs/DESIGN.md "Away sites", #286 slice 2a): who may take a passage, and the return drive's input. No site
+ * code moves crew about except the closing lift; the crew AI does (the return machine, ai/machines/return.ts).
+ */
+
+/** The site a crew member is working on: they are of its party and stand on its grid. 0 otherwise. */
+export function siteUnderFoot(sim: Sim, id: number): number {
+  const away = sim.world.get(id, AwayC);
+  const pos = away && sim.world.get(id, PositionC);
+  return pos && shipIdOf(sim, pos) === away.site ? away.site : 0;
+}
+
+/**
+ * Where a shuttle takes people aboard on a grid: the hatch spot while it hovers beside it (they float in), or the inside tile of the
+ * airlock it is docked at (they step in). Null when it is neither.
+ */
+export function siteSpot(sim: Sim, vehicle: number, shipId: number): { x: number; y: number; docked: boolean } | null {
+  const v = sim.world.get(vehicle, VehicleC);
+  const spot = v?.state === 'docked' ? boardingTile(sim, vehicle) : hatchSpot(sim, vehicle);
+  return spot && spot.shipId === shipId ? { x: spot.x, y: spot.y, docked: v?.state === 'docked' } : null;
+}
+
+/** True if the party of this site is being called home: the site closes, is gone, or a fight started. */
+export function siteRecalled(sim: Sim, site: number): boolean {
+  const s = sim.world.get(site, AwaySiteC);
+  const run = s && sim.world.get(s.vehicle, SiteRunC);
+  return !s || s.status === 'closing' || !run || run.phase === 'recall' || sim.sector.inCombat;
+}
+
+/**
+ * True if any need the crew member has (rest, hunger, a battery's charge; 0..100) is under its line. A need they lack is satisfied: the same
+ * rule serves crew who eat and sleep and robots who charge.
+ */
+function needBelow(sim: Sim, id: number, rest: number, hunger: number, charge: number): boolean {
+  const n = sim.world.get(id, NeedsC);
+  return !!n && (n.rest < rest || (n.hunger ?? 100) < hunger || (n.charge ?? 100) < charge);
+}
+
+/** True if the crew member is hurt enough to go home at once (below AWAY_HOME_HEALTH, or downed). */
+function hurt(sim: Sim, id: number): boolean {
+  const h = sim.world.get(id, HealthC);
+  return isIncapacitated(sim, id) || (!!h && h.max > 0 && h.hp < AWAY_HOME_HEALTH * h.max);
+}
+
+/**
+ * The return drive's input (`awayReturn`): absent unless the crew member works on their site. 0 when they must come aboard now (the site
+ * is closing, a fight, hurt below AWAY_HOME_HEALTH, riding out a round trip, or a pickup came for them), 500 when they are due home (a need
+ * under its home line, AWAY_HOME_REST / _HUNGER / _CHARGE: before the sleep, eat or charge drives would want them), else 1000.
+ */
+export function awayReturn(sim: Sim, id: number): number | undefined {
+  const site = siteUnderFoot(sim, id);
+  if (!site) return undefined;
+  const away = sim.world.get(id, AwayC);
+  if (siteRecalled(sim, site) || away?.ride || away?.pickup || hurt(sim, id)) return 0;
+  return needBelow(sim, id, AWAY_HOME_REST, AWAY_HOME_HUNGER, AWAY_HOME_CHARGE) ? 500 : 1000;
+}
+
+/**
+ * True if a passenger waiting aboard for the next trip home is urgent (the trip leaves at once): hurt or downed, or a need under its urgent
+ * line (AWAY_URGENT_*: where they would sleep, eat or charge; needs keep running aboard), so nobody sleeps or starves in a seat.
+ */
+export function passengerUrgent(sim: Sim, id: number): boolean {
+  return hurt(sim, id) || needBelow(sim, id, AWAY_URGENT_REST, AWAY_URGENT_HUNGER, AWAY_URGENT_CHARGE);
+}
+
+/**
+ * The passage checks of `jobFits`: a player crew member not already of a party, every need they have at AWAY_GO or more (rested, fed or
+ * charged enough to stay a while). A seat beyond the shuttle's suits (`airless`) is for crew who do not breathe.
+ */
+export function passageFits(sim: Sim, crew: number, job: Job): boolean {
+  if (job.kind !== 'passage') return true;
+  if (sim.world.has(crew, AwayC) || sim.world.get(crew, AllegianceC)?.faction !== 'player' || (job.airless && needsAir(sim, crew))) return false;
+  return sim.world.has(crew, NeedsC) && !needBelow(sim, crew, AWAY_GO, AWAY_GO, AWAY_GO);
+}
+
+/**
+ * What a passage costs beyond the walk to the bay, in walking tiles of this crew member: the flight to the site. So a home job of the same
+ * level and urgency nearby still wins (docs/DESIGN.md "Who goes").
+ */
+export function passageTiles(sim: Sim, crew: number, job: Job): number {
+  if (job.kind !== 'passage') return 0;
+  const v = sim.world.get(job.target ?? 0, VehicleC);
+  const body = sim.world.get(job.target ?? 0, BodyC);
+  const s = shipById(sim, job.site ?? 0);
+  if (!v || !body || !s) return 0;
+  const ticks = flightTicks(sim, v, Math.hypot(s.x + s.width / 2 - body.x, s.y + s.height / 2 - body.y));
+  return Number.isFinite(ticks) ? Math.round((ticks / TICK_HZ) * walkSpeed(sim, crew)) : 0;
+}

@@ -2,7 +2,7 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { SuitC } from './components';
+import { EvaFloatC, SuitC } from './components';
 import type { Vehicle } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 import { Struct, isEvaWalkable } from '../structure';
@@ -15,6 +15,16 @@ import { VehicleC } from '../vehicles/components';
 /** EVA suits stowed aboard a shuttle (its def's `eva.suits` until the first one is used). */
 export function vehicleSuits(sim: Sim, v: Vehicle): number {
   return v.suits ?? vehicleDefOf(sim, v)?.eva?.suits ?? 0;
+}
+
+/** Seats taken on a shuttle: those aboard plus those floating back to it (each will climb in when the drift ends). */
+export function seatsTaken(sim: Sim, vehicle: number, v: Vehicle): number {
+  let n = v.passengers.length + (v.pilot ? 1 : 0);
+  for (const c of sim.world.query(EvaFloatC)) {
+    const f = sim.world.get(c, EvaFloatC);
+    if (f?.mode === 'back' && f.vehicle === vehicle) n++;
+  }
+  return n;
 }
 
 /** Living crew who left this shuttle in a suit and are still out (the shuttle must wait for them). */

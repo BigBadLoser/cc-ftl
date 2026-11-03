@@ -245,12 +245,26 @@ export function assignJobs(sim: Sim, ids: number[]): Set<number> {
   });
   const assigned = new Set<number>();
   const air = new AirAdmission(sim, jobs); // partial-work admission: a suited walk must fit the tank (ai/admitAir.ts)
+  // Home cover (#286): the jobs a passage to an away site ranks below, the home ship's needs right now (open emergencies and consoles).
+  const needs = jobs.filter((j) => isEmergency(j.job) || j.job.kind === 'operate');
+  const passages = jobs.some((j) => j.job.kind === 'passage');
   for (let level = 1; level <= 4; level++) {
     const pairs: Pair[] = [];
+    const held = new Map<number, boolean>();
+    /** True if an open home need on the walker's ship is still unmatched and they could take it (at any level): no passage for them. */
+    const homeNeed = (w: Walker): boolean => {
+      let h = held.get(w.id);
+      if (h === undefined) {
+        h = needs.some((n) => !assigned.has(n.id) && n.ship === w.ship && [1, 2, 3, 4].some((l) => admitLevel(sim, w.id, w.pos, w.prio, n.job, l)) && w.modeFor(n.goal) >= 0);
+        held.set(w.id, h);
+      }
+      return h;
+    };
     for (const w of walkers) {
       if (taken.has(w.id)) continue;
       for (const j of jobs) {
         if (assigned.has(j.id) || j.ship !== w.ship || j.id === w.avoid) continue;
+        if (passages && j.job.kind === 'passage' && homeNeed(w)) continue;
         const admit = admitLevel(sim, w.id, w.pos, w.prio, j.job, level);
         if (!admit) continue;
         const k = w.modeFor(j.goal);

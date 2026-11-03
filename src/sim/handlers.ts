@@ -25,6 +25,7 @@ import { storyHandlers } from './story/handlers';
 import { tradeHandlers } from './trade/handlers';
 import { vehicleHandlers } from './vehicles/handlers';
 import { salvageHandlers } from './salvage/handlers';
+import { awayHandlers } from './away/handlers';
 import { yardHandlers } from './yard/order';
 import { ModuleC } from './modules/components';
 import { FIRE_START_INTENSITY } from './tuning';
@@ -60,6 +61,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...ferryHandlers,
   ...logisticsHandlers,
   ...salvageHandlers,
+  ...awayHandlers,
   ...outpostHandlers,
   noop: () => {},
   'debug.spawnMarker': (sim, cmd) => {

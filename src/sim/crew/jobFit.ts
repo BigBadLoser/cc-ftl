@@ -1,4 +1,5 @@
 import { YardCrewC } from '../yard/types';
+import { passageFits } from '../away/crew';
 import { isErrand, findSuitSource } from '../eva/errands';
 import { planSiteWalk } from '../eva/route';
 import { needsMaterials } from '../items/materials';
@@ -14,7 +15,7 @@ import { isIncapacitated, jobGoal, origin } from './helpers';
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
   if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;
-  return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job);
+  return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job) && passageFits(sim, crewId, job);
 }
 
 /** True if `crewId` could actually take the job now: it fits, they can walk to it, and a suit can be had when the way is thin air. */

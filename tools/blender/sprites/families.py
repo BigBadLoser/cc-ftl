@@ -28,6 +28,7 @@
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
+  scrapper      the scrapper module: 4x2, 4 rotations; idle, unpowered, 4 active frames (scrapper.py)
   storage_scrap scrap storage: the barred cage full of salvage, 2x2 and 2x3, 4 rotations, 4 fills (ore_cage.py, scrap.py)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
   wallprops pieces on a wall run's face: pipes, cable tray, conduit, vents, panels, signs, a terminal (wallprops.py)
@@ -201,6 +202,9 @@ def jobs(name):
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
+    if name == "scrapper":      # the scrapper module (scrapper.py): its own palette set
+        from . import scrapper
+        return scrapper.jobs(), "scrapper"
     if name == "storage_scrap":
         from . import scrap
         return scrap.jobs(), True
@@ -215,5 +219,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull")
+            "hull", "scrapper")
 ALL = RENDERED + ("sol", "damage_sol")
