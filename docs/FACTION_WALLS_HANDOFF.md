@@ -3,7 +3,7 @@
 **For:** the agent picking up the faction walls in cc-ftl.
 
 **State as of 2026-11-03:**
-- The hull and default walls are done. They are on PR #299 (`art/walls-2x`), which the user merges.
+- The hull and default walls are done and merged to `main` (PR #299, `art/walls-2x`).
 - The faction looks are built and can be previewed, but none is wired into the game.
 - None has the user's approval on in-game screenshots. Each look got an in-session "good" or "fine" during iteration, and that is all.
 
