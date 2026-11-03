@@ -1,6 +1,6 @@
 """Tan (set 3, a working name): tan panelling. A lit header block under the cap; under it louvred slats either side of
-a raised centre panel; a lip at the face's foot over a dark line and a blue one; the ramp pale tan plates in a
-grooved layout over a blue toe."""
+a raised centre panel; a lip at the face's foot over a dark line and a blue one; the ramp pale tan cushions in
+brown joints over a blue toe."""
 from .. import wall3d as T
 from ..relief_style import Design
 from .base import Faction, _style
@@ -9,7 +9,7 @@ from .shell import FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell,
 
 FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's pale tan)
 BLUE = "ochre"                      # the trim's: the line at the face's foot, the toe
-HEAD_D, HEAD_H = 1.5 * PX, 9 * PZ   # the header block: its depth (3 px of lit top), its front (a lit edge, 8 of face)
+HEAD_D, HEAD_H = PX, 11 * PZ       # the header block: its depth (2 px of lit top), its front (a lit edge, 10 of face)
 LIP_D, LIP_H = PX, 4 * PZ           # the lip at the face's foot (3 px of face over a dark one)
 PANEL_W = 1 / 3                     # the centre panel's width (a tile's middle third)
 SLAT = 4 * PZ                       # the slats' pitch: a dark line, a lit one, 2 px of face
@@ -120,26 +120,26 @@ def tan(hull):
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 
 
-# the base ramp's plates, symmetric about the tile's middle: (u0, u1, d0, d1) as fractions of the tile and of the
-# plates' run (the joints, a px, centred on the cuts): a plate down each side, two squares against the wall between
-# them over one wide plate
+# the base ramp's cushions (padding, not plates), symmetric about the tile's middle: (u0, u1, d0, d1) as fractions
+# of the tile and of the cushions' run (the joints, a px, centred on the cuts): one down each side, two squares
+# against the wall between them over one wide one
 CUT_U, CUT_D = (0.25, 0.5, 0.75), 0.55
 PLATES = ((0.0, 0.25, 0.0, 1.0), (0.25, 0.5, 0.0, CUT_D), (0.5, 0.75, 0.0, CUT_D), (0.75, 1.0, 0.0, 1.0),
           (0.25, 0.75, CUT_D, 1.0))
 
 
 def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
-    """The base ramp: a blue line along the wall, then pale raised plates in brown joints, each lit along its top
-    and left edges and shaded along its foot and right edge, then the blue toe."""
+    """The base ramp: a blue line along the wall, then pale cushions in brown joints, each lit along its top and left
+    edges and shaded along its foot and right edge, then the blue toe."""
     w, E, L = u1 - u0, EDGE, LINE
-    top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the plates' end, over the toe)
+    top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the cushions' end, over the toe)
     nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
     plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
     plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
-    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the plates)
+    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the cushions)
     span = end - E - top
     for f0, f1, g0, g1 in PLATES:                       # (a joint at the tile's left edge, none at the wall)
         pu0 = u0 + f0 * w + (L if f0 == 0.0 else L / 2)
@@ -154,7 +154,7 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
         plate(q(pu0, pu0 + L, pd0 + E, pd1 - E), r, 5, 2 * PAINT, "wall")
 
 
-TAN_RAMPS = (Design("plates", ramp=tan_plate),)
+TAN_RAMPS = (Design("cushions", ramp=tan_plate),)
 
 
 class Tan(Faction):
