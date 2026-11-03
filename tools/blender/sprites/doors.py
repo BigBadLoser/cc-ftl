@@ -13,7 +13,7 @@ import math
 from . import core
 from . import wallart as A
 from . import walls
-from .walls import GN, TW, Strip, emit, skirt_run, skirt_top, wall_back
+from .walls import GN, TW, Strip, emit, foot, skirt_run, skirt_top, wall_back
 
 DXF = 0.50                  # frame half-width
 DXO = 0.27                  # opening half-width (Space Haven: about 0.55 of the frame)
@@ -80,6 +80,11 @@ class DoorWall(Strip):
         if run * 0.55 <= d < run * 0.55 + C:
             return R["D"]                                   # groove across the foot
         return R["L"] if d < 2 * C else R["M"]
+
+    def col_face(self, face, x, y, z):
+        if z < self.foot - 1e-6 and abs(self._u(x, y)) < DXF:     # under the jambs the foot is the frame's, rose
+            return A.ramp("rose", "x" if face == "x" else "y")["M"]
+        return super().col_face(face, x, y, z)
 
     def face_lo(self, x, y):
         u = abs(self._u(x, y))
@@ -161,8 +166,9 @@ def door(axis="x", is_open=False):
     zt = frame_top(DXF - 1e-6, zf)
     quad([(DXF, VB, 0), (DXF, VF - C, 0), (DXF, VF - C, zt), (DXF, VB, zt)], Rs["D"])   # +u side, wall-deep
     quad([(DXF, VF - C, 0), (DXF, VF, 0), (DXF, VF, zt), (DXF, VF - C, zt)], Rs["L"])
-    m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(), 0), G(-DXO, VW, zs)],
-           Rs["D"])                                                  # the foot's cut edge at the opening
+    m.poly([G(-DXO, VW, 0), G(-DXO, VW + skirt_run(), 0), G(-DXO, VW + skirt_run(), foot()), G(-DXO, VW, zs)],
+           Rs["D"])                                                  # the foot's cut edge at the opening (its
+                                                                     # upright foot at the toe)
     # reveal (the jamb's inner side at u = -DXO faces +u)
     vr = VB if is_open else VL
     zr = min(zo - RO, top)

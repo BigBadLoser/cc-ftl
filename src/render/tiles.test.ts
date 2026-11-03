@@ -48,14 +48,14 @@ describe("wall autotiling", () => {
     expect(ids(ring, 3, 1, W, "up")).toEqual(["hull.o2.m12", "hull.belly.o2.m12"]);
     expect(wallPieces(ring, 2, 3, W, "up").map((q) => !!q.under)).toEqual([false, true]);
   });
-  it("the far hull is full in up and cut, a ghost rim in low", () => {
-    expect(ids(ring, 2, 1, W, "up")).toEqual(["hull.full.m10", "hull.full.end.e"]);
-    expect(ids(ring, 2, 1, W, "auto")).toEqual(["hull.m10", "hull.end.e"]);
+  it("the far hull is the full partition piece with its cap in up and cut, a ghost rim in low", () => {
+    expect(ids(ring, 2, 1, W, "up")).toEqual(["wall.full.m10", "hull.cap.m10", "wall.full.end.e", "hull.cap.end.e"]);
+    expect(ids(ring, 2, 1, W, "auto")).toEqual(["wall.full.m10", "hull.cap.m10", "wall.full.end.e", "hull.cap.end.e"]);
     expect(ids(ring, 2, 1, W, "down")).toEqual(["hull.ghost.m10"]);
     expect(ids(grid([[S, S, S, S], [S, F, F, S], [S, F, W, W], [S, S, W, W]]), 2, 2, W, "down")).toEqual(["wall.low.m6c2", "wall.low.end.s.c2", "wall.low.end.e.c2"]); // rooms at -x / -y: a partition (tiles.hullside.test.ts)
     expect(ids(ring, 1, 1, W, "down")).toEqual(["hull.ghost.m6"]);
-    expect(ids(ring, 2, 1, W, "up", false)).toEqual(["hull.full.m10"]);
-    expect(ids(ring, 2, 3, W, "auto", false)).toEqual(["hull.m10"]);
+    expect(ids(ring, 2, 1, W, "up", false)).toEqual(["wall.full.m10", "hull.cap.m10"]);
+    expect(ids(ring, 2, 3, W, "auto", false)).toEqual(["wall.full.m10", "hull.cap.m10"]);
   });
   it("partitions use the level's piece and an end face where they butt into a ghost", () => {
     const room = grid([
@@ -70,7 +70,7 @@ describe("wall autotiling", () => {
     expect(ids(grid([[F, F, F], [F, W, F], [F, F, F]]), 1, 1, W, "up")).toEqual(["wall.full.m0"]);
     expect(ids(grid([[F, F, F], [F, W, F], [F, F, F]]), 1, 1, W, "down")).toEqual(["wall.low.m0"]);
     expect(ids(room, 2, 3, W, "auto")).toEqual(["wall.m10", "wall.end.e"]);
-    expect(ids(room, 2, 1, W, "up")).toEqual(["hull.full.m10", "hull.full.end.e"]);
+    expect(ids(room, 2, 1, W, "up")).toEqual(["wall.full.m10", "hull.cap.m10", "wall.full.end.e", "hull.cap.end.e"]);
   });
   it("hull beside a gap (an engine's bulkhead with walls up) gets an end face toward it, ghost or plain block", () => {
     const col = grid([
@@ -83,15 +83,15 @@ describe("wall autotiling", () => {
     ]);
     const eng = (x: number, y: number) => x === 2 && (y === 2 || y === 3);
     // Roofed (no ghosts): the hull run above the gap is a plain block capped toward it; none below (its back side).
-    expect(ids(col, 2, 1, W, "up", false, eng)).toEqual(["hull.full.m12", "hull.full.end.s"]);
-    expect(ids(col, 2, 4, W, "up", false, eng)).toEqual(["hull.full.m9"]);
+    expect(ids(col, 2, 1, W, "up", false, eng)).toEqual(["wall.full.m12", "hull.cap.m12", "wall.full.end.s", "hull.cap.end.s"]);
+    expect(ids(col, 2, 4, W, "up", false, eng)).toEqual(["wall.full.m9", "hull.cap.m9"]);
     // Ghost hull stays a ghost rim; without a gap there is no end face.
     expect(ids(col, 2, 1, W, "up", true, eng)).toEqual(["hull.o2.m12", "hull.belly.o2.m12"]);
-    expect(ids(col, 2, 1, W, "up", false)).toEqual(["hull.full.m12"]);
+    expect(ids(col, 2, 1, W, "up", false)).toEqual(["wall.full.m12", "hull.cap.m12"]);
   });
   it("hull plating uses the ochre-panel variant on every third diagonal", () => {
-    expect(wallPieces(ring, 2, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m10.v1");
-    expect(wallPieces(ring, 1, 1, W, "auto")[0]?.chain[0]).toBe("tile.hull.m6");
+    expect(wallPieces(ring, 2, 1, W, "auto")[1]?.chain[0]).toBe("tile.hull.cap.m10.v1");
+    expect(wallPieces(ring, 1, 1, W, "auto")[1]?.chain[0]).toBe("tile.hull.cap.m6");
   });
   it("doors are never cut, orient along their walls and hang the belly in the near hull", () => {
     expect(ids(grid([[F, F, F], [W, D, W], [F, F, F]]), 1, 1, D, "auto")).toEqual(["door.x"]);

@@ -79,8 +79,9 @@ def faces(sp):
     for r in sp.rects:
         x0, x1, y0, y1 = r[0]
         for ax, plane, a, b in (("y", y1, x0, x1), ("x", x1, y0, y1)):
-            if plane > 0.5 - 1e-6:
-                continue                                 # the arm runs on into the next tile
+            if plane > 0.5 - 1e-6 and not any(e == "+" + ax and abs(q - plane) < 1e-6
+                                              for e, q in getattr(sp, "end_sides", ())):
+                continue                                 # the arm runs on into the next tile (not a free end there)
             seg = None
             n = int(round((b - a) * FINE))
             for k in range(n):
@@ -195,7 +196,8 @@ def end_face(side, level="up", corners=0):
         u0, u1 = c / FINE, (c + 1) / FINE
         um = (u0 + u1) / 2
         sp = next((s for s in spans if s[0] <= um < s[1]), None)
-        zt = min(lo, sp[2]) if sp else min(lo, zs * max(0.0, 1.0 - min(max(a - um, um - b) for a, b, _ in spans) / run))
+        dd = min(max(a - um, um - b) for a, b, _ in spans)            # (out from the wall: the skirt, on its foot)
+        zt = min(lo, sp[2]) if sp else min(lo, W.foot() + (zs - W.foot()) * (1.0 - dd / run) if dd <= run else 0.0)
         if zt <= W.ZG + 1e-6:
             continue
         polyg(k, [_pt(ax, 0.5, u - 0.5, z, 0.0) for u, z in ((u0, W.ZG), (u1, W.ZG), (u1, zt), (u0, zt))], "rkD", out)

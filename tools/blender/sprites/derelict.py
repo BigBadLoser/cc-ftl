@@ -16,6 +16,7 @@ from . import core
 from . import logistics
 from . import walls as W
 from .derelict_walls import SPRITES as WALL_SPRITES
+from .wallbreach import SPRITES as BREACH_SPRITES
 
 GN = 32
 
@@ -351,7 +352,7 @@ def scorch_roof(v):
     return [decal(f"scorch_roof_{v}", fn, z=ZR + 0.003, flat=True).build()]
 
 
-SPRITES = list(WALL_SPRITES)
+SPRITES = list(WALL_SPRITES) + BREACH_SPRITES
 SPRITES += [(f"decay.breach.floor.v{_v}", (1, 1), "block", lambda v=_v: breach_floor(v)) for _v in range(3)]
 SPRITES += [(f"decay.scorch.floor.v{_v}", (1, 1), "block", lambda v=_v: scorch_floor(v)) for _v in range(3)]
 SPRITES += [(f"decay.burnt.{_w}x{_h}", (_w, _h), "block", lambda w=_w, h=_h: burnt(w, h))

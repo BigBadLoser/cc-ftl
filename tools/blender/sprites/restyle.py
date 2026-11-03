@@ -29,14 +29,21 @@ ROLE = {}
 for (_fam, _face), _d in A.RAMP.items():
     for _role, _name in _d.items():
         ROLE.setdefault(_name, ({"blue": "hull", "ochre": "trim"}.get(_fam, _fam), _face, _role))
+ROLE_X = {}                    # a name's role on a shade (x) face: some names serve both ramps in different roles
+for (_fam, _face), _d in A.RAMP.items():     # (blue x: L is bM, T is bD), so the y-first ROLE alone collapsed them
+    if _face == "x":
+        for _role, _name in _d.items():
+            ROLE_X.setdefault(_name, ({"blue": "hull", "ochre": "trim"}.get(_fam, _fam), "x", _role))
 for _name, _role in (("gB3", "rail"), ("gB2", "edge"), ("gB1", "body"), ("gO", "trim")):
     ROLE[_name] = ("belly", "y", _role)
 for _name, _role in (("gBX3", "rail"), ("gBX2", "edge"), ("gBX1", "body"), ("gOX", "trim")):
     ROLE[_name] = ("belly", "x", _role)
 
-# role -> ramp step (0 lightest .. 6 darkest), per face; the x (shade) face sits a step darker, like wallart.RAMP
-STEP = {"y": {"H": 0, "L": 1, "S": 2, "T": 2, "M": 3, "D": 4, "K": 6, "rail": 3, "edge": 4, "body": 5, "trim": 2},
-        "x": {"H": 1, "L": 2, "S": 3, "T": 3, "M": 4, "D": 5, "K": 6, "rail": 4, "edge": 5, "body": 5, "trim": 3}}
+# role -> ramp step (0 lightest .. 6 darkest), per face: the x (shade) face one step darker than the lit (y) face
+STEP = {"y": {"H": 0, "L": 1, "S": 2, "T": 2, "M": 3, "D": 4, "K": 6, "rail": 3, "edge": 4, "body": 5, "trim": 2}}
+STEP["x"] = {k: min(6, v + 1) for k, v in STEP["y"].items()}
+# a wall end's cut section on its shade ramp (faction.base): two steps darker, its light lines (H, L) one, as before
+SECTION_STEP = {k: min(6, v + (1 if k in ("H", "L") else 2)) for k, v in STEP["y"].items()}
 LIGHT = (0.27, 0.17, 0.08, 0.0, -0.09, -0.17, -0.26)          # lightness offsets of the 7 steps from the base colour
 
 
@@ -75,14 +82,14 @@ class Poly:
         m = max(ax, ay, az) or 1.0
         if az >= 0.95 * m and ax < 0.2 * m and ay < 0.2 * m:
             self.kind = "top"
-        elif az > 0.25 * m:
-            self.kind = "slope_y" if ay >= ax else "slope_x"
+        elif az > 0.25 * m:                             # (a 45-degree face is lit: its triangles' normals
+            self.kind = "slope_y" if ay >= ax - 1e-3 * m else "slope_x"     # differ in rounding, which dotted it)
         else:
-            self.kind = "y" if ay >= ax else "x"
+            self.kind = "y" if ay >= ax - 1e-3 * m else "x"
         self.s = self.x + 0.5 if self.kind in ("y", "slope_y", "top") else 0.5 - self.y
         self.fam, self.face, self.role = ROLE.get(name, (None, "y", None))
         if self.kind in ("x", "slope_x"):
-            self.face = "x"
+            self.fam, self.face, self.role = ROLE_X.get(name, (self.fam, "x", self.role))
 
 
 class Look:

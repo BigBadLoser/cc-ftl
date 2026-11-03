@@ -13,7 +13,6 @@ import math
 from mathutils import Matrix, Vector
 
 from . import core
-from . import walls as W
 from .rock_base import LCOLS, LEVELS, Canvas, polyg, quad
 
 FINE = 64                                    # the shell's grid (the metal walls use walls.GN = 32)
@@ -55,10 +54,14 @@ def brick_var(course, start):
             1 + SHADE * (2 * f(871933, 103) - 1))
 
 
+FOOT_ZS = 0.555                              # the footing's layering: its bricks' layers as on a slope this high
+COURSE_H = 0.339                             # a face brick's height (4 courses a full wall, as set when the
+                                             # footing's course along its slope matched it)
+
+
 def course_h():
-    """A brick's height: the footing's course measured along its slope, so face and footing bricks match."""
-    run, zs = W.skirt_run(), W.skirt_top()
-    return run / SKIRT_N * math.hypot(1.0, zs / run)
+    """A brick's height (the face's courses)."""
+    return COURSE_H
 
 
 def courses(zs, top):
@@ -199,15 +202,15 @@ def _inset(poly, w):
 def skirt_blocks(k, sp, ax, plane, a, b):
     """The wall's brick courses carried down the skirt's slope, cut like the face's: flat stones whose edges are
     chamfered down to the joints, staggered on from the face's bond, mitred where the slope turns a corner."""
-    run, zs = sp.run, sp.zs
+    run, zs, ft = sp.run, sp.zs, sp.foot
     out = Vector((0, 1, 0)) if ax == "y" else Vector((1, 0, 0))
-    nrm = (out * zs / run + Vector((0, 0, 1))).normalized()          # the slope's normal
+    nrm = (out * (zs - ft) / run + Vector((0, 0, 1))).normalized()   # the slope's normal
     lo_t, hi_t = _end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1)
     lo = {"cont": lambda p: p[0] - a, "in": lambda p: p[0] - (a + p[1]), "out": lambda p: p[0] - (a - p[1])}[lo_t]
     hi = {"cont": lambda p: b - p[0], "in": lambda p: (b - p[1]) - p[0], "out": lambda p: (b + p[1]) - p[0]}[hi_t]
 
     def pt(u, d, rise):
-        return _pt(ax, plane, u, zs * (1 - d / run), d) + nrm * rise
+        return _pt(ax, plane, u, ft + (zs - ft) * (1 - d / run), d) + nrm * rise
     step = run / SKIRT_N
     g = SKIRT_GAP / 2
     for c in range(SKIRT_N):
@@ -223,7 +226,7 @@ def skirt_blocks(k, sp, ax, plane, a, b):
             ch, proud, tilt, shade = brick_var(-(c + 1), u0)
             n0 = len(k.m.f)
             inner = _inset(poly, ch)
-            col = brick_tone(zs * (1 - (d0 + d1) / 2 / run))
+            col = brick_tone(FOOT_ZS * (1 - (d0 + d1) / 2 / run))     # (the cliff layer by its place up the slope)
             dm = (d0 + d1) / 2
             top = [pt(u, d, max(0.003, FOOT_PROUD * proud + tilt * (dm - d) / (d1 - d0))) for u, d in inner]
             polyg(k, top, col, nrm)
@@ -237,6 +240,12 @@ def skirt_blocks(k, sp, ax, plane, a, b):
                 soften(k, nrm, 1.0)                    # the slope faces the light: its bevels need all their turn
                 relight(k, nrm, out)
             tint(k, n0, shade)
+    if ft > 0.0:                                                     # the upright foot: a plain course of stone
+        ua = {"cont": a, "in": a + run, "out": a - run}[lo_t]       # under the slope's toe, as long as the toe
+        ub = {"cont": b, "in": b - run, "out": b + run}[hi_t]
+        if ub - ua > 1e-6:
+            quad(k, _pt(ax, plane, ua, 0.0, run), _pt(ax, plane, ub, 0.0, run), _pt(ax, plane, ub, ft, run),
+                 _pt(ax, plane, ua, ft, run), brick_tone(0.0), out)
 
 
 SUN = Vector((0.3, -0.3, 0.86)).normalized()               # the walls' key: symmetric across the diagonal,

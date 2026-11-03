@@ -30,7 +30,7 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     // (2, 1): the north hull's last tile, space at +x and -y, its room below: the north wall of that room.
     const k = ship(["     ", "###  ", "#__# ", "#__# ", "#### "]);
     expect(hullSide(k, 2, 1)).toBe(HullSide.Far);
-    expect(first(k, 2, 1)).toBe("tile.hull.m8");
+    expect(first(k, 2, 1)).toBe("tile.wall.full.m8");                  // (with the hull's cap on it)
     expect(replacesFloor(k, 2, 1)).toBe(false);
   });
   it("a partition that ends at a breach in the near hull is a cut partition, not a ghost", () => {

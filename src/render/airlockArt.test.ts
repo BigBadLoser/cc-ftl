@@ -3,7 +3,7 @@ import { ModuleC, ShipC, Struct, newGame, shipGrid } from '../sim';
 import { airlockTiles } from '../sim/modules/airlock';
 import { shipIdOf } from '../sim/regions';
 import { content } from '../content';
-import { airlockDoorTiles } from './airlockArt';
+import { airlockDoorTiles, airlockLayers } from './airlockArt';
 
 describe('airlock door tiles', () => {
   it("cover the outer door and the pod (inner door) of every airlock, the player's ship and a station's alike", () => {
@@ -23,5 +23,20 @@ describe('airlock door tiles', () => {
       expect(g.get('struct', t.inner.x, t.inner.y)).toBe(Struct.Door);
       expect(g.get('struct', t.outer.x, t.outer.y)).toBe(Struct.Door);
     }
+  });
+});
+
+describe('airlock hull block', () => {
+  it('roofed, stands only where the hull has no art at the outer door (hullFallback), at the walls-up level', () => {
+    const sim = newGame(1, content);
+    const id = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)?.def === 'module.airlock')!;
+    const m = sim.world.get(id, ModuleC)!;
+    const def = content.modules['module.airlock']!;
+    const hull = (roofed: boolean) => airlockLayers(sim.world, id, m, def, { level: 'cut', roofed, collar: null }).find((l) => l.key === 'module.airlock.hull');
+    expect(hull(false)?.hullFallback).toBeUndefined();
+    const roofed = hull(true)!;
+    expect(roofed.roofVisible).toBe(true);
+    expect(roofed.hullFallback).toEqual(airlockTiles(def, m).outer);
+    expect(roofed.chain[0]).toMatch(/\.up$/);
   });
 });

@@ -13,13 +13,19 @@ import { BAY_FRAME_MS } from './vehicleBayArt';
 import type { WallLevel } from './tiles';
 
 /**
- * The docking airlock's art (tools/blender/sprites/airlock.py): every part is a 1x1 sprite anchored at its own tile, so it
- * sorts against the crew by that tile. Never cut away: only the hull block follows the wall view level (`hull.r{n}.{up,cut,low}`),
- * the pod, unloaders and collar are drawn whole at every level.
+ * The docking airlock's art (tools/blender/sprites/airlock.py): every part is a sprite anchored at its own tile, so it
+ * sorts against the crew by that tile. Never cut away: only the door tile's hull follows the wall view level (`hull.r{n}.{up,cut,low}`;
+ * on a hull row facing the camera it is the engine's treatment instead: exterior hull over the door tile and half of either
+ * neighbour, full height at every level, closed by end cuts with the neighbours' cut hull past them), the pod, unloaders, brace and collar are drawn whole at every level.
  *
  *  - housing `.closed|.f1|.f2|.open` on the pod tile (the inner door), light `.red|.green` over it
- *  - hull block on the hull tile (replaces the door the wall renderer would draw there)
- *  - collar `.closed|.f1|.f2|.open[.docked]` one tile past the hull, sorted like an engine bell (the iris hatch, the outer door)
+ *  - the door tile's hull (replaces the door the wall renderer would draw there; roofed, the hull's own piece stands there,
+ *    this block only where the hull has no art: `hullFallback`),
+ *    facing the camera the whole hull row at its front tile (its end cuts and the neighbours' cut hull past them: the grid
+ *    leaves those tiles' own cut top out, `airlockRowTiles`)
+ *  - brace (camera-facing hull rows: the rib and clamp block from the collar's clamp ring over the hull's top) on the hull tile
+ *  - collar `.closed|.f1|.f2|.open[.docked]` one tile past the hull, sorted like an engine bell (its clamp ring, the iris hatch:
+ *    the outer door)
  *  - unloader `.back` and `.front[.loaded]` on the two body tiles of each unloader, `keepout` on the tile in front of a chute,
  *    `walk` marks on the two tiles in front of the pod (deck marks, under the crew)
  */
@@ -109,6 +115,26 @@ export function airlockDoorTiles(world: World, defs: Readonly<Record<string, Mod
   return out;
 }
 
+/**
+ * The neighbours either side of a camera-facing airlock's door tile on the hull row: the airlock's hull sprite carries
+ * their cut-down hull (its outer half each side; the inner half is inside the full-height row), so the grid leaves their
+ * belly's cut top (`low`) out, as behind an engine's thruster block.
+ */
+export function airlockRowTiles(world: World, defs: Readonly<Record<string, ModuleDef>>, inside: (x: number, y: number) => boolean): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (const id of world.query(ModuleC)) {
+    const m = world.get(id, ModuleC);
+    const def = m && defs[m.def];
+    if (!m || !def?.airlock?.layout || !inside(m.x, m.y)) continue;
+    const o = hullOutward(hullSide(def, m.rot) ?? 'n');
+    if (!(o.x > 0 || o.y > 0)) continue;
+    const t = airlockTiles(def, m);
+    const run = { x: Math.abs(o.y), y: Math.abs(o.x) };
+    out.push({ x: t.outer.x - run.x, y: t.outer.y - run.y }, { x: t.outer.x + run.x, y: t.outer.y + run.y });
+  }
+  return out;
+}
+
 /** The vehicle docked at this airlock, if any. */
 export function dockedAt(world: World, airlock: number): number {
   for (const id of world.query(VehicleC)) {
@@ -125,8 +151,8 @@ export interface AirlockView {
 }
 
 /**
- * Sprite layers of a docking airlock (a def with `airlock.layout`), bottom first. Under a roof only the hull block and the
- * collar show (the pod and unloaders are inside).
+ * Sprite layers of a docking airlock (a def with `airlock.layout`), bottom first. Under a roof only the brace and the collar
+ * show (the pod and unloaders are inside; the hull's own piece covers the door tile).
  */
 export function airlockLayers(world: World, id: number, m: Module, def: ModuleDef, view: AirlockView): ModuleLayer[] {
   const a = world.get(id, AirlockC);
@@ -158,7 +184,27 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
   out_.push(part('housing', frames.inner, t.inner));
   const working = m.enabled && m.hp > 0 && m.powered;
   out_.push(part('light', working && !cycling ? 'green' : 'red', t.inner, { dz: 0.01 }));
-  out_.push(part('hull', view.roofed ? 'up' : view.level, t.outer, { tiles: 'hull', roofVisible: true }));
+  const near = out.x > 0 || out.y > 0;
+  const front = near ? { x: t.outer.x + Math.abs(out.y), y: t.outer.y + Math.abs(out.x) } : t.outer;
+  {
+    // Roofed, the door tile takes the new hull's base piece (gridView); this block only where the hull has no art there.
+    const roof: Partial<ModuleLayer> = view.roofed ? { roofVisible: true, hullFallback: t.outer } : {};
+    const level = view.roofed ? 'up' : view.level;
+    // Facing the camera (east / south) the hull row is the engine's: full height in every view over the door tile and half
+    // of either neighbour, closed by end cuts with the neighbours' cut hull past them (one Blender scene; the grid leaves
+    // those tiles' own cut top out), anchored at the row's front tile.
+    // Unlike the engine's (behind its steel thruster block) it shows whole, so it wears the hull's paint as the hull's
+    // pieces do: the armour over it, the deco over its deco layer (`.tint`). Just over the front neighbour's belly cut top
+    // (gridView: its tile's depth + 0.001, the solid module's key 0.05 under it), which would otherwise paint over the row's
+    // foot; under the brace and collar (+0.5).
+    const hull = part('hull', level, front, { tiles: 'hull', ...roof, ...(near ? { paint: 'armour' as const, dz: 0.06 } : {}) });
+    out_.push(hull);
+    if (near) {
+      out_.push({ ...hull, chain: hull.chain.map((c) => `${c}.tint`), key: `${hull.key}.tint`, paint: 'deco', optional: true, dz: 0.0602 });
+    }
+  }
+  // The brace stands on the hull's outside, over the hull row (roofed, over the hull's own pieces), at the row's front tile.
+  out_.push(part('brace', null, front, { roofVisible: true, optional: true, out: true }));
   out_.push(part('collar', `${collar.frame}${collar.docked ? '.docked' : ''}`, t.collar, { out: true, roofVisible: true }));
   return out_;
 }

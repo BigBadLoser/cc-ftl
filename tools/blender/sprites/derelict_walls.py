@@ -299,14 +299,7 @@ def striplight(ax, fam, high):
 
 PRE = {"up": "full.", "cut": ""}
 SPRITES = []
-for _fam in ("wall", "hull"):
-    for _lv, _pre in PRE.items():
-        for _m in range(16):
-            SPRITES.append((f"tile.{_fam}.{_pre}m{_m}.breach", (1, 1), "block",
-                            lambda m=_m, f=_fam, lv=_lv: breach(m, f, lv)))
-        for _s in ("w", "n"):
-            SPRITES.append((f"tile.{_fam}.{_pre}breach.end.{_s}", (1, 1), "block",
-                            lambda s=_s, f=_fam, lv=_lv: breach_end(f, s, lv)))
+for _fam in ("wall", "hull"):                    # (the breaches themselves: wallbreach.SPRITES)
     for _ax in ("x", "y"):
         lvls = ("up", "cut", "low") if _fam == "wall" else ("up", "cut")
         for _lv in lvls:

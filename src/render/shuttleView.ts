@@ -20,14 +20,17 @@ const PIT_Z = -0.95;
  * Docked at an airlock the shuttle lies parallel to the hull, side hatch toward it (`vehicle.shuttle.dockside.d<k>`, k = the
  * hull's outward direction). The round hatch is at (HATCH_U along the nose, HATCH_V out from the centre line, axis 1.30 up) on the
  * shuttle's -v flank (shuttle_craft.py / tools/blender/review/TRANSPORT_B.md); the collar's mating face is COLLAR_FACE past the dock
- * point (the collar tile's centre; tools/blender/sprites/airlock.py COLLAR_END) with its axis 0.95 up. So the shuttle's centre lies
- * COLLAR_FACE + HATCH_V + HOLD_OFF out from the dock point and HATCH_U back along the hull, and at DOCK_Z (axis 0.95 = DOCK_Z + 1.30).
+ * point (the collar tile's centre; tools/blender/sprites/airlock.py COLLAR_END) with its axis COLLAR_Z up (airlock.py ZC). So the
+ * shuttle's centre lies COLLAR_FACE + HATCH_V + HOLD_OFF out from the dock point and HATCH_U back along the hull, and at DOCK_Z
+ * (COLLAR_Z = DOCK_Z + 1.30).
  * The tube (`vehicle.shuttle.tube.d<k>.f1..f3`, the same origin as the shuttle sprite) extends from the hatch the HOLD_OFF to the collar face.
  */
 const HATCH_U = 1.4;
 const HATCH_V = 0.817;
 const COLLAR_FACE = 0.2;
-const DOCK_Z = 0.95 - 1.3;
+/** The collar's axis height (airlock.py ZC). */
+const COLLAR_Z = 0.539;
+const DOCK_Z = COLLAR_Z - 1.3;
 /** Half length (along the nose) and half width of the shuttle's footprint in tiles (shuttle_craft.py, wings folded). */
 const HALF_LEN = 2.4;
 const HALF_W = 1.0;
