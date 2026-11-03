@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CarriedC, CrewC, DownedC, DraftedC, HealthC, NeedsC, PositionC, VehicleC, type Sim } from '../../sim';
+import { AboardC, CarriedC, CrewC, DownedC, DraftedC, HealthC, NeedsC, PositionC, VehicleC, createCrew, destroyVehicle, type Sim } from '../../sim';
+import { EvaFloatC } from '../../sim/eva/components';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { unsafeMembers } from '../../sim/away/depart';
 import { SuitC } from '../../sim/eva/components';
 import { outsideCrew } from '../../sim/eva/shuttle';
 import { shipIdOf } from '../../sim/regions';
 import { AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC } from '../../sim/tuning';
-import { boardCrew } from '../../sim/vehicles/lifecycle';
+import { boardCrew, occupants, vehicleDefOf } from '../../sim/vehicles/lifecycle';
 import { content } from '../index';
-import { crewOn, landed } from './awayFixture';
-import { of, play } from './salvageEvaFixture';
+import { crewOn, landed, siteWork } from './awayFixture';
+import { shuttleOf } from './ferryFixture';
+import { of, play, setup } from './salvageEvaFixture';
 
 /** Hold every crew member at home (drafted): nobody there would take a seat, so no rotation trip falls due on their account. */
 function holdHome(sim: Sim, home: number): void {
@@ -145,5 +147,51 @@ describe('away sites: batched round trips (#286 slice 2b)', () => {
     expect(shipIdOf(sim, sim.world.get(fresh, PositionC)!)).toBe(site); // the replacement is out working
     expect(sim.world.get(fresh, SuitC)?.vehicle).toBeUndefined();
     expect(sim.world.get(fresh, CrewC)?.activity).not.toBe('drafted');
+  });
+});
+
+describe('away sites: holds for floats never leak (Codex 4449454958, 4449454964)', () => {
+  const held = (sim: Sim): number[] => sim.world.query(DraftedC, PositionC).filter((c) => sim.world.get(c, DraftedC)?.away && !sim.world.has(c, EvaFloatC));
+
+  it('two workers coming back to one free seat: only one floats in, the other is never left held', () => {
+    const { sim, home, shuttle, party } = landed();
+    holdHome(sim, home);
+    // All seats but one taken by passengers who stay aboard.
+    const at = sim.world.get(crewOn(sim, home)[0]!, PositionC)!;
+    const v = sim.world.get(shuttle, VehicleC)!;
+    while (occupants(v).length < (vehicleDefOf(sim, v)?.capacity ?? 0)) boardCrew(sim, createCrew(sim, home, 'role.engineer', { x: at.x, y: at.y }, { faction: 'player', rest: 100 }), shuttle);
+    const [a, b] = party as [number, number];
+    for (const c of [a, b]) Object.assign(sim.world.get(c, NeedsC)!, { rest: 22, hunger: 100 });
+    let most = 0;
+    let boarded = 0;
+    for (let i = 0; i < 20 * 120; i++) {
+      play(sim, 1);
+      for (const c of [a, b]) if (sim.world.has(c, AboardC)) boarded |= c === a ? 1 : 2;
+      most = Math.max(most, sim.world.query(EvaFloatC).filter((c) => sim.world.get(c, EvaFloatC)?.mode === 'back').length);
+      expect(held(sim)).toEqual([]);
+    }
+    expect(most).toBe(1); // inbound floats count against the free seat
+    expect(boarded).toBeGreaterThan(0); // and someone did come aboard
+  });
+
+  it('the shuttle lost while passengers float out: nobody stays held', () => {
+    const { sim, wreck } = (() => {
+      const { sim, wreck } = setup();
+      siteWork(sim, wreck, 3);
+      sim.enqueue({ type: 'away.open', ship: wreck });
+      return { sim, wreck };
+    })();
+    const shuttle = shuttleOf(sim);
+    play(sim, 20 * 300, () => sim.world.query(EvaFloatC).some((c) => sim.world.get(c, EvaFloatC)?.mode === 'out'));
+    const out = sim.world.query(EvaFloatC).filter((c) => sim.world.get(c, EvaFloatC)?.mode === 'out');
+    expect(out.length).toBeGreaterThan(0);
+    destroyVehicle(sim, shuttle);
+    play(sim, 20 * 20);
+    for (const c of out) {
+      expect(shipIdOf(sim, sim.world.get(c, PositionC)!)).toBe(wreck);
+      expect(sim.world.has(c, DraftedC)).toBe(false);
+      expect(sim.world.get(c, CrewC)?.activity).not.toBe('drafted');
+    }
+    expect(held(sim)).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 import type { Command } from '../commands';
 import { abortTask } from '../ai/task';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
+import { AwayC } from '../away/components';
 import { isIncapacitated } from '../crew/helpers';
 import { BodyC } from '../body';
 
@@ -99,7 +100,10 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     able.slice(0, spots.length).forEach((crew, i) => {
       const spot = spots[i] as { x: number; y: number; d: number };
       unboardCrew(sim, crew, cmd.vehicle, { shipId, x: spot.x, y: spot.y });
+      // Held for the drift (boarding dropped any draft; stepping off onto another faction's grid may have just added one). A party member's
+      // hold is the away code's, released by awaySystem once the float is over.
       if (!sim.world.has(crew, DraftedC)) sim.world.add(crew, DraftedC, { target: null });
+      if (sim.world.has(crew, AwayC)) sim.world.get(crew, DraftedC)!.away = true;
       (sim.world.get(crew, CrewKey) as Crew).activity = 'drafted';
       if (needsAir(sim, crew)) {
         v.suits = vehicleSuits(sim, v) - 1;

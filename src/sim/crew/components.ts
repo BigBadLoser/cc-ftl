@@ -83,6 +83,11 @@ export interface Drafted {
   target: { x: number; y: number } | null;
   /** The target the current route was planned for (so a changed target is noticed). */
   planned?: { x: number; y: number };
+  /**
+   * A hold the away-site code put on for a float to or from a site's shuttle (not the player's). `awaySystem` releases it once no float or
+   * boarding is behind it, so it can never outlive them; a player's draft order takes it over (the mark goes).
+   */
+  away?: true;
 }
 export const DraftedC = defineComponent<Drafted>('drafted');
 

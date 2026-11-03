@@ -6,14 +6,14 @@ import { siteSpot, siteUnderFoot } from '../../away/crew';
 import { EvaFloatC, SuitC } from '../../eva/components';
 import { hatchFace } from '../../eva/hatch';
 import { planWalk } from '../../eva/route';
-import { floatTicks, tileCentre, vehicleSuits } from '../../eva/shuttle';
+import { floatTicks, seatsTaken, tileCentre, vehicleSuits } from '../../eva/shuttle';
 import { suitDef, walksOutside } from '../../eva/suit';
 import { dropCarried } from '../../items/stacks';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { AWAY_WAIT_TILES } from '../../tuning';
 import { VehicleC } from '../../vehicles/components';
-import { boardCrew, occupants, vehicleDefOf } from '../../vehicles/lifecycle';
+import { boardCrew, vehicleDefOf } from '../../vehicles/lifecycle';
 import { TaskC } from '../components';
 import { abortTask, setJoblessTask } from '../task';
 
@@ -36,7 +36,7 @@ export function returnTurn(sim: Sim, id: number, crew: Crew, pos: Position, hold
   if (sim.world.has(id, EvaFloatC)) return true;
   const spot = spotFor(sim, id, pos);
   const v = spot && sim.world.get(spot.vehicle, VehicleC);
-  if (!spot || !v || (!spot.docked && !walksOutside(sim, id)) || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return false;
+  if (!spot || !v || (!spot.docked && !walksOutside(sim, id)) || seatsTaken(sim, spot.vehicle, v) >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return false;
   const path = sim.world.get(id, PathC) as Path;
   if (isSettled(pos) && pos.x === spot.x && pos.y === spot.y) return spot.docked ? stepAboard(sim, id, spot.vehicle) : floatAboard(sim, id, crew, spot.vehicle, pos);
   const t = sim.world.get(id, TaskC);
@@ -60,7 +60,7 @@ function floatAboard(sim: Sim, id: number, crew: Crew, vehicle: number, pos: Pos
   const face = hatchFace(body, at);
   const ticks = floatTicks(sim, Math.hypot(at.x - face.x, at.y - face.y));
   sim.world.add(id, EvaFloatC, { mode: 'back', vehicle, sx: face.x, sy: face.y, ticks, total: ticks });
-  sim.world.add(id, DraftedC, { target: null });
+  sim.world.add(id, DraftedC, { target: null, away: true });
   crew.activity = 'drafted';
   cameAboard(sim, id);
   return true;
