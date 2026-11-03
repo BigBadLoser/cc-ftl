@@ -36,8 +36,9 @@ def _raw(f):
     return isinstance(f, list)
 
 
-def cushions(layout):
-    """A ramp design (relief_style.Design's ramp slot) laying the cushions of layout over the block."""
+def cushions(layout, extra=None):
+    """A ramp design (relief_style.Design's ramp slot) laying the cushions of layout over the block; extra(paint, U,
+    D) paints more over it (paint(poly as (u, d), tone, rise in PAINTs); U, D a fraction of the tile / the run)."""
     def ramp(plate, u0, u1, run_, k=None, pt=None, ax="y", **_):
         w, E, L = u1 - u0, EDGE, LINE
         top, end = 0.02 + E, run_ - 0.045               # (under the blue line; the block's end, over the toe)
@@ -110,8 +111,43 @@ def cushions(layout):
                 plate(rect(f0, f1, g0, g1, rc), 2 * PAINT, 2, PAINT, "wall")
         for poly in fillets:
             T.plate(k, poly, pt, nrm, 0.0, 3 * PAINT, FACE, 0, 2 * PAINT, fixed=ROUND_TONE)
+        if extra:
+            extra(lambda poly, tone, rise: T.plate(k, poly, pt, nrm, 0.0, rise * PAINT, FACE, 0, (rise - 0.25) * PAINT,
+                                                   fixed=tone),
+                  lambda f: u0 + f * w, lambda g: top + g * span)
     return ramp
 
 
+# the grille design: a wide cushion, a vent recessed between it and a narrow one (its floor a lattice of pale slats
+# down the slope under brown bars across it, a lit rim along its top and left, its right wall in shadow)
+G_L, G_R = 8 / 32, 25 / 32                     # the recess, across the tile
+G_U0, G_U1, G_D0, G_D1 = 10 / 32, 20 / 32, 0.1, 0.9     # the grille in it
+
+
+def grille(paint, U, D):
+    L, E = LINE, EDGE
+
+    def q(ua, ub, da, db):
+        return [(ua, da), (ub, da), (ub, db), (ua, db)]
+    paint(q(U(G_L) + L / 2, U(G_R) - L / 2, D(0.0), D(1.0)), "fTS3", 1.75)        # the recess, in shadow
+    paint(q(U(G_L) + L / 2, U(G_U1), D(0.0), D(1.0)), "fTS2", 2.0)                 # its floor, lit to the grille's
+    gu0, gu1, gd0, gd1 = U(G_U0), U(G_U1), D(G_D0), D(G_D1)                         # right
+    paint(q(gu0, gu1, gd0, gd1), "fTS2", 2.25)                                      # the grille: brown between
+    n = int(round((G_U1 - G_U0) * 32 / 2))
+    for i in range(n):                                                              # its slats (a px, every two)
+        ua = gu0 + (2 * i + 0.5) * L
+        paint(q(ua, ua + L, gd0 + E, gd1 - E), "fTW0", 2.5)
+    d = gd0 + 2 * E
+    while d < gd1 - E:                                                              # the bars across them
+        paint(q(gu0, gu1, d, d + E), "fTS3", 2.75)
+        d += 3 * E
+    paint(q(gu0 - L, gu1, gd0 - E, gd0), "fTW1", 2.5)                               # its lit rim, along its top
+    paint(q(gu0 - L, gu0, gd0, gd1), "fTW1", 2.5)                                   # and left
+
+
+GRILLE = (((0.0, G_L, 0.0, 1.0, "abcd"),), ((G_R, 1.0, 0.0, 1.0, "abcd"),))
+
+
 TAN_RAMPS = (Design("cushions", ramp=cushions(BASE)), Design("grid", ramp=cushions(GRID)),
-             Design("mirrored", ramp=cushions(MIRRORED)), Design("tall", ramp=cushions(TALL)))
+             Design("mirrored", ramp=cushions(MIRRORED)), Design("tall", ramp=cushions(TALL)),
+             Design("grille", ramp=cushions(GRILLE, grille)))
