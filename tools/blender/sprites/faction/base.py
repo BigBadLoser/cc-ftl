@@ -36,8 +36,7 @@ SNAP = {"fG", "fT"}                      # looks whose ramps sit on the quantise
 # a look's hue and saturation drifting down its ramps (else each ramp keeps its base colour's): (lightness, hue°,
 # saturation) at the dark end and at the light end, between them by lightness; bastion's shadows indigo, its
 # highlights steel blue
-TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18)),
-        "fTS": ((0.37, 18, 0.17), (0.76, 45, 0.37))}    # tan's face: its darks maroon brown, its lights pale straw
+TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18))}
 
 
 def _snap(h, l, s):
@@ -98,8 +97,7 @@ def palette_entries():
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
             r = ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {}))
-            tn = TINT.get(f"{pre}{tag}", TINT.get(pre))                      # (a look's tint, or one ramp's)
-            out.update(_tinted(r, tn) if tn else _snapped(r) if pre in SNAP else r)
+            out.update(_tinted(r, TINT[pre]) if pre in TINT else _snapped(r) if pre in SNAP else r)
             if pre in OFFSETS and len(OFFSETS[pre]) > 7 and pre not in TINT:   # (an extra step on a centre of
                 out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # the quantiser's bins: it keeps it, not a near
                                                                     # tone of another look's, and anti-aliases)
@@ -113,7 +111,11 @@ TONES = {"fB": {"fBG": "#1c2444",      # a look's own single tones, on bin centr
                "fBW9": "#34344c", "fBH9": "#34344c",    # navy; its recess's back, between steps 3 and 7 (too close
                                                         # for the ramp's snapping to keep them apart);
                "fBW10": "#44546c"},                     # its slope and front, between steps 2 and 8
-         "fD": {"fDM1": "#6c343c", "fDM2": "#5c2c34", "fDM3": "#4c242c"}}   # drone's maroon (its red block): lit,
+         "fD": {"fDM1": "#6c343c", "fDM2": "#5c2c34", "fDM3": "#4c242c"},
+         "fT": {"fTS0": "#dcccac", "fTS1": "#bca46c", "fTS2": "#ac8c64",     # tan's face, picked off the ref (no
+                "fTS3": "#a48464", "fTS4": "#6c4c4c", "fTS5": "#543c3c",     # one hue: its lights pale straw, its
+                "fTS6": "#3c2c2c", "fTS7": "#8c6c5c", "fTS8": "#9c745c"}}    # darks maroon brown), on bin centres;
+                                                                            # 7, 8: soft shadows (between 3 and 4)   # drone's maroon (its red block): lit,
                                                                             # front, shade
 
 

@@ -4,24 +4,35 @@ grooved layout over a blue toe."""
 from .. import wall3d as T
 from ..relief_style import Design
 from .base import Faction, _style
-from .parts import LINE, PAINT, PX, PZ, body, prism
+from .parts import LINE, PAINT, PX, PZ, body, flat, prism
 from .shell import FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
 
 FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's pale tan)
 BLUE = "ochre"                      # the trim's: the line at the face's foot, the toe
-HEAD_D, HEAD_H = PX, 9 * PZ         # the header block: its depth (2 px of lit top), its front
-LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot
-SLAT_D, SLAT_H, SLAT_P = PX / 2, 2 * PZ, 4 * PZ   # a slat: its depth (a px of lit top), its front, its pitch
-PANEL_D = PX                        # the raised centre panel's depth
-PANEL_W = 1 / 3                     # ... its width (a tile's middle third)
+HEAD_D, HEAD_H = 1.5 * PX, 9 * PZ   # the header block: its depth (3 px of lit top), its front (a lit edge, 8 of face)
+LIP_D, LIP_H = PX, 4 * PZ           # the lip at the face's foot (3 px of face over a dark one)
+PANEL_W = 1 / 3                     # the centre panel's width (a tile's middle third)
+SLAT = 4 * PZ                       # the slats' pitch: a dark line, a lit one, 2 px of face
 END = {"x": "fTX5", "y": "fTX4"}    # a free end's section, on an x / y end face; its front edge's highlight
 END_EDGE = {"x": "fTX3", "y": "fTX2"}
+SHADES = ("fTS0", "fTS1", "fTS2", "fTS3", "fTS8", "fTS7", "fTS4", "fTS5", "fTS6")   # the face's tones, light to dark
+
+
+def _hid(d):
+    """The rows a part d proud hides of the face under it (a PX shows 2 px down a lit face)."""
+    return d / (PX / 2) * PZ
+
+
+def sd(name, ax):
+    """A face tone on an x (shade) face: a step darker."""
+    return SHADES[min(len(SHADES) - 1, SHADES.index(name) + 1)] if ax == "x" else name
 
 
 class TanTones(Feature):
-    """The shell's faces in the face's tan (the second tone); the dark outlines at the foot and under the top stay."""
+    """The shell's faces in the face's tan (the second tone), a free end's in the slate blue; the dark outlines at
+    the foot and under the top stay."""
     def col_face(self, sp, face, x, y, z):
-        if sp.end_face(face, x if face == "x" else y):  # (a free end: its section's slate blue)
+        if sp.end_face(face, x if face == "x" else y):
             return END[face]
         c = T.Shell.col_face(sp, face, x, y, z)
         e = 0.5 / T.W.GN
@@ -36,7 +47,7 @@ class TanTones(Feature):
 
 
 def _panels(a, b):
-    """The face over [a, b] on each tile's grid: (u0, u1, centre panel?)."""
+    """The face over [a, b] on each tile's grid: (u0, u1, centre panel?, the part's own span)."""
     out = []
     h = PANEL_W / 2
     for c in range(-1, 2):
@@ -51,7 +62,6 @@ def tan(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
         endf, end1, corner, back = _ends(ax, plane, b, ends)
-        pe = ("in" if back else ends[0], ends[1])
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
         rt = min(top, T.W.wall_top("wall", "up")) if full else top
         z1 = rt - 0.031                                 # the header's top (under the cap's black: Faction.paint)
@@ -64,65 +74,86 @@ def tan(hull):
                                                                      (b + run, ft), (a - run, ft))],
                        F, 2, T.OUT(ax), fixed=END[ax])
             return
-        lit = "fTS0" if ax == "y" else "fTS1"           # (a lit top: the ramp's palest)
-        # the foot: a blue line, a dark one, the lip over them
-        T.paint(k, ax, plane, a, b, zs - 0.01, zs + PZ, 0.0, BLUE, 3)
-        T.paint(k, ax, plane, a, b, zs + PZ, zs + 2 * PZ, 0.0, FACE, 1)
-        zl0, zl1 = zs + 2 * PZ, zs + 2 * PZ + LIP_H
+
+        def band(u0, u1, z0, z1_, col, d=0.0):          # (a strip of one tone on the face, or on a part d proud)
+            flat(k, ax, plane, u0, u1, z0, z1_, d + PAINT, sd(col, ax))
+
+        # the foot: the lip (its front's last px dark; the ramp's first row is the blue line under it)
+        zl0, zl1 = zs + _hid(LIP_D), zs + _hid(LIP_D) + LIP_H
         prism(k, ax, plane, a, b, [(0.0, zl0), (LIP_D, zl0), (LIP_D, zl1), (0.0, zl1)], FACE, 3,
-              cols=[False, None, None, False], mitre=mit)
+              cols=[False, None, sd("fTS1", ax), False], mitre=mit)
+        band(a, b, zl0, zl0 + PZ, "fTS4", LIP_D)
         if not full:
             return
-        # the header block, its shadow under it
+        # the header block: its pale top, a lit edge on its front, a shadow 2 px under it
         zh0 = z1 - HEAD_H
         prism(k, ax, plane, a, b, [(0.0, zh0), (HEAD_D, zh0), (HEAD_D, z1), (0.0, z1)], FACE, 3,
-              cols=[False, None, lit, False], mitre=mit)
-        T.paint(k, ax, plane, a, b, z1 - PZ, z1, HEAD_D, FACE, 4)                 # (its front's top edge lit)
-        T.paint(k, ax, plane, a, b, zh0 - 2 * PZ, zh0, 0.0, FACE, 1)
-        # between them: slats either side of a raised centre panel
-        zb, zt = zl1 + PZ, zh0 - 5 * PZ                 # (a px over the lip; a gap under the header's shadow)
+              cols=[False, None, sd("fTS0", ax), False], mitre=mit)
+        band(a, b, z1 - PZ, z1, "fTS1", HEAD_D)
+        zs0 = zh0 - _hid(HEAD_D)                        # (the face's first row seen under the header)
+        band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
+        band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
+        zt = zs0 - 6.5 * PZ                             # (3 px of face, then the slats and the panel; the half px
+                                                        # lands the 1 px lines on whole rows: clean 2:1 steps)
         for u0, u1, mid, (g0, g1) in _panels(a, b):
-            m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
-            if mid:
-                zp0, zp1 = zb + PZ, zt + 2 * PZ
-                for gu in (g0, g1 - LINE):              # (its grooves either side, up to the header's shadow)
-                    if u0 - 1e-6 <= gu and gu + LINE <= u1 + 1e-6:
-                        T.paint(k, ax, plane, gu, gu + LINE, zb, zh0 - 2 * PZ, 0.0, FACE, 1)
-                T.paint(k, ax, plane, u0, u1, zp1, zp1 + PZ, 0.0, FACE, 1)          # (a groove over it)
-                T.paint(k, ax, plane, u0, u1, zp0 - PZ, zp0, 0.0, FACE, 1)          # (its shadow under it)
-                prism(k, ax, plane, u0 + LINE, u1 - LINE, [(0.0, zp0), (PANEL_D, zp0), (PANEL_D, zp1),
-                                                           (0.0, zp1)], FACE, 3, cols=[False, None, None, False])
+            if not mid:                                 # either side of the panel: slats, from the top a dark line,
+                z = zt                                  # a lit one, 2 px of face; a groove up each tile's edge
+                while z - 2 * PZ >= zl1 - 1e-6:
+                    band(u0, u1, z - PZ, z, "fTS4")
+                    band(u0, u1, z - 2 * PZ, z - PZ, "fTS1")
+                    z -= SLAT
+                if u0 - 1e-6 <= g0 and g0 + LINE <= u1 + 1e-6:
+                    band(g0, g0 + LINE, zl1, zt, "fTS4")
                 continue
-            z = zt
-            while z - SLAT_H - PZ >= zb - 1e-6:          # (top down: a dark line, a slat's lit top, its front)
-                T.paint(k, ax, plane, u0, u1, z - PZ, z, 0.0, FACE, 1)
-                s1, s0 = z - PZ, z - PZ - SLAT_H - PZ
-                prism(k, ax, plane, u0, u1, [(0.0, s0), (SLAT_D, s0), (SLAT_D, s1), (0.0, s1)], FACE, 3,
-                      cols=[False, None, None, False], mitre=m)
-                z -= SLAT_P
+            zp0, zp1 = zl1 + PZ, zt - PZ                # the centre panel, flush: a groove round it, a 2 px bevel lit
+            band(u0, u1, zp1, zt, "fTS4")               # along its top, a soft shadow along its foot
+            band(u0, u1, zp1 - 2 * PZ, zp1, "fTS2")
+            band(u0, u1, zp0 + PZ, zp0 + 3 * PZ, "fTS8")
+            band(u0, u1, zp0 + PZ, zp0 + 2 * PZ, "fTS7")
+            band(u0, u1, zl1, zp0 + PZ, "fTS4")
+            for gu in (g0, g1 - LINE):
+                if u0 - 1e-6 <= gu and gu + LINE <= u1 + 1e-6:
+                    band(gu, gu + LINE, zl1, zt, "fTS4")
     return face
 
 
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 
 
-def tan_plate(plate, u0, u1, run_, **_):
-    """The base ramp's plates (grooves in the face's brown, each plate's top edge lit from its left corner): a plate
-    down the tile's left, two small square plates against the wall beside it, one wide plate under them running up
-    the tile's right side to the wall."""
-    w, r, E = u1 - u0, run_, EDGE
+# the base ramp's plates, (u0, u1, d0, d1) as fractions of the tile and of the plates' run: one down the tile's left,
+# two small squares against the wall beside it, and one L-shaped plate under them up the tile's right side (its two
+# parts: the edges it shows lit / dark)
+PLATES = ((0.0, 0.29, 0.0, 1.0, "tlbr"), (0.31, 0.52, 0.07, 0.47, "tlbr"), (0.54, 0.75, 0.07, 0.47, "tlbr"),
+          (0.77, 1.0, 0.0, 0.5, "tlr"), (0.31, 1.0, 0.5, 1.0, "tlbr"))
 
-    def at(f):
-        return u0 + f * w
 
-    ua, um, ub, dm = at(0.29), at(0.53), at(0.77), 0.47 * r
-    for q in ((u0, u0 + LINE, 0.0, r), (ua, ua + LINE, 0.0, r),            # (the tile's edge, the left plate's)
-              (ua, ub + LINE, 0.0, E), (ua, ub + LINE, dm, dm + 2 * E),    # (the small plates' top and foot)
-              (um, um + LINE, 0.0, dm), (ub, ub + LINE, 0.0, dm)):         # (between them, right of them)
-        plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, FACE)
-    for f0, f1, d in ((0.04, 0.15, 0.0), (0.30, 0.40, E), (0.54, 0.64, E), (0.30, 0.45, dm + 2 * E),
-                      (0.78, 0.88, 0.0)):
-        plate([(at(f0), d), (at(f1), d), (at(f1), d + E), (at(f0), d + E)], PAINT, 5, 0.0, "wall")
+def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
+    """The base ramp: a blue line along the wall, then pale raised plates in brown joints, each lit along its top
+    and left edges and shaded along its foot and right edge, then the blue toe."""
+    w, E, L = u1 - u0, EDGE, LINE
+    top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the plates' end, over the toe)
+    nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
+
+    def q(ua, ub, da, db):
+        return [(ua, da), (ub, da), (ub, db), (ua, db)]
+    plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
+    plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
+    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the plates)
+    for f0, f1, g0, g1, sides in PLATES:
+        pu0, pu1 = u0 + f0 * w + (L if f0 == 0.0 else 0.0), u0 + f1 * w
+        pd0, pd1 = top + E + g0 * (end - top - E), top + g1 * (end - top - E) - (E if g1 < 1.0 else 0.0)
+        if f0 == 0.77:                                  # (the L's upright part runs on down into its foot)
+            pd1 += 2 * E
+        plate(q(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
+        r = 3 * PAINT
+        if "b" in sides:
+            plate(q(pu0, pu1, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)
+        if "r" in sides:
+            plate(q(pu1 - L, pu1, pd0, pd1), r, 2, 2 * PAINT, FACE)
+        if "t" in sides:
+            plate(q(pu0 + L, pu1 - L, pd0, pd0 + E), r, 5, 2 * PAINT, "wall")
+        if "l" in sides:
+            plate(q(pu0, pu0 + L, pd0 + E, pd1 - E), r, 5, 2 * PAINT, "wall")
 
 
 TAN_RAMPS = (Design("plates", ramp=tan_plate),)

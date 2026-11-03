@@ -3620,39 +3620,32 @@
   "set": "tan"
  },
  "fTS0": {
-  "hex": "#ccbc9c",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#dcccac",
+  "set": "tan"
  },
  "fTS1": {
-  "hex": "#b49c7c",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#bca46c",
+  "set": "tan"
  },
  "fTS2": {
-  "hex": "#9c7c64",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#ac8c64",
+  "set": "tan"
  },
  "fTS3": {
-  "hex": "#846c5c",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#a48464",
+  "set": "tan"
  },
  "fTS4": {
-  "hex": "#644c44",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#6c4c4c",
+  "set": "tan"
  },
  "fTS5": {
-  "hex": "#4c3c34",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#543c3c",
+  "set": "tan"
  },
  "fTS6": {
-  "hex": "#342c24",
-  "set": "tan",
-  "aa": "tan"
+  "hex": "#3c2c2c",
+  "set": "tan"
  },
  "fTX0": {
   "hex": "#9cacc4",
@@ -3708,6 +3701,14 @@
  },
  "fTF6": {
   "hex": "#1d1b17",
+  "set": "tan"
+ },
+ "fTS7": {
+  "hex": "#8c6c5c",
+  "set": "tan"
+ },
+ "fTS8": {
+  "hex": "#9c745c",
   "set": "tan"
  }
 }
