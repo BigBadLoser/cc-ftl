@@ -122,7 +122,7 @@ void main(void) {
   if (breakAge >= 0.0) {                                       // the lost ring flashes, its cells drop out, shards drift off
     bool lost = r < 1.0 && ring > rows - 0.5 && ring < rows + 0.5;
     bool stay = ch > breakAge * 1.4;                           // each cell of it goes out at its own moment
-    if (lost && breakAge < 0.15) { col = line ? H0 : mix(col, H1, 0.4); al = line ? 1.0 : max(al, 0.3); glow += H1 * (line ? 0.6 : 0.15); }
+    if (lost && breakAge < 0.15) { col = line ? W : mix(col, H1, 0.4); al = line ? 1.0 : max(al, 0.3); glow += line ? H0 * 0.9 : H1 * 0.15; }
     else if (lost && stay && line) { col = breakAge < 0.5 ? H0 : H1; al = 1.0 - 0.3 * breakAge; glow += H1 * 0.6; }
     else if (lost && stay) { col = mix(col, H1, 0.5); al = max(al, 0.35 * (1.0 - breakAge)); }
     float ang = atan(l.y / uAx.y, l.x / uAx.x);
