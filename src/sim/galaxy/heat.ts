@@ -80,7 +80,7 @@ function stationOwner(sim: Sim, id: number): string | null {
 function factionOfShip(sim: Sim, id: number, ship: Ship, side: Faction): string | null {
   const g = sim.galaxy;
   const owns = (cs: readonly Contact[]): Contact | undefined => cs.find((c) => c.ship === id);
-  const c = owns(g.event?.fleet.ships ?? []) ?? g.fleets.map((f) => owns(f.ships)).find(Boolean) ?? owns(nodeState(sim, g.current).contacts);
+  const c = owns(g.event?.fleet?.ships ?? []) ?? owns(g.event?.scene.ships.map((s) => s.contact) ?? []) ?? g.fleets.map((f) => owns(f.ships)).find(Boolean) ?? owns(nodeState(sim, g.current).contacts);
   if (c) return c.faction;
   if (ship.immobile) {
     const owner = stationOwner(sim, id);

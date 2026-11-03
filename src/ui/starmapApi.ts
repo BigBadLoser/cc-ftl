@@ -307,12 +307,12 @@ export interface UiEncounterResult {
 /** The event grid the player is in (a deep-space pocket for a fight or a rescue). */
 export interface UiEventGrid {
   id: number;
-  kind: 'fight' | 'rescue';
+  kind: 'fight' | 'rescue' | 'scene';
   title: string;
-  faction: string;
-  role: string;
+  /** Who is out there: the fleet ("Free Traders trader") or the scene's lead ship ("Ash Wren, Free Traders"). */
+  who: string;
   tone: Tone;
-  /** Fleet ships still in the grid, and how many of them are hostile and active. */
+  /** Scene ships still in the grid, and how many of them are hostile and active. */
   ships: number;
   hostiles: number;
   /** The ship is still being placed (the deploy picker is up). */

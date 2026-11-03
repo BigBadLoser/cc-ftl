@@ -1,6 +1,7 @@
 import type { ItemQty } from '../registry';
 import type { FleetRole, ShipSize } from './defs';
 import type { Vec } from './geometry';
+import type { SceneSpec, SceneWatch } from '../scene/types';
 
 export type { FleetRole, ShipSize } from './defs';
 
@@ -308,14 +309,18 @@ export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore'
  * to settle an encounter. The fleet is out of `GalaxyState.fleets` while the grid exists. Leaving it discards the sector.
  */
 export interface EventGrid {
-  /** The encounter id; the grid's node id is `eventNodeId(id)`. */
+  /** Its id (an encounter's, or a fresh one for a story scene); the grid's node id is `eventNodeId(id)`. */
   id: number;
-  /** 'fight': an interdiction (the fleet is hostile); 'rescue': a distress call (the fleet's ships are neutral). */
-  kind: 'fight' | 'rescue';
-  encounter: Encounter;
-  /** The fleet while inside the grid (its ships are real ones here). */
-  fleet: Fleet;
-  /** Its ships that escaped from the grid (jumped away); they rejoin the fleet when the grid is left. */
+  /** 'fight': an interdiction (the fleet is hostile); 'rescue': a distress call (the fleet's ships are neutral); 'scene': a story encounter. */
+  kind: 'fight' | 'rescue' | 'scene';
+  /** What the pocket holds (scene/types.ts). A fleet encounter's spec names its fleet. */
+  scene: SceneSpec;
+  /** What the outcome observer has seen so far (scene/observer.ts). */
+  watch: SceneWatch;
+  /** Fleet encounters: the encounter, and the fleet while inside the grid (its ships are real ones here). */
+  encounter?: Encounter;
+  fleet?: Fleet;
+  /** Ships that escaped from the grid (jumped away); a fleet's rejoin it when the grid is left. */
   fled: Contact[];
 }
 
@@ -411,6 +416,8 @@ export interface GalaxyState {
   encounters: Encounter[];
   /** The event grid the player is in, or null (eventGrid.ts). `sim.sector.node` is its node id while it exists; `current` stays the real node. */
   event: EventGrid | null;
+  /** The scene a story signal open right now is about (built when the decision opens, so remote actions read it), or null. */
+  signal: SceneSpec | null;
   /** How the last encounter was settled, or null. */
   lastResult: EncounterResult | null;
   /** Ids for fleets, their ships and encounters (apart from `nextId`, so node contacts keep their ids). */

@@ -1,9 +1,8 @@
-import { CombatC, ShipC, WeaponC } from '../combat/components';
-import { ModuleC } from '../modules/components';
+import { ShipC } from '../combat/components';
 import { PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
-import { isDormant, wake, type WakeReason } from '../combat/dormant';
+import { aimedByPlayer, isDormant, wake, type WakeReason } from '../combat/dormant';
 import type { Sim } from '../sim';
 
 /**
@@ -16,17 +15,7 @@ export function dormancySystem(sim: Sim): void {
   const sleepers: number[] = [];
   for (const id of sim.world.query(ShipC)) if (isDormant(sim.world.get(id, ShipC))) sleepers.push(id);
   if (sleepers.length === 0) return;
-  const aimedAt = new Set<number>();
-  for (const id of sim.world.query(ShipC, CombatC)) {
-    if (sim.world.get(id, ShipC)?.faction !== 'player') continue;
-    const t = sim.world.get(id, CombatC)?.target;
-    if (t?.ship) aimedAt.add(t.ship);
-  }
-  for (const id of sim.world.query(WeaponC, ModuleC)) {
-    const t = sim.world.get(id, WeaponC)?.target;
-    if (!t?.ship) continue;
-    if (sim.world.get(shipIdOf(sim, sim.world.get(id, ModuleC)), ShipC)?.faction === 'player') aimedAt.add(t.ship);
-  }
+  const aimedAt = aimedByPlayer(sim);
   const boarded = new Set<number>();
   for (const id of sim.world.query(AllegianceC, PositionC)) {
     if (sim.world.get(id, AllegianceC)?.faction === 'player') boarded.add(shipIdOf(sim, sim.world.get(id, PositionC)));

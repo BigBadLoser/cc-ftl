@@ -5,6 +5,8 @@ import type { PhysicalOutcome, StoryContext } from './defs';
 export interface ActiveEvent {
   event: string;
   since: number;
+  /** Remote actions already taken on it (`ChoiceDef.remote`): their choice ids. */
+  done?: string[];
 }
 
 export interface QueuedEvent {
@@ -55,6 +57,8 @@ export interface StoryState {
   nextId: number;
   last: Resolution | null;
   physical: PhysicalEntry[];
+  /** The event whose scene the player chose to investigate (a `scene` effect), until the trip opens it (galaxy/storyHop.ts). */
+  scene: string | null;
   rng: number;
   /** The tutorial goal chain's progress (story/goals.ts). */
   goals: GoalProgress;
@@ -76,7 +80,7 @@ export const PHYSICAL_LOG_MAX = 50;
 export function newStory(seed: number): StoryState {
   return {
     flags: {}, reputation: {}, context: { danger: 0, faction: null },
-    seen: {}, active: null, queue: [], notices: [], nextId: 1, last: null, physical: [],
+    seen: {}, active: null, queue: [], notices: [], nextId: 1, last: null, physical: [], scene: null,
     rng: (seed ^ 0x5eed5eed) >>> 0,
     goals: { act: 0, done: [], skipped: false, home: null },
     blueprints: [],

@@ -1,3 +1,4 @@
+import type { SceneRuleDef } from './scene/types';
 import type { Faction } from './combat/components';
 import type { FactionDef } from './shipgen/types';
 import type { StationDef } from './shipgen/stationTypes';
@@ -71,6 +72,8 @@ export interface ContentRegistry {
   vehicles?: Record<string, VehicleDef>;
   /** Event content (story/defs.ts) by id. Absent = no events. */
   events?: Record<string, EventDef>;
+  /** Shared outcome observer rules for scenes (scene/types.ts `SceneRuleDef`; content/sceneRules.ts), by rule id. Absent = none. */
+  sceneRules?: Record<string, SceneRuleDef>;
   /** The tutorial goal chain, in order (story/goals.ts). Absent = none. */
   goals?: GoalActDef[];
   /** The EVA spacesuit. Absent = DEFAULT_SUIT (tuning.ts). */

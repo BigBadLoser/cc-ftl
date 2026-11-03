@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * The event grid card: a deep-space pocket opened by an interdiction fight or a distress call. Shows who is out there, how the encounter
+   * The event grid card: a deep-space pocket opened by an interdiction fight, a distress call or a story encounter. Shows who is out there, how the encounter
    * began, and the way back onto the trip: "Resume travel" once clear, "Flee" while hostiles are about (it spends the charged drive).
    */
   import Icon from './Icon.svelte';
@@ -14,7 +14,7 @@
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
   const status = $derived(
     event.hostiles > 0 ? `${event.hostiles} hostile ship${event.hostiles > 1 ? 's' : ''} in range`
-    : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : 'The sky is clear: the fight is won.',
+    : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : event.kind === 'scene' ? 'No one is hostile here. Move on when you are done.' : 'The sky is clear: the fight is won.',
   );
 </script>
 
@@ -22,7 +22,7 @@
   <PanelHead icon="combat" title={event.title} sub="Event grid" foe={event.hostiles > 0} />
   <div class="who">
     <i style={`background: ${toneColor(event.tone)}`}></i>
-    <b>{event.faction} {event.role.toLowerCase()}</b>
+    <b>{event.who}</b>
     <small>{event.ships === 0 ? 'none left' : `${event.ships} ship${event.ships === 1 ? '' : 's'}`}</small>
   </div>
   <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{status}</p>

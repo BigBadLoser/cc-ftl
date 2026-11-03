@@ -510,7 +510,8 @@ export interface UiStoryChoice {
 
 /** The event system as the UI sees it: the open decision (the game pauses on it) and the last result. */
 export interface UiStory {
-  active: { event: string; title: string; text: string; choices: UiStoryChoice[] } | null;
+  /** `facts`: what remote actions (a scan, a hail) have revealed about the signal's scene so far, one line each. */
+  active: { event: string; title: string; text: string; choices: UiStoryChoice[]; facts: string[] } | null;
   last: { tick: number; title: string; choice: string; success: boolean | null; text: string; lines: string[] } | null;
 }
 

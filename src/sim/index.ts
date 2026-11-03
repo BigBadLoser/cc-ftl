@@ -80,6 +80,7 @@ export {
 export type { StoryState, ActiveEvent, Notice, Resolution, PhysicalEntry } from './story/state';
 export { choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
 export { poolFor, startEvent } from './story/engine';
+export type * from './scene/types';
 export { createCrew } from './crew/spawn';
 export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
 export { foodOn } from './crew/eating';

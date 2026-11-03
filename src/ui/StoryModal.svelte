@@ -9,11 +9,15 @@
   /** The result the player already dismissed (or that was there when the page loaded). */
   let seenTick = $state<number | null | undefined>(undefined);
   let busy = $state(false);
+  /** Which choices were open: a remote action (scan, hail) keeps the decision up, and marking it done frees the other buttons again. */
+  let openSig = '';
 
   onMount(() =>
     api.story.subscribe((s) => {
       if (seenTick === undefined) seenTick = s.last?.tick ?? null;
-      if (!s.active) busy = false;
+      const sig = s.active ? s.active.choices.map((c) => (c.enabled ? 1 : 0)).join('') : '';
+      if (!s.active || sig !== openSig) busy = false;
+      openSig = sig;
       story = s;
     }),
   );
@@ -33,6 +37,7 @@
 {:else if active}
   <Dialog open title={active.title} dismissable={false} testId="story-modal">
     <p class="text">{active.text}</p>
+    {#if active.facts.length}<ul class="facts" data-testid="story-facts">{#each active.facts as f, i (i)}<li>{f}</li>{/each}</ul>{/if}
     <div class="choices">
       {#each active.choices as c (c.id)}
         <button class="choice" class:locked={!c.enabled} disabled={!c.enabled || busy} data-testid="story-choice" data-choice={c.id} onclick={() => pick(c.id)}>
@@ -57,6 +62,7 @@
 
 <style>
   .text { margin: 0 0 12px; color: var(--text); line-height: 1.45; }
+  .facts { margin: 0 0 12px; padding-left: 18px; color: var(--ink-accent); font-size: 13px; line-height: 1.4; }
   .choices { display: grid; gap: 8px; }
   .choice { display: grid; gap: 2px; text-align: left; padding: 9px 12px; min-height: 44px; }
   .label { font-weight: 600; }

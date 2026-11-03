@@ -205,6 +205,7 @@ export type SimEvent =
   /** Event system: an event started (`notice` is the notice id for notices with a lead, else 0), a choice resolved it, an effect was applied (`text` '' = nothing to show). */
   | { type: 'story.started'; event: string; mode: 'decision' | 'notice'; notice: number }
   | { type: 'story.resolved'; event: string; choice: string; success: boolean | null }
+  | { type: 'story.remote'; event: string; choice: string; action: 'hail' | 'scan' }
   | { type: 'story.effect'; event: string; effect: EventEffect['type']; text: string }
   /** Trade: a hail was answered or refused (`reason`: 'hostile', 'weaponsHot', 'silent', 'noTrade'); an offer was priced; a deal was made (`courier`: who flies). */
   | { type: 'trade.hailAnswered'; ship: number; name: string }
@@ -243,7 +244,9 @@ export type SimEvent =
   | { type: 'scan.found'; id: number; faction: string; value: number }
   | { type: 'scan.settled'; id: number; faction: string; outcome: 'confiscated' | 'bribed'; cost: number }
   | { type: 'truce.breached'; node: string; until: number }
-  | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' }
+  | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' | 'scene' }
+  /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */
+  | { type: 'scene.observed'; rule: string; ship: number; text: string; tone: 'good' | 'warn' | 'bad' | 'info' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }
   | { type: 'galaxy.stalled'; node: string; need: number }

@@ -82,11 +82,18 @@ export function eventOf(sim: Sim): UiEventGrid | null {
   const hostiles = hostilesPresent(sim);
   const blocker = leaveBlocker(sim);
   const f = ev.fleet;
+  const lead = ev.scene.ships[0]?.contact;
+  const owner = f?.faction ?? lead?.faction ?? '';
+  const story = ev.scene.event ? sim.content.events?.[ev.scene.event]?.title : undefined;
+  const role = f ? (ROLE_LABEL[f.role] ?? f.role).toLowerCase() : '';
   return {
-    id: ev.id, kind: ev.kind, title: ev.kind === 'fight' ? 'Deep space: interdiction' : 'Deep space: distress call', faction: factionName(sim, f.faction),
-    role: ROLE_LABEL[f.role] ?? f.role, tone: toneOf(sim.content.galaxy?.factions[f.faction]?.kind), ships: f.ships.length, hostiles,
+    id: ev.id, kind: ev.kind,
+    title: ev.kind === 'fight' ? 'Deep space: interdiction' : ev.kind === 'rescue' ? 'Deep space: distress call' : `Deep space: ${story ?? 'encounter'}`,
+    who: f ? `${factionName(sim, owner)} ${role}` : `${lead?.name ?? 'Unknown ship'}, ${factionName(sim, owner)}`,
+    tone: toneOf(sim.content.galaxy?.factions[owner]?.kind), ships: f ? f.ships.length : ev.scene.ships.filter((s) => s.contact.ship !== undefined).length, hostiles,
     deploying: sim.sector.state === 'deploying', canLeave: blocker === null,
-    why: blocker === 'notCharged' ? 'The FTL drive must be charged to flee' : blocker === 'tradeInProgress' ? 'A trade is in progress' : blocker,
+    why: blocker === 'notCharged' ? 'The FTL drive must be charged to flee' : blocker === 'tradeInProgress' ? 'A trade is in progress'
+      : blocker === 'crewAway' ? 'Crew or a shuttle are still away: bring them home first' : blocker,
     fleeing: hostiles > 0, resumeTo: nodeName(sim, t.route[t.route.length - 1] as string), hopsLeft: Math.max(0, t.route.length - 1 - t.at),
   };
 }

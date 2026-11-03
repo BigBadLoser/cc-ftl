@@ -6,6 +6,7 @@ import { finishEncounter } from './encounters';
 import { enterEvent, inEvent, leaveEvent } from './eventGrid';
 import { unit } from './hash';
 import { resumeAfterHop } from './hyperspace';
+import { fleetSpec } from '../scene/spec';
 import type { Encounter, EncounterChoice } from './types';
 
 /**
@@ -40,7 +41,7 @@ function fight(sim: Sim, e: Encounter, outcome: string, detail: { odds?: number;
     return true;
   }
   finishEncounter(sim, e.id, outcome, detail);
-  return enterEvent(sim, e, 'fight');
+  return enterEvent(sim, 'fight', fleetSpec(e, 'hostile'), e);
 }
 
 export function respond(sim: Sim, id: number, choice: EncounterChoice, command = 'galaxy.respond'): boolean {
@@ -91,11 +92,12 @@ export function respond(sim: Sim, id: number, choice: EncounterChoice, command =
     if (!waiting || t?.phase === 'event') return reject('notInHyperspace');
     if (!g.fleets.some((f) => f.id === e.fleet)) return reject('fleetGone');
     finishEncounter(sim, id, 'responded');
-    return enterEvent(sim, e, 'rescue');
+    return enterEvent(sim, 'rescue', fleetSpec(e, 'neutral'), e);
   }
   finishEncounter(sim, id, choice === 'acknowledge' ? 'acknowledged' : 'ignored');
   return true;
 }
 
-/** `galaxy.leaveEvent`: leave the event grid and carry on with the trip. */
-export const leave = (sim: Sim, command?: string): boolean => leaveEvent(sim, resume, command);
+/** `galaxy.leaveEvent`: leave the event grid and carry on with the trip (a scene signalled at a hop's end goes on to the next hop). */
+export const leave = (sim: Sim, command?: string): boolean =>
+  leaveEvent(sim, (s, held) => (held === 'hopEnd' ? resumeAfterHop(s) : resume(s)), command);
