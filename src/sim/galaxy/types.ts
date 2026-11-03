@@ -119,8 +119,6 @@ export interface Contact {
   bounty?: number;
   /** A hired escort (roster.ts `FleetGroupDef.escort`): the faction that pays it. It flies on that faction's side in a fight; `faction` stays its own. */
   hired?: string;
-  /** Provoked by the player (combat/provoke.ts): it stays hostile, so it comes back on its owner's combat side whenever it is made real again. */
-  provoked?: true;
 }
 
 export interface NodeState {
@@ -420,6 +418,8 @@ export interface GalaxyState {
   event: EventGrid | null;
   /** The scene a story signal open right now is about (built when the decision opens, so remote actions read it), or null. */
   signal: SceneSpec | null;
+  /** The groups of ships the player provoked (galaxy/groups.ts keys: `fleet:<id>`, `scene:<key>`, `contact:<id>`): they come in hostile. */
+  provoked: string[];
   /** How the last encounter was settled, or null. */
   lastResult: EncounterResult | null;
   /** Ids for fleets, their ships and encounters (apart from `nextId`, so node contacts keep their ids). */

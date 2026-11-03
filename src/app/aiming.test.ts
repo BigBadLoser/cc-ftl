@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ShipC, Struct, newGame, type Sim } from '../sim';
 import { materialiseFleet } from '../sim/galaxy/fleetShips';
 import { isHostileFaction } from '../sim/galaxy/standing';
-import { provoke } from '../sim/combat/provoke';
+import { hostileAct } from '../sim/combat/provoke';
 import { shipGrid } from '../sim/regions';
 import type { Fleet } from '../sim/galaxy/types';
 import { content } from '../content';
@@ -31,7 +31,7 @@ describe('aimable', () => {
     sim.sector.stations = true;
     expect(aimable(sim, ship, x, y)).toBe(true);
     delete sim.sector.stations;
-    provoke(sim, ship, 'fired');
+    hostileAct(sim, ship, 'fired');
     expect(aimable(sim, ship, x, y)).toBe(true);
   });
 });

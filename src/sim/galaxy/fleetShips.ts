@@ -7,7 +7,6 @@ import { spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
 import { nodesWithin } from './graph';
 import { owe } from './portIndex';
-import { nodeState } from './state';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
 
@@ -159,33 +158,4 @@ export function tendFleets(sim: Sim): void {
   }
   if (changed) g.rev++;
   warmFleets(sim);
-}
-
-/** The descriptor a ship in the active sector was made from: a pocket's fleet or scene, a travelling fleet, else the node's contacts. */
-export function contactOf(sim: Sim, ship: number): Contact | undefined {
-  const g = sim.galaxy;
-  const owns = (cs: readonly Contact[]): Contact | undefined => cs.find((c) => c.ship === ship);
-  return owns(g.event?.fleet?.ships ?? []) ?? owns(g.event?.scene.ships.map((s) => s.contact) ?? []) ?? g.fleets.map((f) => owns(f.ships)).find(Boolean)
-    ?? owns(nodeState(sim, g.current).contacts);
-}
-
-/**
- * The descriptors of the group this ship came with, itself included, spawned or still waiting for room: its fleet (a node's fleets, or the event grid's
- * fleet) or a story scene's ships; else its own node contact. Empty for a ship with no descriptor.
- */
-export function shipGroup(sim: Sim, ship: number): Contact[] {
-  const g = sim.galaxy;
-  const groups: Contact[][] = [...g.fleets.map((f) => f.ships)];
-  if (g.event?.fleet) groups.push(g.event.fleet.ships);
-  if (g.event) groups.push(g.event.scene.ships.map((s) => s.contact));
-  const mine = groups.find((cs) => cs.some((c) => c.ship === ship));
-  if (mine) return mine;
-  const own = contactOf(sim, ship);
-  return own ? [own] : [];
-}
-
-/** The ships that came with this one, itself included, that are real in the sector (`shipGroup`). A ship with no descriptor has only itself. */
-export function shipmates(sim: Sim, ship: number): number[] {
-  const group = shipGroup(sim, ship);
-  return group.length ? group.flatMap((c) => (c.ship === undefined ? [] : [c.ship])) : [ship];
 }

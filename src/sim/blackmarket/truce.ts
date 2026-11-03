@@ -1,11 +1,7 @@
-import { CombatC, ProjectileC, ShipC, WeaponC } from '../combat/components';
+import { CombatC, ShipC } from '../combat/components';
 import { wake } from '../combat/dormant';
 import { turnCrew } from '../combat/turn';
-import { CrewC, DeadC, PositionC } from '../crew/components';
-import { AllegianceC, PrisonerC } from '../fight/components';
 import { nodeState } from '../galaxy/state';
-import { ModuleC } from '../modules/components';
-import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { BAN_TURNS, BREACH_STANDING } from './tuning';
@@ -13,7 +9,7 @@ import { BAN_TURNS, BREACH_STANDING } from './tuning';
 /**
  * The truce of a black market's node. It is a flag on the node (`NodeState.truce`) that a market service sets when it is attached (attach.ts), so it
  * works for any station and is tested on a test node. While it holds nobody starts a fight there: the enemy AI holds fire, the node is never "in combat",
- * and no interdiction is made there. The player firing on or boarding anyone there breaks it (`truceSystem` finds that): a breach is a ban for BAN_TURNS
+ * and no interdiction is made there. The player firing on or boarding anyone there breaks it (a hostile act: combat/provoke.ts `hostileAct`): a breach is a ban for BAN_TURNS
  * turns in which every ship there is hostile and fires on the player, and every pirate faction thinks less of them by BREACH_STANDING. The game never
  * stops the player travelling to a truce node, so a ban only makes it dangerous.
  */
@@ -53,39 +49,6 @@ export function breachTruce(sim: Sim, node: string = sim.sector.node): void {
   sim.events.emit({ type: 'truce.breached', node, until: t.banUntil });
 }
 
-/** Ships of the node that are in play and not the player's, ascending. */
-function others(sim: Sim): number[] {
-  return [...sim.world.query(ShipC)].sort((a, b) => a - b).filter((id) => {
-    const s = sim.world.get(id, ShipC);
-    return !!s && s.faction !== 'player' && (s.state === 'active' || s.state === 'disabled');
-  });
-}
-
-/**
- * Does the player threaten anyone here: a player weapon that will fire at a live ship (aimed at it, by its own target or the ship's, and not held), a
- * player shot on its way to one, or a player crew member aboard one? An aim with the weapon held is not a threat (battle stations hold every weapon: combat/provoke.ts).
- */
-export function aggression(sim: Sim): boolean {
-  const live = new Set(others(sim));
-  for (const id of sim.world.query(WeaponC, ModuleC)) {
-    const w = sim.world.get(id, WeaponC);
-    const ship = shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number });
-    if (!w || sim.world.get(ship, ShipC)?.faction !== 'player' || (w.mode === 'hold' && !w.once)) continue;
-    const t = w.target ?? sim.world.get(ship, CombatC)?.target;
-    if (t?.ship && live.has(t.ship)) return true;
-  }
-  // A shot already on its way (a volley from held weapons, or one that left before the aim changed).
-  for (const id of sim.world.query(ProjectileC)) {
-    const p = sim.world.get(id, ProjectileC);
-    if (p?.target.ship && live.has(p.target.ship) && sim.world.get(p.fromShip, ShipC)?.faction === 'player') return true;
-  }
-  for (const id of sim.world.query(CrewC, AllegianceC, PositionC)) {
-    if (sim.world.get(id, AllegianceC)?.faction !== 'player' || sim.world.has(id, DeadC) || sim.world.has(id, PrisonerC)) continue;
-    if (live.has(shipIdOf(sim, sim.world.get(id, PositionC)))) return true;
-  }
-  return false;
-}
-
 /** During a ban every ship here (and its people) turns hostile to the player and wakes; when it ends they go back to what they were. */
 export function applyBan(sim: Sim, node: string): void {
   const ban = banned(sim, node);
@@ -111,12 +74,11 @@ export function applyBan(sim: Sim, node: string): void {
   }
 }
 
-/** One tick at a truce node: restore after a ban, find a breach, turn the ships hostile while a ban runs. */
+/** One tick at a truce node: turn the ships hostile while a ban runs, restore them after. A breach comes from a hostile act (combat/provoke.ts). */
 export function tendTruce(sim: Sim): void {
   const node = sim.sector.node;
   const t = sim.galaxy.nodes[node]?.truce;
   if (t) {
-    if (truceHolds(sim, node) && aggression(sim)) breachTruce(sim, node);
     applyBan(sim, node);
     return;
   }

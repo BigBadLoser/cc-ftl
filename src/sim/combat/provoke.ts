@@ -1,15 +1,18 @@
-import { shipGroup, shipmates } from '../galaxy/fleetShips';
+import { banned, breachTruce, truceHolds } from '../blackmarket/truce';
+import { markProvoked, shipmates } from '../galaxy/groups';
 import type { Sim } from '../sim';
 import { ShipC } from './components';
 import { factionsHostile } from './factions';
 import { turnShip } from './turn';
 
 /**
- * Provoked ships fight back (#173; user ruling 2026-11-03). One rule for every ship that is not hostile to the player: aiming at it does nothing, but
- * a shot fired at it (firing.ts, as the shot leaves the weapon) or the player's crew standing aboard (provocation.ts) turns it hostile, with the ships
- * that came with it (its fleet in the node or pocket, a scene's ships). They go over to their owner's combat side (`turnShip`), so the ordinary
- * combat AI fights or flees, and their crew defend with the ordinary fight code. Nothing turns them back: their descriptors keep it
- * (`Contact.provoked`), so a fleet lifted out of the node and met again is still hostile.
+ * Hostile acts (#173; user ruling 2026-11-03). One rule, and this the one entry point: only a shot that leaves a player weapon (firing.ts) or the
+ * player's crew standing aboard (provocation.ts) is a hostile act. Aiming is not: nothing reads an aim as aggression.
+ *
+ * - At a black-market truce node the act breaks the truce (`breachTruce`: the ban turns everyone there for its length, then lets them go).
+ * - Elsewhere a ship that is not hostile to the player is provoked: it and the ships that came with it (its fleet, a scene's ships) go over to their
+ *   owner's combat side (`turnShip`, its people included), so the ordinary combat AI fights or flees and their crew defend. The group is recorded
+ *   once (`galaxy.provoked`, galaxy/groups.ts), and every ship of it made real later comes in hostile from that record. Nothing turns them back.
  */
 
 /** True for a ship the player's fire or boarding would provoke: in play, not the player's, not already at war with the player. */
@@ -18,11 +21,23 @@ export function provokable(sim: Sim, ship: number): boolean {
   return !!s && s.faction !== 'player' && !factionsHostile(s.faction, 'player') && (s.state === 'active' || s.state === 'disabled');
 }
 
-/** Turn the ship and its shipmates hostile to the player, recording why on the ship. No-op for a ship that is not provokable. */
-export function provoke(sim: Sim, ship: number, why: 'fired' | 'boarded'): void {
+/**
+ * A hostile act on a ship. `boarded` acts leave stations (their alarm: stations/alarm) and dormant ships (dormancy) to their own rules, except that
+ * any act breaks a truce, as before.
+ */
+export function hostileAct(sim: Sim, ship: number, why: 'fired' | 'boarded'): void {
+  const s = sim.world.get(ship, ShipC);
+  if (!s || s.faction === 'player' || (s.state !== 'active' && s.state !== 'disabled')) return;
+  if (truceHolds(sim)) return breachTruce(sim);
+  if (banned(sim)) return; // the ban has every ship there for its length, and gives them back after
+  if (why === 'boarded' && (s.immobile || s.dormant !== undefined)) return;
+  provoke(sim, ship, why);
+}
+
+/** Turn the ship and its group hostile to the player and record the group; `why` is kept on the ship itself. No-op for a ship that is not provokable. */
+function provoke(sim: Sim, ship: number, why: 'fired' | 'boarded'): void {
   if (!provokable(sim, ship)) return;
-  // The whole group stays hostile, ships still waiting for room in the sector included: each comes back hostile when made real (spawnContact).
-  for (const c of shipGroup(sim, ship)) c.provoked = true;
+  markProvoked(sim, ship);
   for (const mate of shipmates(sim, ship)) {
     const s = sim.world.get(mate, ShipC);
     if (!s || !provokable(sim, mate)) continue;

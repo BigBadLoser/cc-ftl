@@ -15,6 +15,7 @@ import {
 } from './tuning';
 import { SCAVENGER_CHANCE, SCAVENGER_FACTION, SCAVENGER_MAX_DANGER } from './tuningHeat';
 import type { Contact } from './types';
+import { isProvoked } from './groups';
 
 /**
  * Generated ships by contact key (faction shipgen, seed, depth), per content registry. Generation is a pure function of the key, so
@@ -122,7 +123,7 @@ export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: 
   const payer = c.hired ?? c.faction;
   const sideOf = (f: string): Faction => sim.content.galaxy?.factions[f]?.combatFaction ?? 'hostile';
   // Provoked, it is on its owner's combat side as provoke() put it (combat/provoke.ts).
-  const side = c.provoked ? sideOf(c.faction) : opts.side ?? (isHostileFaction(sim, payer) ? sideOf(payer) : 'neutral');
+  const side = isProvoked(sim, c) ? sideOf(c.faction) : opts.side ?? (isHostileFaction(sim, payer) ? sideOf(payer) : 'neutral');
   // A scene may ask for fewer crew than the generator puts aboard (the first `crew` of them).
   const template = opts.crew === undefined ? gen.template : { ...gen.template, crew: (gen.template.crew ?? []).slice(0, opts.crew) };
   const id = spawnShip(sim, template, { faction: side, x: spot.x, y: spot.y, rest: 100 });

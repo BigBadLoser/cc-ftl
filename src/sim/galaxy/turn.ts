@@ -5,6 +5,7 @@ import { decayNotoriety } from './heat';
 import { dispatchHunters } from './hunters';
 import { expireJobs } from './jobs';
 import { stepFleets } from './fleets';
+import { pruneProvoked } from './groups';
 import { stepDistress } from './stranded';
 import { stepLiveMarkets } from './marketLive';
 import { TURN_SEC } from './tuning';
@@ -35,6 +36,7 @@ export function onTurn(sim: Sim, turn: number, cause: 'hop' | 'time' = 'hop'): v
   dispatchHunters(sim, turn);
   expireJobs(sim, turn);
   stepDistress(sim, turn);
+  pruneProvoked(sim);
 }
 
 /** A hop is entered: the next turn, and the game-time clock starts over. */

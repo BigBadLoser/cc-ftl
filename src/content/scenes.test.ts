@@ -14,7 +14,7 @@ import { WeaponC } from '../sim/combat/components';
 import { shipIdOf } from '../sim/regions';
 import { materialiseFleet, liftFleet } from '../sim/galaxy/fleetShips';
 import { isHostileFaction } from '../sim/galaxy/standing';
-import { provoke } from '../sim/combat/provoke';
+import { hostileAct } from '../sim/combat/provoke';
 import type { Fleet } from '../sim/galaxy/types';
 import { AboardC, VehicleC, type Vehicle } from '../sim/vehicles/components';
 import { content } from '.';
@@ -356,7 +356,7 @@ describe('provoking a neutral', () => {
     expect(sim.world.query(WeaponC).every((id) => sim.world.get(id, WeaponC)?.mode !== 'hold' || sim.world.get(id, WeaponC)?.restore === undefined)).toBe(true);
   });
 
-  it('a provoked fleet stays hostile: lifted out and made real again, or a ship that was waiting for room, it comes on its owner\'s combat side', () => {
+  it('provoking records the group once: its crew on a shuttle turn, and a ship lifted out and back, after a reload, or waiting for room comes in hostile', () => {
     const sim = newGame(24, content);
     const g = sim.galaxy;
     const f = g.fleets.find((x) => x.ships.length > 1 && !isHostileFaction(sim, x.faction)) as Fleet;
@@ -368,27 +368,22 @@ describe('provoking a neutral', () => {
     const first = f.ships[0]?.ship as number;
     expect(waiting.every((c) => c.ship === undefined)).toBe(true);
     expect(sim.world.get(first, ShipC)?.faction).toBe('neutral');
-    provoke(sim, first, 'fired');
+    // One of its crew embarked on its shuttle (no position on a grid).
+    const crew = shipCrew(sim, first)[0] as number;
+    const shuttle = sim.world.createEntity();
+    sim.world.add(shuttle, VehicleC, { homeShip: first } as Vehicle);
+    sim.world.remove(crew, PositionC);
+    sim.world.add(crew, AboardC, { vehicle: shuttle });
+    hostileAct(sim, first, 'fired');
     const side = sim.world.get(first, ShipC)?.faction;
     expect(side).not.toBe('neutral');
-    expect(f.ships.every((c) => c.provoked)).toBe(true);
+    expect(sim.world.get(crew, AllegianceC)?.faction).toBe(side);
+    expect(g.provoked).toEqual([`fleet:${f.id}`]);
     liftFleet(sim, f);
     const back = deserialize(serialize(sim), content);
     const again = back.galaxy.fleets.find((x) => x.id === f.id) as Fleet;
     materialiseFleet(back, again);
     for (const c of again.ships) if (c.ship !== undefined) expect(back.world.get(c.ship, ShipC)?.faction).toBe(side);
     expect(again.ships.every((c) => c.ship !== undefined)).toBe(true);
-  });
-
-  it('crew embarked on its own shuttle turn with the provoked ship', () => {
-    const { sim, skiff } = inScene(3);
-    const crew = shipCrew(sim, skiff)[0] as number;
-    const shuttle = sim.world.createEntity();
-    sim.world.add(shuttle, VehicleC, { homeShip: skiff } as Vehicle);
-    sim.world.remove(crew, PositionC);
-    sim.world.add(crew, AboardC, { vehicle: shuttle });
-    provoke(sim, skiff, 'fired');
-    expect(sim.world.get(skiff, ShipC)?.faction).toBe('hostile');
-    expect(sim.world.get(crew, AllegianceC)?.faction).toBe('hostile');
   });
 });

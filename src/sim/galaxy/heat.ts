@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { portsAt } from './portIndex';
 import { repKey, tierOf } from './standing';
-import { contactOf } from './fleetShips';
+import { contactOf } from './groups';
 import {
   CAPTURE_FACTOR, CLEAR_COST_PER_POINT, GRUDGE_WEIGHT, KILL_NOTORIETY, KILL_REPUTATION, LAW_KINDS, NOTORIETY_DECAY, NOTORIETY_DECAY_MIN, NOTORIETY_MAX,
   NOTORIETY_WEIGHT, OUTLAW_KINDS, STATION_NOTORIETY, WANTED_AT,

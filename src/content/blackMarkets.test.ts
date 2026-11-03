@@ -256,6 +256,17 @@ describe('scans', () => {
 });
 
 describe('truce', () => {
+  /** A shot that leaves a player weapon at the target (the hostile act; an aim alone is none): battle stations, aim, charged weapons, a volley. */
+  function fireAt(sim: Sim, target: number): string[] {
+    const me = playerShip(sim);
+    sim.enqueue({ type: 'combat.battleStations', on: true });
+    sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: target, targetModuleId: 0 });
+    const log = run(sim, 5 * 20); // the turrets run out
+    for (const id of sim.world.query(WeaponC)) sim.world.get(id, WeaponC)!.charge = 1;
+    sim.enqueue({ type: 'combat.fireVolley', ship: me });
+    return [...log, ...run(sim, 3)];
+  }
+
   function market(): { sim: Sim; station: number; foe: number } {
     const w = withStation();
     attachServices(w.sim, w.station, 'bm.cartel');
@@ -291,7 +302,7 @@ describe('truce', () => {
 
   it('a ship captured during a ban stays the player\'s when the ban ends', () => {
     const { sim, station } = market();
-    sim.enqueue({ type: 'combat.setTarget', ship: playerShip(sim), weaponId: null, targetShip: station, targetModuleId: 0 });
+    fireAt(sim, station);
     run(sim, 3);
     expect(sim.world.get(station, ShipC)!.banned).toBe('neutral');
     capturePrize(sim, station);
@@ -306,8 +317,7 @@ describe('truce', () => {
     const keys = pirateKeys(sim);
     expect(keys).toEqual(expect.arrayContaining(['pirates', 'raiders', 'cartel', 'zealots', 'mercenaries']));
     const before = keys.map((k) => reputationOf(sim.story, k));
-    sim.enqueue({ type: 'combat.setTarget', ship: playerShip(sim), weaponId: null, targetShip: station, targetModuleId: 0 });
-    const log = run(sim, 3);
+    const log = fireAt(sim, station);
     expect(log).toContain('truce.breached');
     expect(truceBanned(sim)).toBe(true);
     expect(truceHolds(sim)).toBe(false);
