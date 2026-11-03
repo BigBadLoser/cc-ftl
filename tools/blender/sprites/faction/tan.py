@@ -103,12 +103,12 @@ def tan(hull):
         zs0 = zh0 - _hid(HEAD_D)                        # (the face's first row seen under the header)
         band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
         band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
-        zt = zs0 - 6.5 * PZ                             # (3 px of face, then the slats and the panel; the half px
-                                                        # lands the 1 px lines on whole rows: clean 2:1 steps)
+        zt = zs0 - 6.5 * PZ                             # (3 px of face, then the slats and the panel)
+        ztop = zl1 + int((zt - PZ - zl1) / SLAT + 1e-6) * SLAT     # the slats' top seam, the panel's top level with it
         for u0, u1, mid, gs in _panels(a, b):
             if not mid:                                 # either side of the panel: slats up from the lip, each a
                 z = zl1                                 # dark seam over a lit line (the first seam on the lip, its
-                while z + PZ <= zt + 1e-6:              # lit line under it hidden), 2 px of face between
+                while z <= ztop + 1e-6:                 # lit line under it hidden), 2 px of face between
                     band(u0, u1, z, z + PZ, "fTS4")
                     band(u0, u1, z - PZ, z, "fTS1")
                     z += SLAT
@@ -116,8 +116,8 @@ def tan(hull):
                     if u0 - 1e-6 <= g[0] and g[1] <= u1 + 1e-6:
                         band(g[0], g[1], zl1, zs0, "fTS4", PAINT)   # (over the bands across it)
                 continue
-            zp0, zp1 = zl1 + PZ, zt - PZ                # the centre panel, flush: a groove round it, a 2 px bevel lit
-            band(u0, u1, zp1, zt, "fTS4")               # along its top, a soft shadow along its foot
+            zp0, zp1 = zl1 + PZ, ztop                   # the centre panel, flush: a groove round it, a 2 px bevel lit
+            band(u0, u1, zp1, zp1 + PZ, "fTS4")         # along its top, a soft shadow along its foot
             band(u0, u1, zp1 - 2 * PZ, zp1, "fTS2")
             band(u0, u1, zp0 + PZ, zp0 + 3 * PZ, "fTS8")
             band(u0, u1, zp0 + PZ, zp0 + 2 * PZ, "fTS7")
