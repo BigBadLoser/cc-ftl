@@ -6,7 +6,8 @@ from sprites import structure as ST
 from sprites.envtiles import SPRITES, _variant
 from sprites.faction import look
 
-IDS = [f"tile.wall.full.m{m}" for m in range(16)]
+IDS = [f"tile.wall.full.m{m}" for m in range(16)] + ["tile.wall.full.end.e", "tile.wall.full.end.s"]   # (the ends: a
+                                                                                 # run's free end, over its mask)
 BY = {sid: (kind, fn) for sid, fp, kind, fn in SPRITES}
 LOOKS = os.environ.get("STRUCT_LOOKS", ",".join(ST.LOOKS)).split(",")
 JOBS = {}

@@ -18,7 +18,7 @@ BASES = {
     "fC4": dict(wall="#c8d0ca", hull="#bcc5be", trim="#3f9a66", second="#8a968d", shade="#3b5d6a", floor="#4b544c"),
     "fB": dict(wall="#2f3542", hull="#272d3a", trim="#5c6c86", second="#1e2330", shade="#262c3c", floor="#2f3440"),
     "fG": dict(wall="#6b7076", hull="#727880", trim="#2a53a1", second="#495764", shade="#3e5f88", floor="#40464e"),
-    "fT": dict(wall="#ae9656", hull="#896d52", trim="#1f2834", second="#896d52", shade="#3f526b", floor="#4a443c"),
+    "fT": dict(wall="#ae9656", hull="#896d52", trim="#1f2834", second="#896d52", shade="#506888", floor="#4a443c"),
     "fS": dict(wall="#736c60", hull="#5d5b55", trim="#9a5a2c", second="#4a463f", shade="#2e2c29", floor="#46443f"),
 }
 
