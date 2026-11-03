@@ -169,7 +169,7 @@ def slope_cyl(b, A, B, s, d, r, t0, t1, col, sides=16, top=None):
     b.face(b_, top or col, dv)
 
 
-HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.48, 0.16, 0.085, 0.06
+HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.56, 0.16, 0.085, 0.06
 
 
 def exhaust_housing(A, B):
@@ -250,8 +250,8 @@ def scrapper(rot):
     b.prism_D(exhaust_housing(fA, fB), DM + 0.1, D1 - 0.1, GMD, GM)
     fm = math.dist(fA, fB) / 2
     slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.17, 0, 0.04, GMD)             # flange, foot flat on the slope
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.13, 0.04, 0.12, GM)           # nozzle barrel
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.08, 0.12, 0.125, DARK)        # bore
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.13, 0.04, 0.195, GM)          # nozzle barrel
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.08, 0.195, 0.2, DARK)         # bore
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
