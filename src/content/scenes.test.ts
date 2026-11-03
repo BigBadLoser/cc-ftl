@@ -113,6 +113,20 @@ describe('scene signal', () => {
     expect(sim.galaxy.event).toBeNull();
     expect(sim.galaxy.travel?.phase).toBe('hop');
   });
+
+  it('a scene decision opened off the lane (no trip, no signal) locks its scene choices but can be answered', () => {
+    const sim = newGame(3, content);
+    sim.story.goals.skipped = true;
+    sim.enqueue({ type: 'story.fire', event: 'event.trader_swap' });
+    step(sim, 2);
+    expect(sim.story.active?.event).toBe('event.trader_swap');
+    expect(sim.galaxy.signal).toBeNull();
+    for (const c of ['hail', 'scan', 'approach']) expect(choose(sim, c)).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
+    expect(sim.story.active?.done ?? []).toEqual([]);
+    choose(sim, 'ignore');
+    expect(sim.story.active).toBeNull();
+    expect(sim.galaxy.event).toBeNull();
+  });
 });
 
 describe('scene in a pocket', () => {

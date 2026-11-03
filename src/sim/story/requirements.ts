@@ -61,9 +61,20 @@ export function choiceRequirements(choice: ChoiceDef): Requirement[] {
   return [...(choice.requires ?? []), ...(choice.cost ?? []).map((c): Requirement => ({ kind: 'item', item: c.item, count: c.count }))];
 }
 
-/** Unmet requirement reasons for a choice (empty = available). */
-export const unmetReasons = (sim: Sim, choice: ChoiceDef): string[] =>
-  withPlayerAboard(sim, () => choiceRequirements(choice).filter((r) => !meets(sim, r)).map((r) => describeRequirement(sim, r)));
+/** A choice that acts on the event's scene: a remote action on its signal, or investigating it (a `scene` effect). */
+const onScene = (choice: ChoiceDef): boolean =>
+  !!choice.remote || [choice.outcome, choice.success, choice.failure].some((o) => o?.effects?.some((e) => e.type === 'scene'));
+
+/**
+ * Unmet requirement reasons for a choice (empty = available). A scene choice needs the open decision's signal: one only exists while a trip is
+ * under way between hops, so a scene decision opened anywhere else (a node, a trip that has arrived) can still be answered, just not acted on.
+ */
+export const unmetReasons = (sim: Sim, choice: ChoiceDef): string[] => {
+  const reasons = withPlayerAboard(sim, () => choiceRequirements(choice).filter((r) => !meets(sim, r)).map((r) => describeRequirement(sim, r)));
+  const active = sim.story.active;
+  if (onScene(choice) && (!active || sim.galaxy.signal?.event !== active.event)) reasons.push('Only from the lane');
+  return reasons;
+};
 
 /** True when every eligibility condition of the event holds. */
 export const eligible = (sim: Sim, def: EventDef): boolean => withPlayerAboard(sim, () => (def.eligible ?? []).every((r) => meets(sim, r)));
