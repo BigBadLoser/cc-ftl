@@ -351,7 +351,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           // Roofed, the new hull runs over an engine's hull row (its plain piece): no bulkhead (the thruster block stays, over it).
           if (roofed && def.hullEdge && layer.tiles === 'hull' && !layer.out && host.hullDrawn && hullRow(def, m.x, m.y, m.rot).every((t) => host.hullDrawn!(t.x, t.y))) return [];
           // Roofed, the airlock's door tile takes the new hull's piece; its own hull block only where that has no art.
-          if (roofed && layer.hullFallback && host.hullDrawn?.(layer.hullFallback.x, layer.hullFallback.y)) return [];
+          if (roofed && layer.hullFallback && host.hullDrawn?.(layer.hullFallback.x + grid.x0, layer.hullFallback.y + grid.y0)) return [];  // (sector tiles)
           // firstOf queues the sheet; while it loads the container draws nothing (not the stand-in box).
           const first = def.container || layer.optional ? atlas.firstOf(layer.chain) : undefined;
           if (def.container && !first && atlas.loading(layer.chain)) return [];
