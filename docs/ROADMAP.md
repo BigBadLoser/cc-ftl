@@ -12,9 +12,8 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Now
 
-- **Away sites and salvage, rebuilt.** Crew work off the ship on wrecks, stage loot at the shuttle, and haul several piles per trip. Crew get air and suit needs like any other drive. ([#286](https://github.com/BigBadLoser/cc-ftl/issues/286), PR [#297](https://github.com/BigBadLoser/cc-ftl/pull/297); also [#268](https://github.com/BigBadLoser/cc-ftl/issues/268))
 - **Rest retune.** Crew stay awake about 20 minutes and sleep about 7 in a bed, so a long shift no longer ends after a minute or two. ([#278](https://github.com/BigBadLoser/cc-ftl/issues/278))
-- **Boarding parties and shipyard contractors on away sites.** Boarders and yard contractors travel and work off-ship the same way salvage crews do. ([#287](https://github.com/BigBadLoser/cc-ftl/issues/287))
+- **Physical encounters, first steps.** A signal you can hail or scan, then a scene in open space with a real ship. The trader skiff comes first; a derelict, a pirate ambush, a distress freighter and a medical pod follow. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173))
 
 ## Next
 
