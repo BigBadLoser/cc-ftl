@@ -149,9 +149,13 @@ export function createShieldView(
     const g = hull(id);
     const key = `${s.x},${s.y},${s.width},${s.height},${g ? g.revision('struct') : -1}`;
     if (d && d.key !== key) {
-      const state = d.state;
+      // a refit (the hull changed: built on, or holed by the very shot that is still playing) keeps the state and the
+      // live hits, each moved to the same spot on the new rim
+      const { state, hits, fit: was } = d;
       drop(id, d);
       d = make(id, key, (g && hullFit(g)) ?? boxFit(s), state);
+      const f = d.fit;
+      d.hits = hits.map((h) => ({ ...h, lx: (h.lx * f.rx) / was.rx, ly: (h.ly * f.ry) / was.ry }));
     }
     d ??= make(id, key, (g && hullFit(g)) ?? boxFit(s), newDome(0));
     d.seen = true;
