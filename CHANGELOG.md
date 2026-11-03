@@ -11,6 +11,8 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Boarding: the shuttle flies itself, so you no longer pick a pilot. Only the crew you picked board. Recalled boarders head straight for the shuttle, it takes them home and goes back for those who stay, and the fight no longer calls the party home. If the target airlock is lost, the shuttle docks at another or the party goes out of the hatch. ([#304](https://github.com/BigBadLoser/cc-ftl/pull/304))
+- Shipyard contractors come and go on the station's shuttle like any away party and draw air from their own shuttle before your airlock's store. ([#304](https://github.com/BigBadLoser/cc-ftl/pull/304))
 - Salvage reworked: the crew stage the loot beside the shuttle's landing zone, and the shuttle loads it crate by crate, also when nobody of the party is left out there. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
 - Haulers gather several nearby piles going to the same place before they walk, on every ship. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
 - Robots ride shuttles to away sites and work there without a suit. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
