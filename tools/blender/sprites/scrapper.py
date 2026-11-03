@@ -381,12 +381,15 @@ def screen(b, D1):
 
 
 DOOR_W, DOOR_H = 0.65, 0.55
-DOOR_L = [(c - DOOR_W / 2, c + DOOR_W / 2) for c in (1.5, 3.5)]        # centred in their tiles, front row
+DOOR_DEPTH = 0.3
+# front row: the first centred in its tile, the far one moved toward the end to clear the yoke, which stands out in
+# front of the body and would hide its near side
+DOOR_L = [(c - DOOR_W / 2, c + DOOR_W / 2) for c in (1.5, 3.56)]
 
 
-def doorway(b, L0, L1, D1, wall_h, knee=None, depth=0.3):
+def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
     """A doorway in the front wall (measured on the ref's tiles, links 03 and 08; centred in its tile): the wall above
-    it, a dark passage running in from the plinth band, and a raised frame 2 px wide round its sides and top."""
+    it, a dark passage running in at floor level, and a raised frame 2 px wide round its sides and top."""
     zt = DOOR_H
     def wall(pts, col, n):                                              # pts as (L, D, z); n = normal in (L, D, z)
         a, c = b.P(*pts[0]), b.P(pts[0][0] + n[0], pts[0][1] + n[1], pts[0][2] + n[2])
@@ -394,15 +397,16 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=0.3):
     kn = [(knee[0], D1, knee[1])] if knee and L0 < knee[0] < L1 else []
     wall([(L0, D1, zt), (L1, D1, zt), (L1, D1, wall_h(L1)), *kn, (L0, D1, wall_h(L0))], BODY, (0, 1, 0))   # above
     Db = D1 - depth
-    wall([(L0, Db, BASE), (L1, Db, BASE), (L1, Db, zt), (L0, Db, zt)], DARK, (0, 1, 0))                    # back
-    fl = BASE + 0.003                                                   # just above the plinth's top
+    fl = 0.003                                                          # the floor, just off the ground
+    wall([(L0, Db, fl), (L1, Db, fl), (L1, Db, zt), (L0, Db, zt)], DARK, (0, 1, 0))                        # back
     wall([(L0, Db, fl), (L1, Db, fl), (L1, D1, fl), (L0, D1, fl)], DARK, (0, 0, 1))                        # floor
     wall([(L0, Db, zt), (L1, Db, zt), (L1, D1, zt), (L0, D1, zt)], DARK, (0, 0, -1))                       # ceiling
-    wall([(L0, Db, BASE), (L0, D1, BASE), (L0, D1, zt), (L0, Db, zt)], DARK, (1, 0, 0))                    # sides
-    wall([(L1, Db, BASE), (L1, D1, BASE), (L1, D1, zt), (L1, Db, zt)], DARK, (-1, 0, 0))
+    s0, s1 = L0 + 0.003, L1 - 0.003                                     # sides, just in front of the plinth's ends
+    wall([(s0, Db, fl), (s0, D1, fl), (s0, D1, zt), (s0, Db, zt)], DARK, (1, 0, 0))
+    wall([(s1, Db, fl), (s1, D1, fl), (s1, D1, zt), (s1, Db, zt)], DARK, (-1, 0, 0))
     wl, wz, lip = 0.056, 0.051, 0.035                                   # frame: 2 px each way, proud of the wall
-    for prof in ([(L0 - wl, BASE), (L0, BASE), (L0, zt), (L0 - wl, zt)],
-                 [(L1, BASE), (L1 + wl, BASE), (L1 + wl, zt), (L1, zt)],
+    for prof in ([(L0 - wl, 0), (L0, 0), (L0, zt), (L0 - wl, zt)],
+                 [(L1, 0), (L1 + wl, 0), (L1 + wl, zt), (L1, zt)],
                  [(L0 - wl, zt), (L1 + wl, zt), (L1 + wl, zt + wz), (L0 - wl, zt + wz)]):
         b.prism_D(prof, D1, D1 + lip, GMD)
 
@@ -452,9 +456,12 @@ def scrapper(rot):
         drum(b)
         return [b.m.build()]
     # plinth band under the shells (not under the open bay)
-    b.box(0.03, 2.0, 0.03, 1.97, 0, BASE, BODY_D)
-    b.box(2.0, 3.0, 0.03, 1.0, 0, BASE, BODY_D)
-    b.box(3.0, 3.97, 0.03, 1.97, 0, BASE, BODY_D)
+    # (the doorways run down to the floor, so the band stops short of the front under each: it carries on behind)
+    (a0, a1), (c0, c1) = DOOR_L
+    dd = 1.97 - DOOR_DEPTH - 0.005                                     # just behind each doorway's back wall
+    for L0, L1, Df in ((0.03, a0, 1.97), (a0, a1, dd), (a1, 2.0, 1.97), (2.0, 3.0, 1.0),
+                       (3.0, c0, 1.97), (c0, c1, dd), (c1, 3.97, 1.97)):
+        b.box(L0, L1, 0.03, Df, 0, BASE, BODY_D)
     # One body sloped at both ends; the bay (L 2..3, front row) is cut out of it. Profile along L, the same for both rows
     # and symmetric end to end: end wall WALL, slope up to EDGE by 0.5 in, flat; the centre two tiles (L 1..3) rise to
     # TOP with a short slope (STEP long) inside each end of them. The bay's top edges slope the same way: the front row
