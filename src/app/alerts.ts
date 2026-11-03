@@ -3,6 +3,7 @@ import { shipIdOf, shipGrid } from '../sim/regions';
 import { CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
+import { AwaySiteC } from '../sim/away/components';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { recallReason } from './boardingText';
 import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
@@ -18,7 +19,7 @@ const EXPIRE_MS = 45000;
  */
 export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> = {
   'combat.started': 'urgent', 'fire.started': 'urgent', 'hull.breach': 'urgent', 'o2.low': 'urgent', 'power.shortage': 'urgent',
-  'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.airUnreachable': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
+  'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.airUnreachable': 'urgent', 'away.stranded': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
   'crew.recallStarted': 'urgent', 'crew.recallFailed': 'urgent', // a party member left on the enemy ship (the rest of the boarding events are log-only)
   'story.started': 'urgent', // only a notice with a lead you can open; plain notices are log-only (see describe)
   'crew.died': 'log', 'crew.rescued': 'log', 'crew.moodLow': 'log', 'job.missingMaterials': 'log', 'storage.full': 'log', 'production.done': 'log',
@@ -26,7 +27,7 @@ export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> 
   'outpost.discovered': 'log', 'ship.provoked': 'log', 'module.destroyed': 'log', 'ship.destroyed': 'log', 'ship.fled': 'log', 'station.alarm': 'log',
   'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.dealMade': 'log', 'crew.hired': 'log', 'trade.delivered': 'log',
   'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'scan.settled': 'log',
-  'truce.breached': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log',
+  'truce.breached': 'log', 'away.homeEmpty': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log',
 };
 const urgent = (type: SimEvent['type']) => ALERT_URGENCY[type] === 'urgent';
 
@@ -135,10 +136,18 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: e.type, key: `sa${e.crew}`, text: `${e.type === 'suit.airLow' ? 'Suit air low' : 'Suit air out'}: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !isSuited(sim, e.crew) };
       }
       case 'crew.airUnreachable': {
-        // No air source in reach (#286): the pickup request is out; a shuttle answering it comes with the pickup run (slice 2b).
+        // No air source in reach (#286): the pickup request is out; a shuttle answers it (the site's own, or a pickup run).
         if (!playerSuit(e.crew)) return null;
         const left = `${Math.floor(e.sec / 60)}:${String(e.sec % 60).padStart(2, '0')}`;
         return { kind: e.type, key: `au${e.crew}`, text: `No air in reach: ${crewName(e.crew)} (${left} left)`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !sim.world.has(e.crew, PickupC) };
+      }
+      case 'away.stranded': {
+        // The away site's shuttle is lost and no other free one can come (#286): the party waits on the site until one can.
+        const ship = e.ship;
+        return {
+          kind: e.type, key: `as${ship}`, text: `Crew stranded: ${sim.world.get(ship, ShipC)?.name ?? 'away site'}`, subject: e.crew[0] ? crewSubject(sim, e.crew[0]) : null,
+          resolved: () => sim.world.get(ship, AwaySiteC)?.block !== 'stranded',
+        };
       }
       case 'crew.starving': {
         if (!playerSuit(e.crew)) return null;

@@ -54,8 +54,8 @@ function legacyWorld(sim: Sim): unknown {
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
-  // And asteroids, mining pods and base-logistics runs and transfer orders: their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'salvageOrder', 'salvageTrip', 'salvageCrew', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  // And asteroids, mining pods and base-logistics runs and transfer orders (and later away sites): their empty stores are not part of it.
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'salvageOrder', 'salvageTrip', 'salvageCrew', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered', 'away', 'awaySite', 'siteRun', 'pickup', 'airHolds']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     // `heat` (combat heat, #185) is a new empty field in the same way.

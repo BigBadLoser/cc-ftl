@@ -26,6 +26,11 @@ export function isSuited(sim: Sim, crew: number): boolean {
   return sim.world.has(crew, SuitC);
 }
 
+/** True if the crew member may walk the exterior surface of a grid (the hull ring): suited, or a body that needs no air (suits are for breathers). */
+export function walksOutside(sim: Sim, crew: number): boolean {
+  return isSuited(sim, crew) || !needsAir(sim, crew);
+}
+
 /** Seconds of air left in the worn suit (0 when not suited). A suit made by `suit.set` has a full tank. */
 export function suitAir(sim: Sim, crew: number): number {
   const s = sim.world.get(crew, SuitC);

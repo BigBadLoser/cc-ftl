@@ -3,6 +3,7 @@ import { CrewC, PathC, type Crew, type Path, type Position } from '../../crew/co
 import { foodOn } from '../../crew/eating';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
+import { walkOpts } from '../../eva/route';
 import { StorageC } from '../../items/components';
 import { dropCarried } from '../../items/stacks';
 import { storageCount } from '../../items/storage';
@@ -51,7 +52,7 @@ function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: stri
     if (!m || !def || shipIdOf(sim, m) !== shipId || m.hp <= 0) continue;
     if (def.galley && m.enabled && m.powered) {
       const at = accessTile(def, m.x, m.y, m.rot);
-      const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at);
+      const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at, walkOpts(sim, crew));
       if (at && steps && (!galley || steps.length < galley.steps.length)) galley = { x: at.x, y: at.y, galley: true, steps };
     } else if (def.storage && sim.world.has(id, StorageC) && storageCount(sim, id, item) > 0) {
       const steps = safePathBeside(sim, crew, shipId, from, m.x, m.y);
@@ -107,7 +108,7 @@ function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
     crew.activity = 'eating';
     return true;
   }
-  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: at.x, y: at.y });
+  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: at.x, y: at.y }, walkOpts(sim, id));
   if (!steps || steps.length === 0) {
     endMeal(sim, id);
     return false;

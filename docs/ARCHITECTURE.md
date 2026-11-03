@@ -25,7 +25,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
 - [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck; salvageTripSystem sends suited teams by shuttle.
-- [Away sites and the air drive (planned, #286)](#away-sites-and-the-air-drive-planned-286): Planned (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, round trips), salvage on top, throughput bench, slices.
+- [Away sites and the air drive (#286; slices 0 to 2b built)](#away-sites-and-the-air-drive-286-slices-0-to-2b-built): Slices 0 to 2b built, slice 3 planned (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, batched round trips, pickups, lost shuttles), salvage on top, throughput bench, slices.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
@@ -921,9 +921,9 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 - **Guard.** `job.build`, `job.deconstruct`, `job.buildModule` and `job.deconstructModule` are rejected (`wreck`) on any ship in state 'wreck'; `job.forceDoor` still works.
   Crew of the player on a wreck are not 'boarding' (`isBoarding`: an invader on a wreck is off duty no longer), so they take jobs there like on any ship.
 
-## Away sites and the air drive (planned, #286)
+## Away sites and the air drive (#286; slices 0 to 2b built)
 
-Planned design. Gameplay side: DESIGN.md "Air, away sites and salvage (design for #286; not built yet)".
+Slices 0 to 2b are built (below); slice 3 (salvage on sites) is planned. Gameplay side: DESIGN.md "Air, away sites and salvage (design for #286; not built yet)".
 
 **Slice 0 is built** (branch `feat/air-sources-286`): `ai/travel.ts` (`travelTicks`, `flightTicks`; `floatTicks` re-exported), `eva/sources.ts`
 (`airSources`, `sourceCandidates`), `eva/air.ts` (stores, `refillFromAirlock` / `refillFromVehicle`), `systems/airStores.ts` (once a second),
@@ -947,7 +947,58 @@ admission until salvage moves onto this (slice 3), so salvage behaves exactly as
   - A jobless task, such as a walk to a claimed bed, ends through `abortTask('air')`, which also gives the bed back.
   - There is no `NEST_HOLD_SEC` timeout yet: a refill always ends (full tank, or an abort releases the parked job through the errand sweep).
 - **The pickup request.** `PickupC {since}` is set from `Intent.blocked === 'air'` in the scheduler's turn and cleared when a source is back or the crew member is held out. It emits `crew.airUnreachable {crew, sec}`, an urgent alert. The shuttle that answers it is slice 2b's pickup run.
+- **`NEST_HOLD_SEC`** (120 s, added in 2b): a refill that parked a job (`Job.resume`) stamps `Job.heldSince`; past the hold the air turn lets the parked job go (its reservation released, `resume` dropped), so others may take it.
 - **Hazard.** A refill tolerates thin air and cold. An empty suit with no breathable tile in reach falls through the failed escape to the air drive, which is then critical and refills. So "escape to a source" is the drive itself, not a separate escape goal.
+
+**Slice 2a is built** (branch `away/sites-286`), in `src/sim/away/`:
+- **Components.** `AwaySiteC` (site), `SiteRunC` (vehicle), `AwayC` (crew, with the passage's `cat`, `landing`, `home`). `away.open {ship, vehicle?}` (debug) and `away.recall {ship}`; events `away.opened|departed|returned|closed`.
+- **Passages** (`passage.ts`): job kind `passage` (`Job.site`, `target` the shuttle) at the boarding tile, one per free seat (seats, as far as the shuttle has suits), categories by `allocateSeats` over `siteDemand` (`seats.ts`: the owner's `demand`, else the open jobs on the site plus loose loot as hauling). `passageFits` (in `jobFits`) wants rest and hunger at `AWAY_GO`. `pairCost` adds the flight (`passageTiles`). The holder waits on the tile (`performJob` 'wait'); the run boards them.
+- **Home cover** in `assignJobs`: per level, a walker who could take an unmatched open emergency or `operate` job on their ship (any level, reachable by labelling) gets no passage pair. A passenger waiting at home steps out again for an emergency they rank above their passage (`calledBack`).
+- **The run** (`run.ts`, `awaySystem`, after the salvage teams): `board` (at home; leaves once the passengers are in, within `AWAY_BOARD_WAIT_SEC`, or within `AWAY_TURNAROUND_SEC` while part of the party is out) → `fly` → `stay` (hover beside the site; `keepClose`; passengers sent out with `eva.out` and handed to the crew AI on landing, their suit untied; loose loot hauled into the hold; a downed member lifted aboard) → `home` (bay, else a home airlock; those aboard step out and leave the party) → `board`. `recall` (site closing or gone, or a fight) calls everyone aboard and lifts the rest after `AWAY_LIFT_SEC`; the run then ends at home with the site.
+- **Departure check** (`depart.ts`, `unsafeMembers` / `departCheck`): every trip home from the site goes through it; rules (a)–(c) below, R = `roundTripTicks` (two flights plus `AWAY_TURNAROUND_SEC`), margin `AWAY_DEPART_MARGIN`. The last call and riders came with 2b.
+- **Crew side.** The `return` drive (`policy.colonist`, after `air`, before sleep and eat; input `awayReturn`: 0 closing, fight or hurt, 500 tired or hungry, 1000 otherwise) runs `ai/machines/return.ts`: walk to the hatch spot, float aboard (`AwayC.home`). Sleep is never served on the site (no lying down on a wreck; they go home). Idle away crew `waitBySite`.
+**Slice 2b is built** (same branch and PR, #295), in `src/sim/away/`:
+- **Files.** `run.ts` (the system; `board`, `fly`, `home`, `pickup` phases), `site.ts` (`stay`, `depart`, `recall` beside the site), `trips.ts` (triggers, last call, the watch), `pickup.ts` (pickups, pickup runs, lost shuttles), `rescue.ts` (carry to the shuttle), `phase.ts` (shared helpers).
+- **Batched trips** (`tripDue`): urgent at once when a passenger waiting aboard is hurt, downed or at the end of a need (`passengerUrgent`: rest `AWAY_URGENT_REST` 20, hunger 10, charge 20; needs keep running aboard); else batch on the hold full with loot waiting (`runDue`), half the seats waiting, `AWAY_TRIP_WAIT_SEC` (300) since the last trip (`SiteRun.lastTrip`: the last arrival or departure) with anyone waiting, the shuttle's air under a tank, or free seats and a crew member at home who would take one (idle, holds no job, `passageFits`, a suit left if they breathe, a priority for a demanded category).
+- **Settled first** (`settled`, Codex 4448955314): no trip (nor the recall's home leg) starts while anyone floats to or from the shuttle, a passenger aboard is still to go out (not `home`, not a rider) or on the way out (`landing`), or a suit outside is still tied to it. The ownership sweep (`away/owned.ts`) unties every party member's suit and ends `landing` once they stand on a tile. A breather with no suit left to go out in is marked `home` instead of being sent out.
+- **Depart phase** (`departStep`): launch when settled and `departCheck` passes. Until then every short and able member (judged as they stand, a refill float included) gets `AwayC.lastCall` (`airMargin` reads it as under the refill line while the tank is not full); after `AWAY_LAST_CALL_SEC` (60) `AwayC.ride` (`awayReturn` 0). Riders come aboard without `home`, stay aboard at home (`homeLeg` lets out only non-riders) and go out again on arrival (`sendOut`, which keeps riders aboard while a trip is due). After `AWAY_DEPART_GIVEUP_SEC` (120) the trip is called off and the run stays (and tries again).
+- **`returnBy` and the watch.** `departCheck` also returns `returnBy`, the earliest tick a (c)-safe member runs short (air less the walk back and `AIR_RESERVE_SEC`): the tick the shuttle must be back at the site. `mustTurnBack` (in `home` while flying, and in `board` while part of the party is out): a member out downed, carried or with `PickupC`, or `now + flight back + 5 s >= returnBy`; then it flies straight back (those aboard for home ride along and leave on the next trip).
+- **Rescue on a site** (`rescue.ts`): `rescueSpot` (the party member on their site with no free bed there: the shuttle's hatch spot or docked airlock tile). Autojobs posts the rescue; `jobWork` carries the patient there and `handInPatient` boards them (`home`, downed: an urgent trip). A downed member left uncarried for `AWAY_LIFT_SEC` is lifted (`watchDowned`, clock `AwayC.downAt`); the closing lift stays.
+- **Pickups.** A party member out with `PickupC` gets `AwayC.pickup` (`answerPickups`): the run holds station by them (`holdStation` aims the hover box at them; a docked shuttle undocks to hover), and `awayReturn` 0 brings them aboard as `home`. Anyone else of the player's crew with `PickupC` gets a **pickup run** (`startPickupRuns`, not in a fight): the lowest free stowed EVA shuttle with a tank of air gets `SiteRunC {site: their grid, pickup: crew}` and they get `AwayC {pickup}`; it flies to hover beside them (`vehicle.hover` takes a `box`, which also allows the home ship), waits in `pickup` until they are aboard (lifted after `AWAY_LIFT_SEC`), flies home and ends. Event `away.pickup`.
+- **Shuttle loss** (`replaceLostShuttles`): a site whose shuttle run is gone keeps its party (`AwayC` stays while the site names a vehicle); another free shuttle takes the run over (`board`, party rewired, `away.pickup`), else `AwaySite.block = 'stranded'` and `away.stranded` (an urgent alert, cleared when a shuttle comes). A site with nobody left closes (`lost`).
+- **Docking at site airlocks.** `flyTo` docks at a free working airlock of the site (`regionAirlock`) when it has one (not on a pickup), else hovers. Docked, passengers step out at the airlock's inside tile (undrafted; a suit from stock for breathers if the tile is thin), and the return machine walks them to it and steps them in (`stepAboard`). `siteSpot` is the boarding point either way (hatch spot or docked tile), used by the return machine, the departure check and the rescue.
+- **Crew who don't breathe** (#284): no robot branch. `passageFits` checks every need the crew member has at `AWAY_GO` (a missing need is satisfied); `awayReturn` the same with the home lines (charge `AWAY_HOME_CHARGE` 30). Seats are capacity + 1; the first `freeSuits` passages are suited, the rest `Job.airless` (only for crew who need no air). `eva.out` floats airless crew out without a suit, `eva.board` takes them in unsuited, and the float back stows a suit only if one was worn. `walksOutside` (suited or airless) replaces `isSuited` for exterior walking in `planWalk`/`siteWalkModes`, movement, idle and escape. `policy.robot` has the `return` drive.
+- **Hold and log.** The home stop waits for the unload (cargo still coming out, up to `AWAY_TURNAROUND_SEC`); a stop that empties none of the hold sets `block = 'noRoom'` (`SiteRun.held`). Leaving home with nobody able left aboard logs `away.homeEmpty`.
+- **The air module** (`eva/airLedger.ts` with `eva/sources.ts`; #295 review rounds). The one place the air questions are answered; admission
+  (`ai/admitAir.ts`), the air drive (`ai/airNeed.ts`, `ai/machines/air.ts`), the refill (`eva/jobs.ts`, the refill float), the player's refill
+  order and the departure check all ask it and keep no copy of their own. New code that needs any of these asks here too.
+  - *Air in a tank:* `airLeft(crew, fresh?)` (suit seconds times the Void-born factor; `fresh`: a suit about to go on counts full),
+    `tankSec`, `tankShortfall`. *The reserve:* `fitsReserve(sec, air)` (`sec + AIR_RESERVE_SEC <= air`), the one reserve rule.
+  - *Supply:* `sourceSupply(src, {without?, for?})`: an airlock's store plus a player shuttle docked there (`dockedSupplier`), or a
+    hovering player shuttle's store; `without` leaves out one shuttle (and its own holds), and air held for others is taken off.
+    `canGive` says whether a source counts at all (an airlock with air, or a docked shuttle with a tank; a shuttle with a tank), for
+    anyone: it only picks where searches start. `givesTo(src, crew)` is the one per-walker answer (`canGive` and some supply left for
+    them): `airSources` and admission's `SourceReach` (whose cached searches keep each source and ask it per walker) both use it.
+    A docked shuttle tops itself up only from an airlock's `freeAirlockStore` (none of the held air).
+  - *The refill:* `drawAir(crew, src)` takes the tank's shortfall from that same supply (airlock store first, then the docked shuttle)
+    and spends the crew member's own holds there. Nothing else writes a store on a refill.
+  - *Reach:* `airSources(crew, {without?})` (forward, one multi-goal search over the suited view, i.e. `walkOpts` of a suited walker)
+    returns each source with `ticks`, `fillTicks` and the `steps` it was timed by; the air drive and the refill order walk those steps,
+    so the walk taken is the walk timed. `SourceReach` is the same search run backwards from every source to many tiles at once
+    (admission's way back from a job's work tile).
+  - *Holds* (`AirHoldsC {holds: {crew, kind, id, sec}[]}` on the owner): air set aside at a source for one crew member's later refills.
+    Nobody else can draw it (`sourceSupply` takes it off for them; `airSources` skips a source with nothing left for the walker); the
+    crew member's own refills spend it. The departure check returns its (b) top-ups as `holds`; the run sets them on launch
+    (`setAirHolds`), and they end with the trip (see Ownership).
+- **Ownership** (`away/owned.ts`). Every hold or flag the away code puts on crew, jobs or shuttles has one owner and one release path:
+  `releaseOwned`, run once at the end of `awaySystem`, lets it go once its owner is gone. Code that sets such state, or moves it on as part
+  of a transition (a passenger sent out loses `ride`; a lift gives a fresh `AwayC`), never has to clear it on the way out of anything.
+  The table in `owned.ts` lists each: `AwayC` (the run, else the site's claim), `Drafted.away` (the float), `Suit.vehicle` and
+  `Away.landing` (the drift out), `Away.lastCall` and a member out's `ride` (the 'depart' phase), `Away.pickup`, `downAt`, `home` of a
+  member out, `SiteRun.returnBy` and `AirHoldsC` (the trip away from the site), `boardedAt`/`held` (the stop at home), `passage` jobs
+  (the run serving the site). `awayLeaks` is the same rules as a pure audit; the away tests' `play` (`awayFixture.ts`) throws when a
+  leak survives a tick. New away state goes in that table.
+- **Not yet:** the debug-site bench variant (the salvage bench still runs salvage's own trip code; slice 3 moves it onto sites and asserts throughput there).
 
 ### Dependency on crew AI Phase 3
 
@@ -992,6 +1043,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   airlock suit tiles with `AirlockC.air > 0`, and the hatch spots of player shuttles hovering beside the grid with
   `Vehicle.air >= one tank`. `opts.without` leaves out a given vehicle (the departure check). It runs one multi-goal Dijkstra
   over the suited view. A reverse per-pass map `toSource[jobTile]` (one search out of all source tiles) serves admission.
+  (Since #295 part of the air module with `eva/airLedger.ts`; see "The air module" above.)
 - **Air stores.**
   - `AirlockC.air` (seconds; default `AirlockDef.airStore`, 1800). It refills at `AIRLOCK_AIR_REFILL` on a ship with working
     life support.
@@ -1050,8 +1102,11 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   - A party member `m` on the site and not aboard is **safe** iff one of these holds:
     - (a) `m` doesn't drain: airless, or not suited and on a breathable tile with no job beyond thin air (admission without
       this shuttle keeps it so);
-    - (b) `airSources(m, {without: vehicle})` is non-empty, and the sources' air stores together hold at least one tank per
-      worker counting on them;
+    - (b) `airSources(m, {without: vehicle})` is non-empty (reached with `AIR_RESERVE_SEC` to spare), and one of them still
+      holds, after the members before `m` (ascending id), a whole tank for each top-up `m` will take before the shuttle is back
+      (one, or more when one top-up, filling from the refill line, cannot carry them through `1.25 × R`). A source's supply is
+      `sourceSupply`: an airlock's store plus a player shuttle docked there (not the one leaving), the same stores the refill
+      draws from. Their `returnBy` counts the top-ups set aside;
     - (c) `m` is able, and `airLeft(m) >= 1.25 × R + travelTicks(m → hatch spot) + AIR_RESERVE_SEC`.
   - Downed or carried members are never safe; they are rescued aboard first.
   - In `depart`:
@@ -1059,7 +1114,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     2. If still not safe after `LAST_CALL_SEC` (60 s), they get `AwayC.ride` (return drive full) and board.
     3. Launch when every member out is safe.
     4. Never launch otherwise; after `DEPART_GIVEUP_SEC` the trip is called off and the run goes back to `stay`.
-  - On launch, `returnBy` is the earliest tick any (c)-safe member would run short, minus `flightTicks(home→site)`. The home
+  - On launch, `returnBy` is the earliest tick any (b)- or (c)-safe member would run short, minus `flightTicks(home→site)`. The home
     stop ends at `returnBy` whatever is left (unload, passages).
   - Watch: if `now + remaining > returnBy`, or a member left out turns unsafe (downed, pickup request), the run skips to
     `back` at once.
@@ -1126,7 +1181,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 
 - Slice 0: `AirlockC.air`, `Vehicle.air`; `EvaFloat.mode` `'refill'`; `SuitC.airlock` removed.
 - Slice 1: `PickupC`; `Intent.air` (the kept source search); `SAVE_VERSION` 82. (`Intent.blocked` came with Phase 3; nested refill frames are the errand's `resume`, derived, nothing new saved.)
-- Slice 2: `AwaySiteC`, `SiteRunC`, `AwayC`; `Job.kind` `passage`, `Job.site`; `SuitC.vehicle` removed.
+- Slice 2 (2a and 2b, `SAVE_VERSION` 83): `AwaySiteC`, `SiteRunC` (2b: phases `depart`/`pickup`, `returnBy`, `pickup`, `held`), `AwayC` (2b: `lastCall`, `ride`, `pickup`, `downAt`); `Job.kind` `passage`, `Job.site`, `Job.airless`, `Job.heldSince`; the `pickup` store. `SuitC.vehicle` stays until slice 3 (salvage still uses it).
 - Slice 3: `SalvageTripC`, `SalvageCrewC`, `SalvageOrder.teamAt` removed.
 
 ### Slices
@@ -1141,7 +1196,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 
 Slice 0 can be built while Phase 3 is under way. Parts of 2a that don't touch drives (components, passages, allocation,
 cover, the run machine, shared `arrive`) could be built before Phase 3, but 2a can't ship without the return drive.
-2a and 2b are separate PRs for review size; salvage keeps its own trip until slice 3, and `ferryFree` refuses both.
+2a and 2b went into one PR (#295, user decision); salvage keeps its own trip until slice 3, and `ferryFree` refuses both.
 
 ### Risks
 

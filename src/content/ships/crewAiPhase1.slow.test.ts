@@ -12,6 +12,7 @@ import { findJobAt, isIncapacitated } from '../../sim/crew/helpers';
 import { destroyJob } from '../../sim/items/stacks';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
+import { landed, siteWork } from './awayFixture';
 
 /**
  * Crew AI Phase 1 (docs/CREW_AI.md section 10): every executor state is reached on a real ship, saved and loaded there, and torn
@@ -121,6 +122,16 @@ function refill(seed: number): Sim {
   return sim;
 }
 
+/** A party landed on an away site (#286), one of it tired: the return drive walks them back to the shuttle (`return/Walk`). */
+function awayReturn(): Sim {
+  const { sim, wreck, party } = landed();
+  siteWork(sim, wreck, 8); // enough to keep them at it
+  run(sim, 20 * 20); // at work, away from the hatch
+  const c = party.find((m) => sim.world.has(m, PositionC)) ?? party[0]!;
+  sim.world.get(c, NeedsC)!.rest = 22;
+  return sim;
+}
+
 const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'busy', make: () => busy(1), ticks: 2000 },
   { name: 'robot', make: () => robot(1), ticks: 400 },
@@ -128,6 +139,7 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'bedless 2', make: () => bedless(2, true), ticks: 300 },
   { name: 'hazard', make: () => hazard(1), ticks: 600 },
   { name: 'refill', make: () => refill(1), ticks: 400 },
+  { name: 'away', make: awayReturn, ticks: 400 },
 ];
 
 /**

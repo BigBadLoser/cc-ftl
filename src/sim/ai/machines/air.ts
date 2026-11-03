@@ -1,14 +1,13 @@
 import { AssignmentC, JobC, type Crew, type Position } from '../../crew/components';
 import { CarryingC } from '../../items/components';
-import { origin } from '../../crew/helpers';
 import { isErrand } from '../../eva/errands';
-import { planWalk } from '../../eva/route';
 import { nearestAirSource } from '../../eva/sources';
-import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { forgetAirSearch } from '../airNeed';
 import { TaskC } from '../components';
-import { abortTask, isCarrying } from '../task';
+import { abortTask, isCarrying, syncTask } from '../task';
+import { TICK_HZ } from '../../time';
+import { NEST_HOLD_SEC } from '../../tuning';
 import { navigateTurn } from './navigate';
 import { startRefill } from './refill';
 
@@ -23,21 +22,27 @@ export function airTurn(sim: Sim, id: number, _crew: Crew, pos: Position, holdsJ
   const a = holdsJob ? sim.world.get(id, AssignmentC) : undefined;
   const job = a && sim.world.get(a.jobId, JobC);
   if (a && job?.kind === 'refill') {
+    // A job parked this long (NEST_HOLD_SEC: a long way to the source, a queue at it) is let go, as an abort would: others may take it.
+    if (job.resume && sim.tick - (job.heldSince ?? sim.tick) > NEST_HOLD_SEC * TICK_HZ) {
+      const parent = sim.world.get(job.resume, JobC);
+      if (parent?.reservedBy === id) parent.reservedBy = 0;
+      delete job.resume;
+      delete job.heldSince;
+      syncTask(sim, id);
+    }
     navigateTurn(sim, id, pos, a.jobId, job);
     return true;
   }
   if (job && isErrand(job)) return false; // fitting or stowing a suit: not on top of that errand
-  const src = nearestAirSource(sim, id);
+  const src = nearestAirSource(sim, id); // the walk with it is the one it was timed by
   if (!src) return false;
-  const plan = planWalk(sim, id, shipIdOf(sim, pos), origin(pos), src.tile);
-  if (!plan) return false;
   let resume: number | undefined;
   // A job is parked (nested) unless a patient or a load is in hand: those are set down and the job given up. A task with no job (a walk to a
   // bed, a meal or a break) ends, its holds released (abortTask, the one teardown).
   if (a && job && !isCarrying(sim, id) && !sim.world.has(id, CarryingC)) resume = a.jobId;
   else if (a || sim.world.has(id, TaskC)) abortTask(sim, id, 'air');
   forgetAirSearch(sim, id);
-  startRefill(sim, id, src, plan.steps, resume);
+  startRefill(sim, id, src, src.steps, resume);
   return true;
 }
 

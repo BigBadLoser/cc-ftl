@@ -39,5 +39,17 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   if (task && (gone(task.job) || task.holds.some((h) => gone(h.id)) || gone(task.bb.target) || gone(task.bb.aux))) delete data.task;
   if (gone((data.bedClaim as { bed: number } | undefined)?.bed)) delete data.bedClaim;
   if (gone((data.bedOwner as { bed: number } | undefined)?.bed)) delete data.bedOwner;
+  // Away sites (#286): the runs split by a cut are ended before it (`endSplitRuns`); anything still pointing across goes, and a passage
+  // to a site across the cut is spent (the away system withdraws it).
+  const away = data.away as { site: number; vehicle: number } | undefined;
+  if (away && (gone(away.site) || gone(away.vehicle))) delete data.away;
+  if (gone((data.siteRun as { site: number } | undefined)?.site)) delete data.siteRun;
+  if (gone((data.awaySite as { vehicle: number } | undefined)?.vehicle)) delete data.awaySite;
+  // Air set aside (the air ledger) for crew or at sources across the cut is no longer anyone's.
+  const holds = data.airHolds as { holds: { crew: number; id: number }[] } | undefined;
+  if (holds) {
+    holds.holds = holds.holds.filter((h) => !gone(h.crew) && !gone(h.id));
+    if (holds.holds.length === 0) delete data.airHolds;
+  }
   return data;
 }

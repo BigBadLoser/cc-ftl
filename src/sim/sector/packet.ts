@@ -12,6 +12,7 @@ import { VehicleC } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
 import { liftSet, type LiftOptions } from './members';
 import { cutLeaving } from './refs';
+import { endSplitRuns } from '../away/end';
 import { translated } from './translate';
 
 /** One entity in transit: its id (kept: ids are never reused) and its components, coordinates in the packet's frame. */
@@ -62,6 +63,10 @@ export function packetFromTemplate(template: ShipTemplate): ShipPacket {
 export function liftShip(sim: Sim, ship: number, opts: LiftOptions = {}): ShipPacket {
   const s = sim.world.get(ship, ShipC);
   if (!s) throw new Error(`liftShip: ${ship} is not a ship`);
+  // An away site and its shuttle never end up on two sides of the cut: such a run ends first (its passengers step out at home, so the set
+  // is worked out again).
+  const before = new Set(liftSet(sim, ship, opts));
+  endSplitRuns(sim, (e) => before.has(e));
   const ids = liftSet(sim, ship, opts);
   const lifting = new Set(ids);
   for (const id of sim.world.query(VehicleC)) {

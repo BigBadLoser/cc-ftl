@@ -1,6 +1,7 @@
 import { CrewC, PathC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath } from '../../crew/pathfind';
+import { walkOpts } from '../../eva/route';
 import { dropCarried } from '../../items/stacks';
 import { ModuleC } from '../../modules/components';
 import { shipIdOf } from '../../regions';
@@ -61,7 +62,7 @@ function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): number {
       if (!m || shipIdOf(sim, m) !== shipIdOf(sim, pos) || !bayFree(sim, id)) continue;
       const c = cradleOf(sim, id);
       if (unsafeFor(sim, robot, shipIdOf(sim, pos), c.x, c.y)) continue;
-      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), cradleOf(sim, id));
+      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), cradleOf(sim, id), walkOpts(sim, robot));
       if (steps && steps.length < best) [bay, best] = [id, steps.length];
     }
     if (!bay) return 0;
@@ -77,7 +78,7 @@ function goToBay(sim: Sim, robot: number, crew: Crew, pos: Position): number {
     return bay;
   }
   if (path.steps.length > 0 || !isSettled(pos)) return bay;
-  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y });
+  const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y }, walkOpts(sim, robot));
   if (!steps || steps.length === 0) return 0;
   path.steps = steps;
   return bay;
