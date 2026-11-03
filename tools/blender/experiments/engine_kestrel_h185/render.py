@@ -24,7 +24,8 @@ def flame_visible(visible):
 
 def block_sprite(out,rot,part,preview=False):
     """Stage 8's hull layers, from sprites/hull_engine at the module's anchor, rendered as the hull's own pieces are
-    (env_build, the walls+hull palette): part "hull" (the row's two inner tiles, full height, end cuts) or "block"
+    (env_build, the walls+hull palette): part "hull" (the row's two inner tiles, full height, end cuts), "end" ("over": the end cuts alone, painted
+    in game) or "block"
     ("over": the thruster block and the bell's mounting ring, its px where it is in front of the hull row)."""
     from sprites import env_build, hull_engine as HE
     core.setup_scene()
@@ -32,8 +33,9 @@ def block_sprite(out,rot,part,preview=False):
     post.select("walls+hull")
     try:
         sid=f"module.engine.{part}.r{rot}"
-        if part=="block":
-            c,op,g,ox,oy,_=env_build.render_sprite(sid,"over",HE.module_block(rot))
+        if part in ("block","end"):
+            objs=HE.module_block(rot) if part=="block" else HE.module_end(rot)
+            c,op,g,ox,oy,_=env_build.render_sprite(sid,"over",objs)
         else:
             c,op,g,ox,oy,_=env_build.render_sprite(sid,"block",HE.module_hull(rot))
     finally:
@@ -56,7 +58,7 @@ def stage_of(rot,stage):
 
 
 def sprite(out,rot,hot,part,stage,preview=False):
-    if stage>=8 and part in ("hull","block"):
+    if stage>=8 and part in ("hull","block","end"):
         return block_sprite(out,rot,part,preview)
     core.setup_scene()
     core._state["scene"].cycles.samples=4 if preview else 24
@@ -237,10 +239,10 @@ def main():
     for r in a.rot:
         stage=stage_of(r,a.stage)
         if not a.no_sprites:
-            parts=(("hull",False),)+((("block",False),) if stage>=8 else ())+(("machine",False),("machine",True),
+            parts=(("hull",False),)+((("block",False),("end",False)) if stage>=8 else ())+(("machine",False),("machine",True),
                    ("machine.open",False),("machine.open",True),("bell",False),("bell",True))
             for part,hot in parts:
-                if part not in ("hull","block") and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
+                if part not in ("hull","block","end") and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
                     continue
                 sid,entry=sprite(a.out,r,hot,part,stage,a.preview)
                 entries[sid]=entry

@@ -204,6 +204,8 @@ export interface ModuleLayer {
   anim?: string;
   /** Stays drawn on a roofed ship (hull block, collar); the other parts are under the roof. */
   roofVisible?: boolean;
+  /** Always recoloured by this colour of the ship's hull paint, as the hull's own pieces are (an engine's end cut: the cut tops' black). */
+  paint?: 'armour' | 'deco';
 }
 
 /** Depth offset of a seated operator over the console's key, and of the desk-front overlay over it. */
@@ -271,6 +273,8 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     const block: ModuleLayer[] = engineBlock(def, m.rot) ? [{ chain: [`${a}.block${r}`], key: `${a}.block`, tiles: 'hull', out: true, dz: -0.01, optional: true }] : [];
     return [
       { chain: [`${a}.hull${r}`, `${a}.hull`], key: `${a}.hull`, tiles: 'hull' },
+      // The hull row's end cut over it, in the hull's paint (its black is the belly cut tops' around it).
+      ...(engineBlock(def, m.rot) ? [{ chain: [`${a}.end${r}`], key: `${a}.end`, tiles: 'hull', optional: true, paint: 'armour', dz: 0.0005 } as ModuleLayer] : []),
       { chain: machine, key: active ? `${a}.machine.active` : `${a}.machine`, tiles: 'rest' },
       ...block,
       { chain: variant('bell'), key: `${a}.bell`, tiles: 'rest', out: true },

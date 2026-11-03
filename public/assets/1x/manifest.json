@@ -60035,6 +60035,42 @@
     5
    ]
   },
+  "module.engine.end.r1": {
+   "kind": "static",
+   "sheet": "engine8",
+   "frame": {
+    "x": 2441,
+    "y": 1,
+    "w": 31,
+    "h": 95
+   },
+   "anchor": {
+    "x": 0,
+    "y": 96
+   },
+   "footprint": [
+    5,
+    4
+   ]
+  },
+  "module.engine.end.r2": {
+   "kind": "static",
+   "sheet": "engine8",
+   "frame": {
+    "x": 2473,
+    "y": 1,
+    "w": 31,
+    "h": 95
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    5
+   ]
+  },
   "module.engine.hull.r0": {
    "kind": "static",
    "sheet": "engine",

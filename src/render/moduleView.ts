@@ -67,8 +67,8 @@ interface Part {
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
-  /** A hull layer's part: a HullSprite recoloured by the hull paint (hullPaint.ts). */
-  paint?: boolean;
+  /** A hull layer's part: a HullSprite recoloured by this colour of the hull paint (hullPaint.ts). */
+  paint?: keyof HullPaint;
   /** False while the current frame of an animated layer has no glow (flicker-off). */
   lit?: boolean;
   /** A depth strip: the frame columns it shows, and the anchor and width of the frame it was cut from (see `stripFrame`). */
@@ -128,7 +128,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   const bayAnim = createBayAnimator();
   const collarAnim = createCollarAnimator();
   /** True while build() makes a hull layer's parts. */
-  let painting = false;
+  let painting: keyof HullPaint | undefined;
 
   function dropEntry(e: Entry): void {
     e.mark?.destroy({ children: true });
@@ -152,7 +152,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       return spr;
     };
     const sch = overlay && SCHEMES[host.livery?.()?.scheme ?? ''];
-    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex, painting);
+    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex, !!painting);
     if (sch && overlay) spr.position.set(x, y);
     spr.zIndex = key;
     L.sorted.addChild(spr);
@@ -180,7 +180,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     layers.forEach(({ layer, art }, i) => {
       const s = art.s;
       const from = out.length;
-      painting = roofed && layer.tiles === 'hull' && !layer.out && !!host.hullPaint; // (roofed: the hull around it is painted too; not the block: bare steel)
+      // Roofed, the hull around it is painted too (not the block: bare steel); an engine's end cut always wears the armour, as the belly's cut tops do.
+      painting = !host.hullPaint ? undefined : layer.paint ?? (roofed && layer.tiles === 'hull' && !layer.out ? 'deco' : undefined);
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (layer.at) {
         const k = key(layer.at.x, layer.at.y);
@@ -229,7 +230,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
       for (let j = from; j < out.length; j++) out[j]!.li = i;
     });
-    painting = false;
+    painting = undefined;
     return out;
   }
 
@@ -387,7 +388,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         // A wreck without its own damaged / destroyed art is darkened instead.
         const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
-          p.spr.tint = mulColor(tint, p.paint ? (host.hullPaint?.().deco ?? p.art) : p.art);
+          p.spr.tint = mulColor(tint, p.paint ? (host.hullPaint?.()[p.paint] ?? p.art) : p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }

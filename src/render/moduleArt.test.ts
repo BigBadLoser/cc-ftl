@@ -15,25 +15,30 @@ describe('module layer depth', () => {
     expect(layerKey(engine, m, layers[0]!, 0, false, 31)).toBe(31);
     // Roofed: both the bulkhead and the machine sort just under the plate of the rear-most tile (24, 2), at +0.9.
     const hull = layerKey(engine, m, layers[0]!, 0, true, 31);
-    const machine = layerKey(engine, m, layers[1]!, 1, true, 31);
+    const machine = layerKey(engine, m, layers[2]!, 2, true, 31);
     expect(hull).toBeCloseTo(26.85);
     expect(machine).toBeGreaterThan(hull);
     expect(machine).toBeLessThan(26.9);
   });
   it('sorts the bell by the tile beyond the hull row, roofed or not, so it draws over the hull behind it', () => {
     const layers = moduleLayers(null as never, 1, m, engine, true, true);
-    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.machine.open.r1.active', 'module.engine.block.r1', 'module.engine.bell.r1.active']);
-    expect(layerKey(engine, m, layers[3]!, 3, false, 31)).toBe(34.5);
-    expect(layerKey(engine, m, layers[3]!, 3, true, 31)).toBe(34.5);
+    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.end.r1', 'module.engine.machine.open.r1.active', 'module.engine.block.r1', 'module.engine.bell.r1.active']);
+    expect(layerKey(engine, m, layers[4]!, 4, false, 31)).toBe(34.5);
+    expect(layerKey(engine, m, layers[4]!, 4, true, 31)).toBe(34.5);
   });
   it('sorts the thruster block just under the bell (the bell comes out of its port), on the near rotations only', () => {
     const layers = moduleLayers(null as never, 1, m, engine, false);
     const block = layers.find((l) => l.key === 'module.engine.block')!;
     expect(block.tiles).toBe('hull');
-    expect(layerKey(engine, m, block, 2, true, 31)).toBeCloseTo(34.49);
+    expect(layerKey(engine, m, block, 3, true, 31)).toBeCloseTo(34.49);
+    // The hull row's end cut: just over the hull, in the armour of the hull paint (the belly cut tops' black).
+    const end = layers.find((l) => l.key === 'module.engine.end')!;
+    expect(end.paint).toBe('armour');
+    expect(layerKey(engine, m, end, 1, false, 31)).toBeGreaterThan(layerKey(engine, m, layers[0]!, 0, false, 31));
+    expect(layerKey(engine, m, end, 1, false, 31)).toBeLessThan(layerKey(engine, m, layers[2]!, 2, false, 31));
     expect(engineBlock(engine, 1) && engineBlock(engine, 2)).toBe(true);
     expect(engineBlock(engine, 0) || engineBlock(engine, 3)).toBe(false);
-    expect(moduleLayers(null as never, 1, { ...m, rot: 3 } as Module, engine, false).some((l) => l.key === 'module.engine.block')).toBe(false);
+    expect(moduleLayers(null as never, 1, { ...m, rot: 3 } as Module, engine, false).some((l) => l.key === 'module.engine.block' || l.key === 'module.engine.end')).toBe(false);
   });
 });
 

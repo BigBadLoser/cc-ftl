@@ -380,10 +380,8 @@ def module_block(rot):
     return own, wide + own[-1:]
 
 
-def module_hull(rot):
-    """module.engine.hull.r<rot> (walls up and cutaway: the whole assembly shows): the row's two inner tiles of base
-    hull, full height, closed at either end by end_cut, at the engine module's anchor."""
-    o = KESTREL[rot]
+def _hull_row(o):
+    """The row's two inner tiles of base hull (piece's -1 and 0), placed."""
     mask = 5 if o == 2 else 10
     dx, dy = X.STRAIGHT[(mask, o)]
     was, T.VARIANT = T.VARIANT, (0, 0)
@@ -395,4 +393,22 @@ def module_hull(rot):
                 hull.append(ob)
     finally:
         T.VARIANT = was
+    return hull
+
+
+def module_hull(rot):
+    """module.engine.hull.r<rot> (walls up and cutaway: the whole assembly shows): the row's two inner tiles of base
+    hull, full height, closed at either end by end_cut, at the engine module's anchor."""
+    o = KESTREL[rot]
+    hull = _hull_row(o)
     return _to_module(rot, hull + [end_cut(o, hull)])
+
+
+def module_end(rot):
+    """module.engine.end.r<rot> ("over"): the row's end cut alone, its px where it is in front of the hull row. The
+    game draws it over the hull sprite in the hull's paint (its black then matches the belly cut tops around it)."""
+    o = KESTREL[rot]
+    hull = _hull_row(o)
+    cut = end_cut(o, hull)
+    _to_module(rot, hull + [cut])
+    return [cut], hull + [cut]
