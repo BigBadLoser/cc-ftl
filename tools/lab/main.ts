@@ -17,6 +17,8 @@ import { PANELS } from './panels';
 const LABEL_H = 30;
 const GAP = 10;
 const MARGIN = 12;
+/** Tallest strip drawn at once (css px): well inside WebGL's canvas limits at 2x. */
+const BAND = 2048;
 
 const params = new URLSearchParams(location.search);
 const bar = document.getElementById('bar') as HTMLElement;
@@ -95,14 +97,32 @@ async function run(): Promise<void> {
     inRow++;
   }
   const height = y + rowH + MARGIN;
-  renderer.resize(Math.max(width, 1), Math.max(height, 1));
+  // WebGL caps a canvas at a few thousand px, and a big grid is taller than that: the one renderer draws the grid in
+  // bands of at most BAND css px, each copied into a 2D canvas of its own, stacked down the page
+  const w = Math.max(width, 1);
+  const bandH = Math.min(BAND, Math.max(height, 1));
+  renderer.resize(w, bandH);
   stageEl.style.height = `${height}px`;
-  stageEl.prepend(renderer.canvas);
+  const bands: { top: number; ctx: CanvasRenderingContext2D }[] = [];
+  for (let top = 0; top < height; top += BAND) {
+    const h = Math.min(BAND, height - top);
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * devicePixelRatio);
+    c.height = Math.round(h * devicePixelRatio);
+    Object.assign(c.style, { position: 'absolute', left: '0', top: `${top}px`, width: `${w}px`, height: `${h}px`, imageRendering: 'pixelated' });
+    stageEl.prepend(c);
+    bands.push({ top, ctx: c.getContext('2d') as CanvasRenderingContext2D });
+  }
   await atlas.whenIdle();
 
   const draw = (now: number): void => {
     for (const p of placed) p.set(play && p.cell.loop ? (now / 1000) % p.cell.loop : (p.cell.at ?? 0));
-    renderer.render(stage);
+    for (const b of bands) {
+      stage.y = -b.top;
+      renderer.render(stage);
+      b.ctx.clearRect(0, 0, b.ctx.canvas.width, b.ctx.canvas.height);
+      b.ctx.drawImage(renderer.canvas, 0, 0);
+    }
   };
   draw(0);
   lab.__labReady = true;

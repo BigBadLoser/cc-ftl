@@ -11,6 +11,8 @@ function group(ids: readonly string[]): Map<string, string[]> {
     list.push({ id, n: m ? Number(m[2]) : 0 });
     out.set(key, list);
   }
+  // an unnumbered id beside numbered frames is an alias of frame 0 (fx3d.py renders it from f(0)), not a frame
+  for (const [k, v] of out) if (v.some((x) => x.id !== k)) out.set(k, v.filter((x) => x.id !== k));
   return new Map([...out].map(([k, v]) => [k, v.sort((a, b) => a.n - b.n).map((x) => x.id)]));
 }
 
