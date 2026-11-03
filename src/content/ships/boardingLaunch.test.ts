@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AssignmentC, CrewC, DraftedC, EquipC, HealthC, StunC, FerryC, JobC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
+import { AboardC, AssignmentC, CrewC, DraftedC, EquipC, FighterC, HealthC, StunC, FerryC, JobC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { passagesOf } from '../../sim/away/passage';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
@@ -144,6 +144,30 @@ describe('boarding.launch', () => {
     const events = run(sim, 3000, () => party.every((p) => sim.world.has(p, AwayC)));
     expect(of(events, 'away.leftBehind')).toEqual([]);
     for (const p of party) expect(sim.world.has(p, AwayC)).toBe(true); // aboard: of the party
+  });
+
+  it('a pick with an earlier attack order of the player\'s drops it for the launch: the stale order does not keep them from their seat', () => {
+    const sim = setup();
+    const shuttle = shuttleOf(sim, 1);
+    const party = crewOn(sim, 1).slice(0, 2);
+    const c = party[0]!;
+    sim.world.add(c, EquipC, { weapon: 'item.rifle' });
+    const at = sim.world.get(c, PositionC)!;
+    const raider = raiderCrew(sim)[0]!; // an intruder beside them, aboard the home ship
+    sim.world.remove(raider, StunC);
+    sim.world.add(raider, PositionC, { x: at.x, y: at.y - 1, toX: at.x, toY: at.y - 1, progress: 0, facing: 0 });
+    for (const id of [...party, raider]) sim.world.get(id, HealthC)!.max = sim.world.get(id, HealthC)!.hp = 100000;
+    sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+    run(sim, 1);
+    sim.enqueue({ type: 'crew.attack', id: c, target: raider });
+    run(sim, 2);
+    expect(sim.world.get(c, FighterC)?.ordered).toBe(raider);
+    sim.enqueue({ type: 'boarding.launch', vehicle: shuttle, crew: party, airlock: airlockOf(sim, 2) });
+    run(sim, 2);
+    expect(sim.world.get(c, FighterC)?.ordered).toBe(0);
+    const events = run(sim, 3000, () => party.every((p) => sim.world.has(p, AwayC)));
+    expect(of(events, 'away.leftBehind')).toEqual([]);
+    for (const p of party) expect(sim.world.has(p, AwayC)).toBe(true);
   });
 
   it('a sleeping crew member picked for the party wakes up and goes', () => {

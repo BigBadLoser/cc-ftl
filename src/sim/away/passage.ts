@@ -7,6 +7,7 @@ import { isIncapacitated, isSettled, origin } from '../crew/helpers';
 import { vehicleSuits } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
 import { destroyJob } from '../items/stacks';
+import { FighterC } from '../fight/components';
 import { isTileWalkable } from '../modules/walk';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
@@ -78,6 +79,8 @@ function postInvited(sim: Sim, vehicle: number, site: number): void {
     }
     const crew = sim.world.get(c, CrewC) as Crew;
     if (crew.activity === 'sleeping') wakeUp(sim, c, crew); // the order wakes them (and lets go of the bed)
+    const fighter = sim.world.get(c, FighterC);
+    if (fighter) fighter.ordered = 0; // the pick is the newer order: an earlier attack order ends (a later one still takes them off it)
     abortTask(sim, c, 'order');
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, { category: 'patrol', kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: c, holder: c, target: vehicle, site });
