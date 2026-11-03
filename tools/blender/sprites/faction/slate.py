@@ -13,9 +13,9 @@ RAIL_D, MID_D = PX, PX / 2          # the rail's depth: its end blocks' (2 px: a
                                     # middle block's (set back a px)
 RAIL_H = 7 * PZ                     # the rail's front
 END_W = 0.25                        # its end blocks along a tile (the middle block between them)
-LIP_D, LIP_H = 1.5 * PX, 2 * PZ     # the lip at the face's foot: its depth (3 px), its height
+LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
-SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
+SHELF = 3 / 32                      # the ramp's top a flat step this deep against the wall (3 px)
 
 
 def _shelf_z(zs):
@@ -68,10 +68,9 @@ def slate(hull):
             prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
                   FACE, 3, cols=[False, None, top_, False], mitre=mit)
             T.paint(k, ax, plane, a, b, zl - PZ, zl, LIP_D, FACE, 1)
-            zg = zl + LIP_H + 2 * PZ                                                           # its groove
-            if zg + 4 * PZ < top - 0.03:
-                for g0, g1, lvl in ((zg, zg + 2 * PZ, 1), (zg + 2 * PZ, zg + 3 * PZ, 4)):     # (lit over it)
-                    T.paint(k, ax, plane, a, b, g0, g1, 0.0, FACE, lvl)
+            zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, 2 px wide)
+            if zg + 2 * PZ < top - 0.03:
+                T.paint(k, ax, plane, a, b, zg, zg + 2 * PZ, 0.0, FACE, 1)
             if full:                                                    # a faint line, 7 px under the stripe
                 T.paint(k, ax, plane, a, b, zst - 14 * PZ, zst - 13 * PZ, 0.0, FACE, 4)
         if not full:
