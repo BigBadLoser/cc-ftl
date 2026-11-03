@@ -2,6 +2,7 @@ import { CrewC, DeadC, PathC, PositionC, type Crew, type Path, type Position } f
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { hasMood, noteLeisure } from '../../crew/mood';
 import { findPath, type Tile } from '../../crew/pathfind';
+import { walkOpts } from '../../eva/route';
 import { ModuleC } from '../../modules/components';
 import { accessTile } from '../../modules/footprint';
 import { isTileWalkable } from '../../modules/walk';
@@ -75,7 +76,7 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
     const x = mess.x + sim.rng.int(-MESS_RADIUS, MESS_RADIUS), y = mess.y + sim.rng.int(-MESS_RADIUS, MESS_RADIUS);
     const goal = grid.inBounds(x, y) && room !== 0 && grid.get('room', x, y) === room && isTileWalkable(sim, grid, x, y) ? { x, y } : mess;
     for (const g of goal === mess ? [mess] : [goal, mess]) {
-      const steps = unsafeFor(sim, id, ship, g.x, g.y) ? null : findPath(sim, ship, from, g);
+      const steps = unsafeFor(sim, id, ship, g.x, g.y) ? null : findPath(sim, ship, from, g, walkOpts(sim, id));
       if (steps) return steps;
     }
   }

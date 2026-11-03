@@ -34,6 +34,14 @@ function gridHasThinAir(sim: Sim, grid: Grid): boolean {
 }
 
 /**
+ * The walk mode for a crew member's own errands (a bed, a meal, a break, a robot bay): the exterior counts for those who walk outside
+ * (suited, or needing no air), as in `planWalk`. One helper, so the need machines cannot drift from it (Codex 4449530807).
+ */
+export function walkOpts(sim: Sim, crew: number): PathOpts {
+  return { suited: walksOutside(sim, crew) };
+}
+
+/**
  * Plan a walk on one grid for a particular crew member. Suited crew (whatever is left in the tank: an empty suit still walks) and bodies that need no air walk
  * anywhere. Everyone else first looks for a path that keeps out of thin air (the prefer-no-EVA rule); if only a thin-air
  * path exists they get it with `thin` set, so the caller can send them for a suit or let a player's order stand.

@@ -194,4 +194,19 @@ describe('away sites: holds for floats never leak (Codex 4449454958, 4449454964)
     }
     expect(held(sim)).toEqual([]);
   });
+
+  it('a draft the player takes over during the float stays after landing (Codex 4449530810)', () => {
+    const { sim, wreck } = setup();
+    siteWork(sim, wreck, 3);
+    sim.enqueue({ type: 'away.open', ship: wreck });
+    play(sim, 20 * 300, () => sim.world.query(EvaFloatC).some((c) => sim.world.get(c, EvaFloatC)?.mode === 'out'));
+    const c = sim.world.query(EvaFloatC).find((c) => sim.world.get(c, EvaFloatC)?.mode === 'out')!;
+    sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+    play(sim, 1);
+    expect(sim.world.get(c, DraftedC)?.away).toBeUndefined(); // the player's draft now
+    play(sim, 20 * 20);
+    expect(sim.world.has(c, EvaFloatC)).toBe(false);
+    expect(shipIdOf(sim, sim.world.get(c, PositionC)!)).toBe(wreck);
+    expect(sim.world.has(c, DraftedC)).toBe(true);
+  });
 });

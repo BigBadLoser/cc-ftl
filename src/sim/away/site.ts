@@ -56,7 +56,9 @@ function handOver(sim: Sim, vehicle: number): void {
     if (suit?.vehicle === vehicle) delete suit.vehicle;
     if (!away.landing) continue;
     delete away.landing;
-    if (sim.world.get(c, DraftedC)?.target === null && sim.world.remove(c, DraftedC)) (sim.world.get(c, CrewC) as Crew).activity = 'idle';
+    // Only the away code's own hold for the drift: a draft the player took over stays (Codex 4449530810).
+    const d = sim.world.get(c, DraftedC);
+    if (d?.away && d.target === null && sim.world.remove(c, DraftedC)) (sim.world.get(c, CrewC) as Crew).activity = 'idle';
   }
 }
 
