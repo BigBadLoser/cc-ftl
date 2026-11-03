@@ -22,6 +22,7 @@
     "assets:preview": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/preview.py -- /tmp/claude-0/-home-user/ed10066a-51ba-5b6e-98cf-ce829905d359/scratchpad/assets-preview",
     "sprites": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/sprites/build_sprites.py",
     "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs",
+    "lab": "node tools/lab/shoot.js",
     "profile": "node tools/profile/cli.js",
     "profile:sim": "node tools/profile/sim.js",
     "profile:windows": "node tools/profile/windows.js",
