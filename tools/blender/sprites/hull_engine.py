@@ -289,13 +289,15 @@ END = "cut"
 END_LIP, EDGE_N = 0.026, 4      # the lip's height; the outline's width in columns (128 a tile: 1 px)
 
 
-def end_cut(o, hull):
+def end_cut(o, hull, ends=(-1.5, 0.5), origin=None):
     """Walls down: the engine's two hull tiles stand full height (the whole assembly shows), their neighbours cut to
     the belly, so the hull's open ends (a piece builds no face on its tile's edge: the next tile's) are closed with
     its section as a black cut (wall3d.CUT, the cut tops' tone). `hull`: the two tiles' objects, placed (piece's -1
     and 0); one mesh, both ends (only the one facing the camera shows). The section is the hull cut at the end's
     plane, filled per column from the floor up to the top surface, across its whole width (its outline is open
-    underneath; the top overhangs the block's back face, so the overhang's columns come down to the floor too)."""
+    underneath; the top overhangs the block's back face, so the overhang's columns come down to the floor too).
+    ends: the two end planes along the run, in tiles from origin (the block frame's origin; the airlock's hull row
+    passes its own)."""
     import bmesh
     import bpy
     from mathutils import Vector
@@ -312,8 +314,9 @@ def end_cut(o, hull):
             bm.from_mesh(me)
             bpy.data.meshes.remove(me)
     m = core.Mesh("hull_engine_end_cut", flat=True)
-    for s, sign in ((-1.5, -1), (0.5, 1)):
-        co = rv * s
+    base = Vector(origin) if origin is not None else Vector((0.0, 0.0, 0.0))
+    for s, sign in ((ends[0], -1), (ends[1], 1)):
+        co = base + rv * s
         t = bm.copy()
         res = bmesh.ops.bisect_plane(t, geom=t.verts[:] + t.edges[:] + t.faces[:], dist=1e-5, plane_co=co,
                                      plane_no=rv)
@@ -325,7 +328,8 @@ def end_cut(o, hull):
         pts = [p for sg in segs for p in sg]
         d0, d1 = min(d for d, _ in pts), max(d for d, _ in pts)
         n = int(round((d1 - d0) * 128))
-        at = co + rv * (sign * 0.004)                   # (just out of the hull's own faces on the tile's edge)
+        at = co - ov * co.dot(ov) / ov.dot(ov) + rv * (sign * 0.004)     # (just out of the hull's faces on the edge;
+        #                                                  the section's own out-coordinate is da, db below)
         for i in range(n):
             da, db = d0 + (d1 - d0) * i / n, d0 + (d1 - d0) * (i + 1) / n
             dm = (da + db) / 2

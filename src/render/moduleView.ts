@@ -69,6 +69,8 @@ interface Part {
   art: number;
   /** A hull layer's part: a HullSprite recoloured by this colour of the hull paint (hullPaint.ts). */
   paint?: keyof HullPaint;
+  /** A painted part on its own tile (an airlock's hull row; region-local): lit like the hull walls round it (the brightest light by it). */
+  wallAt?: { x: number; y: number };
   /** False while the current frame of an animated layer has no glow (flicker-off). */
   lit?: boolean;
   /** A depth strip: the frame columns it shows, and the anchor and width of the frame it was cut from (see `stripFrame`). */
@@ -122,6 +124,14 @@ export function shipHasPower(world: World, defs: ModuleDefs, grid: { inBounds(x:
 }
 
 /** Module sprites: anchored at the footprint's front tile, depth sorted, tinted by light and power, with state variants. */
+/** A wall's light at sector tile t: the brightest light on it and round it (as gridView lights the hull). */
+function wallTint(grid: Grid, t: { x: number; y: number }, pulse: number): number {
+  let lv = 0;
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++) if (grid.inBounds(t.x + dx, t.y + dy)) lv = Math.max(lv, grid.get('light', t.x + dx, t.y + dy));
+  return lightTint(lv, false, pulse);
+}
+
 export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: ModuleDefs, host: ModuleViewHost): ModuleView {
   const mods = new Map<number, Entry>();
   const lastProgress = new Map<number, { value: number; at: number }>();
@@ -185,7 +195,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const key = (tx: number, ty: number) => layerKey(def, m, layer, i, roofed, moduleKey(def, tx, ty));
       if (layer.at) {
         const k = key(layer.at.x, layer.at.y);
-        out.push(makePart(s, layer.at.x, layer.at.y, false, k, art.tint, glowKey(layer, k)));
+        out.push({ ...makePart(s, layer.at.x, layer.at.y, false, k, art.tint, glowKey(layer, k)), ...(painting ? { wallAt: layer.at } : {}) });
         return;
       }
       if (art.fallback && art.perTile) {
@@ -388,7 +398,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         // A wreck without its own damaged / destroyed art is darkened instead.
         const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
-          p.spr.tint = mulColor(tint, p.paint ? (host.hullPaint?.()[p.paint] ?? p.art) : p.art);
+          p.spr.tint = mulColor(p.wallAt ? wallTint(grid, { x: p.wallAt.x + grid.x0, y: p.wallAt.y + grid.y0 }, pulse) : tint, p.paint ? (host.hullPaint?.()[p.paint] ?? p.art) : p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }

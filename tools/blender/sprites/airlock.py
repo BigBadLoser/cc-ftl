@@ -17,8 +17,11 @@ level; the plain hull beside the block and over it follows the level like any hu
 
 Sprites, per rotation r (each anchored at its own tile so the renderer sorts it by that tile; footprint [1, 1]):
   module.airlock.housing.r<r>.<closed|f1|f2|open>     the pod and its inner door (opening frames f1, f2)
-  module.airlock.hull.r<r>.<up|cut|low>               hull row: the door tile's hull (camera-facing rotations: the base
-                                                      exterior hull, full height in every view; far: the wall at the level)
+  module.airlock.hull.r<r>.<up|cut|low>               hull row (camera-facing rotations: its three tiles of base exterior
+                                                      hull, full height in every view, end cuts, anchored at its front
+                                                      tile; far: the door tile's wall at the level)
+  module.airlock.hull.r<r>.<level>.tint               camera-facing rotations: the hull row's deco layer (as a hull piece's)
+  module.airlock.end.r<r>                             camera-facing rotations: the hull row's end cuts alone (hull paint)
   module.airlock.brace.r<r>                           camera-facing rotations: the rib and clamp block over the hull's top
   module.airlock.light.r<r>.<red|green>               the cycle light in the slot on the pod's top
   module.airlock.collar.r<r>.<closed|f1|f2|open>[.docked]
@@ -29,7 +32,7 @@ Sprites, per rotation r (each anchored at its own tile so the renderer sorts it 
   module.airlock.unloader.r<r>.front.loaded           the front tile with a crate on the chute's rollers
   module.airlock.keepout.r<r>                         the faint keep-out square in front of a chute
   module.airlock.walk.r<r>                            the walk zone's corner marks (both tiles in front of the pod)
-                                                      (unloaders, keep-out and walk: airlock_inboard)
+                                                      (collar: airlock_collar; unloaders, keep-out and walk: airlock_inboard)
 The collar's mating face (where a shuttle's hatch meets it) is COLLAR_END, 0.7 past the hull row's outer edge."""
 import math
 
@@ -286,13 +289,25 @@ def _ext_tiles(rot, ks=(0,)):
     return out
 
 
+FRONT_V = {1: 1, 2: -1}  # camera-facing rotations: v of the hull row's front tile (the hull sprites' anchor)
+ROW = (-1, 0, 1)
+
+
+def _end_cut(rot, row):
+    """The black end cut closing the full-height hull row at either end (hull_engine.end_cut, as the engine's)."""
+    from . import hull_engine as HE
+    return HE.end_cut(NEAR[rot], row, ends=(-1.5, 1.5), origin=frame(None, rot).pt(HULL_U, 0, 0))
+
+
 def hull(rot, level):
-    """The door tile's hull. Facing the camera: the base exterior hull, full height in every view (the brace and collar
-    stand on it, as the engine's hull row behind its thruster block). Far (north / west): the hull wall on the production
-    profile (strip, sloped skirt, 2.05 top) as the level shows the plain hull either side, full in up and cut, else
-    the ghost rim."""
+    """The hull row. Facing the camera: as the engine's hull row, its three tiles of base exterior hull stand full height
+    in every view without a roof (the whole assembly shows: the brace and collar stand on it), closed at either end by
+    the end cut; anchored at the row's front tile (FRONT_V) so it sorts over its neighbours' cut tops. Far (north /
+    west): the door tile's hull wall on the production profile (strip, sloped skirt, 2.05 top) as the level shows the
+    plain hull either side, full in up and cut, else the ghost rim."""
     if rot in NEAR:
-        return _ext_tiles(rot)
+        row = _ext_tiles(rot, ROW)
+        return row + [_end_cut(rot, row)]
     m = core.Mesh(f"airlock_hull_{rot}_{level}")
     f = frame(m, rot)
     inner, outer = strip(rot)
@@ -307,88 +322,18 @@ def hull(rot, level):
     return [m.build()]
 
 
+def end(rot):
+    """module.airlock.end.r<r> ("over"): the row's end cut alone, its px where it is in front of the hull row; drawn over
+    the hull sprite in the hull's paint (its black then matches the belly cut tops round it), as the engine's."""
+    row = _ext_tiles(rot, ROW)
+    cut = _end_cut(rot, row)
+    return [cut], row + [cut]
+
+
 def brace(rot):
     """("over") the rib and clamp block, their px where they are in front of the hull row."""
     own = INS.brace(rot)
     return own, own + _ext_tiles(rot, (-1, 0, 1))
-
-
-# ---- the docking collar -------------------------------------------------------------------------------------------
-
-def _sector(r0, r1, a0, a1, tw=0.0):
-    """(v, z) quad of an annular sector about the collar axis; tw rotates the inner edge (iris blades)."""
-    if r0 <= 1e-4:
-        return [(0.0, ZC), (r1 * math.cos(a0), ZC + r1 * math.sin(a0)), (r1 * math.cos(a1), ZC + r1 * math.sin(a1))]
-    return [(r1 * math.cos(a0), ZC + r1 * math.sin(a0)), (r1 * math.cos(a1), ZC + r1 * math.sin(a1)),
-            (r0 * math.cos(a1 + tw), ZC + r0 * math.sin(a1 + tw)), (r0 * math.cos(a0 + tw), ZC + r0 * math.sin(a0 + tw))]
-
-
-REC, TW0, R_TIP = 0.07, 0.9, 0.07  # the iris: set back in the mouth; its blades' twist when shut; their tips' radius
-LIGHTS = (0.0, math.pi, 1.5 * math.pi)  # status lights round the mouth (clear of the clamps on the diagonals)
-
-
-def _blade(r0, r1, a0, a1, tw, n=5):
-    """(v, z) outline of an iris blade: its rim arc a0..a1 at r1, its tip edge at r0 turned tw (the seams spiral in)."""
-    rim = [(r1 * math.cos(a0 + (a1 - a0) * j / (n - 1)), ZC + r1 * math.sin(a0 + (a1 - a0) * j / (n - 1))) for j in range(n)]
-    return rim + [(r0 * math.cos(a1 + tw), ZC + r0 * math.sin(a1 + tw)), (r0 * math.cos(a0 + tw), ZC + r0 * math.sin(a0 + tw))]
-
-
-def collar(rot, p, docked):
-    """The docking collar: a flange on the hull, a grey tube with two red bands in the clamp ring (airlock_insert), and
-    a mouth ring holding the iris hatch (the outer door; p = how far open) set back behind a light lip, a red marker
-    on top. Status lights round the mouth: red, green when docked. Four clamps lie back round the ring, or swing
-    forward onto a docked shuttle's hatch over a dark seal ring; the seal light on the flange is green when docked."""
-    m = core.Mesh(f"airlock_collar_{rot}_{int(docked)}")
-    f = frame(m, rot)
-    u0, ue = HULL_U + 0.5, COLLAR_END
-    um = ue - 0.16
-    f.hcyl(u0 - 0.02, u0 + 0.07, 0, ZC, RR + 0.04, GREY, sides=16, cap=GREY_T)                     # flange
-    f.hcyl(u0 + 0.07, um, 0, ZC, RR - 0.06, GREY_T, sides=16, cap="dark")                         # tube
-    for uk in (u0 + 0.18, u0 + 0.36):
-        f.hcyl(uk - 0.03, uk + 0.03, 0, ZC, RR - 0.04, RED, sides=16, cap=RED)                    # red bands
-    ring16 = [(k * math.tau / 16, (k + 1) * math.tau / 16) for k in range(16)]
-    for a0, a1 in ring16:                                                                        # mouth ring
-        _tube(f, um, ue, _sector(RH, RR, a0, a1), GREY, GREY_T, cap=GREY_T)
-    uh = ue - REC                                                                                # the iris's plane
-    f.hcyl(uh - 0.1, uh - 0.095, 0, ZC, RH + 0.01, "dark", sides=16, cap="dark")                  # behind the hatch
-    f.hcyl(uh - 0.05, ue - 0.02, 0, ZC, RH + 0.003, "steelD", sides=16)                          # the bore's wall
-    for a0, a1 in ring16:                                                                        # light lip
-        _tube(f, ue - 0.025, ue + 0.006, _sector(RH - 0.025, RH + 0.03, a0, a1), "steelL", "plate", cap="plate")
-    if p >= 1.0:                                                                                 # open: a dark bore the tube's mouth reads through
-        f.hcyl(ue, u0 + 0.07, 0, ZC, RH - 0.01, "dark", sides=16)
-        f.hcyl(uh - 0.14, uh - 0.135, 0, ZC, RH - 0.01, "dark", sides=16, cap="dark")
-    f.box(um + 0.08, 0, ZC + RR - 0.03, 0.12, 0.14, 0.07, RED, top=RED)                             # red marker
-    if p < 1.0:                                                                                  # iris blades
-        r0, tw = max(R_TIP, RH * p), TW0 + 0.55 * p
-        for k in range(6):
-            a0, a1 = k * math.tau / 6 + 0.03, (k + 1) * math.tau / 6 - 0.03
-            col = "plate" if k % 2 else "steelL"
-            _tube(f, uh - 0.09, uh - 0.05, _blade(r0, RH + 0.01, a0, a1, tw), col, col, cap=col)
-        if p == 0.0:
-            f.hcyl(uh - 0.06, uh - 0.03, 0, ZC, 0.08, "steelD", sides=8, cap=RED)                  # hub
-    if docked:                                                                                   # the dark seal ring (the shuttle covers it)
-        for a0, a1 in ring16:
-            _tube(f, ue, ue + 0.05, _sector(RH, RR + 0.03, a0, a1), "steelD", "steelD", cap="steelD")
-    sl, ul = ("green", ue + 0.05) if docked else ("red", ue)
-    for a in LIGHTS:                                                                             # status lights
-        r = (RH + RR) / 2 + 0.01
-        f.box(ul, r * math.cos(a), ZC + r * math.sin(a), 0.03, 0.05, 0.05, sl, top=sl, base=False)
-    lamp = "green" if docked else "steelD"
-    f.box(u0 + 0.03, 0, ZC + RR + 0.02, 0.06, 0.1, 0.04, lamp, top=lamp)                            # seal light
-    for k in range(4):                                                                           # clamps
-        a = math.pi / 4 + k * math.pi / 2
-        cv, cz = math.cos(a), math.sin(a)
-        if docked:
-            r = RR - 0.06
-            f.box(ue + 0.05, cv * r, ZC + cz * r, 0.1, 0.09, 0.09, "steelD", top="steelD", base=False)
-            f.box(ue + 0.11, cv * (r - 0.06), ZC + cz * (r - 0.06), 0.04, 0.08, 0.08, RED, top=RED, base=False)
-        else:
-            r = RR + 0.02
-            f.box(ue - 0.06, cv * r, ZC + cz * r, 0.12, 0.07, 0.07, "steelD", top="steelD", base=False)
-    own = [m.build()] + INS.ring(rot)
-    if rot not in NEAR:
-        return own
-    return own, own + _ext_tiles(rot, (-1, 0, 1)) + INS.brace(rot)                               # ("over": in front of the hull)
 
 
 # ---- sprites ------------------------------------------------------------------------------------------------------
@@ -407,8 +352,24 @@ def _item(sid, kind, objs, u, v, rot):
     return [it] if it else []
 
 
+def _hull_items(sid, rot, level):
+    """A camera-facing hull row rendered as the hull's own pieces are (hulltiles: the hull palette, and its deco layer
+    <sid>.tint, which the game tints with the ship's deco colour over the armour), anchored at the row's front tile."""
+    from . import hulltiles as HT
+    from . import wall3d_ext as X
+    x, y = frame(None, rot).xy(HULL_U, FRONT_V[rot])
+
+    def build():
+        objs = hull(rot, level)
+        for o in objs:
+            o.location = (o.location.x - x, o.location.y + y, o.location.z)
+        return objs
+    return HT._items(sid, "block", build, X.TINT, True)
+
+
 def items(rot):
-    from . import airlock_inboard as IN      # (imported here: it builds on this module's frame and colours)
+    from . import airlock_collar as CO       # (imported here: they build on this module's frame and colours)
+    from . import airlock_inboard as IN
     post.select(True)
     out = []
 
@@ -420,11 +381,15 @@ def items(rot):
         add(f"{ID}.housing.r{rot}.{name}", "block", lambda p=p: housing(rot, p), 0)
         for docked in (False, True):
             add(f"{ID}.collar.r{rot}.{name}" + (".docked" if docked else ""), "prop",
-                lambda p=p, d=docked: collar(rot, p, d), HULL_U + 1, pal=HULL_PAL)
+                lambda p=p, d=docked: CO.collar(rot, p, d), HULL_U + 1, pal=HULL_PAL)
     for lv in W.LEVELS:
-        add(f"{ID}.hull.r{rot}.{lv}", "block", lambda lv=lv: hull(rot, lv), HULL_U, pal=HULL_PAL)
+        if rot in NEAR:
+            out.extend(_hull_items(f"{ID}.hull.r{rot}.{lv}", rot, lv))
+        else:
+            add(f"{ID}.hull.r{rot}.{lv}", "block", lambda lv=lv: hull(rot, lv), HULL_U, pal=HULL_PAL)
     if rot in NEAR:
-        add(f"{ID}.brace.r{rot}", "over", lambda: brace(rot), HULL_U, pal=HULL_PAL)
+        add(f"{ID}.end.r{rot}", "over", lambda: end(rot), HULL_U, FRONT_V[rot], pal=HULL_PAL)
+        add(f"{ID}.brace.r{rot}", "over", lambda: brace(rot), HULL_U, FRONT_V[rot], pal=HULL_PAL)
     for col in ("red", "green"):
         add(f"{ID}.light.r{rot}.{col}", "fx", lambda c=col: lights(rot, c), 0)
     add(f"{ID}.unloader.r{rot}.back", "prop", lambda: IN.unloader(rot, "back"), 0, IN.UV)
