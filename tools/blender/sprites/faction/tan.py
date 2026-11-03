@@ -97,9 +97,13 @@ def tan(hull):
             return
         # the header block: its pale top, a lit edge on its front, a shadow 2 px under it
         zh0 = z1 - HEAD_H
-        prism(k, ax, plane, a, b, [(0.0, zh0), (HEAD_D, zh0), (HEAD_D, z1), (0.0, z1)], FACE, 3,
-              cols=[False, None, sd("fTS0", ax), False], mitre=mit)
-        band(a, b, z1 - PZ, z1, "fTS1", HEAD_D)
+        ha, hb = a + (LINE if back else 0.0), b - (LINE if end1 else 0.0)  # (at a free end its last column a px
+        for u0, u1, m, r in ((ha, hb, mit, 0.0), (a, ha, (mit[0], False), PZ), (hb, b, (False, mit[1]), PZ)):
+            if u1 - u0 > 1e-6:                          # shorter top and bottom: its corners rounded)
+                prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
+                      FACE, 3, cols=[False, None, sd("fTS0", ax), False], mitre=m)
+                if not r:                               # (its lit edge stops short of a rounded end)
+                    band(u0, u1, z1 - PZ, z1, "fTS1", HEAD_D)
         zs0 = zh0 - _hid(HEAD_D)                        # (the face's first row seen under the header)
         band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
         band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
@@ -141,14 +145,19 @@ PLATES = ((0.0, 0.25, 0.0, 1.0), (0.25, 0.5, 0.0, CUT_D), (0.5, 0.75, 0.0, CUT_D
 
 
 def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
-    """The base ramp: a blue line along the wall, then pale cushions in brown joints, each shaded along its foot and
-    right edge, then the blue toe."""
+    """The base ramp: a blue line along the wall, then pale cushions in brown joints, each with rounded corners and
+    shaded along its foot and right edge, then the blue toe."""
     w, E, L = u1 - u0, EDGE, LINE
     top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the cushions' end, over the toe)
     nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
+
+    def rq(ua, ub, da, db):                             # (a cushion: its corners rounded, the corner px clipped off
+        c, e = 1.5 * L, 1.5 * E                         # each (a cut that covers it whole))
+        return [(ua + c, da), (ub - c, da), (ub, da + e), (ub, db - e), (ub - c, db), (ua + c, db), (ua, db - e),
+                (ua, da + e)]
     plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
     plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
     T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the cushions)
@@ -158,10 +167,10 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
         pu1 = u0 + f1 * w - (0.0 if f1 == 1.0 else L / 2)
         pd0 = top + g0 * span + (0.0 if g0 == 0.0 else E / 2)
         pd1 = top + g1 * span - (0.0 if g1 == 1.0 else E / 2)
-        plate(q(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
+        plate(rq(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
         r = 3 * PAINT
-        plate(q(pu0, pu1, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)              # (its foot and right edge shaded;
-        plate(q(pu1 - L, pu1, pd0, pd1), r, 2, 2 * PAINT, FACE)              # no lit rims)
+        plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)      # (its foot and right edge shaded, short
+        plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, 2 * PAINT, FACE)      # of the corners; no lit rims)
 
 
 TAN_RAMPS = (Design("cushions", ramp=tan_plate),)
