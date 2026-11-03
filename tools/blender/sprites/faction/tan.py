@@ -143,15 +143,14 @@ EDGE = 0.4 / 32                                 # (a px down the slope, about: 2
 CUT_D = 0.55
 SQUARES = ((0.25, 0.5), (0.5, 0.75))
 # each L: its rects ((u0, u1, d0, d1), its rounded corners: a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1)); a u0 / u1 of
-# None runs into the L's other rect, under it (no joint); then its shaded right edges ((u1, d0, d1) as fractions)
-ELLS = ((((0.0, 0.25, 0.0, 1.0), "abd"), ((None, 0.5, CUT_D, 1.0), "bc")), ((0.25, 0.0, CUT_D), (0.5, CUT_D, 1.0))), \
-       ((((0.75, 1.0, 0.0, 1.0), "abc"), ((0.5, None, CUT_D, 1.0), "ad")), ((1.0, 0.0, 1.0),))
+# None runs into the L's other rect, under it (no joint)
+ELLS = (((0.0, 0.25, 0.0, 1.0), "abd"), ((None, 0.5, CUT_D, 1.0), "bc")), \
+       (((0.75, 1.0, 0.0, 1.0), "abc"), ((0.5, None, CUT_D, 1.0), "ad"))
 
 
 def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
     """The base ramp: a blue line along the wall, then one flat pale surface with the cushions' seams painted on it
-    (1 px, their corners rounded), each cushion shaded along its right edge (the squares along their foot too), then
-    the blue toe."""
+    (1 px, their corners rounded), then the blue toe."""
     w, E, L = u1 - u0, EDGE, LINE
     top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the cushions' end, over the toe)
     nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
@@ -174,23 +173,15 @@ def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
     plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
     plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
     T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, 2 * PAINT, "wall", 2, PAINT, fixed="fTW2")  # one flat cushion
-    r, sh, sm = 3 * PAINT, 2 * PAINT, 4 * PAINT         # (the shading, then the seams painted over it)
+    r, sm = 3 * PAINT, 4 * PAINT                        # (the seams painted over it)
 
     def seam(poly):
         T.plate(k, poly, pt, nrm, 0.0, sm, FACE, 0, r, fixed=SEAM)
     rects = [((U0(f0), U1(f1), D0(0.0), D1(CUT_D)), "abcd") for f0, f1 in SQUARES]
-    for f0, f1 in SQUARES:
-        pu0, pu1, pd0, pd1 = rects[SQUARES.index((f0, f1))][0]
-        plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, sh, FACE)            # (its foot and right edge shaded, short
-        plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, sh, FACE)            # of the corners)
-    for rs, shades in ELLS:
+    for rs in ELLS:
         for (f0, f1, g0, g1), rc in rs:
             rects.append(((u0 + 0.125 * w if f0 is None else U0(f0), u0 + 0.875 * w if f1 is None else U1(f1),
                            D0(g0), D1(g1)), rc))
-        for f, g0, g1 in shades:                        # (its right edges shaded, short of a rounded corner)
-            pd0 = D0(g0) + (E if g0 == 0.0 or g0 == CUT_D and f == 0.5 else 0.0)
-            pd1 = D1(g1) - E if g1 == 1.0 else D0(g1)  # (down to the L's inner corner)
-            plate(q(U1(f) - L, U1(f), pd0, pd1), r, 2, sh, FACE)
     # the seams, painted: a px wide on the joints' lines (the tile's left edge, the quarters and the middle down to
     # the cut, the middle on to the toe, the cut across the squares' feet, the last over the toe)
     for f, g1 in ((0.0, 1.0), (0.25, CUT_D), (0.5, 1.0), (0.75, CUT_D)):
