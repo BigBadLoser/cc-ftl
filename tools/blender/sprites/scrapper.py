@@ -171,14 +171,14 @@ def slope_cyl(b, A, B, s, d, r, t0, t1, col, sides=16, top=None):
     b.face(b_, top or col, dv)
 
 
-HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.56, 0.21, 0.085, 0.06
+HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.56, 0.21, 0.17, 0.12
 
 
 def exhaust_housing(A, B):
     """The exhaust housing's (L, z) side profile on the slope from A (foot) to B (crest), one solid read as three
     shapes: a block lying on the upper slope (its underside on the slope, from HOUSING_S0 up to the crest, HOUSING_H
     thick); a block on the flat top whose top runs back level from the first one's top edge and whose underside reaches
-    HOUSING_BACK (about 3 px) past the crest; and a short slope (HOUSING_TAIL long) down to the top at its back end."""
+    HOUSING_BACK (about 6 px) past the crest; and a short slope (HOUSING_TAIL long) down to the top at its back end."""
     ln = math.dist(A, B)
     u = ((B[0] - A[0]) / ln, (B[1] - A[1]) / ln)
     n = (-u[1], u[0]) if u[0] > 0 else (u[1], -u[0])
