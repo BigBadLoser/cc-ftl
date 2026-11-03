@@ -10,7 +10,7 @@ from .parts import LINE, PAINT
 FACE = "rose"                                   # the face's family (its second tone: the wall family the cushions')
 BLUE = "ochre"                                  # the trim's: the line along the wall, the toe
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
-CURVE = 4                                       # the block's outer corners: their curve's radius, in px
+CURVE = 3                                       # the block's outer corners: their curve's radius, in px
 OUTER = "fTS7"                                  # the block's outer joints (its sides, over the toe; a px): a step darker
 INNER = "fTS8"                                  # the joints between its cushions
 GAP = 0.7                                       # the inner joints' width, in px (under one: AA softens them)
