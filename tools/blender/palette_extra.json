@@ -3520,5 +3520,194 @@
  "fGF6": {
   "hex": "#1b1e21",
   "set": "slate"
+ },
+ "fTW0": {
+  "hex": "#d4ccb4",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTW1": {
+  "hex": "#ccbc94",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTW2": {
+  "hex": "#bca474",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTW3": {
+  "hex": "#ac9454",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTW4": {
+  "hex": "#947c44",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTW5": {
+  "hex": "#746434",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTW6": {
+  "hex": "#544c2c",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH0": {
+  "hex": "#c4b4a4",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH1": {
+  "hex": "#b4947c",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH2": {
+  "hex": "#a48464",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH3": {
+  "hex": "#8c6c54",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH4": {
+  "hex": "#6c5444",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH5": {
+  "hex": "#544434",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTH6": {
+  "hex": "#342c24",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTT0": {
+  "hex": "#546c84",
+  "set": "tan"
+ },
+ "fTT1": {
+  "hex": "#3c546c",
+  "set": "tan"
+ },
+ "fTT2": {
+  "hex": "#2c3c4c",
+  "set": "tan"
+ },
+ "fTT3": {
+  "hex": "#1c2434",
+  "set": "tan"
+ },
+ "fTT4": {
+  "hex": "#0c1414",
+  "set": "tan"
+ },
+ "fTT5": {
+  "hex": "#040404",
+  "set": "tan"
+ },
+ "fTT6": {
+  "hex": "#040404",
+  "set": "tan"
+ },
+ "fTS0": {
+  "hex": "#ccbc9c",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTS1": {
+  "hex": "#b49c7c",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTS2": {
+  "hex": "#9c7c64",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTS3": {
+  "hex": "#846c5c",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTS4": {
+  "hex": "#644c44",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTS5": {
+  "hex": "#4c3c34",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTS6": {
+  "hex": "#342c24",
+  "set": "tan",
+  "aa": "tan"
+ },
+ "fTX0": {
+  "hex": "#8494ac",
+  "set": "tan"
+ },
+ "fTX1": {
+  "hex": "#5c7ca4",
+  "set": "tan"
+ },
+ "fTX2": {
+  "hex": "#4c6484",
+  "set": "tan"
+ },
+ "fTX3": {
+  "hex": "#3c546c",
+  "set": "tan"
+ },
+ "fTX4": {
+  "hex": "#2c3c4c",
+  "set": "tan"
+ },
+ "fTX5": {
+  "hex": "#1c2434",
+  "set": "tan"
+ },
+ "fTX6": {
+  "hex": "#0c141c",
+  "set": "tan"
+ },
+ "fTF0": {
+  "hex": "#776d61",
+  "set": "tan"
+ },
+ "fTF1": {
+  "hex": "#665e53",
+  "set": "tan"
+ },
+ "fTF2": {
+  "hex": "#585147",
+  "set": "tan"
+ },
+ "fTF3": {
+  "hex": "#4a443c",
+  "set": "tan"
+ },
+ "fTF4": {
+  "hex": "#3c3731",
+  "set": "tan"
+ },
+ "fTF5": {
+  "hex": "#2e2a25",
+  "set": "tan"
+ },
+ "fTF6": {
+  "hex": "#1d1b17",
+  "set": "tan"
  }
 }

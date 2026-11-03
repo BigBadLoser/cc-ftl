@@ -27,7 +27,7 @@ out.mkdir(parents=True, exist_ok=True)
 for k in want:
     kind, fn = JOBS[k]
     core.clear_scene_meshes()
-    post.select(False if k.startswith("tile.floor") else ("walls+hull+slate" if ".slate." in k else "walls+hull")
+    post.select(False if k.startswith("tile.floor") else ("walls+hull+slate" if ".slate." in k else "walls+hull+tan" if ".tan." in k else "walls+hull")
                 if k.startswith("tile.") else True)                                     # (as the
     try:                                            # walls family picks it: families.jobs)
         objs = fn()

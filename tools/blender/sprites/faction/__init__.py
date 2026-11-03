@@ -11,6 +11,8 @@ ramps). Floors, caps and ghosts keep the default geometry and take the faction's
             (not tied to a faction yet)
   slate     after set 2 (a working name): a mid-grey wall under a bright blue rail and stripe, its ramp light grey
             over a blue plate
+  tan       after set 3 (a working name): tan panelling, a lit header block over louvred slats and a raised centre
+            panel, its ramp pale tan plates over a blue toe
   scrap.pN  the default layout with mismatched bolted patch plates, rusty colours (see docs/STRUCTURE_LOOKS.md for
             scrapper ships built from donor looks)
 
@@ -27,10 +29,11 @@ from .drone import Drone
 from .navy import Navy
 from .scrap import Scrap
 from .slate import Slate
+from .tan import Tan
 
 
 def look(name):
-    """navy | drone | civil.v1..v4 | bastion | slate | scrap.p1..p4."""
+    """navy | drone | civil.v1..v4 | bastion | slate | tan | scrap.p1..p4."""
     if name == "navy":
         return Navy()
     if name == "drone":
@@ -39,6 +42,8 @@ def look(name):
         return Bastion()
     if name == "slate":
         return Slate()
+    if name == "tan":
+        return Tan()
     if name.startswith("civil.v"):
         return Civil(int(name[-1]))
     if name.startswith("scrap.p"):

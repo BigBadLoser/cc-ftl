@@ -18,6 +18,7 @@ BASES = {
     "fC4": dict(wall="#c8d0ca", hull="#bcc5be", trim="#3f9a66", second="#8a968d", shade="#3b5d6a", floor="#4b544c"),
     "fB": dict(wall="#2f3542", hull="#272d3a", trim="#5c6c86", second="#1e2330", shade="#262c3c", floor="#2f3440"),
     "fG": dict(wall="#6b7076", hull="#727880", trim="#2a53a1", second="#495764", shade="#3e5f88", floor="#40464e"),
+    "fT": dict(wall="#ae9656", hull="#896d52", trim="#1f2834", second="#896d52", shade="#3f526b", floor="#4a443c"),
     "fS": dict(wall="#736c60", hull="#5d5b55", trim="#9a5a2c", second="#4a463f", shade="#2e2c29", floor="#46443f"),
 }
 
@@ -28,14 +29,15 @@ OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045, 0.155),  # 
                                                                                 # 2; its 9th, <pre>W8: 2 and 1)
            "fG": (0.30, 0.20, 0.08, 0.0, -0.09, -0.17, -0.26)}     # slate's set 2: its tops and blue plate well over
                                                                     # its fronts (under 0.2: no saturation lost)
-SNAP = {"fG"}                      # looks whose ramps sit on the quantiser's bin centres (_snap: else a step can map
+SNAP = {"fG", "fT"}                      # looks whose ramps sit on the quantiser's bin centres (_snap: else a step can map
                                    # onto another look's near tone)
 
 
 # a look's hue and saturation drifting down its ramps (else each ramp keeps its base colour's): (lightness, hue°,
 # saturation) at the dark end and at the light end, between them by lightness; bastion's shadows indigo, its
 # highlights steel blue
-TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18))}
+TINT = {"fB": ((0.20, 237, 0.23), (0.44, 212, 0.18)),
+        "fTS": ((0.37, 18, 0.17), (0.76, 45, 0.37))}    # tan's face: its darks maroon brown, its lights pale straw
 
 
 def _snap(h, l, s):
@@ -96,7 +98,8 @@ def palette_entries():
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
             r = ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {}))
-            out.update(_tinted(r, TINT[pre]) if pre in TINT else _snapped(r) if pre in SNAP else r)
+            tn = TINT.get(f"{pre}{tag}", TINT.get(pre))                      # (a look's tint, or one ramp's)
+            out.update(_tinted(r, tn) if tn else _snapped(r) if pre in SNAP else r)
             if pre in OFFSETS and len(OFFSETS[pre]) > 7 and pre not in TINT:   # (an extra step on a centre of
                 out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # the quantiser's bins: it keeps it, not a near
                                                                     # tone of another look's, and anti-aliases)
