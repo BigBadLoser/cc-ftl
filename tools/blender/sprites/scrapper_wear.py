@@ -110,10 +110,11 @@ def wear(b, names, top_z, seed=7, run_k=0.7, dust_k=0.7, low_z=0.35, run_col="ru
         m.f[i] = (idx, tuple(col), own, glow)
 
 
-def drum_wear(b, dark, light, axis, bands, seed=3):
+def drum_wear(b, dark, light, axis, bands, turn=0.0, seed=3):
     """The drum's and yoke's wear: not streaks but rust of varied shades, in soft patches round and along the drum.
     dark, light: the drum's two rust names (the drum and yoke, the raised bands); axis: (D, z) of the drum's axis;
-    bands: (L0, L1) of each raised band. The dark rust lifts to the light one in patches and sinks to grime in others
+    bands: (L0, L1) of each raised band; turn: how far the drum has turned, so its patches turn with it (the shrouds,
+    yoke and plate stand still). The dark rust lifts to the light one in patches and sinks to grime in others
     and in the creases beside each band and low on the drum; the bands brighten toward a raw orange rust in patches."""
     names = (dark, light)
     want = {core.lin(c): c for c in names}
@@ -132,6 +133,8 @@ def drum_wear(b, dark, light, axis, bands, seed=3):
         x, y = p.x - O.x, -p.y - O.y
         L, D, z = (x * eD.y - y * eD.x) / det, (eL.x * y - eL.y * x) / det, p.z
         a = math.atan2(z - axis[1], D - axis[0])                        # round the drum
+        if 2.2 - 1e-3 <= L <= 2.8 + 1e-3 and math.hypot(z - axis[1], D - axis[0]) < 0.39:
+            a -= turn                                                   # on the drum: the pattern turns with it
         n1 = 0.5 + 0.5 * math.sin(11.0 * L + 2.0 * a + ph[0]) * math.cos(3.0 * a - 7.0 * L + ph[1])
         n2 = 0.5 + 0.5 * math.sin(17.0 * L - 3.0 * a + ph[2]) * math.sin(5.0 * a + 13.0 * L + ph[3])
         crease = max((math.exp(-(min(abs(L - e) for e in (L0, L1)) / 0.025) ** 2) for L0, L1 in bands), default=0)

@@ -128,3 +128,23 @@ def panels(b, col, lit, rivet, m=0.11, mz=0.09, rm=0.05):
             vL, vz = pL - cL, pz - cz
             ln = (vL * vL + vz * vz) ** 0.5 or 1.0
             rivet_wall(b, D, side, pL + vL / ln * rm, pz + vz / ln * rm, rivet)
+
+
+def drum_bolts(b, D, z, r, bands, n, turn, col, s=0.05, h=0.025):
+    """n bolt heads round each band (L0, L1) of the drum (axis at D, z; band radius r), turned with it: small blocks
+    standing h out of the band, s square, so the drum's turning shows."""
+    import math
+    for L0, L1 in bands:
+        Lc = (L0 + L1) / 2
+        for k in range(n):
+            a = turn + (k + 0.5) * math.tau / n
+            ca, sa = math.cos(a), math.sin(a)
+            def at(dl, dt, dr):                                         # along L, round, out from the axis
+                return b.P(Lc + dl, D + (r + dr) * ca - dt * sa, z + (r + dr) * sa + dt * ca)
+            box = [[at(dl, dt, dr) for dl, dt in ((-s / 2, -s / 2), (s / 2, -s / 2), (s / 2, s / 2), (-s / 2, s / 2))]
+                   for dr in (-0.005, h)]
+            lo, hi = box
+            ctr = at(0, 0, h / 2)
+            for q in (hi, *([lo[i], lo[(i + 1) % 4], hi[(i + 1) % 4], hi[i]] for i in range(4))):
+                c = [sum(p[k2] for p in q) / 4 for k2 in range(3)]
+                b.face(q, col, tuple(c[k2] - ctr[k2] for k2 in range(3)))

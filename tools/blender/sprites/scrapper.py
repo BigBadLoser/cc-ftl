@@ -127,9 +127,10 @@ class _Build:
             c3 = [sum(p[k] for p in q) / 4 for k in range(3)]
             self.face(q, col, (c3[0] - mid[0], c3[1] - mid[1], 0))
 
-    def cyl_L(self, D, z, r, L0, L1, col, sides=16):
-        """A cylinder lying along L (the drum)."""
-        ring = lambda L: [self.P(L, D + r * math.cos((i + .5) * math.tau / sides), z + r * math.sin((i + .5) * math.tau / sides)) for i in range(sides)]  # noqa: E731
+    def cyl_L(self, D, z, r, L0, L1, col, sides=16, turn=0.0):
+        """A cylinder lying along L (the drum); turn: radians it is turned about its axis."""
+        ang = lambda i: (i + .5) * math.tau / sides + turn  # noqa: E731
+        ring = lambda L: [self.P(L, D + r * math.cos(ang(i)), z + r * math.sin(ang(i))) for i in range(sides)]  # noqa: E731
         a, b = ring(L0), ring(L1)
         ax = self.P((L0 + L1) / 2, D, z)
         for i in range(sides):
@@ -493,18 +494,23 @@ def levers(b, Dc, zc, r, spacing=0.236, w=0.06, t=0.04, gap=0.003, wrap=130, n=8
         plate_L(b, poly, Lc - w / 2, Lc + w / 2, DARK, caps)
 
 
+DRUM_SIDES, DRUM_BOLTS = 32, 8
 DRUM_BANDS = ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76))   # the drum's raised bands along L
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
-def drum(b):
+def drum(b, turn=0.0):
     """The drum lying along L in the bay, measured on the ref's drum tile (link 05): a rounded-square mouth shroud at
     the hatch end, its open face toward the hatch-end block (D 1.25..1.97, z 0.03..0.76), then the drum running to the
-    yoke (later), with two wide raised bands and a narrow one next to the shroud."""
+    yoke, with two wide raised bands and a narrow one next to the shroud, bolted round. turn: how far the drum has
+    turned (radians; the active state's frames). 32 sides, a bolt every 4: a turn of one side looks the same in
+    outline, so only the bolts and the wear move."""
     mouth(b, 2.04, 2.2, 0.12)                                                      # hollow mouth shroud
-    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, RUST_D, sides=20)                        # drum
+    b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, RUST_D, sides=DRUM_SIDES, turn=turn)     # drum
     for L0, L1 in DRUM_BANDS:                                                      # raised bands
-        b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST, sides=20)
+        b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST, sides=DRUM_SIDES, turn=turn)
+    from .scrapper_detail import drum_bolts
+    drum_bolts(b, DRUM_D, DRUM_Z, 0.37, [band for band in DRUM_BANDS if band[1] - band[0] > 0.1], DRUM_BOLTS, turn, GM)
     rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, RUST_D)                      # squared end shroud, under the yoke
     yoke(b)
 
@@ -583,7 +589,8 @@ def scrapper(rot):
     slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, GM)     # chamfer up from the flange to the barrel
     slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, GM)                    # nozzle barrel
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
-    drum(b)
+    turn = math.radians(float(os.environ.get("SCRAPPER_SPIN", "0")))   # preview of the active state's frames
+    drum(b, turn)
     screen(b, D1)
     dial(b)
     vent(b)
@@ -599,7 +606,7 @@ def scrapper(rot):
         wear(b, sel, _top, run_k=rk, dust_k=dk, top_k=tk)
         if os.environ.get("SCRAPPER_DRUM_WEAR", "1") != "0":
             fine(b.m, (RUST, RUST_D), grid=0.04)
-            drum_wear(b, RUST_D, RUST, (DRUM_D, DRUM_Z), DRUM_BANDS)
+            drum_wear(b, RUST_D, RUST, (DRUM_D, DRUM_Z), DRUM_BANDS, turn)
     return [b.m.build()]
 
 
