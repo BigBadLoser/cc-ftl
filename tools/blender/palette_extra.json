@@ -3523,31 +3523,38 @@
  },
  "fTW0": {
   "hex": "#d4ccb4",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTW1": {
   "hex": "#ccbc94",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTW2": {
   "hex": "#bca474",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTW3": {
   "hex": "#ac9454",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTW4": {
   "hex": "#947c44",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTW5": {
   "hex": "#746434",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTW6": {
   "hex": "#544c2c",
-  "set": "tan"
+  "set": "tan",
+  "aa": "tan"
  },
  "fTH0": {
   "hex": "#c4b4a4",
