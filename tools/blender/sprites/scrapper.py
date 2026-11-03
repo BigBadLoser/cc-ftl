@@ -409,6 +409,30 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
         b.prism_D(prof, D1, D1 + lip, GMD)
 
 
+def dial(b, Lc=1.5, Dc=0.5, r=0.36, h=0.16, rim=0.08, sink=0.03, flare=0.05):
+    """The dial on top of the hatch-end block (after the ref's tile, link 04, centred on the back-row tile): an
+    octagonal housing standing h above the top, its sides sloping out (flare) to its foot, its gauge face sunk into
+    it inside a rim."""
+    oct_ = lambda rr: [(Lc + rr * math.cos(math.pi / 8 + k * math.pi / 4), Dc + rr * math.sin(math.pi / 8 + k * math.pi / 4))  # noqa: E731
+                       for k in range(8)]
+    k = 1 / math.cos(math.pi / 8)                                       # flat-to-flat half width r -> corner radius
+    outer, inner, foot = oct_(r * k), oct_((r - rim) * k), oct_((r + flare) * k)
+    z1, zf = TOP + h, TOP + h - sink
+    ce = b.P(Lc, Dc, TOP)
+    for i in range(8):
+        j = (i + 1) % 8
+        (a0, a1), (c0, c1), (e0, e1), (f0, f1) = outer[i], outer[j], inner[i], inner[j]
+        b.face([b.P(a0, a1, z1), b.P(c0, c1, z1), b.P(f0, f1, z1), b.P(e0, e1, z1)], GMD, (0, 0, 1))       # rim top
+        (g0, g1), (h0, h1) = foot[i], foot[j]
+        q = [b.P(g0, g1, TOP), b.P(h0, h1, TOP), b.P(c0, c1, z1), b.P(a0, a1, z1)]                         # outside
+        m = [sum(p[x] for p in q) / 4 for x in range(3)]
+        b.face(q, GMD, (m[0] - ce[0], m[1] - ce[1], 0))
+        q = [b.P(e0, e1, zf), b.P(f0, f1, zf), b.P(f0, f1, z1), b.P(e0, e1, z1)]                           # inside
+        m = [sum(p[x] for p in q) / 4 for x in range(3)]
+        b.face(q, GMD, (ce[0] - m[0], ce[1] - m[1], 0))
+    b.face([b.P(d0, d1, zf) for d0, d1 in inner], LIGHT, (0, 0, 1))                                      # gauge face
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -500,6 +524,7 @@ def scrapper(rot):
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
     drum(b)
     screen(b, D1)
+    dial(b)
     return [b.m.build()]
 
 
