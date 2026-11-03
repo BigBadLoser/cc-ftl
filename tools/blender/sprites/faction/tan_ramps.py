@@ -11,7 +11,7 @@ FACE = "rose"                                   # the face's family (its second 
 BLUE = "ochre"                                  # the trim's: the line along the wall, the toe
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 CURVE = 3                                       # the block's outer corners: their curve's radius, in px
-OUTER = "fTS4"                                  # the block's outer joints (its sides at a tile edge, over the toe; a px), as the inner ones
+OUTER = "fTS4"                                  # the block's outer joints (its sides, over the toe; a px), as the inner ones
 INNER = "fTS4"                                  # the joints between its cushions
 GAP = 0.7                                       # the inner joints' width, in px (under one: AA softens them)
 CUT_D = 0.55
@@ -48,7 +48,7 @@ def cushions(layout, extra=None):
         span = end - E - top                            # (the block's foot over the toe: a whole px)
         sh = T.SHELL                                    # (the block's sides: half a px each at a tile edge, the
         free = [bool(getattr(sh, "is_end", None) and sh.is_end(ax, u, sd)) for u, sd in ((u0, -1), (u1, 1))]
-        side = [0.0 if f else L / 2 for f in free]      # tiles' halves one px; none at a free end)
+        side = [L if f else L / 2 for f in free]        # tiles' halves one px; a whole one at a free end)
 
         def q(ua, ub, da, db):
             return [(ua, da), (ub, da), (ub, db), (ua, db)]
