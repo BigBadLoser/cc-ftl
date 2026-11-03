@@ -11,7 +11,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
  * Clears the floor: every loose stack not already claimed gets a haul job to the nearest storage
  * module that accepts the item and has room (counting space already promised to other hauls).
  * With nowhere to put it, a debounced 'storage.full' event is emitted for that stack. Loot on an away site is not for the
- * site's own storage: the site's run hauls it into its shuttle's hold (away/haul.ts `planCarry`).
+ * site's own storage: the site's party hauls it into the site's staging zone (away/haul.ts `planCarry`).
  */
 export function haulJobsSystem(sim: Sim): void {
   if (sim.tick % PLAN_INTERVAL !== 0) return;

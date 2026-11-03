@@ -59,15 +59,15 @@ function wouldGo(sim: Sim, c: number, site: number, suits: number): boolean {
 }
 
 /**
- * Whether a trip home is due: 'urgent' (leaves at once: a waiting passenger hurt, downed, or at the end of a need), 'batch' (the hold full
- * with loot waiting; rotation due, half the seats waiting or free seats crew at home would take; AWAY_TRIP_WAIT_SEC since the last trip
- * with anyone waiting; the shuttle's own air under a tank), else null. Every trip still goes through the departure check.
+ * Whether a trip home is due: 'urgent' (leaves at once: a waiting passenger hurt, downed, or at the end of a need), 'batch' (the hold
+ * full; rotation due, half the seats waiting or free seats crew at home would take; AWAY_TRIP_WAIT_SEC since the last trip with anyone
+ * waiting; the shuttle's own air under a tank), else null. Every trip still goes through the departure check.
  */
-export function tripDue(sim: Sim, id: number, v: Vehicle, r: SiteRun, unplaced: number): 'urgent' | 'batch' | null {
+export function tripDue(sim: Sim, id: number, v: Vehicle, r: SiteRun): 'urgent' | 'batch' | null {
   const aboard = partyAboard(sim, v);
   const going = aboard.filter((c) => sim.world.get(c, AwayC)?.home);
   if (going.some((c) => passengerUrgent(sim, c))) return 'urgent';
-  if (runDue(sim, id, r.site, unplaced)) return 'batch';
+  if (runDue(sim, id)) return 'batch';
   const seats = (vehicleDefOf(sim, v)?.capacity ?? 0) + 1;
   if (going.length > 0 && going.length >= Math.ceil(seats / 2)) return 'batch';
   if (going.length > 0 && sim.tick - r.lastTrip >= sec(AWAY_TRIP_WAIT_SEC)) return 'batch';

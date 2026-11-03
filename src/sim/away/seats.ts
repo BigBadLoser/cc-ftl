@@ -1,7 +1,7 @@
 import { JobC, WORK_CATEGORIES, type WorkCategory } from '../crew/components';
 import { isErrand } from '../eva/errands';
 import { shipIdOf } from '../regions';
-import { looseOn } from './haul';
+import { unstagedOn } from './haul';
 import type { Sim } from '../sim';
 import { AwaySiteC } from './components';
 
@@ -42,7 +42,7 @@ export function siteDemand(sim: Sim, site: number): Partial<Record<WorkCategory,
     out[j.category] = (out[j.category] ?? 0) + 1;
   }
   if (!out.hauling) {
-    const loose = looseOn(sim, site).length;
+    const loose = unstagedOn(sim, site).length;
     if (loose > 0) out.hauling = loose;
   }
   return out;

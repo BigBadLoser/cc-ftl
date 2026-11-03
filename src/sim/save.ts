@@ -104,8 +104,10 @@ import { newYard, type YardState } from './yard/types';
  *   Air holds (`AirHoldsC`, the air ledger) on a site's shuttle.
  * v84 (salvage on away sites, #286 slice 3): `SalvageTripC`, `SalvageCrewC` and `SalvageOrder.teamAt` are gone; a salvage order keeps an
  *   `AwaySiteC {owner: 'salvage'}` on its wreck.
+ * v85 (staging, #286 slice 3): `StagingC` (an away site's staging zone) on the site's ship; haul refs of kind `zone`; `HaulData.gathered`
+ *   (a hauler collecting several stacks on one trip).
  */
-export const SAVE_VERSION = 84;
+export const SAVE_VERSION = 85;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

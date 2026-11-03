@@ -1,4 +1,5 @@
 import { ART_SCALE, TILE_H, TILE_W } from './iso';
+import { crateCount, STACK_CRATES } from '../sim/items/stacks';
 
 /**
  * Unit stacks: an item whose art has a `.unit` sprite (one scrap crate, one cloth bale) is drawn as that many units on a
@@ -7,8 +8,8 @@ import { ART_SCALE, TILE_H, TILE_W } from './iso';
  * every unit to this grid: a 0.28 x 0.38 tile footprint and a height of one level.
  */
 
-/** Units in a full stack. */
-export const STACK_UNITS = 12;
+/** Units (crates) in a full stack: the sim's crate rule (sim/items/stacks.ts), which loading also counts in. */
+export const STACK_UNITS = STACK_CRATES;
 /** Units per level. */
 export const PER_LEVEL = 4;
 /** Distance between neighbouring slots, in tiles. */
@@ -23,11 +24,8 @@ function slot(j: number): [number, number] {
   return [j % 2 === 1 ? D : -D, j >= 2 ? D : -D];
 }
 
-/** Units to draw for a stack: one per twelfth of a full stack, rounded up (any stack shows at least one), at most 12. */
-export function unitCount(count: number, stackSize: number): number {
-  if (count <= 0) return 0;
-  return Math.min(STACK_UNITS, Math.max(1, Math.ceil((count / Math.max(1, stackSize)) * STACK_UNITS)));
-}
+/** Units to draw for a stack: its crates (one per twelfth of a full stack, rounded up, at least one, at most 12). */
+export const unitCount = crateCount;
 
 /** World-px offset from the tile centre of unit i (0-based, draw order), snapped to whole art px so units stay crisp. */
 export function slotOffset(i: number): { x: number; y: number } {

@@ -1,21 +1,27 @@
-import { JobC } from '../crew/components';
-import { ItemStackC } from '../items/components';
+import { ItemStackC, StagingC } from '../items/components';
 import { makeHaul } from '../items/plan';
 import { refKey, reservations } from '../items/stock';
 import { shipGrid, shipIdAt } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
-import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
+import { isStaged, loadCrate, stagedStacks, stagingRoom, zoneIntact, zoneTilesNear } from '../items/staging';
+import { TICK_HZ } from '../time';
+import { DEFAULT_CARRY_CAPACITY, LOAD_CRATE_SEC, PLAN_INTERVAL, STAGING_LOADS, STAGING_TILES } from '../tuning';
 import { cargoCount, cargoSpace } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { cargoTile } from '../vehicles/geometry';
+import { vehicleDefOf } from '../vehicles/lifecycle';
+
+/** Seconds between looks at a staging zone that is short of tiles or lost one. */
+const ZONE_LOOK_SEC = 5;
 
 /**
- * Loot on an away site (docs/DESIGN.md "Round trips, batched", #286): loose stacks become hauls into the hold of the shuttle serving the
- * site, and a full hold with loot still waiting makes a trip home due. Also the live extent of the site's hull, which the hover point follows.
+ * Loot on an away site (docs/ARCHITECTURE.md "Away sites and the air drive", "Staging", #286): the site keeps a staging zone beside its
+ * shuttle's drop-off point; the party hauls loose loot into it (ordinary hauls, gathered several stacks a trip), whether the shuttle is there
+ * or away, and the shuttle, while at the site, loads it into its hold a crate at a time. A full hold makes a trip home due. Also the live
+ * extent of the site's hull, which the hover point follows.
  */
 
-/** Loose loot lying on a site (delivery crates of station jobs excepted), lowest id first. */
+/** Loot lying on a site, in its staging zone or not (delivery crates of station jobs excepted), lowest id first. */
 export function looseOn(sim: Sim, ship: number): number[] {
   return [...sim.world.query(ItemStackC)].filter((id) => {
     const st = sim.world.get(id, ItemStackC)!;
@@ -23,42 +29,56 @@ export function looseOn(sim: Sim, ship: number): number[] {
   }).sort((a, b) => a - b);
 }
 
-/** Haul jobs carrying loot to the shuttle's hold. */
-export function haulsTo(sim: Sim, vehicle: number): number[] {
-  return sim.world.query(JobC).filter((j) => {
-    const d = sim.world.get(j, JobC)?.haul?.dst;
-    return d?.kind === 'vehicle' && d.id === vehicle;
-  });
-}
+/** Loot lying on a site outside its staging zone: what is still to be hauled. */
+export const unstagedOn = (sim: Sim, ship: number): number[] => looseOn(sim, ship).filter((id) => !isStaged(sim, sim.world.get(id, ItemStackC)!));
 
 /**
- * Plan the party's carrying: each loose stack on the site becomes an ordinary haul job to the shuttle's hold, delivered at its staging tile
- * (`cargoTile`), as far as the hold has room after the hauls already under way. Returns the units still lying about that found no room
- * (a trip home is due when this stays above 0 with no haul under way: `runDue`).
+ * Keep the site's staging zone (the site's, away/owned.ts): STAGING_TILES tiles beside the shuttle's drop-off point (`spot`: the hatch spot
+ * while hovering, the docked airlock's inside tile), holding STAGING_LOADS hold loads. Made the first time the shuttle is at the site; while
+ * it is short of tiles (a sealed hull: only a few are in reach at first) or a tile can no longer hold goods (stripped or built on), it is
+ * looked at again every ZONE_LOOK_SEC: its tiles that still hold goods stay, in their order, and the nearest new ones fill it up.
  */
-export function planCarry(sim: Sim, vehicle: number, ship: number): number {
-  const v = sim.world.get(vehicle, VehicleC) as Vehicle;
-  const res = reservations(sim);
-  let promised = 0;
-  for (const [k, n] of res.incoming) if (k.startsWith(`vehicle:${vehicle}:`)) promised += n;
-  let room = cargoSpace(sim, v) - promised;
-  let left = 0;
-  const plan = sim.tick % PLAN_INTERVAL === 0 && !!cargoTile(sim, vehicle);
-  for (const sid of looseOn(sim, ship)) {
-    const s = sim.world.get(sid, ItemStackC)!;
-    const avail = s.count - (res.out.get(refKey('floor', sid, s.item)) ?? 0);
-    if (avail <= 0) continue;
-    const fit = Math.max(0, Math.min(avail, room));
-    left += avail - fit;
-    room -= fit;
-    if (fit > 0 && plan) makeHaul(sim, res, 'hauling', ship, { ref: { kind: 'floor', id: sid }, x: s.x, y: s.y, avail }, { kind: 'vehicle', id: vehicle }, s.item, Math.min(fit, DEFAULT_CARRY_CAPACITY));
-  }
-  return left;
+export function keepZone(sim: Sim, ship: number, vehicle: number, spot: { x: number; y: number }): void {
+  const z = sim.world.get(ship, StagingC);
+  if (z && z.tiles.length >= STAGING_TILES && zoneIntact(sim, ship, z)) return;
+  if (z && sim.tick % Math.round(ZONE_LOOK_SEC * TICK_HZ) !== 0) return;
+  const keep = z ? z.tiles.filter((t) => zoneIntact(sim, ship, { tiles: [t], cap: 0 })) : [];
+  const near = zoneTilesNear(sim, ship, spot, STAGING_TILES).filter((t) => !keep.some((k) => k.x === t.x && k.y === t.y));
+  const tiles = [...keep, ...near].slice(0, STAGING_TILES);
+  const v = sim.world.get(vehicle, VehicleC);
+  const hold = (v && vehicleDefOf(sim, v)?.cargo) ?? 0;
+  if (tiles.length === 0) sim.world.remove(ship, StagingC);
+  else sim.world.add(ship, StagingC, { tiles, cap: STAGING_LOADS * hold });
 }
 
-/** True when the hold is full and loot is still lying about: a trip home is due to unload it. */
-export function runDue(sim: Sim, vehicle: number, ship: number, unplaced: number): boolean {
-  return unplaced > 0 && haulsTo(sim, vehicle).length === 0 && cargoCount(sim.world.get(vehicle, VehicleC) as Vehicle) > 0 && looseOn(sim, ship).length > 0;
+/** Plan the party's carrying: each loose stack outside the zone becomes an ordinary haul into the zone, as far as the zone has room. */
+export function planCarry(sim: Sim, ship: number): void {
+  if (sim.tick % PLAN_INTERVAL !== 0 || !sim.world.has(ship, StagingC)) return;
+  const res = reservations(sim);
+  for (const sid of unstagedOn(sim, ship)) {
+    const s = sim.world.get(sid, ItemStackC)!;
+    const avail = s.count - (res.out.get(refKey('floor', sid, s.item)) ?? 0);
+    const fit = Math.min(avail, stagingRoom(sim, ship, s.item, res), DEFAULT_CARRY_CAPACITY);
+    if (fit > 0) makeHaul(sim, res, 'hauling', ship, { ref: { kind: 'floor', id: sid }, x: s.x, y: s.y, avail }, { kind: 'zone', id: ship }, s.item, fit);
+  }
+}
+
+/** Load the shuttle at the site: one crate from the zone every LOAD_CRATE_SEC since it arrived (`arrived`: that tick). */
+export function loadStep(sim: Sim, ship: number, vehicle: number, arrived: number): void {
+  const t = sim.tick - arrived;
+  if (t > 0 && t % Math.max(1, Math.round(LOAD_CRATE_SEC * TICK_HZ)) === 0) loadCrate(sim, ship, vehicle);
+}
+
+/** True while the shuttle has loading to do: goods in the zone and room in the hold. */
+export function loading(sim: Sim, ship: number, vehicle: number): boolean {
+  const v = sim.world.get(vehicle, VehicleC) as Vehicle;
+  return cargoSpace(sim, v) > 0 && stagedStacks(sim, ship).length > 0;
+}
+
+/** True when the hold is full: a trip home is due to unload it. */
+export function runDue(sim: Sim, vehicle: number): boolean {
+  const v = sim.world.get(vehicle, VehicleC) as Vehicle;
+  return cargoCount(v) > 0 && cargoSpace(sim, v) === 0;
 }
 
 /** The bounds (sector tiles) of what still stands of a ship: its tiles that are not open space. Null when nothing is left. */

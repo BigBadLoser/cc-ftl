@@ -26,7 +26,7 @@ export type SimEvent =
   /** Mood fell below MOOD_VERY_LOW (re-arms once it recovers above MOOD_LOW). */
   | { type: 'crew.moodLow'; crew: number; mood: number }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
-  | { type: 'item.hauled'; crew: number; item: string; count: number; ship: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' }
+  | { type: 'item.hauled'; crew: number; item: string; count: number; ship: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' | 'zone' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */
   | { type: 'job.missingMaterials'; job: number; ship: number; x: number; y: number; item: string }
   /** A crafting module finished a batch; outputs lie at (x, y). */

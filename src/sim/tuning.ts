@@ -150,6 +150,8 @@ export const DEFAULT_CARRY_CAPACITY = 50;
 export const DECON_REFUND = 0.5;
 /** Planners (supply, hauling, crafting) run once per this many ticks. */
 export const PLAN_INTERVAL = 10;
+/** A hauler with room left in hand also takes loose stacks bound for the same place within this many tiles (items/haul.ts, gathering). */
+export const GATHER_RADIUS = 6;
 /** Minimum ticks between repeats of the same 'job.missingMaterials' / 'storage.full' warning. */
 export const WARN_DEBOUNCE = 400;
 /** Units per second a stack burns at flammability 1 on a fully burning tile. */
@@ -424,5 +426,10 @@ export const AWAY_URGENT_CHARGE = 20;
 export const AWAY_TRIP_WAIT_SEC = 300;
 /** The last call: seconds a worker the departure check finds short gets to refill before they must ride the trip out aboard. */
 export const AWAY_LAST_CALL_SEC = 60;
+/** An away site's staging zone: this many floor tiles beside the shuttle's drop-off point, holding this many hold loads (away/haul.ts). */
+export const STAGING_TILES = 6;
+export const STAGING_LOADS = 2;
+/** Seconds the shuttle at the site takes to load one crate from the staging zone into its hold. */
+export const LOAD_CRATE_SEC = 2;
 /** Seconds a due trip waits for the departure check to pass before it is called off (the run stays and tries again). */
 export const AWAY_DEPART_GIVEUP_SEC = 120;

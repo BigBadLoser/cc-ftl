@@ -16,6 +16,23 @@ export function stackSizeOf(sim: Sim, item: string): number {
   return sim.content.items[item]?.stackSize ?? UNKNOWN_STACK_SIZE;
 }
 
+/**
+ * Crates: a loose stack is drawn as one crate per twelfth of the item's stack size (render/stackSlots.ts lays them out), and a shuttle
+ * loads a staging stack one crate at a time (items/staging.ts). The one place this unit is defined.
+ */
+export const STACK_CRATES = 12;
+
+/** Crates a stack of `count` shows: one per twelfth of a full stack, rounded up (any stack shows at least one), at most STACK_CRATES. */
+export function crateCount(count: number, stackSize: number): number {
+  if (count <= 0) return 0;
+  return Math.min(STACK_CRATES, Math.max(1, Math.ceil((count / Math.max(1, stackSize)) * STACK_CRATES)));
+}
+
+/** Item units in one crate of an item (a twelfth of its stack size, rounded up). */
+export function crateUnits(sim: Sim, item: string): number {
+  return Math.max(1, Math.ceil(stackSizeOf(sim, item) / STACK_CRATES));
+}
+
 /** A job's sealed cargo (ItemDef.cargo): left where it lies. */
 export const isCargo = (sim: Sim, item: string): boolean => !!sim.content.items[item]?.cargo;
 

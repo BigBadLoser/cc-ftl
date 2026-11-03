@@ -156,7 +156,7 @@ describe('salvage on an away site: the order, its site and blocks', () => {
     expect(sim.world.get(wreck, SalvageOrderC)).toMatchObject({ status: 'blocked', block: 'noCrew' });
   });
 
-  it('loot on the site goes into the shuttle\'s hold, not into storage on the wreck (the site\'s run owns its loot)', () => {
+  it('loot on the site goes into its staging zone, not into storage on the wreck (away crew do not use the wreck\'s lockers)', () => {
     const { sim, wreck } = setup();
     const s = sim.world.get(wreck, ShipC)!;
     expect(placementError(sim, wreck, 'module.storage_locker', s.x + 6, s.y + 3, 0)).toBeNull();
@@ -166,7 +166,7 @@ describe('salvage on an away site: the order, its site and blocks', () => {
     const all = play(sim, 20 * 400, (a) => of(a, 'item.hauled').filter((e) => e.ship === wreck).length >= 2);
     const hauled = of(all, 'item.hauled').filter((e) => e.ship === wreck);
     expect(hauled.length).toBeGreaterThan(0);
-    for (const e of hauled) expect(e.to).toBe('vehicle');
+    for (const e of hauled) expect(e.to).toBe('zone');
   });
 
   it('salvage workers are on the air drive like anyone (no exemption): a suited worker on the wreck drains', () => {

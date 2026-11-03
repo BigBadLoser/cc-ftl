@@ -2,6 +2,7 @@ import { CrewC, DeadC, DraftedC, JobC, PositionC, type Crew } from '../crew/comp
 import { isIncapacitated } from '../crew/helpers';
 import { releaseAirHolds } from '../eva/airLedger';
 import { AirHoldsC, EvaFloatC, SuitC, type AirHold } from '../eva/components';
+import { StagingC } from '../items/components';
 import { destroyJob } from '../items/stacks';
 import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
@@ -29,6 +30,7 @@ import { AwayC, AwaySiteC, SiteRunC, type Away, type SitePhase } from './compone
  * | an `AirHold` | a party member out, a source | they left the party or came aboard; the source is gone |
  * | `SiteRun.boardedAt`, `held` | the stop at home ('board') | the stop ends |
  * | a `passage` job | the run serving its site | the run no longer serves it |
+ * | `StagingC` (a site's staging zone) | the site (`AwaySiteC`) on its ship | the site is gone (hauls into it then end: haulCleanup) |
  */
 
 /** Phases in which the shuttle is beside its site (or its pickup): the trip-away state has no use. */
@@ -130,6 +132,11 @@ const RULES: readonly Rule[] = [
       const r = sim.world.get(id, SiteRunC);
       releaseAirHolds(sim, id, (h) => !!r && !BESIDE.has(r.phase) && !staleHold(sim, id, h));
     },
+  },
+  {
+    name: 'staging',
+    find: (sim) => sim.world.query(StagingC).filter((ship) => !sim.world.has(ship, AwaySiteC)),
+    release: (sim, ship) => sim.world.remove(ship, StagingC),
   },
   {
     name: 'passage',

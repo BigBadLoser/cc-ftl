@@ -1,5 +1,3 @@
-import { destroyJob } from '../items/stacks';
-import { haulsTo } from './haul';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
@@ -7,12 +5,11 @@ import { releaseOwned } from './owned';
 import { dropPassages, letOut } from './passage';
 
 /**
- * End a site's run: its passages and hauls to the hold are withdrawn, the shuttle no longer flies itself, and the site closes with it. The
+ * End a site's run: its passages are withdrawn, the shuttle no longer flies itself, and the site closes with it. The
  * party leaves it with the run (crew still on the site are ordinary crew there): their `AwayC` and its holds end in away/owned.ts.
  */
 export function endRun(sim: Sim, id: number, r: SiteRun, reason: 'closed' | 'lost'): void {
   dropPassages(sim, id);
-  for (const j of haulsTo(sim, id)) destroyJob(sim, j);
   const v = sim.world.get(id, VehicleC);
   if (v) v.autopilot = false;
   sim.world.remove(id, SiteRunC);

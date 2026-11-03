@@ -136,6 +136,30 @@ describe('hauling', () => {
     expect(storageCount(sim, s, 'scrap')).toBe(50);
   });
 
+  it('gathers: a hauler collects several nearby stacks (two items) up to their carry capacity, then walks to storage once', () => {
+    const sim = make();
+    const s = storage(sim, 11, 1);
+    const id = crew(sim, 2, 3, hauler);
+    spawnItems(sim, 2, 2, 'scrap', 4);
+    spawnItems(sim, 4, 3, 'scrap', 5);
+    spawnItems(sim, 3, 4, 'ice', 6);
+    spawnItems(sim, 5, 4, 'scrap', 9); // 24 in all: one stack stays for a second trip (capacity 20)
+    let peak = 0;
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 1200; i++) {
+      sim.step();
+      events.push(...sim.events.drain());
+      const c = sim.world.get(id, CarryingC);
+      peak = Math.max(peak, c ? c.count + (c.extra ?? []).reduce((n, q) => n + q.count, 0) : 0);
+    }
+    expect(storageCount(sim, s, 'scrap') + storageCount(sim, s, 'ice')).toBe(24);
+    expect(peak).toBeGreaterThan(9); // more than any one stack
+    expect(peak).toBeLessThanOrEqual(20);
+    // Two walks to storage in all (20 units, then the rest), not one per stack.
+    const deliveries = events.filter((e) => e.type === 'item.hauled' && e.item === 'scrap').length;
+    expect(deliveries).toBeLessThanOrEqual(2);
+  });
+
   it('reserves stock: two crew and two jobs never claim more than the stack holds', () => {
     const sim = make();
     crew(sim, 3, 3, builder);

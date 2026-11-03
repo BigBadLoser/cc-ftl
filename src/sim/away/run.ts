@@ -11,6 +11,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayWorking } from '../vehicles/geometry';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
 import { endRun } from './end';
+import { planCarry } from './haul';
 import { releaseOwned } from './owned';
 import { partyOut } from './depart';
 import { boardPassengers, calledBack, dropPassages, freeSeats, letOut, passagesOf, postPassages } from './passage';
@@ -184,6 +185,8 @@ export function awaySystem(sim: Sim): void {
         break;
     }
   }
+  // Staging goes on whether the shuttle is at the site or away: the party hauls loose loot into the zone (away/haul.ts).
+  for (const ship of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) if (sim.world.get(ship, AwaySiteC)!.status === 'open') planCarry(sim, ship);
   // Away-owned holds and flags whose owner is gone end here, and only here (away/owned.ts).
   releaseOwned(sim);
 }

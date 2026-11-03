@@ -48,9 +48,20 @@ export interface Production {
 }
 export const ProductionC = defineComponent<Production>('production');
 
-/** Where a haul takes from or delivers to. `id` is the stack, module or job entity. */
+/**
+ * A staging zone, on a ship (grid) entity: floor tiles where loose goods are gathered to be loaded onto a shuttle (items/staging.ts). One
+ * stack per tile as anywhere; a full stack overflows to the next tile. `cap`: the units it takes in all. An away site keeps one beside its
+ * shuttle's drop-off point (away/haul.ts); it is the site's (away/owned.ts).
+ */
+export interface Staging {
+  tiles: { x: number; y: number }[];
+  cap: number;
+}
+export const StagingC = defineComponent<Staging>('staging');
+
+/** Where a haul takes from or delivers to. `id` is the stack, module or job entity; for 'zone' the ship whose staging zone it is. */
 export interface HaulRef {
-  kind: 'floor' | 'storage' | 'job' | 'vehicle';
+  kind: 'floor' | 'storage' | 'job' | 'vehicle' | 'zone';
   id: number;
 }
 
@@ -71,4 +82,9 @@ export interface HaulData {
   extra?: ItemQty[];
   /** Later stops: after the destination is served, what is left goes to these jobs in turn (one trip serves a run of walls). */
   then?: { job: number; count: number }[];
+  /**
+   * Gathering (items/haul.ts): what the hauler already holds from earlier stacks of this trip while they walk to the next one (`src`).
+   * Counted as on its way to `dst`, not out of any source.
+   */
+  gathered?: ItemQty[];
 }

@@ -1,6 +1,6 @@
 import { AwaySiteC } from '../away/components';
 import { openSite } from '../away/handlers';
-import { looseOn } from '../away/haul';
+import { unstagedOn } from '../away/haul';
 import { JobC } from '../crew/components';
 import type { Sim } from '../sim';
 import { SalvageOrderC, type SalvageBlock, type SalvageOrder } from './components';
@@ -30,12 +30,12 @@ function unblock(sim: Sim, ship: number, o: SalvageOrder): void {
 
 /**
  * The work waiting on the wreck, for the site's seats (docs/DESIGN.md "Salvage on top"): stripping is construction (its open jobs), carrying
- * is hauling (the loose stacks, each a haul to the hold). While nothing lies loose yet but stripping jobs are open, the loot they will drop
- * counts as one haul, so the first trip already has a hauling seat.
+ * is hauling (the loose stacks outside the staging zone, each a haul into it). While nothing lies loose yet but stripping jobs are open,
+ * the loot they will drop counts as one haul, so the first trip already has a hauling seat.
  */
 export function salvageDemand(sim: Sim, ship: number): { construction: number; hauling: number } {
   const jobs = salvageJobs(sim, ship).filter((j) => sim.world.get(j, JobC)!.reservedBy === 0).length;
-  const loose = looseOn(sim, ship).length;
+  const loose = unstagedOn(sim, ship).length;
   return { construction: jobs, hauling: loose > 0 ? loose : jobs > 0 ? 1 : 0 };
 }
 
