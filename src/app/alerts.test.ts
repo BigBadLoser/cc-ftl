@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, PositionC, START_NODE, ShipC, galaxyIndex, newGame, type Sim } from '../sim';
 import { content } from '../content';
-import { shipGrid } from '../sim/regions';
+import { shipGrid, shipIdOf } from '../sim/regions';
+import { AwaySiteC } from '../sim/away/components';
 import { Struct } from '../sim/structure';
 import type { UiAlert } from '../ui/api';
 import { createAlerts } from './alerts';
@@ -57,6 +58,18 @@ describe('alerts', () => {
     const list = current(alerts);
     expect(list.map((a) => a.kind)).toEqual(['crew.downed']);
     expect(list[0]?.text).toContain('Down: ');
+  });
+
+  it('a site whose shuttle cannot get home raises the stranded alert with its own text, and it clears once a way in is back', () => {
+    const { sim, crew } = awayTeam();
+    const wreck = shipIdOf(sim, sim.world.get(crew, PositionC));
+    sim.world.add(wreck, AwaySiteC, { owner: 'salvage', status: 'open', vehicle: 0, since: 0, block: 'stranded' });
+    const alerts = createAlerts(sim);
+    alerts.onEvents([{ type: 'away.stranded', ship: wreck, crew: [crew], noHome: true }]);
+    expect(current(alerts).map((a) => [a.kind, a.text.split(':')[0]])).toEqual([['away.stranded', 'Shuttle cannot get home']]);
+    delete sim.world.get(wreck, AwaySiteC)!.block;
+    alerts.sync();
+    expect(current(alerts)).toEqual([]);
   });
 
   describe('arrival warnings', () => {

@@ -104,8 +104,9 @@ export type SimEvent =
   | { type: 'away.returned'; ship: number; vehicle: number; crew: number[] }
   /** A shuttle comes for crew: a pickup run for someone out of air reach (`ship` the grid they are on), or taking over a site whose shuttle was lost. */
   | { type: 'away.pickup'; ship: number; vehicle: number; crew: number[] }
-  /** A site's shuttle is lost and no other free one can come: its party is stranded (an urgent alert). */
-  | { type: 'away.stranded'; ship: number; crew: number[] }
+  /** A site's shuttle is lost and no other free one can come, or (`noHome`) it is on its way home with no way into its home ship (bay down, no
+   * free airlock): its party is stranded (an urgent alert, cleared once a shuttle or a way in is back). */
+  | { type: 'away.stranded'; ship: number; crew: number[]; noHome?: true }
   /** A shuttle left for an away site with nobody able left aboard the home ship `ship` (a log line). */
   | { type: 'away.homeEmpty'; ship: number; site: number }
   | { type: 'away.leftBehind'; ship: number; vehicle: number; crew: number[] }

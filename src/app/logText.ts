@@ -47,7 +47,7 @@ export function createDescriber(sim: Sim) {
       case 'suit.airLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)}: suit air low`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.airUnreachable': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: no air source in reach`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'away.homeEmpty': return { kind: 'warning', tone: 'warn', text: `Nobody able is left aboard ${sim.world.get(e.ship, ShipC)?.name ?? 'the ship'}: all hands are away` };
-      case 'away.stranded': return { kind: 'warning', tone: 'bad', text: `Crew stranded on ${sim.world.get(e.ship, ShipC)?.name ?? 'an away site'}: no shuttle can come`, ...sub(e.crew[0] ? crewSubject(sim, e.crew[0]) : null) };
+      case 'away.stranded': return { kind: 'warning', tone: 'bad', text: e.noHome ? `The shuttle from ${sim.world.get(e.ship, ShipC)?.name ?? 'an away site'} cannot get home: the bay is down and no airlock is free` : `Crew stranded on ${sim.world.get(e.ship, ShipC)?.name ?? 'an away site'}: no shuttle can come`, ...sub(e.crew[0] ? crewSubject(sim, e.crew[0]) : null) };
       case 'suit.airOut': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: suit out of air`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'module.destroyed': {
         const name = sim.content.modules[e.def]?.name ?? 'Module';

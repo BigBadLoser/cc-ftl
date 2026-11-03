@@ -1,13 +1,11 @@
 import { abortTask } from '../ai/task';
 import { CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { regionAirlock } from '../ferry/pick';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
-import { bayWorking } from '../vehicles/geometry';
 import { AwayC } from './components';
 import { siteUnderFoot } from './crew';
-import { atHome } from './phase';
+import { wayHome } from './phase';
 
 /** What became of a recall order: who was called home, by site run, and who could not be, with the reason. */
 export interface Recalled {
@@ -28,13 +26,8 @@ export function notRecallable(sim: Sim, c: number): string | null {
   const away = sim.world.get(c, AwayC);
   if (!away || !siteUnderFoot(sim, c)) return 'notAboard';
   if (isIncapacitated(sim, c)) return 'incapacitated';
-  return wayHome(sim, away.vehicle) ? null : 'noHome';
-}
-
-/** Can the shuttle get home: it is there, its bay works, or an airlock of its home ship is free. A lost shuttle counts (another takes over). */
-function wayHome(sim: Sim, id: number): boolean {
-  const v = sim.world.get(id, VehicleC);
-  return !v || atHome(sim, v) || (!!v.home && bayWorking(sim, v.home)) || regionAirlock(sim, v.homeShip, id) !== 0;
+  const v = sim.world.get(away.vehicle, VehicleC);
+  return !v || wayHome(sim, away.vehicle, v) ? null : 'noHome'; // a lost shuttle counts: another takes over
 }
 
 /**

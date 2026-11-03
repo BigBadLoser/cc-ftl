@@ -15,7 +15,7 @@ export interface AwaySite {
   demand?: Partial<Record<WorkCategory, number>>;
   /**
    * What holds the site up (the panel shows it; slice 3): `noCrew`, no crew took an open passage for a while; `noRoom`, the hold could not
-   * be unloaded at home (the loot waits on the site); `stranded`, its shuttle is lost and no other free one can come.
+   * be unloaded at home (the loot waits on the site); `stranded`, its shuttle is lost and no other free one can come, or it is on its way home with no way in (away/run.ts `noWayIn`).
    */
   block?: 'noCrew' | 'noRoom' | 'stranded';
   /** What a fight in the node does to the site (the owner's choice): absent, the party is called home; `stay`, it carries on (boarding). */

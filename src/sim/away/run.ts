@@ -17,7 +17,7 @@ import { stagedStacks } from '../items/staging';
 import { releaseOwned } from './owned';
 import { partyOut } from './depart';
 import { boardPassengers, calledBack, dropPassages, endInvites, freeSeats, letOut, passagesOf, postPassages } from './passage';
-import { atHome, atSite, due, go, hovering, sec, wanted } from './phase';
+import { atHome, atSite, due, go, hovering, sec, wanted, wayHome } from './phase';
 import { boxAround, replaceLostShuttles, startPickupRuns } from './pickup';
 import { depart, lift, recall, stay } from './site';
 import { mustTurnBack, partyAboard, settled } from './trips';
@@ -154,6 +154,25 @@ function pickup(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
 }
 
 /**
+ * A shuttle on its way home with no way into its home ship (its bay down, no airlock there free, or the ship gone) strands its party as a
+ * lost shuttle does: the site is `stranded` (the urgent alert, once, `noHome`) until a way in is back, which clears it. Only the site's own
+ * run marks it (a pickup run has no site); a lost shuttle's `stranded` is the run-less case (pickup.ts `replaceLostShuttles`).
+ */
+function noWayIn(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
+  const s = sim.world.get(r.site, AwaySiteC);
+  if (s?.vehicle !== id) return;
+  const stuck = r.phase === 'home' && !wayHome(sim, id, v);
+  if (!stuck) {
+    if (s.block === 'stranded') delete s.block;
+    return;
+  }
+  if (s.block === 'stranded') return;
+  s.block = 'stranded';
+  const crew = sim.world.query(AwayC).filter((c) => sim.world.get(c, AwayC)?.vehicle === id).sort((a, b) => a - b);
+  sim.events.emit({ type: 'away.stranded', ship: r.site, crew, noHome: true });
+}
+
+/**
  * Away sites (docs/DESIGN.md "Away sites", #286). Each site's shuttle runs on its own (autopilot, like ferry runs): at home it offers
  * passages and takes its passengers to the site; there it docks or hovers as their air source and the hold for loose loot, and brings
  * home those who come back aboard in batched round trips that leave only through the departure check (last call, riders), watched while
@@ -169,6 +188,7 @@ export function awaySystem(sim: Sim): void {
     const v = sim.world.get(id, VehicleC);
     if (!v) continue;
     r.timer++;
+    noWayIn(sim, id, v, r);
     switch (r.phase) {
       case 'board':
         board(sim, id, v, r);

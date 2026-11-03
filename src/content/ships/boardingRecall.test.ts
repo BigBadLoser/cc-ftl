@@ -111,6 +111,35 @@ describe('recall', () => {
     expect(of(run(sim, 3), 'crew.recallStarted')).toHaveLength(1);
   });
 
+  it('a shuttle on its way home that loses every way in strands the site (an urgent alert, once) until a way in is back', () => {
+    const sim = setup();
+    const { shuttle, party } = launchParty(sim);
+    sim.enqueue({ type: 'crew.recall', ids: party });
+    run(sim, 2000, () => sim.world.get(shuttle, SiteRunC)?.phase === 'home'); // leaving the site, not yet sent to the bay
+    const bay = sim.world.get(shuttle, VehicleC)!.home;
+    const locks = sim.world.query(ModuleC).filter((m) => sim.world.get(m, ModuleC)!.def === 'module.airlock' && shipIdOf(sim, sim.world.get(m, ModuleC)) === nth(sim, 1));
+    const hp = sim.world.get(bay, ModuleC)!.hp;
+    const down = (): false => {
+      sim.world.get(bay, ModuleC)!.hp = 0; // kept down: the home crew would mend it
+      for (const m of locks) sim.world.get(m, ModuleC)!.hp = 0;
+      return false;
+    };
+    down();
+    const out = run(sim, 300, down);
+    expect(of(out, 'away.stranded')).toEqual([{ type: 'away.stranded', ship: nth(sim, 2), crew: [...party].sort((a, b) => a - b), noHome: true }]);
+    expect(sim.world.get(nth(sim, 2), AwaySiteC)?.block).toBe('stranded');
+    expect(sim.world.get(shuttle, SiteRunC)?.phase).toBe('home');
+    expect(awayLeaks(sim)).toEqual([]);
+    // The bay is mended: the block clears, the shuttle stows and the party steps out.
+    sim.world.get(bay, ModuleC)!.hp = hp;
+    run(sim, 3);
+    expect(sim.world.get(nth(sim, 2), AwaySiteC)?.block).toBeUndefined();
+    run(sim, 2000, () => !sim.world.has(shuttle, SiteRunC));
+    expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
+    for (const c of party) expect(home(sim, c)).toBe(true);
+    expect(awayLeaks(sim)).toEqual([]);
+  });
+
   it('a party landed by hand (shuttle panel, no launch) is recalled the same way: it joins a boarding site, the shuttle brings everyone home', () => {
     const sim = setup();
     const { shuttle, pilot, party } = dockParty(sim);
