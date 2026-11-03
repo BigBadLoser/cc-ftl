@@ -450,11 +450,18 @@ def cyl_z(b, L, D, z0, z1, r, col, top=None, sides=16):
     b.face(hi, top or col, (0, 0, 1))
 
 
-def vent(b, L=2.3, D=0.38, r=0.17):
-    """The round vent on top of the block behind the bay (after the ref's hopper tile, link 07, where it sits toward
-    the back and the hatch end, clear of the linkage at the front): a low rim round a dark grille."""
+def vent(b, L=2.3, D=0.5, r=0.17):
+    """The round vent on top of the block behind the bay (after the ref's hopper tile, link 07: toward the hatch end,
+    clear of the linkage at the front; in line with the dial across the machine): a low rim round a dark grille."""
     cyl_z(b, L, D, TOP, TOP + 0.03, r, GMD, GM)
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
+
+
+def piston(b, L0=2.1, L1=2.6, D=0.86, r=0.08):
+    """The piston lying along the front edge of the top behind the bay, above the recess (after the ref's hopper
+    tile), with a dark knob capping its hatch-end side."""
+    b.cyl_L(D, TOP + r, r, L0, L1, GM, sides=12)
+    b.cyl_L(D, TOP + r, r + 0.02, L0 - 0.06, L0, DARK, sides=12)
 
 
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
@@ -550,6 +557,7 @@ def scrapper(rot):
     screen(b, D1)
     dial(b)
     vent(b)
+    piston(b)
     return [b.m.build()]
 
 
