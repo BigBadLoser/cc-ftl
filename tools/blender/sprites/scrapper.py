@@ -457,9 +457,10 @@ def vent(b, L=2.3, D=0.5, r=0.17):
     cyl_z(b, L, D, TOP + 0.03, TOP + 0.033, r - 0.04, DARK)
 
 
-def piston(b, L0=2.1, L1=2.6, r=0.135, wall=1.0, sink=0.077):
+def piston(b, L0=2.0 + STEP, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.077):
     """The piston lying along the front edge of the top behind the bay, above the recess (after the ref's hopper
-    tile): sunk about 3 px into the top, where it meets the top along the top's front edge (D = wall), so it bulges out
+    tile), running to where the top slopes away at its far end and as far the other way, centred over the recess:
+    sunk about 3 px into the top, where it meets the top along the top's front edge (D = wall), so it bulges out
     over the bay's back wall above it; a dark knob caps its hatch-end side."""
     z = TOP + r - sink
     D = wall - math.sqrt(r * r - (r - sink) ** 2)                      # its line on the top falls on the front edge
