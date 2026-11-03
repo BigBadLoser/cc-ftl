@@ -142,8 +142,8 @@ class LookShell(T.Shell):
                                                         # faces the camera sees; the face under the top, down to it,
                                                         # is the look's to draw)
         if top is None and d0 < sh < d1:
-            pts += [(sh, zt(sh)), (d0, zt(sh))]
-            parts += ["slope", "shelf"]
+            pts += [(sh, zt(sh)), (sh - 1 / 32, zt(sh)), (d0, zt(sh))]     # (its front edge a lit px)
+            parts += ["slope", "shelf_edge", "shelf"]
         else:
             pts.append((d0, zt(d0)))
             parts.append("slope" if top is None else "floor")
@@ -170,7 +170,8 @@ class LookShell(T.Shell):
                "toe": tl[fam] if isinstance(tl, dict) else R[0 if tl is None else tl], "hole_back": R[0],    # (a hole's walls and floor as
                "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
-               "shelf": R[4],                           # (a flat step at its top: lit)
+               "shelf": R[3], "shelf_edge": R[4],       # (a flat step at its top: the slope's plates' tone, its
+                                                        # front edge lit)
                "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}
         mt = {"cont": 0.0, "end": 0.0, "out": 1.0, "in": -1.0}
         if self.hole_tone:                              # (a ramp design draws its hole's inside: its walls' tones)
