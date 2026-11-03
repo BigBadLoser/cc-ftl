@@ -261,16 +261,18 @@ def plate_L(b, poly, L0, L1, col, caps):
 
 
 def plate_z(b, poly, z0, z1, col, caps):
-    """A flat (L, D) outline, which may be concave, extruded up from z0 to z1; caps as in plate_L."""
+    """A flat (L, D) outline, which may be concave, extruded up from z0 to z1; caps as in plate_L. z1 may be a
+    function of L for a top that slopes along L (each cap piece must then lie where it is linear)."""
+    top = z1 if callable(z1) else (lambda L: z1)  # noqa: E731
     area = sum(poly[i][0] * poly[i - 1][1] - poly[i - 1][0] * poly[i][1] for i in range(len(poly)))
     sg = 1 if area < 0 else -1
     for i in range(len(poly)):
         (l0, d0), (l1, d1) = poly[i - 1], poly[i]
-        q = [b.P(l0, d0, z0), b.P(l1, d1, z0), b.P(l1, d1, z1), b.P(l0, d0, z1)]
+        q = [b.P(l0, d0, z0), b.P(l1, d1, z0), b.P(l1, d1, top(l1)), b.P(l0, d0, top(l0))]
         o0, o1 = b.P((l0 + l1) / 2, (d0 + d1) / 2, z0), b.P((l0 + l1) / 2 + sg * (d1 - d0), (d0 + d1) / 2 - sg * (l1 - l0), z0)
         b.face(q, col, (o1[0] - o0[0], o1[1] - o0[1], o1[2] - o0[2]))
     for piece in caps:
-        b.face([b.P(*poly[k], z1) for k in piece], col, (0, 0, 1))
+        b.face([b.P(*poly[k], top(poly[k][0])) for k in piece], col, (0, 0, 1))
         b.face([b.P(*poly[k], z0) for k in piece], col, (0, 0, -1))
 
 
@@ -284,9 +286,9 @@ def drum(b):
     rr_prism_L(b, 2.04, 2.2, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                    # mouth shroud
     rr_prism_L(b, 2.02, 2.04, DRUM_D, DRUM_Z, 0.29, 0.09, DARK)                    # the mouth, dark
     b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, GM, sides=20)                          # drum
-    for L0, L1 in ((2.24, 2.29), (2.36, 2.52)):                                    # raised bands
+    for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, GMD, sides=20)
-    rr_prism_L(b, 2.62, 2.8, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                     # squared end shroud in the yoke
+    rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                      # squared end shroud, under the yoke
     yoke(b)
 
 
@@ -302,11 +304,17 @@ def yoke(b):
 
 
 def top_plate(b):
-    """The plate lying on the drum, running back from the yoke's top to above the mouth shroud, flush with the yoke's
-    back edge (measured on the drum tile): its front edge is notched in the middle."""
-    poly = [(2.15, 1.25), (2.8, 1.25), (2.8, 1.62), (2.6, 1.62), (2.6, 1.5), (2.38, 1.5), (2.38, 1.62), (2.15, 1.62)]
-    caps = [(0, 5, 6, 7), (0, 1, 4, 5), (1, 2, 3, 4)]
-    plate_z(b, poly, 0.77, 0.92, GMD, caps)
+    """The plate lying on the drum, centred on it, running back from the yoke's top to above the mouth shroud
+    (measured on the drum tile). Its front edge is notched in the middle; near the mouth end its top slopes up about
+    4 px and runs on level to the end."""
+    w, notch = 0.185, 0.12                                              # half width, notch depth
+    Db, Df, Dn = DRUM_D - w, DRUM_D + w, DRUM_D + w - notch
+    poly = [(2.15, Db), (2.27, Db), (2.35, Db), (2.38, Db), (2.6, Db), (2.8, Db), (2.8, Df), (2.6, Df), (2.6, Dn),
+            (2.38, Dn), (2.38, Df), (2.35, Df), (2.27, Df), (2.15, Df)]
+    caps = [(0, 1, 12, 13), (1, 2, 11, 12), (2, 3, 9, 10, 11), (3, 4, 8, 9), (4, 5, 6, 7, 8)]
+    lo, hi = 0.92, 0.92 + 0.1                                           # 0.1 = about 4 px of height
+    plate_z(b, poly, 0.77, lambda L: hi if L <= 2.27 else lo if L >= 2.35 else hi + (lo - hi) * (L - 2.27) / 0.08,
+            GMD, caps)
 
 
 def scrapper(rot):
