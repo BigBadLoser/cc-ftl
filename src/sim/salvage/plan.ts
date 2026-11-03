@@ -1,8 +1,10 @@
 import { createJob, DECONSTRUCT_TICKS } from '../crew/handlers';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob, stackAt } from '../items/stacks';
+import { StagingC } from '../items/components';
+import { stagedStacks } from '../items/staging';
+import { AwaySiteC } from '../away/components';
 import { jobGoal } from '../crew/helpers';
-import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { postModuleDecon } from '../modules/handlers';
 import { shipGrid, shipIdOf } from '../regions';
@@ -97,9 +99,17 @@ function farthestFloors(sim: Sim, ship: number, floors: Tile[]): Tile[] {
   return reach.filter((t) => dist.get(key(t.x, t.y)) === far);
 }
 
-function stacksAboard(sim: Sim, ship: number): boolean {
-  for (const id of sim.world.query(ItemStackC)) if (shipIdOf(sim, sim.world.get(id, ItemStackC)) === ship) return true;
-  return false;
+/**
+ * The floors that may come down now (#286 slice 3): not one with a loose stack on it, and not one of the site's staging zone (the zone's
+ * own `StagingC` tiles) until the site is closing, or the zone is empty and no other floor is left. Every other floor goes while loot
+ * waits elsewhere or the shuttle is away. (A zone tile taken at the end is re-laid by the site's 5 s look, away/haul.ts `keepZone`.)
+ */
+function strippableFloors(sim: Sim, ship: number, floors: Tile[]): Tile[] {
+  const zone = sim.world.get(ship, StagingC)?.tiles ?? [];
+  const inZone = (t: Tile): boolean => zone.some((z) => z.x === t.x && z.y === t.y);
+  const others = floors.filter((t) => !inZone(t));
+  const zoneLast = sim.world.get(ship, AwaySiteC)?.status !== 'open' || (others.length === 0 && stagedStacks(sim, ship).length === 0);
+  return (zoneLast ? floors : others).filter((t) => stackAt(sim, ship, t.x, t.y) === 0);
 }
 
 /** The salvage jobs open on a ship (an order's deconstruct and moduleDecon jobs carry `scrap`). */
@@ -112,8 +122,8 @@ export function salvageJobs(sim: Sim, ship: number): number[] {
 
 /**
  * Keep the order's stripping jobs topped up (at most SALVAGE_JOBS_OPEN open on the wreck). Modules go first; walls and doors once no
- * module of a ticked type is left; floors last, once no loose stack lies on the wreck (the haulers and the salvage shuttle clear those)
- * farthest from the crew first. While crew stand on the wreck, a part none of them can reach is skipped and an open job nobody holds
+ * module of a ticked type is left; floors last, farthest from the crew first, never one under a loose stack and the staging zone's last
+ * (`strippableFloors`). While crew stand on the wreck, a part none of them can reach is skipped and an open job nobody holds
  * that none of them can reach is dropped, so it never holds a place under the cap; a stage whose parts are all out of reach lets the
  * next one start (an outer wall coming down opens a sealed hall). Returns how many parts the order still has to strip (0 = done).
  */
@@ -153,8 +163,8 @@ export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): n
     }
   } else if (walls.length) {
     post(walls, (t) => (t.kind === Struct.Beam ? Struct.Space : Struct.Floor));
-  } else if (!stacksAboard(sim, ship)) {
-    post(farthestFloors(sim, ship, parts.floors).filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }))), () => Struct.Space);
+  } else {
+    post(farthestFloors(sim, ship, strippableFloors(sim, ship, parts.floors)).filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }))), () => Struct.Space);
   }
   return remaining;
 }

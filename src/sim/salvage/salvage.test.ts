@@ -19,6 +19,10 @@ import { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
 import { CREW_MAX_HP } from '../tuning';
 import { SalvageOrderC } from './components';
+import { planJobs, salvageJobs } from './plan';
+import { AwaySiteC } from '../away/components';
+import { StagingC } from '../items/components';
+import { stageAdd } from '../items/staging';
 import { workLeft } from './counts';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
@@ -355,5 +359,41 @@ describe('build tools on a wreck', () => {
     expect(rej({ type: 'job.deconstructModule', ship: w, x: 1, y: 1 })).toBe('wreck');
     expect(rej({ type: 'job.forceDoor', ship: w, x: 4, y: 2 })).toBe('notJammed');
     expect(sim.world.query(JobC).length).toBe(0);
+  });
+});
+
+describe('floors and the staging zone (#286 slice 3)', () => {
+  /** A deck with nothing but floor (modules and walls already stripped), an open away site on it with a two-tile staging zone. */
+  function deck(): { sim: Sim; w: number; zone: { x: number; y: number }[] } {
+    const sim = new Sim(1, content);
+    const w = derelict(sim, { rows: ['______', '______', '______'], modules: [] });
+    const zone = [{ x: 0, y: 0 }, { x: 1, y: 0 }];
+    sim.world.add(w, AwaySiteC, { owner: 'salvage', status: 'open', vehicle: 0, since: 0 }); // its shuttle away (no run beside it)
+    sim.world.add(w, StagingC, { tiles: zone, cap: 80 });
+    return { sim, w, zone };
+  }
+  const floorJobs = (sim: Sim, w: number): string[] => salvageJobs(sim, w).map((j) => `${sim.world.get(j, JobC)!.x},${sim.world.get(j, JobC)!.y}`);
+
+  it('a floor elsewhere comes down while staged loot waits in the zone and the shuttle is away; the zone and tiles under loot stay', () => {
+    const { sim, w, zone } = deck();
+    stageAdd(sim, w, 'item.scrap_hull', 5);
+    spillItems(sim, w, 5, 2, 'item.scrap_tech', 3); // loose loot outside the zone
+    planJobs(sim, w, ['hull']);
+    const jobs = floorJobs(sim, w);
+    expect(jobs.length).toBeGreaterThan(0);
+    for (const t of zone) expect(jobs).not.toContain(`${t.x},${t.y}`);
+    expect(jobs).not.toContain('5,2');
+  });
+
+  it('the zone\'s tiles come last: once no other floor is left and the zone is empty, or once the site is closing', () => {
+    const { sim, w, zone } = deck();
+    const g = sim.sector.grid;
+    for (let y = 0; y < 3; y++) for (let x = 0; x < 6; x++) if (!zone.some((t) => t.x === x && t.y === y)) writeStruct(g, x, y, Struct.Space);
+    stageAdd(sim, w, 'item.scrap_hull', 5); // on the first zone tile
+    planJobs(sim, w, ['hull']);
+    expect(floorJobs(sim, w)).toEqual([]); // the zone still holds loot and the site is open
+    sim.world.get(w, AwaySiteC)!.status = 'closing';
+    planJobs(sim, w, ['hull']);
+    expect(floorJobs(sim, w)).toEqual(['1,0']); // the empty zone tile; the one under the stack waits for its loot to go
   });
 });

@@ -896,8 +896,12 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
   Ordering again changes the types (open jobs are dropped and re-planned).
 - **Parts.** `ModuleDef.scrap` tags a module with its scrap type (robot modules have none and are never touched). Walls, doors and beams are hull.
   `partsOf` lists what an order still strips; `planJobs` posts the jobs: ordinary `moduleDecon` / `deconstruct` jobs with `Job.scrap` set, so `jobWork`
-  spills scrap (`salvage/yield.ts`) instead of the refund. Order: modules, then walls and doors (they come down to floor), then floors, which
-  wait until no loose stack lies on the wreck (the salvage ferry in `logistics/salvage.ts` and the haulers clear them) and go farthest-from-the-crew first, one distance level at a time, so crew never cut themselves off. A floor comes down to open space.
+  spills scrap (`salvage/yield.ts`) instead of the refund. Order: modules, then walls and doors (they come down to floor), then floors,
+  farthest-from-the-crew first, one distance level at a time, so crew never cut themselves off. A floor comes down to open space.
+  `strippableFloors` (#286 slice 3, user decision 2026-11-03): a floor with a loose stack on it waits, and so do the tiles of the site's
+  staging zone (read from its `StagingC`) until the site is closing, or the zone is empty and no other floor is left; every other floor
+  comes down while loot waits elsewhere or the shuttle is away. (Before, every floor waited until no stack lay anywhere on the wreck.)
+  A zone tile taken at the end is replaced by `keepZone`'s 5 s look.
 - **Yield.** item count of the part's build cost x `SALVAGE_FRAC` (0.4), stochastic rounding on the sim rng, capped at cost - 1 (a 1-item floor yields nothing).
 - **System.** `salvageSystem` (every `SALVAGE_EVERY` ticks, after `haulCleanupSystem`): hostile aboard (a living, non-surrendered hostile crew member, an egg sac or a nest)
   blocks the order and drops its open jobs; at most `SALVAGE_JOBS_OPEN` jobs per wreck; when nothing of the ticked types is left it emits `salvage.done`
@@ -1029,8 +1033,8 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
     an urgent trip leaves at once. A departure drops no haul: hauls go into the zone, which stays.
   - The away party never hauls into the wreck's lockers (`haulJobsSystem` skips stacks on an `AwaySiteC` ship); the ordinary ferry
     (`logistics/salvage.ts`) keeps its own rule elsewhere.
-  - `looseOn` is all loot on the site (the order stays open until the shuttle has taken it, staged or not); `unstagedOn` is what is still
-    to be hauled (the site's hauling demand). `haulsTo` and the hauls straight into the hold are gone.
+  - `looseOn` is all loot lying on the site; `lootOnSite` adds loot in hand on its way into the zone (the order keeps the site open on it,
+    Codex 4451348811); `unstagedOn` is what is still to be hauled (the site's hauling demand). `haulsTo` and the hauls straight into the hold are gone.
 
 ### Dependency on crew AI Phase 3
 

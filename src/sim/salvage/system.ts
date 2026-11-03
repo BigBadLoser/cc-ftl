@@ -8,7 +8,7 @@ import { hostilesAboard } from './counts';
 import { planJobs, salvageJobs } from './plan';
 import { isEmptyShell, removeWreck } from './remove';
 import { AwaySiteC } from '../away/components';
-import { looseOn } from '../away/haul';
+import { lootOnSite } from '../away/haul';
 import { closeOrphanSites, tendSite } from './site';
 
 /** True while something hostile to the player is aboard: a living, non-surrendered hostile crew member, an egg sac or a nest. */
@@ -56,8 +56,9 @@ export function salvageSystem(sim: Sim): void {
       sim.events.emit({ type: 'salvage.ordered', ship, types: [...order.types] });
     }
     const site = sim.world.get(ship, AwaySiteC);
-    // Loot still lying about is carried off before the site closes, while its shuttle can take it home (not `noRoom` or `stranded`).
-    const loot = site?.status === 'open' && !site.block && looseOn(sim, ship).length > 0;
+    // Loot still lying about (or on its way into the staging zone) is carried off before the site closes, while its shuttle can take it
+    // home (not `noRoom` or `stranded`).
+    const loot = site?.status === 'open' && !site.block && lootOnSite(sim, ship);
     const work = planJobs(sim, ship, order.types) > 0 || salvageJobs(sim, ship).length > 0;
     tendSite(sim, ship, order, work || loot);
     if (work || loot || ferryingFrom(sim, ship)) continue;

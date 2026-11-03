@@ -6,7 +6,8 @@ import { SuitC } from '../../sim/eva/components';
 import { boardCrew } from '../../sim/vehicles/lifecycle';
 import { StagingC } from '../../sim/items/components';
 import { stagedStacks, stagedUnits, stageAdd } from '../../sim/items/staging';
-import { crateUnits, spillItems } from '../../sim/items/stacks';
+import { looseOn, lootOnSite } from '../../sim/away/haul';
+import { crateUnits, spillItems, takeFromStack } from '../../sim/items/stacks';
 import { shipGrid } from '../../sim/regions';
 import { LOAD_CRATE_SEC } from '../../sim/tuning';
 import { cargoCount } from '../../sim/vehicles/cargo';
@@ -146,5 +147,27 @@ describe('away sites: the staging zone (#286 slice 3)', () => {
     expect(of(all, 'away.departed').some((e) => e.home)).toBe(true);
     expect(stagedUnits(sim, wreck)).toBe(0);
     expect(cargo(sim, shuttle)).toBeGreaterThanOrEqual(30);
+  });
+
+  it('a zone tile stripped from under the zone is replaced by the site\'s look within ZONE_LOOK_SEC (5 s)', () => {
+    const { sim, wreck } = staged();
+    const before = zoneOf(sim, wreck).map((t) => ({ ...t }));
+    const gone = before[0]!;
+    shipGrid(sim, wreck)!.set('struct', gone.x, gone.y, Struct.Space);
+    play(sim, 20 * 6);
+    const after = zoneOf(sim, wreck);
+    expect(after.some((t) => t.x === gone.x && t.y === gone.y)).toBe(false);
+    expect(after.length).toBe(before.length);
+    for (const t of before.slice(1)) expect(after).toContainEqual(t); // the tiles that still hold goods stay
+  });
+
+  it('loot in hand on its way into the zone is still loot on the site (Codex 4451348811: the site must not close under it)', () => {
+    const { sim, wreck } = staged();
+    for (const j of sim.world.query(JobC)) if (sim.world.get(j, JobC)!.kind === 'deconstruct') sim.world.destroyEntity(j); // no more loot
+    for (const id of looseOn(sim, wreck)) takeFromStack(sim, id, sim.world.get(id, ItemStackC)!.count);
+    lootNearZone(sim, wreck, 4);
+    play(sim, 20 * 120, () => sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.haul?.phase === 'deliver'));
+    expect(looseOn(sim, wreck)).toEqual([]); // the last stack is in hand
+    expect(lootOnSite(sim, wreck)).toBe(true);
   });
 });

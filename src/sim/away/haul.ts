@@ -1,3 +1,4 @@
+import { JobC } from '../crew/components';
 import { ItemStackC, StagingC } from '../items/components';
 import { makeHaul } from '../items/plan';
 import { refKey, reservations } from '../items/stock';
@@ -27,6 +28,18 @@ export function looseOn(sim: Sim, ship: number): number[] {
     const st = sim.world.get(id, ItemStackC)!;
     return !st.job && shipIdAt(sim, st.x, st.y) === ship;
   }).sort((a, b) => a - b);
+}
+
+/**
+ * True while loot is still on the site: lying loose (in the zone or not), or in hand on its way into the zone (a haul into it under way:
+ * Codex 4451348811, the last stack picked up must not let the site close before it is put down and loaded).
+ */
+export function lootOnSite(sim: Sim, ship: number): boolean {
+  if (looseOn(sim, ship).length > 0) return true;
+  return sim.world.query(JobC).some((j) => {
+    const d = sim.world.get(j, JobC)!.haul?.dst;
+    return d?.kind === 'zone' && d.id === ship;
+  });
 }
 
 /** Loot lying on a site outside its staging zone: what is still to be hauled. */
