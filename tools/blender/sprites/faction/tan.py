@@ -10,7 +10,8 @@ from .shell import FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell,
 FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's pale tan)
 BLUE = "ochre"                      # the trim's: the line at the face's foot, the toe
 HEAD_D, HEAD_H = PX, 11 * PZ       # the header block: its depth (2 px of lit top), its front (a lit edge, 10 of face)
-LIP_D, LIP_H = PX, 4 * PZ           # the lip at the face's foot (3 px of face over a dark one)
+LIP_D, LIP_TOP = PX / 2, 6 * PZ    # the lip at the face's foot: its depth (a px of lit top), its top over the slope's
+                                    # top (its front from there down to it: 4 px of face over a dark one)
 PANEL_W = 1 / 3                     # the centre panel's width (a tile's middle third)
 SLAT = 4 * PZ                       # the slats' pitch: a dark line, a lit one, 2 px of face
 END = {"x": "fTX5", "y": "fTX4"}    # a free end's section, on an x / y end face; its front edge's highlight
@@ -79,7 +80,7 @@ def tan(hull):
             flat(k, ax, plane, u0, u1, z0, z1_, d + PAINT, sd(col, ax))
 
         # the foot: the lip (its front's last px dark; the ramp's first row is the blue line under it)
-        zl0, zl1 = zs + _hid(LIP_D), zs + _hid(LIP_D) + LIP_H
+        zl0, zl1 = zs, zs + LIP_TOP
         prism(k, ax, plane, a, b, [(0.0, zl0), (LIP_D, zl0), (LIP_D, zl1), (0.0, zl1)], FACE, 3,
               cols=[False, None, sd("fTS1", ax), False], mitre=mit)
         band(a, b, zl0, zl0 + PZ, "fTS4", LIP_D)
