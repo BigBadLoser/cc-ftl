@@ -15,7 +15,7 @@ RAIL_H = 7 * PZ                     # the rail's front
 END_W = 0.25                        # its end blocks along a tile (the middle block between them)
 LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
-SHELF = 3 / 32                      # the ramp's top a flat step this deep against the wall (3 px)
+SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
 
 
 def _shelf_z(zs):
@@ -114,7 +114,7 @@ class Slate(Faction):
 
     def relief(self, sprite):
         return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
-                      shelf=SHELF, shelf_back=0,     # (the shelf's back px dark, under the lip)
+                      shelf=SHELF, shelf_back=(0, 1),   # (the shelf's back: a dark crease under the lip, a dim px)
                       ramp_bands=((SPLIT, BLUE, 4, EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
                       toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 3), FaceHoles(),

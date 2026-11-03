@@ -44,7 +44,7 @@ class Style:
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
     shelf: float = 0.0                    # the ramp's top a flat step against the wall this deep (at the slope's
                                           # height there: the slope as before from its front edge; solid ramps)
-    shelf_back: Optional[int] = None      # ... its back px against the wall in this ramp level (None: the shelf's)
+    shelf_back: tuple = ()                # ... its back px in these ramp levels, out from the wall (the rest: its own)
     ramp_bands: tuple = ()                # the ramp's plates split in bands down the run, after the first (the
                                           # face's family, level 2): (from (a fraction of the run), family (None:
                                           # the face's), level, the joint left open before it (down the run)) each
