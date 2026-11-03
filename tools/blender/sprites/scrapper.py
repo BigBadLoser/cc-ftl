@@ -22,7 +22,7 @@ ACCESS = (1, 2)
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
 RUST, RUST_D = "rust", "rustD"  # the drum and yoke (dark) with lighter raised bands
-HW = os.environ.get("SCRAPPER_STEEL", "scSteel")   # the hardware's steel: piston, exhaust nozzle
+HW, HW_D = "scSteel", "scSteelD"   # the hardware: blue steel (piston, nozzle, door frames, bolts, screws); levers a shade down
 BODY_S2 = "scBodyS2"  # a step below BODY_S: the recess frame
 BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
@@ -372,7 +372,7 @@ def screen(b, D1):
     sl, sz = 0.02, 0.018                                                # a screw head: about 1 px, at each corner
     for L in (L0 - m / 2, L1 + m / 2):
         for z in (z0 - m / 2, z1 + m / 2):
-            b.face([b.P(L + u, D1 + 0.004, z + v) for u, v in ((-sl, -sz), (sl, -sz), (sl, sz), (-sl, sz))], GM, fwd)
+            b.face([b.P(L + u, D1 + 0.004, z + v) for u, v in ((-sl, -sz), (sl, -sz), (sl, sz), (-sl, sz))], HW, fwd)
     f0, f1 = (L0, D1 + bot, z0), (L1, D1 + bot, z0)                     # the foot's front edge
     g0, g1 = (L0, D1, z0), (L1, D1, z0)                                 # the foot's back edge, on the wall
     t0, t1 = (L0, D1 + top, z1), (L1, D1 + top, z1)                     # the top's front edge
@@ -419,7 +419,7 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
     for prof in ([(L0 - wl, 0), (L0, 0), (L0, zt), (L0 - wl, zt)],
                  [(L1, 0), (L1 + wl, 0), (L1 + wl, zt), (L1, zt)],
                  [(L0 - wl, zt), (L1 + wl, zt), (L1 + wl, zt + wz), (L0 - wl, zt + wz)]):
-        b.prism_D(prof, D1, D1 + lip, GMD)
+        b.prism_D(prof, D1, D1 + lip, HW)
 
 
 def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, chamfer=0.09):
@@ -492,7 +492,7 @@ def levers(b, Dc, zc, r, spacing=0.236, w=0.06, t=0.04, gap=0.003, wrap=130, n=8
     m = len(poly) - 1                                                   # inner[k] sits at m - k
     caps = [[0, 1, 2, m]] + [[2 + k, 3 + k, m - k - 1, m - k] for k in range(n)]
     for Lc in (2.5 - spacing, 2.5, 2.5 + spacing):
-        plate_L(b, poly, Lc - w / 2, Lc + w / 2, DARK, caps)
+        plate_L(b, poly, Lc - w / 2, Lc + w / 2, HW_D, caps)
 
 
 DRUM_SIDES, DRUM_BOLTS = 32, 8
@@ -511,7 +511,7 @@ def drum(b, turn=0.0):
     for L0, L1 in DRUM_BANDS:                                                      # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, RUST, sides=DRUM_SIDES, turn=turn)
     from .scrapper_detail import drum_bolts
-    drum_bolts(b, DRUM_D, DRUM_Z, 0.37, [band for band in DRUM_BANDS if band[1] - band[0] > 0.1], DRUM_BOLTS, turn, GM)
+    drum_bolts(b, DRUM_D, DRUM_Z, 0.37, [band for band in DRUM_BANDS if band[1] - band[0] > 0.1], DRUM_BOLTS, turn, HW)
     rr_prism_L(b, 2.8, 3.0, DRUM_D, DRUM_Z, 0.365, 0.12, RUST_D)                      # squared end shroud, under the yoke
     yoke(b)
 

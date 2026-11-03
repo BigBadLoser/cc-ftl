@@ -1400,5 +1400,9 @@
  "scSteel": {
   "hex": "#5b6f8e",
   "set": "scrapper"
+ },
+ "scSteelD": {
+  "hex": "#485a7a",
+  "set": "scrapper"
  }
 }
