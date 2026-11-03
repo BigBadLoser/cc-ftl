@@ -41,6 +41,7 @@
   pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
   mining_pod the mining pod: 8 fly headings, 8 mining headings x 2 frames, 4 docked poses (pod_family.py craft_jobs)
   fx_mining the mining laser's beam segment, its hit on the rock, rock chips, the dust of a tile mined out (fx_mining.py)
+  fx_shield the shield bubble's pieces: rim shells per layer, ripple, break, regen, down, ion drain, pierce (fx_shield.py)
   starmap   the starmap's pictures: sector bodies, structure icons, fleet icons (8 headings), a backdrop tile (starmap.py)
   backdrop  the node's central body drawn large behind the main view: backdrop.body.<kind>.v<n>, 320 px frame (backdrop_bodies.py,
             backdrop_pulsar.py)
@@ -182,6 +183,9 @@ def jobs(name):
     if name == "fx_mining":
         from . import fx_mining
         return fx_mining.SPRITES, True
+    if name == "fx_shield":
+        from . import fx_shield
+        return fx_shield.SPRITES, True
     if name == "starmap":
         from . import starmap
         return starmap.jobs(), True
@@ -218,6 +222,6 @@ def jobs(name):
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
-            "pod_bay", "mining_pod", "fx_mining", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
+            "pod_bay", "mining_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper")
 ALL = RENDERED + ("sol", "damage_sol")
