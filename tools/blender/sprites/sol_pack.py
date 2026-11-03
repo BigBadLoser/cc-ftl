@@ -2,7 +2,8 @@
 their own scripts and packed into game sheets. Runs inside Blender (build_sprites.py `sol`); each pack is rendered by a
 separate Blender job, one at a time.
 
-  engine    Heavy Kestrel (engine_kestrel_h185): module.engine.hull.r<n>, module.engine.machine.r<n>[.active]
+  engine    Heavy Kestrel (engine_kestrel_h185): module.engine.hull.r<n>, module.engine.machine.r<n>[.active]; stage 8
+            where the hull row faces the camera (r1, r2: the hull's thruster block, module.engine.{block,end}.r<n>)
   ai_core   ORACLE (ai_core_oracle_h185): module.ai_core.r<n>[.active]; roof.ai_core[.stowed|.deploy.f<k>|.active]
   shields   BASTION + WARD (shield_bastion_h185_ward_lowbody): module.shield_gen[_small].r<n>[.active];
             roof.shield_gen[_small][.stowed|.deploy.f<k>|.active]. BASTION is 2x3, so its roof parts are also
@@ -36,7 +37,7 @@ def _jobs():
     eng = EXP / "engine_kestrel_h185/render.py"
     ai = EXP / "ai_core_oracle_h185/render.py"
     sh = EXP / "shield_bastion_h185_ward_lowbody/render.py"
-    out = [("engine", f"engine-r{r}", ["--python", str(eng), "--", "--stage", "7", "--rot", str(r), "--no-beauty"]) for r in range(4)]
+    out = [("engine", f"engine-r{r}", ["--python", str(eng), "--", "--stage", "8", "--rot", str(r), "--no-beauty"]) for r in range(4)]
     out += [("ai_core", "ai-module", ["--python", str(ai), "--", "--part", "module", "--rot", "0", "1", "2", "3", "--quality", "final"])]
     out += [("ai_core", f"ai-{p}", ["--python", str(ai), "--", "--part", p, "--quality", "final"]) for p in ("roof-a", "roof-b")]
     out += [("shields", "shield-modules", ["--python", str(sh), "--", "--part", "modules", "--rot", "0", "1", "2", "3", "--quality", "final"])]
