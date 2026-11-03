@@ -309,8 +309,8 @@ def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
 
 
 RECESS_W, RECESS_Z, RECESS_DEPTH = 0.55, (0.52, 1.06), 0.9
-RECESS_BANDS = (0.0, 0.13, 0.2, 0.27, 0.36)             # depths where the passage walls step darker
-RECESS_FADE = (LIGHT, "scRec1", "scRec2", "scRec3", "scRec4")
+RECESS_BANDS = (0.0, 0.2, 0.27, 0.36)           # depths where the passage walls step darker
+RECESS_FADE = ("scRec1", "scRec2", "scRec3", "scRec4")
 RECESS_L = (2.5 - RECESS_W / 2, 2.5 + RECESS_W / 2)                    # centred in the bay's back wall
 
 
