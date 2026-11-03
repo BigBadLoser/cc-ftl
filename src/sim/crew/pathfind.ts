@@ -1,6 +1,6 @@
-import { OPEN_KEY, walkInfo, type WalkInfo } from '../modules/walk';
+import { doorSignature, passAt, type WalkInfo } from '../modules/walk';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { DoorJam, Struct, isEvaWalkable, isWalkable } from '../structure';
+import { Struct, isWalkable } from '../structure';
 import type { Sim } from '../sim';
 import { shipGrid } from '../regions';
 import type { ShipGrid } from '../shipGrid';
@@ -69,13 +69,13 @@ const NO_PATH_MAX = 4096;
 const THIN_MASK = new WeakMap<object, Map<string, { rev: number; h: number }>>();
 
 /**
- * Everything a search reads, as one string: the sector-wide revisions of the fields it walks (struct, door jams, modules), the module count (a
+ * Everything a search reads, as one string: the sector-wide revisions of the fields it walks (struct, door jams, modules), dead airlocks (`doorSignature`), the module count (a
  * module's solid and open tiles come from its component), the ship's window, and for a thin-air-avoiding search a hash of which tiles are thin.
  * The scheduler's navigation views (ai/navView.ts) are cached on it too.
  */
 export function walkSignature(sim: Sim, grid: ShipGrid, avoidThin: boolean): string {
   const g = sim.sector.grid;
-  let sig = `${grid.x0},${grid.y0},${grid.width},${grid.height}|${g.revision('struct')}|${grid.has('jam') ? g.revision('jam') : 0}|${grid.has('module') ? g.revision('module') : 0}|${sim.world.query(ModuleC).length}`;
+  let sig = `${grid.x0},${grid.y0},${grid.width},${grid.height}|${g.revision('struct')}|${grid.has('jam') ? g.revision('jam') : 0}|${grid.has('module') ? g.revision('module') : 0}|${sim.world.query(ModuleC).length}|${doorSignature(sim, grid)}`;
   if (avoidThin && grid.has('o2')) {
     // Hashing the mask walks the whole ship, so it is kept for as long as the o2 field is unchanged (many searches per tick share it).
     const rev = g.revision('o2');
@@ -103,16 +103,8 @@ function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: 
   const infos = new Map<number, WalkInfo>();
   const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
   const walk = (i: number): boolean => {
-    const kind = struct[i] as number;
-    const x = x0 + (i % width), y = y0 + Math.floor(i / width);
-    if (!isWalkable(kind) && !(opts.suited && isEvaWalkable(grid, x, y))) return false;
-    if (jam && jam[i] === DoorJam.Shut) return false;
     if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
-    const m = mods ? (mods[i] as number) : 0;
-    if (m === 0) return true;
-    let info = infos.get(m);
-    if (!info) infos.set(m, (info = walkInfo(sim, m)));
-    return !info.solid || info.open.has(y * OPEN_KEY + x);
+    return passAt(sim, grid, x0 + (i % width), y0 + Math.floor(i / width), struct[i] as number, jam?.[i], mods?.[i], infos, !!opts.suited);
   };
   const at = (x: number, y: number): number => (y - y0) * width + (x - x0);
   const fromIndex = at(from.x, from.y);

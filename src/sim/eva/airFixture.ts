@@ -50,7 +50,8 @@ export function world(o: { lifeSupport?: boolean; faction?: 'player' | 'neutral'
   sim.world.add(ship, CombatC, { hold: false, volley: false, target: null, doctrine: 'random', ftl: 0, shield: { layers: 0, max: 0, timer: 0 }, heat: newHeat(), evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0 });
   if (o.airlock !== false) {
     if (placementError(sim, 1, 'airlock', 9, 5, 1)) throw new Error('airlock does not fit');
-    spawnModule(sim, 'airlock', 9, 5, 1);
+    // Powered from the start (the power system would mark it on the first tick): a test that asks before stepping sees a working airlock.
+    sim.world.get(spawnModule(sim, 'airlock', 9, 5, 1), ModuleC)!.powered = true;
   }
   if (o.lifeSupport) {
     const ls = spawnModule(sim, 'lifeSupport', 4, 4, 0);

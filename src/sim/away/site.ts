@@ -6,10 +6,8 @@ import { abortTask, isCarrying } from '../ai/task';
 import { EvaFloatC, SuitC } from '../eva/components';
 import { vehicleSuits } from '../eva/shuttle';
 import { isThin, needsAir, suitDef } from '../eva/suit';
-import { destroyJob } from '../items/stacks';
 import { shipGrid } from '../regions';
-import { haulsTo, planCarry } from '../salvage/cargoRun';
-import { liveBox } from '../salvage/team';
+import { keepZone, liveBox, loadStep, loading } from './haul';
 import type { Sim } from '../sim';
 import { AWAY_LIFT_SEC } from '../tuning';
 import { VehicleC, type Vehicle } from '../vehicles/components';
@@ -17,7 +15,7 @@ import { boardingTile, hoverPoint } from '../vehicles/geometry';
 import { boardCrew, occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { AwayC, AwaySiteC, type SiteRun } from './components';
 import { partyOut } from './depart';
-import { siteSpot } from './crew';
+import { fetching, siteSpot } from './crew';
 import { REPEAT, atSite, due, go, hovering, sec, wanted } from './phase';
 import { answerPickups, boxAround } from './pickup';
 import { departStep, partyAboard, settled, tripDue } from './trips';
@@ -113,38 +111,40 @@ function offStation(sim: Sim, id: number, v: Vehicle, r: SiteRun, fetch: number)
 }
 
 /**
- * The housekeeping of 'stay' and 'depart': station, the downed, pickups, loot into the hold. Null when off station. (Those sent out of the
- * hatch are the crew AI's once landed: the hand-over is the release of their drift's holds, away/owned.ts.)
+ * The housekeeping of 'stay' and 'depart': station, the downed, pickups, the staging zone beside the drop-off point and loading it into the
+ * hold. False when off station. (Those sent out of the hatch are the crew AI's once landed: the hand-over is the release of their drift's
+ * holds, away/owned.ts.)
  */
-function beside(sim: Sim, id: number, v: Vehicle, r: SiteRun): { unplaced: number } | null {
+function beside(sim: Sim, id: number, v: Vehicle, r: SiteRun): boolean {
   const fetch = answerPickups(sim, id);
-  if (offStation(sim, id, v, r, fetch)) return null;
+  if (offStation(sim, id, v, r, fetch)) return false;
   const onStation = holdStation(sim, id, v, r, fetch);
   watchDowned(sim, id);
-  if (!onStation || !siteSpot(sim, id, r.site)) return null;
-  return { unplaced: planCarry(sim, id, r.site) };
+  const spot = onStation && siteSpot(sim, id, r.site);
+  if (!spot) return false;
+  keepZone(sim, r.site, id, spot);
+  loadStep(sim, r.site, id, r.lastTrip);
+  return true;
 }
 
 /** Beside the site: passengers go out, the party works, and a trip home falls due (`tripDue`), then waits for the shuttle to settle. */
 export function stay(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   if (!wanted(sim, r.site)) return go(r, 'recall');
-  const here = beside(sim, id, v, r);
-  if (!here || !due(r)) return;
-  const trip = tripDue(sim, id, v, r, here.unplaced);
+  if (!beside(sim, id, v, r) || !due(r)) return;
+  const trip = tripDue(sim, id, v, r);
   sendOut(sim, id, v, !!trip);
-  if (trip && settled(sim, id, v)) go(r, 'depart');
+  // An urgent trip goes at once; any other waits until the shuttle has loaded what the zone holds (or its hold is full).
+  if (trip && settled(sim, id, v) && (trip === 'urgent' || !loading(sim, r.site, id))) go(r, 'depart');
 }
 
 /** A trip is due: the last call and riders until the departure check passes, then home (or called off back to 'stay'). */
 export function depart(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   if (!wanted(sim, r.site)) return go(r, 'recall');
-  const here = beside(sim, id, v, r);
-  if (!here) return;
+  if (!beside(sim, id, v, r)) return;
   sendOut(sim, id, v, true);
   const step = departStep(sim, id, v, r);
   if (step === 'off') return go(r, 'stay');
   if (step !== 'go') return;
-  for (const j of haulsTo(sim, id)) destroyJob(sim, j); // a load on its way to the hold is set down; it waits for the next trip
   r.lastTrip = sim.tick;
   go(r, 'home');
   sim.events.emit({ type: 'away.departed', ship: r.site, vehicle: id, crew: partyAboard(sim, v), home: true });
@@ -152,9 +152,12 @@ export function depart(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
 
 /** Everyone is called aboard (the site closes, is gone, or a fight started); after AWAY_LIFT_SEC whoever is still out is lifted. */
 export function recall(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
-  holdStation(sim, id, v, r, 0);
   const out = partyOut(sim, id);
   const gone = !shipById(sim, r.site);
+  // With no hull left to hover beside (the last floor is down), the call home is answered as a pickup: the shuttle comes beside whoever
+  // is still out and they float in from where they stand.
+  if (!gone && !liveBox(sim, r.site)) for (const c of out) sim.world.get(c, AwayC)!.pickup = true;
+  holdStation(sim, id, v, r, fetching(sim, id));
   for (const c of partyAboard(sim, v)) {
     const away = sim.world.get(c, AwayC)!;
     // Aboard and not on the way out (a queued `eva.out` runs the next tick; one still aboard after that was refused): home with the rest
@@ -171,7 +174,6 @@ export function recall(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   // Carriers first: a patient in hand is set down, then lifted on their own.
   for (const c of [...out.filter((c) => isCarrying(sim, c)), ...out.filter((c) => !isCarrying(sim, c))]) lift(sim, c, id);
   if (!settled(sim, id, v)) return;
-  for (const j of haulsTo(sim, id)) destroyJob(sim, j);
   if (gone || sim.world.get(r.site, AwaySiteC)?.status !== 'open') r.ending = true;
   go(r, 'home');
   sim.events.emit({ type: 'away.departed', ship: r.site, vehicle: id, crew: partyAboard(sim, v), home: true });

@@ -51,6 +51,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   marker: xy,
   yardCrew: null,
   hullPlan: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),
+  staging: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),
   miningPod: (c, dx, dy) => {
     point(c.target as Xy | null, dx, dy);
     (c.tiles as Xy[] | null)?.forEach((t) => point(t, dx, dy));
@@ -67,7 +68,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, bedOwner: null, mood: null, suit: null,
   intent: null, interrupt: null, pickup: null,
   trader: null, coreRaider: null, coreRaid: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
-  vehicle: null, ferry: null, transfer: null, salvageWatch: null, salvageOrder: null, salvageTrip: null, salvageCrew: null, awaySite: null, siteRun: null, away: null, airHolds: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, boardLaunch: null, boardHold: null, sabotageOrder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
+  vehicle: null, ferry: null, transfer: null, salvageWatch: null, salvageOrder: null, awaySite: null, siteRun: null, away: null, airHolds: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, boardLaunch: null, boardHold: null, sabotageOrder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
 };
 
 /** A deep copy of one entity's components with every coordinate moved by (dx, dy). Components are plain JSON data. */

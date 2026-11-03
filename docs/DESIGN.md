@@ -15,7 +15,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
   - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
-  - [Air, away sites and salvage (design for #286; not built yet)](#air-away-sites-and-salvage-design-for-286-not-built-yet): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
+  - [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
 - [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
@@ -285,7 +285,7 @@ FTL's decision-making with physical consequences, in a shared sector.
 
 ### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
 
-Being rebuilt on general systems (#286): see [Air, away sites and salvage (design for #286; not built yet)](#air-away-sites-and-salvage-design-for-286-not-built-yet). What is below is what #277 built.
+Rebuilt on general systems (#286): see [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built). The salvage teams below are what #277 built; since #286 slice 3 an away site does their work.
 
 Salvage is one order from the inspector. The crew then run it on their own, like any other work.
 
@@ -323,10 +323,11 @@ Salvage is one order from the inspector. The crew then run it on their own, like
   fabricator recipes that turned scrap into metal, electronics or polymer give way to the scrapper. Rations will use
   hydroponics output once that works. Starting crates hold basic metal, electronics and polymer instead of scrap.
 
-### Air, away sites and salvage (design for #286; not built yet)
+### Air, away sites and salvage (#286; built)
 
-Salvage today has its own crew controller: team picking with builder/hauler roles, suits tied to a shuttle, refill trips,
-emergency pickups, cargo-run riders. This replaces it with three general pieces that other off-ship work can use later.
+Salvage had its own crew controller: team picking with builder/hauler roles, suits tied to a shuttle, refill trips,
+emergency pickups, cargo-run riders. This replaced it (built in #286 slices 0 to 3) with three general pieces that other off-ship work can use later.
+A door that cannot open (a derelict's unpowered airlock) is never a way through, for any crew member (#292).
 
 #### 1. Air as a need
 
@@ -427,14 +428,25 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   leaves the site:
   - **at once** for an urgent passenger, or to serve a pickup (a pickup moves the hover point; it needs no trip unless the
     person is hurt);
-  - **otherwise only when** one of these holds:
-    - the hold is full and loot is waiting;
+  - **otherwise only when** one of these holds (and once the shuttle has loaded what the staging zone holds, below):
+    - the hold is full;
     - rotation is due: non-urgent passengers fill half the seats, or free seats exist that crew at home would take;
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
   At home it drops off those going home, unloads the hold (the existing cargo hauls) and refills its air. Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
+- **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
+  - each away site has a **staging zone**, a few floor tiles beside the shuttle's drop-off point (the hatch drop point when it
+    hovers, inside the airlock when it docks), holding about two hold loads. It belongs to the away site, not to salvage, so
+    mining and boarding loot can use it too;
+  - the party hauls loose loot into the zone, whether the shuttle is there or away. Hauling **gathers** everywhere, the home ship
+    included: a hauler picks up several nearby loose stacks up to their carry capacity and walks to the destination once. A full
+    stack in the zone overflows to the next tile; the crates show it filling;
+  - while the shuttle is at the site it **loads** the zone into its hold, one crate every 2 s;
+  - trips are for crew (rotation, needs, hurt) or a full hold. A batch trip first finishes loading; an urgent trip goes at once.
+    No trip waits on a haul or drops it: the loads go into the zone, which stays;
+  - away crew no longer use the wreck's lockers. The ordinary ferry keeps its rule elsewhere.
 - **The shuttle never strands anyone.** It may leave the site only if every party member staying out is safe, as defined in
   ARCHITECTURE.md ("Away sites and the air drive", "Departure check"). In short, each staying worker must either have another source they can reach (an airlock with
   air left, another shuttle) or enough air to last the whole round trip with a margin. The shuttle settles that before it
@@ -468,7 +480,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   drop), so the first trip already has a hauling seat.
 - The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
 - The wreck stays until the party has left its side, then goes as today.
-- **Throughput.** Scrap brought home per game hour must be no worse than today's salvage teams (ARCHITECTURE.md "Away sites and the air drive", "Throughput check").
+- **Throughput.** Scrap brought home per game hour is held to the bench's baseline (ARCHITECTURE.md "Away sites and the air drive", "Throughput check"). With staging (slice 3) it was re-based: 6 crew bring home about 380 units a game hour (the salvage teams: about 370), and more crew is never slower.
 
 #### How the general design covers each salvage special case
 

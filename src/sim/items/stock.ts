@@ -45,6 +45,7 @@ export function reservations(sim: Sim): Reservations {
       if (h.phase === 'pickup') bump(res.out, refKey(h.src.kind, h.src.id, q.item), q.count);
       bump(res.incoming, refKey(h.dst.kind, h.dst.id, q.item), q.count);
     }
+    for (const q of h.gathered ?? []) bump(res.incoming, refKey(h.dst.kind, h.dst.id, q.item), q.count); // in hand, on its way
   }
   return res;
 }

@@ -6,12 +6,10 @@ import { airLeft, fitsReserve } from '../eva/airLedger';
 import { SourceReach } from '../eva/sources';
 import { isSuited, isThin, needsAir, suitDef } from '../eva/suit';
 import { shipGrid } from '../regions';
-import { SalvageCrewC } from '../salvage/components';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
 import { TICK_HZ } from '../time';
 import { STINT_SEC } from '../tuning';
-import { YardCrewC } from '../yard/types';
 import { isEmergency } from './emergency';
 import { travelTicks } from './travel';
 
@@ -63,7 +61,7 @@ export class AirAdmission {
   rejection(w: AirWalker, jobId: number, steps: readonly Tile[], thin: boolean): AirRejection | null {
     const sim = this.sim;
     const job = sim.world.get(jobId, JobC) as Job | undefined;
-    if (!job || isErrand(job) || !needsAir(sim, w.id) || sim.world.has(w.id, SalvageCrewC) || sim.world.has(w.id, YardCrewC)) return null;
+    if (!job || isErrand(job) || !needsAir(sim, w.id)) return null;
     const suited = isSuited(sim, w.id);
     const grid = shipGrid(sim, w.ship);
     if (!grid || (!suited && !thin)) return null;

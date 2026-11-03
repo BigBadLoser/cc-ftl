@@ -7,7 +7,9 @@ import { SalvageOrderC } from './components';
 import { hostilesAboard } from './counts';
 import { planJobs, salvageJobs } from './plan';
 import { isEmptyShell, removeWreck } from './remove';
-import { teamAt } from './team';
+import { AwaySiteC } from '../away/components';
+import { lootOnSite } from '../away/haul';
+import { closeOrphanSites, tendSite } from './site';
 
 /** True while something hostile to the player is aboard: a living, non-surrendered hostile crew member, an egg sac or a nest. */
 export function hostileAboard(sim: Sim, ship: number): boolean {
@@ -26,14 +28,15 @@ function ferryingFrom(sim: Sim, ship: number): boolean {
 
 /**
  * Derelict salvage. For each wreck with a salvage order, every SALVAGE_EVERY ticks: blocks the order (and drops its open jobs) while
- * anything hostile is aboard, runs it again once cleared, keeps a capped number of stripping jobs open, and finishes it when nothing of
- * the ticked types is left (and the salvage team is clear of it), removing the wreck if nothing at all is. The crew do the stripping as
- * ordinary jobs; the salvage team's shuttle (trip.ts) brings them. Only the 'hostile' block is set and lifted here; the trip system owns the
- * others ('noShuttle', 'noCrew'). After haulCleanup (so the stacks it looks at are current) and before the planners and the scheduler
- * that hand the jobs out.
+ * anything hostile is aboard, runs it again once cleared, keeps a capped number of stripping jobs open, keeps an away site open on the wreck
+ * while there is work (salvage/site.ts: the site's shuttle brings the crew and takes the loot home), and finishes the order when nothing of
+ * the ticked types is left and the open site has carried off the loot (unless it cannot take it home: no room, stranded), removing the
+ * wreck if nothing at all is, once the site has closed. The crew do the stripping as ordinary jobs. After haulCleanup (so the stacks it looks at are current)
+ * and before the planners and the scheduler that hand the jobs out.
  */
 export function salvageSystem(sim: Sim): void {
   if (sim.tick % SALVAGE_EVERY !== 0) return;
+  closeOrphanSites(sim);
   for (const ship of [...sim.world.query(SalvageOrderC)].sort((a, b) => a - b)) {
     const order = sim.world.get(ship, SalvageOrderC);
     if (!order) continue;
@@ -44,6 +47,7 @@ export function salvageSystem(sim: Sim): void {
         order.block = 'hostile';
         sim.events.emit({ type: 'salvage.blocked', ship, reason: 'hostile' });
       }
+      tendSite(sim, ship, order, false);
       continue;
     }
     if (order.status === 'blocked' && order.block === 'hostile') {
@@ -51,9 +55,15 @@ export function salvageSystem(sim: Sim): void {
       delete order.block;
       sim.events.emit({ type: 'salvage.ordered', ship, types: [...order.types] });
     }
-    if (planJobs(sim, ship, order.types) > 0 || salvageJobs(sim, ship).length > 0 || ferryingFrom(sim, ship)) continue;
-    // Finished, but the salvage team is still out there: it stays until they are back aboard their shuttle.
-    if (teamAt(sim, ship)) continue;
+    const site = sim.world.get(ship, AwaySiteC);
+    // Loot still lying about (staged or not, or on its way into the staging zone) is carried off before the site closes, while its shuttle
+    // can take it home (not `noRoom` or `stranded`; with `noCrew` the shuttle still fetches what is staged on its own).
+    const loot = site?.status === 'open' && site.block !== 'noRoom' && site.block !== 'stranded' && lootOnSite(sim, ship);
+    const work = planJobs(sim, ship, order.types) > 0 || salvageJobs(sim, ship).length > 0;
+    tendSite(sim, ship, order, work || loot);
+    if (work || loot || ferryingFrom(sim, ship)) continue;
+    // Finished, but the party is still out there: the wreck stays until the site has closed (its run ends once everyone is home).
+    if (site) continue;
     const removed = isEmptyShell(sim, ship);
     sim.events.emit({ type: 'salvage.done', ship, removed });
     if (removed) removeWreck(sim, ship);

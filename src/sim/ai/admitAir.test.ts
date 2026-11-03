@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { JobC, type Job } from '../crew/components';
 import { AirlockC } from '../modules/airlock';
-import { SalvageCrewC } from '../salvage/components';
+import { YardCrewC } from '../yard/types';
 import { SuitC } from '../eva/components';
 import { airlockOf, crew, world } from '../eva/airFixture';
 import { shipGrid } from '../regions';
@@ -80,7 +80,7 @@ describe('partial-work admission', () => {
     expect(adm(sim, far).rejection(w, far, row(1500), false)).toBe('noAir');
   });
 
-  it('asks nothing of work in breathable air, robots, and salvage teams (their own air logic)', () => {
+  it('asks nothing of work in breathable air or of robots; the shipyard\'s contractors are asked like anyone (no exemption since #286 slice 3)', () => {
     const { sim, w, c } = setup(10);
     const inside = hullJob(sim, 30, { x: 6, y: 6 });
     sim.world.get(inside, JobC)!; // inside the ship: breathable
@@ -88,8 +88,8 @@ describe('partial-work admission', () => {
     expect(adm(sim, inside).rejection(w, inside, [{ x: 5, y: 6 }, { x: 6, y: 6 }], false)).toBeNull();
     const job = hullJob(sim, 600);
     expect(adm(sim, job).rejection(w, job, row(10), false)).toBe('noAir');
-    sim.world.add(c, SalvageCrewC, { trip: 0 } as never);
-    expect(adm(sim, job).rejection(w, job, row(10), false)).toBeNull();
+    sim.world.add(c, YardCrewC, { order: 1 });
+    expect(adm(sim, job).rejection(w, job, row(10), false)).toBe('noAir');
     const bot = crew(sim, 4, 7, { species: 'species.robot' });
     expect(adm(sim, job).rejection(walker(sim, bot), job, row(10), true)).toBeNull();
   });

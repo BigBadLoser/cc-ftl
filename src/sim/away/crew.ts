@@ -1,9 +1,9 @@
 import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
 import { flightTicks, walkSpeed } from '../ai/travel';
-import { HealthC, NeedsC, PositionC, type Job } from '../crew/components';
+import { CrewC, DeadC, HealthC, NeedsC, PositionC, type Job } from '../crew/components';
 import { TICK_HZ } from '../time';
-import { VehicleC } from '../vehicles/components';
+import { AboardC, VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { hatchSpot } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
@@ -21,6 +21,14 @@ import { AwayC, AwaySiteC, SiteRunC } from './components';
  * code moves crew about except the closing lift; the crew AI does (the return machine, ai/machines/return.ts).
  */
 
+/** True while a living crew member of the player's side stands on the ship (a site's wreck must not go while anyone is on it). */
+export function playerCrewOn(sim: Sim, ship: number): boolean {
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    if (!sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) return true;
+  }
+  return false;
+}
+
 /** The site a crew member is working on: they are of its party and stand on its grid. 0 otherwise. */
 export function siteUnderFoot(sim: Sim, id: number): number {
   const away = sim.world.get(id, AwayC);
@@ -28,13 +36,25 @@ export function siteUnderFoot(sim: Sim, id: number): number {
   return pos && shipIdOf(sim, pos) === away.site ? away.site : 0;
 }
 
+/** The crew member a site's shuttle is fetching (a pickup it answered, `AwayC.pickup`): lowest id of its party out. 0 for none. */
+export function fetching(sim: Sim, vehicle: number): number {
+  let first = 0;
+  for (const c of sim.world.query(AwayC, CrewC)) {
+    const away = sim.world.get(c, AwayC)!;
+    if (away.vehicle === vehicle && away.pickup && (!first || c < first) && !sim.world.has(c, AboardC) && !sim.world.has(c, DeadC)) first = c;
+  }
+  return first;
+}
+
 /**
  * Where a shuttle takes people aboard on a grid: the hatch spot while it hovers beside it (they float in), or the inside tile of the
- * airlock it is docked at (they step in). Null when it is neither.
+ * airlock it is docked at (they step in). Null when it is neither. On a pickup the shuttle hovers beside the crew member it fetches, so
+ * their own tile is the hatch spot (the hull near them may be all but gone: they float in from where they stand).
  */
 export function siteSpot(sim: Sim, vehicle: number, shipId: number): { x: number; y: number; docked: boolean } | null {
   const v = sim.world.get(vehicle, VehicleC);
-  const spot = v?.state === 'docked' ? boardingTile(sim, vehicle) : hatchSpot(sim, vehicle);
+  const at = sim.world.get(fetching(sim, vehicle), PositionC);
+  const spot = v?.state === 'docked' ? boardingTile(sim, vehicle) : hatchSpot(sim, vehicle, at && shipIdOf(sim, at) === v?.hover ? at : undefined);
   return spot && spot.shipId === shipId ? { x: spot.x, y: spot.y, docked: v?.state === 'docked' } : null;
 }
 

@@ -102,8 +102,12 @@ import { newYard, type YardState } from './yard/types';
  * v83 (away sites, #286 slice 2a): `AwaySiteC`, `SiteRunC`, `AwayC`; job kind `passage` with `Job.site`; the colonist policy's `return` drive
  *   (`Intent.scores` and `latched` follow the drive list).
  *   Air holds (`AirHoldsC`, the air ledger) on a site's shuttle.
+ * v84 (salvage on away sites, #286 slice 3): `SalvageTripC`, `SalvageCrewC` and `SalvageOrder.teamAt` are gone; a salvage order keeps an
+ *   `AwaySiteC {owner: 'salvage'}` on its wreck.
+ * v85 (staging, #286 slice 3): `StagingC` (an away site's staging zone) on the site's ship; haul refs of kind `zone`; `HaulData.gathered`
+ *   (a hauler collecting several stacks on one trip).
  */
-export const SAVE_VERSION = 83;
+export const SAVE_VERSION = 85;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -5,7 +5,7 @@ import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { vehicleDefOf } from '../vehicles/lifecycle';
-import { AwaySiteC, SiteRunC } from './components';
+import { AwaySiteC, SiteRunC, type AwaySite } from './components';
 
 type AwayCommandType = Extract<Command['type'], `away.${string}`>;
 type Handler<T extends AwayCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -24,16 +24,25 @@ export function siteShuttleOk(sim: Sim, id: number): boolean {
   return boardingTile(sim, id)?.shipId === homeShip(sim);
 }
 
+/**
+ * Open an away site on `ship` for `owner`, served by `vehicle` or the lowest free shuttle that can serve one (`siteShuttleOk`). Returns the
+ * shuttle, or the reason it could not: `noShuttle`. The caller has checked the ship.
+ */
+export function openSite(sim: Sim, ship: number, owner: AwaySite['owner'], vehicle?: number): number | 'noShuttle' {
+  const v = vehicle ?? [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((id) => siteShuttleOk(sim, id)) ?? 0;
+  if (!v || !siteShuttleOk(sim, v)) return 'noShuttle';
+  sim.world.add(ship, AwaySiteC, { owner, status: 'open', vehicle: v, since: sim.tick });
+  sim.world.add(v, SiteRunC, { site: ship, phase: 'board', timer: 0, lastTrip: 0 });
+  sim.events.emit({ type: 'away.opened', ship, vehicle: v });
+  return v;
+}
+
 export const awayHandlers: { [T in AwayCommandType]: Handler<T> } = {
   'away.open': (sim, cmd) => {
     const ship = shipById(sim, cmd.ship);
     if (!ship || cmd.ship === homeShip(sim) || ship.faction === 'player') return reject(sim, cmd.type, 'badTarget');
     if (sim.world.has(cmd.ship, AwaySiteC)) return reject(sim, cmd.type, 'open');
-    const vehicle = cmd.vehicle ?? [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((id) => siteShuttleOk(sim, id)) ?? 0;
-    if (!vehicle || !siteShuttleOk(sim, vehicle)) return reject(sim, cmd.type, 'noShuttle');
-    sim.world.add(cmd.ship, AwaySiteC, { owner: 'debug', status: 'open', vehicle, since: sim.tick });
-    sim.world.add(vehicle, SiteRunC, { site: cmd.ship, phase: 'board', timer: 0, lastTrip: 0 });
-    sim.events.emit({ type: 'away.opened', ship: cmd.ship, vehicle });
+    if (openSite(sim, cmd.ship, 'debug', cmd.vehicle) === 'noShuttle') reject(sim, cmd.type, 'noShuttle');
   },
   'away.recall': (sim, cmd) => {
     const s = sim.world.get(cmd.ship, AwaySiteC);

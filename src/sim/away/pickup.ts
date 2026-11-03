@@ -7,6 +7,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
+import { fetching } from './crew';
 import { partyOut } from './depart';
 import { siteShuttleOk } from './handlers';
 import { freeSeats } from './passage';
@@ -19,21 +20,16 @@ import { freeSeats } from './passage';
 
 type Box = { x: number; y: number; w: number; h: number };
 
-/** A hover box around a crew member's tile (sector tiles): the shuttle holds station just off it. */
+/** The hover box of a pickup: the crew member's own tile (sector tiles), so the shuttle holds station within an easy float of it. */
 export function boxAround(sim: Sim, c: number): Box | null {
   const p = sim.world.get(c, PositionC);
-  return p ? { x: p.x - 1, y: p.y - 1, w: 3, h: 3 } : null;
+  return p ? { x: p.x, y: p.y, w: 1, h: 1 } : null;
 }
 
 /** The party member out on the site a shuttle is fetching (lowest id), marking each new request as answered. 0 for none. */
 export function answerPickups(sim: Sim, vehicle: number): number {
-  let first = 0;
-  for (const c of partyOut(sim, vehicle)) {
-    const away = sim.world.get(c, AwayC)!;
-    if (sim.world.has(c, PickupC)) away.pickup = true;
-    if (away.pickup && !first) first = c;
-  }
-  return first;
+  for (const c of partyOut(sim, vehicle)) if (sim.world.has(c, PickupC)) sim.world.get(c, AwayC)!.pickup = true;
+  return fetching(sim, vehicle);
 }
 
 /**

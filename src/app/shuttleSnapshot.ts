@@ -6,7 +6,8 @@ import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
 import { homeShip } from '../sim/index';
 import { salvageCounts, hostilesAboard, workLeft } from '../sim/salvage/counts';
-import { SalvageOrderC, SalvageTripC, SCRAP_TYPES } from '../sim/salvage/components';
+import { SalvageOrderC, SCRAP_TYPES } from '../sim/salvage/components';
+import { AwaySiteC, SiteRunC } from '../sim/away/components';
 import { isIncapacitated } from '../sim/crew/helpers';
 
 
@@ -25,12 +26,17 @@ const FERRY_STATUS: Record<string, string> = {
   toFrom: 'Flying to the pickup', gather: 'Loading and boarding', toDest: 'Flying to the drop-off', deliver: 'Unloading and landing', home: 'Heading home',
 };
 
-const SALVAGE_STATUS: Record<string, string> = { board: 'team boarding', fly: 'flying out', work: 'team at work', recall: 'team coming back', home: 'heading home' };
+const SITE_STATUS: Record<string, string> = {
+  board: 'boarding at home', fly: 'flying out', stay: 'party at work', depart: 'last call before a trip home', home: 'heading home', recall: 'calling the party in', pickup: 'picking up crew',
+};
 
-/** The base run (or salvage shift) this shuttle is on, as a status line. */
+/** The base run (or away site run) this shuttle is on, as a status line. */
 function ferryRun(sim: Sim, vehicle: number): UiShuttle['ferry'] {
-  const trip = sim.world.get(vehicle, SalvageTripC);
-  if (trip) return { status: trip.run ? 'Salvage: cargo run home' : `Salvage: ${SALVAGE_STATUS[trip.phase]}`, to: shipName(sim, trip.ship) };
+  const run = sim.world.get(vehicle, SiteRunC);
+  if (run) {
+    const what = sim.world.get(run.site, AwaySiteC)?.owner === 'salvage' ? 'Salvage' : 'Away';
+    return { status: `${what}: ${SITE_STATUS[run.phase] ?? run.phase}`, to: shipName(sim, run.site) };
+  }
   const f = sim.world.get(vehicle, FerryC);
   return f ? { status: FERRY_STATUS[f.phase] ?? f.phase, to: shipName(sim, f.to) } : null;
 }
@@ -194,5 +200,9 @@ function salvageInfo(sim: Sim, id: number): UiSalvage {
   const left = workLeft(sim, id, o.types);
   const h = hostilesAboard(sim, id);
   const why = [h.crew ? 'hostiles aboard' : '', h.sacs ? 'egg sacs aboard' : '', h.nests ? 'nests aboard' : ''].filter(Boolean).join(', ');
-  return { types, order: { types: [...o.types], status: o.status, block: o.status !== 'blocked' ? '' : o.block === 'noShuttle' ? 'no free shuttle with suits' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard', done: o.done ?? 0, total: (o.done ?? 0) + left } };
+  // The site's own hold-ups show while the order runs: the hold could not be unloaded at home, or its shuttle is lost with none to replace it.
+  const site = sim.world.get(id, AwaySiteC)?.block;
+  const held = site === 'noRoom' ? 'no room at home for the loot' : site === 'stranded' ? 'shuttle lost: crew stranded' : '';
+  const block = o.status !== 'blocked' ? held : o.block === 'noShuttle' ? 'no free shuttle with suits' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard';
+  return { types, order: { types: [...o.types], status: o.status, block, done: o.done ?? 0, total: (o.done ?? 0) + left } };
 }

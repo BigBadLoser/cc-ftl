@@ -3,13 +3,11 @@ import { airLeft, tankSec } from '../eva/airLedger';
 import { nearestAirSource } from '../eva/sources';
 import { isSuited, isThin, needsAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
-import { SalvageCrewC } from '../salvage/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import {
   AIR_CRITICAL_FRAC, AIR_CRITICAL_PAD_SEC, AIR_CRITICAL_TRAVEL, AIR_EVAL_TICKS, AIR_REFILL_FRAC, AIR_REFILL_PAD_SEC, AIR_REFILL_TRAVEL,
 } from '../tuning';
-import { YardCrewC } from '../yard/types';
 import { IntentC } from './components';
 import { AwayC } from '../away/components';
 
@@ -26,7 +24,7 @@ import { AwayC } from '../away/components';
 
 /** True while the crew member's suit tank drains and the air drive applies to them. */
 export function airDraining(sim: Sim, id: number): boolean {
-  if (!needsAir(sim, id) || !isSuited(sim, id) || sim.world.has(id, SalvageCrewC) || sim.world.has(id, YardCrewC)) return false;
+  if (!needsAir(sim, id) || !isSuited(sim, id)) return false;
   const pos = sim.world.get(id, PositionC);
   const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
   return !!pos && !!grid && isThin(grid, pos.x, pos.y);

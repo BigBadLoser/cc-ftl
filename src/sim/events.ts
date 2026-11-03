@@ -26,7 +26,7 @@ export type SimEvent =
   /** Mood fell below MOOD_VERY_LOW (re-arms once it recovers above MOOD_LOW). */
   | { type: 'crew.moodLow'; crew: number; mood: number }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
-  | { type: 'item.hauled'; crew: number; item: string; count: number; ship: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' }
+  | { type: 'item.hauled'; crew: number; item: string; count: number; ship: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' | 'zone' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */
   | { type: 'job.missingMaterials'; job: number; ship: number; x: number; y: number; item: string }
   /** A crafting module finished a batch; outputs lie at (x, y). */
@@ -111,9 +111,6 @@ export type SimEvent =
   | { type: 'salvage.ordered'; ship: number; types: string[] }
   | { type: 'salvage.blocked'; ship: number; reason: string }
   | { type: 'salvage.done'; ship: number; removed: boolean }
-  | { type: 'salvage.teamSent'; ship: number; vehicle: number; crew: number[] }
-  | { type: 'salvage.teamHome'; ship: number; vehicle: number; reason: string }
-  | { type: 'salvage.cargoRun'; ship: number; vehicle: number; pilot: number; riders: number[] }
   /** A ship's heat hit the maximum: lockout (no weapons, no shields) until it cools. */
   | { type: 'combat.overheated'; ship: number }
   /** A ship started venting heat (shields down, weapons held). */
