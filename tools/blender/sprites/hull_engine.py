@@ -282,13 +282,20 @@ def piece(o):
     return own, own + hull
 
 
+END_LOOKS = {"cut": (T.CUT, T.CUT, T.CUT),                     # the end's section: (body, top lip, outline)
+             "steel": (GE.YS[1], GE.YS[3], "steelD"),          # (the hull's side tone, as a wall's end section)
+             "framed": (T.CUT, GE.YS[3], GE.YS[1])}            # (the black cut framed in the hull's tones)
+END = "cut"
+END_LIP, EDGE_N = 0.026, 4      # the lip's height; the outline's width in columns (128 a tile: 1 px)
+
+
 def end_cut(o, hull):
     """Walls down: the engine's two hull tiles stand full height (the whole assembly shows), their neighbours cut to
     the belly, so the hull's open ends (a piece builds no face on its tile's edge: the next tile's) are closed with
     its section as a black cut (wall3d.CUT, the cut tops' tone). `hull`: the two tiles' objects, placed (piece's -1
     and 0); one mesh, both ends (only the one facing the camera shows). The section is the hull cut at the end's
-    plane, filled per column from the floor up to the top surface, back to the block's back face (its outline is
-    open underneath)."""
+    plane, filled per column from the floor up to the top surface, across its whole width (its outline is open
+    underneath; the top overhangs the block's back face, so the overhang's columns come down to the floor too)."""
     import bmesh
     import bpy
     from mathutils import Vector
@@ -316,17 +323,22 @@ def end_cut(o, hull):
         if not segs:
             continue
         pts = [p for sg in segs for p in sg]
-        d0, d1 = min(d for d, z in pts if z < 1e-3), max(d for d, _ in pts)
+        d0, d1 = min(d for d, _ in pts), max(d for d, _ in pts)
         n = int(round((d1 - d0) * 128))
         at = co + rv * (sign * 0.004)                   # (just out of the hull's own faces on the tile's edge)
         for i in range(n):
             da, db = d0 + (d1 - d0) * i / n, d0 + (d1 - d0) * (i + 1) / n
             dm = (da + db) / 2
             zs = [a[1] + (b[1] - a[1]) * (dm - a[0]) / (b[0] - a[0]) for a, b in segs if (a[0] - dm) * (b[0] - dm) < 0]
-            if zs:
-                q = [at + ov * da, at + ov * db, at + ov * db + Vector((0, 0, max(zs))),
-                     at + ov * da + Vector((0, 0, max(zs)))]
-                m.poly(q if sign > 0 else q[::-1], T.CUT)
+            if not zs:
+                continue
+            z1 = max(zs)
+            body, lip, edge = END_LOOKS[END]
+            col = edge if i < EDGE_N or i >= n - EDGE_N else body       # (a px outline down its back and front)
+            for za, zb, c in ((0.0, z1 - END_LIP, col), (z1 - END_LIP, z1, lip)):     # (and a lit lip along its top)
+                q = [at + ov * da + Vector((0, 0, za)), at + ov * db + Vector((0, 0, za)),
+                     at + ov * db + Vector((0, 0, zb)), at + ov * da + Vector((0, 0, zb))]
+                m.poly(q if sign > 0 else q[::-1], c)
     bm.free()
     return m.build()
 

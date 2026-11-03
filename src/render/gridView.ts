@@ -319,7 +319,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const b = bellyIds(h, x, y, has);
     if (!b) return false;
     if (b.under) put(b.under, z, L.under, solid);
-    if (b.low) put(b.low, z + 0.001, L.sorted, solid);
+    // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
+    if (b.low && !blockHull.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
     return true;
   }
 
