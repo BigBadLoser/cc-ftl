@@ -13,9 +13,9 @@ RAIL_D, MID_D = PX, PX / 2          # the rail's depth: its end blocks' (2 px: a
                                     # middle block's (set back a px)
 RAIL_H = 7 * PZ                     # the rail's front
 END_W = 0.25                        # its end blocks along a tile (the middle block between them)
-LIP_D, LIP_H = PX / 2, 2 * PZ       # the lip at the face's foot: its depth (a px), its top over the ramp's top
+LIP_D, LIP_H = PX, 2 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
-SHELF = 3 / 32                      # the ramp's top a flat step this deep against the wall (3 px)
+SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
 
 
 def _shelf_z(zs):
