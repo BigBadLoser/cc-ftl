@@ -714,7 +714,7 @@ palette.json    the single palette, read by Blender scripts and the game
     axis, grown until every point is inside, padded; a long thin hull keeps an oval (`MIN_ASPECT`). No grid: the bounding box.
   - Drawn by a shader (`shieldDome.ts`), one quad per ship, because it has to fit every hull: a sheen clear in the middle
     and near solid at the deep-blue rim, a 1 art px hex lattice packed toward the rim like a sphere (`HEX` art px cells),
-    and one lit row of cells per layer from the rim in (`ROW` of the radius each; the HUD pips give the exact count). It
+    and one lit row of cells per layer from the rim in (a whole ring of cells each, `RING` hex sizes deep on the unwarped sphere; the HUD pips give the exact count). It
     works in screen-aligned art pixels, so it sits with the pixel art. Colours are the `fxH*` / `fxI*` ramps plus a deeper
     rim blue.
   - Effects, all in the shader and stepped at 12 fps (`shieldState.ts` `DOME_SEC`, `DOME_FPS`): a hit absorbed (a ring of lit
