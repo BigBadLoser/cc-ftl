@@ -260,6 +260,20 @@ def plate_L(b, poly, L0, L1, col, caps):
         b.face([b.P(L1, *poly[k]) for k in piece], col, dv)
 
 
+def plate_z(b, poly, z0, z1, col, caps):
+    """A flat (L, D) outline, which may be concave, extruded up from z0 to z1; caps as in plate_L."""
+    area = sum(poly[i][0] * poly[i - 1][1] - poly[i - 1][0] * poly[i][1] for i in range(len(poly)))
+    sg = 1 if area < 0 else -1
+    for i in range(len(poly)):
+        (l0, d0), (l1, d1) = poly[i - 1], poly[i]
+        q = [b.P(l0, d0, z0), b.P(l1, d1, z0), b.P(l1, d1, z1), b.P(l0, d0, z1)]
+        o0, o1 = b.P((l0 + l1) / 2, (d0 + d1) / 2, z0), b.P((l0 + l1) / 2 + sg * (d1 - d0), (d0 + d1) / 2 - sg * (l1 - l0), z0)
+        b.face(q, col, (o1[0] - o0[0], o1[1] - o0[1], o1[2] - o0[2]))
+    for piece in caps:
+        b.face([b.P(*poly[k], z1) for k in piece], col, (0, 0, 1))
+        b.face([b.P(*poly[k], z0) for k in piece], col, (0, 0, -1))
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -284,6 +298,15 @@ def yoke(b):
             (2.0, 0.27), (2.0, 0.62), (1.76, 0.79), (1.24, 0.79)]                                 # inner, foot to back
     caps = [(0, 1, 8, 9), (1, 2, 7, 8), (2, 3, 6, 7), (3, 4, 5, 6)]
     plate_L(b, poly, 2.8, 3.0, GMD, caps)
+    top_plate(b)
+
+
+def top_plate(b):
+    """The plate lying on the drum, running back from the yoke's top to above the mouth shroud, flush with the yoke's
+    back edge (measured on the drum tile): its front edge is notched in the middle."""
+    poly = [(2.15, 1.25), (2.8, 1.25), (2.8, 1.62), (2.6, 1.62), (2.6, 1.5), (2.38, 1.5), (2.38, 1.62), (2.15, 1.62)]
+    caps = [(0, 5, 6, 7), (0, 1, 4, 5), (1, 2, 3, 4)]
+    plate_z(b, poly, 0.77, 0.92, GMD, caps)
 
 
 def scrapper(rot):
