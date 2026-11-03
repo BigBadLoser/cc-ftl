@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DraftedC, NeedsC, PathC, PositionC, ShipC, VehicleC, createCrew, type Sim } from '../../sim';
+import { AboardC, CrewC, DraftedC, NeedsC, PathC, PositionC, ShipC, Struct, VehicleC, createCrew, writeStruct, type Sim } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
 import { content } from '../index';
 import { placementError, shipGrid, spawnModule } from '../../sim';
 import { nearestExterior } from '../../sim/eva/shuttle';
 import { boardCrew, occupants, vehicleDefOf } from '../../sim/vehicles/lifecycle';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
-import { SuitC } from '../../sim/eva/components';
+import { EvaFloatC, SuitC } from '../../sim/eva/components';
 import { shipIdOf } from '../../sim/regions';
 import { crewOn, landed, play, siteWork } from './awayFixture';
 import { shuttleOf } from './ferryFixture';
@@ -94,6 +94,22 @@ describe('away sites: who goes (#286 slice 2b)', () => {
     play(sim, 20 * 120, () => sim.world.get(shuttle, SiteRunC)?.phase === 'home' || !sim.world.has(shuttle, SiteRunC));
     expect(sim.world.has(c, AwayC)).toBe(false);
     expect(sim.world.get(shuttle, SiteRunC)?.ending ?? true).toBe(true);
+  });
+
+  it('a party member left floating where the hull is gone is fetched from where they stand: the pickup hovers beside them', () => {
+    const { sim, wreck, shuttle, party } = landed();
+    const [m] = party as [number];
+    // The west half of the wreck is gone and they float at its far corner, with nothing to stand on near them and little air left.
+    const g = shipGrid(sim, wreck)!;
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + 5; x++) writeStruct(g, x, y, Struct.Space);
+    const at = { x: g.x0, y: g.y0 + g.height - 1 };
+    Object.assign(sim.world.get(m, PositionC)!, { ...at, toX: at.x, toY: at.y, progress: 0 });
+    sim.world.get(m, PathC)!.steps = [];
+    sim.world.get(m, SuitC)!.air = 150;
+    const all = play(sim, 20 * 300, () => sim.world.has(m, AboardC) || sim.world.has(m, EvaFloatC));
+    expect(sim.world.get(m, AwayC)?.vehicle).toBe(shuttle);
+    expect(sim.world.has(m, AboardC) || sim.world.get(m, EvaFloatC)?.mode === 'back').toBe(true); // floating in to the hatch
+    expect(of(all, 'suit.airOut')).toEqual([]);
   });
 
   it('a site whose shuttle run is gone takes another free shuttle, which brings the party on', () => {

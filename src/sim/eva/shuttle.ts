@@ -64,13 +64,17 @@ export function floatTicks(sim: Sim, dist: number): number {
 
 /**
  * The staging tile of a hovering shuttle: the hull tile of the ship it hovers beside nearest to its hatch, within an easy float (suited crew
- * land and board there, and loot carried to the shuttle is handed in there). Null unless it holds station beside a ship.
+ * land and board there). Null unless it holds station beside a ship. `at` is a tile of that ship the shuttle came beside on purpose (the
+ * crew member a pickup fetches, away/crew.ts `siteSpot`): it is the spot while it is within the easy float, whatever hull is left near it.
  */
-export function hatchSpot(sim: Sim, vehicle: number): { shipId: number; x: number; y: number } | null {
+export function hatchSpot(sim: Sim, vehicle: number, at?: { x: number; y: number }): { shipId: number; x: number; y: number } | null {
   const v = sim.world.get(vehicle, VehicleC);
   const body = sim.world.get(vehicle, BodyC);
   if (!v || !body || v.state !== 'flying' || v.dest || !v.hover) return null;
   const frame = tileFrame(sim, v.hover, body.x, body.y);
-  const spot = frame ? nearestExterior(sim, v.hover, frame, 1)[0] : undefined;
-  return spot && spot.d <= suitDef(sim).floatRange - 0.75 ? { shipId: v.hover, x: spot.x, y: spot.y } : null;
+  if (!frame) return null;
+  const reach = suitDef(sim).floatRange - 0.75;
+  if (at && Math.hypot(at.x - frame.x, at.y - frame.y) <= reach) return { shipId: v.hover, x: at.x, y: at.y };
+  const spot = nearestExterior(sim, v.hover, frame, 1)[0];
+  return spot && spot.d <= reach ? { shipId: v.hover, x: spot.x, y: spot.y } : null;
 }

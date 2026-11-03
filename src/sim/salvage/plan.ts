@@ -12,6 +12,7 @@ import type { ScrapType } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { SALVAGE_JOBS_OPEN } from '../tuning';
+import { strandNobody } from './footing';
 import { reachTest } from './reach';
 
 interface Tile { x: number; y: number; kind: number }
@@ -124,7 +125,7 @@ export function salvageJobs(sim: Sim, ship: number): number[] {
 
 /**
  * Keep the order's stripping jobs topped up (at most SALVAGE_JOBS_OPEN open on the wreck). Modules go first; walls and doors once no
- * module of a ticked type is left; floors last, farthest from the crew first, never one under a loose stack and the staging zone's last
+ * module of a ticked type is left; floors last, farthest from the crew first among those that strand nobody (`strandNobody`), never one under a loose stack and the staging zone's last
  * (`strippableFloors`). While crew stand on the wreck, a part none of them can reach is skipped and an open job nobody holds
  * that none of them can reach is dropped, so it never holds a place under the cap; a stage whose parts are all out of reach lets the
  * next one start (an outer wall coming down opens a sealed hall). Returns how many parts the order still has to strip (0 = done).
@@ -167,7 +168,7 @@ export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): n
     post(walls, (t) => (t.kind === Struct.Beam ? Struct.Space : Struct.Floor));
   } else {
     const reachable = (t: Tile): boolean => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }));
-    post(farthestFloors(sim, ship, strippableFloors(sim, ship, parts.floors, reachable)), () => Struct.Space);
+    post(farthestFloors(sim, ship, strandNobody(sim, ship, strippableFloors(sim, ship, parts.floors, reachable))), () => Struct.Space);
   }
   return remaining;
 }

@@ -3,7 +3,7 @@ import { shipById } from '../combat/ships';
 import { flightTicks, walkSpeed } from '../ai/travel';
 import { CrewC, DeadC, HealthC, NeedsC, PositionC, type Job } from '../crew/components';
 import { TICK_HZ } from '../time';
-import { VehicleC } from '../vehicles/components';
+import { AboardC, VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { hatchSpot } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
@@ -36,13 +36,25 @@ export function siteUnderFoot(sim: Sim, id: number): number {
   return pos && shipIdOf(sim, pos) === away.site ? away.site : 0;
 }
 
+/** The crew member a site's shuttle is fetching (a pickup it answered, `AwayC.pickup`): lowest id of its party out. 0 for none. */
+export function fetching(sim: Sim, vehicle: number): number {
+  let first = 0;
+  for (const c of sim.world.query(AwayC, CrewC)) {
+    const away = sim.world.get(c, AwayC)!;
+    if (away.vehicle === vehicle && away.pickup && (!first || c < first) && !sim.world.has(c, AboardC) && !sim.world.has(c, DeadC)) first = c;
+  }
+  return first;
+}
+
 /**
  * Where a shuttle takes people aboard on a grid: the hatch spot while it hovers beside it (they float in), or the inside tile of the
- * airlock it is docked at (they step in). Null when it is neither.
+ * airlock it is docked at (they step in). Null when it is neither. On a pickup the shuttle hovers beside the crew member it fetches, so
+ * their own tile is the hatch spot (the hull near them may be all but gone: they float in from where they stand).
  */
 export function siteSpot(sim: Sim, vehicle: number, shipId: number): { x: number; y: number; docked: boolean } | null {
   const v = sim.world.get(vehicle, VehicleC);
-  const spot = v?.state === 'docked' ? boardingTile(sim, vehicle) : hatchSpot(sim, vehicle);
+  const at = sim.world.get(fetching(sim, vehicle), PositionC);
+  const spot = v?.state === 'docked' ? boardingTile(sim, vehicle) : hatchSpot(sim, vehicle, at && shipIdOf(sim, at) === v?.hover ? at : undefined);
   return spot && spot.shipId === shipId ? { x: spot.x, y: spot.y, docked: v?.state === 'docked' } : null;
 }
 
