@@ -3,7 +3,7 @@ import type { Grid } from '../grid';
 import type { Sim } from '../sim';
 import { isWalkable } from '../structure';
 import { EVA_THIN_AIR_BELOW } from '../tuning';
-import { isSuited, needsAir } from './suit';
+import { isSuited, needsAir, walksOutside } from './suit';
 import { shipGrid } from '../regions';
 
 /** A walk on one grid. `thin`: it crosses thin air and the walker has no suit for it. */
@@ -34,6 +34,14 @@ function gridHasThinAir(sim: Sim, grid: Grid): boolean {
 }
 
 /**
+ * The walk mode for a crew member's own errands (a bed, a meal, a break, a robot bay): the exterior counts for those who walk outside
+ * (suited, or needing no air), as in `planWalk`. One helper, so the need machines cannot drift from it (Codex 4449530807).
+ */
+export function walkOpts(sim: Sim, crew: number): PathOpts {
+  return { suited: walksOutside(sim, crew) };
+}
+
+/**
  * Plan a walk on one grid for a particular crew member. Suited crew (whatever is left in the tank: an empty suit still walks) and bodies that need no air walk
  * anywhere. Everyone else first looks for a path that keeps out of thin air (the prefer-no-EVA rule); if only a thin-air
  * path exists they get it with `thin` set, so the caller can send them for a suit or let a player's order stand.
@@ -42,7 +50,7 @@ export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goa
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return null;
   if (isSuited(sim, crew) || !needsAir(sim, crew) || !gridHasThinAir(sim, grid)) {
-    const steps = findPath(sim, shipId, from, goal, { suited: isSuited(sim, crew) });
+    const steps = findPath(sim, shipId, from, goal, { suited: walksOutside(sim, crew) });
     return steps && { steps, thin: false };
   }
   const clean = findPath(sim, shipId, from, goal, { avoidThin: true });
@@ -80,7 +88,7 @@ export interface WalkMode {
 export function siteWalkModes(sim: Sim, crew: number, shipId: number): WalkMode[] {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return [];
-  if (isSuited(sim, crew) || !needsAir(sim, crew)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }];
+  if (isSuited(sim, crew) || !needsAir(sim, crew)) return [{ opts: { suited: walksOutside(sim, crew) }, thin: false }];
   if (!gridHasThinAir(sim, grid)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }, { opts: { suited: true }, thin: true }];
   return [{ opts: { avoidThin: true }, thin: false }, { opts: {}, thin: true }, { opts: { suited: true }, thin: true }];
 }

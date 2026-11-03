@@ -15,6 +15,7 @@ const CLASSES: Record<MachineId, Record<string, TaskClass>> = {
   charge: { Walk: 'any', Charge: 'any' },
   escape: { Walk: 'any' },
   leisure: { Walk: 'any', Relax: 'any' },
+  return: { Walk: 'any' },
 };
 
 /** Every (machine, state) pair the executor uses, for tests that must cover each one. */

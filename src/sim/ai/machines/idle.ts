@@ -1,7 +1,7 @@
 import { JobC, PathC, type Crew, type Job, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
-import { isSuited } from '../../eva/suit';
+import { walksOutside } from '../../eva/suit';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
@@ -11,6 +11,7 @@ import { TaskC } from '../components';
 import type { Task } from '../types';
 import { clearJoblessTask, derivable, setJoblessTask, syncTask } from '../task';
 import { stowSuit } from './eva';
+import { waitBySite } from './return';
 
 /**
  * Jobless walks (generic machine, no job: `Navigate`): with nothing to do a crew member stows a worn suit, steps off a site
@@ -23,8 +24,8 @@ const WANDER_CHANCE = 0.005;
 const WANDER_RADIUS = 3;
 
 /**
- * The idle turn, after the scheduler found no job: stow the suit, vacate a site, then the drives ranked below work (`idleDrives`:
- * a break), else stroll (station crew) or wander.
+ * The idle turn, after the scheduler found no job: step off a site being built, wait by an away site's shuttle, stow the suit, then the
+ * drives ranked below work (`idleDrives`: a break), else stroll (station crew) or wander.
  */
 export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position, idleDrives?: () => boolean): void {
   let t = sim.world.get(id, TaskC);
@@ -33,8 +34,11 @@ export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position, idleDr
     t = sim.world.get(id, TaskC);
   }
 
+  // Standing on a tile being built (or a module site) comes first: every idle stand-still below (waiting by an away site's shuttle, waiting
+  // to stow a suit) would otherwise hold the build up (Codex 4450253222). Only when not already walking: a walk crossing the site goes on.
+  if (isSettled(pos) && !(sim.world.get(id, PathC)?.steps.length) && vacateSite(sim, id, pos)) return setJoblessTask(sim, id, 'idle', 'generic', 'Navigate');
+  if (waitBySite(sim, id, pos)) return; // on an away site: wait by the shuttle, suited
   if (stowSuit(sim, id, pos)) return;
-  if (isSettled(pos) && vacateSite(sim, id, pos)) return setJoblessTask(sim, id, 'idle', 'generic', 'Navigate');
   if (idleDrives?.()) return;
   if (strollTurn(sim, id, pos)) return setJoblessTask(sim, id, 'leisure', 'generic', 'Navigate');
   wander(sim, id, pos, crew, t);
@@ -132,7 +136,7 @@ function vacateTile(sim: Sim, id: number, here: Tile, ship: number): boolean {
   const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)).filter((j) => j?.kind === 'build' && shipIdOf(sim, j) === ship);
   const grid = shipGrid(sim, ship);
   if (!grid) return false;
-  const suited = isSuited(sim, id);
+  const suited = walksOutside(sim, id);
   let best: Tile[] | null = null;
   let bestOpen = false;
   for (let dy = -1; dy <= 1; dy++) {

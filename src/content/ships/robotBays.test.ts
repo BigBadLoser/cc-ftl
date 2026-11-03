@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CrewC, DeadC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, StorageC, deserialize, newGame, placementError, serialize, spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent } from '../../sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { content } from '../index';
+import { PathC, ShipC } from '../../sim';
+import { nearestExterior } from '../../sim/eva/shuttle';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
 
@@ -201,4 +203,21 @@ describe('determinism', () => {
     run(c, 900);
     expect(serialize(c)).toBe(serialize(a));
   });
+
+describe('robots outside (Codex 4449530807)', () => {
+  it('a low robot out on the hull walks back across it to a bay (the need machines walk as planWalk does)', () => {
+    const sim = setup();
+    const [bay] = bays(sim, 1);
+    expect(bay).toBeDefined();
+    const bot = spawnRobot(sim);
+    const home = nth(sim, 1);
+    const s = sim.world.get(home, ShipC)!;
+    const spot = nearestExterior(sim, home, { x: s.x + s.width / 2, y: s.y - 1 }, 1)[0]!;
+    Object.assign(sim.world.get(bot, PositionC)!, { x: spot.x, y: spot.y, toX: spot.x, toY: spot.y, progress: 0 });
+    sim.world.get(bot, PathC)!.steps = [];
+    sim.world.get(bot, NeedsC)!.charge = 10;
+    run(sim, 20 * 120, () => sim.world.get(bot, CrewC)!.activity === 'charging');
+    expect(sim.world.get(bot, CrewC)!.activity).toBe('charging');
+  });
+});
 });

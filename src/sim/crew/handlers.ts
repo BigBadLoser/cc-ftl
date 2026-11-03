@@ -129,7 +129,11 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     const crew = crewOf(sim, cmd.type, cmd.id);
     if (!crew) return;
     if (cmd.drafted) {
-      if (sim.world.has(cmd.id, DraftedC)) return;
+      const held = sim.world.get(cmd.id, DraftedC);
+      if (held) {
+        delete held.away; // a hold of the away code: the player's draft now
+        return;
+      }
       if (isIncapacitated(sim, cmd.id)) return reject(sim, cmd.type, 'incapacitated');
       abortTask(sim, cmd.id, 'drafted');
       sim.world.add(cmd.id, DraftedC, { target: null });

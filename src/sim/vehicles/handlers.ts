@@ -108,13 +108,13 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     if (!v) return reject(sim, cmd.type, 'noVehicle');
     if (v.state === 'docked') return reject(sim, cmd.type, 'docked');
     const ship = shipById(sim, cmd.ship);
-    if (!ship || ship.state === 'fled' || cmd.ship === v.homeShip) return reject(sim, cmd.type, 'badTarget');
+    if (!ship || ship.state === 'fled' || (cmd.ship === v.homeShip && !cmd.box)) return reject(sim, cmd.type, 'badTarget');
     if (!vehicleDefOf(sim, v)?.eva) return reject(sim, cmd.type, 'noEva');
     if (outsideCrew(sim, cmd.vehicle).length > 0) return reject(sim, cmd.type, 'crewOutside');
     const err = v.state === 'stowed' ? launch(sim, cmd.vehicle, v) : null;
     if (err) return reject(sim, cmd.type, err);
     v.hover = 0;
-    v.dest = { type: 'hover', ship: cmd.ship };
+    v.dest = cmd.box ? { type: 'hover', ship: cmd.ship, box: cmd.box } : { type: 'hover', ship: cmd.ship };
   },
   'vehicle.undock': (sim, cmd) => {
     const v = sim.world.get(cmd.vehicle, VehicleC);

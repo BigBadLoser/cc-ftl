@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { stat } from '../stats';
 import { EvaFloatC } from '../eva/components';
-import { isSuited } from '../eva/suit';
+import { walksOutside } from '../eva/suit';
 
 /** Advance crew along their paths. Diagonal steps take sqrt(2) longer. */
 export function movementSystem(sim: Sim): void {
@@ -18,7 +18,7 @@ export function movementSystem(sim: Sim): void {
     const path = sim.world.get(id, PathC) as Path;
     const grid = shipGrid(sim, shipIdOf(sim, pos));
     if (!grid?.has('struct')) continue;
-    const suited = isSuited(sim, id);
+    const suited = walksOutside(sim, id);
     const walk = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y, suited);
 
     if (!isSettled(pos) && !walk(pos.toX, pos.toY)) {

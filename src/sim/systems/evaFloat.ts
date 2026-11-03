@@ -2,7 +2,7 @@ import { CrewC, DeadC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
 import { vehicleSuits } from '../eva/shuttle';
-import { refillFromVehicle } from '../eva/air';
+import { drawAir } from '../eva/airLedger';
 import { shuttleBeside } from '../eva/refillFloat';
 import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';
@@ -22,15 +22,16 @@ export function evaFloatSystem(sim: Sim): void {
       continue;
     }
     --f.ticks;
-    if (f.mode === 'refill' && f.ticks === Math.floor(f.total / 2) && shuttleBeside(sim, id, f.vehicle)) refillFromVehicle(sim, id, f.vehicle); // the turn at the hatch: swap tanks, unless the shuttle has left
+    if (f.mode === 'refill' && f.ticks === Math.floor(f.total / 2) && shuttleBeside(sim, id, f.vehicle)) drawAir(sim, id, { kind: 'vehicle', id: f.vehicle }); // the turn at the hatch: swap tanks, unless the shuttle has left
     if (f.ticks > 0) continue;
     sim.world.remove(id, EvaFloatC);
     if (f.mode !== 'back') continue;
     const v = sim.world.get(f.vehicle, VehicleC);
     if (!v || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) continue; // nowhere to climb in: stay out
-    v.suits = vehicleSuits(sim, v) + 1;
-    sim.world.remove(id, SuitC);
-    sim.events.emit({ type: 'suit.doffed', crew: id, airlock: 0 });
+    if (sim.world.remove(id, SuitC)) {
+      v.suits = vehicleSuits(sim, v) + 1;
+      sim.events.emit({ type: 'suit.doffed', crew: id, airlock: 0 });
+    }
     boardCrew(sim, id, f.vehicle);
   }
 }

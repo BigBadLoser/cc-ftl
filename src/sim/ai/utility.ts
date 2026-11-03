@@ -10,6 +10,7 @@ import { speciesOf } from '../robots/core';
 import type { Sim } from '../sim';
 import { StationCrewC } from '../stations/components';
 import { airMargin, airSourceInput } from './airNeed';
+import { awayReturn } from '../away/crew';
 import { IntentC } from './components';
 import type { CrewKind, DriveDef, DriveId, DriveInput, Intent, MachineId, PolicyDef } from './types';
 
@@ -55,6 +56,8 @@ const INPUTS: Record<DriveInput, (sim: Sim, id: number) => number | undefined> =
   airMargin,
   /** An air source can be reached (1000) or not (0); absent unless a suited tank drains. */
   airSource: airSourceInput,
+  /** An away crew member wants home: 0 now (closing, a fight, hurt), 500 due (tired, hungry), 1000 not (away/crew.ts); absent off a site. */
+  awayReturn,
   mood: (sim, id) => {
     const m = sim.world.get(id, MoodC);
     return m ? tenths(m.value) : undefined;
