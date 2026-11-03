@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-11-01.
+Last updated: 2026-11-03.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
@@ -11,7 +11,7 @@ Last updated: 2026-11-01.
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
-## On `main` now (merged PRs through #251)
+## On `main` now (merged PRs through #304)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
   black-market services (#141); hull planner, shipyard and engine capacity (#134); hull width rule and hull plan brushes (#145).
@@ -25,16 +25,26 @@ Last updated: 2026-11-01.
   rotating autosaves in IndexedDB, game-over summary (#223); onboarding markers (#220); floating windows (#121); research tree (#114).
 - **Tooling:** in-game bug report (#159, #230); gameplay wiki (#161); performance profiler (#189); faster test suite (#235); CI skips drafts and main pushes (#198);
   manual GitHub Pages deploy (#147).
-- **Bug batches:** #206, #218, #199, #232.
+- **Derelict salvage and away sites:** scrap items, scrapper and cages (#272, #279, #283, #296); salvage order, stripping jobs and
+  the inspector panel (#273, #275); shuttle and EVA salvage teams (#277); air sources, air drive and suit refills (#291, #294);
+  away sites with passages, batched round trips, pickups and robots (#295); salvage staging and gathered hauls (#297); boarding
+  parties and shipyard contractors as away parties (#304).
+- **Crew AI Phases 2-3:** global job scheduler (#263); data-driven utility engine and policies, hazard interrupt and leisure drive,
+  need tasks as saved truth (#289, #290, #293).
+- **Art and render:** pixel-perfect camera (#267); hatches and turrets above the roof (#262); walls and hull art pass (#299);
+  loading screen (#271) and stuck sheet-load timeout (#282).
+- **Bug batches:** #206, #218, #199, #232; doorway parking (#255); save failure alerts (#269); new-game preview (#270).
 
 ## In progress
 
-- **Now:** #265 new-game ship preview (shared sheet cache across renderers, branch `fix/newgame-preview-265`); #149 silent save
-  failures (branch `fix/save-failures-149`); #266 loading screen while sprites load (prototype, branch `ui/loading-screen-266`).
-- **Next, in order (user, 2026-11-01):** derelict salvage (#268, design in DESIGN.md "Salvaging derelicts"), then #194 Crew AI
-  Phase 3 (utility AI plus hazard interrupts), then mental breaks ([TRAITS.md](TRAITS.md) section 5b), relationships, addictions.
-- **Recently merged:** Crew AI Phase 2 scheduler (#263), pixel-perfect camera at every zoom and DPR (#267, closes #187, #264),
-  roof and turret clipping (#262).
+- **Now:** #278 rest retune (PR #302, branch `tune/rest-278`, finishing review); #173 physical encounters steps 1-2, the shared
+  scene infrastructure and the trader skiff (branch `events/scenes-173`). Later encounter steps, each checked in play first:
+  derelict, pirate ambush, distress freighter, medical pod.
+- **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
+  Addictions are parked.
+- **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
+  landing in a bay that breaks on approach.
+- **Waiting on the user:** shield art; a feature-completeness review of #205, #238 and #203.
 - **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough engines (#129).
 
 ## Decisions (user)
@@ -47,6 +57,9 @@ Last updated: 2026-11-01.
 - The balance-test cap is 12 minutes.
 - Research nodes are inspectable only when researchable.
 - Drafted-crew colour is lime `#7ae64a`.
+- No special cases: general systems working together (robots aren't special; needs a crew member lacks count as met).
+- Encounters follow emergent objectives: scenes set conditions, the sim resolves, an observer reads the outcome.
+- Never weaken a test or swap its seed to make it pass; find the root cause.
 
 ## Open work, in order
 
