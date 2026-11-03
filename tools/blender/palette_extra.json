@@ -1940,6 +1940,16 @@
   "hex": "#121b26",
   "set": "hull"
  },
+ "fNC0": {
+  "hex": "#1c2c44",
+  "flat": true,
+  "set": "hull"
+ },
+ "fNC1": {
+  "hex": "#141c2c",
+  "flat": true,
+  "set": "hull"
+ },
  "fDS0": {
   "hex": "#678290",
   "set": "hull"
