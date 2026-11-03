@@ -1225,10 +1225,12 @@ stranded rules). Enemy boarders (`systems/boardingAi.ts`) stay NPC doctrine.
     'board'.
 - **Recall** (`recall.ts` -> `away/recall.ts` `recallCrew`, `crew.recall`): party members out on their site are undrafted, their sabotage
   cancelled, and marked `Away.recall` (owned row: ends with the party; stale only if they stand off their site). `awayReturn` is 0 for
-  them, `passengerUrgent` true: the trip home leaves at once, and the run goes back for anyone who stays. A party member on the way back aboard
-  (`recall`, `pickup`, `ride`: `headingAboard` in fight/relations.ts) is not boarding (`isBoarding`), and `stepFighter` leaves them idle
-  (no hunting, no fleeing), so the crew AI's return drive steers them, also under fire.
-  `crew.recallStarted` / `crew.recallFailed` (`noCrew`, `notAboard`, `incapacitated`) at the order; `away.returned` is the "back aboard"
+  them, `passengerUrgent` true: the trip home leaves at once, and the run goes back for anyone who stays. Crew under an away order to go aboard
+  (`headingAboard` in fight/relations.ts: a party member with `recall`, `pickup` or `ride`, or an invitee holding their passage) are left
+  idle by `stepFighter` (no hunting, no fleeing; a player's attack order still counts), and a party member on the way back is not boarding
+  (`isBoarding`), so their walk stands, also under fire.
+  `crew.recallStarted` / `crew.recallFailed` (`noCrew`, `notAboard`, `incapacitated`, `noHome`: the shuttle's bay is down and no home airlock is free, so the
+  party stays put rather than sit in a shuttle with nowhere to go) at the order; `away.returned` is the "back aboard"
   log line. A party landed by hand (shuttle panel, no launch) joins a boarding site when recalled (`joinLanded` in `boarding/recall.ts`):
   the ship's site if one is open, else one opened for the lowest free shuttle of their side docked there (its run starts in 'fly' and
   finds itself at the site; those still sitting in it are of the party, `Away.home`). With no such shuttle they are `notAboard`.

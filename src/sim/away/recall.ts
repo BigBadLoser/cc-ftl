@@ -1,23 +1,40 @@
 import { abortTask } from '../ai/task';
 import { CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
+import { regionAirlock } from '../ferry/pick';
 import type { Sim } from '../sim';
+import { VehicleC } from '../vehicles/components';
+import { bayWorking } from '../vehicles/geometry';
 import { AwayC } from './components';
 import { siteUnderFoot } from './crew';
+import { atHome } from './phase';
 
 /** What became of a recall order: who was called home, by site run, and who could not be, with the reason. */
 export interface Recalled {
   /** The crew called home, by the shuttle serving their site (ascending ids). */
   sent: Map<number, number[]>;
-  /** Those who could not be: not of a party out on its site (`notAboard`), downed (`incapacitated`), or gone (`noCrew`). */
+  /** Those who could not be: not of a party out on its site (`notAboard`), downed (`incapacitated`), gone (`noCrew`), or their shuttle has no
+   * way home (`noHome`). */
   left: { crew: number; reason: string }[];
 }
 
-/** Why a crew member cannot be called home, or null: gone (`noCrew`), not of a party out on its site (`notAboard`), downed (`incapacitated`). */
+/**
+ * Why a crew member cannot be called home, or null: gone (`noCrew`), not of a party out on its site (`notAboard`), downed (`incapacitated`),
+ * or the shuttle serving their site has no way home (`noHome`: its bay is down and no airlock of the home ship is free, or the home ship is
+ * gone), so the recall would leave them sitting in a shuttle with nowhere to go. They stay where they are, and the site goes on.
+ */
 export function notRecallable(sim: Sim, c: number): string | null {
   if (!sim.world.has(c, CrewC) || sim.world.has(c, DeadC) || !sim.world.has(c, PositionC)) return 'noCrew';
-  if (!sim.world.has(c, AwayC) || !siteUnderFoot(sim, c)) return 'notAboard';
-  return isIncapacitated(sim, c) ? 'incapacitated' : null;
+  const away = sim.world.get(c, AwayC);
+  if (!away || !siteUnderFoot(sim, c)) return 'notAboard';
+  if (isIncapacitated(sim, c)) return 'incapacitated';
+  return wayHome(sim, away.vehicle) ? null : 'noHome';
+}
+
+/** Can the shuttle get home: it is there, its bay works, or an airlock of its home ship is free. A lost shuttle counts (another takes over). */
+function wayHome(sim: Sim, id: number): boolean {
+  const v = sim.world.get(id, VehicleC);
+  return !v || atHome(sim, v) || (!!v.home && bayWorking(sim, v.home)) || regionAirlock(sim, v.homeShip, id) !== 0;
 }
 
 /**

@@ -103,11 +103,11 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const pos = sim.world.get(id, PositionC) as Position;
   const f = fighterOf(sim, id);
   if (f.cooldown > 0) f.cooldown--;
-  if (headingAboard(sim, id)) {
-    // On the way back aboard (a recall): no hunting or fleeing that would take the walk over; the return drive keeps its path.
+  if (headingAboard(sim, id) && !(isPlayerControlled(sim, id) && f.ordered)) {
+    // Under an away order to go aboard (recalled, fetched, or a named invitee on the way to their seat): no hunting or fleeing that would
+    // take the walk over, the path stays theirs. The player's own attack order still does.
     f.mode = 'idle';
     f.target = 0;
-    f.ordered = 0;
     delete f.goal;
     return;
   }

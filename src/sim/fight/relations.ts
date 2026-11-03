@@ -1,5 +1,5 @@
 import { shipIdOf } from '../regions';
-import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../crew/components';
+import { AssignmentC, CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../crew/components';
 import { factionsHostile, rogueAlly } from '../combat/factions';
 
 import { InertC, StunC } from '../robots/components';
@@ -63,12 +63,15 @@ export function isBoarding(sim: Sim, crew: number): boolean {
 }
 
 /**
- * True for a party member on the way back aboard their site's shuttle (called home by the player, fetched, or riding the round trip): the
- * crew AI's return drive steers them, and the fight code neither sends them hunting nor fleeing (fighter.ts), so the walk is theirs.
+ * True for crew under an away order to go aboard a site's shuttle: a party member called home by the player, fetched or riding the round
+ * trip, or a named invitee walking to the seat held for them (a passage job held by its `holder`, away/passage.ts). Their walk is theirs:
+ * the fight code neither sends them hunting nor fleeing (fighter.ts), and a party member on the way back is not boarding (`isBoarding`).
  */
 export function headingAboard(sim: Sim, crew: number): boolean {
   const away = sim.world.get(crew, AwayC);
-  return !!away && !!(away.recall || away.pickup || away.ride);
+  if (away) return !!(away.recall || away.pickup || away.ride);
+  const job = sim.world.get(sim.world.get(crew, AssignmentC)?.jobId ?? 0, JobC);
+  return job?.kind === 'passage' && job.holder === crew;
 }
 
 /** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */
