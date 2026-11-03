@@ -102,7 +102,8 @@ def jobs(name):
         return jobs, True
     if name == "structure":
         from . import structure
-        return structure.jobs(), "walls+hull"
+        return structure.jobs(), lambda sid: "walls+hull+slate" if ".slate." in sid else "walls+hull"   # (a look's
+                                                                                    # own set: slate's)
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True
