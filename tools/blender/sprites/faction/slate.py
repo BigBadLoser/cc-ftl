@@ -47,6 +47,11 @@ def _blocks(a, b):
     return out
 
 
+def _thirds(a, b):
+    """The lip's seams over [a, b]: at each tile's thirds."""
+    return [u for c in range(-1, 2) for u in (c - 0.5 + 1 / 3, c - 0.5 + 2 / 3) if a + LINE < u < b - LINE]
+
+
 def slate(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -67,9 +72,13 @@ def slate(hull):
             top_ = "fGS2" if ax == "y" else "fGS3"      # (its top a step under a lit top's: a soft edge)
             prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
                   FACE, 3, cols=[False, None, top_, False], mitre=mit)
-            zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, 2 px wide)
-            if zg + 2 * PZ < top - 0.03:
-                T.paint(k, ax, plane, a, b, zg, zg + 2 * PZ, 0.0, FACE, 1)
+            zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, a px wide)
+            if zg + PZ < top - 0.03:
+                T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
+                for u in _thirds(a, b):                 # the lip in three a tile: a seam up its front, over its
+                    q0, q1 = u - LINE / 2, u + LINE / 2  # top and up the face to the seam over it
+                    T.paint(k, ax, plane, q0, q1, zl - PZ, zl + LIP_H, LIP_D, FACE, 1)
+                    T.paint(k, ax, plane, q0, q1, zl + LIP_H, zg, 0.0, FACE, 1)
             if full:                                                    # a faint line, 7 px under the stripe
                 T.paint(k, ax, plane, a, b, zst - 14 * PZ, zst - 13 * PZ, 0.0, FACE, 4)
         if not full:
