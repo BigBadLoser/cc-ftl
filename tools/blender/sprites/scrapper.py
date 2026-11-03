@@ -149,14 +149,16 @@ def _rrect(sc, dc, hs, hd, r, seg=3):
 
 def slope_cyl(b, A, B, s, d, r, t0, t1, col, sides=16, top=None):
     """A cylinder standing on the slope from A to B (L, z points): axis along the slope's normal at (s along, D = d),
-    ends parallel to the slope from t0 to t1 out of it, so its foot sits flat on the slope."""
+    ends parallel to the slope from t0 to t1 out of it, so its foot sits flat on the slope. r may be a (foot, top)
+    pair of radii for a frustum (a chamfer)."""
     ln = math.dist(A, B)
     u = ((B[0] - A[0]) / ln, (B[1] - A[1]) / ln)
     n = (-u[1], u[0]) if u[0] > 0 else (u[1], -u[0])
     S = lambda s_, d_, t: b.P(A[0] + u[0] * s_ + n[0] * t, d_, A[1] + u[1] * s_ + n[1] * t)   # noqa: E731
-    ring = lambda t: [S(s + r * math.cos((i + .5) * math.tau / sides), d + r * math.sin((i + .5) * math.tau / sides), t)  # noqa: E731
-                      for i in range(sides)]
-    a_, b_ = ring(t0), ring(t1)
+    r0, r1 = r if isinstance(r, tuple) else (r, r)
+    ring = lambda t, r: [S(s + r * math.cos((i + .5) * math.tau / sides), d + r * math.sin((i + .5) * math.tau / sides), t)  # noqa: E731
+                         for i in range(sides)]
+    a_, b_ = ring(t0, r0), ring(t1, r1)
     ax = S(s, d, (t0 + t1) / 2)
     for i in range(sides):
         j = (i + 1) % sides
@@ -169,7 +171,7 @@ def slope_cyl(b, A, B, s, d, r, t0, t1, col, sides=16, top=None):
     b.face(b_, top or col, dv)
 
 
-HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.56, 0.16, 0.085, 0.06
+HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.56, 0.21, 0.085, 0.06
 
 
 def exhaust_housing(A, B):
@@ -251,8 +253,10 @@ def scrapper(rot):
     flange = 0.17 + px / 2
     b.prism_D(exhaust_housing(fA, fB), dc - flange - px, dc + flange + px, GMD, GM)   # a pixel wider than the flange
     slope_cyl(b, fA, fB, fm, dc, flange, 0, 0.04, GMD)                       # flange, foot flat on the slope
-    slope_cyl(b, fA, fB, fm, dc, 0.13 + px / 2, 0.04, 0.195, GM)            # nozzle barrel
-    slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.195, 0.2, DARK)           # bore
+    barrel = 0.13 + px / 2
+    slope_cyl(b, fA, fB, fm, dc, (flange - px, barrel), 0.04, 0.075, GM)     # chamfer up from the flange to the barrel
+    slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.27, GM)                    # nozzle barrel
+    slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.27, 0.275, DARK)          # bore
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
