@@ -169,6 +169,25 @@ def slope_cyl(b, A, B, s, d, r, t0, t1, col, sides=16, top=None):
     b.face(b_, top or col, dv)
 
 
+HOUSING_S0, HOUSING_H, HOUSING_BACK, HOUSING_TAIL = 0.48, 0.16, 0.085, 0.06
+
+
+def exhaust_housing(A, B):
+    """The exhaust housing's (L, z) side profile on the slope from A (foot) to B (crest), one solid read as three
+    shapes: a block lying on the upper slope (its underside on the slope, from HOUSING_S0 up to the crest, HOUSING_H
+    thick); a block on the flat top whose top runs back level from the first one's top edge and whose underside reaches
+    HOUSING_BACK (about 3 px) past the crest; and a short slope (HOUSING_TAIL long) down to the top at its back end."""
+    ln = math.dist(A, B)
+    u = ((B[0] - A[0]) / ln, (B[1] - A[1]) / ln)
+    n = (-u[1], u[0]) if u[0] > 0 else (u[1], -u[0])
+    back = -1 if B[0] < A[0] else 1                                    # from the crest away from the end
+    on = lambda s_, t: (A[0] + u[0] * s_ + n[0] * t, A[1] + u[1] * s_ + n[1] * t)   # noqa: E731
+    top = on(ln, HOUSING_H)
+    pts = [on(HOUSING_S0, 0), on(HOUSING_S0, HOUSING_H), top, (B[0] + back * HOUSING_BACK, top[1]),
+           (B[0] + back * (HOUSING_BACK + HOUSING_TAIL), B[1]), B]
+    return pts
+
+
 def hatch(b, A, B, r0, r1):
     """A hatch on the slope from A to B (L, z points), in the row r0 .. r1: a raised frame 2 px wide with rounded
     corners standing proud of the slope, and inside it, recessed below the frame's lip, two sliding door leaves on a
@@ -227,11 +246,12 @@ def scrapper(rot):
         hatch(b, (0.03, WALL), (0.5, EDGE), r0, r1)
     hatch(b, (3.97, WALL), (3.5, EDGE), D0, DM)                         # far end: one hatch, back row
     # far end, front row: the exhaust, a housing standing out of the slope's top and a nozzle pointing out of the end
-    fA, fB, fm = (3.97, WALL), (3.5, EDGE), math.dist((3.97, WALL), (3.5, EDGE)) / 2
-    b.box(3.3, 3.56, DM + 0.14, D1 - 0.14, 0.9, EDGE + 0.12, GMD, GM)
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.3, 0, 0.05, GMD)              # flange, foot flat on the slope
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.24, 0.05, 0.16, GM)           # nozzle barrel
-    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.15, 0.16, 0.165, DARK)        # bore
+    fA, fB = (3.97, WALL), (3.5, EDGE)
+    b.prism_D(exhaust_housing(fA, fB), DM + 0.1, D1 - 0.1, GMD, GM)
+    fm = math.dist(fA, fB) / 2
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.17, 0, 0.04, GMD)             # flange, foot flat on the slope
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.13, 0.04, 0.12, GM)           # nozzle barrel
+    slope_cyl(b, fA, fB, fm, (DM + D1) / 2, 0.08, 0.12, 0.125, DARK)        # bore
     # bay: cradle and drum
     b.box(2.02, 2.98, 1.08, 1.92, 0, 0.1, GMD, GM)
     b.cyl_L(1.5, 0.4, 0.34, 2.22, 2.88, GM)
