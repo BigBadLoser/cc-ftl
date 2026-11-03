@@ -467,6 +467,17 @@ def piston(b, L0=2.0 + STEP - 0.084, L1=3.0 - STEP, r=0.135, wall=1.0, sink=0.07
     cap = 0.06                                                          # the knob is part of the span, so the whole
     b.cyl_L(D, z, r, L0 + cap, L1, GM, sides=14)                        # piston is centred, knob included
     b.cyl_L(D, z, r + 0.02, L0, L0 + cap, DARK, sides=14)
+    levers(b, z + r, wall)
+
+
+def levers(b, ztop, wall, Ls=(2.32, 2.5, 2.68), w=0.06, t=0.04, back=0.85, gap=0.015):
+    """Three dark L-shaped levers (after the ref's hopper tile): an arm lying across the piston's top that turns down
+    the bay's back wall, just clear of the piston's bulge, to stand on the recess frame's top edge."""
+    zf = RECESS_Z[1] + 0.051                                            # the frame's top edge (recess(): wz)
+    d0, d1, z1 = wall + gap, wall + gap + t, ztop + t
+    poly = [(back, ztop), (d0, ztop), (d0, zf), (d1, zf), (d1, z1), (d0, z1), (back, z1)]
+    for Lc in Ls:
+        plate_L(b, poly, Lc - w / 2, Lc + w / 2, DARK, [[0, 1, 5, 6], [1, 2, 3, 4, 5]])
 
 
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
