@@ -588,7 +588,7 @@ def scrapper(rot):
     vent(b)
     piston(b)
     from .scrapper_detail import seams
-    seams(b, GMD)
+    seams(b, BODY_D)
     if os.environ.get("SCRAPPER_WEAR", "1") != "0":
         from .scrapper_wear import fine, wear
         names = os.environ.get("SCRAPPER_WEAR_ON", "body").split(",")
