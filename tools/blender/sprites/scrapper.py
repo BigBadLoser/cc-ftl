@@ -315,7 +315,7 @@ def mouth(b, L0, L1, depth, h=0.365, r=0.12, wall=0.075):
 
 RECESS_W, RECESS_Z, RECESS_DEPTH = 0.55, (0.52, 1.06), 0.9
 RECESS_BANDS = (0.0, 0.2, 0.27, 0.36)           # depths where the passage walls step darker
-RECESS_FADE = ("scRec1", "scRec2", "scRec3", "scRec4")
+RECESS_FADE = (DARK, DARK, DARK, DARK)    # dark like the doorways (the bands stay for a fade later)
 RECESS_L = (2.5 - RECESS_W / 2, 2.5 + RECESS_W / 2)                    # centred in the bay's back wall
 
 
@@ -426,10 +426,10 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
         b.box(Lc + dl - 0.022, Lc + dl + 0.022, D1 + lip, D1 + lip + 0.012, zc - 0.016, zc + 0.016, LAMP)
 
 
-def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, chamfer=0.09):
+def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.13, flare=0.04, chamfer=0.09):
     """The dial on top of the hatch-end block (after the ref's tile, link 04, centred on the back-row tile): a square
-    housing with small cut corners standing h above the top, its sides sloping out (flare) to its foot, its gauge face
-    sunk into it inside a rim. Its foot stays on the flat top (L 1 + STEP .. 2 - STEP), clear of the slopes."""
+    housing with small cut corners standing h above the top, its sides sloping out (flare) to its foot, open on top:
+    a hole sunk into it inside a rim, dark at the bottom like the doorways. Its foot stays on the flat top (L 1 + STEP .. 2 - STEP), clear of the slopes."""
     def oct_(rr):                                                       # a square, half size rr, corners cut by ch
         ch = chamfer + (rr - r) * (math.sqrt(2) - 1)                    # (parallel offsets keep the cuts at 45 deg)
         return [(Lc + x, Dc + y) for x, y in ((rr, -rr + ch), (rr, rr - ch), (rr - ch, rr), (-rr + ch, rr),
@@ -448,7 +448,7 @@ def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, cham
         q = [b.P(e0, e1, zf), b.P(f0, f1, zf), b.P(f0, f1, z1), b.P(e0, e1, z1)]                           # inside
         m = [sum(p[x] for p in q) / 4 for x in range(3)]
         b.face(q, BODY_S, (ce[0] - m[0], ce[1] - m[1], 0))
-    b.face([b.P(d0, d1, zf) for d0, d1 in inner], LIGHT, (0, 0, 1))                                      # gauge face
+    b.face([b.P(d0, d1, zf) for d0, d1 in inner], DARK, (0, 0, 1))                                       # its floor
 
 
 def cyl_z(b, L, D, z0, z1, r, col, top=None, sides=16):
