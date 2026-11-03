@@ -4,13 +4,12 @@ brown joints over a blue toe."""
 import math
 
 from .. import wall3d as T
-from ..relief_style import Design
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, PZ, body, flat, prism
 from .shell import FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
+from ..relief_style import Design
+from .tan_ramps import BLUE, FACE, OUTER, TAN_RAMPS
 
-FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's pale tan)
-BLUE = "ochre"                      # the trim's: the line at the face's foot, the toe
 HEAD_D, HEAD_H = PX, 11 * PZ       # the header block: its depth (2 px of lit top), its front (a lit edge, 10 of face)
 LIP_D, LIP_TOP = PX / 2, 6 * PZ    # the lip at the face's foot: its depth (a px of lit top), its top over the slope's
                                     # top (its front from there down to it: 4 px of face over a dark one)
@@ -167,95 +166,7 @@ def tan(hull):
     return face
 
 
-EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
-
-
-# the base ramp's cushions (padding, not plates), symmetric about the tile's middle, as fractions of the tile (u) and
-# of the cushions' run (d); the joints, a px, centred on the cuts: two squares against the wall, an L either side of
-# them (down the tile's side, then in along the toe to the middle)
-CUT_D = 0.55
-SHADE_EDGES = False                             # a shaded strip along each cushion's foot and right edge
-CURVE = 4                                       # the block's outer corners: their curve's radius, in px
-OUTER = "fTS7"                                  # the block's outer joints (its sides, over the toe; a px): a step darker
-GAP = 0.7                                       # the joints' width, in px (under one: AA softens them)
-SQUARES = ((0.25, 0.5), (0.5, 0.75))
-# each L: its rects ((u0, u1, d0, d1), its rounded corners: a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1), in capitals
-# curved (the block's outer corners)); a u0 / u1 of
-# None runs into the L's other rect, under it (no joint); then its shaded right edges ((u1, d0, d1) as fractions)
-ELLS = ((((0.0, 0.25, 0.0, 1.0), "AbD"), ((None, 0.5, CUT_D, 1.0), "bc")), ((0.25, 0.0, CUT_D), (0.5, CUT_D, 1.0))), \
-       ((((0.75, 1.0, 0.0, 1.0), "aBC"), ((0.5, None, CUT_D, 1.0), "ad")), ((1.0, 0.0, 1.0),))
-
-
-def tan_plate(plate, u0, u1, run_, k=None, pt=None, ax="y", **_):
-    """The base ramp: a blue line along the wall, then a block of pale cushions with rounded corners in brown joints
-    (under a px), the block's outer joints darker and its outer corners curved, then the blue toe."""
-    w, E, L = u1 - u0, EDGE, LINE
-    top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the cushions' end, over the toe)
-    nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
-    JL, JE = GAP * L, GAP * E                           # (the joints, across and down the slope)
-    span = end - E - top                                # (the block's foot over the toe: a whole px)
-
-    def q(ua, ub, da, db):
-        return [(ua, da), (ub, da), (ub, db), (ua, db)]
-
-    def corner(x, y, sx, sy, ch):                       # (a corner (x, y), the rect inward along sx, sy: the corner
-        if ch.isupper():                                # px clipped off (a cut that covers it whole), or a curve)
-            rl, re = CURVE * L, CURVE * E
-            cx, cy = x + sx * rl, y + sy * re
-            pts = [(cx - sx * rl * math.cos(t), cy - sy * re * math.sin(t))
-                   for t in (i * math.pi / 12 for i in range(7))]
-        else:
-            pts = [(x, y + sy * 1.5 * E), (x + sx * 1.5 * L, y)]
-        return pts if sx * sy > 0 else pts[::-1]
-
-    def rq(ua, ub, da, db, rc="abcd"):                  # (a cushion's rect, the corners rc rounded)
-        out = []
-        for ch, (x, y, sx, sy) in zip("abcd", ((ua, da, 1, 1), (ub, da, -1, 1), (ub, db, -1, -1), (ua, db, 1, -1))):
-            out += corner(x, y, sx, sy, next(c for c in rc + ch if c.lower() == ch)) if ch in rc.lower() else [(x, y)]
-        return out
-    sh_ = T.SHELL                                       # (the block's sides: half a joint each at a tile edge, the
-    free = [bool(getattr(sh_, "is_end", None) and sh_.is_end(ax, u, sd)) for u, sd in ((u0, -1), (u1, 1))]
-    side = [L if f else L / 2 for f in free]            # tiles' halves one px; a whole one at a free end)
-
-    def U0(f):
-        return u0 + f * w + (side[0] if f == 0.0 else JL / 2)
-
-    def U1(f):
-        return u0 + f * w - (side[1] if f == 1.0 else JL / 2)
-
-    def D0(g):                                          # (none against the wall or the toe's)
-        return top + g * span + (0.0 if g == 0.0 else JE / 2)
-
-    def D1(g):
-        return top + g * span - (0.0 if g == 1.0 else JE / 2)
-    plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
-    plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
-    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed=OUTER)    # the joints (under the cushions:
-    for f, g1 in ((0.25, CUT_D), (0.5, 1.0), (0.75, CUT_D)):                      # the block's outer ones darker, the
-        um = u0 + f * w                                                           # inner ones lighter; the last,
-        T.plate(k, q(um - 2 * L, um + 2 * L, top, top + g1 * span + (2 * E if g1 < 1.0 else -2 * E)),   # over the toe,
-                pt, nrm, 0.0, 1.5 * PAINT, FACE, 0, PAINT, fixed="fTS8")          # under a px: no foot shading on
-    T.plate(k, q(u0 + 0.25 * w - 2 * L, u0 + 0.75 * w + 2 * L, top + CUT_D * span - 2 * E,   # the Ls over it)
-                 top + CUT_D * span + 2 * E), pt, nrm, 0.0, 1.5 * PAINT, FACE, 0, PAINT, fixed="fTS8")
-    r, sh = 3 * PAINT, 2 * PAINT
-    for f0, f1 in SQUARES:
-        pu0, pu1, pd0, pd1 = U0(f0), U1(f1), D0(0.0), D1(CUT_D)
-        plate(rq(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
-        if SHADE_EDGES:                                 # (its foot and right edge shaded, short of the corners)
-            plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, sh, FACE)
-            plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, sh, FACE)
-    for rects, shades in ELLS:
-        for (f0, f1, g0, g1), rc in rects:
-            pu0 = u0 + 0.125 * w if f0 is None else U0(f0)
-            pu1 = u0 + 0.875 * w if f1 is None else U1(f1)
-            plate(rq(pu0, pu1, D0(g0), D1(g1), rc), 2 * PAINT, 2, PAINT, "wall")
-        for f, g0, g1 in shades if SHADE_EDGES else ():  # (its right edges shaded, short of a rounded corner)
-            pd0 = D0(g0) + (E if g0 == 0.0 or g0 == CUT_D and f == 0.5 else 0.0)
-            pd1 = D1(g1) - E if g1 == 1.0 else D0(g1)  # (down to the L's inner corner)
-            plate(q(U1(f) - L, U1(f), pd0, pd1), r, 2, sh, FACE)
-
-
-TAN_RAMPS = (Design("cushions", ramp=tan_plate),)
+TAN_TOPS = (Design("plain"),)                  # its face designs, the base first
 
 
 class Tan(Faction):
@@ -263,6 +174,6 @@ class Tan(Faction):
 
     def relief(self, sprite):
         return _style(tan, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
-                      toe_lvl={"wall": "fTT2", "blue": "fTT2"}, ramps=TAN_RAMPS,     # (the toe blue, its foot
+                      toe_lvl={"wall": "fTT2", "blue": "fTT2"}, tops=TAN_TOPS, ramps=TAN_RAMPS,     # (the toe blue, its foot
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 2), FaceHoles(),  # darker)
                                 TanTones()))
