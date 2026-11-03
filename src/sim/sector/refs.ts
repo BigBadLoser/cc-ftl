@@ -45,5 +45,11 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   if (away && (gone(away.site) || gone(away.vehicle))) delete data.away;
   if (gone((data.siteRun as { site: number } | undefined)?.site)) delete data.siteRun;
   if (gone((data.awaySite as { vehicle: number } | undefined)?.vehicle)) delete data.awaySite;
+  // Air set aside (the air ledger) for crew or at sources across the cut is no longer anyone's.
+  const holds = data.airHolds as { holds: { crew: number; id: number }[] } | undefined;
+  if (holds) {
+    holds.holds = holds.holds.filter((h) => !gone(h.crew) && !gone(h.id));
+    if (holds.holds.length === 0) delete data.airHolds;
+  }
   return data;
 }

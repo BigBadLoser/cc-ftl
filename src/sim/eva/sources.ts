@@ -1,29 +1,30 @@
 import { PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
-import type { Tile } from '../crew/pathfind';
+import type { PathGoal, Tile } from '../crew/pathfind';
 import { BodyC } from '../body';
-import { vehicleFaction } from '../vehicles/lifecycle';
 import { AirlockC } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { dijkstraFrom } from '../ai/navSearch';
-import { indexOf, inView, viewOf } from '../ai/navView';
+import { goalTiles, indexOf, inView, isFallbackStop, viewOf, type View } from '../ai/navView';
 import { floatTicks, travelTicks } from '../ai/travel';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { REFILL_FILL_SEC } from '../tuning';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { airlockAir, airlockSupply, dockedSupplier, hasTank, vehicleAir } from './air';
+import { canGive, sourceSupply } from './airLedger';
 import { hatchFace } from './hatch';
 import { hatchSpot, tileCentre } from './shuttle';
 import { airlockUsable, suitTile } from './suit';
 
 /**
  * Where a suited crew member can fill their tank, found by reachability on their grid (docs/DESIGN.md "Air as a need", #286). Two kinds:
- * the suit tile of a working airlock that has air in its store (or a player shuttle docked there with a tank to give), and the hatch spot of
- * a player shuttle hovering beside the grid, within float range of a hull tile the walker can reach, with at least one tank in its store.
+ * the suit tile of a working airlock and the hatch spot of a player shuttle hovering beside the grid, within float range of a hull tile the
+ * walker can reach; either counts while the air ledger says it can give (`canGive`). Part of the air module with `eva/airLedger.ts`: the only
+ * place reach to a source is worked out (the air drive, the refill order, admission and the departure check all ask here). The walk is the
+ * suited one (`walkOpts` of anyone who can refill: they wear a suit).
  * `ticks` is the time to get there and be ready to fill (a walk, plus the drift out for a shuttle); `fillTicks` is the time at the source
- * (the tank swap, plus the drift back for a shuttle). Sorted nearest first, then by kind and id.
+ * (the tank swap, plus the drift back for a shuttle); `steps` is the walk itself, the one timed. Sorted nearest first, then by kind and id.
  */
 export interface AirSource {
   kind: 'airlock' | 'vehicle';
@@ -33,6 +34,7 @@ export interface AirSource {
   tile: Tile;
   ticks: number;
   fillTicks: number;
+  steps: Tile[];
 }
 
 /** A candidate before the walk is searched. */
@@ -55,15 +57,13 @@ function driftDist(sim: Sim, vehicle: number, spot: { shipId: number; x: number;
 }
 
 /** The sources on a grid that have air to give, before any reachability test. `without` leaves one shuttle out (the departure check). */
-export function sourceCandidates(sim: Sim, shipId: number, without = 0): Candidate[] {
+function sourceCandidates(sim: Sim, shipId: number, without = 0): Candidate[] {
   const out: Candidate[] = [];
   const fill = Math.round(REFILL_FILL_SEC * TICK_HZ);
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
     if (!at || !airlockUsable(sim, id) || shipIdOf(sim, sim.world.get(id, ModuleC)) !== shipId) continue;
-    // A shuttle docked here gives from its own store when the airlock's is empty.
-    const v = dockedSupplier(sim, id, without);
-    if (airlockAir(sim, id) > 0 || (v && hasTank(sim, vehicleAir(sim, v)))) out.push({ kind: 'airlock', id, tile: at, extra: 0, fill });
+    if (canGive(sim, { kind: 'airlock', id }, without)) out.push({ kind: 'airlock', id, tile: at, extra: 0, fill });
   }
   return out.concat(hoverCandidates(sim, shipId, without, fill));
 }
@@ -72,7 +72,7 @@ function hoverCandidates(sim: Sim, shipId: number, without: number, fill: number
   const out: Candidate[] = [];
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC) as Vehicle;
-    if (id === without || v.hover !== shipId || vehicleFaction(sim, v) !== 'player' || !hasTank(sim, vehicleAir(sim, v))) continue;
+    if (v.hover !== shipId || !canGive(sim, { kind: 'vehicle', id }, without)) continue;
     const spot = hatchSpot(sim, id);
     if (!spot) continue;
     const drift = floatTicks(sim, driftDist(sim, id, spot));
@@ -89,7 +89,8 @@ export function airSources(sim: Sim, crew: number, opts: { without?: number } = 
   const pos = sim.world.get(crew, PositionC);
   if (!pos) return [];
   const shipId = shipIdOf(sim, pos);
-  const cands = sourceCandidates(sim, shipId, opts.without ?? 0);
+  // A source whose air is all set aside for others has nothing for this walker (`sourceSupply`).
+  const cands = sourceCandidates(sim, shipId, opts.without ?? 0).filter((c) => sourceSupply(sim, c, { without: opts.without, for: crew }) > 0);
   const view = cands.length > 0 ? viewOf(sim, shipId, { suited: true }) : null;
   if (!view || !shipGrid(sim, shipId)) return [];
   const goals = new Map<number, number[]>();
@@ -102,23 +103,59 @@ export function airSources(sim: Sim, crew: number, opts: { without?: number } = 
   const out: AirSource[] = [];
   cands.forEach((c, k) => {
     if (!r.cost.has(k)) return;
-    const walk = travelTicks(sim, crew, r.steps(k), { shipId, suited: true });
-    out.push({ kind: c.kind, id: c.id, tile: c.tile, ticks: walk + c.extra, fillTicks: c.fill });
+    const steps = r.steps(k);
+    out.push({ kind: c.kind, id: c.id, tile: c.tile, ticks: travelTicks(sim, crew, steps, { shipId, suited: true }) + c.extra, fillTicks: c.fill, steps });
   });
   return out.sort((a, b) => a.ticks - b.ticks || (a.kind === b.kind ? a.id - b.id : a.kind === 'airlock' ? -1 : 1));
-}
-
-/**
- * Seconds of air the source can give: an airlock's `airlockSupply` (its store, then a player shuttle docked there), a shuttle's store.
- * `without` leaves one shuttle out, as for `airSources`. What the departure check budgets; the refill draws from the same stores.
- */
-export function sourceSupply(sim: Sim, s: Pick<AirSource, 'kind' | 'id'>, without = 0): number {
-  if (s.kind === 'airlock') return airlockSupply(sim, s.id, without);
-  const v = s.id !== without ? sim.world.get(s.id, VehicleC) : undefined;
-  return v ? vehicleAir(sim, v) : 0;
 }
 
 /** The nearest source, or null. */
 export function nearestAirSource(sim: Sim, crew: number, opts: { without?: number } = {}): AirSource | null {
   return airSources(sim, crew, opts)[0] ?? null;
+}
+
+/**
+ * Ticks from given tiles of a grid back to their nearest source, for many walkers and tiles at once (admission asks for every job's work
+ * tile): one search out of each source to the tiles of `goals`, made the first time the grid is asked about. Same sources and walk as
+ * `airSources`, run backwards; a tile no source reaches gets null.
+ */
+export class SourceReach {
+  private byShip = new Map<number, { view: View; from: { r: ReturnType<typeof dijkstraFrom>; tile: Tile; extra: number }[] } | null>();
+  constructor(
+    private sim: Sim,
+    private goals: (ship: number) => readonly PathGoal[],
+  ) {}
+
+  /** Ticks for `walker` from `tile` on `ship` to its nearest source, or null. */
+  ticksFrom(walker: number, ship: number, tile: Tile): number | null {
+    const reach = this.reachOf(ship);
+    if (!reach) return null;
+    const key = indexOf(reach.view, tile.x, tile.y);
+    let best: number | null = null;
+    for (const s of reach.from) {
+      if (!s.r.cost.has(key)) continue;
+      const path = s.r.steps(key); // from the source to the tile
+      const back = [...path.slice(0, -1).reverse(), s.tile];
+      const ticks = travelTicks(this.sim, walker, back, { from: path.length ? (path[path.length - 1] as Tile) : s.tile, shipId: ship, suited: true }) + s.extra;
+      if (best === null || ticks < best) best = ticks;
+    }
+    return best;
+  }
+
+  private reachOf(ship: number) {
+    if (this.byShip.has(ship)) return this.byShip.get(ship)!;
+    const view = viewOf(this.sim, ship, { suited: true });
+    const sources = view ? sourceCandidates(this.sim, ship) : [];
+    let made: { view: View; from: { r: ReturnType<typeof dijkstraFrom>; tile: Tile; extra: number }[] } | null = null;
+    if (view && sources.length > 0) {
+      const goals = new Map<number, number[]>();
+      const fallbacks = new Map<number, number[]>();
+      for (const g of this.goals(ship)) {
+        for (const t of goalTiles(view, g)) (isFallbackStop(view, g, t) ? fallbacks : goals).set(t, [t]); // keyed by tile
+      }
+      made = { view, from: sources.map((s) => ({ r: dijkstraFrom(view, s.tile, goals, fallbacks), tile: s.tile, extra: s.extra })) };
+    }
+    this.byShip.set(ship, made);
+    return made;
+  }
 }

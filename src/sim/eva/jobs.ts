@@ -3,7 +3,7 @@ import type { Job } from '../crew/components';
 import type { Sim } from '../sim';
 import { airlockUsable, donSuit, doffSuit, isSuited, isThin } from './suit';
 import { PositionC } from '../crew/components';
-import { refillFromAirlock } from './air';
+import { drawAir } from './airLedger';
 import { startRefillFloat } from './refillFloat';
 import { VehicleC } from '../vehicles/components';
 
@@ -26,7 +26,7 @@ export function performSuitJob(sim: Sim, crew: number, job: Job, speed: number):
   if (job.kind === 'suitOff' && grid && pos && isThin(grid, pos.x, pos.y)) return 'wait';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
-  if (job.kind === 'refill') refillFromAirlock(sim, crew, airlock);
+  if (job.kind === 'refill') drawAir(sim, crew, { kind: 'airlock', id: airlock });
   else if (job.kind === 'suitUp') donSuit(sim, crew, airlock);
   else if (isSuited(sim, crew)) doffSuit(sim, crew, airlock);
   return 'done';

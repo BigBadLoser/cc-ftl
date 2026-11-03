@@ -101,6 +101,7 @@ import { newYard, type YardState } from './yard/types';
  * v82 (air drive, #286 slice 1): `Intent.air` (the nearest-source search), the `pickup` store (`PickupC`).
  * v83 (away sites, #286 slice 2a): `AwaySiteC`, `SiteRunC`, `AwayC`; job kind `passage` with `Job.site`; the colonist policy's `return` drive
  *   (`Intent.scores` and `latched` follow the drive list).
+ *   Air holds (`AirHoldsC`, the air ledger) on a site's shuttle.
  */
 export const SAVE_VERSION = 83;
 

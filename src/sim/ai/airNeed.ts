@@ -1,7 +1,7 @@
 import { AssignmentC, JobC, PositionC } from '../crew/components';
-import { airValue } from '../eva/air';
+import { airLeft, tankSec } from '../eva/airLedger';
 import { nearestAirSource } from '../eva/sources';
-import { isSuited, isThin, needsAir, suitAir, suitDef } from '../eva/suit';
+import { isSuited, isThin, needsAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import { SalvageCrewC } from '../salvage/components';
 import type { Sim } from '../sim';
@@ -48,12 +48,9 @@ export function forgetAirSearch(sim: Sim, id: number): void {
   if (intent) delete intent.air;
 }
 
-/** Seconds of air left in the worn tank, counting a Void-born wearer's longer tank. */
-export const airLeftSec = (sim: Sim, id: number): number => suitAir(sim, id) * airValue(sim, id);
-
 /** The refill and critical lines (seconds of air) for a travel time of `travel` seconds to the nearest source. */
 export function airLines(sim: Sim, id: number, travel: number): { refill: number; critical: number; tank: number } {
-  const tank = suitDef(sim).airSec * airValue(sim, id);
+  const tank = tankSec(sim, id);
   return {
     tank,
     refill: Math.max(AIR_REFILL_FRAC * tank, AIR_REFILL_TRAVEL * travel + AIR_REFILL_PAD_SEC),
@@ -66,7 +63,7 @@ export function airMargin(sim: Sim, id: number): number | undefined {
   if (!airDraining(sim, id)) return undefined;
   const ticks = sourceTicks(sim, id);
   const { refill, critical, tank } = airLines(sim, id, Math.max(0, ticks) / TICK_HZ);
-  const air = airLeftSec(sim, id);
+  const air = airLeft(sim, id);
   // The last call (away/trips.ts): the departure check found them short, so they refill now, before the shuttle leaves.
   if (sim.world.get(id, AwayC)?.lastCall && air < tank - 1) return Math.min(999, air < critical ? Math.floor((500 * air) / critical) : 999);
   if (air < critical) return Math.floor((500 * air) / critical);

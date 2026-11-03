@@ -5,6 +5,7 @@ import { isIncapacitated } from '../crew/helpers';
 import { PickupC } from '../ai/components';
 import { flightTicks } from '../ai/travel';
 import { hasTank, vehicleAir } from '../eva/air';
+import { setAirHolds } from '../eva/airLedger';
 import { EvaFloatC } from '../eva/components';
 import { outsideCrew, vehicleSuits } from '../eva/shuttle';
 import { needsAir } from '../eva/suit';
@@ -103,9 +104,10 @@ export function departStep(sim: Sim, id: number, v: Vehicle, r: SiteRun): 'wait'
     return 'off';
   }
   if (settled(sim, id, v)) {
-    const { unsafe, returnBy } = departCheck(sim, id);
+    const { unsafe, returnBy, holds } = departCheck(sim, id);
     if (unsafe.length === 0) {
       clearCalls(sim, id);
+      setAirHolds(sim, id, holds); // the top-ups the check counted on, set aside until the shuttle is back (away/owned.ts ends them)
       if (returnBy === undefined) delete r.returnBy;
       else r.returnBy = returnBy;
       return 'go';

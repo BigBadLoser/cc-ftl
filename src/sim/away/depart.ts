@@ -2,11 +2,13 @@ import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
 import { CarriedC, CrewC, DeadC, PositionC } from '../crew/components';
 import { isIncapacitated, origin } from '../crew/helpers';
-import { airLeftSec, airLines } from '../ai/airNeed';
+import { airLines } from '../ai/airNeed';
 import { travelTicks, flightTicks } from '../ai/travel';
 import { EvaFloatC } from '../eva/components';
 import { planWalk } from '../eva/route';
-import { airSources, sourceSupply, type AirSource } from '../eva/sources';
+import { airLeft, fitsReserve, sourceSupply } from '../eva/airLedger';
+import type { AirHold } from '../eva/components';
+import { airSources, type AirSource } from '../eva/sources';
 import { isSuited, isThin, needsAir, suitDef } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -23,8 +25,9 @@ import { siteSpot } from './crew';
  * - (a) they do not drain: they need no air, or wear no suit on a breathable tile;
  * - (c) they are able and have air for AWAY_DEPART_MARGIN round trips (`roundTripTicks`) plus the walk to the hatch spot plus AIR_RESERVE_SEC;
  * - (b) failing that, they can walk to another air source (an airlock on the site with air left, a shuttle docked or hovering there) on the
- *   air they have, with AIR_RESERVE_SEC to spare, and its store (`sourceSupply`, what the refill draws from) still holds every top-up they
- *   will take before the shuttle is back once the members before them (ascending id) have had theirs (`topUps`).
+ *   air they have, with AIR_RESERVE_SEC to spare (`fitsReserve`), and its supply (`sourceSupply`, what the refill draws from) still holds
+ *   every top-up they will take before the shuttle is back once the members before them (ascending id) have had theirs (`topUps`). On
+ *   launch those top-ups become air holds (`AirHoldsC`) owned by the shuttle: set aside for them until the shuttle is back.
  * Downed or carried members are never safe. Nobody may be floating to or from the shuttle either.
  */
 
@@ -90,15 +93,17 @@ export function unsafeMembers(sim: Sim, vehicle: number): number[] {
 
 /**
  * The departure check in full: `unsafe` as `unsafeMembers`; `returnBy`, the tick the shuttle must be back at the site by, the earliest a
- * worker safe by their own tank (c), or by it and the top-ups set aside for them (b), would run short (undefined when nobody drains).
+ * worker safe by their own tank (c), or by it and the top-ups set aside for them (b), would run short (undefined when nobody drains);
+ * `holds`, those top-ups, for the shuttle to own while it is away.
  */
-export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsafe: number[]; returnBy?: number } {
+export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsafe: number[]; returnBy?: number; holds: AirHold[] } {
   const out = partyOut(sim, vehicle);
   // Someone between the hull and the hatch: wait (`floatsOk`: judge them as they stand, for the last call).
-  if (!floatsOk && out.some((m) => sim.world.get(m, EvaFloatC)?.vehicle === vehicle)) return { unsafe: out };
+  if (!floatsOk && out.some((m) => sim.world.get(m, EvaFloatC)?.vehicle === vehicle)) return { unsafe: out, holds: [] };
   const R = roundTripTicks(sim, vehicle);
   const unsafe: number[] = [];
   let returnBy: number | undefined;
+  const holds: AirHold[] = [];
   // Members whose own tank does not cover the round trip but who can walk to another source in time: they share its store.
   const leaning: { m: number; air: number; walk: number; need: number; sources: AirSource[] }[] = [];
   const stores = new Map<string, number>();
@@ -110,7 +115,7 @@ export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsa
       continue;
     }
     if (noDrain(sim, m)) continue; // (a)
-    const air = airLeftSec(sim, m);
+    const air = airLeft(sim, m);
     const walk = hatchTicks(sim, m, vehicle);
     const need = (AWAY_DEPART_MARGIN * R + walk) / TICK_HZ + AIR_RESERVE_SEC;
     if (air >= need) {
@@ -119,12 +124,12 @@ export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsa
       continue;
     }
     // (b): another source counts only if the tank lasts the walk there, with the same reserve as admission.
-    const others = airSources(sim, m, { without: vehicle }).filter((s) => s.ticks / TICK_HZ + AIR_RESERVE_SEC <= air);
+    const others = airSources(sim, m, { without: vehicle }).filter((s) => fitsReserve(s.ticks / TICK_HZ, air));
     if (others.length === 0) {
       unsafe.push(m);
       continue;
     }
-    for (const s of others) stores.set(key(s), sourceSupply(sim, s, vehicle));
+    for (const s of others) if (!stores.has(key(s))) stores.set(key(s), sourceSupply(sim, s, { without: vehicle }));
     leaning.push({ m, air, walk, need, sources: others });
   }
   // Each member leaning on a store has their top-ups set aside in the nearest of theirs that still holds them (ascending id).
@@ -139,7 +144,8 @@ export function departCheck(sim: Sim, vehicle: number, floatsOk = false): { unsa
       continue;
     }
     stores.set(key(src), (stores.get(key(src)) ?? 0) - t.draw);
+    holds.push({ crew: m, kind: src.kind, id: src.id, sec: t.draw });
     returnBy = Math.min(returnBy ?? Infinity, runsShort(air + t.gain, walk));
   }
-  return { unsafe: unsafe.sort((a, b) => a - b), returnBy };
+  return { unsafe: unsafe.sort((a, b) => a - b), returnBy, holds };
 }

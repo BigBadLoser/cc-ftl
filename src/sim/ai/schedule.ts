@@ -15,7 +15,8 @@ import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
 import { IntentC, PickupC, TaskC } from './components';
-import { airDraining, airLeftSec, airMargin } from './airNeed';
+import { airDraining, airMargin } from './airNeed';
+import { airLeft } from '../eva/airLedger';
 import { airTurn } from './machines/air';
 import { returnTurn } from './machines/return';
 import { siteUnderFoot } from '../away/crew';
@@ -60,7 +61,7 @@ function pickupRequest(sim: Sim, id: number): void {
     return;
   }
   sim.world.add(id, PickupC, { since: sim.tick });
-  sim.events.emit({ type: 'crew.airUnreachable', crew: id, sec: Math.floor(airLeftSec(sim, id)) });
+  sim.events.emit({ type: 'crew.airUnreachable', crew: id, sec: Math.floor(airLeft(sim, id)) });
 }
 
 /**
