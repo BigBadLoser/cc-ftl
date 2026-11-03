@@ -12,7 +12,8 @@ BLUE = "ochre"                      # the trim's: the line at the face's foot, t
 HEAD_D, HEAD_H = PX, 11 * PZ       # the header block: its depth (2 px of lit top), its front (a lit edge, 10 of face)
 LIP_D, LIP_TOP = PX / 2, 6 * PZ    # the lip at the face's foot: its depth (a px of lit top), its top over the slope's
                                     # top (its front from there down to it: 4 px of face over a dark one)
-PANEL_W = 1 / 3                     # the centre panel's width (a tile's middle third)
+GROOVES = (0, 10, 21)               # the face's upright grooves, by pixel column across a tile (32): its edge, the
+                                    # centre panel's sides (10 px of face either side of it, 10 px of panel)
 SLAT = 4 * PZ                       # the slats' pitch: a dark line, a lit one, 2 px of face
 END = {"x": "fTX5", "y": "fTX4"}    # a free end's section, on an x / y end face; its front edge's highlight
 END_EDGE = {"x": "fTX3", "y": "fTX2"}
@@ -47,15 +48,23 @@ class TanTones(Feature):
         return END[ox]
 
 
+def _col(c, n):
+    """Pixel column n across the tile centred on c, as an upright 1 px groove (u0, u1): a touch narrower than a
+    column, on its centre (a column's edges sit a quarter px past the tile's 32nds), so it stays one column wide."""
+    u = c - 0.5 + (n + 0.3) / 32
+    return u, u + 0.7 * LINE
+
+
 def _panels(a, b):
-    """The face over [a, b] on each tile's grid: (u0, u1, centre panel?, the part's own span)."""
+    """The face over [a, b] on each tile's grid: (u0, u1, centre panel?, its grooves' columns: (u0, u1) each)."""
     out = []
-    h = PANEL_W / 2
     for c in range(-1, 2):
-        for u0, u1, mid in ((c - 0.5, c - h, False), (c - h, c + h, True), (c + h, c + 0.5, False)):
+        e, l, r = (_col(c, n) for n in GROOVES)
+        for u0, u1, mid, gs in ((c - 0.5, l[0], False, (e,)), (l[0], r[1], True, (l, r)),
+                                (r[1], c + 0.5, False, ())):
             q0, q1 = max(a, u0), min(b, u1)
             if q1 - q0 > 1e-6:
-                out.append((q0, q1, mid, (u0, u1)))
+                out.append((q0, q1, mid, gs))
     return out
 
 
@@ -96,15 +105,16 @@ def tan(hull):
         band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
         zt = zs0 - 6.5 * PZ                             # (3 px of face, then the slats and the panel; the half px
                                                         # lands the 1 px lines on whole rows: clean 2:1 steps)
-        for u0, u1, mid, (g0, g1) in _panels(a, b):
+        for u0, u1, mid, gs in _panels(a, b):
             if not mid:                                 # either side of the panel: slats up from the lip, each a
                 z = zl1                                 # dark seam over a lit line (the first seam on the lip, its
                 while z + PZ <= zt + 1e-6:              # lit line under it hidden), 2 px of face between
                     band(u0, u1, z, z + PZ, "fTS4")
                     band(u0, u1, z - PZ, z, "fTS1")
                     z += SLAT
-                if u0 - 1e-6 <= g0 and g0 + LINE <= u1 + 1e-6:     # a groove up each tile's edge to the header
-                    band(g0, g0 + LINE, zl1, zs0, "fTS4")
+                for g in gs:                            # a groove up each tile's edge to the header
+                    if u0 - 1e-6 <= g[0] and g[1] <= u1 + 1e-6:
+                        band(g[0], g[1], zl1, zs0, "fTS4")
                 continue
             zp0, zp1 = zl1 + PZ, zt - PZ                # the centre panel, flush: a groove round it, a 2 px bevel lit
             band(u0, u1, zp1, zt, "fTS4")               # along its top, a soft shadow along its foot
@@ -112,9 +122,9 @@ def tan(hull):
             band(u0, u1, zp0 + PZ, zp0 + 3 * PZ, "fTS8")
             band(u0, u1, zp0 + PZ, zp0 + 2 * PZ, "fTS7")
             band(u0, u1, zl1, zp0 + PZ, "fTS4")
-            for gu in (g0, g1 - LINE):                  # (its side grooves on up to the header)
-                if u0 - 1e-6 <= gu and gu + LINE <= u1 + 1e-6:
-                    band(gu, gu + LINE, zl1, zs0, "fTS4")
+            for g in gs:                                # (its side grooves on up to the header)
+                if u0 - 1e-6 <= g[0] and g[1] <= u1 + 1e-6:
+                    band(g[0], g[1], zl1, zs0, "fTS4")
     return face
 
 
