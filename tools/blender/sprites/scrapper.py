@@ -587,7 +587,34 @@ def scrapper(rot):
     dial(b)
     vent(b)
     piston(b)
+    if os.environ.get("SCRAPPER_WEAR", "0") != "0":
+        from .scrapper_wear import fine, wear
+        names = os.environ.get("SCRAPPER_WEAR_ON", "body").split(",")
+        cols = {"body": (BODY, BODY_S, BODY_D), "drum": (RUST, RUST_D)}
+        sel = [c for k in names for c in cols[k]]
+        fine(b.m, sel)
+        rk, dk = (float(x) for x in os.environ.get("SCRAPPER_WEAR_K", "0.7,0.7").split(","))
+        wear(b, sel, _top, run_k=rk, dust_k=dk)
     return [b.m.build()]
+
+
+def _top(L, D):
+    """The height of the body's top edge above (L, D): where rust run-off starts."""
+    if L < 0.5:
+        return WALL + (EDGE - WALL) * (L - 0.03) / 0.47
+    if L < 1.0:
+        return EDGE
+    if L < 1.0 + STEP:
+        return EDGE + (TOP - EDGE) * (L - 1.0) / STEP
+    if L < 2.0 - STEP or (L < 2.0 and D < 1.0):
+        return TOP
+    if L < 2.0:
+        return TOP + (EDGE - TOP) * (L - 2.0 + STEP) / STEP
+    if L < 3.0:
+        return _bay_back_h(L) if D < 1.0 else EDGE
+    if L < 3.5:
+        return EDGE
+    return EDGE + (WALL - EDGE) * (L - 3.5) / 0.47
 
 
 def jobs():
