@@ -97,6 +97,34 @@ describe('air drive', () => {
     expect(ev.filter((e) => e.type === 'suit.airOut')).toEqual([]);
   });
 
+  it('critical air interrupts a meal even when hunger is urgent too: the tank runs dry first (#278)', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 5);
+    const crew = sim.world.query(CrewC);
+    for (const m of crew) sim.world.get(m, NeedsC)!.hunger = 100;
+    const c = crew[0] as number;
+    sim.world.get(c, NeedsC)!.hunger = 7;
+    run(sim, 30 * TICK_HZ, () => sim.world.get(c, CrewC)!.activity === 'eating');
+    expect(sim.world.get(c, CrewC)!.activity).toBe('eating');
+    // The room loses its air and their suit holds one second.
+    const grid = shipGrid(sim, homeShip(sim))!;
+    const p = sim.world.get(c, PositionC)!;
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    run(sim, 1);
+    sim.world.get(c, SuitC)!.air = 1;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (grid.inBounds(p.x + dx, p.y + dy)) grid.set('o2', p.x + dx, p.y + dy, 0);
+    const ev: SimEvent[] = [];
+    let left = false, refilled = false;
+    for (let i = 0; i < 60 * TICK_HZ && !refilled; i++) {
+      ev.push(...run(sim, 1));
+      left ||= sim.world.get(c, CrewC)!.activity !== 'eating';
+      refilled ||= left && suitAir(sim, c) > 0.5 * suitDef(sim).airSec;
+    }
+    expect(left).toBe(true);
+    expect(refilled).toBe(true);
+    expect(ev.filter((e) => e.type === 'suit.airOut')).toEqual([]);
+  });
+
   it('a job parked by a refill is let go after NEST_HOLD_SEC (#294 follow-up)', () => {
     const { sim, c, job } = hullWork();
     sim.world.get(c, SuitC)!.air = 0.25 * suitDef(sim).airSec;
@@ -171,6 +199,44 @@ describe('air drive', () => {
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = true;
     run(sim, 3 * AIR_TICKS);
     expect(sim.world.has(c, PickupC)).toBe(false);
+  });
+
+  it('a suited sleeper with no source in reach still raises the pickup request (#278)', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const c = sim.world.query(CrewC)[1] as number;
+    sim.world.get(c, NeedsC)!.rest = 5;
+    run(sim, 600, () => sim.world.get(c, CrewC)!.activity === 'sleeping');
+    expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
+    for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false;
+    for (const v of [...sim.world.query(VehicleC)]) destroyVehicle(sim, v);
+    sim.world.add(c, SuitC, { worn: true, air: 0.1 * suitDef(sim).airSec });
+    const ev: SimEvent[] = [];
+    const grid = shipGrid(sim, homeShip(sim))!;
+    for (let i = 0; i < 3 * AIR_TICKS; i++) {
+      for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) grid.set('o2', x, y, 0);
+      if (sim.world.get(c, CrewC)!.activity === 'sleeping') sim.world.get(c, NeedsC)!.rest = 5;
+      ev.push(...run(sim, 1));
+    }
+    expect(sim.world.get(c, IntentC)!.blocked).toBe('air');
+    expect(sim.world.has(c, PickupC)).toBe(true);
+    expect(ev.filter((e) => e.type === 'crew.airUnreachable')).toHaveLength(1);
+  });
+
+  it('a sleeper past the sleep exit whose air is merely low still wakes for urgent hunger (#278)', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const c = sim.world.query(CrewC)[1] as number;
+    sim.world.get(c, NeedsC)!.rest = 5;
+    run(sim, 600, () => sim.world.get(c, CrewC)!.activity === 'sleeping');
+    expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
+    sim.world.get(c, NeedsC)!.rest = 30;
+    sim.world.get(c, NeedsC)!.hunger = 8;
+    sim.world.add(c, SuitC, { worn: true, air: 0.3 * suitDef(sim).airSec }); // below the refill line, above critical
+    const grid = shipGrid(sim, homeShip(sim))!;
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) grid.set('o2', x, y, 0);
+    run(sim, 3 * TICK_HZ);
+    expect(sim.world.get(c, CrewC)!.activity).not.toBe('sleeping');
   });
 
   it('an empty tank where no tile is breathable: the hazard sends them to the airlock to refill', () => {

@@ -91,8 +91,105 @@ describe('hunger', () => {
     for (let i = 0; i < 10; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
     expect(sim.world.get(id, TaskC)?.machine).toBe('sleep');
-    for (let i = 0; i < 600 * TICK_HZ && sim.world.get(id, CrewC)!.activity === 'sleeping'; i++) sim.step();
+    for (let i = 0; i < 1200 * TICK_HZ && sim.world.get(id, CrewC)!.activity === 'sleeping'; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).not.toBe('sleeping');
+  });
+
+  it('a bedless floor sleeper whose hunger runs low wakes, eats and does not starve (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
+    needs(sim, id).rest = 19;
+    needs(sim, id).hunger = 36;
+    for (let i = 0; i < 30 * TICK_HZ && sim.world.get(id, CrewC)!.activity !== 'sleeping'; i++) sim.step();
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    let ate = false, lowest = 100;
+    for (let i = 0; i < 900 * TICK_HZ && !ate; i++) {
+      sim.step();
+      ate = sim.events.drain().some((e) => e.type === 'crew.ate' && e.crew === id);
+      lowest = Math.min(lowest, needs(sim, id).hunger as number);
+    }
+    expect(ate).toBe(true);
+    expect(lowest).toBeGreaterThan(0);
+    expect(sim.world.get(id, HealthC)!.hp).toBe(sim.world.get(id, HealthC)!.max);
+  });
+
+  it('a tired bedless sleeper whose hunger goes urgent eats instead of falling asleep again (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
+    needs(sim, id).rest = 5;
+    needs(sim, id).hunger = 11;
+    let ate = false, lowest = 100;
+    for (let i = 0; i < 220 * TICK_HZ && !ate; i++) {
+      sim.step();
+      ate = sim.events.drain().some((e) => e.type === 'crew.ate' && e.crew === id);
+      lowest = Math.min(lowest, needs(sim, id).hunger as number);
+    }
+    expect(ate).toBe(true);
+    expect(lowest).toBeGreaterThan(0);
+    expect(sim.world.get(id, HealthC)!.hp).toBe(sim.world.get(id, HealthC)!.max);
+  });
+
+  it('a bedless sleeper with urgent rest and urgent hunger eats first: starving harms, tiredness does not (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
+    needs(sim, id).rest = 1;
+    needs(sim, id).hunger = 7;
+    let ate = false, lowest = 100;
+    for (let i = 0; i < 220 * TICK_HZ && !ate; i++) {
+      sim.step();
+      ate = sim.events.drain().some((e) => e.type === 'crew.ate' && e.crew === id);
+      lowest = Math.min(lowest, needs(sim, id).hunger as number);
+    }
+    expect(ate).toBe(true);
+    expect(lowest).toBeGreaterThan(0);
+    expect(sim.world.get(id, HealthC)!.hp).toBe(sim.world.get(id, HealthC)!.max);
+  });
+
+  it('a meal already begun is not dropped for urgent rest when the larder empties under it (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
+    needs(sim, id).rest = 1;
+    needs(sim, id).hunger = 7;
+    let ate = false;
+    for (let i = 0; i < 220 * TICK_HZ && !ate; i++) {
+      sim.step();
+      if (sim.world.get(id, CrewC)!.activity === 'eating') emptyLarder(sim);
+      ate = sim.events.drain().some((e) => e.type === 'crew.ate' && e.crew === id);
+    }
+    expect(ate).toBe(true);
+  });
+
+  it('a bedless sleeper who is hungry with no food aboard sleeps on and recovers rest (no wake for a meal that cannot start) (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
+    emptyLarder(sim);
+    needs(sim, id).rest = 5;
+    needs(sim, id).hunger = 8;
+    for (let i = 0; i < 30 * TICK_HZ && sim.world.get(id, CrewC)!.activity !== 'sleeping'; i++) sim.step();
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    const rest = needs(sim, id).rest;
+    run(sim, 30 * TICK_HZ);
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    expect(needs(sim, id).rest).toBeGreaterThan(rest + 2);
+  });
+
+  it('a bedless sleeper with food aboard but no spot to eat it sleeps on and recovers rest (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) {
+      const m = sim.world.get(b, ModuleC)!;
+      const def = sim.content.modules[m.def];
+      if (def?.bed) removeModule(sim, b);
+      else if (def?.galley) m.enabled = false;
+      else if (def?.storage) m.hp = 0; // the rations stay in the ship's stock, but no crate can be reached
+    }
+    needs(sim, id).rest = 5;
+    needs(sim, id).hunger = 8;
+    for (let i = 0; i < 30 * TICK_HZ && sim.world.get(id, CrewC)!.activity !== 'sleeping'; i++) sim.step();
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    const rest = needs(sim, id).rest;
+    run(sim, 30 * TICK_HZ);
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    expect(needs(sim, id).rest).toBeGreaterThan(rest + 2);
   });
 
   it('eats from a crate when there is no working galley', () => {

@@ -232,7 +232,7 @@ export function detachJob(sim: Sim, crew: number): void {
 export type AbortReason =
   | 'downed' | 'dead' | 'drafted' | 'surrendered' | 'boarded' | 'removed' | 'halted' | 'fight' | 'equip'
   | 'heldForMend' | 'preempt' | 'relieved' | 'unreachable' | 'jobGone' | 'cancelled' | 'replaced' | 'order' | 'drive'
-  | 'standDown' | 'imprisoned' | 'dismissed' | 'debug' | 'hazard' | 'air';
+  | 'standDown' | 'imprisoned' | 'dismissed' | 'debug' | 'hazard' | 'air' | 'urgentNeed';
 
 interface Dispose {
   /** Release the sleeping-bed claim. */
@@ -256,6 +256,7 @@ const DISPOSE: Partial<Record<AbortReason, Dispose>> = {
   // Off to refill a suit's tank: a load or a patient in hand is set down (the patient on a safe tile nearby, keeping their bed), a bed
   // claimed for a sleep is given back, and a sleeper or an eater gets up (critical air).
   air: { bed: true, carried: true, wake: true },
+  urgentNeed: { bed: true, carried: true, wake: true },
 };
 
 /**

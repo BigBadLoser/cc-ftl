@@ -308,4 +308,5 @@ describe('sector refactor equivalence', () => {
 // Repinned `disaster` for crew AI Phase 3 (#194): crew walk off burning and airless tiles (the hazard interrupt; with only that the run
 // gives 5369b5f9) and a crew member whose mood the fire and smoke sour takes a break in the mess when idle (the leisure drive; alone,
 // cb93b66e). With both switched off in the policies it still gives fe8751b2. The combat run has neither and is unchanged.
-const EXPECTED = { combat: '9ae6c3d8', disaster: '521afe25' };
+// Repinned for the rest retune (#278): rest is part of the hashed world and now drains at a tenth of the rate (both hashes change by that alone).
+const EXPECTED = { combat: 'c13e58d2', disaster: 'f70efd42' };

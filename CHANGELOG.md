@@ -19,6 +19,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 - Robots ride shuttles to away sites and work there without a suit. ([#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
 - Crew on your side gain skill XP from routine work and level up, up to +5. ([#251](https://github.com/BigBadLoser/cc-ftl/pull/251))
 - Pyrophobic crew lose mood when a fire burns within six tiles. The "Afraid of the void" trait is renamed Space-sick, and space-sick crew lose mood on a spacewalk. ([#253](https://github.com/BigBadLoser/cc-ftl/pull/253))
+- Crew stay awake about 20 minutes before they need sleep, and a full sleep takes about 7 minutes in a bed (about 14 on the floor). Salvage runs get through more work as a result. ([#302](https://github.com/BigBadLoser/cc-ftl/pull/302))
 - Crew leave tiles that will hurt them (fire, bad air, extreme heat or cold) instead of standing in them. ([#290](https://github.com/BigBadLoser/cc-ftl/pull/290))
 - A suited crew member refills at the nearest air source before the tank runs low, then goes back to their job. ([#294](https://github.com/BigBadLoser/cc-ftl/pull/294))
 - Ships carry a roof livery by faction, so factions are easy to tell apart on the map and in the combat panel. ([#142](https://github.com/BigBadLoser/cc-ftl/pull/142))
