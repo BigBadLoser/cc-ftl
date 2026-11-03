@@ -1072,8 +1072,11 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   - A party member `m` on the site and not aboard is **safe** iff one of these holds:
     - (a) `m` doesn't drain: airless, or not suited and on a breathable tile with no job beyond thin air (admission without
       this shuttle keeps it so);
-    - (b) `airSources(m, {without: vehicle})` is non-empty, and the sources' air stores together hold at least one tank per
-      worker counting on them;
+    - (b) `airSources(m, {without: vehicle})` is non-empty (reached with `AIR_RESERVE_SEC` to spare), and one of them still
+      holds, after the members before `m` (ascending id), a whole tank for each top-up `m` will take before the shuttle is back
+      (one, or more when one top-up, filling from the refill line, cannot carry them through `1.25 × R`). A source's supply is
+      `sourceSupply`: an airlock's store plus a player shuttle docked there (not the one leaving), the same stores the refill
+      draws from. Their `returnBy` counts the top-ups set aside;
     - (c) `m` is able, and `airLeft(m) >= 1.25 × R + travelTicks(m → hatch spot) + AIR_RESERVE_SEC`.
   - Downed or carried members are never safe; they are rescued aboard first.
   - In `depart`:
@@ -1081,7 +1084,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     2. If still not safe after `LAST_CALL_SEC` (60 s), they get `AwayC.ride` (return drive full) and board.
     3. Launch when every member out is safe.
     4. Never launch otherwise; after `DEPART_GIVEUP_SEC` the trip is called off and the run goes back to `stay`.
-  - On launch, `returnBy` is the earliest tick any (c)-safe member would run short, minus `flightTicks(home→site)`. The home
+  - On launch, `returnBy` is the earliest tick any (b)- or (c)-safe member would run short, minus `flightTicks(home→site)`. The home
     stop ends at `returnBy` whatever is left (unload, passages).
   - Watch: if `now + remaining > returnBy`, or a member left out turns unsafe (downed, pickup request), the run skips to
     `back` at once.

@@ -6,7 +6,7 @@ import { AirlockC } from '../../sim/modules/airlock';
 import { airSources } from '../../sim/eva/sources';
 import { content } from '../index';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
-import { unsafeMembers } from '../../sim/away/depart';
+import { departCheck, unsafeMembers } from '../../sim/away/depart';
 import { passagesOf } from '../../sim/away/passage';
 import { SuitC } from '../../sim/eva/components';
 import { ferryFree } from '../../sim/ferry/pick';
@@ -84,6 +84,36 @@ describe('away sites', () => {
     expect(airSources(sim, m, { without: shuttle }).length).toBeGreaterThan(0);
     sim.world.get(m, SuitC)!.air = 590;
     expect(unsafeMembers(sim, shuttle)).toEqual([]);
+  });
+
+  it('the departure check: an empty airlock with a player shuttle docked at it counts that shuttle\'s air (Codex 4449661837)', () => {
+    const { sim, wreck, shuttle, party } = landed();
+    const lock = wreckAirlock(sim, wreck);
+    sim.world.get(lock, AirlockC)!.air = 0;
+    // A second player shuttle docked at the site's airlock, with a full store: the refill tops tanks up from it.
+    const other = sim.world.createEntity();
+    sim.world.add(other, VehicleC, { ...structuredClone(sim.world.get(shuttle, VehicleC)!), state: 'docked', dock: lock, air: undefined });
+    const [low] = party as [number];
+    sim.world.get(low, SuitC)!.air = 60;
+    expect(airSources(sim, low, { without: shuttle })[0]).toMatchObject({ kind: 'airlock', id: lock });
+    expect(unsafeMembers(sim, shuttle)).toEqual([]);
+    sim.world.get(other, VehicleC)!.air = 0; // nothing to give: unsafe again
+    expect(unsafeMembers(sim, shuttle)).toEqual([low]);
+  });
+
+  it('the departure check: a worker whose full tank cannot last the round trip needs a whole top-up set aside (Codex 4449661828)', () => {
+    // A small tank (120 s) that no worker's full tank stretches over a round trip with margin: each must count on the airlock.
+    const { sim, wreck, shuttle, party } = landed(3, { ...content, suit: { ...content.suit!, airSec: 120 } });
+    const lock = wreckAirlock(sim, wreck);
+    for (const c of party) sim.world.get(c, SuitC)!.air = 120;
+    sim.world.get(lock, AirlockC)!.air = 1; // a near-empty store covers nobody's top-up
+    expect(unsafeMembers(sim, shuttle)).toEqual(party);
+    sim.world.get(lock, AirlockC)!.air = 2 * 120; // a tank each for the first two (ascending id)
+    expect(unsafeMembers(sim, shuttle)).toEqual(party.slice(2));
+    sim.world.get(lock, AirlockC)!.air = 3 * 120;
+    const r = departCheck(sim, shuttle);
+    expect(r.unsafe).toEqual([]);
+    expect(r.returnBy).toBeGreaterThan(sim.tick); // the shuttle must be back before the top-up set aside runs out
   });
 
   it('a waiting passenger does not leave while a worker staying out is unsafe', () => {

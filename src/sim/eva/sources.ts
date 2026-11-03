@@ -13,7 +13,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { REFILL_FILL_SEC } from '../tuning';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { airlockAir, dockedAt, hasTank, vehicleAir } from './air';
+import { airlockAir, airlockSupply, dockedSupplier, hasTank, vehicleAir } from './air';
 import { hatchFace } from './hatch';
 import { hatchSpot, tileCentre } from './shuttle';
 import { airlockUsable, suitTile } from './suit';
@@ -62,10 +62,8 @@ export function sourceCandidates(sim: Sim, shipId: number, without = 0): Candida
     const at = suitTile(sim, id);
     if (!at || !airlockUsable(sim, id) || shipIdOf(sim, sim.world.get(id, ModuleC)) !== shipId) continue;
     // A shuttle docked here gives from its own store when the airlock's is empty.
-    const dock = dockedAt(sim, id);
-    const v = dock && dock !== without ? sim.world.get(dock, VehicleC) : undefined;
-    const docked = !!v && vehicleFaction(sim, v) === 'player' && hasTank(sim, vehicleAir(sim, v));
-    if (airlockAir(sim, id) > 0 || docked) out.push({ kind: 'airlock', id, tile: at, extra: 0, fill });
+    const v = dockedSupplier(sim, id, without);
+    if (airlockAir(sim, id) > 0 || (v && hasTank(sim, vehicleAir(sim, v)))) out.push({ kind: 'airlock', id, tile: at, extra: 0, fill });
   }
   return out.concat(hoverCandidates(sim, shipId, without, fill));
 }
@@ -108,6 +106,16 @@ export function airSources(sim: Sim, crew: number, opts: { without?: number } = 
     out.push({ kind: c.kind, id: c.id, tile: c.tile, ticks: walk + c.extra, fillTicks: c.fill });
   });
   return out.sort((a, b) => a.ticks - b.ticks || (a.kind === b.kind ? a.id - b.id : a.kind === 'airlock' ? -1 : 1));
+}
+
+/**
+ * Seconds of air the source can give: an airlock's `airlockSupply` (its store, then a player shuttle docked there), a shuttle's store.
+ * `without` leaves one shuttle out, as for `airSources`. What the departure check budgets; the refill draws from the same stores.
+ */
+export function sourceSupply(sim: Sim, s: Pick<AirSource, 'kind' | 'id'>, without = 0): number {
+  if (s.kind === 'airlock') return airlockSupply(sim, s.id, without);
+  const v = s.id !== without ? sim.world.get(s.id, VehicleC) : undefined;
+  return v ? vehicleAir(sim, v) : 0;
 }
 
 /** The nearest source, or null. */

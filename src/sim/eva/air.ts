@@ -7,7 +7,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { AIRLOCK_AIR_TANKS, VEHICLE_AIR_TANKS } from '../tuning';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { vehicleDefOf } from '../vehicles/lifecycle';
+import { vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 import { SuitC } from './components';
 import { suitAir, suitDef } from './suit';
 
@@ -54,6 +54,25 @@ export function dockedAt(sim: Sim, airlock: number): number {
   return 0;
 }
 
+/**
+ * The player shuttle docked at this airlock that tops tanks up through it once the airlock's store runs dry, or undefined. `without` leaves
+ * one shuttle out (the departure check: the shuttle about to leave gives nothing while it is away).
+ */
+export function dockedSupplier(sim: Sim, airlock: number, without = 0): Vehicle | undefined {
+  const dock = dockedAt(sim, airlock);
+  const v = dock && dock !== without ? sim.world.get(dock, VehicleC) : undefined;
+  return v && vehicleFaction(sim, v) === 'player' ? v : undefined;
+}
+
+/**
+ * Seconds of air a crew member can draw at this airlock: its own store, then the docked shuttle's (`dockedSupplier`). The one figure the
+ * refill (`refillFromAirlock`) draws from and the departure check budgets, so the two cannot disagree.
+ */
+export function airlockSupply(sim: Sim, airlock: number, without = 0): number {
+  const v = dockedSupplier(sim, airlock, without);
+  return airlockAir(sim, airlock) + (v ? vehicleAir(sim, v) : 0);
+}
+
 /** True if the ship's life support works, and the ship is not a derelict: an airlock store on it refills. */
 export function shipHasLifeSupport(sim: Sim, shipId: number): boolean {
   const s = shipById(sim, shipId);
@@ -71,7 +90,8 @@ export function tankShortfall(sim: Sim, crew: number): number {
 }
 
 /**
- * Fill the crew member's tank from an airlock's store (and then, if it ran short, from a shuttle docked there). Returns the seconds put in.
+ * Fill the crew member's tank from an airlock's store (and then, if it ran short, from the player shuttle docked there: `airlockSupply`).
+ * Returns the seconds put in.
  * A suit that was made with no tank figure counts as full already.
  */
 export function refillFromAirlock(sim: Sim, crew: number, airlock: number): number {
@@ -82,8 +102,7 @@ export function refillFromAirlock(sim: Sim, crew: number, airlock: number): numb
   const fromLock = Math.min(need, airlockAir(sim, airlock));
   a.air = airlockAir(sim, airlock) - fromLock;
   let given = fromLock;
-  const dock = dockedAt(sim, airlock);
-  const v = dock ? sim.world.get(dock, VehicleC) : undefined;
+  const v = dockedSupplier(sim, airlock);
   if (v && given < need) {
     const more = Math.min(need - given, vehicleAir(sim, v));
     v.air = vehicleAir(sim, v) - more;
