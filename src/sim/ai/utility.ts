@@ -154,6 +154,9 @@ interface Scored {
   open: boolean;
 }
 
+/** A drive is urgent when its input reads under its `urgent.below`. */
+export const isUrgent = (def: DriveDef, v: number): boolean => !!def.urgent && v < def.urgent.below;
+
 /** Score one drive, updating its latch bit. */
 function scoreDrive(sim: Sim, id: number, def: DriveDef, i: number, intent: Intent, driven: boolean, view: TaskView): Scored {
   const bit = 1 << i;
@@ -164,7 +167,7 @@ function scoreDrive(sim: Sim, id: number, def: DriveDef, i: number, intent: Inte
     return { def, i, score: 0, urgent: false, open: false };
   }
   const v = x ?? 0;
-  const urgent = !!def.urgent && v < def.urgent.below;
+  const urgent = isUrgent(def, v);
   let on = true;
   if (def.urgent && driven) on = urgent; // a driven crew member answers only the urgent part of a drive
   else if (def.enter !== undefined) {
