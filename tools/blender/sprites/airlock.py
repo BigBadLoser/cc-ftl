@@ -366,10 +366,12 @@ def _stub_ends(rot):
     """The neighbours' cut-down hull past the run's ends (their outer halves; the inner halves are inside the row): in
     the hull sprite, one scene with the row and its end cuts, so Blender resolves where the stub's foot meets the cut (the
     game leaves those tiles' own cut top out: gridView, airlockRowTiles). In the deco mask pass they take the belly's
-    tint tones (wall3d_belly.TINT), as their own sprite's mask would."""
+    tint tones (wall3d_belly.TINT), as their own sprite's mask would; in the exterior's seam pass they draw black (their
+    light rims would read as seams and drop out of the mask)."""
+    from . import wall3d as T
     from . import wall3d_belly as B
     was = core.TINT
-    core.TINT = B.TINT if was is not None else None
+    core.TINT = B.TINT if was is not None else set() if T.SEAM_PASS else None
     try:
         return _trim(rot, _stub(rot, (1,)), HALF, None) + _trim(rot, _stub(rot, (-1,)), None, -HALF)
     finally:
