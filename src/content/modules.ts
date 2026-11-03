@@ -134,14 +134,14 @@ export const modules = {
     crafting: true,
   },
   // Scrapper: crew reclaim scrap into materials at the front tile (recipes.ts). Buildable from the start; the starter ship has none.
-  // Placeholder art: the fabricator's sprite (a scrapper sheet is still to make).
+  // Art: tools/blender/sprites/scrapper.py (idle, unpowered, and the drum turning while active).
   'module.scrapper': {
     scrap: 'tech',
     name: 'Scrapper',
     category: 'production',
     description: "Reclaims salvaged scrap into metal, electronics, spare parts and more. Crew work it from the front tile.",
-    asset: 'module.fabricator',
-    footprint: [4, 2], // stand-in art: the fabricator, until the scrapper sprite lands
+    asset: 'module.scrapper',
+    footprint: [4, 2],
     solid: true,
     access: [1, 2],
     power: -5,
