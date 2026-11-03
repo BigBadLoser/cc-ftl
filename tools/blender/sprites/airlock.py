@@ -302,11 +302,37 @@ def _run(rot):
     return core.G(dx, dy, 0.0)
 
 
+RUN_KEY = {1: "1,0,15", 2: "0,1,15"}  # camera-facing rotations: the hull key (hull_outline) of their straight run
+
+
+def _stub(rot):
+    """The belly's cut-down hull ("low": wall3d_belly over the deck, to W.ZG) on the row's tiles, placed as _ext_tiles:
+    only for the end cuts' section, so their foot meets the cut hull beside them (thicker inboard than the exterior's
+    skin)."""
+    from . import wall3d_belly as B
+    from . import wall3d_ext as X
+    o = NEAR[rot]
+    dx, dy = X.STRAIGHT[(5 if o == 2 else 10, o)]
+    at = frame(None, rot).pt(HULL_U, 0, 0)
+    out = []
+    for k in ROW:
+        for ob in B.piece(RUN_KEY[rot], W.ZG, "over"):
+            ob.location = ob.location + at + core.G(k * dx, k * dy, 0.0)
+            out.append(ob)
+    return out
+
+
 def _end_cut(rot, row):
     """The black end cut closing the full-height run at either end, HALF along it from the door tile's centre
-    (hull_engine.end_cut, as the engine's)."""
+    (hull_engine.end_cut, as the engine's): the section of the row and of the cut hull's stub (_stub, which is not
+    drawn: its outer face is the exterior's)."""
     from . import hull_engine as HE
-    return HE.end_cut(NEAR[rot], row, ends=(-HALF, HALF), origin=frame(None, rot).pt(HULL_U, 0, 0))
+    stub = _stub(rot)
+    cut = HE.end_cut(NEAR[rot], row + stub, ends=(-HALF, HALF), origin=frame(None, rot).pt(HULL_U, 0, 0))
+    import bpy
+    for ob in stub:
+        bpy.data.objects.remove(ob, do_unlink=True)
+    return cut
 
 
 def _trim(rot, objs):
@@ -334,13 +360,16 @@ def _trim(rot, objs):
 def hull(rot, level):
     """The hull row. Facing the camera: as the engine's hull row, the base exterior hull stands full height in every view
     without a roof (the whole assembly shows: the brace and collar stand on it) over the door tile and half of either
-    neighbour (HALF), closed at either end by the end cut; anchored at the row's front tile (FRONT_V) so it sorts over its neighbours' cut tops. Far (north /
-    west): the door tile's hull wall on the production profile (strip, sloped skirt, 2.05 top) as the level shows the
-    plain hull either side, full in up and cut, else the ghost rim."""
+    neighbour (HALF), closed at either end by the end cut; anchored at the row's front tile (FRONT_V) so it sorts over
+    its neighbours' cut tops. Its sprite leaves the end cuts out ("over": (row, row + cuts)): they are
+    module.airlock.end, sorted under the cut hull in front of them. Far (north / west): the door tile's hull wall on the
+    production profile (strip, sloped skirt, 2.05 top) as the level shows the plain hull either side, full in up and
+    cut, else the ghost rim."""
     if rot in NEAR:
         row = _ext_tiles(rot, ROW)
-        cut = _end_cut(rot, row)
-        return _trim(rot, row) + [cut]
+        cut = _end_cut(rot, row)                                    # (cut from the whole row, then trimmed)
+        row = _trim(rot, row)
+        return row, row + [cut]
     m = core.Mesh(f"airlock_hull_{rot}_{level}")
     f = frame(m, rot)
     inner, outer = strip(rot)
@@ -356,8 +385,9 @@ def hull(rot, level):
 
 
 def end(rot):
-    """module.airlock.end.r<r> ("over"): the row's end cut alone, its px where it is in front of the hull row; drawn over
-    the hull sprite in the hull's paint (its black then matches the belly cut tops round it), as the engine's."""
+    """module.airlock.end.r<r> ("over"): the row's end cut alone, its px where it is in front of the hull row, in the
+    hull's paint (its black then matches the belly cut tops round it), as the engine's; the hull sprite leaves it out.
+    The game sorts it under the cut hull in front of it (the stub on past the run's end), the hull row over that."""
     row = _ext_tiles(rot, ROW)
     cut = _end_cut(rot, row)
     return [cut], _trim(rot, row) + [cut]
@@ -393,11 +423,11 @@ def _hull_items(sid, rot, level):
     x, y = frame(None, rot).xy(HULL_U, FRONT_V[rot])
 
     def build():
-        objs = hull(rot, level)
-        for o in objs:
+        own, wide = hull(rot, level)
+        for o in {id(o): o for o in wide + own}.values():
             o.location = (o.location.x - x, o.location.y + y, o.location.z)
-        return objs
-    return HT._items(sid, "block", build, X.TINT, True)
+        return own, wide
+    return HT._items(sid, "over", build, X.TINT, True)
 
 
 def items(rot):

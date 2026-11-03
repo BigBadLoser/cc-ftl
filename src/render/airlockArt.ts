@@ -175,7 +175,8 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
     out_.push(hull);
     if (near) {
       out_.push({ ...hull, chain: hull.chain.map((c) => `${c}.tint`), key: `${hull.key}.tint`, paint: 'deco', optional: true, dz: 0.0602 });
-      out_.push(part('end', null, front, { tiles: 'hull', optional: true, paint: 'armour', dz: 0.0605 }));
+      // The end cuts under the front neighbour's cut hull (its stub on past the run's end stands in front of them).
+      out_.push(part('end', null, front, { tiles: 'hull', optional: true, paint: 'armour', dz: 0 }));
     }
   }
   // The brace stands on the hull's outside, over the hull row (roofed, over the hull's own pieces), at the row's front tile.
