@@ -148,3 +148,21 @@ def drum_bolts(b, D, z, r, bands, n, turn, col, s=0.05, h=0.025):
             for q in (hi, *([lo[i], lo[(i + 1) % 4], hi[(i + 1) % 4], hi[i]] for i in range(4))):
                 c = [sum(p[k2] for p in q) / 4 for k2 in range(3)]
                 b.face(q, col, tuple(c[k2] - ctr[k2] for k2 in range(3)))
+
+
+def gear(b, L, D, z, col, r=0.17, ring=0.06, hole=0.065, teeth=8, tooth=0.055, tw=0.065):
+    """A gear painted on a top at height z, centred on (L, D): a ring round a bare hole, square teeth on it; strokes
+    about 2 px so it reads unbroken."""
+    import math
+    up = (0, 0, 1)
+    ri, ro, n = hole, hole + ring, 24
+    for k in range(n):
+        a0, a1 = k * math.tau / n, (k + 1) * math.tau / n
+        q = [(L + rr * math.cos(a), D + rr * math.sin(a), z + OFF) for rr, a in ((ri, a0), (ri, a1), (ro, a1), (ro, a0))]
+        _paint(b, q, col, up)
+    for k in range(teeth):
+        a = (k + 0.5) * math.tau / teeth
+        c, s = math.cos(a), math.sin(a)
+        q = [(L + c * rr - s * t, D + s * rr + c * t, z + OFF) for rr, t in ((ro - 0.01, -tw / 2), (ro + tooth, -tw / 2),
+                                                                           (ro + tooth, tw / 2), (ro - 0.01, tw / 2))]
+        _paint(b, q, col, up)

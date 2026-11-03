@@ -368,7 +368,7 @@ def screen(b, D1):
     m = 0.082                                                           # mounting plate margin, about 3 px
     plate = [b.P(L, D1 + 0.002, z) for L, z in ((L0 - m, z0 - m), (L1 + m, z0 - m), (L1 + m, z1 + m), (L0 - m, z1 + m))]
     fwd = [x - y for x, y in zip(b.P(L0, D1 + 1, z0), b.P(L0, D1, z0))]
-    b.face(plate, DARK, fwd)
+    b.face(plate, HW, fwd)
     sl, sz = 0.02, 0.018                                                # a screw head: about 1 px, at each corner
     for L in (L0 - m / 2, L1 + m / 2):
         for z in (z0 - m / 2, z1 + m / 2):
@@ -596,8 +596,9 @@ def scrapper(rot):
     dial(b)
     vent(b)
     piston(b)
-    from .scrapper_detail import panels, seams
+    from .scrapper_detail import gear, panels, seams
     seams(b, BODY_D)
+    gear(b, 1.5, 1.5, TOP, BODY_D)                                    # the gear emblem on the top, front row
     panels(b, BODY_D, BODY, BODY_S)
     if os.environ.get("SCRAPPER_WEAR", "1") != "0":
         from .scrapper_wear import drum_wear, fine, wear
