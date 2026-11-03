@@ -48,7 +48,7 @@ export const species = {
     name: 'Augmented human',
     moveSpeed: 2.5,
     workSpeed: 1,
-    restDecay: 0.6,
+    restDecay: 0.06,
     carryCapacity: 40,
     maxHp: 130,
     armor: 0.1,
