@@ -139,12 +139,12 @@ def grille(paint, solid, U, D):
     bu0, bu1, bd0, bd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)          # (a joint in from the cushions)
     paint(q(bu0, bu1, D(0.0), D(1.0)), "fTS3", 1.75)                                # (the slope round it)
     fl = G_H - G_SINK
-    solid(q(bu0, bu1, bd0, bd1), fl, "fTS2", FACE, 3)                               # the body, to the vent's floor
+    solid(q(bu0, bu1, bd0, bd1), fl, "fTS2", FACE, 4)                               # the body, to the vent's floor
     ru, rd = G_RIM * L, G_RIM * E
     vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
     for ua, ub, da, db in ((bu0, bu1, bd0, vd0), (bu0, bu1, vd1, bd1),             # the rim round it, up to the
                            (bu0, vu0, vd0, vd1), (vu1, bu1, vd0, vd1)):             # body's top
-        solid(q(ua, ub, da, db), G_H, "fTW2", FACE, 3, fl)
+        solid(q(ua, ub, da, db), G_H, "fTW2", FACE, 4, fl)
     n = int(((vu1 - vu0) / L - 1) / 2)                                              # the slats (a px, a px apart,
     off = vu0 + ((vu1 - vu0) - (2 * n + 1) * L) / 2                                 # centred in it, a gap at each
     for i in range(n):                                                              # side)
