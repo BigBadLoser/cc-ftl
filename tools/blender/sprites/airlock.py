@@ -19,9 +19,9 @@ Sprites, per rotation r (each anchored at its own tile so the renderer sorts it 
   module.airlock.housing.r<r>.<closed|f1|f2|open>     the pod and its inner door (opening frames f1, f2)
   module.airlock.hull.r<r>.<up|cut|low>               hull row (camera-facing rotations: base exterior hull over the door
                                                       tile and half of either neighbour, full height in every view, end
-                                                      cuts, anchored at the row's front tile; far: the door tile's wall)
+                                                      cuts, the neighbours' cut hull past them, anchored at the row's
+                                                      front tile; far: the door tile's wall)
   module.airlock.hull.r<r>.<level>.tint               camera-facing rotations: the hull row's deco layer (as a hull piece's)
-  module.airlock.end.r<r>                             camera-facing rotations: the hull row's end cuts alone (hull paint)
   module.airlock.brace.r<r>                           camera-facing rotations: the rib and clamp block over the hull's top
   module.airlock.light.r<r>.<red|green>               the cycle light in the slot on the pod's top
   module.airlock.collar.r<r>.<closed|f1|f2|open>[.docked]
@@ -305,17 +305,16 @@ def _run(rot):
 RUN_KEY = {1: "1,0,15", 2: "0,1,15"}  # camera-facing rotations: the hull key (hull_outline) of their straight run
 
 
-def _stub(rot):
-    """The belly's cut-down hull ("low": wall3d_belly over the deck, to W.ZG) on the row's tiles, placed as _ext_tiles:
-    only for the end cuts' section, so their foot meets the cut hull beside them (thicker inboard than the exterior's
-    skin)."""
+def _stub(rot, ks=ROW):
+    """The belly's cut-down hull ("low": wall3d_belly over the deck, to W.ZG) on the row's tiles k, placed as
+    _ext_tiles."""
     from . import wall3d_belly as B
     from . import wall3d_ext as X
     o = NEAR[rot]
     dx, dy = X.STRAIGHT[(5 if o == 2 else 10, o)]
     at = frame(None, rot).pt(HULL_U, 0, 0)
     out = []
-    for k in ROW:
+    for k in ks:
         for ob in B.piece(RUN_KEY[rot], W.ZG, "over"):
             ob.location = ob.location + at + core.G(k * dx, k * dy, 0.0)
             out.append(ob)
@@ -325,7 +324,8 @@ def _stub(rot):
 def _end_cut(rot, row):
     """The black end cut closing the full-height run at either end, HALF along it from the door tile's centre
     (hull_engine.end_cut, as the engine's): the section of the row and of the cut hull's stub (_stub, which is not
-    drawn: its outer face is the exterior's)."""
+    drawn here: its outer face is the exterior's), so their foot meets the cut hull beside them (thicker inboard than the
+    exterior's skin)."""
     from . import hull_engine as HE
     stub = _stub(rot)
     cut = HE.end_cut(NEAR[rot], row + stub, ends=(-HALF, HALF), origin=frame(None, rot).pt(HULL_U, 0, 0))
@@ -335,10 +335,13 @@ def _end_cut(rot, row):
     return cut
 
 
-def _trim(rot, objs):
-    """The row's objects cut to the run: what lies more than HALF along it from the door tile's centre removed."""
+def _trim(rot, objs, lo=-HALF, hi=HALF):
+    """Objects cut to lo <= s <= hi tiles along the run from the door tile's centre (None: open); by default the row's,
+    to the run: what lies more than HALF along it removed."""
     import bmesh
+    import bpy
     from mathutils import Vector
+    bpy.context.view_layer.update()                         # (matrix_world after the pieces were placed)
     rv = _run(rot)
     at = Vector(frame(None, rot).pt(HULL_U, 0, 0))
     for ob in objs:
@@ -348,7 +351,9 @@ def _trim(rot, objs):
         n = (inv.to_3x3() @ rv).normalized()
         bm = bmesh.new()
         bm.from_mesh(ob.data)
-        for s, outer in ((HALF, True), (-HALF, False)):
+        for s, outer in ((hi, True), (lo, False)):
+            if s is None:
+                continue
             geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
             bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-6, plane_co=inv @ (at + rv * s), plane_no=n,
                                    clear_outer=outer, clear_inner=not outer)
@@ -357,19 +362,32 @@ def _trim(rot, objs):
     return objs
 
 
+def _stub_ends(rot):
+    """The neighbours' cut-down hull past the run's ends (their outer halves; the inner halves are inside the row): in
+    the hull sprite, one scene with the row and its end cuts, so Blender resolves where the stub's foot meets the cut (the
+    game leaves those tiles' own cut top out: gridView, airlockRowTiles). In the deco mask pass they take the belly's
+    tint tones (wall3d_belly.TINT), as their own sprite's mask would."""
+    from . import wall3d_belly as B
+    was = core.TINT
+    core.TINT = B.TINT if was is not None else None
+    try:
+        return _trim(rot, _stub(rot, (1,)), HALF, None) + _trim(rot, _stub(rot, (-1,)), None, -HALF)
+    finally:
+        core.TINT = was
+
+
 def hull(rot, level):
     """The hull row. Facing the camera: as the engine's hull row, the base exterior hull stands full height in every view
     without a roof (the whole assembly shows: the brace and collar stand on it) over the door tile and half of either
-    neighbour (HALF), closed at either end by the end cut; anchored at the row's front tile (FRONT_V) so it sorts over
-    its neighbours' cut tops. Its sprite leaves the end cuts out ("over": (row, row + cuts)): they are
-    module.airlock.end, sorted under the cut hull in front of them. Far (north / west): the door tile's hull wall on the
+    neighbour (HALF), closed at either end by the end cut, with the neighbours' cut-down hull on past the cuts
+    (_stub_ends); anchored at the row's front tile (FRONT_V). Far (north / west): the door tile's hull wall on the
     production profile (strip, sloped skirt, 2.05 top) as the level shows the plain hull either side, full in up and
     cut, else the ghost rim."""
     if rot in NEAR:
         row = _ext_tiles(rot, ROW)
         cut = _end_cut(rot, row)                                    # (cut from the whole row, then trimmed)
-        row = _trim(rot, row)
-        return row, row + [cut]
+        whole = _trim(rot, row) + _stub_ends(rot) + [cut]
+        return whole, whole
     m = core.Mesh(f"airlock_hull_{rot}_{level}")
     f = frame(m, rot)
     inner, outer = strip(rot)
@@ -382,15 +400,6 @@ def hull(rot, level):
         shape = [(inner, 0), (inner, W.ZG), (outer, W.ZG), (outer, 0)]
     prism(f, shape, -0.5, 0.5, HULL, HULL_T)
     return [m.build()]
-
-
-def end(rot):
-    """module.airlock.end.r<r> ("over"): the row's end cut alone, its px where it is in front of the hull row, in the
-    hull's paint (its black then matches the belly cut tops round it), as the engine's; the hull sprite leaves it out.
-    The game sorts it under the cut hull in front of it (the stub on past the run's end), the hull row over that."""
-    row = _ext_tiles(rot, ROW)
-    cut = _end_cut(rot, row)
-    return [cut], _trim(rot, row) + [cut]
 
 
 def brace(rot):
@@ -451,7 +460,6 @@ def items(rot):
         else:
             add(f"{ID}.hull.r{rot}.{lv}", "block", lambda lv=lv: hull(rot, lv), HULL_U, pal=HULL_PAL)
     if rot in NEAR:
-        add(f"{ID}.end.r{rot}", "over", lambda: end(rot), HULL_U, FRONT_V[rot], pal=HULL_PAL)
         add(f"{ID}.brace.r{rot}", "over", lambda: brace(rot), HULL_U, FRONT_V[rot], pal=HULL_PAL)
     for col in ("red", "green"):
         add(f"{ID}.light.r{rot}.{col}", "fx", lambda c=col: lights(rot, c), 0)

@@ -3,7 +3,7 @@ import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
-import { airlockDoorTiles } from "./airlockArt";
+import { airlockDoorTiles, airlockRowTiles } from "./airlockArt";
 import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
@@ -117,6 +117,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   /** Of `replaced`, the tiles of engines behind the hull's thruster block: their own hull sprite in every view without a roof. */
   let blockHull = new Set<number>();
   let airlocks = new Set<number>();
+  let lockRow = new Set<number>();
   /** The region's hull keys (hullArt), null for no new hull art (not a ship). */
   let hull: HullKeys | null = null;
   const has = (id: string) => !!atlas.stat(id);
@@ -155,6 +156,13 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return new Set(tiles.filter((t) => grid.inBounds(t.x, t.y)).map((t) => (t.y - grid.y0) * width + (t.x - grid.x0))); // region-local index
   }
 
+  /** The hull row tiles beside camera-facing airlocks' doors: the airlock's hull sprite carries their cut-down hull. */
+  function airlockRow(): Set<number> {
+    const { world, modules } = host.overlayWorld;
+    const tiles = airlockRowTiles(world, modules, (x, y) => grid.inBounds(x, y));
+    return new Set(tiles.filter((t) => grid.inBounds(t.x, t.y)).map((t) => (t.y - grid.y0) * width + (t.x - grid.x0)));
+  }
+
   /** A chunk's hull keys (a key reads the outline far past the struct strip round the chunk). */
   function hullKeysIn(c: ChunkRef): string {
     if (!hull) return "";
@@ -168,7 +176,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function specialsNear(c: ChunkRef): string {
     const r = tiles.chunkRect(c);
     let k = "";
-    for (const [tag, set] of [["e", replaced], ["a", airlocks]] as const)
+    for (const [tag, set] of [["e", replaced], ["a", airlocks], ["r", lockRow]] as const)
       for (const i of set) {
         const x = i % width;
         const y = (i - x) / width;
@@ -322,7 +330,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     if (!b) return false;
     if (b.under) put(b.under, z, L.under, solid);
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
-    if (b.low && !blockHull.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
+    // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
+    // inside its full-height row and would show through the row's end cut).
+    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
     return true;
   }
 
@@ -406,6 +416,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         modRev = mr;
         [replaced, blockHull] = engineHull();
         airlocks = airlockHull();
+        lockRow = airlockRow();
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;
       const paint = host.hullPaint?.() ?? PLAIN_PAINT;
