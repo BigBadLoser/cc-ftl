@@ -91,7 +91,7 @@ describe('hunger', () => {
     for (let i = 0; i < 10; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
     expect(sim.world.get(id, TaskC)?.machine).toBe('sleep');
-    for (let i = 0; i < 600 * TICK_HZ && sim.world.get(id, CrewC)!.activity === 'sleeping'; i++) sim.step();
+    for (let i = 0; i < 1200 * TICK_HZ && sim.world.get(id, CrewC)!.activity === 'sleeping'; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).not.toBe('sleeping');
   });
 

@@ -15,7 +15,7 @@ import { BED_REST_MULT, HUNGER_SLEEP_MULT } from '../tuning';
 import { StationCrewC } from '../stations/components';
 
 /** Sleeping recovers this many times faster than awake decay. */
-const SLEEP_RECOVERY_MULT = 5;
+const SLEEP_RECOVERY_MULT = 2;
 
 /**
  * Rest decays while awake and recovers while sleeping (BED_REST_MULT times faster again when

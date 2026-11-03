@@ -1245,6 +1245,10 @@ site's `noRoom` / `stranded` beside them.
   2 game hours, seeds 1, 2, 3: 6 crew 779, 699, 822 (about 383 per game hour); 4 crew 600, 624, 552 (296); with an airlock on the wreck
   6 crew 779, 698, 716 (366) and 4 crew 673, 645, 611 (322). For comparison the salvage teams' 6-crew runs were 720, 702, 805, and this
   slice before staging 162, 191, 159 (crew carrying 1 to 5 units at a time to the hatch). More crew is never slower on any seed (both wrecks).
+- **Re-based for the rest retune (#278).** Crew now stay awake about 20 minutes (rest drain 0.06/s, sleep recovery 2x), so there are far
+  fewer sleep trips. Scrap home in 2 game hours, seeds 1, 2, 3: 6 crew 946, 1002, 1009 (about 493 per game hour); 4 crew 818, 755, 754 (388);
+  with an airlock on the wreck 6 crew 954, 965, 1022 (490) and 4 crew 775, 730, 732 (373). The slice 3 numbers above are what it replaced.
+  More crew is never slower on any seed (both wrecks).
 - A 4-crew variant (all four with construction and hauling at 1) is asserted too. With no home emergencies in the bench,
   cover holds nobody back.
 
