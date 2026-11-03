@@ -54,6 +54,24 @@ interface Piece {
   age: number;
 }
 
+/** A dome mesh over a fitted bubble, its shape uniforms set (the per-frame ones are `paintDome`'s). The render lab uses it too. */
+export function domeMesh(fit: Fit): { mesh: Mesh<Geometry, Shader>; uniforms: DomeUniforms } {
+  const { ex, ey } = fitExtent(fit);
+  const pad = 1.12;
+  const dome = createDomeMesh(fit.cx - ex * pad, fit.cy - ey * pad, fit.cx + ex * pad, fit.cy + ey * pad);
+  const u = dome.uniforms;
+  u.uC = new Float32Array([fit.cx, fit.cy]);
+  u.uAx = new Float32Array([fit.rx, fit.ry]);
+  u.uRot = fit.rot;
+  u.uPx = ART_SCALE;
+  u.uMx = new Float32Array(fit.body.mx);
+  u.uMy = new Float32Array(fit.body.my);
+  u.uN = new Float32Array(fit.body.n);
+  u.uAB = new Float32Array(fit.body.ab);
+  u.uHex = fit.body.hex;
+  return dome;
+}
+
 const hitSec = (h: DomeHit): number => (h.kind === 'pierce' ? DOME_SEC.pierce : DOME_SEC.hit);
 
 /**
@@ -98,13 +116,7 @@ export function createShieldView(
   const pool: Sprite[] = [];
 
   function make(id: number, key: string, fit: Fit, state: DomeState): Dome {
-    const { ex, ey } = fitExtent(fit);
-    const pad = 1.12;
-    const { mesh, uniforms: u } = createDomeMesh(fit.cx - ex * pad, fit.cy - ey * pad, fit.cx + ex * pad, fit.cy + ey * pad);
-    u.uC = new Float32Array([fit.cx, fit.cy]);
-    u.uAx = new Float32Array([fit.rx, fit.ry]);
-    u.uRot = fit.rot;
-    u.uPx = ART_SCALE;
+    const { mesh, uniforms: u } = domeMesh(fit);
     layers.dome.addChild(mesh);
     const d: Dome = { key, fit, mesh, u, state, hits: [], seen: true };
     domes.set(id, d);

@@ -23,8 +23,6 @@ void main(void) {
 export const DOME_HITS = 4;
 /** Radial pitch of one ring of cells (one layer's lit row), in hex sizes. */
 export const RING = 1.6;
-/** Hex cell size in art px. */
-export const HEX = 22;
 
 const FRAG = `#version 300 es
 precision highp float;
@@ -33,6 +31,11 @@ out vec4 finalColor;
 uniform vec4 uColor;
 uniform vec2 uC;
 uniform vec2 uAx;
+uniform vec3 uMx;
+uniform vec3 uMy;
+uniform vec3 uN;
+uniform vec2 uAB;
+uniform float uHex;
 uniform float uRot;
 uniform float uPx;
 uniform float uLit;
@@ -40,7 +43,6 @@ uniform float uOver;
 uniform vec4 uHit[${DOME_HITS}];
 uniform vec4 uEv;
 const float RING = ${RING.toFixed(2)};
-const float HEX = ${HEX.toFixed(1)};
 const vec3 H0 = vec3(0.918, 0.996, 1.0);
 const vec3 H1 = vec3(0.4, 0.878, 1.0);
 const vec3 H2 = vec3(0.165, 0.498, 0.659);
@@ -66,20 +68,30 @@ vec2 hexRound(vec2 p) {
   else rc.z = -rc.x - rc.y;
   return rc.xz;
 }
-// The cell a point falls in: the plane is squeezed toward the rim like a sphere seen from above.
-vec2 cellAt(vec2 p) {
-  vec2 l = local(p);
-  float r = length(l / uAx);
-  float s = asin(min(r, 0.999)) / 1.5708 / max(r, 0.001);
-  return hexRound(l * s / (HEX * uPx));
+// The front of the shell under a screen point, in the ellipsoid's unit-sphere frame (see shieldFit's Body).
+vec3 shellAt(vec2 p) {
+  vec3 u = uMx * (p.x - uC.x) + uMy * (p.y - uC.y);
+  float q = dot(u, u);
+  if (q > 0.998) { u *= sqrt(0.998 / q); q = 0.998; }
+  return u + sqrt(1.0 - q) * uN;
 }
-// Which ring of cells, counted from the rim in, a cell sits in (by its centre on the unwarped sphere).
+// The cell a point falls in: a hex lattice laid round the shell from its top (azimuthal, a quarter turn = 1), so it
+// lies on the 3D surface and squashes with the view the way the floor does.
+vec2 cellAt(vec2 p) {
+  vec3 u = shellAt(p);
+  float lr = length(u.xy);
+  vec2 w = lr > 1e-5 ? u.xy / lr * acos(clamp(u.z, -1.0, 1.0)) / 1.5708 : vec2(0.0);
+  return hexRound(w * uAB / uHex);
+}
+// Which ring of cells, counted in from the outline, a cell sits in: how far its centre turns away from the edge.
 float ringOf(vec2 c) {
-  vec2 w = vec2(1.73205 * (c.x + 0.5 * c.y), 1.5 * c.y) * HEX * uPx;
-  if (dot(w, w) < 1.0) return 99.0;                          // the centre cell is in no ring
-  float e = max(length(w / uAx), 0.001);
-  // the half cells the rim cuts belong to the outer ring with the first whole row inside them
-  return floor(max((1.0 / e - 1.0) * length(w) / (RING * HEX * uPx) - 0.6, 0.0));
+  vec2 w = vec2(1.73205 * (c.x + 0.5 * c.y), 1.5 * c.y) * uHex / uAB;
+  float rho = length(w) * 1.5708;
+  vec3 u = rho > 1e-5 ? vec3(normalize(w) * sin(rho), cos(rho)) : vec3(0.0, 0.0, 1.0);
+  float f = dot(u, uN);
+  if (f <= 0.0) return 0.0;
+  // the half cells the outline cuts belong to the outer ring with the first whole row inside them
+  return floor(max(asin(min(f, 1.0)) / (RING * uHex * 1.5708) - 0.6, 0.0));
 }
 float hash(vec2 v) { return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453); }
 float hash1(float v) { return fract(sin(v * 91.3458) * 47453.5453); }
@@ -203,6 +215,11 @@ let program: GlProgram | undefined;
 export interface DomeUniforms {
   uC: Float32Array;
   uAx: Float32Array;
+  uMx: Float32Array;
+  uMy: Float32Array;
+  uN: Float32Array;
+  uAB: Float32Array;
+  uHex: number;
   uRot: number;
   uPx: number;
   uLit: number;
@@ -223,6 +240,11 @@ export function createDomeMesh(x0: number, y0: number, x1: number, y1: number): 
   const shield = {
     uC: { value: new Float32Array(2), type: 'vec2<f32>' },
     uAx: { value: new Float32Array(2), type: 'vec2<f32>' },
+    uMx: { value: new Float32Array(3), type: 'vec3<f32>' },
+    uMy: { value: new Float32Array(3), type: 'vec3<f32>' },
+    uN: { value: new Float32Array([0, 0, 1]), type: 'vec3<f32>' },
+    uAB: { value: new Float32Array([1, 1]), type: 'vec2<f32>' },
+    uHex: { value: 0.1, type: 'f32' },
     uRot: { value: 0, type: 'f32' },
     uPx: { value: 2, type: 'f32' },
     uLit: { value: 0, type: 'f32' },

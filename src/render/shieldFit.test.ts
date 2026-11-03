@@ -1,42 +1,59 @@
 import { describe, expect, it } from 'vitest';
-import { fitExtent, fitPoints, rimPoint } from './shieldFit';
+import { Z_PX } from './heights';
+import { fitBody, fitExtent, rimPoint, type Fit } from './shieldFit';
+import { sectorArt } from './sectorPos';
 
-const inside = (f: { cx: number; cy: number; rx: number; ry: number; rot: number }, x: number, y: number): number => {
+const inside = (f: Fit, x: number, y: number): number => {
   const c = Math.cos(f.rot);
   const s = Math.sin(f.rot);
   const dx = x - f.cx;
   const dy = y - f.cy;
   return Math.hypot((dx * c + dy * s) / f.rx, (-dx * s + dy * c) / f.ry);
 };
+const screen = (p: readonly [number, number, number]): { x: number; y: number } => {
+  const a = sectorArt(p[0], p[1]);
+  return { x: a.x, y: a.y - p[2] * Z_PX };
+};
 
 describe('shield fit', () => {
-  // a long hull on the iso diagonal: points along a slanted strip
-  const xs: number[] = [];
-  const ys: number[] = [];
-  for (let i = 0; i <= 40; i++) {
-    for (const o of [-20, 0, 20]) {
-      xs.push(i * 30 + o);
-      ys.push(i * 12 - o);
-    }
-  }
-  const f = fitPoints(xs, ys);
+  // a long hull along the grid's x axis, floor to roof
+  const pts: [number, number, number][] = [];
+  for (let x = 0; x <= 24; x++) for (const y of [0, 4, 8]) for (const z of [0, 2]) pts.push([x, y, z]);
+  const f = fitBody(pts) as Fit;
 
-  it('turns to the hull and holds every point', () => {
-    expect(f).toBeDefined();
-    if (!f) return;
+  it('holds every hull point inside its outline on screen', () => {
+    for (const p of pts) {
+      const s = screen(p);
+      expect(inside(f, s.x, s.y)).toBeLessThan(1);
+    }
+  });
+
+  it('lies along the grid: a hull long in x tilts its outline down to the right like the floor', () => {
+    expect(f.rx).toBeGreaterThan(f.ry);
     expect(f.rot).toBeGreaterThan(0.2);
     expect(f.rot).toBeLessThan(0.6);
-    expect(f.rx).toBeGreaterThan(f.ry);
-    for (let i = 0; i < xs.length; i++) expect(inside(f, xs[i] as number, ys[i] as number)).toBeLessThanOrEqual(1);
+  });
+
+  it('maps the outline back onto the shell: the centre is the point facing the camera, the rim turns side-on', () => {
+    const { mx, my, n } = f.body;
+    const at = (dx: number, dy: number): number => {
+      const u = [0, 1, 2].map((k) => (mx[k] as number) * dx + (my[k] as number) * dy);
+      return u.reduce((s, v, k) => s + v * (n[k] as number), 0); // the screen-plane part has no share of the view
+    };
+    expect(Math.abs(at(f.rx * Math.cos(f.rot), f.rx * Math.sin(f.rot)))).toBeLessThan(1e-9);
+    const r = Math.hypot(...[0, 1, 2].map((k) => (mx[k] as number) * f.rx * Math.cos(f.rot) + (my[k] as number) * f.rx * Math.sin(f.rot)));
+    expect(r).toBeCloseTo(1, 6);
   });
 
   it('a thin hull still gets an oval', () => {
-    const g = fitPoints([0, 100, 200, 300], [0, 0, 0, 0]);
-    expect(g && g.ry / g.rx).toBeGreaterThan(0.3);
+    const g = fitBody([
+      [0, 0, 0],
+      [30, 1, 2],
+    ]) as Fit;
+    expect(g.ry / g.rx).toBeGreaterThan(0.3);
   });
 
   it('puts a hit on the rim, on the side the shot came from', () => {
-    if (!f) return;
     const p = rimPoint(f, { x: f.cx - 1000, y: f.cy - 400 });
     expect(inside(f, p.x, p.y)).toBeCloseTo(1, 5);
     expect(p.x).toBeLessThan(f.cx);
