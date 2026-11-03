@@ -361,7 +361,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     def pt(u, dd, rise):
         return P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise = LINE / 2, PAINT
-    d0, d1 = 0.02, run_ - (0.03 if ft else 0.045)
+    d0, d1 = max(0.02, style().shelf), run_ - (0.03 if ft else 0.045)   # (from a look's shelf's edge)
     off = seam()                               # the plates' seams this far in from each tile edge (0: one plate)
     segs = []                                   # the face's posts and fields (posts()), run on past a face end so
     for s0, s1 in spans(a, b):                  # the mitre clips them

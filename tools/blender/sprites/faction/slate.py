@@ -15,6 +15,12 @@ RAIL_H = 7 * PZ                     # the rail's front
 END_W = 0.25                        # its end blocks along a tile (the middle block between them)
 LIP_D, LIP_H = PX / 2, 2 * PZ       # the lip at the face's foot: its depth (a px), its top over the ramp's top
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
+SHELF = 3 / 32                      # the ramp's top a flat step this deep against the wall (3 px)
+
+
+def _shelf_z(zs):
+    """The shelf's height (the slope's, SHELF out from the wall)."""
+    return zs - SHELF * T.W.GN * T.W.RAMP_PX / T.W.ZART
 
 
 class SlateTones(Feature):
@@ -24,7 +30,7 @@ class SlateTones(Feature):
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
         top = r[3] if r else sp.top
-        if z < sp.zs + 0.02 or z > top - 0.03:
+        if z < _shelf_z(sp.zs) + 0.02 or z > top - 0.03:       # (down to the ramp's shelf)
             return c
         return T.RAMPS[FACE][1 if face == "x" else 0][3]
 
@@ -55,9 +61,12 @@ def slate(hull):
         if endf:
             _end_section(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
         if not endf:
-            T.run(k, ax, plane, a, b, pe, zs - PZ, zs + LIP_H, LIP_D, FACE, 3, 0)              # the lip, its
-            T.paint(k, ax, plane, a, b, zs - PZ, zs, LIP_D, FACE, 1)                           # foot dark
-            zg = zs + LIP_H + 2 * PZ                                                           # its groove
+            T.run(k, ax, plane, a, b, pe, _shelf_z(zs) - 0.01, zs + 0.02, PAINT, FACE, 3, 0)   # the face on down
+                                                                                                # to the shelf
+            zl = _shelf_z(zs) + 3 * PZ                  # the lip: 2 px of face over the shelf, under its dark foot
+            T.run(k, ax, plane, a, b, pe, zl - PZ, zl + LIP_H, LIP_D, FACE, 3, 0)
+            T.paint(k, ax, plane, a, b, zl - PZ, zl, LIP_D, FACE, 1)
+            zg = zl + LIP_H + 2 * PZ                                                           # its groove
             if zg + 4 * PZ < top - 0.03:
                 for g0, g1, lvl in ((zg, zg + 2 * PZ, 1), (zg + 2 * PZ, zg + 3 * PZ, 4)):     # (lit over it)
                     T.paint(k, ax, plane, a, b, g0, g1, 0.0, FACE, lvl)
@@ -105,8 +114,8 @@ class Slate(Faction):
 
     def relief(self, sprite):
         return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
-                      ramp_bands=((0.0, None, 3, 0.0), (0.21, None, 2, 0.0), (SPLIT, BLUE, 4, EDGE),
-                                  (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (lit at the top, a seam, the
-                      toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,      # blue plate's lit edge)
+                      shelf=SHELF,
+                      ramp_bands=((SPLIT, BLUE, 4, EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
+                      toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 3), FaceHoles(),
                                 SlateTones()))
