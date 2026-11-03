@@ -382,9 +382,7 @@ def screen(b, D1):
 
 DOOR_W, DOOR_H = 0.58, 0.435
 DOOR_DEPTH = 0.3
-# front row: the first centred in its tile, the far one moved toward the end to clear the yoke, which stands out in
-# front of the body and would hide its near side
-DOOR_L = [(c - DOOR_W / 2, c + DOOR_W / 2) for c in (1.5, 3.56)]
+DOOR_L = [(c - DOOR_W / 2, c + DOOR_W / 2) for c in (1.5, 3.5)]        # front row, each centred in its tile
 
 
 def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
