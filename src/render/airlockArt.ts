@@ -15,8 +15,8 @@ import type { WallLevel } from './tiles';
 /**
  * The docking airlock's art (tools/blender/sprites/airlock.py): every part is a sprite anchored at its own tile, so it
  * sorts against the crew by that tile. Never cut away: only the door tile's hull follows the wall view level (`hull.r{n}.{up,cut,low}`;
- * on a hull row facing the camera it is the engine's treatment instead: the row's three tiles of exterior hull, full height at
- * every level, with `end.r{n}` cuts at either end), the pod, unloaders, brace and collar are drawn whole at every level.
+ * on a hull row facing the camera it is the engine's treatment instead: exterior hull over the door tile and half of either
+ * neighbour, full height at every level, with `end.r{n}` cuts at either end), the pod, unloaders, brace and collar are drawn whole at every level.
  *
  *  - housing `.closed|.f1|.f2|.open` on the pod tile (the inner door), light `.red|.green` over it
  *  - the door tile's hull (replaces the door the wall renderer would draw there; roofed, the hull's own piece stands there),
@@ -165,8 +165,8 @@ export function airlockLayers(world: World, id: number, m: Module, def: ModuleDe
   const near = out.x > 0 || out.y > 0;
   const front = near ? { x: t.outer.x + Math.abs(out.y), y: t.outer.y + Math.abs(out.x) } : t.outer;
   if (!view.roofed) {
-    // Facing the camera (east / south) the hull row is the engine's: its three tiles full height in every view, closed by
-    // end cuts, anchored at the row's front tile (so it sorts over the neighbours' cut tops).
+    // Facing the camera (east / south) the hull row is the engine's: full height in every view over the door tile and half
+    // of either neighbour, closed by end cuts, anchored at the row's front tile (so it sorts over the neighbours' cut tops).
     // Unlike the engine's (behind its steel thruster block) it shows whole, so it wears the hull's paint as the hull's
     // pieces do: the armour over it, the deco over its deco layer (`.tint`).
     const hull = part('hull', view.level, front, { tiles: 'hull', ...(near ? { paint: 'armour' as const, dz: 0 } : {}) });
