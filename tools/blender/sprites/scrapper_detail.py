@@ -23,6 +23,12 @@ def wall_h(b, D, side, L0, L1, z, col, h=0.038):
     _paint(b, [(L0, d, z - h / 2), (L1, d, z - h / 2), (L1, d, z + h / 2), (L0, d, z + h / 2)], col, (0, side, 0))
 
 
+def end_v(b, L, side, D, z0, z1, col, w=0.047):
+    """An upright seam painted on the end wall at L (side: -1 hatch end, +1 far end) at D, from z0 to z1."""
+    ll = L + side * OFF
+    _paint(b, [(ll, D - w / 2, z0), (ll, D + w / 2, z0), (ll, D + w / 2, z1), (ll, D - w / 2, z1)], col, (side, 0, 0))
+
+
 def top_L(b, D, Ls, col, w=0.05):
     """A seam along L painted on the top at D, through the breakpoints Ls (the top's height between them is linear).
     w: about 1.5 px across on screen, so it reads as an unbroken line."""
@@ -35,8 +41,12 @@ def top_L(b, D, Ls, col, w=0.05):
 def seams(b, col):
     D0, D1 = 0.03, 1.97
     # down the middle of the tops, where the two rows' plates meet
-    top_L(b, 1.0, (0.5, 1.0, 1.0 + S.STEP, 2.0 - S.STEP), col)
-    top_L(b, 1.0, (3.0, 3.5), col)
+    # and on down each end, between the hatches (between the hatch and the exhaust at the far end), the end slope and
+    # the end wall below it
+    top_L(b, 1.0, (0.03, 0.5, 1.0, 1.0 + S.STEP, 2.0 - S.STEP), col)
+    top_L(b, 1.0, (3.0, 3.5, 3.97), col)
+    for L, side in ((0.03, -1), (3.97, 1)):
+        end_v(b, L, side, 1.0, S.BASE, S.WALL, col)
     # a belt round the long walls, level with where the end slopes begin (the end walls' tops); the doorways' frames
     # stop below it, so on the front it breaks only for the bay
     zb = S.WALL
