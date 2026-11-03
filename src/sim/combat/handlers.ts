@@ -105,8 +105,9 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
     weapon.target = target;
     // Aiming a held weapon at an enemy is the order to shoot: it fires once when charged, then stays on hold. Aiming at a ship that is not hostile
-    // only aims (battle stations on a neutral): a shot needs a volley or an auto weapon, and that shot is what turns it (combat/provoke.ts).
-    if (weapon.mode === 'hold' && (!!target?.vehicle || factionsHostile(shipById(sim, target?.ship ?? 0)?.faction, 'player'))) weapon.once = true;
+    // only aims (battle stations on a neutral), and drops a shot still pending from an earlier aim: a shot needs a volley or an auto weapon, and that
+    // shot is what turns it (combat/provoke.ts).
+    if (weapon.mode === 'hold' && target) weapon.once = !!target.vehicle || factionsHostile(shipById(sim, target.ship)?.faction, 'player');
   },
   'combat.setWeaponMode': (sim, cmd) => {
     const weapon = sim.world.get(cmd.weaponId, WeaponC);

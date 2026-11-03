@@ -315,6 +315,22 @@ describe('provoking a neutral', () => {
     expect(sim.world.get(skiff, ShipC)?.faction).toBe('neutral');
   });
 
+  it('re-aiming a held weapon from an enemy to a neutral drops the pending shot', () => {
+    const { sim, skiff } = inScene(3);
+    const me = playerShip(sim);
+    sim.enqueue({ type: 'combat.battleStations', on: true });
+    step(sim);
+    const gun = sim.world.query(WeaponC, ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number }) === me) as number;
+    const w = sim.world.get(gun, WeaponC) as { once?: boolean; charge: number };
+    w.once = true; // an earlier aim at an enemy, still charging
+    sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: gun, targetShip: skiff, targetModuleId: 0 });
+    step(sim);
+    expect(w.once).toBe(false);
+    w.charge = 1;
+    expect(step(sim, 100).some((e) => e.type === 'weapon.fired')).toBe(false);
+    expect(sim.world.get(skiff, ShipC)?.faction).toBe('neutral');
+  });
+
   it('the first shot turns it hostile, a fight is on, and it fires back', () => {
     // A full crew (a lone one cannot man the guns and the helm at once): the ordinary hostile AI and crew do the rest.
     const base = content.events['event.trader_swap'];
