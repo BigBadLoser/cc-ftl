@@ -145,6 +145,20 @@ describe('hunger', () => {
     expect(sim.world.get(id, HealthC)!.hp).toBe(sim.world.get(id, HealthC)!.max);
   });
 
+  it('a meal already begun is not dropped for urgent rest when the larder empties under it (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
+    needs(sim, id).rest = 1;
+    needs(sim, id).hunger = 7;
+    let ate = false;
+    for (let i = 0; i < 220 * TICK_HZ && !ate; i++) {
+      sim.step();
+      if (sim.world.get(id, CrewC)!.activity === 'eating') emptyLarder(sim);
+      ate = sim.events.drain().some((e) => e.type === 'crew.ate' && e.crew === id);
+    }
+    expect(ate).toBe(true);
+  });
+
   it('a bedless sleeper who is hungry with no food aboard sleeps on and recovers rest (no wake for a meal that cannot start) (#278)', () => {
     const { sim, id } = hungry(100);
     for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);

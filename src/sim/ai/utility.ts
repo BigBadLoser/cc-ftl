@@ -205,7 +205,9 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
       continue;
     }
     if (s.def.task === 'job') continue;
-    if (s.def.requires?.some((r) => (readInput(sim, id, r) ?? 0) <= 0)) {
+    // A task already under way (a meal begun, the ration taken) is not closed by what it consumed; a blocking `onMissing` still blocks.
+    const exempt = !!s.def.keepWhileTask && s.def.onMissing !== 'block' && view.underway(s.def.task);
+    if (!exempt && s.def.requires?.some((r) => (readInput(sim, id, r) ?? 0) <= 0)) {
       s.open = false;
       if (s.def.onMissing === 'block') blocked ??= s.def.id;
       else intent.scores[s.i] = s.score = 0;

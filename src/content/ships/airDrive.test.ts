@@ -201,6 +201,28 @@ describe('air drive', () => {
     expect(sim.world.has(c, PickupC)).toBe(false);
   });
 
+  it('a suited sleeper with no source in reach still raises the pickup request (#278)', () => {
+    const sim = newGame(3, content, 'ship.starter', false);
+    run(sim, 2);
+    const c = sim.world.query(CrewC)[1] as number;
+    sim.world.get(c, NeedsC)!.rest = 5;
+    run(sim, 600, () => sim.world.get(c, CrewC)!.activity === 'sleeping');
+    expect(sim.world.get(c, CrewC)!.activity).toBe('sleeping');
+    for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false;
+    for (const v of [...sim.world.query(VehicleC)]) destroyVehicle(sim, v);
+    sim.world.add(c, SuitC, { worn: true, air: 0.1 * suitDef(sim).airSec });
+    const ev: SimEvent[] = [];
+    const grid = shipGrid(sim, homeShip(sim))!;
+    for (let i = 0; i < 3 * AIR_TICKS; i++) {
+      for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) grid.set('o2', x, y, 0);
+      if (sim.world.get(c, CrewC)!.activity === 'sleeping') sim.world.get(c, NeedsC)!.rest = 5;
+      ev.push(...run(sim, 1));
+    }
+    expect(sim.world.get(c, IntentC)!.blocked).toBe('air');
+    expect(sim.world.has(c, PickupC)).toBe(true);
+    expect(ev.filter((e) => e.type === 'crew.airUnreachable')).toHaveLength(1);
+  });
+
   it('an empty tank where no tile is breathable: the hazard sends them to the airlock to refill', () => {
     const { sim, c } = hullWork();
     const grid = shipGrid(sim, homeShip(sim))!;

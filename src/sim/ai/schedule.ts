@@ -99,8 +99,12 @@ export function scheduleSystem(sim: Sim): void {
     // Any other need gone urgent ends a sleep or a meal (a suited crew member whose room lost its air, a sleeper who is starving): they get up
     // and the drives below serve it; sleep resumes through its own drive afterwards. Charging is a robot's, which does not breathe.
     if ((crew.activity === 'sleeping' || crew.activity === 'eating') && wakeForNeed(sim, id, crew.activity === 'sleeping' ? 'sleep' : 'eat')) abortTask(sim, id, 'urgentNeed');
-    // Asleep, charging or eating: the need's own machine ends it (wakeUp, endCharge, finishMeal keep the mirror).
-    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') continue;
+    // Asleep, charging or eating: the need's own machine ends it (wakeUp, endCharge, finishMeal keep the mirror). A sleeper or eater whose
+    // air is out with no source in reach still raises the pickup request (the evaluation above wrote `blocked`).
+    if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') {
+      pickupRequest(sim, id);
+      continue;
+    }
     const pos = sim.world.get(id, PositionC) as Position;
     const assignment = sim.world.get(id, AssignmentC);
     const atPost = !!assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
