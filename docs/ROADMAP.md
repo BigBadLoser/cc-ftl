@@ -12,7 +12,6 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Now
 
-- **Rest retune.** Crew stay awake about 20 minutes and sleep about 7 in a bed, so a long shift no longer ends after a minute or two. ([#278](https://github.com/BigBadLoser/cc-ftl/issues/278))
 - **Physical encounters, first steps.** A signal you can hail or scan, then a scene in open space with a real ship. The trader skiff comes first; a derelict, a pirate ambush, a distress freighter and a medical pod follow. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173))
 
 ## Next

@@ -11,7 +11,7 @@ Last updated: 2026-11-03.
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
-## On `main` now (merged PRs through #304)
+## On `main` now (merged PRs through #308)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
   black-market services (#141); hull planner, shipyard and engine capacity (#134); hull width rule and hull plan brushes (#145).
@@ -37,7 +37,7 @@ Last updated: 2026-11-03.
 
 ## In progress
 
-- **Now:** #278 rest retune (PR #302, branch `tune/rest-278`, finishing review); #173 physical encounters steps 1-2, the shared
+- **Now:** #173 physical encounters steps 1-2, the shared
   scene infrastructure and the trader skiff (branch `events/scenes-173`). Later encounter steps, each checked in play first:
   derelict, pirate ambush, distress freighter, medical pod.
 - **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
