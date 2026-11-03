@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PositionC, PrioritiesC, START_NODE, ShipC, VehicleC, deserialize, galaxyIndex, homeShip, serialize, type Sim } from '../../sim';
+import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, START_NODE, ShipC, VehicleC, deserialize, galaxyIndex, homeShip, serialize, type Sim } from '../../sim';
 import { giveItems } from '../../sim/story/effects';
 import { placementError, shipGrid, spawnModule } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
@@ -152,6 +152,21 @@ describe('away sites', () => {
     expect(reach().ticksFrom(a, wreck, tile)).toBeNull(); // the old reach counted them all the same
     expect(reach().ticksFrom(b, wreck, tile)).not.toBeNull(); // still b's
     setAirHolds(sim, owner, []);
+  });
+
+  it('an idle party member waiting by the shuttle steps off a tile being built (Codex 4450253222)', () => {
+    const { sim, party } = landed();
+    // Nobody in the party takes construction: they idle, waiting by the shuttle.
+    for (const c of party) sim.world.get(c, PrioritiesC)!.construction = 0;
+    const [c] = party as [number];
+    play(sim, 20 * 30);
+    const p = { ...sim.world.get(c, PositionC)! };
+    expect(sim.world.get(c, PathC)!.steps).toEqual([]);
+    const job = sim.world.createEntity();
+    sim.world.add(job, JobC, { category: 'construction', kind: 'build', x: p.x, y: p.y, struct: 0, work: 400, progress: 0, reservedBy: 0 });
+    play(sim, 20 * 5);
+    const q = sim.world.get(c, PositionC)!;
+    expect([q.x, q.y]).not.toEqual([p.x, p.y]);
   });
 
   it('ownership: away-owned state whose owner is gone is released by the sweep, and the audit reports it until then', () => {
