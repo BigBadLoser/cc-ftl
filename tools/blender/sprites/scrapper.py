@@ -346,14 +346,36 @@ def recess(b, DM):
              (-mo[0] if i % 2 else 0, 0, 0 if i % 2 else -mo[2]))
 
 
+SCREEN_FLARE = 0.0     # how much longer the top edge is than the foot, each side
+SCREEN_SHADE = 0.07    # how much further out from the face the top edge stands than the foot (about 2-3 px)
+
+
 def screen(b, D1):
-    """The screen on the hatch-end block's front face beside the bay (measured on the ref's tile, link 03): a housing
-    standing out of the face with the screen set into its front."""
+    """The screen on the hatch-end block's front face beside the bay (placed after the ref's R0 view): a housing
+    standing out of the face like a sun shade, its top edge longer than its foot (SCREEN_FLARE each side) and/or
+    standing further out (SCREEN_SHADE), its sides sloping down between them, with the screen set into its front."""
     L0, L1, z0, z1, out = 1.34, 1.86, 0.9, 1.18, 0.08
-    b.box(L0, L1, D1, D1 + out, z0, z1, GMD, GM)
-    i = 0.045                                                           # bezel, about 2 px
-    p = [b.P(L, D1 + out + 0.002, z) for L, z in ((L0 + i, z0 + i), (L1 - i, z0 + i), (L1 - i, z1 - i), (L0 + i, z1 - i))]
-    a, c = b.P(L0, D1, 0), b.P(L0, D1 + 1, 0)
+    f, sh, h = SCREEN_FLARE, SCREEN_SHADE, z1 - z0
+    lo = [(L0, D1, z0), (L1, D1, z0), (L1, D1 + out, z0), (L0, D1 + out, z0)]
+    hi = [(L0 - f, D1, z1), (L1 + f, D1, z1), (L1 + f, D1 + out + sh, z1), (L0 - f, D1 + out + sh, z1)]
+    lo_, hi_ = [b.P(*p) for p in lo], [b.P(*p) for p in hi]
+    ce = b.P((L0 + L1) / 2, D1 + out / 2, (z0 + z1) / 2)
+    for k in range(4):
+        m = (k + 1) % 4
+        q = [lo_[k], lo_[m], hi_[m], hi_[k]]
+        c = [sum(p[x] for p in q) / 4 for x in range(3)]
+        b.face(q, GMD, (c[0] - ce[0], c[1] - ce[1], c[2] - ce[2]))
+    b.face(hi_, GM, (0, 0, 1))
+    b.face(lo_, GMD, (0, 0, -1))
+    i, e = 0.045, 0.003                                                 # bezel (about 2 px); lift off the face
+    ln = math.hypot(sh, h)
+    nd, nz = h / ln, -sh / ln                                           # the front face's normal (out, and down if shaded)
+    def on(u, t):                                                       # u: 0..1 along the face, t: 0..1 up it
+        Lb, Lt = L0 + (L1 - L0) * u, (L0 - f) + (L1 - L0 + 2 * f) * u
+        return b.P(Lb + (Lt - Lb) * t, D1 + out + sh * t + nd * e, z0 + h * t + nz * e)
+    tb, ub = i / ln, i / (L1 - L0)
+    p = [on(ub, tb), on(1 - ub, tb), on(1 - ub, 1 - tb), on(ub, 1 - tb)]
+    a, c = b.P(L0, D1, z0), b.P(L0, D1 + nd, z0 + nz)
     b.face(p, DARK, (c[0] - a[0], c[1] - a[1], c[2] - a[2]))
 
 
