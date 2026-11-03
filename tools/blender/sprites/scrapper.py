@@ -317,7 +317,7 @@ def _bay_back_h(L):
 def recess(b, DM):
     """The opening in the bay's back wall (the hopper's, placed after the ref's hopper tile, link 07, but centred in
     the wall): the wall at D = DM around it, and a passage running deep enough into the block (RECESS_DEPTH) that its
-    end never shows, dark for now (it glows later)."""
+    end never shows, its walls white, in a raised frame."""
     (L0, L1), (z0, z1), d = RECESS_L, RECESS_Z, RECESS_DEPTH
     def wall(pts, col, n):                                              # pts as (L, D, z); n = normal in (L, D, z)
         a, c = b.P(*pts[0]), b.P(pts[0][0] + n[0], pts[0][1] + n[1], pts[0][2] + n[2])
@@ -326,11 +326,24 @@ def recess(b, DM):
     knee = [(3.0 - STEP, DM, TOP)] if L0 < 3.0 - STEP < L1 else []
     wall([(L0, DM, BASE), (L1, DM, BASE), (L1, DM, z0), (L0, DM, z0)], BODY, fwd)                 # below
     wall([(L0, DM, z1), (L1, DM, z1), (L1, DM, _bay_back_h(L1)), *knee, (L0, DM, _bay_back_h(L0))], BODY, fwd)
-    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], DARK, fwd)     # far end
-    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM, z0), (L0, DM, z0)], DARK, (0, 0, 1))       # floor
-    wall([(L0, DM - d, z1), (L1, DM - d, z1), (L1, DM, z1), (L0, DM, z1)], DARK, (0, 0, -1))      # ceiling
-    wall([(L0, DM - d, z0), (L0, DM, z0), (L0, DM, z1), (L0, DM - d, z1)], DARK, (1, 0, 0))       # sides
-    wall([(L1, DM - d, z0), (L1, DM, z0), (L1, DM, z1), (L1, DM - d, z1)], DARK, (-1, 0, 0))
+    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM - d, z1), (L0, DM - d, z1)], LIGHT, fwd)    # far end
+    wall([(L0, DM - d, z0), (L1, DM - d, z0), (L1, DM, z0), (L0, DM, z0)], LIGHT, (0, 0, 1))      # floor
+    wall([(L0, DM - d, z1), (L1, DM - d, z1), (L1, DM, z1), (L0, DM, z1)], LIGHT, (0, 0, -1))     # ceiling
+    wall([(L0, DM - d, z0), (L0, DM, z0), (L0, DM, z1), (L0, DM - d, z1)], LIGHT, (1, 0, 0))      # sides
+    wall([(L1, DM - d, z0), (L1, DM, z0), (L1, DM, z1), (L1, DM - d, z1)], LIGHT, (-1, 0, 0))
+    # a raised frame round the opening, 2 px wide each way, standing `lip` proud of the wall
+    wl, wz, lip = 0.056, 0.051, 0.035
+    inner = [(L0, z0), (L1, z0), (L1, z1), (L0, z1)]
+    outer = [(L0 - wl, z0 - wz), (L1 + wl, z0 - wz), (L1 + wl, z1 + wz), (L0 - wl, z1 + wz)]
+    for i in range(4):
+        j = (i + 1) % 4
+        (oa, ob), (oc, od), (ia, ib), (ic, id_) = outer[i], outer[j], inner[i], inner[j]
+        wall([(oa, DM + lip, ob), (oc, DM + lip, od), (ic, DM + lip, id_), (ia, DM + lip, ib)], GMD, fwd)   # face
+        mo = ((oa + oc) / 2 - 2.5, 0, (ob + od) / 2 - (z0 + z1) / 2)                                     # outward
+        wall([(oa, DM, ob), (oc, DM, od), (oc, DM + lip, od), (oa, DM + lip, ob)], GMD,
+             (mo[0] if i % 2 else 0, 0, 0 if i % 2 else mo[2]))
+        wall([(ia, DM, ib), (ic, DM, id_), (ic, DM + lip, id_), (ia, DM + lip, ib)], GMD,
+             (-mo[0] if i % 2 else 0, 0, 0 if i % 2 else -mo[2]))
 
 
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
