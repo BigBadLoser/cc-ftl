@@ -136,41 +136,65 @@ def tan(hull):
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 
 
-# the base ramp's cushions (padding, not plates), symmetric about the tile's middle: (u0, u1, d0, d1) as fractions
-# of the tile and of the cushions' run (the joints, a px, centred on the cuts): one down each side, two squares
-# against the wall between them over one wide one
-CUT_U, CUT_D = (0.25, 0.5, 0.75), 0.55
-PLATES = ((0.0, 0.25, 0.0, 1.0), (0.25, 0.5, 0.0, CUT_D), (0.5, 0.75, 0.0, CUT_D), (0.75, 1.0, 0.0, 1.0),
-          (0.25, 0.75, CUT_D, 1.0))
+# the base ramp's cushions (padding, not plates), symmetric about the tile's middle, as fractions of the tile (u) and
+# of the cushions' run (d); the joints, a px, centred on the cuts: two squares against the wall, an L either side of
+# them (down the tile's side, then in along the toe to the middle)
+CUT_D = 0.55
+SQUARES = ((0.25, 0.5), (0.5, 0.75))
+# each L: its rects ((u0, u1, d0, d1), its rounded corners: a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1)); a u0 / u1 of
+# None runs into the L's other rect, under it (no joint); then its shaded right edges ((u1, d0, d1) as fractions)
+ELLS = ((((0.0, 0.25, 0.0, 1.0), "abd"), ((None, 0.5, CUT_D, 1.0), "bc")), ((0.25, 0.0, CUT_D), (0.5, CUT_D, 1.0))), \
+       ((((0.75, 1.0, 0.0, 1.0), "abc"), ((0.5, None, CUT_D, 1.0), "ad")), ((1.0, 0.0, 1.0),))
 
 
 def tan_plate(plate, u0, u1, run_, k=None, pt=None, **_):
-    """The base ramp: a blue line along the wall, then pale cushions in brown joints, each with rounded corners and
-    shaded along its foot and right edge, then the blue toe."""
+    """The base ramp: a blue line along the wall, then pale cushions with rounded corners in brown joints (1 px),
+    each shaded along its right edge (and the squares along their foot), then the blue toe."""
     w, E, L = u1 - u0, EDGE, LINE
     top, end = 0.02 + E, run_ - 0.045                   # (under the blue line; the cushions' end, over the toe)
     nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
+    span = end - E - top
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
 
-    def rq(ua, ub, da, db):                             # (a cushion: its corners rounded, the corner px clipped off
-        c, e = 1.5 * L, 1.5 * E                         # each (a cut that covers it whole))
-        return [(ua + c, da), (ub - c, da), (ub, da + e), (ub, db - e), (ub - c, db), (ua + c, db), (ua, db - e),
-                (ua, da + e)]
+    def rq(ua, ub, da, db, rc="abcd"):                  # (a cushion's rect, the corners rc rounded: the corner px
+        c, e = 1.5 * L, 1.5 * E                         # clipped off (a cut that covers it whole))
+        return ([(ua, da + e), (ua + c, da)] if "a" in rc else [(ua, da)]) + \
+               ([(ub - c, da), (ub, da + e)] if "b" in rc else [(ub, da)]) + \
+               ([(ub, db - e), (ub - c, db)] if "c" in rc else [(ub, db)]) + \
+               ([(ua + c, db), (ua, db - e)] if "d" in rc else [(ua, db)])
+
+    def U0(f):                                          # (a joint at the tile's left edge, none at its right)
+        return u0 + f * w + (L if f == 0.0 else L / 2)
+
+    def U1(f):
+        return u0 + f * w - (0.0 if f == 1.0 else L / 2)
+
+    def D0(g):                                          # (none against the wall or the toe's)
+        return top + g * span + (0.0 if g == 0.0 else E / 2)
+
+    def D1(g):
+        return top + g * span - (0.0 if g == 1.0 else E / 2)
     plate(q(u0, u1, 0.0, top), PAINT, 2, 0.0, BLUE)                         # the blue line under the lip
     plate(q(u0, u1, end, run_ - 1 / 32), PAINT, 2, 0.0, BLUE)               # the toe band, on to the toe
-    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the cushions)
-    span = end - E - top
-    for f0, f1, g0, g1 in PLATES:                       # (a joint at the tile's left edge, none at the wall)
-        pu0 = u0 + f0 * w + (L if f0 == 0.0 else L / 2)
-        pu1 = u0 + f1 * w - (0.0 if f1 == 1.0 else L / 2)
-        pd0 = top + g0 * span + (0.0 if g0 == 0.0 else E / 2)
-        pd1 = top + g1 * span - (0.0 if g1 == 1.0 else E / 2)
+    T.plate(k, q(u0, u1, top, end), pt, nrm, 0.0, PAINT, FACE, 0, fixed="fTS7")   # the joints (under the cushions;
+    r, sh = 3 * PAINT, 2 * PAINT                                            # the last, over the toe, a px: no foot
+                                                                            # shading on the Ls over it)
+    for f0, f1 in SQUARES:
+        pu0, pu1, pd0, pd1 = U0(f0), U1(f1), D0(0.0), D1(CUT_D)
         plate(rq(pu0, pu1, pd0, pd1), 2 * PAINT, 2, PAINT, "wall")
-        r = 3 * PAINT
-        plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, 2 * PAINT, FACE)      # (its foot and right edge shaded, short
-        plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, 2 * PAINT, FACE)      # of the corners; no lit rims)
+        plate(q(pu0 + L, pu1 - L, pd1 - E, pd1), r, 2, sh, FACE)            # (its foot and right edge shaded, short
+        plate(q(pu1 - L, pu1, pd0 + E, pd1 - E), r, 2, sh, FACE)            # of the corners)
+    for rects, shades in ELLS:
+        for (f0, f1, g0, g1), rc in rects:
+            pu0 = u0 + 0.125 * w if f0 is None else U0(f0)
+            pu1 = u0 + 0.875 * w if f1 is None else U1(f1)
+            plate(rq(pu0, pu1, D0(g0), D1(g1), rc), 2 * PAINT, 2, PAINT, "wall")
+        for f, g0, g1 in shades:                        # (its right edges shaded, short of a rounded corner)
+            pd0 = D0(g0) + (E if g0 == 0.0 or g0 == CUT_D and f == 0.5 else 0.0)
+            pd1 = D1(g1) - E if g1 == 1.0 else D0(g1)  # (down to the L's inner corner)
+            plate(q(U1(f) - L, U1(f), pd0, pd1), r, 2, sh, FACE)
 
 
 TAN_RAMPS = (Design("cushions", ramp=tan_plate),)
