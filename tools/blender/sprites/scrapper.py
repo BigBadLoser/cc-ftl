@@ -270,8 +270,9 @@ def drum(b):
     rr_prism_L(b, 2.04, 2.2, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                    # mouth shroud
     rr_prism_L(b, 2.02, 2.04, DRUM_D, DRUM_Z, 0.29, 0.09, DARK)                    # the mouth, dark
     b.cyl_L(DRUM_D, DRUM_Z, 0.33, 2.2, 2.8, GM, sides=20)                          # drum
-    for L0, L1 in ((2.24, 2.29), (2.36, 2.52), (2.6, 2.76)):                       # raised bands
+    for L0, L1 in ((2.24, 2.29), (2.36, 2.52)):                                    # raised bands
         b.cyl_L(DRUM_D, DRUM_Z, 0.37, L0, L1, GMD, sides=20)
+    rr_prism_L(b, 2.62, 2.8, DRUM_D, DRUM_Z, 0.365, 0.12, GMD)                     # squared end shroud in the yoke
     yoke(b)
 
 
