@@ -63,11 +63,10 @@ def slate(hull):
         if not endf:
             T.run(k, ax, plane, a, b, pe, _shelf_z(zs) - 0.01, zs + 0.02, PAINT, FACE, 3, 0)   # the face on down
                                                                                                 # to the shelf
-            zl = _shelf_z(zs) + 3 * PZ                  # the lip: 2 px of face over the shelf, under its dark foot
+            zl = _shelf_z(zs) + 3 * PZ                  # the lip (its foot meets the shelf's dark back on screen)
             top_ = "fGS2" if ax == "y" else "fGS3"      # (its top a step under a lit top's: a soft edge)
             prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
                   FACE, 3, cols=[False, None, top_, False], mitre=mit)
-            T.paint(k, ax, plane, a, b, zl - PZ, zl, LIP_D, FACE, 1)
             zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, 2 px wide)
             if zg + 2 * PZ < top - 0.03:
                 T.paint(k, ax, plane, a, b, zg, zg + 2 * PZ, 0.0, FACE, 1)
@@ -115,7 +114,7 @@ class Slate(Faction):
 
     def relief(self, sprite):
         return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
-                      shelf=SHELF,
+                      shelf=SHELF, shelf_back=0,     # (the shelf's back px dark, under the lip)
                       ramp_bands=((SPLIT, BLUE, 4, EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
                       toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 3), FaceHoles(),
