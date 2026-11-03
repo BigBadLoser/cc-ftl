@@ -346,6 +346,17 @@ def recess(b, DM):
              (-mo[0] if i % 2 else 0, 0, 0 if i % 2 else -mo[2]))
 
 
+def screen(b, D1):
+    """The screen on the hatch-end block's front face beside the bay (measured on the ref's tile, link 03): a housing
+    standing out of the face with the screen set into its front."""
+    L0, L1, z0, z1, out = 1.34, 1.86, 0.9, 1.18, 0.08
+    b.box(L0, L1, D1, D1 + out, z0, z1, GMD, GM)
+    i = 0.045                                                           # bezel, about 2 px
+    p = [b.P(L, D1 + out + 0.002, z) for L, z in ((L0 + i, z0 + i), (L1 - i, z0 + i), (L1 - i, z1 - i), (L0 + i, z1 - i))]
+    a, c = b.P(L0, D1, 0), b.P(L0, D1 + 1, 0)
+    b.face(p, DARK, (c[0] - a[0], c[1] - a[1], c[2] - a[2]))
+
+
 DRUM_D, DRUM_Z = 1.61, 0.4                # the drum's axis along L: nearer the front than the row's middle (measured)
 
 
@@ -426,6 +437,7 @@ def scrapper(rot):
     slope_cyl(b, fA, fB, fm, dc, barrel, 0.075, 0.345, GM)                    # nozzle barrel
     slope_cyl(b, fA, fB, fm, dc, 0.08 + px / 2, 0.345, 0.35, DARK)          # bore
     drum(b)
+    screen(b, D1)
     return [b.m.build()]
 
 
