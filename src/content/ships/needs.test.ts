@@ -173,6 +173,25 @@ describe('hunger', () => {
     expect(needs(sim, id).rest).toBeGreaterThan(rest + 2);
   });
 
+  it('a bedless sleeper with food aboard but no spot to eat it sleeps on and recovers rest (#278)', () => {
+    const { sim, id } = hungry(100);
+    for (const b of [...sim.world.query(ModuleC)]) {
+      const m = sim.world.get(b, ModuleC)!;
+      const def = sim.content.modules[m.def];
+      if (def?.bed) removeModule(sim, b);
+      else if (def?.galley) m.enabled = false;
+      else if (def?.storage) m.hp = 0; // the rations stay in the ship's stock, but no crate can be reached
+    }
+    needs(sim, id).rest = 5;
+    needs(sim, id).hunger = 8;
+    for (let i = 0; i < 30 * TICK_HZ && sim.world.get(id, CrewC)!.activity !== 'sleeping'; i++) sim.step();
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    const rest = needs(sim, id).rest;
+    run(sim, 30 * TICK_HZ);
+    expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
+    expect(needs(sim, id).rest).toBeGreaterThan(rest + 2);
+  });
+
   it('eats from a crate when there is no working galley', () => {
     const { sim, id } = hungry(20);
     (sim.world.get(find(sim, 'module.galley'), ModuleC) as { enabled: boolean }).enabled = false;

@@ -5,7 +5,7 @@ import { dropCarried } from '../items/stacks';
 import type { Sim } from '../sim';
 import { EMERGENCY_CHECK_TICKS, emergencyWaiting } from './emergency';
 import { chargeTurn } from './machines/charge';
-import { eatTurn } from './machines/eat';
+import { canStartMeal, eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
 import { leisureTurn } from './machines/leisure';
 import { navigateTurn } from './machines/navigate';
@@ -58,7 +58,9 @@ function wakeForNeed(sim: Sim, id: number, own: MachineId): boolean {
     if (!d.urgent || !d.input) continue;
     const x = readInput(sim, id, d.input);
     if (x === undefined || !isUrgent(d, x)) continue;
-    return d.task !== own && d.task !== 'job';
+    if (d.task === own || d.task === 'job') return false;
+    // Food aboard is not a meal: with no galley or crate in reach, getting up would only cost sleep (the eat turn could not start).
+    return d.task !== 'eat' || canStartMeal(sim, id, sim.world.get(id, PositionC) as Position);
   }
   return false;
 }
