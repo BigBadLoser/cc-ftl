@@ -150,7 +150,7 @@ def drum_bolts(b, D, z, r, bands, n, turn, col, s=0.05, h=0.025):
                 b.face(q, col, tuple(c[k2] - ctr[k2] for k2 in range(3)))
 
 
-def gear(b, L, D, z, col, r=0.17, ring=0.06, hole=0.065, teeth=8, tooth=0.055, tw=0.065):
+def gear(b, L, D, z, col, ring=0.072, hole=0.078, teeth=8, tooth=0.066, tw=0.078):
     """A gear painted on a top at height z, centred on (L, D): a ring round a bare hole, square teeth on it; strokes
     about 2 px so it reads unbroken."""
     import math

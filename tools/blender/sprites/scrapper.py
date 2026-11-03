@@ -23,6 +23,7 @@ STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "g
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
 RUST, RUST_D = "rust", "rustD"  # the drum and yoke (dark) with lighter raised bands
 HW, HW_D = "scSteel", "scSteelD"   # the hardware: blue steel (piston, nozzle, door frames, bolts, screws); levers a shade down
+LAMP = "orange"   # the door frames' lamps (emissive)
 BODY_S2 = "scBodyS2"  # a step below BODY_S: the recess frame
 BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
@@ -420,6 +421,9 @@ def doorway(b, L0, L1, D1, wall_h, knee=None, depth=DOOR_DEPTH):
                  [(L1, 0), (L1 + wl, 0), (L1 + wl, zt), (L1, zt)],
                  [(L0 - wl, zt), (L1 + wl, zt), (L1 + wl, zt + wz), (L0 - wl, zt + wz)]):
         b.prism_D(prof, D1, D1 + lip, HW)
+    Lc, zc = (L0 + L1) / 2, zt + wz / 2                                 # three lamps along the frame's top bar
+    for dl in (-0.15, 0.0, 0.15):
+        b.box(Lc + dl - 0.022, Lc + dl + 0.022, D1 + lip, D1 + lip + 0.012, zc - 0.016, zc + 0.016, LAMP)
 
 
 def dial(b, Lc=1.5, Dc=0.5, r=0.3, h=0.16, rim=0.08, sink=0.03, flare=0.04, chamfer=0.09):
