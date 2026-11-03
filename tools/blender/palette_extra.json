@@ -1372,5 +1372,9 @@
  "scBodyD": {
   "hex": "#6b3519",
   "set": "scrapper"
+ },
+ "scBodyS": {
+  "hex": "#9e5622",
+  "set": "scrapper"
  }
 }

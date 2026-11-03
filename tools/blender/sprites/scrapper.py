@@ -21,6 +21,7 @@ ACCESS = (1, 2)
 
 STEEL, STEEL_T, DARK, GM, GMD, PLATE, LIGHT, LIT = "steel", "steelL", "dark", "gm", "gmD", "plate", "medWhite", "cyan"
 BODY, BODY_D = "scBody", "scBodyD"   # the body is coloured (palette set "scrapper"); details stay grey while blocked out
+BODY_S = "scBodyS"   # the body's sloped faces: one ramp step below BODY (its 0.82 shade), so slopes read apart from tops
 BASE = 0.06          # dark plinth band
 
 
@@ -87,7 +88,9 @@ class _Build:
                 q = [p for i, p in enumerate(q) if math.dist(p, q[i - 1]) > 1e-9]
                 if len(q) < 3:
                     continue
-                self.face(q, col, [sign * v for v in _normal(q)], top)
+                n = [sign * v for v in _normal(q)]
+                nz = n[2] / (math.sqrt(sum(v * v for v in n)) or 1.0)
+                self.face(q, BODY_S if col == BODY and 0.05 < nz < 0.95 else col, n, top)
         for (L, r), s, cap in ((rings[0], -1, caps[0]), (rings[-1], 1, caps[1])):
             if cap is False:
                 continue
