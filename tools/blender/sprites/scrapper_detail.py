@@ -57,3 +57,35 @@ def seams(b, col):
     for L in (1.0, 2.0, 3.0):
         wall_v(b, D0, -1, L, S.BASE, S._top(L, D0) - 0.005, col)
     wall_v(b, D1, 1, 1.0, S.BASE, S._top(1.0, D1) - 0.005, col)
+
+
+def rivet_wall(b, D, side, L, z, col, r=0.022, rz=0.02, h=0.022):
+    """A rivet head on the long wall at D: a small block standing out of it."""
+    d0, d1 = sorted((D, D + side * h))
+    b.box(L - r, L + r, d0, d1, z - rz, z + rz, col)
+
+
+def rivet_end(b, L, side, D, z, col, r=0.022, rz=0.02, h=0.022):
+    """A rivet head on the end wall at L."""
+    l0, l1 = sorted((L, L + side * h))
+    b.box(l0, l1, D - r, D + r, z - rz, z + rz, col)
+
+
+def rivets(b, col, step=0.2, gap=0.05):
+    """Rows of rivets beside the wall seams, gap off each line, about every step."""
+    D0, D1 = 0.03, 1.97
+    def run(a, c):                                                      # evenly spaced points strictly inside a..c
+        n = max(1, round((c - a) / step))
+        return [a + (c - a) * (k + 0.5) / n for k in range(n)]
+    for D, side, spans in ((D0, -1, ((0.03, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 3.97))),
+                           (D1, 1, ((0.03, 1.0), (1.0, 2.0), (3.0, 3.97)))):
+        for L0, L1 in spans:                                            # under the belt
+            for L in run(L0 + 0.05, L1 - 0.05):
+                rivet_wall(b, D, side, L, S.WALL - gap, col)
+    for L in (1.0, 2.0, 3.0):                                           # beside the tile-join seams
+        for z in run(S.BASE + 0.05, S.WALL - 0.1):
+            rivet_wall(b, D0, -1, L + gap, z, col)
+    for z in run(S.BASE + 0.05, S.WALL - 0.1):
+        rivet_wall(b, D1, 1, 1.0 + gap, z, col)
+        for L, side in ((0.03, -1), (3.97, 1)):
+            rivet_end(b, L, side, 1.0 + gap, z, col)
