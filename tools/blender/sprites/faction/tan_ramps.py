@@ -24,7 +24,10 @@ ROUND_TONE = "fTS2"                             # radius in px, in a tone betwee
 BASE = (((0.25, 0.5, 0.0, CUT_D, "abcd"),), ((0.5, 0.75, 0.0, CUT_D, "abcd"),),    # two squares against the wall, an
         ((0.0, 0.25, 0.0, 1.0, "abd"), ([0.125], 0.5, CUT_D, 1.0, "bc")),         # L either side of them (down the
         ((0.75, 1.0, 0.0, 1.0, "abc"), (0.5, [0.875], CUT_D, 1.0, "ad")))         # tile's side, in along the toe)
-THIRDS = (0.0, 1 / 3, 2 / 3, 1.0)
+MIRRORED = (((0.0, 0.25, 0.0, CUT_D, "abcd"),), ((0.75, 1.0, 0.0, CUT_D, "abcd"),),     # the base with each half
+            ((0.25, 0.5, 0.0, 1.0, "abc"), (0.0, [0.375], CUT_D, 1.0, "ad")),          # mirrored: the squares at
+            ((0.5, 0.75, 0.0, 1.0, "abd"), ([0.625], 1.0, CUT_D, 1.0, "bc")))          # the tile's sides, the Ls
+THIRDS = (0.0, 1 / 3, 2 / 3, 1.0)                                                       # in the middle
 GRID = tuple(((THIRDS[i], THIRDS[i + 1], g0, g1, "abcd"),) for i in range(3) for g0, g1 in ((0.0, 0.5), (0.5, 1.0)))
 TALL = tuple(((THIRDS[i], THIRDS[i + 1], 0.0, 1.0, "abcd"),) for i in range(3))
 
@@ -111,4 +114,4 @@ def cushions(layout):
 
 
 TAN_RAMPS = (Design("cushions", ramp=cushions(BASE)), Design("grid", ramp=cushions(GRID)),
-             Design("tall", ramp=cushions(TALL)))
+             Design("mirrored", ramp=cushions(MIRRORED)), Design("tall", ramp=cushions(TALL)))
