@@ -1,4 +1,4 @@
-import { StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
+import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { ItemStackC } from '../sim/items/components';
@@ -184,6 +184,10 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     /** Set the player's notoriety (wanted from 10). */
     notoriety: (value: number) => sim.enqueue({ type: 'debug.notoriety', value }),
     story: () => sim.story,
+    /** Nodes joined to the current one (a script plans a one-hop trip with them), the event grid and the signal's scene. */
+    neighbours: () => (galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current) ?? []).map((e) => (e.a === sim.galaxy.current ? e.b : e.a)).sort(),
+    event: () => sim.galaxy.event,
+    travel: () => sim.galaxy.travel,
     vehicles: () => vehicleViews(sim),
     ships: () => [...sim.world.query(ShipC)].map((id) => sim.world.get(id, ShipC)),
     /** Ship ids with their components (stations: `immobile`), the trade state, and a camera frame for screenshots. */
