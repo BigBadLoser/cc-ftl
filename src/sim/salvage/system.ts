@@ -56,9 +56,9 @@ export function salvageSystem(sim: Sim): void {
       sim.events.emit({ type: 'salvage.ordered', ship, types: [...order.types] });
     }
     const site = sim.world.get(ship, AwaySiteC);
-    // Loot still lying about (or on its way into the staging zone) is carried off before the site closes, while its shuttle can take it
-    // home (not `noRoom` or `stranded`).
-    const loot = site?.status === 'open' && !site.block && lootOnSite(sim, ship);
+    // Loot still lying about (staged or not, or on its way into the staging zone) is carried off before the site closes, while its shuttle
+    // can take it home (not `noRoom` or `stranded`; with `noCrew` the shuttle still fetches what is staged on its own).
+    const loot = site?.status === 'open' && site.block !== 'noRoom' && site.block !== 'stranded' && lootOnSite(sim, ship);
     const work = planJobs(sim, ship, order.types) > 0 || salvageJobs(sim, ship).length > 0;
     tendSite(sim, ship, order, work || loot);
     if (work || loot || ferryingFrom(sim, ship)) continue;

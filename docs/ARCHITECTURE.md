@@ -899,7 +899,8 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
   spills scrap (`salvage/yield.ts`) instead of the refund. Order: modules, then walls and doors (they come down to floor), then floors,
   farthest-from-the-crew first, one distance level at a time, so crew never cut themselves off. A floor comes down to open space.
   `strippableFloors` (#286 slice 3, user decision 2026-11-03): a floor with a loose stack on it waits, and so do the tiles of the site's
-  staging zone (read from its `StagingC`) until the site is closing, or the zone is empty and no other floor is left; every other floor
+  staging zone (read from its `StagingC`) until the site is closing, or the zone is empty and no other floor can come down now (none
+  left, or none the crew can reach: otherwise an unreachable floor held the zone for ever); every other floor
   comes down while loot waits elsewhere or the shuttle is away. (Before, every floor waited until no stack lay anywhere on the wreck.)
   A zone tile taken at the end is replaced by `keepZone`'s 5 s look.
 - **Yield.** item count of the part's build cost x `SALVAGE_FRAC` (0.4), stochastic rounding on the sim rng, capped at cost - 1 (a 1-item floor yields nothing).
@@ -1031,6 +1032,11 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
     first staged stack into the hold every `LOAD_CRATE_SEC` (2 s), counted from its arrival (`SiteRun.lastTrip`): no new state.
   - *Trips.* A full hold is the cargo trigger (`runDue`). A batch trip waits until loading is done (nothing staged, or the hold full);
     an urgent trip leaves at once. A departure drops no haul: hauls go into the zone, which stays.
+  - *Cargo runs* (Codex 4453963767). Loading needs no crew: at home with nobody aboard, nobody out and loot staged at the site, `board`
+    leaves alone once nobody is on the way to a seat and the hold is unloaded (or after `AWAY_BOARD_WAIT_SEC` with passages open), and
+    sets no `noCrew` meanwhile. Beside the site, a trip home is due as soon as nobody of the party is out there or aboard to go out
+    (`tripDue`), after loading. No new state. The salvage order keeps its site open on any loot (`lootOnSite`: loose, staged or in hand)
+    unless the shuttle cannot take it home (`noRoom`, `stranded`); `noCrew` no longer discards it.
   - The away party never hauls into the wreck's lockers (`haulJobsSystem` skips stacks on an `AwaySiteC` ship); the ordinary ferry
     (`logistics/salvage.ts`) keeps its own rule elsewhere.
   - `looseOn` is all loot lying on the site; `lootOnSite` adds loot in hand on its way into the zone (the order keeps the site open on it,

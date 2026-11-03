@@ -12,6 +12,7 @@ import { bayWorking } from '../vehicles/geometry';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
 import { endRun } from './end';
 import { planCarry } from './haul';
+import { stagedStacks } from '../items/staging';
 import { releaseOwned } from './owned';
 import { partyOut } from './depart';
 import { boardPassengers, calledBack, dropPassages, freeSeats, letOut, passagesOf, postPassages } from './passage';
@@ -64,8 +65,10 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   const aboard = partyAboard(sim, v);
   const site = sim.world.get(r.site, AwaySiteC);
   if (r.timer === 1) r.held = cargoCount(v);
+  // Loot staged at the site and nobody going: the shuttle fetches it alone (loading needs no crew), once nobody is on the way to a seat.
+  const cargoRun = want && aboard.length === 0 && out.length === 0 && stagedStacks(sim, r.site).length > 0;
   if (site) {
-    if (want && aboard.length === 0 && out.length === 0 && r.timer > sec(AWAY_BOARD_WAIT_SEC)) site.block = 'noCrew';
+    if (want && aboard.length === 0 && out.length === 0 && !cargoRun && r.timer > sec(AWAY_BOARD_WAIT_SEC)) site.block = 'noCrew';
     else if (site.block === 'noCrew') delete site.block;
   }
   if (!want && out.length === 0) {
@@ -80,7 +83,7 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   let leave: boolean;
   if (out.length > 0) {
     leave = mustTurnBack(sim, id, v, r) || r.timer >= sec(AWAY_TURNAROUND_SEC) || (r.timer >= sec(AWAY_BOARD_MIN_SEC) && !enRoute && !unloading) || (freeSeats(sim, v) === 0 && !unloading);
-  } else if (aboard.length === 0) leave = false;
+  } else if (aboard.length === 0) leave = cargoRun && !enRoute && !unloading && (passagesOf(sim, id).length === 0 || r.timer >= sec(AWAY_BOARD_WAIT_SEC));
   else leave = waited >= sec(AWAY_BOARD_WAIT_SEC) || (waited >= sec(AWAY_BOARD_MIN_SEC) && !enRoute && !unloading) || (freeSeats(sim, v) === 0 && !unloading);
   if (!leave) return;
   // The hold could not be emptied at all: no room at home (the loot waits on the site; the panel shows it).

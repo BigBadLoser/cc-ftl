@@ -12,7 +12,7 @@ import { shipGrid } from '../../sim/regions';
 import { LOAD_CRATE_SEC } from '../../sim/tuning';
 import { cargoCount } from '../../sim/vehicles/cargo';
 import { crewOn, landed, play } from './awayFixture';
-import { of } from './salvageEvaFixture';
+import { of, scrapHome, smallHold } from './salvageEvaFixture';
 
 /** The staging zone of an away site (#286 slice 3, docs/ARCHITECTURE.md "Staging"): the party gathers loot there, the shuttle loads it. */
 
@@ -169,5 +169,20 @@ describe('away sites: the staging zone (#286 slice 3)', () => {
     play(sim, 20 * 120, () => sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.haul?.phase === 'deliver'));
     expect(looseOn(sim, wreck)).toEqual([]); // the last stack is in hand
     expect(lootOnSite(sim, wreck)).toBe(true);
+  });
+
+  it('staged loot left when the whole party has come home is fetched by the shuttle alone (Codex 4453963767)', () => {
+    const { sim, home, wreck, shuttle } = staged(smallHold(10));
+    for (const j of sim.world.query(JobC)) if (sim.world.get(j, JobC)!.kind === 'deconstruct') sim.world.destroyEntity(j); // no work: no seats
+    for (const id of looseOn(sim, wreck)) takeFromStack(sim, id, sim.world.get(id, ItemStackC)!.count);
+    stageAdd(sim, wreck, SCRAP, 20);
+    const start = scrapHome(sim, home);
+    for (const c of crewOn(sim, wreck)) sim.world.get(c, NeedsC)!.rest = 22; // everyone due home
+    play(sim, 20 * 300, () => crewOn(sim, wreck).length === 0 && phase(sim, shuttle) === 'board');
+    expect(crewOn(sim, wreck)).toEqual([]);
+    expect(stagedUnits(sim, wreck)).toBeGreaterThan(0); // the hold (10) could not take it all on the way home
+    play(sim, 20 * 900, () => stagedUnits(sim, wreck) === 0 && scrapHome(sim, home) - start >= 20);
+    expect(stagedUnits(sim, wreck)).toBe(0);
+    expect(scrapHome(sim, home) - start).toBe(20);
   });
 });

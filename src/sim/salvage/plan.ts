@@ -100,16 +100,18 @@ function farthestFloors(sim: Sim, ship: number, floors: Tile[]): Tile[] {
 }
 
 /**
- * The floors that may come down now (#286 slice 3): not one with a loose stack on it, and not one of the site's staging zone (the zone's
- * own `StagingC` tiles) until the site is closing, or the zone is empty and no other floor is left. Every other floor goes while loot
- * waits elsewhere or the shuttle is away. (A zone tile taken at the end is re-laid by the site's 5 s look, away/haul.ts `keepZone`.)
+ * The floors that may come down now (#286 slice 3): not one with a loose stack on it, nor one the crew cannot reach (`can`), and not one of
+ * the site's staging zone (the zone's own `StagingC` tiles) until the site is closing, or the zone is empty and no other floor can come
+ * down. Every other floor goes while loot waits elsewhere or the shuttle is away. (A zone tile taken at the end is re-laid by the site's
+ * 5 s look, away/haul.ts `keepZone`.)
  */
-function strippableFloors(sim: Sim, ship: number, floors: Tile[]): Tile[] {
+function strippableFloors(sim: Sim, ship: number, floors: Tile[], can: (t: Tile) => boolean): Tile[] {
   const zone = sim.world.get(ship, StagingC)?.tiles ?? [];
   const inZone = (t: Tile): boolean => zone.some((z) => z.x === t.x && z.y === t.y);
-  const others = floors.filter((t) => !inZone(t));
+  const free = floors.filter((t) => stackAt(sim, ship, t.x, t.y) === 0 && can(t));
+  const others = free.filter((t) => !inZone(t));
   const zoneLast = sim.world.get(ship, AwaySiteC)?.status !== 'open' || (others.length === 0 && stagedStacks(sim, ship).length === 0);
-  return (zoneLast ? floors : others).filter((t) => stackAt(sim, ship, t.x, t.y) === 0);
+  return zoneLast ? free : others;
 }
 
 /** The salvage jobs open on a ship (an order's deconstruct and moduleDecon jobs carry `scrap`). */
@@ -164,7 +166,8 @@ export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): n
   } else if (walls.length) {
     post(walls, (t) => (t.kind === Struct.Beam ? Struct.Space : Struct.Floor));
   } else {
-    post(farthestFloors(sim, ship, strippableFloors(sim, ship, parts.floors)).filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }))), () => Struct.Space);
+    const reachable = (t: Tile): boolean => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }));
+    post(farthestFloors(sim, ship, strippableFloors(sim, ship, parts.floors, reachable)), () => Struct.Space);
   }
   return remaining;
 }

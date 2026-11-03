@@ -35,7 +35,7 @@ function wreckAirlock(sim: Sim, wreck: number): number {
 }
 
 describe('salvage on an away site: the shuttle and EVA loop', () => {
-  it('sends a suited party by shuttle, carries the scrap to its hold with trips home, brings everyone home, and removes the wreck', () => {
+  it('sends a suited party by shuttle, stages the scrap for its hold with trips home, brings everyone home, and removes the wreck', () => {
     const { sim, home, wreck } = setup(3, smallHold(4));
     const before = scrapHome(sim, home);
     sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech', 'energy', 'weapons', 'comfort'] });
@@ -48,8 +48,9 @@ describe('salvage on an away site: the shuttle and EVA loop', () => {
       all.push(...play(sim, 1));
     }
     expect(of(all, 'away.opened')).toMatchObject([{ ship: wreck, vehicle: shuttleOf(sim) }]);
-    // The party carried the loot to the shuttle (haul jobs into its hold), and trips home unloaded it while the site stayed open.
-    expect(of(all, 'item.hauled').filter((e) => e.to === 'vehicle' && e.ship === wreck).length).toBeGreaterThan(0);
+    // The party carried the loot into the site's staging zone (the shuttle loads it from there), and trips home unloaded it while the
+    // site stayed open.
+    expect(of(all, 'item.hauled').filter((e) => e.to === 'zone' && e.ship === wreck).length).toBeGreaterThan(0);
     expect(of(all, 'away.departed').filter((e) => e.home).length).toBeGreaterThan(1);
     expect(of(all, 'suit.airOut')).toHaveLength(0); // no airlock on this wreck: nobody ran dry while the shuttle was away
     expect(of(all, 'salvage.done')).toMatchObject([{ ship: wreck, removed: true }]);
