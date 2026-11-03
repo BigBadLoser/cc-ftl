@@ -16,6 +16,7 @@ import { materialiseFleet, liftFleet } from '../sim/galaxy/fleetShips';
 import { isHostileFaction } from '../sim/galaxy/standing';
 import { provoke } from '../sim/combat/provoke';
 import type { Fleet } from '../sim/galaxy/types';
+import { AboardC, VehicleC, type Vehicle } from '../sim/vehicles/components';
 import { content } from '.';
 
 /** Physical encounters (#173): a signal's remote actions, investigating into a scene in a pocket, the observer, leaving, save and load. */
@@ -356,5 +357,17 @@ describe('provoking a neutral', () => {
     materialiseFleet(back, again);
     for (const c of again.ships) if (c.ship !== undefined) expect(back.world.get(c.ship, ShipC)?.faction).toBe(side);
     expect(again.ships.some((c) => c.ship !== undefined)).toBe(true);
+  });
+
+  it('crew embarked on its own shuttle turn with the provoked ship', () => {
+    const { sim, skiff } = inScene(3);
+    const crew = shipCrew(sim, skiff)[0] as number;
+    const shuttle = sim.world.createEntity();
+    sim.world.add(shuttle, VehicleC, { homeShip: skiff } as Vehicle);
+    sim.world.remove(crew, PositionC);
+    sim.world.add(crew, AboardC, { vehicle: shuttle });
+    provoke(sim, skiff, 'fired');
+    expect(sim.world.get(skiff, ShipC)?.faction).toBe('hostile');
+    expect(sim.world.get(crew, AllegianceC)?.faction).toBe('hostile');
   });
 });

@@ -1,4 +1,4 @@
-import { CombatC, ShipC, WeaponC } from '../combat/components';
+import { CombatC, ProjectileC, ShipC, WeaponC } from '../combat/components';
 import { wake } from '../combat/dormant';
 import { turnCrew } from '../combat/turn';
 import { CrewC, DeadC, PositionC } from '../crew/components';
@@ -61,17 +61,23 @@ function others(sim: Sim): number[] {
   });
 }
 
-/** Does the player threaten anyone here: a player ship or weapon aimed at a live ship, or a player crew member aboard one? */
+/**
+ * Does the player threaten anyone here: a player weapon that will fire at a live ship (aimed at it, by its own target or the ship's, and not held), a
+ * player shot on its way to one, or a player crew member aboard one? An aim with the weapon held is not a threat (battle stations hold every weapon: combat/provoke.ts).
+ */
 export function aggression(sim: Sim): boolean {
   const live = new Set(others(sim));
-  for (const id of sim.world.query(ShipC, CombatC)) {
-    if (sim.world.get(id, ShipC)?.faction !== 'player') continue;
-    const t = sim.world.get(id, CombatC)?.target;
+  for (const id of sim.world.query(WeaponC, ModuleC)) {
+    const w = sim.world.get(id, WeaponC);
+    const ship = shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number });
+    if (!w || sim.world.get(ship, ShipC)?.faction !== 'player' || (w.mode === 'hold' && !w.once)) continue;
+    const t = w.target ?? sim.world.get(ship, CombatC)?.target;
     if (t?.ship && live.has(t.ship)) return true;
   }
-  for (const id of sim.world.query(WeaponC, ModuleC)) {
-    const t = sim.world.get(id, WeaponC)?.target;
-    if (t?.ship && live.has(t.ship) && sim.world.get(shipIdOf(sim, sim.world.get(id, ModuleC)), ShipC)?.faction === 'player') return true;
+  // A shot already on its way (a volley from held weapons, or one that left before the aim changed).
+  for (const id of sim.world.query(ProjectileC)) {
+    const p = sim.world.get(id, ProjectileC);
+    if (p?.target.ship && live.has(p.target.ship) && sim.world.get(p.fromShip, ShipC)?.faction === 'player') return true;
   }
   for (const id of sim.world.query(CrewC, AllegianceC, PositionC)) {
     if (sim.world.get(id, AllegianceC)?.faction !== 'player' || sim.world.has(id, DeadC) || sim.world.has(id, PrisonerC)) continue;

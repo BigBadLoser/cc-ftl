@@ -6,7 +6,7 @@ import {
 import { stat } from '../sim/stats';
 import { dockScan, scanPending } from '../sim/blackmarket/scan';
 import { syncRecruits } from '../sim/galaxy/recruit';
-import { PrizeC } from '../sim/combat/components';
+import { PrizeC, WeaponC } from '../sim/combat/components';
 import { capturePrize } from '../sim/capture/prize';
 import { CarryingC, StorageC } from '../sim/items/components';
 import { AllegianceC, EquipC } from '../sim/fight/components';
@@ -274,6 +274,19 @@ describe('truce', () => {
     expect(sim.world.get(foe, ShipC)!.state).toBe('active');
     expect(sim.world.get(foe, CombatC)?.target ?? null).toBeNull();
     expect(sim.world.get(mine, ShipC)!.integrity).toBe(hp);
+  });
+
+  it('an aim with weapons held (battle stations) is no breach; the shot that leaves is', () => {
+    const { sim, station } = market();
+    const me = playerShip(sim);
+    sim.enqueue({ type: 'combat.battleStations', on: true });
+    sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: station, targetModuleId: 0 });
+    expect(run(sim, 3)).not.toContain('truce.breached');
+    expect(truceHolds(sim)).toBe(true);
+    run(sim, 5 * 20); // the turrets run out
+    for (const id of sim.world.query(WeaponC)) sim.world.get(id, WeaponC)!.charge = 1;
+    sim.enqueue({ type: 'combat.fireVolley', ship: me });
+    expect(run(sim, 3)).toContain('truce.breached');
   });
 
   it('a ship captured during a ban stays the player\'s when the ban ends', () => {
