@@ -30,7 +30,7 @@ EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
-SLOPE_LIT = "fTS0"       # the lit edge along a sill slope's near (top) edge
+SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
 FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT) + RAMP_FACE)
@@ -185,8 +185,10 @@ def _ramp_lines(k, x0, x1, yf):
         t0, t1 = top(u0 + 1e-6), top(u1 - 1e-6)
         strip([(u0, t0), (u1, t1), (u1, t1 + E), (u0, t0 + E)])         # (along the top)
         strip([(u0, de - E), (u1, de - E), (u1, de), (u0, de)])         # (along the end)
-    strip([(a, top(a)), (a + L / 2, top(a)), (a + L / 2, de), (a, de)])     # (the tile edges)
-    strip([(b - L / 2, top(b)), (b, top(b)), (b, de), (b - L / 2, de)])
+    if x0 > a:                                          # (the tile edges, but where the window runs on into the
+        strip([(a, top(a)), (a + L / 2, top(a)), (a + L / 2, de), (a, de)])     # next window tile)
+    if x1 < b:
+        strip([(b - L / 2, top(b)), (b, top(b)), (b, de), (b - L / 2, de)])
     for u, sd in ((x0, -1), (x1, 1)):                   # (down the slope at each post, on the post's side)
         if a < u < b:
             strip([(min(u, u + sd * L), 0.0), (max(u, u + sd * L), 0.0), (max(u, u + sd * L), de),
@@ -229,10 +231,14 @@ def hook(k, sp):
         _quad(k, [(u, -r, h), (u + w, -r, h), (u + w, r, h), (u, r, h)], (0, 0, 1), SEAM)
     for u0, u1 in zip(us, us[1:]):                      # the sill top's far edge (the slopes' and the level part's) a
         h0, h1 = _sill(u0, x0, x1) + 0.002, _sill(u1, x0, x1) + 0.002     # seam; a lit edge along each slope's
-        r0, r1 = _reach(h0 - 0.002, yf), _reach(h1 - 0.002, yf)          # near (top) edge
+        r0, r1 = _reach(h0 - 0.002, yf), _reach(h1 - 0.002, yf)          # top edge, at the post
         _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, -r1 + LINE_W, h1), (u0, -r0 + LINE_W, h0)], (0, 0, 1), SEAM)
-        if abs(h1 - h0) > 1e-9:
-            _quad(k, [(u0, r0 - LINE_W, h0), (u1, r1 - LINE_W, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1), SLOPE_LIT)
+    for u, sd in ((x0, 1), (x1, -1)):                   # a lit edge across each slope's top, at its post
+        if a <= u <= b:
+            ua, ub = u, u + sd * LINE_W
+            ha, hb = _sill(ua, x0, x1) + 0.003, _sill(ub, x0, x1) + 0.003
+            ra, rb = _reach(ha - 0.003, yf), _reach(hb - 0.003, yf)
+            _quad(k, [(ua, -ra, ha), (ub, -rb, hb), (ub, rb, hb), (ua, ra, ha)], (0, 0, 1), SLOPE_LIT)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
     if CLOSE and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
