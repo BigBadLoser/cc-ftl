@@ -22,6 +22,9 @@ SILL_COL = "fTG1"       # the sill's top and the beam's underside: the cap's bla
 PART = None
 CLOSE = False           # (a preview of a piece on its own: its open end closed, the half arch's sections shown)
 FB.TOP_KEEP.update((LINE_COL, SILL_COL))
+DIP = 7 * PZ            # the window's ramp: its crest this far under the wall's ramp (ref #2767 B layer: ~7 px) ...
+DIP_RUN = 0.5           # ... reached this far along the wall from a post (a sloped crest), then level (the middle
+                        # tiles level all across)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -32,6 +35,46 @@ def _heights():
     z1 = W.HF - 0.031                                   # (tan: the header's top under the cap's black)
     zs0 = z1 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D)
     return zs, zs0 - 3 * PZ
+
+
+def _sill(x, x0, x1):
+    """The ramp's crest under the opening at x: the wall's ramp top at a post, down DIP over DIP_RUN from it."""
+    zs = W.skirt_top()
+    d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
+    return zs - DIP * min(1.0, max(0.0, d) / DIP_RUN)
+
+
+def _split(k, xs):
+    """Cut every polygon at the planes x = each of xs (so a bend along x falls on edges)."""
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        for xv in xs:
+            out = []
+            for f in m.f:
+                pts = [m.v[i] for i in f[0]]
+                if min(p[0] for p in pts) >= xv - 1e-9 or max(p[0] for p in pts) <= xv + 1e-9:
+                    out.append(f)
+                    continue
+                for r in ([(0, xv, -1)], [(0, xv, 1)]):
+                    q = _clip(pts, r)
+                    if len(q) >= 3:
+                        base = len(m.v)
+                        m.v += [tuple(p) for p in q]
+                        out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+            m.f = out
+
+
+def _lower(k, x0, x1):
+    """The ramps and the wall's foot under the opening brought down to the window's crest: every point under the
+    wall's ramp top past a post scaled toward the ramps' upright foot (the toes stay where they are)."""
+    zs, ft = W.skirt_top(), W.FOOT_PX / W.ZART
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        for i, (x, y, z) in enumerate(m.v):
+            if x0 + 1e-9 < x < x1 - 1e-9 and ft < z <= zs + 1e-6:
+                m.v[i] = (x, y, ft + (z - ft) * (_sill(x, x0, x1) - ft) / (zs - ft))
 
 
 def _span(part):
@@ -91,24 +134,30 @@ def hook(k, sp):
     z0, z1 = _heights()
     yb, yf = W.wall_back() - 0.5, W.wall_back() - 0.5 + W.TW
     _cut(k, x0, x1, z0, z1)
+    bends = sorted({u for u in (x0, x0 + DIP_RUN, x1 - DIP_RUN, x1) if -0.5 < u < 0.5})
+    _split(k, bends)
+    _lower(k, x0, x1)
     a, b = max(x0, -0.5), min(x1, 0.5)
     k.side = None
     if x0 > -0.5:                                       # the posts' sections
         _quad(k, [(x0, yb, z0), (x0, yf, z0), (x0, yf, z1), (x0, yb, z1)], (1, 0, 0), TAN.END["x"])
     if x1 < 0.5:
         _quad(k, [(x1, yb, z0), (x1, yf, z0), (x1, yf, z1), (x1, yb, z1)], (-1, 0, 0), TAN.END["x"])
-    _quad(k, [(a, yb, z0), (b, yb, z0), (b, yf, z0), (a, yf, z0)], (0, 0, 1), SILL_COL)
+    us = [a] + [u for u in bends if a < u < b] + [b]    # the sill's top (on the lowered crest) and the beam's underside
+    for u0, u1 in zip(us, us[1:]):
+        h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
+        _quad(k, [(u0, yb, h0), (u1, yb, h1), (u1, yf, h1), (u0, yf, h0)], (0, 0, 1), SILL_COL)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
     if CLOSE and x1 > 0.5:
-        _close(k, yb, yf, z0, z1)
+        _close(k, yb, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2       # (grid y; G flips it, symmetric anyway)
         _quad(k, [(a, y0, zt), (b, y0, zt), (b, y1, zt), (a, y1, zt)], (0, 0, 1), LINE_COL)
     global GLASS
-    GLASS = T.Relief("iwin_glass")
-    GLASS.poly([Vector(p) for p in ((a, 0.0, z0), (b, 0.0, z0), (b, 0.0, z1), (a, 0.0, z1))], "wall", 2,
-               Vector((0, 1, 0)), fixed="glassL")
+    GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
+    GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
+               "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
 def _close(k, yb, yf, z0, z1):
@@ -117,7 +166,7 @@ def _close(k, yb, yf, z0, z1):
     from .faction.parts import body
     from .faction.shell import _end_section
     col, edge = TAN.END["x"], TAN.END_EDGE["x"]
-    zs, top = W.skirt_top(), W.HF
+    zs, top = z0, W.HF                                  # (z0: the window ramp's crest at the end)
     zh1 = top - 0.031
     zh0 = zh1 - TAN.HEAD_H
     _end_section(k, "x", 0.5, yb, yf, zs, z0, body(False), col=col, edge=edge)
