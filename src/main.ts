@@ -30,6 +30,7 @@ import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERS
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
+import { droneScenarioCommands } from './app/droneScenario';
 import { inspectorScenario } from './app/inspectorScenario';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
@@ -267,6 +268,7 @@ const stationFlag = params.get('station');
 const scenario = params.get('scenario');
 /**
  * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
+ * `?scenario=drones`: two drone bays, three drones, a fire, a damaged console and hurt crew (see app/droneScenario.ts).
  * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
  * `&charged` also fills the FTL drive.
  * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
@@ -312,6 +314,17 @@ function startScenario(): void {
     for (const cmd of set.commands) bridge.dispatch(cmd);
     if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 300);
     loop.setSpeed(1);
+    return;
+  }
+  if (scenario === 'drones') {
+    // `?scenario=drones`: drone bays, three drones, a fire, a damaged console and hurt crew (app/droneScenario.ts).
+    loop.setSpeed(1);
+    // After a few ticks (rooms, power), however slow the first frames are.
+    const setUp = (): void => {
+      if (sim.tick < 10) return void setTimeout(setUp, 200);
+      for (const cmd of droneScenarioCommands(sim)) bridge.dispatch(cmd);
+    };
+    setUp();
     return;
   }
   if (scenario === 'damage') {

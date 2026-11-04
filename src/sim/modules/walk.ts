@@ -42,15 +42,16 @@ export function walkInfo(sim: Sim, id: number): WalkInfo {
  * grid's exterior surface: suited and airless crew), it is not a door that cannot open now (jammed shut, or the shut door of an airlock that
  * does not work), and no solid module stands there. `findPath`, the scheduler's navigation views and movement all ask this, so pathing,
  * reach, job feasibility and the step itself agree. `infos` caches module walk info for the length of one search.
+ * `fly` (drones): solid modules are flown over, so only the struct and the doors that cannot open bar the way.
  */
-export function passAt(sim: Sim, grid: GridLike, x: number, y: number, kind: number, jam: number | undefined, mod: number | undefined, infos: Map<number, WalkInfo>, suited: boolean): boolean {
+export function passAt(sim: Sim, grid: GridLike, x: number, y: number, kind: number, jam: number | undefined, mod: number | undefined, infos: Map<number, WalkInfo>, suited: boolean, fly = false): boolean {
   if (!isWalkable(kind) && !(suited && isEvaWalkable(grid, x, y))) return false;
   if (jam === DoorJam.Shut) return false;
   if (!mod) return true;
   let info = infos.get(mod);
   if (!info) infos.set(mod, (info = walkInfo(sim, mod)));
   const k = y * OPEN_KEY + x;
-  return !info.shut.has(k) && (!info.solid || info.open.has(k));
+  return !info.shut.has(k) && (fly || !info.solid || info.open.has(k));
 }
 
 /**
@@ -67,10 +68,10 @@ export function doorSignature(sim: Sim, grid: GridLike): string {
   return sig;
 }
 
-/** Crew can stand here (`passAt` for one tile). `suited`: the walker walks outside (suited or airless). */
-export function isTileWalkable(sim: Sim, grid: Grid, x: number, y: number, suited = false): boolean {
+/** Crew can stand here (`passAt` for one tile). `suited`: the walker walks outside (suited or airless). `fly`: a drone can fly here. */
+export function isTileWalkable(sim: Sim, grid: Grid, x: number, y: number, suited = false, fly = false): boolean {
   if (!grid.inBounds(x, y)) return false;
   const jam = grid.has('jam') ? grid.get('jam', x, y) : undefined;
   const mod = grid.has('module') ? grid.get('module', x, y) : undefined;
-  return passAt(sim, grid, x, y, grid.get('struct', x, y), jam, mod, new Map(), suited);
+  return passAt(sim, grid, x, y, grid.get('struct', x, y), jam, mod, new Map(), suited, fly);
 }

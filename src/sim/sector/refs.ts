@@ -31,6 +31,9 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   if (job && gone(job.reservedBy)) job.reservedBy = 0;
   const module = data.module as { reservedBy: number } | undefined;
   if (module && gone(module.reservedBy)) module.reservedBy = 0;
+  const drone = data.drone as { bay: number; target: { kind: string; id: number } | null } | undefined;
+  if (drone && gone(drone.bay)) drone.bay = 0;
+  if (drone?.target && drone.target.kind !== 'extinguish' && gone(drone.target.id)) drone.target = null;
   const downed = data.downed as { bed: number } | undefined;
   if (downed && gone(downed.bed)) downed.bed = 0;
   if (gone((data.assignment as { jobId: number } | undefined)?.jobId)) delete data.assignment;

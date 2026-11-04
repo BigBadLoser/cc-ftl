@@ -7,6 +7,7 @@ import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
+import { droneSystem } from './systems/drones';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
 import { outpostSystem } from './systems/outposts';
@@ -128,6 +129,8 @@ export const pipeline: readonly System[] = [
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
+  // Drones after vitals (fresh patients) and power (live cores): they charge, fly and work on their own, never through the job board.
+  droneSystem,
   // Console operating jobs (combat): after vitals so downed operators are already released.
   operateJobsSystem,
   // Sabotage orders a fight paused pick up again once nothing hostile is in sight (after autojobs, which pauses them).

@@ -142,18 +142,28 @@ function finishModule(sim: Sim, job: Job): WorkResult {
 }
 
 function extinguish(sim: Sim, job: Job, speed: number): WorkResult {
-  const grid = shipGrid(sim, shipIdOf(sim, job));
-  if (!grid?.has('fire') || !grid.inBounds(job.x, job.y)) return 'done';
-  const left = grid.get('fire', job.x, job.y) - stochasticRound(sim, (EXTINGUISH_PER_SEC * speed) / TICK_HZ);
-  grid.set('fire', job.x, job.y, Math.max(0, left));
+  return douseTile(sim, shipIdOf(sim, job), job.x, job.y, EXTINGUISH_PER_SEC * speed);
+}
+
+/** One tick of putting out the fire on a tile at `perSec` intensity a second (crew extinguish jobs and drones). 'done' once it is out. */
+export function douseTile(sim: Sim, shipId: number, x: number, y: number, perSec: number): WorkResult {
+  const grid = shipGrid(sim, shipId);
+  if (!grid?.has('fire') || !grid.inBounds(x, y)) return 'done';
+  const left = grid.get('fire', x, y) - stochasticRound(sim, perSec / TICK_HZ);
+  grid.set('fire', x, y, Math.max(0, left));
   return left <= 0 ? 'done' : 'working';
 }
 
 function repair(sim: Sim, job: Job, speed: number): WorkResult {
-  const m = sim.world.get(job.target ?? 0, ModuleC);
+  return repairModule(sim, job.target ?? 0, REPAIR_PER_SEC * speed);
+}
+
+/** One tick of repairing a module at `perSec` hp a second (crew repair jobs and drones). 'done' once it is whole or gone. */
+export function repairModule(sim: Sim, id: number, perSec: number): WorkResult {
+  const m = sim.world.get(id, ModuleC);
   const def = m && sim.content.modules[m.def];
   if (!m || !def) return 'done';
-  m.hp = Math.min(def.maxHp, m.hp + (REPAIR_PER_SEC * speed) / TICK_HZ);
+  m.hp = Math.min(def.maxHp, m.hp + perSec / TICK_HZ);
   if (m.wrecked && m.hp >= def.maxHp / 2) delete m.wrecked;
   if (m.hp < def.maxHp) return 'working';
   if (playerShips(sim).has(shipIdOf(sim, m))) bumpStat(sim, 'repaired');

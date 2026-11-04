@@ -168,6 +168,16 @@ export type SimEvent =
   | { type: 'robot.charged'; crew: number; bay: number }
   | { type: 'robot.active'; crew: number }
   | { type: 'robot.wrecked'; crew: number }
+  /** Drones (sim/drones): a drone bay turned a drone item into a drone; it left its bay for `target` work, came back, was knocked out (ion until `until`, or its core went down), came back online, or was destroyed. */
+  | { type: 'drone.installed'; drone: number; bay: number; ship: number }
+  | { type: 'drone.launched'; drone: number; ship: number }
+  | { type: 'drone.docked'; drone: number; bay: number }
+  | { type: 'drone.stunned'; drone: number; until: number }
+  | { type: 'drone.inert'; drone: number }
+  | { type: 'drone.active'; drone: number }
+  | { type: 'drone.wrecked'; drone: number; ship: number; x: number; y: number }
+  /** A medic drone patched a downed crew member: the bleeding stopped (they still need a bed). */
+  | { type: 'crew.patched'; crew: number; by: number }
   /** A heavy blow (HandWeaponDef.knockdownChance) stunned `crew` until tick `until`. */
   | { type: 'crew.knockedDown'; crew: number; by: number; until: number }
   /** Aliens: an egg sac started hatching (`cause`: a non-alien came near, it was hurt, or a neighbour hatched). */

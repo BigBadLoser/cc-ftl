@@ -1,3 +1,4 @@
+import { recipeKnown } from '../modules/blueprints';
 import type { Command } from '../commands';
 
 import { ModuleC } from '../modules/components';
@@ -21,6 +22,7 @@ export const itemHandlers: { [T in ItemCommandType]: Handler<T> } = {
     const recipe = sim.content.recipes[cmd.recipe];
     if (!recipe) return reject(sim, cmd.type, 'badRecipe');
     if (recipe.station !== m.def) return reject(sim, cmd.type, 'wrongStation');
+    if (!recipeKnown(sim, cmd.recipe)) return reject(sim, cmd.type, 'noBlueprint');
     if (cmd.mode !== 'count' && cmd.mode !== 'keep') return reject(sim, cmd.type, 'badMode');
     if (!Number.isInteger(cmd.target) || cmd.target < 1) return reject(sim, cmd.type, 'badValue');
     prod.orders.push({ recipe: cmd.recipe, mode: cmd.mode, target: cmd.target, done: 0 });

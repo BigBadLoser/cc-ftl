@@ -220,6 +220,8 @@ export interface UiModule {
   research: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
+  /** Drone bay state (null for other modules). */
+  droneBay: UiDroneBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
 }
@@ -269,6 +271,14 @@ export interface UiResearch {
   nodes: UiResearchNode[];
   /** Project ids in queue order (the first is the active one once paid). */
   queue: string[];
+}
+
+/** A drone bay for its panel: each slot's drone, and how many of the ship's drones its AI core lets out at once. */
+export interface UiDroneBay {
+  slots: ({ id: number; name: string; state: 'docked' | 'out' | 'home' | 'down'; doing: string; charge: number; hp: number; maxHp: number } | null)[];
+  /** Drones of this ship out of their bays now, and the core's cap (0: no live AI core, drones are inert). */
+  out: number;
+  cap: number;
 }
 
 export interface UiRobotBay {
