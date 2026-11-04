@@ -17,6 +17,7 @@ C_IN = 1                                # its side plates: in from each tile edg
 D_TOP, D_THICK = 15 * PZ, 2 * PZ       # the desk: its shelf's top over the rail's foot, the shelf's thickness
 D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side panels, the rail at their feet stand
 D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
+D_SHADE = "fTS8"                        # the face under the shelf
 LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's front edge sits on its)
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
 SCREENS = ((2 / 32, 13 / 32), (19 / 32, 30 / 32))    # each tile's two terminals' screens, across it (with the
@@ -88,14 +89,16 @@ def _px(k, ax, plane, g0, x, r, zt, d, col):
     k.poly(pts, "wall", 0, T.OUT(ax), fixed=col)
 
 
-def _desk(k, ax, plane, a, b, mit, zl1, band, sd):
-    """The console's desk on the lip; its shelf's top."""
+def _desk(k, ax, plane, a, b, mit, zl1, band, sd, shadow=D_SHADE):
+    """The console's desk on the lip (the face under its shelf in shadow: None leaves it as it is); its shelf's
+    top."""
     L = 1 / 32
     sh, sp, rl = D_SHELF * L, D_PANEL * L, D_RAIL * L           # the desk, a frame: a shelf (2 px thick), a side
     zb = zl1 + _rows(rl - LIP_D) + PZ / 4                       # panel at each end of each tile's (flaring out at
     zd1 = zb + D_TOP                                            # 45 degrees to the shelf), a rail across the tile
     zt0 = zd1 - D_THICK                                         # (its front edge on the lip's)
-    band(a, b, zl1, zt0, "fTS8", PAINT)                              # joining their feet; open between (the face in it
+    if shadow:
+        band(a, b, zl1, zt0, shadow, PAINT)                              # joining their feet; open between (the face in it
     prism(k, ax, plane, a, b, [(0.0, zt0), (sh, zt0), (sh, zd1), (0.0, zd1)], FACE, 3,     # in shadow)
           cols=[False, sd("fTS1", ax), sd("fTS1", ax), False], cap=sd(D_SIDE_TONE, ax), mitre=mit)  # (its ends,
     band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # the rail's too, as the panels' sides) (its
@@ -508,10 +511,15 @@ def stack(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 _handle(k, ax, plane, c, q0, q1, zd, *HANDLES[0], fd, sd, even=True)
 
 
+HUTCH_CHEST = ((1, 21, 6, 2, 1), ((9, (0.5,), 3), (11, (0.25, 0.5, 0.75), 2)))  # the hutch's chest: the
+                                        # stack's, down to the desk's shelf (its foot a touch into it)
+
+
 def hutch(k, ax, plane, a, b, mit, zl1, z1, band, sd):
-    """The stack's chest up under the cap, the console's hollow desk under it on the lip."""
-    chest(k, ax, plane, a, b, mit, zl1, z1, band, sd, *STACK_CHEST)
-    _desk(k, ax, plane, a, b, mit, zl1, band, sd)
+    """The stack's chest up under the cap, standing on the console's hollow desk on the lip (the face dark under
+    it: the chest's)."""
+    chest(k, ax, plane, a, b, mit, zl1, z1, band, sd, *HUTCH_CHEST)
+    _desk(k, ax, plane, a, b, mit, zl1, band, sd, shadow=None)
 
 
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
