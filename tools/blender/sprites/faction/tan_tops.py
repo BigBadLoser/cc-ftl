@@ -423,7 +423,7 @@ DESK = (14, 5, 4, 2)                    # the desk (ref 31): its shelf's top (ro
 
 def desk(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     """The console's desk under the cushion: its shelf just under it, a side wall at each tile edge (flaring out to
-    the shelf), four drawers between them on the lip (their fronts a px back, 1 px ribs between)."""
+    the shelf), four drawers between them on the lip, two rows of two (their fronts a px back, 1 px bars between)."""
     L = 1 / 32
     top, shd, pd, pw = DESK
     sh, sp, w = shd * L, pd * L, pw * L
@@ -448,13 +448,15 @@ def desk(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         e0, e1 = c - 0.5 + w, c + 0.5 - w                       # (the drawers)
         prism(k, ax, plane, e0, e1, [(0.0, zb + PZ), (sp - L, zb + PZ), (sp - L, zt0), (0.0, zt0)], FACE, 3,
               cols=[False, sd("fTS3", ax), False, False], cap=cap)
-        us = [c - 0.5 + f for f in (0.25, 0.5, 0.75)]
-        bars = [(e0, e1, zb, zb + PZ)] + [(u - L / 2, u + L / 2, zb + PZ, zt0) for u in us]
+        u = c                                                   # (two rows of two: a rib up the middle, a bar
+        zm = zb + PZ + round((zt0 - zb - PZ) / PZ / 2 - 0.5) * PZ  # across halfway)
+        bars = [(e0, e1, zb, zb + PZ), (e0, e1, zm, zm + PZ), (u - L / 2, u + L / 2, zb + PZ, zt0)]
         for u0, u1, z0, z1_ in bars:
             prism(k, ax, plane, u0, u1, [(0.0, z0), (sp, z0), (sp, z1_), (0.0, z1_)], FACE, 3,
                   cols=[False, sd("fTS1", ax), sd("fTS0", ax), False], cap=cap)
-        for q0, q1 in zip([e0] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1]):
-            _handle(k, ax, plane, c, q0, q1, zb + PZ, *HANDLES[1], sp, sd, even=True)
+        for zf_ in (zb + PZ, zm + PZ):
+            for q0, q1 in ((e0, u - L / 2), (u + L / 2, e1)):
+                _handle(k, ax, plane, c, q0, q1, zf_, *HANDLES[0], sp, sd, even=True)
 
 
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
