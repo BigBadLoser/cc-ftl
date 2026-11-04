@@ -5,6 +5,7 @@ import { breachTiles, canAffordWall } from '../crew/breach';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
+import { ShipC } from '../combat/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
 import { keepSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
@@ -32,7 +33,8 @@ function drop(sim: Sim, jobId: number, job: Job): void {
  * Maintains the jobs the colony creates for itself, so crew react to emergencies without orders:
  *  - extinguish (firefighting): one per burning tile, removed once the fire is out;
  *  - breach: a wall build (category firefighting) on each hole in a player ship's hull, once the stock can pay for a wall;
- *  - repair (repair): one per damaged module, removed at full hp or when the module is gone;
+ *  - repair (repair): one per damaged module, removed at full hp or when the module is gone; never on a wreck (nobody keeps one up: its
+ *    modules are for stripping, and crew working aboard one would otherwise mend it part by part);
  *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.
@@ -73,7 +75,7 @@ export function autoJobsSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (m && def && m.hp >= def.maxHp) delete m.repairFirst; // mended: the priority repair order is done
-    if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`)) continue;
+    if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`) || onWreck(sim, m)) continue;
     addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id });
   }
   for (const id of sim.world.query(DownedC, PositionC)) {
@@ -98,8 +100,11 @@ function keepExtinguish(sim: Sim, job: Job): boolean {
 function keepRepair(sim: Sim, job: Job): boolean {
   const m = sim.world.get(job.target ?? 0, ModuleC);
   const def = m && sim.content.modules[m.def];
-  return !!m && !!def && m.hp < def.maxHp;
+  return !!m && !!def && m.hp < def.maxHp && !onWreck(sim, m);
 }
+
+/** True for a module of a wreck (a derelict, a destroyed ship). */
+const onWreck = (sim: Sim, m: { x: number; y: number }): boolean => sim.world.get(shipIdOf(sim, m), ShipC)?.state === 'wreck';
 
 /** Rescue jobs aim at the patient while on the floor and at their bed while being carried. */
 function keepRescue(sim: Sim, job: Job): boolean {

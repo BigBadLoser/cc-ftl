@@ -249,6 +249,14 @@ describe('salvage orders', () => {
     expect(tally['item.scrap_hull']).toBeUndefined();
   });
 
+  it('leave a wreck unrepaired: no repair jobs on its damaged modules', () => {
+    const sim = new Sim(5, content);
+    const w = derelict(sim);
+    for (const id of sim.world.query(ModuleC)) if (shipIdOf(sim, sim.world.get(id, ModuleC)!) === w) sim.world.get(id, ModuleC)!.hp = 10;
+    run(sim, 5);
+    expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.kind === 'repair')).toEqual([]);
+  });
+
   it('are the same for the same seed', () => {
     const go = (): string => {
       const sim = new Sim(9, content);

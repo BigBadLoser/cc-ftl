@@ -5,7 +5,7 @@ import { airlockTiles } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
 import { shipIdOf } from '../regions';
-import { hatchSpot } from '../eva/shuttle';
+import { hatchSpot, nearestExterior } from '../eva/shuttle';
 
 export interface DockPoint {
   shipId: number;
@@ -90,7 +90,9 @@ export function bayWorking(sim: Sim, bay: number): boolean {
  * Where a shuttle holds station beside a ship (ShipC entity id): `gap` tiles off the side of the ship's bounding box that
  * faces `from`, level with the nearest point of that side (never off a corner, so the hull stays within a short float). A
  * point inside the box leaves through its nearest side. `box` (sector tiles) stands in for the bounding box: the hull's live
- * extent, for a shuttle that keeps close to a wreck being stripped. Null if the ship is gone.
+ * extent, for a shuttle that keeps close to a wreck being stripped. A ragged hull (a wreck's sheared and holed edge) can lie far
+ * inside the box at that point: the shuttle then comes in to `gap` from the nearest tile of the hull ring, so suited crew can float
+ * between it and the hull (its hatch spot, eva/shuttle.ts `hatchSpot`). Null if the ship is gone.
  */
 export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: number; y: number }, box?: { x: number; y: number; w: number; h: number }): { x: number; y: number } | null {
   const ss = shipById(sim, ship);
@@ -106,6 +108,15 @@ export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: numbe
     const m = d.indexOf(Math.min(...d));
     [dx, dy] = m === 0 ? [-1, 0] : m === 1 ? [1, 0] : m === 2 ? [0, -1] : [0, 1];
   }
-  if (Math.abs(dx) >= Math.abs(dy)) return { x: dx >= 0 ? s.x + s.width + gap : s.x - gap, y: ny };
-  return { x: nx, y: dy >= 0 ? s.y + s.height + gap : s.y - gap };
+  const p = Math.abs(dx) >= Math.abs(dy) ? { x: dx >= 0 ? s.x + s.width + gap : s.x - gap, y: ny } : { x: nx, y: dy >= 0 ? s.y + s.height + gap : s.y - gap };
+  return closeIn(sim, ship, p, gap);
+}
+
+/** `p` brought in to `gap` from the nearest tile of the ship's hull ring (tile centres), when that tile is farther off. */
+function closeIn(sim: Sim, ship: number, p: { x: number; y: number }, gap: number): { x: number; y: number } {
+  const near = nearestExterior(sim, ship, { x: p.x - 0.5, y: p.y - 0.5 }, 1)[0];
+  if (!near) return p;
+  const cx = near.x + 0.5, cy = near.y + 0.5;
+  const d = Math.hypot(p.x - cx, p.y - cy);
+  return d > gap ? { x: cx + ((p.x - cx) * gap) / d, y: cy + ((p.y - cy) * gap) / d } : p;
 }
