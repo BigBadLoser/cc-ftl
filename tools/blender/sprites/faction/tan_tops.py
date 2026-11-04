@@ -349,10 +349,33 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                         sd("fTC0" if ch == "." else SCREEN_INK[ch], ax))
 
 
-CHEST = (16, 39, 3, 2, 1)               # the chest (ref 26): its frame's top and foot (rows down), depth, bars (px),
+CHEST = (14, 37, 3, 2, 1)               # the chest (ref 26): its frame's top and foot (rows down), depth, bars (px),
                                         # the drawers' fronts back in it (px)
-CHEST_ROWS = ((27, (0.5,), 3), (29, (0.25, 0.5, 0.75), 2))  # its sections: the top's foot (the middle bar under
+CHEST_ROWS = ((25, (0.5,), 3), (27, (0.25, 0.5, 0.75), 2))  # its sections: the top's foot (the middle bar under
                                         # it), the bottom's top; each one's ribs (1 px, across the tile), handles' width
+CHEST_ROUND = 3                         # its outline's corners: curved, this radius (px; in half px slices)
+
+
+def _rounded(u0, u1, z0, z1, box):
+    """[u0, u1] x [z0, z1] inside box (e0, e1, zf, zt) with its corners curved (CHEST_ROUND): (u0, u1, z0, z1)
+    slices, half a px wide where the curve is."""
+    L, C = 1 / 32, CHEST_ROUND
+    e0, e1, zf, zt = box
+    cuts = sorted({u0, u1} | {e0 + i * L / 2 for i in range(2 * C + 1)} | {e1 - i * L / 2 for i in range(2 * C + 1)})
+    out = []
+    for s0, s1 in zip(cuts, cuts[1:]):
+        if s0 < u0 - 1e-9 or s1 > u1 + 1e-9 or s1 - s0 < 1e-9:
+            continue
+        x = min((s0 + s1) / 2 - e0, e1 - (s0 + s1) / 2) / L        # (px from the nearer end)
+        ins = (C - math.sqrt(max(0.0, C * C - (C - x) ** 2))) * PZ if x < C else 0.0
+        a0, a1 = max(z0, zf + ins), min(z1, zt - ins)
+        if a1 - a0 < 1e-9:
+            continue
+        if out and abs(out[-1][1] - s0) < 1e-9 and abs(out[-1][2] - a0) < 1e-9 and abs(out[-1][3] - a1) < 1e-9:
+            out[-1] = (out[-1][0], s1, a0, a1)
+        else:
+            out.append((s0, s1, a0, a1))
+    return out
 
 
 def chest(k, ax, plane, a, b, mit, zl1, z1, band, sd):
@@ -370,23 +393,26 @@ def chest(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             continue
         e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L
         zt, zf, zm0, zm1 = R(top), R(foot), R(mfoot), R(mtop)
-        prism(k, ax, plane, e0, e1, [(0.0, zf), (fd - back * L, zf), (fd - back * L, zt), (0.0, zt)], FACE, 3,
-              cols=[False, sd("fTS3", ax), False, False], cap=cap)              # (the drawers' fronts)
-        bars = [(e0, e1, zf, zf + bar * PZ), (e0, e1, zt - bar * PZ, zt), (e0, e1, zm0, zm1),
+        box = (e0, e1, zf, zt)
+        for q0, q1, y0, y1 in _rounded(e0, e1, zf, zt, box):                     # (the drawers' fronts)
+            prism(k, ax, plane, q0, q1, [(0.0, y0), (fd - back * L, y0), (fd - back * L, y1), (0.0, y1)], FACE, 3,
+                  cols=[False, sd("fTS3", ax), False, False], cap=cap)
+        bars = [(e0, e1, zf, zf + bar * PZ), (e0, e1, zt - bar * PZ, zt), (e0, e1, zm1, zm0),
                 (e0, e0 + bw, zf, zt), (e1 - bw, e1, zf, zt)]
         for (z0, z1_), us, w in (((zm0, zt - bar * PZ), us0, w0), ((zf + bar * PZ, zm1), us1, w1)):
             ux = [c - 0.5 + f for f in us]
             bars += [(u - L / 2, u + L / 2, z0, z1_) for u in ux]               # (the ribs)
             for q0, q1 in zip([e0 + bw] + [u + L / 2 for u in ux], [u - L / 2 for u in ux] + [e1 - bw]):
                 _handle(k, ax, plane, c, q0, q1, z0, HANDLES[1][0], w, fd - back * L + L, sd)
-        for u0, u1, z0, z1_ in bars:                                # (an across bar's top: lit, its front px pale)
-            across = u1 - u0 > 0.5
-            prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
-                  cols=[False, sd("fTS1", ax), sd("fTS1" if across else "fTS0", ax), False], cap=cap)
-            if across:
-                k.poly([T.P(ax, plane, u, z1_ + PAINT, d) for u, d in ((u0, fd - L), (u1, fd - L), (u1, fd),
-                                                                        (u0, fd))],
-                       "wall", 0, Vector((0, 0, 1)), fixed=sd("fTS0", ax))
+        for b0, b1, w0_, w1_ in bars:                               # (an across bar's top: lit, its front px pale)
+            across = b1 - b0 > 0.5
+            for u0, u1, z0, z1_ in _rounded(b0, b1, w0_, w1_, box):
+                prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
+                      cols=[False, sd("fTS1", ax), sd("fTS1" if across else "fTS0", ax), False], cap=cap)
+                if across:
+                    k.poly([T.P(ax, plane, u, z1_ + PAINT, d) for u, d in ((u0, fd - L), (u1, fd - L), (u1, fd),
+                                                                            (u0, fd))],
+                           "wall", 0, Vector((0, 0, 1)), fixed=sd("fTS0", ax))
 
 
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
