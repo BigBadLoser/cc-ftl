@@ -1,5 +1,6 @@
 """Tan's face designs (its tops) past the base: each the face over the lip, from the lip's top (zl1) to the header's
 top (z1), drawn instead of the base's header, slats and panel."""
+import functools
 import math
 
 from mathutils import Vector
@@ -202,6 +203,7 @@ H_SCREENS = ((1, (".......", ".RR.GG.", ".RR.GG.", ".......")),     # the header
              (24, ("YYYYYY.", "YRRYYY.", "YRRYYY.", "YYYYYY.")))    # tile's left edge, 7 x 4 of art ("." the glass), their
                                                             # top corners in the recess's (H_SEEN rows down)
 H_SEEN = H_CANOPY - H_FACE + 1          # (the recess's first row seen under the canopy)
+CUSHION = (11, 2)                       # the look's cushion header (tan.HEAD_H, HEAD_D): its rows, its depth (px)
 
 
 def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd):
@@ -252,8 +254,11 @@ def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None, hid=0.0):
               cols=[False, sd(tone, ax), False], cap=cap)
 
 
-def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True):
+    """The bins, cabinets and drawers; under the canopy and its screens (canopy), else under the look's cushion
+    header (CUSHION: its rows, its depth in px)."""
     L = 1 / 32
+    h_rows, h_dep = (H_FRONT, H_FACE) if canopy else CUSHION
     R = lambda n: z1 - n * PZ                                   # noqa: E731
     band(a, b, zl1, z1, "fTS4")                                 # (the face, dark in the gaps)
     cap = sd(D_SIDE_TONE, ax)
@@ -265,12 +270,12 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         for u0, u1, o in ((c - 0.5, c - 0.5 + w, 0.0), (c + 0.5 - w, c + 0.5, 0.0),
                           (c - 0.5 + w, c - L_GAP * L / 2, gb), (c + L_GAP * L / 2, c + 0.5 - w, gb)):
             right = o and (u1 > c + 0.5 - w - 1e-6 if ax == "y" else u0 < c - 0.5 + w + 1e-6)    # (screen right)
-            _bin(k, ax, plane, u0, u1, (bd - o, zb), (bt - o, R(H_FRONT)), sd, cap,
-                 (1 if ax == "y" else -1) if right else None, (H_FACE - BIN_TOP) + o / L)
+            _bin(k, ax, plane, u0, u1, (bd - o, zb), (bt - o, R(h_rows)), sd, cap,
+                 (1 if ax == "y" else -1) if right else None, (h_dep - BIN_TOP) + o / L)
             if o:                                                   # (a handle on each bin, over its foot edge: as
                 rows, wide = BIN_HANDLE                             # proud as the front is under its lowest px)
                 zl = zb + (rows - 1.5) * PZ
-                fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
+                fl = (bd - o) - (bd - bt) * (zl - zb) / (R(h_rows) - zb)
                 _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
         e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L     # the cabinets, the drawers: a frame of bars,
         for n, (top, foot, dep, splits, back) in enumerate(SECTIONS):   # the doors back in it
@@ -302,6 +307,8 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                     k.poly([T.P(ax, plane, u, z1_ + PAINT, d) for u, d in ((u0, fd - L), (u1, fd - L), (u1, fd),
                                                                             (u0, fd))],
                            "wall", 0, Vector((0, 0, 1)), fixed=sd("fTS0", ax))
+    if not canopy:
+        return
     hf, hc, zh0 = H_FACE * L, H_CANOPY * L, R(H_FRONT)          # the header: its face, the canopy over it, a side
     for c in range(-1, 2):                                      # wall at each tile edge (not where the run turns a
         q0, q1 = max(a, c - 0.5), min(b, c + 0.5)               # corner)
@@ -337,4 +344,5 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                         sd("fTC0" if ch == "." else SCREEN_INK[ch], ax))
 
 
-TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False))
+TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
+            Design("cabinets", body=functools.partial(lockers, canopy=False), lip=False, cushion=True))

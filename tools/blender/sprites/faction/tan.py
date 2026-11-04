@@ -129,22 +129,28 @@ def tan(hull):
             band(a, b, zl0, zl0 + PZ, "fTS4", LIP_D)
         if not full:
             return
-        alt = T.fill("body")                            # (a face design's own face over the lip)
-        if alt:
+
+        def cushion():                                  # the header block: its pale top, a lit edge on its front
+            zh0 = z1 - HEAD_H
+            for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile
+                if r is not None:                                   # edge, a px at a free end, its corners curved,
+                    continue                                        # the face behind the gap and the curves the
+                band(u0, u1, zh0, z1, OUTER)                        # block's outline)
+            for u0, u1, m, r in _header(a, b, mit, back, end1):
+                if r is None:
+                    continue
+                prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
+                      FACE, 3, cols=[False, None, sd("fTS0", ax), False], mitre=m)
+                band(u0, u1, z1 - r - PZ, z1 - r, "fTS1", HEAD_D)
+            return zh0
+
+        alt = T.fill("body")                            # (a face design's own face over the lip, under the
+        if alt:                                         # cushion if it keeps it)
+            if T.fill("cushion", False):
+                cushion()
             alt(k, ax, plane, a, b, mit, zl1, z1, band, sd)
             return
-        # the header block: its pale top, a lit edge on its front, a shadow 2 px under it
-        zh0 = z1 - HEAD_H
-        for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile edge,
-            if r is not None:                                   # a px at a free end, its corners curved, the face
-                continue                                        # behind the gap and the curves the block's outline)
-            band(u0, u1, zh0, z1, OUTER)
-        for u0, u1, m, r in _header(a, b, mit, back, end1):
-            if r is None:
-                continue
-            prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
-                  FACE, 3, cols=[False, None, sd("fTS0", ax), False], mitre=m)
-            band(u0, u1, z1 - r - PZ, z1 - r, "fTS1", HEAD_D)
+        zh0 = cushion()                                 # (then a shadow 2 px under it)
         zs0 = zh0 - _hid(HEAD_D)                        # (the face's first row seen under the header)
         band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
         band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
