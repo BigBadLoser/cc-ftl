@@ -198,8 +198,8 @@ L_GAP = 1                               # the gap between the bins, and at a til
 SIDE_W = (2, 1)                         # the cabinets', the drawers' side bars (px thick)
 HANDLES = ((3, 3), (3, 2))              # the cabinets', the drawers' handles (the glass's navy): (rows over, px wide)
                                         # their door's foot
-H_SCREENS = ((1, ("R.G.G.R", "..GG.G.", "G...G..", ".G....G")),     # the header's screens: px in from the
-             (24, ("YY.R.YY", "Y.Y..Y.", ".YY.R.Y", "Y....YY")))    # tile's left edge, 7 x 4 of art ("." the glass), their
+H_SCREENS = ((1, (".......", ".RR.GG.", ".RR.GG.", ".......")),     # the header's screens: px in from the
+             (24, ("YYYYYY.", "YRRYYY.", "YRRYYY.", "YYYYYY.")))    # tile's left edge, 7 x 4 of art ("." the glass), their
                                                             # top corners in the recess's (H_SEEN rows down)
 H_SEEN = H_CANOPY - H_FACE + 1          # (the recess's first row seen under the canopy)
 
