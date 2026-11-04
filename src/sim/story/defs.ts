@@ -39,7 +39,9 @@ export type Requirement =
   /** A persistent flag/counter within [min, max]. Default `min` is 1 (when no `max`), so `{ kind: 'flag', flag }` means "is set"; `max: 0` means "not set". */
   | { kind: 'flag'; flag: string; min?: number; max?: number }
   /** At least this many living crew. */
-  | { kind: 'crew'; count: number };
+  | { kind: 'crew'; count: number }
+  /** A player shuttle stowed in its bay; `eva`: one fit for EVA work (it can hover beside a wreck and suit its crew out). */
+  | { kind: 'shuttle'; eva?: boolean };
 
 /** Whom a crew effect lands on. 'actor' = whoever made the skill check (else a random crew member). */
 export type CrewTarget = 'random' | 'all' | 'actor';

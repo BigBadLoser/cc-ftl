@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { ensureTrader } from '../trade/traders';
 import { spawnContact } from '../galaxy/arrivals';
+import { spawnSceneDerelict } from './derelicts';
 import type { SceneShip, SceneSpec, Stance } from './types';
 
 /**
@@ -31,8 +32,9 @@ function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
   return true;
 }
 
-/** Open a scene in the (fresh) event grid: spawn its ships and start its timers. */
+/** Open a scene in the (fresh) event grid: spawn its derelicts and ships and start its timers. */
 export function openScene(sim: Sim, spec: SceneSpec): void {
+  for (const d of spec.derelicts) if (d.ship === undefined) spawnSceneDerelict(sim, d);
   for (const s of spec.ships) {
     if (s.stay !== undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
     if (s.contact.ship === undefined) spawnSceneShip(sim, s);
@@ -41,11 +43,12 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
 }
 
 /**
- * Once a second: lift the scene's ships that jumped away (the observer has already seen them go; they are not respawned) and retry the ones that found
- * no room. True when something changed.
+ * Once a second: lift the scene's ships that jumped away (the observer has already seen them go; they are not respawned) and retry the ships and
+ * derelicts that found no room. True when something changed.
  */
 export function tendScene(sim: Sim, spec: SceneSpec): boolean {
   let changed = false;
+  for (const d of spec.derelicts) if (d.ship === undefined && spawnSceneDerelict(sim, d)) changed = true;
   for (const s of spec.ships) {
     const id = s.contact.ship;
     if (id !== undefined && sim.world.get(id, ShipC)?.state === 'fled') {

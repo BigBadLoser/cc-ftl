@@ -63,21 +63,31 @@ export const events = {
       { id: 'ignore', label: 'Fly on', outcome: {} },
     ],
   },
-  /** Uses the stubbed physical outcome. */
+  /**
+   * A physical encounter (DESIGN.md "Physical encounters", the derelict): a dead hull from the derelict generator, ruined by what killed it, maybe with
+   * something aboard. Scanning reads it from the lane; investigating drops out beside it, where salvage, an away team and the shuttle do the rest.
+   */
   'event.derelict_sighting': {
     title: 'Derelict sighted',
-    text: 'Long-range scans pick out a dark, drifting hull. No transponder, no heat. It could hold salvage, or something worse.',
+    text: 'Long-range sensors pick out a dark hull drifting off the lane. No transponder. Its power signature flickers in and out: dead, or nearly.',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 7 }],
     danger: { max: 3 },
+    eligible: [{ kind: 'shuttle', eva: true }],
+    scene: {
+      persistence: 'discovery',
+      derelicts: [{ intensity: [0.3, 0.75], causes: ['combat', 'decay'], infested: 0.5 }],
+    },
     choices: [
+      { id: 'scan', label: 'Scan it', hint: 'Hull, air and signs of life', remote: 'scan' },
       {
-        id: 'explore', label: 'Mark it for exploration', hint: 'A derelict appears for an away team',
-        outcome: { text: 'You plot a course. An away team can board it.', effects: [{ type: 'physical', outcome: { kind: 'derelict', template: 'ship.derelict' } }, { type: 'flag', flag: 'derelicts_found', op: 'add' }] },
+        id: 'probe', label: 'Hack its data core', hint: 'A full scan, and whatever the core still holds', remote: 'scan',
+        requires: [{ kind: 'skill', skill: 'hacking', level: 1 }],
+        outcome: { effects: [{ type: 'items', item: 'item.electronics', count: 3 }] },
       },
       {
-        id: 'scan', label: 'Scan it from here', requires: [{ kind: 'skill', skill: 'hacking', level: 1 }],
-        outcome: { text: 'The wreck is ancient but its data core still spins. You copy what you can.', effects: [{ type: 'items', item: 'item.electronics', count: 3 }] },
+        id: 'approach', label: 'Drop out beside it', hint: 'Board it, strip it, or look and leave',
+        requires: [{ kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene' }] },
       },
       { id: 'skip', label: 'Leave it', outcome: {} },
     ],
