@@ -255,12 +255,14 @@ def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None, hid=0.0):
               cols=[False, sd(tone, ax), False], cap=cap)
 
 
-def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, swap=False):
+def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, swap=False, down=0, sections=True,
+            plates=False):
     """The cabinets and drawers; under the header of bins, the canopy and its screens (canopy), else under the look's
     cushion header (drawn by the look: the design's "cushion"); the cabinets' top cab_up px higher; the drawers over
-    the cabinets (swap: the block's top and foot kept)."""
+    the cabinets (swap: the block's top and foot kept); all down rows lower; without the cabinets and drawers
+    (sections False); the bins' side walls on down to the face's foot (plates)."""
     L = 1 / 32
-    R = lambda n: z1 - n * PZ                                   # noqa: E731
+    R = lambda n: z1 - (n + down) * PZ                          # noqa: E731
     band(a, b, zl1, z1, "fTS4")                                 # (the face, dark in the gaps)
     cap = sd(D_SIDE_TONE, ax)
     for c in range(-1, 2):
@@ -280,6 +282,11 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                 zl = zb + (rows - 1.5) * PZ
                 fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
                 _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
+            elif plates:                                            # (a side wall on down, as deep as its foot)
+                prism(k, ax, plane, u0, u1, [(0.0, zl1), (bd, zl1), (bd, zb), (0.0, zb)], FACE, 3,
+                      cols=[False, sd("fTS1", ax), False, False], cap=cap)
+        if not sections:
+            continue
         (t0, f0, *c0), (t1, f1, *c1) = SECTIONS                    # the cabinets (n 0), the drawers (1): a frame
         t0 -= cab_up                                                # of bars, the doors back in it
         secs = ([(1, t0, t0 + f1 - t1, *c1), (0, t0 + f1 - t1, f1, *c0)] if swap else
@@ -332,7 +339,7 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                 if not (r == 0 and x in glass and q0 <= c - 0.5 + 1e-6 and q1 >= c + 0.5 - 1e-6):
                     _px(k, ax, plane, c - 0.5, x, r, R(H_SEEN) - PZ / 2, hf + L / 4, sd(col, ax))   # (half a row
                     #                           down: the face's px rows under the canopy, the screens' glass hiding it)
-        prism(k, ax, plane, q0, q1, [(0.0, R(1)), (hc, R(1)), (hc, z1), (0.0, z1)], FACE, 3,
+        prism(k, ax, plane, q0, q1, [(0.0, R(1)), (hc, R(1)), (hc, R(0)), (0.0, R(0))], FACE, 3,
               cols=[False, sd("fTS0", ax), sd("fTS1", ax), False], cap=cap, mitre=m)
         for u, mm, e in ((q0, m[0], c - 0.5), (q1, m[1], c + 0.5)):
             if abs(u - e) > 1e-6 or mm:
@@ -380,15 +387,15 @@ def _rounded(u0, u1, z0, z1, box):
     return out
 
 
-def chest(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+def chest(k, ax, plane, a, b, mit, zl1, z1, band, sd, geom=None, rows=None):
     """A chest of drawers under the cushion: a frame (bars BAR px across its top, its foot, its sides and between its
-    sections), the drawers' fronts back in it, a 1 px rib between them."""
+    sections), the drawers' fronts back in it, a 1 px rib between them (geom, rows: as CHEST, CHEST_ROWS)."""
     L = 1 / 32
     R = lambda n: z1 - n * PZ                                   # noqa: E731
     band(a, b, zl1, z1, "fTS4")                                 # (the face, dark in the gaps)
     cap = sd(D_SIDE_TONE, ax)
-    top, foot, dep, bar, back = CHEST
-    (mfoot, us0, w0), (mtop, us1, w1) = CHEST_ROWS
+    top, foot, dep, bar, back = geom or CHEST
+    (mfoot, us0, w0), (mtop, us1, w1) = rows or CHEST_ROWS
     fd, bw = dep * L, bar * L
     for c in range(-1, 2):
         if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
@@ -459,9 +466,22 @@ def desk(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 _handle(k, ax, plane, c, q0, q1, zf_, *HANDLES[0], sp, sd, even=True)
 
 
+STACK_DOWN = 15                         # the stack (ref 36): the lockers' header and bins this many rows down, under
+STACK_CHEST = ((1, 15, 3, 2, 1), ((7, (0.5,), 3), (9, (0.25, 0.5, 0.75), 2)))  # a small chest (as CHEST,
+                                        # CHEST_ROWS)
+
+
+def stack(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+    """The chest's two rows of drawers up under the cap, the lockers' header and bins under it, the bins' side walls
+    on down to the slope (drawers between them to come)."""
+    chest(k, ax, plane, a, b, mit, zl1, z1, band, sd, *STACK_CHEST)
+    lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, down=STACK_DOWN, sections=False, plates=True)
+
+
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
             Design("cabinets", body=functools.partial(lockers, canopy=False, cab_up=3), lip=False, cushion="fTS8"),
             Design("drawers", body=functools.partial(lockers, canopy=False, cab_up=3, swap=True), lip=False,
                    cushion="fTS8"),
             Design("chest", body=chest, cushion="fTS8"),         # (on the lip: its foot at 39 rows down)
-            Design("desk", body=desk, cushion=True))
+            Design("desk", body=desk, cushion=True),
+            Design("stack", body=stack, lip=False))
