@@ -9,6 +9,8 @@
   roof      roof plating modules, edges, inset and patch plates, livery masks, cut plates (roof_cuts.py)
   vehicle_bay the shuttle bay (pit, doors, gangway, claws) and the shuttle parked in it, 4 rotations (vehicle_bay.py)
   shuttle   the flying shuttle: 8 fly headings and 4 docked poses (vehicle_bay.py craft_jobs)
+  drones    the drones (3 types x 8 headings: fly, work frames, inert, docked; the medic's beam, the shadow) and the
+            drone bay (2x2, 4 rotations, .front overlays, roof hatch frames) (drone_family.py)
   robot_bay the robot bay: 4 rotations x states (empty, charging, charging.drone, assembling.<robot type>)
   fx        combat fx v2 (fx3d.py): bolts, muzzle flashes, impacts, explosions as lit 3D clusters
   containers  cargo containers 2x4 / 3x6: shells per rotation and door end, variants, damaged / destroyed / patched,
@@ -75,6 +77,9 @@ def jobs(name):
     if name == "weapons":
         from . import turrets
         return turrets.SPRITES, True
+    if name == "drones":
+        from . import drone_family
+        return drone_family.jobs(), True
     if name == "robot_bay":
         from . import robot_bay
         return robot_bay.jobs(), True
@@ -219,7 +224,7 @@ def jobs(name):
 
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
-RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle_bay", "shuttle", "airlock", "struct",
+RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones", "vehicle_bay", "shuttle", "airlock", "struct",
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
