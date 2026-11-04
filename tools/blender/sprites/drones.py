@@ -2,8 +2,8 @@
 
 A drone is a small quad-ducted machine of the ship's AI core: not crew, not a robot, its own family, in the robots'
 language (smooth livery shell `team.cloth` over a dark frame, a `team.accent` seam, one cyan eye in dark glass).
-One chassis for every type: a rounded hull pod with four ducted rotors on short arms (the robots' repair drone is
-a walker-sized shell with arms; these are rounder, rotor-borne, about 1.25 tiles across). Per type: a coloured marker on the
+One chassis for every type: a rounded hull pod with four ring thruster pods on short arms (the robots' repair drone is
+a walker-sized shell with arms; these are rounder, thruster-borne (they fly in space too), about 1.25 tiles across). Per type: a coloured marker on the
 shell and a working part under the nose.
   defence  a twin gun pod; working = muzzle flash
   repair   a jointed tool arm with a welder; working = sparks at the tip
@@ -14,11 +14,10 @@ sprite's anchor is the drone itself and the renderer lifts it by its altitude ov
 (`drone.shadow`). Faces +f at THETA[d] like the crew (d0 = grid +x, clockwise).
 
 Drone bay (2x2, a weapon bay round its roof hatch): an open launch cage with two stacked lift cradles (see `bay`).
-Ring pods are hollow (a dark throat, three blades). The medic's treatment light is a separate layer (BEAM_ALPHA): a
+Thruster pods are hollow rings round a bell on four vanes, its lip lit while firing. The medic's treatment light is a separate layer (BEAM_ALPHA): a
 sprite's own opacity is all or nothing, so the runtime draws it see-through over the drone's patient."""
 import math
 from . import core, detail as D
-from . import turret_bays as TB
 from . import turret_concepts as TC
 from .cmbkit import Frame
 from .robot_kit import Rig
@@ -28,18 +27,18 @@ CLOTH, ACCENT = "team.cloth", "team.accent"
 FRAME, FRAME_L, MID = "dark", "steelD", "gm"
 EYE = "cyan"
 MARK = {"defence": "medRed", "repair": "hivis", "medic": "medWhite"}
-SCALE = 2.3         # about 1.25 tiles across the rotors
+SCALE = 2.3         # about 1.25 tiles across the pods
 BEAM_ALPHA = 0.45   # the medic's treatment light: its own sprite layer (tag "beam"), drawn see-through at this opacity
-PADS = (0.42, 1.22)  # the bay's cradle pad tops (lower, upper)
+PADS = (0.34, 1.36)  # the bay's cradle pad tops (lower, upper)
 DOCK_DZ = 0.23       # drone centre over its pad when docked (its belly, 0.1 * SCALE under it, on the dish)
-CAGE = 0.9           # bay cage radius (the drones span 0.78 across the rotors)
+CAGE = 0.9           # bay cage radius (the drones span 0.78 across the pods)
 BACK = FRONT + math.pi
 RAIL_W = 0.3         # the lift rails either side of the back
 
 
-def _duct(p, x, f, z, spin, ang):
-    """A ducted rotor: a hollow livery ring (dark inside, open through the middle) round a hub with three blades at
-    angle ang (degrees)."""
+def _pod(p, x, f, z, firing):
+    """A thruster pod (no air to push in space): a hollow livery ring (dark inside, open through the middle) round a
+    thruster bell hung mouth-down on four stator vanes, its lip lit while firing."""
     ro, ri, h, n = 0.092, 0.062, 0.05, 24
     xf = p._xf((x, f, z), None, "z")
     circ = [(math.cos(math.tau * i / n), math.sin(math.tau * i / n)) for i in range(n)]
@@ -53,20 +52,22 @@ def _duct(p, x, f, z, spin, ang):
         p._face([ia + j, ia + i, ib + i, ib + j], FRAME, True)                  # inner wall (the dark throat)
         p._face([ta + i, tb + i, tb + j, ta + j], CLOTH, False)                 # top lip
         p._face([ba + j, bb + j, bb + i, ba + i], FRAME, False)                 # bottom lip
-    p.cyl((x, f, z + 0.004), 0.017, 0.026, MID, sides=10)                     # hub (on the rotor arm)
-    for k in range(3):
-        a = math.radians(ang + 120 * k)
-        L0, L1 = 0.012, ri - 0.006
-        c = (x + math.cos(a) * (L0 + L1) / 2, f + math.sin(a) * (L0 + L1) / 2, z + 0.012)
-        p.box(c, (L1 - L0, 0.026, 0.006), "steelL" if spin else FRAME_L, rot=(14, 0, math.degrees(a)))   # blade
+    p.cyl((x, f, z - 0.026), 0.048, 0.056, MID, sides=16, taper=0.6)           # bell (mouth below the ring)
+    p.cyl((x, f, z - 0.05), 0.05, 0.012, "cyan" if firing else FRAME_L, sides=16)   # its lip, lit while firing
+    p.cyl((x, f, z + 0.008), 0.026, 0.016, MID, sides=12, top=FRAME_L)        # injector head
+    for k in range(4):
+        a = math.radians(45 + 90 * k)
+        L0, L1 = 0.02, ri + 0.004
+        c = (x + math.cos(a) * (L0 + L1) / 2, f + math.sin(a) * (L0 + L1) / 2, z + 0.006)
+        p.box(c, (L1 - L0, 0.022, 0.014), FRAME_L, rot=(0, 0, math.degrees(a)))   # stator vane into the ring wall
 
 
 def drone(kind, state="fly", frame=0):
-    """state: fly (hover, frame 0..3 bobs), work, docked (rotors still), inert (rotors still, eye dark)."""
+    """state: fly (hover, frame 0..3 bobs), work, docked (thrusters off), inert (thrusters off, eye dark)."""
     rig = Rig(f"drone_{kind}")
     b = rig.joint("body", "root", (0, 0, 0))
     p = rig.part(b)
-    spin = state in ("fly", "work")
+    firing = state in ("fly", "work")
     p.rbox((0, 0, -0.06), (0.2, 0.26, 0.08), FRAME, r=0.05, taper=1.15)                    # belly
     p.rbox((0, 0, 0.0), (0.24, 0.3, 0.02), ACCENT, r=0.07)                                 # seam
     p.rbox((0, -0.01, 0.02), (0.24, 0.3, 0.09), CLOTH, r=0.08, taper=0.72)                 # shell
@@ -79,8 +80,8 @@ def drone(kind, state="fly", frame=0):
     for sx in (1, -1):
         for sf in (1, -1):
             x, f = sx * 0.19, sf * 0.16
-            p.plate((sx * 0.07, sf * 0.06, -0.016), (x, f, -0.016), 0.04, 0.03, FRAME, r=0.01)   # rotor arm
-            _duct(p, x, f, 0.0, spin, 20 + sx * sf * 30 * frame)                 # diagonal pairs counter-rotate
+            p.plate((sx * 0.07, sf * 0.06, -0.016), (x, f, -0.016), 0.04, 0.03, FRAME, r=0.01)   # pod arm
+            _pod(p, x, f, 0.0, firing)
     if kind == "defence":
         p.rbox((0, 0.06, -0.12), (0.11, 0.13, 0.06), MID, r=0.02)                          # gun pod
         p.rbox((0, 0.06, -0.09), (0.11, 0.13, 0.012), "medRed", r=0.02)                    # its red band
@@ -162,8 +163,6 @@ def bay(docked=0, charging=False):
     for k in range(3):
         u, v = P(BACK, 1.0)
         f.box(u, v, 0.86 + k * 0.1, 0.05, 0.05, 0.04, "dark", base=False)
-    TB._caps(f, ((0.8, -0.8),), r=0.13, h=0.9)
-    TB._console(f, -0.8, 0.8, k=0.45)
     for z in PADS:
         _cradle(f, z, lit)
     obs = [m.build()]
