@@ -23,7 +23,7 @@ PART = None
 CLOSE = False           # (a preview of a piece on its own: its open end closed, the half arch's sections shown)
 DIP = 12 * PZ           # the window's ramp: its crest this far under the wall's ramp (ref #2767 B layer: ~7 px of a
                         # ~16 px ramp; ours is 26 px) ...
-DIP_RUN = 0.5           # ... reached this far along the wall from a post (a sloped crest), then level (the middle
+DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a sloped crest), then level (the middle
                         # tiles level all across)
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
