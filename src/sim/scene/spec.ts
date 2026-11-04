@@ -8,7 +8,8 @@ import { currentNode } from '../galaxy/state';
 import { SEED_TRIES } from '../galaxy/tuning';
 import type { Encounter } from '../galaxy/types';
 import type { ItemQty } from '../registry';
-import type { Range, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, Stance } from './types';
+import { buildDerelict } from './derelicts';
+import type { Range, SceneDerelict, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, Stance } from './types';
 
 /**
  * Scene specs (DESIGN.md "Physical encounters", part b). A story scene is rolled from the world seed, the event id and the hop it was signalled at, so
@@ -68,11 +69,12 @@ export function storySpec(sim: Sim, event: string, recipe: SceneRecipe): SceneSp
     persistence: recipe.persistence,
     event,
     ships: (recipe.ships ?? []).map((r, i) => buildShip(sim, r, rng, depth, [h, i], used)),
+    derelicts: (recipe.derelicts ?? []).map((r, i) => buildDerelict(sim, r, rng, [h, 0x100 + i])).filter((d): d is SceneDerelict => d !== null),
     timers: (recipe.timers ?? []).map((t) => ({ id: t.id, afterSec: t.afterSec })),
   };
 }
 
 /** A fleet encounter as a scene: the fleet's own ships, hostile in a fight, neutral when answering a distress call. */
 export function fleetSpec(e: Encounter, stance: Stance): SceneSpec {
-  return { key: `fleet:${e.id}`, persistence: 'transient', fleet: { id: e.fleet, stance }, ships: [], timers: [] };
+  return { key: `fleet:${e.id}`, persistence: 'transient', fleet: { id: e.fleet, stance }, ships: [], derelicts: [], timers: [] };
 }

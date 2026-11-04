@@ -1,6 +1,6 @@
 import type { Faction } from './combat/components';
 import type { JobKind } from './crew/components';
-import type { EventEffect } from './story/defs';
+import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
 
 /** Outbound notifications for UI and audio. */
@@ -207,7 +207,7 @@ export type SimEvent =
   /** Event system: an event started (`notice` is the notice id for notices with a lead, else 0), a choice resolved it, an effect was applied (`text` '' = nothing to show). */
   | { type: 'story.started'; event: string; mode: 'decision' | 'notice'; notice: number }
   | { type: 'story.resolved'; event: string; choice: string; success: boolean | null }
-  | { type: 'story.remote'; event: string; choice: string; action: 'hail' | 'scan' }
+  | { type: 'story.remote'; event: string; choice: string; action: RemoteAction }
   | { type: 'story.effect'; event: string; effect: EventEffect['type']; text: string }
   /** Trade: a hail was answered or refused (`reason`: 'hostile', 'weaponsHot', 'silent', 'noTrade'); an offer was priced; a deal was made (`courier`: who flies). */
   | { type: 'trade.hailAnswered'; ship: number; name: string }

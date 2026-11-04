@@ -107,11 +107,18 @@ export interface DerelictSpec {
   infest?: 'none';
 }
 
-/**
- * Generate a hull, ruin it and stamp it as a neutral wreck (`debug.spawnDerelict`, and the galaxy's derelicts and battle wrecks). Wrecks of a living faction are
- * infested with aliens, the rest with robots. Returns the ship id, or the reason it could not be made or placed.
- */
-export function spawnDerelict(sim: Sim, spec: DerelictSpec): number | string {
+/** A derelict as the generator and the ruin pass make it, before it is stamped: its ruined template, the ruin meta and its size. */
+export interface DerelictPlan {
+  template: ShipTemplate;
+  meta: RuinMeta;
+  width: number;
+  height: number;
+  /** The ship role / hull family it was built as. */
+  role: string;
+}
+
+/** Generate and ruin the hull `spawnDerelict` would make (pure: nothing is placed). The reason when no layout comes out. */
+export function planDerelict(sim: Sim, spec: Omit<DerelictSpec, 'at'>): DerelictPlan | string {
   const faction = sim.content.factions?.[spec.faction];
   if (!faction) return 'badFaction';
   let gen: ReturnType<typeof generateShip>;
@@ -123,15 +130,26 @@ export function spawnDerelict(sim: Sim, spec: DerelictSpec): number | string {
   if (gen.problems.length > 0) return 'noLayout';
   const infest = spec.infest ?? (faction.living ? 'alien' : 'robot');
   const { template, meta } = ruin(gen.template, spec.seed, { defs: sim.content.modules, intensity: spec.intensity ?? 0.5, infest, origin: spec.faction, ...(spec.cause ? { cause: spec.cause } : {}) });
-  const { x, y } = placeAt(spec.at, gen.width, gen.height);
+  return { template, meta, width: gen.width, height: gen.height, role: gen.role };
+}
+
+/**
+ * Generate a hull, ruin it and stamp it as a neutral wreck (`debug.spawnDerelict`, and the galaxy's derelicts and battle wrecks). Wrecks of a living faction are
+ * infested with aliens, the rest with robots. Returns the ship id, or the reason it could not be made or placed.
+ */
+export function spawnDerelict(sim: Sim, spec: DerelictSpec): number | string {
+  const plan = planDerelict(sim, spec);
+  if (typeof plan === 'string') return plan;
+  const { template, meta } = plan;
+  const { x, y } = placeAt(spec.at, plan.width, plan.height);
   if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0) return 'badValue';
-  const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
+  const gap = placementGapError(sim, { x, y, w: plan.width, h: plan.height });
   if (gap) return gap;
-  sim.sector.width = Math.max(sim.sector.width, x + gen.width + 8);
-  sim.sector.height = Math.max(sim.sector.height, y + gen.height + 8);
+  sim.sector.width = Math.max(sim.sector.width, x + plan.width + 8);
+  sim.sector.height = Math.max(sim.sector.height, y + plan.height + 8);
   const shipId = stampShip(sim, spec.name ? { ...template, name: spec.name } : template, { faction: 'neutral', x, y, state: 'wreck' });
   applyRuin(sim, shipId, template, meta);
   const ship = shipById(sim, shipId);
-  if (ship) ship.gen = { faction: spec.faction, seed: spec.seed, depth: spec.depth, role: gen.role };
+  if (ship) ship.gen = { faction: spec.faction, seed: spec.seed, depth: spec.depth, role: plan.role };
   return shipId;
 }

@@ -20,6 +20,8 @@ One line per section; read the index, then only the sections your task touches.
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
 - [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
+  - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
+  - [Drones (user decisions, 2026-11-04; not built yet)](#drones-user-decisions-2026-11-04-not-built-yet): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
@@ -342,13 +344,18 @@ scripts. Not every scene has one.
   - Approaches: trade; barter; board and rob it; fire on it; wave and leave.
   - Observed: traded -> small reputation with traders; boarded or captured -> reputation loss, flag; destroyed -> a wreck to strip, reputation loss.
   - Persistence: transient. Timer: no.
-- **Derelict** (`derelict_sighting`, `notice_beacon` lead). Eligible: danger 0 to 3, an EVA shuttle stowed.
+- **Derelict** (`derelict_sighting`, `notice_beacon` lead). Eligible: danger 0 to 3, an EVA shuttle stowed. **Built (#173 step 3).**
   - Signal: a dead hull, power signature unclear.
-  - Remote: scan (reveals ruin level, a hint of life signs or machines; +3 electronics from a hacking scan), ignore.
-  - Scene: one derelict, ruin level from its cause, maybe infested or holding a rogue bot; loose containers. Hazards are conditions of the
-    hull (thin air, fires, locked doors), not set pieces.
-  - Approaches: open an away site and run a salvage order; send a team to explore; strip the hull; leave it.
-  - Observed: salvaged -> items, `derelicts_found` (gets a reader); infestation killed -> flag; crew lost -> log; left -> flag only.
+  - Remote: scan (make, condition and cause, air and fires, jammed doors, life signs or machine signatures, loose cargo); a hacking scan (hacking 2)
+    is a deep read with counts, gives no items (user ruling, 2026-11-04); ignore. With practice (`derelicts_found` 2 or more) any scan reads counts.
+  - Scene: one derelict from the derelict generator, ruin level and cause rolled, infested half the time (aliens in a living faction's wreck);
+    torn-off containers drift beside it. Hazards are conditions of the hull (thin air, fires, jammed doors), not set pieces.
+    Rogue robots at the ruin pass's machine points are deferred (#310); loose containers stay scenery until container pickup exists.
+  - Approaches: run a salvage order (the away site does the rest); explore by hand, with no explore order (user ruling): draft crew, take them
+    out in the shuttle, hover beside the wreck, crew out (EVA), order them around inside, force jammed doors (tile inspector), Back to shuttle,
+    return; strip the hull; leave it.
+  - Observed: salvaged -> items, `derelicts_found` (read by the scan); infestation killed -> `infestations_cleared`; crew lost -> log; left ->
+    flag `derelicts_left` only.
   - Persistence: **persistent discovery**, cleared on leave for now. Timer: no.
 - **Pirate ambush** (`pirate_returns`, once, after sparing a pirate; flag-queued, still waits for transit).
   - Signal: a skiff hails you, claiming a debt owed. The story sometimes does not add up (a name that changes, a transponder that lags).
@@ -395,8 +402,8 @@ Salvage is one order from the inspector. The crew then run it on their own, like
 
   | Type | Stripped from | The scrapper gives | Rare extra |
   |---|---|---|---|
-  | **Hull Scrap** | hull plating, walls, floors, doors | metal | none |
-  | **Tech Scrap** | consoles, computers, sensors, shield and medbay modules | electronics, some spare parts | drone tech |
+  | **Hull Scrap** | hull plating, walls, beams, floors | metal | none |
+  | **Tech Scrap** | consoles, computers, sensors, shield and medbay modules, doors (#312) | electronics, some spare parts | drone tech |
   | **Energy Scrap** | reactors, batteries, engines, power conduits | spare parts, electronics, metal | fuel |
   | **Weapons Scrap** | turrets, launchers, magazines, armouries | spare parts, metal | a missile, or a hand weapon |
   | **Comfort Scrap** | furniture, beds, kitchens, lounge and storage fittings | polymer, cloth | none |
@@ -698,6 +705,81 @@ and risk is worth taking.
   station. Each research project has its own materials cost (data cores, samples, alien tissue, artifacts, components,
   depending on the project) and takes time. Projects unlock blueprints: module tiers, upgrades, implants,
   construction pods and drones. Build plan: `docs/PROGRESSION_PLAN.md`.
+
+### Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)
+
+Upgrades are items slotted into ship weapons. Build plan: PROGRESSION_PLAN step 4.
+
+**Rules.**
+- **One slot per weapon.** Some upgrades are general and fit any weapon; others fit one weapon type only.
+- **What they change.** General upgrades are small stat boosts and pure gains. Weapon-specific upgrades change how the weapon
+  behaves, and each one carries a cost.
+- **Fitting is a crew job.** You pick the upgrade in the module inspector. An engineer fetches the item and installs it, like a
+  repair, and the weapon is offline while that happens. Removing an upgrade puts the item back in cargo intact.
+- **Sources.** Bought at stations (the shady ones on the black market), found in salvage, researched (a blueprint, built
+  at a fabricator).
+- **Enemies carry them by faction.** Navy upgrades are precise, pirate ones crude, zealot ones fire-based. A scan shows them
+  on the enemy card. Stripping an enemy weapon module that wasn't destroyed drops its upgrade; a damaged one may lose it, with
+  a chance scaled by damage.
+- **Visuals.** The upgrade's item icon shows on the weapon card and in the inspector. Behaviour upgrades change the shot's
+  effect (tint, trail, blast). Small add-on art (a bolt-on part on the bay) only where it earns its place; no new bay models.
+
+**First batch.** Numbers are a starting point for tuning.
+
+| Upgrade | Fits | Does | Cost |
+|---|---|---|---|
+| Coolant jacket | any | −30% heat per volley | — |
+| Quick capacitor | any | −15% charge time | — |
+| Hardened housing | any | The weapon takes half damage from hits and ion | — |
+| Prism splitter | burst laser | 5 shots instead of 3, each −40% damage | +50% heat |
+| Heavy focus | burst laser | 2 shots, each pierces 1 shield layer | Slower charge |
+| Frag slug | mass driver | Bigger blast radius, more crew and module damage | Loses shield pierce |
+| Rail coil | mass driver | Pierces 2 layers; much faster shot | Runs very hot |
+| Nuclear warhead | missiles | Huge blast; heavy hull, module and crew damage; fires across the blast | 2 missiles a shot; black market only |
+| Chain coil | ion cannon | The ion arcs from the hit module as lightning into nearby crew | +40% heat |
+| Thermite | incendiary | Real hull damage on top of the ignite, so it breaches as well as burns | More heat |
+
+No radiation system: the nuke is blast plus fire, built from existing effects.
+
+**Flak cannon (new weapon).** It fires scrap: one hull scrap item from cargo per volley, the way missiles use missile items.
+Each volley is a spread of many weak pellets. Every pellet that hits a shield strips a layer, so flak knocks shields down for
+the other guns. It does little hull damage and is inaccurate at range. It reuses an existing bay model, told apart by a tint.
+
+### Drones (user decisions, 2026-11-04; not built yet)
+
+**What a drone is.** A small flying robot that works inside the ship and launches into space. One system covers both, reusing the
+robots (AI core, bays, charge) and the vehicles (launch, fly, dock). The robot class "drone" above is the same thing.
+
+**Rules.**
+- **The AI core runs them,** like robots. Its tier sets how many drones can be active at once (Mk I: 2, Mk II: 4, Mk III: 6).
+  If the core goes down, every drone goes inert (it drops or drifts) until the core is back.
+- **Drone bay (new module).** It holds and recharges 2 drones. Drones launch into space through a ceiling hatch, like the
+  weapon hatches, so the bay doesn't have to touch the hull. Drones fly out of it into the ship as well.
+- **Fully automatic.** The player gives no orders. Each drone does its job: defence drones launch when a fight starts,
+  repair drones go to damage, medic drones go to the wounded.
+- **Battery.** It drains while flying, faster while working, and recharges in the bay. Drones rotate home on their own when low.
+- **Built, kept, lost.** Each type has a researched blueprint and is built at a fabricator from parts and electronics. Tech
+  stations also sell them ready-made. A destroyed drone leaves scrap.
+- **Jumping and leaving.** Charging a jump, or leaving a scene, recalls every drone. The departure waits a few seconds for
+  them, the way leaving waits for crew. A drone that can't make it back in time is left behind and lost.
+- **Weaknesses.** Ion or EMP near a drone or on its bay knocks it out for a while; a flying drone drops. Losing the core
+  stops them all. In space, only flak, point defence and enemy defence drones can hit a drone; ordinary ship guns can't
+  track one.
+  - **Range in practice.** Fights are 40 to 100 tiles apart, and the first batch of drones stays near your own ship. At that
+    range enemy flak is inaccurate by design and enemy point defence only covers its own ship, so in practice drones mostly
+    fight drones. A combat drone that flies to the enemy (later) would be exposed to its flak and point defence, so tune it then.
+- **Enemies have drones too,** on the same system: rogue AI and navy ships.
+
+**First batch.**
+
+| Drone | Where | Does |
+|---|---|---|
+| Defence | Orbits your ship in space | Shoots down incoming missiles and enemy shuttles. Never fires at ships, so it can't provoke anyone. |
+| Repair | Inside and outside | Seals hull breaches from outside (no crew on EVA), repairs damaged modules (slower than an engineer), puts out small fires. |
+| Medic | Inside | Flies to the wounded and downed: stops bleeding, stabilises the downed so they don't die, heals slowly. Real treatment still needs the medbay and a medic. |
+
+Later: combat drones that fly to the enemy and shoot (DESIGN "Combat drones": they build on the core's tier and the EMP effect),
+and salvage drones.
 
 ### Where blueprints are sold (user decision, 2026-10-26)
 

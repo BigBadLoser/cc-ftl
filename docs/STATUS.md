@@ -37,8 +37,9 @@ Last updated: 2026-11-03.
 
 ## In progress
 
-- **Now:** #173 physical encounters step 3, the derelict. Steps 1-2 (scenes, battle stations, the trader skiff) merged in #309.
-  Then, each checked in play first: pirate ambush, distress freighter, medical pod.
+- **Encounters (#173):** steps 1-3 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314). Paused by the
+  user (2026-11-04); next: pirate ambush, distress freighter, medical pod, each checked in play first.
+- **Designed, not started:** weapon upgrades and flak (#317), drones (#318); crew implants (#311) needs its design pass.
 - **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
