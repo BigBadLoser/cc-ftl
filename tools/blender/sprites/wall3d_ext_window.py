@@ -48,9 +48,10 @@ FOOT_W = 5 / 32                     # sill's flat top (the slope measured off th
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, under the header: facing down, darker)
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
-B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to its foot; C, a
-C_SIDE, C_DOWN = 22, 4              # strip on from B's right side to C_SIDE, C_DOWN px down the lean (measured off
-                                    # the reference)
+B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
+C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
+                                    # lean line down (measured off the reference; the base's two lines across its
+                                    # lean run on up to B and on from C)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -107,7 +108,7 @@ def build(k, ax, plane, a, b, ends, H):
         f.top_line(s0, s1, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])   # A: the top's seam along its
                                                                                     # back, the base's own
         if PART == "w1":
-            _w1_header(f, s, s0, dv, zc, zh)
+            _w1_header(f, s, s0, s1, dv, zc, zh)
         win = _opening(w0, w1, zj, zh, end)
         _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
               mu=mu)                                    # the pane: its front only (one tinted layer: with its back,
@@ -122,8 +123,9 @@ def build(k, ax, plane, a, b, ends, H):
                   [False, SLOPE_TOP, False], back=False, mu=mu)                                  # slope
 
 
-def _w1_header(f, s, s0, dv, zc, zh):
-    """B and C on W1's header (painted lines, as the base's: on its top in YS[2], down its front in YS[3])."""
+def _w1_header(f, s, s0, s1, dv, zc, zh):
+    """B and C on W1's header, and the base's lines across its lean run on to them (painted lines, as the base's:
+    on its top in YS[2], down its front in YS[3])."""
     ln, H = LINE, s.H
     dk = (dv - T3.BACK) / (H - zc)                      # (the header's lean: out per unit down)
 
@@ -141,10 +143,14 @@ def _w1_header(f, s, s0, dv, zc, zh):
     for u in (b0, b1):
         f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
         band(u, u + ln, zh, H, YS[3])                                   # and the front
-    zt = s.z_at(H, C_DOWN)
-    c1 = s0 + T3.px(C_SIDE)
-    band(b1 + ln, c1 + ln, s.z_at(zt, 1), zt, YS[3])                    # C: its top
-    band(c1, c1 + ln, zh, zt, YS[3])                                    # its side
+    L = T3.Layout(s)
+    zt = L.px(L.zr, -2)                                 # the base's lines across its lean (its own calls): the one
+    c1 = s0 + T3.px(C_SIDE)                             # its top panel stands on (C's top), its seam
+    for u0, u1 in ((s0, b0), (b1 + ln, s1)):
+        f.line(u0, u1, zt, L.px(zt, -1), YS[4], bevel=False)
+    for u0, u1 in ((s0, b0), (c1 + ln, s1)):
+        f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
+    band(c1, c1 + ln, zh, L.px(zt, -1), YS[3])                          # C: its side
 
 
 def _opening(u0, u1, z0, z1, corner):
