@@ -23,16 +23,16 @@ def _start(name, state, rot, frame):
     return m, make_frame(m, (1, 2), (rot + 1) % 4), on, lit
 
 
-def _ice(m, f, u, v, z, su, sv, rim=0.12, wall=0.08):
+def _ice(m, f, u, v, z, su, sv, rim=0.12, wall=0.08, cut=0.08, icut=0.05):
     """An ice well like the life support's inlet coamings: a cyan coaming with a real top face `wall` thick, dark inner
     walls down to a bed of ice, chunks heaped on it."""
     m.paint(body='vent_teal', frame='frame')
     top = z + rim
-    casing(m, f, u, v, z, su, sv, rim, cut=0.08, closed=False, bottom=False)
-    outer = chamfer_loop(f, u, v, top, su, sv, 0.08)
-    inner = chamfer_loop(f, u, v, top, su - 2 * wall, sv - 2 * wall, 0.05)
+    casing(m, f, u, v, z, su, sv, rim, cut=cut, closed=False, bottom=False)
+    outer = chamfer_loop(f, u, v, top, su, sv, cut)
+    inner = chamfer_loop(f, u, v, top, su - 2 * wall, sv - 2 * wall, icut)
     bed = top - 0.07
-    floor = chamfer_loop(f, u, v, bed, su - 2 * wall, sv - 2 * wall, 0.05)
+    floor = chamfer_loop(f, u, v, bed, su - 2 * wall, sv - 2 * wall, icut)
     bridge(m, outer, inner, BODY)                                                            # the rim's top face
     bridge(m, inner, floor, FRAME)                                                           # inner walls
     m.poly(floor, "iceB", flip=True)
@@ -47,10 +47,12 @@ def _snap(m):
     m.v = [(round(x / g) * g, round(y / g) * g, round(z / h) * h) for x, y, z in m.v]
 
 
-def _display(m, f, u, lit, on, z=0.5, v=0.38):
+def _display(m, f, u, lit, on, z=0.5, v=0.38, plate=True):
     """A recessed display and a lamp on a dark plate, sitting just proud of the face at `v`."""
     m.paint(body='steel', recess='display' if lit else 'amber' if on else 'dark')
-    f.box(u, v + 0.006, z, 0.34, 0.012, 0.24, FRAME)
+    if plate:
+        f.box(u, v + 0.006, z, 0.34, 0.012, 0.24, FRAME)
+    v -= 0.0 if plate else 0.01
     f.box(u - 0.04, v + 0.016, z + 0.05, 0.19, 0.012, 0.14, RECESS)
     f.box(u + 0.11, v + 0.016, z + 0.12, 0.05, 0.012, 0.05, RECESS)
     m.paint()
@@ -73,16 +75,20 @@ def column(state, rot, frame=0):
     casing(m, f, -6 * G, 0, 0.0, 16 * G, 12 * G, 0.3, cut=G, col=FRAME)                   # base under the housing
     f.vcyl(u, v, 0.0, r + G, 0.38, FRAME, sides=16)                                        # drum under the column
     f.box(3 * G, 0, 0.0, 4 * G, 8 * G, 0.3, FRAME)                                         # pump block between
-    casing(m, f, -6 * G, -2 * G, 0.28, 14 * G, 8 * G, 0.58, cut=G, col=FRAME)              # core under the hood
+    casing(m, f, -7 * G, -2 * G, 0.28, 12 * G, 8 * G, 0.58, cut=G, col=FRAME)              # core under the hood (ends at u -G)
     m.paint(body='pale')
     casing(m, f, -10 * G, 2.5 * G, 0.12, 8 * G, 9 * G, 0.74, cut=G)                       # melt panel (front 7G)
-    casing(m, f, -2 * G, 3.5 * G, 0.16, 6 * G, 7 * G, 0.7, cut=G)                         # filter bay (front 7G)
+    casing(m, f, -2.5 * G, 3.5 * G, 0.16, 5 * G, 7 * G, 0.7, cut=G)                       # filter bay (front 7G, ends at u 0)
     casing(m, f, -5 * G, 0, 0.86, 18 * G, 14 * G, 0.14, cut=2 * G, taper=0.96)            # hood
-    f.vcyl(u, v, 0.86, r + 2 * G, 0.14, BODY, sides=16)                                    # collar round the column
-    f.box(3 * G, v, 0.86, 4 * G, 10 * G, 0.14, BODY)                                       # its web into the hood
+    f.box(G, -G, 0.16, 2 * G, 12 * G, 0.7, BODY)                                           # web, housing to column (it shades the
+                                                                                             # filter bay from the water's glow)
+    f.vcyl(u, v, 0.86, r + 2 * G, 0.1, BODY, sides=16)                                     # collar round the column, under
+    f.box(3 * G, v, 0.86, 4 * G, 10 * G, 0.08, BODY)                                       # the hood's top; its web into the hood
     m.paint(body='steel')
     f.box(3 * G, 4.5 * G, 0.06, 2 * G, G, 0.14, BODY)                                      # service port on the pump
-    _ice(m, f, -9 * G, -G, 1.0, 8 * G, 9 * G, wall=1.5 * G)
+    _ice(m, f, -7 * G, 0, 1.0, 10 * G, 10 * G, wall=2 * G, cut=2 * G, icut=G)              # centred on its section, a 2G rim
+    m.paint(body='frame')
+    f.box(-10 * G, FRONT + G / 2, 0.44, 6 * G, G, 0.26, BODY)                             # the control panel, a block off the face
     # The column: water, glass, a hoop, the cap ring and dome, a vent pipe back to the hood.
     m.paint(body='cartridge', frame='frame', recess=_water(lit))
     f.vcyl(u, v, 0.38, r, 0.48, RECESS, sides=16)                                          # the water
@@ -99,7 +105,7 @@ def column(state, rot, frame=0):
     mark = len(m.v)
     _snap(m)
     # Decals, unsnapped, 0.012 proud of the snapped front (FRONT): the display, the filter cartridges.
-    _display(m, f, -10 * G, lit, on, z=0.44, v=FRONT)
+    _display(m, f, -10 * G, lit, on, z=0.44, v=FRONT + G, plate=False)
     for du in (-3.5 * G, -0.5 * G):
         m.paint(recess='dark')
         f.box(du, FRONT + 0.006, 0.34, 0.15, 0.012, 0.44, RECESS)
