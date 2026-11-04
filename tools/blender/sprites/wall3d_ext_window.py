@@ -24,8 +24,7 @@ SILL = 25                           # the sill's front, px tall
 SILL_RISE = 7.5                     # its top's slope: its rise from the front to the glass, px of height; cut off
                                     # level with the frame's front (behind it the top flat, to the glass)
 SILL_FLAT = "hsXS"                  # that flat (shaded under the header; well under the slope's)
-SILL_SLOPE = "hwL"                  # the slope (a white between the jamb's front and the header's lean: the window's
-                                    # own tone, palette set "window")
+SILL_SLOPE = YS[5]                  # the slope (the header's lean's tone)
 FRAME = 2 / 32                      # an end piece's outer frame (the whole base section), along the face
 JAMB = 5 / 32                       # the window frame's side (W1: its left) inside it, along the face: upright from
                                     # the sill to the header, its front the header's
