@@ -79,6 +79,7 @@ export function spawnDrone(sim: Sim, def: string, bay: number, slot: number): nu
   const id = sim.world.createEntity();
   sim.world.add(id, DroneC, {
     def, ship, bay, slot, state: 'docked', charge: 100, hp: d.maxHp, target: null, steps: [], work: 0, inert: false, stunUntil: 0,
+    space: false, lift: 0, cool: 0,
   });
   sim.world.add(id, BodyC, { x: at.x + 0.5, y: at.y + 0.5, heading: 0, alt: ALT.dronePad });
   return id;
@@ -136,14 +137,14 @@ export function stunDrone(sim: Sim, id: number, sec: number): void {
   sim.events.emit({ type: 'drone.stunned', drone: id, until });
 }
 
-/** A destroyed drone: its wreck items fall where it was and the entity goes. */
+/** A destroyed drone: inside a ship its wreck items fall where it was (in space they are lost), and the entity goes. */
 export function wreckDrone(sim: Sim, id: number): void {
   const d = sim.world.get(id, DroneC);
   const b = sim.world.get(id, BodyC);
   if (!d) return;
   const x = Math.floor(b?.x ?? 0), y = Math.floor(b?.y ?? 0);
-  const ship = shipIdOf(sim, { x, y });
+  const ship = d.space ? 0 : shipIdOf(sim, { x, y });
   if (ship) for (const q of sim.content.drones?.[d.def]?.wreck ?? []) spillItems(sim, ship, x, y, q.item, q.count);
-  sim.events.emit({ type: 'drone.wrecked', drone: id, ship, x, y });
+  sim.events.emit({ type: 'drone.wrecked', drone: id, ship: d.ship, def: d.def, x, y, space: d.space });
   sim.world.destroyEntity(id);
 }

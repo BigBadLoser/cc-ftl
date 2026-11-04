@@ -441,3 +441,13 @@ export const DRONE_CAP_BY_TIER: readonly number[] = [0, 2, 4, 6];
 export const DRONE_PATH_TRIES = 4;
 /** Ticks between a drone's target searches while it has nothing to do (docked and charged, or hovering after a job). */
 export const DRONE_SCAN_TICKS = 10;
+/** Hp a second a drone loses on a fully burning tile inside its ship (scaled by the fire's intensity). */
+export const DRONE_FIRE_DAMAGE = 4;
+/** Seconds a launch or a landing through the bay's ceiling hatch takes; the first HATCH_SHARE of it the hatch opens (landing: closes). */
+export const DRONE_LIFT_SEC = 2.4;
+export const DRONE_HATCH_SHARE = 0.3;
+/** Seconds a departure (a jump, a flee, leaving a scene) waits for drones out in space to dock; those still out then are lost. */
+export const DRONE_RECALL_WAIT_SEC = 6;
+/** Point defence against enemy drones in space within VEHICLE_PD_RANGE of its ship: every VEHICLE_PD_INTERVAL ticks each working module rolls this to hit one for this much. */
+export const DRONE_PD_CHANCE = 0.3;
+export const DRONE_PD_DAMAGE = 8;

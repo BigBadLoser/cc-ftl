@@ -13,10 +13,12 @@ export interface DroneTarget {
 }
 
 /**
- * 'docked': in its bay slot, charging. 'out': flying to its target or working on it (working once `steps` is empty). 'home': flying back to
- * its bay. Knocked out (no live core: `inert`; ion: `stunUntil`) it drops to the deck wherever it is and does nothing.
+ * 'docked': in its bay slot, charging. 'launch': going up through the bay's ceiling hatch into space. 'out': flying to its target or working
+ * on it (inside, working once `steps` is empty; in space the job steers it). 'home': flying back to its bay. 'land': coming down through the
+ * hatch onto its pad. Knocked out (no live core: `inert`; ion: `stunUntil`) it drops to the deck wherever it is (in space it drifts) and does
+ * nothing.
  */
-export type DroneState = 'docked' | 'out' | 'home';
+export type DroneState = 'docked' | 'launch' | 'out' | 'home' | 'land';
 
 /**
  * A drone (DESIGN.md "Drones"): its own entity on a free body (BodyC: sector tiles, a tile's centre at +0.5), run by the drone system and
@@ -43,5 +45,11 @@ export interface Drone {
   inert: boolean;
   /** Knocked out by ion or EMP until this tick (0 = not). */
   stunUntil: number;
+  /** Out in space (free flight on its body) rather than inside its ship. Launch and land move it between the two. */
+  space: boolean;
+  /** Progress 0..1 through a launch or a landing. */
+  lift: number;
+  /** Ticks until its gun is ready again (defence); it was just fired while this is near its full reload (render: the firing pose). */
+  cool: number;
 }
 export const DroneC = defineComponent<Drone>('drone');

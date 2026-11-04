@@ -1,8 +1,7 @@
 import { BodyC } from '../body';
 import { droneCap, installDrones } from '../drones/bay';
 import { DroneC } from '../drones/components';
-import { runDrone, type DronePass } from '../drones/run';
-import { targetKey } from '../drones/work';
+import { claim, runDrone, type DronePass } from '../drones/run';
 import type { Sim } from '../sim';
 
 /**
@@ -22,7 +21,7 @@ export function droneSystem(sim: Sim): void {
     if (!d) continue;
     if (!pass.cap.has(d.ship)) pass.cap.set(d.ship, droneCap(sim, d.ship));
     if (d.state !== 'docked') pass.out.set(d.ship, (pass.out.get(d.ship) ?? 0) + 1);
-    if (d.target) pass.claims.add(targetKey(d.target));
+    if (d.target) claim(pass, d.target);
   }
   for (const id of [...ids]) if (sim.world.has(id, DroneC)) runDrone(sim, id, pass);
 }

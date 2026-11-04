@@ -13,7 +13,14 @@ export type DroneJobDef =
    * First aid: a downed patient is patched in `patchSec` seconds (the bleeding stops; they still need a bed), a conscious wounded one is
    * healed `healPerSec` hp a second up to `healTo` of their max hp. Never a mechanical body.
    */
-  | { kind: 'firstAid'; patchSec: number; healPerSec: number; healTo: number };
+  | { kind: 'firstAid'; patchSec: number; healPerSec: number; healTo: number }
+  /**
+   * Defence, in space: while its ship is in a fight the drone launches through its bay's hatch and orbits the ship `gap` tiles off its hull,
+   * shooting what is already hostile and within `range` tiles: interceptable shots at its ship first (`hitChance` each), then enemy drones
+   * (`droneDamage`), then enemy shuttles (`shuttleDamage`, chipping like point defence). One shot every `fireSec`. Never a ship, so it never
+   * provokes anyone (combat/provoke.ts).
+   */
+  | { kind: 'intercept'; range: number; gap: number; fireSec: number; hitChance: number; droneDamage: number; shuttleDamage: number };
 
 export type DroneJobKind = DroneJobDef['kind'];
 
@@ -38,8 +45,13 @@ export interface DroneDef {
   tint: number;
 }
 
-/** A drone bay module (ModuleDef.droneBay): `slots` drones docked on its footprint tiles in order, each recharged `chargePerSec` while powered. */
+/**
+ * A drone bay module (ModuleDef.droneBay): `slots` drones docked on its footprint tiles in order, each recharged `chargePerSec` and mended
+ * `repairPerSec` while powered. Drones bound for space go up through the ceiling hatch at the middle of its footprint.
+ */
 export interface DroneBayDef {
   slots: number;
   chargePerSec: number;
+  /** Hp a second it mends a docked drone while powered. */
+  repairPerSec: number;
 }

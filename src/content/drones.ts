@@ -28,4 +28,14 @@ export const drones = {
     jobs: [{ kind: 'firstAid', patchSec: 4, healPerSec: 1, healTo: 0.75 }],
     tint: 0x60f0a0,
   },
+  // Guards the ship in space while a fight is on: circles it 4 tiles off the hull and shoots down incoming missiles, enemy drones and
+  // shuttles (shuttles only chip, like point defence). Never fires at a ship, so it cannot start a fight. Quicker and frailer than the others.
+  'drone.defence': {
+    ...body,
+    name: 'Defence drone',
+    speed: 6,
+    maxHp: 30,
+    jobs: [{ kind: 'intercept', range: 14, gap: 4, fireSec: 0.8, hitChance: 0.45, droneDamage: 8, shuttleDamage: 4 }],
+    tint: 0x70b0ff,
+  },
 } satisfies Record<string, DroneDef>;
