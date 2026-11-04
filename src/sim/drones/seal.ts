@@ -58,10 +58,10 @@ export const seal: KindRules<Seal> = {
     if (!steer(b, t.x + 0.5, t.y + 0.5, def.speed * (d.charge <= 0 ? EMPTY_CHARGE_MULT : 1))) return 'working';
     d.work += 1 / TICK_HZ;
     if (d.work < (BUILD_TICKS[Struct.Wall] as number) / TICK_HZ / job.rate) return 'working';
+    const wall: Job = { category: 'firefighting', kind: 'build', x: t.x, y: t.y, struct: Struct.Wall, work: 0, progress: 0, reservedBy: 0 };
+    if (finishStruct(sim, wall) === 'wait') return 'working'; // someone stands on the hole: keep hovering and try again, nothing is spent
     const crew = findJobAt(sim, d.ship, t.x, t.y);
     if (crew) destroyJob(sim, crew); // the crew's wall job on this hole is no longer needed
-    const wall: Job = { category: 'firefighting', kind: 'build', x: t.x, y: t.y, struct: Struct.Wall, work: 0, progress: 0, reservedBy: 0 };
-    finishStruct(sim, wall);
     d.load = (d.load ?? 0) - cost;
     sim.events.emit({ type: 'drone.sealed', drone: id, ship: d.ship, x: t.x, y: t.y });
     return 'done';

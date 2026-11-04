@@ -4,6 +4,7 @@ import { homeShip, newGame, Struct, type Sim, type SimEvent } from '../sim';
 import { ammoCount, takeStock } from '../sim/combat/ammo';
 import { breachesOf } from '../sim/crew/breach';
 import { DroneC } from '../sim/drones/components';
+import { CrewC, PositionC } from '../sim';
 import { shipGrid } from '../sim/regions';
 import { droneScenarioCommands } from './droneScenario';
 
@@ -62,5 +63,29 @@ describe('outside breach repair (#318 slice 2b)', () => {
     step(20);
     expect(holes(sim).length).toBe(1);
     expect(drones(sim).every((d) => d.state === 'docked' && !d.space)).toBe(true);
+  });
+
+  it('a hole someone stands on stays open and costs nothing until it is clear, then it is sealed', () => {
+    const { sim, events, step } = breached();
+    const hole = holes(sim)[0]!;
+    step(1.5);
+    const crew = sim.world.query(CrewC, PositionC)[0]!;
+    const at = sim.world.get(crew, PositionC)!;
+    const stand = (ticks: number): void => {
+      for (let i = 0; i < ticks; i++) {
+        [at.x, at.y, at.toX, at.toY, at.progress] = [hole.x, hole.y, hole.x, hole.y, 0];
+        sim.step();
+        events.push(...sim.events.drain());
+      }
+    };
+    stand(20 * 20);
+    expect(events.some((e) => e.type === 'drone.sealed')).toBe(false);
+    expect(holes(sim).length).toBe(1);
+    expect(drones(sim).some((d) => d.space && d.target?.kind === 'seal')).toBe(true); // still hovering, waiting
+    expect(drones(sim).every((d) => (d.load ?? 0) === 4)).toBe(true);
+    at.x = at.toX = hole.x + 100; // gone (off the grid: the crew's own systems sort them out)
+    step(10);
+    expect(events.some((e) => e.type === 'drone.sealed')).toBe(true);
+    expect(holes(sim).length).toBe(0);
   });
 });
