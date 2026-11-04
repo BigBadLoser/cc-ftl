@@ -20,6 +20,9 @@ SCREENS = ((2 / 32, 13 / 32), (19 / 32, 30 / 32))    # each tile's two terminals
                                                     # keyboards, centred on it)
 T_DEPTH, T_SCREEN = 5, 3               # a terminal: how far out (px) its keyboard's front stands, its screen
 K_SHADOW = "fTS2"                       # the faint shadow on the keyboard's face under each screen
+K_BLOCK, K_IN = "fTS7", 2                # a block across each keyboard's middle (2 rows, the seam's tone), K_IN px
+                                        # in from its ends
+M_SHADOW = "fTS8"                       # the canopy's shadow on the face between the screens (2 rows under it)
 B_TONE = "fTS3"                         # the screens' borders' front (darker than the keyboard's face)
 T_DROP, T_GLASS = 3 * PZ, 5 * PZ        # the keyboard's top under T_SHOW's foot; the glass's height (up to
                                         # T_SHOW's top)
@@ -35,17 +38,20 @@ def _rows(d):
     return d / (PX / 2) * PZ
 
 
-def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1):
+def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False):
     """A strip of one tone along a sloping face's top (its foot at lo, its top at hi: (d, z)), rows of it as seen,
-    a touch out from it."""
+    a touch out from it; or (mid) across its middle."""
     dd, dz = hi[0] - lo[0], hi[1] - lo[1]
     ln = (dd * dd + dz * dz) ** 0.5
     seen = dz / PZ + abs(dd) / (PX / 2)                 # (the rows the slope shows)
-    t0 = max(0.0, 1.0 - rows / seen)
+    t0, t1 = max(0.0, 1.0 - rows / seen), 1.0
+    if mid:                                             # (whole rows down from its top, as the strip along it)
+        r = round((seen - rows) / 2)
+        t0, t1 = 1.0 - (r + rows) / seen, 1.0 - r / seen
     od, oz = dz / ln * PAINT, -dd / ln * PAINT
     nrm = T.OUT(ax) * (dz / ln) + Vector((0, 0, 1)) * (-dd / ln)
-    pts = [T.P(ax, plane, u, lo[1] + t * dz + oz, lo[0] + t * dd + od) for u, t in ((u0, t0), (u1, t0), (u1, 1.0),
-                                                                                       (u0, 1.0))]
+    pts = [T.P(ax, plane, u, lo[1] + t * dz + oz, lo[0] + t * dd + od) for u, t in ((u0, t0), (u1, t0), (u1, t1),
+                                                                                       (u0, t1))]
     k.poly(pts, "wall", 0, nrm, fixed=col)
 
 
@@ -95,11 +101,13 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         for k0, k1 in ((e0, c - T_SEAM * L / 2), (c + T_SEAM * L / 2, e1)):    # (one keyboard across the bay, a
             prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zkt), (0.0, zkt)], FACE, 3,  # seam
                   cols=[False, sd("fTS3", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))  # down its
+            _slope(k, ax, plane, k0 + K_IN * L, k1 - K_IN * L, (td, zk0), (ts, zkt), sd(K_BLOCK, ax), 2, True)
         for s0, s1 in SCREENS:                                  # (a faint shadow along the slope's top row under
-            _slope(k, ax, plane, c - 0.5 + s0, c - 0.5 + s1, (td, zk0), (ts, zkt), K_SHADOW)  # each screen)
+            _slope(k, ax, plane, c - 0.5 + s0, c - 0.5 + s1, (td, zk0), (ts, zkt), sd(K_SHADOW, ax))  # each screen)
         m0, m1 = c - 0.5 + SCREENS[0][1], c - 0.5 + SCREENS[1][0]                # middle; a face between the
         prism(k, ax, plane, m0, m1, [(0.0, zkt), (ts, zkt), (ts, zc0), (0.0, zc0)], FACE, 3,  # screens, a px back
               cols=[False, sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))            # of their borders)
+        band(m0, m1, zg1 - 2 * PZ, zc0, M_SHADOW, ts)          # (the canopy's shadow on it)
         for i, (s0, s1) in enumerate(SCREENS):
             u0, u1 = c - 0.5 + s0, c - 0.5 + s1
             prism(k, ax, plane, u0, u1, [(0.0, zkt), (ts, zkt), (ts, zc0), (0.0, zc0)], FACE, 3,
