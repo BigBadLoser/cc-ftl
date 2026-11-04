@@ -78,10 +78,15 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 for y, x0, x1 in lines:
                     if zg0 + (y + 1) * PZ <= zg1 + 1e-6 and u0 + x1 * L <= u1 - L + 1e-6:
                         band(u0 + x0 * L, u0 + x1 * L, zg0 + y * PZ, zg0 + (y + 1) * PZ, col, ts + PX / 8)
-    prism(k, ax, plane, a, b, [(0.0, zc0), (C_DEPTH, zc0), (C_DEPTH, z1), (0.0, z1)], FACE, 3,
-          cols=[sd("fTS4", ax), sd("fTS1", ax), sd("fTS1", ax), False], mitre=mit)
-    for i, col in enumerate(("fTS0", "fTS1", "fTS7")):
-        band(a, b, z1 - (i + 1) * PZ, z1 - i * PZ, col, C_DEPTH)
+    for c in range(-1, 2):                                      # (a tile's, flush with its side plates)
+        q0, q1 = max(a, c - 0.5 + C_IN * L), min(b, c + 0.5 - C_IN * L)
+        if q1 - q0 < 1e-6:
+            continue
+        m = (mit[0] if q0 <= a + 1e-6 else False, mit[1] if q1 >= b - 1e-6 else False)
+        prism(k, ax, plane, q0, q1, [(0.0, zc0), (C_DEPTH, zc0), (C_DEPTH, z1), (0.0, z1)], FACE, 3,
+              cols=[sd("fTS4", ax), sd("fTS1", ax), sd("fTS1", ax), False], cap=sd(D_SIDE_TONE, ax), mitre=m)
+        for i, col in enumerate(("fTS0", "fTS1", "fTS7")):
+            band(q0, q1, z1 - (i + 1) * PZ, z1 - i * PZ, col, C_DEPTH)
 
 
 TAN_TOPS = (Design("plain"), Design("console", body=console))
