@@ -72,7 +72,7 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             if k0 < a - 1e-6 or k1 > b + 1e-6:
                 continue
             prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (0.0, zk1)], FACE, 3,
-                  cols=[False, sd("fTS3", ax), sd("fTS0", ax), False, False], cap=sd(D_SIDE_TONE, ax))
+                  cols=[False, sd("fTS3", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))
             prism(k, ax, plane, u0, u1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,
                   cols=[False, sd("fTC0", ax), False, False], cap=sd(D_SIDE_TONE, ax))     # (the glass, its face)
             bd = ts + L                                         # a tan border round it, a px proud of it
