@@ -39,7 +39,10 @@ Last updated: 2026-11-03.
 
 - **Encounters (#173):** steps 1-3 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314). Paused by the
   user (2026-11-04); next: pirate ambush, distress freighter, medical pod, each checked in play first.
-- **Designed, not started:** weapon upgrades and flak (#317), drones (#318); crew implants (#311) needs its design pass.
+- **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
+  breach seals, supplies, enemy drones, staggered landing (#326).
+- **Designed, not started:** weapon upgrades and flak (#317); new modules (comfort, medical, gear, food: DESIGN.md "New modules");
+  crew implants (#311) needs its design pass.
 - **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
