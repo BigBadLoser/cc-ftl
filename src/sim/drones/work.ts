@@ -12,6 +12,7 @@ import { TICK_HZ } from '../time';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
 import type { Drone, DroneTarget } from './components';
 import { intercept } from './intercept';
+import { seal, sealKey } from './seal';
 import type { DroneJobDef, DroneJobKind } from './types';
 
 /** A candidate target and its rank within its kind (lower first: a downed patient before a scratched one). */
@@ -29,7 +30,7 @@ export interface KindRules<J extends DroneJobDef> {
   /** Any number of drones may share one target of this kind (no claim). */
   shared?: boolean;
   /** Every target of this kind on the ship that needs the work now. */
-  candidates(sim: Sim, ship: number, job: J): Candidate[];
+  candidates(sim: Sim, ship: number, job: J, d?: Drone): Candidate[];
   /** The target still needs this work; it may update where to hover (`x`, `y`: a patient who moved). */
   valid(sim: Sim, ship: number, t: DroneTarget, job: J): boolean;
   /** One tick of work by a drone hovering on the target (inside), or one tick of the job in space, where the job steers the drone itself. */
@@ -147,14 +148,14 @@ const firstAid: KindRules<FirstAid> = {
   },
 };
 
-const RULES: { [K in DroneJobKind]: KindRules<Extract<DroneJobDef, { kind: K }>> } = { repair, extinguish, firstAid, intercept };
+const RULES: { [K in DroneJobKind]: KindRules<Extract<DroneJobDef, { kind: K }>> } = { repair, extinguish, firstAid, intercept, seal };
 
 /** Where a job kind's work is. */
 export const jobWhere = (kind: DroneJobKind): 'inside' | 'space' => RULES[kind].where ?? 'inside';
 
 /** The target query of one job kind. */
-export function candidatesFor(sim: Sim, ship: number, job: DroneJobDef): Candidate[] {
-  return (RULES[job.kind] as KindRules<DroneJobDef>).candidates(sim, ship, job);
+export function candidatesFor(sim: Sim, ship: number, job: DroneJobDef, d?: Drone): Candidate[] {
+  return (RULES[job.kind] as KindRules<DroneJobDef>).candidates(sim, ship, job, d);
 }
 
 /** The target still needs its work. */
@@ -168,4 +169,4 @@ export function workOn(sim: Sim, id: number, d: Drone, t: DroneTarget, job: Dron
 }
 
 /** The claim key of a target: one drone per module, patient or burning tile; '' for a kind any number of drones share. */
-export const targetKey = (t: DroneTarget): string => (RULES[t.kind].shared ? '' : t.kind === 'extinguish' ? `x:${t.x},${t.y}` : `${t.kind}:${t.id}`);
+export const targetKey = (t: DroneTarget): string => (RULES[t.kind].shared ? '' : t.kind === 'seal' ? sealKey(t) : t.kind === 'extinguish' ? `x:${t.x},${t.y}` : `${t.kind}:${t.id}`);

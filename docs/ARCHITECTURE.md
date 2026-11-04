@@ -1417,7 +1417,13 @@ Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
   - *Staggered return* (`drones/recall.ts` `landingBusy`, `queuePlace`): while a ship's drones are recalled a drone in space waits at a place
     of its own round the hatch until no other drone of the ship is cleared (`Drone.clear`) or less than `DRONE_LAND_GAP_SEC` into its landing.
     With the 2.4 s landing and 6 s wait, up to four drones make it. SAVE_VERSION 91.
-  - *Outside breach repair:* not built yet (open question: the material rule, see STATUS).
+  - *Supplies:* `DroneDef.supply` (`{ item, capacity }`, data) is a load a drone carries (`Drone.load`, saved). Docked in a powered bay it tops
+    up from the ship's storage every scan (`combat/ammo.ts` `takeStock`, shared with `consumeAmmo`); no hauling. The repair drone carries 4 metal.
+    Medic supplies and drone ammo will use the same field. SAVE_VERSION 92.
+  - *Outside breach repair* (`drones/seal.ts`, job `seal`, space): a repair drone with the wall's whole cost in its load (`structCosts`, via
+    `sealCost`) takes a hole in its ship's hull (`crew/breach.ts` `breachesOf`, shared with the crew's seal job posting), flies out through the
+    hatch, hovers over it for the crew's wall time, then finishes it through `finishStruct` (exported from `crew/jobWork.ts`) and pays from its
+    load. A crew wall job on the same hole is destroyed. Recall and wrecks work as for any space job. Debug start `?scenario=drones&breach`.
 
 ## Vehicles (shuttles), `src/sim/vehicles/`
 

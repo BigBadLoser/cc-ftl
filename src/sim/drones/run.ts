@@ -1,4 +1,5 @@
 import { ALT, BodyC, type Body } from '../body';
+import { takeStock } from '../combat/ammo';
 import { IonC } from '../combat/components';
 import { shipById } from '../combat/ships';
 import { mustWaitAtAirlockDoor } from '../modules/airlock';
@@ -153,6 +154,9 @@ function docked(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef, pass: Dr
     d.charge = Math.min(100, d.charge + rate / TICK_HZ);
     d.hp = Math.min(def.maxHp, d.hp + (sim.content.modules[bay.def]?.droneBay?.repairPerSec ?? 0) / TICK_HZ);
   }
+  if (bay?.powered && def.supply && (d.load ?? 0) < def.supply.capacity && (sim.tick + id) % DRONE_SCAN_TICKS === 0) {
+    d.load = (d.load ?? 0) + takeStock(sim, d.ship, def.supply.item, def.supply.capacity - (d.load ?? 0)); // topped up from the ship's storage
+  }
   if (d.charge < def.charge.launchAbove || (pass.out.get(d.ship) ?? 0) >= (pass.cap.get(d.ship) ?? 0) || recalled(sim, d.ship)) return;
   if ((sim.tick + id) % DRONE_SCAN_TICKS !== 0 || !pickTarget(sim, d, b, def, pass, 'any')) return;
   if (d.target && jobWhere(d.target.kind) === 'space') {
@@ -246,7 +250,7 @@ function pickTarget(sim: Sim, d: Drone, b: Body, def: DroneDef, pass: DronePass,
   for (const job of def.jobs) {
     const place = jobWhere(job.kind);
     if (where !== 'any' && place !== where) continue;
-    const cands = candidatesFor(sim, d.ship, job).filter((c) => {
+    const cands = candidatesFor(sim, d.ship, job, d).filter((c) => {
       const k = targetKey(c);
       return !k || !pass.claims.has(k);
     });

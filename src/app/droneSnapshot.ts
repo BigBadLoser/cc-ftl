@@ -4,7 +4,7 @@ import { DroneC, type Drone } from '../sim/drones/components';
 import { shipIdOf } from '../sim/regions';
 import type { UiDroneBay } from '../ui/api';
 
-const DOING: Record<string, string> = { repair: 'repairing', extinguish: 'putting out a fire', firstAid: 'first aid', intercept: 'guarding the ship' };
+const DOING: Record<string, string> = { repair: 'repairing', extinguish: 'putting out a fire', firstAid: 'first aid', intercept: 'guarding the ship', seal: 'sealing a breach' };
 
 /** What a drone is up to, in a few words. */
 function doing(sim: Sim, d: Drone): string {
@@ -30,7 +30,7 @@ export function buildDroneBay(sim: Sim, bay: number): UiDroneBay | null {
       const def = d && sim.content.drones?.[d.def];
       if (!d || !def) return null;
       const down = d.inert || d.stunUntil > sim.tick;
-      return { id, name: def.name, state: down ? 'down' : d.state, doing: doing(sim, d), charge: Math.round(d.charge), hp: Math.round(d.hp), maxHp: def.maxHp };
+      return { id, name: def.name, state: down ? 'down' : d.state, doing: doing(sim, d), charge: Math.round(d.charge), hp: Math.round(d.hp), maxHp: def.maxHp, supply: def.supply ? { name: sim.content.items[def.supply.item]?.name ?? def.supply.item, have: d.load ?? 0, cap: def.supply.capacity } : null };
     }),
     out,
     cap: droneCap(sim, ship),

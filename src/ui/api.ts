@@ -275,7 +275,7 @@ export interface UiResearch {
 
 /** A drone bay for its panel: each slot's drone, and how many of the ship's drones its AI core lets out at once. */
 export interface UiDroneBay {
-  slots: ({ id: number; name: string; state: 'docked' | 'launch' | 'out' | 'home' | 'land' | 'down'; doing: string; charge: number; hp: number; maxHp: number } | null)[];
+  slots: ({ id: number; name: string; state: 'docked' | 'launch' | 'out' | 'home' | 'land' | 'down'; doing: string; charge: number; hp: number; maxHp: number; /** What it carries (its supply item's name) and how much, or null for a drone with no supply. */ supply: { name: string; have: number; cap: number } | null } | null)[];
   /** Drones of this ship out of their bays now, and the core's cap (0: no live AI core, drones are inert). */
   out: number;
   cap: number;

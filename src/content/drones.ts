@@ -14,11 +14,13 @@ const body = {
 };
 
 export const drones = {
-  // Repairs damaged modules at half an engineer's speed and puts out small fires (big ones are left to the crew).
+  // Seals hull breaches from outside (paid from its metal load), repairs damaged modules at half an engineer's speed and puts out small fires (big ones are left to the crew).
   'drone.repair': {
     ...body,
     name: 'Repair drone',
-    jobs: [{ kind: 'extinguish', rate: 0.6, maxFire: 120 }, { kind: 'repair', rate: 0.5 }],
+    // Carries 4 metal (two walls) topped up in its bay; seals hull breaches from outside at the crew's speed, then repairs modules (free).
+    supply: { item: 'item.metal', capacity: 4 },
+    jobs: [{ kind: 'extinguish', rate: 0.6, maxFire: 120 }, { kind: 'seal', rate: 1 }, { kind: 'repair', rate: 0.5 }],
     tint: 0xffa040,
   },
   // Flies to the downed (patches them so they stop bleeding) and the wounded (heals them slowly to three quarters). Beds and medics do the rest.

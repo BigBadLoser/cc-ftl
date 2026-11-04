@@ -377,6 +377,16 @@ function startScenario(): void {
     return;
   }
   if (scenario === 'drones' && params.has('fight')) return droneFightScenario();
+  if (scenario === 'drones' && params.has('breach')) {
+    // `?scenario=drones&breach`: repair drones with metal and a hole in the hull; they go out through the hatch and seal it (app/droneScenario.ts).
+    loop.setSpeed(1);
+    const setUp = (): void => {
+      if (sim.tick < 10) return void setTimeout(setUp, 150);
+      for (const cmd of droneScenarioCommands(sim, false, true)) bridge.dispatch(cmd);
+    };
+    setUp();
+    return;
+  }
   if (scenario === 'drones') {
     // `?scenario=drones`: drone bays, three drones, a fire, a damaged console and hurt crew (app/droneScenario.ts).
     loop.setSpeed(1);
