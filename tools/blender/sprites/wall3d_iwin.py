@@ -26,11 +26,12 @@ GLASS = None            # the pane's Relief, built by the piece (the glass rende
 
 
 def _heights():
-    """(sill top, beam underside): the lip's top over the ramp; under the header cushion's shadow bands."""
+    """(sill top, beam underside): the ramp's top (no lip over the opening: the pane down to the ramp); under
+    the header cushion's shadow bands."""
     zs = W.skirt_top()
     z1 = W.HF - 0.031                                   # (tan: the header's top under the cap's black)
     zs0 = z1 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D)
-    return zs + TAN.LIP_TOP, zs0 - 3 * PZ
+    return zs, zs0 - 3 * PZ
 
 
 def _span(part):
