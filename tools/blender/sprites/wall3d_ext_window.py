@@ -46,6 +46,7 @@ SLOPE_H = 5                         # this many px down (the jamb's side down to
 FOOT_H = 3                          # on a foot this many px tall, this far on from the slope's end; then down to the
 FOOT_W = 5 / 32                     # sill's flat top (the slope measured off the reference's glass line)
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
+SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, under the header: facing down, darker)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -89,19 +90,22 @@ def build(k, ax, plane, a, b, ends, H):
         _slab(k, ax, plane, pts, dp - PANE / 2, dp + PANE / 2, False,
               [False if abs(a[0] - b[0]) < 1e-6 and (abs(a[0] - w1) < 1e-2 or (not corner and abs(a[0] - w0) < 1e-2))
                else EDGE for a, b in zip(pts, pts[1:] + pts[:1])])
-        if corner:                                                      # the slope and its foot
+        if corner:                                                      # the slope and its foot (and the top's)
             fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, w0 + SLOPE + FOOT_W
             _slab(k, ax, plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + SLOPE, zj + fh), (w0, zj + fh + sh)],
                   db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False)
+            _slab(k, ax, plane, [(w0, zh), (w0, zh - sh), (w0 + SLOPE, zh)], db, dv, HEAD_FRONT,   # the top corner's
+                  [False, SLOPE_TOP, False], back=False)                                         # slope
 
 
 def _opening(u0, u1, z0, z1, corner):
     """The window's opening in (u, z), anticlockwise from its top left (corner: the slope and its foot at its bottom
-    left)."""
+    left, the slope at its top left)."""
     if not corner:
         return [(u0, z1), (u0, z0), (u1, z0), (u1, z1)]
     fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, u0 + SLOPE + FOOT_W
-    return [(u0, z1), (u0, z0 + fh + sh), (u0 + SLOPE, z0 + fh), (ut, z0 + fh), (ut, z0), (u1, z0), (u1, z1)]
+    return [(u0 + SLOPE, z1), (u0, z1 - sh), (u0, z0 + fh + sh), (u0 + SLOPE, z0 + fh), (ut, z0 + fh), (ut, z0),
+            (u1, z0), (u1, z1)]
 
 
 def _inset(pts, e):
