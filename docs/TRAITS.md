@@ -291,6 +291,32 @@ authoritative and adds `hazard` (Phase 3). Mild breaks alone could go through th
 Bonds come from compatibility and shared experiences; being in the same room barely matters, so not everyone ends up
 friends.
 
+**User decisions (2026-11-04, #239).** These override the tables below where they differ.
+- **Light chats, built to grow.** Two crew sometimes chat in free time (meals, break spots, leisure modules such as the
+  game table). A small bubble shows over them, and the chat goes well or badly by compatibility and mood. Chats and shared
+  danger (fights, rescues, deaths) are the main bond sources; the passive "near each other" and "working nearby" terms
+  shrink to a trickle. Interactions are **data** (`InteractionDef` in `content/`: when it can happen, chance and trait
+  weights, score change, bubble icon, whether it logs), so deep talks, jokes, insults and comforting a grieving friend
+  can be added later as content, not code. Only `chat` exists in this pass, plus the planned shouting match.
+- **Romance: not now, leave room.** Friends and rivals only. A bond record can carry more than a score later
+  (partners, shared bed, jealousy) without reshaping it.
+- **The player steers indirectly.** No relationship orders. What you build and where you send people matters: leisure
+  modules make more chances to chat, rivals posted apart see less of each other, and mixed away teams bond.
+- **Visible on the crew card and in the world.** The crew card lists friends and rivals by name, and hovering a crewmate
+  shows a short opinion line with its main reason ("Friend: fought together at Ithra"), so each pair keeps its last few
+  reasons. In the world: chat bubbles, friends sit together at meals and break spots, rivals keep apart, and the shouting
+  match shows over both heads. No relationship web panel. Log lines stay for milestones only.
+- **Pace: hours of play.** A first friend or rival takes about 1 to 3 hours of play together. One near-death fight or a
+  rescue can get there in one go. Bonds fade slowly without upkeep. The numbers below are retuned to that.
+- **Rivals clash with a shouting match** (as planned): a visible scene, mood hit to both, a log line, nobody hurt.
+  Brawls may come later as a break type.
+- **Before mental breaks (#175).** Grief is a mood factor for now ("grieving" −15 for 10 min). When breaks land, they read
+  grief and rivalries as stressors; nothing here is redone.
+- **People, not just crew.** Bonds are keyed by a stable person id, not an entity id, so anyone with a lasting identity
+  can hold or be the subject of an opinion. Crew-to-crew is what gets built now. NPCs (passengers, a recurring pirate)
+  join as soon as they have a lasting identity: the extra work there is giving them one (an encounter matter), not the
+  bond system. The pirate ambush may then be expanded slightly (DESIGN.md "Pirate ambush").
+
 | Rule | Value |
 |---|---|
 | `RelationsC { scores: Record<crewId, number>, seen: {...} }` | −100 to +100 per other crew member, sparse. Player crew only. |
@@ -362,7 +388,7 @@ Size **M** buy-only; **L** with the still and its art.
 | 4 | Work-based XP: `grantXp`, curve, grant points, recruit and save handling | S/M | built (#251) |
 | 5a | Phobia pick penalties and mood factors; Pyrophobic, Space-sick, Afraid of the dark rollable; rename `trait.void_fear` ("Afraid of the void", `rollable: false` today) to `trait.space_sick`, with its name and short line | S | mood part built (#252): the `trait.void_fear` rename to `trait.space_sick` is done, and fire nearby, spacewalk and the −10 dark factor exist; the three stay `rollable: false` until job avoidance lands (#194 Phase 2) |
 | 5b | Mental breaks: `BreakdownC`, `BreakMemoryC`, check and stressors, `break` machine, work-drive suppression, trait weights; Battle-shy rollable; effect lines gain their break parts | M | after #194's `hazard` interrupt (Phase 3) |
-| 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | |
+| 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | next (user, 2026-11-04), before 5b; decisions in section 6 |
 | 7 | Addictions; Drinker, Stim-hooked rollable | M/L | |
 
 Save: `RolledSkillsC`, `TraitsC`, `BreakdownC`, `BreakMemoryC`, `RelationsC`, `AddictionC` are optional components (and optional `MoodC` counters); old saves load with
