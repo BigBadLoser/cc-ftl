@@ -103,6 +103,14 @@ export function crewAway(sim: Sim): boolean {
   return false;
 }
 
+/** True while a let-in visit is under way in the grid: from the dock grant until a trap has sprung or an honest party is home in its shuttle. */
+function visitUnderway(ev: EventGrid): boolean {
+  return ev.scene.ships.some((s) => {
+    const v = s.ambush?.visit;
+    return v === 'granted' || v === 'aboard' || (v === 'delivered' && !s.ambush?.home);
+  });
+}
+
 /**
  * Why the player cannot leave the event grid now, or null: a live deal, crew or a shuttle still away (DESIGN.md "Physical encounters": leaving is blocked
  * until they are back), or hostiles about with the drive not charged (leaving under fire is a flee).
@@ -112,6 +120,7 @@ export function leaveBlocker(sim: Sim): string | null {
   if (sim.sector.state === 'deploying') return null;
   if (sim.trade.deals.some(isLive)) return 'tradeInProgress';
   if (crewAway(sim)) return 'crewAway';
+  if (visitUnderway(sim.galaxy.event)) return 'visitors'; // a let-in party and its shuttle must be settled first (scene/visit.ts)
   const me = playerShipInfo(sim);
   if (!me) return 'notPlayerShip';
   if (hostilesPresent(sim) > 0 && (ftlCharge(sim, me.id) ?? 0) + 1e-9 < FTL_CHARGE_SEC) return 'notCharged';

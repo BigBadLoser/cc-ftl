@@ -10,6 +10,7 @@ import { RolledSkillsC } from '../sim/crew/traits';
 import { playerCrew, playerStock, withPlayerAboard } from '../sim/story/world';
 import { ItemStackC } from '../sim/items/components';
 import { BoarderC, VehicleC } from '../sim/vehicles/components';
+import { leaveBlocker } from '../sim';
 import { buildStory } from './storySnapshot';
 import { eventOf } from './encounterSnapshot';
 import { content } from '../content';
@@ -248,6 +249,26 @@ describe('the returning pirate: in its pocket', () => {
     expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before);
     expect(sim.story.flags['spared_pirate'] ?? 0).toBe(0);
     expect(out.some((e) => e.type === 'ship.fled')).toBe(true);
+  });
+
+  it('leaving is refused while a visit is under way, for both variants, and allowed once it is settled', () => {
+    for (const trap of [true, false]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      expect(leaveBlocker(sim)).toBeNull(); // an open request blocks nothing
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      step(sim, 2);
+      expect(leaveBlocker(sim)).toBe('visitors');
+      for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+      expect(leaveBlocker(sim)).toBe('visitors');
+      expect(eventOf(sim)?.canLeave).toBe(false);
+      sim.enqueue({ type: 'galaxy.leaveEvent' });
+      expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.leaveEvent', reason: 'visitors' });
+      for (let i = 0; i < 20 * 150 && !(trap ? ambushOf(sim)?.visit === 'sprung' : ambushOf(sim)?.home); i++) step(sim);
+      // A sprung trap is an ordinary fight (leaving then is a flee); an honest party is home and the way is clear.
+      expect(leaveBlocker(sim)).not.toBe('visitors');
+      if (!trap) expect(leaveBlocker(sim)).toBeNull();
+    }
   });
 
   it('boarders killed cost standing with pirates; the skiff destroyed sets a flag', () => {
