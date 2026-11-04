@@ -7,7 +7,7 @@ from .tan_ramps import FACE
 # the console: a deep canopy under the cap, two screens in the recess under it, a desk standing out under them (a
 # frame, open under its top plate), then the lip (heights in rows of face, as the ref's)
 C_FRONT, C_DEPTH = 3 * PZ, 3.5 * PX     # the canopy: its front's height, how far it stands out (7 rows of top)
-C_IN, C_FOOT = 2, 3                     # its side plates: in from each tile edge, out at their foot (px)
+C_IN = 2                                # its side plates: in from each tile edge (px)
 D_TOP, D_THICK = 15 * PZ, 2 * PZ       # the desk: its shelf's top over the rail's foot, the shelf's thickness
 D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side panels, the rail at their feet stand
 D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
@@ -56,11 +56,11 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         q0, q1 = max(a, c - 0.5 + C_IN * L), min(b, c + 0.5 - C_IN * L)     # shadow; the face outside its plates
         if q1 - q0 > 1e-6:                                                  # left lit, against their sides)
             band(q0, q1, zd1, zc0, "fTS7")
-    for c in range(-1, 2):                                      # the canopy's side plates: its full depth under
-        for p0 in (c - 0.5 + C_IN * L, c + 0.5 - (C_IN + 1) * L):     # it, their front sloping in from there down
-            if a - 1e-6 <= p0 and p0 + D_SIDE <= b + 1e-6:              # to C_FOOT at the shelf; C_IN in from each
-                prism(k, ax, plane, p0, p0 + D_SIDE, [(0.0, zd1), (C_FOOT * L, zd1), (C_DEPTH, zc0), (0.0, zc0)],
-                      FACE, 3, cols=[False, sd("fTS3", ax), False, False], cap=sd(D_SIDE_TONE, ax))  # tile edge
+    for c in range(-1, 2):                                      # the canopy's side plates: brackets its full depth
+        for p0 in (c - 0.5 + C_IN * L, c + 0.5 - (C_IN + 1) * L):     # under it, their front at 45 degrees from
+            if a - 1e-6 <= p0 and p0 + D_SIDE <= b + 1e-6:              # its edge back to the wall; C_IN in from
+                prism(k, ax, plane, p0, p0 + D_SIDE, [(0.0, zc0 - C_DEPTH), (C_DEPTH, zc0), (0.0, zc0)],  # each
+                      FACE, 3, cols=[sd("fTS3", ax), False, False], cap=sd(D_SIDE_TONE, ax))          # tile edge
     td, ts = T_DEPTH * L, T_SCREEN * L                          # the terminals: a keyboard on the shelf (a low
     zk1 = zc0 - _rows(C_DEPTH) + _rows(ts) - T_SHOW             # front, its face sloping back up to the screen's
     zk0 = zd1 + T_FRONT                                         # foot; wider than the screen toward the tile's
