@@ -37,9 +37,8 @@ Last updated: 2026-11-03.
 
 ## In progress
 
-- **Now:** #173 physical encounters steps 1-2, the shared
-  scene infrastructure and the trader skiff (branch `events/scenes-173`). Later encounter steps, each checked in play first:
-  derelict, pirate ambush, distress freighter, medical pod.
+- **Now:** #173 physical encounters step 3, the derelict. Steps 1-2 (scenes, battle stations, the trader skiff) merged in #309.
+  Then, each checked in play first: pirate ambush, distress freighter, medical pod.
 - **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
