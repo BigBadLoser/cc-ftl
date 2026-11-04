@@ -203,8 +203,8 @@ def grille(paint, solid, U, D, sd):
     bx1 = U(G_R) + GAP * L / 2                                                      # (its right side: on the cushion,
     paint(q(bu0, bx1, D(0.0), D(1.0)), sd("fTS3"), 1.75)                            # no joint) (the slope round it)
     fl = G_H - G_SINK
-    LIT = "fTW1" if sd("fTW0") != "fTW0" else None  # (on the shaded face its sides toward the light: a step under
-                                                    # the lit face's slats)
+    LIT = "fTS3" if sd("fTW0") != "fTW0" else None  # (on the shaded face its sides toward the light: a shade
+                                                    # under the cushions' slope round it)
     solid(q(bu0, bx1, bd0, bd1), fl, sd("fTS2"), FACE, 4, lit=LIT)                  # the body, to the vent's floor
     ru, rd = G_RIM * L, G_RIM_D * E
     vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
