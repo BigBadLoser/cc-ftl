@@ -56,10 +56,10 @@ E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under 
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
 E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
 E_TONE = "hsL"                      # tile's edge, from E_IN px out from its back to E_SHORT px short of its front
-F_U, F_RECESS = (8, 24), (11, 18)   # W1's sill front: F, a recess REC deep over these px from the tile's edge
-F_GRILLE = (6, 8)                   # (centred) and px down from the front's top, its floor the base's plates' tone,
-F_SEAM, F_SEAM_DOWN = 26, (4, 18)   # its ledge F_LEDGE; painted lines over it (px down, F_LINE), as wide; a seam
-F_FLOOR, F_LEDGE = YS[3], YS[1]     # beside it, a dark px and a shade
+F_U, F_RECESS = (8, 24), (11, 18)   # W1's sill front: F, a plate over these px from the tile's edge (centred) in
+F_GRILLE = (6, 8)                   # the base's plates' tone, from the seam's top down: painted over a recess REC
+F_SEAM, F_SEAM_DOWN = 26, (4, 18)   # deep (px down from the front's top; its ledge F_LEDGE), painted lines over that
+F_FLOOR, F_LEDGE = YS[3], YS[1]     # (px down, F_LINE); a seam beside it, a dark px and a shade, over its height
 F_LINE = "hsXS"
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
@@ -176,9 +176,8 @@ def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
     def z(d):                                           # the slope's top at d
         return zs + (fr - d) * (zj - zs) / (fr - dv)
 
-    def paint(a, b, z0, z1, col):                       # a painted band on the front
-        f.part(a, b, [(fr - 0.01, z0), (fr + 0.001, z0), (fr + 0.001, z1), (fr - 0.01, z1)], [col] * 4, col,
-               end=False)
+    def paint(a, b, z0, z1, col, out=0.001):            # a painted band on the front
+        f.part(a, b, [(fr - 0.01, z0), (fr + out, z0), (fr + out, z1), (fr - 0.01, z1)], [col] * 4, col, end=False)
 
     def px(n):
         return s0 + T3.px(n)
@@ -202,6 +201,7 @@ def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
     for a, b, cp in ((u0, f0, (None, SIDE)), (f1, u1, None)):
         f.part(a, b, [(df, za), (fr, za), (fr, zb), (df, zb)], [False, front, False, False], cp, end=False)
     f.part(u0, u1, [(df, zb), (fr, zb), (fr, zs), (df, z(df))], [False, front, SILL_SLOPE, False], None, end=False)
+    paint(px(F_U[0]), px(F_U[1]), zb, zs - F_SEAM_DOWN[0] / Z, F_FLOOR, 0.0005)     # the plate over the recess
     for n in F_GRILLE:
         paint(px(F_U[0]), px(F_U[1]), zs - (n + 1) / Z, zs - n / Z, F_LINE)
     zt, zu = zs - F_SEAM_DOWN[1] / Z, zs - F_SEAM_DOWN[0] / Z
