@@ -10,6 +10,8 @@ from .shell import FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell,
 from .tan_ramps import BLUE, FACE, OUTER, TAN_RAMPS
 from .tan_tops import TAN_TOPS
 
+HEAD_END = "fTS8"                  # the header block's ends on the lit side (they face the shade; its darkest blends
+                                   # with the backdrop)
 HEAD_D, HEAD_H = PX, 11 * PZ       # the header block: its depth (2 px of lit top), its front (a lit edge, 10 of face)
 LIP_D, LIP_TOP = PX / 2, 6 * PZ    # the lip at the face's foot: its depth (a px of lit top), its top over the slope's
                                     # top (its front from there down to it: 4 px of face over a dark one)
@@ -131,9 +133,8 @@ def tan(hull):
             return
 
         def cushion(shaded=None):                       # the header block: its pale top, a lit edge on its front,
-                                                        # a shadow 2 px under it (its shade-facing sides, its front
-                                                        # on the shaded side and its ends on the lit, in this tone:
-                                                        # a design's, over a darker face)
+                                                        # a shadow 2 px under it (its front on the shaded side in
+                                                        # this tone: a design's, over a darker face)
             zh0 = z1 - HEAD_H
             for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile
                 if r is not None:                                   # edge, a px at a free end, its corners curved,
@@ -144,7 +145,7 @@ def tan(hull):
                     continue
                 prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
                       FACE, 3, cols=[False, shaded if ax == "x" else None, sd("fTS0", ax), False], mitre=m,
-                      cap=shaded if ax == "y" else None)        # (its ends on the lit side: they face the shade)
+                      cap=HEAD_END if ax == "y" else None)      # (its ends on the lit side: they face the shade)
                 band(u0, u1, z1 - r - PZ, z1 - r, "fTS1", HEAD_D)
             zs0 = zh0 - _hid(HEAD_D)                    # (the face's first row seen under the header)
             band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
