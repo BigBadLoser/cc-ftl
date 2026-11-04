@@ -253,7 +253,7 @@ def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None, hid=0.0):
               cols=[False, sd(tone, ax), False], cap=cap)
 
 
-def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True):
+def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0):
     """The cabinets and drawers; under the header of bins, the canopy and its screens (canopy), else under the look's
     cushion header (drawn by the look: the design's "cushion")."""
     L = 1 / 32
@@ -278,7 +278,8 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True):
                 fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
                 _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
         e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L     # the cabinets, the drawers: a frame of bars,
-        for n, (top, foot, dep, splits, back) in enumerate(SECTIONS):   # the doors back in it
+        for n, (top, foot, dep, splits, back) in enumerate(SECTIONS):   # the doors back in it (the cabinets'
+            top -= cab_up if n == 0 else 0                              # top cab_up px higher)
             fd, zt = dep * L, R(top)
             zf = zl1 if foot is None else R(foot)
             dt = zt - (PZ if n == 0 else 0.0)                       # (the doors' top, under the top bar)
@@ -345,4 +346,4 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True):
 
 
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
-            Design("cabinets", body=functools.partial(lockers, canopy=False), lip=False, cushion=True))
+            Design("cabinets", body=functools.partial(lockers, canopy=False, cab_up=3), lip=False, cushion="fTS8"))
