@@ -29,9 +29,10 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
+CREST = "fTW2"          # the ramps' crest line (blue on a wall) on a window tile: the cushions' tan
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM))
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, CREST))
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -119,6 +120,29 @@ def _cut(k, x0, x1, z1):
         m.f = out
 
 
+def _crest_tan(k, yf):
+    """The blue along the ramps' crest (the line under the face's lip on a wall, the plate the cushions stand on
+    showing there) in tan on a window tile: each blue polygon reaching the crest drawn again in CREST."""
+    zs = W.skirt_top()
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        keep, redo = [], []
+        for f in m.f:
+            pts = [m.v[i] for i in f[0]]
+            cy = sum(abs(p[1]) for p in pts) / len(pts)
+            col = f[2]
+            if cy > yf + 1e-4 and max(p[2] for p in pts) > zs - 0.01 and col[2] > col[0] + 0.01:
+                redo.append([Vector((p[0], -p[1], p[2])) for p in pts])     # (back in grid space)
+            else:
+                keep.append(f)
+        m.f = keep
+        for pts in redo:
+            n = (pts[1] - pts[0]).cross(pts[2] - pts[0])
+            if n.length > 1e-12:
+                k.poly(pts, "wall", 2, n.normalized(), fixed=CREST)
+
+
 def _reach(h, yf):
     """How far out of the wall's middle the ramps' slope is at height h (the cut top's half width)."""
     sl = W.GN * W.RAMP_PX / W.ZART                     # (the ramps' slope: z per unit out)
@@ -134,6 +158,7 @@ def hook(k, sp):
     z0, z1 = _heights()
     yb, yf = W.wall_back() - 0.5, W.wall_back() - 0.5 + W.TW
     _cut(k, x0, x1, z1)
+    _crest_tan(k, yf)
     a, b = max(x0, -0.5), min(x1, 0.5)
     bends = [u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b]
     k.side = None
