@@ -29,10 +29,10 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
-CREST = "fTW2"          # the ramps' crest line (blue on a wall) on a window tile: the cushions' tan
+RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, CREST))
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -120,27 +120,76 @@ def _cut(k, x0, x1, z1):
         m.f = out
 
 
-def _crest_tan(k, yf):
-    """The blue along the ramps' crest (the line under the face's lip on a wall, the plate the cushions stand on
-    showing there) in tan on a window tile: each blue polygon reaching the crest drawn again in CREST."""
-    zs = W.skirt_top()
+def _block_end():
+    """How far out from the wall the ramps' tan block runs (tan_ramps: the cushions' end, over the blue toe)."""
+    return W.skirt_run() - 0.045
+
+
+def _plain(k, yf):
+    """The ramps' tan block on a window tile in plain tan, for the window's own lines (RAMP_LINES): the old cushions,
+    their joints and the blue line along the crest gone; the blue toe band and the foot under it kept. Polygons are
+    split where the block ends, the part over it drawn again (RAMP_FACE: lit, shade side)."""
+    yc = yf + _block_end()
     for m in (k.m, k.ns):
         if m is None:
             continue
         keep, redo = [], []
         for f in m.f:
             pts = [m.v[i] for i in f[0]]
-            cy = sum(abs(p[1]) for p in pts) / len(pts)
-            col = f[2]
-            if cy > yf + 1e-4 and max(p[2] for p in pts) > zs - 0.01 and col[2] > col[0] + 0.01:
-                redo.append([Vector((p[0], -p[1], p[2])) for p in pts])     # (back in grid space)
-            else:
+            ays = [abs(p[1]) for p in pts]
+            if min(ays) < yf + 1e-4 or min(ays) >= yc - 1e-9:
                 keep.append(f)
+                continue
+            sg = 1 if sum(p[1] for p in pts) > 0 else -1
+            for r, near in (([(1, sg * yc, -sg)], True), ([(1, sg * yc, sg)], False)):
+                q = _clip(pts, r)
+                if len(q) < 3:
+                    continue
+                if near:
+                    redo.append([Vector((p[0], -p[1], p[2])) for p in q])     # (back in grid space)
+                else:
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in q]
+                    keep.append((list(range(base, base + len(q))),) + tuple(f[1:]))
         m.f = keep
+        sl = W.GN * W.RAMP_PX / W.ZART
         for pts in redo:
             n = (pts[1] - pts[0]).cross(pts[2] - pts[0])
-            if n.length > 1e-12:
-                k.poly(pts, "wall", 2, n.normalized(), fixed=CREST)
+            if n.length < 1e-12:
+                continue
+            n.normalize()
+            sn = Vector((0.0, sl if sum(p.y for p in pts) > 0 else -sl, 1.0)).normalized()
+            if abs(n.dot(sn)) < 0.9:                    # (the old plates' sides: gone, the block flat)
+                continue
+            k.poly(pts, "wall", 2, n, fixed=RAMP_FACE[0])
+
+
+def _ramp_lines(k, x0, x1, yf):
+    """The window's lines on its ramps' tan block (a px each, in SEAM): round the block (its crest, or the cut
+    top's edge over the opening; its end over the toe; half a px at each tile edge) and one down the slope at each
+    post, where the window's slope starts."""
+    sl, zs = W.GN * W.RAMP_PX / W.ZART, W.skirt_top()
+    de, E, L, off = _block_end(), 0.4 / 32, LINE_W, 4 * TAN.PAINT
+
+    def top(x):                                         # (the block's top edge: the crest, or the cut's)
+        return max(0.0, _reach(_sill(x, x0, x1), yf) - yf) if x0 < x < x1 else 0.0
+
+    def strip(pts):                                     # ((u, d) on both ramps' slopes)
+        for sg in (1, -1):
+            n = Vector((0.0, sg * sl, 1.0)).normalized()
+            k.poly([Vector((u, sg * (yf + d), zs - d * sl)) + n * off for u, d in pts], "wall", 2, n, fixed=SEAM)
+    a, b = -0.5, 0.5
+    us = sorted({a, b} | {u for u in (x0, x0 + DIP_RUN, x1 - DIP_RUN, x1) if a < u < b})
+    for u0, u1 in zip(us, us[1:]):
+        t0, t1 = top(u0 + 1e-6), top(u1 - 1e-6)
+        strip([(u0, t0), (u1, t1), (u1, t1 + E), (u0, t0 + E)])         # (along the top)
+        strip([(u0, de - E), (u1, de - E), (u1, de), (u0, de)])         # (along the end)
+    strip([(a, top(a)), (a + L / 2, top(a)), (a + L / 2, de), (a, de)])     # (the tile edges)
+    strip([(b - L / 2, top(b)), (b, top(b)), (b, de), (b - L / 2, de)])
+    for u, sd in ((x0, -1), (x1, 1)):                   # (down the slope at each post, on the post's side)
+        if a < u < b:
+            strip([(min(u, u + sd * L), 0.0), (max(u, u + sd * L), 0.0), (max(u, u + sd * L), de),
+                   (min(u, u + sd * L), de)])
 
 
 def _reach(h, yf):
@@ -158,7 +207,8 @@ def hook(k, sp):
     z0, z1 = _heights()
     yb, yf = W.wall_back() - 0.5, W.wall_back() - 0.5 + W.TW
     _cut(k, x0, x1, z1)
-    _crest_tan(k, yf)
+    _plain(k, yf)
+    _ramp_lines(k, x0, x1, yf)
     a, b = max(x0, -0.5), min(x1, 0.5)
     bends = [u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b]
     k.side = None
