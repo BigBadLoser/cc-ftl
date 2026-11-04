@@ -88,9 +88,9 @@ def _px(k, ax, plane, g0, x, r, zt, d, col):
     k.poly(pts, "wall", 0, T.OUT(ax), fixed=col)
 
 
-def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+def _desk(k, ax, plane, a, b, mit, zl1, band, sd):
+    """The console's desk on the lip; its shelf's top."""
     L = 1 / 32
-    band(a, b, zl1, z1, "fTS2")                                 # the recess's back, all the way up
     sh, sp, rl = D_SHELF * L, D_PANEL * L, D_RAIL * L           # the desk, a frame: a shelf (2 px thick), a side
     zb = zl1 + _rows(rl - LIP_D) + PZ / 4                       # panel at each end of each tile's (flaring out at
     zd1 = zb + D_TOP                                            # 45 degrees to the shelf), a rail across the tile
@@ -111,6 +111,13 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             if q1 - q0 > 1e-6:
                 prism(k, ax, plane, q0, q1, [(0.0, zb), (sp, zb), (sp, zt0 - fl), (sh, zt0), (0.0, zt0)], FACE,
                       3, cols=[False, sd("fTS3", ax), sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))
+    return zd1
+
+
+def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+    L = 1 / 32
+    band(a, b, zl1, z1, "fTS2")                                 # the recess's back, all the way up
+    zd1 = _desk(k, ax, plane, a, b, mit, zl1, band, sd)
     zc0 = z1 - C_FRONT                                          # the canopy: lit top, a pale nose, dark under
     for c in range(-1, 2):                                      # (each bay behind the terminals in the canopy's
         q0, q1 = max(a, c - 0.5 + C_IN * L), min(b, c + 0.5 - C_IN * L)     # shadow; the face outside its plates
@@ -501,10 +508,17 @@ def stack(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 _handle(k, ax, plane, c, q0, q1, zd, *HANDLES[0], fd, sd, even=True)
 
 
+def hutch(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+    """The stack's chest up under the cap, the console's hollow desk under it on the lip."""
+    chest(k, ax, plane, a, b, mit, zl1, z1, band, sd, *STACK_CHEST)
+    _desk(k, ax, plane, a, b, mit, zl1, band, sd)
+
+
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
             Design("cabinets", body=functools.partial(lockers, canopy=False, cab_up=3), lip=False, cushion="fTS8"),
             Design("drawers", body=functools.partial(lockers, canopy=False, cab_up=3, swap=True), lip=False,
                    cushion="fTS8"),
             Design("chest", body=chest, cushion="fTS8"),         # (on the lip: its foot at 39 rows down)
             Design("desk", body=desk, cushion=True),
-            Design("stack", body=stack, lip=False))
+            Design("stack", body=stack, lip=False),
+            Design("hutch", body=hutch))
