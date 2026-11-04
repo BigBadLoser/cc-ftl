@@ -43,7 +43,8 @@ Last updated: 2026-11-03.
   breach seals, supplies, enemy drones, staggered landing (#326).
 - **Designed, not started:** weapon upgrades and flak (#317); new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
-- **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
+- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239, designed 2026-11-04 in [TRAITS.md](TRAITS.md) section 6), then mental breaks
+  (#175, section 5b).
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
   landing in a bay that breaks on approach.

@@ -16,8 +16,8 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Next
 
+- **Crew relationships.** Crew form bonds and grudges, which feed into mood, breaks and the new traits. Next, before mental breaks; designed in TRAITS.md section 6. ([#239](https://github.com/BigBadLoser/cc-ftl/issues/239))
 - **Mental breaks.** Crew with unmet needs or bad stretches can snap: refuse work, wander, brawl or quit, with alerts and recovery. Low mood finally has consequences. ([#175](https://github.com/BigBadLoser/cc-ftl/issues/175), [#51](https://github.com/BigBadLoser/cc-ftl/issues/51))
-- **Crew relationships.** Crew form bonds and grudges, which feed into mood, breaks and the new traits. ([#239](https://github.com/BigBadLoser/cc-ftl/issues/239))
 
 ## Later: major features
 
