@@ -14,7 +14,8 @@ from .faction import base as FB
 from .faction import tan as TAN
 from .faction.parts import PZ
 
-POST = 12 / 32          # an end post's length along the wall (ref: 12 px of front)
+POST_L = 11.25 / 32     # the end posts' inner edges, across the tile: each post's front a groove, the slats, a groove
+POST_R = 21.25 / 32     # (the face's grooves at px 0, 10, 21; a px column's edges sit a quarter px past the 32nds)
 LINES = 3 / 32          # the pane's top edges on the beam: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"
@@ -54,7 +55,7 @@ def _sill(x, x0, x1):
 
 
 def _span(part):
-    return {"l": (-0.5 + POST, 1.5), "m": (-1.5, 1.5), "r": (-1.5, 0.5 - POST)}[part]
+    return {"l": (-0.5 + POST_L, 1.5), "m": (-1.5, 1.5), "r": (-1.5, -0.5 + POST_R)}[part]
 
 
 def _side(pl, p):
@@ -206,7 +207,7 @@ def _quad(k, pts, out, col):
     k.poly([Vector(p) for p in pts], "wall", 2, Vector(out), fixed=col)
 
 
-def hook(k, sp):
+def hook(k, sp, own=True):
     x0, x1 = _span(PART)
     z0, z1 = _heights()
     yb, yf = W.wall_back() - 0.5, W.wall_back() - 0.5 + W.TW
@@ -241,7 +242,7 @@ def hook(k, sp):
             ra, rb = _reach(ha - 0.003, yf), _reach(hb - 0.003, yf)
             _quad(k, [(ua, -ra, ha), (ub, -rb, hb), (ub, rb, hb), (ua, ra, ha)], (0, 0, 1), SLOPE_LIT)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
-    if CLOSE and x1 > 0.5:
+    if CLOSE and own and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
     for c in (-LINES / 2, LINES / 2):
@@ -249,6 +250,8 @@ def hook(k, sp):
         _quad(k, [(a, y0, zt), (b, y0, zt), (b, y1, zt), (a, y1, zt)], (0, 0, 1), LINE_COL)
     if RAMP_ONLY:
         _ramp_only(k, a, x0, x1, yb, yf)
+    if not own:                                         # (a copy past the tile: no pane)
+        return
     global GLASS
     GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
     GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
@@ -305,20 +308,31 @@ def _ramp_only(k, a, x0, x1, yb, yf):
 
 
 def window(fn, part):
-    """fn: the look's straight piece builder (tile.wall.<look>.full.m10). (solid objects, pane objects)."""
+    """fn: the look's straight piece builder (tile.wall.<look>.full.m10). (own, wide, pane objects); (own, wide)
+    ramp only."""
+    calls = [0]
+    seq = (part, "m" if part in "lm" else None, "m" if part in "mr" else None)  # the piece; its copies one tile on
+    #   at +x, at -x (envtiles._with_runs builds them in that order): the window running on into them, else plain
+
+    def each(k, sp):
+        global PART
+        i = calls[0]
+        calls[0] += 1
+        if i < len(seq) and seq[i]:
+            PART = seq[i]
+            hook(k, sp, own=i == 0)
+
     def build():
         global PART
-        PART = part
-        T.HOOK = hook
+        calls[0] = 0
+        T.HOOK = each
         try:
             r = fn()
-            solid = r[0] if isinstance(r, tuple) else r
-            glass = [] if RAMP_ONLY else GLASS.build()
-            import bpy                                  # (a wide piece's copies past the tile: not in this render)
-            for o in list(bpy.context.scene.objects):
-                if o not in solid and o not in glass and o.type == "MESH":
-                    bpy.data.objects.remove(o)
-            return solid if RAMP_ONLY else (solid, glass)
+            assert calls[0] == 3, calls[0]
+            own, wide = r if isinstance(r, tuple) else (r, None)
+            if RAMP_ONLY:
+                return r
+            return own, wide, GLASS.build()             # (wide: the piece's copies past the tile, hiding its ends)
         finally:
             PART, T.HOOK = None, None
     return build
