@@ -98,15 +98,17 @@ describe('derelict signal', () => {
     expect(buildStory(sim).active?.intel[0]?.rows.find((r) => r.label === 'Signs')?.value).toMatch(/about \d+/);
   });
 
-  it('the hacking scan needs a hacker and copies 3 electronics off the core', () => {
+  it('the hacking scan needs hacking 2, gives nothing but a deep read: counts and cargo without practice', () => {
     const probe = content.events['event.derelict_sighting'].choices.find((c) => c.id === 'probe');
-    expect(probe?.requires).toEqual([{ kind: 'skill', skill: 'hacking', level: 1 }]);
-    const sim2 = signalled(3, (s) => applyEffect(s, { type: 'skillXp', skill: 'hacking', amount: 300, who: 'all' }, { event: 'test', actor: null }));
-    const before = withPlayerAboard(sim2, () => playerStock(sim2, 'item.electronics'));
-    const out = choose(sim2, 'probe');
-    expect(out).toContainEqual({ type: 'story.remote', event: 'event.derelict_sighting', choice: 'probe', action: 'scan' });
-    expect(withPlayerAboard(sim2, () => playerStock(sim2, 'item.electronics'))).toBe(before + 3);
-    expect(buildStory(sim2).active?.intel).toHaveLength(1);
+    expect(probe?.requires).toEqual([{ kind: 'skill', skill: 'hacking', level: 2 }]);
+    expect(choose(signalled(3), 'probe')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' }); // starter crew: hacking 1
+    const sim = signalled(seedWith(true), (s) => applyEffect(s, { type: 'skillXp', skill: 'hacking', amount: 300, who: 'all' }, { event: 'test', actor: null }));
+    const before = withPlayerAboard(sim, () => playerStock(sim, 'item.electronics'));
+    const out = choose(sim, 'probe');
+    expect(out).toContainEqual({ type: 'story.remote', event: 'event.derelict_sighting', choice: 'probe', action: 'probe' });
+    expect(withPlayerAboard(sim, () => playerStock(sim, 'item.electronics'))).toBe(before);
+    const rows = buildStory(sim).active?.intel[0]?.rows ?? [];
+    expect(rows.find((r) => r.label === 'Signs')?.value).toMatch(/^Egg sacs, about \d+$/);
   });
 
   it('dropping out needs an EVA shuttle in its bay', () => {

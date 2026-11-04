@@ -81,9 +81,8 @@ export const events = {
     choices: [
       { id: 'scan', label: 'Scan it', hint: 'Hull, air and signs of life', remote: 'scan' },
       {
-        id: 'probe', label: 'Hack its data core', hint: 'A full scan, and whatever the core still holds', remote: 'scan',
-        requires: [{ kind: 'skill', skill: 'hacking', level: 1 }],
-        outcome: { effects: [{ type: 'items', item: 'item.electronics', count: 3 }] },
+        id: 'probe', label: 'Hack its data core', hint: 'A deep scan: what is aboard, and how much', remote: 'probe',
+        requires: [{ kind: 'skill', skill: 'hacking', level: 2 }],
       },
       {
         id: 'approach', label: 'Drop out beside it', hint: 'Board it, strip it, or look and leave',

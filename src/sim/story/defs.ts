@@ -46,6 +46,9 @@ export type Requirement =
 /** Whom a crew effect lands on. 'actor' = whoever made the skill check (else a random crew member). */
 export type CrewTarget = 'random' | 'all' | 'actor';
 
+/** A remote action on a scene's signal (`ChoiceDef.remote`). */
+export type RemoteAction = 'hail' | 'scan' | 'probe';
+
 /** A physical outcome. Stubbed: recorded in `StoryState.physical` for a later sector-aware system to realise. */
 export type PhysicalOutcome =
   | { kind: 'derelict'; template: string }
@@ -97,9 +100,9 @@ export interface ChoiceDef {
   cost?: ItemQty[];
   /**
    * A remote action on a scene's signal (DESIGN.md "Physical encounters"): it reveals facts about the scene (a hail its ships' stock, a scan
-   * their crew and hull) and the decision stays open. Each is taken once.
+   * their crew and hull; a probe is a deep scan that also reads counts and cargo) and the decision stays open. Each is taken once.
    */
-  remote?: 'hail' | 'scan';
+  remote?: RemoteAction;
   /** With a check the outcome is `success` or `failure`; without, `outcome`. */
   check?: SkillCheck;
   outcome?: Outcome;

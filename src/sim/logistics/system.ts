@@ -8,7 +8,8 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { sendToEmbark } from '../vehicles/embark';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { vehicleDefOf } from '../vehicles/lifecycle';
+import { vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
+import { SiteRunC } from '../away/components';
 import { cancelTransfer } from './handlers';
 import { releasePilot } from './pilot';
 import { salvageWatch } from './salvage';
@@ -19,8 +20,18 @@ import { TransferC, type Transfer, type TransferBlock } from './components';
 const LOOK_EVERY = 10;
 const BOARD_SEC = 60;
 
+/**
+ * True when "no free shuttle" is only a wait: the player has shuttles, and one of them is out serving an away site (a salvage, a boarding): the order
+ * goes when it is back, which is not news. With no shuttle at all the block is news.
+ */
+function awayBusy(sim: Sim): boolean {
+  const mine = sim.world.query(VehicleC).filter((v) => vehicleFaction(sim, sim.world.get(v, VehicleC) as Vehicle) === 'player');
+  return mine.some((v) => sim.world.has(v, SiteRunC));
+}
+
 function block(sim: Sim, id: number, t: Transfer, reason: TransferBlock, retry = RETRY_TICKS / 4): void {
-  if (t.status !== 'blocked' || t.reason !== reason) sim.events.emit({ type: 'transfer.blocked', order: id, reason });
+  const quiet = reason === 'noShuttle' && awayBusy(sim);
+  if (!quiet && (t.status !== 'blocked' || t.reason !== reason)) sim.events.emit({ type: 'transfer.blocked', order: id, reason });
   if (t.status !== 'blocked') t.since = sim.tick;
   t.status = 'blocked';
   t.reason = reason;

@@ -8,10 +8,13 @@ const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions
 /** Wrecks worked before (`derelicts_found`) after which a scan of a derelict reads counts, not just signs. */
 const PRACTISED = 2;
 
-/** A scan of a derelict, worded from what its ruin pass left (scene/derelicts.ts `readOf`); with practice the signs come with counts. */
-function derelictRows(sim: Sim, d: SceneDerelict): { label: string; value: string }[] {
+/**
+ * A scan of a derelict, worded from what its ruin pass left (scene/derelicts.ts `readOf`). A deep scan (a probe of its core), or practice at
+ * working wrecks, reads counts, not just signs.
+ */
+function derelictRows(sim: Sim, d: SceneDerelict, deep: boolean): { label: string; value: string }[] {
   const r = d.read;
-  const practised = (sim.story.flags['derelicts_found'] ?? 0) >= PRACTISED;
+  const practised = deep || (sim.story.flags['derelicts_found'] ?? 0) >= PRACTISED;
   const state = r.ruin < 0.35 ? 'Mostly whole' : r.ruin < 0.6 ? 'Battered' : 'Gutted';
   const air = r.vacuum > 0.75 ? 'Open to space' : r.vacuum > 0.25 ? 'Holed; some rooms hold air' : 'Mostly sealed';
   const signs = r.sacs > 0 ? (practised ? `Egg sacs, about ${r.sacs}` : 'Faint life signs') : r.machines > 0 ? (practised ? `Machine signatures, about ${r.machines}` : 'Machine signatures') : 'Nothing moving';
@@ -30,10 +33,11 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
   if (!spec) return [];
   const acts = new Set(done.map(remoteOf));
   const out: UiIntel[] = [];
-  if (acts.has('scan')) for (const d of spec.derelicts) out.push({ kind: 'scan', ship: d.name, rows: derelictRows(sim, d) });
+  const scanned = acts.has('scan') || acts.has('probe');
+  if (scanned) for (const d of spec.derelicts) out.push({ kind: 'scan', ship: d.name, rows: derelictRows(sim, d, acts.has('probe')) });
   for (const s of spec.ships) {
     const ship = s.contact.name ?? 'Unknown ship';
-    if (acts.has('scan')) {
+    if (scanned) {
       out.push({
         kind: 'scan', ship, rows: [
           { label: 'Transponder', value: ownerName(sim, s.contact.faction) },
