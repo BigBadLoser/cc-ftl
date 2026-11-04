@@ -52,10 +52,10 @@ C_SIDE = 22                         # its foot; C, a strip on from B's right sid
                                     # lean line down (measured off the reference; the base's two lines across its
                                     # lean run on up to B and on from C)
 PLATE_FOOT = 2                      # B and C end on a line this many px down the header's upright face
-E_RIBS = (12, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
+E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
-E_SHORT = 3                         # standing in it at the slope's level, E_RIB px wide from these px from the
-E_TONE = "hsL"                      # tile's edge, from its back to E_SHORT px short of its front
+E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
+E_TONE = "hsL"                      # tile's edge, from E_IN px out from its back to E_SHORT px short of its front
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -171,7 +171,7 @@ def _w1_sill(f, s0, e0, e1, db, fr, zs, dv, zj, front):
 
     def z(d):                                           # the slope's top at d
         return zs + (fr - d) * (zj - zs) / (fr - dv)
-    dl, dr = fr - ln, fr - T3.px(E_SHORT)
+    dl, dr, di = fr - ln, fr - T3.px(E_SHORT), dv + T3.px(E_IN)
     f.part(e0, e1, [(db, 0.0), (dv, 0.0), (dv, zj), (db, zj)], [False, YS[2], SILL_FLAT, None], None, end=False)
     f.part(e0, e1, [(dv, 0.0), (dl, 0.0), (dl, z(dl) - R), (dv, zj - R)], [False, False, E_TONE, False], None,
            end=False)                                                   # the recess's floor
@@ -179,8 +179,8 @@ def _w1_sill(f, s0, e0, e1, db, fr, zs, dv, zj, front):
            end=False)                                                   # the lip
     for n in E_RIBS:
         u = s0 + T3.px(n)
-        f.part(u, u + T3.px(E_RIB), [(dv, zj - R), (dr, z(dr) - R), (dr, z(dr)), (dv, zj)],
-               [False, YS[2], SILL_SLOPE, False], (False, SIDE), end=False)     # the ribs
+        f.part(u, u + T3.px(E_RIB), [(di, z(di) - R), (dr, z(dr) - R), (dr, z(dr)), (di, z(di))],
+               [False, YS[2], SILL_SLOPE, YS[2]], (False, SIDE), end=False)     # the ribs
 
 
 def _opening(u0, u1, z0, z1, corner):
