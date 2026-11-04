@@ -131,8 +131,9 @@ def tan(hull):
             return
 
         def cushion(shaded=None):                       # the header block: its pale top, a lit edge on its front,
-                                                        # a shadow 2 px under it (its front on the shaded side in
-                                                        # this tone: a design's, over a darker face)
+                                                        # a shadow 2 px under it (its shade-facing sides, its front
+                                                        # on the shaded side and its ends on the lit, in this tone:
+                                                        # a design's, over a darker face)
             zh0 = z1 - HEAD_H
             for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile
                 if r is not None:                                   # edge, a px at a free end, its corners curved,
@@ -142,7 +143,8 @@ def tan(hull):
                 if r is None:
                     continue
                 prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
-                      FACE, 3, cols=[False, shaded if ax == "x" else None, sd("fTS0", ax), False], mitre=m)
+                      FACE, 3, cols=[False, shaded if ax == "x" else None, sd("fTS0", ax), False], mitre=m,
+                      cap=shaded if ax == "y" else None)        # (its ends on the lit side: they face the shade)
                 band(u0, u1, z1 - r - PZ, z1 - r, "fTS1", HEAD_D)
             zs0 = zh0 - _hid(HEAD_D)                    # (the face's first row seen under the header)
             band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
