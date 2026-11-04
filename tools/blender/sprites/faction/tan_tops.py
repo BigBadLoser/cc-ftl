@@ -203,7 +203,6 @@ H_SCREENS = ((1, (".......", ".RR.GG.", ".RR.GG.", ".......")),     # the header
              (24, ("YYYYYY.", "YRRYYY.", "YRRYYY.", "YYYYYY.")))    # tile's left edge, 7 x 4 of art ("." the glass), their
                                                             # top corners in the recess's (H_SEEN rows down)
 H_SEEN = H_CANOPY - H_FACE + 1          # (the recess's first row seen under the canopy)
-CUSHION = (11, 2)                       # the look's cushion header (tan.HEAD_H, HEAD_D): its rows, its depth (px)
 
 
 def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd):
@@ -255,10 +254,9 @@ def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None, hid=0.0):
 
 
 def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True):
-    """The bins, cabinets and drawers; under the canopy and its screens (canopy), else under the look's cushion
-    header (CUSHION: its rows, its depth in px)."""
+    """The cabinets and drawers; under the header of bins, the canopy and its screens (canopy), else under the look's
+    cushion header (drawn by the look: the design's "cushion")."""
     L = 1 / 32
-    h_rows, h_dep = (H_FRONT, H_FACE) if canopy else CUSHION
     R = lambda n: z1 - n * PZ                                   # noqa: E731
     band(a, b, zl1, z1, "fTS4")                                 # (the face, dark in the gaps)
     cap = sd(D_SIDE_TONE, ax)
@@ -270,12 +268,14 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True):
         for u0, u1, o in ((c - 0.5, c - 0.5 + w, 0.0), (c + 0.5 - w, c + 0.5, 0.0),
                           (c - 0.5 + w, c - L_GAP * L / 2, gb), (c + L_GAP * L / 2, c + 0.5 - w, gb)):
             right = o and (u1 > c + 0.5 - w - 1e-6 if ax == "y" else u0 < c - 0.5 + w + 1e-6)    # (screen right)
-            _bin(k, ax, plane, u0, u1, (bd - o, zb), (bt - o, R(h_rows)), sd, cap,
-                 (1 if ax == "y" else -1) if right else None, (h_dep - BIN_TOP) + o / L)
+            if not canopy:
+                break
+            _bin(k, ax, plane, u0, u1, (bd - o, zb), (bt - o, R(H_FRONT)), sd, cap,
+                 (1 if ax == "y" else -1) if right else None, (H_FACE - BIN_TOP) + o / L)
             if o:                                                   # (a handle on each bin, over its foot edge: as
                 rows, wide = BIN_HANDLE                             # proud as the front is under its lowest px)
                 zl = zb + (rows - 1.5) * PZ
-                fl = (bd - o) - (bd - bt) * (zl - zb) / (R(h_rows) - zb)
+                fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
                 _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
         e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L     # the cabinets, the drawers: a frame of bars,
         for n, (top, foot, dep, splits, back) in enumerate(SECTIONS):   # the doors back in it
