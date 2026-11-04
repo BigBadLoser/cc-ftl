@@ -41,9 +41,10 @@ PANE_IN = 5 / 32                    # its front this far behind the frame's fron
 WALL_BACK = 5 / 32                  # the wall's back this far behind the pane's back (the window cut through to it)
 EDGE = YS[0]                        # the pane's edges (all but its two faces): dark and opaque, a hair proud of
 EDGE_OUT = 0.002                    # the frame they sit on, so each draws a dark line on it
-SLOPE = 8 / 32                      # the window's corner at the jamb's foot: a slope this far along and down (the
-FOOT_H = 2                          # jamb's side down to it, through the jamb's depth), ending on a foot this many
-FOOT_W = 3 / 32                     # px tall, this far on from the slope's end; then down to the sill's flat top
+SLOPE = 4 / 32                      # the window's corner at the jamb's foot: a slope this far along and
+SLOPE_H = 5                         # this many px down (the jamb's side down to it, through the jamb's depth), ending
+FOOT_H = 2                          # on a foot this many px tall, this far on from the slope's end; then down to the
+FOOT_W = 3 / 32                     # sill's flat top (measured off the reference's glass line)
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
@@ -89,8 +90,8 @@ def build(k, ax, plane, a, b, ends, H):
               [False if abs(a[0] - b[0]) < 1e-6 and (abs(a[0] - w1) < 1e-2 or (not corner and abs(a[0] - w0) < 1e-2))
                else EDGE for a, b in zip(pts, pts[1:] + pts[:1])])
         if corner:                                                      # the slope and its foot
-            fh, ut = FOOT_H / core.ZPX, w0 + SLOPE + FOOT_W
-            _slab(k, ax, plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + SLOPE, zj + fh), (w0, zj + fh + SLOPE)],
+            fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, w0 + SLOPE + FOOT_W
+            _slab(k, ax, plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + SLOPE, zj + fh), (w0, zj + fh + sh)],
                   db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False)
 
 
@@ -99,8 +100,8 @@ def _opening(u0, u1, z0, z1, corner):
     left)."""
     if not corner:
         return [(u0, z1), (u0, z0), (u1, z0), (u1, z1)]
-    fh, ut = FOOT_H / core.ZPX, u0 + SLOPE + FOOT_W
-    return [(u0, z1), (u0, z0 + fh + SLOPE), (u0 + SLOPE, z0 + fh), (ut, z0 + fh), (ut, z0), (u1, z0), (u1, z1)]
+    fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, u0 + SLOPE + FOOT_W
+    return [(u0, z1), (u0, z0 + fh + sh), (u0 + SLOPE, z0 + fh), (ut, z0 + fh), (ut, z0), (u1, z0), (u1, z1)]
 
 
 def _inset(pts, e):
