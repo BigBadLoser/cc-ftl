@@ -16,6 +16,7 @@ D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their side
 SCREENS = ((2 / 32, 13 / 32), (19 / 32, 30 / 32))    # each tile's two terminals' screens, across it (with the
                                                     # keyboards, centred on it)
 T_DEPTH, T_SCREEN = 6, 3               # a terminal: how far out (px) its keyboard's front stands, its screen
+T_DROP = 2 * PZ                         # the keyboard's top under the screen's glass's foot (2 rows of border)
 T_SEAM = 0.7                            # the seam down the keyboard's middle (px; under one: AA softens it)
 T_SHOW, T_FRONT = 5 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
                                         # keyboard face slopes from it to the screen's foot)
@@ -65,22 +66,24 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     zk1 = zc0 - _rows(C_DEPTH) + _rows(ts) - T_SHOW             # front, its face sloping back up to the screen's
     zk0 = zd1 + T_FRONT                                         # foot; wider than the screen toward the tile's
     zg0, zg1 = zk1 + PZ, zk1 + T_SHOW                           # middle), the screen upright on it, a dark bezel
+    zkt = zk1 - T_DROP                                          # (the keyboard's top: T_DROP under the screen's
+                                                                # glass's foot, the screen's border down to it)
     for c in range(-1, 2):                                      # up to the canopy round its glass (T_SHOW rows of
         e0, e1 = c - 0.5 + SCREENS[0][0], c - 0.5 + SCREENS[1][1]               # it under the canopy's shadow)
         if e0 < a - 1e-6 or e1 > b + 1e-6:
             continue
         for k0, k1 in ((e0, c - T_SEAM * L / 2), (c + T_SEAM * L / 2, e1)):    # (one keyboard across the bay, a
-            prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (0.0, zk1)], FACE, 3,  # seam
+            prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zkt), (0.0, zkt)], FACE, 3,  # seam
                   cols=[False, sd("fTS3", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))  # down its
         m0, m1 = c - 0.5 + SCREENS[0][1], c - 0.5 + SCREENS[1][0]                # middle; a face between the
-        prism(k, ax, plane, m0, m1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,  # screens, a px back
+        prism(k, ax, plane, m0, m1, [(0.0, zkt), (ts, zkt), (ts, zc0), (0.0, zc0)], FACE, 3,  # screens, a px back
               cols=[False, sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))            # of their borders)
         for i, (s0, s1) in enumerate(SCREENS):
             u0, u1 = c - 0.5 + s0, c - 0.5 + s1
-            prism(k, ax, plane, u0, u1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,
+            prism(k, ax, plane, u0, u1, [(0.0, zkt), (ts, zkt), (ts, zc0), (0.0, zc0)], FACE, 3,
                   cols=[False, sd("fTC0", ax), False, False], cap=sd(D_SIDE_TONE, ax))     # (the glass, its face)
             bd = ts + L                                         # a tan border round it, a px proud of it
-            for ba, bb, za, zb_, cl in ((u0, u1, zk1, zg0, ("fTS0", "fTS1")), (u0, u1, zg1, zc0, (False, "fTS1")),
+            for ba, bb, za, zb_, cl in ((u0, u1, zkt, zg0, ("fTS0", "fTS1")), (u0, u1, zg1, zc0, (False, "fTS1")),
                                         (u0, u0 + L, zg0, zg1, (False, "fTS1")),
                                         (u1 - L, u1, zg0, zg1, (False, "fTS1"))):
                 prism(k, ax, plane, ba, bb, [(0.0, za), (bd, za), (bd, zb_), (0.0, zb_)], FACE, 3,
