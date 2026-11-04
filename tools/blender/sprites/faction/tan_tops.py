@@ -9,6 +9,7 @@ from .tan_ramps import FACE
 C_FRONT, C_DEPTH = 3 * PZ, 3.5 * PX     # the canopy: its front's height, how far it stands out (7 rows of top)
 D_TOP, D_THICK = 15 * PZ, 2 * PZ       # the desk: its shelf's top over the rail's foot, the shelf's thickness
 D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side panels, the rail at their feet stand
+D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
 LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's front edge sits on its)
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
 SCREENS = ((2 / 32, 10 / 32), (18 / 32, 26 / 32))    # each tile's two screens, across it
@@ -34,6 +35,7 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # (its front's upper px a highlight)
     prism(k, ax, plane, a, b, [(0.0, zb), (rl, zb), (rl, zb + PZ), (0.0, zb + PZ)], FACE, 3,
           cols=[False, sd("fTS2", ax), sd(D_SIDE_TONE, ax), False], mitre=mit)     # (its front a step over the lip's)
+    band(a, b, zl1 - 1.5 * PZ, zl1, D_RAIL_SHADOW, LIP_D)        # (a faint shadow from it on the lip's front)
     fl = (sh - sp)                                              # (the flare: as high as it runs out)
     for c in range(-1, 2):
         for p0, p1 in ((c - 0.5, c - 0.5 + D_SIDE), (c + 0.5 - D_SIDE, c + 0.5)):
