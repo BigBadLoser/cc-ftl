@@ -10,7 +10,8 @@ frame's front.
 Measured off the reference (its top and the upright part's front sit where the base hull's do; the section off the
 pieces' cut sides): the header's foot 21 px down the base lean's front; the sill's front 25 px tall, its top's slope
 rising 7.5 px over its depth; W1's outer frame 3 px, its jamb 9 px (ours
-2 px and 5 px: narrower); the window's corner at the jamb's foot a cove of about 8 px."""
+2 px and 5 px: narrower); the window's corner at the jamb's foot a slope onto a
+small foot."""
 from . import core
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
@@ -40,10 +41,10 @@ PANE_IN = 5 / 32                    # its front this far behind the frame's fron
 WALL_BACK = 5 / 32                  # the wall's back this far behind the pane's back (the window cut through to it)
 EDGE = YS[0]                        # the pane's edges (all but its two faces): dark and opaque, a hair proud of
 EDGE_OUT = 0.002                    # the frame they sit on, so each draws a dark line on it
-COVE = 8 / 32                       # the window's corner at the jamb's foot: a cove this radius (the jamb's side
-COVE_N = 8                          # curving into the sill's flat top, through the jamb's depth), in this many
-                                    # facets: the upper ones the side's tone, the lower the flat's; the pane round
-                                    # it
+SLOPE = 8 / 32                      # the window's corner at the jamb's foot: a slope this far along and down (the
+FOOT_H = 2                          # jamb's side down to it, through the jamb's depth), ending on a foot this many
+FOOT_W = 3 / 32                     # px tall, this far on from the slope's end; then down to the sill's flat top
+SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -80,42 +81,52 @@ def build(k, ax, plane, a, b, ends, H):
         cols = s.cols(pf, "face")                                       # down to its foot
         cols[1] = HEAD_FRONT
         f.part(h0, w1, pf, cols, None, end=False)
-        r = COVE if PART == "w1" else 0.0
-        _slab(GLASS, ax, plane, _opening(w0, w1, zj, zh, r, 0.0), dp - PANE / 2, dp + PANE / 2, "glassL",
-              ["glassL"] * 99)                                          # the pane
-        e = EDGE_OUT                                                    # its edges (but where it runs on)
-        pts = _opening(w0 + (e if r else 0.0), w1, zj + e, zh - e, r, e)
+        corner = PART == "w1"
+        win = _opening(w0, w1, zj, zh, corner)
+        _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", ["glassL"] * len(win))   # the pane
+        pts = _inset(win, EDGE_OUT)                                     # its edges (but where it runs on)
         _slab(k, ax, plane, pts, dp - PANE / 2, dp + PANE / 2, False,
-              [False if abs(a[0] - b[0]) < 1e-9 and (abs(a[0] - w1) < 1e-9 or (not r and abs(a[0] - w0) < 1e-9))
+              [False if abs(a[0] - b[0]) < 1e-6 and (abs(a[0] - w1) < 1e-2 or (not corner and abs(a[0] - w0) < 1e-2))
                else EDGE for a, b in zip(pts, pts[1:] + pts[:1])])
-        if r:                                                           # the cove
-            arc = _arc(w0, zj, r, 0.0)
-            cols = [SIDE if i < COVE_N / 2 else SILL_FLAT for i in range(COVE_N)]
-            _slab(k, ax, plane, [(w0, zj)] + arc, db, dv, HEAD_FRONT, [False] + cols + [False], back=False)
+        if corner:                                                      # the slope and its foot
+            fh, ut = FOOT_H / core.ZPX, w0 + SLOPE + FOOT_W
+            _slab(k, ax, plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + SLOPE, zj + fh), (w0, zj + fh + SLOPE)],
+                  db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False)
 
 
-def _arc(u0, z0, r, e):
-    """The cove's arc (a corner at (u0, z0), radius r; e: its radius that much less), from the jamb down to the sill."""
-    import math
-    uc, zc = u0 + r, z0 + r
-    return [(uc - (r - e) * math.cos(math.pi / 2 * i / COVE_N), zc - (r - e) * math.sin(math.pi / 2 * i / COVE_N))
-            for i in range(COVE_N + 1)]
-
-
-def _opening(u0, u1, z0, z1, r, e):
-    """The window's opening in (u, z), anticlockwise from its top left: a cove of radius r at its bottom left."""
-    if not r:
+def _opening(u0, u1, z0, z1, corner):
+    """The window's opening in (u, z), anticlockwise from its top left (corner: the slope and its foot at its bottom
+    left)."""
+    if not corner:
         return [(u0, z1), (u0, z0), (u1, z0), (u1, z1)]
-    return [(u0, z1)] + _arc(u0 - e, z0 - e, r, e) + [(u1, z0), (u1, z1)]
+    fh, ut = FOOT_H / core.ZPX, u0 + SLOPE + FOOT_W
+    return [(u0, z1), (u0, z0 + fh + SLOPE), (u0 + SLOPE, z0 + fh), (ut, z0 + fh), (ut, z0), (u1, z0), (u1, z1)]
+
+
+def _inset(pts, e):
+    """An anticlockwise polygon's sides each moved e inward (its corners where they meet)."""
+    n, out = len(pts), []
+    for i in range(n):
+        lines = []
+        for a, b in ((pts[i - 1], pts[i]), (pts[i], pts[(i + 1) % n])):
+            du, dz = b[0] - a[0], b[1] - a[1]
+            ln = (du * du + dz * dz) ** 0.5
+            nu, nz = -dz / ln, du / ln                  # (inward: left of the way round)
+            lines.append(((a[0] + nu * e, a[1] + nz * e), (du, dz)))
+        (p, d), (q, f) = lines
+        den = d[0] * f[1] - d[1] * f[0]
+        t = ((q[0] - p[0]) * f[1] - (q[1] - p[1]) * f[0]) / den
+        out.append((p[0] + d[0] * t, p[1] + d[1] * t))
+    return out
 
 
 def _slab(k, ax, plane, pts, d0, d1, face, edges, back=True, fam="steel", lvl=3):
-    """A (u, z) polygon through d0..d1: its front (and back) faces `face` (False: left out), its sides edges[i] (the
-    one from pts[i] to pts[i + 1]; False: left out)."""
+    """A (u, z) polygon (any simple one) through d0..d1: its front (and back) faces `face` (False: left out), its sides
+    edges[i] (the one from pts[i] to pts[i + 1]; False: left out)."""
     from mathutils import Vector
     from .faction.parts import ALONG
     o, up, al = T.OUT(ax), Vector((0, 0, 1)), ALONG(ax)
-    uc, zc = sum(q[0] for q in pts) / len(pts), sum(q[1] for q in pts) / len(pts)
+    ccw = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1])) > 0
     if face is not False:
         k.poly([T.P(ax, plane, u, z, d1) for u, z in pts], fam, lvl, o, fixed=face)
         if back:
@@ -123,8 +134,6 @@ def _slab(k, ax, plane, pts, d0, d1, face, edges, back=True, fam="steel", lvl=3)
     for i, (a, b) in enumerate(zip(pts, pts[1:] + pts[:1])):
         if edges[i] is False:
             continue
-        nu, nz = b[1] - a[1], a[0] - b[0]
-        if nu * ((a[0] + b[0]) / 2 - uc) + nz * ((a[1] + b[1]) / 2 - zc) < 0:
-            nu, nz = -nu, -nz
+        nu, nz = (b[1] - a[1], a[0] - b[0]) if ccw else (a[1] - b[1], b[0] - a[0])     # (outward)
         k.poly([T.P(ax, plane, a[0], a[1], d0), T.P(ax, plane, b[0], b[1], d0), T.P(ax, plane, b[0], b[1], d1),
                 T.P(ax, plane, a[0], a[1], d1)], fam, lvl, al * nu + up * nz, fixed=edges[i])
