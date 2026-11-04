@@ -112,11 +112,18 @@ export function hoverPoint(sim: Sim, ship: number, gap: number, from: { x: numbe
   return closeIn(sim, ship, p, gap);
 }
 
-/** `p` brought in to `gap` from the nearest tile of the ship's hull ring (tile centres), when that tile is farther off. */
+/** How much farther than intended (tiles) the hull may be before the shuttle comes in: a corner of the ring a little off the line is fine. */
+const CLOSE_SLACK = 0.25;
+
+/**
+ * `p` brought in to `gap` from the nearest tile of the ship's hull ring (from its outer edge: `gap` + half a tile from its centre), when that
+ * tile is more than CLOSE_SLACK farther off. A hull that reaches its bounding box is left as it is.
+ */
 function closeIn(sim: Sim, ship: number, p: { x: number; y: number }, gap: number): { x: number; y: number } {
   const near = nearestExterior(sim, ship, { x: p.x - 0.5, y: p.y - 0.5 }, 1)[0];
   if (!near) return p;
   const cx = near.x + 0.5, cy = near.y + 0.5;
   const d = Math.hypot(p.x - cx, p.y - cy);
-  return d > gap ? { x: cx + ((p.x - cx) * gap) / d, y: cy + ((p.y - cy) * gap) / d } : p;
+  const r = gap + 0.5;
+  return d > r + CLOSE_SLACK ? { x: cx + ((p.x - cx) * r) / d, y: cy + ((p.y - cy) * r) / d } : p;
 }
