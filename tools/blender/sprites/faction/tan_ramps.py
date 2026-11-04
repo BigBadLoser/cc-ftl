@@ -153,27 +153,26 @@ def cushions(layout, extra=None):
         if extra:                                       # (paint: flat, rise in PAINTs; solid: a part rise proud
             extra(lambda poly, tone, rise: T.plate(k, poly, pt, nrm, 0.0, rise * PAINT, FACE, 0, (rise - 0.25) * PAINT,
                                                    fixed=tone),                    # of the slope, its top in a tone,
-                  lambda poly, rise, top_, fam="wall", lvl=2, base=PAINT, sides=None:
-                      _solid(k, poly, pt, nrm, rise, fam, lvl, base, top_, sides),   # (its sides lit as they face;
-                                                                                      # sides: (tone, which))
+                  lambda poly, rise, top_, fam="wall", lvl=2, base=PAINT, lit=None:
+                      _solid(k, poly, pt, nrm, rise, fam, lvl, base, top_, lit),   # (its sides lit as they face; lit:
+                                                                                    # the side toward the light's tone)
                   lambda f: u0 + f * w, lambda g: top + g * span, lambda c: _shade(c, ax))
     return ramp
 
 
-def _solid(k, poly, pt, nrm, rise, fam, lvl, base, top_, sides):
-    """T.plate's raised part; sides = (tone, which(a, b)): the sides along the edges which picks in that tone, the
-    rest lit as they face."""
-    if sides is None:
+def _solid(k, poly, pt, nrm, rise, fam, lvl, base, top_, lit):
+    """T.plate's raised part, its side facing the light (+y) in the tone lit when given (on a shaded face that side
+    is the part's lightest)."""
+    if lit is None:
         return T.plate(k, poly, pt, nrm, 0.0, rise, fam, lvl, base, fixed=top_)
-    tone, which = sides
     topf = [pt(u, dd, rise) for u, dd in poly]
     k.poly(topf, fam, lvl, nrm, fixed=top_)
     cen = sum(topf, Vector()) / len(topf)
     for i in range(len(poly)):
         j = (i + 1) % len(poly)
         p0, p1 = pt(*poly[i], base), pt(*poly[j], base)
-        k.poly([p0, p1, topf[j], topf[i]], fam, lvl, (p0 + p1) / 2 - cen + nrm * 0.02,
-               fixed=tone if which(poly[i], poly[j]) else None)
+        out = (p0 + p1) / 2 - cen + nrm * 0.02
+        k.poly([p0, p1, topf[j], topf[i]], fam, lvl, out, fixed=lit if out.normalized().y > 0.7 else None)
 
 
 RAMP_TONES = ("fTW0", "fTW1", "fTW2", "fTW3")   # the cushions' tones, light to dark (fTW3 their shaded side)
@@ -204,19 +203,14 @@ def grille(paint, solid, U, D, sd):
     bx1 = U(G_R) + GAP * L / 2                                                      # (its right side: on the cushion,
     paint(q(bu0, bx1, D(0.0), D(1.0)), sd("fTS3"), 1.75)                            # no joint) (the slope round it)
     fl = G_H - G_SINK
-    shade = sd("fTW0") != "fTW0"                    # (on the shaded face the block's front in its sides' tone
-    front, side = ("fTS1", "fTW3") if shade else (sd("fTW2"), None)        # and its four sides in the front's)
-
-    def outer(a, b):                                                                # (an edge on the block's outline)
-        return any(abs(a[n] - v) < 1e-9 and abs(b[n] - v) < 1e-9 for n, vs in ((0, (bu0, bx1)), (1, (bd0, bd1)))
-                   for v in vs)
-    sides = (side, outer) if side else None
-    solid(q(bu0, bx1, bd0, bd1), fl, sd("fTS2"), FACE, 4, sides=sides)              # the body, to the vent's floor
+    LIT = "fTW1" if sd("fTW0") != "fTW0" else None  # (on the shaded face its sides toward the light: a step under
+                                                    # the lit face's slats)
+    solid(q(bu0, bx1, bd0, bd1), fl, sd("fTS2"), FACE, 4, lit=LIT)                  # the body, to the vent's floor
     ru, rd = G_RIM * L, G_RIM_D * E
     vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
     for ua, ub, da, db in ((bu0, bx1, bd0, vd0), (bu0, bx1, vd1, bd1),             # the rim round it, up to the
                            (bu0, vu0, vd0, vd1), (vu1, bx1, vd0, vd1)):             # body's top
-        solid(q(ua, ub, da, db), G_H, front, FACE, 4, fl, sides)
+        solid(q(ua, ub, da, db), G_H, sd("fTW2"), FACE, 4, fl, LIT)
     n = int(((vu1 - vu0) / L - 1) / 2)                                              # the slats (a px, a px apart,
     off = vu0 + ((vu1 - vu0) - (2 * n + 1) * L) / 2                                 # centred in it, a gap at each
     for i in range(n):                                                              # side)
