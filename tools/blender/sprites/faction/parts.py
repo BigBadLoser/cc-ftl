@@ -7,39 +7,6 @@ from mathutils import Vector
 
 from .. import wall3d as T
 
-def _clip3(poly, ax, m):
-    """A polygon's part with coordinate ax at most m."""
-    out = []
-    for i, p in enumerate(poly):
-        q = poly[(i + 1) % len(poly)]
-        if p[ax] <= m:
-            out.append(p)
-        if (p[ax] - m) * (q[ax] - m) < 0:
-            t = (m - p[ax]) / (q[ax] - p[ax])
-            out.append(p.lerp(q, t))
-    return out
-
-
-def valley_piece(k, X, Y, C, prof, fam, lvl, cols=None, lim=(0.5, 0.5)):
-    """corner_piece for an inner corner chamfered C along each axis (the faces' ramps meeting in a valley): each point
-    of the profile runs from (X + C + d, Y + d) on the y face to (X + d, Y + C + d) on the x face (its ends against
-    the faces' ramps, left open), cut at the tile's edges lim (its toe reaches the tile's corner: the band runs out
-    there, the tiles beside it carry their ramps on)."""
-    n_, up = Vector((R2, R2, 0)), Vector((0, 0, 1))
-    J1, J2 = ([Vector((X + (1 - s) * C + d, Y + d + s * C, z)) for d, z in prof] for s in (0.0, 1.0))
-    m = len(prof)
-    dc, zc = sum(q[0] for q in prof) / m, sum(q[1] for q in prof) / m
-    for i in range(m):
-        j = (i + 1) % m
-        (d0, z0), (d1, z1) = prof[i], prof[j]
-        pd, pz = z1 - z0, d0 - d1
-        if pd * ((d0 + d1) / 2 - dc) + pz * ((z0 + z1) / 2 - zc) < 0:
-            pd, pz = -pd, -pz
-        poly = _clip3(_clip3([J1[i], J2[i], J2[j], J1[j]], 0, lim[0]), 1, lim[1])
-        if len(poly) >= 3:
-            k.poly(poly, fam, lvl, n_ * pd + up * pz, fixed=cols[i] if cols else None)
-
-
 PX, PAINT, LINE = T.PX, T.PAINT, T.LINE
 
 
