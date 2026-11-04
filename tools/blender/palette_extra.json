@@ -2468,6 +2468,10 @@
   "hex": "#d0dbe2",
   "set": "hull"
  },
+ "hwL": {
+  "hex": "#c0ccd5",
+  "set": "window"
+ },
  "hsXK": {
   "hex": "#1a2026",
   "set": "hull"

@@ -4,7 +4,8 @@ section) cut down to: a sill (the upright part, cut low, its top sloping up to t
 window cut through the wall (a pane of glass in it) and a header over it (the lean's top 5 px, then upright; its
 underside flat). An end piece keeps an outer frame of the whole base section at its outer end and the window frame's
 side inside it (a jamb, its front the header's). A window piece builds its tile's whole section itself
-(wall3d_ext's shell builds nothing for it), the window cut through to the wall's back.
+(wall3d_ext's shell builds nothing for it), its back the wall's: 4 px behind the pane, the pane 4 px behind the
+frame's front.
 
 Measured off the reference (its top and the upright part's front sit where the base hull's do; the section off the
 pieces' cut sides): the header's foot 21 px down the base lean's front; the sill's front 25 px tall, its top's slope
@@ -21,6 +22,8 @@ SILL = 25                           # the sill's front, px tall
 SILL_RISE = 7.5                     # its top's slope: its rise from the front to the glass, px of height; cut off
                                     # level with the frame's front (behind it the top flat, to the glass)
 SILL_FLAT = "hsXS"                  # that flat (shaded under the header; well under the slope's)
+SILL_SLOPE = "hwL"                  # the slope (a white between the jamb's front and the header's lean: the window's
+                                    # own tone, palette set "window")
 FRAME = 3 / 32                      # an end piece's outer frame (the whole base section), along the face
 JAMB = 9 / 32                       # the window frame's side (W1: its left) inside it, along the face: upright from
                                     # the sill to the header, its front the header's
@@ -29,9 +32,10 @@ BEVEL = 5 / 32                      # the header: its lean only this far out fro
 SIDE = "hsXL"                       # the sides facing the window (the outer frame's, the jamb's): one plane, one
                                     # tone, between the fronts'
 HEAD_FRONT = YS[4]                  # the header's upright front (a step under the lean over it)
-PANE = 1 / 32                       # the glass: a pane this thick, centred front to back in the opening (the
-                                    # frame's front to the wall's back), see-through and tinted (its own object: the
-                                    # render's glass pass)
+PANE = 1 / 32                       # the glass: a pane this thick, see-through and tinted (its own object: the
+                                    # render's glass pass),
+PANE_IN = 4 / 32                    # this far behind the frame's front (its centre)
+WALL_BACK = 4 / 32                  # the wall's back this far behind the pane (the window cut through to it)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -41,14 +45,14 @@ def build(k, ax, plane, a, b, ends, H):
     s = Section(H, T3.BACK)
     f = Face(k, ax, plane, a, b, ends, s, T3.CORNER_C)
     zb, fr = s.zb, D + T3.BACK                          # (fr: the upright part's front, out from the block's face)
-    db = -0.5 - plane                                   # (the tile's back edge, from the block's face: the wall's
-                                                        # back, the window cut through to it)
     zh = s.z_at(H, HEAD)                                # the header's foot
     zs = SILL / core.ZPX                                # the sill's front top
     gl = T3.BACK - GLASS_IN
     dv = T3.BACK + BEVEL                                # the header's upright front (and the jamb's)
     zj = zs + SILL_RISE / core.ZPX * (fr - dv) / (fr - gl)   # the sill's top level with it (the slope's top)
     zc = H - LEAN_RISE * BEVEL / D
+    dp = dv - PANE_IN                                   # the pane's centre
+    db = dp - WALL_BACK                                 # the wall's back (the piece's section reaches back to it)
     GLASS = T.Relief("window_glass")
     for s0, s1 in T.spans(a, b):
         h0, w0, w1 = s0, s0, s1                         # (h0: the header's and the sill's start; w0: the glass's)
@@ -63,12 +67,11 @@ def build(k, ax, plane, a, b, ends, H):
             h0, w0 = s0 + FRAME, s0 + FRAME + JAMB
         pf = [(db, 0.0), (fr, 0.0), (fr, zs), (dv, zj), (db, zj)]       # the sill: its slope, then flat back
         cols = s.cols(pf, "face")
-        cols[3] = SILL_FLAT
+        cols[2], cols[3] = SILL_SLOPE, SILL_FLAT
         f.part(h0, w1, pf, cols, None, end=False)
         pf = [(db, zh), (dv, zh), (dv, zc), (T3.BACK, H), (db, H)]      # the header: the lean's top, then upright
         cols = s.cols(pf, "face")                                       # down to its foot
         cols[1] = HEAD_FRONT
         f.part(h0, w1, pf, cols, None, end=False)
-        dc = (dv + db) / 2                                              # the pane
-        prism(GLASS, ax, plane, w0, w1, [(dc - PANE / 2, zj), (dc + PANE / 2, zj), (dc + PANE / 2, zh),
-                                         (dc - PANE / 2, zh)], "steel", 3, ["glassL"] * 4, "glassL")
+        prism(GLASS, ax, plane, w0, w1, [(dp - PANE / 2, zj), (dp + PANE / 2, zj), (dp + PANE / 2, zh),   # the
+                                         (dp - PANE / 2, zh)], "steel", 3, ["glassL"] * 4, "glassL")         # pane
