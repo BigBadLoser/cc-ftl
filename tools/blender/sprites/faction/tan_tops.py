@@ -349,7 +349,48 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                         sd("fTC0" if ch == "." else SCREEN_INK[ch], ax))
 
 
+CHEST = (16, 41, 3, 2, 1)               # the chest (ref 26): its frame's top and foot (rows down), depth, bars (px),
+                                        # the drawers' fronts back in it (px)
+CHEST_ROWS = ((29, (0.5,), 3), (31, (0.25, 0.5, 0.75), 2))  # its sections: the top's foot (the middle bar under
+                                        # it), the bottom's top; each one's ribs (1 px, across the tile), handles' width
+
+
+def chest(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+    """A chest of drawers under the cushion: a frame (bars BAR px across its top, its foot, its sides and between its
+    sections), the drawers' fronts back in it, a 1 px rib between them."""
+    L = 1 / 32
+    R = lambda n: z1 - n * PZ                                   # noqa: E731
+    band(a, b, zl1, z1, "fTS4")                                 # (the face, dark in the gaps)
+    cap = sd(D_SIDE_TONE, ax)
+    top, foot, dep, bar, back = CHEST
+    (mfoot, us0, w0), (mtop, us1, w1) = CHEST_ROWS
+    fd, bw = dep * L, bar * L
+    for c in range(-1, 2):
+        if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
+            continue
+        e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L
+        zt, zf, zm0, zm1 = R(top), R(foot), R(mfoot), R(mtop)
+        prism(k, ax, plane, e0, e1, [(0.0, zf), (fd - back * L, zf), (fd - back * L, zt), (0.0, zt)], FACE, 3,
+              cols=[False, sd("fTS3", ax), False, False], cap=cap)              # (the drawers' fronts)
+        bars = [(e0, e1, zf, zf + bar * PZ), (e0, e1, zt - bar * PZ, zt), (e0, e1, zm0, zm1),
+                (e0, e0 + bw, zf, zt), (e1 - bw, e1, zf, zt)]
+        for (z0, z1_), us, w in (((zm0, zt - bar * PZ), us0, w0), ((zf + bar * PZ, zm1), us1, w1)):
+            ux = [c - 0.5 + f for f in us]
+            bars += [(u - L / 2, u + L / 2, z0, z1_) for u in ux]               # (the ribs)
+            for q0, q1 in zip([e0 + bw] + [u + L / 2 for u in ux], [u - L / 2 for u in ux] + [e1 - bw]):
+                _handle(k, ax, plane, c, q0, q1, z0, HANDLES[1][0], w, fd - back * L + L, sd)
+        for u0, u1, z0, z1_ in bars:                                # (an across bar's top: lit, its front px pale)
+            across = u1 - u0 > 0.5
+            prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
+                  cols=[False, sd("fTS1", ax), sd("fTS1" if across else "fTS0", ax), False], cap=cap)
+            if across:
+                k.poly([T.P(ax, plane, u, z1_ + PAINT, d) for u, d in ((u0, fd - L), (u1, fd - L), (u1, fd),
+                                                                        (u0, fd))],
+                       "wall", 0, Vector((0, 0, 1)), fixed=sd("fTS0", ax))
+
+
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
             Design("cabinets", body=functools.partial(lockers, canopy=False, cab_up=3), lip=False, cushion="fTS8"),
             Design("drawers", body=functools.partial(lockers, canopy=False, cab_up=3, swap=True), lip=False,
-                   cushion="fTS8"))
+                   cushion="fTS8"),
+            Design("chest", body=chest, lip=False, cushion="fTS8"))
