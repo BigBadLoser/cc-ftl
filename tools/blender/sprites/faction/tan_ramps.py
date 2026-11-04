@@ -27,9 +27,17 @@ BASE = (((0.25, 0.5, 0.0, CUT_D, "abcd"),), ((0.5, 0.75, 0.0, CUT_D, "abcd"),), 
 MIRRORED = (((0.0, 0.25, 0.0, CUT_D, "abcd"),), ((0.75, 1.0, 0.0, CUT_D, "abcd"),),     # the base with each half
             ((0.25, 0.5, 0.0, 1.0, "abc"), (0.0, [0.375], CUT_D, 1.0, "ad")),          # mirrored: the squares at
             ((0.5, 0.75, 0.0, 1.0, "abd"), ([0.625], 1.0, CUT_D, 1.0, "bc")))          # the tile's sides, the Ls
-CORNER = (BASE[0], BASE[2], ((0.5, 1.0, 0.0, 1.0, "ad"),))                             # by an outer corner: the
-                                                                                        # base's far half, a plain
-                                                                                        # plate to the corner
+
+
+def _corner(w):
+    """The layout by an outer corner, on a face w of a tile: the base's far half at its own size (the L, the square),
+    a plain plate on to the corner's ridge."""
+    t = 1.0 / w
+    return (((0.25 * t, 0.5 * t, 0.0, CUT_D, "abcd"),), ((0.0, 0.25 * t, 0.0, 1.0, "abd"), ([0.125 * t], 0.5 * t, CUT_D, 1.0, "bc")),
+            ((0.5 * t, 1.0, 0.0, 1.0, "ad"),))
+
+
+RIDGE_EDGE = {"y": "fTE0", "x": "fTE0"}         # the plates' pale edge either side of the ridge, a px (not anti-aliased)
 THIRDS = (0.0, 1 / 3, 2 / 3, 1.0)                                                       # in the middle
 GRID = tuple(((THIRDS[i], THIRDS[i + 1], g0, g1, "abcd"),) for i in range(3) for g0, g1 in ((0.0, 0.5), (0.5, 1.0)))
 TALL = tuple(((THIRDS[i], THIRDS[i + 1], 0.0, 1.0, "abcd"),) for i in range(3))
@@ -55,10 +63,17 @@ def cushions(layout, extra=None):
         ln = getattr(sh, "line", None)                  # (at an outer corner's ridge (tan.RampRidge): the corner
         corner = bool(ln and getattr(sh, "band", 0.0)   # layout, square at the ridge)
                       and abs(u1 - ((ln[0] if ax == "y" else ln[1]) - sh.band)) < 1e-6)
-        lay = CORNER if corner and layout is BASE else layout
+        lay = _corner(w) if corner and layout is BASE else layout
+        if corner:
+            side[1] = 0.0                               # (no joint at the ridge: the plate's pale edge)
 
         def q(ua, ub, da, db):
             return [(ua, da), (ub, da), (ub, db), (ua, db)]
+
+        def run_on(poly):                               # (at the ridge the slope's edge runs out with d, the
+            if not corner:                              # chamfer's edges straight at the camera: a part ending
+                return poly                             # there runs on with it)
+            return [(x + y, y) if min(abs(x - u1), abs(x - u1 + L)) < 1e-9 else (x, y) for x, y in poly]
 
         def U0(f):
             return u0 + f[0] * w if _raw(f) else u0 + f * w + (side[0] if f == 0.0 else JL / 2)
@@ -98,7 +113,7 @@ def cushions(layout, extra=None):
                                      (u1, end, -1, -1, side[1], E), (u0, end, 1, -1, side[0], E)):
             out += [(x, y)] if corner and x == u1 else arc(x, y, sx, sy, CURVE, el, ee)   # (the outline round the
                                                                                             # cushions' curves)
-        T.plate(k, out, pt, nrm, 0.0, PAINT, FACE, 0, PAINT / 2, fixed=OUTER)   # the joints, under the
+        T.plate(k, run_on(out), pt, nrm, 0.0, PAINT, FACE, 0, PAINT / 2, fixed=OUTER)   # the joints, under the
         ulo, uhi, dhi = u0 + L, u1 - L, top + span - 2 * E                  # cushions: the block's outline, the
         for cu in lay:                                                   # inner ones lighter along each
             for f0, f1, g0, g1, _rc in cu:                                  # cushion's inner edges
@@ -117,7 +132,10 @@ def cushions(layout, extra=None):
                                 fixed=INNER)
         for cu in lay:
             for f0, f1, g0, g1, rc in cu:
-                plate(rect(f0, f1, g0, g1, rc), 2 * PAINT, 2, PAINT, "wall")
+                plate(run_on(rect(f0, f1, g0, g1, rc)), 2 * PAINT, 2, PAINT, "wall")
+        if corner:                                      # the plate's pale edge along the ridge
+            T.plate(k, run_on(q(u1 - L, u1, D0(0.0), D1(1.0))), pt, nrm, 0.0, 3 * PAINT, FACE, 0, 2 * PAINT,
+                    fixed=RIDGE_EDGE[ax])
         for poly in fillets:
             T.plate(k, poly, pt, nrm, 0.0, 3 * PAINT, FACE, 0, 2 * PAINT, fixed=ROUND_TONE)
         if extra:                                       # (paint: flat, rise in PAINTs; solid: a part rise proud

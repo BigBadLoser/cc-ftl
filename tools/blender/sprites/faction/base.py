@@ -117,6 +117,7 @@ TONES = {"fB": {"fBG": "#1c2444",      # a look's own single tones, on bin centr
                 "fTS6": "#3c2c2c", "fTS7": "#8c6c5c", "fTS8": "#9c745c",
                 "fTC0": "#1c2c3c", "fTC1": "#1cac4c", "fTC2": "#cc1c1c", "fTC3": "#ecdc3c",
                 "fTC4": "#1c5c3c", "fTC5": "#3cccdc",
+                "fTE0": "#d4c49c",                   # (the ramp ridge's pale edges: out of the AA group)
                 "fTW3": "#ac8c6c"}}     # (the cushions' shade side: the face's shade step, as their lit side
                                         # its lit one; the ramp's own step 3 an olive)    # darks maroon brown), on bin centres;
                                                                             # 7, 8: soft shadows (between 3 and 4)   # drone's maroon (its red block): lit,

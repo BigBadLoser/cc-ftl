@@ -3743,5 +3743,9 @@
  "fTC5": {
   "hex": "#3cccdc",
   "set": "tan"
+ },
+ "fTE0": {
+  "hex": "#d4c49c",
+  "set": "tan"
  }
 }
