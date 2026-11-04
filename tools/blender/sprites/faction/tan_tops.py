@@ -205,10 +205,12 @@ H_SCREENS = ((1, (".......", ".RR.GG.", ".RR.GG.", ".......")),     # the header
 H_SEEN = H_CANOPY - H_FACE + 1          # (the recess's first row seen under the canopy)
 
 
-def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd):
-    """A handle wide px mid [q0, q1], rows over zf, d proud, on the sprite's grid."""
+def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd, even=False):
+    """A handle wide px mid [q0, q1], rows over zf, d proud, on the sprite's grid (even: from an even px, the face's
+    steps pairing columns: an even-wide one from an odd px straddles a step)."""
     L = 1 / 32
-    g0 = c - 0.5 + round(((q0 + q1) / 2 - (c - 0.5)) / L - wide / 2) * L
+    x0 = ((q0 + q1) / 2 - (c - 0.5)) / L - wide / 2
+    g0 = c - 0.5 + (2 * round(x0 / 2) if even else round(x0)) * L
     zh = zf + (rows + 1) * PZ
     odd = round((d + L / 4 - (T_SCREEN * L + PX / 8)) / L) % 2      # (at an odd depth the face's steps pair
     for x in range(odd, wide + odd):                                # columns 1-2, 3-4, ...: one step, one row)
@@ -415,8 +417,49 @@ def chest(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                            "wall", 0, Vector((0, 0, 1)), fixed=sd("fTS0", ax))
 
 
+DESK = (14, 5, 4, 2)                    # the desk (ref 31): its shelf's top (rows down), how far out (px) the shelf
+                                        # and the side walls stand, the walls' thickness (px)
+
+
+def desk(k, ax, plane, a, b, mit, zl1, z1, band, sd):
+    """The console's desk under the cushion: its shelf just under it, a side wall at each tile edge (flaring out to
+    the shelf), four drawers between them on the lip (their fronts a px back, 1 px ribs between)."""
+    L = 1 / 32
+    top, shd, pd, pw = DESK
+    sh, sp, w = shd * L, pd * L, pw * L
+    band(a, b, zl1, z1, "fTS2")
+    cap = sd(D_SIDE_TONE, ax)
+    zd1 = z1 - top * PZ
+    zt0 = zd1 - D_THICK
+    zb = zl1 + _rows(sp - LIP_D) + PZ / 4                       # (the feet's front edge on the lip's)
+    prism(k, ax, plane, a, b, [(0.0, zt0), (sh, zt0), (sh, zd1), (0.0, zd1)], FACE, 3,
+          cols=[False, sd("fTS1", ax), sd("fTS1", ax), False], cap=cap, mitre=mit)
+    band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # (its front's upper px a highlight)
+    band(a, b, zl1 - 1.5 * PZ, zl1, D_RAIL_SHADOW, LIP_D)        # (a faint shadow from the drawers on the lip's front)
+    fl = sh - sp
+    for c in range(-1, 2):
+        for p0, p1 in ((c - 0.5, c - 0.5 + w), (c + 0.5 - w, c + 0.5)):    # (the side walls)
+            q0, q1 = max(a, p0), min(b, p1)
+            if q1 - q0 > 1e-6:
+                prism(k, ax, plane, q0, q1, [(0.0, zb), (sp, zb), (sp, zt0 - fl), (sh, zt0), (0.0, zt0)], FACE,
+                      3, cols=[False, sd("fTS1", ax), sd("fTS0", ax), False, False], cap=cap)
+        if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
+            continue
+        e0, e1 = c - 0.5 + w, c + 0.5 - w                       # (the drawers)
+        prism(k, ax, plane, e0, e1, [(0.0, zb + PZ), (sp - L, zb + PZ), (sp - L, zt0), (0.0, zt0)], FACE, 3,
+              cols=[False, sd("fTS3", ax), False, False], cap=cap)
+        us = [c - 0.5 + f for f in (0.25, 0.5, 0.75)]
+        bars = [(e0, e1, zb, zb + PZ)] + [(u - L / 2, u + L / 2, zb + PZ, zt0) for u in us]
+        for u0, u1, z0, z1_ in bars:
+            prism(k, ax, plane, u0, u1, [(0.0, z0), (sp, z0), (sp, z1_), (0.0, z1_)], FACE, 3,
+                  cols=[False, sd("fTS1", ax), sd("fTS0", ax), False], cap=cap)
+        for q0, q1 in zip([e0] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1]):
+            _handle(k, ax, plane, c, q0, q1, zb + PZ, *HANDLES[1], sp, sd, even=True)
+
+
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
             Design("cabinets", body=functools.partial(lockers, canopy=False, cab_up=3), lip=False, cushion="fTS8"),
             Design("drawers", body=functools.partial(lockers, canopy=False, cab_up=3, swap=True), lip=False,
                    cushion="fTS8"),
-            Design("chest", body=chest, cushion="fTS8"))         # (on the lip: its foot at 39 rows down)
+            Design("chest", body=chest, cushion="fTS8"),         # (on the lip: its foot at 39 rows down)
+            Design("desk", body=desk, cushion=True))
