@@ -186,6 +186,9 @@ SECTIONS = ((18, 30, 5, (0.5,), 3),     # the cabinets, the drawers under them: 
                                         # its foot)
 BIN_EDGE = {"y": "fTW1", "x": "fTS1"}    # the highlight along the bins' foot edge (a step under the face's pale)
 BIN_SHADE = "fTS2"                      # a px of shadow down each bin's end by a side wall (screen right)
+H_EDGE, H_SHADOW = "fTS1", "fTS3"       # the recessed face: a pale row along its foot, a shadow row under the canopy
+SIDE_STEP = 3                           # the cabinets' side bars: full depth for their first 3 rows from the
+                                        # frame's foot, then a px back up to the bins
 BIN_ROUND = 1.5                         # the bins' (and their side walls') top: rounded into the header's foot
                                         # (the radius, px)
 FRAME_IN = 1                            # the cabinets and drawers: in from each tile edge (px)
@@ -267,16 +270,22 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             bars = [(e0, e1, zf, zf + PZ)] + ([(e0, e1, zt - PZ, zt)] if n == 0 else [])
             us = [c - 0.5 + f for f in splits]
             bars += [(u - L / 2, u + L / 2, zf + PZ, dt) for u in us]
-            bars += [(e0, e0 + L, zf + PZ, dt), (e1 - L, e1, zf + PZ, dt)]
+            if n == 0:                                              # (the cabinets' sides: stepped back a px
+                zs_ = zf + SIDE_STEP * PZ                           # above their foot's rows)
+                bars += [(e0, e0 + L, zf + PZ, zs_), (e1 - L, e1, zf + PZ, zs_)]
+                bars += [(e0, e0 + L, zs_, dt, fd - L), (e1 - L, e1, zs_, dt, fd - L)]
+            else:
+                bars += [(e0, e0 + L, zf + PZ, dt), (e1 - L, e1, zf + PZ, dt)]
             prism(k, ax, plane, e0, e1, [(0.0, zf + PZ), (fd - back * L, zf + PZ), (fd - back * L, dt), (0.0, dt)],
                   FACE, 3,
                   cols=[False, sd("fTS3", ax), False, False], cap=cap)          # (its doors)
             for q0, q1 in zip([e0 + L] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1 - L]):
                 _handle(k, ax, plane, c, q0, q1, zf + PZ, *HANDLES[n], fd - (back - 1) * L, sd)   # (a px out of
                                                                                                     # the door)
-            for u0, u1, z0, z1_ in bars:                            # (a deep top: lit, its front px pale)
+            for u0, u1, z0, z1_, *bd_ in bars:                      # (a deep top: lit, its front px pale)
                 deep = back > 1 and abs(z1_ - z0 - PZ) < 1e-6
-                prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
+                bdep = bd_[0] if bd_ else fd
+                prism(k, ax, plane, u0, u1, [(0.0, z0), (bdep, z0), (bdep, z1_), (0.0, z1_)], FACE, 3,
                       cols=[False, sd("fTS1", ax), sd("fTS1" if deep else "fTS0", ax), False], cap=cap)
                 if deep:
                     k.poly([T.P(ax, plane, u, z1_ + PAINT, d) for u, d in ((u0, fd - L), (u1, fd - L), (u1, fd),
@@ -290,6 +299,8 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         m = (mit[0] if q0 <= a + 1e-6 else False, mit[1] if q1 >= b - 1e-6 else False)
         prism(k, ax, plane, q0, q1, [(0.0, zh0), (hf, zh0), (hf, R(1)), (0.0, R(1))], FACE, 3,
               cols=[False, sd("fTS2", ax), False, False], cap=cap, mitre=m)
+        band(q0, q1, zh0, zh0 + PZ, H_EDGE, hf)                    # (a pale row along its foot, a shadow row
+        band(q0, q1, R(H_SEEN + 1), R(H_SEEN), H_SHADOW, hf)        # under the canopy)
         prism(k, ax, plane, q0, q1, [(0.0, R(1)), (hc, R(1)), (hc, z1), (0.0, z1)], FACE, 3,
               cols=[False, sd("fTS0", ax), sd("fTS1", ax), False], cap=cap, mitre=m)
         for u, mm, e in ((q0, m[0], c - 0.5), (q1, m[1], c + 0.5)):
