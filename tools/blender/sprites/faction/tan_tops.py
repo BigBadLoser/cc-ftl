@@ -170,9 +170,9 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
 # tile on it); under it two overhead bins, then two cabinets over four drawers in a frame, down to the slope (no lip)
 # (heights in rows of face down from the header's top, depths in px; a part d proud shows d rows lower, so the one
 # over it hides that much of what's under it)
-H_FRONT, H_FACE, H_CANOPY = 8, 5, 7     # the header: its rows; its face's depth (the screens on it); the canopy's
-BIN_FOOT, BIN_D, BIN_TOP = 18, 7, 3     # the bins: their bottom edge (on the cabinets' top), its depth (the
-                                        # canopy's); their front leaning back from it to the header's foot, BIN_TOP
+H_FRONT, H_FACE, H_CANOPY = 8, 6, 8     # the header: its rows; its face's depth (the screens on it); the canopy's
+BIN_FOOT, BIN_D, BIN_TOP = 18, 7, 2     # the bins: their bottom edge (on the cabinets' top), its depth (a px
+                                        # short of the canopy's); their front leaning back from it to the header's foot, BIN_TOP
                                         # px out (under the header)
 BIN_WALL, BIN_BACK = 2, 1               # the bins' side walls at each tile edge (px thick, the bins' profile), the
                                         # bins a px back of them
