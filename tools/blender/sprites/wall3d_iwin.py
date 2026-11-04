@@ -18,9 +18,10 @@ POST = 12 / 32          # an end post's length along the wall (ref: 12 px of fro
 LINES = 3 / 32          # the pane's top edges on the beam: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"
-SILL_COL = T.CUT        # the sill's top and the beam's underside: the cut tone
+SILL_COL = "fTG1"       # the sill's top and the beam's underside: the cap's black
 PART = None
-FB.TOP_KEEP.add(LINE_COL)
+CLOSE = False           # (a preview of a piece on its own: its open end closed, the half arch's sections shown)
+FB.TOP_KEEP.update((LINE_COL, SILL_COL))
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -97,6 +98,8 @@ def hook(k, sp):
         _quad(k, [(x1, yb, z0), (x1, yf, z0), (x1, yf, z1), (x1, yb, z1)], (-1, 0, 0), TAN.END["x"])
     _quad(k, [(a, yb, z0), (b, yb, z0), (b, yf, z0), (a, yf, z0)], (0, 0, 1), SILL_COL)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
+    if CLOSE and x1 > 0.5:
+        _close(k, yb, yf, z0, z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2       # (grid y; G flips it, symmetric anyway)
@@ -105,6 +108,23 @@ def hook(k, sp):
     GLASS = T.Relief("iwin_glass")
     GLASS.poly([Vector(p) for p in ((a, 0.0, z0), (b, 0.0, z0), (b, 0.0, z1), (a, 0.0, z1))], "wall", 2,
                Vector((0, 1, 0)), fixed="glassL")
+
+
+def _close(k, yb, yf, z0, z1):
+    """The piece's +x end as a free end's: the foot and ramps' section (shell._end_section) on up to the sill, the
+    beam's over the opening (with the lip's and the header cushion's, proud of the face), in the free ends' slate."""
+    from .faction.parts import body
+    from .faction.shell import _end_section
+    col, edge = TAN.END["x"], TAN.END_EDGE["x"]
+    zs, top = W.skirt_top(), W.HF
+    zh1 = top - 0.031
+    zh0 = zh1 - TAN.HEAD_H
+    _end_section(k, "x", 0.5, yb, yf, zs, z0, body(False), col=col, edge=edge)
+    for y0, y1, za, zb in ((yb, yf, zs, z0), (yf, yf + TAN.LIP_D, zs, z0), (yb, yf, z1, top),
+                           (yf, yf + TAN.HEAD_D, zh0, zh1)):
+        _quad(k, [(0.5, y0, za), (0.5, y1, za), (0.5, y1, zb), (0.5, y0, zb)], (1, 0, 0), col)
+    _quad(k, [(0.5 + 0.004, yf + TAN.HEAD_D - 1 / 32, zh0), (0.5 + 0.004, yf + TAN.HEAD_D, zh0),
+              (0.5 + 0.004, yf + TAN.HEAD_D, zh1), (0.5 + 0.004, yf + TAN.HEAD_D - 1 / 32, zh1)], (1, 0, 0), edge)
 
 
 def window(fn, part):
