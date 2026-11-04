@@ -49,9 +49,9 @@ def _raw(f):
 
 def cushions(layout, extra=None):
     """A ramp design (relief_style.Design's ramp slot) laying the cushions of layout over the block; extra(paint,
-    solid, U, D) adds more (paint(poly as (u, d), tone, rise in PAINTs); solid(poly, rise, top tone): a raised part;
+    solid, U, D, sd) adds more (paint(poly as (u, d), tone, rise in PAINTs); solid(poly, rise, top tone): a raised part;
     U, D a fraction of the tile / the run)."""
-    def ramp(plate, u0, u1, run_, k=None, pt=None, ax="y", **_):
+    def ramp(plate, u0, u1, run_, k=None, pt=None, ax="y", plane=None, **_):
         w, E, L = u1 - u0, EDGE, LINE
         top, end = 0.02 + E, run_ - 0.045               # (under the blue line; the block's end, over the toe)
         nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
@@ -63,7 +63,13 @@ def cushions(layout, extra=None):
         ln = getattr(sh, "line", None)                  # (at an outer corner's ridge (tan.RampRidge): the corner
         corner = bool(ln and getattr(sh, "band", 0.0)   # layout, square at the ridge)
                       and abs(u1 - ((ln[0] if ax == "y" else ln[1]) - sh.band)) < 1e-6)
+        e = 1e-3                                        # (at an inner corner's valley (LookShell.valley): one
+        vc = getattr(sh, "valley", 0.0)                 # plain plate, square at the crease, run on into it)
+        inner = bool(vc and plane is not None and sh._rect_at(*((u0 - e, plane + e) if ax == "y" else
+                                                                 (plane + e, u0 - e)), 0.0) is not None)
         lay = _corner(w) if corner and layout is BASE else layout
+        if inner and layout is BASE:
+            lay = (((0.0, 1.0, 0.0, 1.0, "bc"),),)
         if corner:
             side[1] = 0.0                               # (no joint at the ridge: the plate's pale edge)
 
@@ -71,9 +77,14 @@ def cushions(layout, extra=None):
             return [(ua, da), (ub, da), (ub, db), (ua, db)]
 
         def run_on(poly):                               # (at the ridge the slope's edge runs out with d, the
-            if not corner:                              # chamfer's edges straight at the camera: a part ending
-                return poly                             # there runs on with it)
-            return [(x + y, y) if min(abs(x - u1), abs(x - u1 + L)) < 1e-9 else (x, y) for x, y in poly]
+            out_ = []                                   # chamfer's edges straight at the camera: a part ending
+            for x, y in poly:                           # there runs on with it; at a valley the slope starts past
+                if corner and min(abs(x - u1), abs(x - u1 + L)) < 1e-9:     # it, as far out)
+                    x += y
+                elif inner and u0 - 1e-9 <= x <= u0 + L + 1e-9:
+                    x = min(x + vc + y, u1)
+                out_.append((x, y))
+            return out_
 
         def U0(f):
             return u0 + f[0] * w if _raw(f) else u0 + f * w + (side[0] if f == 0.0 else JL / 2)
@@ -111,7 +122,7 @@ def cushions(layout, extra=None):
         out = []                                                            # toe band, round the block's corners
         for x, y, sx, sy, el, ee in ((u0, top, 1, 1, side[0], 0.0), (u1, top, -1, 1, side[1], 0.0),
                                      (u1, end, -1, -1, side[1], E), (u0, end, 1, -1, side[0], E)):
-            out += [(x, y)] if corner and x == u1 else arc(x, y, sx, sy, CURVE, el, ee)   # (the outline round the
+            out += [(x, y)] if (corner and x == u1) or (inner and x == u0) else arc(x, y, sx, sy, CURVE, el, ee)   # (the outline round the
                                                                                             # cushions' curves)
         T.plate(k, run_on(out), pt, nrm, 0.0, PAINT, FACE, 0, PAINT / 2, fixed=OUTER)   # the joints, under the
         ulo, uhi, dhi = u0 + L, u1 - L, top + span - 2 * E                  # cushions: the block's outline, the
@@ -145,8 +156,19 @@ def cushions(layout, extra=None):
                                                                                    base, fixed=top_),  # (its sides
                                                                                                        # lit as they
                                                                                                        # face)
-                  lambda f: u0 + f * w, lambda g: top + g * span)
+                  lambda f: u0 + f * w, lambda g: top + g * span, lambda c: _shade(c, ax))
     return ramp
+
+
+RAMP_TONES = ("fTW0", "fTW1", "fTW2", "fTW3")   # the cushions' tones, light to dark (fTW3 their shaded side)
+
+
+def _shade(name, ax):
+    """A design's tone on the shaded (x) face: a step darker, as the cushions beside it are."""
+    from .tan import sd
+    if ax == "x" and name in RAMP_TONES:
+        return RAMP_TONES[min(len(RAMP_TONES) - 1, RAMP_TONES.index(name) + 1)]
+    return sd(name, ax)
 
 
 # the grille design: a wide cushion, then a raised body between it and a narrow one (its sides shaded as they face),
@@ -157,26 +179,26 @@ G_H, G_SINK = 2 * PX, PX / 2                    # its height; the vent's depth i
 G_RIM, G_RIM_D = 1.0, 2.0                       # the rim round the vent, in px: at its sides, at its top and foot
 
 
-def grille(paint, solid, U, D):
+def grille(paint, solid, U, D, sd):
     L, E = LINE, EDGE
 
     def q(ua, ub, da, db):
         return [(ua, da), (ub, da), (ub, db), (ua, db)]
     bu0, bu1, bd0, bd1 = U(G_L) + L / 2, U(G_R) - L / 2, D(G_D0), D(G_D1)          # (a joint in from the cushions)
     bx1 = U(G_R) + GAP * L / 2                                                      # (its right side: on the cushion,
-    paint(q(bu0, bx1, D(0.0), D(1.0)), "fTS3", 1.75)                                # no joint) (the slope round it)
+    paint(q(bu0, bx1, D(0.0), D(1.0)), sd("fTS3"), 1.75)                            # no joint) (the slope round it)
     fl = G_H - G_SINK
-    solid(q(bu0, bx1, bd0, bd1), fl, "fTS2", FACE, 4)                               # the body, to the vent's floor
+    solid(q(bu0, bx1, bd0, bd1), fl, sd("fTS2"), FACE, 4)                             # the body, to the vent's floor
     ru, rd = G_RIM * L, G_RIM_D * E
     vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
     for ua, ub, da, db in ((bu0, bx1, bd0, vd0), (bu0, bx1, vd1, bd1),             # the rim round it, up to the
                            (bu0, vu0, vd0, vd1), (vu1, bx1, vd0, vd1)):             # body's top
-        solid(q(ua, ub, da, db), G_H, "fTW2", FACE, 4, fl)
+        solid(q(ua, ub, da, db), G_H, sd("fTW2"), FACE, 4, fl)
     n = int(((vu1 - vu0) / L - 1) / 2)                                              # the slats (a px, a px apart,
     off = vu0 + ((vu1 - vu0) - (2 * n + 1) * L) / 2                                 # centred in it, a gap at each
     for i in range(n):                                                              # side)
         ua = off + (2 * i + 1) * L
-        solid(q(ua, ua + L, vd0, vd1), G_H, "fTW0", FACE, 4, fl)
+        solid(q(ua, ua + L, vd0, vd1), G_H, sd("fTW0"), FACE, 4, fl)
 
 
 GRILLE = (((0.0, G_L, 0.0, 1.0, "abcd"),), ((G_R, 1.0, 0.0, 1.0, "abcd"),))

@@ -51,6 +51,7 @@ class LookShell(T.Shell):
     line = None
     band = 0.0
     clip = 0.0
+    valley = 0.0                                        # (an inner corner's ramp chamfer: the band's width)
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -188,6 +189,10 @@ class LookShell(T.Shell):
             mt["chamfer"] = 1.0
             if ax == "y":
                 self._band(k, fam, R, col)
+        if self.valley and lo_t == "in":               # (an inner corner chamfered: the ramp starts past the band,
+            a += self.valley                            # the band its own piece, drawn with the y face)
+            if ax == "y":
+                self._valley(k, fam, R, col, a - self.valley, plane)
         holes = sorted(h[2:] for h in self.holes if h[0] == ax and abs(h[1] - plane) < 1e-6 and a < h[3] and h[2] < b)
         cuts = [a] + [u for h in holes for u in h[:2]] + [b]
         ox = "x" if ax == "y" else "y"                  # (at a wall's free end the cap is the end face's section:
@@ -196,9 +201,12 @@ class LookShell(T.Shell):
                                                                                           # next tile: open)
         side = (lambda sg: self.hole_tone("side", fam, ax, al * sg)) if self.hole_tone else \
             (lambda sg: T.tone(fam, 1, al * sg, ax))
+        vl = self.valley and lo_t == "in"
         for n in range(len(cuts) - 1):
             u0, u1 = cuts[n], cuts[n + 1]
             m = (mt[lo_t] if n == 0 else 0.0, mt[hi_t] if n == len(cuts) - 2 else 0.0)
+            if vl and n == 0:                           # (past a valley's band the ramp's start runs out with d: no
+                m = (lambda d, z, w=u1 - u0: -min(d, w), m[1])  # further than its tile's edge)
             caps = (side(-1) if n > 0 else ec[0], side(1) if n < len(cuts) - 2 else ec[1])   # (beside a hole: its
                                                                                               # sides)
             if n % 2 == 0:
@@ -256,6 +264,17 @@ class LookShell(T.Shell):
         """An outer corner's chamfer (line, band) on a solid ramp: the ramp's section carried round it (a corner
         piece), its slope in the tones the look gives the band by distance out (its features' band hook)."""
         from .parts import corner_piece
+        pts, cols = self._band_prof(fam, R, col)
+        corner_piece(k, self.line[0], self.line[1], self.band, pts, fam, 2, cols=cols, cap=R[0])
+
+    def _valley(self, k, fam, R, col, X, Y):
+        """An inner corner's chamfer (valley) at (X, Y): the band's piece between the faces' ramps, toned as _band."""
+        from .parts import valley_piece
+        pts, cols = self._band_prof(fam, R, col)
+        valley_piece(k, X, Y, self.valley, pts, fam, 2, cols=cols)
+
+    def _band_prof(self, fam, R, col):
+        """A chamfer band's section and its edges' tones (the features' band hook, by distance out)."""
         tones = self._ask("band", fam) if self.features else NO
         tones = [(self.run, col["slope"])] if tones is NO else tones   # [(up to d, tone)] out from the wall's line
         run, ft = self.run, self.foot
@@ -269,7 +288,7 @@ class LookShell(T.Shell):
             cols.append(c)
         pts.append((0.0, self.zs))
         cols.append(R[0])
-        corner_piece(k, self.line[0], self.line[1], self.band, pts, fam, 2, cols=cols, cap=R[0])
+        return pts, cols
 
     def solid_extra(self, k):
         """Under a solid ramp: the ramps on the wall's back faces (out of the camera's sight, but the piece is a closed

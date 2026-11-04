@@ -64,6 +64,9 @@ RIDGE = 1 / 32                      # an outer corner: chamfered this along each
 class RampRidge(Feature):
     """The ramp's chamfer band (Chamfer's) in the plates' tone between the blue line under the lip and the blue toe
     band, as the faces' bands run (the plates' pale edges either side of it: tan_ramps)."""
+    def setup(self, sp):
+        sp.valley = RIDGE                               # (inner corners: their ramps' valley chamfered as much)
+
     def band(self, sp, fam):
         from .tan_ramps import EDGE
         B = T.RAMPS[BLUE][0][2]
