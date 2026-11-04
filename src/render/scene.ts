@@ -237,7 +237,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const drones = createDroneView(world, { layer: W.low, air: SL.sorted, drones: content.drones ?? {}, modules: content.modules, atlas });
   // The drone bays' ceiling hatches (droneHatch.ts), at roof height over each bay.
   const hatches = createHatchView(world, {
-    layer: W.low, modules: content.modules, atlas,
+    layer: W.low, modules: content.modules, atlas, zoom: () => SL.scale,
     roofed: (id) => scenes.get(id)?.isRoofed() ?? false,
     shipOf: (mid) => {
       const m = world.get(mid, ModuleC);

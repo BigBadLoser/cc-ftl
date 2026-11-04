@@ -6,14 +6,15 @@ import { rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import { DRONE_HATCH_SHARE, DRONE_LIFT_SEC } from '../sim/tuning';
 import type { Atlas } from './assets/loader';
+import { createGhostFilter, setGhostZoom } from './ghost';
 import { sectorArt } from './sectorPos';
 
 /**
  * The drone bay's ceiling hatch (#324 art `module.drone_bay.hatch.f0..f4`, `.hatch.stowed`), drawn at roof height over the bay like the
  * weapon hatches. It opens while one of the bay's drones launches or lands (the sim's lift timing: it is fully open as the drone starts up)
- * and closes behind it. On a roofed ship it is always there (stowed when shut). On the cutaway player ship it shows only while it is not
- * shut: the bay's tall frame stands in the cutaway, so its lid is drawn solid on top of it rather than ghosted like the roof turrets (a shut
- * lid would hide the docked drones). Reads the sim only.
+ * and closes behind it. The same rules as the weapon hatches (turretView.ts): on a roofed (enemy) ship it is drawn solid on the roof, stowed
+ * when shut; on the cutaway player ship nothing is drawn while it is stowed, and the opening or open stages are ghosts (faint, with a light
+ * outline, the turrets' ghost filter). Reads the sim only.
  */
 export const HATCH_FRAMES = 5;
 
@@ -40,10 +41,13 @@ export interface HatchHost {
   roofed: (ship: number) => boolean;
   /** Ship (ShipC id) of a module. */
   shipOf: (module: number) => number;
+  /** Camera zoom, for the ghost outline width. */
+  zoom?: () => number;
 }
 
 interface Hatch {
   spr: Sprite;
+  ghost: ReturnType<typeof createGhostFilter>;
   open: number;
 }
 
@@ -72,7 +76,7 @@ export function createHatchView(world: World, host: HatchHost): { update(dt: num
           continue;
         }
         if (!h) {
-          h = { spr: new Sprite(), open };
+          h = { spr: new Sprite(), ghost: createGhostFilter(), open };
           host.layer.addChild(h.spr);
           hatches.set(id, h);
         }
@@ -81,6 +85,8 @@ export function createHatchView(world: World, host: HatchHost): { update(dt: num
         const [w, hh] = rotatedSize(def, m.rot);
         const p = sectorArt(m.x + w / 2, m.y + hh / 2);
         h.spr.visible = true;
+        h.spr.filters = roofed ? [] : [h.ghost];
+        setGhostZoom(h.ghost, host.zoom?.() ?? 1);
         h.spr.texture = st.tex;
         h.spr.position.set(Math.round(p.x - st.ax), Math.round(p.y - st.ay));
         // Over the bay's own art and a drone inside it (front tile +1.25); on a roofed ship over the roof plating, as the turrets (+2.95).

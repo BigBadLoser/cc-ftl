@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { drones } from '../../src/content/drones';
 import { applyDroneArt, createDroneArtSprites, droneArtIds } from '../../src/render/droneArt';
+import { createGhostFilter, setGhostZoom } from '../../src/render/ghost';
 import { hatchArtId, stepHatch, HATCH_SEC } from '../../src/render/droneHatch';
 import { Z_PX } from '../../src/render/heights';
 import { sectorArt } from '../../src/render/sectorPos';
@@ -12,7 +13,7 @@ import { strip, type LabCell, type LabCtx, type LabPanel } from './panel';
 /**
  * `?panel=droneLaunch`: a drone going up through its bay's ceiling hatch and coming back down (#318 slice 2), through the game's own code:
  * the sim's lift pose (sim/drones/space.ts `liftPose`), the hatch timing and art (render/droneHatch.ts) and the drone art (droneArt.ts).
- * Row 1 the launch, row 2 the landing (strips of `frames=8` stills, the hatch shutting after), row 3 the drone in space: its eight headings
+ * Row 1 the launch, row 2 the landing, row 3 the launch on the cutaway player ship (hatch ghosted, nothing while stowed) (strips of `frames=8` stills, the hatch shutting after), row 4 the drone in space: its eight headings
  * flying, the two firing frames, and drifting knocked out. `def=drone.defence` picks the drone.
  */
 const BAY = 'module.drone_bay';
@@ -26,7 +27,7 @@ function hatchAt(t: number): number {
   return open;
 }
 
-function bayCell(ctx: LabCtx, def: string, label: string, note: string, t: number, up: boolean, newRow: boolean): LabCell {
+function bayCell(ctx: LabCtx, def: string, label: string, note: string, t: number, up: boolean, newRow: boolean, cutaway = false): LabCell {
   return {
     label, note, w: W, h: H, at: t, loop: DRONE_LIFT_SEC + HATCH_SEC, newRow,
     mount(root: Container) {
@@ -34,6 +35,11 @@ function bayCell(ctx: LabCtx, def: string, label: string, note: string, t: numbe
       const bay = new Sprite(), front = new Sprite(), hatch = new Sprite();
       const low = new Container(), high = new Container();
       const art = createDroneArtSprites(low);
+      if (cutaway) {
+        const ghost = createGhostFilter();
+        setGhostZoom(ghost, 1);
+        hatch.filters = [ghost];
+      }
       root.addChild(bay, low, front, hatch, high);
       const at = (id: string, spr: Sprite, x: number, y: number): void => {
         const st = atlas.stat(id);
@@ -49,7 +55,10 @@ function bayCell(ctx: LabCtx, def: string, label: string, note: string, t: numbe
         const p = liftPose({ x: 0.5, y: 0.5 }, { x: 1, y: 1 }, Math.min(1, time / DRONE_LIFT_SEC), up);
         at(`${BAY}.r0`, bay, OX, OY);
         at(`${BAY}.r0.front`, front, OX, OY);
-        at(hatchArtId(BAY, hatchAt(time)), hatch, OX, OY);
+        const open = hatchAt(time);
+        at(hatchArtId(BAY, open), hatch, OX, OY);
+        // As the game: a stowed lid is not drawn on the cutaway ship; opening stages are ghosts.
+        if (cutaway && open <= 0) hatch.visible = false;
         const docked = up ? time <= 0 : time >= DRONE_LIFT_SEC;
         const ids = droneArtIds(def, { down: false, working: false, docked }, Math.PI / 4, time);
         const q = sectorArt(p.x, p.y);
@@ -88,6 +97,7 @@ export const droneLaunchPanel: LabPanel = {
     const cells: LabCell[] = [];
     strip(len, n).forEach((t, i) => cells.push(bayCell(ctx, def, 'launch', `${t.toFixed(2)} s`, t, true, i === 0)));
     strip(len, n).forEach((t, i) => cells.push(bayCell(ctx, def, 'landing', `${t.toFixed(2)} s`, t, false, i === 0)));
+    strip(len, n).forEach((t, i) => cells.push(bayCell(ctx, def, 'cutaway launch', `${t.toFixed(2)} s`, t, true, i === 0, true)));
     for (let d = 0; d < 8; d++) cells.push(spaceCell(ctx, def, `fly ${d * 45}°`, (d * Math.PI) / 4 - Math.PI / 2, {}, d === 0));
     cells.push(spaceCell(ctx, def, 'firing f0', Math.PI / 4, { working: true }, false, 0));
     cells.push(spaceCell(ctx, def, 'firing f1', Math.PI / 4, { working: true }, false, 0.2));
