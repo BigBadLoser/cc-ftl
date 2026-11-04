@@ -47,35 +47,48 @@ def _water(lit):
 
 def column(state, rot, frame=0):
     m, f, on, lit = _start("column", state, rot, frame)
-    casing(m, f, 0, -0.005, 0.0, LENGTH - 0.06, WIDTH - 0.04, 0.22, cut=0.09, col=FRAME)   # one plinth for both
+    hu, hl = -0.33, 1.08                       # housing centre and length along u (access end -0.87 .. 0.21)
+    u, v, r = 0.5, -0.01, 0.32                # the column: its outer rings stay inside the footprint (u <= 0.86)
+    # Dark machinery is the body (as in the life support): a base band the whole length, a core block set back under
+    # the hood; pale panels sit on it and the hood caps it.
+    casing(m, f, hu, -0.01, 0.0, hl - 0.02, WIDTH - 0.1, 0.3, cut=0.08, col=FRAME)           # base under the housing
+    f.vcyl(u, v, 0.0, r + 0.04, 0.38, FRAME, sides=16)                                      # drum under the column
+    f.box(0.2, -0.02, 0.0, 0.24, 0.5, 0.3, FRAME)                                           # joined by the pump block
+    casing(m, f, hu, -0.12, 0.28, hl - 0.08, 0.52, 0.56, cut=0.06, col=FRAME)              # core under the hood
     m.paint(body='pale')
-    casing(m, f, -0.3, -0.02, 0.22, 1.1, WIDTH - 0.12, 0.6, cut=0.06)                      # melt and filter housing
-    casing(m, f, -0.3, 0, 0.82, 1.18, WIDTH, 0.14, cut=0.12, taper=0.96)                   # its hood
-    _ice(m, f, -0.55, -0.03, 0.96, 0.5, 0.52)
-    _display(m, f, -0.55, lit, on, z=0.4)
-    for du in (-0.1, 0.1):                                                                   # filter cassettes
-        m.paint(body='cartridge')
-        f.box(du, 0.36, 0.3, 0.14, 0.04, 0.44, BODY)
-        m.paint(frame='teal')
-        f.box(du, 0.37, 0.7, 0.14, 0.04, 0.05, FRAME)
-    # The water column: glass round water, steel rings and hoops, a cap.
-    u, v = 0.55, -0.01
-    m.paint(body='steel', frame='frame', recess=_water(lit))
-    f.vcyl(u, v, 0.2, 0.37, 0.12, FRAME, sides=16)                                          # base ring
-    f.vcyl(u, v, 0.32, 0.33, 0.62, RECESS, sides=16)                                        # the water
-    m.paint(body='cartridge')
-    f.vcyl(u, v, 0.94, 0.33, 0.48, BODY, sides=16)                                          # the glass above it
-    m.paint(frame='frame')
-    for z in (0.62, 0.94, 1.18):
-        f.vcyl(u, v, z, 0.345, 0.035, FRAME, sides=16)                                      # hoops
-    f.vcyl(u, v, 1.42, 0.37, 0.1, FRAME, sides=16)                                          # cap ring
-    m.paint(body='pale')
-    f.vcyl(u, v, 1.52, 0.3, 0.08, BODY, rtop=0.18, sides=16)                                # domed cap
-    if lit:
-        for du, z0 in ((-0.12, 0.0), (0.08, 0.2), (0.0, 0.38), (0.14, 0.1)):
-            f.box(u + du, v + 0.33, 0.36 + (z0 + 0.12 * frame) % 0.52, 0.05, 0.03, 0.04, "medWhite")
+    casing(m, f, -0.6, 0.2, 0.12, 0.5, 0.4, 0.72, cut=0.05)                                # melt panel, down over the base
+    casing(m, f, -0.08, 0.22, 0.16, 0.42, 0.36, 0.68, cut=0.045)                           # filter bay, the same
+    casing(m, f, hu + 0.02, 0, 0.84, hl + 0.06, WIDTH, 0.14, cut=0.12, taper=0.96)         # hood
     m.paint(body='steel')
-    f.box(0.18, 0.0, 0.5, 0.14, 0.14, 0.12, FRAME)                                           # feed into the column
+    f.box(0.2, 0.25, 0.08, 0.12, 0.04, 0.14, BODY)                                           # service port on the pump
+    m.paint(body='pale')
+    f.vcyl(u, v, 0.84, r + 0.05, 0.14, BODY, sides=16)                                     # collar at hood height
+    f.box(0.24, v, 0.84, 0.16, 0.5, 0.14, BODY)                                            # its web into the hood
+    _ice(m, f, -0.6, -0.03, 0.98, 0.46, 0.52)
+    _display(m, f, -0.6, lit, on, z=0.44, v=0.41)
+    for du in (-0.18, 0.02):                                                                 # filter cartridges
+        m.paint(recess='dark')
+        f.box(du, 0.405, 0.36, 0.16, 0.012, 0.42, RECESS)
+        m.paint(body='cartridge')
+        f.box(du, 0.415, 0.39, 0.12, 0.012, 0.36, BODY)
+        m.paint(frame='teal')
+        f.box(du, 0.405, 0.74, 0.14, 0.03, 0.05, FRAME)
+    # The water column: water and glass between the collars, a teal band, a cap tied back to the hood.
+    m.paint(body='cartridge', frame='frame', recess=_water(lit))
+    f.vcyl(u, v, 0.38, r, 0.46, RECESS, sides=16)                                            # the water
+    f.vcyl(u, v, 0.98, r, 0.34, BODY, sides=16)                                              # the glass above it
+    f.vcyl(u, v, 0.58, r + 0.012, 0.03, FRAME, sides=16)                                     # hoop
+    f.vcyl(u, v, 1.32, r + 0.04, 0.08, FRAME, sides=16)                                      # cap ring
+    m.paint(body='pale')
+    f.vcyl(u, v, 1.4, r - 0.02, 0.08, BODY, rtop=0.16, sides=16)                             # domed cap
+    m.paint(body='vent_teal')
+    f.vcyl(u, v, 1.48, 0.1, 0.05, BODY, sides=10)                                            # its fill hatch
+    m.paint(body='steel')
+    f.box(0.0, -0.22, 0.96, 0.08, 0.08, 0.3, BODY)                                           # vent pipe from the hood
+    f.box(0.12, -0.22, 1.26, 0.32, 0.08, 0.08, BODY)                                         # over into the cap
+    if lit:
+        for du, z0 in ((-0.12, 0.0), (0.08, 0.2), (0.0, 0.36), (0.14, 0.1)):
+            f.box(u + du, v + r, 0.32 + (z0 + 0.12 * frame) % 0.48, 0.05, 0.03, 0.04, "medWhite")
     return [m.build()]
 
 
