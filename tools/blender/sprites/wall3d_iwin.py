@@ -20,6 +20,7 @@ LINE_W = 1 / 32
 LINE_COL = "fTG0"
 SILL_COL = "fTG1"       # the sill's top and the beam's underside: the cap's black
 PART = None
+RAMP_ONLY = False       # (a preview of the ramp alone: the wall over its top, the beam and the pane left out)
 CLOSE = False           # (a preview of a piece on its own: its open end closed, the half arch's sections shown)
 DIP = 12 * PZ           # the window's ramp: its crest this far under the wall's ramp (ref #2767 B layer: ~7 px of a
                         # ~16 px ramp; ours is 26 px) ...
@@ -157,6 +158,8 @@ def hook(k, sp):
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2       # (grid y; G flips it, symmetric anyway)
         _quad(k, [(a, y0, zt), (b, y0, zt), (b, y1, zt), (a, y1, zt)], (0, 0, 1), LINE_COL)
+    if RAMP_ONLY:
+        _ramp_only(k, a, x0, x1, yb, yf)
     global GLASS
     GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
     GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
@@ -183,6 +186,35 @@ def _close(k, yf, h, z1):
               (0.5 + 0.004, yf + TAN.HEAD_D, zh1), (0.5 + 0.004, yf + TAN.HEAD_D - 1 / 32, zh1)], (1, 0, 0), edge)
 
 
+def _ramp_only(k, a, x0, x1, yb, yf):
+    """Everything over the ramps' top out (the cushions standing over it kept), the post cut there in the cap's
+    black."""
+    zs, yc, rise = W.skirt_top(), yf + TAN.LIP_D + 1e-4, 0.12
+    regions = [[(2, zs, -1)], [(2, zs, 1), (2, zs + rise, -1), (1, yc, 1)],
+               [(2, zs, 1), (2, zs + rise, -1), (1, -yc, -1)]]
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        out = []
+        for f in m.f:
+            pts = [m.v[i] for i in f[0]]
+            if max(p[2] for p in pts) <= zs + 1e-9:
+                out.append(f)
+                continue
+            for r in regions:
+                q = _clip(pts, r)
+                if len(q) >= 3:
+                    n = Vector(q[1]) - Vector(q[0])
+                    if max((Vector(c) - Vector(q[0])).cross(n).length for c in q) < 1e-10:
+                        continue
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in q]
+                    out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+        m.f = out
+    if x0 > -0.5:
+        _quad(k, [(-0.5, yb, zs), (x0, yb, zs), (x0, yf, zs), (-0.5, yf, zs)], (0, 0, 1), SILL_COL)
+
+
 def window(fn, part):
     """fn: the look's straight piece builder (tile.wall.<look>.full.m10). (solid objects, pane objects)."""
     def build():
@@ -192,12 +224,12 @@ def window(fn, part):
         try:
             r = fn()
             solid = r[0] if isinstance(r, tuple) else r
-            glass = GLASS.build()
+            glass = [] if RAMP_ONLY else GLASS.build()
             import bpy                                  # (a wide piece's copies past the tile: not in this render)
             for o in list(bpy.context.scene.objects):
                 if o not in solid and o not in glass and o.type == "MESH":
                     bpy.data.objects.remove(o)
-            return solid, glass
+            return solid if RAMP_ONLY else (solid, glass)
         finally:
             PART, T.HOOK = None, None
     return build
