@@ -78,6 +78,8 @@ export interface Trader {
    * stock and some prices. Absent = the trade faction's own reputation key.
    */
   owner?: string;
+  /** A scene ship's own attitude towards the player, added to the hail score (scene `attitude`). */
+  relation?: number;
   /**
    * Set while a station stands in a node with a port (galaxy/marketLive.ts): the port whose market this trader is. Its `stock` is then the port's stock, and
    * `base` the port's baseline for the commodities (item, count; 0 allowed), against which prices rise with scarcity and fall with plenty (`stockFactor`).

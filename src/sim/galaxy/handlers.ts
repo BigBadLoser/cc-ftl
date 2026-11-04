@@ -13,9 +13,10 @@ import { hireCrew } from './recruit';
 import { buyBlueprint } from './blueprintShop';
 import { callForHelp } from './stranded';
 import { jobScenario } from './jobsDebug';
+import { answerVisit, setAmbush } from '../scene/visit';
 import { abandonJob, acceptJob, handIn, openCrate } from './jobs';
 
-type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'blueprint.buy' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety' | 'debug.jobScenario'>;
+type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'blueprint.buy' | 'debug.ambush' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety' | 'debug.jobScenario'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
@@ -23,6 +24,8 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'galaxy.drop': (sim) => void drop(sim),
   'galaxy.respond': (sim, cmd) => void respond(sim, cmd.encounter, cmd.choice),
   'galaxy.leaveEvent': (sim) => void leave(sim),
+  'galaxy.visit': (sim, cmd) => void answerVisit(sim, cmd.ship, cmd.grant),
+  'debug.ambush': (sim, cmd) => void setAmbush(sim, cmd.trap),
   'galaxy.clearNotoriety': (sim) => void clearNotoriety(sim),
   'galaxy.distress': (sim) => void callForHelp(sim),
   'crew.hire': (sim, cmd) => hireCrew(sim, cmd.key),

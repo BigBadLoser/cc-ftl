@@ -317,6 +317,8 @@ export interface UiEventGrid {
   /** Each ship of the scene (a fleet's, or a story encounter's), with what it is doing: its entity (0 once gone) for a click to find it. */
   roster: { ship: number; name: string; owner: string; status: string; tone: 'red' | 'amber' | 'green' | 'cyan' | 'dim' }[];
   hostiles: number;
+  /** A scene skiff has asked to dock and waits for the answer (`galaxy.visit`): its entity, name and what it asks. */
+  dockRequest: { ship: number; name: string; text: string } | null;
   /** The ship is still being placed (the deploy picker is up). */
   deploying: boolean;
   /** Leaving is allowed now; `why` says what is missing when it is not. Under fire leaving is a flee that spends the charged drive. */

@@ -229,6 +229,8 @@ export const ANTI_VEHICLE_RANGE = 70;
 export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
+/** Seconds an ambush skiff's boarding party stands on the player's ship, still passing for guests, before it turns (scene/visit.ts). */
+export const AMBUSH_SPRING_SEC = 10;
 
 /**
  * Sabotage (boarding/sabotage.ts): hp per second one boarder takes off the module they were ordered to wreck, with a weapon or

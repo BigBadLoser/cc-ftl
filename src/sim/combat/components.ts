@@ -96,7 +96,7 @@ export interface Ship {
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
   /** The player fired on it or boarded it while it was not hostile (combat/provoke.ts): it turned hostile then. */
-  provoked?: 'fired' | 'boarded';
+  provoked?: 'fired' | 'boarded' | 'ambush';
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
   immobile?: true;
   /**

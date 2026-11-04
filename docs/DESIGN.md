@@ -361,7 +361,7 @@ scripts. Not every scene has one.
   - Observed: salvaged -> items, `derelicts_found` (read by the scan); infestation killed -> `infestations_cleared`; crew lost -> log; left ->
     flag `derelicts_left` only.
   - Persistence: **persistent discovery**, cleared on leave for now. Timer: no.
-- **Pirate ambush** (`pirate_returns`, once, after sparing a pirate; flag-queued, still waits for transit).
+- **Pirate ambush** (`pirate_returns`, once, after sparing a pirate; flag-queued, still waits for transit). **Built (#173 step 4).** Rulings taken in the build, open to the user: the flag is the existing `spared_pirate` (set by letting the scout of `pirate_captive` go); only a trap asks to dock, 10 s after landing the party turns; refusing the dock turns a trap hostile at once; strike first = fire on the skiff (any shot is the ordinary provocation); a scan's rows sharpen with gunnery (guns), piloting (craft) and hacking (crew, transponder slip).
   - Signal: a skiff hails you, claiming a debt owed. The story sometimes does not add up (a name that changes, a transponder that lags).
   - Remote: scan (sensors show weapons, a boarding craft, extra crew, and your crew's skills sharpen the read), hail for more talk, ignore.
   - Scene: the pirate's skiff, trap or honest (set by the scene seed). A trap has a boarding party of 3 and a shuttle, not yet hostile.

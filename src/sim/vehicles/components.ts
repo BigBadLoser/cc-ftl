@@ -84,5 +84,7 @@ export interface Boarder {
   prefer?: true;
   /** The party goes for the AI core (zealots). */
   coreRaid?: true;
+  /** The party was let in (a scene's skiff the player allowed to dock, scene/visit.ts): it runs while the ship is still neutral, outside combat. */
+  visit?: true;
 }
 export const BoarderC = defineComponent<Boarder>('boarder');

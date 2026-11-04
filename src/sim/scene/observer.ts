@@ -3,13 +3,15 @@ import { playerCrewOn } from '../away/crew';
 import { CrewC, DeadC } from '../crew/components';
 import { SalvageOrderC } from '../salvage/components';
 import { hostileAboard } from '../salvage/system';
+import { isSubdued } from '../fight/relations';
 import { playerCrew } from '../story/world';
+import { BoarderC } from '../vehicles/components';
 import type { Sim } from '../sim';
 import { applyEffect } from '../story/effects';
 import type { EventEffect } from '../story/defs';
 import { repKey } from '../galaxy/standing';
 import type { Contact, EventGrid } from '../galaxy/types';
-import type { SceneDerelict, SceneFact, SceneRuleDef, Stance } from './types';
+import type { Ambush, SceneDerelict, SceneFact, SceneRuleDef, Stance } from './types';
 
 /**
  * The outcome observer (DESIGN.md "Physical encounters", part c). Once a second in an event grid it reads facts about the scene's ships from sim
@@ -22,10 +24,11 @@ import type { SceneDerelict, SceneFact, SceneRuleDef, Stance } from './types';
 interface Watched {
   contact: Contact;
   stance: Stance;
+  ambush?: Ambush;
 }
 
 function watched(ev: EventGrid): Watched[] {
-  const out: Watched[] = ev.scene.ships.map((s) => ({ contact: s.contact, stance: s.stance }));
+  const out: Watched[] = ev.scene.ships.map((s) => ({ contact: s.contact, stance: s.stance, ...(s.ambush ? { ambush: s.ambush } : {}) }));
   const stance = ev.scene.fleet?.stance ?? 'hostile';
   for (const c of ev.fleet?.ships ?? []) out.push({ contact: c, stance });
   return out;
@@ -58,6 +61,12 @@ function factsOf(sim: Sim, ev: EventGrid, w: Watched): Set<SceneFact> {
   if (ship.state === 'wreck') out.add('destroyed');
   if (ship.state === 'fled') out.add('fled');
   if ((sim.world.get(id, SalvageOrderC)?.done ?? 0) > 0) out.add('salvaged');
+  if (w.ambush) {
+    if (ship.provoked === 'ambush') out.add('ambushed');
+    // The party it sent is all dead or down (the player's shot or the ambush brought them out; either way they are done).
+    const party = sim.world.get(id, BoarderC)?.crew ?? [];
+    if (party.length > 0 && party.every((c) => !sim.world.has(c, CrewC) || isSubdued(sim, c))) out.add('boardersDown');
+  }
   return out;
 }
 
@@ -95,8 +104,9 @@ function fire(sim: Sim, ev: EventGrid, id: string, rule: SceneRuleDef, w: Subjec
   sim.events.emit({ type: 'scene.observed', rule: id, ship: shipId && sim.world.has(shipId, ShipC) ? shipId : 0, text, tone: rule.tone ?? 'info' });
 }
 
-const stanceOk = (rule: SceneRuleDef, w: Watched): boolean => rule.of !== 'derelict' && (!rule.stance || rule.stance.includes(w.stance));
-const derelictOk = (rule: SceneRuleDef): boolean => rule.of !== 'ship' && !rule.stance;
+const stanceOk = (rule: SceneRuleDef, w: Watched): boolean =>
+  rule.of !== 'derelict' && (!rule.stance || rule.stance.includes(w.stance)) && (rule.trap === undefined || (!!w.ambush && w.ambush.trap === rule.trap));
+const derelictOk = (rule: SceneRuleDef): boolean => rule.of !== 'ship' && !rule.stance && rule.trap === undefined;
 const SCENE_WIDE = new Set<SceneFact>(['timer', 'left', 'crewLost']);
 
 /** Player crew alive when the scene opened who are dead now (or gone from the world, which only a death does inside the grid). */

@@ -12,6 +12,7 @@
   let { api, event, result }: { api: UiApi; event: UiEventGrid; result: UiEncounterResult | null } = $props();
 
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
+  const answer = (grant: boolean) => event.dockRequest && api.dispatch({ type: 'galaxy.visit', ship: event.dockRequest.ship, grant });
   const title = $derived(event.title.replace(/^Deep space: /, ''));
   const quiet = $derived(
     event.hostiles > 0 ? `${event.hostiles} hostile ship${event.hostiles > 1 ? 's' : ''} in range`
@@ -36,6 +37,15 @@
           </li>
         {/each}
       </ul>
+      {#if event.dockRequest}
+        <div class="ask" data-testid="dock-request">
+          <p class="note ask-text"><Icon name="alert" size={14} />{event.dockRequest.text}</p>
+          <div class="ask-row">
+            <ActionButton tone="plain" onclick={() => answer(true)} testid="dock-allow"><Icon name="shuttle" size={16} />Let them dock</ActionButton>
+            <ActionButton tone="plain" onclick={() => answer(false)} testid="dock-refuse"><Icon name="evasion" size={16} />Refuse</ActionButton>
+          </div>
+        </div>
+      {/if}
       <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{quiet}</p>
       {#if result && result.tone === 'red' && event.hostiles > 0}<p class="note warn" data-testid="event-result">{result.text}</p>{/if}
       <p class="note"><Icon name="map" size={14} />{trip}</p>
@@ -60,4 +70,7 @@
   .note { margin: 0; font-size: 12px; display: flex; gap: 6px; align-items: flex-start; color: var(--dim); }
   .note :global(svg) { flex: none; margin-top: 1px; }
   .warn { color: var(--red); }
+  .ask { display: grid; gap: 6px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--amber, var(--line)); }
+  .ask-text { color: var(--text); }
+  .ask-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 </style>

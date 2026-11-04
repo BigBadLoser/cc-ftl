@@ -113,8 +113,9 @@ import { newYard, type YardState } from './yard/types';
  * v88 (the derelict encounter, #173): `SceneSpec.derelicts`; `SceneWatch.crew`.
  * v89 (drones, #318 slice 1): `DroneC` (on a `BodyC`); `Downed.patched`.
  * v90 (drones in space, #318 slice 2): `Drone.space`, `lift`, `cool`, states 'launch' and 'land'; `Combat.departHold`.
+ * v94 (the pirate ambush, #173): `SceneShip.ambush` and `attitude`; `Trader.relation`; `Boarder.visit`; `Ship.provoked` may be 'ambush'.
  */
-export const SAVE_VERSION = 93;
+export const SAVE_VERSION = 94;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
