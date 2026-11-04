@@ -3735,5 +3735,13 @@
  "fTC3": {
   "hex": "#ecdc3c",
   "set": "tan"
+ },
+ "fTC4": {
+  "hex": "#1c5c3c",
+  "set": "tan"
+ },
+ "fTC5": {
+  "hex": "#3cccdc",
+  "set": "tan"
  }
 }

@@ -27,8 +27,10 @@ def _hid(d):
 
 
 def sd(name, ax):
-    """A face tone on an x (shade) face: a step darker."""
-    return SHADES[min(len(SHADES) - 1, SHADES.index(name) + 1)] if ax == "x" else name
+    """A face tone on an x (shade) face: a step darker (other colours, a screen's, as they are)."""
+    if ax != "x" or name not in SHADES:
+        return name
+    return SHADES[min(len(SHADES) - 1, SHADES.index(name) + 1)]
 
 
 class TanTones(Feature):

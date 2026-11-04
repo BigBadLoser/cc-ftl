@@ -29,9 +29,16 @@ T_DROP, T_GLASS = 3 * PZ, 5 * PZ        # the keyboard's top under T_SHOW's foot
 T_SEAM = 0.7                            # the seam down the keyboard's middle (px; under one: AA softens it)
 T_SHOW, T_FRONT = 5 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
                                         # keyboard face slopes from it to the screen's foot)
-SCREEN_LINES = ((("fTC1", ((2, 1, 6), (0, 1, 4), (0, 5, 7))), ("fTC2", ((2, 7, 8),))),
-                (("fTC3", ((2, 1, 4), (2, 5, 7), (0, 1, 6))), ("fTC2", ((0, 7, 8),))))
-                                        # (each screen's text: lines of lit px (row up its glass, px from, to))
+SCREEN_ART = (("CCC.CC.R",             # each tile's two screens' glass, px by px from its first row seen under the
+               "...G..G.",             # canopy (8 x 4, the px of its 9 seen past the borders): a graph under a
+               ".G.GG.GG",             # header; a log, lit lines over a dim one, a prompt and a cursor at its foot
+               "GGGGGGGG"),            # (on an x face, its u running right to left on screen, mirrored: the
+              ("YYYY.YYY",             # graph still on the left, the text still left to right)
+               "dd.ddd.d",
+               "YYY.YY.R",
+               "C.CCC.G."))
+G_HID = 1                               # (the glass's rows hidden under the canopy, over the art)
+SCREEN_INK = {"G": "fTC1", "R": "fTC2", "Y": "fTC3", "d": "fTC4", "C": "fTC5"}
 
 
 def _rows(d):
@@ -53,6 +60,23 @@ def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False):
     pts = [T.P(ax, plane, u, lo[1] + t * dz + oz, lo[0] + t * dd + od) for u, t in ((u0, t0), (u1, t0), (u1, t1),
                                                                                        (u0, t1))]
     k.poly(pts, "wall", 0, nrm, fixed=col)
+
+PX_U, PX_A = 0.25, -0.75                # (a screen px's square on the sprite's grid: its offset across, in px, and
+                                        # the face's row phase; found by rendering a checker on both faces)
+
+
+def _px(k, ax, plane, g0, x, r, zt, d, col):
+    """Pixel x across, r down of a screen's art (its glass from g0, its first row's top at zt) as a square on the
+    sprite's pixel grid: a face's rows step down a px every 2 across, so its top and foot slope up with the face's u
+    to stay level (the art's columns paired: 0-1, 2-3, ...)."""
+    L = 1 / 32
+    y = r + x // 2
+
+    def z(u, yy):
+        return zt + (PX_A + (u - g0) / L / 2 - yy) * PZ
+    ua, ub = g0 + (x + PX_U) * L, g0 + (x + 1 + PX_U) * L
+    pts = [T.P(ax, plane, u, z(u, yy), d) for u, yy in ((ua, y), (ub, y), (ub, y + 1), (ua, y + 1))]
+    k.poly(pts, "wall", 0, T.OUT(ax), fixed=col)
 
 
 def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
@@ -121,10 +145,12 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 prism(k, ax, plane, ba, bb, [(0.0, za), (bd, za), (bd, zb_), (0.0, zb_)], FACE, 3,
                       cols=[False, sd(cl[1], ax), sd(cl[0], ax) if cl[0] else False, False],
                       cap=sd(D_SIDE_TONE, ax))
-            for col, lines in SCREEN_LINES[i]:
-                for y, x0, x1 in lines:
-                    if zg0 + (y + 1) * PZ <= zg1 + 1e-6 and u0 + x1 * L <= u1 - L + 1e-6:
-                        band(u0 + x0 * L, u0 + x1 * L, zg0 + y * PZ, zg0 + (y + 1) * PZ, col, ts + PX / 8)
+            zt = zg1 - G_HID * PZ
+            art = SCREEN_ART[1 - i if ax == "x" else i]
+            for r, row in enumerate(art):                   # (its art, a px square on the screen each)
+                for x, ch in enumerate(row[::-1] if ax == "x" else row):
+                    if ch != ".":
+                        _px(k, ax, plane, u0 + L, x, r, zt, ts + PX / 8, sd(SCREEN_INK[ch], ax))
     for c in range(-1, 2):                                      # (a tile's, flush with its side plates)
         q0, q1 = max(a, c - 0.5 + C_IN * L), min(b, c + 0.5 - C_IN * L)
         if q1 - q0 < 1e-6:
