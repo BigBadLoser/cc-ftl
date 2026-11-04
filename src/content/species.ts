@@ -31,31 +31,24 @@ const alien = {
   creature: { fleeBelow: 0.25 },
 } satisfies SpeciesDef;
 
+/** The base human body. Variants spread it and change only what differs, so its tuning (rest, hunger, speed) never drifts. */
+const human = {
+  name: 'Human',
+  moveSpeed: 2.5,
+  workSpeed: 1,
+  // Rest drains slowly: about 20 minutes awake (a full sleep takes about 7 in a bed).
+  restDecay: 0.06,
+  carryCapacity: 40,
+  // Fed to hungry in about 9 minutes (hungry crew eat below 35), starving after about 14.
+  hunger: { decayPerSec: 0.12 },
+  mood: true,
+} satisfies SpeciesDef;
+
 export const species = {
-  'species.human': {
-    name: 'Human',
-    moveSpeed: 2.5,
-    workSpeed: 1,
-    // Rest drains slowly: about 20 minutes awake (a full sleep takes about 7 in a bed).
-    restDecay: 0.06,
-    carryCapacity: 40,
-    // Fed to hungry in about 9 minutes (hungry crew eat below 35), starving after about 14.
-    hunger: { decayPerSec: 0.12 },
-    mood: true,
-  },
-  // Zealot crews: human, machine-touched (tougher) and fearless, so they never surrender. Real implants arrive with phase 7; until then this body stands in for them.
-  'species.augmented': {
-    name: 'Augmented human',
-    moveSpeed: 2.5,
-    workSpeed: 1,
-    restDecay: 0.06,
-    carryCapacity: 40,
-    maxHp: 130,
-    armor: 0.1,
-    hunger: { decayPerSec: 0.12 },
-    mood: true,
-    fearless: true,
-  },
+  'species.human': human,
+  // Zealot crews: human, machine-touched (tougher) and fearless, so they never surrender. Real implants arrive with phase 7
+  // (#303); until then this body stands in for them, built from the human so it never drifts from the base.
+  'species.augmented': { ...human, name: 'Augmented human', maxHp: 130, armor: 0.1, fearless: true },
   // Robot crew (the rogue AI faction; player-built in robot bays). Variants are roles (role.robot_*).
   'species.robot': robot,
   // Security chassis: armoured and heavier, slower; wrecks yield more parts.
