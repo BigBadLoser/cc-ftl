@@ -47,19 +47,19 @@ def _rows(d):
     return d / (PX / 2) * PZ
 
 
-def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False, foot=False):
+def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False, foot=False, out=1, skip=0.0):
     """A strip of one tone along a sloping face's top (its foot at lo, its top at hi: (d, z)), rows of it as seen,
-    a touch out from it; or (mid) across its middle, or (foot) along its foot."""
+    skip rows down from it, a touch (out PAINTs) out from it; or (mid) across its middle, or (foot) along its foot."""
     dd, dz = hi[0] - lo[0], hi[1] - lo[1]
     ln = (dd * dd + dz * dz) ** 0.5
     seen = dz / PZ + abs(dd) / (PX / 2)                 # (the rows the slope shows)
-    t0, t1 = max(0.0, 1.0 - rows / seen), 1.0
+    t0, t1 = max(0.0, 1.0 - (skip + rows) / seen), 1.0 - skip / seen
     if mid:                                             # (whole rows down from its top, as the strip along it)
         r = round((seen - rows) / 2)
         t0, t1 = 1.0 - (r + rows) / seen, 1.0 - r / seen
     if foot:
         t0, t1 = 0.0, min(1.0, rows / seen)
-    od, oz = dz / ln * PAINT, -dd / ln * PAINT
+    od, oz = dz / ln * PAINT * out, -dd / ln * PAINT * out
     nrm = T.OUT(ax) * (dz / ln) + Vector((0, 0, 1)) * (-dd / ln)
     pts = [T.P(ax, plane, u, lo[1] + t * dz + oz, lo[0] + t * dd + od) for u, t in ((u0, t0), (u1, t0), (u1, t1),
                                                                                        (u0, t1))]
@@ -186,17 +186,20 @@ SECTIONS = ((18, 30, 5, (0.5,), 3),     # the cabinets, the drawers under them: 
                                         # its foot)
 BIN_EDGE = {"y": "fTW1", "x": "fTS1"}    # the highlight along the bins' foot edge (a step under the face's pale)
 BIN_SHADE = "fTS2"                      # a px of shadow down each bin's end by a side wall (screen right)
-H_EDGE, H_SHADOW = "fTS1", "fTS3"       # the recessed face: a pale row along its foot, a shadow row under the canopy
-SIDE_STEP = 3                           # the cabinets' side bars: full depth for their first 3 rows from the
+H_EDGE, H_SHADOW = "fTS0", "fTS8"       # the recessed face: a pale row along its foot, a shadow row under the canopy
+BIN_TOP_SHADE = "fTS3"                  # the bins' (and their side walls') top row, under the header's foot: shadow
+BIN_HANDLE = (3, 3)                     # each bin's handle (the glass's navy): rows over its foot edge, px wide
+SIDE_STEP = 5                           # the cabinets' side bars: full depth for their first 5 rows from the
                                         # frame's foot, then a px back up to the bins
 BIN_ROUND = 1.5                         # the bins' (and their side walls') top: rounded into the header's foot
                                         # (the radius, px)
 FRAME_IN = 1                            # the cabinets and drawers: in from each tile edge (px)
 L_GAP = 1                               # the gap between the bins, and at a tile's edge (px; the face dark)
+SIDE_W = (2, 1)                         # the cabinets', the drawers' side bars (px thick)
 HANDLES = ((3, 3), (3, 2))              # the cabinets', the drawers' handles (the glass's navy): (rows over, px wide)
                                         # their door's foot
-H_SCREENS = ((1, ("R.G.G", "..GG.", "G...G", ".G...")),     # the header's screens: px in from the tile's
-             (26, ("YY.R.", "Y.Y..", ".YY.R", "Y....")))    # left edge, 5 x 4 of art ("." the glass), their
+H_SCREENS = ((1, ("R.G.G.R", "..GG.G.", "G...G..", ".G....G")),     # the header's screens: px in from the
+             (24, ("YY.R.YY", "Y.Y..Y.", ".YY.R.Y", "Y....YY")))    # tile's left edge, 7 x 4 of art ("." the glass), their
                                                             # top corners in the recess's (H_SEEN rows down)
 H_SEEN = H_CANOPY - H_FACE + 1          # (the recess's first row seen under the canopy)
 
@@ -211,7 +214,7 @@ def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd):
         _px(k, ax, plane, g0 - odd * L, x, 0, zh, d + L / 4, sd("fTC0", ax))
 
 
-def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None):
+def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None, hid=0.0):
     """A bin over [u0, u1]: a wedge from the wall, its front leaning back from its foot edge (d, z) to its top (d,
     z) under the header, the corner there rounded into the header's foot (convex slices: the wedge, then a fan from
     the corner to the curve)."""
@@ -230,6 +233,8 @@ def _bin(k, ax, plane, u0, u1, foot, top, sd, cap, shade=None):
         o = BIN_BACK * L if ax == "y" else 0.0          # the y face the wall, BIN_BACK prouder, hides that much)
         s0, s1 = (u1 - o - L, u1 - o) if shade > 0 else (u0 + o, u0 + o + L)
         _slope(k, ax, plane, s0, s1, foot, pa, sd(BIN_SHADE, ax), rows=99)
+    _slope(k, ax, plane, u0, u1, foot, top, sd(BIN_TOP_SHADE, ax), out=2, skip=hid)    # (the header's shadow on its
+    #                                                                       first row seen under it: hid rows hidden)
     for h0, h1 in ([(u0, u1)] if shade is None else [(u0, s0), (s1, u1)]):
         if h1 - h0 > 1e-6:
             _slope(k, ax, plane, h0, h1, foot, pa, BIN_EDGE[ax], foot=True)     # (a highlight along its foot)
@@ -261,25 +266,31 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                           (c - 0.5 + w, c - L_GAP * L / 2, gb), (c + L_GAP * L / 2, c + 0.5 - w, gb)):
             right = o and (u1 > c + 0.5 - w - 1e-6 if ax == "y" else u0 < c - 0.5 + w + 1e-6)    # (screen right)
             _bin(k, ax, plane, u0, u1, (bd - o, zb), (bt - o, R(H_FRONT)), sd, cap,
-                 (1 if ax == "y" else -1) if right else None)
+                 (1 if ax == "y" else -1) if right else None, (H_FACE - BIN_TOP) + o / L)
+            if o:                                                   # (a handle on each bin, over its foot edge: as
+                rows, wide = BIN_HANDLE                             # proud as the front is under its lowest px)
+                zl = zb + (rows - 1.5) * PZ
+                fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
+                _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
         e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L     # the cabinets, the drawers: a frame of bars,
         for n, (top, foot, dep, splits, back) in enumerate(SECTIONS):   # the doors back in it
             fd, zt = dep * L, R(top)
             zf = zl1 if foot is None else R(foot)
             dt = zt - (PZ if n == 0 else 0.0)                       # (the doors' top, under the top bar)
+            sw = SIDE_W[n] * L
             bars = [(e0, e1, zf, zf + PZ)] + ([(e0, e1, zt - PZ, zt)] if n == 0 else [])
             us = [c - 0.5 + f for f in splits]
             bars += [(u - L / 2, u + L / 2, zf + PZ, dt) for u in us]
             if n == 0:                                              # (the cabinets' sides: stepped back a px
                 zs_ = zf + SIDE_STEP * PZ                           # above their foot's rows)
-                bars += [(e0, e0 + L, zf + PZ, zs_), (e1 - L, e1, zf + PZ, zs_)]
-                bars += [(e0, e0 + L, zs_, dt, fd - L), (e1 - L, e1, zs_, dt, fd - L)]
+                bars += [(e0, e0 + sw, zf + PZ, zs_), (e1 - sw, e1, zf + PZ, zs_)]
+                bars += [(e0, e0 + sw, zs_, dt, fd - L), (e1 - sw, e1, zs_, dt, fd - L)]
             else:
-                bars += [(e0, e0 + L, zf + PZ, dt), (e1 - L, e1, zf + PZ, dt)]
+                bars += [(e0, e0 + sw, zf + PZ, dt), (e1 - sw, e1, zf + PZ, dt)]
             prism(k, ax, plane, e0, e1, [(0.0, zf + PZ), (fd - back * L, zf + PZ), (fd - back * L, dt), (0.0, dt)],
                   FACE, 3,
                   cols=[False, sd("fTS3", ax), False, False], cap=cap)          # (its doors)
-            for q0, q1 in zip([e0 + L] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1 - L]):
+            for q0, q1 in zip([e0 + sw] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1 - sw]):
                 _handle(k, ax, plane, c, q0, q1, zf + PZ, *HANDLES[n], fd - (back - 1) * L, sd)   # (a px out of
                                                                                                     # the door)
             for u0, u1, z0, z1_, *bd_ in bars:                      # (a deep top: lit, its front px pale)
@@ -299,8 +310,14 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         m = (mit[0] if q0 <= a + 1e-6 else False, mit[1] if q1 >= b - 1e-6 else False)
         prism(k, ax, plane, q0, q1, [(0.0, zh0), (hf, zh0), (hf, R(1)), (0.0, R(1))], FACE, 3,
               cols=[False, sd("fTS2", ax), False, False], cap=cap, mitre=m)
-        band(q0, q1, zh0, zh0 + PZ, H_EDGE, hf)                    # (a pale row along its foot, a shadow row
-        band(q0, q1, R(H_SEEN + 1), R(H_SEEN), H_SHADOW, hf)        # under the canopy)
+        glass = {x for x0, art in H_SCREENS for x in range(x0, x0 + len(art[0]))}   # (a shadow row under the
+        if ax == "x":                                                               # canopy, a pale row along its
+            glass = {31 - x for x in glass}                                         # foot: on the px grid, the
+        for x in range(round((q0 - (c - 0.5)) / L), round((q1 - (c - 0.5)) / L)):   # screens' first row over it)
+            for r, col in ((0, H_SHADOW), (H_FRONT - H_SEEN - 1, H_EDGE)):
+                if not (r == 0 and x in glass and q0 <= c - 0.5 + 1e-6 and q1 >= c + 0.5 - 1e-6):
+                    _px(k, ax, plane, c - 0.5, x, r, R(H_SEEN) - PZ / 2, hf + L / 4, sd(col, ax))   # (half a row
+                    #                           down: the face's px rows under the canopy, the screens' glass hiding it)
         prism(k, ax, plane, q0, q1, [(0.0, R(1)), (hc, R(1)), (hc, z1), (0.0, z1)], FACE, 3,
               cols=[False, sd("fTS0", ax), sd("fTS1", ax), False], cap=cap, mitre=m)
         for u, mm, e in ((q0, m[0], c - 0.5), (q1, m[1], c + 0.5)):
