@@ -20,6 +20,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
 - [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
+  - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
@@ -703,6 +704,45 @@ and risk is worth taking.
   station. Each research project has its own materials cost (data cores, samples, alien tissue, artifacts, components,
   depending on the project) and takes time. Projects unlock blueprints: module tiers, upgrades, implants,
   construction pods and drones. Build plan: `docs/PROGRESSION_PLAN.md`.
+
+### Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)
+
+Upgrades are items slotted into ship weapons. Build plan: PROGRESSION_PLAN step 4.
+
+**Rules.**
+- **One slot per weapon.** Some upgrades are general and fit any weapon; others fit one weapon type only.
+- **What they change.** General upgrades are small stat boosts and pure gains. Weapon-specific upgrades change how the weapon
+  behaves, and each one carries a cost.
+- **Fitting is a crew job.** You pick the upgrade in the module inspector. An engineer fetches the item and installs it, like a
+  repair, and the weapon is offline while that happens. Removing an upgrade puts the item back in cargo intact.
+- **Sources.** Bought at stations (the shady ones on the black market), found in salvage, researched (a blueprint, built
+  at a fabricator).
+- **Enemies carry them by faction.** Navy upgrades are precise, pirate ones crude, zealot ones fire-based. A scan shows them
+  on the enemy card. Stripping an enemy weapon module that wasn't destroyed drops its upgrade; a damaged one may lose it, with
+  a chance scaled by damage.
+- **Visuals.** The upgrade's item icon shows on the weapon card and in the inspector. Behaviour upgrades change the shot's
+  effect (tint, trail, blast). Small add-on art (a bolt-on part on the bay) only where it earns its place; no new bay models.
+
+**First batch.** Numbers are a starting point for tuning.
+
+| Upgrade | Fits | Does | Cost |
+|---|---|---|---|
+| Coolant jacket | any | −30% heat per volley | — |
+| Quick capacitor | any | −15% charge time | — |
+| Hardened housing | any | The weapon takes half damage from hits and ion | — |
+| Prism splitter | burst laser | 5 shots instead of 3, each −40% damage | +50% heat |
+| Heavy focus | burst laser | 2 shots, each pierces 1 shield layer | Slower charge |
+| Frag slug | mass driver | Bigger blast radius, more crew and module damage | Loses shield pierce |
+| Rail coil | mass driver | Pierces 2 layers; much faster shot | Runs very hot |
+| Nuclear warhead | missiles | Huge blast; heavy hull, module and crew damage; fires across the blast | 2 missiles a shot; black market only |
+| Chain coil | ion cannon | The ion arcs from the hit module as lightning into nearby crew | +40% heat |
+| Thermite | incendiary | Real hull damage on top of the ignite, so it breaches as well as burns | More heat |
+
+No radiation system: the nuke is blast plus fire, built from existing effects.
+
+**Flak cannon (new weapon).** It fires scrap: one hull scrap item from cargo per volley, the way missiles use missile items.
+Each volley is a spread of many weak pellets. Every pellet that hits a shield strips a layer, so flak knocks shields down for
+the other guns. It does little hull damage and is inaccurate at range. It reuses an existing bay model, told apart by a tint.
 
 ### Where blueprints are sold (user decision, 2026-10-26)
 
