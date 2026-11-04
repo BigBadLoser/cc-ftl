@@ -1,3 +1,5 @@
+import { BodyC } from '../body';
+import { DroneC } from '../drones/components';
 import { shipIdOf } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import type { GridLike } from '../grid';
@@ -87,6 +89,17 @@ function crewTiles(sim: Sim): Map<number, { x: number; y: number; toX: number; t
     let list = out.get(ship);
     if (!list) out.set(ship, (list = []));
     list.push(p);
+  }
+  // Flying drones hold a doorway open as they pass, like a walker (their body's tile and the next tile of their route).
+  for (const id of sim.world.query(DroneC, BodyC)) {
+    const d = sim.world.get(id, DroneC);
+    const b = sim.world.get(id, BodyC);
+    if (!d || !b || d.state === 'docked' || b.alt <= 0) continue;
+    const x = Math.floor(b.x), y = Math.floor(b.y);
+    const next = d.steps[0] ?? { x, y };
+    let list = out.get(d.ship);
+    if (!list) out.set(d.ship, (list = []));
+    list.push({ x, y, toX: next.x, toY: next.y });
   }
   return out;
 }

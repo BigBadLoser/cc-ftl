@@ -199,6 +199,8 @@ export interface Downed {
   stabilized: boolean;
   /** Bed module the patient is reserved for / lying in, or 0. */
   bed: number;
+  /** First aid on the floor (a medic drone): the bleeding has stopped, so the bleed-out timer is paused. No bed healing; rescue still applies. */
+  patched?: true;
 }
 export const DownedC = defineComponent<Downed>('downed');
 

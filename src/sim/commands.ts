@@ -188,7 +188,7 @@ export type Command =
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
   | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
-  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number }
+  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number }
   /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */
   | { type: 'debug.spawnModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Set the battery (0..100) of every battery robot (the debug panel). */

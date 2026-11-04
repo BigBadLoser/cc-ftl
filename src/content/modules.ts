@@ -385,6 +385,18 @@ export const modules = {
     flammability: 0.2, maxHp: 90, buildWork: 200, robotBay: { chargePerSec: 1.5, repairPerSec: 1 },
     cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 8 }],
   },
+  // Drone bay 2x2 (the art's footprint, #324): two landing pads on the back row, a docked drone on each (slot 0 on the anchor tile). Solid:
+  // walkers go round it, drones fly over it.
+  // It recharges both while powered; a free pad takes a drone item from storage. PLACEHOLDER art (render fallback) until its sprite exists.
+  'module.droneBay': {
+    scrap: 'tech',
+    name: 'Drone bay',
+    category: 'utility',
+    description: 'Docks and recharges two drones. Needs an AI core to run them.',
+    asset: 'module.drone_bay', footprint: [2, 2], solid: true, power: -3, powerPriority: 3,
+    flammability: 0.2, maxHp: 80, buildWork: 220, droneBay: { slots: 2, chargePerSec: 2.5 },
+    cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 6 }],
+  },
   'module.aiCore': {
     name: 'AI core',
     category: 'systems',

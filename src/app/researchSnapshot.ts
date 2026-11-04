@@ -48,7 +48,7 @@ export function buildResearch(sim: Sim): UiResearch {
   const nodeOf = (def: string): string => unlockedBy.get(def) ?? `root:${def}`;
   const nodes = new Map<string, UiResearchNode>();
   const size = (d: ModuleDef | undefined): string => (d ? `${d.footprint[0]}x${d.footprint[1]}` : '');
-  const sub = (d: ModuleDef | undefined): string => `${CATEGORY[d?.category ?? ''] ?? 'Module'} · ${size(d)}`;
+  const sub = (d: ModuleDef | undefined): string => (d ? `${CATEGORY[d.category ?? ''] ?? 'Module'} · ${size(d)}` : 'Blueprint');
 
   // Roots: modules some project requires that no project unlocks.
   for (const d of Object.values(defs)) {

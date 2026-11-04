@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ResearchC, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef } from '../sim';
+import { ModuleC, ResearchC, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef, type RecipeDef } from '../sim';
 import { content } from './index';
 
 const modules: Record<string, ModuleDef> = content.modules;
 const items: Record<string, unknown> = content.items;
 
 describe('research content', () => {
-  it('every project unlocks a blueprint module, costs real items and gates Mk III behind Mk II', () => {
+  it('every project unlocks a blueprint module (or a recipe blueprint), costs real items and gates Mk III behind Mk II', () => {
     const projects = Object.entries(content.research);
-    expect(projects.length).toBe(6);
+    expect(projects.length).toBe(8);
+    const recipeBlueprints = new Set(Object.values(content.recipes as Record<string, RecipeDef>).flatMap((r) => (r.blueprint ? [r.blueprint] : [])));
     for (const [id, p] of projects) {
       expect(p.unlocks.length, id).toBeGreaterThan(0);
-      for (const u of p.unlocks) expect(modules[u]?.blueprint, `${id} ${u}`).toBeDefined();
+      for (const u of p.unlocks) expect(!!modules[u]?.blueprint || recipeBlueprints.has(u), `${id} ${u}`).toBe(true);
       for (const c of p.cost) expect(items[c.item], `${id} ${c.item}`).toBeDefined();
       for (const r of p.requires ?? []) expect(modules[r], `${id} ${r}`).toBeDefined();
       expect(p.work, id).toBeGreaterThan(0);

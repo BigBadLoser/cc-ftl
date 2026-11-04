@@ -26,6 +26,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
 - [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck; the order keeps an away site open on the wreck (its shuttle run brings the crew and takes the loot home).
 - [Away sites and the air drive (#286)](#away-sites-and-the-air-drive-286): Slices 0 to 3 built (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, batched round trips, pickups, lost shuttles), salvage on top, throughput bench, slices.
+- [Drones, `src/sim/drones/`](#drones-srcsimdrones): Own entities (DroneC on a BodyC), one drone system, a job table per kind; core cap, bays, fly pathing, ion, placeholders.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
@@ -1359,6 +1360,34 @@ cover, the run machine, shared `arrive`) could be built before Phase 3, but 2a c
 - **Nested holds** keep a job reserved during a refill; the 120 s timeout bounds it.
 - **Pickup hover at the home ship** needs `ferryMode` to allow a shuttle to hover beside its own ship (refused today).
 
+
+## Drones, `src/sim/drones/`
+
+Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
+
+- **Entity.** A drone is its own entity: `DroneC` (def, home ship, bay and slot, state `docked | out | home`, battery, hp, target, flight
+  steps, `inert`, `stunUntil`) on a `BodyC` (sector tiles, a tile's centre at +0.5; `ALT.drone` flying, `ALT.dronePad` docked, 0 dropped).
+  Never crew: no jobs, priorities, scheduler or crew panels.
+- **Types are data** (`content/drones.ts`, `satisfies DroneDef`): speed, hp, battery, ion stun, wreck and a `jobs` list, best first.
+  `drones/work.ts` has one rule set per job kind (`repair`, `extinguish`, `firstAid`): a target query, a still-wanted check and one tick
+  of work. A drone takes the nearest free target of the first kind in its list that has one (`DRONE_PATH_TRIES` flight plans per kind).
+  One drone per target: the claim set of the pass (`targetKey`). Crew may work the same target; both add up.
+- **System** (`systems/drones.ts`, after autoJobs): bays install drone items from storage (`installDrones`), each ship's cap is worked out
+  (`droneCap`: `DRONE_CAP_BY_TIER` by the best live core of the ship's faction; 0 = inert), then `runDrone` per drone in id order (`run.ts`):
+  docked (charge at `droneBay.chargePerSec` while the bay is powered; launch once over `launchAbove` with a free cap slot and a target),
+  out (fly, work, retarget, home below `lowBelow`), home (dock in its slot, or any free slot when its bay is gone; docked in a lost bay = wrecked).
+- **Flight** (`flight.ts`): an ordinary `findPath` with `fly` (the walk rule's `passAt` crosses solid modules; struct and doors that cannot
+  open still block). The body moves centre to centre; a closed step replans. The doors system holds a doorway open for a flying drone.
+- **Shared with crew:** `douseTile` and `repairModule` (crew/jobWork.ts), `Downed.patched` (vitals pauses the bleed-out), `hasLiveCore` /
+  `isCoreLive`, the ion points (`combat/effects.ts` `stunNear` calls `stunDronesNear`; a bay with `IonC` stuns the drones docked in it).
+- **Build:** `ItemDef.drone` items (`item.drone_*`), fabricator recipes gated by `RecipeDef.blueprint` (`recipeKnown`; `isKnown` accepts
+  `blueprint.*` ids that are not modules), research projects in the `automation` band, research-station stock.
+- **Jumps and saves:** drones lift with their ship (`members.ts`), `translate.ts` / `refs.ts` cover `drone`. `DroneC` and `Downed.patched`
+  are saved (SAVE_VERSION 89).
+- **Render/UI:** PLACEHOLDER art drawn in code (`render/droneView.ts`, `paintDrone`; lab panel `drones`), sorted in the sector `low`
+  layer; the bay inspector's Drones section (`app/droneSnapshot.ts`, `ui/DroneBayPanel.svelte`). Debug start `?scenario=drones`.
+- **Slice 2 (planned):** a free-space planner on the same body, the ceiling-hatch launch, the defence drone, outside breach repair, recall
+  on a jump or leaving with a short wait, drone damage, enemy drones.
 
 ## Vehicles (shuttles), `src/sim/vehicles/`
 

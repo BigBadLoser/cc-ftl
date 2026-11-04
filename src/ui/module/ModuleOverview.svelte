@@ -4,6 +4,7 @@
   import Icon from '../Icon.svelte';
   import FabPanel from '../FabPanel.svelte';
   import RobotBayPanel from '../RobotBayPanel.svelte';
+  import DroneBayPanel from '../DroneBayPanel.svelte';
   import StoragePanel from '../StoragePanel.svelte';
   import { moduleState } from './state';
 
@@ -26,6 +27,7 @@
     {#if m.research}<button class="resbtn" data-testid="open-research" onclick={onResearch}><Icon name="research" size={18} /> Research projects</button>{/if}
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}
+    {#if m.droneBay}<DroneBayPanel bay={m.droneBay} />{/if}
     {#if m.hp < m.maxHp}
       <button class="prio" class:on={m.repairFirst} data-testid="dc-priority" aria-pressed={m.repairFirst} title={m.repairFirst ? 'First in the repair queue (click to undo)' : 'Crew repair this before anything else'} onclick={() => api.dispatch({ type: 'module.priorityRepair', id: m.id, on: !m.repairFirst })}><Icon name="chevUp" size={16} />Priority repair</button>
     {/if}

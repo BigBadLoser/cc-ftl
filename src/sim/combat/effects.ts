@@ -16,6 +16,7 @@ import { damageStruct } from './hull';
 
 import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
+import { stunDronesNear } from '../drones/bay';
 
 /** Where and from what an impact happens. */
 export interface Impact {
@@ -156,6 +157,7 @@ function stunNear(sim: Sim, at: Impact, radius: number): void {
     const o = origin(pos);
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) <= radius) stunCrew(sim, id);
   }
+  stunDronesNear(sim, at.shipId, at.x, at.y, radius);
 }
 
 function ionDisable(sim: Sim, at: Impact, seconds: number): void {
