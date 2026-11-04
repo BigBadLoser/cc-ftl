@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 ZPX = 64 / math.sqrt(2) * math.cos(math.radians(30))     # px per unit of height (core.ZPX)
 ALT = 1.1                                                 # cruise altitude indoors (tiles over the deck)
 SHADOW_A = 0.4
+BEAM_A = 0.45                                             # drones.BEAM_ALPHA
 LIV = rp.LIVERY["player"]
 
 
@@ -51,6 +52,19 @@ def load(d, tag):
 def put(cv, spr, sx, sy, lift=0.0):
     img, g, ox, oy = spr
     cv.put(img, g, sx - ox, int(round(sy - oy - lift)))
+
+
+def glaze(cv, spr, sx, sy, lift, a):
+    """A see-through light (the medic's beam): its colour blended at opacity a, its glow added on top."""
+    img, g, ox, oy = spr
+    x0, y0 = sx - ox, int(round(sy - oy - lift))
+    h, w = img.shape[:2]
+    reg = cv.px[y0:y0 + h, x0:x0 + w, :3].astype(float)
+    m = (img[..., 3:4] > 0) * a
+    out = reg * (1 - m) + img[..., :3] * m
+    if g is not None:
+        out += g[..., :3].astype(float) * (g[..., 3:4] > 0) * a
+    cv.px[y0:y0 + h, x0:x0 + w, :3] = np.clip(out, 0, 255).astype(np.uint8)
 
 
 def shade(cv, spr, sx, sy):
@@ -93,6 +107,9 @@ def drones_scene(pub, d, out):
             shade(cv, sh, x, y)
             spr = load(d, f"d_{kind}_{state}_{dr}")
             draws.append((gx + gy + 0.5, lambda x=x, y=y, s=spr: put(cv, s, x, y, ALT * ZPX)))
+            if (Path(d) / f"d_{kind}_{state}_{dr}_beam.npz").exists():
+                bm = load(d, f"d_{kind}_{state}_{dr}_beam")
+                draws.append((gx + gy + 0.6, lambda x=x, y=y, s=bm: glaze(cv, s, x, y, ALT * ZPX, BEAM_A)))
             if k == 2:
                 cv.labels.append((x - 22, y + 22, f"{state} d{dr}"))
         lx, ly = rp.iso(ox, oy, 14.6, 1.5 + k * 2.6)
@@ -107,10 +124,10 @@ def bay_scene(pub, d, out):
     nx, ny = 10, 4
     ox, oy = ny * 32 + 30, 160
     cv = room(pub, nx, ny, (nx + ny) * 32 + 60, (nx + ny) * 16 + 200, ox, oy)
-    put(cv, load(d, "bay_0"), *(int(c) for c in rp.iso(ox, oy, 3, 1)))          # 3x2: origin = the front-most tile (2 + 1, 0 + 1)
-    cv.labels.append((rp.iso(ox, oy, 2, 2)[0] - 10, rp.iso(ox, oy, 2, 2)[1] + 30, "empty"))
-    put(cv, load(d, "bay_2"), *rp.iso(ox, oy, 8, 1))
-    cv.labels.append((rp.iso(ox, oy, 7, 2)[0] - 10, rp.iso(ox, oy, 7, 2)[1] + 30, "2 docked"))
+    for gx, tag, label in ((2.5, "bay_0", "empty"), (7.5, "bay_2", "2 docked")):   # 2x2: origin = the footprint centre
+        put(cv, load(d, tag), *(int(round(c)) for c in rp.iso(ox, oy, gx, 1.5)))
+        lx, ly = rp.iso(ox, oy, gx + 1, 2.5)
+        cv.labels.append((int(lx) - 10, int(ly) + 20, label))
     crew(cv, pub, *rp.iso(ox, oy, 4.6, 3))
     cv.save(out / "bay-1x.png", 1)
     cv.save(out / "bay-3x.png", 3)

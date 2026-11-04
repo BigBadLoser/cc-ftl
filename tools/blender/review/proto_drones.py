@@ -29,17 +29,27 @@ def clear():
         bpy.data.objects.remove(o, do_unlink=True)
 
 
-def render(tag, build):
+def render(tag, build, objs=None):
     core.setup_scene()
     sc = core._state["scene"]
     sc.cycles.samples, sc.cycles.use_denoising = SAMPLES, True
     clear()
     core.setup_scene()
     post.select(True)
-    build()
-    c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", meshes())
+    rig = build()
+    beam = rig.objects("beam") if hasattr(rig, "objects") else []
+    for ob in beam:                                   # the drone without its beam
+        ob.hide_render = True
+    c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", [o for o in meshes() if o not in beam])
     np.savez(OUT / f"{tag}.npz", rgba=post.to_rgba(c, op), glow=g, ox=ox, oy=oy)
     print("pixel", tag, flush=True)
+    if beam:                                          # the beam on its own, cut where the drone hides it
+        for ob in meshes():
+            ob.is_holdout = ob not in beam
+            ob.hide_render = False
+        c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", beam)
+        np.savez(OUT / f"{tag}_beam.npz", rgba=post.to_rgba(c, op), glow=g, ox=ox, oy=oy)
+        print("pixel", tag + "_beam", flush=True)
 
 
 def job(j):
@@ -52,6 +62,7 @@ def job(j):
             rig = drones.drone(kind, state, fr)
             e = rig.root.rotation_euler
             rig.root.rotation_euler = (e[0], e[1], math.radians(THETA[d]))
+            return rig
         render(j.replace(":", "_"), b)
     elif p[0] == "shadow":
         render("shadow", drones.shadow)

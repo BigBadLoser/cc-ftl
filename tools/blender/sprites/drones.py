@@ -13,26 +13,52 @@ Character frame (robot_kit): x = the drone's right, f = forward, z up, tiles; th
 sprite's anchor is the drone itself and the renderer lifts it by its altitude over a separate floor shadow
 (`drone.shadow`). Faces +f at THETA[d] like the crew (d0 = grid +x, clockwise).
 
-Drone bay (3x2 at r0, front +y): a squat charger unit in the middle with a docking cradle either side on a tripod
-(no floor slab), each a ring with three clamp fingers (their tips the charge contacts). Drones launch straight up
-through a roof hatch above the cradles."""
+Drone bay (2x2, a weapon bay round its roof hatch): an open launch cage with two stacked lift cradles (see `bay`).
+Ring pods are hollow (a dark throat, three blades). The medic's treatment light is a separate layer (BEAM_ALPHA): a
+sprite's own opacity is all or nothing, so the runtime draws it see-through over the drone's patient."""
 import math
+from . import core, detail as D
+from . import turret_bays as TB
+from . import turret_concepts as TC
+from .cmbkit import Frame
 from .robot_kit import Rig
+from .turret_bay_laser import FRONT, P, hazard_ring, obox
 
 CLOTH, ACCENT = "team.cloth", "team.accent"
 FRAME, FRAME_L, MID = "dark", "steelD", "gm"
 EYE = "cyan"
 MARK = {"defence": "medRed", "repair": "hivis", "medic": "medWhite"}
 SCALE = 2.3         # about 1.25 tiles across the rotors
-PAD_Z = 0.5         # top of a bay cradle's ring
-DOCK_Z = PAD_Z + 0.23  # drone centre when docked (its belly, 0.1 * SCALE under it, on the dish)
+BEAM_ALPHA = 0.45   # the medic's treatment light: its own sprite layer (tag "beam"), drawn see-through at this opacity
+PADS = (0.42, 1.22)  # the bay's cradle pad tops (lower, upper)
+DOCK_DZ = 0.23       # drone centre over its pad when docked (its belly, 0.1 * SCALE under it, on the dish)
+CAGE = 0.9           # bay cage radius (the drones span 0.78 across the rotors)
+BACK = FRONT + math.pi
+RAIL_W = 0.3         # the lift rails either side of the back
 
 
-def _duct(p, x, f, z, spin):
-    """A ducted rotor: a livery ring, its dark throat, the rotor disc (blurred while spinning)."""
-    p.cyl((x, f, z), 0.085, 0.05, CLOTH, sides=20)                         # ring (primitives are centred)
-    p.cyl((x, f, z + 0.027), 0.066, 0.004, "steelL" if spin else FRAME_L, sides=20)   # rotor disc (blur when spinning)
-    p.cyl((x, f, z + 0.031), 0.018, 0.008, MID, sides=10)                 # hub
+def _duct(p, x, f, z, spin, ang):
+    """A ducted rotor: a hollow livery ring (dark inside, open through the middle) round a hub with three blades at
+    angle ang (degrees)."""
+    ro, ri, h, n = 0.092, 0.062, 0.05, 24
+    xf = p._xf((x, f, z), None, "z")
+    circ = [(math.cos(math.tau * i / n), math.sin(math.tau * i / n)) for i in range(n)]
+    oa, ob = p._ring(circ, -h / 2, ro, xf), p._ring(circ, h / 2, ro, xf)
+    ia, ib = p._ring(circ, -h / 2, ri, xf), p._ring(circ, h / 2, ri, xf)
+    ta, tb = p._ring(circ, h / 2, ri, xf), p._ring(circ, h / 2, ro, xf)       # flat lips on their own verts
+    ba, bb = p._ring(circ, -h / 2, ri, xf), p._ring(circ, -h / 2, ro, xf)
+    for i in range(n):
+        j = (i + 1) % n
+        p._face([oa + i, oa + j, ob + j, ob + i], CLOTH, True)                  # outer wall
+        p._face([ia + j, ia + i, ib + i, ib + j], FRAME, True)                  # inner wall (the dark throat)
+        p._face([ta + i, tb + i, tb + j, ta + j], CLOTH, False)                 # top lip
+        p._face([ba + j, bb + j, bb + i, ba + i], FRAME, False)                 # bottom lip
+    p.cyl((x, f, z + 0.004), 0.017, 0.026, MID, sides=10)                     # hub (on the rotor arm)
+    for k in range(3):
+        a = math.radians(ang + 120 * k)
+        L0, L1 = 0.012, ri - 0.006
+        c = (x + math.cos(a) * (L0 + L1) / 2, f + math.sin(a) * (L0 + L1) / 2, z + 0.012)
+        p.box(c, (L1 - L0, 0.026, 0.006), "steelL" if spin else FRAME_L, rot=(14, 0, math.degrees(a)))   # blade
 
 
 def drone(kind, state="fly", frame=0):
@@ -53,8 +79,8 @@ def drone(kind, state="fly", frame=0):
     for sx in (1, -1):
         for sf in (1, -1):
             x, f = sx * 0.19, sf * 0.16
-            p.plate((sx * 0.07, sf * 0.06, 0.0), (x, f, 0.0), 0.04, 0.03, FRAME, r=0.01)   # rotor arm
-            _duct(p, x, f, 0.0, spin)
+            p.plate((sx * 0.07, sf * 0.06, -0.016), (x, f, -0.016), 0.04, 0.03, FRAME, r=0.01)   # rotor arm
+            _duct(p, x, f, 0.0, spin, 20 + sx * sf * 30 * frame)                 # diagonal pairs counter-rotate
     if kind == "defence":
         p.rbox((0, 0.06, -0.12), (0.11, 0.13, 0.06), MID, r=0.02)                          # gun pod
         p.rbox((0, 0.06, -0.09), (0.11, 0.13, 0.012), "medRed", r=0.02)                    # its red band
@@ -94,53 +120,56 @@ def shadow():
     return rig
 
 
-def _cradle(rig, p, cx, cf, lit):
-    """A docking cradle: a tripod, a ring with a hazard band round a dish, three clamp fingers whose tips are the charge
-    contacts (lit while charging)."""
-    for a in (90, 210, 330):
-        t = math.radians(a)
-        p.strut((cx + 0.42 * math.cos(t), cf + 0.42 * math.sin(t), 0.0),
-                (cx + 0.3 * math.cos(t), cf + 0.3 * math.sin(t), PAD_Z - 0.08), 0.035, FRAME)       # tripod leg
-    p.cyl((cx, cf, PAD_Z - 0.07), 0.5, 0.08, FRAME, sides=36)                                  # ring frame
-    p.cyl((cx, cf, PAD_Z - 0.02), 0.48, 0.04, CLOTH, sides=36)                                 # ring
-    p.cyl((cx, cf, PAD_Z - 0.016), 0.4, 0.04, "hazY", sides=36)                                # hazard band
-    p.cyl((cx, cf, PAD_Z - 0.012), 0.33, 0.04, MID, sides=32)                                  # dish
-    for a in (30, 150, 270):                                                                   # clamp fingers
-        t = math.radians(a)
-        x, f = cx + 0.45 * math.cos(t), cf + 0.45 * math.sin(t)
-        p.rbox((x, f, PAD_Z + 0.06), (0.09, 0.09, 0.16), FRAME_L, r=0.03,
-               rot=(0, 0, a))
-        x2, f2 = cx + 0.4 * math.cos(t), cf + 0.4 * math.sin(t)
-        rig.part("root", "contact").rbox((x2, f2, PAD_Z + 0.13), (0.07, 0.06, 0.05), lit, r=0.015, rot=(0, 0, a))
+def _cradle(f, z, lit):
+    """One lift cradle with its pad top at z: a carriage riding the two back rails, two arms forward to a ring round a
+    dish, three charge contacts on the ring (lit while charging)."""
+    TC._g("cradle")
+    obox(f, BACK, CAGE - 0.22, CAGE - 0.06, 0.4, z - 0.24, z - 0.02, "gm", "steel")           # carriage
+    for t in (-1, 1):
+        obox(f, BACK, CAGE - 0.08, CAGE - 0.02, 0.05, z - 0.22, z - 0.04, "steelD", "steelL", off=t * RAIL_W)   # rollers
+        obox(f, BACK, 0.36, CAGE - 0.2, 0.06, z - 0.14, z - 0.06, "steelD", "steel", off=t * 0.2)               # arms
+    TC.vannulus(f, 0.44, 0.34, z - 0.08, z, "steelD", "steel", sides=32)                       # ring
+    f.vcyl(0, 0, z - 0.07, 0.345, 0.05, "gm", top="steelD", sides=32)                           # dish
+    for k in range(3):
+        u, v = P(FRONT + math.pi / 3 + k * math.tau / 3, 0.39)
+        f.box(u, v, z, 0.07, 0.07, 0.04, "steelD", top=lit)                                     # charge contacts
 
 
 def bay(docked=0, charging=False):
-    """The bay at r0: 3x2 (3 along grid +x, 2 deep, front +y; origin the centre of the front-most tile, as for every
-    module). A squat charger unit in the middle of the back row, a docking cradle either side of it on a tripod, a
-    power arm from the unit to each cradle. Drones launch straight up from the cradles through a roof hatch."""
-    rig = Rig("drone_bay")
-    p = rig.part("root")
-    lit = "cyan" if charging else FRAME_L
-    CF, CX = 0.12, 1.0                        # cradle centres (character frame: x = -grid u, f = grid v from centre)
-    # The charger unit: a dark frame, a light shell wrapping it, a domed cap, a vent slot and two status lights.
-    p.rbox((0, -0.5, 0.55), (0.56, 0.66, 1.1), FRAME, r=0.08)                                 # (top under the cap: no shared face)
-    p.rbox((0, -0.47, 0.5), (0.64, 0.66, 0.84), CLOTH, r=0.12, taper=0.94)
-    p.rbox((0, -0.47, 0.95), (0.64, 0.66, 0.06), ACCENT, r=0.12)
-    p.rbox((0, -0.5, 1.12), (0.56, 0.58, 0.24), CLOTH, r=0.16, taper=0.75)                      # cap
-    p.rbox((0, -0.13, 0.5), (0.2, 0.04, 0.5), FRAME, r=0.03)                                   # vent slot
-    for k in range(4):
-        p.rbox((0, -0.11, 0.33 + k * 0.11), (0.16, 0.02, 0.03), MID, r=0.008)                   # its louvres
-    for sx in (1, -1):
-        rig.part("root", "status").ball((sx * 0.18, -0.14, 0.8), 0.035, "cyan" if charging else "green")
-        # The power arm from the unit's side to the cradle's ring.
-        p.plate((sx * 0.3, -0.4, PAD_Z - 0.08), (sx * (CX - 0.46), CF - 0.12, PAD_Z - 0.08), 0.14, 0.1, FRAME, r=0.03)
-        p.plate((sx * 0.3, -0.4, PAD_Z - 0.02), (sx * (CX - 0.46), CF - 0.12, PAD_Z - 0.02), 0.08, 0.04, CLOTH, r=0.015)
-        _cradle(rig, p, sx * CX, CF, lit)
-    rig.build()
-    rig.root.location = (-1.0, 0.5, 0)        # Blender: the footprint centre, a tile toward grid -x and half toward -y
-    drones = []
-    for i, sx in enumerate((1, -1)[:docked]):
-        d = drone(("repair", "medic")[i], "docked")
-        d.root.location = (-1.0 - sx * CX, 0.5 - CF, DOCK_Z)
-        drones.append(d)
-    return rig, drones
+    """The bay (2x2, weapon-bay frame: u = grid +x, v = grid +y, origin the footprint centre at floor level). An open
+    launch cage under the roof hatch at the drones' span: a foot ring and a roof collar (the hatch's coaming), two
+    lift rails at the back, four posts, the front open. Two cradles ride the rails, stacked: the top drone launches
+    straight up through the hatch and the lift brings the other up behind it. A hazard keep-clear ring on the floor; the
+    charger cabinet in the back corner, a capacitor can and a console in the side corners. Holds `docked` drones
+    (0..2: the top cradle fills first)."""
+    m = core.Mesh("drone_bay")
+    f = Frame(m, 1, square=True)
+    lit = "cyan" if charging else "steelD"
+    TC._g("cage")
+    hazard_ring(f, 0.56, 0.66)
+    TC.vannulus(f, CAGE + 0.06, CAGE - 0.06, 0, 0.08, "steelD", "steel")                       # foot ring
+    TC.vannulus(f, CAGE + 0.08, CAGE - 0.08, TC.ZR - 0.12, TC.ZR, "steelD", "steelL")          # roof collar
+    TC.vannulus(f, CAGE - 0.08, CAGE - 0.14, TC.ZR - 0.06, TC.ZR, "steel", "steelL")           # its inner lip
+    for a in (FRONT + 1.0, FRONT - 1.0, FRONT + 2.1, FRONT - 2.1):
+        u, v = P(a, CAGE)
+        D.seg(f, (u, v, 0.08), (u, v, TC.ZR - 0.12), 0.045, "steel", 8)                        # posts
+    for t in (-1, 1):
+        obox(f, BACK, CAGE - 0.04, CAGE + 0.06, 0.05, 0.08, TC.ZR - 0.12, "steelD", "steelL", off=t * RAIL_W)  # rails
+    obox(f, BACK, CAGE + 0.06, CAGE + 0.2, 0.22, TC.ZR - 0.5, TC.ZR - 0.12, "gm", "steel")    # lift drive
+    TC._g("gear")
+    obox(f, BACK, 1.0, 1.24, 0.13, 0, 1.25, "gm", "steelL")                                    # charger cabinet
+    obox(f, BACK, 1.24, 1.25, 0.08, 0.7, 1.1, "dark", "dark")                                  # its vent
+    for k in range(3):
+        u, v = P(BACK, 1.0)
+        f.box(u, v, 0.86 + k * 0.1, 0.05, 0.05, 0.04, "dark", base=False)
+    TB._caps(f, ((0.8, -0.8),), r=0.13, h=0.9)
+    TB._console(f, -0.8, 0.8, k=0.45)
+    for z in PADS:
+        _cradle(f, z, lit)
+    obs = [m.build()]
+    for k, z in enumerate(reversed(PADS[2 - docked:])):
+        d = drone(("repair", "medic")[k], "docked")
+        d.root.location = (0, 0, z + DOCK_DZ)
+        d.root.rotation_euler = (0, 0, math.radians(45))
+        obs += d.objects()
+    return obs
