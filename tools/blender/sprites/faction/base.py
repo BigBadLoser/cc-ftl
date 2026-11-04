@@ -147,7 +147,8 @@ class Faction(Look):
             return f"{self.pre}F{max(0, min(6, s))}" if s is not None else P.name
         if ".cap." in P.sprite and P.name == T.CUT:                   # the far hull's cap (wall3d.hull_cap): its cuts
             return T.CUT                                                # black, as the partitions' caps
-        if (P.kind == "top" or P.name == T.CUT) and P.sprite.startswith("tile.wall."):   # a partition's top (cap or
+        if (P.kind == "top" or P.name == T.CUT) and P.sprite.startswith("tile.wall.") and \
+                P.name not in TOP_KEEP:                                 # a partition's top (cap or
             lv = "up" if ".full." in P.sprite else "low" if ".low." in P.sprite else "cut"   # cut) and the dark line
             if P.z >= W.wall_top("wall", lv) - 0.03:            # under it: black, as the default walls' (the
                 return T.CUT                                    # header's top, 0.02 under the cap, too)
@@ -156,6 +157,9 @@ class Faction(Look):
                 and P.role in SECTION_STEP):
             return f"{self.pre}X{SECTION_STEP[P.role]}"
         return super().paint(P)
+
+
+TOP_KEEP = set()        # colours a partition's top keeps (not its black): a window's pane edges (wall3d_iwin)
 
 
 def _style(face, **kw):

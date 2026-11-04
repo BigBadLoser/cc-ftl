@@ -122,6 +122,7 @@ def OUT(ax):
     return Vector((0, 1, 0)) if ax == "y" else Vector((1, 0, 0))
 
 
+HOOK = None             # while a piece builds: f(k, sp) on its Relief before it builds (wall3d_iwin: a window's opening)
 SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) sets this to a key colour: painted lines
                         # (seams, panel outlines, plates' shading) draw in it, everything else near black
 SEAM_DARK = "hsXK"
@@ -665,6 +666,8 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
             (dress or style().hull or hull_face)(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
         else:
             (style().wall or wall_face)(k, ax, plane, a, b, ends, sp.zs, top, full)
+    if HOOK:
+        HOOK(k, sp)
     return k.build()
 
 
