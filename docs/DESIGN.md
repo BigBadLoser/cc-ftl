@@ -22,7 +22,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
 - [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
   - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
-  - [Drones (user decisions, 2026-11-04; not built yet)](#drones-user-decisions-2026-11-04-not-built-yet): Small flying robots run by the AI core, inside and out: defence, repair and medic...
+  - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
@@ -779,7 +779,7 @@ No radiation system: the nuke is blast plus fire, built from existing effects.
 Each volley is a spread of many weak pellets. Every pellet that hits a shield strips a layer, so flak knocks shields down for
 the other guns. It does little hull damage and is inaccurate at range. It reuses an existing bay model, told apart by a tint.
 
-### Drones (user decisions, 2026-11-04; not built yet)
+### Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)
 
 **What a drone is.** A small flying machine that works inside the ship and launches into space. Drones are their own entity
 (a drone component on a free body), run by one drone system, not crew on the job scheduler: no priorities, no orders, no crew
@@ -816,6 +816,15 @@ extinguish and stabilise code, flying navigation, charging, the AI core link) an
 
 Later: combat drones that fly to the enemy and shoot (DESIGN "Combat drones": they build on the core's tier and the EMP effect),
 and salvage drones.
+
+**Slice 1 (built, #318): inside the ship.** The drone bay (2x1, two pads), the repair and medic drones, the core cap, inert on core loss,
+ion knockouts, blueprints, fabricator recipes and station stock. The user's rulings (2026-11-04):
+- Bays fill themselves: a free pad takes a drone item from the ship's storage, no order needed.
+- The medic drone patches the downed (the bleeding stops) but does not get them up: rescue to a bed and a medic still do that.
+- Only the Mk I AI core exists; the cap table already has Mk II (4) and Mk III (6) for when the core tiers come.
+- Nothing damages a drone yet besides ion and core loss: drone damage comes with slice 2.
+Slice 2 (space: ceiling hatch, defence drone, outside breach repair, recall on a jump, damage, enemy drones) is next. Art for the
+drone and the bay is pending (code placeholders until then). Code: ARCHITECTURE.md "Drones".
 
 ### Where blueprints are sold (user decision, 2026-10-26)
 
