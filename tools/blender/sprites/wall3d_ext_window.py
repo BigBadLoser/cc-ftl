@@ -65,37 +65,50 @@ def build(k, ax, plane, a, b, ends, H):
     db = dp - PANE / 2 - WALL_BACK                      # the wall's back (the section reaches back to it)
     GLASS = T.Relief("window_glass")
     for s0, s1 in T.spans(a, b):
+        end = PART in ("w1", "w3")                      # (an end piece: W3 W1 mirrored, built in W1's u then
+        mu = (lambda u: s0 + s1 - u) if PART == "w3" else (lambda u: u)     # flipped by mu)
+
+        def seg(u0, u1, cap=None):                      # a span in W1's u and its (start, end) caps, in the tile's
+            if PART != "w3":
+                return u0, u1, cap
+            return mu(u1), mu(u0), cap[::-1] if isinstance(cap, tuple) else cap
+
         h0, w0, w1 = s0, s0, s1                         # (h0: the header's and the sill's start; w0: the glass's)
-        if PART == "w1":
+        if end:
             for z0, z1 in ((0.0, zb), (zb, H)):         # the outer frame: the base section, whole
                 pf = s.sec(z0, z1)
                 cols = s.cols(pf, "face")
                 pf = [(db, pf[0][1])] + pf[1:-1] + [(db, pf[-1][1])]
-                f.part(s0, s0 + FRAME, pf, cols, (None, SIDE), end=False)
+                u0, u1, cp = seg(s0, s0 + FRAME, (None, SIDE))
+                f.part(u0, u1, pf, cols, cp, end=False)
             pf = [(db, 0.0), (dv, 0.0), (dv, zh), (db, zh)]     # the frame's side (jamb), under the header
-            f.part(s0 + FRAME, s0 + FRAME + JAMB, pf, [None, HEAD_FRONT, None, None], (None, SIDE), end=False)
+            u0, u1, cp = seg(s0 + FRAME, s0 + FRAME + JAMB, (None, SIDE))
+            f.part(u0, u1, pf, [None, HEAD_FRONT, None, None], cp, end=False)
             h0, w0 = s0 + FRAME, s0 + FRAME + JAMB
+        u0, u1, _ = seg(h0, w1)
         pf = [(db, 0.0), (fr, 0.0), (fr, zs), (dv, zj), (db, zj)]       # the sill: its slope, then flat back
         cols = s.cols(pf, "face")
         cols[2], cols[3] = SILL_SLOPE, SILL_FLAT
-        f.part(h0, w1, pf, cols, None, end=False)
+        f.part(u0, u1, pf, cols, None, end=False)
         pf = [(db, zh), (dv, zh), (dv, zc), (T3.BACK, H), (db, H)]      # the header: the lean's top, then upright
         cols = s.cols(pf, "face")                                       # down to its foot
         cols[1] = HEAD_FRONT
-        f.part(h0, w1, pf, cols, None, end=False)
-        corner = PART == "w1"
-        win = _opening(w0, w1, zj, zh, corner)
-        _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", ["glassL"] * len(win))   # the pane
-        pts = _inset(win, EDGE_OUT)                                     # its edges (but where it runs on)
-        _slab(k, ax, plane, pts, dp - PANE / 2, dp + PANE / 2, False,
-              [False if abs(a[0] - b[0]) < 1e-6 and (abs(a[0] - w1) < 1e-2 or (not corner and abs(a[0] - w0) < 1e-2))
-               else EDGE for a, b in zip(pts, pts[1:] + pts[:1])])
-        if corner:                                                      # the slope and its foot (and the top's)
+        f.part(u0, u1, pf, cols, None, end=False)
+        def sides(pts, col):                            # (none where the pane runs on into the next tile)
+            return [False if abs(p[0] - q[0]) < 1e-6 and (abs(p[0] - w1) < 1e-2 or (not end and abs(p[0] - w0) < 1e-2))
+                    else col for p, q in zip(pts, pts[1:] + pts[:1])]
+        win = _opening(w0, w1, zj, zh, end)
+        _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
+              mu=mu)                                    # the pane: its front only (one tinted layer: with its back,
+                                                        # a px column more, which the next tile's pane covers too)
+        pts = _inset(win, EDGE_OUT)                                     # its edges
+        _slab(k, ax, plane, pts, dp - PANE / 2, dp + PANE / 2, False, sides(pts, EDGE), mu=mu)
+        if end:                                                         # the slope and its foot (and the top's)
             fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, w0 + SLOPE + FOOT_W
             _slab(k, ax, plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + SLOPE, zj + fh), (w0, zj + fh + sh)],
-                  db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False)
+                  db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False, mu=mu)
             _slab(k, ax, plane, [(w0, zh), (w0, zh - sh), (w0 + SLOPE, zh)], db, dv, HEAD_FRONT,   # the top corner's
-                  [False, SLOPE_TOP, False], back=False)                                         # slope
+                  [False, SLOPE_TOP, False], back=False, mu=mu)                                  # slope
 
 
 def _opening(u0, u1, z0, z1, corner):
@@ -125,9 +138,10 @@ def _inset(pts, e):
     return out
 
 
-def _slab(k, ax, plane, pts, d0, d1, face, edges, back=True, fam="steel", lvl=3):
+def _slab(k, ax, plane, pts, d0, d1, face, edges, back=True, fam="steel", lvl=3, mu=None):
     """A (u, z) polygon (any simple one) through d0..d1: its front (and back) faces `face` (False: left out), its sides
-    edges[i] (the one from pts[i] to pts[i + 1]; False: left out)."""
+    edges[i] (the one from pts[i] to pts[i + 1]; False: left out); mu: its u mapped (a mirrored piece)."""
+    pts = [(mu(u), z) for u, z in pts] if mu else pts
     from mathutils import Vector
     from .faction.parts import ALONG
     o, up, al = T.OUT(ax), Vector((0, 0, 1)), ALONG(ax)
