@@ -196,16 +196,20 @@ def tan(hull):
                                                         # a shadow 2 px under it (its front on the shaded side in
                                                         # this tone: a design's, over a darker face)
             zh0 = z1 - HEAD_H
-            for u0, u1, m, r in _header(a, b, mit, back, end1):     # (a cushion a tile: in half a px at a tile
+            hd = _header(a, b, mit, back, end1)
+            hb = max(q[1] for q in hd if q[3] is not None)  # (the cushion's end at b: seen through the gap at a
+            seam = OUTER if ends[1] == "cont" and not end1 else HEAD_END    # tile seam, dark)
+            for u0, u1, m, r in hd:                                 # (a cushion a tile: in half a px at a tile
                 if r is not None:                                   # edge, a px at a free end, its corners curved,
                     continue                                        # the face behind the gap and the curves the
                 band(u0, u1, zh0, z1, OUTER)                        # block's outline)
-            for u0, u1, m, r in _header(a, b, mit, back, end1):
+            for u0, u1, m, r in hd:
                 if r is None:
                     continue
                 prism(k, ax, plane, u0, u1, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
                       FACE, 3, cols=[False, shaded if ax == "x" else None, sd("fTS0", ax), False], mitre=m,
-                      cap=HEAD_END if ax == "y" else None)      # (its ends on the lit side: they face the shade)
+                      cap=(HEAD_END, seam if abs(u1 - hb) < 1e-9 else HEAD_END) if ax == "y" else None)
+                                                        # (its ends on the lit side: they face the shade)
                 if cp and abs(u1 - b) < 1e-6:
                     _round(k, X, plane, C, [(0.0, zh0 + r), (HEAD_D, zh0 + r), (HEAD_D, z1 - r), (0.0, z1 - r)],
                            [False, "fTS2", "fTS0", False])
