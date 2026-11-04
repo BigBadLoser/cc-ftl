@@ -283,8 +283,11 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                 fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
                 _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
             elif plates:                                            # (a side wall on down to the face's foot, as
-                prism(k, ax, plane, u0, u1, [(0.0, zl1), (bd, zl1), (bd, zb), (0.0, zb)], FACE, 3,  # deep as its foot)
-                      cols=[False, sd("fTS1", ax), False, False], cap=cap)
+                r, n = PLATE_ROUND * L, 4                           # deep as its foot, its foot's front corner
+                arc = [(bd - r + r * math.sin(math.pi / 2 * i / n), zl1 + r / L * PZ * (1 - math.cos(math.pi / 2 * i / n)))
+                       for i in range(n + 1)]                       # curved up)
+                prism(k, ax, plane, u0, u1, [(0.0, zl1)] + arc + [(bd, zb), (0.0, zb)], FACE, 3,
+                      cols=[False] + [sd("fTS2", ax)] * n + [sd("fTS1", ax), False, False], cap=cap)
         if not sections:
             continue
         (t0, f0, *c0), (t1, f1, *c1) = SECTIONS                    # the cabinets (n 0), the drawers (1): a frame
@@ -466,6 +469,7 @@ def desk(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 _handle(k, ax, plane, c, q0, q1, zf_, *HANDLES[0], sp, sd, even=True)
 
 
+PLATE_ROUND = 4                         # the stack's side walls: their foot's front corner curved up (radius, px)
 STACK_DOWN = 15                         # the stack (ref 36): the lockers' header and bins this many rows down, under
 STACK_CHEST = ((1, 15, 6, 2, 1), ((7, (0.5,), 3), (9, (0.25, 0.5, 0.75), 2)))  # a small chest (as CHEST,
                                         # CHEST_ROWS)
