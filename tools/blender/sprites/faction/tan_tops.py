@@ -1,7 +1,10 @@
 """Tan's face designs (its tops) past the base: each the face over the lip, from the lip's top (zl1) to the header's
 top (z1), drawn instead of the base's header, slats and panel."""
+from mathutils import Vector
+
+from .. import wall3d as T
 from ..relief_style import Design
-from .parts import PX, PZ, prism
+from .parts import PAINT, PX, PZ, prism
 from .tan_ramps import FACE
 
 # the console: a deep canopy under the cap, two screens in the recess under it, a desk standing out under them (a
@@ -16,6 +19,7 @@ D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their side
 SCREENS = ((2 / 32, 13 / 32), (19 / 32, 30 / 32))    # each tile's two terminals' screens, across it (with the
                                                     # keyboards, centred on it)
 T_DEPTH, T_SCREEN = 5, 3               # a terminal: how far out (px) its keyboard's front stands, its screen
+K_SHADOW = "fTS2"                       # the faint shadow on the keyboard's face under each screen
 B_TONE = "fTS3"                         # the screens' borders' front (darker than the keyboard's face)
 T_DROP, T_GLASS = 3 * PZ, 5 * PZ        # the keyboard's top under T_SHOW's foot; the glass's height (up to
                                         # T_SHOW's top)
@@ -29,6 +33,20 @@ SCREEN_LINES = ((("fTC1", ((2, 1, 6), (0, 1, 4), (0, 5, 7))), ("fTC2", ((2, 7, 8
 
 def _rows(d):
     return d / (PX / 2) * PZ
+
+
+def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1):
+    """A strip of one tone along a sloping face's top (its foot at lo, its top at hi: (d, z)), rows of it as seen,
+    a touch out from it."""
+    dd, dz = hi[0] - lo[0], hi[1] - lo[1]
+    ln = (dd * dd + dz * dz) ** 0.5
+    seen = dz / PZ + abs(dd) / (PX / 2)                 # (the rows the slope shows)
+    t0 = max(0.0, 1.0 - rows / seen)
+    od, oz = dz / ln * PAINT, -dd / ln * PAINT
+    nrm = T.OUT(ax) * (dz / ln) + Vector((0, 0, 1)) * (-dd / ln)
+    pts = [T.P(ax, plane, u, lo[1] + t * dz + oz, lo[0] + t * dd + od) for u, t in ((u0, t0), (u1, t0), (u1, 1.0),
+                                                                                       (u0, 1.0))]
+    k.poly(pts, "wall", 0, nrm, fixed=col)
 
 
 def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
@@ -77,6 +95,8 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         for k0, k1 in ((e0, c - T_SEAM * L / 2), (c + T_SEAM * L / 2, e1)):    # (one keyboard across the bay, a
             prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zkt), (0.0, zkt)], FACE, 3,  # seam
                   cols=[False, sd("fTS3", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))  # down its
+        for s0, s1 in SCREENS:                                  # (a faint shadow along the slope's top row under
+            _slope(k, ax, plane, c - 0.5 + s0, c - 0.5 + s1, (td, zk0), (ts, zkt), K_SHADOW)  # each screen)
         m0, m1 = c - 0.5 + SCREENS[0][1], c - 0.5 + SCREENS[1][0]                # middle; a face between the
         prism(k, ax, plane, m0, m1, [(0.0, zkt), (ts, zkt), (ts, zc0), (0.0, zc0)], FACE, 3,  # screens, a px back
               cols=[False, sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))            # of their borders)
