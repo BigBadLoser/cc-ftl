@@ -56,6 +56,7 @@ E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under 
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
 E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
 E_TONE = "hsL"                      # tile's edge, from E_IN px out from its back to E_SHORT px short of its front
+F_ON = False                        # (F off for now)
 F_U, F_RECESS = (8, 24), (11, 18)   # W1's sill front: F, a plate over these px from the tile's edge (centred) in
 F_GRILLE = (6, 8)                   # the base's plates' tone, from the seam's top down: painted over a recess REC
 F_SEAM, F_SEAM_DOWN = 26, (4, 18)   # deep (px down from the front's top; its ledge F_LEDGE), painted lines over that
@@ -195,6 +196,10 @@ def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
         u = px(n)
         f.part(u, u + T3.px(E_RIB), [(di, z(di) - R), (dr, z(dr) - R), (dr, z(dr)), (di, z(di))],
                [False, YS[2], SILL_SLOPE, YS[2]], (False, SIDE), end=False)     # its ribs
+    if not F_ON:                                                        # the slab whole
+        f.part(u0, u1, [(df, 0.0), (fr, 0.0), (fr, zs), (df, z(df))], [False, front, SILL_SLOPE, False], None,
+               end=False)
+        return
     za, zb = zs - F_RECESS[1] / Z, zs - F_RECESS[0] / Z                 # F: the slab, cut through over its recess
     f0, f1 = px(F_U[0]), px(F_U[1])
     f.part(u0, u1, [(df, 0.0), (fr, 0.0), (fr, za), (df, za)], [False, front, F_LEDGE, False], None, end=False)
