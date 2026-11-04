@@ -63,7 +63,8 @@ def _pod(p, x, f, z, firing):
 
 
 def drone(kind, state="fly", frame=0):
-    """state: fly (hover, frame 0..3 bobs), work, docked (thrusters off), inert (thrusters off, eye dark)."""
+    """state: fly (the hover bob is the renderer's), work (frame 0..1: the effect flickers), docked (thrusters off),
+    inert (thrusters off, eye dark, tilted)."""
     rig = Rig(f"drone_{kind}")
     b = rig.joint("body", "root", (0, 0, 0))
     p = rig.part(b)
@@ -87,27 +88,28 @@ def drone(kind, state="fly", frame=0):
         p.rbox((0, 0.06, -0.09), (0.11, 0.13, 0.012), "medRed", r=0.02)                    # its red band
         for dx in (-0.024, 0.024):
             p.cyl((dx, 0.15, -0.12), 0.014, 0.13, FRAME_L, axis="f", sides=8)              # twin barrels
-        if state == "work":
+        if state == "work" and frame == 0:                                                 # full flash, then its core
             rig.part(b, "flash").ball((0, 0.21, -0.1), 0.04, "flameY")
             rig.part(b, "flash").ball((0, 0.25, -0.1), 0.025, "flameW")
+        elif state == "work":
+            rig.part(b, "flash").ball((0, 0.2, -0.1), 0.026, "flameW")
     elif kind == "repair":
         p.cyl((0, 0.04, -0.1), 0.025, 0.04, FRAME_L, axis="x", sides=10)                  # shoulder hinge
         reach = 0.16 if state == "work" else 0.1
         p.plate((0, 0.04, -0.1), (0, 0.04 + reach, -0.16), 0.03, 0.03, MID, r=0.01)       # arm
         p.plate((0, 0.04 + reach, -0.16), (0, 0.08 + reach, -0.2), 0.022, 0.022, FRAME_L, r=0.008)  # welder
         if state == "work":
-            rig.part(b, "spark").ball((0, 0.1 + reach, -0.22), 0.03, "arc")
-            for dx, dz in ((0.04, 0.01), (-0.035, -0.02), (0.02, -0.04)):
+            rig.part(b, "spark").ball((0, 0.1 + reach, -0.22), 0.03 if frame == 0 else 0.024, "arc")
+            sparks = ((0.04, 0.01), (-0.035, -0.02), (0.02, -0.04)) if frame == 0 else ((-0.04, 0.0), (0.035, -0.03), (-0.015, -0.045))
+            for dx, dz in sparks:
                 rig.part(b, "spark").ball((dx, 0.1 + reach + 0.02, -0.22 + dz), 0.012, "flameW")
     elif kind == "medic":
         p.cyl((0, 0.07, -0.13), 0.035, 0.035, FRAME_L, sides=14)                          # emitter
-        p.cyl((0, 0.07, -0.135), 0.026, 0.006, "lens", sides=14)
+        p.cyl((0, 0.07, -0.135), 0.026, 0.006, "green" if state == "work" and frame == 0 else "lens", sides=14)   # pulses
         if state == "work":                                                                # treatment light cone
             rig.part(b, "beam").cyl((0, 0.07, -0.28), 0.07, 0.26, "green", sides=16, taper=0.35)   # to a patient on the deck at cruise height
     rig.build()
     rig.root.scale = (SCALE,) * 3
-    if state == "fly":
-        rig.root.location.z += 0.012 * math.sin(math.tau * frame / 4)
     if state == "inert":
         rig.root.rotation_euler = (math.radians(14), math.radians(-9), 0)
     return rig
@@ -136,13 +138,13 @@ def _cradle(f, z, lit):
         f.box(u, v, z, 0.07, 0.07, 0.04, "steelD", top=lit)                                     # charge contacts
 
 
-def bay(docked=0, charging=False):
+def bay(docked=0, charging=False, powered=True):
     """The bay (2x2, weapon-bay frame: u = grid +x, v = grid +y, origin the footprint centre at floor level). An open
     launch cage under the roof hatch at the drones' span: a foot ring and a roof collar (the hatch's coaming), two
     lift rails at the back, four posts, the front open. Two cradles ride the rails, stacked: the top drone launches
     straight up through the hatch and the lift brings the other up behind it. A hazard keep-clear ring on the floor; the
-    charger cabinet in the back corner, a capacitor can and a console in the side corners. Holds `docked` drones
-    (0..2: the top cradle fills first)."""
+    charger cabinet in the back corner, a status lamp on each front post (dark while unpowered). `docked` drones (0..2,
+    the top cradle fills first) are for previews only: the game draws docked drones itself (see drone_family)."""
     m = core.Mesh("drone_bay")
     f = Frame(m, 1, square=True)
     lit = "cyan" if charging else "steelD"
@@ -165,6 +167,9 @@ def bay(docked=0, charging=False):
         f.box(u, v, 0.86 + k * 0.1, 0.05, 0.05, 0.04, "dark", base=False)
     for z in PADS:
         _cradle(f, z, lit)
+    for a in (FRONT + 1.0, FRONT - 1.0):                                                     # status lamps on the front posts
+        u, v = P(a, CAGE + 0.045)
+        f.box(u, v, 0.95, 0.06, 0.06, 0.1, "green" if powered else "dark", base=False)
     obs = [m.build()]
     for k, z in enumerate(reversed(PADS[2 - docked:])):
         d = drone(("repair", "medic")[k], "docked")
