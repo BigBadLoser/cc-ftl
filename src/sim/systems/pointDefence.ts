@@ -1,13 +1,16 @@
 import { BodyC } from '../body';
 import { IonC, PointDefenseC, ProjectileC } from '../combat/components';
 import { aimDirection, moduleCenter } from '../combat/geometry';
+import { chipShuttle, defenderOf, droneThreats, shipCentre, shuttleThreat } from '../combat/intercept';
+import { damageDrone } from '../drones/damage';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
-import { PD_CHANCE, PD_WINDOW, VEHICLE_PD_CHANCE, VEHICLE_PD_DAMAGE, VEHICLE_PD_FLOOR, VEHICLE_PD_INTERVAL, VEHICLE_PD_RANGE } from '../tuning';
+import {
+  DRONE_PD_CHANCE, DRONE_PD_DAMAGE, PD_CHANCE, PD_WINDOW, VEHICLE_PD_CHANCE, VEHICLE_PD_DAMAGE, VEHICLE_PD_INTERVAL, VEHICLE_PD_RANGE,
+} from '../tuning';
+import { DroneC } from '../drones/components';
 import { VehicleC } from '../vehicles/components';
-import { dockPoint } from '../vehicles/geometry';
-import { damageVehicle, vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 import { shipById } from '../combat/ships';
 import { shipIdOf } from '../regions';
 
@@ -20,7 +23,8 @@ import { shipIdOf } from '../regions';
  * Shuttles: a missile homing on a shuttle is covered by the shuttle's home ship's point defence while the shuttle is
  * within VEHICLE_PD_RANGE of it. A hostile shuttle in flight within range of a defending ship, or docked at it, is an
  * incoming threat too: every VEHICLE_PD_INTERVAL ticks each working module rolls VEHICLE_PD_CHANCE to hit it for
- * VEHICLE_PD_DAMAGE hp, never below VEHICLE_PD_FLOOR of its max hp.
+ * VEHICLE_PD_DAMAGE hp, never below VEHICLE_PD_FLOOR of its max hp. Enemy drones out in space within VEHICLE_PD_RANGE are shot the same way
+ * (DRONE_PD_CHANCE for DRONE_PD_DAMAGE, the nearest first). Who counts as an enemy is the shared rule in combat/intercept.ts.
  */
 export function pointDefenceSystem(sim: Sim): void {
   const gunsByGrid = new Map<number, number[]>();
@@ -35,7 +39,7 @@ export function pointDefenceSystem(sim: Sim): void {
   for (const id of [...sim.world.query(ProjectileC)]) {
     const p = sim.world.get(id, ProjectileC);
     if (!p || !sim.content.weapons?.[p.weapon]?.interceptable) continue;
-    const defender = defenderGrid(sim, p.target);
+    const defender = defenderOf(sim, p.target);
     const guns = coreByGrid.get(defender) ? gunsByGrid.get(defender) ?? [] : [];
     for (const g of guns) track(sim, g, p.x, p.y);
     if (p.pdRolled || p.t < PD_WINDOW) continue;
@@ -48,41 +52,40 @@ export function pointDefenceSystem(sim: Sim): void {
       break;
     }
   }
-  if (sim.tick % VEHICLE_PD_INTERVAL === 0) engageVehicles(sim, gunsByGrid, coreByGrid);
-}
-
-/** The grid whose point defence covers a shot's target: the ship itself, or a shuttle's home ship when it is close. */
-function defenderGrid(sim: Sim, t: { ship: number; vehicle?: number }): number {
-  const v = t.vehicle ? sim.world.get(t.vehicle, VehicleC) : undefined;
-  const b = t.vehicle ? sim.world.get(t.vehicle, BodyC) : undefined;
-  if (!t.vehicle) return t.ship;
-  const ship = v && shipById(sim, v.homeShip);
-  if (!v || !b || !ship || Math.hypot(b.x - (ship.x + ship.width / 2), b.y - (ship.y + ship.height / 2)) > VEHICLE_PD_RANGE) return 0;
-  return v.homeShip;
+  if (sim.tick % VEHICLE_PD_INTERVAL !== 0) return;
+  engageVehicles(sim, gunsByGrid, coreByGrid);
+  engageDrones(sim, gunsByGrid, coreByGrid);
 }
 
 function engageVehicles(sim: Sim, gunsByGrid: Map<number, number[]>, coreByGrid: Map<number, boolean>): void {
   for (const vid of [...sim.world.query(VehicleC)]) {
-    const v = sim.world.get(vid, VehicleC);
     const b = sim.world.get(vid, BodyC);
-    if (!v || !b || v.state === 'stowed') continue;
-    const faction = vehicleFaction(sim, v);
-    const dockedAt = v.state === 'docked' ? dockPoint(sim, v.dock)?.shipId : 0;
+    if (!b) continue;
     for (const [shipId, guns] of gunsByGrid) {
-      const ship = shipById(sim, shipId);
-      if (!ship || !coreByGrid.get(shipId) || ship.state === 'wreck' || ship.faction === faction || ship.faction === 'neutral' || faction === 'neutral') continue;
-      const near = dockedAt === shipId || (v.state === 'flying'
-        && Math.hypot(b.x - (ship.x + ship.width / 2), b.y - (ship.y + ship.height / 2)) <= VEHICLE_PD_RANGE);
-      if (!near) continue;
+      const c = shipCentre(sim, shipId);
+      if (!c || !coreByGrid.get(shipId) || shipById(sim, shipId)?.state === 'wreck' || !shuttleThreat(sim, shipId, vid, c.x, c.y, VEHICLE_PD_RANGE)) continue;
       for (const g of guns) {
         track(sim, g, b.x, b.y);
-        if (sim.rng.chance(VEHICLE_PD_CHANCE)) {
-          // Point defence only chips: it never takes a shuttle below the floor.
-          const floor = Math.ceil((vehicleDefOf(sim, v)?.maxHp ?? 0) * VEHICLE_PD_FLOOR);
-          damageVehicle(sim, vid, Math.min(VEHICLE_PD_DAMAGE, v.hp - floor), 'pointDefence');
-        }
+        if (sim.rng.chance(VEHICLE_PD_CHANCE)) chipShuttle(sim, vid, VEHICLE_PD_DAMAGE);
       }
       if (!sim.world.get(vid, VehicleC)) break;
+    }
+  }
+}
+
+/** Each working module takes one shot at the nearest enemy drone in space within range of its ship. */
+function engageDrones(sim: Sim, gunsByGrid: Map<number, number[]>, coreByGrid: Map<number, boolean>): void {
+  for (const [shipId, guns] of gunsByGrid) {
+    const c = shipCentre(sim, shipId);
+    if (!c || !coreByGrid.get(shipId) || shipById(sim, shipId)?.state === 'wreck') continue;
+    const near = droneThreats(sim, shipId, c.x, c.y, VEHICLE_PD_RANGE);
+    if (near.length === 0) continue;
+    for (const g of guns) {
+      const target = near.find((id) => (sim.world.get(id, DroneC)?.hp ?? 0) > 0);
+      const b = target && sim.world.get(target, BodyC);
+      if (!target || !b) break;
+      track(sim, g, b.x, b.y);
+      if (sim.rng.chance(DRONE_PD_CHANCE)) damageDrone(sim, target, DRONE_PD_DAMAGE, 'pointDefence');
     }
   }
 }

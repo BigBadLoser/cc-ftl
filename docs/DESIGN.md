@@ -823,8 +823,10 @@ ion knockouts, blueprints, fabricator recipes and station stock. The user's ruli
 - The medic drone patches the downed (the bleeding stops) but does not get them up: rescue to a bed and a medic still do that.
 - Only the Mk I AI core exists; the cap table already has Mk II (4) and Mk III (6) for when the core tiers come.
 - Nothing damages a drone yet besides ion and core loss: drone damage comes with slice 2.
-Slice 2 (space: ceiling hatch, defence drone, outside breach repair, recall on a jump, damage, enemy drones) is next. Art for the
-drone and the bay is pending (code placeholders until then). Code: ARCHITECTURE.md "Drones".
+**Slice 2a (built on `drones/space-318`, awaiting review): space.** The ceiling hatch launch and landing, the defence drone (circles the
+ship while a ship at war with it is in play; shoots incoming missiles, enemy drones and shuttles, never a ship), the recall on a jump, a
+flee or leaving a scene (the departure waits up to 6 s; drones still out are lost and logged), and drone damage (fire, hand weapons, and in
+space point defence and enemy defence drones). Slice 2b: outside breach repair and enemy drones. Code: ARCHITECTURE.md "Drones".
 
 ### Where blueprints are sold (user decision, 2026-10-26)
 

@@ -6,8 +6,9 @@ import { shipGrid, shipIdOf } from '../sim/regions';
  * `?scenario=drones`: playtest drones (#318). Two drone bays beside the AI core, three drones in storage (two repair, one medic: the
  * Mk I core lets two out at once, so one waits on its pad), a damaged module, a small fire, one crew member downed and one wounded.
  * The bays take the drones from storage on their own, and the drones go to work. Set through debug commands.
+ * `space` (`?scenario=drones&fight`, slice 2): only the bays and two defence drones; the caller brings the enemy.
  */
-export function droneScenarioCommands(sim: Sim): Command[] {
+export function droneScenarioCommands(sim: Sim, space = false): Command[] {
   const ship = homeShip(sim);
   const grid = shipGrid(sim, ship);
   if (!grid) return [];
@@ -70,6 +71,7 @@ export function droneScenarioCommands(sim: Sim): Command[] {
   }
   const spots = [place('module.droneBay', 2, 2, cx, cy), place('module.droneBay', 2, 2, cx, cy)].filter((s): s is { x: number; y: number } => !!s);
   for (const s of spots) out.push({ type: 'debug.spawnModule', ship, def: 'module.droneBay', x: s.x, y: s.y, rot: 0 });
+  if (space) return [...out, { type: 'debug.giveItems', item: 'item.drone_defence', count: 2 }];
   out.push({ type: 'debug.giveItems', item: 'item.drone_repair', count: 2 });
   out.push({ type: 'debug.giveItems', item: 'item.drone_medic', count: 1 });
 

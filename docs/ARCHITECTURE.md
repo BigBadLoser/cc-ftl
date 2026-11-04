@@ -1386,8 +1386,29 @@ Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
   are saved (SAVE_VERSION 89).
 - **Render/UI:** PLACEHOLDER art drawn in code (`render/droneView.ts`, `paintDrone`; lab panel `drones`), sorted in the sector `low`
   layer; the bay inspector's Drones section (`app/droneSnapshot.ts`, `ui/DroneBayPanel.svelte`). Debug start `?scenario=drones`.
-- **Slice 2 (planned):** a free-space planner on the same body, the ceiling-hatch launch, the defence drone, outside breach repair, recall
-  on a jump or leaving with a short wait, drone damage, enemy drones.
+- **Slice 2a (space, built on `drones/space-318`):**
+  - *Where a job is:* `KindRules.where` (`inside` | `space`) and `shared` (no claim: every guard shares its ship). A docked drone picks from
+    every kind; one inside picks only inside kinds, one in space only space kinds, else it goes home.
+  - *Free flight* (`drones/space.ts`): `steer` moves the body straight at a point in sector tiles at `ALT.cruise`; `d.space` marks a drone out
+    of its ship. The only way between inside and space is the bay's ceiling hatch: states `launch` / `land` (`stepLift`, `liftPose`): the
+    first `DRONE_HATCH_SHARE` of `DRONE_LIFT_SEC` it slides from its pad to the footprint's middle (the hatch opens), then rises to cruise
+    height (a landing is the same backwards). Render: `droneHatch.ts` (art `module.drone_bay.hatch.f0..f4` / `.stowed`; solid on the cutaway
+    ship while open), drones above `ALT.roof` draw in the air layer.
+  - *Defence* (`drones/intercept.ts`, job `intercept`): while its ship is `underThreat` it circles an ellipse `gap` tiles off the ship's
+    rectangle (places spread evenly by id, turning at 0.8 of its speed) and fires every `fireSec`: an incoming interceptable shot
+    (`hitChance`; `projectile.intercepted` with `by`), else the nearest enemy drone, else an enemy shuttle (chipped like point defence).
+    Who may be shot is one shared rule, `combat/intercept.ts` (`atWarWith`: already at war, never neutral, no truce), used by point defence
+    too, so defending never provokes.
+  - *Recall* (`drones/recall.ts`): a charge order with a jump, or a held departure, recalls the ship's drones (no launches, the ones out fly
+    home). `jump`, `flee` and `leaveEvent` call `holdDeparture` before they lift the ship: with drones outside it stores `Combat.departHold`
+    and stops; the helm system retries it every tick (`settleDeparture`) until they are in or `DRONE_RECALL_WAIT_SEC` is over. Then
+    `loseStrandedDrones` (`drone.lost`) and only drones aboard (docked, or flying inside) lift (`members.ts`).
+  - *Damage* (`drones/damage.ts`): fire on its tile inside (`DRONE_FIRE_DAMAGE` x intensity), crew hand weapons (`fight/fighter.ts`
+    `shootDrone`: armed fighters shoot an enemy drone inside that they can hit where they stand, when no crew foe is about), and in space
+    point defence (`DRONE_PD_*`) and enemy defence drones. Ship guns never target a drone. A docked drone is mended by a powered bay
+    (`DroneBayDef.repairPerSec`). A wreck in space drops nothing. SAVE_VERSION 90.
+  - Debug start `?scenario=drones&fight[&charged]`; lab panel `droneLaunch`.
+- **Slice 2b (planned):** outside breach repair, enemy drones through shipgen.
 
 ## Vehicles (shuttles), `src/sim/vehicles/`
 

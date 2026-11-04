@@ -54,6 +54,11 @@ const DRONES: Record<string, ResearchDef> = {
     cost: [{ item: 'item.electronics', count: 14 }, { item: DATA_CORE, count: 4 }], work: 1800,
     unlocks: ['blueprint.drone_medic'], requires: ['module.aiCore'],
   },
+  'research.drone.defence': {
+    name: 'Defence drone', description: 'A drone that guards the ship in a fight: it shoots down missiles, enemy drones and shuttles.', category: 'automation',
+    cost: [{ item: 'item.electronics', count: 16 }, { item: DATA_CORE, count: 5 }], work: 2100,
+    unlocks: ['blueprint.drone_defence'], requires: ['module.aiCore'],
+  },
 };
 
 export const research: Record<string, ResearchDef> = { ...Object.fromEntries(FAMILIES.flatMap((f) => [project(f, 2), project(f, 3)])), ...DRONES };

@@ -57,6 +57,12 @@ export function createDescriber(sim: Sim) {
           ? { kind: e.type, tone: 'bad', text: `${name} destroyed`, ...at, fold: { ship: e.ship, enemy: false, names: [name] } }
           : { kind: e.type, tone: 'good', text: `Enemy ${name} destroyed`, ...onShip(e.ship), fold: { ship: e.ship, enemy: true, names: [name] } };
       }
+      case 'drone.recall': return mine(e.ship) ? { kind: 'warning', tone: 'info', text: `Waiting for ${e.drones === 1 ? 'a drone' : `${e.drones} drones`} to dock before leaving` } : null;
+      case 'drone.lost': return mine(e.ship) ? { kind: 'warning', tone: 'bad', text: `${sim.content.drones?.[e.def]?.name ?? 'Drone'} left behind and lost` } : null;
+      case 'drone.wrecked': {
+        const name = sim.content.drones?.[e.def]?.name ?? 'Drone';
+        return mine(e.ship) ? { kind: 'warning', tone: 'bad', text: `${name} destroyed`, ...(e.space ? {} : sub(tileAt(e.x, e.y))) } : { kind: 'kill', tone: 'good', text: `Enemy ${name.toLowerCase()} destroyed` };
+      }
       case 'combat.started': return { kind: 'combat', tone: 'warn', text: 'Combat started', ...sub(enemyShip(sim, home())) };
       case 'combat.ended': return { kind: 'combat', tone: 'info', text: 'Combat over' };
       case 'ship.surrendered': return { kind: 'ship.disabled', tone: 'good', text: `${shipName(e.ship)} surrenders`, ...onShip(e.ship) };

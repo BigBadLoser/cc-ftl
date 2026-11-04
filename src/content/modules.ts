@@ -394,7 +394,7 @@ export const modules = {
     category: 'utility',
     description: 'Docks and recharges two drones. Needs an AI core to run them.',
     asset: 'module.drone_bay', footprint: [2, 2], solid: true, power: -3, powerPriority: 3,
-    flammability: 0.2, maxHp: 80, buildWork: 220, droneBay: { slots: 2, chargePerSec: 2.5 },
+    flammability: 0.2, maxHp: 80, buildWork: 220, droneBay: { slots: 2, chargePerSec: 2.5, repairPerSec: 0.5 },
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 6 }],
   },
   'module.aiCore': {

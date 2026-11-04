@@ -116,6 +116,14 @@ export const recipes = {
     work: 400,
     blueprint: 'blueprint.drone_medic',
   },
+  'recipe.drone_defence': {
+    name: 'Build defence drone',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.parts', count: 5 }, { item: 'item.electronics', count: 6 }],
+    outputs: [{ item: 'item.drone_defence', count: 1 }],
+    work: 450,
+    blueprint: 'blueprint.drone_defence',
+  },
   'recipe.sidearm': {
     name: 'Assemble sidearm',
     station: 'module.fabricator',

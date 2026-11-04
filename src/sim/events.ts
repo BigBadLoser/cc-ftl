@@ -84,7 +84,8 @@ export type SimEvent =
   | { type: 'projectile.miss'; projectile: number; weapon: string; ship: number; reason: 'evaded' | 'space' | 'gone'; x: number; y: number }
   /** A shield layer absorbed (or an ion bolt drained) a shot; `layers` remain. */
   | { type: 'projectile.shieldHit'; projectile: number; weapon: string; ship: number; layers: number }
-  | { type: 'projectile.intercepted'; projectile: number; weapon: string; ship: number }
+  /** `by`: the defence drone that shot it down (absent: the ship's point defence). */
+  | { type: 'projectile.intercepted'; projectile: number; weapon: string; ship: number; by?: number }
   /** A module reached 0 hp from combat damage. */
   | { type: 'module.destroyed'; moduleId: number; def: string; ship: number }
   /** A container left its ship as a free body (same entity id); x, y are its body position in sector tiles. */
@@ -171,11 +172,21 @@ export type SimEvent =
   /** Drones (sim/drones): a drone bay turned a drone item into a drone; it left its bay for `target` work, came back, was knocked out (ion until `until`, or its core went down), came back online, or was destroyed. */
   | { type: 'drone.installed'; drone: number; bay: number; ship: number }
   | { type: 'drone.launched'; drone: number; ship: number }
+  /** A drone came out of its bay's ceiling hatch into space. */
+  | { type: 'drone.launchedSpace'; drone: number; ship: number }
   | { type: 'drone.docked'; drone: number; bay: number }
   | { type: 'drone.stunned'; drone: number; until: number }
   | { type: 'drone.inert'; drone: number }
   | { type: 'drone.active'; drone: number }
-  | { type: 'drone.wrecked'; drone: number; ship: number; x: number; y: number }
+  /** `ship`: its home ship; (x, y) its tile; `space`: it was out in space (at cruise height, nothing falls). */
+  | { type: 'drone.wrecked'; drone: number; ship: number; def: string; x: number; y: number; space: boolean }
+  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' }
+  /** A defence drone fired at an enemy drone or shuttle (an interceptable shot it hits is `projectile.intercepted` with `by`). (x, y): the aim point, sector tiles. */
+  | { type: 'drone.fired'; drone: number; x: number; y: number; hit: boolean }
+  /** A departure is held for the ship's drones out in space (DRONE_RECALL_WAIT_SEC at most). */
+  | { type: 'drone.recall'; ship: number; drones: number }
+  /** A drone still out in space when its ship left: left behind and lost. */
+  | { type: 'drone.lost'; drone: number; ship: number; def: string }
   /** A medic drone patched a downed crew member: the bleeding stopped (they still need a bed). */
   | { type: 'crew.patched'; crew: number; by: number }
   /** A heavy blow (HandWeaponDef.knockdownChance) stunned `crew` until tick `until`. */

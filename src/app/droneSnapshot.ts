@@ -4,13 +4,15 @@ import { DroneC, type Drone } from '../sim/drones/components';
 import { shipIdOf } from '../sim/regions';
 import type { UiDroneBay } from '../ui/api';
 
-const DOING: Record<string, string> = { repair: 'repairing', extinguish: 'putting out a fire', firstAid: 'first aid' };
+const DOING: Record<string, string> = { repair: 'repairing', extinguish: 'putting out a fire', firstAid: 'first aid', intercept: 'guarding the ship' };
 
 /** What a drone is up to, in a few words. */
 function doing(sim: Sim, d: Drone): string {
   if (d.inert) return 'inert: no AI core';
   if (d.stunUntil > sim.tick) return 'knocked out (ion)';
   if (d.state === 'docked') return d.charge < 100 ? 'charging' : 'ready';
+  if (d.state === 'launch') return 'launching';
+  if (d.state === 'land') return 'landing';
   if (d.state === 'home') return 'returning';
   if (!d.target) return 'looking for work';
   return d.steps.length > 0 ? `on the way (${DOING[d.target.kind] ?? d.target.kind})` : DOING[d.target.kind] ?? d.target.kind;

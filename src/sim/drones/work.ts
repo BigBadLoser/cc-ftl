@@ -11,6 +11,7 @@ import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC } from '../tuning';
 import type { Drone, DroneTarget } from './components';
+import { intercept } from './intercept';
 import type { DroneJobDef, DroneJobKind } from './types';
 
 /** A candidate target and its rank within its kind (lower first: a downed patient before a scratched one). */
@@ -22,12 +23,16 @@ export interface Candidate extends DroneTarget {
  * How the drone system finds and works each job kind (DESIGN.md "Drones": a type's job list is a direct target query). Every drone type
  * goes through this one table; a type differs only in which kinds its def lists and their numbers.
  */
-interface KindRules<J extends DroneJobDef> {
+export interface KindRules<J extends DroneJobDef> {
+  /** Where the work is: inside the drone's ship (tile flight) or out in space (free flight; it launches through its bay's hatch). Default inside. */
+  where?: 'inside' | 'space';
+  /** Any number of drones may share one target of this kind (no claim). */
+  shared?: boolean;
   /** Every target of this kind on the ship that needs the work now. */
   candidates(sim: Sim, ship: number, job: J): Candidate[];
   /** The target still needs this work; it may update where to hover (`x`, `y`: a patient who moved). */
   valid(sim: Sim, ship: number, t: DroneTarget, job: J): boolean;
-  /** One tick of work by a drone hovering on the target. */
+  /** One tick of work by a drone hovering on the target (inside), or one tick of the job in space, where the job steers the drone itself. */
   work(sim: Sim, id: number, d: Drone, t: DroneTarget, job: J): WorkResult;
 }
 
@@ -142,7 +147,10 @@ const firstAid: KindRules<FirstAid> = {
   },
 };
 
-const RULES: { [K in DroneJobKind]: KindRules<Extract<DroneJobDef, { kind: K }>> } = { repair, extinguish, firstAid };
+const RULES: { [K in DroneJobKind]: KindRules<Extract<DroneJobDef, { kind: K }>> } = { repair, extinguish, firstAid, intercept };
+
+/** Where a job kind's work is. */
+export const jobWhere = (kind: DroneJobKind): 'inside' | 'space' => RULES[kind].where ?? 'inside';
 
 /** The target query of one job kind. */
 export function candidatesFor(sim: Sim, ship: number, job: DroneJobDef): Candidate[] {
@@ -159,5 +167,5 @@ export function workOn(sim: Sim, id: number, d: Drone, t: DroneTarget, job: Dron
   return (RULES[job.kind] as KindRules<DroneJobDef>).work(sim, id, d, t, job);
 }
 
-/** The claim key of a target: one drone per module, patient or burning tile. */
-export const targetKey = (t: DroneTarget): string => (t.kind === 'extinguish' ? `x:${t.x},${t.y}` : `${t.kind}:${t.id}`);
+/** The claim key of a target: one drone per module, patient or burning tile; '' for a kind any number of drones share. */
+export const targetKey = (t: DroneTarget): string => (RULES[t.kind].shared ? '' : t.kind === 'extinguish' ? `x:${t.x},${t.y}` : `${t.kind}:${t.id}`);

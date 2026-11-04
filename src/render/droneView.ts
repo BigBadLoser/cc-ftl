@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
-import { BodyC } from '../sim/body';
+import { BodyC, isAirborne } from '../sim/body';
+import { TICK_HZ } from '../sim/time';
 import type { World } from '../sim/ecs';
 import { DroneC } from '../sim/drones/components';
 import type { DroneDef } from '../sim/drones/types';
@@ -25,7 +26,10 @@ export interface DroneView {
 }
 
 export interface DroneHost {
+  /** The shared depth layer (inside ships, sorted with their tiles). */
   layer: Container;
+  /** The air layer, over every tile and roof: drones above roof height (in space, or high in the hatch). Sorts by zIndex = sector depth. */
+  air?: Container;
   drones: Readonly<Record<string, DroneDef>>;
   modules: Readonly<Record<string, ModuleDef>>;
   /** Pipeline art (#324): used when the manifest has it, else the code placeholder. */
@@ -41,12 +45,15 @@ interface Track {
   art?: DroneArtSprites;
 }
 
+/** Ticks after a shot a defence drone shows its firing frames. */
+const FIRE_POSE_TICKS = 5;
+
 /** Height of the bay's plate in tiles of height, and half a tile's art size. */
 const PLATE_Z = 0.3;
 const HW = TILE_W / 2, HH = TILE_H / 2;
 
-const MARK: Record<string, 'cross' | 'wrench'> = { firstAid: 'cross', repair: 'wrench', extinguish: 'wrench' };
-const BEAM: Record<string, number> = { firstAid: 0x8affc0, repair: 0xffc070, extinguish: 0x9ae0ff };
+const MARK: Record<string, 'cross' | 'wrench' | 'gun'> = { firstAid: 'cross', repair: 'wrench', extinguish: 'wrench', intercept: 'gun' };
+const BEAM: Record<string, number> = { firstAid: 0x8affc0, repair: 0xffc070, extinguish: 0x9ae0ff, intercept: 0xfff0a0 };
 
 /** How one drone looks this frame (from its sim state): what paintDrone draws. */
 export interface DroneLook {
@@ -77,7 +84,7 @@ export function paintDrone(g: { shadow: Graphics; beam: Graphics; body: Graphics
   g.shadow.clear();
   if (look.alt > 0.05) g.shadow.ellipse(0, 0, R * 1.1, R * 0.55).fill({ color: 0x000000, alpha: 0.3 });
   g.beam.clear();
-  if (look.working) {
+  if (look.working && look.working !== 'intercept') {
     const col = BEAM[look.working] ?? 0xffffff;
     const flick = 0.5 + 0.5 * Math.sin(clock * 30 + seed);
     g.beam.moveTo(0, -lift + 3 * S).lineTo(0, -2 * S).stroke({ color: col, width: 3 * S, alpha: 0.55 + 0.35 * flick });
@@ -223,7 +230,10 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
         }
         const stunned = d.stunUntil > 0; // the drone system clears it once the stun is over
         const down = d.inert || stunned;
-        const working = d.state === 'out' && d.target && d.steps.length === 0 && !down ? d.target.kind : null;
+        // In space the work pose is the gun firing: the moment after a shot (a fresh reload).
+        const job = d.target && def.jobs.find((j) => j.kind === d.target?.kind);
+        const firing = !!job && job.kind === 'intercept' && d.cool > Math.round(job.fireSec * TICK_HZ) - FIRE_POSE_TICKS;
+        const working = d.state === 'out' && d.target && !down && (d.space ? firing : d.steps.length === 0) ? d.target.kind : null;
         const look: DroneLook = {
           tint: def.tint, kind: def.jobs[0]?.kind ?? 'repair', alt: b.alt, down, stunned,
           battery: d.charge <= 0 ? 'flat' : d.charge < def.charge.lowBelow ? 'low' : 'ok', working, hover: !down && d.state !== 'docked',
@@ -236,10 +246,18 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
           t.body.clear();
           t.shadow.clear();
         } else paintDrone(t, look, clock, id);
+        // Out in space there is no deck under it to cast a shadow on.
+        if (d.space) {
+          t.shadow.clear();
+          if (t.art) t.art.shadow.visible = false;
+        }
         const p = sectorArt(b.x, b.y);
         t.root.position.set(Math.round(p.x), Math.round(p.y));
+        // Above the roofs (in space, or high in its bay's hatch) it flies in the air layer, sorted by sector depth like a shuttle.
+        const parent = host.air && isAirborne(b) ? host.air : host.layer;
+        if (t.root.parent !== parent) parent.addChild(t.root);
         // Sector depth (x + y in tiles): over the module it hovers above (its front tile's depth), else over its own tile.
-        t.root.zIndex = Math.max(b.x - 0.5 + b.y - 0.5, under.get(`${Math.floor(b.x)},${Math.floor(b.y)}`) ?? -Infinity) + (b.alt > 0.05 ? 0.9 : 0.4);
+        t.root.zIndex = parent === host.air ? b.x + b.y : Math.max(b.x - 0.5 + b.y - 0.5, under.get(`${Math.floor(b.x)},${Math.floor(b.y)}`) ?? -Infinity) + (b.alt > 0.05 ? 0.9 : 0.4);
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);
     },

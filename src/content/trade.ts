@@ -96,6 +96,7 @@ export const trade = {
         { item: 'item.metal', min: 15, max: 50 }, { item: 'item.ration', min: 15, max: 40 }, { item: 'item.fuel', min: 20, max: 50 },
         // Tech stations sell drones ready-made.
         { item: 'item.drone_repair', min: 1, max: 2, chance: 0.5 }, { item: 'item.drone_medic', min: 1, max: 2, chance: 0.4 },
+        { item: 'item.drone_defence', min: 1, max: 1, chance: 0.35 },
       ],
     },
     'trader.station.military': {

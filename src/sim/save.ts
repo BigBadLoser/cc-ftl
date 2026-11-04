@@ -112,8 +112,9 @@ import { newYard, type YardState } from './yard/types';
  *   and `kind` may be 'scene'; `galaxy.signal`; `story.scene`; `ActiveEvent.done`; `Ship.provoked`; `galaxy.provoked`; `Sector.stations`.
  * v88 (the derelict encounter, #173): `SceneSpec.derelicts`; `SceneWatch.crew`.
  * v89 (drones, #318 slice 1): `DroneC` (on a `BodyC`); `Downed.patched`.
+ * v90 (drones in space, #318 slice 2): `Drone.space`, `lift`, `cool`, states 'launch' and 'land'; `Combat.departHold`.
  */
-export const SAVE_VERSION = 89;
+export const SAVE_VERSION = 90;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
