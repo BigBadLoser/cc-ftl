@@ -82,8 +82,8 @@ export function departScene(sim: Sim, spec: SceneSpec): void {
     const id = s.contact.ship;
     const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
     if (id === undefined || !ship) continue;
-    if (!s.hailed && sim.trade.hails.some((h) => h.ship === id && h.answered)) s.hailed = true;
-    if (s.hailed || visiting(s.ambush) || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
+    if (!s.hailed && !s.dismissed && sim.trade.hails.some((h) => h.ship === id && h.answered)) s.hailed = true;
+    if ((s.hailed && !s.dismissed) || visiting(s.ambush) || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
     if (sim.trade.deals.some((d) => d.ship === id && isLive(d))) continue;
     const combat = sim.world.get(id, CombatC);
     if (!combat) continue;

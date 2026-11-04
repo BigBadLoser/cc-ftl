@@ -204,6 +204,9 @@ describe('the returning pirate: in its pocket', () => {
   it('an honest skiff asks to dock too, pays its debt in person (missiles, standing, flag cleared) and goes home', () => {
     const { sim, skiff } = inScene(3, false);
     untilAsked(sim);
+    sim.enqueue({ type: 'trade.hail', ship: skiff }); // an answered hail must not keep it from leaving afterwards
+    step(sim, 3);
+    expect(sim.trade.hails.find((h) => h.ship === skiff)?.answered).toBe(true);
     expect(eventOf(sim)?.dockRequest?.ship).toBe(skiff);
     const before = withPlayerAboard(sim, () => playerStock(sim, 'item.missile'));
     const rep = sim.story.reputation['pirates'] ?? 0;
@@ -234,6 +237,9 @@ describe('the returning pirate: in its pocket', () => {
   it('refusing an honest skiff: it pulls away with no hostility, no missiles, the debt unpaid', () => {
     const { sim, skiff } = inScene(3, false);
     untilAsked(sim);
+    sim.enqueue({ type: 'trade.hail', ship: skiff });
+    step(sim, 3);
+    expect(sim.trade.hails.find((h) => h.ship === skiff)?.answered).toBe(true);
     const before = withPlayerAboard(sim, () => playerStock(sim, 'item.missile'));
     sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: false });
     const out = step(sim, 20 * 90);

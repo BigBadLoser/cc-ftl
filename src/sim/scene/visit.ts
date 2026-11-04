@@ -48,6 +48,7 @@ export const visiting = (a: Ambush | undefined): boolean =>
 /** Let the skiff move on: it is no longer held, and its business here is done now. */
 function dismiss(sim: Sim, s: SceneShip): void {
   delete s.hailed;
+  s.dismissed = true; // a hail answered earlier would otherwise re-hold it (`departScene`)
   s.leaveAt = sim.tick;
 }
 

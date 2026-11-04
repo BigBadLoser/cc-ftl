@@ -131,6 +131,8 @@ export interface SceneShip {
   /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set when the scene opens. */
   stay?: number;
   leaveAt?: number;
+  /** Its business here is finished (an ambush skiff's visit ended, delivered or refused): it moves on whatever hold a hail put on it. */
+  dismissed?: true;
   /** Hailed (by the signal's remote hail, or answering a hail in the pocket): it holds station. */
   hailed?: true;
   /** It jumped away: its entity is gone from the pocket and it is not respawned. */
