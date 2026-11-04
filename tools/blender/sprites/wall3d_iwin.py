@@ -130,7 +130,7 @@ def _plain(k, yf):
     """The ramps' tan block on a window tile in plain tan, for the window's own lines (RAMP_LINES): the old cushions,
     their joints and the blue line along the crest gone; the blue toe band and the foot under it kept. Polygons are
     split where the block ends, the part over it drawn again (RAMP_FACE: lit, shade side)."""
-    yc = yf + _block_end()
+    yc, zs = yf + _block_end(), W.skirt_top()
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -138,7 +138,8 @@ def _plain(k, yf):
         for f in m.f:
             pts = [m.v[i] for i in f[0]]
             ays = [abs(p[1]) for p in pts]
-            if min(ays) < yf + 1e-4 or min(ays) >= yc - 1e-9:
+            if min(ays) < yf + 1e-4 or min(ays) >= yc - 1e-9 or min(p[2] for p in pts) >= zs - 1e-3:   # (not the
+                                                                                    # face's painted bands over it)
                 keep.append(f)
                 continue
             sg = 1 if sum(p[1] for p in pts) > 0 else -1
