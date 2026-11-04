@@ -99,6 +99,13 @@ describe('logistics: transfer orders', () => {
     expect(stockOn(sim, base, 'item.metal')).toBe(11);
   });
 
+  it('logs noShuttle when the only vehicle is a mining pod', () => {
+    const { sim, home, base } = setup({ metal: 20 });
+    (sim.world.get(shuttleOf(sim), VehicleC) as { def: string }).def = 'vehicle.mining_pod';
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
+    expect(of(play(sim, 300), 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
+  });
+
   it('logs noShuttle when the player has no shuttle at all', () => {
     const { sim, home, base } = setup({ metal: 20 });
     sim.world.destroyEntity(shuttleOf(sim));

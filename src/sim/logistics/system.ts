@@ -24,7 +24,11 @@ const BOARD_SEC = 60;
  * and the order goes when one is back, which is not news. With no shuttle at all the block is news.
  */
 function shuttleBusy(sim: Sim): boolean {
-  return sim.world.query(VehicleC).some((v) => vehicleFaction(sim, sim.world.get(v, VehicleC) as Vehicle) === 'player');
+  return sim.world.query(VehicleC).some((id) => {
+    const v = sim.world.get(id, VehicleC) as Vehicle;
+    const def = vehicleDefOf(sim, v);
+    return vehicleFaction(sim, v) === 'player' && !!def && def.class !== 'pod' && (def.cargo ?? 0) > 0; // a pod cannot carry a transfer, waiting for it is no wait
+  });
 }
 
 function block(sim: Sim, id: number, t: Transfer, reason: TransferBlock, retry = RETRY_TICKS / 4): void {
