@@ -282,8 +282,9 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                 zl = zb + (rows - 1.5) * PZ
                 fl = (bd - o) - (bd - bt) * (zl - zb) / (R(H_FRONT) - zb)
                 _handle(k, ax, plane, c, u0, u1, zb, rows, wide, math.ceil(fl / L - 1e-6) * L, sd)
-            elif plates:                                            # (a side wall on down, as deep as its foot)
-                prism(k, ax, plane, u0, u1, [(0.0, zl1), (bd, zl1), (bd, zb), (0.0, zb)], FACE, 3,
+            elif plates:                                            # (a side wall on down, as deep as its foot,
+                zp = zl1 + _rows(bd)                                # its front edge on the slope's top)
+                prism(k, ax, plane, u0, u1, [(0.0, zp), (bd, zp), (bd, zb), (0.0, zb)], FACE, 3,
                       cols=[False, sd("fTS1", ax), False, False], cap=cap)
         if not sections:
             continue
@@ -473,9 +474,28 @@ STACK_CHEST = ((1, 15, 3, 2, 1), ((7, (0.5,), 3), (9, (0.25, 0.5, 0.75), 2)))  #
 
 def stack(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     """The chest's two rows of drawers up under the cap, the lockers' header and bins under it, the bins' side walls
-    on down to the slope (drawers between them to come)."""
+    on down to the slope, two rows of two drawers between them."""
     chest(k, ax, plane, a, b, mit, zl1, z1, band, sd, *STACK_CHEST)
     lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, down=STACK_DOWN, sections=False, plates=True)
+    L = 1 / 32
+    cap = sd(D_SIDE_TONE, ax)
+    fd = (BIN_D - BIN_BACK - 1) * L                             # (a px back of the bins' front edge)
+    zt, zf = z1 - (BIN_FOOT + STACK_DOWN) * PZ, zl1 + _rows(fd)  # two rows of two drawers between the side walls:
+    zm = zf + round((zt - zf) / PZ / 2 - 0.5) * PZ              # a frame of 1 px bars, the fronts a px back in it
+    for c in range(-1, 2):
+        if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
+            continue
+        e0, e1 = c - 0.5 + BIN_WALL * L, c + 0.5 - BIN_WALL * L
+        prism(k, ax, plane, e0, e1, [(0.0, zf + PZ), (fd - L, zf + PZ), (fd - L, zt - PZ), (0.0, zt - PZ)], FACE, 3,
+              cols=[False, sd("fTS3", ax), False, False], cap=cap)
+        bars = [(e0, e1, zf, zf + PZ), (e0, e1, zm, zm + PZ), (e0, e1, zt - PZ, zt),
+                (e0, e0 + L, zf + PZ, zt - PZ), (e1 - L, e1, zf + PZ, zt - PZ), (c - L / 2, c + L / 2, zf + PZ, zt - PZ)]
+        for u0, u1, z0, z1_ in bars:
+            prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
+                  cols=[False, sd("fTS1", ax), sd("fTS0", ax), False], cap=cap)
+        for zd in (zf + PZ, zm + PZ):
+            for q0, q1 in ((e0 + L, c - L / 2), (c + L / 2, e1 - L)):
+                _handle(k, ax, plane, c, q0, q1, zd, *HANDLES[0], fd, sd, even=True)
 
 
 TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False),
