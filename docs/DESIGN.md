@@ -18,6 +18,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
 - [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
+  - [New modules: comfort, medical, gear, food (user decisions, 2026-11-04; not built yet)](#new-modules-comfort-medical-gear-food-user-decisions-2026-11-04-not-built-yet): Arcade, recovery pod, workbench, water purifier, hydroponics crops and meals...
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
 - [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
   - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
@@ -664,6 +665,36 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   crafting, food) are added later as data.
 - **Terminology:** a **node** is one playable grid or location, a **sector** is a group of nodes, a **cluster** is a group of
   sectors, and sectors are linked by **hyperlanes**.
+
+### New modules: comfort, medical, gear, food (user decisions, 2026-11-04; not built yet)
+
+Every new module feeds a system that already exists and changes play. None is decoration.
+
+- **Arcade (game table).** A solo game cabinet that gives one player at a time a mood boost.
+  - **Leisure spots and taste.** The leisure drive, a crew member on a break, picks a leisure module to use. Each module type
+    gives its own mood factor ("Played the arcade +N"). Traits set preferences, and variety helps: using the same thing every
+    break is worth less. No new need.
+  - This is the frame for more comfort modules later (viewport, bar, gym).
+- **Recovery pod.** A powered bed. A hurt crew member lies in it and heals to full over time with no medic, but is out of
+  action meanwhile. Downed crew carried there are stabilised and heal. The medic drone only patches and stabilises where crew
+  fall; the pod is where they get well.
+  - Injuries are left for later: the pod works on HP, built so lasting injuries (and surgery) can slot in.
+- **Workbench** (art already in the sheets: `module.workbench`). Crew make and repair personal gear here: suits, sidearms,
+  tools, armour. The fabricator keeps ship-scale things (missiles, parts).
+- **Water purifier.** Turns ice into water, a small dedicated alternative to the refinery's split-ice recipe.
+- **Hydroponics, wired up (#59).** You pick a crop per bed. A crew member plants it (a farming job), the bed uses water and
+  power, and the crop grows over time and is harvested as an item.
+
+  | Crop | Grows | Used for |
+  |---|---|---|
+  | Greens | Fast, small yield | Meals |
+  | Protein beans | Slow, big yield | Meals |
+  | Medicinal herbs | Medium | In stock, the med bed and recovery pod heal faster (a herb is used per treatment) |
+  | Grain | Medium | A trade good for now; brewed into drinks later (bar, Drinker habit) |
+
+- **Galley: meals by cook quality (#59).** Cooking produce with water into a meal is a cooking job, which makes the Cooking
+  priority column work. The cook's skill sets the quality (bland, good, fine), and quality sets the mood boost. Water-only
+  rations stay as the emergency fallback.
 
 ### Trade
 
