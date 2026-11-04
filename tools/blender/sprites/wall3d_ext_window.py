@@ -52,6 +52,7 @@ B_BACK = 1                          # block's face, TOP_PX deep) and down both s
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
                                     # lean line down (measured off the reference; the base's two lines across its
                                     # lean run on up to B and on from C)
+PLATE_FOOT = 2                      # B and C end on a line this many px down the header's upright face
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -140,9 +141,10 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     b0, b1 = s0 + T3.px(B_SIDES[0]), s0 + T3.px(B_SIDES[1])
     dl = T3.px(B_BACK)
     f.top_line(b0, b1 + ln, dl, dl + T3.TOP_PX, YS[2])                  # B: across the top
+    zl = zc - (PLATE_FOOT + 1) / core.ZPX                # (B and C's foot: on the upright face, a px tall)
     for u in (b0, b1):
         f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
-        band(u, u + ln, zh, H, YS[3])                                   # and the front
+        band(u, u + ln, zl, H, YS[3])                                   # and the front
     L = T3.Layout(s)
     zt = L.px(L.zr, -2)                                 # the base's lines across its lean (its own calls): the one
     c1 = s0 + T3.px(C_SIDE)                             # its top panel stands on (C's top), its seam
@@ -150,7 +152,8 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
         f.line(u0, u1, zt, L.px(zt, -1), YS[4], bevel=False)
     for u0, u1 in ((s0, b0), (c1 + ln, s1)):
         f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
-    band(c1, c1 + ln, zh, L.px(zt, -1), YS[3])                          # C: its side
+    band(c1, c1 + ln, zl, L.px(zt, -1), YS[3])                          # C: its side
+    band(b0, c1 + ln, zl, zl + 1 / core.ZPX, YS[3])                     # their foot, across both
 
 
 def _opening(u0, u1, z0, z1, corner):
