@@ -210,7 +210,7 @@ def grille(paint, solid, U, D, sd):
     vu0, vu1, vd0, vd1 = bu0 + ru, bu1 - ru, bd0 + rd, bd1 - rd                     # the vent
     for ua, ub, da, db in ((bu0, bx1, bd0, vd0), (bu0, bx1, vd1, bd1),             # the rim round it, up to the
                            (bu0, vu0, vd0, vd1), (vu1, bx1, vd0, vd1)):             # body's top
-        solid(q(ua, ub, da, db), G_H, sd("fTW2"), FACE, 4, fl, LIT)
+        solid(q(ua, ub, da, db), G_H, "fTW2", FACE, 4, fl, LIT)     # (on both faces: the shaded one's a step up)
     n = int(((vu1 - vu0) / L - 1) / 2)                                              # the slats (a px, a px apart,
     off = vu0 + ((vu1 - vu0) - (2 * n + 1) * L) / 2                                 # centred in it, a gap at each
     for i in range(n):                                                              # side)
