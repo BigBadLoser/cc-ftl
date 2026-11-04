@@ -22,9 +22,11 @@ def purifier(state, rot, frame=0):
     k.box(hu, 0.26, SKID + 0.04, 0.5, 0.02, 0.08, ACC)                                      # accent band
     k.box(hu, -0.02, SKID + 0.5, 0.36, 0.42, 0.06, BODY_D)                                  # throat
     k.box(hu, -0.02, SKID + 0.56, 0.36, 0.42, 0.3, BODY, top=BODY_D, taper=1.45)            # funnel, widening up
-    k.box(hu, -0.02, SKID + 0.84, 0.54, 0.6, 0.04, "steelD", top="steel")                   # its rim
+    for du, dv, su, sv in ((0, -0.29, 0.54, 0.04), (0, 0.25, 0.54, 0.04), (-0.25, -0.02, 0.04, 0.5), (0.25, -0.02, 0.04, 0.5)):
+        k.box(hu + du, dv, SKID + 0.84, su, sv, 0.06, "steelD", top="steel")                  # its rim, a frame
+    k.box(hu, -0.02, SKID + 0.83, 0.48, 0.52, 0.05, "iceB", top="iceB")                       # the ice in it
     for du, dv, s in ((-0.1, -0.08, 0.12), (0.08, 0.05, 0.14), (0.0, -0.15, 0.1), (0.12, -0.12, 0.1), (-0.12, 0.1, 0.11)):
-        k.box(hu + du, -0.02 + dv, SKID + 0.8, s, s, s * 0.8, "iceB", top="puIceL", rz=du * 6)  # ice heaped in it
+        k.box(hu + du, -0.02 + dv, SKID + 0.86, s, s, s * 0.6, "iceB", top="puIceL")  # ice heaped in it
     k.box(hu + 0.08, 0.255, SKID + 0.2, 0.22, 0.02, 0.16, "gmD", bevel=0.01)                # control panel
     k.box(hu + 0.08, 0.267, SKID + 0.23, 0.17, 0.01, 0.1, ("green" if lit else "puScrDim") if on else "dark")
     k.box(hu - 0.15, 0.27, SKID + 0.3, 0.05, 0.012, 0.05, ("green" if lit else "lampY") if on else "rustD")  # status lamp

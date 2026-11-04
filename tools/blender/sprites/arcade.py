@@ -23,7 +23,8 @@ def _sides(k):
         k.box(u, (FRONT + BACK) / 2, 0.0, SIDE, FRONT - BACK, DECK, ART, top=ART)            # foot: full depth
         k.box(u, (0.08 + BACK) / 2, DECK, SIDE, 0.08 - BACK, 0.62, ART, top=ART)            # upper: set back
         k.box(u, -0.05, 1.48, SIDE, 0.5, 0.1, ART, top=ART)                                  # under the marquee
-        k.box(u + su * 0.004, 0.0, 0.36, SIDE, 0.32, 0.5, ART2, rx=0.5)                     # the flash on the side
+        for i in range(6):                                                                   # the flash on the side:
+            k.box(u + su * 0.004, 0.17 - i * 0.07, 0.22 + i * 0.1, SIDE, 0.08, 0.16, ART2)  # a stepped diagonal band
         k.box(u + su * 0.004, BACK + 0.03, 0.0, SIDE, 0.06, 1.58, BODY_D)                   # back edge trim
         k.box(u + su * 0.004, FRONT - 0.02, 0.0, SIDE, 0.05, DECK, TRIM)                     # front edge trim (T-molding)
 
