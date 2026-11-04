@@ -216,6 +216,9 @@ def jobs(name):
         import os
         from . import purifier
         return purifier.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), False
+    if name == "purifier_variants":   # look review only (not in `all`): three purifier silhouettes, r0
+        from . import purifier_variants
+        return purifier_variants.jobs(), False
     if name == "scrapper":      # the scrapper module (scrapper.py): its own palette set
         from . import scrapper
         return scrapper.jobs(), "scrapper"
