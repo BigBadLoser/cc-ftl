@@ -74,8 +74,14 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (0.0, zk1)], FACE, 3,
                   cols=[False, sd("fTS3", ax), sd("fTS0", ax), False, False], cap=sd(D_SIDE_TONE, ax))
             prism(k, ax, plane, u0, u1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,
-                  cols=[False, sd("fTS6", ax), False, False], cap=sd(D_SIDE_TONE, ax))
-            band(u0 + L, u1 - L, zg0, zg1, "fTC0", ts)
+                  cols=[False, sd("fTC0", ax), False, False], cap=sd(D_SIDE_TONE, ax))     # (the glass, its face)
+            bd = ts + L                                         # a tan border round it, a px proud of it
+            for ba, bb, za, zb_, cl in ((u0, u1, zk1, zg0, ("fTS0", "fTS1")), (u0, u1, zg1, zc0, (False, "fTS1")),
+                                        (u0, u0 + L, zg0, zg1, (False, "fTS1")),
+                                        (u1 - L, u1, zg0, zg1, (False, "fTS1"))):
+                prism(k, ax, plane, ba, bb, [(0.0, za), (bd, za), (bd, zb_), (0.0, zb_)], FACE, 3,
+                      cols=[False, sd(cl[1], ax), sd(cl[0], ax) if cl[0] else False, False],
+                      cap=sd(D_SIDE_TONE, ax))
             for col, lines in SCREEN_LINES[i]:
                 for y, x0, x1 in lines:
                     if zg0 + (y + 1) * PZ <= zg1 + 1e-6 and u0 + x1 * L <= u1 - L + 1e-6:
