@@ -52,8 +52,10 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 prism(k, ax, plane, q0, q1, [(0.0, zb), (sp, zb), (sp, zt0 - fl), (sh, zt0), (0.0, zt0)], FACE,
                       3, cols=[False, sd("fTS3", ax), sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))
     zc0 = z1 - C_FRONT                                          # the canopy: lit top, a pale nose, dark under
-    band(a, b, zd1, zc0, "fTS7")                                # (the recess behind the terminals in its shadow,
-    band(a, b, zc0 - _rows(C_DEPTH) - 2 * PZ, zc0, "fTS7")      # deepest right under it)
+    for c in range(-1, 2):                                      # (each bay behind the terminals in the canopy's
+        q0, q1 = max(a, c - 0.5 + C_IN * L), min(b, c + 0.5 - C_IN * L)     # shadow; the face outside its plates
+        if q1 - q0 > 1e-6:                                                  # left lit, against their sides)
+            band(q0, q1, zd1, zc0, "fTS7")
     for c in range(-1, 2):                                      # the canopy's side plates: its full depth under
         for p0 in (c - 0.5 + C_IN * L, c + 0.5 - (C_IN + 1) * L):     # it, their front sloping in from there down
             if a - 1e-6 <= p0 and p0 + D_SIDE <= b + 1e-6:              # to C_FOOT at the shelf; C_IN in from each
