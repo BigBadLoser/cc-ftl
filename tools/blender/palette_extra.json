@@ -3335,5 +3335,140 @@
  "scSteelD": {
   "hex": "#485a7a",
   "set": "scrapper"
+ },
+ "acBody": {
+  "hex": "#2b2444",
+  "set": "arcade"
+ },
+ "acBodyD": {
+  "hex": "#1a1529",
+  "set": "arcade"
+ },
+ "acArt": {
+  "hex": "#b8306f",
+  "set": "arcade"
+ },
+ "acArt2": {
+  "hex": "#2aa9b8",
+  "set": "arcade"
+ },
+ "acTrim": {
+  "hex": "#8e8a9c",
+  "set": "arcade"
+ },
+ "acDeck": {
+  "hex": "#3a3256",
+  "set": "arcade"
+ },
+ "acBtnR": {
+  "hex": "#b8282f",
+  "set": "arcade"
+ },
+ "acBtnY": {
+  "hex": "#c99a22",
+  "set": "arcade"
+ },
+ "acBtnB": {
+  "hex": "#2f5fae",
+  "set": "arcade"
+ },
+ "acMarqOff": {
+  "hex": "#5a4426",
+  "set": "arcade"
+ },
+ "acScrDim": {
+  "hex": "#1f3a4a",
+  "set": "arcade"
+ },
+ "acScr": {
+  "hex": "#1d6f8c",
+  "emissive": 1.6,
+  "set": "arcade"
+ },
+ "acMarq": {
+  "hex": "#ffbe4a",
+  "emissive": 1.4,
+  "set": "arcade"
+ },
+ "acMarq2": {
+  "hex": "#ff5aa8",
+  "emissive": 1.8,
+  "set": "arcade"
+ },
+ "acPix": {
+  "hex": "#7cff6a",
+  "emissive": 2.4,
+  "set": "arcade"
+ },
+ "acPix2": {
+  "hex": "#ff5a7a",
+  "emissive": 2.4,
+  "set": "arcade"
+ },
+ "acPix3": {
+  "hex": "#fff36a",
+  "emissive": 2.4,
+  "set": "arcade"
+ },
+ "acBtnRL": {
+  "hex": "#ff5a5f",
+  "emissive": 2.0,
+  "set": "arcade"
+ },
+ "acBtnYL": {
+  "hex": "#ffd84a",
+  "emissive": 2.0,
+  "set": "arcade"
+ },
+ "acBtnBL": {
+  "hex": "#5a9aff",
+  "emissive": 2.0,
+  "set": "arcade"
+ },
+ "puBody": {
+  "hex": "#cdd5dc",
+  "set": "purifier"
+ },
+ "puBodyD": {
+  "hex": "#8f9ba6",
+  "set": "purifier"
+ },
+ "puAcc": {
+  "hex": "#2d86b8",
+  "set": "purifier"
+ },
+ "puGlass": {
+  "hex": "#a7d4e4",
+  "set": "purifier"
+ },
+ "puWater": {
+  "hex": "#2c74b4",
+  "set": "purifier"
+ },
+ "puFilt": {
+  "hex": "#e6eaee",
+  "set": "purifier"
+ },
+ "puCap": {
+  "hex": "#2a5f88",
+  "set": "purifier"
+ },
+ "puIceL": {
+  "hex": "#e2f4fb",
+  "set": "purifier"
+ },
+ "puScrDim": {
+  "hex": "#1f4a3a",
+  "set": "purifier"
+ },
+ "puWaterL": {
+  "hex": "#4fb6f0",
+  "emissive": 1.3,
+  "set": "purifier"
+ },
+ "puBubble": {
+  "hex": "#d8f6ff",
+  "emissive": 2.0,
+  "set": "purifier"
  }
 }

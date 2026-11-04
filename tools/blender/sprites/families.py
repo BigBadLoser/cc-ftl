@@ -28,6 +28,8 @@
   hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
+  arcade        the arcade cabinet, 1x1: idle, .unpowered, 4 active frames (arcade.py; MODPACK_ROTS as storage_set)
+  purifier      the water purifier, 2x1: idle, .unpowered, 4 active frames (purifier.py; MODPACK_ROTS as storage_set)
   scrapper      the scrapper module: 4x2, 4 rotations; idle, unpowered, 4 active frames (scrapper.py)
   storage_scrap scrap storage: the barred cage full of salvage, 2x2 and 2x3, 4 rotations, 4 fills (ore_cage.py, scrap.py)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
@@ -206,6 +208,14 @@ def jobs(name):
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
+    if name == "arcade":        # the arcade cabinet (arcade.py): its own palette set
+        import os
+        from . import arcade
+        return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
+    if name == "purifier":      # the water purifier (purifier.py): its own palette set
+        import os
+        from . import purifier
+        return purifier.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "purifier"
     if name == "scrapper":      # the scrapper module (scrapper.py): its own palette set
         from . import scrapper
         return scrapper.jobs(), "scrapper"
@@ -223,5 +233,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "vehicle
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper")
+            "hull", "scrapper", "arcade", "purifier")
 ALL = RENDERED + ("sol", "damage_sol")
