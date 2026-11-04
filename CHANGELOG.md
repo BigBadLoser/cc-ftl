@@ -6,6 +6,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
+- Defence drones guard the ship in battle: they launch through the drone bay's ceiling hatch, circle the hull and shoot down incoming missiles, enemy drones and shuttles. Drones dock again before a jump; the ship waits a few seconds for them, and any left outside are lost. ([#325](https://github.com/BigBadLoser/cc-ftl/pull/325))
 - Drones: research and build repair and medic drones, and they work the ship on their own. Repair drones fix damaged modules and put out small fires; medic drones stop the bleeding of downed crew and patch up the wounded. They live in a new drone bay that recharges them, fly over modules but wait at doors and airlocks like crew, and the AI core decides how many can be out at once. Ion knocks them out, and losing the core grounds them all. ([#323](https://github.com/BigBadLoser/cc-ftl/pull/323), art [#324](https://github.com/BigBadLoser/cc-ftl/pull/324))
 - The fabricator shows recipes that still need research as locked. ([#323](https://github.com/BigBadLoser/cc-ftl/pull/323))
 - Drafted crew can force a jammed door: right-click it and pick "Force door". The nearest drafted crew member who isn't fighting does it and stays drafted. ([#316](https://github.com/BigBadLoser/cc-ftl/pull/316))
