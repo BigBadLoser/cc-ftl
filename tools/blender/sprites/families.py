@@ -108,7 +108,8 @@ def jobs(name):
         return jobs, True
     if name == "structure":
         from . import structure
-        return structure.jobs(), "walls+hull"
+        own = {".slate.": "walls+hull+slate", ".tan.": "walls+hull+tan"}             # (a look's own palette set)
+        return structure.jobs(), lambda sid: next((v for k, v in own.items() if k in sid), "walls+hull")
     if name == "galley":
         from . import galley, mess
         return galley.SPRITES + mess.SPRITES, True

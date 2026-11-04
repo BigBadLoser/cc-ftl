@@ -4735,6 +4735,9 @@
    "image": "sprites/struct.png",
    "glow": "sprites/struct.glow.png"
   },
+  "structure": {
+   "image": "sprites/structure.png"
+  },
   "vehicle_bay": {
    "image": "sprites/vehicle_bay.png",
    "glow": "sprites/vehicle_bay.glow.png"
@@ -127893,6 +127896,150 @@
     1
    ]
   },
+  "tile.floor.tan.a": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 681,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.b": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 744,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.c": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 807,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.d": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 870,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.e": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 933,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.f": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 996,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.g": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1059,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.tan.h": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1122,
+    "y": 201,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.hull.belly.low.0_1_15": {
    "kind": "static",
    "sheet": "hull",
@@ -166593,6 +166740,654 @@
     1
    ]
   },
+  "tile.hull.tan.cap.end.e": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1485,
+    "y": 101,
+    "w": 23,
+    "h": 86
+   },
+   "anchor": {
+    "x": -9,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.end.s": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1509,
+    "y": 101,
+    "w": 23,
+    "h": 86
+   },
+   "anchor": {
+    "x": 32,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m0": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1185,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m0.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1228,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1271,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m1.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1314,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m10": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3593,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m10.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3647,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m11": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3701,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m11.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3755,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m12": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3809,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m12.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3863,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m13": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3917,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m13.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3971,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m14": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 4025,
+    "y": 101,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m14.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m15": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 55,
+    "y": 201,
+    "w": 42,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m15.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 98,
+    "y": 201,
+    "w": 42,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m2": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 141,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m2.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 195,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m3": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 249,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m3.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 303,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m4": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 357,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m4.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 411,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m5": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 465,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m5.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 519,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m6": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1529,
+    "y": 201,
+    "w": 64,
+    "h": 25
+   },
+   "anchor": {
+    "x": 32,
+    "y": 87
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m6.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1594,
+    "y": 201,
+    "w": 64,
+    "h": 25
+   },
+   "anchor": {
+    "x": 32,
+    "y": 87
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m7": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 573,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m7.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 627,
+    "y": 201,
+    "w": 53,
+    "h": 35
+   },
+   "anchor": {
+    "x": 32,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m8": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1357,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m8.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1400,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m9": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1443,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.cap.m9.v1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1486,
+    "y": 201,
+    "w": 42,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.drop.e": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1599,
+    "y": 101,
+    "w": 42,
+    "h": 70
+   },
+   "anchor": {
+    "x": 10,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.tan.drop.s": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1642,
+    "y": 101,
+    "w": 42,
+    "h": 70
+   },
+   "anchor": {
+    "x": 32,
+    "y": 0
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.rockwall.end.e": {
    "kind": "static",
    "sheet": "rockwall",
@@ -174651,6 +175446,2562 @@
    "anchor": {
     "x": 32,
     "y": 50
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.end.e": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3418,
+    "y": 101,
+    "w": 32,
+    "h": 44
+   },
+   "anchor": {
+    "x": 0,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.end.s": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3451,
+    "y": 101,
+    "w": 32,
+    "h": 44
+   },
+   "anchor": {
+    "x": 32,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.end.e": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1533,
+    "y": 101,
+    "w": 32,
+    "h": 83
+   },
+   "anchor": {
+    "x": 0,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.end.s": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1566,
+    "y": 101,
+    "w": 32,
+    "h": 83
+   },
+   "anchor": {
+    "x": 32,
+    "y": 67
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m0": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1379,
+    "y": 101,
+    "w": 64,
+    "h": 93
+   },
+   "anchor": {
+    "x": 32,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 66,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 119,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a10": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 172,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a11": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 225,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a12": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 278,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a13": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 331,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a14": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 384,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a15": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 437,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a16": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 490,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a17": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 543,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a18": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 596,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a19": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 649,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a2": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 702,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a20": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 755,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a21": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 808,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a22": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 861,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a23": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 914,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a24": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 967,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a25": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1020,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a26": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1073,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a27": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1126,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a28": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1179,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a29": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1232,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a3": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1285,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a30": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1338,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a31": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1391,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a32": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1444,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a33": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1497,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a34": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1550,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a35": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1603,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a36": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1656,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a37": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1709,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a38": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1762,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a39": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1815,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a4": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1868,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a40": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1921,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a41": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1974,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a42": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2027,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a43": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2080,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a44": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2133,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a5": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2186,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a6": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2239,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a7": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2292,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a8": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2345,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m10.a9": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2398,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m11": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2451,
+    "y": 1,
+    "w": 55,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m12": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2507,
+    "y": 1,
+    "w": 55,
+    "h": 99
+   },
+   "anchor": {
+    "x": 23,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m13": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2563,
+    "y": 1,
+    "w": 55,
+    "h": 99
+   },
+   "anchor": {
+    "x": 23,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m14": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1244,
+    "y": 101,
+    "w": 43,
+    "h": 94
+   },
+   "anchor": {
+    "x": 23,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m15": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1288,
+    "y": 101,
+    "w": 46,
+    "h": 94
+   },
+   "anchor": {
+    "x": 23,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m2": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2619,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m3": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2672,
+    "y": 1,
+    "w": 55,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m4": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2728,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2781,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2834,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a10": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2887,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a11": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2940,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a12": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2993,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a13": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3046,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a14": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3099,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a15": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3152,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a16": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3205,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a17": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3258,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a18": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3311,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a19": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3364,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a2": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3417,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a20": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3470,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a21": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3523,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a22": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3576,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a23": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3629,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a24": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3682,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a25": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3735,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a26": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3788,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a27": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3841,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a28": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3894,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a29": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3947,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a3": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 4000,
+    "y": 1,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a30": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a31": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 54,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a32": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 107,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a33": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 160,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a34": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 213,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a35": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 266,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a36": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 319,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a37": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 372,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a38": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 425,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a39": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 478,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a4": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 531,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a40": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 584,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a41": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 637,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a42": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 690,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a43": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 743,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a44": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 796,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a5": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 849,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a6": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 902,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a7": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 955,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a8": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1008,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m5.a9": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1061,
+    "y": 101,
+    "w": 52,
+    "h": 99
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m6": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1444,
+    "y": 101,
+    "w": 40,
+    "h": 88
+   },
+   "anchor": {
+    "x": 20,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m7": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1335,
+    "y": 101,
+    "w": 43,
+    "h": 94
+   },
+   "anchor": {
+    "x": 20,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m8": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1114,
+    "y": 101,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.full.m9": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1179,
+    "y": 101,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.end.e": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3527,
+    "y": 101,
+    "w": 32,
+    "h": 36
+   },
+   "anchor": {
+    "x": 0,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.end.s": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3560,
+    "y": 101,
+    "w": 32,
+    "h": 36
+   },
+   "anchor": {
+    "x": 32,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m0": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3204,
+    "y": 101,
+    "w": 64,
+    "h": 47
+   },
+   "anchor": {
+    "x": 32,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2514,
+    "y": 101,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m10": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2579,
+    "y": 101,
+    "w": 53,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m11": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2633,
+    "y": 101,
+    "w": 58,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m12": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2692,
+    "y": 101,
+    "w": 58,
+    "h": 52
+   },
+   "anchor": {
+    "x": 26,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m13": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2751,
+    "y": 101,
+    "w": 58,
+    "h": 52
+   },
+   "anchor": {
+    "x": 26,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m14": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3269,
+    "y": 101,
+    "w": 47,
+    "h": 47
+   },
+   "anchor": {
+    "x": 26,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m15": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3317,
+    "y": 101,
+    "w": 52,
+    "h": 47
+   },
+   "anchor": {
+    "x": 26,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m2": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2810,
+    "y": 101,
+    "w": 53,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m3": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2864,
+    "y": 101,
+    "w": 58,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m4": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2923,
+    "y": 101,
+    "w": 53,
+    "h": 52
+   },
+   "anchor": {
+    "x": 21,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m5": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2977,
+    "y": 101,
+    "w": 53,
+    "h": 52
+   },
+   "anchor": {
+    "x": 21,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m6": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3484,
+    "y": 101,
+    "w": 42,
+    "h": 42
+   },
+   "anchor": {
+    "x": 21,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m7": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3370,
+    "y": 101,
+    "w": 47,
+    "h": 47
+   },
+   "anchor": {
+    "x": 21,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m8": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3031,
+    "y": 101,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.low.m9": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3096,
+    "y": 101,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m0": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2316,
+    "y": 101,
+    "w": 64,
+    "h": 55
+   },
+   "anchor": {
+    "x": 32,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m1": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1685,
+    "y": 101,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m10": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1750,
+    "y": 101,
+    "w": 53,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m11": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1804,
+    "y": 101,
+    "w": 54,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m12": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1859,
+    "y": 101,
+    "w": 54,
+    "h": 60
+   },
+   "anchor": {
+    "x": 22,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m13": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1914,
+    "y": 101,
+    "w": 54,
+    "h": 60
+   },
+   "anchor": {
+    "x": 22,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m14": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2381,
+    "y": 101,
+    "w": 43,
+    "h": 55
+   },
+   "anchor": {
+    "x": 22,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m15": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2425,
+    "y": 101,
+    "w": 44,
+    "h": 55
+   },
+   "anchor": {
+    "x": 22,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m2": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 1969,
+    "y": 101,
+    "w": 53,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m3": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2023,
+    "y": 101,
+    "w": 54,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m4": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2078,
+    "y": 101,
+    "w": 53,
+    "h": 60
+   },
+   "anchor": {
+    "x": 21,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m5": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2132,
+    "y": 101,
+    "w": 53,
+    "h": 60
+   },
+   "anchor": {
+    "x": 21,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m6": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 3161,
+    "y": 101,
+    "w": 42,
+    "h": 50
+   },
+   "anchor": {
+    "x": 21,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m7": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2470,
+    "y": 101,
+    "w": 43,
+    "h": 55
+   },
+   "anchor": {
+    "x": 21,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m8": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2186,
+    "y": 101,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.tan.m9": {
+   "kind": "static",
+   "sheet": "structure",
+   "frame": {
+    "x": 2251,
+    "y": 101,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
    },
    "footprint": [
     1,

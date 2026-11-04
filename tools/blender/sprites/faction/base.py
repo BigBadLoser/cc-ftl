@@ -17,14 +17,20 @@ BASES = {
     "fC3": dict(wall="#cfcdc5", hull="#c3c0b7", trim="#d39a2e", second="#948f85", shade="#46526e", floor="#57534b"),
     "fC4": dict(wall="#c8d0ca", hull="#bcc5be", trim="#3f9a66", second="#8a968d", shade="#3b5d6a", floor="#4b544c"),
     "fB": dict(wall="#2f3542", hull="#272d3a", trim="#5c6c86", second="#1e2330", shade="#262c3c", floor="#2f3440"),
+    "fG": dict(wall="#6b7076", hull="#727880", trim="#2a53a1", second="#495764", shade="#3e5f88", floor="#40464e"),
+    "fT": dict(wall="#ae9656", hull="#896d52", trim="#1f2834", second="#896d52", shade="#506888", floor="#4a443c"),
     "fS": dict(wall="#736c60", hull="#5d5b55", trim="#9a5a2c", second="#4a463f", shade="#2e2c29", floor="#46443f"),
 }
 
 
 # a look's own lightness steps (restyle.LIGHT's, spread): bastion's set 8 is dark charcoal-slate with strong
 # highlights against it
-OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045, 0.155)}   # (its 8th, <pre>W7: between 3 and
+OFFSETS = {"fB": (0.30, 0.22, 0.09, 0.0, -0.05, -0.10, -0.16, 0.045, 0.155),  # (its 8th, <pre>W7: between 3 and
                                                                                 # 2; its 9th, <pre>W8: 2 and 1)
+           "fG": (0.30, 0.20, 0.08, 0.0, -0.09, -0.17, -0.26)}     # slate's set 2: its tops and blue plate well over
+                                                                    # its fronts (under 0.2: no saturation lost)
+SNAP = {"fG", "fT"}                      # looks whose ramps sit on the quantiser's bin centres (_snap: else a step can map
+                                   # onto another look's near tone)
 
 
 # a look's hue and saturation drifting down its ramps (else each ramp keeps its base colour's): (lightness, hue°,
@@ -60,6 +66,24 @@ def _tinted(ramp_, tint):
     return out
 
 
+def _dhue(a, b):
+    ha, hb = (colorsys.rgb_to_hls(*(v / 255 for v in q))[0] for q in (a, b))
+    return abs((ha - hb + 0.5) % 1.0 - 0.5)
+
+
+def _snapped(ramp_):
+    """A ramp's steps ({name: hex}) each on the nearest bin centre (of the 8 round it, by RGB distance: _snap weighs
+    hue by saturation, and turned slate's near greys purple)."""
+    out = {}
+    for k, h in ramp_.items():
+        c = [int(h[i:i + 2], 16) for i in (1, 3, 5)]
+        near = [sorted({min(252, max(4, (v - 4) // 8 * 8 + 4 + 8 * d)) for d in (0, 1)}) for v in c]
+        best = min(((r, g, b) for r in near[0] for g in near[1] for b in near[2]),
+                   key=lambda q: (sum((x - y) ** 2 for x, y in zip(q, c)), _dhue(q, c)))   # (a tie: its hue)
+        out[k] = "#%02x%02x%02x" % best
+    return out
+
+
 def _on_bin(hexc):
     """The colour on the nearest centre of post.quantize's bins (8 a channel, centred at 8n + 4), kept blue over
     green: a tone between steps that the quantiser maps to itself."""
@@ -73,7 +97,7 @@ def palette_entries():
     for pre, b in BASES.items():
         for key, tag in (("wall", "W"), ("hull", "H"), ("trim", "T"), ("second", "S"), ("shade", "X")):
             r = ramp(f"{pre}{tag}", b[key], **({"offsets": OFFSETS[pre]} if pre in OFFSETS else {}))
-            out.update(_tinted(r, TINT[pre]) if pre in TINT else r)
+            out.update(_tinted(r, TINT[pre]) if pre in TINT else _snapped(r) if pre in SNAP else r)
             if pre in OFFSETS and len(OFFSETS[pre]) > 7 and pre not in TINT:   # (an extra step on a centre of
                 out[f"{pre}{tag}7"] = _on_bin(out[f"{pre}{tag}7"])  # the quantiser's bins: it keeps it, not a near
                                                                     # tone of another look's, and anti-aliases)
@@ -87,7 +111,16 @@ TONES = {"fB": {"fBG": "#1c2444",      # a look's own single tones, on bin centr
                "fBW9": "#34344c", "fBH9": "#34344c",    # navy; its recess's back, between steps 3 and 7 (too close
                                                         # for the ramp's snapping to keep them apart);
                "fBW10": "#44546c"},                     # its slope and front, between steps 2 and 8
-         "fD": {"fDM1": "#6c343c", "fDM2": "#5c2c34", "fDM3": "#4c242c"}}   # drone's maroon (its red block): lit,
+         "fD": {"fDM1": "#6c343c", "fDM2": "#5c2c34", "fDM3": "#4c242c"},
+         "fT": {"fTS0": "#dcccac", "fTS1": "#bca46c", "fTS2": "#ac8c64",     # tan's face, picked off the ref (no
+                "fTS3": "#a48464", "fTS4": "#6c4c4c", "fTS5": "#543c3c",     # one hue: its lights pale straw, its
+                "fTS6": "#3c2c2c", "fTS7": "#8c6c5c", "fTS8": "#9c745c",
+                "fTC0": "#1c2c3c", "fTC1": "#1cac4c", "fTC2": "#cc1c1c", "fTC3": "#ecdc3c",
+                "fTC4": "#1c5c3c", "fTC5": "#3cccdc",
+                "fTE0": "#d4c49c",                   # (the ramp ridge's pale edges: out of the AA group)
+                "fTW3": "#ac8c6c"}}     # (the cushions' shade side: the face's shade step, as their lit side
+                                        # its lit one; the ramp's own step 3 an olive)    # darks maroon brown), on bin centres;
+                                                                            # 7, 8: soft shadows (between 3 and 4)   # drone's maroon (its red block): lit,
                                                                             # front, shade
 
 

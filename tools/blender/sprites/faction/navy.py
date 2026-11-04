@@ -129,7 +129,8 @@ def navy(hull):
 
 def navy_hole_tone(part, fam, ax, n):
     """The open ramp's walls as navy_pipes draws them (its back in the wall's dark, its sides the second tone)."""
-    return T.tone("wall", 0, n, ax) if part == "back" else T.tone("rose", 2, n, ax)
+    from .navy_designs import CAV
+    return CAV[1] if part == "back" else CAV[2]
 
 
 class Navy(Faction):

@@ -6,7 +6,9 @@ from sprites import structure as ST
 from sprites.envtiles import SPRITES, _variant
 from sprites.faction import look
 
-IDS = [f"tile.wall.full.m{m}" for m in range(16)]
+IDS = [f"tile.wall.full.m{m}" for m in range(16)] + ["tile.wall.full.end.e", "tile.wall.full.end.s"]   # (and the end
+                                                    # faces drawn over a run that meets a ghost or a gap; a free end
+                                                    # is the stub's own mask piece, m8 for a run ending at +x)
 BY = {sid: (kind, fn) for sid, fp, kind, fn in SPRITES}
 LOOKS = os.environ.get("STRUCT_LOOKS", ",".join(ST.LOOKS)).split(",")
 JOBS = {}
@@ -20,6 +22,7 @@ for name in LOOKS:
         kind, fn = BY[sid]
         fid = ST.faction_id(sid, name)
         JOBS[fid] = (kind, ST._wrap(lk, fid, fn))
-        if sid.endswith(("m10", "m5")):
+        if sid.endswith(("m10", "m5", "m8")):          # (the game's straight runs' designs; on the m8 stub too,
+                                                        # a preview's: with its free end)
             for n, tr in enumerate(getattr(lk, "pairs", ()), 1):
                 JOBS[f"{fid}.a{n}"] = (kind, ST._wrap(lk, f"{fid}.a{n}", _variant(fn, tr)))

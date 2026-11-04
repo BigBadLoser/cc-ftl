@@ -361,7 +361,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     def pt(u, dd, rise):
         return P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise = LINE / 2, PAINT
-    d0, d1 = 0.02, run_ - (0.03 if ft else 0.045)
+    d0, d1 = max(0.02, style().shelf), run_ - (0.03 if ft else 0.045)   # (from a look's shelf's edge)
     off = seam()                               # the plates' seams this far in from each tile edge (0: one plate)
     segs = []                                   # the face's posts and fields (posts()), run on past a face end so
     for s0, s1 in spans(a, b):                  # the mitre clips them
@@ -377,9 +377,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     for u0, u1, field in segs:
         hole = next((h for h in holes if field and h[0] < u1 and h[1] > u0), None)
         for q in _minus((u0 + g, u1 - g, d0, d1), holes):                      # (round a look's ramp hole)
-            poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
-            if len(poly) >= 3:
-                plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
+            for b0, b1, bf, bl in _bands(q[2], q[3], run_, fam):                # (in a look's bands down the run)
+                poly = _clip(_clip([(q[0], b0), (q[1], b0), (q[1], b1), (q[0], b1)], lo), hi)
+                if len(poly) >= 3:
+                    plate(k, poly, pt, nrm, 0.0, rise, bf, bl)
         poly = _clip(_clip([(u0 + g, d0), (u1 - g, d0), (u1 - g, d1), (u0 + g, d1)], lo), hi)
         if len(poly) < 3:
             continue
@@ -456,6 +457,17 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     tb = b - cr + run_ if cr else b
     toe = [P(ax, plane, u, 0.0035, dd) for u, dd in ((a, run_ - 0.03), (tb, run_ - 0.03), (tb, run_), (a, run_))]
     k.poly(toe, fam, 1, Vector((0, 0, 1)))
+
+
+def _bands(d0, d1, run_, fam):
+    """The ramp's plates from d0 to d1 down the run, split in the look's bands (Style.ramp_bands): (from, to, family,
+    level) each; without bands one plate in the face's family, level 2."""
+    out, cur = [], (d0, fam, 2)
+    for f, bf, bl, gap in style().ramp_bands:
+        out.append((cur[0], f * run_ - gap, cur[1], cur[2]))
+        cur = (f * run_, bf or fam, bl)
+    out.append((cur[0], d1, cur[1], cur[2]))
+    return [(max(b0, d0), min(b1, d1), bf, bl) for b0, b1, bf, bl in out if min(b1, d1) - max(b0, d0) > 1e-6]
 
 
 SLOT_DEPTH = 3 / 39                             # a ramp slot's floor under the slope (art px up)

@@ -120,7 +120,7 @@ class LookShell(T.Shell):
         return max(self.foot, self.zs - d * T.W.GN * T.W.RAMP_PX / T.W.ZART)   # (the walls' fall a cell: over a
                                                                                 # foot it ends on a ledge)
 
-    def _prof(self, d0, d1, top):
+    def _prof(self, d0, d1, top, shelf=True):
         """The ramp's section from d0 to d1 out (its slope down to the toe, the foot under that), its top cut down to
         top(d) where given (a hole's floor): ((d, z) points, the name of each edge's part)."""
         run, ft = self.run, self.foot
@@ -138,8 +138,20 @@ class LookShell(T.Shell):
         else:
             pts.append((d1, zt(d1)))
             parts.append("hole_front")
-        pts.append((d0, zt(d0)))
-        parts.append("slope" if top is None else "floor")
+        sh = T.style().shelf if shelf else 0.0          # (a flat step against the wall at the ramp's top: on the
+                                                        # faces the camera sees; the face under the top, down to it,
+                                                        # is the look's to draw)
+        if top is None and d0 < sh < d1:
+            pts += [(sh, zt(sh)), (sh - 1 / 32, zt(sh))]                    # (its front edge a lit px)
+            parts += ["slope", "shelf_edge", "shelf"]
+            for n in range(len(T.style().shelf_back), 0, -1):              # (its back px against the wall, each
+                if d0 < n / 32 < sh - 1 / 32:                               # in its own level)
+                    pts.append((n / 32, zt(sh)))
+                    parts.append(f"shelf_back{n - 1}")
+            pts.append((d0, zt(sh)))
+        else:
+            pts.append((d0, zt(d0)))
+            parts.append("slope" if top is None else "floor")
         if d0 > 0:
             parts.append("hole_back")
         else:
@@ -163,6 +175,9 @@ class LookShell(T.Shell):
                "toe": tl[fam] if isinstance(tl, dict) else R[0 if tl is None else tl], "hole_back": R[0],    # (a hole's walls and floor as
                "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
+               "shelf": R[3], "shelf_edge": R[4],       # (a flat step at its top: the slope's plates' tone, its
+                                                        # front edge lit, its back px in Style.shelf_back's levels)
+               **{f"shelf_back{n}": R[v] for n, v in enumerate(T.style().shelf_back)},
                "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}
         mt = {"cont": 0.0, "end": 0.0, "out": 1.0, "in": -1.0}
         if self.hole_tone:                              # (a ramp design draws its hole's inside: its walls' tones)
@@ -266,7 +281,7 @@ class LookShell(T.Shell):
             r = self._rect_at(*(((a + b) / 2, plane + 1e-3) if ax == "y" else (plane + 1e-3, (a + b) / 2)), 0.0)
             fam = "blue" if r and r[1] == "hull" else "wall"
             R = T.RAMPS[fam][1 if ax == "x" else 0]
-            pts, parts = self._prof(0.0, self.run, None)
+            pts, parts = self._prof(0.0, self.run, None, shelf=False)
             mt = {"cont": 0.0, "end": 0.0, "out": -1.0, "in": 1.0}
             lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
             pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)

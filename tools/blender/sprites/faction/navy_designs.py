@@ -7,7 +7,7 @@ from mathutils import Vector
 
 from .. import wall3d as T
 from ..relief_style import Design
-from .parts import LINE, PAINT, PX, flat, prism, tube
+from .parts import LINE, PAINT, PX, flat, prism, tube, tube_prof
 
 
 def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
@@ -96,29 +96,50 @@ def _bar(k, P, u, d0, d1, zf, hw, ht, up):
 
 
 def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, ax=0, plane=0.0, **_):
-    """B1-2: the ramp's cover off over the hole the shell leaves (its "ramp_hole"): a dark cavity down to the floor
-    (back, sides and floor), two pipes across it in the header tube's orange, tied by steel brackets. (A ramp fill's
-    arguments, wall3d.skirt: plate lays a plate on the slope, pt(u, d, rise) is a point on it, P(u, z, d) any point, d
-    out from the wall.)"""
+    """B1-2: the ramp's cover off over the hole the shell leaves (its "ramp_hole"): a dark navy recess, its bottom
+    parallel to the ramp, two pipes across it in the header tube's orange (the top one up under the lip), a thin
+    silver one behind and above the lower, steel brackets tying them. (A ramp fill's arguments, wall3d.skirt:
+    plate lays a plate on the slope, pt(u, d, rise) is a point on it, P(u, z, d) any point, d out from the wall.)"""
     if hole:
         o0, o1, d0, d1 = hole
         zat = lambda d: zs * (1 - d / run_)            # noqa: E731   the ramp's height d out
-        f = 0.004
+        f = 0.02
         up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
-        k.poly([P(o0, f, d0), P(o1, f, d0), P(o1, f, d1), P(o0, f, d1)], "wall", 0, up)                 # its floor,
-        k.poly([P(o0, f, d0), P(o1, f, d0), P(o1, zat(d0), d0), P(o0, zat(d0), d0)], "wall", 0, out_)   # back
+        db = d0 + 0.012                                 # (a hair in front of the shell's own hole back: on it they
+                                                        # fought, specks of its tone through ours)
+        h = 0.17                                        # its bottom parallel to the ramp, h under it (on the floor
+        zb = lambda d: max(f, zat(d) - h)               # noqa: E731   where that would go under it)
+        dk = max(db, min(d1, run_ * (1 - (f + h) / zs)))                  # (where the bottom meets the floor)
+        prof = [(db, zat(db)), (db, zb(db)), (dk, zb(dk)), (d1, zb(d1))]   # its section: a short back, the bottom
+        for (da, za), (dbb, zbb) in zip(prof, prof[1:]):
+            if dbb - da < 1e-6 and abs(zbb - za) < 1e-6:
+                continue
+            n = out_ if dbb - da < 1e-6 else up * (dbb - da) + out_ * (za - zbb)
+            k.poly([P(o0, za, da), P(o1, za, da), P(o1, zbb, dbb), P(o0, zbb, dbb)], "wall", 0, n,
+                   fixed=CAV[1] if dbb - da < 1e-6 else CAV[0])
         for u, sg in ((o0, 1), (o1, -1)):                                                                # and sides
-            k.poly([P(u, f, d0), P(u, zat(d0), d0), P(u, zat(d1), d1), P(u, f, d1)], "rose", 2, along * sg)
-        rp = 0.06
+            side = [P(u, z_, d_) for d_, z_ in prof] + [P(u, zat(d1), d1)] + [P(u, zat(dd_), dd_) for dd_ in (dk, db)]
+            k.poly(side, "rose", 2, along * sg, fixed=CAV[2])
+        rp, rs = 0.06, 0.03
         dz = (rp + 0.025) / math.cos(math.atan(zs / run_))           # sunk a radius and a bit under the slope
-        rows = [d0 + fr * (d1 - d0) for fr in (0.18, 0.6)]
-        for dd in rows:                                                     # the pipes, lit like the header tube
-            tube(k, ax, plane, o0 - 0.005, o1 + 0.005, dd, zat(dd) - dz, rp)     # (ends in the side walls)
+        rows = [d0 + fr * (d1 - d0) for fr in (0.12, 0.6)]
+        zp = [zat(rows[0]) - rp - 0.005, zat(rows[1]) - dz]          # (the top one up under the lip)
+        for dd, zc in zip(rows, zp):                                        # the pipes, lit like the header tube
+            tube(k, ax, plane, o0 - 0.005, o1 + 0.005, dd, zc, rp)           # (ends in the side walls)
+        ds = rows[1] - 0.06                                                 # a thin silver pipe behind and above
+        prof, cols = tube_prof(ds, zp[1] + rp + 0.055, rs)                 # the lower one, clear of it
+        prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
+        zf = lambda d: zp[0] + (zp[1] - zp[0]) * (d - rows[0]) / (rows[1] - rows[0])   # noqa: E731
         w = o1 - o0
         for u in (o0 + w / 3, o0 + 2 * w / 3):         # steel brackets: a collar round each pipe, a bar between them
-            for dd in rows:
-                _collar(k, P, u, dd, zat(dd) - dz, rp + 0.015, 0.03, up)
-            _bar(k, P, u, rows[0], rows[1], lambda d: zat(d) - dz, 0.02, 0.015, up)
+            for dd, zc in zip(rows, zp):
+                _collar(k, P, u, dd, zc, rp + 0.015, 0.03, up)
+            _bar(k, P, u, rows[0], rows[1], zf, 0.02, 0.015, up)
+
+
+SILVER = {"fxO": "fNW3", "orL": "fNW4", "orM": "fNW6"}  # the tube's tones in navy's steel greys
+CAV = ("fNC0", "fNC1", "fNC0")                          # the open ramp's floor, back, sides: dark navy, flat (kept
+                                                        # exact: edge AA blended them into a grey speckle)
 
 
 def navy_split(plate, u0, u1, run_, **_):

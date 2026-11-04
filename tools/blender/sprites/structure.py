@@ -3,11 +3,12 @@ through a faction look (faction/: its own relief on the walls and far hull, its 
 the same id with a faction segment after the family:
 
   tile.<fam>.<look>.<rest of the default id>      e.g. tile.hull.navy.cap.m10.v1, tile.wall.civil.v2.end.s,
-                                                       tile.hull.scrap.p3.belly.o1.m10, tile.floor.drone.a
+                                                       tile.hull.scrap.p3.cap.m10, tile.floor.drone.a
 
-<look> is navy | drone | civil.v1..v4 | bastion | scrap.p1..p4. Doors and the hull ghosts (see-through edge lines) are left out:
-they read the same in every look, so the renderer's chain falls back to the default. Env STRUCT_LOOKS (comma list) and
-STRUCT_IDS (comma list of default ids) narrow a build for previews."""
+<look> is navy | drone | civil.v1..v4 | bastion | slate | tan | scrap.p1..p4. Doors and the hull ghosts (see-through
+edge lines) are left out: they read the same in every look, so the renderer's chain falls back to the default. So are
+the old belly pieces (tile.hull.belly.o<n>.m<mask>): the near hull is the hull family's belly art (src/render/hullArt.ts).
+Env STRUCT_LOOKS (comma list) and STRUCT_IDS (comma list of default ids) narrow a build for previews."""
 import os
 import re
 
@@ -17,7 +18,7 @@ from .faction import look
 from .restyle import restyled
 
 
-LOOKS = ("navy", "drone", "civil.v1", "civil.v2", "civil.v3", "civil.v4", "bastion", "scrap.p1", "scrap.p2", "scrap.p3", "scrap.p4")
+LOOKS = ("navy", "drone", "civil.v1", "civil.v2", "civil.v3", "civil.v4", "bastion", "slate", "tan", "scrap.p1", "scrap.p2", "scrap.p3", "scrap.p4")
 
 
 CORNER = re.compile(r"\.m\d+c\d+|\.end\.[se]\.c\d")     # corner-fill pieces: default look only for now
@@ -49,7 +50,8 @@ def jobs():
     for name in names:
         lk = look(name)
         for sid, fp, kind, fn in DEFAULT:
-            if kind == "ghost" or sid.startswith("tile.door") or sid == STAND_IN or CORNER.search(sid) or \
+            if kind == "ghost" or sid.startswith(("tile.door", "tile.hull.belly.")) or sid == STAND_IN or \
+                    CORNER.search(sid) or \
                     (only and sid not in only):
                 continue
             if DEFAULT_VARIANT.search(sid):
