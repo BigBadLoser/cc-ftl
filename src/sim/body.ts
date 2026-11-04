@@ -26,6 +26,10 @@ export const ALT = {
   docked: 0.95,
   /** Flying or hovering. */
   cruise: 2.5,
+  /** A drone flying inside its ship: over modules and crew, under the roof. */
+  drone: 1.3,
+  /** A drone docked on its bay pad. */
+  dronePad: 0.45,
   roof: 2.05,
 } as const;
 

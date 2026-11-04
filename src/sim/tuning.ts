@@ -433,3 +433,11 @@ export const STAGING_LOADS = 2;
 export const LOAD_CRATE_SEC = 2;
 /** Seconds a due trip waits for the departure check to pass before it is called off (the run stays and tries again). */
 export const AWAY_DEPART_GIVEUP_SEC = 120;
+
+// --- Drones (sim/drones, DESIGN.md "Drones") ---
+/** Drones out of their bays at once, by the best live AI core's tier (index): Mk I 2, Mk II 4, Mk III 6. */
+export const DRONE_CAP_BY_TIER: readonly number[] = [0, 2, 4, 6];
+/** Candidate targets a drone tries a flight path to per pick (nearest first); further ones wait for a later pick. */
+export const DRONE_PATH_TRIES = 4;
+/** Ticks between a drone's target searches while it has nothing to do (docked and charged, or hovering after a job). */
+export const DRONE_SCAN_TICKS = 10;

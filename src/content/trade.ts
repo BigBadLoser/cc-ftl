@@ -94,6 +94,8 @@ export const trade = {
       stock: [
         { item: 'item.electronics', min: 30, max: 80 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.polymer', min: 15, max: 45 },
         { item: 'item.metal', min: 15, max: 50 }, { item: 'item.ration', min: 15, max: 40 }, { item: 'item.fuel', min: 20, max: 50 },
+        // Tech stations sell drones ready-made.
+        { item: 'item.drone_repair', min: 1, max: 2, chance: 0.5 }, { item: 'item.drone_medic', min: 1, max: 2, chance: 0.4 },
       ],
     },
     'trader.station.military': {

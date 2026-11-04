@@ -2,6 +2,7 @@ import {
   AllegianceC, CarryingC, ItemStackC, JobC, ModuleC, ProductionC, ShipC, StorageC, needsMaterials, type ItemQty, type Sim,
 } from '../sim';
 import { TICK_HZ } from '../sim';
+import { recipeKnown } from '../sim/modules/blueprints';
 import { shipIdAt, shipIdOf } from '../sim/regions';
 import type { UiCost, UiFab, UiItemDef, UiOrder, UiRecipe, UiStock, UiStorage } from '../ui/api';
 
@@ -97,7 +98,9 @@ export function buildFabs(sim: Sim): UiFab[] {
       const phase = needsMaterials(job) ? 'materials' : !m.powered || !m.enabled ? 'power' : job.progress > 0 ? 'crafting' : 'ready';
       state = { name: sim.content.recipes[current ?? '']?.name ?? 'Crafting', progress: Math.min(1, job.progress / Math.max(1, job.work)), phase };
     }
-    out.push({ id, orders, job: state });
+    // Recipes of this station still gated by a blueprint the crew have not learned (research): the picker shows them locked.
+    const locked = Object.entries(sim.content.recipes).filter(([rid, r]) => r.station === m.def && !recipeKnown(sim, rid)).map(([rid]) => rid);
+    out.push({ id, orders, job: state, locked });
   }
   return out;
 }

@@ -121,6 +121,17 @@ export function requestAirlock(sim: Sim, id: number, side: 'inner' | 'outer'): v
   if (a && a.state !== side) a.request = side;
 }
 
+/**
+ * True when (x, y) is an airlock door that is not open yet. It asks the airlock to cycle to that side, so whoever is stepping onto the tile
+ * (crew or a drone) waits where it stands until the door is open.
+ */
+export function mustWaitAtAirlockDoor(sim: Sim, grid: Grid, x: number, y: number): boolean {
+  const gate = airlockDoorAt(sim, grid, x, y);
+  if (!gate || grid.get('door', x, y) >= 255) return false;
+  requestAirlock(sim, gate.id, gate.door);
+  return true;
+}
+
 /** Which side an idle airlock currently has open, else null (cycling). */
 export function openSide(a: Airlock): 'inner' | 'outer' | null {
   return a.state === 'inner' || a.state === 'outer' ? a.state : null;

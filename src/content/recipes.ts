@@ -99,6 +99,23 @@ export const recipes = {
     outputs: [{ item: 'item.shuttle', count: 1 }],
     work: 600,
   },
+  // Drones: parts and electronics, once their blueprint is known (research.drone.*).
+  'recipe.drone_repair': {
+    name: 'Build repair drone',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.parts', count: 4 }, { item: 'item.electronics', count: 6 }],
+    outputs: [{ item: 'item.drone_repair', count: 1 }],
+    work: 400,
+    blueprint: 'blueprint.drone_repair',
+  },
+  'recipe.drone_medic': {
+    name: 'Build medic drone',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.parts', count: 3 }, { item: 'item.electronics', count: 8 }],
+    outputs: [{ item: 'item.drone_medic', count: 1 }],
+    work: 400,
+    blueprint: 'blueprint.drone_medic',
+  },
   'recipe.sidearm': {
     name: 'Assemble sidearm',
     station: 'module.fabricator',

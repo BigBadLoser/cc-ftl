@@ -37,6 +37,8 @@ export interface PathOpts {
   avoidThin?: boolean;
   /** The walker wears a spacesuit: the exterior surface (isEvaWalkable) is walkable. */
   suited?: boolean;
+  /** A flyer (drones): crosses solid modules (passAt's `fly`). */
+  fly?: boolean;
 }
 
 /**
@@ -49,7 +51,7 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
   if (!grid?.has('struct') || !grid.inBounds(from.x, from.y) || !grid.inBounds(goal.x, goal.y)) return null;
   // An unreachable goal floods the whole grid, and the crew picker asks again every tick for every idle crew member and open job (#224):
   // remember the failure for as long as nothing the search reads has changed.
-  const key = `${shipId}|${from.x},${from.y}|${goal.x},${goal.y},${goal.adjacent ? 1 : 0},${goal.w ?? 1},${goal.h ?? 1}|${opts.avoidThin ? 1 : 0}${opts.suited ? 1 : 0}`;
+  const key = `${shipId}|${from.x},${from.y}|${goal.x},${goal.y},${goal.adjacent ? 1 : 0},${goal.w ?? 1},${goal.h ?? 1}|${opts.avoidThin ? 1 : 0}${opts.suited ? 1 : 0}${opts.fly ? 1 : 0}`;
   const sig = walkSignature(sim, grid, !!opts.avoidThin);
   // Keyed by the sector grid instance, not the sim: a restored archive brings a new grid whose revisions start again at zero.
   let memo = NO_PATH.get(sim.sector.grid);
@@ -104,7 +106,7 @@ function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: 
   const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
   const walk = (i: number): boolean => {
     if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
-    return passAt(sim, grid, x0 + (i % width), y0 + Math.floor(i / width), struct[i] as number, jam?.[i], mods?.[i], infos, !!opts.suited);
+    return passAt(sim, grid, x0 + (i % width), y0 + Math.floor(i / width), struct[i] as number, jam?.[i], mods?.[i], infos, !!opts.suited, !!opts.fly);
   };
   const at = (x: number, y: number): number => (y - y0) * width + (x - x0);
   const fromIndex = at(from.x, from.y);
