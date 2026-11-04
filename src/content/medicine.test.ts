@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DownedC, HealthC, newGame, type Sim } from '../sim';
+import { CrewC, DeadC, DownedC, HealthC, NeedsC, newGame, type Sim } from '../sim';
 import { playerCrew } from '../sim/story/world';
 import { content } from '.';
 
@@ -27,5 +27,25 @@ describe('medicine', () => {
     expect(b).toBeGreaterThan(0);
     // Medicine 3 at SKILL_STEP 0.1: 30% faster.
     expect(a / b).toBeCloseTo(1.3, 1);
+  });
+
+  it('a patched patient still bleeds out while something harms them, and lives on when nothing does', () => {
+    const outcome = (starving: boolean): boolean => {
+      const sim = newGame(3, content);
+      const patient = playerCrew(sim).find((id) => sim.world.get(id, CrewC)?.role !== 'role.medic')!;
+      sim.world.get(patient, HealthC)!.hp = 0;
+      sim.world.add(patient, DownedC, { bleed: 5, stabilized: false, bed: 0, patched: true });
+      for (let i = 0; i < 8 * 20; i++) {
+        if (starving) {
+          const needs = sim.world.get(patient, NeedsC);
+          if (needs) needs.hunger = 0;
+          else sim.world.add(patient, NeedsC, { rest: 100, hunger: 0 });
+        }
+        sim.step();
+      }
+      return sim.world.has(patient, DeadC);
+    };
+    expect(outcome(true)).toBe(true);
+    expect(outcome(false)).toBe(false);
   });
 });

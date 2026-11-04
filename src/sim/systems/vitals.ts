@@ -80,7 +80,7 @@ export function vitalsSystem(sim: Sim): void {
       if (health.hp >= GET_UP_HP) getUp(sim, id, downed);
     } else {
       health.hp = Math.max(0, health.hp - harm / TICK_HZ);
-      if (!downed.patched) downed.bleed -= 1 / TICK_HZ; // first aid stopped the bleeding
+      if (!downed.patched || harm > 0) downed.bleed -= 1 / TICK_HZ; // first aid stops the bleeding, not a fire or empty air
       if (downed.bleed <= 0) die(sim, id, downed);
     }
   }
