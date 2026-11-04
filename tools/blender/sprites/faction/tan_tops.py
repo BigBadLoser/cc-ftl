@@ -1,5 +1,7 @@
 """Tan's face designs (its tops) past the base: each the face over the lip, from the lip's top (zl1) to the header's
 top (z1), drawn instead of the base's header, slats and panel."""
+import math
+
 from mathutils import Vector
 
 from .. import wall3d as T
@@ -176,26 +178,58 @@ BIN_FOOT, BIN_D, BIN_TOP = 18, 7, 2     # the bins: their bottom edge (on the ca
                                         # px out (under the header)
 BIN_WALL, BIN_BACK = 2, 1               # the bins' side walls at each tile edge (px thick, the bins' profile), the
                                         # bins a px back of them
-SECTIONS = ((18, 30, 5, (0.5,)),        # the cabinets, the drawers under them: (top, foot (None: the slope),
-            (30, 41, 4, (0.25, 0.5, 0.75)))     # depth, the bars up between them): each in a frame of 1 px bars
-                                        # (across its top, the cabinets', and its foot), the doors a px back in it
+SECTIONS = ((18, 30, 5, (0.5,), 2),     # the cabinets, the drawers under them: (top, foot (None: the slope),
+            (30, 41, 4, (0.25, 0.5, 0.75), 1))  # depth, the bars up between them, how far back in them the doors
+                                        # sit): each in a frame of 1 px bars (across its top, the cabinets', and
+                                        # its foot)
+BIN_ROUND = 2.5                         # the bins' (and their side walls') top: rounded into the header's foot
+                                        # (the radius, px)
 FRAME_IN = 1                            # the cabinets and drawers: in from each tile edge (px)
 L_GAP = 1                               # the gap between the bins, and at a tile's edge (px; the face dark)
-HANDLES = (3, 2)                        # the cabinets', the drawers' handles (2 px, the glass's navy): rows over
+HANDLES = ((3, 3), (3, 2))              # the cabinets', the drawers' handles (the glass's navy): (rows over, px wide)
                                         # their door's foot
 H_SCREENS = ((2, ("R.G.G", "..GG.", "G...G", ".G...")),     # the header's screens: px in from the tile's
              (20, ("YY.R.", "Y.Y..", ".YY.R", "Y....")))    # left edge, 5 x 4 of art ("." the glass) a row
                                                             # clear of the canopy's edge
 
 
-def _handle(k, ax, plane, c, q0, q1, zf, rows, d, sd):
-    """A 2 px handle mid [q0, q1], rows over zf, d proud, on the sprite's grid."""
+def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd):
+    """A handle wide px mid [q0, q1], rows over zf, d proud, on the sprite's grid."""
     L = 1 / 32
-    g0 = c - 0.5 + round(((q0 + q1) / 2 - (c - 0.5)) / L - 1) * L
+    g0 = c - 0.5 + round(((q0 + q1) / 2 - (c - 0.5)) / L - wide / 2) * L
     zh = zf + (rows + 1) * PZ
     odd = round((d + L / 4 - (T_SCREEN * L + PX / 8)) / L) % 2      # (at an odd depth the face's steps pair
-    for x in range(odd, 2 + odd):                                   # columns 1-2, 3-4, ...: one step, one row)
+    for x in range(odd, wide + odd):                                # columns 1-2, 3-4, ...: one step, one row)
         _px(k, ax, plane, g0 - odd * L, x, 0, zh, d + L / 4, sd("fTC0", ax))
+
+
+def _bin(k, ax, plane, u0, u1, foot, top, sd, cap):
+    """A bin over [u0, u1]: a wedge from the wall, its front leaning back from its foot edge (d, z) to its top (d,
+    z) under the header, the corner there rounded into the header's foot (convex slices: the wedge, then a fan from
+    the corner to the curve)."""
+    L = 1 / 32
+    (fd, fz), (td, tz) = foot, top
+    ad, az = fd - td, fz - tz                           # (down the front from the top; along the header's foot)
+    ln = math.hypot(ad, az)
+    ad, az = ad / ln, az / ln
+    th = math.acos(max(-1.0, min(1.0, ad)))             # (the angle between them)
+    r = BIN_ROUND * L
+    t = r / math.tan(th / 2)
+    pa, pb = (td + ad * t, tz + az * t), (td + t, tz)   # (where the curve leaves the front and meets the foot)
+    prism(k, ax, plane, u0, u1, [(0.0, fz), foot, pa, (td, tz), (0.0, tz)], FACE, 3,
+          cols=[False, sd("fTS1", ax), False, False, False], cap=cap)
+    bx, bz = ad + 1.0, az                               # (the curve's centre: on the bisector)
+    bl = math.hypot(bx, bz)
+    cx, cz = td + bx / bl * r / math.sin(th / 2), tz + bz / bl * r / math.sin(th / 2)
+    a0, a1 = math.atan2(pa[1] - cz, pa[0] - cx), math.atan2(pb[1] - cz, pb[0] - cx)
+    a1 = a0 + (a1 - a0 + math.pi) % (2 * math.pi) - math.pi     # (the short way round)
+    n = 4
+    pts = [(cx + r * math.cos(a0 + (a1 - a0) * i / n), cz + r * math.sin(a0 + (a1 - a0) * i / n)) for i in range(n + 1)]
+    for i in range(n):
+        nz = -math.sin(a0 + (a1 - a0) * (i + 0.5) / n)          # (the curve's facing: toward its centre)
+        tone = "fTS1" if nz > -0.2 else "fTS2" if nz > -0.6 else "fTS3"
+        prism(k, ax, plane, u0, u1, [(td, tz), pts[i], pts[i + 1]], FACE, 3,
+              cols=[False, sd(tone, ax), False], cap=cap)
 
 
 def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
@@ -207,14 +241,12 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
         if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
             continue
         bd, zb, bt = BIN_D * L, R(BIN_FOOT), BIN_TOP * L        # the bins: a wedge, lit along its front, between
-        prof = lambda o: [(0.0, zb), (bd - o, zb), (bt - o, R(H_FRONT)), (0.0, R(H_FRONT))]     # noqa: E731
         w, gb = BIN_WALL * L, BIN_BACK * L                      # side walls at the tile's edges
-        for u0, u1 in ((c - 0.5, c - 0.5 + w), (c + 0.5 - w, c + 0.5)):
-            prism(k, ax, plane, u0, u1, prof(0.0), FACE, 3, cols=[False, sd("fTS1", ax), False, False], cap=cap)
-        for q0, q1 in ((c - 0.5 + w, c - L_GAP * L / 2), (c + L_GAP * L / 2, c + 0.5 - w)):
-            prism(k, ax, plane, q0, q1, prof(gb), FACE, 3, cols=[False, sd("fTS1", ax), False, False], cap=cap)
+        for u0, u1, o in ((c - 0.5, c - 0.5 + w, 0.0), (c + 0.5 - w, c + 0.5, 0.0),
+                          (c - 0.5 + w, c - L_GAP * L / 2, gb), (c + L_GAP * L / 2, c + 0.5 - w, gb)):
+            _bin(k, ax, plane, u0, u1, (bd - o, zb), (bt - o, R(H_FRONT)), sd, cap)
         e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L     # the cabinets, the drawers: a frame of bars,
-        for n, (top, foot, dep, splits) in enumerate(SECTIONS):     # the doors a px back in it
+        for n, (top, foot, dep, splits, back) in enumerate(SECTIONS):   # the doors back in it
             fd, zt = dep * L, R(top)
             zf = zl1 if foot is None else R(foot)
             dt = zt - (PZ if n == 0 else 0.0)                       # (the doors' top, under the top bar)
@@ -222,10 +254,12 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             us = [c - 0.5 + f for f in splits]
             bars += [(u - L / 2, u + L / 2, zf + PZ, dt) for u in us]
             bars += [(e0, e0 + L, zf + PZ, dt), (e1 - L, e1, zf + PZ, dt)]
-            prism(k, ax, plane, e0, e1, [(0.0, zf + PZ), (fd - L, zf + PZ), (fd - L, dt), (0.0, dt)], FACE, 3,
+            prism(k, ax, plane, e0, e1, [(0.0, zf + PZ), (fd - back * L, zf + PZ), (fd - back * L, dt), (0.0, dt)],
+                  FACE, 3,
                   cols=[False, sd("fTS3", ax), False, False], cap=cap)          # (its doors)
             for q0, q1 in zip([e0 + L] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1 - L]):
-                _handle(k, ax, plane, c, q0, q1, zf + PZ, HANDLES[n], fd, sd)   # (a px out of the door)
+                _handle(k, ax, plane, c, q0, q1, zf + PZ, *HANDLES[n], fd - (back - 1) * L, sd)   # (a px out of
+                                                                                                    # the door)
             for u0, u1, z0, z1_ in bars:
                 prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
                       cols=[False, sd("fTS1", ax), sd("fTS0", ax), False], cap=cap)
