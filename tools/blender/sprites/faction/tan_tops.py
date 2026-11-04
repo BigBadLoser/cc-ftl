@@ -14,9 +14,10 @@ LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
 SCREENS = ((3 / 32, 11 / 32), (21 / 32, 29 / 32))    # each tile's two terminals' screens, across it (with the
                                                     # keyboards, centred on it)
-T_DEPTH, T_SCREEN = 4, 2               # a terminal: how far out (px) its keyboard's front stands, its screen
+T_DEPTH, T_SCREEN = 5, 2               # a terminal: how far out (px) its keyboard's front stands, its screen
 T_WIDER = 2                             # its keyboard wider than the screen (px), toward the tile's middle
-T_SHOW, T_KEY = 4 * PZ, 3 * PZ          # its screen's rows seen under the canopy; its keyboard face's rise
+T_SHOW, T_FRONT = 4 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
+                                        # keyboard face slopes from it to the screen's foot)
 SCREEN_DOTS = (("fTC1", ((1, 0), (2, 0), (4, 1), (5, 1), (2, 2))), ("fTC2", ((3, 1), (5, 0), (1, 2), (4, 2))))
 SCREEN_DOTS_B = (("fTC3", ((1, 0), (2, 1), (3, 1), (4, 2), (5, 2), (6, 0))), ("fTC2", ((1, 2), (4, 0), (6, 1))))
                                         # (each screen's lit dots: px across, rows up its glass)
@@ -52,7 +53,7 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     zc0 = z1 - C_FRONT                                          # the canopy: lit top, a pale nose, dark under
     td, ts = T_DEPTH * L, T_SCREEN * L                          # the terminals: a keyboard on the shelf (a low
     zk1 = zc0 - _rows(C_DEPTH) + _rows(ts) - T_SHOW             # front, its face sloping back up to the screen's
-    zk0 = zk1 - T_KEY                                           # foot; wider than the screen toward the tile's
+    zk0 = zd1 + T_FRONT                                         # foot; wider than the screen toward the tile's
     zg0, zg1 = zk1 + PZ, zk1 + T_SHOW                           # middle), the screen upright on it, a dark bezel
     for c in range(-1, 2):                                      # up to the canopy round its glass (T_SHOW rows of
         for i, (s0, s1) in enumerate(SCREENS):                  # it under the canopy's shadow)
