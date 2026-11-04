@@ -1,5 +1,6 @@
 import { ALT, BodyC, type Body } from '../body';
 import { IonC } from '../combat/components';
+import { shipById } from '../combat/ships';
 import { mustWaitAtAirlockDoor } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
@@ -37,6 +38,9 @@ export function runDrone(sim: Sim, id: number, pass: DronePass): void {
   if (!def) return;
   burnDrone(sim, id, d);
   if (d.hp <= 0) return wreckDrone(sim, id);
+  // Its ship is wrecked or gone: the drone goes with it (nothing runs it, nothing to dock in).
+  const mine = shipById(sim, d.ship);
+  if (!mine || mine.state === 'wreck') return wreckDrone(sim, id);
   if (d.bay && !isDroneBay(sim, d.bay)) {
     if (d.state === 'docked') return wreckDrone(sim, id); // lost with its bay
     d.bay = 0;

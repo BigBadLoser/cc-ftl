@@ -602,7 +602,7 @@ const api: UiApi = {
         r.setCommitEta((id) => commitEtaSec(sim, id));
         r.setShotColor((id) => shotColor(shotSlot(sim, id)));
         r.setProbe(probe);
-        if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
+        if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r, loop);
         r.setSector(sim.sector.grid);
         r.setBackdrop(backdropSpecOf(sim));
         const grid = shipGrid(sim, homeShip(sim));

@@ -81,6 +81,18 @@ describe('enemy drones (#318 slice 2b)', () => {
   });
 });
 
+describe('a wrecked ship takes its drones with it (#318 slice 2b)', () => {
+  it('drones out in space and docked ones are wrecked when their ship becomes a wreck', () => {
+    const { sim, enemy, events, step } = against('faction.navy', 8);
+    step(12);
+    expect(dronesOf(sim, enemy).some((id) => sim.world.get(id, DroneC)?.space)).toBe(true);
+    sim.world.get(enemy, ShipC)!.state = 'wreck';
+    step(1);
+    expect(dronesOf(sim, enemy).length).toBe(0);
+    expect(events.filter((e) => e.type === 'drone.wrecked' && e.ship === enemy).length).toBe(2);
+  });
+});
+
 describe('staggered return (#318 slice 2b)', () => {
   it('recalled drones land one after another, not all at once, and are all in before the departure', () => {
     const { sim, events, ticks, step } = against('faction.navy', 1);
