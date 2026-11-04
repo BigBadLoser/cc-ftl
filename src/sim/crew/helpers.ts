@@ -5,6 +5,7 @@ import {
 
 import { InertC, StunC } from '../robots/components';
 import type { Tile } from './pathfind';
+import { FighterC } from '../fight/components';
 import { shipGrid, shipIdOf } from '../regions';
 import { DoorJam, Struct } from '../structure';
 
@@ -96,4 +97,9 @@ export function jobGoal(job: { kind: string; x: number; y: number; size?: [numbe
 export function isJammedDoor(sim: Sim, shipId: number, x: number, y: number): boolean {
   const grid = shipGrid(sim, shipId);
   return !!grid?.has('jam') && grid.inBounds(x, y) && grid.get('struct', x, y) === Struct.Door && grid.get('jam', x, y) !== DoorJam.None;
+}
+
+/** True while the crew member is in a fight (engaging or fleeing): orders that need them standing at work (sabotage, forcing a door) wait for it to end. */
+export function isFighting(sim: Sim, crew: number): boolean {
+  return (sim.world.get(crew, FighterC)?.mode ?? 'idle') !== 'idle';
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
+import { FighterC } from '../fight/components';
 import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 import { findPath } from '../crew/pathfind';
 import type { SimEvent } from '../events';
@@ -108,6 +109,19 @@ describe('drafted force door order', () => {
     expect(sim.world.query(JobC).length).toBe(1);
     sim.enqueue({ type: 'crew.moveTo', id: c, x: 1, y: 1 });
     run(sim, 5);
+    expect(sim.world.query(JobC).length).toBe(0);
+    expect(shipGrid(sim, 1)!.get('jam', 4, 2)).toBe(DoorJam.Shut);
+  });
+
+  it('a crew member already fighting is not given the door work', () => {
+    const sim = make(DoorJam.Shut);
+    const c = spawn(sim, 3, 2);
+    sim.world.add(c, DraftedC, { target: null });
+    sim.world.add(c, FighterC, { mode: 'engage', ordered: 0 } as never);
+    sim.enqueue({ type: 'crew.forceDoor', ids: [c], ship: 1, x: 4, y: 2 });
+    sim.step();
+    expect(sim.events.drain().find((e: SimEvent) => e.type === 'command.rejected')).toMatchObject({ reason: 'fighting' });
+    run(sim, 300);
     expect(sim.world.query(JobC).length).toBe(0);
     expect(shipGrid(sim, 1)!.get('jam', 4, 2)).toBe(DoorJam.Shut);
   });
