@@ -7,12 +7,13 @@ from .tan_ramps import FACE
 # the console: a deep canopy under the cap, two screens in the recess under it, a desk standing out under them (a
 # frame, open under its top plate), then the lip (heights in rows of face, as the ref's)
 C_FRONT, C_DEPTH = 3 * PZ, 3.5 * PX     # the canopy: its front's height, how far it stands out (7 rows of top)
+C_IN = 2                                # its side plates: in from each tile edge (px)
 D_TOP, D_THICK = 15 * PZ, 2 * PZ       # the desk: its shelf's top over the rail's foot, the shelf's thickness
 D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side panels, the rail at their feet stand
 D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
 LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's front edge sits on its)
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
-SCREENS = ((2 / 32, 12 / 32), (20 / 32, 30 / 32))    # each tile's two terminals' screens, across it (with the
+SCREENS = ((3 / 32, 13 / 32), (19 / 32, 29 / 32))    # each tile's two terminals' screens, across it (with the
                                                     # keyboards, centred on it)
 T_DEPTH, T_SCREEN = 6, 3               # a terminal: how far out (px) its keyboard's front stands, its screen
 T_WIDER = 2                             # its keyboard wider than the screen (px), toward the tile's middle
@@ -53,6 +54,13 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     zc0 = z1 - C_FRONT                                          # the canopy: lit top, a pale nose, dark under
     band(a, b, zd1, zc0, "fTS7")                                # (the recess behind the terminals in its shadow,
     band(a, b, zc0 - _rows(C_DEPTH) - 2 * PZ, zc0, "fTS7")      # deepest right under it)
+    fc = C_DEPTH - sp                                           # the canopy's side plates, as the desk's: up from
+    for c in range(-1, 2):                                      # the shelf, flaring out to its front; C_IN in from
+        for p0 in (c - 0.5 + C_IN * L, c + 0.5 - (C_IN + 1) * L):     # each tile edge
+            if a - 1e-6 <= p0 and p0 + D_SIDE <= b + 1e-6:
+                prism(k, ax, plane, p0, p0 + D_SIDE, [(0.0, zd1), (sp, zd1), (sp, zc0 - fc), (C_DEPTH, zc0),
+                                                      (0.0, zc0)], FACE, 3,
+                      cols=[False, sd("fTS3", ax), sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))
     td, ts = T_DEPTH * L, T_SCREEN * L                          # the terminals: a keyboard on the shelf (a low
     zk1 = zc0 - _rows(C_DEPTH) + _rows(ts) - T_SHOW             # front, its face sloping back up to the screen's
     zk0 = zd1 + T_FRONT                                         # foot; wider than the screen toward the tile's
