@@ -1,6 +1,6 @@
 /** What a right-click can mean at one spot, and how the choices are offered. */
 
-export type OrderId = 'attack' | 'man' | 'board' | 'sabotage' | 'walk';
+export type OrderId = 'attack' | 'man' | 'board' | 'sabotage' | 'forceDoor' | 'walk';
 
 /** What is under the cursor, as the controller found it. */
 export interface OrderProbe {
@@ -12,6 +12,8 @@ export interface OrderProbe {
   shuttle?: { vehicle: number; name: string };
   /** A working module of a hostile ship that boarders stand on. */
   sabotage?: { module: number; name: string };
+  /** A jammed door tile the selection could force. */
+  forceDoor?: boolean;
   /** A floor tile the selection could walk to. */
   walk?: boolean;
 }
@@ -29,11 +31,12 @@ export function orderChoices(p: OrderProbe): OrderChoice[] {
   if (p.shuttle) out.push({ id: 'board', label: `Board ${p.shuttle.name}` });
   // Alone, sabotage is the default right-click on an enemy module (it runs at once, walking onto a module is not a choice); with a foe under the cursor it stays a menu entry.
   if (p.sabotage) out.push({ id: 'sabotage', label: `Sabotage ${p.sabotage.name}` });
+  if (p.forceDoor) out.push({ id: 'forceDoor', label: 'Force door' });
   if (p.walk && !(p.sabotage && !p.foe)) out.push({ id: 'walk', label: 'Walk here' });
   return out;
 }
 
-/** One choice runs at once; two or more open the menu; none does nothing. A lone target (an enemy on no tile, say) is the choice. */
+/** One choice runs at once; two or more open the menu; none does nothing. A lone target (an enemy on no tile, say) is the choice. Forcing a door is slow work, so it is always offered in the menu. */
 export function needsMenu(choices: readonly OrderChoice[]): boolean {
-  return choices.length > 1;
+  return choices.length > 1 || choices[0]?.id === 'forceDoor';
 }

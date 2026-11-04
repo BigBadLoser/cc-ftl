@@ -5,6 +5,7 @@ import { factionsHostile } from '../sim/combat/factions';
 import { shipById } from '../sim/combat/ships';
 import { isTileWalkable } from '../sim/modules/walk';
 import { accessTile } from '../sim/modules/footprint';
+import { isJammedDoor } from '../sim/crew/helpers';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { VehicleBayC } from '../sim/vehicles/components';
 import type { Renderer } from '../render/scene';
@@ -118,6 +119,13 @@ export function planOrders(sim: Sim, r: Renderer, sx: number, sy: number, select
   }
 
   const grid = tile ? shipGrid(sim, tile.shipId) : undefined;
+  if (tile && on(tile.shipId).length && isJammedDoor(sim, tile.shipId, tile.x, tile.y)) {
+    probe.forceDoor = true;
+    act.forceDoor = () => {
+      sim.enqueue({ type: 'crew.forceDoor', ids: on(tile.shipId), ship: tile.shipId, x: tile.x, y: tile.y });
+      r.addOrderMarker(tile.x, tile.y, 'move');
+    };
+  }
   if (tile && grid && on(tile.shipId).length && isTileWalkable(sim, grid, tile.x, tile.y) && !(grid.get('struct', tile.x, tile.y) === Struct.Door && grid.get('jam', tile.x, tile.y) !== 0)) {
     probe.walk = true;
     act.walk = () => {

@@ -6,6 +6,7 @@ import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components
 import { origin } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
+import { keepForceDoor } from '../crew/forceDoor';
 import { keepSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
 import { regions, shipIdOf, shipGrid } from '../regions';
@@ -44,6 +45,7 @@ export function autoJobsSystem(sim: Sim): void {
     const keep = job.kind === 'extinguish' ? keepExtinguish(sim, job)
       : job.kind === 'repair' ? keepRepair(sim, job)
       : job.kind === 'rescue' ? keepRescue(sim, job)
+      : job.kind === 'forceDoor' && job.holder ? keepForceDoor(sim, jobId, job)
       : job.kind === 'sabotage' ? keepSabotage(sim, jobId, job)
       : keepRobotJob(sim, jobId, job);
     if (keep === null) continue;
