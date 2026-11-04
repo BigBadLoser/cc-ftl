@@ -41,9 +41,7 @@ class TanTones(Feature):
     """The shell's faces in the face's tan (the second tone), a free end's in the slate blue; the dark outlines at
     the foot and under the top stay."""
     def col_face(self, sp, face, x, y, z):
-        if face == "d":                                 # (an outer corner's chamfer: a step lighter than the lit face)
-            return lit("fTS3")                          # (the lit face's own: fTS3)
-        if sp.end_face(face, x if face == "x" else y):
+        if face != "d" and sp.end_face(face, x if face == "x" else y):
             return END[face]
         c = T.Shell.col_face(sp, face, x, y, z)
         e = 0.5 / T.W.GN
@@ -51,6 +49,8 @@ class TanTones(Feature):
         top = r[3] if r else sp.top
         if z < sp.zs + 0.02 or z > top - 0.03:
             return c
+        if face == "d":                                 # (an outer corner's chamfer: a step lighter than the lit face's
+            return lit("fTS3")                          # fTS3)
         return T.RAMPS[FACE][1 if face == "x" else 0][3]
 
     def end_tone(self, sp, fam, ox):                    # (the ramps' caps at a free end: its section's)
@@ -67,7 +67,8 @@ class RampRidge(Feature):
     def band(self, sp, fam):
         from .tan_ramps import EDGE
         B = T.RAMPS[BLUE][0][2]
-        return [(0.02 + EDGE, B), (sp.run - 0.045, RIDGE_TONE), (sp.run - 1 / 32, B), (sp.run, "fTT2")]
+        return [(0.02 + EDGE, B), (sp.run - 0.045 - EDGE, RIDGE_TONE), (sp.run - 0.045, OUTER), (sp.run - 1 / 32, B),
+                (sp.run, "fTT2")]                       # (the plates' foot joint across it too)
 
 
 RIDGE_TONE = "fTW2"
@@ -228,7 +229,7 @@ def tan(hull):
         for u0, u1, mid, gs in _panels(a, b):
             g0 = zl1                                    # (the grooves' foot)
             if mid and corner and b - u0 < 0.5:         # (beside an outer corner: no panel, the slats on round it,
-                mid, g0 = False, ztop - 2 * SLAT        # its grooves splitting only the top two)
+                mid, g0 = False, ztop                   # its grooves only over the slats, under the header)
             if not mid:                                 # either side of the panel: slats up from the lip, each a
                 z = zl1                                 # dark seam over a lit line (the first seam on the lip, its
                 while z <= ztop + 1e-6:                 # lit line under it hidden), 2 px of face between

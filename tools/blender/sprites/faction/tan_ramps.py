@@ -107,7 +107,7 @@ def cushions(layout, extra=None):
                 if ch in rc:                            # (the others: square, a round shaded on them)
                     fillets.append([(x, y)] + arc(x, y, sx, sy, ROUND))
             return out
-        plate(q(u0, u1, 0.0, run_ - 1 / 32), PAINT / 2, 2, 0.0, BLUE)       # the blue: a line under the lip, the
+        plate(run_on(q(u0, u1, 0.0, run_ - 1 / 32)), PAINT / 2, 2, 0.0, BLUE)       # the blue: a line under the lip, the
         out = []                                                            # toe band, round the block's corners
         for x, y, sx, sy, el, ee in ((u0, top, 1, 1, side[0], 0.0), (u1, top, -1, 1, side[1], 0.0),
                                      (u1, end, -1, -1, side[1], E), (u0, end, 1, -1, side[0], E)):
