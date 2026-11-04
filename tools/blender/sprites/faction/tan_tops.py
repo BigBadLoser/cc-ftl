@@ -7,16 +7,16 @@ from .tan_ramps import FACE
 # the console: a deep canopy under the cap, two screens in the recess under it, a desk standing out under them (a
 # frame, open under its top plate), then the lip (heights in rows of face, as the ref's)
 C_FRONT, C_DEPTH = 3 * PZ, 3.5 * PX     # the canopy: its front's height, how far it stands out (7 rows of top)
-C_IN = 2                                # its side plates: in from each tile edge (px)
+C_IN = 1                                # its side plates: in from each tile edge (px)
 D_TOP, D_THICK = 15 * PZ, 2 * PZ       # the desk: its shelf's top over the rail's foot, the shelf's thickness
 D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side panels, the rail at their feet stand
 D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
 LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's front edge sits on its)
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
-SCREENS = ((3 / 32, 13 / 32), (19 / 32, 29 / 32))    # each tile's two terminals' screens, across it (with the
+SCREENS = ((2 / 32, 13 / 32), (19 / 32, 30 / 32))    # each tile's two terminals' screens, across it (with the
                                                     # keyboards, centred on it)
 T_DEPTH, T_SCREEN = 6, 3               # a terminal: how far out (px) its keyboard's front stands, its screen
-T_WIDER = 2                             # its keyboard wider than the screen (px), toward the tile's middle
+T_SEAM = 0.7                            # the seam down the keyboard's middle (px; under one: AA softens it)
 T_SHOW, T_FRONT = 5 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
                                         # keyboard face slopes from it to the screen's foot)
 SCREEN_LINES = ((("fTC1", ((2, 1, 6), (0, 1, 4), (0, 5, 7))), ("fTC2", ((2, 7, 8),))),
@@ -66,13 +66,17 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     zk0 = zd1 + T_FRONT                                         # foot; wider than the screen toward the tile's
     zg0, zg1 = zk1 + PZ, zk1 + T_SHOW                           # middle), the screen upright on it, a dark bezel
     for c in range(-1, 2):                                      # up to the canopy round its glass (T_SHOW rows of
-        for i, (s0, s1) in enumerate(SCREENS):                  # it under the canopy's shadow)
+        e0, e1 = c - 0.5 + SCREENS[0][0], c - 0.5 + SCREENS[1][1]               # it under the canopy's shadow)
+        if e0 < a - 1e-6 or e1 > b + 1e-6:
+            continue
+        for k0, k1 in ((e0, c - T_SEAM * L / 2), (c + T_SEAM * L / 2, e1)):    # (one keyboard across the bay, a
+            prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (0.0, zk1)], FACE, 3,  # seam
+                  cols=[False, sd("fTS3", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))  # down its
+        m0, m1 = c - 0.5 + SCREENS[0][1], c - 0.5 + SCREENS[1][0]                # middle; a face between the
+        prism(k, ax, plane, m0, m1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,  # screens, a px back
+              cols=[False, sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))            # of their borders)
+        for i, (s0, s1) in enumerate(SCREENS):
             u0, u1 = c - 0.5 + s0, c - 0.5 + s1
-            k0, k1 = (u0, u1 + T_WIDER * L) if i == 0 else (u0 - T_WIDER * L, u1)
-            if k0 < a - 1e-6 or k1 > b + 1e-6:
-                continue
-            prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (0.0, zk1)], FACE, 3,
-                  cols=[False, sd("fTS3", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))
             prism(k, ax, plane, u0, u1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,
                   cols=[False, sd("fTC0", ax), False, False], cap=sd(D_SIDE_TONE, ax))     # (the glass, its face)
             bd = ts + L                                         # a tan border round it, a px proud of it
