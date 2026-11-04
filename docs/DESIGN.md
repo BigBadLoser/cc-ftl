@@ -187,7 +187,10 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   - **Heavy** (security bots): can haul and is strong in combat, but does no skilled work.
   - **Medium**: does skilled labour (repair, construction, manning stations) and is average in combat, but carries
     little.
-  - **Drone** (flying, more drone types planned): mostly repair. It can't haul or man stations.
+  - **Logistics** (user, 2026-11-04): rolls on the floor like a roomba and only hauls materials, from the floor to storage
+    or from storage to a build site.
+  - Flying drones are not a robot class: they are their own system ("Drones", below), not crew on the job scheduler.
+    NPC robots keep their own roles.
   - The limits apply only to robots the player salvages or builds and sets to work on their ship. NPC and rogue-AI
     robots keep the full job set.
   - **Androids** (later) will be the robot-like crew members: real crew, with portraits and a crew-bar card.
@@ -778,8 +781,10 @@ the other guns. It does little hull damage and is inaccurate at range. It reuses
 
 ### Drones (user decisions, 2026-11-04; not built yet)
 
-**What a drone is.** A small flying robot that works inside the ship and launches into space. One system covers both, reusing the
-robots (AI core, bays, charge) and the vehicles (launch, fly, dock). The robot class "drone" above is the same thing.
+**What a drone is.** A small flying machine that works inside the ship and launches into space. Drones are their own entity
+(a drone component on a free body), run by one drone system, not crew on the job scheduler: no priorities, no orders, no crew
+panels. Each drone type's job list is a direct target query. They share the low-level work with crew and robots (the repair,
+extinguish and stabilise code, flying navigation, charging, the AI core link) and use the vehicles' free-body movement in space.
 
 **Rules.**
 - **The AI core runs them,** like robots. Its tier sets how many drones can be active at once (Mk I: 2, Mk II: 4, Mk III: 6).
