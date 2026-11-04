@@ -18,9 +18,9 @@ T_DEPTH, T_SCREEN = 6, 3               # a terminal: how far out (px) its keyboa
 T_WIDER = 2                             # its keyboard wider than the screen (px), toward the tile's middle
 T_SHOW, T_FRONT = 5 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
                                         # keyboard face slopes from it to the screen's foot)
-SCREEN_DOTS = (("fTC1", ((1, 0), (2, 0), (4, 1), (5, 1), (2, 2))), ("fTC2", ((3, 1), (5, 0), (1, 2), (4, 2))))
-SCREEN_DOTS_B = (("fTC3", ((1, 0), (2, 1), (3, 1), (4, 2), (5, 2), (6, 0))), ("fTC2", ((1, 2), (4, 0), (6, 1))))
-                                        # (each screen's lit dots: px across, rows up its glass)
+SCREEN_LINES = ((("fTC1", ((2, 1, 6), (0, 1, 4), (0, 5, 7))), ("fTC2", ((2, 7, 8),))),
+                (("fTC3", ((2, 1, 4), (2, 5, 7), (0, 1, 6))), ("fTC2", ((0, 7, 8),))))
+                                        # (each screen's text: lines of lit px (row up its glass, px from, to))
 
 
 def _rows(d):
@@ -51,6 +51,8 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 prism(k, ax, plane, q0, q1, [(0.0, zb), (sp, zb), (sp, zt0 - fl), (sh, zt0), (0.0, zt0)], FACE,
                       3, cols=[False, sd("fTS3", ax), sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))
     zc0 = z1 - C_FRONT                                          # the canopy: lit top, a pale nose, dark under
+    band(a, b, zd1, zc0, "fTS7")                                # (the recess behind the terminals in its shadow,
+    band(a, b, zc0 - _rows(C_DEPTH) - 2 * PZ, zc0, "fTS7")      # deepest right under it)
     td, ts = T_DEPTH * L, T_SCREEN * L                          # the terminals: a keyboard on the shelf (a low
     zk1 = zc0 - _rows(C_DEPTH) + _rows(ts) - T_SHOW             # front, its face sloping back up to the screen's
     zk0 = zd1 + T_FRONT                                         # foot; wider than the screen toward the tile's
@@ -62,15 +64,14 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             if k0 < a - 1e-6 or k1 > b + 1e-6:
                 continue
             prism(k, ax, plane, k0, k1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (0.0, zk1)], FACE, 3,
-                  cols=[False, sd("fTS2", ax), sd("fTS1", ax), False, False], cap=sd(D_SIDE_TONE, ax))
+                  cols=[False, sd("fTS3", ax), sd("fTS0", ax), False, False], cap=sd(D_SIDE_TONE, ax))
             prism(k, ax, plane, u0, u1, [(0.0, zk1), (ts, zk1), (ts, zc0), (0.0, zc0)], FACE, 3,
                   cols=[False, sd("fTS6", ax), False, False], cap=sd(D_SIDE_TONE, ax))
             band(u0 + L, u1 - L, zg0, zg1, "fTC0", ts)
-            for col, dots in (SCREEN_DOTS if i == 0 else SCREEN_DOTS_B):
-                for x, y in dots:
-                    ua = u0 + x * L
-                    if ua + L <= u1 - L + 1e-6:
-                        band(ua, ua + L, zg0 + y * PZ, zg0 + (y + 1) * PZ, col, ts + PX / 8)
+            for col, lines in SCREEN_LINES[i]:
+                for y, x0, x1 in lines:
+                    if zg0 + (y + 1) * PZ <= zg1 + 1e-6 and u0 + x1 * L <= u1 - L + 1e-6:
+                        band(u0 + x0 * L, u0 + x1 * L, zg0 + y * PZ, zg0 + (y + 1) * PZ, col, ts + PX / 8)
     prism(k, ax, plane, a, b, [(0.0, zc0), (C_DEPTH, zc0), (C_DEPTH, z1), (0.0, z1)], FACE, 3,
           cols=[sd("fTS4", ax), sd("fTS1", ax), sd("fTS1", ax), False], mitre=mit)
     for i, col in enumerate(("fTS0", "fTS1", "fTS7")):
