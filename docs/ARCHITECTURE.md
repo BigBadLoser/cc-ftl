@@ -1403,7 +1403,7 @@ counters, reputation per faction, the open decision (`active`), a `queue` of due
 - `choices[]` (`ChoiceDef`): `id`, `label`, `hint`, `requires: Requirement[]`, `cost: ItemQty[]` (required and spent), then either
   `outcome` or `check` + `success`/`failure`. An `Outcome` is `{ text?, effects? }`.
 - `Requirement`: `species`, `implant`, `skill`, `module`, `item` (kept), `reputation` (min/max), `flag` (min/max; default "is set";
-  `max: 0` = "not set"), `crew`. Unmet choices show greyed with the reason (`describeRequirement`).
+  `max: 0` = "not set"), `crew`, `shuttle {eva?}` (a player shuttle stowed in its bay). Unmet choices show greyed with the reason (`describeRequirement`).
 - `SkillCheck {skill, difficulty, base=0.5, perLevel=0.1}`: odds = clamp(base + perLevel * (level - difficulty), 5%, 95%), the best
   crew member (highest `stat`, ties lowest id) rolls; the odds label ("Repair skill 6 (Mara): 70%") is shown on the choice.
 - `EventEffect`: `items` (+/-, to/from player storage), `crewDamage`, `crewHeal`, `skillXp` (100 xp = 1 level via a stat modifier
@@ -1425,6 +1425,26 @@ notices arrive through `alerts.ts` (`UiAlert.notice`).
 and flag triggers resolve and that every choice runs). For an arc, have one event set a flag and the next list a `flag` trigger
 (with `eligible` on the flag) or be reached by `chain`. Add a new effect or requirement kind in `defs.ts`, then `effects.ts` /
 `requirements.ts` (both switches are exhaustive).
+
+### Physical encounters (scenes), `src/sim/scene/` (#173)
+
+DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit draw, `galaxy/storyHop.ts`), scene specs and the outcome observer.
+- **Spec** (`scene/types.ts`, `spec.ts`): content's `EventDef.scene` (`SceneRecipe`: ships, derelicts, timers, rule overrides) is rolled into a
+  `SceneSpec` when the signal opens (`galaxy.signal`), from the world seed, the event id and the hop, so the same signal gives the same scene.
+  Ships are contact descriptors (`spawnContact`); derelicts (`scene/derelicts.ts`) are the derelict generator's inputs (`planDerelict` in
+  `combat/derelict.ts`: generate and ruin without placing) plus a `DerelictRead` of the ruin meta that a scan words (`app/storySnapshot.ts`).
+- **Remote actions** (`ChoiceDef.remote`: `hail`, `scan`, `probe`, a deep scan that reads counts and cargo) reveal facts from the spec and keep
+  the decision open. Investigating (a `scene` effect) opens the event grid (`galaxy/eventGrid.ts` `enterEvent`); `scene/open.ts` makes the
+  derelicts and ships real (beside where the ship comes in, retried each second when there is no room) and departs neutral ships.
+- **Observer** (`scene/observer.ts`): once a second, facts read from sim state (never events) per scene ship and derelict: traded, attacked,
+  boarded, captured, destroyed, fled, salvaged (a salvage order stripped parts, or the wreck is stripped away), cleared (hostiles aboard at
+  spawn, none now), plus `crewLost` per player crew member seen alive in the grid, `timer`, and `left` at leave. Rules are data: shared
+  `content/sceneRules.ts` (with `of: ship | derelict` and `stance` filters), overridden per encounter. `derelicts_found` counts salvaged
+  derelicts; a scan reads counts once it is 2.
+- **Persistence:** everything in the grid is wiped on leave (a `discovery` spec keeps its stable key for a later node record).
+- **Exploring by hand** uses the general tools: draft, `vehicle.embark`, `vehicle.hover` (the hover point comes in to the gap from the nearest
+  hull-ring tile when a ragged hull lies inside its bounding box, so a hatch spot exists), `eva.out`, crew orders, `job.forceDoor`, and
+  `eva.board`, which walks a crew member out of float range to the hatch spot first (`eva/board.ts`). Wrecks get no repair jobs.
 
 ## Trade, `src/sim/trade/`
 
