@@ -4,7 +4,7 @@ section) cut down to: a sill (the upright part, cut low, its top sloping up to t
 window cut through the wall (a pane of glass in it) and a header over it (the lean's top 5 px, then upright; its
 underside flat). An end piece keeps an outer frame of the whole base section at its outer end and the window frame's
 side inside it (a jamb, its front the header's). A window piece builds its tile's whole section itself
-(wall3d_ext's shell builds nothing for it), its back the wall's: 4 px behind the pane, the pane 4 px behind the
+(wall3d_ext's shell builds nothing for it), its back the wall's: 5 px behind the pane, the pane 5 px behind the
 frame's front.
 
 Measured off the reference (its top and the upright part's front sit where the base hull's do; the section off the
@@ -34,8 +34,10 @@ SIDE = "hsXL"                       # the sides facing the window (the outer fra
 HEAD_FRONT = YS[4]                  # the header's upright front (a step under the lean over it)
 PANE = 1 / 32                       # the glass: a pane this thick, see-through and tinted (its own object: the
                                     # render's glass pass),
-PANE_IN = 4 / 32                    # this far behind the frame's front (its centre)
-WALL_BACK = 4 / 32                  # the wall's back this far behind the pane (the window cut through to it)
+PANE_IN = 5 / 32                    # this far behind the frame's front (its centre)
+WALL_BACK = 5 / 32                  # the wall's back this far behind the pane (the window cut through to it)
+EDGE = YS[0]                        # the pane's edges (all but its two faces): dark and opaque, a hair proud of
+EDGE_OUT = 0.002                    # the frame they sit on, so each draws a dark line on it
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -75,3 +77,7 @@ def build(k, ax, plane, a, b, ends, H):
         f.part(h0, w1, pf, cols, None, end=False)
         prism(GLASS, ax, plane, w0, w1, [(dp - PANE / 2, zj), (dp + PANE / 2, zj), (dp + PANE / 2, zh),   # the
                                          (dp - PANE / 2, zh)], "steel", 3, ["glassL"] * 4, "glassL")         # pane
+        e = EDGE_OUT
+        pf = [(dp - PANE / 2, zj + e), (dp + PANE / 2, zj + e), (dp + PANE / 2, zh - e), (dp - PANE / 2, zh - e)]
+        f.part(w0 + (e if PART == "w1" else 0.0), w1, pf, [EDGE, False, EDGE, False],     # its edges (an end only
+               (EDGE if PART == "w1" else False, EDGE if PART == "w3" else False), end=False)  # at the jamb)
