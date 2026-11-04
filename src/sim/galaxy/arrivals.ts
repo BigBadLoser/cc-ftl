@@ -88,7 +88,7 @@ const SPOT_DIRS = 12;
  * Where a ship of w x h tiles appears: the first spot on rings around the player's ship that passes the same checks as
  * `sector.deploy` (inside the sector bounds, then the gap rule `placementGapError`). Null when nothing fits. Deterministic.
  */
-function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | null {
+export function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | null {
   const me = playerShipInfo(sim)?.ship;
   const cx = me ? me.x + me.width / 2 : sim.sector.width / 2;
   const cy = me ? me.y + me.height / 2 : sim.sector.height / 2;

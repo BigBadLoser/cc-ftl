@@ -8,6 +8,8 @@ import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, boardingTile, dockPoint } from '../vehicles/geometry';
 import { boardCrew, destPoint, occupants, undock, vehicleDefOf, vehicleLostWithBay, vehicleSpeedPerTick } from '../vehicles/lifecycle';
 import { shipIdOf } from '../regions';
+import { boardHovering } from '../eva/board';
+import { hatchSpot } from '../eva/shuttle';
 
 /**
  * Vehicles. (1) Crew with an embark order who stand on the vehicle's boarding tile climb in (hidden, off the grid).
@@ -21,7 +23,9 @@ export function vehicleSystem(sim: Sim): void {
     const order = sim.world.get(crew, EmbarkOrderC);
     const v = order && sim.world.get(order.vehicle, VehicleC);
     const pos = sim.world.get(crew, PositionC);
-    const at = order && boardingTile(sim, order.vehicle);
+    // A hovering shuttle is boarded at its hatch spot, by a drift from the hull (eva/board.ts); the others at their boarding tile.
+    const hovering = v?.state === 'flying';
+    const at = order && (hovering ? hatchSpot(sim, order.vehicle) : boardingTile(sim, order.vehicle));
     const drafted = sim.world.get(crew, DraftedC);
     if (!order || !v || !pos || !at || !drafted || !sim.world.has(crew, CrewC) || sim.world.has(crew, DeadC) || isIncapacitated(sim, crew)) {
       sim.world.remove(crew, EmbarkOrderC);
@@ -29,8 +33,9 @@ export function vehicleSystem(sim: Sim): void {
     }
     if (isSettled(pos) && shipIdOf(sim, pos) === at.shipId && pos.x === at.x && pos.y === at.y) {
       sim.world.remove(crew, EmbarkOrderC);
-      if (occupants(v).length < (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) boardCrew(sim, crew, order.vehicle);
-      else sim.events.emit({ type: 'command.rejected', command: 'vehicle.embark', reason: 'full' });
+      if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) sim.events.emit({ type: 'command.rejected', command: hovering ? 'eva.board' : 'vehicle.embark', reason: 'full' });
+      else if (hovering) boardHovering(sim, crew, order.vehicle);
+      else boardCrew(sim, crew, order.vehicle);
     } else if (!drafted.target) {
       sim.world.remove(crew, EmbarkOrderC); // gave up: unreachable
     }

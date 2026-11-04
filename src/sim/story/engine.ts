@@ -1,7 +1,7 @@
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { applyEffect, takeItems } from './effects';
-import type { EventDef, EventTrigger, Outcome } from './defs';
+import type { EventDef, EventTrigger, Outcome, RemoteAction } from './defs';
 import { checkOdds, describeQty, eligible, unmetReasons } from './requirements';
 import { withRng } from './state';
 import { withPlayerAboard } from './world';
@@ -156,7 +156,7 @@ function remote(sim: Sim, active: NonNullable<Sim['story']['active']>, choice: N
   for (const c of choice.cost ?? []) takeItems(sim, c.item, c.count);
   for (const eff of choice.outcome?.effects ?? []) applyEffect(sim, eff, { event: active.event, actor: null });
   active.done = [...(active.done ?? []), choice.id];
-  sim.events.emit({ type: 'story.remote', event: active.event, choice: choice.id, action: choice.remote as 'hail' | 'scan' });
+  sim.events.emit({ type: 'story.remote', event: active.event, choice: choice.id, action: choice.remote as RemoteAction });
 }
 
 /** Open the decision a lead notice points at (the player tapped it). */

@@ -16,4 +16,9 @@ export const sceneRules = {
   captured: { on: 'captured', effects: [{ type: 'flag', flag: 'ships_taken', op: 'add' }], log: 'The {ship} is yours now', tone: 'warn' },
   fled: { on: 'fled', log: 'The {ship} jumped away', tone: 'info' },
   destroyed: { on: 'destroyed', stance: ['neutral', 'helpless'], log: 'The {ship} is a dead hull now, open to stripping', tone: 'bad' },
+  // Derelicts: what you found and what it cost. `derelicts_found` counts the wrecks you worked (a scan reads them better with practice).
+  salvaged: { on: 'salvaged', of: 'derelict', effects: [{ type: 'flag', flag: 'derelicts_found', op: 'add' }], log: 'Salvage coming off the {ship}', tone: 'good' },
+  cleared: { on: 'cleared', of: 'derelict', effects: [{ type: 'flag', flag: 'infestations_cleared', op: 'add' }], log: 'The {ship} is clear: nothing hostile left aboard', tone: 'good' },
+  derelictLeft: { on: 'left', of: 'derelict', effects: [{ type: 'flag', flag: 'derelicts_left', op: 'add' }] },
+  crewLost: { on: 'crewLost', log: '{crew} did not come back', tone: 'bad' },
 } satisfies Record<string, SceneRuleDef>;

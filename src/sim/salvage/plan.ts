@@ -17,6 +17,15 @@ import { reachTest } from './reach';
 
 interface Tile { x: number; y: number; kind: number }
 
+/**
+ * The scrap type a structure tile strips as (#312): doors are tech (their mechanism and controls), walls, beams and floors are hull. The one
+ * rule the planner, the job's yield and the inspector's counts all go by.
+ */
+export function structScrap(kind: number): ScrapType | null {
+  if (kind === Struct.Door) return 'tech';
+  return kind === Struct.Wall || kind === Struct.Beam || kind === Struct.Floor ? 'hull' : null;
+}
+
 /** What an order for `types` would still strip from a wreck, in the order it is stripped: modules, then walls and doors (and beams), then floors. */
 export interface Parts {
   modules: number[];
@@ -33,12 +42,14 @@ export function partsOf(sim: Sim, ship: number, types: readonly ScrapType[]): Pa
     if (m && scrap && types.includes(scrap) && shipIdOf(sim, m) === ship) parts.modules.push(id);
   }
   const grid = shipGrid(sim, ship);
-  if (!grid || !types.includes('hull')) return parts;
+  if (!grid) return parts;
+  const ticked = (kind: number): boolean => types.includes(structScrap(kind) as ScrapType);
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
     for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('ship', x, y) !== ship) continue;
       const kind = grid.get('struct', x, y);
       if (grid.get('module', x, y) !== 0 && kind !== Struct.Floor) continue; // a wall under a module that stays holds it up
+      if (!ticked(kind)) continue;
       if (kind === Struct.Wall || kind === Struct.Door || kind === Struct.Beam) parts.walls.push({ x, y, kind });
       else if (kind === Struct.Floor && grid.get('module', x, y) === 0) parts.floors.push({ x, y, kind });
     }
@@ -147,7 +158,7 @@ export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): n
     for (const t of list) {
       if (room <= 0) return;
       if (taken.has(`${t.x},${t.y}`)) continue;
-      createJob(sim, 'deconstruct', ship, t.x, t.y, struct(t), DECONSTRUCT_TICKS, false, { scrap: 'hull' });
+      createJob(sim, 'deconstruct', ship, t.x, t.y, struct(t), DECONSTRUCT_TICKS, false, { scrap: structScrap(t.kind) ?? 'hull' });
       room--;
     }
   };

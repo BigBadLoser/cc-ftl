@@ -342,13 +342,18 @@ scripts. Not every scene has one.
   - Approaches: trade; barter; board and rob it; fire on it; wave and leave.
   - Observed: traded -> small reputation with traders; boarded or captured -> reputation loss, flag; destroyed -> a wreck to strip, reputation loss.
   - Persistence: transient. Timer: no.
-- **Derelict** (`derelict_sighting`, `notice_beacon` lead). Eligible: danger 0 to 3, an EVA shuttle stowed.
+- **Derelict** (`derelict_sighting`, `notice_beacon` lead). Eligible: danger 0 to 3, an EVA shuttle stowed. **Built (#173 step 3).**
   - Signal: a dead hull, power signature unclear.
-  - Remote: scan (reveals ruin level, a hint of life signs or machines; +3 electronics from a hacking scan), ignore.
-  - Scene: one derelict, ruin level from its cause, maybe infested or holding a rogue bot; loose containers. Hazards are conditions of the
-    hull (thin air, fires, locked doors), not set pieces.
-  - Approaches: open an away site and run a salvage order; send a team to explore; strip the hull; leave it.
-  - Observed: salvaged -> items, `derelicts_found` (gets a reader); infestation killed -> flag; crew lost -> log; left -> flag only.
+  - Remote: scan (make, condition and cause, air and fires, jammed doors, life signs or machine signatures, loose cargo); a hacking scan (hacking 2)
+    is a deep read with counts, gives no items (user ruling, 2026-11-04); ignore. With practice (`derelicts_found` 2 or more) any scan reads counts.
+  - Scene: one derelict from the derelict generator, ruin level and cause rolled, infested half the time (aliens in a living faction's wreck);
+    torn-off containers drift beside it. Hazards are conditions of the hull (thin air, fires, jammed doors), not set pieces.
+    Rogue robots at the ruin pass's machine points are deferred (#310); loose containers stay scenery until container pickup exists.
+  - Approaches: run a salvage order (the away site does the rest); explore by hand, with no explore order (user ruling): draft crew, take them
+    out in the shuttle, hover beside the wreck, crew out (EVA), order them around inside, force jammed doors (tile inspector), Back to shuttle,
+    return; strip the hull; leave it.
+  - Observed: salvaged -> items, `derelicts_found` (read by the scan); infestation killed -> `infestations_cleared`; crew lost -> log; left ->
+    flag `derelicts_left` only.
   - Persistence: **persistent discovery**, cleared on leave for now. Timer: no.
 - **Pirate ambush** (`pirate_returns`, once, after sparing a pirate; flag-queued, still waits for transit).
   - Signal: a skiff hails you, claiming a debt owed. The story sometimes does not add up (a name that changes, a transponder that lags).
@@ -395,8 +400,8 @@ Salvage is one order from the inspector. The crew then run it on their own, like
 
   | Type | Stripped from | The scrapper gives | Rare extra |
   |---|---|---|---|
-  | **Hull Scrap** | hull plating, walls, floors, doors | metal | none |
-  | **Tech Scrap** | consoles, computers, sensors, shield and medbay modules | electronics, some spare parts | drone tech |
+  | **Hull Scrap** | hull plating, walls, beams, floors | metal | none |
+  | **Tech Scrap** | consoles, computers, sensors, shield and medbay modules, doors (#312) | electronics, some spare parts | drone tech |
   | **Energy Scrap** | reactors, batteries, engines, power conduits | spare parts, electronics, metal | fuel |
   | **Weapons Scrap** | turrets, launchers, magazines, armouries | spare parts, metal | a missile, or a hand weapon |
   | **Comfort Scrap** | furniture, beds, kitchens, lounge and storage fittings | polymer, cloth | none |
