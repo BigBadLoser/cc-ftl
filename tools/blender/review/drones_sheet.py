@@ -43,29 +43,30 @@ def draw(cv, built, aid, sx, sy, lift=0.0, keyed=False):
 
 
 def fleet(pub, built, out):
-    nx, ny = 17, 14
-    ox, oy = ny * 32 + 30, 190
-    cv = room(pub, nx, ny, (nx + ny) * 32 + 60, (nx + ny) * 16 + 240, ox, oy)
-    crew(cv, pub, *rp.iso(ox, oy, 1, 1))
+    """Screen rows (not grid rows, so the headings line up for comparison) over a floor."""
+    nx, ny = 14, 14
+    ox, oy = ny * 32 + 30, 60
+    W, H = (nx + ny) * 32 + 60, (nx + ny) * 16 + 120
+    cv = rp.Canvas(W, H)
+    rp.floor(cv, pub, ox, oy, nx, ny)
     lift = ALT * ZPX
+    x0, dx, y0, dy = 190, 92, 150, 78
     for k, kind in enumerate(("defence", "repair", "medic")):
         rows = ([(f"fly.d{d}", "fly") for d in range(8)],
-                [("work.d1.f0", "work"), ("work.d1.f1", "work"), ("work.d6.f0", "work"), ("inert.d1", "inert"),
-                 ("inert.d6", "inert")])
+                [("work.d1.f0", "work"), ("work.d1.f1", "work"), ("work.d6.f0", "work"), ("work.d6.f1", "work"),
+                 ("inert.d1", "inert"), ("inert.d6", "inert"), ("docked.d1", "docked")])
         for i, row in enumerate(rows):
-            gy = 1.4 + (2 * k + i) * 2.0
+            y = y0 + (2 * k + i) * dy
+            cv.labels.append((8, y - 30, f"{kind} {'fly' if i == 0 else 'work / inert / docked'}"))
             for j, (tag, st) in enumerate(row):
-                gx = 2.4 + j * 1.85
-                x, y = rp.iso(ox, oy, gx, gy)
-                if st != "inert":
+                x = x0 + j * dx
+                if st in ("fly", "work"):
                     draw(cv, built, "drone.shadow", x, y)
-                draw(cv, built, f"drone.{kind}.{tag}", x, y, 0 if st == "inert" else lift, keyed=True)
+                draw(cv, built, f"drone.{kind}.{tag}", x, y, lift if st in ("fly", "work") else 0, keyed=True)
                 if kind == "medic" and st == "work":
                     draw(cv, built, f"drone.medic.work.beam.{tag.split('.')[1]}", x, y, lift)
-                if k == 2 or i == 1:
-                    cv.labels.append((int(x) - 14, int(y) + 20, tag))
-        lx, ly = rp.iso(ox, oy, 16.6, 1.4 + 4 * k)
-        cv.labels.append((int(lx), int(ly), kind))
+                cv.labels.append((x - 22, y + 12, tag))
+    crew(cv, pub, x0 + 8 * dx, y0 + 5 * dy)
     cv.save(out / "fleet-1x.png", 1)
     cv.save(out / "fleet-3x.png", 3)
 
@@ -94,7 +95,7 @@ def bay(pub, built, out):
     for j, tag in enumerate(("stowed",) + tuple(f"f{f}" for f in range(5))):
         x, y = 110 + (j % 3) * 170, y0 + 50 + (j // 3) * 120
         draw(cv, built, f"module.drone_bay.hatch.{tag}", x, y)
-        cv.labels.append((x - 20, y + 45, f"hatch.{tag}"))
+        cv.labels.append((x - 20, y - 50, f"hatch.{tag}"))
     cv.save(out / "bay-1x.png", 1)
     cv.save(out / "bay-3x.png", 3)
 

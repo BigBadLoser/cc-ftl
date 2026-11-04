@@ -20,6 +20,7 @@ its rails and cabinet are placed for the camera). Anchored like every module (th
   module.drone_bay.hatch.stowed / .hatch.f0..f4          the roof hatch above the roof plating, anchored at the
                                                          footprint centre like turret.<stem>.stowed: closed, then opening
 The game draws docked drones itself (any type, any livery): `drone.<type>.docked.d1` with its anchor DOCK_PX[i] px
+(currently (0, -38) and (0, -78))
 (right, down) from the module anchor, i = 0 the lower cradle, 1 the upper (the top fills first), between the bay and
 its `.front`, lower drone first."""
 import math
