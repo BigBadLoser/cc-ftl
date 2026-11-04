@@ -25,9 +25,12 @@ DIP = 12 * PZ           # the window's ramp: its crest this far under the wall's
                         # ~16 px ramp; ours is 26 px) ...
 DIP_RUN = 0.5           # ... reached this far along the wall from a post (a sloped crest), then level (the middle
                         # tiles level all across)
-EDGE_OUT = 1 / 64        # (the cut top a touch past the slope, over the cushions' cut edges)
+EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
+POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
+SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
+SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP))
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM))
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -134,14 +137,19 @@ def hook(k, sp):
     bends = [u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b]
     k.side = None
     if x0 > -0.5:                                       # the posts' sections
-        _quad(k, [(x0, yb, z0), (x0, yf, z0), (x0, yf, z1), (x0, yb, z1)], (1, 0, 0), TAN.END["x"])
+        _quad(k, [(x0, yb, z0), (x0, yf, z0), (x0, yf, z1), (x0, yb, z1)], (1, 0, 0), POST_IN)
     if x1 < 0.5:
-        _quad(k, [(x1, yb, z0), (x1, yf, z0), (x1, yf, z1), (x1, yb, z1)], (-1, 0, 0), TAN.END["x"])
+        _quad(k, [(x1, yb, z0), (x1, yf, z0), (x1, yf, z1), (x1, yb, z1)], (-1, 0, 0), POST_IN)
     us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
     for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
         r0, r1 = _reach(h0, yf) + EDGE_OUT, _reach(h1, yf) + EDGE_OUT
-        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1), SILL_TOP)
+        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
+              SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
+    for u in bends:                                     # (a seam a px wide where a slope meets the level part)
+        h, r = _sill(u, x0, x1) + 0.002, _reach(_sill(u, x0, x1), yf)
+        w = LINE_W if _sill(u + 1e-3, x0, x1) < _sill(u - 1e-3, x0, x1) else -LINE_W    # (on the level side)
+        _quad(k, [(u, -r, h), (u + w, -r, h), (u + w, r, h), (u, r, h)], (0, 0, 1), SEAM)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
     if CLOSE and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
