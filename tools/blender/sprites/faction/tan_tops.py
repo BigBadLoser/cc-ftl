@@ -12,11 +12,11 @@ D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side p
 D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
 LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's front edge sits on its)
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
-SCREENS = ((3 / 32, 11 / 32), (21 / 32, 29 / 32))    # each tile's two terminals' screens, across it (with the
+SCREENS = ((2 / 32, 12 / 32), (20 / 32, 30 / 32))    # each tile's two terminals' screens, across it (with the
                                                     # keyboards, centred on it)
-T_DEPTH, T_SCREEN = 5, 2               # a terminal: how far out (px) its keyboard's front stands, its screen
+T_DEPTH, T_SCREEN = 6, 3               # a terminal: how far out (px) its keyboard's front stands, its screen
 T_WIDER = 2                             # its keyboard wider than the screen (px), toward the tile's middle
-T_SHOW, T_FRONT = 4 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
+T_SHOW, T_FRONT = 5 * PZ, 2 * PZ        # its screen's rows seen under the canopy; its keyboard's front (the
                                         # keyboard face slopes from it to the screen's foot)
 SCREEN_DOTS = (("fTC1", ((1, 0), (2, 0), (4, 1), (5, 1), (2, 2))), ("fTC2", ((3, 1), (5, 0), (1, 2), (4, 2))))
 SCREEN_DOTS_B = (("fTC3", ((1, 0), (2, 1), (3, 1), (4, 2), (5, 2), (6, 0))), ("fTC2", ((1, 2), (4, 0), (6, 1))))
