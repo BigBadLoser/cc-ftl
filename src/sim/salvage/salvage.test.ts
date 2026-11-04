@@ -19,11 +19,11 @@ import { Sim } from '../sim';
 import { Struct, writeStruct } from '../structure';
 import { CREW_MAX_HP } from '../tuning';
 import { SalvageOrderC } from './components';
-import { planJobs, salvageJobs } from './plan';
+import { partCount, partsOf, planJobs, salvageJobs } from './plan';
 import { AwaySiteC } from '../away/components';
 import { StagingC } from '../items/components';
 import { stageAdd } from '../items/staging';
-import { workLeft } from './counts';
+import { salvageCounts, workLeft } from './counts';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -228,6 +228,25 @@ describe('salvage orders', () => {
     });
     expect(phase.join('')).toMatch(/^mwf/);
     expect(phase.join('')).not.toMatch(/fw|wm|fm/);
+  });
+
+  it('strip doors as tech scrap (#312): with only Tech ticked the door comes down and the walls stay', () => {
+    const sim = new Sim(5, content);
+    const w = derelict(sim, { modules: [] });
+    person(sim, 4, 3);
+    const g = sim.sector.grid;
+    const walls = (): number => [...Array(50).keys()].filter((i) => g.get('struct', i % 10, Math.floor(i / 10)) === Struct.Wall).length;
+    const before = walls();
+    expect(salvageCounts(sim, w).tech.parts).toBe(1);
+    expect(salvageCounts(sim, w).hull.parts).toBe(partCount(partsOf(sim, w, ['hull'])));
+    expect(partsOf(sim, w, ['hull']).walls.some((t) => t.kind === Struct.Door)).toBe(false);
+    order(sim, w, ['tech']);
+    const tally: Record<string, number> = {};
+    run(sim, 3000, tally, () => !sim.world.has(w, SalvageOrderC));
+    expect(g.get('struct', 4, 2)).toBe(Struct.Floor);
+    expect(walls()).toBe(before);
+    expect(tally['item.scrap_tech']).toBeGreaterThan(0);
+    expect(tally['item.scrap_hull']).toBeUndefined();
   });
 
   it('are the same for the same seed', () => {
