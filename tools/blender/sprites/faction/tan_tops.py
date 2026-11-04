@@ -349,9 +349,9 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd, canopy=True, cab_up=0, s
                         sd("fTC0" if ch == "." else SCREEN_INK[ch], ax))
 
 
-CHEST = (16, 41, 3, 2, 1)               # the chest (ref 26): its frame's top and foot (rows down), depth, bars (px),
+CHEST = (16, 39, 3, 2, 1)               # the chest (ref 26): its frame's top and foot (rows down), depth, bars (px),
                                         # the drawers' fronts back in it (px)
-CHEST_ROWS = ((29, (0.5,), 3), (31, (0.25, 0.5, 0.75), 2))  # its sections: the top's foot (the middle bar under
+CHEST_ROWS = ((27, (0.5,), 3), (29, (0.25, 0.5, 0.75), 2))  # its sections: the top's foot (the middle bar under
                                         # it), the bottom's top; each one's ribs (1 px, across the tile), handles' width
 
 
@@ -393,4 +393,4 @@ TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", 
             Design("cabinets", body=functools.partial(lockers, canopy=False, cab_up=3), lip=False, cushion="fTS8"),
             Design("drawers", body=functools.partial(lockers, canopy=False, cab_up=3, swap=True), lip=False,
                    cushion="fTS8"),
-            Design("chest", body=chest, lip=False, cushion="fTS8"))
+            Design("chest", body=chest, cushion="fTS8"))         # (on the lip: its foot at 39 rows down)
