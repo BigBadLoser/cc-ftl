@@ -12,7 +12,7 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Now
 
-- **Physical encounters.** Signals, scenes and the trader skiff shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309)). Next: a derelict, then a pirate ambush, a distress freighter and a medical pod. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173))
+- **Physical encounters.** Signals, scenes, the trader skiff and the derelict shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314)). Next: a pirate ambush, a distress freighter and a medical pod. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173))
 
 ## Next
 
