@@ -1,10 +1,11 @@
 import { homeShip } from '../sim/index';
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
+import { BreakdownC, CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
+import { breakWhat } from './breakText';
 import { recallReason } from './boardingText';
 import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
 import { createStore, type Readable } from './store';
@@ -20,6 +21,8 @@ const EXPIRE_MS = 45000;
 export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> = {
   'combat.started': 'urgent', 'fire.started': 'urgent', 'hull.breach': 'urgent', 'o2.low': 'urgent', 'power.shortage': 'urgent',
   'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.airUnreachable': 'urgent', 'away.stranded': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
+  'crew.break': 'urgent', // only when the sim says the break is loud and unthrottled (`alert`); every break is in the log
+
   'crew.recallStarted': 'urgent', 'crew.recallFailed': 'urgent', // a party member left on the enemy ship (the rest of the boarding events are log-only)
   'story.started': 'urgent', // only a notice with a lead you can open; plain notices are log-only (see describe)
   'crew.died': 'log', 'crew.rescued': 'log', 'crew.moodLow': 'log', 'job.missingMaterials': 'log', 'storage.full': 'log', 'production.done': 'log',
@@ -149,6 +152,11 @@ export function createAlerts(sim: Sim): Alerts {
           kind: e.type, key: `as${ship}`, text: `${e.noHome ? 'Shuttle cannot get home' : 'Crew stranded'}: ${sim.world.get(ship, ShipC)?.name ?? 'away site'}`, subject: e.crew[0] ? crewSubject(sim, e.crew[0]) : null,
           resolved: () => sim.world.get(ship, AwaySiteC)?.block !== 'stranded',
         };
+      }
+      case 'crew.break': {
+        if (!e.alert || !playerSuit(e.crew)) return null;
+        // Clears itself when the break ends (the sim's `crew.breakEnded`).
+        return { kind: e.type, key: `br${e.crew}`, text: `${crewName(e.crew)} ${breakWhat(e.kind, e.context)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !sim.world.has(e.crew, BreakdownC) };
       }
       case 'crew.starving': {
         if (!playerSuit(e.crew)) return null;

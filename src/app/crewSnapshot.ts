@@ -1,5 +1,7 @@
 import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
 import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
+import { breakWord } from './breakText';
+import { BreakdownC } from '../sim';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
@@ -183,6 +185,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     name: crew.name,
     role: role?.name ?? crew.role,
     activity: activityOf(sim, id, crew.activity),
+    ...(sim.world.get(id, BreakdownC) ? { broke: breakWord(sim.world.get(id, BreakdownC)!.kind) } : {}),
     rest: Math.round(sim.world.get(id, NeedsC)?.rest ?? 100),
     hunger: hungerOf(sim, id),
     mood: moodOf(sim, id),

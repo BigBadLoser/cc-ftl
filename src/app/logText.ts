@@ -2,6 +2,7 @@ import { homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry, UiSubject } from '../ui/api';
+import { breakWhat } from './breakText';
 import { describeBoarding } from './boardingText';
 import { crewSubject, crewTile, enemyShip, roomOf, shipSubject, tileAt } from './subjects';
 
@@ -43,6 +44,7 @@ export function createDescriber(sim: Sim) {
           : { kind: 'kill', tone: 'good', text: `${crewName(e.crew)} killed`, ...sub(crewTile(sim, e.crew)) };
       case 'crew.rescued': return ours(e.crew) ? { kind: e.type, tone: 'good', text: `${crewName(e.crew)} was rescued`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.starving': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)} is starving`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.break': return player(e.crew) ? { kind: 'warning', tone: e.tier === 'severe' ? 'bad' : 'warn', text: `${crewName(e.crew)} ${breakWhat(e.kind, e.context)}`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.moodLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)} is very unhappy`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'suit.airLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)}: suit air low`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.airUnreachable': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: no air source in reach`, ...sub(crewSubject(sim, e.crew)) } : null;

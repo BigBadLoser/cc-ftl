@@ -286,6 +286,15 @@ Touches: 5a `ai/legacyPick.ts`, `crew/traitMood.ts`, `crew/mood.ts`. 5b `crew/br
 `app/logText.ts`, alerts, the crew inspector. Size: 5a **S** (now); 5b **M**, after #194 makes the interrupt layer
 authoritative and adds `hazard` (Phase 3). Mild breaks alone could go through the policy data earlier (a work flag off while `BreakdownC` holds one).
 
+### As built (5b, #175)
+
+Built as above, mapped onto the Phase 3 code: `ai/legacyPick.ts` and `ai/policy.ts` are gone, so the work drive's suppression is data (`willing` input on `policy.colonist`'s work drive) and the Battle-shy pick penalty is a cost term in `ai/jobRank.ts` `pairCost`. Files: `crew/{breakTypes,breakTable,breakdown,stress}.ts`, `systems/breakdown.ts`, `ai/machines/break.ts`; `isBreaking` is part of `isOffDuty`. One `breakdown` interrupt reason, reported at 5 (severe) or 7 (moderate). Choices where the spec was open:
+- Decompression is suited on a thin tile with the tank at or under 25%, or suited in a breached interior room; a plain spacewalk is not a stressor.
+- No roll while asleep; cooldowns count from the end of a break; the alert flag is decided in the sim (`crew.break.alert`), so a replay agrees.
+- A tantrum dips the mood of crew within 7 tiles ("made a scene"); the relationship hit and the grief stressor (`contextPresent('grief')`) wait for section 6.
+- Quitting at a station is not a break outcome (user decision). Only Battle-shy is rollable; the other phobias have their break weights but no pick penalty yet.
+- Tuning is the table values, in `tuning.ts` (`BREAK_*`); `crewBreakdown.slow.test.ts` pins the designed low-mood rate. `?scenario=breaks` starts four breaks.
+
 ## 6. Relationships (L)
 
 Bonds come from compatibility and shared experiences; being in the same room barely matters, so not everyone ends up

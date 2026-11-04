@@ -1,4 +1,5 @@
 import type { Faction } from './combat/components';
+import type { BreakContext, BreakKind } from './crew/breakTypes';
 import type { WorkCategory } from './crew/components';
 import type { ItemQty, ScrapType, SkillName } from './registry';
 
@@ -187,6 +188,8 @@ export type Command =
   | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
   | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number }
+  /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */
+  | { type: 'debug.breakCrew'; id: number; kind: BreakKind; context?: BreakContext; sec?: number }
   /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */
   | { type: 'debug.spawnModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Set the battery (0..100) of every battery robot (the debug panel). */

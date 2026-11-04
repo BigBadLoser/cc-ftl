@@ -109,6 +109,8 @@ export interface UiCrew {
   name: string;
   role: string;
   activity: string;
+  /** The mental break they are in, in a few words ("Panicking", "Refusing work"), or absent. */
+  broke?: string;
   /** 0..100, 100 = fully rested. */
   rest: number;
   /** 0..100, 100 = fed; null for crew that never eat (robots, enemies). */
@@ -538,7 +540,7 @@ export type UiSubject =
 
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
-  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving'
+  | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed';
 
 export type UiLogKind =

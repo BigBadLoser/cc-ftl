@@ -95,6 +95,13 @@ export function advanceStress(sim: Sim, id: number, m: Mood, dt: number): void {
   else delete m.dark;
 }
 
+/** Where a debug-started break's stressor is: the nearest burning tile or hostile, if any (what panic flees from). */
+export function nearestStressor(sim: Sim, id: number, context: BreakContext): Tile2 | undefined {
+  if (context === 'fire') return fireNear(sim, id, fireRadius(sim, id)) ?? undefined;
+  if (context === 'combat') return hostilesInSight(sim, id, BREAK_COMBAT_RADIUS)[0];
+  return undefined;
+}
+
 /** Is the context there right now (ignoring how long it has lasted)? */
 export function contextPresent(sim: Sim, id: number, context: BreakContext): boolean {
   switch (context) {

@@ -39,7 +39,7 @@ Last updated: 2026-11-03.
 
 - **Now:** #173 physical encounters step 3, the derelict. Steps 1-2 (scenes, battle stations, the trader skiff) merged in #309.
   Then, each checked in play first: pirate ambush, distress freighter, medical pod.
-- **Next:** see [ROADMAP.md](ROADMAP.md): mental breaks (#175, [TRAITS.md](TRAITS.md) section 5b), then relationships.
+- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (mental breaks #175 are built on `crew/breakdowns-175`, awaiting merge; the grief stressor and the tantrum's relationship hit are seams for them).
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
   landing in a bay that breaks on approach.
