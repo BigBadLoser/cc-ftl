@@ -96,7 +96,7 @@ export function installDrones(sim: Sim): void {
     for (let slot = 0; slot < slots.length; slot++) {
       if (slots[slot]) continue;
       const def = takeDroneItem(sim, ship);
-      if (!def) return;
+      if (!def) break; // none on this ship: the next bay may be on another
       const id = spawnDrone(sim, def, bay, slot);
       if (id) sim.events.emit({ type: 'drone.installed', drone: id, bay, ship });
     }

@@ -232,7 +232,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const asteroids = createAsteroidView(world, atlas, rockLayers, content.ores ?? {});
   const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
   // PLACEHOLDER drones and drone-bay plates (drawn in code until their art exists), sorted with the ships' tiles.
-  const drones = createDroneView(world, { layer: W.low, drones: content.drones ?? {}, modules: content.modules });
+  const drones = createDroneView(world, { layer: W.low, drones: content.drones ?? {}, modules: content.modules, atlas });
   const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle

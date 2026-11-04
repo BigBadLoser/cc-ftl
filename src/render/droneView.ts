@@ -9,6 +9,8 @@ import type { ModuleDef } from '../sim/registry';
 import { Z_PX } from './heights';
 import { ART_SCALE as S, TILE_H, TILE_W, iso } from './iso';
 import { sectorArt } from './sectorPos';
+import type { Atlas } from './assets/loader';
+import { applyDroneArt, createDroneArtSprites, droneArtIds, type DroneArtSprites } from './droneArt';
 
 /**
  * PLACEHOLDER drones and drone-bay pads, drawn in code until their pipeline art exists (CLAUDE.md: placeholders while art is pending).
@@ -26,6 +28,8 @@ export interface DroneHost {
   layer: Container;
   drones: Readonly<Record<string, DroneDef>>;
   modules: Readonly<Record<string, ModuleDef>>;
+  /** Pipeline art (#324): used when the manifest has it, else the code placeholder. */
+  atlas?: Pick<Atlas, 'stat'>;
 }
 
 interface Track {
@@ -34,6 +38,7 @@ interface Track {
   beam: Graphics;
   body: Graphics;
   def: string;
+  art?: DroneArtSprites;
 }
 
 /** Height of the bay's plate in tiles of height, and half a tile's art size. */
@@ -147,7 +152,7 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
       for (const id of world.query(ModuleC)) {
         const m = world.get(id, ModuleC);
         const def = m && host.modules[m.def];
-        if (!m || !def?.droneBay) continue;
+        if (!m || !def?.droneBay || host.atlas?.stat(`${def.asset}.r${m.rot}`)) continue; // with its art the module view draws the bay
         bays.add(id);
         let g = pads.get(id);
         if (!g) {
@@ -218,12 +223,19 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
         }
         const stunned = d.stunUntil > 0; // the drone system clears it once the stun is over
         const down = d.inert || stunned;
-        paintDrone(t, {
+        const working = d.state === 'out' && d.target && d.steps.length === 0 && !down ? d.target.kind : null;
+        const look: DroneLook = {
           tint: def.tint, kind: def.jobs[0]?.kind ?? 'repair', alt: b.alt, down, stunned,
-          battery: d.charge <= 0 ? 'flat' : d.charge < def.charge.lowBelow ? 'low' : 'ok',
-          working: d.state === 'out' && d.target && d.steps.length === 0 && !down ? d.target.kind : null,
-          hover: !down && d.state !== 'docked',
-        }, clock, id);
+          battery: d.charge <= 0 ? 'flat' : d.charge < def.charge.lowBelow ? 'low' : 'ok', working, hover: !down && d.state !== 'docked',
+        };
+        // The pipeline art when the manifest has it (the stun crackle stays drawn in code), else the placeholder.
+        const ids = droneArtIds(d.def, { down, working: !!working, docked: d.state === 'docked' }, b.heading, clock);
+        if (host.atlas) t.art ??= createDroneArtSprites(t.root);
+        if (host.atlas && t.art && applyDroneArt(host.atlas, t.art, ids, b.alt * Z_PX)) {
+          paintDrone(t, { ...look, working: null }, clock, id);
+          t.body.clear();
+          t.shadow.clear();
+        } else paintDrone(t, look, clock, id);
         const p = sectorArt(b.x, b.y);
         t.root.position.set(Math.round(p.x), Math.round(p.y));
         // Sector depth (x + y in tiles): over the module it hovers above (its front tile's depth), else over its own tile.

@@ -12,7 +12,7 @@ export function droneScenarioCommands(sim: Sim): Command[] {
   const grid = shipGrid(sim, ship);
   if (!grid) return [];
   const out: Command[] = [];
-  // Two bays near the AI core (in the starter's AI room) wherever a 2x1 fits without walling off any floor (a bay is solid to walkers).
+  // Two bays near the AI core (in the starter's AI room) wherever a 2x2 fits without walling off any floor (a bay is solid to walkers).
   // A ship without a core gets one first (Mk I), placed the same way from its middle.
   const core = sim.world.query(ModuleC).map((id) => sim.world.get(id, ModuleC)).find((m) => !!m && !!sim.content.modules[m.def]?.aiCore && shipIdOf(sim, m) === ship);
   const blocked = new Set<string>();
@@ -68,7 +68,7 @@ export function droneScenarioCommands(sim: Sim): Command[] {
       [cx, cy] = [at.x, at.y];
     }
   }
-  const spots = [place('module.droneBay', 2, 1, cx, cy), place('module.droneBay', 2, 1, cx, cy)].filter((s): s is { x: number; y: number } => !!s);
+  const spots = [place('module.droneBay', 2, 2, cx, cy), place('module.droneBay', 2, 2, cx, cy)].filter((s): s is { x: number; y: number } => !!s);
   for (const s of spots) out.push({ type: 'debug.spawnModule', ship, def: 'module.droneBay', x: s.x, y: s.y, rot: 0 });
   out.push({ type: 'debug.giveItems', item: 'item.drone_repair', count: 2 });
   out.push({ type: 'debug.giveItems', item: 'item.drone_medic', count: 1 });

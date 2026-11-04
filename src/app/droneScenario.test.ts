@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, DownedC, HealthC, ModuleC, newGame, type Sim } from '../sim';
+import { CrewC, DownedC, HealthC, ModuleC, ShipC, homeShip, newGame, placementError, spawnModule, type Sim } from '../sim';
 import { BodyC } from '../sim/body';
 import { droneCap, stunDronesNear } from '../sim/drones/bay';
+import { candidatesFor } from '../sim/drones/work';
+import { findPath } from '../sim/crew/pathfind';
+import { shipGrid, shipIdOf } from '../sim/regions';
 import { IonC } from '../sim/combat/components';
 import { DroneC, type Drone } from '../sim/drones/components';
 import { deserialize, serialize } from '../sim/save';
@@ -93,6 +96,39 @@ describe('drones (#318 slice 1)', () => {
     run(sim, 1);
     expect(sim.world.get(id, DroneC)!.stunUntil).toBeGreaterThan(sim.tick);
     expect(b.alt).toBe(0);
+  });
+
+  it('a hull-mounted module is repaired from a tile a drone can fly to (the airlock, origin on the hull wall)', () => {
+    const { sim } = scenario();
+    const ship = drones(sim)[0]!.ship;
+    const lock = sim.world.query(ModuleC).find((id) => !!sim.content.modules[sim.world.get(id, ModuleC)!.def]?.airlock && shipIdOf(sim, sim.world.get(id, ModuleC)) === ship)!;
+    const c = candidatesFor(sim, ship, { kind: 'repair', rate: 1 });
+    expect(c.some((t) => t.id === lock)).toBe(false); // whole: no candidate
+    sim.world.get(lock, ModuleC)!.hp = 1;
+    const t = candidatesFor(sim, ship, { kind: 'repair', rate: 1 }).find((x) => x.id === lock)!;
+    expect(t).toBeDefined();
+    expect(findPath(sim, ship, { x: t.x, y: t.y }, { x: t.x, y: t.y }, { fly: true })).not.toBeNull();
+  });
+
+  it('a bay on a ship with no drone items does not stop bays on other ships from filling', () => {
+    const sim = newGame(7, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    run(sim, 1);
+    const home = homeShip(sim);
+    const raider = sim.world.query(ShipC).find((id) => id !== home && sim.world.get(id, ShipC)?.faction !== 'player')!;
+    const g = shipGrid(sim, raider)!;
+    let placed = false;
+    for (let y = g.y0; y < g.y0 + g.height && !placed; y++) {
+      for (let x = g.x0; x < g.x0 + g.width && !placed; x++) {
+        if (placementError(sim, raider, 'module.droneBay', x, y, 0)) continue;
+        spawnModule(sim, 'module.droneBay', x, y, 0); // first: the lowest bay id, on a ship with no drone items
+        placed = true;
+      }
+    }
+    expect(placed).toBe(true);
+    for (const c of droneScenarioCommands(sim)) if (c.type === 'debug.spawnModule' || c.type === 'debug.giveItems') sim.enqueue(c);
+    run(sim, 0.2);
+    expect(drones(sim).filter((d) => d.ship === home).length).toBe(3);
   });
 
   it('save and load mid-flight give the same run', () => {

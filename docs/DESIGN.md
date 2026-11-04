@@ -817,7 +817,7 @@ extinguish and stabilise code, flying navigation, charging, the AI core link) an
 Later: combat drones that fly to the enemy and shoot (DESIGN "Combat drones": they build on the core's tier and the EMP effect),
 and salvage drones.
 
-**Slice 1 (built, #318): inside the ship.** The drone bay (2x1, two pads), the repair and medic drones, the core cap, inert on core loss,
+**Slice 1 (built, #318): inside the ship.** The drone bay (2x2, two pads), the repair and medic drones, the core cap, inert on core loss,
 ion knockouts, blueprints, fabricator recipes and station stock. The user's rulings (2026-11-04):
 - Bays fill themselves: a free pad takes a drone item from the ship's storage, no order needed.
 - The medic drone patches the downed (the bleeding stops) but does not get them up: rescue to a bed and a medic still do that.

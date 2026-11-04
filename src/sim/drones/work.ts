@@ -3,6 +3,8 @@ import { CarriedC, CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/com
 import { douseTile, repairModule, type WorkResult } from '../crew/jobWork';
 import { AllegianceC } from '../fight/components';
 import { ModuleC } from '../modules/components';
+import { footprintTiles } from '../modules/footprint';
+import { isTileWalkable } from '../modules/walk';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { ShipC } from '../combat/components';
@@ -39,7 +41,8 @@ const repair: KindRules<Extract<DroneJobDef, { kind: 'repair' }>> = {
       const m = sim.world.get(id, ModuleC);
       const def = m && sim.content.modules[m.def];
       if (!m || !def || m.hp >= def.maxHp || shipIdOf(sim, m) !== ship) continue;
-      out.push({ kind: 'repair', id, x: m.x, y: m.y, rank: 0 });
+      const at = workSpot(sim, ship, footprintTiles(def, m.x, m.y, m.rot));
+      if (at) out.push({ kind: 'repair', id, x: at.x, y: at.y, rank: 0 });
     }
     return out;
   },
@@ -50,6 +53,20 @@ const repair: KindRules<Extract<DroneJobDef, { kind: 'repair' }>> = {
   },
   work: (sim, _id, _d, t, job) => repairModule(sim, t.id, REPAIR_PER_SEC * job.rate),
 };
+
+/**
+ * Where a drone hovers to work on a module: its first footprint tile a drone can fly to (a hull-mounted module's origin may be a wall), else
+ * the first flyable tile beside the footprint. Null when there is none.
+ */
+function workSpot(sim: Sim, ship: number, tiles: readonly { x: number; y: number }[]): { x: number; y: number } | null {
+  const grid = shipGrid(sim, ship);
+  if (!grid) return null;
+  const ok = (x: number, y: number): boolean => isTileWalkable(sim, grid, x, y, false, true);
+  const inside = tiles.find((t) => ok(t.x, t.y));
+  if (inside) return inside;
+  for (const t of tiles) for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as const) if (ok(t.x + dx, t.y + dy)) return { x: t.x + dx, y: t.y + dy };
+  return null;
+}
 
 const fireAt = (sim: Sim, ship: number, x: number, y: number): number => {
   const grid = shipGrid(sim, ship);
