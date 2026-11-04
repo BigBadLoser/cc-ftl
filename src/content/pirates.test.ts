@@ -198,7 +198,7 @@ describe('the machines and the zealots', () => {
     expect(spawnContact(sim, sim.galaxy.current, contact)).toBe(true);
     const zealot = (contact as { ship?: number }).ship as number;
     expect(sim.world.get(zealot, ShipC)?.faction).toBe('neutral');
-    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed: 5, depth: 3, cx: 60, cy: 120 });
+    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed: 5, depth: 2, cx: 60, cy: 120 });
     sim.step();
     const drone = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)?.gen?.faction === 'faction.drones') as number;
     // A debug spawn flies the generator's default side; put the drones (ship and crew) on the machines' side as a node contact would.

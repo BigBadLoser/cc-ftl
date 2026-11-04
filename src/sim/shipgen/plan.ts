@@ -1,4 +1,5 @@
 import type { Rng } from '../rng';
+import { ENEMY_DRONES_BASE, ENEMY_DRONE_MIN_DEPTH, ENEMY_DRONE_SECOND_DEPTH } from '../tuning';
 import type { ModuleDef } from '../registry';
 import type { FactionDef, HullFamilyDef, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted } from './types';
 
@@ -43,6 +44,8 @@ export interface RoomSpec {
   /** Crates get starting stock; a vehicle bay gets a shuttle. */
   stock?: boolean;
   vehicle?: boolean;
+  /** A drone bay here is filled with this many drones of this DroneDef id. */
+  drones?: { def: string; count: number };
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
@@ -127,8 +130,14 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   if (!f.living && f.aiCore) consoles.push('module.aiCore');
   const command: RoomSpec = { role: f.living ? 'bridge' : 'core', mods: consoles, w: 7, h: f.living ? 4 : 5 };
   const pdCount = f.aiCore ? b.pointDefense : 0;
-  const core = f.aiCore && f.living ? { role: 'core' as const, mods: ['module.aiCore', ...Array<string>(pdCount).fill('module.pointDefense')], w: 3 + 3 * pdCount, h: 3 } : null;
-  const pd = !f.living ? Array.from({ length: pdCount }, () => ({ role: 'weapons' as const, mods: ['module.pointDefense'], w: 3, h: 3 })) : [];
+  // Defence drones (DESIGN.md "Drones"): a bay in the AI room (living crews) or in its own sealed pod (drone ships); it needs the core to run them.
+  const dronesOn = !!f.defenceDrones && f.aiCore && depth >= ENEMY_DRONE_MIN_DEPTH;
+  const drones = { def: 'drone.defence', count: ENEMY_DRONES_BASE + (depth >= ENEMY_DRONE_SECOND_DEPTH ? 1 : 0) };
+  const core = f.aiCore && f.living
+    ? { role: 'core' as const, mods: ['module.aiCore', ...Array<string>(pdCount).fill('module.pointDefense'), ...(dronesOn ? ['module.droneBay'] : [])], w: 3 + 3 * (pdCount + (dronesOn ? 1 : 0)), h: 3, ...(dronesOn ? { drones } : {}) }
+    : null;
+  const pd: RoomSpec[] = !f.living ? Array.from({ length: pdCount }, () => ({ role: 'weapons' as const, mods: ['module.pointDefense'], w: 3, h: 3 })) : [];
+  if (!f.living && dronesOn) pd.push({ role: 'weapons', mods: ['module.droneBay'], w: 3, h: 3, drones });
   const crew = [...f.crew.required];
   while (crew.length < Math.max(f.crew.required.length, b.crew)) crew.push(pickWeighted(rng, f.crew.pool));
   const quarters: RoomSpec[] = [];

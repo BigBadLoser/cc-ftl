@@ -1,5 +1,7 @@
 import { ALT, BodyC, type Body } from '../body';
+import { takeStock } from '../combat/ammo';
 import { IonC } from '../combat/components';
+import { shipById } from '../combat/ships';
 import { mustWaitAtAirlockDoor } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
@@ -9,7 +11,7 @@ import { TICK_HZ } from '../time';
 import { DRONE_PATH_TRIES, DRONE_SCAN_TICKS, EMPTY_CHARGE_MULT } from '../tuning';
 import { freeSlot, isDroneBay, slotTile, wreckDrone } from './bay';
 import { burnDrone } from './damage';
-import { recalled } from './recall';
+import { landingBusy, queuePlace, recalled } from './recall';
 import { hatchPoint, steer, stepLift } from './space';
 import { DroneC, type Drone, type DroneTarget } from './components';
 import { arrived, bodyTile, fly, planFlight } from './flight';
@@ -37,6 +39,9 @@ export function runDrone(sim: Sim, id: number, pass: DronePass): void {
   if (!def) return;
   burnDrone(sim, id, d);
   if (d.hp <= 0) return wreckDrone(sim, id);
+  // Its ship is wrecked or gone: the drone goes with it (nothing runs it, nothing to dock in).
+  const mine = shipById(sim, d.ship);
+  if (!mine || mine.state === 'wreck') return wreckDrone(sim, id);
   if (d.bay && !isDroneBay(sim, d.bay)) {
     if (d.state === 'docked') return wreckDrone(sim, id); // lost with its bay
     d.bay = 0;
@@ -63,7 +68,7 @@ export function runDrone(sim: Sim, id: number, pass: DronePass): void {
   b.alt = d.space ? ALT.cruise : ALT.drone;
   if (d.state === 'out' && (d.charge < def.charge.lowBelow || recalled(sim, d.ship))) goHome(d, pass);
   if (d.state === 'out') return d.space ? outSpace(sim, id, d, b, def, pass) : out(sim, id, d, b, def, pass);
-  if (d.space) return homeSpace(sim, d, b, def);
+  if (d.space) return homeSpace(sim, id, d, b, def);
   home(sim, id, d, b, def);
 }
 
@@ -103,14 +108,22 @@ function outSpace(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef, pass: 
 }
 
 /** Flying home in space: straight to its bay's hatch, then down through it. */
-function homeSpace(sim: Sim, d: Drone, b: Body, def: DroneDef): void {
+function homeSpace(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef): void {
   if (!d.bay) {
     const slot = freeSlot(sim, d.ship);
     if (!slot) return; // nowhere to land: it holds where it is
     [d.bay, d.slot] = [slot.bay, slot.slot];
   }
   const at = hatchPoint(sim, d.bay);
-  if (!at || !steer(b, at.x, at.y, speedOf(d, def))) return;
+  if (!at) return;
+  if (recalled(sim, d.ship) && !d.clear) {
+    // Staggered return: wait at a place of its own round the hatch until no other drone is landing or on its way in.
+    const place = queuePlace(at, id);
+    if (!steer(b, place.x, place.y, speedOf(d, def)) || landingBusy(sim, id, d)) return;
+    d.clear = true;
+  }
+  if (!steer(b, at.x, at.y, speedOf(d, def))) return;
+  d.clear = false;
   d.state = 'land';
   d.lift = 0;
 }
@@ -121,6 +134,7 @@ function knockedOut(d: Drone, b: Body, pass: DronePass): void {
   d.target = null;
   d.steps = [];
   d.work = 0;
+  d.clear = false;
   if (d.state === 'docked') {
     b.alt = ALT.dronePad;
     return;
@@ -139,6 +153,9 @@ function docked(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef, pass: Dr
   if (bay?.powered) {
     d.charge = Math.min(100, d.charge + rate / TICK_HZ);
     d.hp = Math.min(def.maxHp, d.hp + (sim.content.modules[bay.def]?.droneBay?.repairPerSec ?? 0) / TICK_HZ);
+  }
+  if (bay?.powered && def.supply && (d.load ?? 0) < def.supply.capacity && (sim.tick + id) % DRONE_SCAN_TICKS === 0) {
+    d.load = (d.load ?? 0) + takeStock(sim, d.ship, def.supply.item, def.supply.capacity - (d.load ?? 0)); // topped up from the ship's storage
   }
   if (d.charge < def.charge.launchAbove || (pass.out.get(d.ship) ?? 0) >= (pass.cap.get(d.ship) ?? 0) || recalled(sim, d.ship)) return;
   if ((sim.tick + id) % DRONE_SCAN_TICKS !== 0 || !pickTarget(sim, d, b, def, pass, 'any')) return;
@@ -233,7 +250,7 @@ function pickTarget(sim: Sim, d: Drone, b: Body, def: DroneDef, pass: DronePass,
   for (const job of def.jobs) {
     const place = jobWhere(job.kind);
     if (where !== 'any' && place !== where) continue;
-    const cands = candidatesFor(sim, d.ship, job).filter((c) => {
+    const cands = candidatesFor(sim, d.ship, job, d).filter((c) => {
       const k = targetKey(c);
       return !k || !pass.claims.has(k);
     });

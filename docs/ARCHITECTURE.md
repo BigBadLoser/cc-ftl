@@ -1401,14 +1401,29 @@ Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
     too, so defending never provokes.
   - *Recall* (`drones/recall.ts`): a charge order with a jump, or a held departure, recalls the ship's drones (no launches, the ones out fly
     home). `jump`, `flee` and `leaveEvent` call `holdDeparture` before they lift the ship: with drones outside it stores `Combat.departHold`
-    and stops; the helm system retries it every tick (`settleDeparture`) until they are in or `DRONE_RECALL_WAIT_SEC` is over. Then
+    and stops; the helm system retries it every tick (`settleDeparture`) until they are in or the wait (`DRONE_RECALL_WAIT_SEC` plus `DRONE_QUEUE_ALLOW_SEC` per drone after the first, stored as `DepartHold.waitTicks`) is over. Then
     `loseStrandedDrones` (`drone.lost`) and only drones aboard (docked, or flying inside) lift (`members.ts`).
   - *Damage* (`drones/damage.ts`): fire on its tile inside (`DRONE_FIRE_DAMAGE` x intensity), crew hand weapons (`fight/fighter.ts`
     `shootDrone`: armed fighters shoot an enemy drone inside that they can hit where they stand, when no crew foe is about), and in space
     point defence (`DRONE_PD_*`) and enemy defence drones. Ship guns never target a drone. A docked drone is mended by a powered bay
     (`DroneBayDef.repairPerSec`). A wreck in space drops nothing. SAVE_VERSION 90.
   - Debug start `?scenario=drones&fight[&charged]`; lab panel `droneLaunch`.
-- **Slice 2b (planned):** outside breach repair, enemy drones through shipgen.
+- **Slice 2b (built on `drones/space2b-318`):**
+  - *Enemy drones* (shipgen): a `FactionDef` with `defenceDrones` (navy, rogue AI) gets, from `ENEMY_DRONE_MIN_DEPTH`, a `module.droneBay` in
+    its AI room (living crews) or its own sealed pod (drone ships) (`plan.ts`); the room spec's `drones` becomes `ShipTemplate.modules[].drones`
+    (`generate.ts`), which `placeTemplateModules` spawns docked and `stampShip` hands to the new ship. Same drone system, same `drone.defence`
+    def: they launch once a ship at war with them is in play, and shoot our missiles, shuttles and drones by the shared rules. Count and depth
+    gates are in `tuning.ts` (`ENEMY_DRONE_*`). A drone whose ship is a wreck or gone is wrecked with it (`runDrone`). Debug start `?scenario=drones&fight&enemy=navy|drones[&depth=N]`; with `?hook`, `__cc.setSpeed(0..3)` freezes or runs the sim and `__cc.stepTicks(n)` advances it.
+  - *Staggered return* (`drones/recall.ts` `landingBusy`, `queuePlace`): while a ship's drones are recalled a drone in space waits at a place
+    of its own round the hatch until no other drone of the ship is cleared (`Drone.clear`) or less than `DRONE_LAND_GAP_SEC` into its landing.
+    The recall wait grows with the queue, so only distance can strand a drone. SAVE_VERSION 91 (93 with the later fixes).
+  - *Supplies:* `DroneDef.supply` (`{ item, capacity }`, data) is a load a drone carries (`Drone.load`, saved). Docked in a powered bay it tops
+    up from the ship's storage every scan (`combat/ammo.ts` `takeStock`, shared with `consumeAmmo`); no hauling. The repair drone carries 4 metal.
+    Medic supplies and drone ammo will use the same field. SAVE_VERSION 92.
+  - *Outside breach repair* (`drones/seal.ts`, job `seal`, space): a repair drone with the wall's whole cost in its load (`structCosts`, via
+    `sealCost`) takes a hole in its ship's hull (`crew/breach.ts` `breachesOf`, shared with the crew's seal job posting), flies out through the
+    hatch, hovers over it for the crew's wall time, then finishes it through `finishStruct` (exported from `crew/jobWork.ts`) and pays from its
+    load. A crew wall job on the same hole is destroyed. Recall and wrecks work as for any space job. Debug start `?scenario=drones&breach`.
 
 ## Vehicles (shuttles), `src/sim/vehicles/`
 

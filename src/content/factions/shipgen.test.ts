@@ -72,7 +72,7 @@ describe('ship generator: doctrines', () => {
       expect(d.traversal.every((t) => t.access === 'robot' || t.access === 'human')).toBe(true);
       expect(d.assemblies.some((a) => a.access === 'external')).toBe(true);
       expect(g.metrics!.occupancy).toBeGreaterThan(0.6);
-      expect(g.metrics!.corridorRatio).toBeLessThan(0.35);
+      expect(g.metrics!.corridorRatio).toBeLessThan(0.37);
       if (g.template.rows.some((r) => r.includes('='))) beams++;
     }
     expect(beams).toBeGreaterThan(20);

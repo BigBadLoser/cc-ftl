@@ -94,7 +94,7 @@ function timed(job: Job, speed: number, finish: () => WorkResult): WorkResult {
   return job.progress < job.work ? 'working' : finish();
 }
 
-function finishStruct(sim: Sim, job: Job): WorkResult {
+export function finishStruct(sim: Sim, job: Job): WorkResult {
   if (job.kind === 'build' && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
   const grid = shipGrid(sim, shipIdOf(sim, job));
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {

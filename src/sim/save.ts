@@ -114,7 +114,7 @@ import { newYard, type YardState } from './yard/types';
  * v89 (drones, #318 slice 1): `DroneC` (on a `BodyC`); `Downed.patched`.
  * v90 (drones in space, #318 slice 2): `Drone.space`, `lift`, `cool`, states 'launch' and 'land'; `Combat.departHold`.
  */
-export const SAVE_VERSION = 90;
+export const SAVE_VERSION = 93;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

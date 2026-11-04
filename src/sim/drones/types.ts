@@ -20,7 +20,13 @@ export type DroneJobDef =
    * (`droneDamage`), then enemy shuttles (`shuttleDamage`, chipping like point defence). One shot every `fireSec`. Never a ship, so it never
    * provokes anyone (combat/provoke.ts).
    */
-  | { kind: 'intercept'; range: number; gap: number; fireSec: number; hitChance: number; droneDamage: number; shuttleDamage: number };
+  | { kind: 'intercept'; range: number; gap: number; fireSec: number; hitChance: number; droneDamage: number; shuttleDamage: number }
+  /**
+   * Seal hull breaches from outside (DESIGN.md "Drones"): flies out through its bay's hatch to a hole in the hull of its ship and closes it
+   * with a wall, in the crew's wall time divided by `rate`. The wall's cost is paid from the drone's supply load (`DroneDef.supply`); a drone
+   * that cannot carry the whole cost, or has too little of it, does not take the work.
+   */
+  | { kind: 'seal'; rate: number };
 
 export type DroneJobKind = DroneJobDef['kind'];
 
@@ -39,6 +45,8 @@ export interface DroneDef {
   ionStunSec: number;
   /** What a destroyed drone leaves. */
   wreck: readonly ItemQty[];
+  /** A load of one item it carries (topped up from its ship's storage while docked in a powered bay) and spends on work, e.g. the metal of a seal. */
+  supply?: { item: string; capacity: number };
   /** Its work, best first. */
   jobs: readonly DroneJobDef[];
   /** Placeholder colour of its body until the art exists. Render-only. */

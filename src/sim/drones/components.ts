@@ -51,5 +51,9 @@ export interface Drone {
   lift: number;
   /** Ticks until its gun is ready again (defence); it was just fired while this is near its full reload (render: the firing pose). */
   cool: number;
+  /** Recalled and cleared to land: it has left its place in the queue and is on its way to the hatch (drones/run.ts, staggered return). */
+  clear?: boolean;
+  /** Units of its def's supply item it carries now (absent: none). */
+  load?: number;
 }
 export const DroneC = defineComponent<Drone>('drone');

@@ -11,6 +11,7 @@
     {#if s}
       <div class="row"><span>{s.name}</span><span class="dim" class:bad={s.state === 'down'}>{s.doing}</span></div>
       <div class="bar" class:low={s.charge < 25}><i style:width="{s.charge}%"></i></div>
+      {#if s.supply}<div class="row sup" data-testid="drone-supply"><span class="dim">Load</span><span class:bad={s.supply.have === 0}>{s.supply.name} {s.supply.have}/{s.supply.cap}</span></div>{/if}
     {:else}
       <div class="row"><span class="dim">Empty pad</span><span class="dim">takes a drone from storage</span></div>
     {/if}

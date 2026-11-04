@@ -277,6 +277,8 @@ export interface DepartHold {
   withDocked?: number[];
   overcharge?: boolean;
   since: number;
+  /** How long the hold may last, in ticks: the recall wait plus what the landing queue itself costs (`holdWaitTicks`). Absent: the plain wait. */
+  waitTicks?: number;
 }
 
 export interface Ion {

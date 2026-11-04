@@ -91,6 +91,7 @@ export const navy = {
   stock: [{ item: 'item.missile', min: 2, max: 6 }, { item: 'item.metal', min: 0, max: 4 }],
   living: true,
   aiCore: true,
+  defenceDrones: true,
   crew: {
     required: ['role.pilot', 'role.gunner', 'role.engineer'],
     pool: [{ value: 'role.gunner', weight: 2 }, { value: 'role.engineer', weight: 2 }, { value: 'role.security', weight: 2 }, { value: 'role.medic', weight: 1 }],

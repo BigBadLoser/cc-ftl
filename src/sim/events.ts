@@ -176,6 +176,8 @@ export type SimEvent =
   | { type: 'drone.launchedSpace'; drone: number; ship: number }
   | { type: 'drone.docked'; drone: number; bay: number }
   | { type: 'drone.stunned'; drone: number; until: number }
+  /** A repair drone closed a hole in its ship's hull at (x, y) from outside. */
+  | { type: 'drone.sealed'; drone: number; ship: number; x: number; y: number }
   | { type: 'drone.inert'; drone: number }
   | { type: 'drone.active'; drone: number }
   /** `ship`: its home ship; (x, y) its tile; `space`: it was out in space (at cruise height, nothing falls). */

@@ -13,10 +13,17 @@ export function ammoCount(sim: Sim, shipId: number, item: string): number {
   return n;
 }
 
+/** Take up to `count` units of an item from the grid's storage modules (first holding it first). Returns how many it got. */
+export function takeStock(sim: Sim, shipId: number, item: string, count: number): number {
+  let got = 0;
+  for (const id of sim.world.query(StorageC)) {
+    if (got >= count) break;
+    if (shipIdOf(sim, sim.world.get(id, ModuleC)) === shipId) got += storageTake(sim, id, item, count - got);
+  }
+  return got;
+}
+
 /** Take one unit from the first storage module of the grid holding it. Returns false if none. */
 export function consumeAmmo(sim: Sim, shipId: number, item: string): boolean {
-  for (const id of sim.world.query(StorageC)) {
-    if (shipIdOf(sim, sim.world.get(id, ModuleC)) === shipId && storageTake(sim, id, item, 1) === 1) return true;
-  }
-  return false;
+  return takeStock(sim, shipId, item, 1) === 1;
 }

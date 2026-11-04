@@ -291,7 +291,7 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 /**
  * `?scenario=drones&fight` (#318 slice 2): two drone bays and two defence drones, and a missile-armed Lancer at engagement distance. The fight
  * starts at once, the drones go up through their hatches and guard the ship. Charge the drive and jump (or flee) to see them recalled
- * (`&charged`: the drive starts full).
+ * (`&charged`: the drive starts full). `&enemy=navy|drones[&depth=N]` fights a generated ship with defence drones instead of the Lancer (slice 2b).
  */
 function droneFightScenario(): void {
   const g = sim.galaxy;
@@ -326,10 +326,14 @@ function droneFightScenario(): void {
           clamp(mine.x + mine.width + 40, mine.y + mine.height + 20), clamp(mine.x - w - 40, mine.y + mine.height + 20),
         ];
         const hostile = (): boolean => sim.world.query(ShipC).some((id) => sim.world.get(id, ShipC)?.faction === 'hostile');
+        // `&enemy=navy` or `&enemy=drones` (rogue AI): a generated ship of that faction instead, with its drone bay and defence drones (`&depth=N`, default 6).
+        const faction = params.get('enemy');
+        const depth = Number(params.get('depth') ?? 6);
         const tryAt = (i: number): void => {
           const p = spots[i];
           if (!p || hostile()) return;
-          bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.lancer', x: p.x, y: p.y });
+          if (faction) bridge.dispatch({ type: 'debug.spawnGenerated', faction: `faction.${faction}`, depth, seed: 5, cx: p.x + 37, cy: p.y + 14 });
+          else bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.lancer', x: p.x, y: p.y });
           const sent = sim.tick;
           when(() => sim.tick >= sent + 10, () => tryAt(i + 1));
         };
@@ -373,6 +377,16 @@ function startScenario(): void {
     return;
   }
   if (scenario === 'drones' && params.has('fight')) return droneFightScenario();
+  if (scenario === 'drones' && params.has('breach')) {
+    // `?scenario=drones&breach`: repair drones with metal and a hole in the hull; they go out through the hatch and seal it (app/droneScenario.ts).
+    loop.setSpeed(1);
+    const setUp = (): void => {
+      if (sim.tick < 10) return void setTimeout(setUp, 150);
+      for (const cmd of droneScenarioCommands(sim, false, true)) bridge.dispatch(cmd);
+    };
+    setUp();
+    return;
+  }
   if (scenario === 'drones') {
     // `?scenario=drones`: drone bays, three drones, a fire, a damaged console and hurt crew (app/droneScenario.ts).
     loop.setSpeed(1);
@@ -598,7 +612,7 @@ const api: UiApi = {
         r.setCommitEta((id) => commitEtaSec(sim, id));
         r.setShotColor((id) => shotColor(shotSlot(sim, id)));
         r.setProbe(probe);
-        if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r);
+        if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r, loop);
         r.setSector(sim.sector.grid);
         r.setBackdrop(backdropSpecOf(sim));
         const grid = shipGrid(sim, homeShip(sim));
