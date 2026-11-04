@@ -1,13 +1,14 @@
 """The exterior hull's window (after Space Haven's hull windows): a straight run's design over two or more tiles, an
 end piece at each end (W1 the run's start, W3 its end) and middle pieces (W2) between. The base hull (wall3d_ext_t3's
-section) cut down to: a sill (the upright part, cut low, its top sloping up to the frame's front, flat behind), a window cut
-through the wall (a pane of glass in it) and a header over it (the lean's top 5 px, then upright; its underside flat).
-An end piece keeps an outer frame of the whole base section at its outer end and the window frame's side inside it
-(a jamb, its front the header's). A window piece builds its tile's whole section itself (wall3d_ext's shell builds
-nothing for it), the window cut through to the wall's back.
+section) cut down to: a sill (the upright part, cut low, its top sloping up to the frame's front, flat behind), a
+window cut through the wall (a pane of glass in it) and a header over it (the lean's top 5 px, then upright; its
+underside flat). An end piece keeps an outer frame of the whole base section at its outer end and the window frame's
+side inside it (a jamb, its front the header's). A window piece builds its tile's whole section itself
+(wall3d_ext's shell builds nothing for it), the window cut through to the wall's back.
 
 Measured off the reference (its top and the upright part's front sit where the base hull's do; the section off the
-pieces' cut sides): the header's foot 21 px down the base lean's front; the sill's front 25 px tall, its top's slope rising 7.5 px over its depth; W1's outer frame 3 px, its jamb 9 px."""
+pieces' cut sides): the header's foot 21 px down the base lean's front; the sill's front 25 px tall, its top's slope
+rising 7.5 px over its depth; W1's outer frame 3 px, its jamb 9 px."""
 from . import core
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
