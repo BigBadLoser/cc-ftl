@@ -448,6 +448,8 @@ export const DRONE_LIFT_SEC = 2.4;
 export const DRONE_HATCH_SHARE = 0.3;
 /** Seconds a departure (a jump, a flee, leaving a scene) waits for drones out in space to dock; those still out then are lost. */
 export const DRONE_RECALL_WAIT_SEC = 6;
+/** The staggered landing never strands a drone: the wait grows by this many seconds for each drone queued behind the first (the landing gap plus the flight in from the queue). */
+export const DRONE_QUEUE_ALLOW_SEC = 1.5;
 /** Point defence against enemy drones in space within VEHICLE_PD_RANGE of its ship: every VEHICLE_PD_INTERVAL ticks each working module rolls this to hit one for this much. */
 export const DRONE_PD_CHANCE = 0.3;
 export const DRONE_PD_DAMAGE = 8;

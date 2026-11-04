@@ -1401,7 +1401,7 @@ Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
     too, so defending never provokes.
   - *Recall* (`drones/recall.ts`): a charge order with a jump, or a held departure, recalls the ship's drones (no launches, the ones out fly
     home). `jump`, `flee` and `leaveEvent` call `holdDeparture` before they lift the ship: with drones outside it stores `Combat.departHold`
-    and stops; the helm system retries it every tick (`settleDeparture`) until they are in or `DRONE_RECALL_WAIT_SEC` is over. Then
+    and stops; the helm system retries it every tick (`settleDeparture`) until they are in or the wait (`DRONE_RECALL_WAIT_SEC` plus `DRONE_QUEUE_ALLOW_SEC` per drone after the first, stored as `DepartHold.waitTicks`) is over. Then
     `loseStrandedDrones` (`drone.lost`) and only drones aboard (docked, or flying inside) lift (`members.ts`).
   - *Damage* (`drones/damage.ts`): fire on its tile inside (`DRONE_FIRE_DAMAGE` x intensity), crew hand weapons (`fight/fighter.ts`
     `shootDrone`: armed fighters shoot an enemy drone inside that they can hit where they stand, when no crew foe is about), and in space
@@ -1416,7 +1416,7 @@ Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
     gates are in `tuning.ts` (`ENEMY_DRONE_*`). A drone whose ship is a wreck or gone is wrecked with it (`runDrone`). Debug start `?scenario=drones&fight&enemy=navy|drones[&depth=N]`; with `?hook`, `__cc.setSpeed(0..3)` freezes or runs the sim and `__cc.stepTicks(n)` advances it.
   - *Staggered return* (`drones/recall.ts` `landingBusy`, `queuePlace`): while a ship's drones are recalled a drone in space waits at a place
     of its own round the hatch until no other drone of the ship is cleared (`Drone.clear`) or less than `DRONE_LAND_GAP_SEC` into its landing.
-    With the 2.4 s landing and 6 s wait, up to four drones make it. SAVE_VERSION 91.
+    The recall wait grows with the queue, so only distance can strand a drone. SAVE_VERSION 91 (93 with the later fixes).
   - *Supplies:* `DroneDef.supply` (`{ item, capacity }`, data) is a load a drone carries (`Drone.load`, saved). Docked in a powered bay it tops
     up from the ship's storage every scan (`combat/ammo.ts` `takeStock`, shared with `consumeAmmo`); no hauling. The repair drone carries 4 metal.
     Medic supplies and drone ammo will use the same field. SAVE_VERSION 92.

@@ -800,7 +800,7 @@ extinguish and stabilise code, flying navigation, charging, the AI core link) an
 - **Built, kept, lost.** Each type has a researched blueprint and is built at a fabricator from parts and electronics. Tech
   stations also sell them ready-made. A destroyed drone leaves scrap.
 - **Jumping and leaving.** Charging a jump, or leaving a scene, recalls every drone. The departure waits a few seconds for
-  them, the way leaving waits for crew. A drone that can't make it back in time is left behind and lost.
+  them (longer the more there are: they dock one after another), the way leaving waits for crew. A drone that can't make it back in time is left behind and lost.
 - **Weaknesses.** Ion or EMP near a drone or on its bay knocks it out for a while; a flying drone drops. Losing the core
   stops them all. In space, only flak, point defence and enemy defence drones can hit a drone; ordinary ship guns can't
   track one.
@@ -828,7 +828,7 @@ ion knockouts, blueprints, fabricator recipes and station stock. The user's ruli
 - Nothing damages a drone yet besides ion and core loss: drone damage comes with slice 2.
 **Slice 2a (built on `drones/space-318`, awaiting review): space.** The ceiling hatch launch and landing, the defence drone (circles the
 ship while a ship at war with it is in play; shoots incoming missiles, enemy drones and shuttles, never a ship), the recall on a jump, a
-flee or leaving a scene (the departure waits up to 6 s; drones still out are lost and logged), and drone damage (fire, hand weapons, and in
+flee or leaving a scene (the departure waits 6 s, plus 1.5 s for each drone after the first, since they dock one at a time; drones still out are lost and logged), and drone damage (fire, hand weapons, and in
 space point defence and enemy defence drones). Slice 2b (built, #318): enemy drones (navy and rogue AI ships carry a bay with one or two defence drones from sector depth 3; they guard their ship and shoot our missiles, shuttles and drones) and the staggered return (recalled drones dock one after another). Outside breach repair is built: a repair drone with 2 metal in its load seals a hull breach from outside. Code: ARCHITECTURE.md "Drones".
 
 ### Where blueprints are sold (user decision, 2026-10-26)

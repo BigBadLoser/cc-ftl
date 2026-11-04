@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
 import { ProjectileC, ShipC, homeShip, newGame, type Sim, type SimEvent } from '../sim';
-import { BodyC } from '../sim/body';
+import { ALT, BodyC } from '../sim/body';
+import { spawnDrone } from '../sim/drones/bay';
 import { DroneC } from '../sim/drones/components';
 import { ModuleC } from '../sim';
 import { shipIds } from '../sim/regions';
@@ -113,5 +114,33 @@ describe('staggered return (#318 slice 2b)', () => {
     expect(docked.length).toBe(2);
     expect(((docked[1] as number) - (docked[0] as number)) / TPS).toBeGreaterThanOrEqual(DRONE_LAND_GAP_SEC - 0.1);
     expect(events.some((e) => e.type === 'drone.lost')).toBe(false);
+  });
+
+  it('four drones out and an immediate departure: the queue never strands one', () => {
+    const { sim, events, step } = against('faction.navy', 1);
+    step(14);
+    const me = sim.world.get(homeShip(sim), ShipC)!;
+    const bays = sim.world.query(ModuleC).filter((m) => sim.world.get(m, ModuleC)?.def === 'module.droneBay');
+    // Two more guards (the Mk I core only lets two launch, but nothing stops more being out), all four in one spot.
+    for (const [bay, slot] of [[bays[0] as number, 1], [bays[1] as number, 1]] as const) {
+      const id = spawnDrone(sim, 'drone.defence', bay, slot);
+      if (!id) continue;
+      const d = sim.world.get(id, DroneC)!;
+      Object.assign(d, { state: 'out', space: true });
+      Object.assign(sim.world.get(id, BodyC)!, { alt: ALT.cruise });
+    }
+    for (const id of sim.world.query(DroneC)) {
+      const b = sim.world.get(id, BodyC)!;
+      [b.x, b.y] = [me.x + me.width / 2, me.y - 5];
+    }
+    expect(sim.world.query(DroneC).filter((id) => sim.world.get(id, DroneC)?.space).length).toBe(4);
+    sim.enqueue({ type: 'debug.chargeFtl' });
+    step(0.1);
+    sim.enqueue({ type: 'combat.flee', ship: homeShip(sim) });
+    step(14);
+    expect(sim.sector.state).toBe('hyperspace');
+    expect(events.filter((e) => e.type === 'drone.lost').length).toBe(0);
+    const lifted = (sim.sector.packet?.entities ?? []).map((e) => (e.c as Record<string, unknown>).drone as { state: string } | undefined).filter((d) => !!d);
+    expect(lifted.map((d) => d?.state)).toEqual(['docked', 'docked', 'docked', 'docked']);
   });
 });

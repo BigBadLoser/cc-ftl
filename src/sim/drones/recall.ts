@@ -1,7 +1,7 @@
 import { CombatC, type DepartHold } from '../combat/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { DRONE_LAND_GAP_SEC, DRONE_LIFT_SEC, DRONE_QUEUE_RADIUS, DRONE_RECALL_WAIT_SEC } from '../tuning';
+import { DRONE_LAND_GAP_SEC, DRONE_LIFT_SEC, DRONE_QUEUE_ALLOW_SEC, DRONE_QUEUE_RADIUS, DRONE_RECALL_WAIT_SEC } from '../tuning';
 import { DroneC, type Drone } from './components';
 
 /**
@@ -28,6 +28,9 @@ export function recalled(sim: Sim, ship: number): boolean {
   return !!c && (!!c.ftlOrder?.jump || !!c.departHold);
 }
 
+/** How long a held departure waits for its drones: DRONE_RECALL_WAIT_SEC, plus DRONE_QUEUE_ALLOW_SEC for each drone after the first (the queue's own cost, so only distance can strand one). */
+const holdWaitTicks = (hold: DepartHold): number => hold.waitTicks ?? DRONE_RECALL_WAIT_SEC * TICK_HZ;
+
 /**
  * Called by a departure just before the ship goes. With drones outside and no hold yet it holds the departure (stored on the ship, retried
  * every tick by the helm, ftl/order.ts `settleDeparture`) and returns true: the caller stops. A held departure goes ahead (false) once they
@@ -38,12 +41,12 @@ export function holdDeparture(sim: Sim, ship: number, hold: Omit<DepartHold, 'si
   if (!c) return false;
   const outside = dronesOutside(sim, ship).length;
   if (c.departHold) {
-    if (outside > 0 && sim.tick - c.departHold.since < DRONE_RECALL_WAIT_SEC * TICK_HZ) return true;
+    if (outside > 0 && sim.tick - c.departHold.since < holdWaitTicks(c.departHold)) return true;
     c.departHold = null;
     return false;
   }
   if (outside === 0) return false;
-  c.departHold = { ...hold, since: sim.tick };
+  c.departHold = { ...hold, since: sim.tick, waitTicks: Math.round((DRONE_RECALL_WAIT_SEC + DRONE_QUEUE_ALLOW_SEC * (outside - 1)) * TICK_HZ) };
   sim.events.emit({ type: 'drone.recall', ship, drones: outside });
   return true;
 }
@@ -51,7 +54,7 @@ export function holdDeparture(sim: Sim, ship: number, hold: Omit<DepartHold, 'si
 /** True once a held departure may go: no drone left outside, or the wait is over. */
 export function departureDue(sim: Sim, ship: number): boolean {
   const hold = sim.world.get(ship, CombatC)?.departHold;
-  return !!hold && (dronesOutside(sim, ship).length === 0 || sim.tick - hold.since >= DRONE_RECALL_WAIT_SEC * TICK_HZ);
+  return !!hold && (dronesOutside(sim, ship).length === 0 || sim.tick - hold.since >= holdWaitTicks(hold));
 }
 
 /** The ship leaves: its drones still outside are left behind and lost. */
@@ -72,7 +75,7 @@ export function queuePlace(hatch: { x: number; y: number }, id: number): { x: nu
 /**
  * Staggered return: a recalled drone starts in only once no other drone of its ship is on its way to a hatch (cleared) or has been coming
  * down for less than DRONE_LAND_GAP_SEC, so they dock one after another and the ship is not unguarded in a block. The wait for them is
- * `DRONE_RECALL_WAIT_SEC`: the gap stays under DRONE_LIFT_SEC, so a landing never holds up the next one for longer than it takes.
+ * the wait grows by `DRONE_QUEUE_ALLOW_SEC` per queued drone, so the stagger itself never strands one.
  */
 export function landingBusy(sim: Sim, id: number, mine: Drone): boolean {
   const gap = Math.min(DRONE_LAND_GAP_SEC, DRONE_LIFT_SEC) / DRONE_LIFT_SEC;
