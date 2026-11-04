@@ -9,8 +9,8 @@ frame's front.
 
 Measured off the reference (its top and the upright part's front sit where the base hull's do; the section off the
 pieces' cut sides): the header's foot 21 px down the base lean's front; the sill's front 25 px tall, its top's slope
-rising 7.5 px over its depth; W1's outer frame 3 px (its jamb 5 px:
-narrower than the reference's 9)."""
+rising 7.5 px over its depth; W1's outer frame 3 px, its jamb 9 px (ours
+2 px and 5 px: narrower); the window's corner at the jamb's foot a cove of about 8 px."""
 from . import core
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
@@ -25,7 +25,7 @@ SILL_RISE = 7.5                     # its top's slope: its rise from the front t
 SILL_FLAT = "hsXS"                  # that flat (shaded under the header; well under the slope's)
 SILL_SLOPE = "hwL"                  # the slope (a white between the jamb's front and the header's lean: the window's
                                     # own tone, palette set "window")
-FRAME = 3 / 32                      # an end piece's outer frame (the whole base section), along the face
+FRAME = 2 / 32                      # an end piece's outer frame (the whole base section), along the face
 JAMB = 5 / 32                       # the window frame's side (W1: its left) inside it, along the face: upright from
                                     # the sill to the header, its front the header's
 BEVEL = 5 / 32                      # the header: its lean only this far out from the top's front edge, then cut
@@ -40,12 +40,15 @@ PANE_IN = 5 / 32                    # its front this far behind the frame's fron
 WALL_BACK = 5 / 32                  # the wall's back this far behind the pane's back (the window cut through to it)
 EDGE = YS[0]                        # the pane's edges (all but its two faces): dark and opaque, a hair proud of
 EDGE_OUT = 0.002                    # the frame they sit on, so each draws a dark line on it
+COVE = 8 / 32                       # the window's corner at the jamb's foot: a cove this radius (the jamb's side
+COVE_N = 8                          # curving into the sill's flat top, through the jamb's depth), in this many
+                                    # facets: the upper ones the side's tone, the lower the flat's; the pane round
+                                    # it
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
 def build(k, ax, plane, a, b, ends, H):
     global GLASS
-    from .faction.parts import prism
     s = Section(H, T3.BACK)
     f = Face(k, ax, plane, a, b, ends, s, T3.CORNER_C)
     zb, fr = s.zb, D + T3.BACK                          # (fr: the upright part's front, out from the block's face)
@@ -77,9 +80,51 @@ def build(k, ax, plane, a, b, ends, H):
         cols = s.cols(pf, "face")                                       # down to its foot
         cols[1] = HEAD_FRONT
         f.part(h0, w1, pf, cols, None, end=False)
-        prism(GLASS, ax, plane, w0, w1, [(dp - PANE / 2, zj), (dp + PANE / 2, zj), (dp + PANE / 2, zh),   # the
-                                         (dp - PANE / 2, zh)], "steel", 3, ["glassL"] * 4, "glassL")         # pane
-        e = EDGE_OUT
-        pf = [(dp - PANE / 2, zj + e), (dp + PANE / 2, zj + e), (dp + PANE / 2, zh - e), (dp - PANE / 2, zh - e)]
-        f.part(w0 + (e if PART == "w1" else 0.0), w1, pf, [EDGE, False, EDGE, False],     # its edges (an end only
-               (EDGE if PART == "w1" else False, EDGE if PART == "w3" else False), end=False)  # at the jamb)
+        r = COVE if PART == "w1" else 0.0
+        _slab(GLASS, ax, plane, _opening(w0, w1, zj, zh, r, 0.0), dp - PANE / 2, dp + PANE / 2, "glassL",
+              ["glassL"] * 99)                                          # the pane
+        e = EDGE_OUT                                                    # its edges (but where it runs on)
+        pts = _opening(w0 + (e if r else 0.0), w1, zj + e, zh - e, r, e)
+        _slab(k, ax, plane, pts, dp - PANE / 2, dp + PANE / 2, False,
+              [False if abs(a[0] - b[0]) < 1e-9 and (abs(a[0] - w1) < 1e-9 or (not r and abs(a[0] - w0) < 1e-9))
+               else EDGE for a, b in zip(pts, pts[1:] + pts[:1])])
+        if r:                                                           # the cove
+            arc = _arc(w0, zj, r, 0.0)
+            cols = [SIDE if i < COVE_N / 2 else SILL_FLAT for i in range(COVE_N)]
+            _slab(k, ax, plane, [(w0, zj)] + arc, db, dv, HEAD_FRONT, [False] + cols + [False], back=False)
+
+
+def _arc(u0, z0, r, e):
+    """The cove's arc (a corner at (u0, z0), radius r; e: its radius that much less), from the jamb down to the sill."""
+    import math
+    uc, zc = u0 + r, z0 + r
+    return [(uc - (r - e) * math.cos(math.pi / 2 * i / COVE_N), zc - (r - e) * math.sin(math.pi / 2 * i / COVE_N))
+            for i in range(COVE_N + 1)]
+
+
+def _opening(u0, u1, z0, z1, r, e):
+    """The window's opening in (u, z), anticlockwise from its top left: a cove of radius r at its bottom left."""
+    if not r:
+        return [(u0, z1), (u0, z0), (u1, z0), (u1, z1)]
+    return [(u0, z1)] + _arc(u0 - e, z0 - e, r, e) + [(u1, z0), (u1, z1)]
+
+
+def _slab(k, ax, plane, pts, d0, d1, face, edges, back=True, fam="steel", lvl=3):
+    """A (u, z) polygon through d0..d1: its front (and back) faces `face` (False: left out), its sides edges[i] (the
+    one from pts[i] to pts[i + 1]; False: left out)."""
+    from mathutils import Vector
+    from .faction.parts import ALONG
+    o, up, al = T.OUT(ax), Vector((0, 0, 1)), ALONG(ax)
+    uc, zc = sum(q[0] for q in pts) / len(pts), sum(q[1] for q in pts) / len(pts)
+    if face is not False:
+        k.poly([T.P(ax, plane, u, z, d1) for u, z in pts], fam, lvl, o, fixed=face)
+        if back:
+            k.poly([T.P(ax, plane, u, z, d0) for u, z in pts], fam, lvl, -o, fixed=face)
+    for i, (a, b) in enumerate(zip(pts, pts[1:] + pts[:1])):
+        if edges[i] is False:
+            continue
+        nu, nz = b[1] - a[1], a[0] - b[0]
+        if nu * ((a[0] + b[0]) / 2 - uc) + nz * ((a[1] + b[1]) / 2 - zc) < 0:
+            nu, nz = -nu, -nz
+        k.poly([T.P(ax, plane, a[0], a[1], d0), T.P(ax, plane, b[0], b[1], d0), T.P(ax, plane, b[0], b[1], d1),
+                T.P(ax, plane, a[0], a[1], d1)], fam, lvl, al * nu + up * nz, fixed=edges[i])
