@@ -21,10 +21,13 @@ LINE_COL = "fTG0"
 SILL_COL = "fTG1"       # the sill's top and the beam's underside: the cap's black
 PART = None
 CLOSE = False           # (a preview of a piece on its own: its open end closed, the half arch's sections shown)
-FB.TOP_KEEP.update((LINE_COL, SILL_COL))
-DIP = 7 * PZ            # the window's ramp: its crest this far under the wall's ramp (ref #2767 B layer: ~7 px) ...
+DIP = 12 * PZ           # the window's ramp: its crest this far under the wall's ramp (ref #2767 B layer: ~7 px of a
+                        # ~16 px ramp; ours is 26 px) ...
 DIP_RUN = 0.5           # ... reached this far along the wall from a post (a sloped crest), then level (the middle
                         # tiles level all across)
+EDGE_OUT = 1 / 64        # (the cut top a touch past the slope, over the cushions' cut edges)
+SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP))
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -44,49 +47,23 @@ def _sill(x, x0, x1):
     return zs - DIP * min(1.0, max(0.0, d) / DIP_RUN)
 
 
-def _split(k, xs):
-    """Cut every polygon at the planes x = each of xs (so a bend along x falls on edges)."""
-    for m in (k.m, k.ns):
-        if m is None:
-            continue
-        for xv in xs:
-            out = []
-            for f in m.f:
-                pts = [m.v[i] for i in f[0]]
-                if min(p[0] for p in pts) >= xv - 1e-9 or max(p[0] for p in pts) <= xv + 1e-9:
-                    out.append(f)
-                    continue
-                for r in ([(0, xv, -1)], [(0, xv, 1)]):
-                    q = _clip(pts, r)
-                    if len(q) >= 3:
-                        base = len(m.v)
-                        m.v += [tuple(p) for p in q]
-                        out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
-            m.f = out
-
-
-def _lower(k, x0, x1):
-    """The ramps and the wall's foot under the opening brought down to the window's crest: every point under the
-    wall's ramp top past a post scaled toward the ramps' upright foot (the toes stay where they are)."""
-    zs, ft = W.skirt_top(), W.FOOT_PX / W.ZART
-    for m in (k.m, k.ns):
-        if m is None:
-            continue
-        for i, (x, y, z) in enumerate(m.v):
-            if x0 + 1e-9 < x < x1 - 1e-9 and ft < z <= zs + 1e-6:
-                m.v[i] = (x, y, ft + (z - ft) * (_sill(x, x0, x1) - ft) / (zs - ft))
-
-
 def _span(part):
     return {"l": (-0.5 + POST, 1.5), "m": (-1.5, 1.5), "r": (-1.5, 0.5 - POST)}[part]
 
 
+def _side(pl, p):
+    if len(pl) == 3:                                    # (i, v, s): s * (p[i] - v)
+        return pl[2] * (p[pl[0]] - pl[1])
+    n, c = pl                                           # (n, c): n . p - c
+    return n[0] * p[0] + n[1] * p[1] + n[2] * p[2] - c
+
+
 def _clip(pts, planes):
-    """Sutherland-Hodgman: pts (tuples) kept where s * (p[i] - v) >= 0 for each (i, v, s)."""
-    for i, v, s in planes:
+    """Sutherland-Hodgman: pts (tuples) kept where each plane's side (_side) >= 0."""
+    for pl in planes:
         out = []
         for p, q in zip(pts, pts[1:] + pts[:1]):
-            fp, fq = s * (p[i] - v), s * (q[i] - v)
+            fp, fq = _side(pl, p), _side(pl, q)
             if fp >= -1e-9:
                 out.append(p)
             if (fp >= -1e-9) != (fq >= -1e-9) and abs(fq - fp) > 1e-12:
@@ -98,10 +75,23 @@ def _clip(pts, planes):
     return pts
 
 
-def _cut(k, x0, x1, z0, z1):
-    """Take the box x0 < x < x1, z0 < z < z1 out of every polygon (what is left, in convex pieces)."""
-    regions = [[(0, x0, -1)], [(0, x1, 1)], [(0, x0, 1), (0, x1, -1), (2, z0, -1)],
-               [(0, x0, 1), (0, x1, -1), (2, z1, 1)]]
+def _slabs(x0, x1):
+    """The opening along x as slabs between the crest's bends: (u0, u1, h0, h1), past the tile where it runs on."""
+    xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if xa < u < xb})
+    return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
+
+
+def _cut(k, x0, x1, z1):
+    """Take everything over the window's crest and under the beam (z1) out over the opening, wall and ramps alike
+    (what is left of a polygon, in convex pieces): the ramps cut level with the crest along it."""
+    sl = _slabs(x0, x1)
+    xa, xb, hmin = sl[0][0], sl[-1][1], min(min(h0, h1) for _, _, h0, h1 in sl)
+    regions = [[(0, xa, -1)], [(0, xb, 1)]]
+    for u0, u1, h0, h1 in sl:
+        g = (h1 - h0) / (u1 - u0)
+        inx = [(0, u0, 1), (0, u1, -1)]
+        regions += [inx + [(2, z1, 1)], inx + [((g, 0.0, -1.0), g * u0 - h0)]]
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -109,7 +99,7 @@ def _cut(k, x0, x1, z0, z1):
         for f in m.f:
             pts = [m.v[i] for i in f[0]]
             xs, zs = [p[0] for p in pts], [p[2] for p in pts]
-            if max(xs) <= x0 + 1e-9 or min(xs) >= x1 - 1e-9 or max(zs) <= z0 + 1e-9 or min(zs) >= z1 - 1e-9:
+            if max(xs) <= xa + 1e-9 or min(xs) >= xb - 1e-9 or max(zs) <= hmin + 1e-9 or min(zs) >= z1 - 1e-9:
                 out.append(f)
                 continue
             for r in regions:
@@ -125,6 +115,12 @@ def _cut(k, x0, x1, z0, z1):
         m.f = out
 
 
+def _reach(h, yf):
+    """How far out of the wall's middle the ramps' slope is at height h (the cut top's half width)."""
+    sl = W.GN * W.RAMP_PX / W.ZART                     # (the ramps' slope: z per unit out)
+    return yf + (W.skirt_top() - h) / sl
+
+
 def _quad(k, pts, out, col):
     k.poly([Vector(p) for p in pts], "wall", 2, Vector(out), fixed=col)
 
@@ -133,23 +129,22 @@ def hook(k, sp):
     x0, x1 = _span(PART)
     z0, z1 = _heights()
     yb, yf = W.wall_back() - 0.5, W.wall_back() - 0.5 + W.TW
-    _cut(k, x0, x1, z0, z1)
-    bends = sorted({u for u in (x0, x0 + DIP_RUN, x1 - DIP_RUN, x1) if -0.5 < u < 0.5})
-    _split(k, bends)
-    _lower(k, x0, x1)
+    _cut(k, x0, x1, z1)
     a, b = max(x0, -0.5), min(x1, 0.5)
+    bends = [u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b]
     k.side = None
     if x0 > -0.5:                                       # the posts' sections
         _quad(k, [(x0, yb, z0), (x0, yf, z0), (x0, yf, z1), (x0, yb, z1)], (1, 0, 0), TAN.END["x"])
     if x1 < 0.5:
         _quad(k, [(x1, yb, z0), (x1, yf, z0), (x1, yf, z1), (x1, yb, z1)], (-1, 0, 0), TAN.END["x"])
-    us = [a] + [u for u in bends if a < u < b] + [b]    # the sill's top (on the lowered crest) and the beam's underside
-    for u0, u1 in zip(us, us[1:]):
+    us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
+    for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
-        _quad(k, [(u0, yb, h0), (u1, yb, h1), (u1, yf, h1), (u0, yf, h0)], (0, 0, 1), SILL_COL)
+        r0, r1 = _reach(h0, yf) + EDGE_OUT, _reach(h1, yf) + EDGE_OUT
+        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1), SILL_TOP)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
     if CLOSE and x1 > 0.5:
-        _close(k, yb, yf, _sill(0.5, x0, x1), z1)
+        _close(k, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2       # (grid y; G flips it, symmetric anyway)
@@ -160,18 +155,21 @@ def hook(k, sp):
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
-def _close(k, yb, yf, z0, z1):
-    """The piece's +x end as a free end's: the foot and ramps' section (shell._end_section) on up to the sill, the
-    beam's over the opening (with the lip's and the header cushion's, proud of the face), in the free ends' slate."""
-    from .faction.parts import body
-    from .faction.shell import _end_section
+def _close(k, yf, h, z1):
+    """The piece's +x end as a free end's, in the free ends' slate: the foot and the ramps' section cut level at the
+    window's crest h, and the beam's over the opening (with the header cushion's, proud of the face)."""
     col, edge = TAN.END["x"], TAN.END_EDGE["x"]
-    zs, top = z0, W.HF                                  # (z0: the window ramp's crest at the end)
+    run, ft, top = W.skirt_run(), W.FOOT_PX / W.ZART, W.HF
+    sl = W.GN * W.RAMP_PX / W.ZART
+    dl = min(run, (W.skirt_top() - ft) / sl)
+    re, yt, yl = _reach(h, yf), yf + run, yf + dl
+    sec = [(-yt, 0.0035), (yt, 0.0035), (yt, ft), (yl, ft), (re, h), (-re, h), (-yl, ft), (-yt, ft)]
+    k.poly([T.P("x", 0.5, u, z, 0.0) for u, z in sec], "wall", 2, T.OUT("x"), fixed=col)
+    k.poly([T.P("x", 0.5, u, z, TAN.PAINT) for u, z in ((-yt, 0.0035), (yt, 0.0035), (yt, ft), (-yt, ft))],
+           "wall", 2, T.OUT("x"), fixed=T.style().toe or col)
     zh1 = top - 0.031
     zh0 = zh1 - TAN.HEAD_H
-    _end_section(k, "x", 0.5, yb, yf, zs, z0, body(False), col=col, edge=edge)
-    for y0, y1, za, zb in ((yb, yf, zs, z0), (yf, yf + TAN.LIP_D, zs, z0), (yb, yf, z1, top),
-                           (yf, yf + TAN.HEAD_D, zh0, zh1)):
+    for y0, y1, za, zb in ((-yf, yf, z1, top), (yf, yf + TAN.HEAD_D, zh0, zh1)):
         _quad(k, [(0.5, y0, za), (0.5, y1, za), (0.5, y1, zb), (0.5, y0, zb)], (1, 0, 0), col)
     _quad(k, [(0.5 + 0.004, yf + TAN.HEAD_D - 1 / 32, zh0), (0.5 + 0.004, yf + TAN.HEAD_D, zh0),
               (0.5 + 0.004, yf + TAN.HEAD_D, zh1), (0.5 + 0.004, yf + TAN.HEAD_D - 1 / 32, zh1)], (1, 0, 0), edge)
