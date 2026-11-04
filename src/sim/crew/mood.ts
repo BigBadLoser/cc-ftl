@@ -4,7 +4,7 @@ import { AllegianceC } from '../fight/components';
 import type { Modifier, ModifierSource } from '../stats';
 import type { Sim } from '../sim';
 import {
-  LIGHT_DARK_BELOW, MOOD_BASE, MOOD_BREAKDOWN_BELOW, MOOD_COMPANY_RADIUS, MOOD_LONELY_SEC, MOOD_LOW, MOOD_LOW_WORK_MULT,
+  BREAK_LET_OUT_POINTS, BREAK_SCENE_MOOD, LIGHT_DARK_BELOW, MOOD_BASE, MOOD_BREAKDOWN_BELOW, MOOD_COMPANY_RADIUS, MOOD_LONELY_SEC, MOOD_LOW, MOOD_LOW_WORK_MULT,
   MOOD_MEAL_SEC, MOOD_RELAX_POINTS, MOOD_RELAX_SEC, MOOD_SLEEP_SEC, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT, O2_ALERT_BELOW, O2_HARM_BELOW,
 } from '../tuning';
 import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type MoodFactor } from './components';
@@ -18,7 +18,7 @@ export const MOOD_LABELS: Readonly<Record<string, string>> = {
   exhausted: 'Exhausted', tired: 'Tired', rested: 'Rested',
   hotMeal: 'Hot meal at the galley', bed: 'Slept in a bed', floor: 'Slept on the floor',
   dark: 'Dark room', thinAir: 'Thin air', staleAir: 'Stale air', smoky: 'Smoky room', temperature: 'Uncomfortable temperature',
-  company: 'Company', lonely: 'Lonely', relaxed: 'Took a break',
+  company: 'Company', lonely: 'Lonely', relaxed: 'Took a break', letOut: 'Let it out', scene: 'Made a scene',
   ...TRAIT_MOOD_LABELS,
 };
 
@@ -71,6 +71,8 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
   else if (rest >= 85) add('rested', 4);
   if (m.meal > 0) add('hotMeal', 6);
   if ((m.relax ?? 0) > 0) add('relaxed', MOOD_RELAX_POINTS);
+  if ((m.letOut ?? 0) > 0) add('letOut', BREAK_LET_OUT_POINTS);
+  if ((m.scene ?? 0) > 0) add('scene', BREAK_SCENE_MOOD);
   if (m.sleep > 0) add(m.bed > 0 ? 'bed' : 'floor', m.bed > 0 ? 5 : -6);
 
   const pos = sim.world.get(id, PositionC);
@@ -113,10 +115,7 @@ export const moodModifiers: ModifierSource = (sim, entity) => {
   return [{ stat: 'workSpeed', op: 'mul', value: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : MOOD_LOW_WORK_MULT }];
 };
 
-/**
- * HOOK for breakdowns (open design question, see DESIGN.md "Needs and mood"): true when the crew member is low enough
- * that a breakdown could start. Nothing calls it yet; a future system would roll for tantrums, refusing work or fights.
- */
+/** True when the crew member's mood is low enough to be a breakdown risk: the top tier of the low-mood chance (`breakBase`, crew/breakdown.ts). */
 export function breakdownRisk(sim: Sim, id: number): boolean {
   const m = sim.world.get(id, MoodC);
   return !!m && m.value < MOOD_BREAKDOWN_BELOW;

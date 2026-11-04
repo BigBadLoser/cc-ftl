@@ -1,5 +1,6 @@
 import type { SkillName } from '../registry';
 import type { Modifier } from '../stats';
+import type { BreakContext, BreakKind } from './breakTypes';
 
 /** How a trait reads on the crew card (docs/TRAITS.md section 4). */
 export type TraitKind = 'behaviour' | 'phobia' | 'habit' | 'tradeoff' | 'texture';
@@ -53,6 +54,16 @@ export interface TraitEffects {
   voidHome?: true;
   /** crew/mood.ts: mood while idle (no job) for at least `afterSec` seconds. */
   idleMood?: { key: 'idle' | 'restless'; value: number; afterSec: number };
+  /** crew/breakdown.ts: every stressor's chance is multiplied by this (Stoic, Sensitive, Cheerful, Gloomy). */
+  stress?: number;
+  /** crew/breakdown.ts: one stressor's chance is multiplied by this (0 = immune). */
+  stressBy?: Readonly<Partial<Record<BreakContext, number>>>;
+  /** crew/breakdown.ts: one outcome's weight in the pools is multiplied by this (0 = never). */
+  breakBy?: Readonly<Partial<Record<BreakKind, number>>>;
+  /** crew/stress.ts: Protective, combat stress is halved with a friend within 6 tiles (a friend is any crew member until relationships exist). */
+  protective?: true;
+  /** crew/stress.ts and traitMood.ts: "under fire" mood with a hostile in sight; combat counts from BREAK_BATTLE_SHY_SEC. */
+  battleFear?: true;
   /** story/effects.ts (and work XP later): XP gains are multiplied, for `xpSkills` only when given. */
   xpMult?: number;
   xpSkills?: readonly SkillName[];

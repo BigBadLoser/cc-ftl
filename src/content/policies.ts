@@ -58,9 +58,12 @@ const goHome = {
 /** Work whenever no need wants the crew member: the scheduler finds them a job. */
 const work = { id: 'work', curve: [[0, 100]], task: 'job' } satisfies DriveDef;
 
+/** A colonist works as `work`, unless a mild mental break (work refusal, isolation) holds them: then the drive scores 0 and the scheduler gives them no job. */
+const willingWork = { id: 'work', input: 'willing', curve: [[0, 0], [1, 100]], task: 'job' } satisfies DriveDef;
+
 export const policies = {
   'policy.robot': { id: 'policy.robot', crew: ['robot'], escapeHazards: true, drives: [goHome, recharge, work] },
-  'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, goHome, sleep, eat, work, leisure] },
+  'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, goHome, sleep, eat, willingWork, leisure] },
   // Station crew get hungry and eat too; the hunger floor that keeps them from starving is the needs system's.
   'policy.station': { id: 'policy.station', crew: ['station'], escapeHazards: true, drives: [air, sleep, eat, work] },
   // Enemy ship crew tire but have no hunger.

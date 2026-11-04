@@ -49,6 +49,9 @@ function legacyWorld(sim: Sim): unknown {
   delete stores.bedOwner;
   // The crew-AI components (Phase 1 of docs/CREW_AI.md) mirror the legacy ones: not part of the legacy shape.
   for (const k of ['task', 'intent', 'interrupt']) delete stores[k];
+  // Mental breaks came after (docs/TRAITS.md section 5): a crew member who breaks has these stores.
+  delete stores.breakdown;
+  delete stores.breakMemory;
   // Skill XP from routine work came after the refactor: crew earn it as they work, so the store is not part of the legacy shape.
   delete stores.skillXp;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.

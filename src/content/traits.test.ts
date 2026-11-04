@@ -21,7 +21,7 @@ import { suitsSystem } from '../sim/systems/suits';
 import { BLEED_OUT_SECONDS, CREW_MAX_HP } from '../sim/tuning';
 import { traits } from './traits';
 
-const PENDING = ['trait.hot_headed', 'trait.peacemaker', 'trait.protective', 'trait.pyrophobic', 'trait.space_sick', 'trait.dark_fear', 'trait.battle_shy', 'trait.drinker', 'trait.stim_hooked'];
+const PENDING = ['trait.hot_headed', 'trait.peacemaker', 'trait.protective', 'trait.pyrophobic', 'trait.space_sick', 'trait.dark_fear', 'trait.drinker', 'trait.stim_hooked'];
 
 /** A plain starter game (role skills, no traits) and its crew. */
 function game(): { sim: Sim; crew: number[] } {

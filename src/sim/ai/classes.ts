@@ -16,6 +16,8 @@ const CLASSES: Record<MachineId, Record<string, TaskClass>> = {
   escape: { Walk: 'any' },
   leisure: { Walk: 'any', Relax: 'any' },
   return: { Walk: 'any' },
+  // A break holds the crew member until it ends: only a hard reason (hazard, down, a severe break over a moderate one) takes them off.
+  break: { Flee: 'hold', Cower: 'hold', Freeze: 'hold', Hide: 'hold', Sulk: 'hold', Walk: 'hold', Lie: 'hold' },
 };
 
 /** Every (machine, state) pair the executor uses, for tests that must cover each one. */

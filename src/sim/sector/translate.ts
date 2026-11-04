@@ -66,7 +66,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   container: null, allegiance: null, equip: null, equipOrder: null, emergencyArm: null, stowOrder: null, surrendered: null, prisoner: null, skillXp: null, traits: null, rolledSkills: null,
   implants: null, storage: null, carrying: null, production: null, crew: null, priorities: null, needs: null,
   assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, bedOwner: null, mood: null, suit: null,
-  intent: null, interrupt: null, pickup: null,
+  intent: null, interrupt: null, pickup: null, breakdown: null, breakMemory: null,
   trader: null, coreRaider: null, coreRaid: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
   vehicle: null, ferry: null, transfer: null, salvageWatch: null, salvageOrder: null, awaySite: null, siteRun: null, away: null, airHolds: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, boardLaunch: null, boardHold: null, sabotageOrder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
 };

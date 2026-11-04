@@ -83,6 +83,7 @@ export { poolFor, startEvent } from './story/engine';
 export type * from './scene/types';
 export { createCrew } from './crew/spawn';
 export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
+export { BreakdownC, BreakMemoryC, type Breakdown, type BreakMemory, type BreakContext, type BreakKind, type BreakTier } from './crew/breakTypes';
 export { foodOn } from './crew/eating';
 export { abortTask, detachJob, type AbortReason } from './ai/task';
 export { TaskC, IntentC, InterruptC, PickupC } from './ai/components';

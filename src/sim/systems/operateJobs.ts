@@ -1,7 +1,7 @@
 import type { Job } from '../crew/components';
 import { abortTask } from '../ai/task';
 import { AssignmentC, CrewC, DraftedC, JobC, PositionC, PrioritiesC } from '../crew/components';
-import { isIncapacitated } from '../crew/helpers';
+import { isIncapacitated, refusesWork } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { CombatC, IonC } from '../combat/components';
 
@@ -131,7 +131,7 @@ function callOperator(sim: Sim, job: Job): void {
     if (!prio || !busy || busy.kind === 'operate' || level < 1 || level > OPERATE_MAX_LEVEL) continue;
     const at = sim.world.get(id, PositionC);
     if (!at || !jobTakeable(sim, id, at, job)) continue; // they must be able to reach the console
-    if ((prio[busy.category] ?? 0) <= level || sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    if ((prio[busy.category] ?? 0) <= level || sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
     const skill = skillOf(sim, id, consoleSkill(kind));
     if (skill > bestSkill) {
       best = id;

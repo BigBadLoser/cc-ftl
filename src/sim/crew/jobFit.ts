@@ -9,7 +9,7 @@ import type { Sim } from '../sim';
 import { AssignmentC, CrewC, DraftedC, PositionC, PrioritiesC, type Job, type Position } from './components';
 import { isOffDuty } from '../fight/relations';
 import { OPERATE_MAX_LEVEL } from '../tuning';
-import { isIncapacitated, jobGoal, origin } from './helpers';
+import { isIncapacitated, jobGoal, origin, refusesWork } from './helpers';
 
 /** The checks every job pick makes before scoring: the crew member's ship, not their own target, funded, not an errand, and not barred to them. */
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
@@ -33,7 +33,7 @@ export function freeOperatorFor(sim: Sim, shipId: number, job: Job): number {
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC)) {
     const level = sim.world.get(id, PrioritiesC)?.operating ?? 0;
     const at = sim.world.get(id, PositionC);
-    if (level < 1 || level > OPERATE_MAX_LEVEL || !at || shipIdOf(sim, at) !== shipId || sim.world.has(id, AssignmentC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    if (level < 1 || level > OPERATE_MAX_LEVEL || !at || shipIdOf(sim, at) !== shipId || sim.world.has(id, AssignmentC) || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
     if (sim.world.get(id, CrewC)?.activity === 'sleeping' || sim.world.has(id, DraftedC) || !jobFits(sim, id, at, job)) continue;
     return id;
   }

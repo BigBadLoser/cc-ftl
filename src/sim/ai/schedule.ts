@@ -1,5 +1,5 @@
 import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Crew, type Position } from '../crew/components';
-import { isIncapacitated } from '../crew/helpers';
+import { isBreaking, isIncapacitated, refusesWork } from '../crew/helpers';
 import { isOffDuty } from '../fight/relations';
 import { dropCarried } from '../items/stacks';
 import type { Sim } from '../sim';
@@ -21,6 +21,7 @@ import { airTurn } from './machines/air';
 import { returnTurn } from './machines/return';
 import { siteUnderFoot } from '../away/crew';
 import { hazardHolds } from './hazard';
+import { breakTurn } from './machines/break';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
 import { evaluateIntent, isUrgent, readInput, serveDrive, type TaskView } from './utility';
@@ -89,6 +90,17 @@ export function scheduleSystem(sim: Sim): void {
   /** Drives ranked below work, tried in the idle turn of a crew member the scheduler found no job for (leisure). */
   const idleDrives = new Map<number, DriveDef[]>();
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
+    // A mental break that takes the crew member over (the `breakdown` interrupt, docs/TRAITS.md section 5): survival first (off a harmful tile,
+    // keeping any draft), otherwise the break machine. Before the drafted test below: a severe break beats a draft.
+    if (isBreaking(sim, id) && !isIncapacitated(sim, id)) {
+      const pos = sim.world.get(id, PositionC) as Position;
+      const drafted = sim.world.has(id, DraftedC);
+      if (hazardHolds(sim, id) && escapeTurn(sim, id, pos, drafted)) continue;
+      if (sim.world.get(id, TaskC)?.machine === 'escape') clearJoblessTask(sim, id);
+      breakTurn(sim, id, pos);
+      sim.world.remove(id, PickupC);
+      continue;
+    }
     if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) {
       // A drafted crew member whose order is done is stepped off a harmful tile and keeps the draft (the hazard interrupt).
       if (sim.world.has(id, DraftedC) && !isIncapacitated(sim, id) && !isOffDuty(sim, id) && hazardHolds(sim, id)) escapeTurn(sim, id, sim.world.get(id, PositionC) as Position, true);
@@ -140,6 +152,12 @@ export function scheduleSystem(sim: Sim): void {
       break;
     }
     if (served) continue;
+    // A mild break (work refusal, isolation): the work drive scored 0 (`willing`), so no job is taken; they idle, and sleep, eat and the rest still apply.
+    if (refusesWork(sim, id)) {
+      if (assignment) abortTask(sim, id, 'breakdown');
+      idleTurn(sim, id, crew, pos);
+      continue;
+    }
     serveDrive(sim, id, 'work');
 
     if (assignment) {
