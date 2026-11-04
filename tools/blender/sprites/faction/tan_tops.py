@@ -166,18 +166,19 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
             band(q0, q1, z1 - (i + 1) * PZ, z1 - i * PZ, col, C_DEPTH)
 
 
-# the lockers: a header (a 1 px canopy over a recessed face, a small screen at each end of each tile on it); under it
-# two overhead bins, two cabinets in a frame, four drawers a tile (heights in rows of face down from the header's top,
-# depths in px; a part d proud shows d rows lower, so the one over it hides that much of what's under it)
+# the lockers: a header (a 1 px canopy over a recessed face between side walls, a small screen at each end of each
+# tile on it); under it two overhead bins, then two cabinets over four drawers in a frame, down to the slope (no lip)
+# (heights in rows of face down from the header's top, depths in px; a part d proud shows d rows lower, so the one
+# over it hides that much of what's under it)
 H_FRONT, H_FACE, H_CANOPY = 8, 5, 7     # the header: its rows; its face's depth (the screens on it); the canopy's
-BIN_FOOT, BIN_D = 14, 3                 # the bins: their bottom edge, its depth (their front leaning back from it
+BIN_FOOT, BIN_D = 18, 5                 # the bins: their bottom edge, its depth (their front leaning back from it
                                         # to the wall at 45 degrees, under the header)
-CAB_TOP, CAB_FOOT, CAB_D = 15, 26, 1    # the cabinets: their frame (1 px bars, CAB_D proud), the doors in it flush
-                                        # with the wall
-DRAWER_TOP, DRAWER_D = 27, 2            # the drawers (their foot set by the lip, their front's foot on its)
-L_GAP = 1                               # the gap between bins, drawers, and at a tile's edge (px; the face dark)
+FRAME_BARS, FRAME_D = (22, 33), 1       # the frame's bars across (rows; one more at its foot, on the slope), how
+                                        # far it stands out (1 px bars; the doors in it flush with the wall)
+FRAME_SPLITS = ((0.5,), (0.25, 0.5, 0.75))  # its bars up between the cabinets, the drawers (and at a tile's edges)
+L_GAP = 1                               # the gap between the bins, and at a tile's edge (px; the face dark)
 HANDLES = (3, 2)                        # the cabinets', the drawers' handles (2 px, the glass's navy): rows over
-                                        # their front's foot
+                                        # their door's foot
 H_SCREENS = ((2, ("R.G.G", "..GG.", "G...G", ".G...")),     # the header's screens: px in from the tile's
              (20, ("YY.R.", "Y.Y..", ".YY.R", "Y....")))    # left edge, 5 x 4 of art ("." the glass) a row
                                                             # clear of the canopy's edge
@@ -200,31 +201,30 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     for c in range(-1, 2):
         if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
             continue
-        halves = [(c - 0.5 + h * 0.5 + L_GAP * L / 2, c + h * 0.5 - L_GAP * L / 2) for h in range(2)]
         bd, zb = BIN_D * L, R(BIN_FOOT)                         # the bins: a wedge, lit along its front
-        for q0, q1 in halves:
+        for h in range(2):
+            q0, q1 = c - 0.5 + h * 0.5 + L_GAP * L / 2, c + h * 0.5 - L_GAP * L / 2
             prism(k, ax, plane, q0, q1, [(0.0, zb), (bd, zb), (0.0, zb + bd)], FACE, 3,
                   cols=[False, sd("fTS1", ax), False], cap=cap)
-        cd, zct, zcf = CAB_D * L, R(CAB_TOP), R(CAB_FOOT)       # the cabinets: doors flush with the wall, in a frame
-        band(c - 0.5, c + 0.5, zcf, zct, "fTS3", PAINT)            # (a touch over the face: no z-fight)
-        bars = [(c - 0.5, c + 0.5, zct - PZ, zct), (c - 0.5, c + 0.5, zcf, zcf + PZ)]
-        bars += [(u0, u1, zcf, zct) for u0, u1 in ((c - 0.5, c - 0.5 + L / 2), (c - L / 2, c + L / 2),
-                                                   (c + 0.5 - L / 2, c + 0.5))]
+        fd = FRAME_D * L                                        # the frame: doors flush with the wall in it
+        zs = [R(n) for n in FRAME_BARS] + [zl1 + PZ]            # (each section's top bar's top, then its foot's)
+        bars = []
+        for n, splits in enumerate(FRAME_SPLITS):
+            zt, zf = zs[n], zs[n + 1]
+            band(c - 0.5, c + 0.5, zf, zt - PZ, "fTS3", PAINT)  # (its doors, a touch over the face: no z-fight)
+            bars.append((c - 0.5, c + 0.5, zt - PZ, zt))
+            us = [c - 0.5 + f for f in splits]
+            bars += [(u - L / 2, u + L / 2, zf, zt - PZ) for u in us]
+            bars += [(c - 0.5, c - 0.5 + L / 2, zf, zt - PZ), (c + 0.5 - L / 2, c + 0.5, zf, zt - PZ)]
+            for q0, q1 in zip([c - 0.5 + L / 2] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [c + 0.5 - L / 2]):
+                _handle(k, ax, plane, c, q0, q1, zf, HANDLES[n], L, sd)   # (a px out of the door)
+        bars.append((c - 0.5, c + 0.5, zl1, zl1 + PZ))
         for u0, u1, z0, z1_ in bars:
-            prism(k, ax, plane, u0, u1, [(0.0, z0), (cd, z0), (cd, z1_), (0.0, z1_)], FACE, 3,
+            prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
                   cols=[False, sd("fTS1", ax), sd("fTS0", ax), False], cap=cap)
-        for q0, q1 in ((c - 0.5 + L / 2, c - L / 2), (c + L / 2, c + 0.5 - L / 2)):
-            _handle(k, ax, plane, c, q0, q1, zcf + PZ, HANDLES[0], 0.0, sd)
-        dd, zdt = DRAWER_D * L, R(DRAWER_TOP)                   # the drawers
-        zdf = zl1 + _rows(dd - LIP_D)
-        for i in range(4):
-            q0, q1 = c - 0.5 + i / 4 + L_GAP * L / 2, c - 0.5 + (i + 1) / 4 - L_GAP * L / 2
-            prism(k, ax, plane, q0, q1, [(0.0, zdf), (dd, zdf), (dd, zdt), (0.0, zdt)], FACE, 3,
-                  cols=[False, sd("fTS2", ax), sd("fTS0", ax), False], cap=cap)
-            _handle(k, ax, plane, c, q0, q1, zdf, HANDLES[1], dd, sd)
-    hf, hc, zh0 = H_FACE * L, H_CANOPY * L, R(H_FRONT)          # the header: its face, the canopy over it
-    for c in range(-1, 2):
-        q0, q1 = max(a, c - 0.5), min(b, c + 0.5)
+    hf, hc, zh0 = H_FACE * L, H_CANOPY * L, R(H_FRONT)          # the header: its face, the canopy over it, a side
+    for c in range(-1, 2):                                      # wall at each tile edge (not where the run turns a
+        q0, q1 = max(a, c - 0.5), min(b, c + 0.5)               # corner)
         if q1 - q0 < 1e-6:
             continue
         m = (mit[0] if q0 <= a + 1e-6 else False, mit[1] if q1 >= b - 1e-6 else False)
@@ -232,6 +232,12 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
               cols=[False, sd("fTS2", ax), False, False], cap=cap, mitre=m)
         prism(k, ax, plane, q0, q1, [(0.0, R(1)), (hc, R(1)), (hc, z1), (0.0, z1)], FACE, 3,
               cols=[False, sd("fTS0", ax), sd("fTS1", ax), False], cap=cap, mitre=m)
+        for u, mm, e in ((q0, m[0], c - 0.5), (q1, m[1], c + 0.5)):
+            if abs(u - e) > 1e-6 or mm:
+                continue
+            w0, w1 = (u, u + L / 2) if u == q0 else (u - L / 2, u)
+            prism(k, ax, plane, w0, w1, [(0.0, zh0), (hc, zh0), (hc, R(1)), (0.0, R(1))], FACE, 3,
+                  cols=[False, sd("fTS1", ax), False, False], cap=cap)
         if q0 > c - 0.5 + 1e-6 or q1 < c + 0.5 - 1e-6:
             continue
         for x0, art in (H_SCREENS[::-1] if ax == "x" else H_SCREENS):
@@ -243,4 +249,4 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                         sd("fTC0" if ch == "." else SCREEN_INK[ch], ax))
 
 
-TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers))
+TAN_TOPS = (Design("plain"), Design("console", body=console), Design("lockers", body=lockers, lip=False))

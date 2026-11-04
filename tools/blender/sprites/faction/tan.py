@@ -121,10 +121,12 @@ def tan(hull):
             flat(k, ax, plane, u0, u1, z0, z1_, d + PAINT, sd(col, ax))
 
         # the foot: the lip (its front's last px dark; the ramp's first row is the blue line under it)
-        zl0, zl1 = zs, zs + LIP_TOP
-        prism(k, ax, plane, a, b, [(0.0, zl0), (LIP_D, zl0), (LIP_D, zl1), (0.0, zl1)], FACE, 3,
-              cols=[False, None, sd("fTS1", ax), False], mitre=mit)
-        band(a, b, zl0, zl0 + PZ, "fTS4", LIP_D)
+        lip = T.fill("lip", True)                       # (a face design may go without it, down to the slope)
+        zl0, zl1 = zs, zs + (LIP_TOP if lip else 0.0)
+        if lip:
+            prism(k, ax, plane, a, b, [(0.0, zl0), (LIP_D, zl0), (LIP_D, zl1), (0.0, zl1)], FACE, 3,
+                  cols=[False, None, sd("fTS1", ax), False], mitre=mit)
+            band(a, b, zl0, zl0 + PZ, "fTS4", LIP_D)
         if not full:
             return
         alt = T.fill("body")                            # (a face design's own face over the lip)
