@@ -70,25 +70,28 @@ def column(state, rot, frame=0):
     decals after `mark` stay unsnapped, just proud of the snapped faces they sit on."""
     m, f, on, lit = _start("column", state, rot, frame)
     u, v, r = 0.5, 0.0, 5 * G                 # the column (its rings stay inside the footprint's end, u 0.875)
-    FRONT = 7 * G                             # the pale panels' front face
-    # Dark machinery is the body (as in the life support): a base and a core, pale panels hang over them, a hood caps it.
-    casing(m, f, -6 * G, 0, 0.0, 16 * G, 12 * G, 0.3, cut=G, col=FRAME)                   # base under the housing
+    FRONT = 6 * G                             # the pale panels' front face, flush with the hood's
+    # One outline for the housing: u -14G..2G, v -6G..6G, every visible corner chamfered G. Dark machinery is the body
+    # (as in the life support): a base band showing under the panels, a core showing in the gap between them.
+    casing(m, f, -6 * G, 0, 0.0, 16 * G, 10 * G, 0.3, cut=G, col=FRAME)                   # base band (v -5G..5G)
+    casing(m, f, -6.5 * G, -0.5 * G, 0.3, 13 * G, 9 * G, 0.56, cut=G, col=FRAME)          # core (front 4G, ends at u 0)
     f.vcyl(u, v, 0.0, r + G, 0.38, FRAME, sides=16)                                        # drum under the column
     f.box(3 * G, 0, 0.0, 4 * G, 8 * G, 0.3, FRAME)                                         # pump block between
-    casing(m, f, -7 * G, -2 * G, 0.28, 12 * G, 8 * G, 0.58, cut=G, col=FRAME)              # core under the hood (ends at u -G)
     m.paint(body='pale')
-    casing(m, f, -10 * G, 2.5 * G, 0.12, 8 * G, 9 * G, 0.74, cut=G)                       # melt panel (front 7G)
-    casing(m, f, -2.5 * G, 3.5 * G, 0.16, 5 * G, 7 * G, 0.7, cut=G)                       # filter bay (front 7G, ends at u 0)
-    casing(m, f, -5 * G, 0, 0.86, 18 * G, 14 * G, 0.14, cut=2 * G, taper=0.96)            # hood
-    f.box(G, -G, 0.16, 2 * G, 12 * G, 0.7, BODY)                                           # web, housing to column (it shades the
+    casing(m, f, -10.5 * G, 3 * G, 0.16, 7 * G, 6 * G, 0.7, cut=G)                        # melt panel (u -14G..-7G)
+    casing(m, f, -3 * G, 3 * G, 0.16, 6 * G, 6 * G, 0.7, cut=G)                           # filter bay (u -6G..0), dark gap between
+    casing(m, f, -6 * G, 0, 0.86, 16 * G, 12 * G, 0.14, cut=G)                            # hood: the same outline, no taper
+    f.box(G, -G, 0.3, 2 * G, 8 * G, 0.56, BODY)                                            # web, housing to column (it shades the
                                                                                              # filter bay from the water's glow)
     f.vcyl(u, v, 0.86, r + 2 * G, 0.1, BODY, sides=16)                                     # collar round the column, under
-    f.box(3 * G, v, 0.86, 4 * G, 10 * G, 0.08, BODY)                                       # the hood's top; its web into the hood
+    f.box(3 * G, v, 0.86, 2 * G, 8 * G, 0.08, BODY)                                        # the hood's top; its web into the hood
     m.paint(body='steel')
     f.box(3 * G, 4.5 * G, 0.06, 2 * G, G, 0.14, BODY)                                      # service port on the pump
-    _ice(m, f, -7 * G, 0, 1.0, 10 * G, 10 * G, wall=2 * G, cut=2 * G, icut=G)              # centred on its section, a 2G rim
+    for du in (-12 * G, -4 * G):
+        f.box(du, 5.5 * G, 0.04, 2 * G, G, 0.08, BODY)                                     # feet bolts on the band
+    _ice(m, f, -6.5 * G, 0, 1.0, 11 * G, 10 * G, wall=2 * G, cut=2 * G, icut=G)           # centred on its section, a 2G rim
     m.paint(body='frame')
-    f.box(-10 * G, FRONT + G / 2, 0.44, 6 * G, G, 0.26, BODY)                             # the control panel, a block off the face
+    f.box(-10.5 * G, FRONT + G / 2, 0.44, 5 * G, G, 0.26, BODY)                           # the control panel, a block off the face
     # The column: water, glass, a hoop, the cap ring and dome, a vent pipe back to the hood.
     m.paint(body='cartridge', frame='frame', recess=_water(lit))
     f.vcyl(u, v, 0.38, r, 0.48, RECESS, sides=16)                                          # the water
@@ -105,8 +108,8 @@ def column(state, rot, frame=0):
     mark = len(m.v)
     _snap(m)
     # Decals, unsnapped, 0.012 proud of the snapped front (FRONT): the display, the filter cartridges.
-    _display(m, f, -10 * G, lit, on, z=0.44, v=FRONT + G, plate=False)
-    for du in (-3.5 * G, -0.5 * G):
+    _display(m, f, -10.5 * G, lit, on, z=0.44, v=FRONT + G, plate=False)
+    for du in (-4.5 * G, -1.5 * G):
         m.paint(recess='dark')
         f.box(du, FRONT + 0.006, 0.34, 0.15, 0.012, 0.44, RECESS)
         m.paint(body='cartridge')
