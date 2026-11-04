@@ -21,6 +21,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
 - [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
   - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
+  - [Drones (user decisions, 2026-11-04; not built yet)](#drones-user-decisions-2026-11-04-not-built-yet): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
@@ -743,6 +744,42 @@ No radiation system: the nuke is blast plus fire, built from existing effects.
 **Flak cannon (new weapon).** It fires scrap: one hull scrap item from cargo per volley, the way missiles use missile items.
 Each volley is a spread of many weak pellets. Every pellet that hits a shield strips a layer, so flak knocks shields down for
 the other guns. It does little hull damage and is inaccurate at range. It reuses an existing bay model, told apart by a tint.
+
+### Drones (user decisions, 2026-11-04; not built yet)
+
+**What a drone is.** A small flying robot that works inside the ship and launches into space. One system covers both, reusing the
+robots (AI core, bays, charge) and the vehicles (launch, fly, dock). The robot class "drone" above is the same thing.
+
+**Rules.**
+- **The AI core runs them,** like robots. Its tier sets how many drones can be active at once (Mk I: 2, Mk II: 4, Mk III: 6).
+  If the core goes down, every drone goes inert (it drops or drifts) until the core is back.
+- **Drone bay (new module).** It holds and recharges 2 drones. Drones launch into space through a ceiling hatch, like the
+  weapon hatches, so the bay doesn't have to touch the hull. Drones fly out of it into the ship as well.
+- **Fully automatic.** The player gives no orders. Each drone does its job: defence drones launch when a fight starts,
+  repair drones go to damage, medic drones go to the wounded.
+- **Battery.** It drains while flying, faster while working, and recharges in the bay. Drones rotate home on their own when low.
+- **Built, kept, lost.** Each type has a researched blueprint and is built at a fabricator from parts and electronics. Tech
+  stations also sell them ready-made. A destroyed drone leaves scrap.
+- **Jumping and leaving.** Charging a jump, or leaving a scene, recalls every drone. The departure waits a few seconds for
+  them, the way leaving waits for crew. A drone that can't make it back in time is left behind and lost.
+- **Weaknesses.** Ion or EMP near a drone or on its bay knocks it out for a while; a flying drone drops. Losing the core
+  stops them all. In space, only flak, point defence and enemy defence drones can hit a drone; ordinary ship guns can't
+  track one.
+  - **Range in practice.** Fights are 40 to 100 tiles apart, and the first batch of drones stays near your own ship. At that
+    range enemy flak is inaccurate by design and enemy point defence only covers its own ship, so in practice drones mostly
+    fight drones. A combat drone that flies to the enemy (later) would be exposed to its flak and point defence, so tune it then.
+- **Enemies have drones too,** on the same system: rogue AI and navy ships.
+
+**First batch.**
+
+| Drone | Where | Does |
+|---|---|---|
+| Defence | Orbits your ship in space | Shoots down incoming missiles and enemy shuttles. Never fires at ships, so it can't provoke anyone. |
+| Repair | Inside and outside | Seals hull breaches from outside (no crew on EVA), repairs damaged modules (slower than an engineer), puts out small fires. |
+| Medic | Inside | Flies to the wounded and downed: stops bleeding, stabilises the downed so they don't die, heals slowly. Real treatment still needs the medbay and a medic. |
+
+Later: combat drones that fly to the enemy and shoot (DESIGN "Combat drones": they build on the core's tier and the EMP effect),
+and salvage drones.
 
 ### Where blueprints are sold (user decision, 2026-10-26)
 
