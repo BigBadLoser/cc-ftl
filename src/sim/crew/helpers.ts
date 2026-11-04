@@ -6,7 +6,9 @@ import {
 import { InertC, StunC } from '../robots/components';
 import { BreakdownC } from './breakTypes';
 import type { Tile } from './pathfind';
-import { shipIdOf } from '../regions';
+import { FighterC } from '../fight/components';
+import { shipGrid, shipIdOf } from '../regions';
+import { DoorJam, Struct } from '../structure';
 
 // Facing index per unit step: 0 = +x, counter-clockwise in grid space, 2 = +y.
 const FACING_TABLE: Record<string, number> = {
@@ -101,4 +103,15 @@ export function jobGoal(job: { kind: string; x: number; y: number; size?: [numbe
   const g: { x: number; y: number; adjacent: boolean; w?: number; h?: number } = { x: job.x, y: job.y, adjacent: !ON_TILE_KINDS.includes(job.kind) };
   if (job.size && g.adjacent) { g.w = job.size[0]; g.h = job.size[1]; }
   return g;
+}
+
+/** True for a door tile with a jam (DoorJam): shut or held open until forced. */
+export function isJammedDoor(sim: Sim, shipId: number, x: number, y: number): boolean {
+  const grid = shipGrid(sim, shipId);
+  return !!grid?.has('jam') && grid.inBounds(x, y) && grid.get('struct', x, y) === Struct.Door && grid.get('jam', x, y) !== DoorJam.None;
+}
+
+/** True while the crew member is in a fight (engaging or fleeing): orders that need them standing at work (sabotage, forcing a door) wait for it to end. */
+export function isFighting(sim: Sim, crew: number): boolean {
+  return (sim.world.get(crew, FighterC)?.mode ?? 'idle') !== 'idle';
 }

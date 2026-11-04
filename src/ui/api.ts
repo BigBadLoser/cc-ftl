@@ -222,6 +222,8 @@ export interface UiModule {
   research: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
+  /** Drone bay state (null for other modules). */
+  droneBay: UiDroneBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
 }
@@ -271,6 +273,14 @@ export interface UiResearch {
   nodes: UiResearchNode[];
   /** Project ids in queue order (the first is the active one once paid). */
   queue: string[];
+}
+
+/** A drone bay for its panel: each slot's drone, and how many of the ship's drones its AI core lets out at once. */
+export interface UiDroneBay {
+  slots: ({ id: number; name: string; state: 'docked' | 'launch' | 'out' | 'home' | 'land' | 'down'; doing: string; charge: number; hp: number; maxHp: number; /** What it carries (its supply item's name) and how much, or null for a drone with no supply. */ supply: { name: string; have: number; cap: number } | null } | null)[];
+  /** Drones of this ship out of their bays now, and the core's cap (0: no live AI core, drones are inert). */
+  out: number;
+  cap: number;
 }
 
 export interface UiRobotBay {
@@ -380,6 +390,8 @@ export interface UiFab {
   orders: UiOrder[];
   /** Craft job now, or null. */
   job: { name: string; progress: number; phase: 'materials' | 'power' | 'crafting' | 'ready' } | null;
+  /** Recipe ids of this station whose blueprint is not known yet (research it first); the picker shows them locked. */
+  locked: string[];
 }
 
 /** A module the build menu offers. */

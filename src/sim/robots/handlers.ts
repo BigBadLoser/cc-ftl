@@ -4,7 +4,7 @@ import { abortTask, attachJob } from '../ai/task';
 
 import { skillOf } from '../combat/operators';
 import type { Command } from '../commands';
-import { CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
+import { CrewC, DraftedC, HealthC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
 import { isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { createCrew } from '../crew/spawn';
@@ -101,6 +101,8 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const n = sim.world.get(cmd.id, NeedsC);
     if (n && cmd.hunger !== undefined && sim.content.species[sim.world.get(cmd.id, CrewC)?.species ?? '']?.hunger) n.hunger = Math.max(0, Math.min(100, cmd.hunger));
     if (n && cmd.rest !== undefined) n.rest = Math.max(0, Math.min(100, cmd.rest));
+    const hp = sim.world.get(cmd.id, HealthC);
+    if (hp && cmd.hp !== undefined) hp.hp = Math.max(0, Math.min(hp.max, cmd.hp));
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = shipGrid(sim, cmd.ship);

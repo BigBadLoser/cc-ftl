@@ -9,6 +9,8 @@ import type { SkillName } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
 import { ImplantsC } from './components';
+import { VehicleC } from '../vehicles/components';
+import { vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 
 const aboard = new WeakSet<Sim>();
 
@@ -62,6 +64,14 @@ export function playerModules(sim: Sim, def?: string): number[] {
     const m = sim.world.get(id, ModuleC);
     return !!m && grids.has(shipIdOf(sim, m)) && (def === undefined || m.def === def);
   });
+}
+
+/** Player shuttles stowed in a bay (`eva`: only those fit for EVA work). */
+export function stowedShuttles(sim: Sim, eva: boolean): number {
+  return sim.world.query(VehicleC).filter((id) => {
+    const v = sim.world.get(id, VehicleC);
+    return !!v && v.state === 'stowed' && vehicleFaction(sim, v) === 'player' && (!eva || !!vehicleDefOf(sim, v)?.eva);
+  }).length;
 }
 
 /** Storage modules on player ships, ascending id. */

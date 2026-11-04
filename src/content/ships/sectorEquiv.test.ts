@@ -41,6 +41,9 @@ function legacyWorld(sim: Sim): unknown {
       ? [[id, { x: t.bb.tile?.x, y: t.bb.tile?.y, galley: !!t.bb.hot, item: t.bb.item, left: t.bb.n }] as [number, unknown]] : [])),
   };
   const merged: Record<string, unknown[]> = { ...data.stores };
+  // Drones (#318) came later: the drone system and the doors query the `drone` store every tick, which makes it exist empty. A run with no
+  // drones in it is unchanged, so an empty one is left out (as it was absent in the pinned runs).
+  if (merged.drone?.length === 0) delete merged.drone;
   for (const [k, rows] of Object.entries(folded)) if (rows.length > 0) merged[k] = rows; // in the pinned runs an empty one was absent
   const stores = Object.fromEntries(Object.keys(merged).sort().map((k) => [k, merged[k]])) as typeof data.stores;
   const bodies = new Map((stores.body ?? []) as [number, Body][]);

@@ -68,7 +68,7 @@ const baseRoles = {
     loadout: ['item.rifle', 'item.sidearm', 'item.blade'],
   },
   'role.robot_repair': {
-    name: 'Repair drone-bot',
+    name: 'Repair bot',
     species: 'species.robot',
     assemble: { cost: [{ item: 'item.parts', count: 8 }, { item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 8 }], work: 500 },
     priorities: { firefighting: 1, medical: 0, operating: 4, repair: 1, construction: 2, hauling: 3, refining: 4, crafting: 4, research: 4, cooking: 0, patrol: 0 },

@@ -5,6 +5,8 @@ import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import type { ComponentKey } from '../ecs';
 import { AlienC, EggSacC, NestC } from '../aliens/components';
+import { DroneC } from '../drones/components';
+import { droneAboard } from '../drones/recall';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { AboardC, VehicleC } from '../vehicles/components';
@@ -49,6 +51,11 @@ function onShipSet(sim: Sim, ship: number): Set<number> {
   // A suited crew member drifting to or from a shuttle that stays behind is away, whatever tile their Position names.
   for (const id of w.query(PositionC)) if (!w.has(id, EvaFloatC)) at(id, w.get(id, PositionC));
   for (const key of [EggSacC, NestC, AlienC] as ComponentKey<{ ship: number }>[]) for (const id of w.query(key)) if (w.get(id, key)?.ship === ship) out.add(id);
+  // Drones aboard (docked, or flying inside); one out in space or in the hatch stays behind (drones/recall.ts).
+  for (const id of w.query(DroneC)) {
+    const d = w.get(id, DroneC);
+    if (d?.ship === ship && droneAboard(d)) out.add(id);
+  }
   return out;
 }
 

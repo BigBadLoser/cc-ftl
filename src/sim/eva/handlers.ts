@@ -15,6 +15,7 @@ import { floatTicks, nearestExterior, tileCentre, tileFrame, vehicleSuits } from
 import { findSuitStow } from './errands';
 import { hatchFace } from './hatch';
 import { refillOrder } from './refillOrder';
+import { boardHovering } from './board';
 import { startErrand } from '../ai/machines/eva';
 import { planWalk } from './route';
 import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from './suit';
@@ -125,16 +126,8 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     if (!isSuited(sim, cmd.crew) && needsAir(sim, cmd.crew)) return reject(sim, cmd.type, 'notSuited');
     if (v.state !== 'flying' || v.dest || !v.hover || v.hover !== (shipIdOf(sim, pos))) return reject(sim, cmd.type, 'notHovering');
     if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return reject(sim, cmd.type, 'full');
-    const at = tileCentre(sim, shipIdOf(sim, pos), pos.x, pos.y);
-    const d = at ? Math.hypot(body.x - at.x, body.y - at.y) : Infinity;
-    if (!at || d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
-    abortTask(sim, cmd.crew, 'order');
-    const drafted = sim.world.get(cmd.crew, DraftedC)!;
-    drafted.target = null;
-    delete drafted.planned;
-    const face = hatchFace(body, at);
-    const ticks = floatTicks(sim, Math.hypot(at.x - face.x, at.y - face.y));
-    sim.world.add(cmd.crew, EvaFloatC, { mode: 'back', vehicle: cmd.vehicle, sx: face.x, sy: face.y, ticks, total: ticks });
+    const why = boardHovering(sim, cmd.crew, cmd.vehicle);
+    if (why) reject(sim, cmd.type, why);
   },
 };
 

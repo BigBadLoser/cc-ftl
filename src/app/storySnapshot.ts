@@ -1,17 +1,43 @@
 import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
+import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
 const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
 
-/** What the remote actions taken on a signal reveal about its scene: a scan reads hulls and crew, a hail gets each ship's stock and wallet. */
+/** Wrecks worked before (`derelicts_found`) after which a scan of a derelict reads counts, not just signs. */
+const PRACTISED = 2;
+
+/**
+ * A scan of a derelict, worded from what its ruin pass left (scene/derelicts.ts `readOf`). A deep scan (a probe of its core), or practice at
+ * working wrecks, reads counts, not just signs.
+ */
+function derelictRows(sim: Sim, d: SceneDerelict, deep: boolean): { label: string; value: string }[] {
+  const r = d.read;
+  const practised = deep || (sim.story.flags['derelicts_found'] ?? 0) >= PRACTISED;
+  const state = r.ruin < 0.35 ? 'Mostly whole' : r.ruin < 0.6 ? 'Battered' : 'Gutted';
+  const air = r.vacuum > 0.75 ? 'Open to space' : r.vacuum > 0.25 ? 'Holed; some rooms hold air' : 'Mostly sealed';
+  const signs = r.sacs > 0 ? (practised ? `Egg sacs, about ${r.sacs}` : 'Faint life signs') : r.machines > 0 ? (practised ? `Machine signatures, about ${r.machines}` : 'Machine signatures') : 'Nothing moving';
+  return [
+    { label: 'Make', value: sim.content.factions?.[d.shipgen]?.name ?? 'Unknown' },
+    { label: 'Condition', value: `${state}, ${r.cause === 'combat' ? 'battle damage' : 'long decay'}` },
+    { label: 'Air', value: r.fires > 0 ? `${air}; fires burning` : air },
+    ...(r.jammed > 0 ? [{ label: 'Doors', value: 'Some jammed shut' }] : []),
+    { label: 'Signs', value: signs },
+    ...(r.containers > 0 ? [{ label: 'Loose cargo', value: practised ? `${r.containers} containers adrift` : 'Containers adrift' }] : []),
+  ];
+}
+
+/** What the remote actions taken on a signal reveal about its scene: a scan reads hulls and crew (and a derelict's state), a hail gets each ship's stock and wallet. */
 function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remoteOf: (choice: string) => string | undefined): UiIntel[] {
   if (!spec) return [];
   const acts = new Set(done.map(remoteOf));
   const out: UiIntel[] = [];
+  const scanned = acts.has('scan') || acts.has('probe');
+  if (scanned) for (const d of spec.derelicts) out.push({ kind: 'scan', ship: d.name, rows: derelictRows(sim, d, acts.has('probe')) });
   for (const s of spec.ships) {
     const ship = s.contact.name ?? 'Unknown ship';
-    if (acts.has('scan')) {
+    if (scanned) {
       out.push({
         kind: 'scan', ship, rows: [
           { label: 'Transponder', value: ownerName(sim, s.contact.faction) },

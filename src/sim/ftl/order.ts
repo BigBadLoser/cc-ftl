@@ -10,7 +10,9 @@ import { planWalk } from '../eva/route';
 import { isOffDuty } from '../fight/relations';
 import { AllegianceC } from '../fight/components';
 import { canTakeRobotJob } from '../robots/jobs';
-import { routeCharge, routeEdges, jump } from '../galaxy/hyperspace';
+import { flee, routeCharge, routeEdges, jump } from '../galaxy/hyperspace';
+import { leave } from '../galaxy/respond';
+import { departureDue } from '../drones/recall';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
@@ -92,4 +94,18 @@ export function settleOrder(sim: Sim, ship: number): void {
   if (combat.ftl + 1e-9 < routeCharge(edges)) return;
   combat.ftlOrder = null;
   jump(sim, ship, order.jump, order.withDocked, 'ftl.charge', order.overcharge);
+}
+
+/**
+ * A departure held for the ship's drones (drones/recall.ts): once they are all in, or the wait is over, it goes ahead through the same call
+ * that held it (which now passes the hold and clears it).
+ */
+export function settleDeparture(sim: Sim, ship: number): void {
+  const hold = sim.world.get(ship, CombatC)?.departHold;
+  if (!hold || !departureDue(sim, ship)) return;
+  if (hold.kind === 'jump') jump(sim, ship, hold.route ?? [], hold.withDocked, hold.command, !!hold.overcharge);
+  else if (hold.kind === 'flee') flee(sim, ship);
+  else leave(sim, hold.command);
+  const c = sim.world.get(ship, CombatC);
+  if (c?.departHold) c.departHold = null; // rejected on the way (the reason went out as command.rejected)
 }

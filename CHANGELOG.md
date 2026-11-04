@@ -6,7 +6,12 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
-- Mental breaks: crew who are unhappy, or caught in a fire, a fight, a decompression or a long blackout, can panic, freeze, hide, throw a tantrum, despair, refuse work or want to be alone. Panics raise an urgent alert; every break is in the log and on the crew card, and the crew member goes back to work when it ends. Traits and phobias change the odds, and Battle-shy crew can now be rolled. ([#175](https://github.com/BigBadLoser/cc-ftl/issues/175))
+- Repair drones seal hull breaches from outside, paying 2 metal from a small load they refill from storage while docked (the bay panel shows it). Navy and rogue AI ships field their own defence drones from sector depth 3, and drones wreck with their ship. Recalled drones land one at a time, and the ship waits long enough for all of them. ([#326](https://github.com/BigBadLoser/cc-ftl/pull/326))
+- Defence drones guard the ship in battle: they launch through the drone bay's ceiling hatch, circle the hull and shoot down incoming missiles, enemy drones and shuttles. Drones dock again before a jump; the ship waits a few seconds for them, and any left outside are lost. ([#325](https://github.com/BigBadLoser/cc-ftl/pull/325))
+- Drones: research and build repair and medic drones, and they work the ship on their own. Repair drones fix damaged modules and put out small fires; medic drones stop the bleeding of downed crew and patch up the wounded. They live in a new drone bay that recharges them, fly over modules but wait at doors and airlocks like crew, and the AI core decides how many can be out at once. Ion knocks them out, and losing the core grounds them all. ([#323](https://github.com/BigBadLoser/cc-ftl/pull/323), art [#324](https://github.com/BigBadLoser/cc-ftl/pull/324))
+- The fabricator shows recipes that still need research as locked. ([#323](https://github.com/BigBadLoser/cc-ftl/pull/323))
+- Drafted crew can force a jammed door: right-click it and pick "Force door". The nearest drafted crew member who isn't fighting does it and stays drafted. ([#316](https://github.com/BigBadLoser/cc-ftl/pull/316))
+- Derelicts on the lane: a dead hull can turn up mid-trip. Scan it for its condition, air, doors and signs of life (a hacker with skill 2 can probe it for counts and cargo), then drop out beside it to salvage it, or draft a team, fly them over in the shuttle and explore it by hand. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Signals on the lane: a trader skiff can turn up mid-trip. Hail it or scan it from the starmap, then drop out beside it to trade, or fly on. Ships in these scenes leave after a while unless you hail them. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Battle stations (C, or the crew-bar button) opens the combat view at any time with every weapon held. Aiming at a ship that is not hostile does nothing; the first shot you fire, or boarding it, turns it and its group hostile and they fight back. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Derelict salvage: select a wreck and tick the scrap types to strip. A shuttle takes a suited party out, makes trips home with the loot and the crew who need a rest, and brings everyone back when the wreck is done. ([#273](https://github.com/BigBadLoser/cc-ftl/pull/273), [#275](https://github.com/BigBadLoser/cc-ftl/pull/275), [#277](https://github.com/BigBadLoser/cc-ftl/pull/277), [#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
@@ -14,6 +19,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Doors strip as tech scrap, so unticking Hull on a salvage order still takes them. ([#312](https://github.com/BigBadLoser/cc-ftl/issues/312), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Dormant pirate dens and outposts wake when you fire on them or board them, not when you only aim at them. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Combat shields show as a hex-lattice bubble round each ship: lit rings count the layers, and lasers ripple, ion drains turn the rim violet, mass drivers tear through, missiles pass, and layers visibly break, return, collapse on a vent and pulse when overcharged. ([#308](https://github.com/BigBadLoser/cc-ftl/pull/308))
 - Boarding: the shuttle flies itself, so you no longer pick a pilot. Only the crew you picked board. Recalled boarders head straight for the shuttle, it takes them home and goes back for those who stay, and the fight no longer calls the party home. If the target airlock is lost, the shuttle docks at another or the party goes out of the hatch. ([#304](https://github.com/BigBadLoser/cc-ftl/pull/304))
@@ -33,6 +39,9 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- A hovering shuttle comes close enough to a ragged wreck for crew to get back aboard, and "Back to shuttle" works from deep inside a wreck. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
+- Crew no longer repair wrecks they are salvaging or exploring. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
+- "Transfer blocked: no free shuttle" no longer fills the log while your shuttles are busy, including on a run you fly by hand. It still shows when you have no shuttle. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#316](https://github.com/BigBadLoser/cc-ftl/pull/316))
 - You can't leave a scene while crew or shuttles are still out, including aboard a captured prize. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Civilian traders in fleets could not trade. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Crew no longer try to walk through doors that cannot open, such as a jammed door or a dead airlock. ([#292](https://github.com/BigBadLoser/cc-ftl/issues/292), [#297](https://github.com/BigBadLoser/cc-ftl/pull/297))

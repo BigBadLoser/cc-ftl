@@ -1,3 +1,4 @@
+import { holdDeparture, loseStrandedDrones } from '../drones/recall';
 import { settleLosses } from './jobs';
 import { ShipC } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
@@ -149,6 +150,10 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim, held: 'interdicted' | 'h
   if (!ev || !t) return reject('noEvent');
   const blocked = leaveBlocker(sim);
   if (blocked) return reject(blocked);
+  const mine = sim.sector.state === 'active' ? playerShipInfo(sim)?.id : undefined;
+  // Drones out in space: the ship waits a moment for them (drones/recall.ts).
+  if (mine && holdDeparture(sim, mine, { kind: 'leave', command })) return true;
+  if (mine) loseStrandedDrones(sim, mine);
   let packet = sim.sector.packet;
   // Kills in the grid count before its ships are gone, and the observer has its last look.
   settleLosses(sim);

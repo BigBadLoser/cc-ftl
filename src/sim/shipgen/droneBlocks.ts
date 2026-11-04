@@ -26,10 +26,10 @@ export function sealedPod(rng: Rng, kind: string, spec: RoomSpec): Block {
 /** Pod specs for everything the plan mounts outside: guns, PD, shields, reactor banks, engines. */
 export function podSpecs(plan: ShipPlan, defs: Record<string, ModuleDef>): { mounts: RoomSpec[]; reactors: RoomSpec[]; engines: RoomSpec[] } {
   const fp = (id: string): [number, number] => (defs[id]?.footprint ?? [2, 2]) as [number, number];
-  const pod = (role: RoomRole, id: string): RoomSpec => { const [w, h] = fp(id); return { role, mods: [id], w, h, sealed: true }; };
+  const pod = (role: RoomRole, id: string, from?: RoomSpec): RoomSpec => { const [w, h] = fp(id); return { role, mods: [id], w, h, sealed: true, ...(from?.drones ? { drones: from.drones } : {}) }; };
   const mounts = [
     ...plan.weapons.flatMap((s) => s.mods.map((m) => pod('weapons', m))),
-    ...plan.pd.flatMap((s) => s.mods.map((m) => pod('weapons', m))),
+    ...plan.pd.flatMap((s) => s.mods.map((m) => pod('weapons', m, s))),
     ...plan.shields.flatMap((s) => s.mods.map((m) => pod('shields', m))),
   ];
   const reactors: RoomSpec[] = [];

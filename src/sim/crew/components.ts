@@ -158,6 +158,7 @@ export interface Job {
   /** For 'passage' jobs: a seat beyond the shuttle's suits, for crew who do not breathe. */
   airless?: true;
   /**
+   * forceDoor: the drafted crew member ordered to force the door (absent on the undrafted construction job).
    * sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them.
    * passage: the crew member of a named party the seat is for (only they take it, `AwaySite.invited`).
    */
@@ -198,6 +199,8 @@ export interface Downed {
   stabilized: boolean;
   /** Bed module the patient is reserved for / lying in, or 0. */
   bed: number;
+  /** First aid on the floor (a medic drone): the bleeding has stopped, so the bleed-out timer is paused. No bed healing; rescue still applies. */
+  patched?: true;
 }
 export const DownedC = defineComponent<Downed>('downed');
 

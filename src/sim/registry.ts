@@ -1,3 +1,4 @@
+import type { DroneBayDef, DroneDef } from './drones/types';
 import type { SceneRuleDef } from './scene/types';
 import type { Faction } from './combat/components';
 import type { FactionDef } from './shipgen/types';
@@ -11,7 +12,7 @@ export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w' }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w' }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
@@ -70,6 +71,8 @@ export interface ContentRegistry {
   weapons?: Record<string, WeaponDef>;
   /** Vehicle content id (e.g. 'vehicle.shuttle') to definition. Absent = no vehicles. */
   vehicles?: Record<string, VehicleDef>;
+  /** Drone types (content/drones.ts) by id. Absent = no drones. */
+  drones?: Record<string, DroneDef>;
   /** Event content (story/defs.ts) by id. Absent = no events. */
   events?: Record<string, EventDef>;
   /** Shared outcome observer rules for scenes (scene/types.ts `SceneRuleDef`; content/sceneRules.ts), by rule id. Absent = none. */
@@ -237,6 +240,8 @@ export interface ItemDef {
   flammability?: number;
   /** VehicleDef id: a vehicle bay can turn one of these into a shuttle (vehicle.assign). */
   vehicle?: string;
+  /** DroneDef id: a drone bay with a free slot turns one of these from the ship's storage into a drone. */
+  drone?: string;
   /** Present = crew can equip it and fight with it. */
   hand?: HandWeaponDef;
   /** Present = hungry crew eat it from storage: eating one restores `nutrition` hunger points (0..100 scale). */
@@ -290,6 +295,8 @@ export interface RecipeDef {
   work: number;
   /** Work category of the craft job (default 'crafting'; refinery recipes use 'refining'). */
   category?: WorkCategory;
+  /** A blueprint id (`blueprint.*`, learned by research or purchase) the recipe needs before it can be ordered. Absent = always known. */
+  blueprint?: string;
 }
 
 /** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */
@@ -525,6 +532,8 @@ export interface ModuleDef {
    * items from the ship's storage. It also assembles robots (module.assembleRobot).
    */
   robotBay?: { chargePerSec: number; repairPerSec: number };
+  /** Drone bay: docks and recharges drones (sim/drones). */
+  droneBay?: DroneBayDef;
   /** AI core: operates the ship's point defence (and, later, other automation) at this tier. */
   aiCore?: { tier: number };
   /** Render asset id of the special roof tile drawn above this module on roofed (enemy) ships, e.g. 'roof.weapon'. Render-only. */

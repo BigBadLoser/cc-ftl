@@ -42,4 +42,11 @@ describe('order choices', () => {
     expect(c.map((x) => x.id)).toEqual(['attack', 'sabotage', 'walk']);
     expect(needsMenu(c)).toBe(true);
   });
+
+  it('a jammed door is offered in a menu of its own, ahead of nothing else', () => {
+    const c = orderChoices({ forceDoor: true });
+    expect(c).toEqual([{ id: 'forceDoor', label: 'Force door' }]);
+    expect(needsMenu(c)).toBe(true);
+    expect(orderChoices({ walk: true }).map((x) => x.id)).not.toContain('forceDoor');
+  });
 });

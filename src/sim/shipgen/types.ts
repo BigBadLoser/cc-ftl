@@ -194,6 +194,8 @@ export interface FactionDef {
   living: boolean;
   /** Has an AI core (needed for point defence). */
   aiCore: boolean;
+  /** Its ships carry a drone bay with defence drones from ENEMY_DRONE_MIN_DEPTH on (needs its AI core to run them). */
+  defenceDrones?: true;
   /** Its crews never surrender and its ships are never taken as prizes: a fight with them ends in a derelict (the zealots). */
   neverSurrender?: true;
   crew: { required: readonly string[]; pool: readonly Weighted<string>[]; species: readonly string[] };

@@ -4595,6 +4595,10 @@
    "image": "sprites/derelict.png",
    "glow": "sprites/derelict.glow.png"
   },
+  "drones": {
+   "image": "sprites/drones.png",
+   "glow": "sprites/drones.glow.png"
+  },
   "eggsac": {
    "image": "sprites/eggsac.png",
    "glow": "sprites/eggsac.glow.png"
@@ -46855,6 +46859,2033 @@
    ],
    "glow": true
   },
+  "drone.defence.docked.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3773,
+    "y": 131,
+    "w": 60,
+    "h": 40
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1248,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3834,
+    "y": 131,
+    "w": 60,
+    "h": 40
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1321,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 56,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1394,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1021,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1467,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.fly.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 111,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.inert.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3190,
+    "y": 1,
+    "w": 72,
+    "h": 57
+   },
+   "anchor": {
+    "x": 36,
+    "y": 45
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3813,
+    "y": 1,
+    "w": 62,
+    "h": 50
+   },
+   "anchor": {
+    "x": 31,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1,
+    "y": 131,
+    "w": 72,
+    "h": 48
+   },
+   "anchor": {
+    "x": 36,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3956,
+    "y": 131,
+    "w": 54,
+    "h": 38
+   },
+   "anchor": {
+    "x": 27,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1706,
+    "y": 180,
+    "w": 72,
+    "h": 30
+   },
+   "anchor": {
+    "x": 36,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1779,
+    "y": 180,
+    "w": 62,
+    "h": 30
+   },
+   "anchor": {
+    "x": 31,
+    "y": 30
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3554,
+    "y": 131,
+    "w": 72,
+    "h": 41
+   },
+   "anchor": {
+    "x": 36,
+    "y": 37
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.inert.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3986,
+    "y": 1,
+    "w": 54,
+    "h": 49
+   },
+   "anchor": {
+    "x": 27,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.defence.work.d0.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1540,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d0.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1613,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d1.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3493,
+    "y": 131,
+    "w": 60,
+    "h": 42
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d1.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3895,
+    "y": 131,
+    "w": 60,
+    "h": 40
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d2.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1686,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d2.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1759,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d3.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 166,
+    "y": 180,
+    "w": 57,
+    "h": 37
+   },
+   "anchor": {
+    "x": 30,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d3.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 224,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d4.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1832,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d4.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1905,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d5.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1082,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d5.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1143,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d6.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1978,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d6.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2051,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d7.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 279,
+    "y": 180,
+    "w": 57,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.defence.work.d7.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 337,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.docked.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 777,
+    "y": 180,
+    "w": 60,
+    "h": 36
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2124,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 838,
+    "y": 180,
+    "w": 60,
+    "h": 36
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2197,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 392,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2270,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1204,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2343,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.fly.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 447,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.inert.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3470,
+    "y": 1,
+    "w": 72,
+    "h": 56
+   },
+   "anchor": {
+    "x": 36,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 74,
+    "y": 131,
+    "w": 62,
+    "h": 48
+   },
+   "anchor": {
+    "x": 31,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 817,
+    "y": 131,
+    "w": 72,
+    "h": 45
+   },
+   "anchor": {
+    "x": 36,
+    "y": 38
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 502,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 33
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1905,
+    "y": 180,
+    "w": 72,
+    "h": 28
+   },
+   "anchor": {
+    "x": 36,
+    "y": 27
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1842,
+    "y": 180,
+    "w": 62,
+    "h": 29
+   },
+   "anchor": {
+    "x": 31,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3627,
+    "y": 131,
+    "w": 72,
+    "h": 41
+   },
+   "anchor": {
+    "x": 36,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.inert.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3876,
+    "y": 1,
+    "w": 54,
+    "h": 50
+   },
+   "anchor": {
+    "x": 27,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.medic.work.beam.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1978,
+    "y": 180,
+    "w": 16,
+    "h": 28
+   },
+   "anchor": {
+    "x": 3,
+    "y": -16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1995,
+    "y": 180,
+    "w": 16,
+    "h": 28
+   },
+   "anchor": {
+    "x": 8,
+    "y": -17
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2012,
+    "y": 180,
+    "w": 16,
+    "h": 28
+   },
+   "anchor": {
+    "x": 13,
+    "y": -16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2029,
+    "y": 180,
+    "w": 17,
+    "h": 28
+   },
+   "anchor": {
+    "x": 16,
+    "y": -14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2082,
+    "y": 180,
+    "w": 16,
+    "h": 21
+   },
+   "anchor": {
+    "x": 13,
+    "y": -18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2065,
+    "y": 180,
+    "w": 16,
+    "h": 23
+   },
+   "anchor": {
+    "x": 8,
+    "y": -15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2099,
+    "y": 180,
+    "w": 16,
+    "h": 21
+   },
+   "anchor": {
+    "x": 3,
+    "y": -18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.beam.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2047,
+    "y": 180,
+    "w": 17,
+    "h": 28
+   },
+   "anchor": {
+    "x": 1,
+    "y": -14
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d0.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2416,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d0.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2489,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d1.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 899,
+    "y": 180,
+    "w": 60,
+    "h": 36
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d1.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 960,
+    "y": 180,
+    "w": 60,
+    "h": 36
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d2.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2562,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d2.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2635,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d3.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 557,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d3.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 612,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d4.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2708,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d4.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2781,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d5.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1265,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d5.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1326,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d6.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2854,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d6.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2927,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d7.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 667,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.medic.work.d7.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 722,
+    "y": 180,
+    "w": 54,
+    "h": 37
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.docked.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 890,
+    "y": 131,
+    "w": 60,
+    "h": 45
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 137,
+    "y": 131,
+    "w": 72,
+    "h": 47
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 951,
+    "y": 131,
+    "w": 60,
+    "h": 45
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 210,
+    "y": 131,
+    "w": 72,
+    "h": 47
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 4011,
+    "y": 131,
+    "w": 54,
+    "h": 38
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3000,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1387,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3073,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.fly.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1,
+    "y": 180,
+    "w": 54,
+    "h": 38
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.inert.d0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3263,
+    "y": 1,
+    "w": 72,
+    "h": 57
+   },
+   "anchor": {
+    "x": 36,
+    "y": 50
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3677,
+    "y": 1,
+    "w": 62,
+    "h": 53
+   },
+   "anchor": {
+    "x": 31,
+    "y": 46
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3740,
+    "y": 1,
+    "w": 72,
+    "h": 51
+   },
+   "anchor": {
+    "x": 36,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3146,
+    "y": 131,
+    "w": 54,
+    "h": 43
+   },
+   "anchor": {
+    "x": 27,
+    "y": 40
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1570,
+    "y": 180,
+    "w": 72,
+    "h": 32
+   },
+   "anchor": {
+    "x": 36,
+    "y": 34
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d5": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1643,
+    "y": 180,
+    "w": 62,
+    "h": 31
+   },
+   "anchor": {
+    "x": 31,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d6": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3700,
+    "y": 131,
+    "w": 72,
+    "h": 41
+   },
+   "anchor": {
+    "x": 36,
+    "y": 42
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.inert.d7": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3931,
+    "y": 1,
+    "w": 54,
+    "h": 50
+   },
+   "anchor": {
+    "x": 27,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "drone.repair.work.d0.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3044,
+    "y": 1,
+    "w": 72,
+    "h": 58
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d0.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3336,
+    "y": 1,
+    "w": 72,
+    "h": 57
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d1.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3543,
+    "y": 1,
+    "w": 60,
+    "h": 56
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d1.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3409,
+    "y": 1,
+    "w": 60,
+    "h": 57
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d2.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3604,
+    "y": 1,
+    "w": 72,
+    "h": 56
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d2.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3117,
+    "y": 1,
+    "w": 72,
+    "h": 58
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d3.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1130,
+    "y": 131,
+    "w": 58,
+    "h": 44
+   },
+   "anchor": {
+    "x": 31,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d3.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1012,
+    "y": 131,
+    "w": 58,
+    "h": 45
+   },
+   "anchor": {
+    "x": 31,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d4.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3201,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d4.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3274,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d5.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1448,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d5.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1509,
+    "y": 180,
+    "w": 60,
+    "h": 33
+   },
+   "anchor": {
+    "x": 30,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d6.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3347,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d6.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 3420,
+    "y": 131,
+    "w": 72,
+    "h": 43
+   },
+   "anchor": {
+    "x": 36,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d7.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1071,
+    "y": 131,
+    "w": 58,
+    "h": 45
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.repair.work.d7.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1189,
+    "y": 131,
+    "w": 58,
+    "h": 44
+   },
+   "anchor": {
+    "x": 27,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "drone.shadow": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2116,
+    "y": 180,
+    "w": 38,
+    "h": 20
+   },
+   "anchor": {
+    "x": 19,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "fx.debris.a": {
    "kind": "static",
    "sheet": "fx",
@@ -60749,6 +62780,776 @@
    "footprint": [
     2,
     1
+   ]
+  },
+  "module.drone_bay.hatch.f0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 283,
+    "y": 131,
+    "w": 88,
+    "h": 47
+   },
+   "anchor": {
+    "x": 44,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.hatch.f1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 372,
+    "y": 131,
+    "w": 88,
+    "h": 47
+   },
+   "anchor": {
+    "x": 44,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.hatch.f2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 461,
+    "y": 131,
+    "w": 88,
+    "h": 47
+   },
+   "anchor": {
+    "x": 44,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.hatch.f3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 550,
+    "y": 131,
+    "w": 88,
+    "h": 47
+   },
+   "anchor": {
+    "x": 44,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.hatch.f4": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 639,
+    "y": 131,
+    "w": 88,
+    "h": 47
+   },
+   "anchor": {
+    "x": 44,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.hatch.stowed": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 728,
+    "y": 131,
+    "w": 88,
+    "h": 47
+   },
+   "anchor": {
+    "x": 44,
+    "y": 105
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r0": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 183,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r0.charging": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 274,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r0.charging.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2312,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r0.damaged": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1645,
+    "y": 1,
+    "w": 94,
+    "h": 126
+   },
+   "anchor": {
+    "x": 45,
+    "y": 119
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1740,
+    "y": 1,
+    "w": 92,
+    "h": 126
+   },
+   "anchor": {
+    "x": 45,
+    "y": 119
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r0.destroyed": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1833,
+    "y": 1,
+    "w": 129,
+    "h": 113
+   },
+   "anchor": {
+    "x": 66,
+    "y": 106
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r0.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2373,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r0.unpowered": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 365,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r0.unpowered.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2434,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r1": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 456,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r1.charging": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 547,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r1.charging.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2495,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r1.damaged": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 90,
+    "h": 129
+   },
+   "anchor": {
+    "x": 45,
+    "y": 122
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 92,
+    "y": 1,
+    "w": 90,
+    "h": 129
+   },
+   "anchor": {
+    "x": 45,
+    "y": 122
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r1.destroyed": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1963,
+    "y": 1,
+    "w": 120,
+    "h": 105
+   },
+   "anchor": {
+    "x": 64,
+    "y": 94
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r1.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2556,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r1.unpowered": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 638,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r1.unpowered.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2617,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r2": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 729,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r2.charging": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 820,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r2.charging.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2678,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r2.damaged": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 911,
+    "y": 1,
+    "w": 93,
+    "h": 127
+   },
+   "anchor": {
+    "x": 48,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1005,
+    "y": 1,
+    "w": 93,
+    "h": 127
+   },
+   "anchor": {
+    "x": 48,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r2.destroyed": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2192,
+    "y": 1,
+    "w": 119,
+    "h": 98
+   },
+   "anchor": {
+    "x": 50,
+    "y": 91
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r2.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2739,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r2.unpowered": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1099,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r2.unpowered.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2800,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r3": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1190,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r3.charging": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1281,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r3.charging.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2861,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r3.damaged": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1372,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "module.drone_bay.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1463,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r3.destroyed": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2084,
+    "y": 1,
+    "w": 107,
+    "h": 104
+   },
+   "anchor": {
+    "x": 62,
+    "y": 96
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r3.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2922,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r3.unpowered": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 1554,
+    "y": 1,
+    "w": 90,
+    "h": 127
+   },
+   "anchor": {
+    "x": 45,
+    "y": 120
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.drone_bay.r3.unpowered.front": {
+   "kind": "static",
+   "sheet": "drones",
+   "frame": {
+    "x": 2983,
+    "y": 1,
+    "w": 60,
+    "h": 73
+   },
+   "anchor": {
+    "x": 30,
+    "y": 88
+   },
+   "footprint": [
+    2,
+    2
    ]
   },
   "module.engine.bell.r0": {

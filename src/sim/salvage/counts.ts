@@ -69,7 +69,7 @@ export function workLeft(sim: Sim, ship: number, types: readonly ScrapType[]): n
   const parts = partsOf(sim, ship, types);
   let n = partCount(parts);
   const grid = shipGrid(sim, ship);
-  if (!grid || !types.includes('hull')) return n;
+  if (!grid || !types.includes('hull')) return n; // only then is the floor a part leaves stripped in turn
   n += parts.walls.filter((t) => t.kind !== Struct.Beam).length; // a wall or door leaves a floor
   const ids = new Set(parts.modules);
   for (let y = grid.y0; y < grid.y0 + grid.height; y++) {

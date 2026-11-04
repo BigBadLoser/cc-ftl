@@ -10,17 +10,29 @@ import { addHeat } from '../sim/combat/heat';
 import { explainAll, explainCrew } from '../sim/ai/explain';
 import { auditReservations } from '../sim/ai/audit';
 import { parkCrew } from './parkCrew';
+import type { Loop } from './loop';
+import { DroneC } from '../sim/drones/components';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
  * modules and read the events the sim emitted. Read-only; it never touches the sim.
  */
-export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: readonly string[]): void } {
+export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents(types: readonly string[]): void } {
   const seen: string[] = [];
   (window as unknown as { __cc: unknown }).__cc = {
+    /** Freeze (0) or run the sim at speed 1..3 (screenshot and debug sessions); the renderer goes on. */
+    setSpeed: (s: 0 | 1 | 2 | 3) => loop?.setSpeed(s),
+    /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
+    stepTicks: (n: number) => { for (let i = 0; i < n; i++) sim.step(); },
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
     /** Show or hide the space backdrop (screenshot scripts cut ships out against a flat background). */
     backdrop: (on: boolean) => r.showBackdrop(on),
+    /** Drones: body position (sector tiles), state and target kind (screenshot scripts). */
+    drones: () => sim.world.query(DroneC, BodyC).map((id) => {
+      const d = sim.world.get(id, DroneC)!;
+      const b = sim.world.get(id, BodyC)!;
+      return { id, def: d.def, ship: d.ship, space: d.space, load: d.load ?? 0, x: b.x, y: b.y, state: d.state, target: d.target?.kind ?? null, working: !!d.target && d.steps.length === 0, bay: d.bay, tick: sim.tick };
+    }),
     /** Centre the camera on a sector position in tiles (screenshot scripts). */
     focus: (x: number, y: number) => r.focusSector(x, y),
     /** Step the camera to the zoom level nearest `z` (screenshot scripts); returns the zoom reached. */

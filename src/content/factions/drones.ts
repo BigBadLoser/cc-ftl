@@ -45,6 +45,7 @@ export const drones = {
   stock: [{ item: 'item.electronics', min: 1, max: 4 }],
   living: false,
   aiCore: true,
+  defenceDrones: true,
   crew: {
     required: ['role.pilot', 'role.gunner'],
     pool: [{ value: 'role.engineer', weight: 1 }],

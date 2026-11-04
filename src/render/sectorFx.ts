@@ -2,13 +2,14 @@ import { Graphics, Sprite, Text } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { GridLike } from '../sim/grid';
 import type { SimEvent } from '../sim/events';
+import { ALT, BodyC } from '../sim/body';
 import { ModuleC } from '../sim/modules/components';
 import { rotatedSize } from '../sim/modules/footprint';
 import { CombatC, ProjectileC, ShipC, type Ship } from '../sim/combat/components';
 import type { ModuleDef, WeaponDef } from '../sim/registry';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
-import { IMPACT_H, MUZZLE_H } from './heights';
+import { IMPACT_H, MUZZLE_H, Z_PX } from './heights';
 import { ART_SCALE as S } from './iso';
 import { sectorArt } from './sectorPos';
 import type { Layers } from './layers';
@@ -94,6 +95,13 @@ export function createSectorFx(
   /** Centre of sector tile (x, y). */
   const tileArt = (x: number, y: number) => secArt(x + 0.5, y + 0.5);
   const colorOf = (weapon: string) => WEAPON_COLOR[weapon] ?? 0xffffff;
+  /** Where a drone's gun is (its body, lifted by its altitude), in art px; null when it is gone. Tracers end 6 S px under their point. */
+  const droneMuzzle = (id: number): { x: number; y: number } | null => {
+    const b = world.get(id, BodyC);
+    if (!b) return null;
+    const p = secArt(b.x, b.y);
+    return { x: p.x, y: p.y - b.alt * Z_PX + 10 * S };
+  };
 
   function flash(assetId: string, x: number, y: number, scale: number, peak = 1): void {
     const art = resolveArt(atlas, [assetId]);
@@ -150,10 +158,27 @@ export function createSectorFx(
           const s = ship(e.ship);
           const last = shots.get(e.projectile);
           if (!s || !last) continue;
-          const from = secArt(s.x + s.width / 2, s.y + s.height / 2);
-          tracers.push({ a: from, b: { x: last.x, y: last.y }, age: 0 });
-          particles.burst(burst(0xffffff, 70), last.x, last.y, 10, 6);
-          flash('fx.explosion_small', last.x, last.y, 0.6);
+          // From the defence drone that shot it, else from the ship's middle (its point defence).
+          const drone = e.by ? droneMuzzle(e.by) : null;
+          const from = drone ?? secArt(s.x + s.width / 2, s.y + s.height / 2);
+          // A drone's shot meets the missile where it is drawn (lifted on its arc); point defence keeps its ground tracer.
+          const at = drone ? { x: last.spr.x, y: last.spr.y + 6 * S } : { x: last.x, y: last.y };
+          tracers.push({ a: from, b: at, age: 0 });
+          particles.burst(burst(0xffffff, 70), at.x, at.y, 10, 6);
+          flash('fx.explosion_small', at.x, at.y, 0.6);
+        } else if (e.type === 'drone.fired') {
+          // A defence drone's shot at an enemy drone or shuttle (or a miss at a missile): a tracer to the aim point at cruise height.
+          const from = droneMuzzle(e.drone);
+          const to = secArt(e.x, e.y);
+          if (!from) continue;
+          const b = { x: to.x, y: to.y - ALT.cruise * Z_PX + 6 * S };
+          tracers.push({ a: from, b, age: 0 });
+          if (e.hit) flash('fx.pd_shot', b.x, b.y - 6 * S, 1);
+        } else if (e.type === 'drone.wrecked' && e.space) {
+          const c = tileArt(e.x, e.y);
+          const y = c.y - ALT.cruise * Z_PX;
+          particles.burst(burst(0xffb060, 80), c.x, y, 12, 7);
+          flash('fx.explosion_small', c.x, y, 0.8);
         } else if (e.type === 'projectile.miss') {
           if (e.reason === 'evaded') say('EVADED', e.x, e.y, 0x7fe6ff);
           else if (e.reason === 'space') say('MISS', e.x, e.y, 0xffc83d);

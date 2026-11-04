@@ -18,6 +18,8 @@ export type Command =
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }
+  /** Drafted crew force a jammed door at (x, y): the one nearest by path walks beside it and does the forceDoor work, staying drafted. */
+  | { type: 'crew.forceDoor'; ids: number[]; ship: number; x: number; y: number }
   | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }
@@ -187,7 +189,7 @@ export type Command =
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
   | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
-  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number }
+  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number }
   /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */
   | { type: 'debug.breakCrew'; id: number; kind: BreakKind; context?: BreakContext; sec?: number }
   /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */

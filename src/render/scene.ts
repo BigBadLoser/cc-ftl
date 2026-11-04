@@ -41,6 +41,10 @@ import { createMarkers, type AreaMarks } from './markers';
 import { createWorldGrid } from './worldGrid';
 import { createCutLine } from './cutLine';
 import { createPodView } from './podView';
+import { createDroneView } from './droneView';
+import { createHatchView } from './droneHatch';
+import { onShip } from './regionRules';
+import type { DroneDef } from '../sim/drones/types';
 import { createPortraits } from './portrait';
 import type { CrewLook } from './loadout';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
@@ -170,6 +174,8 @@ interface RendererContent {
   vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
   /** Generated factions by id: a ship's roof livery comes from its generating faction's `art.livery`. */
   factions?: Readonly<Record<string, { art: { livery: string } }>>;
+  /** Drone types, for the placeholder drone drawing (tint, job marks, battery thresholds). */
+  drones?: Readonly<Record<string, DroneDef>>;
 }
 
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
@@ -227,6 +233,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   rockLayers.setOrigin(0, 0, 0);
   const asteroids = createAsteroidView(world, atlas, rockLayers, content.ores ?? {});
   const isPod = (def: string) => content.vehicles?.[def]?.class === 'pod';
+  // PLACEHOLDER drones and drone-bay plates (drawn in code until their art exists), sorted with the ships' tiles.
+  const drones = createDroneView(world, { layer: W.low, air: SL.sorted, drones: content.drones ?? {}, modules: content.modules, atlas });
+  // The drone bays' ceiling hatches (droneHatch.ts), at roof height over each bay.
+  const hatches = createHatchView(world, {
+    layer: W.low, modules: content.modules, atlas, zoom: () => SL.scale,
+    roofed: (id) => scenes.get(id)?.isRoofed() ?? false,
+    shipOf: (mid) => {
+      const m = world.get(mid, ModuleC);
+      return (m && world.query(ShipC).find((id) => { const sh = world.get(id, ShipC); return !!sh && onShip(sh, m); })) ?? 0;
+    },
+  });
   const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
@@ -533,6 +550,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe.begin('render/views');
       asteroids.update(sector);
       pods.update(dt);
+      drones.update(dt);
+      hatches.update(dt);
       shuttles.update(dt);
       boxes.update();
       aimMarks.update();
@@ -716,6 +735,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     dispose() {
       asteroids.dispose();
       pods.dispose();
+      drones.dispose();
+      hatches.dispose();
       rockLayers.dispose();
       shuttles.dispose();
       boxes.dispose();

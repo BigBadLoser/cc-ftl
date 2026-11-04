@@ -34,6 +34,10 @@ export const items = {
   'item.cargo_crate': { name: 'Cargo crate', tags: ['cargo'], stackSize: 1, cargo: true },
   // Crafted at the fabricator; a vehicle bay turns it into a stowed shuttle (vehicle.assign).
   'item.shuttle': { name: 'Shuttle', tags: ['vehicle'], stackSize: 1, price: 650, vehicle: 'vehicle.shuttle' },
+  // Crafted at the fabricator (once the blueprint is researched) or bought at research stations; a drone bay with a free slot takes it from storage.
+  'item.drone_repair': { name: 'Repair drone', tags: ['drone'], stackSize: 1, price: 220, drone: 'drone.repair' },
+  'item.drone_medic': { name: 'Medic drone', tags: ['drone'], stackSize: 1, price: 240, drone: 'drone.medic' },
+  'item.drone_defence': { name: 'Defence drone', tags: ['drone'], stackSize: 1, price: 280, drone: 'drone.defence' },
   // Hand weapons: crew equip them from storage (crew.equip, or automatically for a role's loadout). Range in tiles.
   // `tier`: 1 basic, 2 middle grade, 3 the best (depots sell surplus up to tier 2).
   'item.sidearm': { name: 'Sidearm', tags: ['weapon', 'ranged'], stackSize: 5, price: 45, tier: 1, hand: { kind: 'ranged', damage: 12, range: 8, cooldownSec: 1, accuracy: 0.7, art: { id: 'sidearm', family: '1h' } } },

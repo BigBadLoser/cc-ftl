@@ -4,6 +4,7 @@ import {
   type Sim, type SimEvent,
 } from '../../sim';
 import { shipIdOf } from '../../sim/regions';
+import { openSite } from '../../sim/away/handlers';
 import { spillItems } from '../../sim/items/stacks';
 import { content } from '../index';
 import { outpostRegion, shuttleOf, stockOn, storages } from './ferryFixture';
@@ -95,8 +96,47 @@ describe('logistics: transfer orders', () => {
     play(sim, 5);
     sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
     const all = play(sim, 12000, finished);
-    expect(of(all, 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
+    expect(of(all, 'transfer.blocked').map((e) => e.reason)).not.toContain('noShuttle'); // a busy shuttle is a wait, not news
     expect(stockOn(sim, base, 'item.metal')).toBe(11);
+  });
+
+  it('logs noShuttle when the only vehicle is a mining pod', () => {
+    const { sim, home, base } = setup({ metal: 20 });
+    (sim.world.get(shuttleOf(sim), VehicleC) as { def: string }).def = 'vehicle.mining_pod';
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
+    expect(of(play(sim, 300), 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
+  });
+
+  it('logs noShuttle once a quiet wait turns into having no shuttle', () => {
+    const { sim, home, base } = setup({ metal: 20 });
+    sim.enqueue({ type: 'ferry.order', from: home, to: base, items: [{ item: 'item.metal', count: 3 }] });
+    play(sim, 5);
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
+    expect(of(play(sim, 300), 'transfer.blocked')).toHaveLength(0);
+    sim.world.destroyEntity(shuttleOf(sim));
+    expect(of(play(sim, 300), 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
+  });
+
+  it('logs noShuttle when the player has no shuttle at all', () => {
+    const { sim, home, base } = setup({ metal: 20 });
+    sim.world.destroyEntity(shuttleOf(sim));
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
+    const all = play(sim, 300);
+    expect(of(all, 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
+  });
+
+  it('waits quietly while the only shuttle serves an away site; with no shuttle at all the block is logged', () => {
+    const { sim, home, base } = setup({ metal: 20 });
+    const shuttle = shuttleOf(sim);
+    expect(openSite(sim, base, 'debug')).toBe(shuttle);
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
+    const busy = play(sim, 300);
+    expect(of(busy, 'transfer.blocked')).toEqual([]);
+    expect(sim.world.get(orders(sim)[0]!, TransferC)).toMatchObject({ status: 'blocked', reason: 'noShuttle' });
+    const { sim: bare, home: home2, base: base2 } = setup({ metal: 20 });
+    bare.world.destroyEntity(shuttleOf(bare));
+    bare.enqueue({ type: 'transfer.order', from: home2, to: base2, items: [{ item: 'item.metal', count: 8 }] });
+    expect(of(play(bare, 300), 'transfer.blocked')).toMatchObject([{ reason: 'noShuttle' }]);
   });
 
   it('blocks with noStock when the pickup runs dry and resumes when goods arrive', () => {

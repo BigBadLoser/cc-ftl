@@ -11,6 +11,7 @@ import { traits } from './traits';
 import { policies } from './policies';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
+import { drones } from './drones';
 import { species } from './species';
 import { suit } from './suit';
 import { factions } from './factions';
@@ -44,6 +45,7 @@ export const content = {
   structCosts,
   weapons,
   vehicles,
+  drones,
   suit,
   events,
   sceneRules,

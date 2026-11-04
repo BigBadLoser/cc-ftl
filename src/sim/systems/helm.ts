@@ -10,7 +10,7 @@ import { TICK_HZ } from '../time';
 import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
-import { settleOrder } from '../ftl/order';
+import { settleDeparture, settleOrder } from '../ftl/order';
 
 /**
  * Evasion and the FTL drive. Both need a pilot at a powered helm. Evasion is the sum of powered engines'
@@ -41,6 +41,7 @@ export function helmSystem(sim: Sim): void {
     if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
     if (combat.ftlOrder) settleOrder(sim, id);
+    if (combat.departHold) settleDeparture(sim, id);
   }
 }
 

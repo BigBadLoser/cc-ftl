@@ -37,9 +37,15 @@ Last updated: 2026-11-03.
 
 ## In progress
 
-- **Now:** #173 physical encounters step 3, the derelict. Steps 1-2 (scenes, battle stations, the trader skiff) merged in #309.
-  Then, each checked in play first: pirate ambush, distress freighter, medical pod.
-- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (mental breaks #175 are built on `crew/breakdowns-175`, awaiting merge; the grief stressor and the tantrum's relationship hit are seams for them).
+- **Encounters (#173):** steps 1-3 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314). Paused by the
+  user (2026-11-04); next: pirate ambush, distress freighter, medical pod, each checked in play first.
+- **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
+  breach seals, supplies, enemy drones, staggered landing (#326).
+- **Mental breaks (#175) built** on `crew/breakdowns-175` (TRAITS.md section 5 "As built"), awaiting PR; the grief stressor and the tantrum's relationship hit are seams for relationships.
+- **Designed, not started:** weapon upgrades and flak (#317); new modules (comfort, medical, gear, food: DESIGN.md "New modules");
+  crew implants (#311) needs its design pass.
+- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239, designed 2026-11-04 in [TRAITS.md](TRAITS.md) section 6), then mental breaks
+  (#175, section 5b).
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
   landing in a bay that breaks on approach.

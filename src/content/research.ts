@@ -39,6 +39,26 @@ export const researchBands = [
   { id: 'power', name: 'Power' },
   { id: 'defence', name: 'Defence' },
   { id: 'propulsion', name: 'Propulsion' },
+  { id: 'automation', name: 'Automation' },
 ] as const;
 
-export const research: Record<string, ResearchDef> = Object.fromEntries(FAMILIES.flatMap((f) => [project(f, 2), project(f, 3)]));
+/** Drone blueprints (DESIGN.md "Drones"): each unlocks its fabricator recipe. They grow from the AI core, which runs them. */
+const DRONES: Record<string, ResearchDef> = {
+  'research.drone.repair': {
+    name: 'Repair drone', description: 'A drone that repairs modules and puts out small fires on its own.', category: 'automation',
+    cost: [{ item: 'item.electronics', count: 12 }, { item: DATA_CORE, count: 4 }], work: 1800,
+    unlocks: ['blueprint.drone_repair'], requires: ['module.aiCore'],
+  },
+  'research.drone.medic': {
+    name: 'Medic drone', description: 'A drone that stops the downed bleeding and heals the wounded slowly.', category: 'automation',
+    cost: [{ item: 'item.electronics', count: 14 }, { item: DATA_CORE, count: 4 }], work: 1800,
+    unlocks: ['blueprint.drone_medic'], requires: ['module.aiCore'],
+  },
+  'research.drone.defence': {
+    name: 'Defence drone', description: 'A drone that guards the ship in a fight: it shoots down missiles, enemy drones and shuttles.', category: 'automation',
+    cost: [{ item: 'item.electronics', count: 16 }, { item: DATA_CORE, count: 5 }], work: 2100,
+    unlocks: ['blueprint.drone_defence'], requires: ['module.aiCore'],
+  },
+};
+
+export const research: Record<string, ResearchDef> = { ...Object.fromEntries(FAMILIES.flatMap((f) => [project(f, 2), project(f, 3)])), ...DRONES };

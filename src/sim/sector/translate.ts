@@ -33,6 +33,10 @@ export const TRANSLATE: Record<string, Shift | null> = {
     point(c.planned as Xy | undefined, dx, dy);
   },
   body: xy,
+  drone: (c, dx, dy) => {
+    (c.steps as Xy[]).forEach((s) => point(s, dx, dy));
+    point(c.target as Xy | null, dx, dy);
+  },
   evaFloat: keys(['sx', 'sy']),
   ship: xy,
   projectile: keys(['x0', 'y0'], ['x1', 'y1'], ['x', 'y']),

@@ -9,6 +9,7 @@ import { playerShip } from '../trade/player';
 import { burnFuel, ftlCharge, fuelStock, jumpFuel, spendCharge } from './fuel';
 import { arrive, checkLeaving, type Reject } from './travel';
 import { edgeBetween } from './route';
+import { holdDeparture, loseStrandedDrones } from '../drones/recall';
 import { ensureAround, galaxyIndex, nodeState } from './state';
 import { TURN_TICKS } from './tuning';
 import { FTL_CHARGE_SEC } from '../tuning';
@@ -80,6 +81,9 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   // TODO(#129): NPC ships do not obey engine capacity yet. A ship heavier than its engines carry needs the overcharge (the player's flee takes it: staying is worse).
   const overcharged = hullLoad(sim, ship).over > 0;
   if (overcharged && !overcharge && command !== 'combat.flee') return reject('overweight');
+  // Drones out in space: the ship waits a moment for them (drones/recall.ts).
+  if (holdDeparture(sim, ship, { kind: 'jump', command, route: [...route], ...(withDocked ? { withDocked: [...withDocked] } : {}), overcharge })) return true;
+  loseStrandedDrones(sim, ship);
   const first = edges[0] as EdgeData;
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
@@ -204,6 +208,8 @@ export function flee(sim: Sim, ship: number): boolean {
   const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command: 'combat.flee', reason }), false);
   if (!checkLeaving(sim, ship, reject)) return false;
   if ((ftlCharge(sim, ship) ?? 0) + 1e-9 < FTL_CHARGE_SEC) return reject('notCharged');
+  if (holdDeparture(sim, ship, { kind: 'flee', command: 'combat.flee' })) return true;
+  loseStrandedDrones(sim, ship);
   if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
   spendCharge(sim, FTL_CHARGE_SEC, ship);
   if (hullLoad(sim, ship).over > 0) applyOvercharge(sim, ship);

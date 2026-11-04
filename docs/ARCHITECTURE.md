@@ -26,6 +26,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
 - [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck; the order keeps an away site open on the wreck (its shuttle run brings the crew and takes the loot home).
 - [Away sites and the air drive (#286)](#away-sites-and-the-air-drive-286): Slices 0 to 3 built (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, batched round trips, pickups, lost shuttles), salvage on top, throughput bench, slices.
+- [Drones, `src/sim/drones/`](#drones-srcsimdrones): Own entities (DroneC on a BodyC), one drone system, a job table per kind; core cap, bays, fly pathing, ion, placeholders.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
@@ -1360,6 +1361,70 @@ cover, the run machine, shared `arrive`) could be built before Phase 3, but 2a c
 - **Pickup hover at the home ship** needs `ferryMode` to allow a shuttle to hover beside its own ship (refused today).
 
 
+## Drones, `src/sim/drones/`
+
+Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
+
+- **Entity.** A drone is its own entity: `DroneC` (def, home ship, bay and slot, state `docked | out | home`, battery, hp, target, flight
+  steps, `inert`, `stunUntil`) on a `BodyC` (sector tiles, a tile's centre at +0.5; `ALT.drone` flying, `ALT.dronePad` docked, 0 dropped).
+  Never crew: no jobs, priorities, scheduler or crew panels.
+- **Types are data** (`content/drones.ts`, `satisfies DroneDef`): speed, hp, battery, ion stun, wreck and a `jobs` list, best first.
+  `drones/work.ts` has one rule set per job kind (`repair`, `extinguish`, `firstAid`): a target query, a still-wanted check and one tick
+  of work. A drone takes the nearest free target of the first kind in its list that has one (`DRONE_PATH_TRIES` flight plans per kind).
+  One drone per target: the claim set of the pass (`targetKey`). Crew may work the same target; both add up.
+- **System** (`systems/drones.ts`, after autoJobs): bays install drone items from storage (`installDrones`), each ship's cap is worked out
+  (`droneCap`: `DRONE_CAP_BY_TIER` by the best live core of the ship's faction; 0 = inert), then `runDrone` per drone in id order (`run.ts`):
+  docked (charge at `droneBay.chargePerSec` while the bay is powered; launch once over `launchAbove` with a free cap slot and a target),
+  out (fly, work, retarget, home below `lowBelow`), home (dock in its slot, or any free slot when its bay is gone; docked in a lost bay = wrecked).
+- **Flight** (`flight.ts`): an ordinary `findPath` with `fly` (the walk rule's `passAt` crosses solid modules; struct and doors that cannot
+  open still block). The body moves centre to centre; a closed step replans. The doors system holds a doorway open for a flying drone.
+- **Shared with crew:** `douseTile` and `repairModule` (crew/jobWork.ts), `Downed.patched` (vitals pauses the bleed-out), `hasLiveCore` /
+  `isCoreLive`, the ion points (`combat/effects.ts` `stunNear` calls `stunDronesNear`; a bay with `IonC` stuns the drones docked in it).
+- **Build:** `ItemDef.drone` items (`item.drone_*`), fabricator recipes gated by `RecipeDef.blueprint` (`recipeKnown`; `isKnown` accepts
+  `blueprint.*` ids that are not modules), research projects in the `automation` band, research-station stock.
+- **Jumps and saves:** drones lift with their ship (`members.ts`), `translate.ts` / `refs.ts` cover `drone`. `DroneC` and `Downed.patched`
+  are saved (SAVE_VERSION 89).
+- **Render/UI:** PLACEHOLDER art drawn in code (`render/droneView.ts`, `paintDrone`; lab panel `drones`), sorted in the sector `low`
+  layer; the bay inspector's Drones section (`app/droneSnapshot.ts`, `ui/DroneBayPanel.svelte`). Debug start `?scenario=drones`.
+- **Slice 2a (space, built on `drones/space-318`):**
+  - *Where a job is:* `KindRules.where` (`inside` | `space`) and `shared` (no claim: every guard shares its ship). A docked drone picks from
+    every kind; one inside picks only inside kinds, one in space only space kinds, else it goes home.
+  - *Free flight* (`drones/space.ts`): `steer` moves the body straight at a point in sector tiles at `ALT.cruise`; `d.space` marks a drone out
+    of its ship. The only way between inside and space is the bay's ceiling hatch: states `launch` / `land` (`stepLift`, `liftPose`): the
+    first `DRONE_HATCH_SHARE` of `DRONE_LIFT_SEC` it slides from its pad to the footprint's middle (the hatch opens), then rises to cruise
+    height (a landing is the same backwards). Render: `droneHatch.ts` (art `module.drone_bay.hatch.f0..f4` / `.stowed`; solid on the cutaway
+    ship while open), drones above `ALT.roof` draw in the air layer.
+  - *Defence* (`drones/intercept.ts`, job `intercept`): while its ship is `underThreat` it circles an ellipse `gap` tiles off the ship's
+    rectangle (places spread evenly by id, turning at 0.8 of its speed) and fires every `fireSec`: an incoming interceptable shot
+    (`hitChance`; `projectile.intercepted` with `by`), else the nearest enemy drone, else an enemy shuttle (chipped like point defence).
+    Who may be shot is one shared rule, `combat/intercept.ts` (`atWarWith`: already at war, never neutral, no truce), used by point defence
+    too, so defending never provokes.
+  - *Recall* (`drones/recall.ts`): a charge order with a jump, or a held departure, recalls the ship's drones (no launches, the ones out fly
+    home). `jump`, `flee` and `leaveEvent` call `holdDeparture` before they lift the ship: with drones outside it stores `Combat.departHold`
+    and stops; the helm system retries it every tick (`settleDeparture`) until they are in or the wait (`DRONE_RECALL_WAIT_SEC` plus `DRONE_QUEUE_ALLOW_SEC` per drone after the first, stored as `DepartHold.waitTicks`) is over. Then
+    `loseStrandedDrones` (`drone.lost`) and only drones aboard (docked, or flying inside) lift (`members.ts`).
+  - *Damage* (`drones/damage.ts`): fire on its tile inside (`DRONE_FIRE_DAMAGE` x intensity), crew hand weapons (`fight/fighter.ts`
+    `shootDrone`: armed fighters shoot an enemy drone inside that they can hit where they stand, when no crew foe is about), and in space
+    point defence (`DRONE_PD_*`) and enemy defence drones. Ship guns never target a drone. A docked drone is mended by a powered bay
+    (`DroneBayDef.repairPerSec`). A wreck in space drops nothing. SAVE_VERSION 90.
+  - Debug start `?scenario=drones&fight[&charged]`; lab panel `droneLaunch`.
+- **Slice 2b (built on `drones/space2b-318`):**
+  - *Enemy drones* (shipgen): a `FactionDef` with `defenceDrones` (navy, rogue AI) gets, from `ENEMY_DRONE_MIN_DEPTH`, a `module.droneBay` in
+    its AI room (living crews) or its own sealed pod (drone ships) (`plan.ts`); the room spec's `drones` becomes `ShipTemplate.modules[].drones`
+    (`generate.ts`), which `placeTemplateModules` spawns docked and `stampShip` hands to the new ship. Same drone system, same `drone.defence`
+    def: they launch once a ship at war with them is in play, and shoot our missiles, shuttles and drones by the shared rules. Count and depth
+    gates are in `tuning.ts` (`ENEMY_DRONE_*`). A drone whose ship is a wreck or gone is wrecked with it (`runDrone`). Debug start `?scenario=drones&fight&enemy=navy|drones[&depth=N]`; with `?hook`, `__cc.setSpeed(0..3)` freezes or runs the sim and `__cc.stepTicks(n)` advances it.
+  - *Staggered return* (`drones/recall.ts` `landingBusy`, `queuePlace`): while a ship's drones are recalled a drone in space waits at a place
+    of its own round the hatch until no other drone of the ship is cleared (`Drone.clear`) or less than `DRONE_LAND_GAP_SEC` into its landing.
+    The recall wait grows with the queue, so only distance can strand a drone. SAVE_VERSION 91 (93 with the later fixes).
+  - *Supplies:* `DroneDef.supply` (`{ item, capacity }`, data) is a load a drone carries (`Drone.load`, saved). Docked in a powered bay it tops
+    up from the ship's storage every scan (`combat/ammo.ts` `takeStock`, shared with `consumeAmmo`); no hauling. The repair drone carries 4 metal.
+    Medic supplies and drone ammo will use the same field. SAVE_VERSION 92.
+  - *Outside breach repair* (`drones/seal.ts`, job `seal`, space): a repair drone with the wall's whole cost in its load (`structCosts`, via
+    `sealCost`) takes a hole in its ship's hull (`crew/breach.ts` `breachesOf`, shared with the crew's seal job posting), flies out through the
+    hatch, hovers over it for the crew's wall time, then finishes it through `finishStruct` (exported from `crew/jobWork.ts`) and pays from its
+    load. A crew wall job on the same hole is destroyed. Recall and wrecks work as for any space job. Debug start `?scenario=drones&breach`.
+
 ## Vehicles (shuttles), `src/sim/vehicles/`
 
 - A shuttle is an **entity** (`VehicleC`), never a grid. States: `stowed` (in its home bay), `flying` (sector x, y), `docked` (at an
@@ -1403,7 +1468,7 @@ counters, reputation per faction, the open decision (`active`), a `queue` of due
 - `choices[]` (`ChoiceDef`): `id`, `label`, `hint`, `requires: Requirement[]`, `cost: ItemQty[]` (required and spent), then either
   `outcome` or `check` + `success`/`failure`. An `Outcome` is `{ text?, effects? }`.
 - `Requirement`: `species`, `implant`, `skill`, `module`, `item` (kept), `reputation` (min/max), `flag` (min/max; default "is set";
-  `max: 0` = "not set"), `crew`. Unmet choices show greyed with the reason (`describeRequirement`).
+  `max: 0` = "not set"), `crew`, `shuttle {eva?}` (a player shuttle stowed in its bay). Unmet choices show greyed with the reason (`describeRequirement`).
 - `SkillCheck {skill, difficulty, base=0.5, perLevel=0.1}`: odds = clamp(base + perLevel * (level - difficulty), 5%, 95%), the best
   crew member (highest `stat`, ties lowest id) rolls; the odds label ("Repair skill 6 (Mara): 70%") is shown on the choice.
 - `EventEffect`: `items` (+/-, to/from player storage), `crewDamage`, `crewHeal`, `skillXp` (100 xp = 1 level via a stat modifier
@@ -1425,6 +1490,26 @@ notices arrive through `alerts.ts` (`UiAlert.notice`).
 and flag triggers resolve and that every choice runs). For an arc, have one event set a flag and the next list a `flag` trigger
 (with `eligible` on the flag) or be reached by `chain`. Add a new effect or requirement kind in `defs.ts`, then `effects.ts` /
 `requirements.ts` (both switches are exhaustive).
+
+### Physical encounters (scenes), `src/sim/scene/` (#173)
+
+DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit draw, `galaxy/storyHop.ts`), scene specs and the outcome observer.
+- **Spec** (`scene/types.ts`, `spec.ts`): content's `EventDef.scene` (`SceneRecipe`: ships, derelicts, timers, rule overrides) is rolled into a
+  `SceneSpec` when the signal opens (`galaxy.signal`), from the world seed, the event id and the hop, so the same signal gives the same scene.
+  Ships are contact descriptors (`spawnContact`); derelicts (`scene/derelicts.ts`) are the derelict generator's inputs (`planDerelict` in
+  `combat/derelict.ts`: generate and ruin without placing) plus a `DerelictRead` of the ruin meta that a scan words (`app/storySnapshot.ts`).
+- **Remote actions** (`ChoiceDef.remote`: `hail`, `scan`, `probe`, a deep scan that reads counts and cargo) reveal facts from the spec and keep
+  the decision open. Investigating (a `scene` effect) opens the event grid (`galaxy/eventGrid.ts` `enterEvent`); `scene/open.ts` makes the
+  derelicts and ships real (beside where the ship comes in, retried each second when there is no room) and departs neutral ships.
+- **Observer** (`scene/observer.ts`): once a second, facts read from sim state (never events) per scene ship and derelict: traded, attacked,
+  boarded, captured, destroyed, fled, salvaged (a salvage order stripped parts, or the wreck is stripped away), cleared (hostiles aboard at
+  spawn, none now), plus `crewLost` per player crew member seen alive in the grid, `timer`, and `left` at leave. Rules are data: shared
+  `content/sceneRules.ts` (with `of: ship | derelict` and `stance` filters), overridden per encounter. `derelicts_found` counts salvaged
+  derelicts; a scan reads counts once it is 2.
+- **Persistence:** everything in the grid is wiped on leave (a `discovery` spec keeps its stable key for a later node record).
+- **Exploring by hand** uses the general tools: draft, `vehicle.embark`, `vehicle.hover` (the hover point comes in to the gap from the nearest
+  hull-ring tile when a ragged hull lies inside its bounding box, so a hatch spot exists), `eva.out`, crew orders, `job.forceDoor`, and
+  `eva.board`, which walks a crew member out of float range to the hatch spot first (`eva/board.ts`). Wrecks get no repair jobs.
 
 ## Trade, `src/sim/trade/`
 

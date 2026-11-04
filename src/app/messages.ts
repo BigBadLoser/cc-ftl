@@ -42,6 +42,7 @@ const REASONS: Record<string, string> = {
   noStock: 'None of that in storage on this ship',
   nothingEquipped: 'Nothing wielded',
   incapacitated: 'That crew member cannot move',
+  fighting: 'That crew member is busy fighting',
   badStruct: "Can't build that",
   notHovering: 'The shuttle is not holding station at a ship',
   outOfRange: 'Too far from the hull: hover closer',

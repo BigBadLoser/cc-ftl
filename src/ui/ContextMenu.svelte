@@ -3,7 +3,7 @@
   import type { UiApi } from './api';
   import Icon, { type IconName } from './Icon.svelte';
 
-  const ICON: Record<string, IconName> = { attack: 'combat', man: 'helm', board: 'shuttle', sabotage: 'fire', walk: 'walk' };
+  const ICON: Record<string, IconName> = { attack: 'combat', man: 'helm', board: 'shuttle', sabotage: 'fire', walk: 'walk', forceDoor: 'wrench' };
 
   let { api }: { api: UiApi } = $props();
   let menu = $state<{ x: number; y: number; items: { id: string; label: string }[] } | null>(null);

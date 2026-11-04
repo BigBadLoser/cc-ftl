@@ -164,6 +164,8 @@ export interface Combat {
    * current node) to fly the moment the charge covers it. Absent or null: no order.
    */
   ftlOrder?: { jump: string[] | null; withDocked?: number[]; overcharge?: true } | null;
+  /** A departure waiting for the ship's drones out in space (drones/recall.ts); the helm retries it every tick. Absent or null: none. */
+  departHold?: DepartHold | null;
   shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
   heat: Heat;
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
@@ -263,6 +265,22 @@ export interface Projectile {
 export const ProjectileC = defineComponent<Projectile>('projectile');
 
 /** On a module disabled by ion: out of action until this tick. */
+/**
+ * A held departure (drones/recall.ts `holdDeparture`): what to do once the drones are in or the wait is over. 'jump' a hyperspace trip along
+ * `route` (with `withDocked`, `overcharge`), 'flee' the player's flee, 'leave' leaving a scene. `command` names the original command for
+ * rejections; `since` is the tick it was held.
+ */
+export interface DepartHold {
+  kind: 'jump' | 'flee' | 'leave';
+  command: string;
+  route?: string[];
+  withDocked?: number[];
+  overcharge?: boolean;
+  since: number;
+  /** How long the hold may last, in ticks: the recall wait plus what the landing queue itself costs (`holdWaitTicks`). Absent: the plain wait. */
+  waitTicks?: number;
+}
+
 export interface Ion {
   until: number;
 }

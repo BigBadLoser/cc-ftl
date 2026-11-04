@@ -54,6 +54,8 @@ interface Fitted {
   lay: Layout;
   stock: Map<number, { item: string; count: number }[]>;
   vehicles: Set<number>;
+  /** Drone defs docked in the bay at this module index. */
+  drones: Map<number, string[]>;
 }
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
@@ -62,7 +64,7 @@ function fitOut(
   recipes = RECIPES,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
-  const out: Fitted = { lay, stock: new Map(), vehicles: new Set() };
+  const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), drones: new Map() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
   jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
@@ -111,6 +113,7 @@ function fitOut(
     const idx = lay.modules.length - 1;
     stockUp(idx, j.spec);
     if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
+    if (j.spec.drones && defs[j.def]?.droneBay) out.drones.set(idx, Array<string>(Math.min(j.spec.drones.count, defs[j.def]?.droneBay?.slots ?? 0)).fill(j.spec.drones.def));
   }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
@@ -171,6 +174,7 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
       def: m.def, x: m.x, y: m.y, rot: m.rot,
       ...(stock && stock.length > 0 ? { stock } : {}),
       ...(d.vehicles.has(i) ? { vehicle: 'vehicle.shuttle' } : {}),
+      ...(d.drones.has(i) ? { drones: d.drones.get(i) } : {}),
     };
   });
   return {

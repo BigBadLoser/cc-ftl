@@ -481,3 +481,32 @@ export const BREAK_ALERT_SHIP_SEC = 60;
 /** A Battle-shy crew member avoids job sites with a hostile within this many tiles (pick penalty, tiles). */
 export const PHOBIA_JOB_PENALTY = 30;
 export const PHOBIA_BATTLE_RADIUS = 8;
+
+// --- Drones (sim/drones, DESIGN.md "Drones") ---
+/** Drones out of their bays at once, by the best live AI core's tier (index): Mk I 2, Mk II 4, Mk III 6. */
+export const DRONE_CAP_BY_TIER: readonly number[] = [0, 2, 4, 6];
+/** Candidate targets a drone tries a flight path to per pick (nearest first); further ones wait for a later pick. */
+export const DRONE_PATH_TRIES = 4;
+/** Ticks between a drone's target searches while it has nothing to do (docked and charged, or hovering after a job). */
+export const DRONE_SCAN_TICKS = 10;
+/** Hp a second a drone loses on a fully burning tile inside its ship (scaled by the fire's intensity). */
+export const DRONE_FIRE_DAMAGE = 4;
+/** Seconds a launch or a landing through the bay's ceiling hatch takes; the first HATCH_SHARE of it the hatch opens (landing: closes). */
+export const DRONE_LIFT_SEC = 2.4;
+export const DRONE_HATCH_SHARE = 0.3;
+/** Seconds a departure (a jump, a flee, leaving a scene) waits for drones out in space to dock; those still out then are lost. */
+export const DRONE_RECALL_WAIT_SEC = 6;
+/** The staggered landing never strands a drone: the wait grows by this many seconds for each drone queued behind the first (the landing gap plus the flight in from the queue). */
+export const DRONE_QUEUE_ALLOW_SEC = 1.5;
+/** Point defence against enemy drones in space within VEHICLE_PD_RANGE of its ship: every VEHICLE_PD_INTERVAL ticks each working module rolls this to hit one for this much. */
+export const DRONE_PD_CHANCE = 0.3;
+export const DRONE_PD_DAMAGE = 8;
+/** Staggered return: while a ship's drones are recalled, one starts its landing only this many seconds after the one before it (under DRONE_LIFT_SEC). */
+export const DRONE_LAND_GAP_SEC = 0.9;
+/** How far from its bay's hatch a recalled drone waits for its turn to land, in tiles. */
+export const DRONE_QUEUE_RADIUS = 1.8;
+/** Enemy drones (shipgen): a navy or rogue AI ship of at least this sector depth carries a drone bay with defence drones. */
+export const ENEMY_DRONE_MIN_DEPTH = 3;
+/** Defence drones in an enemy bay: this many, plus one from ENEMY_DRONE_SECOND_DEPTH on (a bay holds two). */
+export const ENEMY_DRONES_BASE = 1;
+export const ENEMY_DRONE_SECOND_DEPTH = 7;

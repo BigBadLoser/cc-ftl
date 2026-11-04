@@ -27,6 +27,9 @@ import { StunC } from '../robots/components';
 import { haltCrew } from '../robots/halt';
 import { TICK_HZ } from '../time';
 import { StationCrewC } from '../stations/components';
+import { DroneC } from '../drones/components';
+import { damageDrone } from '../drones/damage';
+import { droneInReach } from '../drones/target';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -123,6 +126,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const autoSac = controlled && !f.ordered && f.engage && isArmed(sim, id) ? sacInReach(sim, grid, shipIdOf(sim, pos), pos, wielded(sim, id).def) : null;
 
   if (foes.length === 0 && !sac && !autoSac) {
+    if (shootDrone(sim, grid, id, f, pos, controlled)) return;
     if (f.mode !== 'idle') setMode(sim, id, f, 'idle');
     f.ordered = 0;
     if (invader && isBoarding(sim, id) && !controlled && sim.world.get(id, CrewC)?.activity !== 'sleeping' && !sim.world.has(id, AssignmentC)) {
@@ -260,6 +264,12 @@ function attack(
     sim.events.emit({ type: 'crew.miss', crew: id, target: targetId, cover });
     return;
   }
+  if (sim.world.has(targetId, DroneC)) {
+    damageDrone(sim, targetId, weapon.def.damage, 'gunfire');
+    grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', weapon.def.damage / XP_DAMAGE_PER_XP);
+    sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage: weapon.def.damage, hp: sim.world.get(targetId, DroneC)?.hp ?? 0, cover });
+    return;
+  }
   const sac = sim.world.get(targetId, EggSacC);
   if (sac) {
     sac.hp = Math.max(0, sac.hp - weapon.def.damage); // the egg sac system sees the damage next tick
@@ -279,6 +289,19 @@ function attack(
     haltCrew(sim, targetId);
     sim.events.emit({ type: 'crew.knockedDown', crew: targetId, by: id, until });
   }
+}
+
+/**
+ * With no crew foe about, an armed fighter (the player's only when drafted and engaging) shoots an enemy drone inside the ship it can hit
+ * where it stands. True while it is on one (firing, or waiting for its weapon).
+ */
+function shootDrone(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, controlled: boolean): boolean {
+  if (!isArmed(sim, id) || (controlled && (!f.engage || f.ordered)) || !isSettled(pos)) return false;
+  const weapon = wielded(sim, id);
+  const hit = droneInReach(sim, grid, sim.world.get(id, AllegianceC)?.faction, shipIdOf(sim, pos), pos, weapon.def);
+  if (!hit) return false;
+  if (f.cooldown === 0) attack(sim, id, f, hit.id, hit.pos, pos, weapon, Math.hypot(hit.pos.x - pos.x, hit.pos.y - pos.y), 'none');
+  return true;
 }
 
 /** True when the crew member's hp is below `frac` of their max. */

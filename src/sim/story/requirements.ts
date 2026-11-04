@@ -3,7 +3,7 @@ import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import type { ChoiceDef, EventDef, Requirement, SkillCheck } from './defs';
 import { flagValue, reputationOf } from './state';
-import { bestAt, hasImplant, playerCrew, playerModules, playerStock, withPlayerAboard } from './world';
+import { bestAt, hasImplant, playerCrew, playerModules, playerStock, stowedShuttles, withPlayerAboard } from './world';
 
 const SKILL_LABEL: Record<string, string> = {
   gunnery: 'Gunnery', piloting: 'Piloting', shielding: 'Shielding', melee: 'Melee', repair: 'Repair', hacking: 'Hacking',
@@ -32,6 +32,7 @@ function meetsNow(sim: Sim, req: Requirement): boolean {
       return v >= (req.min ?? (req.max === undefined ? 1 : -Infinity)) && v <= (req.max ?? Infinity);
     }
     case 'crew': return playerCrew(sim).length >= req.count;
+    case 'shuttle': return stowedShuttles(sim, !!req.eva) > 0;
   }
 }
 
@@ -53,6 +54,7 @@ export function describeRequirement(sim: Sim, req: Requirement): string {
     }
     case 'flag': return (req.max ?? Infinity) < 1 ? `Not after ${req.flag}` : `Needs ${req.flag}`;
     case 'crew': return `Needs ${req.count} crew`;
+    case 'shuttle': return req.eva ? 'Needs an EVA shuttle in its bay' : 'Needs a shuttle in its bay';
   }
 }
 

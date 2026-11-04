@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
-import { CrewC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
+import { FighterC } from '../fight/components';
+import { AssignmentC, CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 import { findPath } from '../crew/pathfind';
 import type { SimEvent } from '../events';
 import { shipGrid } from '../regions';
@@ -74,5 +75,54 @@ describe('jammed doors', () => {
     sim.step();
     const rejected = sim.events.drain().find((e: SimEvent) => e.type === 'command.rejected');
     expect(rejected).toMatchObject({ reason: 'notJammed' });
+  });
+});
+
+describe('drafted force door order', () => {
+  it('a drafted crew member forces a jammed door and stays drafted', () => {
+    const sim = make(DoorJam.Shut);
+    const c = spawn(sim, 1, 2);
+    sim.world.add(c, DraftedC, { target: null });
+    sim.enqueue({ type: 'crew.forceDoor', ids: [c], ship: 1, x: 4, y: 2 });
+    let ticks = 0;
+    while (shipGrid(sim, 1)!.get('jam', 4, 2) !== DoorJam.None && ticks < 2000) { sim.step(); ticks++; }
+    expect(shipGrid(sim, 1)!.get('jam', 4, 2)).toBe(DoorJam.None);
+    expect(ticks).toBeGreaterThan(5 * 20);
+    run(sim, 5);
+    expect(sim.world.has(c, DraftedC)).toBe(true);
+    expect(sim.world.has(c, AssignmentC)).toBe(false);
+    expect(sim.world.query(JobC).length).toBe(0);
+  });
+
+  it('is refused on a door that is not jammed, and dropped when the crew member is sent elsewhere', () => {
+    const plain = make(DoorJam.None);
+    const a = spawn(plain, 1, 2);
+    plain.world.add(a, DraftedC, { target: null });
+    plain.enqueue({ type: 'crew.forceDoor', ids: [a], ship: 1, x: 4, y: 2 });
+    plain.step();
+    expect(plain.events.drain().find((e: SimEvent) => e.type === 'command.rejected')).toMatchObject({ reason: 'notJammed' });
+    const sim = make(DoorJam.Shut);
+    const c = spawn(sim, 1, 2);
+    sim.world.add(c, DraftedC, { target: null });
+    sim.enqueue({ type: 'crew.forceDoor', ids: [c], ship: 1, x: 4, y: 2 });
+    run(sim, 3);
+    expect(sim.world.query(JobC).length).toBe(1);
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: 1, y: 1 });
+    run(sim, 5);
+    expect(sim.world.query(JobC).length).toBe(0);
+    expect(shipGrid(sim, 1)!.get('jam', 4, 2)).toBe(DoorJam.Shut);
+  });
+
+  it('a crew member already fighting is not given the door work', () => {
+    const sim = make(DoorJam.Shut);
+    const c = spawn(sim, 3, 2);
+    sim.world.add(c, DraftedC, { target: null });
+    sim.world.add(c, FighterC, { mode: 'engage', ordered: 0 } as never);
+    sim.enqueue({ type: 'crew.forceDoor', ids: [c], ship: 1, x: 4, y: 2 });
+    sim.step();
+    expect(sim.events.drain().find((e: SimEvent) => e.type === 'command.rejected')).toMatchObject({ reason: 'fighting' });
+    run(sim, 300);
+    expect(sim.world.query(JobC).length).toBe(0);
+    expect(shipGrid(sim, 1)!.get('jam', 4, 2)).toBe(DoorJam.Shut);
   });
 });
