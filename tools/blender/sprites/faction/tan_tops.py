@@ -171,11 +171,13 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
 # (heights in rows of face down from the header's top, depths in px; a part d proud shows d rows lower, so the one
 # over it hides that much of what's under it)
 H_FRONT, H_FACE, H_CANOPY = 8, 5, 7     # the header: its rows; its face's depth (the screens on it); the canopy's
-BIN_FOOT, BIN_D = 18, 5                 # the bins: their bottom edge, its depth (their front leaning back from it
-                                        # to the wall at 45 degrees, under the header)
-FRAME_BARS, FRAME_D = (22, 33), 1       # the frame's bars across (rows; one more at its foot, on the slope), how
-                                        # far it stands out (1 px bars; the doors in it flush with the wall)
-FRAME_SPLITS = ((0.5,), (0.25, 0.5, 0.75))  # its bars up between the cabinets, the drawers (and at a tile's edges)
+BIN_FOOT, BIN_D, BIN_TOP = 18, 7, 2     # the bins: their bottom edge, its depth (the canopy's); their front leaning
+                                        # back from it to the header's foot, BIN_TOP px out (under the header)
+FRAME_BARS, FRAME_D = (22, 33), 5       # the cabinets' and drawers' block: its frame's bars across (rows; one more
+                                        # at its foot, on the slope), how far it stands out (2 px back of the bins'
+                                        # edge; 1 px bars, the doors a px back in it)
+FRAME_IN = 1                            # the block: in from each tile edge (px)
+FRAME_SPLITS = ((0.5,), (0.25, 0.5, 0.75))  # its bars up between the cabinets, the drawers (and at its ends)
 L_GAP = 1                               # the gap between the bins, and at a tile's edge (px; the face dark)
 HANDLES = (3, 2)                        # the cabinets', the drawers' handles (2 px, the glass's navy): rows over
                                         # their door's foot
@@ -201,24 +203,26 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     for c in range(-1, 2):
         if c - 0.5 < a - 1e-6 or c + 0.5 > b + 1e-6:
             continue
-        bd, zb = BIN_D * L, R(BIN_FOOT)                         # the bins: a wedge, lit along its front
+        bd, zb, bt = BIN_D * L, R(BIN_FOOT), BIN_TOP * L        # the bins: a wedge, lit along its front
         for h in range(2):
             q0, q1 = c - 0.5 + h * 0.5 + L_GAP * L / 2, c + h * 0.5 - L_GAP * L / 2
-            prism(k, ax, plane, q0, q1, [(0.0, zb), (bd, zb), (0.0, zb + bd)], FACE, 3,
-                  cols=[False, sd("fTS1", ax), False], cap=cap)
-        fd = FRAME_D * L                                        # the frame: doors flush with the wall in it
+            prism(k, ax, plane, q0, q1, [(0.0, zb), (bd, zb), (bt, R(H_FRONT)), (0.0, R(H_FRONT))], FACE, 3,
+                  cols=[False, sd("fTS1", ax), False, False], cap=cap)
+        fd = FRAME_D * L                                        # the block: a frame of bars FRAME_D out, the doors
+        e0, e1 = c - 0.5 + FRAME_IN * L, c + 0.5 - FRAME_IN * L     # a px back in it
         zs = [R(n) for n in FRAME_BARS] + [zl1 + PZ]            # (each section's top bar's top, then its foot's)
         bars = []
         for n, splits in enumerate(FRAME_SPLITS):
             zt, zf = zs[n], zs[n + 1]
-            band(c - 0.5, c + 0.5, zf, zt - PZ, "fTS3", PAINT)  # (its doors, a touch over the face: no z-fight)
-            bars.append((c - 0.5, c + 0.5, zt - PZ, zt))
+            prism(k, ax, plane, e0, e1, [(0.0, zf), (fd - L, zf), (fd - L, zt - PZ), (0.0, zt - PZ)], FACE, 3,
+                  cols=[False, sd("fTS3", ax), False, False], cap=cap)          # (its doors)
+            bars.append((e0, e1, zt - PZ, zt))
             us = [c - 0.5 + f for f in splits]
             bars += [(u - L / 2, u + L / 2, zf, zt - PZ) for u in us]
-            bars += [(c - 0.5, c - 0.5 + L / 2, zf, zt - PZ), (c + 0.5 - L / 2, c + 0.5, zf, zt - PZ)]
-            for q0, q1 in zip([c - 0.5 + L / 2] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [c + 0.5 - L / 2]):
-                _handle(k, ax, plane, c, q0, q1, zf, HANDLES[n], L, sd)   # (a px out of the door)
-        bars.append((c - 0.5, c + 0.5, zl1, zl1 + PZ))
+            bars += [(e0, e0 + L, zf, zt - PZ), (e1 - L, e1, zf, zt - PZ)]
+            for q0, q1 in zip([e0 + L] + [u + L / 2 for u in us], [u - L / 2 for u in us] + [e1 - L]):
+                _handle(k, ax, plane, c, q0, q1, zf, HANDLES[n], fd, sd)  # (a px out of the door)
+        bars.append((e0, e1, zl1, zl1 + PZ))
         for u0, u1, z0, z1_ in bars:
             prism(k, ax, plane, u0, u1, [(0.0, z0), (fd, z0), (fd, z1_), (0.0, z1_)], FACE, 3,
                   cols=[False, sd("fTS1", ax), sd("fTS0", ax), False], cap=cap)
