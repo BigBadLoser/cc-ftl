@@ -130,7 +130,7 @@ export const events = {
           ],
         },
         ambush: {
-          chance: 0.5, party: 3, crew: [4, 5], askAfterSec: [14, 22],
+          chance: 0.5, party: 3, crew: [4, 5], askAfterSec: [14, 22], honest: { party: [1, 2], crew: [3, 4] },
           talk: {
             honest: '"It\'s me, the one you let go. The clan let me keep the boat, and I\'ve been paying it off since. I know where the patrols sit, and I\'ll tell you for nothing. Come alongside and we can trade, if you like."',
             trap: '"Captain, it\'s me, the one you spared. I owe you my life, and my crew want to thank you in person. Let us dock and we\'ll settle up properly."',
@@ -142,10 +142,15 @@ export const events = {
         },
       }],
       rules: {
-        honestTraded: {
-          on: 'traded', trap: false,
+        honestPaid: {
+          on: 'delivered', trap: false,
           effects: [{ type: 'items', item: 'item.missile', count: 4 }, { type: 'reputation', faction: 'owner', delta: 2 }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }],
-          log: '{ship} keeps its word: the patrol routes for nothing, and four missiles pressed on you', tone: 'good',
+          log: '{ship} keeps its word: four missiles handed over, and the patrol routes for nothing', tone: 'good',
+        },
+        honestRefused: {
+          on: 'declined', trap: false,
+          effects: [{ type: 'flag', flag: 'spared_pirate', op: 'clear' }],
+          log: '{ship} pulls away, the debt unpaid', tone: 'warn',
         },
         ambushed: {
           on: 'ambushed', trap: true,

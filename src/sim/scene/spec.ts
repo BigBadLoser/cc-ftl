@@ -45,10 +45,10 @@ function seedFor(sim: Sim, r: SceneShipRecipe, depth: number, key: readonly numb
 function rollAmbush(rng: Rng, a: AmbushRecipe): { ambush: Ambush; crew: number } {
   const trap = rng.next() < a.chance;
   const slip = rng.next() < 0.7 ? (rng.next() < 0.5 ? 'name' : 'lag') : undefined;
-  const crew = roll(rng, trap ? a.crew : [1, 2]);
+  const crew = roll(rng, trap ? a.crew : a.honest.crew);
   const askAfter = roll(rng, a.askAfterSec);
   const talk = trap ? (slip ? a.talk.tells[slip] : a.talk.trap) : a.talk.honest;
-  return { crew, ambush: { trap, party: trap ? a.party : 0, talk, ...(trap && slip ? { tell: slip } : {}), askAfter } };
+  return { crew, ambush: { trap, party: trap ? a.party : roll(rng, a.honest.party), talk, ...(trap && slip ? { tell: slip } : {}), askAfter } };
 }
 
 function buildShip(sim: Sim, r: SceneShipRecipe, rng: Rng, depth: number, key: readonly number[], used: Set<string>): SceneShip {

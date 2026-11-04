@@ -3,7 +3,7 @@ import {
 } from '../sim';
 import type { UiEncounter, UiEncounterChoice, UiEncounterResult, UiEventGrid } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
-import { ShipC, factionsHostile, type Contact } from '../sim';
+import { ShipC, factionsHostile, type Contact, type SceneShip } from '../sim';
 
 
 export const ROLE_LABEL: Record<string, string> = { trader: 'Trader', miner: 'Miner', patrol: 'Patrol', pirate: 'Pirate', raider: 'Raider' };
@@ -79,7 +79,7 @@ export function resultOf(sim: Sim): UiEncounterResult | null {
 type Roster = UiEventGrid['roster'][number];
 
 /** One scene ship as the event card lists it: what it is doing now, read from its state. */
-function rosterRow(sim: Sim, c: Contact, extra: { hailed?: boolean; leaveAt?: number; gone?: string; visit?: 'asked' | 'granted' | 'aboard' | 'refused' | 'sprung' }): Roster {
+function rosterRow(sim: Sim, c: Contact, extra: { hailed?: boolean; leaveAt?: number; gone?: string; visit?: NonNullable<NonNullable<SceneShip['ambush']>['visit']> }): Roster {
   const s = c.ship === undefined ? undefined : sim.world.get(c.ship, ShipC);
   const row = { ship: c.ship ?? 0, name: s?.name ?? c.name ?? 'Unknown ship', owner: factionName(sim, c.faction) };
   if (extra.gone || s?.state === 'fled') return { ...row, ship: 0, status: 'Jumped away', tone: 'dim' };
@@ -90,6 +90,7 @@ function rosterRow(sim: Sim, c: Contact, extra: { hailed?: boolean; leaveAt?: nu
   if (factionsHostile(s.faction, 'player')) return { ...row, status: 'Hostile', tone: 'red' };
   if (extra.visit === 'asked') return { ...row, status: 'Asks to dock', tone: 'amber' };
   if (extra.visit === 'granted') return { ...row, status: 'Shuttle docking', tone: 'amber' };
+  if (extra.visit === 'delivered') return { ...row, status: 'Debt paid', tone: 'green' };
   if (extra.visit === 'aboard') return { ...row, status: 'Party aboard', tone: 'amber' };
   if (extra.hailed) return { ...row, status: 'Holding station', tone: 'green' };
   if (extra.leaveAt !== undefined && sim.tick >= extra.leaveAt) return { ...row, status: 'Leaving', tone: 'amber' };

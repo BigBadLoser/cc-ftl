@@ -1513,12 +1513,14 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
 
 - **Pirate ambush (step 4)** (`scene/visit.ts`, `boarding/party.ts`): a scene ship recipe may carry `ambush` (`AmbushRecipe`): the scene seed rolls
   trap or honest (`SceneShip.ambush`: `trap`, `party` 3, the hail `talk`, a `tell`, `askAfter`, `visit`). `attitude` adds to the hail score
-  (`Trader.relation`) so a ship with a reason answers. **Boarding trigger outside combat:** a trap asks to dock `askAfter` s after the scene opens
+  (`Trader.relation`) so a ship with a reason answers. **Boarding trigger outside combat:** either variant asks to dock `askAfter` s after the scene opens
   (`visit: 'asked'`, event `scene.dockAsked`, EventPanel's request with Let them dock / Refuse = command `galaxy.visit`). Granted: `Boarder.visit`
   lets `boardingAiSystem` run the neutral ship's party (`startParty`, moved to `boarding/party.ts`, sent from `tendVisit` so embark orders are in
   place); once one of them stands on the player's ship (`aboard`) they pass for guests `AMBUSH_SPRING_SEC`, then `hostileAct(ship, 'ambush')` turns
-  the group (`turnShip` now also turns `Boarder.crew` standing on another grid) and records it as every provocation does. Refusing does the same
-  without a party. A player shot first (`provoked` set) makes it `sprung` already. Observer facts `ambushed` (`provoked === 'ambush'`) and
+  the group (`turnShip` now also turns `Boarder.crew` standing on another grid) and records it as every provocation does. Refusing a trap does the same
+  without a party. An honest party never springs: at `aboard` it becomes `delivered` (observer fact, rule `honestPaid`), `HONEST_STAY_SEC` later
+  its crew `vehicle.embark`, the shuttle `undock`s and `return`s, `home` is set and the skiff is dismissed (`leaveAt` now, so `departScene` jumps it
+  out). Refused, an honest skiff is dismissed at once (fact `declined`, rule `honestRefused`). A player shot first (`provoked` set) makes it `sprung` already. Observer facts `ambushed` (`provoked === 'ambush'`) and
   `boardersDown` (party all dead or down), rule filter `trap: true|false`. Scan rows are skill-sharpened (`app/ambushIntel.ts`: gunnery, piloting,
   hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`app/ambushScenario.ts`, `debug.ambush`).
 

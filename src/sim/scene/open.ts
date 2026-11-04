@@ -33,8 +33,11 @@ function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
     if (t && s.credits !== undefined) t.credits = s.credits;
   }
   // A trap's boarding party is the size the scene says (the generator's doctrine may differ), armed with whatever the doctrine issues; it only goes when let in.
-  const party = s.ambush?.trap ? sim.world.get(s.contact.ship, BoarderC) : undefined;
-  if (party && s.ambush) party.party = s.ambush.party;
+  const party = s.ambush ? sim.world.get(s.contact.ship, BoarderC) : undefined;
+  if (party && s.ambush) {
+    party.party = s.ambush.party;
+    if (!s.ambush.trap) delete party.weapon; // an honest party comes unarmed
+  }
   return true;
 }
 

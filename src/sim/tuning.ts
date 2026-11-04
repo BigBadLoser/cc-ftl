@@ -231,6 +231,8 @@ export const BOARDING_MIN_HOME = 1;
 export const BOARDING_LOAD_TICKS = 600;
 /** Seconds an ambush skiff's boarding party stands on the player's ship, still passing for guests, before it turns (scene/visit.ts). */
 export const AMBUSH_SPRING_SEC = 10;
+/** Seconds an honest skiff's party stays aboard after paying its debt before it walks back to its shuttle. */
+export const HONEST_STAY_SEC = 6;
 
 /**
  * Sabotage (boarding/sabotage.ts): hp per second one boarder takes off the module they were ordered to wreck, with a weapon or

@@ -63,6 +63,8 @@ function factsOf(sim: Sim, ev: EventGrid, w: Watched): Set<SceneFact> {
   if ((sim.world.get(id, SalvageOrderC)?.done ?? 0) > 0) out.add('salvaged');
   if (w.ambush) {
     if (ship.provoked === 'ambush') out.add('ambushed');
+    if (w.ambush.visit === 'delivered') out.add('delivered');
+    if (w.ambush.visit === 'refused' && !w.ambush.trap) out.add('declined');
     // The party it sent is all dead or down (the player's shot or the ambush brought them out; either way they are done).
     const party = sim.world.get(id, BoarderC)?.crew ?? [];
     if (party.length > 0 && party.every((c) => !sim.world.has(c, CrewC) || isSubdued(sim, c))) out.add('boardersDown');

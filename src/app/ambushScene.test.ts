@@ -91,7 +91,10 @@ describe('the returning pirate: signal', () => {
       if (a?.trap) {
         expect(a.party).toBe(3);
         expect(spec?.ships[0]?.crew).toBeGreaterThanOrEqual(4);
-      } else expect(a?.party).toBe(0);
+      } else {
+        expect(a?.party).toBeGreaterThanOrEqual(1);
+        expect(a?.party).toBeLessThanOrEqual(2);
+      }
       expect(sim.world.query(ShipC)).toHaveLength(0); // the player's ship is a packet in hyperspace and nothing spawned
       expect(signalled(s).galaxy.signal).toEqual(sim.galaxy.signal); // the same signal, the same skiff
     }
@@ -195,22 +198,38 @@ describe('the returning pirate: in its pocket', () => {
     expect(sim.story.flags['pirate_ambushed'] ?? 0).toBe(0); // not an ambush: you fired first
   });
 
-  it('an honest skiff never asks to dock, trades, and keeps its word: four missiles, standing and the flag cleared', () => {
+  it('an honest skiff asks to dock too, pays its debt in person (missiles, standing, flag cleared) and goes home', () => {
     const { sim, skiff } = inScene(3, false);
-    step(sim, 20 * 60);
-    expect(ambushOf(sim)?.visit).toBeUndefined();
+    untilAsked(sim);
+    expect(eventOf(sim)?.dockRequest?.ship).toBe(skiff);
     const before = withPlayerAboard(sim, () => playerStock(sim, 'item.missile'));
     const rep = sim.story.reputation['pirates'] ?? 0;
-    sim.enqueue({ type: 'trade.hail', ship: skiff });
-    step(sim, 3);
-    expect(sim.trade.hails.find((h) => h.ship === skiff)?.answered).toBe(true);
-    // Settle a deal by marking the finished record the observer reads (the trade flow itself is tested in trade).
-    sim.trade.deals.push({ ship: skiff, phase: 'done' } as never);
-    const out = step(sim, 40);
-    expect(observed(out).map((e) => e.rule)).toContain('honestTraded');
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    const rules: string[] = [];
+    for (let i = 0; i < 20 * 150 && !ambushOf(sim)?.home; i++) rules.push(...observed(step(sim)).map((e) => e.rule));
+    expect(rules).toContain('honestPaid');
+    expect(ambushOf(sim)?.visit).toBe('delivered');
+    expect(sim.world.get(skiff, ShipC)?.faction).toBe('neutral'); // never springs
     expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before + 4);
     expect(sim.story.reputation['pirates'] ?? 0).toBeGreaterThan(rep);
     expect(sim.story.flags['spared_pirate'] ?? 0).toBe(0);
+    expect(ambushOf(sim)?.home).toBe(true);
+    // The party is back in its shuttle, and the skiff may jump away.
+    const out = step(sim, 20 * 90);
+    expect(sim.galaxy.event?.scene.ships[0]?.gone === 'fled' || sim.world.get(skiff, ShipC)?.state === 'fled' || out.some((e) => e.type === 'ship.fled')).toBe(true);
+  });
+
+  it('refusing an honest skiff: it pulls away with no hostility, no missiles, the debt unpaid', () => {
+    const { sim, skiff } = inScene(3, false);
+    untilAsked(sim);
+    const before = withPlayerAboard(sim, () => playerStock(sim, 'item.missile'));
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: false });
+    const out = step(sim, 20 * 90);
+    expect(observed(out).map((e) => e.rule)).toContain('honestRefused');
+    expect(sim.world.get(skiff, ShipC)?.faction === 'hostile').toBe(false);
+    expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before);
+    expect(sim.story.flags['spared_pirate'] ?? 0).toBe(0);
+    expect(out.some((e) => e.type === 'ship.fled')).toBe(true);
   });
 
   it('boarders killed cost standing with pirates; the skiff destroyed sets a flag', () => {
