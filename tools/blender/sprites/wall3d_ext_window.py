@@ -43,8 +43,8 @@ EDGE = YS[0]                        # the pane's edges (all but its two faces): 
 EDGE_OUT = 0.002                    # the frame they sit on, so each draws a dark line on it
 SLOPE = 4 / 32                      # the window's corner at the jamb's foot: a slope this far along and
 SLOPE_H = 5                         # this many px down (the jamb's side down to it, through the jamb's depth), ending
-FOOT_H = 2                          # on a foot this many px tall, this far on from the slope's end; then down to the
-FOOT_W = 3 / 32                     # sill's flat top (measured off the reference's glass line)
+FOOT_H = 3                          # on a foot this many px tall, this far on from the slope's end; then down to the
+FOOT_W = 5 / 32                     # sill's flat top (the slope measured off the reference's glass line)
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
