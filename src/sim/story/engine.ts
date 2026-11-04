@@ -122,6 +122,7 @@ export function choose(sim: Sim, choiceId: string): void {
   const choice = def?.choices?.find((c) => c.id === choiceId);
   if (!active || !def || !choice) return rejected(sim, 'story.choose', 'noChoice');
   if (unmetReasons(sim, choice).length) return rejected(sim, 'story.choose', 'unmet');
+  if (choice.remote) return remote(sim, active, choice);
 
   const lines: string[] = [];
   for (const c of choice.cost ?? []) {
@@ -144,6 +145,18 @@ export function choose(sim: Sim, choiceId: string): void {
   story.last = { tick: sim.tick, event: active.event, choice: choice.id, success, text: outcome.text ?? '', lines };
   sim.events.emit({ type: 'story.resolved', event: active.event, choice: choice.id, success });
   pump(sim);
+}
+
+/**
+ * A remote action (scan, hail) on a scene's signal: its cost and effects apply, it is marked done and the decision stays open; what it reveals is
+ * read from the signal's scene by the view. Taken once.
+ */
+function remote(sim: Sim, active: NonNullable<Sim['story']['active']>, choice: NonNullable<EventDef['choices']>[number]): void {
+  if (active.done?.includes(choice.id)) return rejected(sim, 'story.choose', 'done');
+  for (const c of choice.cost ?? []) takeItems(sim, c.item, c.count);
+  for (const eff of choice.outcome?.effects ?? []) applyEffect(sim, eff, { event: active.event, actor: null });
+  active.done = [...(active.done ?? []), choice.id];
+  sim.events.emit({ type: 'story.remote', event: active.event, choice: choice.id, action: choice.remote as 'hail' | 'scan' });
 }
 
 /** Open the decision a lead notice points at (the player tapped it). */

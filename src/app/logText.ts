@@ -65,7 +65,7 @@ export function createDescriber(sim: Sim) {
       case 'ship.fled': return { kind: e.type, tone: 'info', text: `${shipName(e.ship)} jumped away` };
       case 'station.alarm': return { kind: 'combat', tone: 'bad', text: `Alarm on ${shipName(e.ship)}: ${e.reason}`, ...onShip(e.ship) };
       case 'station.calm': return { kind: 'combat', tone: 'info', text: `${shipName(e.ship)} stands down its alarm`, ...onShip(e.ship) };
-      case 'ship.provoked': return { kind: 'combat', tone: 'bad', text: `${shipName(e.ship)} is roused: its guns turn on you`, ...onShip(e.ship) };
+      case 'ship.provoked': return { kind: 'combat', tone: 'bad', text: e.reason === 'fired' ? `${shipName(e.ship)} was fired on: it turns hostile` : e.reason === 'boarded' ? `${shipName(e.ship)} was boarded: it turns hostile` : `${shipName(e.ship)} is roused: its guns turn on you`, ...onShip(e.ship) };
       case 'ship.captured': return { kind: e.type, tone: e.by === 'player' ? 'good' : 'bad', text: e.by === 'player' ? `${shipName(e.ship)} captured` : `${shipName(e.ship)} was captured`, ...onShip(e.ship) };
       case 'eggsac.hatched': return { kind: 'creatures', tone: 'bad', text: `Hostile creatures aboard ${shipName(e.ship)}`, subject: tileAt(e.x, e.y) };
       case 'container.detached': return { kind: 'container', tone: 'info', text: 'A cargo container broke loose', subject: tileAt(e.x, e.y) };
@@ -112,7 +112,8 @@ export function createDescriber(sim: Sim) {
       case 'scan.settled': return { kind: 'galaxy', tone: 'warn', text: e.outcome === 'bribed' ? `Paid a ${e.cost} ₵ bribe: the scan found nothing` : `Contraband confiscated and a ${e.cost} ₵ fine paid`, ...here() };
       case 'galaxy.bribed': return { kind: 'galaxy', tone: 'warn', text: `Paid ${e.cost} ₵ to pass`, ...here() };
       case 'truce.breached': return { kind: 'galaxy', tone: 'bad', text: 'Truce broken: everyone here is hostile to you for 30 turns', ...node(e.node) };
-      case 'galaxy.eventEntered': return { kind: 'galaxy', tone: 'warn', text: e.kind === 'fight' ? 'Dropped into deep space: fight' : 'Dropped into deep space to help', ...here() };
+      case 'galaxy.eventEntered': return { kind: 'galaxy', tone: 'warn', text: e.kind === 'fight' ? 'Dropped into deep space: fight' : e.kind === 'rescue' ? 'Dropped into deep space to help' : 'Dropped out of the lane to look', ...here() };
+      case 'scene.observed': return e.text ? { kind: 'story', tone: e.tone, text: e.text, ...(e.ship ? onShip(e.ship) : {}) } : null;
       case 'game.lost': return { kind: 'lost', tone: 'bad', text: 'Game over' };
       default: return describeBoarding(sim, e);
     }

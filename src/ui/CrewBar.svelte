@@ -2,9 +2,12 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew } from './api';
   import Icon, { type IconName } from './Icon.svelte';
+  import { keyLabel, keymap } from './keymap';
 
-  /** `compact`: small portraits only (the combat view). */
-  let { api, compact = false }: { api: UiApi; compact?: boolean } = $props();
+  /** `compact`: small portraits only (the combat view). `stations`: battle stations are called (the tile beside Draft all toggles them). */
+  let { api, compact = false, stations = false, canStation = false, onStations }: {
+    api: UiApi; compact?: boolean; stations?: boolean; canStation?: boolean; onStations?: () => void;
+  } = $props();
   let crew = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
   const ready = (c: UiCrew) => !c.dead && !c.downed && c.ship !== 0;
@@ -70,6 +73,7 @@
     </button>
   {/each}
   <button class="tile all" class:on={allDrafted && crew.length > 0} title={allDrafted ? 'Stand down' : 'Draft all'} aria-label={allDrafted ? 'Stand down' : 'Draft all'} data-testid="draft-all" onclick={draftAll}><Icon name="draft" size={20} /></button>
+  {#if onStations}<button class="tile all" class:on={stations} disabled={!canStation} title="{stations ? 'Stand down from battle stations' : 'Battle stations: crew to the consoles, weapons held'} ({keyLabel($keymap, 'combat.stations')})" aria-label={stations ? 'Stand down' : 'Battle stations'} data-testid="battle-stations" onclick={onStations}><Icon name="combat" size={20} /></button>{/if}
 </nav>
 
 <style>

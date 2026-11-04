@@ -93,6 +93,8 @@
 html, body, #app { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
 body { font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-variant-numeric: tabular-nums; touch-action: none; -webkit-user-select: none; user-select: none; }
 button { min-height: 40px; min-width: 40px; padding: 0 12px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 0; font: inherit; cursor: pointer; }
+/* Keyboard focus is a square cyan ring, like the kit's; the browser's default ring is rounded. :where() keeps it overridable. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 button:disabled { opacity: 0.6; cursor: default; }
 button:hover { border-color: var(--line-hi); }
 button.on { background: var(--panel-3); border-color: var(--cyan); color: #fff; }

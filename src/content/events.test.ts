@@ -41,7 +41,13 @@ describe('event content', () => {
       if (d.mode === 'decision') {
         expect(d.choices?.length, id).toBeGreaterThan(0);
         expect(new Set(d.choices?.map((c) => c.id)).size, id).toBe(d.choices?.length);
-        for (const c of d.choices ?? []) expect(!!c.outcome !== !!c.check, `${id}/${c.id}: outcome xor check`).toBe(true);
+        for (const c of d.choices ?? []) {
+          // A remote action (scan, hail on a scene's signal) reveals and keeps the decision open: no check, and only on an event with a scene.
+          if (c.remote) expect(!c.check && !!d.scene, `${id}/${c.id}: remote needs a scene and no check`).toBe(true);
+          else expect(!!c.outcome !== !!c.check, `${id}/${c.id}: outcome xor check`).toBe(true);
+        }
+        // An event with a scene offers a way into it.
+        if (d.scene) expect(d.choices?.some((c) => c.outcome?.effects?.some((e) => e.type === 'scene')), `${id}: no investigate choice`).toBe(true);
       } else expect(d.choices, id).toBeUndefined();
       expect(d.triggers.some((t) => t.kind !== 'chain') || chained.has(id), `${id} unreachable`).toBe(true);
     }
@@ -62,7 +68,8 @@ describe('event content', () => {
         if (unmetReasons(sim, choice).length) continue; // gated or costs items the starter lacks
         sim.enqueue({ type: 'story.choose', choice: choice.id });
         sim.step();
-        expect(sim.story.last?.choice, `${id}/${choice.id}`).toBe(choice.id);
+        if (choice.remote) expect(sim.story.active?.done, `${id}/${choice.id}`).toEqual([choice.id]);
+        else expect(sim.story.last?.choice, `${id}/${choice.id}`).toBe(choice.id);
       }
     }
   });

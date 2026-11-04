@@ -130,7 +130,9 @@
   });
 
   /** The combat view (#186) replaces the colony panels while a fight is on. */
-  const fightHud = $derived(combat.inCombat);
+  const fightHud = $derived(combat.inCombat || !!combat.stations);
+  /** Battle stations: the combat view at any time (the sim mans the consoles and holds every weapon); standing down is refused by nothing. */
+  const toggleStations = () => api.dispatch({ type: 'combat.battleStations', on: !combat.stations });
   let cutaway = $state<UiCutaway>('auto');
   /** Draw the player ship's roof and hull exterior (view from outside). */
   let roofOn = $state(false);
@@ -231,6 +233,7 @@
       openReport(); // the toolbar's bug button is hidden during a fight; the key always works
     }
     else if (keymap.matches(e, 'view.starmap')) { if (!mapLocked) { focusNode = null; mapOpen = !mapOpen; } }
+    else if (keymap.matches(e, 'combat.stations')) { if (!mapOpen && !deploy && combat.player) toggleStations(); }
   }
   /** Esc: close the top panel, else cancel the tool, aim or selection, else open the menu. A pinned window ignores Esc. */
   function escape() {
@@ -288,7 +291,7 @@
     onStock={() => (stockOpen = !stockOpen)}
   />{/if}
   <span class="mid">
-    <CrewBar {api} compact={fightHud} />
+    <CrewBar {api} compact={fightHud} stations={!!combat.stations} canStation={!!combat.player} onStations={toggleStations} />
     {#if !fightHud}<NodeStrip {api} selected={selShip} />{/if}
   </span>
   {#if narrow}{@render time()}{/if}

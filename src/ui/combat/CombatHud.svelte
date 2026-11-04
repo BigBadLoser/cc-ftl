@@ -14,6 +14,7 @@
   import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
+  import StationsCard from './StationsCard.svelte';
   import { isTypingTarget, modalOpen } from '../keys';
   import './steel.css';
 
@@ -32,6 +33,9 @@
     combat.enemies.find((e) => e.state === 'active' || e.state === 'disabled') ?? combat.enemies[0],
   );
   const me = $derived(combat.player);
+  /** Battle stations with no fight on: the card that says so, and the way back to the colony view. */
+  const standing = $derived(!!combat.stations && !combat.inCombat);
+  const standDown = () => api.dispatch({ type: 'combat.battleStations', on: false });
   // BOARD: only a live hostile ship can be boarded; the plan says what the picker can offer and why not.
   const plan = $derived(boardPlan(shuttles, enemy?.ship ?? 0, me?.ship ?? 0));
   const boardBlocker = $derived(!enemy || enemy.state === 'wreck' ? 'No target' : plan.blocker);
@@ -57,6 +61,7 @@
 
   const pill = $derived.by((): { text: string; tone: string } => {
     if (!enemy) return { text: 'Clear', tone: 'dim' };
+    if (enemy.neutral) return { text: 'Not hostile', tone: 'dim' };
     if (enemy.state === 'disabled') return { text: 'Disabled', tone: 'amber' };
     if (enemy.state !== 'active') return { text: enemy.state, tone: 'dim' };
     if (enemy.heat.lockout > 0) return { text: 'Overheated', tone: 'green' };
@@ -82,7 +87,7 @@
   // A new hostile ship starts as the ship-wide target (as the old panel did), and the camera frames both ships once.
   let autoAimed = 0;
   $effect(() => {
-    if (me && enemy && enemy.state !== 'wreck' && !me.target && autoAimed !== enemy.ship) {
+    if (me && enemy && !enemy.neutral && enemy.state !== 'wreck' && !me.target && autoAimed !== enemy.ship) {
       autoAimed = enemy.ship;
       api.dispatch({ type: 'combat.setTarget', ship: me.ship, weaponId: null, targetShip: enemy.ship, targetModuleId: 0 });
     }
@@ -165,15 +170,16 @@
 </script>
 
 <div class="hud" data-testid="combat-hud">
-  {#if enemy}
+  {#if enemy || standing}
     <div class="top">
-      <EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} onBoard={() => (picking = true)} {boardBlocker} />
+      {#if standing}<StationsCard held={!!me?.holdAll} onStandDown={standDown} />{/if}
+      {#if enemy}<EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} onBoard={() => (picking = true)} {boardBlocker} />{/if}
       {#each boarding as b (b.ship)}<BoardingCard {api} {b} named={boarding.length > 1} />{/each}
     </div>
   {/if}
   {#if me && insetShip}
     <div class="insetdock">
-      <InsetFrame {api} ship={insetShip} title={swapped ? 'Enemy ship' : 'Your ship'} threatened={me.incoming.length > 0} onSwap={swap} />
+      <InsetFrame {api} ship={insetShip} title={swapped ? (enemy?.neutral ? 'Their ship' : 'Enemy ship') : 'Your ship'} threatened={me.incoming.length > 0} onSwap={swap} />
     </div>
   {/if}
   {#if me && swapped}

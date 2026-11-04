@@ -3,6 +3,8 @@ import {
 } from '../sim';
 import type { UiEncounter, UiEncounterChoice, UiEncounterResult, UiEventGrid } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
+import { ShipC, factionsHostile, type Contact } from '../sim';
+
 
 export const ROLE_LABEL: Record<string, string> = { trader: 'Trader', miner: 'Miner', patrol: 'Patrol', pirate: 'Pirate', raider: 'Raider' };
 const TITLE = { interdict: 'Interdiction', hail: 'Hail', scan: 'Patrol scan', distress: 'Distress call' } as const;
@@ -74,6 +76,23 @@ export function resultOf(sim: Sim): UiEncounterResult | null {
   }
 }
 
+type Roster = UiEventGrid['roster'][number];
+
+/** One scene ship as the event card lists it: what it is doing now, read from its state. */
+function rosterRow(sim: Sim, c: Contact, extra: { hailed?: boolean; leaveAt?: number; gone?: string }): Roster {
+  const s = c.ship === undefined ? undefined : sim.world.get(c.ship, ShipC);
+  const row = { ship: c.ship ?? 0, name: s?.name ?? c.name ?? 'Unknown ship', owner: factionName(sim, c.faction) };
+  if (extra.gone || s?.state === 'fled') return { ...row, ship: 0, status: 'Jumped away', tone: 'dim' };
+  if (!s) return { ...row, status: 'Inbound', tone: 'dim' };
+  if (s.state === 'wreck') return { ...row, status: 'Wreck', tone: 'dim' };
+  if (s.state === 'prize' || s.faction === 'player') return { ...row, status: 'Taken', tone: 'green' };
+  if (s.state === 'disabled') return { ...row, status: 'Disabled', tone: 'amber' };
+  if (factionsHostile(s.faction, 'player')) return { ...row, status: 'Hostile', tone: 'red' };
+  if (extra.hailed) return { ...row, status: 'Holding station', tone: 'green' };
+  if (extra.leaveAt !== undefined && sim.tick >= extra.leaveAt) return { ...row, status: 'Leaving', tone: 'amber' };
+  return { ...row, status: 'Neutral', tone: 'cyan' };
+}
+
 /** The event grid the player is in, or null. */
 export function eventOf(sim: Sim): UiEventGrid | null {
   const ev = sim.galaxy.event;
@@ -82,11 +101,19 @@ export function eventOf(sim: Sim): UiEventGrid | null {
   const hostiles = hostilesPresent(sim);
   const blocker = leaveBlocker(sim);
   const f = ev.fleet;
+  const lead = ev.scene.ships[0]?.contact;
+  const owner = f?.faction ?? lead?.faction ?? '';
+  const story = ev.scene.event ? sim.content.events?.[ev.scene.event]?.title : undefined;
+  const role = f ? (ROLE_LABEL[f.role] ?? f.role).toLowerCase() : '';
   return {
-    id: ev.id, kind: ev.kind, title: ev.kind === 'fight' ? 'Deep space: interdiction' : 'Deep space: distress call', faction: factionName(sim, f.faction),
-    role: ROLE_LABEL[f.role] ?? f.role, tone: toneOf(sim.content.galaxy?.factions[f.faction]?.kind), ships: f.ships.length, hostiles,
+    id: ev.id, kind: ev.kind,
+    title: ev.kind === 'fight' ? 'Deep space: interdiction' : ev.kind === 'rescue' ? 'Deep space: distress call' : `Deep space: ${story ?? 'encounter'}`,
+    who: f ? `${factionName(sim, owner)} ${role}` : `${lead?.name ?? 'Unknown ship'}, ${factionName(sim, owner)}`,
+    roster: f ? f.ships.map((c) => rosterRow(sim, c, {})) : ev.scene.ships.map((x) => rosterRow(sim, x.contact, { ...(x.hailed ? { hailed: true } : {}), ...(x.leaveAt !== undefined ? { leaveAt: x.leaveAt } : {}), ...(x.gone ? { gone: x.gone } : {}) })),
+    tone: toneOf(sim.content.galaxy?.factions[owner]?.kind), ships: f ? f.ships.length : ev.scene.ships.filter((s) => s.contact.ship !== undefined).length, hostiles,
     deploying: sim.sector.state === 'deploying', canLeave: blocker === null,
-    why: blocker === 'notCharged' ? 'The FTL drive must be charged to flee' : blocker === 'tradeInProgress' ? 'A trade is in progress' : blocker,
+    why: blocker === 'notCharged' ? 'The FTL drive must be charged to flee' : blocker === 'tradeInProgress' ? 'A trade is in progress'
+      : blocker === 'crewAway' ? 'Crew or a shuttle are still away: bring them home first' : blocker,
     fleeing: hostiles > 0, resumeTo: nodeName(sim, t.route[t.route.length - 1] as string), hopsLeft: Math.max(0, t.route.length - 1 - t.at),
   };
 }

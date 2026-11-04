@@ -127,6 +127,9 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     case 'chain':
       story.queue.push({ event: eff.event, due: sim.tick + Math.round((eff.delaySec ?? 0) * TICK_HZ), force: true });
       return null;
+    case 'scene':
+      story.scene = ctx.event;
+      return null;
     case 'physical': {
       story.physical.push({ id: story.nextId++, tick: sim.tick, event: ctx.event, outcome: eff.outcome });
       if (story.physical.length > PHYSICAL_LOG_MAX) story.physical.shift();

@@ -12,6 +12,8 @@ import { placementGapError, shipGrid, shipIdOf } from '../regions';
 import { Struct } from '../structure';
 import { shipById, spawnShip } from './ships';
 import { weaponAntiVehicle } from './targets';
+import { battleStations, holdAll } from './stations';
+import { factionsHostile } from './factions';
 import { generateShip } from '../shipgen/generate';
 import { spawnDerelict } from './derelict';
 
@@ -102,8 +104,10 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const weapon = sim.world.get(cmd.weaponId, WeaponC);
     if (!weapon || !moduleOnGrid(sim, cmd.weaponId, cmd.ship)) return reject(sim, cmd.type, 'noWeapon');
     weapon.target = target;
-    // Aiming a held weapon is the order to shoot: it fires once when charged, then stays on hold.
-    if (weapon.mode === 'hold') weapon.once = true;
+    // Aiming a held weapon at an enemy is the order to shoot: it fires once when charged, then stays on hold. Aiming at a ship that is not hostile
+    // only aims (battle stations on a neutral), and drops a shot still pending from an earlier aim: a shot needs a volley or an auto weapon, and that
+    // shot is what turns it (combat/provoke.ts).
+    if (weapon.mode === 'hold' && target) weapon.once = !!target.vehicle || factionsHostile(shipById(sim, target.ship)?.faction, 'player');
   },
   'combat.setWeaponMode': (sim, cmd) => {
     const weapon = sim.world.get(cmd.weaponId, WeaponC);
@@ -115,19 +119,9 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
   },
   'combat.holdAll': (sim, cmd) => {
     if (!sim.world.get(cmd.ship, CombatC)) return reject(sim, cmd.type, 'noShip');
-    for (const id of sim.world.query(WeaponC, ModuleC)) {
-      const w = sim.world.get(id, WeaponC);
-      if (!w || !moduleOnGrid(sim, id, cmd.ship)) continue;
-      if (cmd.hold) {
-        if (w.restore === undefined) w.restore = w.mode;
-        w.mode = 'hold';
-      } else if (w.restore !== undefined) {
-        w.mode = w.restore;
-        delete w.restore;
-      }
-      w.once = false;
-    }
+    holdAll(sim, cmd.ship, cmd.hold);
   },
+  'combat.battleStations': (sim, cmd) => battleStations(sim, cmd.on),
   'combat.setHold': (sim, cmd) => {
     const combat = sim.world.get(cmd.ship, CombatC);
     if (!combat) return reject(sim, cmd.type, 'noShip');

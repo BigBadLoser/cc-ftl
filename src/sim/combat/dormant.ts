@@ -11,8 +11,11 @@ import { CombatC, ShipC, type Combat, type Ship } from './components';
  * a `CombatC`: dens do, outposts get one on waking.
  */
 
-/** Why a dormant ship woke: aimed at, damaged, boarded (dormancySystem); dug into or breached (outpost-only triggers). */
-export type WakeReason = 'aimed' | 'damaged' | 'boarded' | 'dug' | 'breach';
+/**
+ * Why a dormant ship woke: fired on or boarded (a hostile act: combat/provoke.ts), damaged (dormancySystem), a truce ban (blackmarket/truce.ts), dug
+ * into or breached (outpost-only triggers). Aiming at it does not wake it (user ruling, #173).
+ */
+export type WakeReason = 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach';
 
 /** True for a ship that has not been provoked: never a combatant. */
 export function isDormant(ship: Ship | undefined): boolean {

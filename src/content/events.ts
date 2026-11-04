@@ -32,21 +32,35 @@ export const events = {
       { id: 'ignore', label: 'Fly on', outcome: { text: 'You leave them to it.', effects: [{ type: 'reputation', faction: 'traders', delta: -1 }] } },
     ],
   },
-  /** Item cost; an option gated by reputation. */
+  /**
+   * A physical encounter (DESIGN.md "Physical encounters", the trader skiff): remote actions read its scene, investigating drops out beside it.
+   * What happens there (trade, barter, robbing or firing on it, waving and leaving) is the sim's; the shared observer rules make the consequences.
+   */
   'event.trader_swap': {
-    title: 'Trader offers a swap',
-    text: 'A trading skiff pulls alongside. "Scrap for chips, friend. I always need scrap, and my electronics are the good kind."',
+    title: 'A skiff on the lane',
+    text: 'Sensors catch a small trading skiff drifting along the lane, transponder on. Its drive is cold: it is in no hurry.',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 5 }],
     cooldownSec: 600,
+    scene: {
+      persistence: 'transient',
+      ships: [{
+        owner: 'traders', shipgen: 'faction.civilian', family: 'mining', stance: 'neutral', crew: [1, 3], credits: [120, 420], leaveAfterSec: [100, 160],
+        cargo: {
+          lines: [2, 4],
+          pool: [
+            { item: 'item.electronics', min: 4, max: 12 }, { item: 'item.parts', min: 4, max: 10 }, { item: 'item.polymer', min: 6, max: 16 },
+            { item: 'item.ration', min: 8, max: 20 }, { item: 'item.missile', min: 1, max: 4 }, { item: 'item.sidearm', min: 1, max: 2 },
+            { item: 'item.fuel', min: 4, max: 12 },
+          ],
+        },
+      }],
+    },
     choices: [
-      { id: 'swap', label: 'Swap 10 metal for 5 electronics', cost: [{ item: 'item.metal', count: 10 }], outcome: { text: 'A fair deal. The skiff peels away.', effects: [{ type: 'items', item: 'item.electronics', count: 5 }] } },
-      {
-        id: 'friends', label: 'Ask for the friends rate',
-        requires: [{ kind: 'reputation', faction: 'traders', min: 2 }], cost: [{ item: 'item.metal', count: 5 }],
-        outcome: { text: '"For you? Done." He throws in extra.', effects: [{ type: 'items', item: 'item.electronics', count: 6 }, { type: 'items', item: 'item.parts', count: 2 }] },
-      },
-      { id: 'decline', label: 'No thanks', outcome: { text: 'The skiff shrugs and leaves.' } },
+      { id: 'hail', label: 'Hail it', hint: 'Ask what it carries', remote: 'hail' },
+      { id: 'scan', label: 'Scan it', hint: 'Hull and crew', remote: 'scan' },
+      { id: 'approach', label: 'Drop out beside it', hint: 'Leave the lane for a while', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', outcome: {} },
     ],
   },
   /** Uses the stubbed physical outcome. */

@@ -7,13 +7,12 @@ import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { portsAt } from './portIndex';
 import { repKey, tierOf } from './standing';
-import { nodeState } from './state';
+import { contactOf } from './groups';
 import {
   CAPTURE_FACTOR, CLEAR_COST_PER_POINT, GRUDGE_WEIGHT, KILL_NOTORIETY, KILL_REPUTATION, LAW_KINDS, NOTORIETY_DECAY, NOTORIETY_DECAY_MIN, NOTORIETY_MAX,
   NOTORIETY_WEIGHT, OUTLAW_KINDS, STATION_NOTORIETY, WANTED_AT,
 } from './tuningHeat';
 import type { FleetRole } from './defs';
-import type { Contact } from './types';
 
 /**
  * The player's notoriety (see tuningHeat.ts). One number on `GalaxyState.heat`, written only here: kills and captures the player made
@@ -78,9 +77,7 @@ function stationOwner(sim: Sim, id: number): string | null {
  * faction (a prize's side is the one it was taken from).
  */
 function factionOfShip(sim: Sim, id: number, ship: Ship, side: Faction): string | null {
-  const g = sim.galaxy;
-  const owns = (cs: readonly Contact[]): Contact | undefined => cs.find((c) => c.ship === id);
-  const c = owns(g.event?.fleet.ships ?? []) ?? g.fleets.map((f) => owns(f.ships)).find(Boolean) ?? owns(nodeState(sim, g.current).contacts);
+  const c = contactOf(sim, id);
   if (c) return c.faction;
   if (ship.immobile) {
     const owner = stationOwner(sim, id);

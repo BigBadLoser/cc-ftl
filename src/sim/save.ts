@@ -108,8 +108,10 @@ import { newYard, type YardState } from './yard/types';
  *   (a hauler collecting several stacks on one trip).
  * v86 (boarding on away sites, #287): `RecallC`, `BoardLaunchC` and `BoardHoldC` gone (a boarding is an away site); `AwaySite.fight`,
  *   `standBy`, `dock`, `invited`; `Away.recall`; a passage's `Job.holder`.
+ * v87 (physical encounters, #173): `EventGrid` holds a `scene` (SceneSpec) and the observer's `watch`, its `encounter` and `fleet` are optional
+ *   and `kind` may be 'scene'; `galaxy.signal`; `story.scene`; `ActiveEvent.done`; `Ship.provoked`; `galaxy.provoked`; `Sector.stations`.
  */
-export const SAVE_VERSION = 86;
+export const SAVE_VERSION = 87;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

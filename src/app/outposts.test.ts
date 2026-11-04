@@ -3,6 +3,7 @@ import {
   CombatC, CrewC, PositionC, ShipC, Struct, deserialize, homeShip, isDormant, newGame, serialize, shipGrid, type Sim,
 } from '../sim';
 import { targetableShip } from '../sim/combat/targets';
+import { hostileAct } from '../sim/combat/provoke';
 import { content } from '../content';
 import { buildCombat } from './combatSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
@@ -87,13 +88,15 @@ describe('outpost hostility', () => {
     expect(sim.world.get(base, ShipC)!.dormant).toBeUndefined();
   });
 
-  it('aiming weapons at a discovered outpost provokes it (a hidden one cannot be targeted)', () => {
+  it('a discovered outpost can be aimed at (a hidden one cannot), and only a shot fired provokes it', () => {
     const { sim, base } = setup();
     sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: base, targetModuleId: 0 });
     expect(run(sim, 1)).toContain('rejected:combat.setTarget:badTarget');
     const s = sim.world.get(base, ShipC)!;
     s.outpost!.hidden = false; // discovered
     sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: base, targetModuleId: 0 });
+    expect(run(sim, 60 * 20)).not.toContain('ship.provoked'); // an aim alone is no hostile act (#173)
+    hostileAct(sim, base, 'fired'); // the shot leaving the weapon (firing system)
     const log = run(sim, 60 * 20);
     expect(log).toContain('ship.provoked');
     expect(log).toContain('combat.started');
@@ -124,7 +127,7 @@ describe('outpost hostility', () => {
     for (const id of [base, den]) expect(isDormant(sim.world.get(id, ShipC))).toBe(true);
     const woke: number[] = [];
     for (const id of [base, den]) {
-      sim.enqueue({ type: 'combat.setTarget', ship: homeShip(sim), weaponId: null, targetShip: id, targetModuleId: 0 });
+      hostileAct(sim, id, 'fired');
       for (let i = 0; i < 3; i++) {
         sim.step();
         for (const e of sim.events.drain()) if (e.type === 'ship.provoked') woke.push(e.ship);

@@ -1,53 +1,63 @@
 <script lang="ts">
   /**
-   * The event grid card: a deep-space pocket opened by an interdiction fight or a distress call. Shows who is out there, how the encounter
-   * began, and the way back onto the trip: "Resume travel" once clear, "Flee" while hostiles are about (it spends the charged drive).
+   * The event grid card: a deep-space pocket opened by an interdiction fight, a distress call or a story encounter. Who is out there and what each
+   * ship is doing (its state, read live), and the way back onto the trip: "Resume travel" once clear, "Flee" while hostiles are about (it spends the
+   * charged drive). Set in the same thin frame as the combat cards; a ship's row frames it in the view.
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { ActionButton, Frame, Pill } from './kit';
   import type { UiApi } from './api';
   import type { UiEventGrid, UiEncounterResult } from './starmapApi';
-  import { toneColor } from './starmapStyle';
 
   let { api, event, result }: { api: UiApi; event: UiEventGrid; result: UiEncounterResult | null } = $props();
 
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
-  const status = $derived(
+  const title = $derived(event.title.replace(/^Deep space: /, ''));
+  const quiet = $derived(
     event.hostiles > 0 ? `${event.hostiles} hostile ship${event.hostiles > 1 ? 's' : ''} in range`
-    : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : 'The sky is clear: the fight is won.',
+    : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : event.kind === 'scene' ? 'Nobody here is hostile.' : 'The sky is clear: the fight is won.',
   );
+  const trip = $derived(event.hopsLeft === 0 ? `Trip ends at ${event.resumeTo}` : `To ${event.resumeTo} · ${event.hopsLeft} hop${event.hopsLeft === 1 ? '' : 's'}`);
 </script>
 
-<aside class="sheet card" data-testid="event-panel" data-kind={event.kind}>
-  <PanelHead icon="combat" title={event.title} sub="Event grid" foe={event.hostiles > 0} />
-  <div class="who">
-    <i style={`background: ${toneColor(event.tone)}`}></i>
-    <b>{event.faction} {event.role.toLowerCase()}</b>
-    <small>{event.ships === 0 ? 'none left' : `${event.ships} ship${event.ships === 1 ? '' : 's'}`}</small>
-  </div>
-  <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{status}</p>
-  {#if result && result.tone === 'red' && event.hostiles > 0}<p class="note result" data-testid="event-result">{result.text}</p>{/if}
-  <p class="note dim"><Icon name="map" size={14} />{event.hopsLeft === 0 ? `You had reached ${event.resumeTo}.` : `On your way to ${event.resumeTo}, ${event.hopsLeft} hop${event.hopsLeft === 1 ? '' : 's'} to go.`} This patch of deep space is not on the map; it ends when you leave.</p>
-  <button class="go" class:on={event.canLeave} class:flee={event.fleeing} disabled={!event.canLeave || event.deploying} onclick={leave} data-testid="event-leave">
-    <Icon name={event.fleeing ? 'evasion' : 'fast'} size={18} />{event.fleeing ? 'Flee and resume' : 'Resume travel'}
-  </button>
-  {#if event.why && !event.deploying}<p class="note warn">{event.why}</p>{/if}
+<aside class="card" data-testid="event-panel" data-kind={event.kind}>
+  <Frame title={title} tone={event.hostiles > 0 ? 'hostile' : 'normal'} style="pointer-events:auto; background: var(--panel)">
+    {#snippet right()}
+      <Pill tone="dim">Off the map</Pill>
+    {/snippet}
+    <div class="body">
+      <ul class="roster">
+        {#each event.roster as r, i (i)}
+          <li>
+            <button class="row" disabled={!r.ship} title={r.ship ? 'Show it' : undefined} onclick={() => r.ship && api.focusFight(r.ship)}>
+              <span class="who"><b>{r.name}</b><small>{r.owner}</small></span>
+              <Pill tone={r.tone}>{r.status}</Pill>
+            </button>
+          </li>
+        {/each}
+      </ul>
+      <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{quiet}</p>
+      {#if result && result.tone === 'red' && event.hostiles > 0}<p class="note warn" data-testid="event-result">{result.text}</p>{/if}
+      <p class="note"><Icon name="map" size={14} />{trip}</p>
+      <ActionButton tone={event.canLeave ? 'go' : 'plain'} disabled={!event.canLeave || event.deploying} onclick={leave} testid="event-leave">
+        <Icon name={event.fleeing ? 'evasion' : 'fast'} size={16} />{event.fleeing ? 'Flee and resume' : 'Resume travel'}
+      </ActionButton>
+      {#if event.why && !event.deploying}<p class="note warn">{event.why}</p>{/if}
+    </div>
+  </Frame>
 </aside>
 
 <style>
-  /* With the combat panel open (left, 420px) the card centres in the space between it and the right column (260px). */
-  .card { display: grid; gap: 6px; box-sizing: border-box; top: calc(var(--hdr) + var(--sat) + 8px); left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 16px)); z-index: 6; }
-  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-  .who i { width: 8px; height: 8px; flex: none; clip-path: polygon(100% 50%, 0 0, 25% 50%, 0 100%); }
-  .who b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-  small { color: var(--dim); font-size: 11px; }
-  .note { margin: 0; font-size: 12px; display: flex; gap: 6px; align-items: flex-start; }
+  /* Top centre, clear of the crew bar; the combat panel (left) and the right column keep their space. */
+  .card { position: fixed; top: calc(var(--hdr) + var(--sat) + 10px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 16px)); z-index: 6; pointer-events: none; }
+  .body { display: grid; gap: 8px; padding: 6px 10px 10px; }
+  .roster { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .row { width: 100%; min-height: 36px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--panel-2); border: 1px solid var(--line); text-align: left; }
+  .row:disabled { opacity: 0.7; cursor: default; }
+  .who { flex: 1; min-width: 0; display: grid; }
+  .who b { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who small { color: var(--dim); font-size: 11px; }
+  .note { margin: 0; font-size: 12px; display: flex; gap: 6px; align-items: flex-start; color: var(--dim); }
   .note :global(svg) { flex: none; margin-top: 1px; }
   .warn { color: var(--red); }
-  .dim { color: var(--dim); }
-  .result { color: var(--red); }
-  button { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
-  .go.flee { border-color: var(--red); }
-  @media (max-width: 600px) { .card { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; border-width: 1px 0 0; padding-bottom: calc(10px + var(--sab)); } }
 </style>

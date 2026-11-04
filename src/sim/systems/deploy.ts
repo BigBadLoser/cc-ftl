@@ -7,7 +7,7 @@ import { shipById } from '../combat/ships';
 
 /**
  * Roof parts (weapon turrets, shield dishes, AI sensor masts, point-defence turrets) move toward a target of 1 (out) or 0 (stowed) at
- * 1 / (deploySec x TICK_HZ) per tick. Weapons, point defence and shield generators want to be out while the sector is in combat;
+ * 1 / (deploySec x TICK_HZ) per tick. Weapons, point defence and shield generators want to be out while the sector is in combat (the player's also at battle stations);
  * the AI core whenever it runs. All need to be powered and intact, on a ship that is not a wreck or fled.
  */
 export function deploySystem(sim: Sim): void {
@@ -20,9 +20,11 @@ export function deploySystem(sim: Sim): void {
       d = { amount: 0 };
       sim.world.add(id, DeployC, d);
     }
-    const state = shipById(sim, shipIdOf(sim, m))?.state;
+    const ship = shipById(sim, shipIdOf(sim, m));
+    const state = ship?.state;
     const alive = m.powered && m.hp > 0 && state !== 'wreck' && state !== 'fled';
-    const wanted = def.aiCore ? alive : alive && sim.sector.inCombat;
+    // Battle stations run the player's guns out with no fight on.
+    const wanted = def.aiCore ? alive : alive && (sim.sector.inCombat || (!!sim.sector.stations && ship?.faction === 'player'));
     const step = 1 / (Math.max(def.deploySec, 0.05) * TICK_HZ);
     d.amount = wanted ? Math.min(1, d.amount + step) : Math.max(0, d.amount - step);
   }

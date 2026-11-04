@@ -16,6 +16,11 @@ export interface Sector {
   height: number;
   /** True while an active player ship and an active/disabled hostile ship coexist. */
   inCombat: boolean;
+  /**
+   * Battle stations (`combat.battleStations`): the player called their crew to the consoles with no fight on (or kept them there). The player's
+   * consoles are manned as in a fight, so its weapons charge; nothing else changes (`inCombat` stays the real engagement).
+   */
+  stations?: true;
   /** Set once the player has lost (reason code, e.g. 'captured'); see the `game.lost` event. */
   lost?: string;
   /** Galaxy node id this sector is (`START_NODE` at the start). Archives are keyed by it. */
@@ -90,6 +95,8 @@ export interface Ship {
   outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; dock?: number };
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
+  /** The player fired on it or boarded it while it was not hostile (combat/provoke.ts): it turned hostile then. */
+  provoked?: 'fired' | 'boarded';
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
   immobile?: true;
   /**

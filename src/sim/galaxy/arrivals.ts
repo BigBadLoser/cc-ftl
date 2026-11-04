@@ -1,4 +1,4 @@
-import { CombatC, ShipC, type Ship } from '../combat/components';
+import { CombatC, ShipC, type Faction, type Ship } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import { spawnShip } from '../combat/ships';
 import { placementGapError } from '../regions';
@@ -15,6 +15,7 @@ import {
 } from './tuning';
 import { SCAVENGER_CHANCE, SCAVENGER_FACTION, SCAVENGER_MAX_DANGER } from './tuningHeat';
 import type { Contact } from './types';
+import { isProvoked } from './groups';
 
 /**
  * Generated ships by contact key (faction shipgen, seed, depth), per content registry. Generation is a pure function of the key, so
@@ -105,10 +106,10 @@ function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | nu
 
 /**
  * Make a contact a real ship in the active sector through the generated-ship path and the gap rule: hostile ones on their
- * faction's combat side, the rest neutral. Returns false (the contact stays, unspawned) when its
+ * faction's combat side, the rest neutral (a scene may set the side, and cap the crew); one the player provoked always comes back hostile. Returns false (the contact stays, unspawned) when its
  * generator faction is missing, no layout comes out or nothing fits.
  */
-export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
+export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number } = {}): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
@@ -120,11 +121,15 @@ export function spawnContact(sim: Sim, node: string, c: Contact): boolean {
   generated(sim).delete(key);
   // A hired escort fights for whoever pays it.
   const payer = c.hired ?? c.faction;
-  const side = isHostileFaction(sim, payer) ? sim.content.galaxy?.factions[payer]?.combatFaction ?? 'hostile' : 'neutral';
-  const id = spawnShip(sim, gen.template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
+  const sideOf = (f: string): Faction => sim.content.galaxy?.factions[f]?.combatFaction ?? 'hostile';
+  // Provoked, it is on its owner's combat side as provoke() put it (combat/provoke.ts).
+  const side = isProvoked(sim, c) ? sideOf(c.faction) : opts.side ?? (isHostileFaction(sim, payer) ? sideOf(payer) : 'neutral');
+  // A scene may ask for fewer crew than the generator puts aboard (the first `crew` of them).
+  const template = opts.crew === undefined ? gen.template : { ...gen.template, crew: (gen.template.crew ?? []).slice(0, opts.crew) };
+  const id = spawnShip(sim, template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
   const ship = sim.world.get(id, ShipC);
   if (ship) {
-    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction };
+    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction, ...(gen.role ? { role: gen.role } : {}) };
     if (c.name) ship.name = c.name;
     if (c.bounty !== undefined) ship.bounty = c.bounty;
   }

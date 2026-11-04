@@ -1,5 +1,6 @@
 import { ModuleC, ShipC, Struct, type Sim } from '../sim';
 import { factionsHostile } from '../sim/combat/factions';
+import { provokable } from '../sim/combat/provoke';
 import { targetableShip } from '../sim/combat/targets';
 import { shipGrid } from '../sim/regions';
 import { isTargetable } from '../render/moduleArt';
@@ -16,11 +17,15 @@ export function aimTargetAt(sim: Sim, shipId: number, x: number, y: number): { m
   return def && isTargetable(def) && m.hp > 0 ? { moduleId: id } : { moduleId: 0, tile: { x, y } };
 }
 
-/** True if a click on this ship in a fight may aim at it: at war with the player, still a target, and the tile is hull or deck. */
+/**
+ * True if a click on this ship may aim at it: at war with the player, or (at battle stations) a ship that is not, which the aim alone leaves
+ * alone (the first shot fired provokes it: combat/provoke.ts); still a target, and the tile is hull or deck.
+ */
 export function aimable(sim: Sim, shipId: number, x: number, y: number): boolean {
   const ship = sim.world.get(shipId, ShipC);
   const grid = shipGrid(sim, shipId);
-  return !!ship && !!grid && factionsHostile(ship.faction, 'player') && ship.state !== 'wreck' && targetableShip(sim, shipId)
+  const foe = !!ship && (factionsHostile(ship.faction, 'player') || (!!sim.sector.stations && provokable(sim, shipId)));
+  return !!ship && !!grid && foe && ship.state !== 'wreck' && targetableShip(sim, shipId)
     && grid.inBounds(x, y) && grid.get('struct', x, y) !== Struct.Space;
 }
 
@@ -50,7 +55,7 @@ export function createAiming(sim: Sim, player: () => number, clearHover: () => v
     tap(r, sx, sy) {
       const a = store.get();
       if (!a) return false;
-      if (!sim.sector.inCombat) {
+      if (!sim.sector.inCombat && !sim.sector.stations) {
         this.set(null);
         return false;
       }

@@ -1,6 +1,7 @@
 import { BodyC } from '../body';
 import { ammoCount, consumeAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
+import { hostileAct } from '../combat/provoke';
 import { aimDirection, turretPosition } from '../combat/geometry';
 import { mannedConsole, operatorSkill } from '../combat/operators';
 
@@ -93,6 +94,9 @@ function launchNext(
     x0: from.x, y0: from.y, x1: to.x, y1: to.y, x: from.x, y: from.y, t: 0, dt: def.speed / dist / TICK_HZ,
     spread, pdRolled: false,
   });
+  // The shot leaving a player weapon is the hostile act (aiming alone is nothing); a shot at a shuttle is one on the ship it belongs to.
+  const victim = target.ship || (target.vehicle ? sim.world.get(target.vehicle, VehicleC)?.homeShip ?? 0 : 0);
+  if (victim && shipById(sim, shipId)?.faction === 'player') hostileAct(sim, victim, 'fired');
   sim.events.emit({
     type: 'weapon.fired', ship: shipId, weaponId: moduleId, weapon, projectile, targetShip: target.ship, targetModuleId: target.moduleId,
   });

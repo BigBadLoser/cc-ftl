@@ -1,4 +1,5 @@
 import type { ItemQty, SkillName } from '../registry';
+import type { SceneRecipe } from '../scene/types';
 
 /**
  * Event content types. Events are data: when they can fire, who may see them, their text and their choices.
@@ -63,7 +64,9 @@ export type EventEffect =
   | { type: 'flag'; flag: string; op?: 'set' | 'add' | 'clear'; value?: number }
   /** Start another event, `delaySec` later (default at once). It queues behind a decision already open. */
   | { type: 'chain'; event: string; delaySec?: number }
-  | { type: 'physical'; outcome: PhysicalOutcome };
+  | { type: 'physical'; outcome: PhysicalOutcome }
+  /** Investigate: the trip drops out into the event's scene (its `EventDef.scene`) once the decision closes. */
+  | { type: 'scene' };
 
 /** What a choice does: text shown afterwards and the effects. */
 export interface Outcome {
@@ -90,6 +93,11 @@ export interface ChoiceDef {
   requires?: Requirement[];
   /** Items spent when chosen (also required up front). */
   cost?: ItemQty[];
+  /**
+   * A remote action on a scene's signal (DESIGN.md "Physical encounters"): it reveals facts about the scene (a hail its ships' stock, a scan
+   * their crew and hull) and the decision stays open. Each is taken once.
+   */
+  remote?: 'hail' | 'scan';
   /** With a check the outcome is `success` or `failure`; without, `outcome`. */
   check?: SkillCheck;
   outcome?: Outcome;
@@ -115,6 +123,8 @@ export interface EventDef {
   cooldownSec?: number;
   /** Decisions: the options (at least one). */
   choices?: ChoiceDef[];
+  /** A physical encounter: what its pocket holds, if the player investigates (a `scene` effect). */
+  scene?: SceneRecipe;
   /** Notices: applied the moment it arrives. */
   effects?: EventEffect[];
   /** Notices: tapping the notice opens this decision event. */
