@@ -112,7 +112,7 @@ export const events = {
    */
   'event.pirate_returns': {
     title: 'The pirate you spared',
-    text: 'A skiff you know hails you off the lane. "You let me go. I have not forgotten. I owe you, and I mean to pay it." It holds a little too close.',
+    text: 'A skiff you know hails you off the lane. "You let me go back there. I haven\'t forgotten. I owe you, and I mean to pay."',
     mode: 'decision',
     triggers: [{ kind: 'flag', flag: 'spared_pirate', delaySec: 240 }],
     eligible: [{ kind: 'flag', flag: 'spared_pirate' }],
@@ -132,11 +132,11 @@ export const events = {
         ambush: {
           chance: 0.5, party: 3, crew: [4, 5], askAfterSec: [14, 22],
           talk: {
-            honest: 'It is me, the one you let go. The clan let me keep the boat and I have been paying it off since. I know where the patrols sit and I will tell you for free. Come alongside, we will talk and trade if you like.',
-            trap: 'Captain, it is me, the one you spared. I owe you my life and my friends want to thank you in person. Let us dock and settle the debt properly.',
+            honest: '"It\'s me, the one you let go. The clan let me keep the boat, and I\'ve been paying it off since. I know where the patrols sit, and I\'ll tell you for nothing. Come alongside and we can trade, if you like."',
+            trap: '"Captain, it\'s me, the one you spared. I owe you my life, and my crew want to thank you in person. Let us dock and we\'ll settle up properly."',
             tells: {
-              name: 'Captain, it is me, Tam. Ren. Whoever you like: the name on the transponder shifts as he talks. He owes you, he says, and his friends would like to thank you in person. Let us dock.',
-              lag: 'Captain, it is me, the one you spared. The words come a beat behind the voice, as if read off a page. He owes you, he says, and his friends would like to thank you in person. Let us dock.',
+              name: '"Captain, it\'s Tam, the one you spared." The name on his transponder flickers to Ren, then back. "My crew want to thank you in person. Let us dock."',
+              lag: '"Captain, it\'s me, the one you spared. I owe you my life." The words come out flat and even, as if read off a page. "My crew want to thank you in person. Let us dock."',
             },
           },
         },

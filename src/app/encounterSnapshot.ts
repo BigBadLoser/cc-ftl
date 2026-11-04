@@ -102,7 +102,7 @@ function dockRequestOf(sim: Sim): UiEventGrid['dockRequest'] {
   const id = s?.contact.ship;
   if (!s || id === undefined) return null;
   const name = sim.world.get(id, ShipC)?.name ?? s.contact.name ?? 'The skiff';
-  return { ship: id, name, text: `${name} asks to dock and come aboard to settle its debt. Its crew would walk through your airlock.` };
+  return { ship: id, name, text: `${name} asks to dock so its crew can come aboard and settle the debt.` };
 }
 
 /** The event grid the player is in, or null. */

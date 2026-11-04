@@ -114,7 +114,7 @@ describe('the returning pirate: signal', () => {
       const r = rowsOf(sim);
       expect(r['Weapons']).toBe(trap ? 'Guns powered and charged' : 'Guns cold');
       expect(r['Boarding craft']).toBe(trap ? 'Shuttle fuelled, suited crew in the bay' : 'Shuttle bay, cold');
-      expect(r['Crew aboard']).toMatch(trap ? /more than a skiff needs/ : /^\d+$/);
+      expect(r['Crew aboard']).toMatch(/^\d+$/);
     }
   });
 

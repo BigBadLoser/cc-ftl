@@ -16,12 +16,12 @@ export function ambushRows(sim: Sim, s: SceneShip, owner: string): { label: stri
   const gunnery = level(sim, 'gunnery');
   const piloting = level(sim, 'piloting');
   const hacking = level(sim, 'hacking');
-  const slip = a.trap && hacking >= 2 ? (a.tell === 'name' ? ' (its name changes between pings)' : a.tell === 'lag' ? ' (it lags behind the voice)' : '') : '';
+  const slip = a.trap && hacking >= 2 ? (a.tell === 'name' ? ' (the ID changes between pings)' : a.tell === 'lag' ? ' (out of step with the voice channel)' : '') : '';
   return [
     { label: 'Transponder', value: `${owner}${slip}` },
     { label: 'Hull', value: s.family ? `${s.family[0]?.toUpperCase()}${s.family.slice(1)} class` : 'Unknown' },
     { label: 'Weapons', value: gunnery < 1 ? 'Armed, as any pirate' : a.trap ? 'Guns powered and charged' : 'Guns cold' },
     { label: 'Boarding craft', value: piloting < 1 ? 'A shuttle bay' : a.trap ? 'Shuttle fuelled, suited crew in the bay' : 'Shuttle bay, cold' },
-    { label: 'Crew aboard', value: hacking < 1 ? 'Unclear' : s.crew === undefined ? 'Unclear' : a.trap ? `${s.crew}: more than a skiff needs` : String(s.crew) },
+    { label: 'Crew aboard', value: hacking < 1 ? 'Unclear' : s.crew === undefined ? 'Unclear' : String(s.crew) },
   ];
 }
