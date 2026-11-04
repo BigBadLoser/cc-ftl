@@ -4,7 +4,9 @@ import { ShipC, homeShip, newGame, type Sim, type SimEvent } from '../sim';
 import { ALT, BodyC } from '../sim/body';
 import { DroneC, type Drone } from '../sim/drones/components';
 import { stunDrone } from '../sim/drones/bay';
-import { shipGrid } from '../sim/regions';
+import { shipGrid, shipIdOf } from '../sim/regions';
+import { droneInReach } from '../sim/drones/target';
+import { CrewC, PositionC } from '../sim';
 import { droneScenarioCommands } from './droneScenario';
 
 const drones = (sim: Sim): Drone[] => sim.world.query(DroneC).map((id) => sim.world.get(id, DroneC) as Drone);
@@ -113,5 +115,30 @@ describe('drones in space (#318 slice 2)', () => {
     grid.set('fire', Math.floor(b.x), Math.floor(b.y), 0);
     for (let i = 0; i < 40; i++) sim.step();
     expect(sim.world.get(id, DroneC)!.hp).toBeGreaterThan(hp);
+  });
+
+  it('crew with a hand weapon can shoot an enemy drone inside their ship, never one of their own side', () => {
+    const { sim, step } = fight();
+    step(2);
+    const home = homeShip(sim);
+    const grid = shipGrid(sim, home)!;
+    const crew = sim.world.query(CrewC, PositionC).find((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === home)!;
+    const at = sim.world.get(crew, PositionC)!;
+    const enemy = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)?.faction === 'hostile')!;
+    const weapon = content.items['item.sidearm']!.hand!;
+    const put = (ship: number): number => {
+      const id = sim.world.createEntity();
+      sim.world.add(id, DroneC, {
+        def: 'drone.repair', ship, bay: 0, slot: 0, state: 'out', charge: 100, hp: 40, target: null, steps: [], work: 0, inert: false,
+        stunUntil: 0, space: false, lift: 0, cool: 0,
+      });
+      sim.world.add(id, BodyC, { x: at.x + 0.5, y: at.y + 0.5, heading: 0, alt: ALT.drone });
+      return id;
+    };
+    const own = put(home);
+    expect(droneInReach(sim, grid, 'player', home, at, weapon)).toBeNull();
+    sim.world.destroyEntity(own);
+    const foe = put(enemy);
+    expect(droneInReach(sim, grid, 'player', home, at, weapon)?.id).toBe(foe);
   });
 });
