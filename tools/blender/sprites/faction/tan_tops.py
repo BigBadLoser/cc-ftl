@@ -25,14 +25,15 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     L = 1 / 32
     band(a, b, zl1, z1, "fTS2")                                 # the recess's back, all the way up
     sh, sp, rl = D_SHELF * L, D_PANEL * L, D_RAIL * L           # the desk, a frame: a shelf (2 px thick), a side
-    zb = zl1 + _rows(rl - LIP_D)                                # panel at each end of each tile's (flaring out at
+    zb = zl1 + _rows(rl - LIP_D) + PZ / 4                       # panel at each end of each tile's (flaring out at
     zd1 = zb + D_TOP                                            # 45 degrees to the shelf), a rail across the tile
     zt0 = zd1 - D_THICK                                         # (its front edge on the lip's)
     band(a, b, zl1, zt0, "fTS8")                                # joining their feet; open between (the face in it
     prism(k, ax, plane, a, b, [(0.0, zt0), (sh, zt0), (sh, zd1), (0.0, zd1)], FACE, 3,     # in shadow)
-          cols=[False, sd("fTS0", ax), sd("fTS1", ax), False], mitre=mit)
+          cols=[False, sd("fTS1", ax), sd("fTS1", ax), False], mitre=mit)
+    band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # (its front's upper px a highlight)
     prism(k, ax, plane, a, b, [(0.0, zb), (rl, zb), (rl, zb + PZ), (0.0, zb + PZ)], FACE, 3,
-          cols=[False, sd("fTS3", ax), sd(D_SIDE_TONE, ax), False], mitre=mit)
+          cols=[False, sd("fTS2", ax), sd(D_SIDE_TONE, ax), False], mitre=mit)     # (its front a step over the lip's)
     fl = (sh - sp)                                              # (the flare: as high as it runs out)
     for c in range(-1, 2):
         for p0, p1 in ((c - 0.5, c - 0.5 + D_SIDE), (c + 0.5 - D_SIDE, c + 0.5)):
