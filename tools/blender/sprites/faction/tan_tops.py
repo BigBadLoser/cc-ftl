@@ -47,9 +47,9 @@ def _rows(d):
     return d / (PX / 2) * PZ
 
 
-def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False):
+def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False, foot=False):
     """A strip of one tone along a sloping face's top (its foot at lo, its top at hi: (d, z)), rows of it as seen,
-    a touch out from it; or (mid) across its middle."""
+    a touch out from it; or (mid) across its middle, or (foot) along its foot."""
     dd, dz = hi[0] - lo[0], hi[1] - lo[1]
     ln = (dd * dd + dz * dz) ** 0.5
     seen = dz / PZ + abs(dd) / (PX / 2)                 # (the rows the slope shows)
@@ -57,6 +57,8 @@ def _slope(k, ax, plane, u0, u1, lo, hi, col, rows=1, mid=False):
     if mid:                                             # (whole rows down from its top, as the strip along it)
         r = round((seen - rows) / 2)
         t0, t1 = 1.0 - (r + rows) / seen, 1.0 - r / seen
+    if foot:
+        t0, t1 = 0.0, min(1.0, rows / seen)
     od, oz = dz / ln * PAINT, -dd / ln * PAINT
     nrm = T.OUT(ax) * (dz / ln) + Vector((0, 0, 1)) * (-dd / ln)
     pts = [T.P(ax, plane, u, lo[1] + t * dz + oz, lo[0] + t * dd + od) for u, t in ((u0, t0), (u1, t0), (u1, t1),
@@ -182,15 +184,16 @@ SECTIONS = ((18, 30, 5, (0.5,), 2),     # the cabinets, the drawers under them: 
             (30, 41, 4, (0.25, 0.5, 0.75), 1))  # depth, the bars up between them, how far back in them the doors
                                         # sit): each in a frame of 1 px bars (across its top, the cabinets', and
                                         # its foot)
-BIN_ROUND = 2.5                         # the bins' (and their side walls') top: rounded into the header's foot
+BIN_ROUND = 1.5                         # the bins' (and their side walls') top: rounded into the header's foot
                                         # (the radius, px)
 FRAME_IN = 1                            # the cabinets and drawers: in from each tile edge (px)
 L_GAP = 1                               # the gap between the bins, and at a tile's edge (px; the face dark)
 HANDLES = ((3, 3), (3, 2))              # the cabinets', the drawers' handles (the glass's navy): (rows over, px wide)
                                         # their door's foot
-H_SCREENS = ((2, ("R.G.G", "..GG.", "G...G", ".G...")),     # the header's screens: px in from the tile's
-             (20, ("YY.R.", "Y.Y..", ".YY.R", "Y....")))    # left edge, 5 x 4 of art ("." the glass) a row
-                                                            # clear of the canopy's edge
+H_SCREENS = ((1, ("R.G.G", "..GG.", "G...G", ".G...")),     # the header's screens: px in from the tile's
+             (26, ("YY.R.", "Y.Y..", ".YY.R", "Y....")))    # left edge, 5 x 4 of art ("." the glass), their
+                                                            # top corners in the recess's (H_SEEN rows down)
+H_SEEN = H_CANOPY - H_FACE + 1          # (the recess's first row seen under the canopy)
 
 
 def _handle(k, ax, plane, c, q0, q1, zf, rows, wide, d, sd):
@@ -218,6 +221,7 @@ def _bin(k, ax, plane, u0, u1, foot, top, sd, cap):
     pa, pb = (td + ad * t, tz + az * t), (td + t, tz)   # (where the curve leaves the front and meets the foot)
     prism(k, ax, plane, u0, u1, [(0.0, fz), foot, pa, (td, tz), (0.0, tz)], FACE, 3,
           cols=[False, sd("fTS1", ax), False, False, False], cap=cap)
+    _slope(k, ax, plane, u0, u1, foot, pa, sd("fTS0", ax), foot=True)    # (a highlight along its foot edge)
     bx, bz = ad + 1.0, az                               # (the curve's centre: on the bisector)
     bl = math.hypot(bx, bz)
     cx, cz = td + bx / bl * r / math.sin(th / 2), tz + bz / bl * r / math.sin(th / 2)
@@ -286,7 +290,7 @@ def lockers(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 x0, art = 32 - x0 - len(art[0]), tuple(r[::-1] for r in art)
             for r, row in enumerate(art):
                 for x, ch in enumerate(row):
-                    _px(k, ax, plane, c - 0.5 + x0 * L, x, r, R(4), hf + L / 4,
+                    _px(k, ax, plane, c - 0.5 + x0 * L, x, r, R(H_SEEN), hf + L / 4,
                         sd("fTC0" if ch == "." else SCREEN_INK[ch], ax))
 
 
