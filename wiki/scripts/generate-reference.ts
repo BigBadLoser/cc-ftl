@@ -91,6 +91,14 @@ function named(kind: Kind, id: string): string {
   if (kind === 'items' && id === 'item.ai_core') return 'AI core (trade good)';
   return def.name;
 }
+// A research unlock is a module id, or a recipe blueprint id (drones): those
+// link to the recipe the blueprint gates.
+function unlockRef(id: string): [Kind, string] {
+  if (modules[id]) return ['modules', id];
+  const recipe = Object.entries(recipes).find(([, def]) => (def as { blueprint?: string }).blueprint === id);
+  if (!recipe) throw Error('Broken research unlock: ' + id);
+  return ['recipes', recipe[0]];
+}
 function link(kind: Kind, id: string, from: Kind): string {
   return '[' + text(named(kind, id)) + '](../../' + kind + '/' + slug(kind, id) + '/)';
 }
@@ -311,13 +319,13 @@ await writeIndex('factions', 'Factions', 'Factions encountered across the galaxy
 
 // Research projects.
 for (const [id, def] of Object.entries(research).sort()) {
-  const unlocked = (def.unlocks ?? []).map(mid => named('modules', mid)).join(', ');
+  const unlocked = (def.unlocks ?? []).map(mid => named(...unlockRef(mid))).join(', ');
   entry('research', id, unlocked ? 'Unlocks ' + unlocked : 'Research project', [['Work', String(def.work)], ['Materials', materialLabel(def.cost)]], def.unlocks?.[0] ? previews[def.unlocks[0]]?.url : undefined, def.category);
   await writeEntry('research', id, [
     ...stats([['Category', label(def.category ?? 'general')], ['Research work', def.work + ' ticks']]), '',
     '## Required materials', '', ...bulletsOfMaterials(def.cost, 'research'), '',
     '## Prerequisites', '', ...(def.requires?.length ? def.requires.map(m => '- ' + link('modules', m, 'research')) : ['None']), '',
-    '## Unlocks', '', ...(def.unlocks?.length ? def.unlocks.map(m => '- ' + link('modules', m, 'research')) : ['None']),
+    '## Unlocks', '', ...(def.unlocks?.length ? def.unlocks.map(m => '- ' + link(...unlockRef(m), 'research')) : ['None']),
   ]);
 }
 await writeIndex('research', 'Research', 'Project costs, prerequisites, and unlocked equipment.');
