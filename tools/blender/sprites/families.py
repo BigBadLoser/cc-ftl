@@ -29,7 +29,7 @@
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
   arcade        the arcade cabinet, 1x1: idle, .unpowered, 4 active frames (arcade.py; MODPACK_ROTS as storage_set)
-  purifier      the water purifier, 2x1: idle, .unpowered, 4 active frames (purifier.py; MODPACK_ROTS as storage_set)
+  purifier      the water purifier, 2x1, life support's family: idle, .unpowered, 4 active frames (purifier.py; MODPACK_ROTS as storage_set)
   scrapper      the scrapper module: 4x2, 4 rotations; idle, unpowered, 4 active frames (scrapper.py)
   storage_scrap scrap storage: the barred cage full of salvage, 2x2 and 2x3, 4 rotations, 4 fills (ore_cage.py, scrap.py)
   ops_consoles  comms and sensor consoles, seated 2x2, with desk-front overlays (console_ops.py; MODPACK_ROTS as above)
@@ -212,10 +212,10 @@ def jobs(name):
         import os
         from . import arcade
         return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
-    if name == "purifier":      # the water purifier (purifier.py): its own palette set
+    if name == "purifier":      # the water purifier (purifier.py): the life support's family, the base palette as the core systems
         import os
         from . import purifier
-        return purifier.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "purifier"
+        return purifier.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), False
     if name == "scrapper":      # the scrapper module (scrapper.py): its own palette set
         from . import scrapper
         return scrapper.jobs(), "scrapper"

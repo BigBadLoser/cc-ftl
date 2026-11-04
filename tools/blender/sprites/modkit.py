@@ -12,10 +12,19 @@ from . import core
 HALF_PI = math.pi / 2
 
 
+def _q(a, step):
+    return round(a / step) * step
+
+
 class K:
-    def __init__(self, name, fp, rot=0):
+    """`snap`: every box edge lands on the pixel grid (u, v on 1/(TILE_W/4) of a tile: whole px across and down the
+    2:1 floor; z on whole px of height, 1/ZPX), so straight edges draw as clean lines without stray steps. Opt-in:
+    families built before it keep their pixels."""
+
+    def __init__(self, name, fp, rot=0, snap=False):
         self.m = core.Mesh(name)
         self.rot = rot
+        self.snap = snap
         w, d = fp if rot % 2 == 0 else (fp[1], fp[0])
         self.off = (-(w - 1) / 2, -(d - 1) / 2)
 
@@ -25,6 +34,14 @@ class K:
 
     def box(self, u, v, z, su, sv, sz, col, top=None, bevel=0.0, rz=0.0, rx=0.0, taper=1.0):
         """Bottom-centred box at local (u, v, z), sizes along u, v, z; rz turns it about its own centre."""
+        if self.snap:
+            g, h = 4 / core.TILE_W, 1 / core.ZPX
+            lo, hi = _q(u - su / 2, g), _q(u + su / 2, g)
+            u, su = (lo + hi) / 2, max(hi - lo, g)
+            lo, hi = _q(v - sv / 2, g), _q(v + sv / 2, g)
+            v, sv = (lo + hi) / 2, max(hi - lo, g)
+            z0, z1 = _q(z, h), _q(z + sz, h)
+            z, sz = z0, max(z1 - z0, h)
         x, y = self.p(u, v)
         self.m.box((x, y, z), (su, sv, sz), col, top=top, base=True, bevel=bevel, rz=rz + self.rot * HALF_PI,
                    rx=rx, taper=taper)

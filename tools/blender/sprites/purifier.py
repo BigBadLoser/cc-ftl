@@ -1,72 +1,87 @@
-"""Water purifier (family `purifier`, palette set "purifier"): 2x1 at r0 (1x2 turned), idle, `.unpowered` and `.active`
-(`.active.f1` .. `.f3`: bubbles rise in the tank), four rotations. Local frame and placement: modkit.K (front = +v); the
-crew member works it from the tile in front of it.
+"""Water purifier (family `purifier`): 2x1 at r0 (1x2 turned), idle, `.unpowered` and `.active` (`.active.f1` .. `.f3`:
+bubbles rise in the sight glass), four rotations.
 
-Ice goes in at one end and clean water comes out at the other: an ice hopper (a funnel full of ice on a melt box with
-a small control panel), three filter columns on a manifold, a clear water tank in a steel cage with the level showing
-through its glass, pipes between them and a tap at the tank's foot, all on one skid. `.active`: the water glows, the
-panel and the status lamp are green and bubbles rise. `.unpowered`: dark panel, no glow."""
-from .modkit import K
+One machine in the life support's family (core_systems_blockout.life_support): the same kit (`casing`, chamfered
+loops, the finish roles of core_systems_finish) and the same palette (the base palette, as the core systems are
+quantised). A dark manifold plinth under one pale chamfered housing with a hood over the whole length. Along it, from
+the access end: the ice inlet (a cyan coaming on the hood, ice heaped in its well) over the melt section with its
+display, two filter cassettes proud on the front, and the water section: a tall framed sight glass showing the water
+level and a domed tank cap rising through the hood, an outlet port on the end. `.active`: the water glows and the
+display reads; idle: the water is lit only by the room; `.unpowered`: display dark.
 
-SKID = 0.06
-BODY, BODY_D, ACC, GLASS, WATER, FILT, CAP = "puBody", "puBodyD", "puAcc", "puGlass", "puWater", "puFilt", "puCap"
+Local frame (the life support's): u along the length (-u = the access end), v across (+v = front), z up."""
+from . import core
+from .core_systems_blockout import BODY, FRAME, RECESS, PALETTE, casing, chamfer_loop, bridge, make_frame
+from .core_systems_finish import FinishMesh, PALETTE as FINISH
+
+LENGTH, WIDTH = 1.82, 0.88
+HOOD = 1.0          # hood bottom
+TOP = 1.16          # hood top
+MELT, FILT, TANK = -0.5, 0.0, 0.5   # section centres along u
+
+
+def _inlet(m, f):
+    """The ice inlet on the hood over the melt section: a cyan coaming, its inner walls dark, ice in the well."""
+    u, v, top = MELT, -0.03, TOP + 0.1
+    m.paint(body='vent_teal', frame='frame')
+    casing(m, f, u, v, TOP - 0.01, 0.62, 0.6, top - TOP + 0.01, cut=0.08, taper=0.94, closed=False, bottom=False)
+    outer = chamfer_loop(f, u, v, top, 0.62 * 0.94, 0.6 * 0.94, 0.08)
+    inner = chamfer_loop(f, u, v, top, 0.46, 0.44, 0.03)
+    floor = chamfer_loop(f, u, v, top - 0.06, 0.46, 0.44, 0.03)
+    bridge(m, outer, inner, BODY)
+    bridge(m, inner, floor, FRAME)
+    m.poly(floor, "iceB", flip=True)
+    for du, dv, s in ((-0.12, -0.08, 0.12), (0.06, 0.06, 0.14), (0.1, -0.1, 0.1), (-0.08, 0.1, 0.1)):
+        f.box(u + du, v + dv, top - 0.06, s, s, 0.08, "iceB", top="medWhite")   # chunks above the well's floor
+    m.paint()
 
 
 def purifier(state, rot, frame=0):
     on, lit = state != "unpowered", state == "active"
-    k = K(f"purifier_{state}_{frame}_{rot}", (2, 1), rot)
-    k.box(0, 0, 0.0, 1.86, 0.7, SKID, "steelD", top="gm")                                  # skid
-    # ---- ice hopper and melt box (-u end)
-    hu = -0.62
-    k.box(hu, -0.02, SKID, 0.5, 0.56, 0.5, BODY, top=BODY_D, bevel=0.02)                    # melt box
-    k.box(hu, 0.26, SKID + 0.04, 0.5, 0.02, 0.08, ACC)                                      # accent band
-    k.box(hu, -0.02, SKID + 0.5, 0.36, 0.42, 0.06, BODY_D)                                  # throat
-    k.box(hu, -0.02, SKID + 0.56, 0.36, 0.42, 0.3, BODY, top=BODY_D, taper=1.45)            # funnel, widening up
-    for du, dv, su, sv in ((0, -0.29, 0.54, 0.04), (0, 0.25, 0.54, 0.04), (-0.25, -0.02, 0.04, 0.5), (0.25, -0.02, 0.04, 0.5)):
-        k.box(hu + du, dv, SKID + 0.84, su, sv, 0.06, "steelD", top="steel")                  # its rim, a frame
-    k.box(hu, -0.02, SKID + 0.83, 0.48, 0.52, 0.05, "iceB", top="iceB")                       # the ice in it
-    for du, dv, s in ((-0.1, -0.08, 0.12), (0.08, 0.05, 0.14), (0.0, -0.15, 0.1), (0.12, -0.12, 0.1), (-0.12, 0.1, 0.11)):
-        k.box(hu + du, -0.02 + dv, SKID + 0.86, s, s, s * 0.6, "iceB", top="puIceL")  # ice heaped in it
-    k.box(hu + 0.08, 0.255, SKID + 0.2, 0.22, 0.02, 0.16, "gmD", bevel=0.01)                # control panel
-    k.box(hu + 0.08, 0.267, SKID + 0.23, 0.17, 0.01, 0.1, ("green" if lit else "puScrDim") if on else "dark")
-    k.box(hu - 0.15, 0.27, SKID + 0.3, 0.05, 0.012, 0.05, ("green" if lit else "lampY") if on else "rustD")  # status lamp
-    # ---- filter columns on a manifold (middle)
-    k.box(0.0, -0.05, SKID, 0.44, 0.3, 0.12, "steelD", top="gm")                            # manifold block
-    for i, u in enumerate((-0.14, 0.0, 0.14)):
-        v = -0.05 + (0.06 if i == 1 else 0.0)
-        k.cyl(u, v, SKID + 0.12, 0.06, 0.66, FILT, top=FILT, sides=10)                      # column
-        k.cyl(u, v, SKID + 0.12, 0.066, 0.06, CAP, sides=10)                                # foot ring
-        k.cyl(u, v, SKID + 0.72, 0.066, 0.07, CAP, top=CAP, sides=10)                       # head cap
-        k.cyl(u, v, SKID + 0.4, 0.064, 0.04, ACC, sides=10)                                 # band
-    # ---- pipes: hopper -> filters -> tank, and a return along the back
-    k.box(-0.25, -0.05, SKID + 0.62, 0.3, 0.06, 0.06, "steel", top="steelL")
-    k.box(0.0, -0.05, SKID + 0.82, 0.36, 0.05, 0.05, "steel", top="steelL")                 # header across the caps
-    k.box(0.25, -0.05, SKID + 0.62, 0.3, 0.06, 0.06, "steel", top="steelL")
-    k.box(0.0, -0.3, SKID + 0.2, 1.4, 0.05, 0.05, "steelD", top="steel")                    # return line, back
-    # ---- water tank (+u end): a steel cage round a glass drum
-    tu, tv, tr, th = 0.6, -0.03, 0.26, 0.92
-    k.cyl(tu, tv, SKID, tr + 0.02, 0.07, "steelD", top="steel", sides=14)                   # base ring
-    k.cyl(tu, tv, SKID + 0.07, tr, th - 0.14, GLASS, top=GLASS, sides=14)                   # glass drum
-    level = 0.55
-    k.cyl(tu, tv, SKID + 0.08, tr + 0.004, (th - 0.16) * level, ("puWaterL" if lit else WATER), sides=14)  # the water
-    k.cyl(tu, tv, SKID + th - 0.07, tr + 0.02, 0.08, "steelD", top="steel", sides=14)       # lid ring
-    k.cyl(tu, tv, SKID + th + 0.01, tr * 0.6, 0.05, CAP, top=CAP, sides=12)                 # lid hatch
-    for a in range(4):                                                                       # cage bars
-        du, dv = ((tr + 0.02, 0), (0, tr + 0.02), (-tr - 0.02, 0), (0, -tr - 0.02))[a]
-        k.box(tu + du, tv + dv, SKID, 0.035, 0.035, th + 0.01, "steelD")
-    for z in (0.34, 0.62):
-        k.cyl(tu, tv, SKID + z, tr + 0.012, 0.03, "steelD", sides=14)                        # hoops
-    k.box(tu, tv + tr + 0.01, SKID + 0.12, 0.05, 0.02, 0.66, "steelD")                       # level gauge strip
-    for j in range(5):
-        k.box(tu + 0.035, tv + tr + 0.015, SKID + 0.16 + j * 0.12, 0.03, 0.01, 0.012, "plate")
-    if lit:                                                                                   # bubbles rising
-        for i, (du, z0) in enumerate(((-0.1, 0.1), (0.06, 0.3), (-0.02, 0.48), (0.12, 0.2))):
-            z = SKID + 0.12 + (z0 + 0.12 * frame) % (0.5 * level + 0.16)
-            k.box(tu + du, tv + tr - 0.005, z, 0.035, 0.02, 0.035, "puBubble")
-    k.box(tu - 0.16, tv + tr + 0.02, SKID + 0.1, 0.05, 0.08, 0.05, "steel", top="steelL")    # tap
-    k.box(tu - 0.16, tv + tr + 0.08, SKID + 0.06, 0.03, 0.03, 0.06, "steelD")
-    k.box(tu - 0.16, tv + tr + 0.02, SKID + 0.16, 0.08, 0.02, 0.02, ACC)                      # its handle
-    return k.build()
+    core.palette._data.update(PALETTE)
+    core.palette._data.update(FINISH)
+    m = FinishMesh(f"purifier_{state}_{frame}_{rot}", finished=True, powered=on)
+    f = make_frame(m, (1, 2), (rot + 1) % 4)
+    # Manifold plinth and the one housing over the whole length.
+    casing(m, f, 0, -0.005, 0.0, LENGTH - 0.06, WIDTH - 0.04, 0.22, cut=0.09, col=FRAME)
+    m.paint(body='pale')
+    casing(m, f, 0, -0.02, 0.22, LENGTH - 0.12, WIDTH - 0.12, HOOD - 0.22, cut=0.06)
+    casing(m, f, 0, 0, HOOD, LENGTH, WIDTH, TOP - HOOD, cut=0.13, taper=0.96)              # hood
+    # Melt section: display and a status lamp in a recessed panel.
+    m.paint(body='steel', recess='display' if lit else 'amber' if on else 'dark')
+    f.box(MELT, 0.38, 0.5, 0.36, 0.02, 0.26, FRAME)
+    f.box(MELT - 0.04, 0.392, 0.55, 0.2, 0.012, 0.16, RECESS)
+    f.box(MELT + 0.12, 0.392, 0.62, 0.05, 0.012, 0.05, RECESS)
+    # Two filter cassettes, proud of the front like the life support's scrubbers.
+    for du in (-0.13, 0.13):
+        m.paint(body='pale')
+        casing(m, f, FILT + du, 0.34, 0.28, 0.22, 0.14, 0.62, cut=0.035)
+        m.paint(body='cartridge')
+        f.box(FILT + du, 0.41, 0.36, 0.13, 0.012, 0.46, BODY)
+        m.paint(frame='teal')
+        f.box(FILT + du, 0.408, 0.84, 0.12, 0.024, 0.05, FRAME)
+    # Water section: a framed sight glass on the front, the water level in it.
+    water = 'core_light' if lit else 'vent_teal'
+    m.paint(body='screen', frame='frame', recess=water)
+    f.box(TANK, 0.38, 0.26, 0.42, 0.02, 0.66, FRAME)                                       # glass frame
+    f.box(TANK, 0.39, 0.3, 0.32, 0.012, 0.58, BODY)                                          # the empty glass above
+    f.box(TANK, 0.4, 0.3, 0.32, 0.012, 0.36, RECESS)                                       # the water
+    if lit:
+        for i, (du, z0) in enumerate(((-0.08, 0.0), (0.05, 0.12), (-0.02, 0.22), (0.1, 0.06))):
+            z = 0.32 + (z0 + 0.08 * frame) % 0.3
+            f.box(TANK + du, 0.41, z, 0.04, 0.012, 0.035, "medWhite")                       # bubbles rising
+    m.paint(frame='teal')
+    for z in (0.47, 0.66):
+        f.box(TANK + 0.14, 0.41, z, 0.04, 0.012, 0.012, FRAME)                # level ticks
+    # Tank cap rising through the hood, and the outlet port on the end.
+    m.paint(body='vent_teal', frame='frame')
+    f.vcyl(TANK + 0.05, -0.08, TOP - 0.01, 0.27, 0.07, FRAME, sides=12)
+    f.vcyl(TANK + 0.05, -0.08, TOP + 0.06, 0.24, 0.05, BODY, rtop=0.16, sides=12)
+    m.paint(body='steel')
+    f.box(LENGTH / 2 - 0.02, 0.05, 0.34, 0.08, 0.24, 0.24, FRAME)                            # port collar
+    f.box(LENGTH / 2 + 0.01, 0.05, 0.38, 0.04, 0.14, 0.16, BODY)
+    _inlet(m, f)
+    return [m.build()]
 
 
 def jobs(rots=range(4)):

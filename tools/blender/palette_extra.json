@@ -3424,51 +3424,5 @@
   "hex": "#5a9aff",
   "emissive": 2.0,
   "set": "arcade"
- },
- "puBody": {
-  "hex": "#cdd5dc",
-  "set": "purifier"
- },
- "puBodyD": {
-  "hex": "#8f9ba6",
-  "set": "purifier"
- },
- "puAcc": {
-  "hex": "#2d86b8",
-  "set": "purifier"
- },
- "puGlass": {
-  "hex": "#a7d4e4",
-  "set": "purifier"
- },
- "puWater": {
-  "hex": "#2c74b4",
-  "set": "purifier"
- },
- "puFilt": {
-  "hex": "#e6eaee",
-  "set": "purifier"
- },
- "puCap": {
-  "hex": "#2a5f88",
-  "set": "purifier"
- },
- "puIceL": {
-  "hex": "#e2f4fb",
-  "set": "purifier"
- },
- "puScrDim": {
-  "hex": "#1f4a3a",
-  "set": "purifier"
- },
- "puWaterL": {
-  "hex": "#4fb6f0",
-  "emissive": 1.3,
-  "set": "purifier"
- },
- "puBubble": {
-  "hex": "#d8f6ff",
-  "emissive": 2.0,
-  "set": "purifier"
  }
 }
