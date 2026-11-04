@@ -56,7 +56,7 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     zb = zl1 + _rows(rl - LIP_D) + PZ / 4                       # panel at each end of each tile's (flaring out at
     zd1 = zb + D_TOP                                            # 45 degrees to the shelf), a rail across the tile
     zt0 = zd1 - D_THICK                                         # (its front edge on the lip's)
-    band(a, b, zl1, zt0, "fTS8")                                # joining their feet; open between (the face in it
+    band(a, b, zl1, zt0, "fTS8", PAINT)                              # joining their feet; open between (the face in it
     prism(k, ax, plane, a, b, [(0.0, zt0), (sh, zt0), (sh, zd1), (0.0, zd1)], FACE, 3,     # in shadow)
           cols=[False, sd("fTS1", ax), sd("fTS1", ax), False], cap=sd(D_SIDE_TONE, ax), mitre=mit)  # (its ends,
     band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # the rail's too, as the panels' sides) (its
@@ -76,7 +76,7 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     for c in range(-1, 2):                                      # (each bay behind the terminals in the canopy's
         q0, q1 = max(a, c - 0.5 + C_IN * L), min(b, c + 0.5 - C_IN * L)     # shadow; the face outside its plates
         if q1 - q0 > 1e-6:                                                  # left lit, against their sides)
-            band(q0, q1, zd1, zc0, "fTS7")
+            band(q0, q1, zd1, zc0, "fTS7", PAINT)    # (a touch over the back: no z-fight)
     for c in range(-1, 2):                                      # the canopy's side plates: brackets its full depth
         for p0 in (c - 0.5 + C_IN * L, c + 0.5 - (C_IN + 1) * L):     # under it, their front at 45 degrees from
             if a - 1e-6 <= p0 and p0 + D_SIDE <= b + 1e-6:              # its edge back to the wall; C_IN in from
