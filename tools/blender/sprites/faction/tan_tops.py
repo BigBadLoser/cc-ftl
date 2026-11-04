@@ -171,13 +171,13 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
 # (heights in rows of face down from the header's top, depths in px; a part d proud shows d rows lower, so the one
 # over it hides that much of what's under it)
 H_FRONT, H_FACE, H_CANOPY = 8, 5, 7     # the header: its rows; its face's depth (the screens on it); the canopy's
-BIN_FOOT, BIN_D, BIN_TOP = 22, 7, 3     # the bins: their bottom edge (on the cabinets' top), its depth (the
+BIN_FOOT, BIN_D, BIN_TOP = 18, 7, 3     # the bins: their bottom edge (on the cabinets' top), its depth (the
                                         # canopy's); their front leaning back from it to the header's foot, BIN_TOP
                                         # px out (under the header)
 BIN_WALL, BIN_BACK = 2, 1               # the bins' side walls at each tile edge (px thick, the bins' profile), the
                                         # bins a px back of them
-SECTIONS = ((22, 34, 5, (0.5,)),        # the cabinets, the drawers under them: (top, foot (None: the slope),
-            (34, None, 4, (0.25, 0.5, 0.75)))   # depth, the bars up between them): each in a frame of 1 px bars
+SECTIONS = ((18, 30, 5, (0.5,)),        # the cabinets, the drawers under them: (top, foot (None: the slope),
+            (30, 41, 4, (0.25, 0.5, 0.75)))     # depth, the bars up between them): each in a frame of 1 px bars
                                         # (across its top, the cabinets', and its foot), the doors a px back in it
 FRAME_IN = 1                            # the cabinets and drawers: in from each tile edge (px)
 L_GAP = 1                               # the gap between the bins, and at a tile's edge (px; the face dark)
