@@ -158,6 +158,7 @@ export interface Job {
   /** For 'passage' jobs: a seat beyond the shuttle's suits, for crew who do not breathe. */
   airless?: true;
   /**
+   * forceDoor: the drafted crew member ordered to force the door (absent on the undrafted construction job).
    * sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them.
    * passage: the crew member of a named party the seat is for (only they take it, `AwaySite.invited`).
    */

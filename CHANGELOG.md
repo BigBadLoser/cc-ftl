@@ -6,6 +6,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
+- Drafted crew can force a jammed door: right-click it and pick "Force door". The nearest drafted crew member who isn't fighting does it and stays drafted. ([#316](https://github.com/BigBadLoser/cc-ftl/pull/316))
 - Derelicts on the lane: a dead hull can turn up mid-trip. Scan it for its condition, air, doors and signs of life (a hacker with skill 2 can probe it for counts and cargo), then drop out beside it to salvage it, or draft a team, fly them over in the shuttle and explore it by hand. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Signals on the lane: a trader skiff can turn up mid-trip. Hail it or scan it from the starmap, then drop out beside it to trade, or fly on. Ships in these scenes leave after a while unless you hail them. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Battle stations (C, or the crew-bar button) opens the combat view at any time with every weapon held. Aiming at a ship that is not hostile does nothing; the first shot you fire, or boarding it, turns it and its group hostile and they fight back. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
@@ -36,7 +37,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 - A hovering shuttle comes close enough to a ragged wreck for crew to get back aboard, and "Back to shuttle" works from deep inside a wreck. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Crew no longer repair wrecks they are salvaging or exploring. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
-- "Transfer blocked: no free shuttle" no longer fills the log while the shuttle is out on salvage. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
+- "Transfer blocked: no free shuttle" no longer fills the log while your shuttles are busy, including on a run you fly by hand. It still shows when you have no shuttle. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#316](https://github.com/BigBadLoser/cc-ftl/pull/316))
 - You can't leave a scene while crew or shuttles are still out, including aboard a captured prize. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Civilian traders in fleets could not trade. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Crew no longer try to walk through doors that cannot open, such as a jammed door or a dead airlock. ([#292](https://github.com/BigBadLoser/cc-ftl/issues/292), [#297](https://github.com/BigBadLoser/cc-ftl/pull/297))
