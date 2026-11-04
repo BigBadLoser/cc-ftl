@@ -29,13 +29,17 @@ export function arrived(b: Body, x: number, y: number): boolean {
 
 /**
  * Fly along the route for one tick at `speed` tiles a second. Returns false if the next tile has closed (a door jammed shut, a wall built):
- * the caller plans again. With no steps left it settles onto its tile's centre.
+ * the caller plans again. With no steps left it settles onto its tile's centre. `wait` says the next tile is a shut airlock door (already asked to
+ * cycle): the drone holds where it is until it opens, like a walker.
  */
-export function fly(d: Drone, b: Body, speed: number, open: (x: number, y: number) => boolean): boolean {
+export function fly(
+  d: Drone, b: Body, speed: number, open: (x: number, y: number) => boolean, wait: (x: number, y: number) => boolean = () => false,
+): boolean {
   let left = speed / TICK_HZ;
   while (left > 0) {
     const next = d.steps[0] ?? bodyTile(b);
     if (d.steps.length > 0 && !open(next.x, next.y)) return false;
+    if (d.steps.length > 0 && wait(next.x, next.y)) return true;
     const tx = next.x + 0.5, ty = next.y + 0.5;
     const dx = tx - b.x, dy = ty - b.y;
     const dist = Math.hypot(dx, dy);

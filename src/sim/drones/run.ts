@@ -1,5 +1,6 @@
 import { ALT, BodyC, type Body } from '../body';
 import { IonC } from '../combat/components';
+import { mustWaitAtAirlockDoor } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { shipGrid } from '../regions';
@@ -95,7 +96,7 @@ function out(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef, pass: Drone
   if (d.steps.length > 0 || !arrived(b, t.x, t.y)) {
     const last = d.steps[d.steps.length - 1] ?? bodyTile(b);
     if ((last.x !== t.x || last.y !== t.y) && !planFlight(sim, d, b, t.x, t.y)) return dropTarget(d, pass); // the patient moved off
-    if (!fly(d, b, speedOf(d, def), (x, y) => openTile(sim, d.ship, x, y))) d.steps = [];
+    if (!fly(d, b, speedOf(d, def), (x, y) => openTile(sim, d.ship, x, y), (x, y) => waitTile(sim, d.ship, x, y))) d.steps = [];
     return;
   }
   if (workOn(sim, id, d, t, j) === 'done') dropTarget(d, pass);
@@ -117,7 +118,7 @@ function home(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef): void {
   }
   const last = d.steps[d.steps.length - 1];
   if ((!last || last.x !== at.x || last.y !== at.y) && !planFlight(sim, d, b, at.x, at.y)) return;
-  if (!fly(d, b, speedOf(d, def), (x, y) => openTile(sim, d.ship, x, y))) d.steps = [];
+  if (!fly(d, b, speedOf(d, def), (x, y) => openTile(sim, d.ship, x, y), (x, y) => waitTile(sim, d.ship, x, y))) d.steps = [];
 }
 
 /** A flat battery crawls (the robots' EMPTY_CHARGE_MULT). */
@@ -126,6 +127,12 @@ const speedOf = (d: Drone, def: DroneDef): number => def.speed * (d.charge <= 0 
 function openTile(sim: Sim, ship: number, x: number, y: number): boolean {
   const grid = shipGrid(sim, ship);
   return !!grid && isTileWalkable(sim, grid, x, y, false, true);
+}
+
+/** The next tile is an airlock door that is still shut: ask for the cycle and hold, as crew do. */
+function waitTile(sim: Sim, ship: number, x: number, y: number): boolean {
+  const grid = shipGrid(sim, ship);
+  return !!grid && mustWaitAtAirlockDoor(sim, grid, x, y);
 }
 
 function dropTarget(d: Drone, pass: DronePass): void {
