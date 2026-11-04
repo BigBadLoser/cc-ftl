@@ -53,6 +53,27 @@ class TanTones(Feature):
         return END[ox]
 
 
+RIDGE = 1 / 32                      # the ramp's outer corner: a chamfer this along each axis (2 px across on screen); the
+RIDGE_LVL = 4                       # wall's corner stays square. Its slope in the ramp's lit level
+
+
+class RampRidge(Feature):
+    """An outer corner's ramp turned on a pale chamfer band (LookShell's line, band), the wall above it square: the
+    blue line under the lip, the pale band, the blue toe band, the toe, as the faces' bands run."""
+    def setup(self, sp):
+        for r in sp.rects:
+            x0, x1, y0, y1 = r[0]
+            if any(s[0] == "+" for s, _ in sp.end_sides):
+                break
+            if not sp._adj(r, "+x") and not sp._adj(r, "+y") and x1 < 0.5 - 1e-9 and y1 < 0.5 - 1e-9:
+                sp.line, sp.band = (T.snap(x1), T.snap(y1)), RIDGE
+
+    def band(self, sp, fam):
+        from .tan_ramps import EDGE
+        R, B = T.RAMPS[fam][0], T.RAMPS[BLUE][0][2]
+        return [(0.02 + EDGE, B), (sp.run - 0.045, R[RIDGE_LVL]), (sp.run - 1 / 32, B), (sp.run, "fTT2")]
+
+
 def _col(c, n):
     """Pixel column n across the tile centred on c, as an upright 1 px groove (u0, u1): a touch narrower than a
     column, on its centre (a column's edges sit a quarter px past the tile's 32nds), so it stays one column wide."""
@@ -164,6 +185,8 @@ def tan(hull):
         ztop = zl1 + (int((zt - PZ - zl1) / SLAT + 1e-6) + 1) * SLAT   # the slats' top seam (a row up into the face
                                                                         # under the shadow), the panel's top level with it
         for u0, u1, mid, gs in _panels(a, b):
+            if mid and corner and b - u0 < 0.5:         # (beside an outer corner: no panel, the slats on round it)
+                mid, gs = False, ()
             if not mid:                                 # either side of the panel: slats up from the lip, each a
                 z = zl1                                 # dark seam over a lit line (the first seam on the lip, its
                 while z <= ztop + 1e-6:                 # lit line under it hidden), 2 px of face between
@@ -191,6 +214,6 @@ class Tan(Faction):
 
     def relief(self, sprite):
         return _style(tan, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
-                      toe_lvl={"wall": "fTT2", "blue": "fTT2"}, tops=TAN_TOPS, ramps=TAN_RAMPS,     # (the toe blue, its foot
+                      toe_lvl={"wall": "fTT2", "blue": "fTT2"}, chamfer=RIDGE, tops=TAN_TOPS, ramps=TAN_RAMPS,     # (the toe blue, its foot
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 2), FaceHoles(),  # darker)
-                                TanTones()))
+                                TanTones(), RampRidge()))

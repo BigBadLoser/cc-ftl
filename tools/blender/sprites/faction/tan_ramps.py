@@ -27,6 +27,9 @@ BASE = (((0.25, 0.5, 0.0, CUT_D, "abcd"),), ((0.5, 0.75, 0.0, CUT_D, "abcd"),), 
 MIRRORED = (((0.0, 0.25, 0.0, CUT_D, "abcd"),), ((0.75, 1.0, 0.0, CUT_D, "abcd"),),     # the base with each half
             ((0.25, 0.5, 0.0, 1.0, "abc"), (0.0, [0.375], CUT_D, 1.0, "ad")),          # mirrored: the squares at
             ((0.5, 0.75, 0.0, 1.0, "abd"), ([0.625], 1.0, CUT_D, 1.0, "bc")))          # the tile's sides, the Ls
+CORNER = (BASE[0], BASE[2], ((0.5, 1.0, 0.0, 1.0, "ad"),))                             # by an outer corner: the
+                                                                                        # base's far half, a plain
+                                                                                        # plate to the corner
 THIRDS = (0.0, 1 / 3, 2 / 3, 1.0)                                                       # in the middle
 GRID = tuple(((THIRDS[i], THIRDS[i + 1], g0, g1, "abcd"),) for i in range(3) for g0, g1 in ((0.0, 0.5), (0.5, 1.0)))
 TALL = tuple(((THIRDS[i], THIRDS[i + 1], 0.0, 1.0, "abcd"),) for i in range(3))
@@ -49,6 +52,10 @@ def cushions(layout, extra=None):
         sh = T.SHELL                                    # (the block's sides: half a px each at a tile edge, the
         free = [bool(getattr(sh, "is_end", None) and sh.is_end(ax, u, sd)) for u, sd in ((u0, -1), (u1, 1))]
         side = [L if f else L / 2 for f in free]        # tiles' halves one px; a whole one at a free end)
+        ln = getattr(sh, "line", None)                  # (at an outer corner's ridge (tan.RampRidge): the corner
+        corner = bool(ln and getattr(sh, "band", 0.0)   # layout, square at the ridge)
+                      and abs(u1 - ((ln[0] if ax == "y" else ln[1]) - sh.band)) < 1e-6)
+        lay = CORNER if corner and layout is BASE else layout
 
         def q(ua, ub, da, db):
             return [(ua, da), (ub, da), (ub, db), (ua, db)]
@@ -89,10 +96,11 @@ def cushions(layout, extra=None):
         out = []                                                            # toe band, round the block's corners
         for x, y, sx, sy, el, ee in ((u0, top, 1, 1, side[0], 0.0), (u1, top, -1, 1, side[1], 0.0),
                                      (u1, end, -1, -1, side[1], E), (u0, end, 1, -1, side[0], E)):
-            out += arc(x, y, sx, sy, CURVE, el, ee)     # (the outline round the cushions' curves)
+            out += [(x, y)] if corner and x == u1 else arc(x, y, sx, sy, CURVE, el, ee)   # (the outline round the
+                                                                                            # cushions' curves)
         T.plate(k, out, pt, nrm, 0.0, PAINT, FACE, 0, PAINT / 2, fixed=OUTER)   # the joints, under the
         ulo, uhi, dhi = u0 + L, u1 - L, top + span - 2 * E                  # cushions: the block's outline, the
-        for cu in layout:                                                   # inner ones lighter along each
+        for cu in lay:                                                   # inner ones lighter along each
             for f0, f1, g0, g1, _rc in cu:                                  # cushion's inner edges
                 for f, on in ((f0, 0.0 < (f0 if not _raw(f0) else 0.0) < 1.0), (f1, not _raw(f1) and 0.0 < f1 < 1.0)):
                     if on:
@@ -107,7 +115,7 @@ def cushions(layout, extra=None):
                         ub = min(uhi, (u0 + f1[0] * w if _raw(f1) else u0 + f1 * w) + 2 * L)
                         T.plate(k, q(ua, ub, dm - 2 * E, dm + 2 * E), pt, nrm, 0.0, 1.5 * PAINT, FACE, 0, PAINT,
                                 fixed=INNER)
-        for cu in layout:
+        for cu in lay:
             for f0, f1, g0, g1, rc in cu:
                 plate(rect(f0, f1, g0, g1, rc), 2 * PAINT, 2, PAINT, "wall")
         for poly in fillets:
