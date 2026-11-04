@@ -39,6 +39,10 @@ def ext_shell(o):
         def skip_skirt(self, i, j):
             return True
 
+        def cover(self, i, j):                          # (a window piece builds the whole tile's section itself: a
+            from . import wall3d_ext_window as WIN      # window cut through the wall, the header over it)
+            return None if WIN.PART else super().cover(i, j)
+
         def skirtz(self, x, y):                         # (its faces run down to the floor)
             return 0.0
 
