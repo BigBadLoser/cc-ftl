@@ -144,7 +144,7 @@ export const events = {
       rules: {
         honestPaid: {
           on: 'delivered', trap: false,
-          effects: [{ type: 'items', item: 'item.missile', count: 4 }, { type: 'reputation', faction: 'owner', delta: 2 }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }],
+          effects: [{ type: 'items', item: 'item.missile', count: 4, at: 'visitAirlock' }, { type: 'reputation', faction: 'owner', delta: 2 }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }],
           log: '{ship} keeps its word: four missiles handed over, and the patrol routes for nothing', tone: 'good',
         },
         honestRefused: {

@@ -59,7 +59,8 @@ export type PhysicalOutcome =
 /** One change an outcome makes. Applied in order; each emits `story.effect`. */
 export type EventEffect =
   /** Gain (positive) or lose (negative) items in the player's storage. */
-  | { type: 'items'; item: string; count: number }
+  /** `at: 'visitAirlock'`: a scene visitor's delivery, put on the floor just inside the airlock its shuttle is docked at (for haulers to carry); else straight to storage. */
+  | { type: 'items'; item: string; count: number; at?: 'visitAirlock' }
   | { type: 'crewDamage'; amount: number; who?: CrewTarget }
   | { type: 'crewHeal'; amount: number; who?: CrewTarget }
   /** Skill experience: every 100 xp is one level. */

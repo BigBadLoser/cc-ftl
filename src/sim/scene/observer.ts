@@ -97,7 +97,7 @@ function fire(sim: Sim, ev: EventGrid, id: string, rule: SceneRuleDef, w: Subjec
   if (ev.watch.fired.includes(key)) return;
   ev.watch.fired.push(key);
   const ctx = { event: ev.scene.event ?? ev.scene.key, actor: null };
-  for (const eff of effectsFor(sim, rule, w && 'ship' in w ? w.ship.contact.faction : '')) applyEffect(sim, eff, ctx);
+  for (const eff of effectsFor(sim, rule, w && 'ship' in w ? w.ship.contact.faction : '')) applyEffect(sim, eff, { ...ctx, ...(w && 'ship' in w && w.ship.contact.ship !== undefined ? { ship: w.ship.contact.ship } : {}) });
   const shipId = !w ? 0 : 'ship' in w ? w.ship.contact.ship ?? 0 : 'derelict' in w ? w.derelict.ship ?? 0 : 0;
   const live = shipId && sim.world.has(shipId, ShipC) ? sim.world.get(shipId, ShipC)?.name : undefined;
   const name = !w ? '' : 'ship' in w ? live ?? w.ship.contact.name ?? 'the ship' : 'derelict' in w ? live ?? w.derelict.name : '';

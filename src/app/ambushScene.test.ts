@@ -8,6 +8,7 @@ import { killCrew } from '../sim/crew/death';
 import { applyEffect, giveItems } from '../sim/story/effects';
 import { RolledSkillsC } from '../sim/crew/traits';
 import { playerCrew, playerStock, withPlayerAboard } from '../sim/story/world';
+import { ItemStackC } from '../sim/items/components';
 import { BoarderC, VehicleC } from '../sim/vehicles/components';
 import { buildStory } from './storySnapshot';
 import { eventOf } from './encounterSnapshot';
@@ -70,6 +71,8 @@ function inScene(seed: number, trap: boolean): { sim: Sim; skiff: number } {
   step(sim, 20);
   return { sim, skiff: sim.galaxy.event?.scene.ships[0]?.contact.ship as number };
 }
+/** Missiles lying loose on the floor of any ship. */
+const floorMissiles = (sim: Sim): number => sim.world.query(ItemStackC).reduce((n, id) => n + (sim.world.get(id, ItemStackC)?.item === 'item.missile' ? sim.world.get(id, ItemStackC)?.count ?? 0 : 0), 0);
 const ambushOf = (sim: Sim) => sim.galaxy.event?.scene.ships[0]?.ambush;
 const observed = (out: { type: string }[]) => out.filter((e): e is { type: 'scene.observed'; rule: string; text: string } & typeof e => e.type === 'scene.observed');
 /** Step until the request is open (a few seconds' worth after the player is deployed). */
@@ -206,13 +209,22 @@ describe('the returning pirate: in its pocket', () => {
     const rep = sim.story.reputation['pirates'] ?? 0;
     sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
     const rules: string[] = [];
-    for (let i = 0; i < 20 * 150 && !ambushOf(sim)?.home; i++) rules.push(...observed(step(sim)).map((e) => e.rule));
+    const floor0 = floorMissiles(sim);
+    let dropped = 0;
+    for (let i = 0; i < 20 * 150 && !ambushOf(sim)?.home; i++) {
+      rules.push(...observed(step(sim)).map((e) => e.rule));
+      if (rules.includes('honestPaid')) dropped = Math.max(dropped, floorMissiles(sim) - floor0);
+    }
     expect(rules).toContain('honestPaid');
     expect(ambushOf(sim)?.visit).toBe('delivered');
     expect(sim.world.get(skiff, ShipC)?.faction).toBe('neutral'); // never springs
-    expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before + 4);
     expect(sim.story.reputation['pirates'] ?? 0).toBeGreaterThan(rep);
     expect(sim.story.flags['spared_pirate'] ?? 0).toBe(0);
+    // The missiles were put on the floor inside the airlock, and the haulers carried them to storage by now.
+    expect(dropped).toBe(4);
+    for (let i = 0; i < 20 * 120 && floorMissiles(sim) > floor0; i++) step(sim);
+    expect(floorMissiles(sim)).toBe(floor0);
+    expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before + 4);
     expect(ambushOf(sim)?.home).toBe(true);
     // The party is back in its shuttle, and the skiff may jump away.
     const out = step(sim, 20 * 90);
