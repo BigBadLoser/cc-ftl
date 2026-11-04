@@ -15,7 +15,7 @@ small foot."""
 from . import core
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
-from .wall3d_ext_geom import LEAN_RISE, YS, D, Face, Section
+from .wall3d_ext_geom import LEAN_RISE, LINE, YS, D, Face, Section
 
 PART = None                         # the piece being built: "w1" | "w2" | "w3" (None: not a window)
 HEAD = 21                           # the header: the lean's top this many px on screen (down its front)
@@ -47,6 +47,10 @@ FOOT_H = 3                          # on a foot this many px tall, this far on f
 FOOT_W = 5 / 32                     # sill's flat top (the slope measured off the reference's glass line)
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, under the header: facing down, darker)
+B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
+B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to its foot; C, a
+C_SIDE, C_DOWN = 22, 4              # strip on from B's right side to C_SIDE, C_DOWN px down the lean (measured off
+                                    # the reference)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
 
@@ -64,6 +68,8 @@ def build(k, ax, plane, a, b, ends, H):
     dp = dv - PANE_IN - PANE / 2                        # the pane's centre
     db = dp - PANE / 2 - WALL_BACK                      # the wall's back (the section reaches back to it)
     GLASS = T.Relief("window_glass")
+    back = min((r[0][2] if ax == "y" else r[0][0]) for r in T.SHELL.rects if r[1] == "hull") - plane   # (the
+                                                        # tile's back: the header's top runs back to it, the base's)
     for s0, s1 in T.spans(a, b):
         end = PART in ("w1", "w3")                      # (an end piece: W3 W1 mirrored, built in W1's u then
         mu = (lambda u: s0 + s1 - u) if PART == "w3" else (lambda u: u)     # flipped by mu)
@@ -75,10 +81,10 @@ def build(k, ax, plane, a, b, ends, H):
 
         h0, w0, w1 = s0, s0, s1                         # (h0: the header's and the sill's start; w0: the glass's)
         if end:
-            for z0, z1 in ((0.0, zb), (zb, H)):         # the outer frame: the base section, whole
-                pf = s.sec(z0, z1)
+            for z0, z1, d0 in ((0.0, zb, db), (zb, H, back)):     # the outer frame: the base section, whole
+                pf = s.sec(z0, z1)                                  # (over the bend back as the header)
                 cols = s.cols(pf, "face")
-                pf = [(db, pf[0][1])] + pf[1:-1] + [(db, pf[-1][1])]
+                pf = [(d0, pf[0][1])] + pf[1:-1] + [(d0, pf[-1][1])]
                 u0, u1, cp = seg(s0, s0 + FRAME, (None, SIDE))
                 f.part(u0, u1, pf, cols, cp, end=False)
             pf = [(db, 0.0), (dv, 0.0), (dv, zh), (db, zh)]     # the frame's side (jamb), under the header
@@ -90,13 +96,18 @@ def build(k, ax, plane, a, b, ends, H):
         cols = s.cols(pf, "face")
         cols[2], cols[3] = SILL_SLOPE, SILL_FLAT
         f.part(u0, u1, pf, cols, None, end=False)
-        pf = [(db, zh), (dv, zh), (dv, zc), (T3.BACK, H), (db, H)]      # the header: the lean's top, then upright
-        cols = s.cols(pf, "face")                                       # down to its foot
+        pf = [(back, zh), (dv, zh), (dv, zc), (T3.BACK, H), (back, H)]  # the header: the lean's top, then upright
+        cols = s.cols(pf, "face")                                       # down to its foot; its top back to the
+                                                                        # tile's back, as the base's
         cols[1] = HEAD_FRONT
         f.part(u0, u1, pf, cols, None, end=False)
         def sides(pts, col):                            # (none where the pane runs on into the next tile)
             return [False if abs(p[0] - q[0]) < 1e-6 and (abs(p[0] - w1) < 1e-2 or (not end and abs(p[0] - w0) < 1e-2))
                     else col for p, q in zip(pts, pts[1:] + pts[:1])]
+        f.top_line(s0, s1, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])   # A: the top's seam along its
+                                                                                    # back, the base's own
+        if PART == "w1":
+            _w1_header(f, s, s0, dv, zc, zh)
         win = _opening(w0, w1, zj, zh, end)
         _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
               mu=mu)                                    # the pane: its front only (one tinted layer: with its back,
@@ -109,6 +120,31 @@ def build(k, ax, plane, a, b, ends, H):
                   db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False, mu=mu)
             _slab(k, ax, plane, [(w0, zh), (w0, zh - sh), (w0 + SLOPE, zh)], db, dv, HEAD_FRONT,   # the top corner's
                   [False, SLOPE_TOP, False], back=False, mu=mu)                                  # slope
+
+
+def _w1_header(f, s, s0, dv, zc, zh):
+    """B and C on W1's header (painted lines, as the base's: on its top in YS[2], down its front in YS[3])."""
+    ln, H = LINE, s.H
+    dk = (dv - T3.BACK) / (H - zc)                      # (the header's lean: out per unit down)
+
+    def band(u0, u1, z0, z1, col):                      # a painted band on the header's front over [z0, z1]
+        def d(z):
+            return T3.BACK + (H - z) * dk if z > zc else dv
+        cuts = [z1] + [z for z in (zc,) if z0 < z < z1] + [z0]
+        for za, zb in zip(cuts, cuts[1:]):
+            pf = [(d(za) - 0.01, za), (d(za) + 0.001, za), (d(zb) + 0.001, zb), (d(zb) - 0.01, zb)]
+            f.part(u0, u1, pf, [col] * 4, col, end=False)
+
+    b0, b1 = s0 + T3.px(B_SIDES[0]), s0 + T3.px(B_SIDES[1])
+    dl = T3.px(B_BACK)
+    f.top_line(b0, b1 + ln, dl, dl + T3.TOP_PX, YS[2])                  # B: across the top
+    for u in (b0, b1):
+        f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
+        band(u, u + ln, zh, H, YS[3])                                   # and the front
+    zt = s.z_at(H, C_DOWN)
+    c1 = s0 + T3.px(C_SIDE)
+    band(b1 + ln, c1 + ln, s.z_at(zt, 1), zt, YS[3])                    # C: its top
+    band(c1, c1 + ln, zh, zt, YS[3])                                    # its side
 
 
 def _opening(u0, u1, z0, z1, corner):
