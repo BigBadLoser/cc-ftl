@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { JobC, ModuleC, StorageC, newGame, type Sim } from '../sim';
 import { content } from '../content';
 import { buildFood } from './foodSnapshot';
+import { learn } from '../sim/modules/blueprints';
 import { buildFabs, buildStock } from './logisticsSnapshot';
 
 const food = (sim: Sim) => buildFood(sim, buildStock(sim));
@@ -70,5 +71,19 @@ describe('order inputs', () => {
     const o = buildFabs(sim).find((f) => f.id === fab)?.orders[0];
     expect(o?.active).toBe(true);
     expect(o?.missing).toEqual([]);
+  });
+});
+
+describe('locked recipes', () => {
+  it('lists a fabricator recipe as locked until its blueprint is learned, then unlocks it', () => {
+    const sim = newGame(1, content);
+    sim.step();
+    const fab = sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === 'module.fabricator') ?? 0;
+    const locked = () => buildFabs(sim).find((f) => f.id === fab)?.locked ?? [];
+    expect(locked()).toEqual(expect.arrayContaining(['recipe.drone_repair', 'recipe.drone_medic']));
+    expect(locked()).not.toContain('recipe.missile');
+    learn(sim, 'blueprint.drone_repair');
+    expect(locked()).not.toContain('recipe.drone_repair');
+    expect(locked()).toContain('recipe.drone_medic');
   });
 });

@@ -10,6 +10,11 @@
   const fab = $derived(fabs.find((x) => x.id === id));
   const recipes = $derived(api.recipes.filter((r) => r.station === def));
   const recipeOf = (o: UiOrder): UiRecipe | undefined => api.recipes.find((r) => r.id === o.recipe);
+  const isLocked = (r: UiRecipe): boolean => !!fab?.locked.includes(r.id);
+  // A recipe that gets locked while picked (cannot happen today, but stay honest) drops the pick.
+  $effect(() => {
+    if (pick && fab?.locked.includes(pick)) pick = null;
+  });
 
   let picking = $state(false);
   let pick = $state<string | null>(null);
@@ -83,11 +88,11 @@
     {#if picking}
       <div class="picker" data-testid="recipe-picker">
         {#each recipes as r (r.id)}
-          <button class="rec" class:on={pick === r.id} data-testid="recipe-{r.id}" onclick={() => (pick = r.id)}>
+          <button class="rec" class:on={pick === r.id} class:locked={isLocked(r)} disabled={isLocked(r)} data-testid="recipe-{r.id}" title={isLocked(r) ? 'Needs research' : undefined} onclick={() => (pick = r.id)}>
             <ItemIcon {api} item={r.outputs[0]?.item ?? ''} size={30} />
             <span class="rt">
               <span class="rn">{r.name}</span>
-              <span class="rf">{flow(r.inputs)} → {flow(r.outputs)}</span>
+              {#if isLocked(r)}<span class="rf need" data-testid="recipe-locked-{r.id}">Needs research</span>{:else}<span class="rf">{flow(r.inputs)} → {flow(r.outputs)}</span>{/if}
             </span>
             <span class="sec">{r.seconds.toFixed(1)}s</span>
           </button>
@@ -134,6 +139,8 @@
   .rm { color: #ff9a9a; }
   .addbtn { margin-top: 8px; width: 100%; }
   .picker { margin-top: 8px; display: grid; gap: 4px; }
+  .rec.locked { opacity: 0.5; cursor: default; }
+  .rec .need { color: var(--amber); }
   .rec { display: flex; align-items: center; gap: 8px; text-align: left; padding: 2px 8px 2px 4px; min-height: 44px; }
   .rt { flex: 1; display: grid; line-height: 1.2; min-width: 0; }
   .rn { font-weight: 600; }

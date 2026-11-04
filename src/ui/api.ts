@@ -388,6 +388,8 @@ export interface UiFab {
   orders: UiOrder[];
   /** Craft job now, or null. */
   job: { name: string; progress: number; phase: 'materials' | 'power' | 'crafting' | 'ready' } | null;
+  /** Recipe ids of this station whose blueprint is not known yet (research it first); the picker shows them locked. */
+  locked: string[];
 }
 
 /** A module the build menu offers. */
