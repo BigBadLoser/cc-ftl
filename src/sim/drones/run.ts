@@ -9,7 +9,7 @@ import { TICK_HZ } from '../time';
 import { DRONE_PATH_TRIES, DRONE_SCAN_TICKS, EMPTY_CHARGE_MULT } from '../tuning';
 import { freeSlot, isDroneBay, slotTile, wreckDrone } from './bay';
 import { burnDrone } from './damage';
-import { recalled } from './recall';
+import { landingBusy, queuePlace, recalled } from './recall';
 import { hatchPoint, steer, stepLift } from './space';
 import { DroneC, type Drone, type DroneTarget } from './components';
 import { arrived, bodyTile, fly, planFlight } from './flight';
@@ -63,7 +63,7 @@ export function runDrone(sim: Sim, id: number, pass: DronePass): void {
   b.alt = d.space ? ALT.cruise : ALT.drone;
   if (d.state === 'out' && (d.charge < def.charge.lowBelow || recalled(sim, d.ship))) goHome(d, pass);
   if (d.state === 'out') return d.space ? outSpace(sim, id, d, b, def, pass) : out(sim, id, d, b, def, pass);
-  if (d.space) return homeSpace(sim, d, b, def);
+  if (d.space) return homeSpace(sim, id, d, b, def);
   home(sim, id, d, b, def);
 }
 
@@ -103,14 +103,22 @@ function outSpace(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef, pass: 
 }
 
 /** Flying home in space: straight to its bay's hatch, then down through it. */
-function homeSpace(sim: Sim, d: Drone, b: Body, def: DroneDef): void {
+function homeSpace(sim: Sim, id: number, d: Drone, b: Body, def: DroneDef): void {
   if (!d.bay) {
     const slot = freeSlot(sim, d.ship);
     if (!slot) return; // nowhere to land: it holds where it is
     [d.bay, d.slot] = [slot.bay, slot.slot];
   }
   const at = hatchPoint(sim, d.bay);
-  if (!at || !steer(b, at.x, at.y, speedOf(d, def))) return;
+  if (!at) return;
+  if (recalled(sim, d.ship) && !d.clear) {
+    // Staggered return: wait at a place of its own round the hatch until no other drone is landing or on its way in.
+    const place = queuePlace(at, id);
+    if (!steer(b, place.x, place.y, speedOf(d, def)) || landingBusy(sim, id, d)) return;
+    d.clear = true;
+  }
+  if (!steer(b, at.x, at.y, speedOf(d, def))) return;
+  d.clear = false;
   d.state = 'land';
   d.lift = 0;
 }
@@ -121,6 +129,7 @@ function knockedOut(d: Drone, b: Body, pass: DronePass): void {
   d.target = null;
   d.steps = [];
   d.work = 0;
+  d.clear = false;
   if (d.state === 'docked') {
     b.alt = ALT.dronePad;
     return;

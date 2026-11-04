@@ -7,6 +7,7 @@ import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
 import { spawnVehicle } from './vehicles/lifecycle';
+import { spawnDrone } from './drones/bay';
 import { SHIP_FIELDS, Struct, writeStruct } from './structure';
 import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP, SPACE_TEMP } from './tuning';
 
@@ -57,6 +58,7 @@ export function placeTemplateModules(sim: Sim, t: ShipTemplate, ox: number, oy: 
     const id = spawnModule(sim, m.def, ox + m.x, oy + m.y, m.rot);
     for (const q of m.stock ?? []) storageAdd(sim, id, q.item, q.count);
     if (m.vehicle) spawnVehicle(sim, m.vehicle, id);
+    (m.drones ?? []).forEach((def, slot) => spawnDrone(sim, def, id, slot));
     const box = sim.world.get(id, ContainerC);
     if (box && m.clamp) box.clamp = m.clamp;
     const production = sim.world.get(id, ProductionC);

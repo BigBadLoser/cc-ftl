@@ -1,4 +1,5 @@
 import { createCrew } from '../crew/spawn';
+import { DroneC } from '../drones/components';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
@@ -116,6 +117,11 @@ export function stampShip(
   for (const vid of sim.world.query(VehicleC)) {
     const v = sim.world.get(vid, VehicleC);
     if (v && !v.homeShip && shipIdOf(sim, sim.world.get(v.home, ModuleC)) === ship) v.homeShip = ship;
+  }
+  // So are template drones (docked in a bay of the ship).
+  for (const did of sim.world.query(DroneC)) {
+    const d = sim.world.get(did, DroneC);
+    if (d && !d.ship && shipIdOf(sim, sim.world.get(d.bay, ModuleC)) === ship) d.ship = ship;
   }
   return ship;
 }

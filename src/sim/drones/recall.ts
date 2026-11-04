@@ -1,7 +1,7 @@
 import { CombatC, type DepartHold } from '../combat/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { DRONE_RECALL_WAIT_SEC } from '../tuning';
+import { DRONE_LAND_GAP_SEC, DRONE_LIFT_SEC, DRONE_QUEUE_RADIUS, DRONE_RECALL_WAIT_SEC } from '../tuning';
 import { DroneC, type Drone } from './components';
 
 /**
@@ -61,4 +61,25 @@ export function loseStrandedDrones(sim: Sim, ship: number): void {
     sim.events.emit({ type: 'drone.lost', drone: id, ship, def: d.def });
     sim.world.destroyEntity(id);
   }
+}
+
+/** The place of a recalled drone's queue round a hatch: spread round it by id so the waiting drones do not sit on one another. */
+export function queuePlace(hatch: { x: number; y: number }, id: number): { x: number; y: number } {
+  const a = (id % 6) * (Math.PI / 3);
+  return { x: hatch.x + Math.cos(a) * DRONE_QUEUE_RADIUS, y: hatch.y + Math.sin(a) * DRONE_QUEUE_RADIUS };
+}
+
+/**
+ * Staggered return: a recalled drone starts in only once no other drone of its ship is on its way to a hatch (cleared) or has been coming
+ * down for less than DRONE_LAND_GAP_SEC, so they dock one after another and the ship is not unguarded in a block. The wait for them is
+ * `DRONE_RECALL_WAIT_SEC`: the gap stays under DRONE_LIFT_SEC, so a landing never holds up the next one for longer than it takes.
+ */
+export function landingBusy(sim: Sim, id: number, mine: Drone): boolean {
+  const gap = Math.min(DRONE_LAND_GAP_SEC, DRONE_LIFT_SEC) / DRONE_LIFT_SEC;
+  for (const other of sim.world.query(DroneC)) {
+    const o = sim.world.get(other, DroneC);
+    if (other === id || !o || o.ship !== mine.ship || !o.space) continue;
+    if ((o.state === 'home' && o.clear) || (o.state === 'land' && o.lift < gap)) return true;
+  }
+  return false;
 }

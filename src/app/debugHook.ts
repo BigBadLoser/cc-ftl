@@ -26,7 +26,7 @@ export function installDebugHook(sim: Sim, r: Renderer): { onEvents(types: reado
     drones: () => sim.world.query(DroneC, BodyC).map((id) => {
       const d = sim.world.get(id, DroneC)!;
       const b = sim.world.get(id, BodyC)!;
-      return { id, def: d.def, x: b.x, y: b.y, state: d.state, target: d.target?.kind ?? null, working: !!d.target && d.steps.length === 0, bay: d.bay, tick: sim.tick };
+      return { id, def: d.def, ship: d.ship, space: d.space, x: b.x, y: b.y, state: d.state, target: d.target?.kind ?? null, working: !!d.target && d.steps.length === 0, bay: d.bay, tick: sim.tick };
     }),
     /** Centre the camera on a sector position in tiles (screenshot scripts). */
     focus: (x: number, y: number) => r.focusSector(x, y),

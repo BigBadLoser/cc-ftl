@@ -1408,7 +1408,16 @@ Design: DESIGN.md "Drones". Issue #318. Slice 1 (inside the ship) is built.
     point defence (`DRONE_PD_*`) and enemy defence drones. Ship guns never target a drone. A docked drone is mended by a powered bay
     (`DroneBayDef.repairPerSec`). A wreck in space drops nothing. SAVE_VERSION 90.
   - Debug start `?scenario=drones&fight[&charged]`; lab panel `droneLaunch`.
-- **Slice 2b (planned):** outside breach repair, enemy drones through shipgen.
+- **Slice 2b (built on `drones/space2b-318`):**
+  - *Enemy drones* (shipgen): a `FactionDef` with `defenceDrones` (navy, rogue AI) gets, from `ENEMY_DRONE_MIN_DEPTH`, a `module.droneBay` in
+    its AI room (living crews) or its own sealed pod (drone ships) (`plan.ts`); the room spec's `drones` becomes `ShipTemplate.modules[].drones`
+    (`generate.ts`), which `placeTemplateModules` spawns docked and `stampShip` hands to the new ship. Same drone system, same `drone.defence`
+    def: they launch once a ship at war with them is in play, and shoot our missiles, shuttles and drones by the shared rules. Count and depth
+    gates are in `tuning.ts` (`ENEMY_DRONE_*`). Debug start `?scenario=drones&fight&enemy=navy|drones[&depth=N]`.
+  - *Staggered return* (`drones/recall.ts` `landingBusy`, `queuePlace`): while a ship's drones are recalled a drone in space waits at a place
+    of its own round the hatch until no other drone of the ship is cleared (`Drone.clear`) or less than `DRONE_LAND_GAP_SEC` into its landing.
+    With the 2.4 s landing and 6 s wait, up to four drones make it. SAVE_VERSION 91.
+  - *Outside breach repair:* not built yet (open question: the material rule, see STATUS).
 
 ## Vehicles (shuttles), `src/sim/vehicles/`
 

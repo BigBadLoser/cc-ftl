@@ -826,7 +826,7 @@ ion knockouts, blueprints, fabricator recipes and station stock. The user's ruli
 **Slice 2a (built on `drones/space-318`, awaiting review): space.** The ceiling hatch launch and landing, the defence drone (circles the
 ship while a ship at war with it is in play; shoots incoming missiles, enemy drones and shuttles, never a ship), the recall on a jump, a
 flee or leaving a scene (the departure waits up to 6 s; drones still out are lost and logged), and drone damage (fire, hand weapons, and in
-space point defence and enemy defence drones). Slice 2b: outside breach repair and enemy drones. Code: ARCHITECTURE.md "Drones".
+space point defence and enemy defence drones). Slice 2b (built, #318): enemy drones (navy and rogue AI ships carry a bay with one or two defence drones from sector depth 3; they guard their ship and shoot our missiles, shuttles and drones) and the staggered return (recalled drones dock one after another). Outside breach repair waits on a ruling about what a seal costs. Code: ARCHITECTURE.md "Drones".
 
 ### Where blueprints are sold (user decision, 2026-10-26)
 

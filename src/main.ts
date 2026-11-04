@@ -291,7 +291,7 @@ function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
 /**
  * `?scenario=drones&fight` (#318 slice 2): two drone bays and two defence drones, and a missile-armed Lancer at engagement distance. The fight
  * starts at once, the drones go up through their hatches and guard the ship. Charge the drive and jump (or flee) to see them recalled
- * (`&charged`: the drive starts full).
+ * (`&charged`: the drive starts full). `&enemy=navy|drones[&depth=N]` fights a generated ship with defence drones instead of the Lancer (slice 2b).
  */
 function droneFightScenario(): void {
   const g = sim.galaxy;
@@ -326,10 +326,14 @@ function droneFightScenario(): void {
           clamp(mine.x + mine.width + 40, mine.y + mine.height + 20), clamp(mine.x - w - 40, mine.y + mine.height + 20),
         ];
         const hostile = (): boolean => sim.world.query(ShipC).some((id) => sim.world.get(id, ShipC)?.faction === 'hostile');
+        // `&enemy=navy` or `&enemy=drones` (rogue AI): a generated ship of that faction instead, with its drone bay and defence drones (`&depth=N`, default 6).
+        const faction = params.get('enemy');
+        const depth = Number(params.get('depth') ?? 6);
         const tryAt = (i: number): void => {
           const p = spots[i];
           if (!p || hostile()) return;
-          bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.lancer', x: p.x, y: p.y });
+          if (faction) bridge.dispatch({ type: 'debug.spawnGenerated', faction: `faction.${faction}`, depth, seed: 5, cx: p.x + 37, cy: p.y + 14 });
+          else bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.lancer', x: p.x, y: p.y });
           const sent = sim.tick;
           when(() => sim.tick >= sent + 10, () => tryAt(i + 1));
         };

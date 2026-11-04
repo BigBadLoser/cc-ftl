@@ -451,3 +451,12 @@ export const DRONE_RECALL_WAIT_SEC = 6;
 /** Point defence against enemy drones in space within VEHICLE_PD_RANGE of its ship: every VEHICLE_PD_INTERVAL ticks each working module rolls this to hit one for this much. */
 export const DRONE_PD_CHANCE = 0.3;
 export const DRONE_PD_DAMAGE = 8;
+/** Staggered return: while a ship's drones are recalled, one starts its landing only this many seconds after the one before it (under DRONE_LIFT_SEC). */
+export const DRONE_LAND_GAP_SEC = 0.9;
+/** How far from its bay's hatch a recalled drone waits for its turn to land, in tiles. */
+export const DRONE_QUEUE_RADIUS = 1.8;
+/** Enemy drones (shipgen): a navy or rogue AI ship of at least this sector depth carries a drone bay with defence drones. */
+export const ENEMY_DRONE_MIN_DEPTH = 3;
+/** Defence drones in an enemy bay: this many, plus one from ENEMY_DRONE_SECOND_DEPTH on (a bay holds two). */
+export const ENEMY_DRONES_BASE = 1;
+export const ENEMY_DRONE_SECOND_DEPTH = 7;
