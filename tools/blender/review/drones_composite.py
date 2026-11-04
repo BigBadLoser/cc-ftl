@@ -76,26 +76,26 @@ def room(pub, nx, ny, w, h, ox, oy):
 
 def crew(cv, pub, sx, sy, d=0):
     img, g = rp.human(pub, d)
-    cv.put(img, g, sx - 80, sy - 130)
+    cv.put(img, g, int(sx) - 80, int(sy) - 130)
 
 
 def drones_scene(pub, d, out):
-    nx, ny = 13, 6
-    ox, oy = ny * 32 + 30, 150
-    cv = room(pub, nx, ny, (nx + ny) * 32 + 60, (nx + ny) * 16 + 200, ox, oy)
+    nx, ny = 15, 9
+    ox, oy = ny * 32 + 30, 190
+    cv = room(pub, nx, ny, (nx + ny) * 32 + 60, (nx + ny) * 16 + 240, ox, oy)
     draws = [(3.0, lambda: cv.static(pub, "module.life_support.r1", *rp.iso(ox, oy, 3, 0))),   # depth = gx + gy
              (3.9, lambda: crew(cv, pub, *rp.iso(ox, oy, 1, 3)))]
     sh = load(d, "shadow")
     for k, kind in enumerate(("defence", "repair", "medic")):
         for j, (state, dr) in enumerate((("fly", 0), ("fly", 2), ("work", 0), ("work", 2))):
-            gx, gy = 5 + j * 2, 1 + k * 1.6
+            gx, gy = 4.5 + j * 2.6, 1.5 + k * 2.6
             x, y = (int(round(c)) for c in rp.iso(ox, oy, gx, gy))
             shade(cv, sh, x, y)
             spr = load(d, f"d_{kind}_{state}_{dr}")
             draws.append((gx + gy + 0.5, lambda x=x, y=y, s=spr: put(cv, s, x, y, ALT * ZPX)))
             if k == 2:
                 cv.labels.append((x - 22, y + 22, f"{state} d{dr}"))
-        lx, ly = rp.iso(ox, oy, 12.6, 1 + k * 1.6)
+        lx, ly = rp.iso(ox, oy, 14.6, 1.5 + k * 2.6)
         cv.labels.append((int(lx), int(ly), kind))
     for _, fn in sorted(draws, key=lambda t: t[0]):
         fn()
@@ -104,14 +104,14 @@ def drones_scene(pub, d, out):
 
 
 def bay_scene(pub, d, out):
-    nx, ny = 7, 3
-    ox, oy = ny * 32 + 30, 150
-    cv = room(pub, nx, ny, (nx + ny) * 32 + 60, (nx + ny) * 16 + 190, ox, oy)
-    put(cv, load(d, "bay_0"), *rp.iso(ox, oy, 2, 0))
-    cv.labels.append((rp.iso(ox, oy, 1, 1)[0] - 10, rp.iso(ox, oy, 1, 1)[1] + 30, "empty"))
-    put(cv, load(d, "bay_2"), *rp.iso(ox, oy, 5, 0))
-    cv.labels.append((rp.iso(ox, oy, 4, 1)[0] - 10, rp.iso(ox, oy, 4, 1)[1] + 30, "2 docked"))
-    crew(cv, pub, *rp.iso(ox, oy, 3, 2))
+    nx, ny = 10, 4
+    ox, oy = ny * 32 + 30, 160
+    cv = room(pub, nx, ny, (nx + ny) * 32 + 60, (nx + ny) * 16 + 200, ox, oy)
+    put(cv, load(d, "bay_0"), *(int(c) for c in rp.iso(ox, oy, 3, 1)))          # 3x2: origin = the front-most tile (2 + 1, 0 + 1)
+    cv.labels.append((rp.iso(ox, oy, 2, 2)[0] - 10, rp.iso(ox, oy, 2, 2)[1] + 30, "empty"))
+    put(cv, load(d, "bay_2"), *rp.iso(ox, oy, 8, 1))
+    cv.labels.append((rp.iso(ox, oy, 7, 2)[0] - 10, rp.iso(ox, oy, 7, 2)[1] + 30, "2 docked"))
+    crew(cv, pub, *rp.iso(ox, oy, 4.6, 3))
     cv.save(out / "bay-1x.png", 1)
     cv.save(out / "bay-3x.png", 3)
 
