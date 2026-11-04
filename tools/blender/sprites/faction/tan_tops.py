@@ -12,8 +12,9 @@ D_SHELF, D_PANEL, D_RAIL = 7, 4, 4      # how far out (px) its shelf, its side p
 D_RAIL_SHADOW = "fTS8"                  # (a step under the lip's front)
 LIP_D = PX / 2                          # (the lip's depth, as tan's: the rail's front edge sits on its)
 D_SIDE, D_SIDE_TONE = 1 / 32, "fTS7"    # its side panels' thickness; their sides' tone (the rail's top's too)
-SCREENS = ((2 / 32, 10 / 32), (18 / 32, 26 / 32))    # each tile's two screens, across it
-S_GAP, S_H = PZ, 5 * PZ                 # under the canopy's shadow: their top, their height
+SCREENS = ((2 / 32, 10 / 32), (18 / 32, 26 / 32))    # each tile's two terminals, across it
+T_DEPTH, T_SCREEN = 5, 2               # a terminal: how far out (px) its body stands, its screen's face
+T_FRONT, T_KEY = 2 * PZ, 3 * PZ         # its front's height over the shelf; its keyboard face's rise, sloping back
 SCREEN_DOTS = (("fTC1", ((1, 1), (2, 1), (4, 2), (5, 3))), ("fTC2", ((2, 3), (3, 3), (5, 1))))  # (px across, rows
 SCREEN_DOTS_B = (("fTC3", ((1, 1), (2, 2), (3, 2), (4, 3), (5, 3))), ("fTC2", ((1, 3), (4, 1))))  # up) in each one
 
@@ -46,20 +47,25 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
                 prism(k, ax, plane, q0, q1, [(0.0, zb), (sp, zb), (sp, zt0 - fl), (sh, zt0), (0.0, zt0)], FACE,
                       3, cols=[False, sd("fTS3", ax), sd("fTS2", ax), False, False], cap=sd(D_SIDE_TONE, ax))
     zc0 = z1 - C_FRONT                                          # the canopy: lit top, a pale nose, dark under
-    zs1 = zc0 - _rows(C_DEPTH) - S_GAP
-    for c in range(-1, 2):                                      # the screens: dark glass in a frame, lit dots
+    td, ts = T_DEPTH * L, T_SCREEN * L                          # the terminals: a body on the shelf, a low front,
+    zk0 = zd1 + T_FRONT                                         # a keyboard face sloping back up from it to the
+    zk1 = zk0 + T_KEY                                           # screen's foot, the screen upright in a dark bezel
+    zt = zc0 - PZ                                               # up under the canopy
+    zg0, zg1 = zk1 + PZ, zc0 - _rows(C_DEPTH) + _rows(ts) - PZ  # (the glass: over the bezel's foot, to a row under
+    for c in range(-1, 2):                                      # the canopy's shadow)
         for i, (s0, s1) in enumerate(SCREENS):
-            u0, u1 = max(a, c - 0.5 + s0), min(b, c - 0.5 + s1)
-            if u1 - u0 < 2 * L:
+            u0, u1 = c - 0.5 + s0, c - 0.5 + s1
+            if u0 < a - 1e-6 or u1 > b + 1e-6:
                 continue
-            z0 = zs1 - S_H
-            band(u0 - L, u1 + L, z0 - PZ, zs1 + PZ, "fTS6")
-            band(u0, u1, z0, zs1, "fTC0")
+            prism(k, ax, plane, u0, u1, [(0.0, zd1), (td, zd1), (td, zk0), (ts, zk1), (ts, zt), (0.0, zt)], FACE,
+                  3, cols=[False, sd("fTS2", ax), sd("fTS1", ax), sd("fTS6", ax), sd("fTS1", ax), False],
+                  cap=sd(D_SIDE_TONE, ax))
+            band(u0 + L, u1 - L, zg0, zg1, "fTC0", ts)
             for col, dots in (SCREEN_DOTS if i == 0 else SCREEN_DOTS_B):
                 for x, y in dots:
-                    ua = c - 0.5 + s0 + x * L
-                    if u0 <= ua and ua + L <= u1:
-                        band(ua, ua + L, z0 + y * PZ, z0 + (y + 1) * PZ, col, PX / 8)
+                    ua = u0 + x * L
+                    if ua + L <= u1 - L + 1e-6:
+                        band(ua, ua + L, zg0 + y * PZ, zg0 + (y + 1) * PZ, col, ts + PX / 8)
     prism(k, ax, plane, a, b, [(0.0, zc0), (C_DEPTH, zc0), (C_DEPTH, z1), (0.0, z1)], FACE, 3,
           cols=[sd("fTS4", ax), sd("fTS1", ax), sd("fTS1", ax), False], mitre=mit)
     for i, col in enumerate(("fTS0", "fTS1", "fTS7")):
