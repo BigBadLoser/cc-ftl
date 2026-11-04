@@ -106,6 +106,16 @@ describe('logistics: transfer orders', () => {
     expect(of(play(sim, 300), 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
   });
 
+  it('logs noShuttle once a quiet wait turns into having no shuttle', () => {
+    const { sim, home, base } = setup({ metal: 20 });
+    sim.enqueue({ type: 'ferry.order', from: home, to: base, items: [{ item: 'item.metal', count: 3 }] });
+    play(sim, 5);
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 8 }] });
+    expect(of(play(sim, 300), 'transfer.blocked')).toHaveLength(0);
+    sim.world.destroyEntity(shuttleOf(sim));
+    expect(of(play(sim, 300), 'transfer.blocked').map((e) => e.reason)).toContain('noShuttle');
+  });
+
   it('logs noShuttle when the player has no shuttle at all', () => {
     const { sim, home, base } = setup({ metal: 20 });
     sim.world.destroyEntity(shuttleOf(sim));

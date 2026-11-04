@@ -33,7 +33,9 @@ function shuttleBusy(sim: Sim): boolean {
 
 function block(sim: Sim, id: number, t: Transfer, reason: TransferBlock, retry = RETRY_TICKS / 4): void {
   const quiet = reason === 'noShuttle' && shuttleBusy(sim);
-  if (!quiet && (t.status !== 'blocked' || t.reason !== reason)) sim.events.emit({ type: 'transfer.blocked', order: id, reason });
+  if (!quiet && (t.status !== 'blocked' || t.reason !== reason || t.quiet)) sim.events.emit({ type: 'transfer.blocked', order: id, reason });
+  if (quiet) t.quiet = true;
+  else delete t.quiet;
   if (t.status !== 'blocked') t.since = sim.tick;
   t.status = 'blocked';
   t.reason = reason;
