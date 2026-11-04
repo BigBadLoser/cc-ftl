@@ -4,7 +4,7 @@ import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
 import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, JobC, PathC, PositionC, type Job, type Path } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
-import { isIncapacitated, origin } from '../crew/helpers';
+import { isFighting, isIncapacitated, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import { AllegianceC, FighterC } from '../fight/components';
 import { destroyJob } from '../items/stacks';
@@ -89,7 +89,7 @@ function orderSabotage(sim: Sim, crew: number, module: number): Result {
   sim.events.emit({ type: 'crew.sabotageStarted', crew, module, ship });
   // A boarder already in a fight does not sabotage while it lasts (crew combat only drops a job when it *enters* a fight): the order
   // starts paused and the resume system posts the job once the fight is over.
-  if (f && f.mode !== 'idle') sim.events.emit({ type: 'crew.sabotagePaused', crew, module, ship });
+  if (isFighting(sim, crew)) sim.events.emit({ type: 'crew.sabotagePaused', crew, module, ship });
   else startSabotageJob(sim, crew, module, plan);
   return 'ok';
 }

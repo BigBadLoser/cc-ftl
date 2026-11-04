@@ -17,6 +17,8 @@ export type Command =
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }
+  /** Drafted crew force a jammed door at (x, y): the one nearest by path walks beside it and does the forceDoor work, staying drafted. */
+  | { type: 'crew.forceDoor'; ids: number[]; ship: number; x: number; y: number }
   | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }

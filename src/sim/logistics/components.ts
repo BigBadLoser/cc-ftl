@@ -23,6 +23,8 @@ export interface Transfer {
   moved: number;
   status: TransferStatus;
   reason?: TransferBlock;
+  /** The current block was not logged (a busy shuttle is a wait, not news); it is logged if it turns into a real one. */
+  quiet?: true;
   /** Shuttle and pilot of the current trip (0 when none). */
   vehicle: number;
   pilot: number;

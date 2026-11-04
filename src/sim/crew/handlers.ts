@@ -7,7 +7,7 @@ import { needsFrom } from '../items/materials';
 import { destroyJob, structCostKey } from '../items/stacks';
 import { FighterC } from '../fight/components';
 import { SuitC } from '../eva/components';
-import { DoorJam, Struct } from '../structure';
+import { Struct } from '../structure';
 import type { Sim } from '../sim';
 import type { GridLike } from '../grid';
 import { isWreck } from '../salvage/guard';
@@ -18,13 +18,13 @@ import { TICK_HZ } from '../time';
 import {
   CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew, type Job, type Position,
 } from './components';
-import { clearPath, findJobAt, isIncapacitated, origin } from './helpers';
+import { clearPath, findJobAt, isIncapacitated, isJammedDoor, origin } from './helpers';
 import { EmbarkOrderC } from '../vehicles/components';
 import { assignTiles, spreadTiles, tileKey, type Tile } from './spread';
 
 export type CrewCommandType = Exclude<
   Extract<Command['type'], `job.${string}` | `crew.${string}`>,
-  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire' | 'crew.sabotage' | 'crew.cancelSabotage' | 'crew.recall'
+  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire' | 'crew.sabotage' | 'crew.cancelSabotage' | 'crew.recall' | 'crew.forceDoor'
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
@@ -33,7 +33,7 @@ const BUILDABLE: readonly number[] = [Struct.Floor, Struct.Wall, Struct.Door, St
 export const BUILD_TICKS: Record<number, number> = { [Struct.Wall]: 3 * TICK_HZ, [Struct.Floor]: 2 * TICK_HZ, [Struct.Door]: 2 * TICK_HZ, [Struct.Beam]: TICK_HZ };
 export const DECONSTRUCT_TICKS = 2 * TICK_HZ;
 /** Forcing a jammed door: 6 s at workSpeed 1 (skill and suits scale it through the worker's speed). */
-const FORCE_DOOR_TICKS = 6 * TICK_HZ;
+export const FORCE_DOOR_TICKS = 6 * TICK_HZ;
 
 function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
@@ -103,7 +103,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
   'job.forceDoor': (sim, cmd) => {
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
-    if (current !== Struct.Door || (shipGrid(sim, cmd.ship)?.get('jam', cmd.x, cmd.y) ?? 0) === DoorJam.None) return reject(sim, cmd.type, 'notJammed');
+    if (!isJammedDoor(sim, cmd.ship, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notJammed');
     createJob(sim, 'forceDoor', cmd.ship, cmd.x, cmd.y, Struct.Door, FORCE_DOOR_TICKS);
   },
   'job.cancel': (sim, cmd) => {
