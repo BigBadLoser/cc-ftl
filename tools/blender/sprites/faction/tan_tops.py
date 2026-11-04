@@ -31,10 +31,12 @@ def console(k, ax, plane, a, b, mit, zl1, z1, band, sd):
     zt0 = zd1 - D_THICK                                         # (its front edge on the lip's)
     band(a, b, zl1, zt0, "fTS8")                                # joining their feet; open between (the face in it
     prism(k, ax, plane, a, b, [(0.0, zt0), (sh, zt0), (sh, zd1), (0.0, zd1)], FACE, 3,     # in shadow)
-          cols=[False, sd("fTS1", ax), sd("fTS1", ax), False], mitre=mit)
-    band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # (its front's upper px a highlight)
+          cols=[False, sd("fTS1", ax), sd("fTS1", ax), False], cap=sd(D_SIDE_TONE, ax), mitre=mit)  # (its ends,
+    band(a, b, zd1 - PZ, zd1, "fTS0", sh)                       # the rail's too, as the panels' sides) (its
+                                                                # front's upper px a highlight)
     prism(k, ax, plane, a, b, [(0.0, zb), (rl, zb), (rl, zb + PZ), (0.0, zb + PZ)], FACE, 3,
-          cols=[False, sd("fTS2", ax), sd(D_SIDE_TONE, ax), False], mitre=mit)     # (its front a step over the lip's)
+          cols=[False, sd("fTS2", ax), sd(D_SIDE_TONE, ax), False], cap=sd(D_SIDE_TONE, ax),
+          mitre=mit)                                            # (its front a step over the lip's)
     band(a, b, zl1 - 1.5 * PZ, zl1, D_RAIL_SHADOW, LIP_D)        # (a faint shadow from it on the lip's front)
     fl = (sh - sp)                                              # (the flare: as high as it runs out)
     for c in range(-1, 2):
