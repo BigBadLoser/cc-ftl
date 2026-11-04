@@ -30,9 +30,10 @@ EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
+SLOPE_LIT = "fTS0"       # the lit edge along a sill slope's near (top) edge
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM) + RAMP_FACE)
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -226,6 +227,12 @@ def hook(k, sp):
         h, r = _sill(u, x0, x1) + 0.002, _reach(_sill(u, x0, x1), yf)
         w = LINE_W if _sill(u + 1e-3, x0, x1) < _sill(u - 1e-3, x0, x1) else -LINE_W    # (on the level side)
         _quad(k, [(u, -r, h), (u + w, -r, h), (u + w, r, h), (u, r, h)], (0, 0, 1), SEAM)
+    for u0, u1 in zip(us, us[1:]):                      # the sill top's far edge (the slopes' and the level part's) a
+        h0, h1 = _sill(u0, x0, x1) + 0.002, _sill(u1, x0, x1) + 0.002     # seam; a lit edge along each slope's
+        r0, r1 = _reach(h0 - 0.002, yf), _reach(h1 - 0.002, yf)          # near (top) edge
+        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, -r1 + LINE_W, h1), (u0, -r0 + LINE_W, h0)], (0, 0, 1), SEAM)
+        if abs(h1 - h0) > 1e-9:
+            _quad(k, [(u0, r0 - LINE_W, h0), (u1, r1 - LINE_W, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1), SLOPE_LIT)
     _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
     if CLOSE and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
