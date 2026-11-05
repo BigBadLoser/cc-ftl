@@ -114,6 +114,8 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
     - The orchestrator reads an agent's final report, not its output file.
   - Visual work: build the minimum viewable prototype first, send the user screenshots and stop, so they can iterate or
     change direction early. Finish the work and open the PR only after their go.
+  - New UI layouts start as a static mock (HTML over a game screenshot, no game code), shown as a sheet of several
+    labelled options side by side. Build only the option the user picks.
   - Non-visual work: no prototype stop. Work it through to a tested PR.
 - Reference repos (e.g. `bigbadloser/space-web-game`) are design reference only; never port code from them.
 - Save migrations are not a priority yet, not a ban: by default bump `SAVE_VERSION` when the saved shape changes. When
