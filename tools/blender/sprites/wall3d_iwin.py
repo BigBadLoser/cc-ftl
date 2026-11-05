@@ -32,16 +32,13 @@ POST_IN = "fTS3"        # the post's inner side (into the opening): the face's t
 SH_RUN = 10 / 32        # the arch's shoulders (ref #2767: the cushion by each post 8 px deep where the run's are 8,
 SH_DROP = 5 * PZ        # 13 at the post, its underside a straight bevel over ~9 px): the header on down over each
 SH_SHADE = "fTS4"       # post this far, the opening's top rising back to the beam over SH_RUN; the shadow under it
-SH_LIT, SH_EDGE = "fTS0", "fTS4"    # its own cushion's lines (ref): a lit edge along its top, under a joint with the
-                                    # header; a dark one along its foot (the bevel's and the post block's); a joint
-                                    # where the post block meets the bevel's cushion
 LIP_END = "fTS8"        # the face's foot lip's end there: a step darker than its front, so it reads apart
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
 SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, SH_SHADE, SH_LIT) + RAMP_FACE)
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, SH_SHADE) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -298,23 +295,7 @@ def _shoulders(k, x0, x1, yf, z1):
         if sd < 0:                                      # (its end at +x, lit side: as the cushion's ends)
             _quad(k, [(xe, yf, lo), (xe, yh, lo), (xe, yh, zh0), (xe, yf, zh0)], (1, 0, 0), TAN.HEAD_END)
         sh = [(xp, yf + 1e-3, lo - dz), (xs, yf + 1e-3, z1), (xs, yf + 1e-3, z1 + 2 * PZ), (xp, yf + 1e-3, lo - dz + 2 * PZ)]
-        _quad(k, sh, (0, 1, 0), SH_SHADE)               # (the shadow on the face under the bevel, and the post block)
-        zb = lo - TAN._hid(TAN.HEAD_D)
-        _quad(k, [(xe, yf + 1e-3, zb - 2 * PZ), (xp, yf + 1e-3, zb - 2 * PZ), (xp, yf + 1e-3, zb), (xe, yf + 1e-3, zb)],
-              (0, 1, 0), SH_SHADE)
-        g = SH_DROP / SH_RUN                            # (the block's outline: z >= its foot)
-        foot = [((-sd * g, 0.0, 1.0), lo - sd * g * xp), (2, lo, 1)]
-
-        def line(pts, dy, col, clip=True):
-            q = _clip([(x, yh + dy, z) for x, z in pts], foot[:1]) if clip else [(x, yh + dy, z) for x, z in pts]
-            if len(q) >= 3:
-                _quad(k, q, (0, 1, 0), col)
-        line([(xe, zh0 - 3 * PZ), (xs, zh0 - 3 * PZ), (xs, zh0 - PZ), (xe, zh0 - PZ)], 1e-3, SH_LIT)   # lit top (2 px)
-        w = sd * PZ / g
-        line([(xp, lo), (xs, zh0), (xs - w, zh0), (xp, lo + PZ)], 2e-3, SH_EDGE, False)              # the bevel's foot
-        line([(xe, lo), (xp, lo), (xp, lo + PZ), (xe, lo + PZ)], 2e-3, SH_EDGE, False)              # the post block's
-        line([(xp, lo), (xp + sd * LINE_W, lo), (xp + sd * LINE_W, zh0), (xp, zh0)], 3e-3, SH_EDGE)  # the joint
-        line([(xe, zh0 - PZ), (xs, zh0 - PZ), (xs, zh0), (xe, zh0)], 3e-3, SH_EDGE)                  # (under the header)
+        _quad(k, sh, (0, 1, 0), SH_SHADE)               # (the shadow on the face under the bevel)
 
 
 def _close(k, yf, h, z1):
