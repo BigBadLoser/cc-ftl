@@ -193,7 +193,7 @@ def tan(hull):
             return
 
         def cushion(shaded=None):                       # the header block: its pale top, a lit edge on its front,
-                                                        # a shadow 2 px under it (its front on the shaded side in
+                                                        # a shadow 3 px under it (its front on the shaded side in
                                                         # this tone: a design's, over a darker face)
             zh0 = z1 - HEAD_H
             hd = _header(a, b, mit, back, end1)
@@ -218,8 +218,7 @@ def tan(hull):
                            [False, "fTS2", "fTS0", False])
                 band(u0, u1, z1 - r - PZ, z1 - r, "fTS1", HEAD_D)
             zs0 = zh0 - _hid(HEAD_D)                    # (the face's first row seen under the header)
-            band(a, b, zs0 - 3 * PZ, zs0, "fTS7")
-            band(a, b, zs0 - 2 * PZ, zs0, "fTS4")
+            band(a, b, zs0 - 3 * PZ, zs0, "fTS7")      # (its shadow: 3 rows of a soft brown)
             return zs0
 
         alt = T.fill("body")                            # (a face design's own face over the lip, under the

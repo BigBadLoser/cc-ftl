@@ -446,7 +446,8 @@ def _posts(k, x0, x1, yb, yf, z0):
         xs = xp + sd * P
         for zm in zms:                                              # (round onto the side: they, the seam over the
             side(xs, sd, yb, yf, zm, zm + PZ, "fTS4")
-        side(xs, sd, yb, yf, zl1, zl1 + PZ, "fTS4")                 # lip)
+        side(xs, sd, yb, yf, zl1, zl1 + PZ, "fTS4")                 # lip, the shadow under the header)
+        side(xs, sd, yb, yf, zt, zs0, "fTS7")
         xl = xp + sd * D                                            # the lip round the corner: its front facing the
         side(xl, sd, yb, yf + D, z0, zl1, LIP_END)                  # opening, its top, the corner's front, the dark
         side(xl + sd * P, sd, yb, yf + D, z0, z0 + PZ, "fTS4")      # line along its foot
