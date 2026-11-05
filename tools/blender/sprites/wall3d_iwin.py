@@ -327,8 +327,8 @@ def hook(k, sp, own=True):
     zl1 = z0 + TAN.LIP_TOP
     for xp, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # (up each post's side, over the lip wrapped
         if on:                                                      # round it: across its top, down its front)
-            u, ul = xp + sd * e, xp + sd * (TAN.LIP_D + e)
-            za, zb = zl1 + e, _top(u, x0, x1) - e
+            u, ul = xp + sd * (T.PAINT + e), xp + sd * (TAN.LIP_D + e)    # (over the post side's seams, shadow)
+            za, zb = zl1 + e, _top(xp, x0, x1)
             _quad(k, [(u, -h, za), (u, h, za), (u, h, zb), (u, -h, zb)], (-sd, 0, 0), PANE_EDGE)
             _quad(k, [(xp, -h, za), (ul, -h, za), (ul, h, za), (xp, h, za)], (0, 0, 1), PANE_EDGE)
             zc = _sill(ul, x0, x1) + e
@@ -443,11 +443,15 @@ def _posts(k, x0, x1, yb, yf, z0):
         ha, hb = (col(n)[1], xp) if sd > 0 else (xp, col(n)[0])
         for zm in zms:                                              # the seams across it in thirds
             front(ha, hb, zm, zm + PZ, 4 * P, "fTS4")
-        xs = xp + sd * P
+        xs, ys = xp + sd * P, yb + T.LINE                           # (on the side: to a px short of its back)
         for zm in zms:                                              # (round onto the side: they, the seam over the
-            side(xs, sd, yb, yf, zm, zm + PZ, "fTS4")
-        side(xs, sd, yb, yf, zl1, zl1 + PZ, "fTS4")                 # lip, the shadow under the header)
-        side(xs, sd, yb, yf, zt, zs0, "fTS7")
+            side(xs, sd, ys, yf, zm, zm + PZ, "fTS4")
+        side(xs, sd, ys, yf, zl1, zl1 + PZ, "fTS4")                 # lip; the shadow under the header, filled on up
+        zp = _top(xp, x0, x1)                                       # to the cut on the side and on the front over
+        side(xs, sd, ys, yf, zt, zp, "fTS7")                        # the slope's start, one shadow, not bent)
+        ss = _slope_starts(x0, x1)[0 if sd > 0 else 1]
+        _quad(k, [(ss, yf + 3 * P, zs0), (xp, yf + 3 * P, zs0), (xp, yf + 3 * P, zp), (ss, yf + 3 * P, _zh0())],
+              (0, 1, 0), "fTS7")
         xl = xp + sd * D                                            # the lip round the corner: its front facing the
         side(xl, sd, yb, yf + D, z0, zl1, LIP_END)                  # opening, its top, the corner's front, the dark
         side(xl + sd * P, sd, yb, yf + D, z0, z0 + PZ, "fTS4")      # line along its foot
