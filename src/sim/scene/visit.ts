@@ -195,15 +195,15 @@ export function answerVisit(sim: Sim, ship: number, grant: boolean): void {
   sim.galaxy.rev++;
 }
 
-/** Debug: the open signal's ambush skiff is a trap (or honest) whatever its seed rolled, with the talk and crew that goes with it. */
-export function setAmbush(sim: Sim, trap: boolean): void {
+/** Debug: the open signal's ambush skiff is a trap (or honest) whatever its seed rolled, with the talk and crew that goes with it (a trap's tell is `lag` unless given). */
+export function setAmbush(sim: Sim, trap: boolean, tell: 'name' | 'lag' = 'lag'): void {
   const spec = sim.galaxy.signal;
   const recipe = spec?.event ? sim.content.events?.[spec.event]?.scene?.ships : undefined;
   spec?.ships.forEach((s, i) => {
     const r = recipe?.[i]?.ambush;
     if (!s.ambush || !r) return;
-    s.ambush = { trap, party: trap ? r.party : r.honest.party[0], talk: trap ? r.talk.trap : r.talk.honest, askAfter: s.ambush.askAfter, ...(trap ? { tell: 'lag' as const } : {}) };
-    if (trap) s.ambush.talk = r.talk.tells.lag;
+    s.ambush = { trap, party: trap ? r.party : r.honest.party[0], talk: trap ? r.talk.trap : r.talk.honest, askAfter: s.ambush.askAfter, ...(trap ? { tell } : {}) };
+    if (trap) s.ambush.talk = r.talk.tells[tell];
     s.crew = trap ? r.crew[0] : r.honest.crew[0];
   });
 }

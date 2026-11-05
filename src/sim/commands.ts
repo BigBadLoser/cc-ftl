@@ -268,7 +268,7 @@ export type Command =
   /** Answer a scene skiff's request to dock (`grant`: let its shuttle dock and its party come aboard; else refuse). See scene/visit.ts. */
   | { type: 'galaxy.visit'; ship: number; grant: boolean }
   /** Debug: make the open signal's ambush skiff a trap (or honest), whatever its seed rolled. */
-  | { type: 'debug.ambush'; trap: boolean }
+  | { type: 'debug.ambush'; trap: boolean; tell?: 'name' | 'lag' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
   | { type: 'debug.galaxyReveal'; radius: number }
   /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */

@@ -2,6 +2,7 @@ import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
 import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
 import { ambushRows } from './ambushIntel';
+import { commsOf } from './comms/storyComms';
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
 const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
@@ -68,19 +69,29 @@ export function buildStory(sim: Sim): UiStory {
   const done = active?.done ?? [];
   const lastDef = last && sim.content.events?.[last.event];
   const signal = sim.galaxy.signal?.event === active?.event ? sim.galaxy.signal : null;
+  const intel = def ? intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote) : [];
+  const remoteChoice = (...r: string[]): string | null => def?.choices?.find((c) => c.remote !== undefined && r.includes(c.remote) && !done.includes(c.id) && unmetReasons(sim, c).length === 0)?.id ?? null;
+  const didRemote = (...r: string[]): boolean => done.some((id) => { const x = def?.choices?.find((c) => c.id === id)?.remote; return x !== undefined && r.includes(x); });
+  const scan = intel.find((i) => i.kind === 'scan');
+  const hail = intel.find((i) => i.kind === 'hail');
   return {
     active: active && def
       ? {
           event: active.event,
           title: def.title,
           text: def.text,
-          intel: intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote),
+          intel,
+          comms: def && commsOf(sim, {
+            text: def.text, signal, done: { hail: didRemote('hail'), scan: didRemote('scan', 'probe') }, remotes: { hail: remoteChoice('hail'), scan: remoteChoice('scan', 'probe') },
+            scanRows: scan ? scan.rows : null, hailQuote: hail?.quote ?? null, goods: hail?.stock ?? [], credits: hail?.credits,
+          }),
           choices: (def.choices ?? []).map((c) => {
             const taken = done.includes(c.id);
             const reasons = taken ? [] : unmetReasons(sim, c);
             const odds = c.check ? checkOdds(sim, c.check) : null;
             return {
               id: c.id,
+              ...(c.remote ? { remote: c.remote } : {}),
               label: c.label,
               hint: c.hint ?? null,
               enabled: !taken && reasons.length === 0,
