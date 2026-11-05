@@ -122,7 +122,7 @@ export type SimEvent =
   /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
   /** Battle stations called or stood down (`combat.battleStations`). */
   | { type: 'combat.stations'; on: boolean }
-  | { type: 'ship.provoked'; ship: number; reason: 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach' }
+  | { type: 'ship.provoked'; ship: number; reason: 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach' | 'ambush' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
   | { type: 'station.alarm'; ship: number; reason: string }
   /** A station's alarm calmed after a quiet spell; it forgets its grudges. */
@@ -271,6 +271,8 @@ export type SimEvent =
   | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' | 'scene' }
   /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */
+  /** A scene skiff asks to dock with the player's ship (answer with `galaxy.visit`). */
+  | { type: 'scene.dockAsked'; ship: number }
   | { type: 'scene.observed'; rule: string; ship: number; text: string; tone: 'good' | 'warn' | 'bad' | 'info' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }

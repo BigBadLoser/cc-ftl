@@ -21,6 +21,7 @@ import { shipIdOf } from '../regions';
 import { VehicleC } from '../vehicles/components';
 import { vehicleFaction } from '../vehicles/lifecycle';
 import { observeLeave, observeScene } from '../scene/observer';
+import { settleVisits } from '../scene/visit';
 import { departScene, openScene, tendScene } from '../scene/open';
 import type { SceneSpec } from '../scene/types';
 
@@ -157,6 +158,7 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim, held: 'interdicted' | 'h
   let packet = sim.sector.packet;
   // Kills in the grid count before its ships are gone, and the observer has its last look.
   settleLosses(sim);
+  settleVisits(sim, ev.scene); // a visit in progress is settled, never a reason to stay
   observeLeave(sim, ev);
   if (sim.sector.state === 'active') {
     const me = playerShipInfo(sim) as NonNullable<ReturnType<typeof playerShipInfo>>;

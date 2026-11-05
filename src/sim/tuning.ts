@@ -229,6 +229,14 @@ export const ANTI_VEHICLE_RANGE = 70;
 export const BOARDING_MIN_HOME = 1;
 /** Ticks the boarding AI waits for its party to reach the bay before it launches with whoever is aboard. */
 export const BOARDING_LOAD_TICKS = 600;
+/** Seconds an ambush skiff's boarding party stands on the player's ship, still passing for guests, before it turns (scene/visit.ts). */
+export const AMBUSH_SPRING_SEC = 10;
+/** Seconds an honest skiff's party stays aboard after paying its debt before it walks back to its shuttle. */
+export const HONEST_STAY_SEC = 6;
+/** Seconds a visit waits for a usable airlock before it gives up (scene/visit.ts: a trap turns, an honest skiff goes home). */
+export const AMBUSH_NO_DOCK_SEC = 30;
+/** Ticks between a visit's retries of an order that was rejected or abandoned (an airlock that went down). */
+export const VISIT_RETRY_TICKS = 100;
 
 /**
  * Sabotage (boarding/sabotage.ts): hp per second one boarder takes off the module they were ordered to wreck, with a weapon or

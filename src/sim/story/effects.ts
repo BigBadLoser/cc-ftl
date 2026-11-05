@@ -4,6 +4,8 @@ import { ItemStackC } from '../items/components';
 import { spillItems, takeFromStack } from '../items/stacks';
 import { storageAdd, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
+import { airlockTiles } from '../modules/airlock';
+import { BoarderC, VehicleC } from '../vehicles/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { grantXp } from '../crew/xp';
@@ -17,6 +19,20 @@ export interface EffectCtx {
   event: string;
   /** The crew member who made the skill check, if any. */
   actor: number | null;
+  /** The scene ship the effect is about (an observer rule's subject), for effects that act at a place. */
+  ship?: number;
+}
+
+/** The floor tile just inside the airlock the ship's boarding shuttle is docked at (on the ship it is docked to), or null. */
+function visitDrop(sim: Sim, ship: number | undefined): { ship: number; x: number; y: number } | null {
+  const veh = ship === undefined ? 0 : sim.world.get(ship, BoarderC)?.vehicle ?? 0;
+  const v = veh ? sim.world.get(veh, VehicleC) : undefined;
+  const m = v?.state === 'docked' ? sim.world.get(v.dock, ModuleC) : undefined;
+  const def = m && sim.content.modules[m.def];
+  const host = m ? shipIdOf(sim, m) : undefined;
+  if (!m || !def?.airlock || host === undefined) return null;
+  const at = airlockTiles(def, m).inside;
+  return { ship: host, x: at.x, y: at.y };
 }
 
 function targets(sim: Sim, who: CrewTarget | undefined, ctx: EffectCtx): number[] {
@@ -84,6 +100,12 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
   const story = sim.story;
   switch (eff.type) {
     case 'items': {
+      if (eff.count > 0 && eff.at === 'visitAirlock') {
+        const at = visitDrop(sim, ctx.ship);
+        const lost = at ? spillItems(sim, at.ship, at.x, at.y, eff.item, eff.count) : eff.count;
+        if (lost > 0) giveItems(sim, eff.item, lost); // no room on the floor, or no dock: it goes to storage
+        return `+${describeQty(sim, eff)}`;
+      }
       if (eff.count >= 0) {
         giveItems(sim, eff.item, eff.count);
         return `+${describeQty(sim, eff)}`;

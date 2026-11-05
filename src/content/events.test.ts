@@ -14,7 +14,6 @@ describe('event content', () => {
     expect(defs.some(([, d]) => d.choices?.some((c) => c.check))).toBe(true);
     expect(defs.some(([, d]) => d.choices?.some((c) => c.cost?.length))).toBe(true);
     expect(requirements().some((r) => r.kind === 'species')).toBe(true);
-    expect(effects().some((e) => e.type === 'physical')).toBe(true);
     expect(defs.some(([, d]) => d.mode === 'notice')).toBe(true);
   });
 

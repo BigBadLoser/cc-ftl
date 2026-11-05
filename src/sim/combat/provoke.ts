@@ -25,20 +25,21 @@ export function provokable(sim: Sim, ship: number): boolean {
 
 /**
  * A hostile act on a ship. Any act breaks a truce; a dormant den or outpost wakes; a ship that is not hostile is provoked, except that boarding leaves
- * stations to their alarm (stations/alarm).
+ * stations to their alarm (stations/alarm). `ambush` is a ship's own act (scene/visit.ts: a boarding party it was let aboard turns on the player); it goes
+ * the same way, so it and its group are on their owner's side from then on.
  */
-export function hostileAct(sim: Sim, ship: number, why: 'fired' | 'boarded'): void {
+export function hostileAct(sim: Sim, ship: number, why: 'fired' | 'boarded' | 'ambush'): void {
   const s = sim.world.get(ship, ShipC);
   if (!s || s.faction === 'player' || (s.state !== 'active' && s.state !== 'disabled')) return;
   if (truceHolds(sim)) return breachTruce(sim);
   if (banned(sim)) return; // the ban has every ship there for its length, and gives them back after
-  if (s.dormant !== undefined) return wake(sim, ship, why); // a den or outpost (hostile already): it wakes and fights
+  if (s.dormant !== undefined && why !== 'ambush') return wake(sim, ship, why); // a den or outpost (hostile already): it wakes and fights
   if (why === 'boarded' && s.immobile) return;
   provoke(sim, ship, why);
 }
 
 /** Turn the ship and its group hostile to the player and record the group; `why` is kept on the ship itself. No-op for a ship that is not provokable. */
-function provoke(sim: Sim, ship: number, why: 'fired' | 'boarded'): void {
+function provoke(sim: Sim, ship: number, why: 'fired' | 'boarded' | 'ambush'): void {
   if (!provokable(sim, ship)) return;
   markProvoked(sim, ship);
   for (const mate of shipmates(sim, ship)) {

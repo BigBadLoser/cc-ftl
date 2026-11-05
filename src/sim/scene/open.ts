@@ -7,6 +7,8 @@ import { TICK_HZ } from '../time';
 import { ensureTrader } from '../trade/traders';
 import { spawnContact } from '../galaxy/arrivals';
 import { spawnSceneDerelict } from './derelicts';
+import { startVisitClock, tendVisit, visiting } from './visit';
+import { BoarderC } from '../vehicles/components';
 import type { SceneShip, SceneSpec, Stance } from './types';
 
 /**
@@ -24,10 +26,17 @@ function sideOf(sim: Sim, owner: string, stance: Stance): Faction {
 function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
   const opts = { side: sideOf(sim, s.contact.faction, s.stance), ...(s.crew !== undefined ? { crew: s.crew } : {}) };
   if (!spawnContact(sim, sim.galaxy.current, s.contact, opts) || s.contact.ship === undefined) return false;
-  if (s.cargo || s.credits !== undefined) {
+  if (s.cargo || s.credits !== undefined || s.attitude !== undefined) {
     const t = ensureTrader(sim, s.contact.ship);
+    if (t && s.attitude !== undefined) t.relation = s.attitude;
     if (t && s.cargo) t.stock = s.cargo.map((q) => ({ ...q }));
     if (t && s.credits !== undefined) t.credits = s.credits;
+  }
+  // A trap's boarding party is the size the scene says (the generator's doctrine may differ), armed with whatever the doctrine issues; it only goes when let in.
+  const party = s.ambush ? sim.world.get(s.contact.ship, BoarderC) : undefined;
+  if (party && s.ambush) {
+    party.party = s.ambush.party;
+    if (!s.ambush.trap) delete party.weapon; // an honest party comes unarmed
   }
   return true;
 }
@@ -37,6 +46,7 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
   for (const d of spec.derelicts) if (d.ship === undefined) spawnSceneDerelict(sim, d);
   for (const s of spec.ships) {
     if (s.stay !== undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
+    startVisitClock(sim, s);
     if (s.contact.ship === undefined) spawnSceneShip(sim, s);
   }
   for (const t of spec.timers) t.at = sim.tick + Math.round(t.afterSec * TICK_HZ);
@@ -47,7 +57,7 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
  * derelicts that found no room. True when something changed.
  */
 export function tendScene(sim: Sim, spec: SceneSpec): boolean {
-  let changed = false;
+  let changed = tendVisit(sim, spec);
   for (const d of spec.derelicts) if (d.ship === undefined && spawnSceneDerelict(sim, d)) changed = true;
   for (const s of spec.ships) {
     const id = s.contact.ship;
@@ -72,8 +82,8 @@ export function departScene(sim: Sim, spec: SceneSpec): void {
     const id = s.contact.ship;
     const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
     if (id === undefined || !ship) continue;
-    if (!s.hailed && sim.trade.hails.some((h) => h.ship === id && h.answered)) s.hailed = true;
-    if (s.hailed || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
+    if (!s.hailed && !s.dismissed && sim.trade.hails.some((h) => h.ship === id && h.answered)) s.hailed = true;
+    if ((s.hailed && !s.dismissed) || visiting(s.ambush) || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
     if (sim.trade.deals.some((d) => d.ship === id && isLive(d))) continue;
     const combat = sim.world.get(id, CombatC);
     if (!combat) continue;

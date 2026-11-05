@@ -31,6 +31,7 @@ import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
 import { droneScenarioCommands } from './app/droneScenario';
+import { startAmbushScenario } from './app/ambushScenario';
 import { inspectorScenario } from './app/inspectorScenario';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
@@ -270,6 +271,7 @@ const scenario = params.get('scenario');
  * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
  * `?scenario=drones`: two drone bays, three drones, a fire, a damaged console and hurt crew (see app/droneScenario.ts); `&fight`: defence drones
  *   against a missile-armed Lancer.
+ * `?scenario=ambush[&trap|&honest][&signal]`: the pirate ambush from its signal, or dropped out beside the skiff (see app/ambushScenario.ts).
  * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
  * `&charged` also fills the FTL drive.
  * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
@@ -349,6 +351,7 @@ function droneFightScenario(): void {
 }
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
+  if (scenario === 'ambush') return startAmbushScenario(sim, bridge.dispatch, () => loop.setSpeed(1), { trap: params.has('trap') ? true : params.has('honest') ? false : null, signal: params.has('signal') });
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
   if (scenario === 'fight' || scenario === 'boarding') {
     // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.

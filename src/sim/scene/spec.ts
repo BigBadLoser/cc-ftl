@@ -9,7 +9,7 @@ import { SEED_TRIES } from '../galaxy/tuning';
 import type { Encounter } from '../galaxy/types';
 import type { ItemQty } from '../registry';
 import { buildDerelict } from './derelicts';
-import type { Range, SceneDerelict, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, Stance } from './types';
+import type { Ambush, AmbushRecipe, Range, SceneDerelict, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, Stance } from './types';
 
 /**
  * Scene specs (DESIGN.md "Physical encounters", part b). A story scene is rolled from the world seed, the event id and the hop it was signalled at, so
@@ -41,6 +41,16 @@ function seedFor(sim: Sim, r: SceneShipRecipe, depth: number, key: readonly numb
   return first;
 }
 
+/** The ambush skiff's seed roll: trap or honest, what it says, and (a trap, sometimes) the slip that does not add up. Rolled after the ship's other numbers. */
+function rollAmbush(rng: Rng, a: AmbushRecipe): { ambush: Ambush; crew: number } {
+  const trap = rng.next() < a.chance;
+  const slip = rng.next() < 0.7 ? (rng.next() < 0.5 ? 'name' : 'lag') : undefined;
+  const crew = roll(rng, trap ? a.crew : a.honest.crew);
+  const askAfter = roll(rng, a.askAfterSec);
+  const talk = trap ? (slip ? a.talk.tells[slip] : a.talk.trap) : a.talk.honest;
+  return { crew, ambush: { trap, party: trap ? a.party : roll(rng, a.honest.party), talk, ...(trap && slip ? { tell: slip } : {}), askAfter } };
+}
+
 function buildShip(sim: Sim, r: SceneShipRecipe, rng: Rng, depth: number, key: readonly number[], used: Set<string>): SceneShip {
   const names = sim.content.galaxy?.factions[r.owner]?.fleet?.names;
   const seed = seedFor(sim, r, depth, key);
@@ -53,7 +63,13 @@ function buildShip(sim: Sim, r: SceneShipRecipe, rng: Rng, depth: number, key: r
   if (r.crew) ship.crew = roll(rng, r.crew);
   if (r.cargo) ship.cargo = rollCargo(rng, r.cargo);
   if (r.credits) ship.credits = roll(rng, r.credits);
+  if (r.attitude !== undefined) ship.attitude = r.attitude;
   if (r.leaveAfterSec) ship.stay = roll(rng, r.leaveAfterSec);
+  if (r.ambush) {
+    const a = rollAmbush(rng, r.ambush);
+    ship.ambush = a.ambush;
+    ship.crew = a.crew;
+  }
   return ship;
 }
 

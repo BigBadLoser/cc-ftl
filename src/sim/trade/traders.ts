@@ -120,7 +120,7 @@ export function hailVerdict(sim: Sim, id: number): HailVerdict {
   if (ship && ship.state !== 'active' && ship.state !== 'disabled') return { answers: false, reason: 'silent', score: 0 };
   const fac: TradeFactionDef | undefined = cfg.factions[t.faction];
   const augmented = fac?.augmentBonus ? fac.augmentBonus * augmentedCrew(sim) : 0;
-  const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0) + augmented;
+  const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (t.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0) + augmented;
   if (ship && aimingAtPlayer(sim, id)) return { answers: false, reason: 'weaponsHot', score };
   return { answers: score >= 0, reason: score >= 0 ? '' : 'hostile', score };
 }

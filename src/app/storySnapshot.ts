@@ -1,6 +1,7 @@
 import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
 import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
+import { ambushRows } from './ambushIntel';
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
 const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
@@ -37,7 +38,8 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
   if (scanned) for (const d of spec.derelicts) out.push({ kind: 'scan', ship: d.name, rows: derelictRows(sim, d, acts.has('probe')) });
   for (const s of spec.ships) {
     const ship = s.contact.name ?? 'Unknown ship';
-    if (scanned) {
+    if (scanned && s.ambush) out.push({ kind: 'scan', ship, rows: ambushRows(sim, s, ownerName(sim, s.contact.faction)) });
+    else if (scanned) {
       out.push({
         kind: 'scan', ship, rows: [
           { label: 'Transponder', value: ownerName(sim, s.contact.faction) },
@@ -50,7 +52,7 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
     if (acts.has('hail')) {
       out.push({
         kind: 'hail', ship, rows: [],
-        quote: `${ship} here. Pull alongside if you want to deal; we hold station for you.`,
+        quote: s.ambush?.talk ?? `${ship} here. Pull alongside if you want to deal; we hold station for you.`,
         stock: (s.cargo ?? []).map((q) => ({ item: q.item, name: itemName(sim, q.item), count: q.count })),
         ...(s.credits !== undefined ? { credits: s.credits } : {}),
       });

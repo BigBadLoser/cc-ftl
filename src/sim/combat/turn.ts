@@ -1,7 +1,7 @@
 import { CrewC, PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
-import { AboardC, VehicleC } from '../vehicles/components';
+import { AboardC, BoarderC, VehicleC } from '../vehicles/components';
 import type { Sim } from '../sim';
 import { ShipC, type Faction } from './components';
 
@@ -17,6 +17,11 @@ export function turnCrew(sim: Sim, ship: number, from: Faction, to: Faction): vo
     const aboard = sim.world.get(id, AboardC);
     const on = pos ? shipIdOf(sim, pos) : aboard ? sim.world.get(aboard.vehicle, VehicleC)?.homeShip : undefined;
     if (on === ship) a.faction = to;
+  }
+  // A boarding party standing on another ship's grid is still the ship's people (a visit let aboard, scene/visit.ts).
+  for (const id of sim.world.get(ship, BoarderC)?.crew ?? []) {
+    const a = sim.world.get(id, AllegianceC);
+    if (a?.faction === from) a.faction = to;
   }
 }
 

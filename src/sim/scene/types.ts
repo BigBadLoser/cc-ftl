@@ -36,6 +36,52 @@ export interface SceneShipRecipe {
    * (from the signal or in the pocket), which makes it hold station. Absent: it stays.
    */
   leaveAfterSec?: Range;
+  /** Added to how willing it is to talk to the player (the hail score): a ship that has reason to deal with you answers even where its faction would not. */
+  attitude?: number;
+  /** The ship is a story's hidden question (the pirate ambush): the scene seed rolls whether it is a trap or honest. */
+  ambush?: AmbushRecipe;
+}
+
+/**
+ * A skiff that says it means well and may not (DESIGN.md "Pirate ambush"). `chance` of the seeds roll a trap: it has `crew` aboard, a boarding party of
+ * `party` and its shuttle ready, and asks to dock `askAfterSec` after the scene opens. An honest one only talks and trades. Its story (`honest`, `trap`,
+ * and for a trap sometimes a `tell`: the lie that does not add up) is the hail's talk and the player's to weigh.
+ */
+export interface AmbushRecipe {
+  chance: number;
+  party: number;
+  crew: Range;
+  askAfterSec: Range;
+  /** An honest skiff comes aboard too, with a small party and its own crew (it brings its debt in person). */
+  honest: { party: Range; crew: Range };
+  /** What the skiff says when hailed: an honest one, a trap that holds together, and the slips a trap sometimes makes. */
+  talk: { honest: string; trap: string; tells: { name: string; lag: string } };
+}
+
+/** The skiff of an ambush scene as the spec holds it: trap or honest, the line it speaks, and where its dock request stands. */
+export interface Ambush {
+  trap: boolean;
+  /** Boarders it sends (a trap only). */
+  party: number;
+  /** What a hail gets (the story the crew tell): a trap's may hold a `tell` that does not add up. */
+  talk: string;
+  /** The slip a scan or hail can catch (a trap only, and not every trap slips). */
+  tell?: 'name' | 'lag';
+  /** Seconds after the scene opens that it asks to dock (a trap only), and the tick that is. */
+  askAfter: number;
+  askAt?: number;
+  /**
+   * Where its visit stands: 'asked' (a request waits for the player's answer), 'granted' (the shuttle is under way), 'aboard' (the party stands on the
+   * player's ship), 'refused', 'sprung' (it turned hostile). Absent: nothing asked yet.
+   */
+  visit?: 'asked' | 'granted' | 'refused' | 'aboard' | 'delivered' | 'sprung';
+  /** The tick the party turns on you after standing aboard (a trap), or starts home (an honest skiff's, once it has paid). */
+  springAt?: number;
+  /** An honest party is on its way back to the shuttle, and the tick the shuttle is home (it may leave then). */
+  leaving?: true;
+  /** The tick the visit first found no usable airlock to dock or board at (it gives up after `AMBUSH_NO_DOCK_SEC`). */
+  stuckSince?: number;
+  home?: true;
 }
 
 /** A timer of a scene: it comes due `afterSec` after the scene opens. The observer reads it (fact 'timer'); it is not a script. */
@@ -81,9 +127,14 @@ export interface SceneShip {
   crew?: number;
   cargo?: ItemQty[];
   credits?: number;
+  attitude?: number;
+  /** A trap or an honest skiff (the pirate ambush). */
+  ambush?: Ambush;
   /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set when the scene opens. */
   stay?: number;
   leaveAt?: number;
+  /** Its business here is finished (an ambush skiff's visit ended, delivered or refused): it moves on whatever hold a hail put on it. */
+  dismissed?: true;
   /** Hailed (by the signal's remote hail, or answering a hail in the pocket): it holds station. */
   hailed?: true;
   /** It jumped away: its entity is gone from the pocket and it is not respawned. */
@@ -152,10 +203,11 @@ export interface SceneSpec {
 
 /**
  * What the observer can see happen, read from sim state (never from the event stream). Per scene ship or derelict, except `timer` and `crewLost`
- * (per player crew member who was alive when the scene opened and is dead now). `salvaged`: a salvage order stripped parts of it (or stripped it
+ * (per player crew member who was alive when the scene opened and is dead now). `ambushed`: a skiff's boarding party turned on the player after it was let
+ * aboard; `boardersDown`: that party is all dead or down; `delivered`: an honest skiff's party came aboard (its debt is paid); `declined`: the player refused an honest skiff's dock. `salvaged`: a salvage order stripped parts of it (or stripped it
  * away entirely); `cleared`: it had something hostile aboard when it was made, and nothing hostile is aboard now.
  */
-export type SceneFact = 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost';
+export type SceneFact = 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown' | 'delivered' | 'declined';
 
 /**
  * An observer rule (content: the shared `sceneRules`, plus an encounter's own in `SceneRecipe.rules`). The first time `on` is seen for a ship whose
@@ -167,6 +219,8 @@ export interface SceneRuleDef {
   stance?: Stance[];
   /** Only for scene ships (`ship`) or only for derelicts (`derelict`); absent: both. A derelict has no stance: a `stance` rule never matches one. */
   of?: 'ship' | 'derelict';
+  /** Only for an ambush skiff that is a trap (true) or honest (false). */
+  trap?: boolean;
   /** For `on: 'timer'`: the timer id. */
   timer?: string;
   effects?: EventEffect[];

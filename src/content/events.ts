@@ -105,17 +105,74 @@ export const events = {
       { id: 'fire', label: 'Open fire', outcome: { text: 'The skiff is gone. His friends will not be happy.', effects: [{ type: 'reputation', faction: 'pirates', delta: -3 }, { type: 'flag', flag: 'killed_pirate' }] } },
     ],
   },
-  /** Arc part 2: triggered by the flag, gated on it. */
+  /**
+   * Arc part 2, a physical encounter (DESIGN.md "Pirate ambush"): the flag queues it, the next hop of a trip opens it. The pirate you spared hails you with a
+   * debt to pay. The scene seed decides whether it is true (a skiff that trades and talks) or a trap (a boarding party of 3 and a shuttle, which asks to
+   * dock a while after you drop out; let in, the party turns on you). Scans and hails read it from the lane; what you do in the pocket is yours.
+   */
   'event.pirate_returns': {
     title: 'The pirate you spared',
-    text: 'A skiff you know hails you. "You let me go. I have not forgotten. There is a patrol ahead and I can tell you where."',
+    text: 'A skiff you know hails you off the lane. "You let me go back there. I haven\'t forgotten. I owe you, and I mean to pay."',
     mode: 'decision',
     triggers: [{ kind: 'flag', flag: 'spared_pirate', delaySec: 240 }],
     eligible: [{ kind: 'flag', flag: 'spared_pirate' }],
+    danger: { min: 1 },
     once: true,
+    scene: {
+      persistence: 'transient',
+      ships: [{
+        owner: 'pirates', shipgen: 'faction.scrapper', family: 'raider', stance: 'neutral', credits: [60, 220], leaveAfterSec: [150, 220], attitude: 2,
+        cargo: {
+          lines: [2, 3],
+          pool: [
+            { item: 'item.metal', min: 6, max: 16 }, { item: 'item.ration', min: 4, max: 12 }, { item: 'item.parts', min: 2, max: 8 },
+            { item: 'item.fuel', min: 3, max: 9 }, { item: 'item.sidearm', min: 1, max: 2 },
+          ],
+        },
+        ambush: {
+          chance: 0.5, party: 3, crew: [4, 5], askAfterSec: [14, 22], honest: { party: [1, 2], crew: [3, 4] },
+          talk: {
+            honest: '"It\'s me, the one you let go. The clan let me keep the boat, and I\'ve been paying it off since. I know where the patrols sit, and I\'ll tell you for nothing. Come alongside and we can trade, if you like."',
+            trap: '"Captain, it\'s me, the one you spared. I owe you my life, and my crew want to thank you in person. Let us dock and we\'ll settle up properly."',
+            tells: {
+              name: '"Captain, it\'s Tam, the one you spared." The name on his transponder flickers to Ren, then back. "My crew want to thank you in person. Let us dock."',
+              lag: '"Captain, it\'s me, the one you spared. I owe you my life." The words come out flat and even, as if read off a page. "My crew want to thank you in person. Let us dock."',
+            },
+          },
+        },
+      }],
+      rules: {
+        honestPaid: {
+          on: 'delivered', trap: false,
+          effects: [{ type: 'items', item: 'item.missile', count: 4, at: 'visitAirlock' }, { type: 'reputation', faction: 'owner', delta: 2 }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }],
+          log: '{ship} keeps its word: four missiles handed over, and the patrol routes for nothing', tone: 'good',
+        },
+        honestRefused: {
+          on: 'declined', trap: false,
+          effects: [{ type: 'flag', flag: 'spared_pirate', op: 'clear' }],
+          log: '{ship} pulls away, the debt unpaid', tone: 'warn',
+        },
+        ambushed: {
+          on: 'ambushed', trap: true,
+          effects: [{ type: 'flag', flag: 'pirate_ambushed', op: 'add' }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }],
+          log: 'It was a trap: the boarders from {ship} turn on you', tone: 'bad',
+        },
+        boardersDown: {
+          on: 'boardersDown', trap: true,
+          effects: [{ type: 'reputation', faction: 'owner', delta: -1 }],
+          log: 'The boarders from {ship} are down. Their gear is yours, and the clan will hear of it', tone: 'warn',
+        },
+        destroyed: {
+          on: 'destroyed', effects: [{ type: 'flag', flag: 'killed_pirate' }],
+          log: 'The {ship} is a dead hull now, open to stripping', tone: 'bad',
+        },
+      },
+    },
     choices: [
-      { id: 'listen', label: 'Hear him out', outcome: { text: 'He sells you the patrol routes for nothing. Your trip is quieter for it.', effects: [{ type: 'items', item: 'item.missile', count: 4 }, { type: 'reputation', faction: 'pirates', delta: 2 }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }] } },
-      { id: 'ambush', label: 'Suspect a trap and raise shields', outcome: { text: 'It was a trap after all. His friends were waiting.', effects: [{ type: 'physical', outcome: { kind: 'boarders', template: 'ship.raiderBoarder', size: 3 } }, { type: 'flag', flag: 'spared_pirate', op: 'clear' }] } },
+      { id: 'hail', label: 'Hear him out', hint: 'Answer the call and listen', remote: 'hail' },
+      { id: 'scan', label: 'Scan the skiff', hint: 'Weapons, boarding craft and crew', remote: 'scan' },
+      { id: 'approach', label: 'Drop out beside it', hint: 'Meet him off the lane', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', outcome: {} },
     ],
   },
   /** Species requirement: only a robot can do it. */
