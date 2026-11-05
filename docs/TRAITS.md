@@ -308,6 +308,9 @@ friends.
   match shows over both heads. No relationship web panel. Log lines stay for milestones only.
 - **Pace: hours of play.** A first friend or rival takes about 1 to 3 hours of play together. One near-death fight or a
   rescue can get there in one go. Bonds fade slowly without upkeep. The numbers below are retuned to that.
+- **Floating status symbols (art).** A crew member mid-break gets a floating status symbol over their head, made in the
+  same art pass as the chat bubbles and the shouting-match cue (one art prompt for every overhead social and status icon).
+  Mental breaks (#175) shipped with only the alert, crew-bar badge and card line; the symbol comes with relationships.
 - **Rivals clash with a shouting match** (as planned): a visible scene, mood hit to both, a log line, nobody hurt.
   Brawls may come later as a break type.
 - **Before mental breaks (#175).** Grief is a mood factor for now ("grieving" −15 for 10 min). When breaks land, they read
