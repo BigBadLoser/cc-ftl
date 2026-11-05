@@ -23,8 +23,17 @@
     return '';
   });
   const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
-  const verb = (o: { item: string; count: number }[]) => o.map((l) => `${l.count} ${api.items.find((i) => i.id === l.item)?.name.toLowerCase() ?? l.item}`).join(', ');
   const offer = $derived(p.offer);
+  /** The pending offer read back line by line, at today's prices (the total above is the one the sim agreed). */
+  const offerLines = $derived.by(() => {
+    const o = offer;
+    if (!o) return [];
+    const row = (side: 'buy' | 'sell', l: { item: string; count: number }) => {
+      const x = p.lines.find((y) => y.item === l.item);
+      return { side, item: l.item, count: l.count, name: x?.name ?? api.items.find((i) => i.id === l.item)?.name ?? l.item, value: l.count * (side === 'buy' ? x?.sell ?? 0 : x?.buy ?? 0) };
+    };
+    return [...o.get.map((l) => row('buy', l)), ...o.give.map((l) => row('sell', l))];
+  });
   const offerTrips = $derived.by(() => {
     const o = offer;
     const r = o && (o.give.length > 0 ? p.out : p.in);
@@ -55,8 +64,8 @@
       if (o.get.length === 1 && o.get[0]?.item === FUEL && o.give.length === 0) api.dispatch({ type: 'trade.accept', offer: o.id });
     }
   });
-  const refuelOff = $derived(!refuel || refuel.n <= 0 || refuel.cost > (trade.free ?? trade.credits) || !!p.offer || !!p.in.error && p.in.error !== 'courierBusy');
-  const refuelTip = $derived(!refuel ? '' : refuel.n <= 0 ? 'Tanks are full enough' : refuel.cost > (trade.free ?? trade.credits) ? 'Not enough credits' : p.in.error && p.in.error !== 'courierBusy' ? (REASONS[p.in.error] ?? p.in.error) : `You hold ${fuelLine?.mine ?? 0}. The shuttle brings it over.`);
+  const refuelOff = $derived(!refuel || refuel.n <= 0 || refuel.cost > (trade.free ?? trade.credits) || !!p.offer || (!!p.in.error && p.in.error !== 'courierBusy'));
+  const refuelTip = $derived(!refuel ? '' : refuel.n <= 0 ? 'Tanks are full enough' : p.offer ? 'Answer the offer on the table first' : refuel.cost > (trade.free ?? trade.credits) ? 'Not enough credits' : p.in.error && p.in.error !== 'courierBusy' ? (REASONS[p.in.error] ?? p.in.error) : `You hold ${fuelLine?.mine ?? 0}. The shuttle brings it over.`);
 
   function propose() {
     const toLines = (a: { item: string; count: number }[]) => a.map(({ item, count }) => ({ item, count }));
@@ -69,10 +78,11 @@
   <div class="sh">{offer ? 'PROPOSED DEAL' : 'THIS DEAL'}</div>
   {#if offer}
     <div class="body" data-testid="trade-offer">
-      {#each offer.get as l (l.item)}<div class="sl"><ItemIcon {api} item={l.item} size={22} /><span><span class="dim">Buy</span> {verb([l])}</span></div>{/each}
-      {#each offer.give as l (l.item)}<div class="sl"><ItemIcon {api} item={l.item} size={22} /><span><span class="dim">Sell</span> {verb([l])}</span></div>{/each}
+      {#each offerLines as l (l.side + l.item)}
+        <div class="sl"><ItemIcon {api} item={l.item} size={22} /><span><span class="dim">{l.side === 'buy' ? 'Buy' : 'Sell'}</span> {l.count} {l.name.toLowerCase()}</span><span class="gold"><span class={l.side === 'buy' ? 'bad' : 'good'}>{l.side === 'buy' ? '−' : '+'}</span> ₵ {fmt(l.value)}</span></div>
+      {/each}
       <div class="tot"><b>{offer.balance > 0 ? 'You pay' : 'You get'}</b><b class="gold">₵ {fmt(Math.abs(offer.balance))}</b></div>
-      <div class="dim sm">₵ {fmt(trade.credits)} → ₵ {fmt(trade.credits - offer.balance)}{offerTrips > 1 ? ` · ${offerTrips} shuttle trips` : ''}</div>
+      <div class="dim sm">₵ {fmt(trade.credits)} → ₵ {fmt(trade.credits - offer.balance)} · {Math.max(1, offerTrips)} shuttle {offerTrips > 1 ? 'trips' : 'trip'}</div>
     </div>
     <div class="btns">
       <button class="btn no" data-testid="trade-withdraw" onclick={() => api.dispatch({ type: 'trade.cancel', id: offer.id })}>WITHDRAW</button>
@@ -122,7 +132,8 @@
   .btn.go { flex: 1.4; border-color: var(--green); background: rgba(71, 224, 160, 0.1); color: var(--green); }
   .btn.no { border-color: var(--red); color: var(--red); }
   .btn.act { border-color: var(--cyan); color: var(--cyan); background: rgba(54, 212, 255, 0.07); }
-  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+  .btn.act:not(:disabled) { color: var(--cyan); border-color: var(--cyan); background: rgba(54, 212, 255, 0.12); }
   .refuel { padding: 0 10px 10px; display: flex; }
   .refuel .btn { flex: 1; font-size: 12px; padding: 6px 10px; }
 </style>

@@ -9,7 +9,7 @@
    * outside click and Esc, see outsideClick.ts), remembered per `id` for the browser session, and kept on screen.
    * It is always a positioned window, clamped to the viewport at any width (desktop only; no phone layout).
    */
-  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
+  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, titleFit = false, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
     id: string; title: string; icon?: IconName;
     /** The smallest size this panel can be dragged to. */
     min: Size;
@@ -27,6 +27,8 @@
     bare?: boolean; pinRight?: number;
     /** False hides the pin tile (a panel that belongs to another and closes with it). */
     pinnable?: boolean;
+    /** The title keeps its own width, so what `titleExtra` adds follows it instead of sitting at the far right. */
+    titleFit?: boolean;
     /** Forces the width (a window whose content sets its size, like the inspector growing for a tab); the player's moves keep it. */
     width?: number | null;
     /** Default spot keeps right of the combat panel while it is docked on the left. */
@@ -128,7 +130,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <header class="ph" class:drag onpointerdown={(e) => begin(e, 'move')} ondblclick={reset} data-testid={testId ? `${testId}-head` : undefined}>
       {#if icon}<span class="ico"><Icon name={icon} size={18} /></span>{/if}
-      <span class="t" data-testid={titleTestId}>{title}</span>
+      <span class="t" class:fit={titleFit} data-testid={titleTestId}>{title}</span>
       {@render titleExtra?.()}
       {@render actions?.()}
       {#if pinnable}<button class="tile pin" class:on={pinned} title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
@@ -156,6 +158,7 @@
   header.ph { margin: 0; padding: 0 0 0 10px; display: flex; align-items: center; gap: 8px; min-height: 32px; flex: none; }
   header.drag, .fw.bare :global(.ph) { cursor: move; touch-action: none; }
   header .ico { display: inline-flex; color: var(--ink-accent); }
+  header .t.fit { flex: none; }
   header .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   header :global(button.tile), .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: #fff; cursor: pointer; }
   header :global(button.tile:hover), .barepin:hover { background: var(--panel-3); }

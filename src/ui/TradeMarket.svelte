@@ -6,6 +6,8 @@
   /** The market list: one row per item, a signed −/+ picker per row (positive buys, negative sells). The draft is the parent's. */
   let { api, p, credits, draft = $bindable(), locked = false }: { api: UiApi; p: UiTradePartner; credits: number; draft: Draft; locked?: boolean } = $props();
 
+  /** What the pickers show: the draft, or while an offer is pending the offer itself (locked), so the list and the slip agree. */
+  const shown = $derived<Draft>(p.offer ? Object.fromEntries([...p.offer.get.map((l) => [l.item, l.count]), ...p.offer.give.map((l) => [l.item, -l.count])]) : draft);
   const set = (item: string, n: number) => (draft = { ...draft, [item]: n });
   const lim = (l: UiTradeLine) => limits(l, p, draft, credits);
   /** Click ±1, Shift ±5, Ctrl ±10, Alt the most there is. */
@@ -33,7 +35,7 @@
   </div>
   <div class="rows">
     {#each rows as l (l.item)}
-      {@const q = draft[l.item] ?? 0}
+      {@const q = shown[l.item] ?? 0}
       {@const m = lim(l)}
       <div class="row" class:set={q !== 0} data-testid="trade-row-{l.item}">
         <ItemIcon {api} item={l.item} size={28} />

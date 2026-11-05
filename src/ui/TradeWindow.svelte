@@ -25,7 +25,7 @@
   const hail = () => api.dispatch({ type: 'trade.hail', ship: id });
 </script>
 
-<FloatingWindow id="trade" title="Trade" icon="station" min={{ w: 760, h: 380 }} defaultRect={(b) => centerTop(b, 1010)} {onClose} closeLabel="Close trade window" closeTestId="trade-close" testId="trade-window" titleTestId="trade-heading">
+<FloatingWindow id="trade" title="Trade" icon="station" min={{ w: 760, h: 380 }} defaultRect={(b) => centerTop(b, 1010)} {onClose} closeLabel="Close trade window" closeTestId="trade-close" testId="trade-window" titleTestId="trade-heading" titleFit>
   {#snippet titleExtra()}
     <span class="who" data-testid="trade-title">{p?.name ?? ''}</span>
     <span class="role">{p?.role ?? ''}{p && p.kind === 'ship' && p.distance ? ` · ${p.distance} tiles away` : ''}</span>

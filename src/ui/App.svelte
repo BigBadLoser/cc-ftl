@@ -340,7 +340,7 @@
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 
 {#if stationOpen !== null}
-  <StationPanel {api} station={stationOpen} onClose={() => (stationOpen = null)} onTrade={(s) => (tradeWith = s)} />
+  <StationPanel {api} station={stationOpen} onClose={() => (stationOpen = null)} onTrade={(s) => { tradeWith = s; stationOpen = null; }} />
 {/if}
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />

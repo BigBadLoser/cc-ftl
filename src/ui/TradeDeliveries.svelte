@@ -23,7 +23,7 @@
   {#each live as d (d.id)}
     <div class="q" data-testid="trade-status" data-deal={d.id}>
       <div class="t"><b>Deal {nth(d)}</b><span class="dim" data-testid={d.trip ? 'trade-trip' : undefined}>{d.trip ? `trip ${d.trip.n} of ${d.trip.of}${d.trip.stopped ? ' (stopped early)' : ''} · ` : ''}{d.status.toLowerCase()}</span></div>
-      <div class="dim sm">{what(d)} · <span class:good={d.balance < 0} class="gold">{d.balance < 0 ? '+' : ''}₵ {fmt(d.balance)}</span></div>
+      <div class="dim sm">{what(d)} · <span class="gold"><span class={d.balance < 0 ? 'good' : 'bad'}>{d.balance < 0 ? '+' : '−'}</span> ₵ {fmt(d.balance)}</span></div>
       <div class="row">
         <div class="mtr"><i style:width="{Math.round(progress(d) * 100)}%"></i></div>
         {#if d.cancellable}<button class="off" data-testid="trade-cancel-deal" onclick={() => api.dispatch({ type: 'trade.cancel', id: d.id })}>CALL OFF</button>{/if}
@@ -45,7 +45,8 @@
   .sm { font-size: 12px; margin-top: 2px; }
   .dim { color: var(--dim); }
   .gold { color: var(--gold); }
-  .gold.good { color: var(--gold); }
+  .good { color: var(--green); }
+  .bad { color: var(--red); }
   .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
   .mtr { flex: 1; height: 5px; background: #080a0c; border: 1px solid var(--line); }
   .mtr i { display: block; height: 100%; background: #6f7a83; }
