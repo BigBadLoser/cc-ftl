@@ -1,4 +1,6 @@
 import { DeadC, PositionC } from '../crew/components';
+import { AllegianceC } from '../fight/components';
+import { turnCrew } from '../combat/turn';
 import { hostileAct } from '../combat/provoke';
 import { ShipC } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
@@ -45,6 +47,31 @@ export function startVisitClock(sim: Sim, s: SceneShip): void {
 export const visiting = (a: Ambush | undefined): boolean =>
   !!a && a.visit !== 'refused' && a.visit !== 'sprung' && !(a.visit === 'delivered' && a.home);
 
+/** A visit in the phases that need the player's ship held: the dock granted, the party aboard, an honest party not yet home. */
+const inProgress = (a: Ambush): boolean => a.visit === 'granted' || a.visit === 'aboard' || (a.visit === 'delivered' && !a.home);
+
+/**
+ * True while a let-in visit is really under way: its skiff is in play and its phase says so. The leave blocker reads this, so a visit whose skiff is
+ * wrecked, taken or gone never holds the player (`tendVisit` settles what it left behind).
+ */
+export function visitUnderway(sim: Sim, spec: SceneSpec): boolean {
+  return spec.ships.some((s) => !!s.ambush && inProgress(s.ambush) && live(sim, s) !== null);
+}
+
+/**
+ * A visit whose skiff is wrecked, captured or gone is over. A party still standing aboard has just lost its ship to the player's hand or a stray shot:
+ * they turn hostile (their owner's side), as any crew would, and from then on they are the ordinary boarders; with nobody aboard the visit is cancelled.
+ */
+function settleLost(sim: Sim, s: SceneShip, a: Ambush): void {
+  const id = s.contact.ship;
+  const party = id !== undefined && sim.world.has(id, BoarderC) ? sim.world.get(id, BoarderC)?.crew ?? [] : [];
+  const aboard = party.some((c) => !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'neutral');
+  if (id !== undefined && aboard) turnCrew(sim, id, 'neutral', sim.content.galaxy?.factions[s.contact.faction]?.combatFaction ?? 'hostile');
+  a.visit = aboard ? 'sprung' : 'refused';
+  delete s.hailed;
+  s.dismissed = true;
+}
+
 /** Let the skiff move on: it is no longer held, and its business here is done now. */
 function dismiss(sim: Sim, s: SceneShip): void {
   delete s.hailed;
@@ -61,7 +88,14 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
   for (const s of spec.ships) {
     const a = s.ambush;
     const id = live(sim, s);
-    if (!a || id === null) continue;
+    if (!a) continue;
+    if (id === null) {
+      if (inProgress(a)) {
+        settleLost(sim, s, a);
+        changed = true;
+      }
+      continue;
+    }
     const ship = sim.world.get(id, ShipC);
     if (!ship || a.visit === 'refused' || a.visit === 'sprung' || (a.visit === 'delivered' && a.home)) continue;
     // The player's shot (or anything of its group turning) got there first: it is hostile already, the party with it.
@@ -81,7 +115,8 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
         a.visit = 'aboard';
         a.springAt = sim.tick + Math.round(AMBUSH_SPRING_SEC * TICK_HZ);
         changed = true;
-      } else if (b?.state === 'done' && b.crew.length === 0) {
+      } else if (b?.state === 'done' && !partyAboard(sim, id) && (b.crew.length === 0 || !b.vehicle || !sim.world.has(b.vehicle, VehicleC) || sim.world.get(b.vehicle, VehicleC)?.state === 'stowed')) {
+        // nobody could be sent, or the shuttle was lost or never left
         if (a.trap) turn(sim, a, id); // nobody could be sent
         else {
           a.visit = 'refused';

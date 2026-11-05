@@ -271,6 +271,37 @@ describe('the returning pirate: in its pocket', () => {
     }
   });
 
+  it('a skiff wrecked after the dock was granted does not hold the player: the visit settles', () => {
+    for (const trap of [true, false]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      step(sim, 2);
+      expect(leaveBlocker(sim)).toBe('visitors');
+      (sim.world.get(skiff, ShipC) as { state: string }).state = 'wreck';
+      expect(leaveBlocker(sim)).not.toBe('visitors'); // read from what is in play, not a stored phase
+      step(sim, 40);
+      expect(ambushOf(sim)?.visit).toBe('refused');
+    }
+  });
+
+  it('a skiff wrecked with its party aboard: no permanent block, and the party turns hostile', () => {
+    for (const trap of [true, false]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+      const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+      expect(party.length).toBeGreaterThan(0);
+      expect(party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'neutral')).toBe(true);
+      (sim.world.get(skiff, ShipC) as { state: string }).state = 'wreck';
+      step(sim, 40);
+      expect(leaveBlocker(sim)).not.toBe('visitors');
+      expect(ambushOf(sim)?.visit).toBe('sprung');
+      expect(party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'hostile')).toBe(true); // you killed their ship
+    }
+  });
+
   it('boarders killed cost standing with pirates; the skiff destroyed sets a flag', () => {
     const { sim, skiff } = inScene(3, true);
     untilAsked(sim);
