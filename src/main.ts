@@ -22,6 +22,7 @@ import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
+import { shipHolo } from './app/shipHolo';
 import { createRenderer, type Renderer } from './render/scene';
 import { createSaver, loadSlot, lostReason, reloadLastSave, openNewGame, startGame, titleWanted, inThisCampaign, writePrecombat, writeSave } from './app/saves';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
@@ -352,7 +353,7 @@ function droneFightScenario(): void {
 }
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
-  if (scenario === 'ambush') return startAmbushScenario(sim, bridge.dispatch, () => loop.setSpeed(1), { trap: params.has('trap') ? true : params.has('honest') ? false : null, signal: params.has('signal') });
+  if (scenario === 'ambush') return startAmbushScenario(sim, bridge.dispatch, () => loop.setSpeed(1), { trap: params.has('trap') ? true : params.has('honest') ? false : null, signal: params.has('signal'), ...(params.get('tell') === 'name' ? { tell: 'name' as const } : {}), ...(params.get('event') ? { event: `event.${params.get('event')}` } : {}) });
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
   if (scenario === 'fight' || scenario === 'boarding') {
     // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
@@ -612,6 +613,7 @@ const api: UiApi = {
   },
   portrait: (id) => renderer?.portrait(id) ?? null,
   lookPortrait: (look) => renderer?.portraitOf(look) ?? null,
+  shipHolo,
   portraitArt: (key) => renderer?.portraitArt(key) ?? null,
   moduleThumb: (def, rot) => renderer?.moduleThumb(def, rot) ?? null,
   setCutaway: (mode) => renderer?.setCutaway(mode),

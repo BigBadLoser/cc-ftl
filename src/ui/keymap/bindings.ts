@@ -24,6 +24,7 @@ const LIVE_WITH: Record<KeyContext, readonly KeyContext[]> = {
   world: ['global', 'world', 'build', 'combat'],
   build: ['global', 'world', 'build'],
   combat: ['global', 'world', 'combat'],
+  modal: ['modal'],
 };
 
 /** Two actions on one key clash when their handlers can run together, unless one says it shares the key on purpose. */

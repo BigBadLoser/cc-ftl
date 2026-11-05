@@ -985,6 +985,17 @@ common there, and the starmap hints at notable stock.
 - **Starmap:** it is its own view.
 - **Platform:** desktop only.
 
+### Comms window (user decisions, 2026-11-05; #173)
+
+- **The incoming-signal window** (a story signal with a scene behind it) is a centred, forced decision in three equal columns: VIDEO (HAIL, key H;
+  static "NO VIDEO" until hailed, then the caller's portrait with LIVE, name, ship, faction and a status pill), COMMS (the transcript: narration in
+  grey italics, each quoted line behind a cyan bar with its speaker) and SENSORS (SCAN, key S; static "NO SCAN" until scanned, then a hologram of the
+  actual generated ship with callouts on its parts, and a label-over-value readout). The footer is Drop out and Fly on side by side.
+- **Show, don't tell for tells:** the name tell flickers the caller's name (and the scan's transponder ID) to a second value every few seconds; the
+  lag tell makes the video stutter. No text says so.
+- **Reusable:** the pieces live in `src/ui/comms` and take plain props; adapters in `src/app/comms` build them from a source (a story signal today;
+  trade hail, station hail and the in-scene panel later).
+
 ### Combat view (user decisions, 2026-10-29)
 
 - **It replaces the colony HUD during a fight:** the nav strip, node strip, drawers, build tools, inspector and goals give way. The ship's log,

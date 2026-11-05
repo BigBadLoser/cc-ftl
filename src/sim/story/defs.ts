@@ -113,6 +113,8 @@ export interface ChoiceDef {
 
 export interface EventDef {
   title: string;
+  /** What the signal's comms window shows of this event (UI only, no sim logic): `showWares: false` hides the hailed ship's stock and wallet. */
+  comms?: { showWares?: boolean };
   text: string;
   /** 'decision' pauses the game in a modal; 'notice' arrives in-world and may be ignored. */
   mode: 'decision' | 'notice';

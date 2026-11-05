@@ -1,3 +1,4 @@
+import type { CallerInfo, CommsLine, ReadoutRow, UiHolo, UiHoloRequest } from './comms/types';
 import type { UiDeploy, UiJumpWarnings, UiSellGood, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
 import type { UiCrewDetail } from './crewDetailApi';
@@ -522,6 +523,36 @@ export interface UiStoryChoice {
   cost: string[];
   /** A remote action already taken (scan, hail): shown as done, not as a locked choice. */
   done?: boolean;
+  /** Set on a remote action (hail, scan, probe): the signal window gives it a header button instead of a footer one. */
+  remote?: 'hail' | 'scan' | 'probe';
+}
+
+/**
+ * A signal's comms window as plain data (src/ui/comms): the caller, the transcript so far, the scan's callouts and readout, and the ship to draw.
+ * Built in app/comms/storyComms.ts from the open signal; null for a decision with no scene behind it.
+ */
+export interface UiComms {
+  /** The caller's card (before a hail: "Unknown skiff" and a transponder line), the portrait look (null before a hail or for a scene with no ship) and the stutter flag. */
+  caller: CallerInfo | null;
+  look: UiLook | null;
+  stutter: boolean;
+  hailed: boolean;
+  scanned: boolean;
+  /** The remote choices that raise them (null: this signal has none, or it was done). */
+  hailChoice: string | null;
+  scanChoice: string | null;
+  /** What the next sensor action is ('scan', or 'probe' once scanned): the sensor header's button label. */
+  scanKind: 'scan' | 'probe' | null;
+  transcript: CommsLine[];
+  hint: string | null;
+  goods: { item: string; name: string; count: number }[];
+  credits?: number;
+  /** The ship to draw as the hologram (null: a scene with no ship, a derelict), the screen's corner tag, the callouts (anchor kind, label, value) and the readout. */
+  holo: UiHoloRequest | null;
+  hullTitle: string | null;
+  scanHint: string | null;
+  callouts: { id: string; label: string; value: string }[];
+  readout: ReadoutRow[];
 }
 
 /** What a remote action revealed about one ship of a signal's scene. */
@@ -539,7 +570,7 @@ export interface UiIntel {
 /** The event system as the UI sees it: the open decision (the game pauses on it) and the last result. */
 export interface UiStory {
   /** `intel`: what remote actions (a scan, a hail) have revealed about the signal's scene so far. */
-  active: { event: string; title: string; text: string; choices: UiStoryChoice[]; intel: UiIntel[] } | null;
+  active: { event: string; title: string; text: string; choices: UiStoryChoice[]; intel: UiIntel[]; comms: UiComms | null } | null;
   last: { tick: number; title: string; choice: string; success: boolean | null; text: string; lines: string[] } | null;
 }
 
@@ -1404,6 +1435,8 @@ export interface UiApi {
   portrait(id: number): string | null;
   /** The same portrait drawn from a look (species and role ids, appearance seed) with no crew member behind it: a lesson's instructor. */
   lookPortrait(look: UiLook): string | null;
+  /** A generated ship drawn as a hologram before it exists (cached; null when it cannot be drawn): the signal window's sensor screen. */
+  shipHolo(req: UiHoloRequest): Promise<UiHolo | null>;
   /** A dedicated portrait asset (manifest key: an instructor's own art), or null while it loads or if there is none. */
   portraitArt(key: string): string | null;
   /** A module def's game art at a rotation, or null while its sheets load (`w` 0: no art). */
