@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, serialize, deserialize, type Sim } from '../sim';
 import { AllegianceC } from '../sim/fight/components';
-import { CrewC, PositionC } from '../sim/crew/components';
+import { CrewC, DownedC, PositionC } from '../sim/crew/components';
 import { shipIdOf } from '../sim/regions';
 import { AirlockC } from '../sim/modules/airlock';
 import { ModuleC } from '../sim';
@@ -364,6 +364,23 @@ describe('the returning pirate: in its pocket', () => {
     expect(sim.galaxy.event).toBeNull();
     expect(withPlayerAboard(sim, () => party.every((c) => sim.world.has(c, CrewC) && sim.world.get(c, AllegianceC)?.faction === 'hostile'))).toBe(true);
     expect(sim.galaxy.provoked.length).toBeGreaterThan(0);
+  });
+
+  it('leaving with downed visitors aboard settles them too: honest removed, an all-downed trap party turned hostile', () => {
+    for (const trap of [false, true]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+      const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+      expect(party.length).toBeGreaterThan(0);
+      for (const c of party) sim.world.add(c, DownedC, { bleed: 999, stabilized: true, bed: 0 });
+      sim.enqueue({ type: 'galaxy.leaveEvent' });
+      step(sim, 2);
+      expect(sim.galaxy.event).toBeNull();
+      if (trap) expect(withPlayerAboard(sim, () => party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'hostile'))).toBe(true);
+      else expect(withPlayerAboard(sim, () => party.every((c) => !sim.world.has(c, CrewC)))).toBe(true);
+    }
   });
 
   it('leaving mid-flight cancels the visit cleanly', () => {

@@ -71,7 +71,8 @@ export function settleVisits(sim: Sim, spec: SceneSpec): void {
     }
     const party = (sim.world.get(id, BoarderC)?.crew ?? []).filter((c) => {
       const pos = sim.world.get(c, PositionC);
-      return able(sim, c) && !!pos && me !== undefined && shipIdOf(sim, pos) === me;
+      // Downed visitors count too: they would otherwise ride along, neutral, in the player's ship.
+      return sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !!pos && me !== undefined && shipIdOf(sim, pos) === me;
     });
     const name = sim.world.get(id, ShipC)?.name ?? s.contact.name ?? 'The skiff';
     if (party.length > 0 && a.trap) turn(sim, a, id);
