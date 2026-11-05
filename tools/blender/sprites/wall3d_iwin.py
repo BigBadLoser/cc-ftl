@@ -14,6 +14,7 @@ from . import wall3d as T
 from . import walls as W
 from .faction import base as FB
 from .faction import tan as TAN
+from .faction import tan_ramps as TR
 from .faction.parts import PZ
 
 POST_L = 11.25 / 32     # the end posts' inner edges, across the tile: each post's front a groove, the slats, a groove
@@ -173,7 +174,7 @@ def _cut(k, x0, x1, z1):
 
 def _block_end():
     """How far out from the wall the ramps' tan block runs (tan_ramps: the cushions' end, over the blue toe)."""
-    return W.skirt_run() - 0.045
+    return W.skirt_run() - TR.TOE_GAP
 
 
 def _plain(k, yf):

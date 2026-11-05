@@ -19,6 +19,8 @@ GAP = 0.7                                       # the inner joints' width, in px
 CUT_D = 0.55
 ROUND = 2                                       # a cushion's other corners: rounded on it (its joints straight), this
 ROUND_TONE = "fTS2"                             # radius in px, in a tone between the cushion's and the joints'
+TOE_GAP = 0.02                                  # the blue toe band under the block: its end this far short of the
+                                                # foot (2 px of blue, as the line over it)
 
 # a layout: its cushions, each one or more rects (u0, u1, d0, d1, corners) as fractions of the tile (u) and of the
 # block's run (d), the corners to round of a (u0, d0) b (u1, d0) c (u1, d1) d (u0, d1) (one on the block's outline
@@ -55,7 +57,7 @@ def cushions(layout, extra=None):
     U, D a fraction of the tile / the run)."""
     def ramp(plate, u0, u1, run_, k=None, pt=None, ax="y", plane=None, **_):
         w, E, L = u1 - u0, EDGE, LINE
-        top, end = 0.02 + E, run_ - 0.045               # (under the blue line; the block's end, over the toe)
+        top, end = 0.02 + E, run_ - TOE_GAP             # (under the blue line; the block's end, over the toe)
         nrm = (pt(0.0, 0.0, 1.0) - pt(0.0, 0.0, 0.0)).normalized()
         JL, JE = GAP * L, GAP * E
         span = end - E - top                            # (the block's foot over the toe: a whole px)
