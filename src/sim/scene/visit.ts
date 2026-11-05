@@ -1,4 +1,4 @@
-import { DeadC, PositionC } from '../crew/components';
+import { CrewC, DeadC, DownedC, PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { turnCrew } from '../combat/turn';
 import { hostileAct } from '../combat/provoke';
@@ -55,7 +55,12 @@ const inProgress = (a: Ambush): boolean => a.visit === 'granted' || a.visit === 
  * wrecked, taken or gone never holds the player (`tendVisit` settles what it left behind).
  */
 export function visitUnderway(sim: Sim, spec: SceneSpec): boolean {
-  return spec.ships.some((s) => !!s.ambush && inProgress(s.ambush) && live(sim, s) !== null);
+  return spec.ships.some((s) => {
+    const id = live(sim, s);
+    const b = id === null ? undefined : sim.world.get(id, BoarderC);
+    // Only living people hold the player: a party member who is up and about, aboard or in the shuttle. A phase alone never does.
+    return !!s.ambush && inProgress(s.ambush) && !!b && b.crew.some((c) => sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC));
+  });
 }
 
 /**
@@ -65,7 +70,11 @@ export function visitUnderway(sim: Sim, spec: SceneSpec): boolean {
 function settleLost(sim: Sim, s: SceneShip, a: Ambush): void {
   const id = s.contact.ship;
   const party = id !== undefined && sim.world.has(id, BoarderC) ? sim.world.get(id, BoarderC)?.crew ?? [] : [];
-  const aboard = party.some((c) => !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'neutral');
+  const me = playerShipInfo(sim)?.id;
+  const aboard = party.some((c) => {
+    const pos = sim.world.get(c, PositionC);
+    return !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'neutral' && !!pos && me !== undefined && shipIdOf(sim, pos) === me;
+  });
   if (id !== undefined && aboard) turnCrew(sim, id, 'neutral', sim.content.galaxy?.factions[s.contact.faction]?.combatFaction ?? 'hostile');
   a.visit = aboard ? 'sprung' : 'refused';
   delete s.hailed;
@@ -105,6 +114,15 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
       continue;
     }
     const b = sim.world.get(id, BoarderC);
+    // Nobody left alive of the party that was sent: the visit is over (the empty shuttle stays where it is and goes with the scene).
+    if (inProgress(a) && b && b.crew.length > 0 && b.crew.every((c) => !sim.world.has(c, CrewC) || sim.world.has(c, DeadC))) {
+      if (a.trap) turn(sim, a, id);
+      else if (a.visit === 'delivered') a.home = true;
+      else a.visit = 'refused';
+      if (!a.trap) dismiss(sim, s);
+      changed = true;
+      continue;
+    }
     if (a.visit === undefined && a.askAt !== undefined && sim.tick >= a.askAt && playerShipInfo(sim)) {
       a.visit = 'asked';
       sim.events.emit({ type: 'scene.dockAsked', ship: id });
