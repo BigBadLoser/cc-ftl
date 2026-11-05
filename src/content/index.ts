@@ -9,6 +9,7 @@ import { recipes } from './recipes';
 import { roles } from './roles';
 import { traits } from './traits';
 import { policies } from './policies';
+import { interactions } from './interactions';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
 import { drones } from './drones';
@@ -40,6 +41,7 @@ export const content = {
   crewNames,
   traits,
   policies,
+  interactions,
   items,
   recipes,
   structCosts,

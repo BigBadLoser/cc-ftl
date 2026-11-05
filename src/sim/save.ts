@@ -6,6 +6,7 @@ import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
 import { Sim } from './sim';
+import { newBonds, type BondState } from './crew/bonds';
 import { newStory, type StoryState } from './story/state';
 import { loadGalaxy, saveGalaxy, type GalaxySave } from './galaxy/state';
 import { newTrade, type TradeState } from './trade/types';
@@ -114,8 +115,9 @@ import { newYard, type YardState } from './yard/types';
  * v89 (drones, #318 slice 1): `DroneC` (on a `BodyC`); `Downed.patched`.
  * v90 (drones in space, #318 slice 2): `Drone.space`, `lift`, `cool`, states 'launch' and 'land'; `Combat.departHold`.
  * v94 (the pirate ambush, #173): `SceneShip.ambush` and `attitude`; `Trader.relation`; `Boarder.visit`; `Ship.provoked` may be 'ambush'.
+ * v95 (relationships, #239): `bonds` (the opinion store, keyed by person id), `PersonC` on crew, `InteractionC` while two chat or shout, optional `Mood.grief`, `chat` and `row`.
  */
-export const SAVE_VERSION = 94;
+export const SAVE_VERSION = 95;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -127,6 +129,8 @@ export interface SaveData {
   sector: Omit<Sector, 'grid'> & { grid: SectorGridData };
   /** Event system state. Optional: saves from before it existed load with a fresh one (no version bump needed). */
   story?: StoryState;
+  /** Crew opinions (crew/bonds.ts). Optional: older saves of the same version start empty. */
+  bonds?: BondState;
   /** Trade state. Optional like `story`: older saves load with an empty one. */
   trade?: TradeState;
   /** Shipyard orders. Optional like `trade`. */
@@ -149,6 +153,7 @@ export function serialize(sim: Sim): string {
     sector: { ...sim.sector, grid: sim.sector.grid.serialize() },
     story: sim.story,
     trade: sim.trade,
+    bonds: sim.bonds,
     yard: sim.yard,
     galaxy: saveGalaxy(sim.galaxy),
     pending: [...sim.commands.getPending()],
@@ -176,6 +181,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.trade = { ...newTrade(), ...data.trade };
   sim.trade.bestCredits = Math.max(sim.trade.bestCredits ?? 0, sim.trade.credits); // a save from before the field starts at what it holds
   sim.yard = { ...newYard(), ...data.yard };
+  sim.bonds = { ...newBonds(), ...data.bonds };
   sim.galaxy = loadGalaxy(sim, data.galaxy);
   sim.commands.setPending(data.pending);
   sim.archives = data.archives;

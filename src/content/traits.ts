@@ -31,17 +31,18 @@ export const traits = {
     name: 'Hot-headed', flavour: 'Takes it personally.', kind: 'behaviour', weight: 10, rollable: false,
     short: 'Rivalries form fast', effect: 'Rivalries form twice as fast; shouting matches with rivals when unhappy. Throws tantrums three times as often when it breaks.',
     excludes: ['trait.peacemaker'],
-    effects: { breakBy: { tantrum: 3 } },
+    effects: { breakBy: { tantrum: 3 }, bondLoss: 2 },
   },
   'trait.peacemaker': {
     name: 'Peacemaker', flavour: "Everyone's favourite.", kind: 'behaviour', weight: 5, rollable: false,
     short: 'Friendships form fast', effect: 'Friendships form 1.5x as fast; rivals nearby feel half the rival penalty.',
     excludes: ['trait.hot_headed'],
+    effects: { bondGain: 1.5, peacemaker: true },
   },
   'trait.protective': {
     name: 'Protective', flavour: 'Nobody touches my people.', kind: 'behaviour', weight: 5, rollable: false,
     short: '+1 fighting near a friend', effect: 'Bonds twice as fast in shared danger; +1 gunnery and melee fighting near a friend; grieves harder. Combat stress halved with a friend within 6 tiles.',
-    effects: { protective: true },
+    effects: { protective: true, dangerBond: 2 },
   },
   'trait.workaholic': {
     name: 'Workaholic', flavour: 'One more panel.', kind: 'behaviour', weight: 5, rollable: true,

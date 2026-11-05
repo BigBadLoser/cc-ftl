@@ -17,6 +17,7 @@ import type { GalaxyState } from './galaxy/types';
 import { newTrade, type TradeState } from './trade/types';
 import { newYard, type YardState } from './yard/types';
 import { TICK_HZ } from './time';
+import { newBonds, type BondState } from './crew/bonds';
 import { newAiLog, type AiLog } from './ai/log';
 import { SECTOR_HEIGHT, SECTOR_WIDTH } from './tuning';
 
@@ -41,6 +42,8 @@ export class Sim {
   archives: SectorArchive[] = [];
   /** Shipyard hull-expansion orders (yard/). */
   yard: YardState = newYard();
+  /** Crew opinions of each other, keyed by person id (crew/bonds.ts). */
+  bonds: BondState = newBonds();
   /** Crew-AI diagnostics (ai/log.ts): not saved, never read by the sim. */
   aiLog: AiLog = newAiLog();
 

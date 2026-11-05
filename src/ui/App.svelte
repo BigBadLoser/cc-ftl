@@ -1,6 +1,7 @@
 <script lang="ts">
   import GameSession from './GameSession.svelte';
   import GoalsCard from './GoalsCard.svelte';
+  import OpinionHover from './OpinionHover.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import SelectBox from './SelectBox.svelte';
   import { onMount } from 'svelte';
@@ -352,6 +353,7 @@
 {#if menuOpen}<EscMenu {api} start={menuStart} onClose={closeMenu} />{/if}
 <ErrorOverlay {api} />
 <GameSession {api} />
+<OpinionHover {api} />
 
 <!-- Top right: one column. Log and time controls (desktop; on phone the time sits in the header) in one frame; the tutorial goals, the accepted-jobs tracker, then alerts, stack below as separate cards. -->
 <div class="rcol" bind:clientHeight={rcolH}>

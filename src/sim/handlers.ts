@@ -30,6 +30,7 @@ import { awayHandlers } from './away/handlers';
 import { yardHandlers } from './yard/order';
 import { ModuleC } from './modules/components';
 import { DURATION, tierOf } from './crew/breakTable';
+import { bondBoth } from './crew/bonds';
 import { hasMood } from './crew/mood';
 import { nearestStressor } from './crew/stress';
 import { startBreak } from './systems/breakdown';
@@ -76,6 +77,10 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
     const context = cmd.context ?? 'lowMood';
     const [lo, hi] = DURATION[cmd.kind];
     startBreak(sim, cmd.id, { kind: cmd.kind, tier: tierOf(cmd.kind, context), context, ticks: Math.round((cmd.sec ?? (lo + hi) / 2) * TICK_HZ), src: context === 'lowMood' ? undefined : nearestStressor(sim, cmd.id, context) });
+  },
+  'debug.bond': (sim, cmd) => {
+    if (!hasMood(sim, cmd.a) || !hasMood(sim, cmd.b) || cmd.a === cmd.b) return sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noMood' });
+    bondBoth(sim, cmd.a, cmd.b, cmd.delta, cmd.reason ?? 'chat');
   },
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();

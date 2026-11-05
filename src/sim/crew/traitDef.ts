@@ -60,8 +60,14 @@ export interface TraitEffects {
   stressBy?: Readonly<Partial<Record<BreakContext, number>>>;
   /** crew/breakdown.ts: one outcome's weight in the pools is multiplied by this (0 = never). */
   breakBy?: Readonly<Partial<Record<BreakKind, number>>>;
-  /** crew/stress.ts: Protective, combat stress is halved with a friend within 6 tiles (a friend is any crew member until relationships exist). */
+  /** crew/stress.ts: Protective, combat stress is halved with a friend within 6 tiles; grief is x1.5 (crew/bondMood.ts). */
   protective?: true;
+  /** crew/bonds.ts `bondScale`: positive opinion changes are worth this much to this crew member (Peacemaker), negative ones (Hot-headed), and positive ones from shared danger on top (Protective). */
+  bondGain?: number;
+  bondLoss?: number;
+  dangerBond?: number;
+  /** crew/bondMood.ts: rivals within MOOD_COMPANY_RADIUS of this crew member feel half the rival penalty (Peacemaker). */
+  peacemaker?: true;
   /** crew/stress.ts and traitMood.ts: "under fire" mood with a hostile in sight; combat counts from BREAK_BATTLE_SHY_SEC. */
   battleFear?: true;
   /** story/effects.ts (and work XP later): XP gains are multiplied, for `xpSkills` only when given. */
