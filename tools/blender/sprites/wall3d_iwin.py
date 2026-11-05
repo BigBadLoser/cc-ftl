@@ -52,6 +52,8 @@ RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit
 SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 BEND_DROP = 7           # that seam carried on down the ramps' block from the crest, px
+STRIP_RISE = PZ         # the middle piece's sill between those seams raised this much (the ramps' slope on up to it)
+STRIP_TONE = "fTW3"     # (the step's end, facing the opening: the ramp block's shade-side tan)
 MID_LINES = (10, 21)    # the middle piece's sill: a seam across it at these px columns (5 px either side of the
                         # middle; level with the face's grooves), on down the block BEND_DROP px
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
@@ -101,7 +103,22 @@ def _sill(x, x0, x1):
     """The ramp's crest under the opening at x: the wall's ramp top at a post, down DIP over DIP_RUN from it."""
     zs = W.skirt_top()
     d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
-    return zs - DIP * min(1.0, max(0.0, d) / DIP_RUN)
+    st = _strip()
+    rise = STRIP_RISE if st and st[0] + 1e-9 < x < st[1] - 1e-9 else 0.0
+    return zs - DIP * min(1.0, max(0.0, d) / DIP_RUN) + rise
+
+
+def _strip():
+    """The middle piece's raised strip along x, or None: from its -x seam across the sill (on the strip's edge, as
+    the step there faces away) to its +x one (on the floor, in front of the step's end, which faces the camera)."""
+    if PART != "m":
+        return None
+    return -0.5 + (MID_LINES[0] + 0.25) / 32, -0.5 + (MID_LINES[1] + 0.25) / 32
+
+
+def _seg(u0, u1, x0, x1):
+    """The crest's heights at a part's ends (u0, u1), seen from inside it (the strip's steps)."""
+    return _sill(u0 + 1e-7, x0, x1), _sill(u1 - 1e-7, x0, x1)
 
 
 def _span(part):
@@ -135,8 +152,9 @@ def _clip(pts, planes):
 def _slabs(x0, x1):
     """The opening along x as slabs between the crest's bends: (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + _arch_bends(x0, x1) if xa < u < xb})
-    return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + _arch_bends(x0, x1) + (_strip() or ())
+                            if xa < u < xb})
+    return [(u0, u1) + _seg(u0, u1, x0, x1) for u0, u1 in zip(us, us[1:])]
 
 
 def _cut(k, x0, x1, z1):
@@ -235,7 +253,7 @@ def _ramp_lines(k, x0, x1, yf):
             n = Vector((0.0, sg * sl, 1.0)).normalized()
             k.poly([Vector((u, sg * (yf + d), zs - d * sl)) + n * off for u, d in pts], "wall", 2, n, fixed=SEAM)
     a, b = -0.5, 0.5
-    us = sorted({a, b} | {u for u in (x0, x0 + DIP_RUN, x1 - DIP_RUN, x1) if a < u < b})
+    us = sorted({a, b} | {u for u in (x0, x0 + DIP_RUN, x1 - DIP_RUN, x1) + (_strip() or ()) if a < u < b})
     for u0, u1 in zip(us, us[1:]):
         t0, t1 = top(u0 + 1e-6), top(u1 - 1e-6)
         strip([(u0, t0), (u1, t1), (u1, t1 + E), (u0, t0 + E)])         # (along the top)
@@ -256,11 +274,21 @@ def _ramp_lines(k, x0, x1, yf):
     if PART == "m":                                     # (the middle piece's two seams across the sill)
         for n in MID_LINES:
             ua, ub = -0.5 + (n + 0.25) / 32, -0.5 + (n + 1.25) / 32
-            h = _sill(ua, x0, x1) + 0.002
+            h = _seg(ua, ub, x0, x1)[0] + 0.002
             r = _reach(h - 0.002, yf)
             _quad(k, [(ua, -r, h), (ub, -r, h), (ub, r, h), (ua, r, h)], (0, 0, 1), SEAM)
-            t = top(ua)
+            t = top(ua + 1e-6)
             strip([(ua, t), (ub, t), (ub, t + BEND_DROP * E), (ua, t + BEND_DROP * E)])
+    lv0, lv1 = max(a, x0 + DIP_RUN), min(b, x1 - DIP_RUN)  # (along the level part at those seams' feet, joining
+    runs = [(lv0, lv1)]                                     # the slopes' to the middle's: not under the strip)
+    if PART == "m":
+        m0, m1 = -0.5 + (MID_LINES[0] + 0.25) / 32, -0.5 + (MID_LINES[1] + 1.25) / 32
+        runs = [(lv0, m0), (m1, lv1)]
+    for u0, u1 in runs:
+        if u1 - u0 > 1e-9:
+            t = top((u0 + u1) / 2)
+            d0, d1 = t + (BEND_DROP - 1) * E, t + BEND_DROP * E
+            strip([(u0, d0), (u1, d0), (u1, d1), (u0, d1)])
 
 
 def _reach(h, yf):
@@ -289,9 +317,9 @@ def hook(k, sp, own=True):
             zp = _top(u, x0, x1)
             _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, zp), (u, yb, zp)], (sd, 0, 0), POST_IN)
     _posts(k, x0, x1, yb, yf, z0)
-    us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
-    for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
-        h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
+    us = sorted({a, b} | set(bends) | {u for u in (_strip() or ()) if a < u < b})   # the sill's top (the cut along
+    for u0, u1 in zip(us, us[1:]):                      # the crest, out to the ramps' slopes: wider as it drops)
+        h0, h1 = _seg(u0, u1, x0, x1)
         r0, r1 = _reach(h0, yf) + EDGE_OUT, _reach(h1, yf) + EDGE_OUT
         _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
@@ -300,9 +328,16 @@ def hook(k, sp, own=True):
         w = LINE_W if _sill(u + 1e-3, x0, x1) < _sill(u - 1e-3, x0, x1) else -LINE_W    # (on the level side)
         _quad(k, [(u, -r, h), (u + w, -r, h), (u + w, r, h), (u, r, h)], (0, 0, 1), SEAM)
     for u0, u1 in zip(us, us[1:]):                      # the sill top's far edge (the slopes' and the level part's) a
-        h0, h1 = _sill(u0, x0, x1) + 0.002, _sill(u1, x0, x1) + 0.002     # seam; a lit edge along each slope's
+        h0, h1 = (v + 0.002 for v in _seg(u0, u1, x0, x1))               # seam; a lit edge along each slope's
         r0, r1 = _reach(h0 - 0.002, yf), _reach(h1 - 0.002, yf)          # top edge, at the post
         _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, -r1 + LINE_W, h1), (u0, -r0 + LINE_W, h0)], (0, 0, 1), SEAM)
+    st = _strip()                                       # the raised strip's ends: a px step, the ramps' slope
+    for u, sd in ((st[0], -1), (st[1], 1)) if st else ():   # on up to it either side
+        lo, hi = _sill(u - sd * 1e-6, x0, x1), _sill(u + sd * 1e-6, x0, x1)
+        if hi < lo:
+            lo, hi = hi, lo
+        rl, rh = _reach(lo, yf), _reach(hi, yf)
+        _quad(k, [(u, -rl, lo), (u, rl, lo), (u, rh, hi), (u, -rh, hi)], (sd, 0, 0), STRIP_TONE)
     for u, sd in ((x0, 1), (x1, -1)):                   # a lit edge across each slope's top, at its post
         if a <= u <= b:
             ua, ub = u, u + sd * LINE_W
@@ -336,8 +371,12 @@ def hook(k, sp, own=True):
         return
     h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
     for u0, u1 in zip(us, us[1:]):
-        z0_, z1_ = _sill(u0, x0, x1) + e, _sill(u1, x0, x1) + e
+        z0_, z1_ = (v + e for v in _seg(u0, u1, x0, x1))
         _quad(k, [(u0, -h, z0_), (u1, -h, z1_), (u1, h, z1_), (u0, h, z0_)], (0, 0, -1), PANE_EDGE)
+    for u, sd in ((st[0], -1), (st[1], 1)) if st else ():   # (and up the strip's steps)
+        lo, hi = sorted((_sill(u - sd * 1e-6, x0, x1), _sill(u + sd * 1e-6, x0, x1)))
+        _quad(k, [(u + sd * e, -h, lo + e), (u + sd * e, h, lo + e), (u + sd * e, h, hi + e), (u + sd * e, -h, hi + e)],
+              (sd, 0, 0), PANE_EDGE)
     for u0, u1 in zip(ts, ts[1:]):
         z0_, z1_ = _top(u0, x0, x1) - e, _top(u1, x0, x1) - e
         _quad(k, [(u0, -h, z0_), (u1, -h, z1_), (u1, h, z1_), (u0, h, z0_)], (0, 0, 1), PANE_EDGE)
@@ -352,7 +391,12 @@ def hook(k, sp, own=True):
             _quad(k, [(ul, -h, zc), (ul, h, zc), (ul, h, za), (ul, -h, za)], (-sd, 0, 0), PANE_EDGE)
     global GLASS
     GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
-    GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((u, 0.0, _top(u, x0, x1))) for u in ts[::-1]],
+    foot = []                                           # (its foot along the crest, up the strip's steps)
+    for u0, u1 in zip(us, us[1:]):
+        for u, z in zip((u0, u1), _seg(u0, u1, x0, x1)):
+            if not foot or (foot[-1] - Vector((u, 0.0, z))).length > 1e-9:
+                foot.append(Vector((u, 0.0, z)))
+    GLASS.poly(foot + [Vector((u, 0.0, _top(u, x0, x1))) for u in ts[::-1]],
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
