@@ -6,6 +6,8 @@ two blue lines along the beam's top. The ramp runs on under the opening as the s
 
 wall3d.block calls HOOK(k, sp) on a piece's Relief before it builds; window() sets it while its piece builds.
 PART: "l" (the post at the -x end, open on past +x), "m" (open across), "r" (the post at the +x end)."""
+import math
+
 from mathutils import Vector
 
 from . import wall3d as T
@@ -35,7 +37,8 @@ ARCH_SLOPE = (5 / 7, 5 / 7)  # from the cushion's foot at each post's edge, risi
 PANE_EDGE = "fTX6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
 PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
 PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
-HEAD_SEAM = "fTS4"      # a seam up the cushion's front at each shoulder's ends (the post's edge, its top)
+JOINT_BACK = 2          # the header split into cushions at each shoulder's ends: a joint (as the cushions' at a
+                        # tile's edge) this many px back on the post from its edge, and one where the slope ends
 HEAD_EDGE = "fTS7"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
 POST_SEAM = (5, 26)     # the posts' fronts: a groove up each one's middle, lip to header (px columns: left post's,
 POST_PLAIN = "fTS3"     # right's), the slats gone from its half nearest the window (the face's plain tan)
@@ -248,6 +251,7 @@ def hook(k, sp, own=True):
     x0, x1 = _span(PART)
     z0, z1 = _heights()
     yb, yf = W.wall_back() - 0.5, W.wall_back() - 0.5 + W.TW
+    _joints(k, x0, x1, yf)
     _cut(k, x0, x1, z1)
     _plain(k, yf)
     _ramp_lines(k, x0, x1, yf)
@@ -290,15 +294,6 @@ def hook(k, sp, own=True):
             _quad(k, q, (0, 0, -1), uc)
         ye = yh + T.PAINT                                                         # (the cushion's cut foot: a
         _quad(k, [(u0, ye, t0), (u1, ye, t1), (u1, ye, t1 + PZ), (u0, ye, t0 + PZ)], (0, 1, 0), HEAD_EDGE)  # brown edge)
-    zc, yc = W.HF - 0.031, yf + TAN.HEAD_D + 2 * T.PAINT                       # the shoulders' seams: up the
-    ba, bb = _arch_bends(x0, x1)                                                 # cushion's front from its foot
-    for xp, xb, sd, on in ((x0, ba, 1, x0 > -0.5), (x1, bb, -1, x1 < 0.5)):     # (on the post's side of its edge,
-        if not on:                                                               # the crown's of the bend)
-            continue
-        for ua, ub in ((xp - sd * 3 * LINE_W, xp - sd * 2 * LINE_W), (xb, xb + sd * LINE_W)):   # (the post's 2 px
-                                                                                               # back from its edge)
-            pts = [(ua, yc, _top(ua, x0, x1)), (ub, yc, _top(ub, x0, x1)), (ub, yc, zc), (ua, yc, zc)]
-            _quad(k, pts, (0, 1, 0), HEAD_SEAM)
     if CLOSE and own and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
@@ -331,13 +326,60 @@ def hook(k, sp, own=True):
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
+def _joints(k, x0, x1, yf):
+    """The header cushion split at each shoulder's ends: the cushion taken out round each joint and its two ends
+    built again as tan's cushion ends (TAN._header): curved in over HEAD_CURVE px, half a px short of the joint, the
+    face behind the 1 px gap in the joints' dark."""
+    from .faction.parts import prism, flat
+    L, C = T.LINE, TAN.HEAD_CURVE
+    z1h = W.HF - 0.031
+    zh0 = z1h - TAN.HEAD_H
+    zg = zh0 - TAN._hid(TAN.HEAD_D)
+    ba, bb = _arch_bends(x0, x1)
+    js = ([x0 - (JOINT_BACK + 0.5) * L, ba + L / 2] if x0 > -0.5 else []) + \
+         ([x1 + (JOINT_BACK + 0.5) * L, bb - L / 2] if x1 < 0.5 else [])
+    for jx in js:
+        w0, w1 = jx - L / 2 - C * L, jx + L / 2 + C * L
+        for m in (k.m, k.ns):                           # (the cushion's parts there out: its block, its bands)
+            if m is None:
+                continue
+            out = []
+            for f in m.f:
+                pts = [m.v[i] for i in f[0]]
+                xs, zs = [p[0] for p in pts], [p[2] for p in pts]
+                if max(abs(p[1]) for p in pts) < yf + TAN.HEAD_D / 2 or min(zs) < zh0 - 1e-3 or \
+                        max(zs) > z1h + 1e-3 or max(xs) <= w0 + 1e-9 or min(xs) >= w1 - 1e-9:
+                    out.append(f)
+                    continue
+                for r in ([(0, w0, -1)], [(0, w1, 1)]):
+                    q = _clip(pts, r)
+                    if len(q) >= 3:
+                        base = len(m.v)
+                        m.v += [tuple(p) for p in q]
+                        out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+            m.f = out
+        flat(k, "y", yf, jx - L / 2, jx + L / 2, zg, z1h, T.PAINT, TAN.OUTER)      # (the gap)
+
+        def ins(x):
+            return (C - math.sqrt(max(0.0, C * C - (C - x) ** 2))) * PZ
+        for i in range(2 * C):                          # the two ends' slices, curved in
+            r = ins((i + 0.5) / 2)
+            for u0, u1 in ((jx - L / 2 - (i + 1) * L / 2, jx - L / 2 - i * L / 2),
+                           (jx + L / 2 + i * L / 2, jx + L / 2 + (i + 1) * L / 2)):
+                prism(k, "y", yf, u0, u1, [(0.0, zh0 + r), (TAN.HEAD_D, zh0 + r), (TAN.HEAD_D, z1h - r),
+                                           (0.0, z1h - r)], TAN.FACE, 3, cols=[False, None, "fTS0", False],
+                      cap=TAN.HEAD_END)
+                flat(k, "y", yf, u0, u1, z1h - r - PZ, z1h - r, TAN.HEAD_D + T.PAINT, "fTS1")
+
+
 def _posts(k, x0, x1, yb, yf, z0):
     """Each post: on its front a groove up its middle from the lip to the header (as the face's grooves), its half
     nearest the window plain (the slats gone) but for the seam over the lip and two across it in thirds; the lip
     wrapped round onto its side in the opening (its front there LIP_END, its foot's dark line on round), and the seam
     over it and the thirds' carried round that side too."""
     zl1, zt = z0 + TAN.LIP_TOP, W.HF - 0.031 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D) - 3 * PZ   # (lip top; face's plain
-    zms = [zl1 + round((zt - zl1) * f / PZ) * PZ for f in (1 / 3, 2 / 3)]                # top under the shadow)
+    zms = [zl1 + round((zt - zl1) * f / TAN.SLAT) * TAN.SLAT for f in (1 / 3, 2 / 3)]    # top under the shadow;
+                                                                                        # on the slats' seams)
     P, D = T.PAINT, TAN.LIP_D
     zs0 = zt + 3 * PZ
 
