@@ -234,12 +234,10 @@ def hook(k, sp, own=True):
     a, b = max(x0, -0.5), min(x1, 0.5)
     bends = [u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b]
     k.side = None
-    yl, zl = yf + TAN.LIP_D, z0 + TAN.LIP_TOP
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sections, the lip's end on each
         if on:
             _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, z1), (u, yb, z1)], (sd, 0, 0), POST_IN)
-            _quad(k, [(u, yf, z0), (u, yl, z0), (u, yl, zl), (u, yf, zl)], (sd, 0, 0), LIP_END)
-    _post_fronts(k, x0, x1, yf, z0)
+    _posts(k, x0, x1, yb, yf, z0)
     us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
     for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
@@ -284,24 +282,43 @@ def hook(k, sp, own=True):
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
-def _post_fronts(k, x0, x1, yf, z0):
-    """Each post's front: a groove up its middle from the lip to the header (as the face's grooves), and its half
-    nearest the window plain, the slats gone (up to the shadow under the header)."""
-    zl1 = z0 + TAN.LIP_TOP
-    zs0 = W.HF - 0.031 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D)          # (the face's first row under the header)
-    P = T.PAINT
+def _posts(k, x0, x1, yb, yf, z0):
+    """Each post: on its front a groove up its middle from the lip to the header (as the face's grooves), its half
+    nearest the window plain (the slats gone) but for the seam over the lip and one across at half height; the lip
+    wrapped round onto its side in the opening (its front there LIP_END, its foot's dark line on round), and the seam
+    over it and the half-height one carried round that side too."""
+    zl1, zt = z0 + TAN.LIP_TOP, W.HF - 0.031 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D) - 3 * PZ   # (lip top; face's plain
+    zm = zl1 + round((zt - zl1) / 2 / PZ) * PZ                                           # top under the shadow)
+    P, D = T.PAINT, TAN.LIP_D
+    zs0 = zt + 3 * PZ
 
     def col(n):
         return -0.5 + (n + 0.3) / 32, -0.5 + (n + 1.0) / 32         # (TAN._col: a px column's groove)
-    for on, n, (pa, pb) in ((x0 > -0.5, POST_SEAM[0], (col(POST_SEAM[0])[1], col(10)[0])),
-                            (x1 < 0.5, POST_SEAM[1], (col(21)[1], col(POST_SEAM[1])[0]))):
+
+    def front(ua, ub, za, zb, d, c):                                # (a strip on the post's front)
+        _quad(k, [(ua, yf + d, za), (ub, yf + d, za), (ub, yf + d, zb), (ua, yf + d, zb)], (0, 1, 0), c)
+
+    def side(u, sd, ya, yb_, za, zb, c):                            # (on its side, facing the opening)
+        _quad(k, [(u, ya, za), (u, yb_, za), (u, yb_, zb), (u, ya, zb)], (sd, 0, 0), c)
+    for on, xp, sd, n, (pa, pb) in ((x0 > -0.5, x0, 1, POST_SEAM[0], (col(POST_SEAM[0])[1], col(10)[0])),
+                                    (x1 < 0.5, x1, -1, POST_SEAM[1], (col(21)[1], col(POST_SEAM[1])[0]))):
         if not on:
             continue
-        _quad(k, [(pa, yf + 3 * P, zl1), (pb, yf + 3 * P, zl1), (pb, yf + 3 * P, zs0 - 3 * PZ),
-                  (pa, yf + 3 * P, zs0 - 3 * PZ)], (0, 1, 0), POST_PLAIN)
+        front(pa, pb, zl1 + PZ, zt, 3 * P, POST_PLAIN)              # (the slats gone; the seam over the lip kept)
         g0, g1 = col(n)
-        _quad(k, [(g0, yf + 4 * P, zl1), (g1, yf + 4 * P, zl1), (g1, yf + 4 * P, zs0), (g0, yf + 4 * P, zs0)],
-              (0, 1, 0), "fTS4")
+        front(g0, g1, zl1, zs0, 4 * P, "fTS4")                      # the groove up its middle
+        ha, hb = (col(n)[1], xp) if sd > 0 else (xp, col(n)[0])
+        front(ha, hb, zm, zm + PZ, 4 * P, "fTS4")                   # the seam across at half height
+        xs = xp + sd * P
+        side(xs, sd, yb, yf, zm, zm + PZ, "fTS4")                   # (round onto the side: it, the seam over the
+        side(xs, sd, yb, yf, zl1, zl1 + PZ, "fTS4")                 # lip)
+        xl = xp + sd * D                                            # the lip round the corner: its front facing the
+        side(xl, sd, yb, yf + D, z0, zl1, LIP_END)                  # opening, its top, the corner's front, the dark
+        side(xl + sd * P, sd, yb, yf + D, z0, z0 + PZ, "fTS4")      # line along its foot
+        _quad(k, [(xp, yb, zl1), (xl, yb, zl1), (xl, yf + D, zl1), (xp, yf + D, zl1)], (0, 0, 1), "fTS1")
+        lo, hi = min(xp, xl), max(xp, xl)
+        front(lo, hi, z0, zl1, D, "fTS3")
+        front(lo, hi, z0, z0 + PZ, D + P, "fTS4")
 
 
 def _close(k, yf, h, z1):
