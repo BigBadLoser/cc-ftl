@@ -60,14 +60,20 @@ export function touchMarket(sim: Sim, trader: { port?: string } | undefined): vo
   if (trader?.port) sim.galaxy.rev++;
 }
 
-export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: CourierPlan, trips: Trip[] = []): Deal {
+export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: CourierPlan, trips: Trip[] = [], queued = false): Deal {
   const trader = sim.world.get(offer.ship, TraderC);
   const first = trips[0];
   const deal: Deal = {
     id: sim.trade.nextId++, ship: offer.ship, give: first?.give ?? check.give, get: first?.get ?? check.get, barter: offer.barter, balance: first?.balance ?? offer.balance,
-    held: 0, courier: plan.courier, phase: 'dispatch', vehicle: plan.vehicle, airlock: plan.airlock, timer: 0, tick: sim.tick,
+    held: 0, courier: plan.courier, phase: queued ? 'queued' : 'dispatch', vehicle: queued ? 0 : plan.vehicle, airlock: queued ? 0 : plan.airlock, timer: 0, tick: sim.tick,
   };
   if (trips.length > 1) deal.trip = { n: 1, of: trips.length, rest: trips.slice(1) };
+  if (queued) {
+    // Behind an earlier deal with this partner: nothing is held until it reaches the front (queue.ts).
+    sim.trade.deals.push(deal);
+    sim.trade.offers = sim.trade.offers.filter((o) => o.id !== offer.id);
+    return deal;
+  }
   holdTrip(sim, deal, trader);
   const v = plan.vehicle ? sim.world.get(plan.vehicle, VehicleC) : undefined;
   if (v && deal.courier === 'you') v.autopilot = true;
@@ -88,7 +94,7 @@ function agreedValues(sim: Sim, d: Deal): number[] {
 }
 
 /** Put a deal's current trip in escrow: the payer's credits are held, and the goods the trader sells leave its stock. */
-function holdTrip(sim: Sim, d: Deal, trader: Trader | undefined): void {
+export function holdTrip(sim: Sim, d: Deal, trader: Trader | undefined): void {
   const pay = settlement(d);
   d.getValue = agreedValues(sim, d);
   if (pay > 0) sim.trade.credits -= pay;
@@ -193,7 +199,7 @@ export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void 
   trimHistory(sim);
 }
 
-function trimHistory(sim: Sim): void {
+export function trimHistory(sim: Sim): void {
   const done = sim.trade.deals.filter((d) => !isLive(d));
   for (const d of done.slice(0, Math.max(0, done.length - DEAL_HISTORY))) sim.trade.deals.splice(sim.trade.deals.indexOf(d), 1);
 }

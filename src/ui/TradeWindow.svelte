@@ -1,39 +1,70 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiTrade, UiTradePartner } from './api';
-  import TradePane from './TradePane.svelte';
+  import FloatingWindow from './FloatingWindow.svelte';
+  import { centerTop } from './floatingWindow';
+  import TradeDeliveries from './TradeDeliveries.svelte';
+  import TradeMarket from './TradeMarket.svelte';
+  import TradeSlip from './TradeSlip.svelte';
+  import type { Draft } from './tradeDraft';
 
+  /** The one trade window, for a station or a trader ship: movable and pinnable, so it can stay open while shuttles fly. */
   let { api, partner: id, onClose }: { api: UiApi; partner: number; onClose: () => void } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   onMount(() => api.trade.subscribe((t) => (trade = t)));
   const p = $derived<UiTradePartner | undefined>(trade.partners.find((x) => x.id === id));
+  const deals = $derived(trade.deals.filter((d) => d.ship === id && (d.give || d.get)));
+  let draft = $state<Draft>({});
+  const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
+  const refusal: Record<string, string> = {
+    hostile: 'They have no interest in talking to you.', weaponsHot: 'Their guns are on you: they will not talk.',
+    silent: 'No answer. Nobody is aboard to hear.', noTrade: 'They have nothing to trade.',
+  };
+  const truceTip = $derived(p?.market?.banned ? 'Truce broken: everyone here fires on you until the ban ends.' : 'Nobody starts a fight here. Firing on or boarding anyone breaks the truce.');
+  const marketTip = $derived(p?.market ? `${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.${p.market.fence !== null ? ` The fence takes anything at ${Math.round(p.market.fence * 100)}%, no questions.` : ''}` : '');
+  const hail = () => api.dispatch({ type: 'trade.hail', ship: id });
 </script>
 
-<div class="veil" data-backdrop data-testid="trade-window">
-  <div class="card" role="dialog" aria-modal="true" aria-label="Trade">
-    <header>
-      <div class="who">
-        <h2 data-testid="trade-title">{p?.name ?? 'Trade'}</h2>
-        <small>{p?.role ?? ''}{p && p.kind === 'ship' ? ` · ${p.distance} tiles away` : ''}</small>
+<FloatingWindow id="trade" title="Trade" icon="station" min={{ w: 760, h: 380 }} defaultRect={(b) => centerTop(b, 1010)} {onClose} closeLabel="Close trade window" closeTestId="trade-close" testId="trade-window" titleTestId="trade-heading" titleFit>
+  {#snippet titleExtra()}
+    <span class="who" data-testid="trade-title">{p?.name ?? ''}</span>
+    <span class="role">{p?.role ?? ''}{p && p.kind === 'ship' && p.distance ? ` · ${p.distance} tiles away` : ''}</span>
+    {#if p?.market?.truce}<span class="chip" class:bad={p.market.banned} class:good={!p.market.banned} title={truceTip} data-testid="market-truce">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</span>{/if}
+    {#if p?.market}<span class="chip warn" title={marketTip} data-testid="black-market">BLACK MARKET</span>{/if}
+    <span class="credits" title="Your credits" data-testid="trade-credits">₵ {fmt(trade.credits)}</span>
+  {/snippet}
+  <div class="pane" data-testid="trade-pane">
+    {#if !p}
+      <p class="msg">They are gone.</p>
+    {:else if p.hail === 'none'}
+      <div class="msg"><p>No contact yet.</p><button class="act" data-testid="trade-hail" onclick={hail}>Hail {p.name}</button></div>
+    {:else if p.hail === 'refused'}
+      <div class="msg"><p class="bad" data-testid="trade-refused">{refusal[p.reason] ?? 'They refuse to talk.'}</p><button class="act" data-testid="trade-rehail" onclick={hail}>Hail again</button></div>
+    {:else}
+      <div class="grid" data-testid="trade-answered">
+        <TradeMarket {api} {p} credits={trade.free ?? trade.credits} bind:draft locked={!!p.offer} />
+        <div class="side">
+          <TradeSlip {api} {p} {trade} bind:draft />
+          <TradeDeliveries {api} {deals} />
+        </div>
       </div>
-      <span class="chip" data-testid="trade-credits" title="Your credits">₵ {trade.credits}</span>
-      <button aria-label="Close trade window" data-testid="trade-close" onclick={onClose}>×</button>
-    </header>
-    <TradePane {api} partner={id} {trade} />
+    {/if}
   </div>
-</div>
+</FloatingWindow>
 
 <style>
-  .veil { position: fixed; inset: 0; z-index: 25; background: rgba(4, 8, 14, 0.5); display: grid; place-items: center; padding: 12px; touch-action: none; }
-  .card { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; overflow: hidden; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 0; padding: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
-  header { flex: none; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-  .who { flex: 1; min-width: 0; }
-  h2 { margin: 0; font-size: 18px; color: var(--ink-accent); }
-  .who small { color: var(--dim); }
-  .chip { padding: 5px 10px; border-radius: 0; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; }
-  header button { min-width: 36px; min-height: 36px; padding: 0; font-size: 18px; }
-  @media (max-width: 600px) {
-    .veil { place-items: end stretch; padding: 0; }
-    .card { width: 100%; max-height: 88dvh; border-radius: 0; border-width: 1px 0 0; padding: 12px 12px calc(12px + var(--sab)); }
-  }
+  .who { color: var(--text); white-space: nowrap; }
+  .role { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .chip { font: 600 11px var(--head-font); letter-spacing: 0.1em; padding: 1px 6px; border: 1px solid var(--line-hi); color: var(--dim); white-space: nowrap; cursor: help; }
+  .chip.good { color: var(--green); border-color: var(--green); }
+  .chip.bad { color: var(--red); border-color: var(--red); }
+  .chip.warn { color: var(--amber); border-color: var(--amber); }
+  .credits { margin-left: auto; color: var(--gold); font: 700 14px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .pane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 290px; }
+  .side { display: flex; flex-direction: column; min-height: 0; }
+  .msg { padding: 16px; color: var(--dim); display: grid; gap: 8px; justify-items: start; }
+  .msg p { margin: 0; }
+  .msg .bad { color: var(--red); }
+  .act { border-color: var(--cyan); color: var(--cyan); background: transparent; }
 </style>

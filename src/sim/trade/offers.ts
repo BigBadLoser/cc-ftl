@@ -3,6 +3,7 @@ import type { Sim } from '../sim';
 import { contrabandRate, isContraband } from '../blackmarket/services';
 import { quote, type Quote } from './pricing';
 import { playerItems } from './player';
+import { commitments } from './commit';
 import { ensureTrader, hailVerdict } from './traders';
 import type { Offer } from './types';
 
@@ -47,12 +48,14 @@ export function checkOffer(sim: Sim, ship: number, giveIn: readonly ItemQty[], g
   if (give.some((l) => isContraband(sim, l.item)) && contrabandRate(sim, trader) === null) return fail('contraband');
   const q = quote(sim, ship, give, get);
   if (!q) return fail('noPrice');
-  for (const l of get) if ((trader.stock.find((s) => s.item === l.item)?.count ?? 0) < l.count) return fail('theyLack', q);
-  for (const l of give) if (playerItems(sim, l.item) < l.count) return fail('noItems', q);
+  // Goods and credits already promised to deals that wait (queue.ts) are not available twice.
+  const cm = commitments(sim);
+  for (const l of get) if ((trader.stock.find((s) => s.item === l.item)?.count ?? 0) - (cm.stock.get(`${ship}:${l.item}`) ?? 0) < l.count) return fail('theyLack', q);
+  for (const l of give) if (playerItems(sim, l.item) - (cm.items.get(l.item) ?? 0) < l.count) return fail('noItems', q);
   if (barter && q.balance > 0) return fail('unbalanced', q);
   const pays = barter ? 0 : q.balance;
-  if (pays > sim.trade.credits) return fail('noFunds', q);
-  if (pays < 0 && -pays > trader.credits) return fail('theyBroke', q);
+  if (pays > sim.trade.credits - cm.credits) return fail('noFunds', q);
+  if (pays < 0 && -pays > trader.credits - (cm.theirs.get(ship) ?? 0)) return fail('theyBroke', q);
   return { error: null, give, get, quote: q };
 }
 
