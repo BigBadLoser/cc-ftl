@@ -448,10 +448,14 @@ def _posts(k, x0, x1, yb, yf, z0):
             side(xs, sd, ys, yf, zm, zm + PZ, "fTS4")
         side(xs, sd, ys, yf, zl1, zl1 + PZ, "fTS4")                 # lip; the shadow under the header, filled on up
         zp = _top(xp, x0, x1)                                       # to the cut on the side and on the front over
-        side(xs, sd, ys, yf, zt, zp, "fTS7")                        # the slope's start, one shadow, not bent)
+        side(xp + sd * PANE_OUT / 2, sd, ys, yf, zt, zp, "fTS7")    # the slope's start, one shadow, not bent:
+                                                                    # under the pane's edge up the side)
         ss = _slope_starts(x0, x1)[0 if sd > 0 else 1]
         _quad(k, [(ss, yf + 3 * P, zs0), (xp, yf + 3 * P, zs0), (xp, yf + 3 * P, zp), (ss, yf + 3 * P, _zh0())],
               (0, 1, 0), "fTS7")
+        c0, c1 = col(10 if sd > 0 else 21)                          # (the face's groove at the post's corner: on up
+        _quad(k, [(c0, yf + 4 * P, zt), (c1, yf + 4 * P, zt), (c1, yf + 4 * P, _top(c1, x0, x1)),   # through it to
+                  (c0, yf + 4 * P, _top(c0, x0, x1))], (0, 1, 0), "fTS4")                         # the cushion)
         xl = xp + sd * D                                            # the lip round the corner: its front facing the
         side(xl, sd, yb, yf + D, z0, zl1, LIP_END)                  # opening, its top, the corner's front, the dark
         side(xl + sd * P, sd, yb, yf + D, z0, z0 + PZ, "fTS4")      # line along its foot
