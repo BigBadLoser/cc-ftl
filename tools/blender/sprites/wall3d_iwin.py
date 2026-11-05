@@ -29,16 +29,13 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
                         # tiles level all across)
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
-SH_RUN = 10 / 32        # the arch's shoulders (ref #2767: the cushion by each post 8 px deep where the run's are 8,
-SH_DROP = 5 * PZ        # 13 at the post, its underside a straight bevel over ~9 px): the header on down over each
-SH_SHADE = "fTS4"       # post this far, the opening's top rising back to the beam over SH_RUN; the shadow under it
 LIP_END = "fTS8"        # the face's foot lip's end there: a step darker than its front, so it reads apart
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
 SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, SH_SHADE) + RAMP_FACE)
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -49,13 +46,6 @@ def _heights():
     z1 = W.HF - 0.031                                   # (tan: the header's top under the cap's black)
     zs0 = z1 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D)
     return zs, zs0 - 2 * PZ
-
-
-def _top(x, x0, x1):
-    """The opening's top at x: the beam's underside, down SH_DROP at a post over SH_RUN from it (the shoulders)."""
-    z1 = _heights()[1]
-    d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
-    return z1 - SH_DROP * max(0.0, 1.0 - max(0.0, d) / SH_RUN)
 
 
 def _sill(x, x0, x1):
@@ -96,7 +86,7 @@ def _clip(pts, planes):
 def _slabs(x0, x1):
     """The opening along x as slabs between the crest's bends: (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN, x0 + SH_RUN, x1 - SH_RUN) if xa < u < xb})
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
 
 
@@ -108,10 +98,8 @@ def _cut(k, x0, x1, z1):
     regions = [[(0, xa, -1)], [(0, xb, 1)]]
     for u0, u1, h0, h1 in sl:
         g = (h1 - h0) / (u1 - u0)
-        t0, t1 = _top(u0, x0, x1), _top(u1, x0, x1)
-        gt = (t1 - t0) / (u1 - u0)
         inx = [(0, u0, 1), (0, u1, -1)]
-        regions += [inx + [((-gt, 0.0, 1.0), t0 - gt * u0)], inx + [((g, 0.0, -1.0), g * u0 - h0)]]
+        regions += [inx + [(2, z1, 1)], inx + [((g, 0.0, -1.0), g * u0 - h0)]]
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -233,8 +221,7 @@ def hook(k, sp, own=True):
     yl, zl = yf + TAN.LIP_D, z0 + TAN.LIP_TOP
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sections, the lip's end on each
         if on:
-            zp = _top(u, x0, x1)
-            _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, zp), (u, yb, zp)], (sd, 0, 0), POST_IN)
+            _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, z1), (u, yb, z1)], (sd, 0, 0), POST_IN)
             _quad(k, [(u, yf, z0), (u, yl, z0), (u, yl, zl), (u, yf, zl)], (sd, 0, 0), LIP_END)
     us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
     for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
@@ -256,11 +243,7 @@ def hook(k, sp, own=True):
             ha, hb = _sill(ua, x0, x1) + 0.003, _sill(ub, x0, x1) + 0.003
             ra, rb = _reach(ha - 0.003, yf), _reach(hb - 0.003, yf)
             _quad(k, [(ua, -ra, ha), (ub, -rb, hb), (ub, rb, hb), (ua, ra, ha)], (0, 0, 1), SLOPE_LIT)
-    ts = sorted({a, b} | {u for u in (x0 + SH_RUN, x1 - SH_RUN) if a < u < b})    # the beam's underside, and the
-    for u0, u1 in zip(ts, ts[1:]):                                                 # shoulders'
-        t0, t1 = _top(u0, x0, x1), _top(u1, x0, x1)
-        _quad(k, [(u0, yb, t0), (u1, yb, t1), (u1, yf, t1), (u0, yf, t0)], (0, 0, -1), SILL_COL)
-    _shoulders(k, x0, x1, yf, z1)
+    _quad(k, [(a, yb, z1), (b, yb, z1), (b, yf, z1), (a, yf, z1)], (0, 0, -1), SILL_COL)
     if CLOSE and own and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
@@ -273,29 +256,8 @@ def hook(k, sp, own=True):
         return
     global GLASS
     GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
-    GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((u, 0.0, _top(u, x0, x1))) for u in ts[::-1]],
+    GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
-
-
-def _shoulders(k, x0, x1, yf, z1):
-    """The header carried down over each post as a block as proud as the cushion (its face's tone), its underside a
-    bevel up to the cushion's foot SH_RUN out into the opening; on the face under the bevel, the cushion's shadow
-    (2 px) running down with it; the block's end at the tile's edge on the lit side."""
-    zh0 = W.HF - 0.031 - TAN.HEAD_H                     # (the cushion's front's foot)
-    yh, dz = yf + TAN.HEAD_D, zh0 - z1                  # (the opening's top under that foot)
-    for xp, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
-        if not on:
-            continue
-        xe, xs = -0.5 * sd, xp + sd * SH_RUN            # (the tile's edge behind the post; the bevel's top)
-        lo = zh0 - SH_DROP
-        pts = [(xe, yh, zh0), (xs, yh, zh0), (xp, yh, lo), (xe, yh, lo)]
-        k.poly([Vector(p) for p in (pts if sd > 0 else pts[::-1])], TAN.FACE, 3, Vector((0, 1, 0)))
-        for (ua, za), (ub, zb) in (((xe, lo), (xp, lo)), ((xp, lo), (xs, zh0))):     # its underside
-            _quad(k, [(ua, yf, za), (ub, yf, zb), (ub, yh, zb), (ua, yh, za)], (0, 0, -1), SH_SHADE)
-        if sd < 0:                                      # (its end at +x, lit side: as the cushion's ends)
-            _quad(k, [(xe, yf, lo), (xe, yh, lo), (xe, yh, zh0), (xe, yf, zh0)], (1, 0, 0), TAN.HEAD_END)
-        sh = [(xp, yf + 1e-3, lo - dz), (xs, yf + 1e-3, z1), (xs, yf + 1e-3, z1 + 2 * PZ), (xp, yf + 1e-3, lo - dz + 2 * PZ)]
-        _quad(k, sh, (0, 1, 0), SH_SHADE)               # (the shadow on the face under the bevel)
 
 
 def _close(k, yf, h, z1):
