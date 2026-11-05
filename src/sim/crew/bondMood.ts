@@ -12,7 +12,7 @@ export const BOND_MOOD_LABELS: Readonly<Record<string, string>> = {
 };
 
 /** Living bond partners of one kind within BOND_NEAR_RADIUS on the same grid (entities). */
-function near(sim: Sim, id: number, kind: 'friend' | 'rival'): number[] {
+export function near(sim: Sim, id: number, kind: 'friend' | 'rival'): number[] {
   const pid = personOf(sim, id);
   const pos = sim.world.get(id, PositionC);
   if (!pid || !pos) return [];

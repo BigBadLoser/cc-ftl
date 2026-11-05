@@ -4,6 +4,7 @@
 import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
+import t_cup from '@tabler/icons/outline/cup.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_settings from '@tabler/icons/outline/settings.svg?raw';
 import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
@@ -174,6 +175,7 @@ export const FILES = {
   pencil: 'pencil',
   chevRight: 'chevron-right',
   shirt: 'shirt',
+  cup: 'cup',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -260,6 +262,7 @@ const RAW: Record<string, string> = {
   'wind': t_wind,
   'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
+  'cup': t_cup,
 };
 
 
