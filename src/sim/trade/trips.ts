@@ -96,14 +96,16 @@ function cutByUnits(sim: Sim, ship: number, give: readonly ItemQty[], get: reado
  * running total of the trips' balances. `player` is the highest the player has paid out at any point, `trader` the highest the trader has.
  * A barter moves no credits.
  */
-export function peakFunding(trips: readonly Trip[], barter: boolean): { player: number; trader: number } {
-  let run = 0;
-  let player = 0;
-  let trader = 0;
-  for (const t of trips) {
-    if (!barter) run += t.balance;
-    player = Math.max(player, run);
-    trader = Math.max(trader, -run);
+export function peakFunding(trips: readonly Trip[], barter: boolean, from = { player: 0, trader: 0 }): { player: number; trader: number } {
+  // `from`: what each wallet is already due to pay out (or, negative, to receive) before the first of these trips (a running trip's settlement).
+  let p = from.player;
+  let t = from.trader;
+  let player = Math.max(0, p);
+  let trader = Math.max(0, t);
+  for (const trip of trips) {
+    if (!barter) { p += trip.balance; t -= trip.balance; }
+    player = Math.max(player, p);
+    trader = Math.max(trader, t);
   }
   return { player, trader };
 }

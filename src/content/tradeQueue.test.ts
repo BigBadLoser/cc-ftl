@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, newGame, playerItems, type Sim } from '../sim';
+import { ShipC, TraderC, checkOffer, newGame, playerItems, type Sim } from '../sim';
 import { isLive } from '../sim/trade/deals';
 import { commitments } from '../sim/trade/commit';
 import { cargoAdd } from '../sim/vehicles/cargo';
@@ -193,5 +193,31 @@ describe('goods promised to a loading deal', () => {
     cargoAdd(sim, deal.vehicle, 'item.metal', 10);
     expect(commitments(sim).items.get('item.metal')).toBe(10);
     expect(have).toBeGreaterThanOrEqual(30);
+  });
+});
+
+describe('credits promised to a running order', () => {
+  it('count the running trip settling: trips of -100 then +100 reserve nothing against an empty wallet', () => {
+    const { sim, st } = setup();
+    sim.enqueue({ type: 'debug.setCredits', value: 0 });
+    step(sim);
+    sim.trade.deals.push({
+      id: 900, ship: st, give: [], get: [], barter: false, balance: -100, held: 100, courier: 'you', phase: 'out', vehicle: 0, airlock: 0, timer: 0, tick: 0,
+      trip: { n: 1, of: 2, rest: [{ give: [], get: [], balance: 100 }] },
+    });
+    expect(commitments(sim).credits).toBe(0); // 100 comes in from trip 1 before trip 2 asks for 100
+    expect(commitments(sim).theirs.get(st) ?? 0).toBe(0);
+    const have = playerItems(sim, 'item.metal');
+    expect(have).toBeGreaterThan(0);
+    expect(checkOffer(sim, st, [{ item: 'item.metal', count: 5 }], [], false).error).toBeNull(); // a further sale is fine
+  });
+
+  it('still reserve what a later trip needs beyond what the running one brings', () => {
+    const { sim, st } = setup();
+    sim.trade.deals.push({
+      id: 901, ship: st, give: [], get: [], barter: false, balance: -100, held: 100, courier: 'you', phase: 'out', vehicle: 0, airlock: 0, timer: 0, tick: 0,
+      trip: { n: 1, of: 2, rest: [{ give: [], get: [], balance: 300 }] },
+    });
+    expect(commitments(sim).credits).toBe(200);
   });
 });

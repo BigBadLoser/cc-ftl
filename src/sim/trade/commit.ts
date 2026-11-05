@@ -39,7 +39,10 @@ export function commitments(sim: Sim): Commitments {
     // The running trip's own goods are still in the holds until the shuttle has loaded them: what crew have already put aboard has left
     // the storage (playerItems no longer counts it), so only the rest is still promised.
     if (d.phase === 'dispatch' || d.phase === 'load') for (const l of d.give) add(c.items, l.item, Math.max(0, l.count - (d.vehicle ? cargoOf(sim, d.vehicle, l.item) : 0)));
-    const peak = peakFunding(trips, d.barter);
+    // A running trip has its escrow out of the payer's wallet already; what it still does is settle: the player is paid it back when the
+    // trader was the payer (balance < 0), the trader is when the player was. Later trips are counted from there.
+    const run = d.phase === 'queued' || d.barter ? { player: 0, trader: 0 } : { player: Math.min(0, d.balance), trader: -Math.max(0, d.balance) };
+    const peak = peakFunding(trips, d.barter, run);
     c.credits += peak.player;
     if (peak.trader > 0) add(c.theirs, d.ship, peak.trader);
   }
