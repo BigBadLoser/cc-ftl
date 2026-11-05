@@ -77,11 +77,7 @@ export function settleVisits(sim: Sim, spec: SceneSpec): void {
     const name = sim.world.get(id, ShipC)?.name ?? s.contact.name ?? 'The skiff';
     if (party.length > 0 && a.trap) turn(sim, a, id);
     else if (party.length > 0) {
-      for (const c of party) {
-        abortTask(sim, c, 'removed');
-        releaseBedOwner(sim, c);
-        sim.world.destroyEntity(c);
-      }
+      for (const c of party) removeGuest(sim, c);
       if (a.visit !== 'delivered') applyEffect(sim, { type: 'flag', flag: 'spared_pirate', op: 'clear' }, { event: spec.event ?? spec.key, actor: null });
       sim.events.emit({ type: 'scene.observed', rule: 'visitLeft', ship: id, text: `${name}'s crew take their leave`, tone: 'info' });
       a.visit = a.visit === 'delivered' ? 'delivered' : 'refused';
@@ -165,10 +161,19 @@ function reconcileHome(sim: Sim, a: Ambush, b: Boarder): boolean {
     return false;
   }
   if (v.state === 'docked') {
+    // A downed guest cannot walk to the shuttle: their crewmates carry them home with them, so nobody is left behind, neutral, aboard.
+    for (const c of b.crew) if (sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !sim.world.has(c, AboardC)) removeGuest(sim, c);
     sim.enqueue({ type: 'vehicle.undock', vehicle: b.vehicle });
     sim.enqueue({ type: 'vehicle.return', vehicle: b.vehicle });
   } else if (retry && v.state === 'flying' && !v.dest) sim.enqueue({ type: 'vehicle.return', vehicle: b.vehicle });
   return false;
+}
+
+/** A visiting guest leaves play (taken home with their party, or gone when the player leaves the scene). */
+function removeGuest(sim: Sim, c: number): void {
+  abortTask(sim, c, 'removed');
+  releaseBedOwner(sim, c);
+  sim.world.destroyEntity(c);
 }
 
 /** Let the skiff move on: it is no longer held, and its business here is done now. */

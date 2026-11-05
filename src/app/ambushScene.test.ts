@@ -383,6 +383,23 @@ describe('the returning pirate: in its pocket', () => {
     }
   });
 
+  it('an honest party with a downed guest takes them home: nobody is left aboard when the visit completes', () => {
+    const { sim, skiff } = inScene(3, false);
+    untilAsked(sim);
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+    const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+    expect(party.length).toBeGreaterThan(0);
+    sim.world.add(party[0]!, DownedC, { bleed: 999, stabilized: true, bed: 0 });
+    for (let i = 0; i < 20 * 300 && !ambushOf(sim)?.home; i++) step(sim);
+    expect(ambushOf(sim)?.home).toBe(true);
+    const me = playerShip(sim);
+    expect(withPlayerAboard(sim, () => party.every((c) => {
+      const pos = sim.world.get(c, PositionC);
+      return !sim.world.has(c, CrewC) || !pos || shipIdOf(sim, pos) !== me;
+    }))).toBe(true);
+  });
+
   it('leaving mid-flight cancels the visit cleanly', () => {
     for (const trap of [true, false]) {
       const { sim, skiff } = inScene(3, trap);
