@@ -88,7 +88,7 @@
   .chip.red { color: var(--red); border-color: var(--red); }
   .chip.amber { color: var(--amber); border-color: var(--amber); }
   .credits { margin-left: auto; color: var(--gold); font: 700 14px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
-  .cols { flex: 1 1 auto; min-height: 610px; display: grid; grid-template-columns: 220px minmax(0, 1fr) 340px; }
+  .cols { flex: 1 1 610px; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr) 340px; }
   .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); overflow-y: auto; }
   .pane:last-child { border-right: 0; }
   .body { padding: 10px 12px; display: grid; gap: 10px; align-content: start; }
