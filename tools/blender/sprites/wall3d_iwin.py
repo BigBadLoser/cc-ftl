@@ -30,7 +30,9 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 ARCH_CUT = 5 * PZ       # the arch: the opening up into the header cushion (its front 11 px) by about half of it,
-ARCH_RUN = 9 / 32       # rising from the beam's foot at a post over this (ref #2767's shoulders: ~9 px)
+ARCH_SLOPE = (1.5, 0.5)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x post,
+                        # the +x one: a clean 45 on screen both sides (the wall itself falls half a px per px)
+HEAD_EDGE = "fTS8"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
 POST_SEAM = (5, 26)     # the posts' fronts: a groove up each one's middle, lip to header (px columns: left post's,
 POST_PLAIN = "fTS3"     # right's), the slats gone from its half nearest the window (the face's plain tan)
 LIP_END = "fTS8"        # the face's foot lip's end there: a step darker than its front, so it reads apart
@@ -52,13 +54,27 @@ def _heights():
     return zs, zs0 - 2 * PZ
 
 
+def _zh0():
+    """The header cushion's front's foot."""
+    return W.HF - 0.031 - TAN.HEAD_H
+
+
+def _arch_runs():
+    """How far along each shoulder runs (at the -x post, the +x one)."""
+    return tuple(ARCH_CUT / (s * PZ * 32) for s in ARCH_SLOPE)
+
+
 def _top(x, x0, x1):
-    """The opening's top at x: up into the header (ARCH_CUT over the cushion front's foot) over the opening, sloping
-    down to the beam's foot (_heights) at a post over ARCH_RUN."""
-    z1 = _heights()[1]
-    rise = W.HF - 0.031 - TAN.HEAD_H + ARCH_CUT - z1
-    d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
-    return z1 + rise * min(1.0, max(0.0, d) / ARCH_RUN)
+    """The opening's top at x: ARCH_CUT up into the header cushion over the opening, down at ARCH_SLOPE to the
+    cushion's foot at each post's edge."""
+    ra, rb = _arch_runs()
+    f = min([1.0] + ([max(0.0, x - x0) / ra] if x0 > -0.5 else []) + ([max(0.0, x1 - x) / rb] if x1 < 0.5 else []))
+    return _zh0() + ARCH_CUT * f
+
+
+def _arch_bends(x0, x1):
+    ra, rb = _arch_runs()
+    return x0 + ra, x1 - rb
 
 
 def _sill(x, x0, x1):
@@ -99,7 +115,7 @@ def _clip(pts, planes):
 def _slabs(x0, x1):
     """The opening along x as slabs between the crest's bends: (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN, x0 + ARCH_RUN, x1 - ARCH_RUN) if xa < u < xb})
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + _arch_bends(x0, x1) if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
 
 
@@ -236,7 +252,8 @@ def hook(k, sp, own=True):
     k.side = None
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sections, the lip's end on each
         if on:
-            _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, z1), (u, yb, z1)], (sd, 0, 0), POST_IN)
+            zp = _top(u, x0, x1)
+            _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, zp), (u, yb, zp)], (sd, 0, 0), POST_IN)
     _posts(k, x0, x1, yb, yf, z0)
     us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
     for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
@@ -258,14 +275,17 @@ def hook(k, sp, own=True):
             ha, hb = _sill(ua, x0, x1) + 0.003, _sill(ub, x0, x1) + 0.003
             ra, rb = _reach(ha - 0.003, yf), _reach(hb - 0.003, yf)
             _quad(k, [(ua, -ra, ha), (ub, -rb, hb), (ub, rb, hb), (ua, ra, ha)], (0, 0, 1), SLOPE_LIT)
-    ts = sorted({a, b} | {u for u in (x0 + ARCH_RUN, x1 - ARCH_RUN) if a < u < b})  # the opening's top: its underside
+    ts = sorted({a, b} | {u for u in _arch_bends(x0, x1) if a < u < b})  # the opening's top: its underside
     for u0, u1 in zip(ts, ts[1:]):                                                 # (the beam's, the header's cut)
         t0, t1 = _top(u0, x0, x1), _top(u1, x0, x1)
-        _quad(k, [(u0, yb, t0), (u1, yb, t1), (u1, yf, t1), (u0, yf, t0)], (0, 0, -1), SILL_COL)
+        uc = SILL_COL if abs(t1 - t0) < 1e-9 else POST_IN                       # (a shoulder's cut faces the
+        _quad(k, [(u0, yb, t0), (u1, yb, t1), (u1, yf, t1), (u0, yf, t0)], (0, 0, -1), uc)   # opening, as the posts')
         zh0, yh = W.HF - 0.031 - TAN.HEAD_H, yf + TAN.HEAD_D                      # (and the cushion's, where cut)
         q = _clip([(u0, yf, t0), (u1, yf, t1), (u1, yh, t1), (u0, yh, t0)], [(2, zh0, 1)])
         if len(q) >= 3:
-            _quad(k, q, (0, 0, -1), SILL_COL)
+            _quad(k, q, (0, 0, -1), uc)
+        ye = yh + T.PAINT                                                         # (the cushion's cut foot: a
+        _quad(k, [(u0, ye, t0), (u1, ye, t1), (u1, ye, t1 + PZ), (u0, ye, t0 + PZ)], (0, 1, 0), HEAD_EDGE)  # brown edge)
     if CLOSE and own and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
