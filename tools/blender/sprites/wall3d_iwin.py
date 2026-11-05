@@ -30,8 +30,8 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 ARCH_CUT = 5 * PZ       # the arch: the opening up into the header cushion (its front 11 px) by about half of it,
-ARCH_SLOPE = (1.5, 0.5)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x post,
-                        # the +x one: a clean 45 on screen both sides (the wall itself falls half a px per px)
+ARCH_SLOPE = (0.5, 0.5)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x post,
+                        # the +x one: mirrored (the +x one a clean 45 on screen, the wall falling half a px per px)
 PANE_EDGE = "fTS6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
 PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
 PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
