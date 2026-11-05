@@ -143,12 +143,22 @@ async function draw(req: UiHoloRequest): Promise<UiHolo | null> {
     crop.width = w;
     crop.height = h;
     crop.getContext('2d')?.drawImage(shot, x0, y0, w, h, 0, 0, w, h);
+    const MC = 16;
+    const MR = 10;
+    const hit = new Array<number>(MC * MR).fill(0);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (px[(y * shot.width + x) * 4 + 3]! > 0) hit[Math.min(MR - 1, Math.floor(((y - y0) / h) * MR)) * MC + Math.min(MC - 1, Math.floor(((x - x0) / w) * MC))]!++;
+      }
+    }
+    const cellArea = (w / MC) * (h / MR);
+    const mask = { cols: MC, rows: MR, cells: hit.map((n) => (n > cellArea * 0.03 ? '1' : '0')).join('') };
     const anchors: UiHolo['anchors'] = {};
     for (const [k, t] of Object.entries(anchorsOf(sim, id))) {
       const p = r.screenOf(id, t.x, t.y);
       anchors[k] = { x: (p.x * scale - x0) / w, y: (p.y * scale - y0) / h };
     }
-    return { url: crop.toDataURL('image/png'), w, h, anchors };
+    return { url: crop.toDataURL('image/png'), w, h, anchors, mask };
   } finally {
     r?.dispose();
     host.remove();

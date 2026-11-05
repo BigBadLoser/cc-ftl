@@ -10,7 +10,7 @@
    * `force` holds readout flickers for stills.
    */
   let { scanned, holo = null, pending = false, title, callouts = [], readout = [], hint, emptyLabel = 'NO SCAN', force = false }: {
-    scanned: boolean; holo?: { url: string; w: number; h: number } | null; pending?: boolean; title?: string; callouts?: Callout[]; readout?: ReadoutRow[];
+    scanned: boolean; holo?: { url: string; w: number; h: number; mask?: { cols: number; rows: number; cells: string } } | null; pending?: boolean; title?: string; callouts?: Callout[]; readout?: ReadoutRow[];
     hint?: string | null; emptyLabel?: string; force?: boolean;
   } = $props();
 
@@ -27,23 +27,56 @@
     return { x: PAD.l + (bw - w) / 2, y: PAD.t + (bh - h) / 2, w, h };
   });
   type Corner = 'tl' | 'tr' | 'bl' | 'br';
-  /** Each callout gets a corner: its own request, else the side it is nearest; two labels never share a row (top or bottom), so they do not run into each other. */
+  /** Overlap area of a box rectangle with the hull's occupied mask cells. */
+  function hullOverlap(r: { x: number; y: number; w: number; h: number }): number {
+    const f = fit;
+    const m = holo?.mask;
+    if (!f) return 0;
+    if (!m) return Math.max(0, Math.min(r.x + r.w, f.x + f.w) - Math.max(r.x, f.x)) * Math.max(0, Math.min(r.y + r.h, f.y + f.h) - Math.max(r.y, f.y));
+    const cw = f.w / m.cols;
+    const ch = f.h / m.rows;
+    let area = 0;
+    for (let i = 0; i < m.cells.length; i++) {
+      if (m.cells[i] !== '1') continue;
+      const cx = f.x + (i % m.cols) * cw;
+      const cy = f.y + Math.floor(i / m.cols) * ch;
+      area += Math.max(0, Math.min(r.x + r.w, cx + cw) - Math.max(r.x, cx)) * Math.max(0, Math.min(r.y + r.h, cy + ch) - Math.max(r.y, cy));
+    }
+    return area;
+  }
+  const rectOf = (corner: Corner, s: { w: number; h: number }): { x: number; y: number; w: number; h: number } => ({
+    x: corner[1] === 'r' ? W - 4 - s.w : 4, y: corner[0] === 't' ? TOP : H - 4 - s.h, w: s.w, h: s.h,
+  });
+  const overlap2 = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): number =>
+    Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  /**
+   * Each callout takes the corner of the box where its label overlaps the hull least (and no other label): its own request or the nearest corner
+   * first, so a tie goes there; with no clear corner the least-overlapping one, which is the one farthest from the hull.
+   */
   const placed = $derived.by(() => {
-    const taken: Corner[] = [];
-    const rows: string[] = [];
     const f = fit;
     if (!f) return [];
+    const used: { x: number; y: number; w: number; h: number }[] = [];
+    const taken: Corner[] = [];
     return callouts.map((c) => {
       const px = f.x + c.at.x * f.w;
       const py = f.y + c.at.y * f.h;
-      const h = px > W / 2 ? 'r' : 'l';
-      let v = py > H / 2 ? 'b' : 't';
-      if (rows.includes(v)) v = v === 't' ? 'b' : 't';
-      const want = (c.corner ?? `${v}${h}`) as Corner;
-      const corner = taken.includes(want) ? (`${want[0]}${want[1] === 'r' ? 'l' : 'r'}` as Corner) : want;
-      taken.push(corner);
-      rows.push(corner[0]!);
-      return { c, px, py, corner };
+      const s = sizes[c.id] ?? { w: 100, h: 30 };
+      const near = `${py > H / 2 ? 'b' : 't'}${px > W / 2 ? 'r' : 'l'}` as Corner;
+      const all: Corner[] = ['tl', 'tr', 'bl', 'br'];
+      const order = c.corner ? [c.corner] : [near, ...all.filter((x) => x !== near)];
+      let best = order[0]!;
+      let bestScore = Infinity;
+      for (const k of order) {
+        if (taken.includes(k) && order.length > 1) continue;
+        const r = rectOf(k, s);
+        // Hull overlap and other labels dominate; among clear corners the nearest to the anchor wins, which keeps leader lines from crossing.
+        const score = hullOverlap(r) + used.reduce((n, u) => n + overlap2(r, u) * 50, 0) + 6 * Math.hypot(px - (r.x + r.w / 2), py - (r.y + r.h / 2));
+        if (score < bestScore - 1e-6) { best = k; bestScore = score; }
+      }
+      taken.push(best);
+      used.push(rectOf(best, s));
+      return { c, px, py, corner: best };
     });
   });
   let sizes = $state<Record<string, { w: number; h: number }>>({});

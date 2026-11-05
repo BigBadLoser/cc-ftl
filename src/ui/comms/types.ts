@@ -20,6 +20,8 @@ export interface UiHolo {
   w: number;
   h: number;
   anchors: Record<string, { x: number; y: number }>;
+  /** Which cells of a cols x rows grid over the picture hold hull pixels (row by row, '1' = occupied): where a label must not sit. */
+  mask?: { cols: number; rows: number; cells: string };
 }
 
 /** One line of a transcript: narration (grey italics) or a quoted line from `speaker`, who may flicker to `speakerAlt`. */
