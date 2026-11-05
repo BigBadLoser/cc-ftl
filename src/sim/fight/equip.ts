@@ -1,6 +1,6 @@
 import { CrewC, DraftedC, PathC, PositionC, type Position } from '../crew/components';
 import { abortTask } from '../ai/task';
-import { clearPath, isIncapacitated, origin } from '../crew/helpers';
+import { clearPath, isBreaking, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { spillItems } from '../items/stacks';
 import { storageAdd, storageCount, storageTake } from '../items/storage';
@@ -42,6 +42,7 @@ export function orderEquip(sim: Sim, crew: number, item: string): string | null 
   if (!handDefOf(sim, item)) return 'notAWeapon';
   const pos = sim.world.get(crew, PositionC);
   if (!pos || isIncapacitated(sim, crew)) return 'incapacitated';
+  if (isBreaking(sim, crew)) return 'breaking'; // the break machine is the only path writer: no automatic or ordered fetch mid-break
   if (sim.world.get(crew, EquipC)?.weapon === item) return 'alreadyEquipped';
   const storage = nearestStock(sim, shipIdOf(sim, pos), origin(pos), item);
   if (!storage) return 'noStock';
@@ -67,7 +68,7 @@ export function equipOrders(sim: Sim): void {
     const order = sim.world.get(id, EquipOrderC);
     const pos = sim.world.get(id, PositionC);
     const path = sim.world.get(id, PathC);
-    if (!order || !pos || !path) continue;
+    if (!order || !pos || !path || isBreaking(sim, id)) continue;
     const cancel = (): void => {
       sim.world.remove(id, EquipOrderC);
       clearPath(sim, id);

@@ -8,7 +8,7 @@ import { Struct } from '../structure';
 import { EmbarkOrderC } from '../vehicles/components';
 import { AssignmentC, CrewC, DeadC, DraftedC, PathC, PositionC, type Job, type Path } from './components';
 import { FORCE_DOOR_TICKS, createJob } from './handlers';
-import { findJobAt, isFighting, isIncapacitated, isJammedDoor, jobGoal, origin } from './helpers';
+import { findJobAt, isBreaking, isFighting, isIncapacitated, isJammedDoor, jobGoal, origin } from './helpers';
 
 /**
  * Forcing a jammed door as a drafted order (`crew.forceDoor`). It is the same 'forceDoor' job the inspector posts for undrafted crew
@@ -31,7 +31,7 @@ export const forceDoorHandlers: Handlers = {
     let best: { crew: number; steps: { x: number; y: number }[] } | null = null;
     for (const id of cmd.ids) {
       const pos = sim.world.get(id, PositionC);
-      if (!pos || !sim.world.has(id, CrewC) || !sim.world.has(id, DraftedC) || sim.world.has(id, DeadC) || isIncapacitated(sim, id)) continue;
+      if (!pos || !sim.world.has(id, CrewC) || !sim.world.has(id, DraftedC) || sim.world.has(id, DeadC) || isIncapacitated(sim, id) || isBreaking(sim, id)) continue;
       if (isFighting(sim, id)) { fighting = true; continue; } // a fighter keeps fighting: no door work alongside it
       const steps = planWalk(sim, id, cmd.ship, origin(pos), jobGoal({ kind: 'forceDoor', x: cmd.x, y: cmd.y }))?.steps;
       if (steps && (!best || steps.length < best.steps.length)) best = { crew: id, steps };

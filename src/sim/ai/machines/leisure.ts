@@ -1,3 +1,5 @@
+import { BreakdownC } from '../../crew/breakTypes';
+import type { ShipGrid } from '../../shipGrid';
 import { CrewC, DeadC, PathC, PositionC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { hasMood, noteLeisure } from '../../crew/mood';
@@ -60,6 +62,11 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
   const from = origin(pos);
   const grid = shipGrid(sim, ship);
   if (!grid) return null;
+  // Isolation (a mild mental break): the quietest reachable room instead of company.
+  if (sim.world.get(id, BreakdownC)?.kind === 'isolation') {
+    const quiet = quietSpot(sim, id, ship, grid, from);
+    if (quiet) return quiet;
+  }
   // The mess: a tile in the room of the nearest working galley, drawn at random so a crowd spreads out.
   let mess: Tile | null = null;
   let best = Infinity;
@@ -92,4 +99,32 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
   if (!mate) return null;
   if (best <= 1) return []; // already beside them
   return safePathBeside(sim, id, ship, from, mate.x, mate.y);
+}
+
+/** A walk to the nearest tile of the reachable room with the fewest crew (ties by distance); null when no room can be reached. */
+export function quietSpot(sim: Sim, id: number, ship: number, grid: ShipGrid, from: Tile): Tile[] | null {
+  if (!grid.has('room')) return null;
+  const crewIn = new Map<number, number>();
+  for (const o of sim.world.query(CrewC, PositionC)) {
+    const p = sim.world.get(o, PositionC) as Position;
+    if (o === id || sim.world.has(o, DeadC) || shipIdOf(sim, p) !== ship) continue;
+    const room = grid.get('room', Math.round(p.x), Math.round(p.y));
+    if (room !== 0) crewIn.set(room, (crewIn.get(room) ?? 0) + 1);
+  }
+  const nearest = new Map<number, { x: number; y: number; d: number }>();
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) { // sector coordinates: the ship's rectangle, not from 0
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      const room = grid.get('room', x, y);
+      if (room === 0 || !isTileWalkable(sim, grid, x, y) || unsafeFor(sim, id, ship, x, y)) continue;
+      const d = Math.abs(x - from.x) + Math.abs(y - from.y);
+      const cur = nearest.get(room);
+      if (!cur || d < cur.d) nearest.set(room, { x, y, d });
+    }
+  }
+  const rooms = [...nearest.entries()].sort((a, b) => (crewIn.get(a[0]) ?? 0) - (crewIn.get(b[0]) ?? 0) || a[1].d - b[1].d || a[0] - b[0]);
+  for (const [, t] of rooms.slice(0, 3)) {
+    const steps = findPath(sim, ship, from, t, walkOpts(sim, id));
+    if (steps) return steps;
+  }
+  return null;
 }

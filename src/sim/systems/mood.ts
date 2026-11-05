@@ -1,6 +1,7 @@
 import { CrewC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { ensureMood, hasCompany, hasMood, moodFactors, moodScore } from '../crew/mood';
+import { advanceStress } from '../crew/stress';
 import { advanceTraitMemory } from '../crew/traitMood';
 import type { Sim } from '../sim';
 import { MOOD_INTERVAL, MOOD_LOW, MOOD_VERY_LOW } from '../tuning';
@@ -19,6 +20,9 @@ export function moodSystem(sim: Sim): void {
     m.meal = Math.max(0, m.meal - dt);
     m.sleep = Math.max(0, m.sleep - dt);
     if (m.relax) m.relax = Math.max(0, m.relax - dt);
+    if (m.letOut) m.letOut = Math.max(0, m.letOut - dt);
+    if (m.scene) m.scene = Math.max(0, m.scene - dt);
+    advanceStress(sim, id, m, dt);
     m.alone = hasCompany(sim, id) ? 0 : m.alone + dt;
     advanceTraitMemory(sim, id, m, dt);
     m.factors = moodFactors(sim, id, m);

@@ -31,6 +31,7 @@ import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERS
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
+import { breakScenario } from './app/breakScenario';
 import { droneScenarioCommands } from './app/droneScenario';
 import { startAmbushScenario } from './app/ambushScenario';
 import { inspectorScenario } from './app/inspectorScenario';
@@ -377,6 +378,14 @@ function startScenario(): void {
     const set = inspectorScenario(sim);
     for (const cmd of set.commands) bridge.dispatch(cmd);
     if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 300);
+    loop.setSpeed(1);
+    return;
+  }
+  if (scenario === 'breaks') {
+    // `?scenario=breaks`: four crew members break at once (app/breakScenario.ts); the panicking one is selected.
+    const set = breakScenario(sim);
+    setTimeout(() => { for (const cmd of set.commands) bridge.dispatch(cmd); }, 600);
+    if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 900);
     loop.setSpeed(1);
     return;
   }

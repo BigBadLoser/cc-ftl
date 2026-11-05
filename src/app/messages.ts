@@ -43,6 +43,7 @@ const REASONS: Record<string, string> = {
   nothingEquipped: 'Nothing wielded',
   incapacitated: 'That crew member cannot move',
   fighting: 'That crew member is busy fighting',
+  breaking: 'That crew member is in a mental break',
   badStruct: "Can't build that",
   notHovering: 'The shuttle is not holding station at a ship',
   outOfRange: 'Too far from the hull: hover closer',

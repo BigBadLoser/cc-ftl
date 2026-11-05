@@ -255,5 +255,11 @@ export interface Mood {
   idle?: number;
   quiet?: number;
   inside?: number;
+  /** Stressor counters for mental breaks (crew/stress.ts), reset when a break ends: seconds with a hostile in sight within range, and in a dark room. */
+  underFire?: number;
+  dark?: number;
+  /** Seconds left of the "let it out" lift after a break, and of the "made a scene" dip from a crew member's tantrum nearby. */
+  letOut?: number;
+  scene?: number;
 }
 export const MoodC = defineComponent<Mood>('mood');

@@ -1,3 +1,4 @@
+import { BreakdownC } from '../crew/breakTypes';
 import { AssignmentC, DraftedC, JobC, PathC, PositionC, type Position } from '../crew/components';
 import { exposure, HAZARD_AIR, HAZARD_COLD, HAZARD_FIRE, HAZARD_HEAT, hazardsHere, tileHazards } from '../crew/hazard';
 import { isSettled } from '../crew/helpers';
@@ -7,7 +8,7 @@ import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { TaskC } from './components';
 import { isCarrying } from './task';
-import { policyOf } from './utility';
+import { isUrgent, policyOf, readInput } from './utility';
 
 /**
  * The `hazard` interrupt's predicate (docs/CREW_AI.md section 5, TRAITS.md section 5 "Survival is not a break"). A crew member is
@@ -37,9 +38,24 @@ export function hazardHolds(sim: Sim, id: number): boolean {
   if (here === 0 || (here & ~toleratedHazards(sim, id)) === 0) return false;
   if (sim.world.get(id, TaskC)?.machine === 'escape') return true;
   const drafted = sim.world.get(id, DraftedC);
-  if (drafted && (drafted.target || sim.world.has(id, AssignmentC))) return false;
+  // A break suspends the draft's order (a frozen or cowering crew member does not walk to it): survival beats the break.
+  if (drafted && !sim.world.has(id, BreakdownC) && (drafted.target || sim.world.has(id, AssignmentC))) return false;
   const pos = sim.world.get(id, PositionC) as Position;
   return (sim.world.get(id, PathC)?.steps.length ?? 0) === 0 && isSettled(pos);
+}
+
+/**
+ * A survival drive is critical: the tile harms them (`hazardHolds`), or a drive that is urgent and harms at zero (air, starvation) is under its
+ * urgent line, whether or not it can be served (an unreachable source still raises the pickup request). A crew member in a break is then handled
+ * as if they had none (`BreakdownC.suspended`, set by the break system), so the scheduler's full path runs: refill, meal, escape, pickup request, the draft rules.
+ */
+export function survivalCritical(sim: Sim, id: number): boolean {
+  if (hazardHolds(sim, id)) return true;
+  for (const d of policyOf(sim, id).drives) {
+    const v = d.urgent && d.harmsAtZero && d.input ? readInput(sim, id, d.input) : undefined;
+    if (v !== undefined && isUrgent(d, v)) return true;
+  }
+  return false;
 }
 
 /**

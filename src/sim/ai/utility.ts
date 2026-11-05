@@ -1,4 +1,5 @@
 import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
+import { refusesWork } from '../crew/helpers';
 import { foodOn, hungerDrainPerSec } from '../crew/eating';
 import { airLeft } from '../eva/airLedger';
 import { traitEffect, traitFlag } from '../crew/traits';
@@ -30,6 +31,8 @@ const tenths = (v: number): number => Math.floor(v * 10);
 
 /** The input readers. A need is read in tenths of its 0..100 scale; `undefined` when the crew member has no such need. */
 const INPUTS: Record<DriveInput, (sim: Sim, id: number) => number | undefined> = {
+  /** 0 while a mild break (work refusal, isolation) holds the crew member, else 1000: the work drive's willingness (docs/TRAITS.md section 5). */
+  willing: (sim, id) => (refusesWork(sim, id) ? 0 : 1000),
   rest: (sim, id) => {
     const n = sim.world.get(id, NeedsC);
     return n ? tenths(n.rest) : undefined;
