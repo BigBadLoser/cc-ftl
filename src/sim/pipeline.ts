@@ -49,6 +49,7 @@ import { needsSystem } from './systems/needs';
 import { bedOwnersSystem } from './systems/bedOwners';
 import { moodSystem } from './systems/mood';
 import { breakdownSystem } from './systems/breakdown';
+import { relationshipSystem } from './systems/relationship';
 import { operateJobsSystem } from './systems/operateJobs';
 import { powerSystem } from './systems/power';
 import { roomsSystem } from './systems/rooms';
@@ -157,6 +158,8 @@ export const pipeline: readonly System[] = [
   // Mental breaks right after mood (it reads mood and the stressor counters): the hashed roll, and the end of running breaks; the interrupt layer and
   // the break machine act on what it writes later this tick.
   breakdownSystem,
+  // Relationships right after: chats and rows, shared danger, grief for a friend's death; they feed next tick's mood and break checks.
+  relationshipSystem,
   // Crew decisions (sim/ai: policy.legacy, the legacy picker and the need machines) before drafted/movement: new paths are walked
   // the same tick. Weapon fetching before them: crew on an equip order must not be handed a job this tick.
   equipSystem,

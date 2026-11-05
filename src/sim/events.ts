@@ -30,6 +30,13 @@ export type SimEvent =
   | { type: 'crew.break'; crew: number; kind: BreakKind; context: BreakContext; tier: BreakTier; alert: boolean }
   /** A mental break ended (its time ran out, its cause was gone, or they went down). Clears the break's alert. */
   | { type: 'crew.breakEnded'; crew: number; kind: BreakKind; context: BreakContext }
+  /** `crew` came to count `other` a friend (first of the pair to: the other way is quiet) or a rival (docs/TRAITS.md section 6). */
+  | { type: 'crew.befriended'; crew: number; other: number }
+  | { type: 'crew.rivalry'; crew: number; other: number }
+  /** `crew` grieves for `lost`, a friend who died. */
+  | { type: 'crew.grieving'; crew: number; lost: number }
+  /** An interaction whose outcome is worth a log line (a shouting match) between `crew` and `other`. */
+  | { type: 'crew.interaction'; crew: number; other: number; id: string; outcome: string }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
   | { type: 'item.hauled'; crew: number; item: string; count: number; ship: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' | 'zone' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */

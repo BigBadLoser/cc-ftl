@@ -1,4 +1,5 @@
 import { BreakdownC } from '../../crew/breakTypes';
+import { bondedPeers, socialCost } from '../../crew/bondSpot';
 import type { ShipGrid } from '../../shipGrid';
 import { CrewC, DeadC, PathC, PositionC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
@@ -11,7 +12,7 @@ import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
-import { LEISURE_SEC } from '../../tuning';
+import { BOND_SPOT_SAMPLES, LEISURE_SEC } from '../../tuning';
 import { TaskC } from '../components';
 import { safePathBeside, unsafeFor } from '../hazard';
 import { clearJoblessTask, setJoblessTask, setState } from '../task';
@@ -80,8 +81,19 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
   }
   if (mess && grid.has('room')) {
     const room = grid.get('room', mess.x, mess.y);
-    const x = mess.x + sim.rng.int(-MESS_RADIUS, MESS_RADIUS), y = mess.y + sim.rng.int(-MESS_RADIUS, MESS_RADIUS);
-    const goal = grid.inBounds(x, y) && room !== 0 && grid.get('room', x, y) === room && isTileWalkable(sim, grid, x, y) ? { x, y } : mess;
+    const draw = (): Tile => {
+      const x = mess.x + sim.rng.int(-MESS_RADIUS, MESS_RADIUS), y = mess.y + sim.rng.int(-MESS_RADIUS, MESS_RADIUS);
+      return grid.inBounds(x, y) && room !== 0 && grid.get('room', x, y) === room && isTileWalkable(sim, grid, x, y) ? { x, y } : mess;
+    };
+    let goal = draw();
+    // Friends sit together and rivals keep apart: with bonds, a few more draws and the best of them by `socialCost` (none without, so the random stream is unchanged).
+    const peers = bondedPeers(sim, id);
+    if (peers.length > 0) {
+      for (let k = 0, best = socialCost(sim, peers, ship, goal.x, goal.y); k < BOND_SPOT_SAMPLES; k++) {
+        const t = draw(), cost = socialCost(sim, peers, ship, t.x, t.y);
+        if (cost < best) [goal, best] = [t, cost];
+      }
+    }
     for (const g of goal === mess ? [mess] : [goal, mess]) {
       const steps = unsafeFor(sim, id, ship, g.x, g.y) ? null : findPath(sim, ship, from, g, walkOpts(sim, id));
       if (steps) return steps;

@@ -79,4 +79,28 @@ export interface UiCrewDetail {
   gear: UiGearSlot[];
   /** The stats card of every hand weapon, as this crew member would use it (their skill): the wielded one and those in storage. */
   cards: Record<string, UiItemCard>;
+  /** Friends and rivals (docs/TRAITS.md section 6); empty for crew without moods. */
+  bonds: UiBonds;
+}
+
+/** What one crew member thinks of another, for the card and the hover line. */
+export interface UiBond {
+  /** The other crew member's entity id (0 when they are no longer aboard). */
+  id: number;
+  name: string;
+  score: number;
+  kind: 'friend' | 'rival' | null;
+  /** "Friend: fought together at Ithra". */
+  line: string;
+}
+
+/** The crew card's relationships: the living friends and rivals by name. */
+export interface UiBonds {
+  friends: UiBond[];
+  rivals: UiBond[];
+}
+
+/** The line shown over a crewmate the pointer is on while another is selected: what the selected one thinks of them. */
+export interface UiOpinionHover extends UiBond {
+  tone: 'good' | 'bad' | 'plain';
 }

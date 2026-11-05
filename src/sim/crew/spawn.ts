@@ -4,6 +4,7 @@ import { AllegianceC } from '../fight/components';
 import { CoreLinkC } from '../robots/components';
 import type { Sim } from '../sim';
 import { CREW_MAX_HP } from '../tuning';
+import { ensurePerson } from './bonds';
 import { CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC } from './components';
 import type { RolledCrew } from './roll';
 import { RolledSkillsC, TraitsC, traitMult } from './traits';
@@ -28,6 +29,7 @@ export function createCrew(
     : (sim.content.crewNames[sim.rng.int(0, Math.max(0, sim.content.crewNames.length - 1))] ?? 'Crew'));
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name, role: roleId, species: speciesId, appearanceSeed: rolled ? rolled.appearanceSeed : sim.rng.int(0, 0x7fffffff), activity: 'idle' });
+  if (opts.faction === 'player') ensurePerson(sim, id); // other sides get an identity when they join the player's crew (the bond pass)
   sim.world.add(id, PositionC, { x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...role.priorities });

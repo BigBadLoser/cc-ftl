@@ -2,6 +2,7 @@ import { survivalCritical } from '../ai/hazard';
 import { abortTask, clearJoblessTask } from '../ai/task';
 import { InterruptC, TaskC } from '../ai/components';
 import { alertable, isInterruptTier } from '../crew/breakTable';
+import { bondTo } from '../crew/bonds';
 import { BreakdownC, BreakMemoryC, type Breakdown, type BreakMemory } from '../crew/breakTypes';
 import { onCooldown, rollBreak, type BreakPick } from '../crew/breakdown';
 import { AssignmentC, CrewC, DraftedC, MoodC, NeedsC, PositionC } from '../crew/components';
@@ -14,7 +15,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import {
-  BREAK_ALERT_SEC, BREAK_ALERT_SHIP_SEC, BREAK_DESPAIR_EAT, BREAK_GONE_SEC, BREAK_INTERVAL, BREAK_LET_OUT_SEC, BREAK_SCENE_RADIUS, BREAK_SCENE_SEC,
+  BOND_TANTRUM, BREAK_ALERT_SEC, BREAK_ALERT_SHIP_SEC, BREAK_DESPAIR_EAT, BREAK_GONE_SEC, BREAK_INTERVAL, BREAK_LET_OUT_SEC, BREAK_SCENE_RADIUS, BREAK_SCENE_SEC,
 } from '../tuning';
 
 /**
@@ -125,7 +126,7 @@ function standDown(sim: Sim, id: number): void {
   sim.world.remove(id, StowOrderC);
 }
 
-/** A tantrum is heard: crew within BREAK_SCENE_RADIUS tiles feel it for a while. (The relationship hit lands with relationships, section 6.) */
+/** A tantrum is heard: crew within BREAK_SCENE_RADIUS tiles feel it for a while and think a little less of the one who threw it (section 6). */
 function madeAScene(sim: Sim, id: number): void {
   const pos = sim.world.get(id, PositionC);
   if (!pos) return;
@@ -133,6 +134,7 @@ function madeAScene(sim: Sim, id: number): void {
     const p = sim.world.get(o, PositionC);
     if (o === id || !p || !hasMood(sim, o) || shipIdOf(sim, p) !== shipIdOf(sim, pos) || Math.hypot(p.x - pos.x, p.y - pos.y) > BREAK_SCENE_RADIUS) continue;
     (sim.world.get(o, MoodC) as { scene?: number }).scene = BREAK_SCENE_SEC;
+    bondTo(sim, o, id, BOND_TANTRUM, 'tantrum', { shared: false });
   }
 }
 

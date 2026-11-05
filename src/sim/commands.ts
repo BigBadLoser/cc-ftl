@@ -192,6 +192,8 @@ export type Command =
   | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number }
   /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */
   | { type: 'debug.breakCrew'; id: number; kind: BreakKind; context?: BreakContext; sec?: number }
+  /** Debug (the bonds scenario): change what crew members `a` and `b` think of each other, both ways, by `delta` for the bond reason `reason` (default a chat). Rejected without a mood. */
+  | { type: 'debug.bond'; a: number; b: number; delta: number; reason?: string }
   /** Place a finished module without a build job (the debug panel); rejected when placement is invalid. */
   | { type: 'debug.spawnModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Set the battery (0..100) of every battery robot (the debug panel). */

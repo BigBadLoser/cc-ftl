@@ -1,5 +1,6 @@
 import { AlienC } from '../aliens/components';
 import { isIntactBed } from '../crew/beds';
+import { bedSocialCost, bondedPeers } from '../crew/bondSpot';
 import { BedOwnerC, CrewC, DeadC, NeedsC, PositionC } from '../crew/components';
 import { isInvader } from '../fight/relations';
 import { ModuleC } from '../modules/components';
@@ -50,9 +51,10 @@ export function bedOwnersSystem(sim: Sim): void {
     if (!list) continue;
     let pick = -1;
     let pickD = Infinity;
+    const peers = bondedPeers(sim, id); // rivals keep apart, friends bed down together: the bed's distance plus the company beside it
     for (let i = 0; i < list.length; i++) {
       const b = list[i] as { id: number; x: number; y: number };
-      const d = Math.max(Math.abs(b.x - pos.x), Math.abs(b.y - pos.y));
+      const d = Math.max(Math.abs(b.x - pos.x), Math.abs(b.y - pos.y)) + (peers.length ? bedSocialCost(sim, peers, b.x, b.y) : 0);
       if (d < pickD) { pick = i; pickD = d; } // beds are listed by ascending id, so the first of equals wins
     }
     if (pick < 0) continue;

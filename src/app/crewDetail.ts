@@ -6,6 +6,7 @@ import {
 import { CarryingC } from '../sim/items/components';
 import { TICK_HZ } from '../sim/time';
 import { breakNow } from './breakText';
+import { buildBonds } from './bondSnapshot';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
 import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
@@ -39,6 +40,7 @@ function partsOf(sim: Sim, id: number, name: StatName, b: StatBreakdown): UiStat
       case 'suit': out.push({ label: 'EVA suit', kind: 'gear', op: p.op, value: p.value }); break;
       case 'charge': out.push({ label: 'Flat battery', kind: 'state', op: p.op, value: p.value }); break;
       case 'mood': out.push({ label: 'Low mood', kind: 'state', op: p.op, value: p.value }); break;
+      case 'bond': out.push({ label: 'Working beside a friend', kind: 'state', op: p.op, value: p.value }); break;
       case 'dark': out.push({ label: 'Dark room', kind: 'env', op: p.op, value: p.value }); break;
       case 'lowAir': out.push({ label: 'Thin air', kind: 'env', op: p.op, value: p.value }); break;
     }
@@ -158,5 +160,6 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
     }),
     gear: gearOf(sim, id),
     cards: cardsOf(sim, id),
+    bonds: buildBonds(sim, id),
   };
 }

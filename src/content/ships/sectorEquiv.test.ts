@@ -55,6 +55,9 @@ function legacyWorld(sim: Sim): unknown {
   // Mental breaks came after (docs/TRAITS.md section 5): a crew member who breaks has these stores.
   delete stores.breakdown;
   delete stores.breakMemory;
+  // Relationships (docs/TRAITS.md section 6, #239): a crew member's person id and a chat in progress are identity and presentation, not part of the legacy shape.
+  delete stores.person;
+  delete stores.interaction;
   // Skill XP from routine work came after the refactor: crew earn it as they work, so the store is not part of the legacy shape.
   delete stores.skillXp;
   // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
@@ -315,4 +318,6 @@ describe('sector refactor equivalence', () => {
 // gives 5369b5f9) and a crew member whose mood the fire and smoke sour takes a break in the mess when idle (the leisure drive; alone,
 // cb93b66e). With both switched off in the policies it still gives fe8751b2. The combat run has neither and is unchanged.
 // Repinned for the rest retune (#278): rest is part of the hashed world and now drains at a tenth of the rate (both hashes change by that alone).
-const EXPECTED = { combat: 'c13e58d2', disaster: 'f70efd42' };
+// Repinned for relationships (#239): idle crew chat, which gives a good talk or a row a mood factor, and mood is part of the hashed world (with the
+// relationship system off, both hashes are as above).
+const EXPECTED = { combat: 'a0cbadda', disaster: '62484cd5' };

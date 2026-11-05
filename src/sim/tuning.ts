@@ -518,3 +518,56 @@ export const ENEMY_DRONE_MIN_DEPTH = 3;
 /** Defence drones in an enemy bay: this many, plus one from ENEMY_DRONE_SECOND_DEPTH on (a bay holds two). */
 export const ENEMY_DRONES_BASE = 1;
 export const ENEMY_DRONE_SECOND_DEPTH = 7;
+
+// --- Relationships (docs/TRAITS.md section 6; crew/bonds.ts, systems/relationship.ts, content/interactions.ts) ---
+/** Ticks between the bond system's passes (5 s, staggered by id): interactions, shared-danger sources, fading. */
+export const BOND_INTERVAL = 100;
+/** Scores run -100..100. A friend is at or over BOND_FRIEND, a rival at or under -BOND_FRIEND; the label is kept until the score falls under BOND_KEEP. */
+export const BOND_MAX = 100;
+export const BOND_FRIEND = 50;
+export const BOND_KEEP = 40;
+/** At most this many friends and rivals each; a score that would make one more stops at BOND_FRIEND - 1 unless it beats the weakest, who then drops to it. */
+export const BOND_MAX_FRIENDS = 3;
+export const BOND_MAX_RIVALS = 2;
+/** A bond loses 1 point toward 0 for each BOND_FADE_SEC without a shared event (a chat, a fight, a rescue...). */
+export const BOND_FADE_SEC = 600;
+/** Reasons kept per opinion (the last few, merged by id). */
+export const BOND_REASONS = 4;
+/** Compatibility c in -1..1.3: the hashed pair, +BOND_COMPAT_SOCIAL for two Social crew, -BOND_COMPAT_HOT when either is Hot-headed. */
+export const BOND_COMPAT_SOCIAL = 0.3;
+export const BOND_COMPAT_HOT = 0.3;
+/** Tiles within which two crew can chat, and the radius the passive terms read. */
+export const BOND_CHAT_RADIUS = 3;
+export const BOND_NEAR_RADIUS = 7;
+/** Passive trickle per pass for being near (times c) and for working side by side within BOND_WORK_RADIUS (times c). */
+export const BOND_NEAR_TRICKLE = 0.006;
+export const BOND_WORK_TRICKLE = 0.02;
+/** Either of two crew near each other is under MOOD_LOW: they grate, per pass. */
+export const BOND_GRATE = 0.05;
+export const BOND_WORK_RADIUS = 4;
+/** Shared danger (score changes), each once per pair per BOND_DANGER_COOLDOWN_SEC. */
+export const BOND_FOUGHT = 12;
+export const BOND_FOUGHT_BAD = 3;
+export const BOND_DOWNED_BESIDE = 5;
+export const BOND_RESCUED = 30;
+export const BOND_RESCUER = 10;
+export const BOND_WITNESS_DEATH = 6;
+export const BOND_FIGHT_RADIUS = 6;
+export const BOND_DANGER_COOLDOWN_SEC = 300;
+/** Mood: a friend within BOND_NEAR_RADIUS, a rival within it (halved near a Peacemaker). */
+export const BOND_FRIEND_MOOD = 4;
+export const BOND_RIVAL_MOOD = -6;
+/** Grief: a friend's death is -BOND_GRIEF_MOOD for BOND_GRIEF_SEC (Protective x1.5); a good chat lifts, a row dips, for BOND_CHAT_MOOD_SEC. */
+export const BOND_GRIEF_MOOD = 15;
+export const BOND_GRIEF_SEC = 600;
+export const BOND_CHAT_MOOD = 3;
+export const BOND_ROW_MOOD = -5;
+export const BOND_CHAT_MOOD_SEC = 300;
+/** A tantrum is heard: each witness thinks less of the one who threw it. */
+export const BOND_TANTRUM = -4;
+/** Friends pick the spot a friend is at, rivals the farthest one: the tiles around a break spot sampled, and the distance a rival is felt at. */
+export const BOND_SPOT_SAMPLES = 4;
+export const BOND_RIVAL_SPACE = 4;
+/** Working within BOND_FRIEND_WORK_RADIUS tiles of a friend who is working too: work speed x BOND_FRIEND_WORK_MULT. */
+export const BOND_FRIEND_WORK_RADIUS = 3;
+export const BOND_FRIEND_WORK_MULT = 1.05;

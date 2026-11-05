@@ -86,6 +86,8 @@ export { createCrew } from './crew/spawn';
 export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
 export { BreakdownC, BreakMemoryC, type Breakdown, type BreakMemory, type BreakContext, type BreakKind, type BreakTier } from './crew/breakTypes';
 export { foodOn } from './crew/eating';
+export { InteractionC, type Interaction, type InteractionDef, type InteractionOutcome, type InteractionWhere } from './crew/interactionTypes';
+export { PersonC, entityOf, ensurePerson, friendsOf, mainReason, opinionOf, personOf, rivalsOf, type BondReason, type BondState, type Opinion } from './crew/bonds';
 export { abortTask, detachJob, type AbortReason } from './ai/task';
 export { TaskC, IntentC, InterruptC, PickupC } from './ai/components';
 export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass, PolicyDef, DriveDef, DriveInput, CrewKind } from './ai/types';

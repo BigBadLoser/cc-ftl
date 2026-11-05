@@ -45,6 +45,10 @@ export function createDescriber(sim: Sim) {
       case 'crew.rescued': return ours(e.crew) ? { kind: e.type, tone: 'good', text: `${crewName(e.crew)} was rescued`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.starving': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)} is starving`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.break': return player(e.crew) ? { kind: 'warning', tone: e.tier === 'severe' ? 'bad' : 'warn', text: `${crewName(e.crew)} ${breakWhat(e.kind, e.context)}`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.befriended': return player(e.crew) ? { kind: 'crew', tone: 'good', text: `${crewName(e.crew)} and ${crewName(e.other)} have become friends`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.rivalry': return player(e.crew) ? { kind: 'crew', tone: 'warn', text: `${crewName(e.crew)} and ${crewName(e.other)} are now rivals`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.grieving': return player(e.crew) ? { kind: 'crew', tone: 'warn', text: `${crewName(e.crew)} is grieving for ${crewName(e.lost)}`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.interaction': return player(e.crew) ? { kind: 'crew', tone: 'warn', text: `${crewName(e.crew)} and ${crewName(e.other)} had a shouting match`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.moodLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)} is very unhappy`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'suit.airLow': return player(e.crew) ? { kind: 'warning', tone: 'warn', text: `${crewName(e.crew)}: suit air low`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.airUnreachable': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: no air source in reach`, ...sub(crewSubject(sim, e.crew)) } : null;

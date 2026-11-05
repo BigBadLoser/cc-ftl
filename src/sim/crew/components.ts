@@ -261,5 +261,9 @@ export interface Mood {
   /** Seconds left of the "let it out" lift after a break, and of the "made a scene" dip from a crew member's tantrum nearby. */
   letOut?: number;
   scene?: number;
+  /** Seconds left of grief for a friend's death, of the lift from a good chat and of the dip from a row (crew/bondMood.ts). */
+  grief?: number;
+  chat?: number;
+  row?: number;
 }
 export const MoodC = defineComponent<Mood>('mood');

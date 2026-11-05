@@ -1,7 +1,7 @@
 import type { CallerInfo, CommsLine, ReadoutRow, UiHolo, UiHoloRequest } from './comms/types';
 import type { UiDeploy, UiJumpWarnings, UiSellGood, UiStarArt, UiStarmap, UiStarMarket, UiStarRoute } from './starmapApi';
 import type { CreateStarmapGpu } from './starmapGpu';
-import type { UiCrewDetail } from './crewDetailApi';
+import type { UiCrewDetail, UiOpinionHover } from './crewDetailApi';
 export type * from './crewDetailApi';
 import type { Command, SimEvent, WorkCategory } from '../sim';
 
@@ -1306,6 +1306,8 @@ export interface UiApi {
   hostiles: Subscribable<UiCrew[]>;
   /** The inspector's Status, Skills and Gear tabs for the selected crew member of the player's (null otherwise). */
   crewDetail: Subscribable<UiCrewDetail | null>;
+  /** Hovering a crewmate with another selected: what the selected one thinks of them ("Friend: fought together at Ithra"). Null otherwise. */
+  opinionHover: Subscribable<UiOpinionHover | null>;
   /** Center the camera on a crew member wherever they are. */
   focusCrew(id: number): void;
   /** Order the selected drafted crew to attack a hostile crew member. */

@@ -51,6 +51,16 @@
       </Tooltip>
     </div>
   {/if}
+  {#if !enemy && d && (d.bonds.friends.length || d.bonds.rivals.length)}
+    <div class="bonds" data-testid="crew-bonds">
+      {#each [['Friends', d.bonds.friends, 'friend'], ['Rivals', d.bonds.rivals, 'rival']] as const as [label, list, kind] (kind)}
+        {#if list.length}
+          <p class={kind} data-testid="crew-{kind}s"><span class="k">{label}</span>
+            {#each list as b, i (b.id || b.name)}<Tooltip text="{b.name}: {b.line}" side="bottom" label="{b.name}, {kind}"><span class="who" data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span></Tooltip>{/each}</p>
+        {/if}
+      {/each}
+    </div>
+  {/if}
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
   {#if enemy}
     <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} title={blocked ?? 'Order the selected drafted crew to attack'} onclick={() => api.attack(c.id)}>Attack</button></div>
@@ -99,6 +109,11 @@
   .doing > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .doing > span:last-child::first-letter { text-transform: uppercase; }
   .bad { color: #ff9a9a; }
+  .bonds { margin: 0 0 10px; display: grid; gap: 2px; font-size: 13px; }
+  .bonds p { margin: 0; display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
+  .bonds .k { color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; min-width: 52px; }
+  .bonds .friend .who { color: var(--cyan); }
+  .bonds .rival .who { color: #ff9a9a; }
   .weapon { margin: -4px 0 10px; }
   .wl { display: flex; gap: 6px; align-items: center; font-size: 13px; white-space: nowrap; overflow: hidden; }
   .wl b { font-weight: 400; }

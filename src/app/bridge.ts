@@ -1,5 +1,5 @@
 import { whereToSell } from './sellSnapshot';
-import { JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
+import { CrewC, JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiBoarding, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -10,7 +10,8 @@ import { buildStranded } from './strandedSnapshot';
 import { buildGoals } from './goalsSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 import { buildCrewDetail } from './crewDetail';
-import type { UiCrewDetail } from '../ui/crewDetailApi';
+import type { UiCrewDetail, UiOpinionHover } from '../ui/crewDetailApi';
+import { opinionAt } from './bondSnapshot';
 import { buildCombat } from './combatSnapshot';
 import { buildBoarding } from './boardingSnapshot';
 import { buildFtl } from './ftlSnapshot';
@@ -80,6 +81,8 @@ export interface Bridge {
   hostiles: Readable<UiCrew[]>;
   /** The inspector's detail tabs for the one selected crew member of the player's (null otherwise). */
   crewDetail: Readable<UiCrewDetail | null>;
+  /** What the selected crew member thinks of the crewmate the pointer is on (null with none, or no opinion). */
+  opinionHover: Readable<UiOpinionHover | null>;
   modules: Readable<UiModule[]>;
   /** The build menu's modules; rebuilt when a blueprint is learnt. */
   moduleDefs: Readable<UiModuleDef[]>;
@@ -149,6 +152,8 @@ export function createBridge(sim: Sim): Bridge {
   let lastHostiles = '';
   const crewDetail = createStore<UiCrewDetail | null>(null);
   let lastDetail = 'null';
+  const opinionHover = createStore<UiOpinionHover | null>(null);
+  let lastOpinion = 'null';
   const modules = createStore<UiModule[]>([]);
   const moduleDefs = createStore<UiModuleDef[]>(buildModuleDefs(sim));
   let lastBlueprints = sim.story.blueprints.join(',');
@@ -239,7 +244,15 @@ export function createBridge(sim: Sim): Bridge {
     inspect.set(snap);
   };
   let watched: number | null = null;
+  const refreshOpinion = () => {
+    const op = watched !== null && hovered && sim.world.has(watched, CrewC) ? opinionAt(sim, watched, hovered.ship, hovered.x, hovered.y) : null;
+    const key = JSON.stringify(op);
+    if (key === lastOpinion) return;
+    lastOpinion = key;
+    opinionHover.set(op);
+  };
   const refreshCrew = () => {
+    refreshOpinion();
     const lists = buildCrewLists(sim, watched);
     const key = JSON.stringify(lists.crew);
     if (key !== lastCrew) {
@@ -457,6 +470,7 @@ export function createBridge(sim: Sim): Bridge {
     crew,
     hostiles,
     crewDetail,
+    opinionHover,
     modules,
     moduleDefs,
     sites,
@@ -522,6 +536,7 @@ export function createBridge(sim: Sim): Bridge {
     },
     setHovered(t) {
       hovered = t;
+      refreshOpinion();
       refreshInspect();
     },
     dispatch(cmd) {

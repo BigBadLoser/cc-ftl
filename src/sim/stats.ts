@@ -2,6 +2,7 @@ import { CrewC } from './crew/components';
 import { darkModifiers, lowAirModifiers } from './crew/conditions';
 import { suitModifiers } from './eva/conditions';
 import { moodModifiers } from './crew/mood';
+import { bondModifiers } from './crew/bondMood';
 import { xpSkillModifiers } from './story/components';
 import { roleSkillModifiers } from './crew/skills';
 import { traitModifiers } from './crew/traits';
@@ -24,12 +25,12 @@ export interface Modifier {
 export type ModifierSource = (sim: Sim, entity: number) => readonly Modifier[];
 
 /** Where a modifier comes from, for the crew inspector's breakdown. */
-export type ModifierOrigin = 'dark' | 'lowAir' | 'skills' | 'charge' | 'suit' | 'xp' | 'traits' | 'mood';
+export type ModifierOrigin = 'dark' | 'lowAir' | 'skills' | 'charge' | 'suit' | 'xp' | 'traits' | 'mood' | 'bond';
 
 /** Register sources here, each under its origin. Implants plug in later. */
 export const modifierSources: readonly { origin: ModifierOrigin; get: ModifierSource }[] = [
   { origin: 'dark', get: darkModifiers }, { origin: 'lowAir', get: lowAirModifiers }, { origin: 'skills', get: roleSkillModifiers }, { origin: 'charge', get: chargeModifiers },
-  { origin: 'suit', get: suitModifiers }, { origin: 'xp', get: xpSkillModifiers }, { origin: 'traits', get: traitModifiers }, { origin: 'mood', get: moodModifiers },
+  { origin: 'suit', get: suitModifiers }, { origin: 'xp', get: xpSkillModifiers }, { origin: 'traits', get: traitModifiers }, { origin: 'mood', get: moodModifiers }, { origin: 'bond', get: bondModifiers },
 ];
 
 /** A stat taken apart: the species base, every modifier that applies with its origin, and the result `stat` returns. Pure read. */

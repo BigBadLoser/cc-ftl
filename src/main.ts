@@ -32,6 +32,7 @@ import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { damageScenarioCommands } from './app/damageScenario';
 import { breakScenario } from './app/breakScenario';
+import { bondScenario } from './app/bondScenario';
 import { droneScenarioCommands } from './app/droneScenario';
 import { startAmbushScenario } from './app/ambushScenario';
 import { inspectorScenario } from './app/inspectorScenario';
@@ -389,6 +390,14 @@ function startScenario(): void {
     loop.setSpeed(1);
     return;
   }
+  if (scenario === 'bonds') {
+    // `?scenario=bonds`: the first crew member has two friends and a rival (app/bondScenario.ts); they are selected.
+    const set = bondScenario(sim);
+    setTimeout(() => { for (const cmd of set.commands) bridge.dispatch(cmd); }, 600);
+    if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 900);
+    loop.setSpeed(1);
+    return;
+  }
   if (scenario === 'drones' && params.has('fight')) return droneFightScenario();
   if (scenario === 'drones' && params.has('breach')) {
     // `?scenario=drones&breach`: repair drones with metal and a hole in the hull; they go out through the hatch and seal it (app/droneScenario.ts).
@@ -486,6 +495,7 @@ const api: UiApi = {
   crew: bridge.crew,
   hostiles: bridge.hostiles,
   crewDetail: bridge.crewDetail,
+  opinionHover: bridge.opinionHover,
   focusCrew: controller.focusCrew,
   attack: controller.attack,
   selectedCrew: controller.selectedCrew,

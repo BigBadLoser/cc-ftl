@@ -8,15 +8,16 @@ import {
   BREAK_BATTLE_SHY_SEC, BREAK_COMBAT_RADIUS, BREAK_COMBAT_SEC, BREAK_DARK_FEAR_SEC, BREAK_DARK_SEC, BREAK_FIRE_RADIUS, EVA_AIR_LOW_FRAC, FIRE_FEAR_RADIUS,
   LIGHT_DARK_BELOW, O2_HARM_BELOW,
 } from '../tuning';
+import { entityOf, friendsOf, personOf } from './bonds';
 import { STRESSOR_P } from './breakTable';
 import type { BreakContext, Tile2 } from './breakTypes';
-import { CrewC, DeadC, NeedsC, PositionC, type Mood, type Position } from './components';
+import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type Position } from './components';
 import { traitDefs, traitFlag } from './traits';
 
 /**
  * The acute stressors of docs/TRAITS.md section 5, read from world state at check time. Each context has a presence test (is it
  * there right now: also what a running break watches to end early) and a chance (presence, the duration counters on `Mood` and the
- * crew member's traits). `grief` is the seam for relationships (section 6): it is never present until a friend's death is recorded.
+ * crew member's traits). `grief` is present while the bond system's grief for a friend's death lasts (`Mood.grief`).
  */
 
 /** Hostiles in sight within `radius` tiles of the crew member, nearest first. */
@@ -113,19 +114,20 @@ export function contextPresent(sim: Sim, id: number, context: BreakContext): boo
       const n = sim.world.get(id, NeedsC);
       return !!n && (n.rest < 10 || (n.hunger !== undefined && n.hunger <= 0));
     }
-    case 'grief': return false; // relationships (section 6) will record a friend's death; until then there is nobody to grieve
+    case 'grief': return (sim.world.get(id, MoodC)?.grief ?? 0) > 0; // the bond system sets it when a friend dies (systems/relationship.ts)
     default: return false; // lowMood has no context to lose
   }
 }
 
-/** Combat stress is halved for a Protective crew member with a friend (any living crew member, until relationships) within 6 tiles. */
+/** Combat stress is halved for a Protective crew member with a living friend within 6 tiles. */
 function protectedByFriend(sim: Sim, id: number): boolean {
   const pos = sim.world.get(id, PositionC);
   if (!pos || !traitFlag(sim, id, 'protective')) return false;
-  for (const o of sim.world.query(CrewC, PositionC)) {
-    if (o === id || sim.world.has(o, DeadC) || isHostile(sim, id, o)) continue;
-    const p = sim.world.get(o, PositionC) as Position;
-    if (shipIdOf(sim, p) === shipIdOf(sim, pos) && Math.hypot(p.x - pos.x, p.y - pos.y) <= 6) return true;
+  for (const { person } of friendsOf(sim, personOf(sim, id))) {
+    const o = entityOf(sim, person);
+    const p = o ? sim.world.get(o, PositionC) : undefined;
+    if (!p || sim.world.has(o, DeadC) || shipIdOf(sim, p) !== shipIdOf(sim, pos)) continue;
+    if (Math.hypot(p.x - pos.x, p.y - pos.y) <= 6) return true;
   }
   return false;
 }

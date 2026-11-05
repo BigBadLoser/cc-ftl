@@ -9,6 +9,7 @@ import { AsteroidC } from '../sim/asteroids/components';
 import { addHeat } from '../sim/combat/heat';
 import { explainAll, explainCrew } from '../sim/ai/explain';
 import { auditReservations } from '../sim/ai/audit';
+import { begin as beginInteraction } from '../sim/crew/interact';
 import { parkCrew } from './parkCrew';
 import type { Loop } from './loop';
 import { DroneC } from '../sim/drones/components';
@@ -171,6 +172,10 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
       siteProgress: (frac: number) => { for (const id of sim.world.query(JobC)) { const j = sim.world.get(id, JobC); if (j?.kind === 'module') j.progress = Math.round(j.work * frac); } },
       /** Put every player crew member on a tile and drop their orders (keeps crew out of the ghost shots). */
       parkCrew: (x: number, y: number) => parkCrew(sim, x, y),
+      /** Put a crew member on a tile, standing (the relationship shots). */
+      place: (id: number, x: number, y: number) => { const p = sim.world.get(id, PositionC); if (p) { p.x = p.toX = x; p.y = p.toY = y; p.progress = 0; } },
+      /** Force an interaction (`interaction.chat` or `interaction.shout`, outcome index) between two crew now (the relationship shots). */
+      interact: (a: number, b: number, def: string, pick: number) => { const d = sim.content.interactions?.[def]; if (d) beginInteraction(sim, d, pick, a, b, 0); },
       /** Take stored `item` out of every storage until `keep` units are left (the "missing materials" shot). */
       drainStock: (item: string, keep: number) => { for (const id of sim.world.query(StorageC)) { const extra = totalStock(sim, item) - keep; if (extra > 0) storageTake(sim, id, item, extra); } },
       /** Set a suit's tank (the air-warning shot). */

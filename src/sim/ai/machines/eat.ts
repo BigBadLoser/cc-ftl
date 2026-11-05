@@ -1,5 +1,6 @@
 import { ammoCount, consumeAmmo } from '../../combat/ammo';
 import { CrewC, PathC, type Crew, type Path, type Position } from '../../crew/components';
+import { bondedPeers, socialCost } from '../../crew/bondSpot';
 import { foodOn } from '../../crew/eating';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
@@ -51,8 +52,10 @@ export function canStartMeal(sim: Sim, id: number, pos: Position): boolean {
 
 /** Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item` (never a tile that harms the eater). */
 function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: string): { x: number; y: number; galley: boolean; steps: Tile[] } | null {
-  let galley: { x: number; y: number; galley: boolean; steps: Tile[] } | null = null;
-  let crate: { x: number; y: number; galley: boolean; steps: Tile[] } | null = null;
+  type Spot = { x: number; y: number; galley: boolean; steps: Tile[]; cost: number };
+  let galley: Spot | null = null;
+  let crate: Spot | null = null;
+  const peers = bondedPeers(sim, crew); // friends sit together, rivals keep apart: a spot's cost is its walk plus the company there
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
@@ -60,13 +63,13 @@ function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: stri
     if (def.galley && m.enabled && m.powered) {
       const at = accessTile(def, m.x, m.y, m.rot);
       const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at, walkOpts(sim, crew));
-      if (at && steps && (!galley || steps.length < galley.steps.length)) galley = { x: at.x, y: at.y, galley: true, steps };
+      const cost = steps && at ? steps.length + socialCost(sim, peers, shipId, at.x, at.y) : 0;
+      if (at && steps && (!galley || cost < galley.cost)) galley = { x: at.x, y: at.y, galley: true, steps, cost };
     } else if (def.storage && sim.world.has(id, StorageC) && storageCount(sim, id, item) > 0) {
       const steps = safePathBeside(sim, crew, shipId, from, m.x, m.y);
-      if (steps && (!crate || steps.length < crate.steps.length)) {
-        const end = steps[steps.length - 1] ?? from;
-        crate = { x: end.x, y: end.y, galley: false, steps };
-      }
+      const end = steps && (steps[steps.length - 1] ?? from);
+      const cost = steps && end ? steps.length + socialCost(sim, peers, shipId, end.x, end.y) : 0;
+      if (steps && end && (!crate || cost < crate.cost)) crate = { x: end.x, y: end.y, galley: false, steps, cost };
     }
   }
   return galley ?? crate;
