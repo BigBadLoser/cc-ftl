@@ -10,7 +10,9 @@ import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
 
 import { CREW_MAX_HP, SURRENDER_HP_FRAC } from '../tuning';
-import { AllegianceC, EquipC, FighterC, SurrenderedC } from './components';
+import { startBreak } from '../systems/breakdown';
+import { tierOf } from '../crew/breakTable';
+import { AllegianceC, EquipC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { sightLine } from './los';
 import { isSubdued } from './relations';
 import { hitChance, wielded } from './weapons';
@@ -299,6 +301,17 @@ describe('equipping', () => {
     const sec = person(sim, 3, 3, 'player', 'role.sec');
     run(sim, 20 * 15);
     expect(sim.world.get(sec, EquipC)?.weapon).toBe('item.rifle');
+  });
+
+  it('a crew member in a panic is not sent for their loadout: the break machine is the only path writer', () => {
+    const sim = stocked();
+    const sec = person(sim, 3, 3, 'player', 'role.sec');
+    startBreak(sim, sec, { kind: 'panic', tier: tierOf('panic', 'lowMood'), context: 'lowMood', ticks: 60 * 20 });
+    for (let i = 0; i < 20 * 15; i++) {
+      sim.step();
+      expect(sim.world.has(sec, EquipOrderC)).toBe(false);
+    }
+    expect(sim.world.get(sec, EquipC)?.weapon ?? null).toBeNull();
   });
 });
 

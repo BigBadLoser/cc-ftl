@@ -1,6 +1,6 @@
 import { AssignmentC, JobC, PrioritiesC, type Position, type Priorities } from '../crew/components';
 import { reserveJob } from '../ai/task';
-import { jobGoal, origin } from '../crew/helpers';
+import { jobGoal, origin, refusesWork } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { planWalk } from '../eva/route';
 import type { Grid } from '../grid';
@@ -28,7 +28,7 @@ export function onRescue(sim: Sim, id: number): boolean {
  */
 export function claimHiddenRescue(sim: Sim, grid: Grid, id: number, pos: Position, threats: readonly Cell[]): boolean {
   const prio = sim.world.get(id, PrioritiesC) as Priorities | undefined;
-  if (!prio || prio.medical <= 0 || sim.world.has(id, AssignmentC)) return false;
+  if (!prio || prio.medical <= 0 || sim.world.has(id, AssignmentC) || refusesWork(sim, id)) return false;
   const shipId = shipIdOf(sim, pos);
   let best: { job: number; steps: Tile[] } | null = null;
   for (const jobId of sim.world.query(JobC)) {

@@ -109,6 +109,18 @@ function hazard(seed: number): Sim {
   return sim;
 }
 
+/**
+ * Mental breaks (docs/TRAITS.md section 5), one kind per crew member through the debug command, each for 30 s: `kinds` in order. The break machine's
+ * states: panic Flee then Cower, freeze Freeze, hide Hide, tantrum Sulk, despair Walk to the bed then Lie.
+ */
+function breaks(seed: number, kinds: readonly ('panic' | 'freeze' | 'hide' | 'tantrum' | 'despair')[]): Sim {
+  const sim = newGame(seed, content, 'ship.starter', false);
+  run(sim, 2);
+  const crew = sim.world.query(CrewC);
+  kinds.forEach((kind, i) => sim.enqueue({ type: 'debug.breakCrew', id: crew[i]!, kind, context: kind === 'panic' ? 'fire' : 'lowMood', sec: 30 }));
+  return sim;
+}
+
 /** A drafted, suited crew member with a low tank ordered to refill at the starter airlock: the refill machine (`eva/ToAirlock`, `eva/Fill`). */
 function refill(seed: number): Sim {
   const sim = newGame(seed, content, 'ship.starter', false);
@@ -142,6 +154,8 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'bedless rested', make: () => bedless(1, false, false), ticks: 900 },
   { name: 'hazard', make: () => hazard(1), ticks: 600 },
   { name: 'refill', make: () => refill(1), ticks: 400 },
+  { name: 'breaks 1', make: () => breaks(1, ['panic', 'freeze', 'hide', 'tantrum']), ticks: 800 },
+  { name: 'breaks 2', make: () => breaks(1, ['despair']), ticks: 800 },
   { name: 'away', make: awayReturn, ticks: 400 },
 ];
 

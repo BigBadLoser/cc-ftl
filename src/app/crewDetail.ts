@@ -1,9 +1,11 @@
 import {
-  CrewC, DownedC, HealthC, ImplantsC, MoodC, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
+  BreakdownC, CrewC, DownedC, HealthC, ImplantsC, MoodC, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
   NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC,
   statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
+import { TICK_HZ } from '../sim/time';
+import { breakNow } from './breakText';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
 import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
@@ -80,6 +82,8 @@ function conditionsOf(sim: Sim, id: number): UiCondition[] {
     const air = suitAir(sim, id);
     out.push({ key: 'suit', label: 'Suit air', text: `${Math.floor(air / 60)}:${String(Math.round(air) % 60).padStart(2, '0')} left`, pct: Math.round((air / Math.max(1, max)) * 100), tone: air <= max * 0.25 ? 'bad' : 'ok' });
   }
+  const brk = sim.world.get(id, BreakdownC);
+  if (brk) out.push({ key: 'break', label: 'Break', text: breakNow(brk.kind, (brk.until - sim.tick) / TICK_HZ), pct: null, tone: brk.tier === 'severe' ? 'bad' : 'warn' });
   const n = sim.world.get(id, NeedsC);
   if (n?.hunger !== undefined) out.push(level('hunger', 'Hunger', n.hunger, n.hunger <= 0 ? 'starving' : n.hunger < 35 ? `${Math.round(n.hunger)}% hungry` : `${Math.round(n.hunger)}% fed`, 60, 35));
   if (n?.charge !== undefined) out.push(level('charge', 'Battery', n.charge, n.charge <= 0 ? 'flat' : `${Math.round(n.charge)}%`, 40, 15));

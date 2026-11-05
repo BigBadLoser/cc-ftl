@@ -24,4 +24,15 @@ describe('packet translation table', () => {
     expect(src.position.x).toBe(1);
     expect(() => translated({ nope: { x: 1 } }, 1, 1)).toThrow(/no translation table entry/);
   });
+
+  it('moves a break\'s stressor focus with its ship (lift to ship-local, stamp at another place) and tolerates none', () => {
+    const brk = { kind: 'panic', tier: 'severe', context: 'fire', until: 9, since: 1, goneSince: 0, src: { x: 30, y: 52 } };
+    const lifted = translated({ breakdown: brk }, -20, -50) as { breakdown: typeof brk };
+    expect(lifted.breakdown.src).toEqual({ x: 10, y: 2 });
+    const stamped = translated(lifted, 100, 7) as { breakdown: typeof brk };
+    expect(stamped.breakdown.src).toEqual({ x: 110, y: 9 });
+    expect(brk.src).toEqual({ x: 30, y: 52 });
+    const bare = { kind: 'panic', tier: 'severe', context: 'lowMood', until: 9, since: 1, goneSince: 0 };
+    expect((translated({ breakdown: bare }, 5, 5) as { breakdown: object }).breakdown).toEqual(bare);
+  });
 });

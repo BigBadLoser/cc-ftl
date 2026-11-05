@@ -4,6 +4,7 @@ import {
 } from './components';
 
 import { InertC, StunC } from '../robots/components';
+import { BreakdownC } from './breakTypes';
 import type { Tile } from './pathfind';
 import { FighterC } from '../fight/components';
 import { shipGrid, shipIdOf } from '../regions';
@@ -47,6 +48,17 @@ export function hasRoute(sim: Sim, crew: number): boolean {
 }
 
 /** True if the crew member cannot act: downed, dead, being carried, or a robot that is inert or stunned. */
+/** A mental break of a tier that takes the crew member over (panic, freeze, hide, tantrum, despair): the break machine steers them (docs/TRAITS.md section 5). */
+export function isBreaking(sim: Sim, crew: number): boolean {
+  const b = sim.world.get(crew, BreakdownC);
+  return !!b && b.tier !== 'mild' && !b.suspended;
+}
+
+/** A mild break (work refusal, isolation) is on: the work drive scores 0, so no job is taken or called to. */
+export function refusesWork(sim: Sim, crew: number): boolean {
+  return sim.world.get(crew, BreakdownC)?.tier === 'mild';
+}
+
 export function isIncapacitated(sim: Sim, crew: number): boolean {
   return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
     || sim.world.has(crew, InertC) || sim.world.has(crew, StunC);

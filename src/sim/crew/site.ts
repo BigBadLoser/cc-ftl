@@ -8,7 +8,7 @@ import type { Sim } from '../sim';
 import { stat } from '../stats';
 import { TICK_HZ } from '../time';
 import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, type Job } from './components';
-import { isIncapacitated, jobGoal, origin } from './helpers';
+import { isIncapacitated, jobGoal, refusesWork, origin } from './helpers';
 import { findPath } from './pathfind';
 
 /** Why a construction site is stuck (the first that applies). */
@@ -62,7 +62,7 @@ function capableCrew(sim: Sim, ship: number): number[] {
   for (const id of sim.world.query(CrewC, PositionC, PrioritiesC)) {
     const p = sim.world.get(id, PositionC);
     if (!p || shipIdOf(sim, p) !== ship || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC)) continue;
-    if (sim.world.get(id, AllegianceC)?.faction !== 'player' || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    if (sim.world.get(id, AllegianceC)?.faction !== 'player' || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
     if ((sim.world.get(id, PrioritiesC)?.construction ?? 0) <= 0 || stat(sim, id, 'workSpeed') <= 0) continue;
     out.push(id);
   }

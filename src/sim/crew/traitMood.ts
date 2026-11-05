@@ -3,15 +3,16 @@ import { isSuited, isThin } from '../eva/suit';
 import { FighterC } from '../fight/components';
 import type { Sim } from '../sim';
 import {
-  DARK_FEAR_MOOD, FIRE_FEAR_MOOD, FIRE_FEAR_RADIUS, LIGHT_GLARE_ABOVE, SPACE_SICK_MOOD, MOOD_COMPANY_RADIUS, MOOD_CROWD, TRAIT_BORED_SEC, TRAIT_COOPED_SEC,
+  BATTLE_FEAR_MOOD, BREAK_COMBAT_RADIUS, DARK_FEAR_MOOD, FIRE_FEAR_MOOD, FIRE_FEAR_RADIUS, LIGHT_GLARE_ABOVE, SPACE_SICK_MOOD, MOOD_COMPANY_RADIUS, MOOD_CROWD, TRAIT_BORED_SEC, TRAIT_COOPED_SEC,
 } from '../tuning';
+import { hostilesInSight } from './stress';
 import { AssignmentC, CrewC, DeadC, PositionC, type Mood, type MoodFactor } from './components';
 import { traitDefs, traitEffect, traitFlag, traitMult } from './traits';
 
 /** Mood factor labels added by traits (merged into MOOD_LABELS). */
 export const TRAIT_MOOD_LABELS: Readonly<Record<string, string>> = {
   alone: 'Alone (loner)', crowded: 'Crowded', cheeredUp: 'Cheered up', draggedDown: 'Dragged down',
-  thrill: 'Thrill of danger', bored: 'Bored', cooped: 'Cooped up', fireNearby: 'Fire nearby', spacewalk: 'Spacewalk', glare: 'Glare', idle: 'Nothing to do', restless: 'Restless',
+  thrill: 'Thrill of danger', bored: 'Bored', cooped: 'Cooped up', underFire: 'Under fire', fireNearby: 'Fire nearby', spacewalk: 'Spacewalk', glare: 'Glare', idle: 'Nothing to do', restless: 'Restless',
 };
 
 /** In combat (the sector fight, or engaging a foe) or on EVA (suited, on thin air): what a Thrill-seeker lives for. */
@@ -95,6 +96,7 @@ export function applyTraitMood(sim: Sim, id: number, m: Mood, base: MoodFactor[]
     else if ((m.quiet ?? 0) >= TRAIT_BORED_SEC) out.push({ key: 'bored', value: -3 });
   }
   if (traitFlag(sim, id, 'voidHome') && (m.inside ?? 0) >= TRAIT_COOPED_SEC) out.push({ key: 'cooped', value: -3 });
+  if (traitFlag(sim, id, 'battleFear') && hostilesInSight(sim, id, BREAK_COMBAT_RADIUS).length > 0) out.push({ key: 'underFire', value: BATTLE_FEAR_MOOD });
   if (traitFlag(sim, id, 'darkFear')) out = out.map((f) => (f.key === 'dark' ? { key: f.key, value: DARK_FEAR_MOOD } : f));
   if (traitFlag(sim, id, 'fireFear') && fireNearby(sim, id)) out.push({ key: 'fireNearby', value: FIRE_FEAR_MOOD });
   if (traitFlag(sim, id, 'spaceSick') && onEva(sim, id)) out.push({ key: 'spacewalk', value: SPACE_SICK_MOOD });

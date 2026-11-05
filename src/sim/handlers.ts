@@ -29,6 +29,11 @@ import { salvageHandlers } from './salvage/handlers';
 import { awayHandlers } from './away/handlers';
 import { yardHandlers } from './yard/order';
 import { ModuleC } from './modules/components';
+import { DURATION, tierOf } from './crew/breakTable';
+import { hasMood } from './crew/mood';
+import { nearestStressor } from './crew/stress';
+import { startBreak } from './systems/breakdown';
+import { TICK_HZ } from './time';
 import { FIRE_START_INTENSITY } from './tuning';
 import { Struct, writeStruct } from './structure';
 import type { Sim } from './sim';
@@ -66,6 +71,12 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...awayHandlers,
   ...outpostHandlers,
   noop: () => {},
+  'debug.breakCrew': (sim, cmd) => {
+    if (!hasMood(sim, cmd.id)) return sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noMood' });
+    const context = cmd.context ?? 'lowMood';
+    const [lo, hi] = DURATION[cmd.kind];
+    startBreak(sim, cmd.id, { kind: cmd.kind, tier: tierOf(cmd.kind, context), context, ticks: Math.round((cmd.sec ?? (lo + hi) / 2) * TICK_HZ), src: context === 'lowMood' ? undefined : nearestStressor(sim, cmd.id, context) });
+  },
   'debug.spawnMarker': (sim, cmd) => {
     const entity = sim.world.createEntity();
     sim.world.add(entity, MarkerC, { x: cmd.x, y: cmd.y });

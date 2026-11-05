@@ -1,7 +1,7 @@
 import { shipIdOf } from '../regions';
 import { abortTask } from '../ai/task';
 import { AssignmentC, CrewC, DraftedC, JobC, PathC, PositionC, type Drafted, type Path, type Position } from '../crew/components';
-import { atJob, hasRoute, isIncapacitated, jobGoal, origin } from '../crew/helpers';
+import { atJob, hasRoute, isBreaking, isIncapacitated, jobGoal, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import type { Sim } from '../sim';
 import { shipIdAt } from '../regions';
@@ -9,7 +9,7 @@ import { shipIdAt } from '../regions';
 /** Drafted crew walk to their ordered target  and never take jobs. */
 export function draftedSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC, DraftedC, PositionC, PathC)) {
-    if (isIncapacitated(sim, id)) continue;
+    if (isIncapacitated(sim, id) || isBreaking(sim, id)) continue; // a break's machine steers them
     const drafted = sim.world.get(id, DraftedC) as Drafted;
     const target = drafted.target;
     const pos = sim.world.get(id, PositionC) as Position;

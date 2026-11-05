@@ -1,6 +1,6 @@
 import { CrewC, DraftedC, JobC, PathC, PositionC } from '../crew/components';
 import { abortTask } from '../ai/task';
-import { clearPath, isIncapacitated, origin } from '../crew/helpers';
+import { clearPath, isBreaking, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
 import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
@@ -105,7 +105,7 @@ function standDown(sim: Sim, threatened: ReadonlySet<number>): void {
       continue;
     }
     if (mark.quietSince < 0) mark.quietSince = sim.tick;
-    if (sim.tick - mark.quietSince < EMERGENCY_STAND_DOWN_SEC * TICK_HZ || sim.world.has(id, StowOrderC) || isIncapacitated(sim, id)) continue;
+    if (sim.tick - mark.quietSince < EMERGENCY_STAND_DOWN_SEC * TICK_HZ || sim.world.has(id, StowOrderC) || isIncapacitated(sim, id) || isBreaking(sim, id)) continue;
     const storage = reachableRoom(sim, id, mark.item);
     if (storage) {
       abortTask(sim, id, 'standDown');
@@ -152,7 +152,7 @@ export function stowOrders(sim: Sim): void {
     const path = sim.world.get(id, PathC);
     const eq = sim.world.get(id, EquipC);
     const mark = sim.world.get(id, EmergencyArmC);
-    if (!order || !pos || !path) continue;
+    if (!order || !pos || !path || isBreaking(sim, id)) continue;
     if (!eq?.weapon || !mark || isIncapacitated(sim, id)) {
       sim.world.remove(id, StowOrderC);
       continue;

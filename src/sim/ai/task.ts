@@ -232,7 +232,7 @@ export function detachJob(sim: Sim, crew: number): void {
 export type AbortReason =
   | 'downed' | 'dead' | 'drafted' | 'surrendered' | 'boarded' | 'removed' | 'halted' | 'fight' | 'equip'
   | 'heldForMend' | 'preempt' | 'relieved' | 'unreachable' | 'jobGone' | 'cancelled' | 'replaced' | 'order' | 'drive'
-  | 'standDown' | 'imprisoned' | 'dismissed' | 'debug' | 'hazard' | 'air' | 'urgentNeed';
+  | 'standDown' | 'imprisoned' | 'dismissed' | 'debug' | 'hazard' | 'air' | 'urgentNeed' | 'breakdown';
 
 interface Dispose {
   /** Release the sleeping-bed claim. */
@@ -257,6 +257,8 @@ const DISPOSE: Partial<Record<AbortReason, Dispose>> = {
   // claimed for a sleep is given back, and a sleeper or an eater gets up (critical air).
   air: { bed: true, carried: true, wake: true },
   urgentNeed: { bed: true, carried: true, wake: true },
+  // A mental break takes over (docs/TRAITS.md section 5): like a hazard, whatever they were doing ends, a load is dropped, a sleeper gets up.
+  breakdown: { bed: true, carried: true, wake: true },
 };
 
 /**

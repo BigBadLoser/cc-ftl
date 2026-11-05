@@ -118,7 +118,7 @@ export const MOOD_LOW = 35;
 export const MOOD_VERY_LOW = 20;
 export const MOOD_LOW_WORK_MULT = 0.85;
 export const MOOD_VERY_LOW_WORK_MULT = 0.7;
-/** Open question hook: mood below this makes a crew member a breakdown risk (nothing happens yet, see crew/mood.ts). */
+/** Mood below this makes a crew member a breakdown risk (`breakdownRisk`, crew/mood.ts): the top tier of the low-mood chance. */
 export const MOOD_BREAKDOWN_BELOW = 10;
 /** Seconds a hot galley meal, a night in a bed or a night on the floor keeps affecting mood. */
 export const MOOD_MEAL_SEC = 300;
@@ -441,6 +441,54 @@ export const STAGING_LOADS = 2;
 export const LOAD_CRATE_SEC = 2;
 /** Seconds a due trip waits for the departure check to pass before it is called off (the run stays and tries again). */
 export const AWAY_DEPART_GIVEUP_SEC = 120;
+
+// --- Mental breaks (docs/TRAITS.md section 5; crew/breakdown.ts, systems/breakdown.ts) ---
+/** Ticks between break checks per crew member (5 s, staggered by id). */
+export const BREAK_INTERVAL = 100;
+/** Cap on the chance of a break per check. */
+export const BREAK_P_MAX = 0.04;
+/** Low-mood chance per check by mood: from 35 down, from 20 down, from 10 down (`breakdownRisk`). */
+export const BREAK_BASE_P = { low: 0.001, lower: 0.004, risk: 0.015 } as const;
+/** Mood at which the low-mood chance starts, and the second step (the third is MOOD_BREAKDOWN_BELOW). */
+export const BREAK_BASE_BELOW = 35;
+export const BREAK_BASE_LOWER = 20;
+/** Stressor scale: x1.5 below mood 35, x0.5 above 65, else 1. */
+export const BREAK_SCALE_LOW = 1.5;
+export const BREAK_SCALE_HIGH = 0.5;
+export const BREAK_SCALE_HIGH_FROM = 65;
+/** A draft steadies: the chance is halved, and only severe outcomes remain. */
+export const BREAK_DRAFT_MULT = 0.5;
+/** Seconds without any break (after one ends), and without one from the same context. */
+export const BREAK_COOLDOWN_SEC = 600;
+export const BREAK_CONTEXT_COOLDOWN_SEC = 1200;
+/** A break ends early once its context has been gone this many seconds. */
+export const BREAK_GONE_SEC = 10;
+/** Mood "let it out" after a break ends: points and seconds. */
+export const BREAK_LET_OUT_POINTS = 5;
+export const BREAK_LET_OUT_SEC = 300;
+/** Stressors: fire within this many tiles (Pyrophobic: FIRE_FEAR_RADIUS); a hostile in sight within this many tiles. */
+export const BREAK_FIRE_RADIUS = 3;
+export const BREAK_COMBAT_RADIUS = 8;
+/** Seconds under fire (a hostile in sight) before combat counts (Battle-shy: from BREAK_BATTLE_SHY_SEC); darkness likewise (Afraid of the dark: BREAK_DARK_FEAR_SEC). */
+export const BREAK_COMBAT_SEC = 30;
+export const BREAK_BATTLE_SHY_SEC = 10;
+export const BREAK_DARK_SEC = 180;
+export const BREAK_DARK_FEAR_SEC = 60;
+/** Mood of a Battle-shy crew member with a hostile in sight. */
+export const BATTLE_FEAR_MOOD = -6;
+/** A tantrum: crew within this many tiles feel "made a scene" for MOOD points over BREAK_SCENE_SEC. */
+export const BREAK_SCENE_RADIUS = 7;
+export const BREAK_SCENE_MOOD = -3;
+export const BREAK_SCENE_SEC = 300;
+/** A despairing crew member walks to their own bed when it is within this many tiles; hunger below this ends the lie-down (they eat). */
+export const BREAK_BED_RANGE = 15;
+export const BREAK_DESPAIR_EAT = 10;
+/** Alerts: one urgent break alert per crew member per this many seconds; a second severe break on a ship within BREAK_ALERT_SHIP_SEC goes to the log. */
+export const BREAK_ALERT_SEC = 600;
+export const BREAK_ALERT_SHIP_SEC = 60;
+/** A Battle-shy crew member avoids job sites with a hostile within this many tiles (pick penalty, tiles). */
+export const PHOBIA_JOB_PENALTY = 30;
+export const PHOBIA_BATTLE_RADIUS = 8;
 
 // --- Drones (sim/drones, DESIGN.md "Drones") ---
 /** Drones out of their bays at once, by the best live AI core's tier (index): Mk I 2, Mk II 4, Mk III 6. */

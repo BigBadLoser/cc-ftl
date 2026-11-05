@@ -3,6 +3,7 @@ import { AssignmentC, CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, 
 import { factionsHostile, rogueAlly } from '../combat/factions';
 
 import { InertC, StunC } from '../robots/components';
+import { isBreaking } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, StowOrderC, SurrenderedC } from './components';
 import { shipById } from '../combat/ships';
@@ -91,6 +92,7 @@ export function isPlayerControlled(sim: Sim, crew: number): boolean {
 
 /** True if the crew member must not pick colony jobs: fighting, fetching or stowing a weapon, surrendered or invading. */
 export function isOffDuty(sim: Sim, crew: number): boolean {
+  if (isBreaking(sim, crew)) return true; // a mental break (panic, freeze, hide, tantrum, despair) holds them out of the colony loop
   const f = sim.world.get(crew, FighterC);
   return (!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew);
 }

@@ -1,4 +1,5 @@
 import type { Faction } from './combat/components';
+import type { BreakContext, BreakKind, BreakTier } from './crew/breakTypes';
 import type { JobKind } from './crew/components';
 import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
@@ -25,6 +26,10 @@ export type SimEvent =
   | { type: 'crew.starving'; crew: number }
   /** Mood fell below MOOD_VERY_LOW (re-arms once it recovers above MOOD_LOW). */
   | { type: 'crew.moodLow'; crew: number; mood: number }
+  /** A mental break began (docs/TRAITS.md section 5). `alert`: loud enough, and not throttled, for an urgent alert; every break is logged. */
+  | { type: 'crew.break'; crew: number; kind: BreakKind; context: BreakContext; tier: BreakTier; alert: boolean }
+  /** A mental break ended (its time ran out, its cause was gone, or they went down). Clears the break's alert. */
+  | { type: 'crew.breakEnded'; crew: number; kind: BreakKind; context: BreakContext }
   /** A crew member deposited items into a storage module (`to` 'storage') or onto a job (`to` 'job'). */
   | { type: 'item.hauled'; crew: number; item: string; count: number; ship: number; x: number; y: number; to: 'floor' | 'storage' | 'job' | 'vehicle' | 'zone' }
   /** A job lacks materials and no stock exists to fetch (debounced per job). */

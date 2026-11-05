@@ -1,3 +1,5 @@
+import { hostileWithin } from '../crew/stress';
+import { traitFlag } from '../crew/traits';
 import { CrewC, type Job, type Position, type Priorities } from '../crew/components';
 import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { operateAffinity } from '../combat/operators';
@@ -6,7 +8,7 @@ import { shipIdOf } from '../regions';
 import { passageTiles } from '../away/crew';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';
+import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, PHOBIA_BATTLE_RADIUS, PHOBIA_JOB_PENALTY, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';
 
 /**
  * What the scheduler (ai/scheduler.ts) ranks a (crew member, job) pair by, apart from the walk (docs/CREW_AI.md 7.1). The tuple is
@@ -62,5 +64,14 @@ export function repairUrgency(sim: Sim, job: Job): number {
  * see the same tuple. A trait cost (docs/TRAITS.md section 5, e.g. a phobia of the job's room) is added here.
  */
 export function pairCost(sim: Sim, crewId: number, job: Job, thin: boolean, relief: boolean): number {
-  return 10 * ((thin ? EVA_JOB_PENALTY : 0) + (relief ? RELIEF_PENALTY : 0) - operateAffinity(sim, crewId, job) + passageTiles(sim, crewId, job));
+  return 10 * ((thin ? EVA_JOB_PENALTY : 0) + (relief ? RELIEF_PENALTY : 0) - operateAffinity(sim, crewId, job) + passageTiles(sim, crewId, job) + phobiaPenalty(sim, crewId, job));
+}
+
+/**
+ * A phobia discourages, it never refuses (docs/TRAITS.md section 5, "Phobias"): a Battle-shy crew member's pick cost rises by PHOBIA_JOB_PENALTY
+ * tiles for a job site with a hostile within PHOBIA_BATTLE_RADIUS tiles. As a cost term it only reorders pairs within a level and urgency, so
+ * the job goes to someone else when someone can take it, and never moves work across the player's priorities.
+ */
+function phobiaPenalty(sim: Sim, crewId: number, job: Job): number {
+  return traitFlag(sim, crewId, 'battleFear') && hostileWithin(sim, crewId, shipIdOf(sim, job), job.x, job.y, PHOBIA_BATTLE_RADIUS) ? PHOBIA_JOB_PENALTY : 0;
 }

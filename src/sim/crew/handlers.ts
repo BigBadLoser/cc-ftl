@@ -18,7 +18,7 @@ import { TICK_HZ } from '../time';
 import {
   CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, WORK_CATEGORIES, type Crew, type Job, type Position,
 } from './components';
-import { clearPath, findJobAt, isIncapacitated, isJammedDoor, origin } from './helpers';
+import { clearPath, findJobAt, isBreaking, isIncapacitated, isJammedDoor, origin } from './helpers';
 import { EmbarkOrderC } from '../vehicles/components';
 import { assignTiles, spreadTiles, tileKey, type Tile } from './spread';
 
@@ -150,7 +150,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (err) reject(sim, cmd.type, err);
   },
   'crew.moveGroup': (sim, cmd) => {
-    const walkers = cmd.ids.filter((id) => sim.world.has(id, DraftedC) && sim.world.has(id, PositionC));
+    const walkers = cmd.ids.filter((id) => sim.world.has(id, DraftedC) && sim.world.has(id, PositionC) && !isBreaking(sim, id));
     if (!walkers.length) return reject(sim, cmd.type, 'notDrafted');
     const shipId = cmd.ship !== undefined ? cmd.ship : shipIdOf(sim, sim.world.get(walkers[0] as number, PositionC));
     const grid = shipGrid(sim, shipId);
