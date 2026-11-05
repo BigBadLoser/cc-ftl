@@ -74,6 +74,13 @@ function hiddenWalk(sim: Sim, id: number, grid: Grid, ship: number, pos: Positio
   return null;
 }
 
+/** Where a walk planned now must start: the crew member's tile, or the end of the step they are in the middle of (that step stays at the head of the new path). */
+function settledAt(pos: Position): { at: Position; head: Tile[] } {
+  if (isSettled(pos)) return { at: pos, head: [] };
+  const end = { x: pos.toX, y: pos.toY };
+  return { at: { ...pos, ...end }, head: [end] };
+}
+
 /**
  * The break's turn for a crew member the interrupt layer holds with `breakdown`: make sure the task exists, plan the walk of a state that
  * needs one, and move on when it is done. A state with nothing to do stands still.
@@ -89,13 +96,15 @@ export function breakTurn(sim: Sim, id: number, pos: Position): void {
   }
   const grid = shipGrid(sim, shipIdOf(sim, pos));
   const planned = task.bb.n === 1;
+  // Mid-step the movement system finishes the step in progress and then drops `steps[0]`: plan from where that step ends and keep it at the head.
+  const { at, head } = settledAt(pos);
   switch (task.state) {
     case 'Flee': {
       if (!planned) {
         task.bb.n = 1;
-        const here = origin(pos);
+        const here = origin(at);
         const steps = grid && fleePath(sim, grid, here, [b.src ?? here]);
-        if (steps && steps.length > 0) path.steps = steps;
+        if (steps && steps.length > 0) path.steps = [...head, ...steps];
         else setState(sim, id, task, 'Cower');
       } else if (path.steps.length === 0 && isSettled(pos)) setState(sim, id, task, 'Cower');
       return;
@@ -103,16 +112,16 @@ export function breakTurn(sim: Sim, id: number, pos: Position): void {
     case 'Hide': {
       if (!planned) {
         task.bb.n = 1;
-        const steps = grid ? hiddenWalk(sim, id, grid, shipIdOf(sim, pos), pos) : null;
-        if (steps) path.steps = steps;
+        const steps = grid ? hiddenWalk(sim, id, grid, shipIdOf(sim, pos), at) : null;
+        if (steps) path.steps = [...head, ...steps];
       }
       return;
     }
     case 'Walk': {
       if (!planned) {
         task.bb.n = 1;
-        const steps = bedWalk(sim, id, pos);
-        if (steps) path.steps = steps;
+        const steps = bedWalk(sim, id, at);
+        if (steps) path.steps = [...head, ...steps];
       }
       if (path.steps.length === 0 && isSettled(pos)) setState(sim, id, task, 'Lie');
       return;

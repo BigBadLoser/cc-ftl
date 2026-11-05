@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BreakdownC, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
+  AssignmentC, BreakdownC, JobC, SuitC, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
   homeShip, newGame, serialize, shipGrid, type BreakKind, type ContentRegistry, type Sim, type SimEvent,
 } from '../../sim';
 import { IntentC } from '../../sim/ai/components';
@@ -204,6 +204,44 @@ describe('a break in play', () => {
     const p = sim.world.get(c, PositionC)!;
     const steps = quietSpot(sim, c, homeShip(sim), g, { x: Math.round(p.x), y: Math.round(p.y) });
     expect(steps).not.toBeNull(); // scans the ship's own rectangle (sector coordinates), not from 0
+  });
+
+  it('a panic that starts mid-step flees along a path that begins with the step in progress', () => {
+    const { sim, c } = quiet();
+    const pos = sim.world.get(c, PositionC)!;
+    const path = sim.world.get(c, PathC)!;
+    const here = { x: Math.round(pos.x), y: Math.round(pos.y) };
+    // Mid-step to the next tile: the movement system finishes that step and then drops steps[0].
+    const next = [{ x: here.x + 1, y: here.y }, { x: here.x - 1, y: here.y }, { x: here.x, y: here.y + 1 }, { x: here.x, y: here.y - 1 }]
+      .find((t) => shipGrid(sim, homeShip(sim))!.get('struct', t.x, t.y) !== 0)!;
+    Object.assign(pos, { toX: next.x, toY: next.y, progress: 0.3 });
+    path.steps = [next];
+    startBreak(sim, c, { ...pick('panic', 'fire'), src: here });
+    sim.step();
+    const steps = sim.world.get(c, PathC)!.steps;
+    expect(steps.length).toBeGreaterThan(2);
+    expect(steps[0]).toEqual(next); // the step in progress stays at the head
+    for (let i = 1; i < steps.length; i++) expect(Math.max(Math.abs(steps[i]!.x - steps[i - 1]!.x), Math.abs(steps[i]!.y - steps[i - 1]!.y))).toBe(1);
+  });
+
+  it('survival comes before a break: a freezing crew member with a nearly empty tank on a depressurised ship goes for a refill', () => {
+    const { sim, c } = quiet();
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    run(sim, 2);
+    const g = shipGrid(sim, homeShip(sim))!;
+    const vent = (): void => { for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('o2', x, y) > 0) g.set('o2', x, y, 0); };
+    vent();
+    sim.world.get(c, SuitC)!.air = 30;
+    startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 300 * TICK_HZ });
+    let refill = false;
+    for (let i = 0; i < 20 * TICK_HZ && !refill; i++) {
+      vent();
+      sim.step();
+      const j = sim.world.get(sim.world.get(c, AssignmentC)?.jobId ?? 0, JobC);
+      refill = j?.kind === 'refill';
+    }
+    expect(refill).toBe(true);
+    expect(sim.world.has(c, BreakdownC)).toBe(true);
   });
 
   it('a mild break scores the work drive 0 and holds no job, while needs still work', () => {
