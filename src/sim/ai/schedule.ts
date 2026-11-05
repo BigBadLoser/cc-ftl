@@ -78,20 +78,6 @@ function pickupRequest(sim: Sim, id: number): void {
   sim.events.emit({ type: 'crew.airUnreachable', crew: id, sec: Math.floor(airLeft(sim, id)) });
 }
 
-/** A crew member in a break answers a drive that is urgent and harms at zero (the air drive's refill, a meal when starving) before the break machine steers them. */
-function survivalTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
-  const assignment = !!sim.world.get(id, AssignmentC);
-  const ranked = evaluateIntent(sim, id, { atPost: false, underway: underway(sim, id), finishing: () => isCarrying(sim, id) });
-  for (const d of ranked) {
-    const v = d.input && d.harmsAtZero ? readInput(sim, id, d.input) : undefined;
-    const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
-    if (v === undefined || !isUrgent(d, v) || !turn || !turn(sim, id, crew, pos, assignment)) continue;
-    serveDrive(sim, id, d.id);
-    return true;
-  }
-  return false;
-}
-
 /**
  * Crew decisions, in `decide`'s slot (docs/CREW_AI.md sections 4 and 7). Per crew member in id order: the forced states keep them
  * out (drafted, incapacitated, off duty; a sleeper, charger or eater is busy), `policy.legacy` writes what they want (`Intent`), the
@@ -104,18 +90,10 @@ export function scheduleSystem(sim: Sim): void {
   /** Drives ranked below work, tried in the idle turn of a crew member the scheduler found no job for (leisure). */
   const idleDrives = new Map<number, DriveDef[]>();
   for (const id of sim.world.query(CrewC, PrioritiesC, PositionC, PathC, NeedsC)) {
-    // A mental break that takes the crew member over (the `breakdown` interrupt, docs/TRAITS.md section 5): survival first (off a harmful tile,
-    // keeping any draft), otherwise the break machine. Before the drafted test below: a severe break beats a draft.
+    // A mental break that takes the crew member over (the `breakdown` interrupt, docs/TRAITS.md section 5): the break machine. Before the drafted test
+    // below: a severe break beats a draft. While a survival drive is critical the break is suspended (`isBreaking` is false) and the paths below run as for anyone.
     if (isBreaking(sim, id) && !isIncapacitated(sim, id)) {
       const pos = sim.world.get(id, PositionC) as Position;
-      const drafted = sim.world.has(id, DraftedC);
-      if (hazardHolds(sim, id) && escapeTurn(sim, id, pos, drafted)) continue;
-      if (sim.world.get(id, TaskC)?.machine === 'escape') clearJoblessTask(sim, id);
-      // Survival drives (a tank about to run dry, starvation) come before the break, as before any other task: the refill or the meal runs under the break.
-      if (survivalTurn(sim, id, sim.world.get(id, CrewC) as Crew, pos)) {
-        sim.world.remove(id, PickupC);
-        continue;
-      }
       breakTurn(sim, id, pos);
       sim.world.remove(id, PickupC);
       continue;

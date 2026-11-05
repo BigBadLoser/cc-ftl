@@ -69,7 +69,8 @@ export function detect(sim: Sim, id: number, mend?: ReadonlySet<number>): Interr
   const f = sim.world.get(id, FighterC);
   const fighting = (f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, StowOrderC) || sim.world.has(id, SurrenderedC) || isBoarding(sim, id);
   if (!fighting && hazardHolds(sim, id)) return 'hazard';
-  const brk = sim.world.get(id, BreakdownC);
+  const running = sim.world.get(id, BreakdownC);
+  const brk = running?.suspended ? undefined : running; // a survival drive is critical: handled as if there were no break (`BreakdownC.suspended`)
   if (brk?.tier === 'severe') return 'breakdown';
   if (sim.world.has(id, DraftedC)) return 'drafted';
   if (brk?.tier === 'moderate') return 'breakdown';

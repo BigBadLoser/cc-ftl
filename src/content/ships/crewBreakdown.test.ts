@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, BreakdownC, JobC, SuitC, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
+  AirlockC, AssignmentC, BreakdownC, JobC, ModuleC, PickupC, SuitC, VehicleC, destroyVehicle, suitDef, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
   homeShip, newGame, serialize, shipGrid, type BreakKind, type ContentRegistry, type Sim, type SimEvent,
 } from '../../sim';
 import { IntentC } from '../../sim/ai/components';
@@ -242,6 +242,36 @@ describe('a break in play', () => {
     }
     expect(refill).toBe(true);
     expect(sim.world.has(c, BreakdownC)).toBe(true);
+  });
+
+  it('a break is suspended while survival is critical: an unreachable air source raises the pickup request, and the break resumes', () => {
+    const { sim, c } = quiet();
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    run(sim, 2);
+    const g = shipGrid(sim, homeShip(sim))!;
+    const vent = (): void => { for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('o2', x, y) > 0) g.set('o2', x, y, 0); };
+    for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false; // no source in reach
+    for (const v of [...sim.world.query(VehicleC)]) destroyVehicle(sim, v);
+    sim.world.get(c, SuitC)!.air = 0.1 * suitDef(sim).airSec;
+    startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 300 * TICK_HZ });
+    for (let i = 0; i < 6 * TICK_HZ; i++) { vent(); sim.step(); }
+    expect(sim.world.get(c, BreakdownC)!.suspended).toBe(true);
+    expect(sim.world.has(c, PickupC)).toBe(true);
+    // A source again: the break resumes with its time still running.
+    for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = true;
+    sim.world.get(c, SuitC)!.air = suitDef(sim).airSec;
+    run(sim, 60);
+    expect(sim.world.get(c, BreakdownC)?.suspended).toBeUndefined();
+    expect(sim.world.get(c, TaskC)?.machine).toBe('break');
+  });
+
+  it('keeps its own copy of the stressor position', () => {
+    const { sim, c } = quiet();
+    const live = sim.world.get(c, PositionC)!;
+    startBreak(sim, c, { ...pick('panic', 'combat'), src: live });
+    const src = sim.world.get(c, BreakdownC)!.src!;
+    expect(src).not.toBe(live);
+    expect(src).toEqual({ x: live.x, y: live.y });
   });
 
   it('a mild break scores the work drive 0 and holds no job, while needs still work', () => {

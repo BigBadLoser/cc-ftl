@@ -1,7 +1,8 @@
+import { survivalCritical } from '../ai/hazard';
 import { abortTask, clearJoblessTask } from '../ai/task';
 import { InterruptC, TaskC } from '../ai/components';
 import { alertable, isInterruptTier } from '../crew/breakTable';
-import { BreakdownC, BreakMemoryC, type BreakMemory } from '../crew/breakTypes';
+import { BreakdownC, BreakMemoryC, type Breakdown, type BreakMemory } from '../crew/breakTypes';
 import { onCooldown, rollBreak, type BreakPick } from '../crew/breakdown';
 import { AssignmentC, CrewC, DraftedC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
@@ -24,7 +25,10 @@ import {
  * components; nothing here moves anyone.
  */
 export function breakdownSystem(sim: Sim): void {
-  for (const id of sim.world.query(BreakdownC)) if (shouldEnd(sim, id)) endBreak(sim, id);
+  for (const id of sim.world.query(BreakdownC)) {
+    if (shouldEnd(sim, id)) endBreak(sim, id);
+    else suspendFor(sim, id);
+  }
   for (const id of sim.world.query(CrewC)) {
     if ((sim.tick + id) % BREAK_INTERVAL !== 0) continue;
     const m = sim.world.get(id, MoodC);
@@ -35,6 +39,20 @@ export function breakdownSystem(sim: Sim): void {
     const pick = rollBreak(sim, id, m, sim.world.has(id, DraftedC));
     if (pick) startBreak(sim, id, pick);
   }
+}
+
+/**
+ * While a survival drive is critical the break is suspended (`Breakdown.suspended`): the crew member is handled as if they had none, and resumes
+ * when it passes. The timer keeps running. The break's own task is dropped when the suspension begins (the scheduler's path takes over).
+ */
+function suspendFor(sim: Sim, id: number): void {
+  const b = sim.world.get(id, BreakdownC) as Breakdown;
+  const now = survivalCritical(sim, id);
+  if (now === !!b.suspended) return;
+  if (now) {
+    b.suspended = true;
+    if (sim.world.get(id, TaskC)?.machine === 'break') abortTask(sim, id, 'breakdown');
+  } else delete b.suspended;
 }
 
 /** Has the running break run its course: the time is up, the crew member is down, a draft ended a break that yields to it, the context has been gone long enough. */
@@ -78,7 +96,7 @@ function memoryOf(sim: Sim, id: number): BreakMemory {
 /** Begin a break: the component, the task taken over, witnesses of a tantrum, the event. */
 export function startBreak(sim: Sim, id: number, pick: BreakPick): void {
   const alert = wantsAlert(sim, id, pick, memoryOf(sim, id));
-  sim.world.add(id, BreakdownC, { kind: pick.kind, tier: pick.tier, context: pick.context, until: sim.tick + pick.ticks, since: sim.tick, goneSince: 0, ...(pick.src ? { src: pick.src } : {}) });
+  sim.world.add(id, BreakdownC, { kind: pick.kind, tier: pick.tier, context: pick.context, until: sim.tick + pick.ticks, since: sim.tick, goneSince: 0, ...(pick.src ? { src: { x: pick.src.x, y: pick.src.y } } : {}) });
   // A tier that takes over the crew member ends whatever they were doing like any code that takes over a path; a mild break only lets go of a job.
   if (isInterruptTier(pick.tier)) standDown(sim, id);
   if (isInterruptTier(pick.tier) || sim.world.has(id, AssignmentC)) abortTask(sim, id, 'breakdown');

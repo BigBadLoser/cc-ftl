@@ -51,7 +51,7 @@ export function hasRoute(sim: Sim, crew: number): boolean {
 /** A mental break of a tier that takes the crew member over (panic, freeze, hide, tantrum, despair): the break machine steers them (docs/TRAITS.md section 5). */
 export function isBreaking(sim: Sim, crew: number): boolean {
   const b = sim.world.get(crew, BreakdownC);
-  return !!b && b.tier !== 'mild';
+  return !!b && b.tier !== 'mild' && !b.suspended;
 }
 
 /** A mild break (work refusal, isolation) is on: the work drive scores 0, so no job is taken or called to. */

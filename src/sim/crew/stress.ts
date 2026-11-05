@@ -160,7 +160,7 @@ export function stressors(sim: Sim, id: number, m: Mood): Stressor[] {
   };
   const fire = fireNear(sim, id, fireRadius(sim, id));
   if (fire) add('fire', fire);
-  if ((m.underFire ?? 0) >= combatSec(sim, id)) add('combat', hostilesInSight(sim, id, BREAK_COMBAT_RADIUS)[0]);
+  if ((m.underFire ?? 0) >= combatSec(sim, id)) { const h = hostilesInSight(sim, id, BREAK_COMBAT_RADIUS)[0]; add('combat', h && { x: h.x, y: h.y }); } // a copy, never the live Position
   if (decompressing(sim, id)) add('decompression');
   if ((m.dark ?? 0) >= darkSec(sim, id)) add('blackout');
   if (contextPresent(sim, id, 'exhaustion')) add('exhaustion');

@@ -26,6 +26,8 @@ export interface Breakdown {
   goneSince: number;
   /** The stressor's focus (the nearest burning tile or hostile when it began): what panic flees from. Absent: their own tile. */
   src?: Tile2;
+  /** Set by the break system each tick while a survival drive is critical (air, starvation, a harmful tile): the crew member is then handled as if they had no break (`isBreaking` is false) and the break resumes after; its timer runs on. */
+  suspended?: boolean;
 }
 export const BreakdownC = defineComponent<Breakdown>('breakdown');
 
