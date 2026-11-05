@@ -78,11 +78,12 @@ export function buildSocial(sim: Sim, me: number, place: PlaceName = placeNamer(
   const strength = (r: UiSocialRow): number => Math.abs(r.mine);
   const pick = (s: UiSocialRow['section']): UiSocialRow[] => rows.filter((r) => r.section === s).sort((x, y) => strength(y) - strength(x) || x.id - y.id);
   const crew = rows.filter((r) => r.section === 'crew').sort((x, y) => x.name.localeCompare(y.name));
-  const names = (kind: 'friend' | 'rival'): string => near(sim, me, kind).map((e) => sim.world.get(e, CrewC)?.name ?? 'Crew').join(', ');
+  const names = (kind: 'friend' | 'rival'): string[] => near(sim, me, kind).map((e) => sim.world.get(e, CrewC)?.name ?? 'Crew');
   const mood = sim.world.get(me, MoodC)?.factors ?? [];
+  // The factor is flat however many are near (+4 for any friend), so the names share one entry.
   const moodLine = [['withFriend', 'friend'], ['nearRival', 'rival']].flatMap(([key, kind]) => {
-    const f = mood.find((x) => x.key === key);
-    return f && f.value !== 0 ? [{ who: names(kind as 'friend' | 'rival'), value: Math.round(f.value * 10) / 10 }] : [];
+    const f = mood.find((x) => x.key === key), who = names(kind as 'friend' | 'rival');
+    return f && f.value !== 0 && who.length ? [{ who: who.join(', '), value: Math.round(f.value * 10) / 10 }] : [];
   });
   return { friends: pick('friends'), rivals: pick('rivals'), crew, caps: { friends: BOND_MAX_FRIENDS, rivals: BOND_MAX_RIVALS }, moodLine };
 }

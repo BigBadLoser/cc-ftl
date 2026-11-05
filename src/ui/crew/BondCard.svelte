@@ -14,7 +14,7 @@
 <div class="card {row.section}" data-testid="bond-card">
   <button class="head" aria-expanded="true" onclick={onToggle}>
     <Face {api} id={row.id} size={36} />
-    <span class="who"><span><b>{row.name}</b>{#if row.tag} <span class="tag" class:one={row.tag === 'one-sided'}>{row.tag}</span>{/if}</span><span class="sum" data-testid="bond-summary">{row.summary}</span></span>
+    <span class="who"><span><b>{row.name}</b>{#if row.tag}<span class="tag" class:one={row.tag === 'one-sided'}>{row.tag}</span>{/if}</span><span class="sum" data-testid="bond-summary">{row.summary}</span></span>
     <span class="car">▴</span>
   </button>
   <div class="feel">
@@ -45,7 +45,7 @@
   .head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--text); text-align: left; }
   .who { display: grid; gap: 2px; flex: 1; font-size: 14px; }
   b { font-weight: 600; }
-  .tag { font-size: 12px; color: var(--dim); }
+  .tag { margin-left: 6px; font-size: 12px; color: var(--dim); }
   .tag.one { color: var(--amber); }
   .sum { color: var(--dim); font-size: 13px; }
   .car { color: var(--dim); font-size: 11px; }
