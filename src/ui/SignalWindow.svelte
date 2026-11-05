@@ -12,7 +12,7 @@
   import SensorPanel from './comms/SensorPanel.svelte';
   import DecisionBar from './comms/DecisionBar.svelte';
   import type { Callout, DecisionOption, ReadoutRow, UiHolo } from './comms/types';
-  import { isTypingTarget } from './keys';
+  import { holdModal, isTypingTarget } from './keys';
   import { keymap, keyLabel } from './keymap';
 
   /**
@@ -73,9 +73,11 @@
   }
   let binds = $state(keymap.get());
   onMount(() => {
+    // A forced decision: the game's own keys (S pans the camera down) stand aside while it is open.
+    const release = holdModal();
     window.addEventListener('keydown', keydown);
     const off = keymap.subscribe((b) => (binds = b));
-    return () => { window.removeEventListener('keydown', keydown); off(); };
+    return () => { window.removeEventListener('keydown', keydown); off(); release(); };
   });
 </script>
 
