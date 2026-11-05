@@ -96,7 +96,8 @@ export function tryInteractions(sim: Sim, a: number, b: number, dist: number): I
   return null;
 }
 
-function begin(sim: Sim, def: InteractionDef, pick: number, a: number, b: number, c: number): void {
+/** Begin outcome `pick` of `def` between `a` and `b` now (the roll's result, and the screenshot hook's way to force one). */
+export function begin(sim: Sim, def: InteractionDef, pick: number, a: number, b: number, c: number): void {
   const o = def.outcomes[pick]!;
   const until = sim.tick + Math.round(def.durationSec * TICK_HZ);
   sim.world.add(a, InteractionC, { id: def.id, outcome: o.id, icon: o.icon, with: b, since: sim.tick, until });
