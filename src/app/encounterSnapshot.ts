@@ -127,7 +127,7 @@ export function eventOf(sim: Sim): UiEventGrid | null {
     tone: toneOf(sim.content.galaxy?.factions[owner]?.kind), ships: f ? f.ships.length : ev.scene.ships.filter((s) => s.contact.ship !== undefined).length, hostiles,
     deploying: sim.sector.state === 'deploying', canLeave: blocker === null,
     why: blocker === 'notCharged' ? 'The FTL drive must be charged to flee' : blocker === 'tradeInProgress' ? 'A trade is in progress'
-      : blocker === 'visitors' ? 'Visitors are aboard or their shuttle is docked: wait until they go' : blocker === 'crewAway' ? 'Crew or a shuttle are still away: bring them home first' : blocker,
+       : blocker === 'crewAway' ? 'Crew or a shuttle are still away: bring them home first' : blocker,
     fleeing: hostiles > 0, resumeTo: nodeName(sim, t.route[t.route.length - 1] as string), hopsLeft: Math.max(0, t.route.length - 1 - t.at),
   };
 }

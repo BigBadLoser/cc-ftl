@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, serialize, deserialize, type Sim } from '../sim';
 import { AllegianceC } from '../sim/fight/components';
-import { DownedC, PositionC } from '../sim/crew/components';
+import { CrewC, DownedC, PositionC } from '../sim/crew/components';
 import { shipIdOf } from '../sim/regions';
+import { AirlockC } from '../sim/modules/airlock';
+import { ModuleC } from '../sim';
 import { hostileAct } from '../sim/combat/provoke';
 import { killCrew } from '../sim/crew/death';
 import { applyEffect, giveItems } from '../sim/story/effects';
@@ -10,7 +12,6 @@ import { RolledSkillsC } from '../sim/crew/traits';
 import { playerCrew, playerStock, withPlayerAboard } from '../sim/story/world';
 import { ItemStackC } from '../sim/items/components';
 import { BoarderC, VehicleC } from '../sim/vehicles/components';
-import { leaveBlocker } from '../sim';
 import { buildStory } from './storySnapshot';
 import { eventOf } from './encounterSnapshot';
 import { content } from '../content';
@@ -78,6 +79,16 @@ const floorMissiles = (sim: Sim): number => sim.world.query(ItemStackC).reduce((
 const untilSent = (sim: Sim, skiff: number): void => {
   for (let i = 0; i < 20 * 20 && !(sim.world.get(skiff, BoarderC)?.crew.length ?? 0); i++) step(sim);
 };
+/** Switch every airlock of the player's ship off or on (an outage). */
+const airlocks = (sim: Sim, on: boolean): void => {
+  const me = playerShip(sim);
+  for (const id of sim.world.query(ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    if (m && sim.world.has(id, AirlockC) && shipIdOf(sim, m) === me) m.enabled = on;
+  }
+};
+const partyOnPlayer = (sim: Sim, skiff: number): boolean =>
+  (sim.world.get(skiff, BoarderC)?.crew ?? []).some((c) => { const p = sim.world.get(c, PositionC); return !!p && shipIdOf(sim, p) === playerShip(sim); });
 const ambushOf = (sim: Sim) => sim.galaxy.event?.scene.ships[0]?.ambush;
 const observed = (out: { type: string }[]) => out.filter((e): e is { type: 'scene.observed'; rule: string; text: string } & typeof e => e.type === 'scene.observed');
 /** Step until the request is open (a few seconds' worth after the player is deployed). */
@@ -255,37 +266,13 @@ describe('the returning pirate: in its pocket', () => {
     expect(out.some((e) => e.type === 'ship.fled')).toBe(true);
   });
 
-  it('leaving is refused while a visit is under way, for both variants, and allowed once it is settled', () => {
-    for (const trap of [true, false]) {
-      const { sim, skiff } = inScene(3, trap);
-      untilAsked(sim);
-      expect(leaveBlocker(sim)).toBeNull(); // an open request blocks nothing
-      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
-      step(sim, 2);
-      expect(leaveBlocker(sim)).toBeNull(); // nobody is out yet: a phase alone never blocks
-      untilSent(sim, skiff);
-      expect(leaveBlocker(sim)).toBe('visitors');
-      for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
-      expect(leaveBlocker(sim)).toBe('visitors');
-      expect(eventOf(sim)?.canLeave).toBe(false);
-      sim.enqueue({ type: 'galaxy.leaveEvent' });
-      expect(step(sim)).toContainEqual({ type: 'command.rejected', command: 'galaxy.leaveEvent', reason: 'visitors' });
-      for (let i = 0; i < 20 * 150 && !(trap ? ambushOf(sim)?.visit === 'sprung' : ambushOf(sim)?.home); i++) step(sim);
-      // A sprung trap is an ordinary fight (leaving then is a flee); an honest party is home and the way is clear.
-      expect(leaveBlocker(sim)).not.toBe('visitors');
-      if (!trap) expect(leaveBlocker(sim)).toBeNull();
-    }
-  });
-
   it('a skiff wrecked after the dock was granted does not hold the player: the visit settles', () => {
     for (const trap of [true, false]) {
       const { sim, skiff } = inScene(3, trap);
       untilAsked(sim);
       sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
       untilSent(sim, skiff);
-      expect(leaveBlocker(sim)).toBe('visitors');
       (sim.world.get(skiff, ShipC) as { state: string }).state = 'wreck';
-      expect(leaveBlocker(sim)).not.toBe('visitors'); // read from what is in play, not a stored phase
       step(sim, 40);
       expect(ambushOf(sim)?.visit).toBe('refused');
     }
@@ -302,30 +289,127 @@ describe('the returning pirate: in its pocket', () => {
       expect(party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'neutral')).toBe(true);
       (sim.world.get(skiff, ShipC) as { state: string }).state = 'wreck';
       step(sim, 40);
-      expect(leaveBlocker(sim)).not.toBe('visitors');
       expect(ambushOf(sim)?.visit).toBe('sprung');
       expect(party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'hostile')).toBe(true); // you killed their ship
     }
   });
 
-  it('a party killed aboard (honest, or a trap before it springs) or downed does not hold the player', () => {
+  it('a party killed aboard (honest, or a trap before it springs) settles the visit', () => {
     for (const trap of [true, false]) {
       const { sim, skiff } = inScene(3, trap);
       untilAsked(sim);
       sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
       for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
       const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
-      expect(leaveBlocker(sim)).toBe('visitors');
       // Downed but alive: not underway (the downed-boarder handling applies), whatever the phase.
-      for (const c of party) sim.world.add(c, DownedC, { bleed: 99, stabilized: false, bed: 0 });
-      expect(leaveBlocker(sim)).not.toBe('visitors');
-      for (const c of party) sim.world.remove(c, DownedC);
-      expect(leaveBlocker(sim)).toBe('visitors');
       for (const c of party) killCrew(sim, c);
-      expect(leaveBlocker(sim)).not.toBe('visitors');
       step(sim, 40);
       expect(ambushOf(sim)?.visit).toBe(trap ? 'sprung' : 'refused');
-      expect(leaveBlocker(sim)).not.toBe('visitors');
+    }
+  });
+
+  it('an airlock outage as their shuttle is sent: restored, they dock and the visit completes', () => {
+    for (const trap of [true, false]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      for (let i = 0; i < 20 * 60 && sim.world.get(skiff, BoarderC)?.state !== 'loading'; i++) step(sim);
+      airlocks(sim, false); // the outage hits as the shuttle is about to be sent
+      step(sim, 20 * 12);
+      expect(['granted']).toContain(ambushOf(sim)?.visit); // stuck while it is down (it has not given up yet)
+      airlocks(sim, true);
+      for (let i = 0; i < 20 * 120 && !['aboard', 'delivered', 'sprung'].includes(ambushOf(sim)?.visit ?? ''); i++) step(sim);
+      expect(['aboard', 'delivered', 'sprung']).toContain(ambushOf(sim)?.visit);
+      expect(partyOnPlayer(sim, skiff)).toBe(true);
+    }
+  });
+
+  it('an outage when the honest party heads home: restored, they embark and leave', () => {
+    const { sim, skiff } = inScene(3, false);
+    untilAsked(sim);
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'delivered'; i++) step(sim);
+    airlocks(sim, false);
+    step(sim, 20 * 30);
+    expect(ambushOf(sim)?.home).toBeUndefined();
+    airlocks(sim, true);
+    for (let i = 0; i < 20 * 120 && !ambushOf(sim)?.home; i++) step(sim);
+    expect(ambushOf(sim)?.home).toBe(true);
+  });
+
+  it('leaving with honest guests aboard removes them and lets the player go', () => {
+    const { sim, skiff } = inScene(3, false);
+    untilAsked(sim);
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+    const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+    expect(party.length).toBeGreaterThan(0);
+    sim.enqueue({ type: 'galaxy.leaveEvent' });
+    const out = step(sim, 2);
+    expect(out.some((e) => e.type === 'command.rejected')).toBe(false);
+    expect(sim.galaxy.event).toBeNull();
+    expect(observed(out).map((e) => e.text).join(' ')).toMatch(/take their leave/);
+    expect(withPlayerAboard(sim, () => party.every((c) => !sim.world.has(c, CrewC)))).toBe(true);
+    expect(sim.story.flags['spared_pirate'] ?? 0).toBe(0); // the debt went unpaid
+  });
+
+  it('leaving with an unsprung trap party aboard springs it: hostile boarders travel with the ship', () => {
+    const { sim, skiff } = inScene(3, true);
+    untilAsked(sim);
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+    const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+    sim.enqueue({ type: 'galaxy.leaveEvent' });
+    step(sim, 2);
+    expect(sim.galaxy.event).toBeNull();
+    expect(withPlayerAboard(sim, () => party.every((c) => sim.world.has(c, CrewC) && sim.world.get(c, AllegianceC)?.faction === 'hostile'))).toBe(true);
+    expect(sim.galaxy.provoked.length).toBeGreaterThan(0);
+  });
+
+  it('leaving with downed visitors aboard settles them too: honest removed, an all-downed trap party turned hostile', () => {
+    for (const trap of [false, true]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+      const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+      expect(party.length).toBeGreaterThan(0);
+      for (const c of party) sim.world.add(c, DownedC, { bleed: 999, stabilized: true, bed: 0 });
+      sim.enqueue({ type: 'galaxy.leaveEvent' });
+      step(sim, 2);
+      expect(sim.galaxy.event).toBeNull();
+      if (trap) expect(withPlayerAboard(sim, () => party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'hostile'))).toBe(true);
+      else expect(withPlayerAboard(sim, () => party.every((c) => !sim.world.has(c, CrewC)))).toBe(true);
+    }
+  });
+
+  it('an honest party with a downed guest takes them home: nobody is left aboard when the visit completes', () => {
+    const { sim, skiff } = inScene(3, false);
+    untilAsked(sim);
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'aboard'; i++) step(sim);
+    const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
+    expect(party.length).toBeGreaterThan(0);
+    sim.world.add(party[0]!, DownedC, { bleed: 999, stabilized: true, bed: 0 });
+    for (let i = 0; i < 20 * 300 && !ambushOf(sim)?.home; i++) step(sim);
+    expect(ambushOf(sim)?.home).toBe(true);
+    const me = playerShip(sim);
+    expect(withPlayerAboard(sim, () => party.every((c) => {
+      const pos = sim.world.get(c, PositionC);
+      return !sim.world.has(c, CrewC) || !pos || shipIdOf(sim, pos) !== me;
+    }))).toBe(true);
+  });
+
+  it('leaving mid-flight cancels the visit cleanly', () => {
+    for (const trap of [true, false]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      for (let i = 0; i < 20 * 60 && sim.world.get(skiff, BoarderC)?.state !== 'sent'; i++) step(sim);
+      sim.enqueue({ type: 'galaxy.leaveEvent' });
+      const out = step(sim, 2);
+      expect(out.some((e) => e.type === 'command.rejected')).toBe(false);
+      expect(sim.galaxy.event).toBeNull();
     }
   });
 
