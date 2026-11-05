@@ -56,6 +56,7 @@ STRIP_RISE = PZ         # the middle piece's sill between those seams raised thi
 STRIP_TONE = "fTW3"     # (the step's end, facing the opening: the ramp block's shade-side tan)
 MID_LINES = (10, 21)    # the middle piece's sill: a seam across it at these px columns (5 px either side of the
                         # middle; level with the face's grooves), on down the block BEND_DROP px
+PLATE_LEG = 3           # the ramp front's plates: a seam down from each, this many px in from its ends
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
 FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, PANE_EDGE) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
@@ -289,6 +290,15 @@ def _ramp_lines(k, x0, x1, yf):
             t = top((u0 + u1) / 2)
             d0, d1 = t + (BEND_DROP - 1) * E, t + BEND_DROP * E
             strip([(u0, d0), (u1, d0), (u1, d1), (u0, d1)])
+    legs = [u + (1 + PLATE_LEG) * L if sd > 0 else u - (2 + PLATE_LEG) * L        # (each seam's -x edge)
+            for u, sd in ((x0 + DIP_RUN, 1), (x1 - DIP_RUN, -1)) if a < u < b]
+    if PART == "m":                                     # (under each plate on the ramp's front, PLATE_LEG px in from
+        legs += [-0.5 + (MID_LINES[0] + 0.25 - PLATE_LEG) / 32 - L,     # its ends, down to the block's end)
+                 -0.5 + (MID_LINES[1] + 1.25 + PLATE_LEG) / 32]
+    for u in legs:
+        if a < u and u + L < b:
+            t = top(u + L / 2)
+            strip([(u, t + BEND_DROP * E), (u + L, t + BEND_DROP * E), (u + L, de), (u, de)])
 
 
 def _reach(h, yf):
