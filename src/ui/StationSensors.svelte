@@ -17,16 +17,30 @@
   let art = $state<UiStarArt | null>(null);
   onMount(() => api.starmapArt.subscribe((a) => (art = a)));
   const contacts = $derived(info.traffic?.contacts ?? []);
-  /** The farthest contact lands near the screen edge, closer ones in proportion (never inside the hologram). */
-  const scale = $derived.by(() => {
-    const far = Math.max(40, ...contacts.map((c) => Math.hypot(c.dx, c.dy)));
-    return 1 / far;
+  /**
+   * One scale for every contact so the farthest one still fits inside the screen with padding (x spread full, y squashed to the iso view), and
+   * anything that would land on the hologram is pushed out to its edge along the same bearing.
+   */
+  const YSQ = 0.7;
+  const PAD = { l: 34, r: 34, t: 50, b: 40 };
+  const place = $derived.by(() => {
+    let k = 6;
+    for (const c of contacts) {
+      if (c.dx) k = Math.min(k, ((c.dx < 0 ? CX - PAD.l : W - CX - PAD.r) / Math.abs(c.dx)));
+      if (c.dy) k = Math.min(k, ((c.dy < 0 ? CY - PAD.t : H - CY - PAD.b) / (Math.abs(c.dy) * YSQ)));
+    }
+    return (c: { dx: number; dy: number }) => {
+      let x = c.dx * k;
+      let y = c.dy * k * YSQ;
+      const e = Math.hypot(x / 78, y / 46);
+      if (e < 1) {
+        const f = e > 0.01 ? 1 / e : 1;
+        if (e > 0.01) { x *= f; y *= f; } else x = 78;
+      }
+      return { x: Math.max(PAD.l, Math.min(W - PAD.r, CX + x)), y: Math.max(PAD.t, Math.min(H - PAD.b, CY + y)) };
+    };
   });
-  function at(c: { dx: number; dy: number }) {
-    const d = Math.hypot(c.dx, c.dy) || 1;
-    const r = Math.max(HOLO / 2 + 26, Math.min(1, d * scale) * 138);
-    return { x: Math.max(24, Math.min(W - 24, CX + (c.dx / d) * r * 1.2)), y: Math.max(40, Math.min(H - 52, CY + (c.dy / d) * r * 0.62)) };
-  }
+  const at = (c: { dx: number; dy: number }) => place(c);
   const SPRITE = { you: 60, ship: 40, shuttle: 0 } as const;
   const frame = (id: string) => art?.frames[id];
   /** A starmap frame as a CSS background at `px` wide (the sheet scaled with it, pixelated). */
@@ -43,17 +57,39 @@
     const order = [...contacts.filter((c) => c.kind === 'you'), ...contacts.filter((c) => c.kind === 'shuttle'), ...contacts.filter((c) => c.kind === 'ship')];
     return order.map((c) => {
       const p = at(c);
-      for (let k = 1; k <= 8 && taken.some((t) => Math.hypot(t.x - p.x, t.y - p.y) < 34); k++) p.y = Math.max(40, Math.min(H - 52, at(c).y + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 30));
+      const y0 = p.y;
+      for (let k = 1; k <= 8 && taken.some((t) => Math.hypot(t.x - p.x, t.y - p.y) < 34); k++) p.y = Math.max(PAD.t, Math.min(H - PAD.b, y0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 30));
       taken.push({ ...p });
       return { c, p };
     });
   });
   const ships = $derived(placed.filter((x) => x.c.kind !== 'shuttle'));
   const shuttles = $derived(placed.filter((x) => x.c.kind === 'shuttle'));
-  /** Labels stack in their own lane at the bottom, each tied to its mark by a leader line that stops at the end of its text, so none overlap. */
-  const lane = (i: number, n: number) => H - 10 - (n - 1 - i) * 12;
-  const named = $derived([...shuttles.map((s) => ({ ...s, tone: 'amber', text: s.c.label })), ...ships.filter((s) => s.c.kind === 'ship').map((s) => ({ ...s, tone: 'dim', text: `${s.c.label} · INBOUND` }))]);
-  const textEnd = (t: string) => 8 + t.length * 5.5 + 5;
+  /**
+   * Each label sits next to its contact: yours just above it, a ship's under it, a shuttle's a short way below its mark. A pass then nudges
+   * labels apart vertically; a label that moved from its spot (and a shuttle's, which is a tiny mark) gets a short leader line.
+   */
+  const CW = 5.5;
+  const labels = $derived.by(() => {
+    const raw = [...ships, ...shuttles].map(({ c, p }) => {
+      const fit = (t: string) => (t.length > 26 ? `${t.slice(0, 25)}…` : t);
+      const text = c.kind === 'ship' ? fit( `${c.label}${c.head ? ` · ${c.head === 'in' ? 'INBOUND' : 'OUTBOUND'}` : ''}`) : c.label;
+      const tone = c.kind === 'you' ? 'you' : c.kind === 'shuttle' ? 'amber' : 'dim';
+      const w = text.length * CW;
+      const ly = c.kind === 'you' ? p.y - SPRITE.you / 2 + 2 : c.kind === 'ship' ? p.y + SPRITE.ship / 2 + 8 : p.y + 30;
+      const x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, p.x));
+      return { id: c.id, text, tone, w, x, y: ly, y0: ly, ax: p.x, ay: p.y + (c.kind === 'you' ? -SPRITE.you / 2 + 4 : c.kind === 'ship' ? SPRITE.ship / 2 : 3), lead: c.kind === 'shuttle' };
+    });
+    const out: typeof raw = [];
+    for (const l of raw.sort((a, b) => a.y - b.y)) {
+      const clash = (y: number) => out.some((o) => Math.abs(o.y - y) < 11 && Math.abs(o.x - l.x) < (o.w + l.w) / 2 + 4);
+      for (let k = 0; k < 8 && clash(l.y); k++) l.y += 11;
+      if (clash(l.y) || l.y > H - 5) { l.y = l.y0; for (let k = 0; k < 8 && clash(l.y); k++) l.y -= 11; }
+      if (Math.abs(l.y - l.y0) > 1) l.lead = true;
+      out.push(l);
+    }
+    return out;
+  });
   const gunDots = $derived(Array.from({ length: Math.min(4, info.guns) }, (_, i) => [[-1, -1], [1, -1], [-1, 1], [1, 1]][i] as [number, number]));
   const log = $derived(info.traffic?.log ?? []);
 </script>
@@ -70,13 +106,12 @@
   {#each shuttles as { c, p } (c.id)}<i class="mark" style={`left:${p.x - 4}px;top:${p.y - 3}px`} title={c.label}></i>{/each}
   <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
     {#each ships as { c, p } (c.id)}
-      {#if c.kind === 'you'}<text class="you" x={p.x} y={p.y - 32} text-anchor="middle">YOU</text>{/if}
       <path class="head" d={`M${p.x} ${p.y} L${CX + (p.x - CX) * 0.45} ${CY + (p.y - CY) * 0.45}`} class:g={c.kind === 'you'} />
     {/each}
     {#each shuttles as { c, p } (c.id)}<path class="head a" d={`M${p.x} ${p.y} L${CX + (p.x - CX) * 0.3} ${CY + (p.y - CY) * 0.3}`} />{/each}
-    {#each named as n, i (n.c.id)}
-      <path class="lead {n.tone}" d={`M${n.p.x} ${n.p.y + 3} V${lane(i, named.length) - 4} H${textEnd(n.text)}`} />
-      <text class={n.tone} x="8" y={lane(i, named.length)}>{n.text}</text>
+    {#each labels as l (l.id)}
+      {#if l.lead}<path class="lead {l.tone}" d={`M${l.ax} ${l.ay} L${l.x} ${l.y + (l.y > l.ay ? -9 : 3)}`} />{/if}
+      <text class={l.tone} x={l.x} y={l.y} text-anchor="middle">{l.text}</text>
     {/each}
     {#each gunDots as [x, y], i (i)}<circle class="gun" cx={CX + x * (HOLO / 2 - 8)} cy={CY + y * (HOLO / 4)} r="2.2" />{/each}
     <path class="lead a" d={`M${CX + 14} ${CY - 10} L${W - 90} ${CY - 50} H${W - 6}`} />
@@ -87,7 +122,7 @@
   <i class="scan"></i>
 </div>
 <div class="log" data-testid="station-traffic">
-  {#each log as l, i (i)}<div><b>{l.who}</b> <span>{l.what}</span></div>{:else}<div class="none">No traffic on the dock.</div>{/each}
+  {#each log as l, i (i)}<div><time>{l.at}</time><b>{l.who}</b> <span>{l.what}</span></div>{:else}<div class="none">No traffic on the dock.</div>{/each}
 </div>
 
 <style>
@@ -96,7 +131,7 @@
   svg { position: absolute; left: 0; top: 0; pointer-events: none; }
   i.holo, i.ship { position: absolute; image-rendering: pixelated; }
   i.holo { filter: grayscale(1) brightness(1.5) sepia(1) hue-rotate(150deg) saturate(3) opacity(0.9); }
-  i.ship.you { filter: grayscale(1) brightness(3) sepia(1) hue-rotate(95deg) saturate(8) opacity(0.95); }
+  i.ship.you { filter: grayscale(1) brightness(1.5) sepia(1) hue-rotate(92deg) saturate(2.6) opacity(0.78); }
   i.ship.other { filter: grayscale(1) brightness(1.2) sepia(1) hue-rotate(150deg) saturate(2) opacity(0.4); }
   i.mark { position: absolute; width: 8px; height: 6px; background: var(--amber); }
   .tagc { position: absolute; left: 8px; top: 6px; z-index: 2; font: 9px var(--pixel-font); letter-spacing: 0.06em; color: var(--ink-accent); }
@@ -105,7 +140,7 @@
   .head { fill: none; stroke: #5fc8ee; stroke-dasharray: 2 4; opacity: 0.6; }
   .head.g { stroke: var(--green); } .head.a { stroke: var(--amber); stroke-dasharray: 3 3; opacity: 1; }
   .lead { fill: none; stroke-width: 0.8; opacity: 0.6; }
-  .lead.amber, .lead.a { stroke: var(--amber); } .lead.dim { stroke: #6f9cb4; }
+  .lead.amber, .lead.a { stroke: var(--amber); } .lead.you { stroke: var(--green); } .lead.dim { stroke: #6f9cb4; }
   .lead.a { stroke-width: 1.2; opacity: 1; }
   .brk { fill: none; stroke: var(--amber); stroke-width: 1.2; }
   .gun { fill: #ff8a7a; }
@@ -113,7 +148,9 @@
   .co em { display: block; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-style: normal; font-size: 11px; line-height: 1.3; color: var(--text); letter-spacing: 0; }
   .def { left: 8px; top: 22px; } .dock { right: 8px; top: 24px; text-align: right; }
   .log { padding: 8px 10px; display: grid; gap: 4px; font-size: 12.5px; border-bottom: 1px solid var(--line); min-height: 64px; box-sizing: border-box; }
-  .log b { font-weight: 600; }
-  .log span { color: var(--dim); }
+  .log div { display: flex; gap: 6px; align-items: baseline; }
+  .log time { flex: none; width: 36px; font: 9px var(--pixel-font); color: var(--dim); opacity: 0.8; }
+  .log b { font-weight: 600; flex: none; }
+  .log span { color: var(--dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .none { color: var(--dim); }
 </style>

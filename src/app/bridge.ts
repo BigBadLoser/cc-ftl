@@ -19,6 +19,7 @@ import { buildPrizes } from './prizeSnapshot';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildMining } from './miningSnapshot';
 import { buildTrade } from './tradeSnapshot';
+import { StationLog } from './stationLog';
 import { buildYard, yardInputs } from './yardSnapshot';
 import { buildStory } from './storySnapshot';
 import { warmOutlines } from './starmapClusters';
@@ -179,6 +180,7 @@ export function createBridge(sim: Sim): Bridge {
   const shuttles = createStore<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
   const trade = createStore<UiTrade>({ credits: sim.trade.credits, partners: [], deals: [] });
   let lastTrade = '';
+  const stationLog = new StationLog();
   const yard = createStore<UiYard>({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0 } }, quote: null, order: null });
   let yardStation = 0;
   let lastYard = '';
@@ -369,7 +371,7 @@ export function createBridge(sim: Sim): Bridge {
   };
   const refreshTrade = () => {
     if (combatFrame % 3) return;
-    const snap = buildTrade(sim);
+    const snap = buildTrade(sim, stationLog);
     const key = JSON.stringify(snap);
     if (key === lastTrade) return;
     lastTrade = key;
@@ -556,6 +558,7 @@ export function createBridge(sim: Sim): Bridge {
       refreshCrew();
       refreshShip();
       refreshShuttles();
+      stationLog.observe(sim);
       refreshTrade();
       refreshYard();
       refreshPrizes();

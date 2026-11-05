@@ -7,7 +7,7 @@ import { iconOf } from './starmapSnapshot';
 import { marketAt, pricesAt } from './marketSnapshot';
 import { portHints } from './stockHints';
 import { yardOf } from './yardSnapshot';
-import { stationTraffic } from './stationTraffic';
+import { stationTraffic, type StationLogView } from './stationTraffic';
 
 /** Plain names of the structure services worth telling a player about. */
 const SERVICE: Record<string, string> = { trade: 'Trade', fuel: 'Fuel', repair: 'Repair', blueprints: 'Blueprints' };
@@ -64,7 +64,7 @@ function spriteOf(sim: Sim, port: Port | undefined): string {
 }
 
 /** What the inspector shows for a station: owner and standing, services, market, docks and defences. Works without a port (debug spawns). */
-export function stationInfo(sim: Sim, station: number, portId: string | undefined, hw: ReturnType<typeof hardware>): UiStationInfo {
+export function stationInfo(sim: Sim, station: number, portId: string | undefined, hw: ReturnType<typeof hardware>, logView?: StationLogView): UiStationInfo {
   const port = portId ? portOf(sim, portId) : undefined;
   const h = hw.get(station);
   const alarm = sim.world.get(station, StationAlarmC);
@@ -81,6 +81,6 @@ export function stationInfo(sim: Sim, station: number, portId: string | undefine
     alarm: alarm?.state === 'alarm' ? alarm.reason || 'alarm' : null,
     yard: yardOf(sim, station),
     sprite: spriteOf(sim, port),
-    traffic: stationTraffic(sim, station),
+    traffic: stationTraffic(sim, station, logView),
   };
 }

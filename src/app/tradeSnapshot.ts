@@ -5,6 +5,7 @@ import { fetching } from '../sim/galaxy/recruit';
 import { contrabandRate, isContraband, setsOf, truceBanned, truceHolds } from '../sim';
 import { isIncapacitated } from '../sim/crew/helpers';
 import { hardware, stationInfo } from './stationInfo';
+import type { StationLog } from './stationLog';
 import type { UiMarketServices, UiRecruit, UiTrade, UiTradeDeal, UiTradePartner } from '../ui/api';
 
 /** Short label of what a deal is doing now. */
@@ -67,7 +68,7 @@ function hireProbe(sim: Sim, ship: number): string {
 }
 
 /** Plain-data trade state for the trade window and the credits readout. Reads the sim only (it never creates a trader). */
-export function buildTrade(sim: Sim): UiTrade {
+export function buildTrade(sim: Sim, log?: StationLog): UiTrade {
   const me = sim.world.get(playerShip(sim), ShipC);
   const partners: UiTradePartner[] = [];
   let hw: ReturnType<typeof hardware> | undefined;
@@ -106,7 +107,7 @@ export function buildTrade(sim: Sim): UiTrade {
       recruits: trader?.station ? recruitsAt(sim, id) : [],
       hireError: trader?.station ? hireProbe(sim, id) : '',
       ...(marketOf(sim, trader) ? { market: marketOf(sim, trader) } : {}),
-      ...(trader?.station ? { info: stationInfo(sim, id, trader.port, (hw ??= hardware(sim))) } : {}),
+      ...(trader?.station ? { info: stationInfo(sim, id, trader.port, (hw ??= hardware(sim)), log?.view(id)) } : {}),
       distance: ship && me ? Math.round(Math.hypot(ship.x - me.x, ship.y - me.y)) : 0,
     });
   }
