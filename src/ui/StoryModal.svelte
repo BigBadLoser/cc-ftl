@@ -4,6 +4,7 @@
   import { Dialog } from './kit';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
+  import SignalWindow from './SignalWindow.svelte';
 
   /** `hold` keeps popups back (while the starmap animates a jump); they show once it clears. */
   let { api, hold = false }: { api: UiApi; hold?: boolean } = $props();
@@ -37,6 +38,8 @@
 
 {#if hold}
   <!-- held back until the jump animation ends -->
+{:else if active?.comms}
+  <SignalWindow {api} {active} {busy} {pick} />
 {:else if active}
   <Dialog open title={active.title} dismissable={false} testId="story-modal">
     <p class="text">{active.text}</p>

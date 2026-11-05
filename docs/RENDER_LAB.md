@@ -28,6 +28,10 @@ move in a browser).
 - `shield`: the combat shield dome (#301): layer counts at rest, then every effect as a strip of stills through its
   length (`effects=`, `frames=8`, `rx`, `ry`, `rot`, `rest=1,2,3,4`).
 
+- `comms`: not a Pixi panel but a DOM one (`tools/lab/commsLab.ts`, `CommsLab.svelte`): every piece of `src/ui/comms` on its own in its
+  states (static, video, flicker and stutter held on, caller card, transcript, sensor panel with the real ship picture, decision bar), then
+  composed as the signal window. Flickers are held with `force` so a still shows the glitch frame.
+
 ## Add a panel
 
 A panel (`tools/lab/panel.ts`) is `{ id, title, help, zoom?, bg?, cells(ctx) }`. `cells` returns `LabCell`s: a label, a

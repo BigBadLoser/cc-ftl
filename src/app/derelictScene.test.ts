@@ -111,6 +111,15 @@ describe('derelict signal', () => {
     expect(rows.find((r) => r.label === 'Signs')?.value).toMatch(/^Egg sacs, about \d+$/);
   });
 
+  it('after a scan the comms window still offers the probe, and the sensor action is the probe once both are done', () => {
+    const sim = signalled(3, (s) => applyEffect(s, { type: 'skillXp', skill: 'hacking', amount: 300, who: 'all' }, { event: 'test', actor: null }));
+    expect(buildStory(sim).active?.comms).toMatchObject({ scanned: false, scanChoice: 'scan', scanKind: 'scan' });
+    choose(sim, 'scan');
+    expect(buildStory(sim).active?.comms).toMatchObject({ scanned: true, scanChoice: 'probe', scanKind: 'probe' });
+    choose(sim, 'probe');
+    expect(buildStory(sim).active?.comms).toMatchObject({ scanned: true, scanChoice: null, scanKind: null });
+  });
+
   it('dropping out needs an EVA shuttle in its bay', () => {
     const sim = signalled(3, (s) => {
       for (const id of s.world.query(VehicleC)) s.world.destroyEntity(id);

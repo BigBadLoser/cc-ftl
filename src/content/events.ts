@@ -59,8 +59,8 @@ export const events = {
     choices: [
       { id: 'hail', label: 'Hail it', hint: 'Ask what it carries', remote: 'hail' },
       { id: 'scan', label: 'Scan it', hint: 'Hull and crew', remote: 'scan' },
-      { id: 'approach', label: 'Drop out beside it', hint: 'Leave the lane for a while', outcome: { effects: [{ type: 'scene' }] } },
-      { id: 'ignore', label: 'Fly on', outcome: {} },
+      { id: 'approach', label: 'Drop out', hint: 'Travel pauses here', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', hint: 'Continue the trip', outcome: {} },
     ],
   },
   /**
@@ -85,7 +85,7 @@ export const events = {
         requires: [{ kind: 'skill', skill: 'hacking', level: 2 }],
       },
       {
-        id: 'approach', label: 'Drop out beside it', hint: 'Board it, strip it, or look and leave',
+        id: 'approach', label: 'Drop out', hint: 'Board it, strip it, or look and leave',
         requires: [{ kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene' }] },
       },
       { id: 'skip', label: 'Leave it', outcome: {} },
@@ -112,6 +112,7 @@ export const events = {
    */
   'event.pirate_returns': {
     title: 'The pirate you spared',
+    comms: { showWares: false },
     text: 'A skiff you know hails you off the lane. "You let me go back there. I haven\'t forgotten. I owe you, and I mean to pay."',
     mode: 'decision',
     triggers: [{ kind: 'flag', flag: 'spared_pirate', delaySec: 240 }],
@@ -135,8 +136,10 @@ export const events = {
             honest: '"It\'s me, the one you let go. The clan let me keep the boat, and I\'ve been paying it off since. I know where the patrols sit, and I\'ll tell you for nothing. Come alongside and we can trade, if you like."',
             trap: '"Captain, it\'s me, the one you spared. I owe you my life, and my crew want to thank you in person. Let us dock and we\'ll settle up properly."',
             tells: {
-              name: '"Captain, it\'s Tam, the one you spared." The name on his transponder flickers to Ren, then back. "My crew want to thank you in person. Let us dock."',
-              lag: '"Captain, it\'s me, the one you spared. I owe you my life." The words come out flat and even, as if read off a page. "My crew want to thank you in person. Let us dock."',
+              // The tells are shown, not told: the caller's name and the scan's transponder ID flicker to a second value (`name`), or the video stutters (`lag`).
+              // `{caller}` is the caller's name, seeded from the scene (app/comms/speaker.ts).
+              name: '"Captain, it\'s {caller}, the one you spared. I owe you my life." "My crew want to thank you in person. Let us dock."',
+              lag: '"Captain, it\'s me, the one you spared. I owe you my life." "My crew want to thank you in person. Let us dock."',
             },
           },
         },
@@ -171,8 +174,8 @@ export const events = {
     choices: [
       { id: 'hail', label: 'Hear him out', hint: 'Answer the call and listen', remote: 'hail' },
       { id: 'scan', label: 'Scan the skiff', hint: 'Weapons, boarding craft and crew', remote: 'scan' },
-      { id: 'approach', label: 'Drop out beside it', hint: 'Meet him off the lane', outcome: { effects: [{ type: 'scene' }] } },
-      { id: 'ignore', label: 'Fly on', outcome: {} },
+      { id: 'approach', label: 'Drop out', hint: 'Travel pauses here', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', hint: 'Continue the trip', outcome: {} },
     ],
   },
   /** Species requirement: only a robot can do it. */

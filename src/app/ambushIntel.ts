@@ -10,15 +10,19 @@ import { bestAt, withPlayerAboard } from '../sim/story/world';
  */
 const level = (sim: Sim, skill: SkillName): number => withPlayerAboard(sim, () => bestAt(sim, skill)?.level ?? 0);
 
+/** The tell a scan can catch: a hacker (level 2) sees the transponder ID change. The video's stutter (`lag`) needs no skill: it shows on the hail. */
+export function scanSeesNameTell(sim: Sim, s: SceneShip): boolean {
+  return !!s.ambush?.trap && s.ambush.tell === 'name' && level(sim, 'hacking') >= 2;
+}
+
 export function ambushRows(sim: Sim, s: SceneShip, owner: string): { label: string; value: string }[] {
   const a = s.ambush;
   if (!a) return [];
   const gunnery = level(sim, 'gunnery');
   const piloting = level(sim, 'piloting');
   const hacking = level(sim, 'hacking');
-  const slip = a.trap && hacking >= 2 ? (a.tell === 'name' ? ' (the ID changes between pings)' : a.tell === 'lag' ? ' (out of step with the voice channel)' : '') : '';
   return [
-    { label: 'Transponder', value: `${owner}${slip}` },
+    { label: 'Transponder', value: owner },
     { label: 'Hull', value: s.family ? `${s.family[0]?.toUpperCase()}${s.family.slice(1)} class` : 'Unknown' },
     { label: 'Weapons', value: gunnery < 1 ? 'Armed, as any pirate' : a.trap ? 'Guns powered and charged' : 'Guns cold' },
     { label: 'Boarding craft', value: piloting < 1 ? 'A shuttle bay' : a.trap ? 'Shuttle fuelled, suited crew in the bay' : 'Shuttle bay, cold' },

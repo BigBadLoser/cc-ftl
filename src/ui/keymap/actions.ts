@@ -21,10 +21,11 @@ export type KeyGroup = (typeof KEY_GROUPS)[number]['id'];
  * - `world`: the main view, in a fight or not (app/input.ts forwards Draft with no combat guard: drafting crew in a fight is real play).
  * - `build`: while a build tool is open, which never happens in a fight (a fight drops the tools and the tool bar is hidden).
  * - `combat`: during a fight (the combat strip, CombatHud).
+ * - `modal`: only while a window that takes the keyboard is open (the signal window); the game's own keys are off then, so it overlaps only other modal keys.
  * Two actions on one key conflict when their contexts can be live together, unless one lists the other in `shares`: a deliberate double
  * use, such as R drafting crew, rotating a module and picking weapon 4 (the combat strip lets R fall through when there is no fourth weapon).
  */
-export type KeyContext = 'global' | 'world' | 'build' | 'combat';
+export type KeyContext = 'global' | 'world' | 'build' | 'combat' | 'modal';
 
 export interface ActionDef {
   id: string;
@@ -77,6 +78,9 @@ export const ACTIONS = [
   a('combat.stations', 'combat', 'Battle stations / stand down', ['KeyC']),
 
   a('ui.confirm', 'menus', 'Confirm (Got it, Deploy)', ['Enter']),
+  // The signal window is a modal over the map: H and S there never meet combat's hold-all or the camera's pan-down.
+  a('ui.hail', 'menus', 'Hail (signal window)', ['KeyH'], 'modal'),
+  a('ui.scan', 'menus', 'Scan (signal window)', ['KeyS'], 'modal'),
   a('ui.menu', 'menus', 'Cancel / menu', ['Escape'], 'global', { fixed: true }),
 
   a('debug.panel', 'debug', 'Debug panel', ['Backquote']),
