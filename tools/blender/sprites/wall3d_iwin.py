@@ -32,7 +32,7 @@ POST_IN = "fTS3"        # the post's inner side (into the opening): the face's t
 ARCH_CUT = 5 * PZ       # the arch: the opening up into the header cushion (its front 11 px) by about half of it,
 ARCH_SLOPE = (1.5, 0.5)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x post,
                         # the +x one: a clean 45 on screen both sides (the wall itself falls half a px per px)
-HEAD_EDGE = "fTS8"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
+HEAD_EDGE = "fTS7"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
 POST_SEAM = (5, 26)     # the posts' fronts: a groove up each one's middle, lip to header (px columns: left post's,
 POST_PLAIN = "fTS3"     # right's), the slats gone from its half nearest the window (the face's plain tan)
 LIP_END = "fTS8"        # the face's foot lip's end there: a step darker than its front, so it reads apart
