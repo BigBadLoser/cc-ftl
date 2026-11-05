@@ -37,7 +37,9 @@ ARCH_SLOPE = (5 / 7, 5 / 7)  # from the cushion's foot at each post's edge, risi
 PANE_EDGE = "fTX6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
 PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
 PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
-JOINT_CURVE = 3         # their ends' corners: the curve's radius, px (tan's cushions: 3)
+JOINT_CURVE = 1         # their ends' corners: the curve's radius, px (tan's cushions: 3), the end cushions'
+                        # ends at the tile's edges too (the next tile's cushion keeps its 3)
+SLOPE_BACK = 2          # the slope's start: this many px back on the post from its edge (at the joint there)
 JOINT_BACK = 2          # the header split into cushions at each shoulder's ends: a joint (as the cushions' at a
                         # tile's edge) this many px back on the post from its edge, and one where the slope ends
 HEAD_EDGE = "fTS7"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
@@ -76,13 +78,19 @@ def _top(x, x0, x1):
     """The opening's top at x: ARCH_CUT up into the header cushion over the opening, down at ARCH_SLOPE to the
     cushion's foot at each post's edge."""
     ra, rb = _arch_runs()
-    f = min([1.0] + ([max(0.0, x - x0) / ra] if x0 > -0.5 else []) + ([max(0.0, x1 - x) / rb] if x1 < 0.5 else []))
+    s0, s1 = _slope_starts(x0, x1)
+    f = min([1.0] + ([max(0.0, x - s0) / ra] if x0 > -0.5 else []) + ([max(0.0, s1 - x) / rb] if x1 < 0.5 else []))
     return _zh0() + ARCH_CUT * f
+
+
+def _slope_starts(x0, x1):
+    return x0 - SLOPE_BACK * T.LINE, x1 + SLOPE_BACK * T.LINE
 
 
 def _arch_bends(x0, x1):
     ra, rb = _arch_runs()
-    return x0 + ra, x1 - rb
+    s0, s1 = _slope_starts(x0, x1)
+    return s0 + ra, s1 - rb
 
 
 def _sill(x, x0, x1):
@@ -285,10 +293,14 @@ def hook(k, sp, own=True):
             ra, rb = _reach(ha - 0.003, yf), _reach(hb - 0.003, yf)
             _quad(k, [(ua, -ra, ha), (ub, -rb, hb), (ub, rb, hb), (ua, ra, ha)], (0, 0, 1), SLOPE_LIT)
     ts = sorted({a, b} | {u for u in _arch_bends(x0, x1) if a < u < b})  # the opening's top: its underside
-    for u0, u1 in zip(ts, ts[1:]):                                                 # (the beam's, the header's cut)
+    s0, s1 = _slope_starts(x0, x1)                                                 # (the beam's, the header's cut;
+    tc = ([s0] if x0 > -0.5 else []) + ts + ([s1] if x1 < 0.5 else [])            # the cushion's on over the post)
+    for u0, u1 in zip(tc, tc[1:]):
         t0, t1 = _top(u0, x0, x1), _top(u1, x0, x1)
+        on_post = u1 <= a + 1e-9 or u0 >= b - 1e-9
         uc = SILL_COL if abs(t1 - t0) < 1e-9 else POST_IN                       # (a shoulder's cut faces the
-        _quad(k, [(u0, yb, t0), (u1, yb, t1), (u1, yf, t1), (u0, yf, t0)], (0, 0, -1), uc)   # opening, as the posts')
+        if not on_post:                                                          # opening, as the posts')
+            _quad(k, [(u0, yb, t0), (u1, yb, t1), (u1, yf, t1), (u0, yf, t0)], (0, 0, -1), uc)
         zh0, yh = W.HF - 0.031 - TAN.HEAD_H, yf + TAN.HEAD_D                      # (and the cushion's, where cut)
         q = _clip([(u0, yf, t0), (u1, yf, t1), (u1, yh, t1), (u0, yh, t0)], [(2, zh0, 1)])
         if len(q) >= 3:
@@ -327,50 +339,79 @@ def hook(k, sp, own=True):
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
-def _joints(k, x0, x1, yf):
-    """The header cushion split at each shoulder's ends: the cushion taken out round each joint and its two ends
-    built again as tan's cushion ends (TAN._header): curved in over HEAD_CURVE px, half a px short of the joint, the
-    face behind the 1 px gap in the joints' dark."""
+def _cushion_parts(k, yf, keep):
+    """Clip the header cushion's parts (its block, its bands: proud of the face, between its foot and its top) to the
+    regions keep (lists of _clip planes; a part kept wherever it is in one of them)."""
+    z1h = W.HF - 0.031
+    zh0 = z1h - TAN.HEAD_H
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        out = []
+        for f in m.f:
+            pts = [m.v[i] for i in f[0]]
+            zs = [p[2] for p in pts]
+            if max(abs(p[1]) for p in pts) < yf + TAN.HEAD_D / 2 or min(zs) < zh0 - 1e-3 or max(zs) > z1h + 1e-3:
+                out.append(f)
+                continue
+            for r in keep:
+                q = _clip(pts, r)
+                if len(q) >= 3 and max(abs(a - b) for p0 in q for a, b in zip(p0, q[0])) > 1e-9:
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in q]
+                    out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+        m.f = out
+
+
+def _cushion_end(k, yf, e, sd):
+    """A cushion's end at e (where its gap starts), the cushion on side sd: rebuilt over tan's curve's length
+    (HEAD_CURVE px), curved in over JOINT_CURVE px (as TAN._header's slices), full height on from there."""
     from .faction.parts import prism, flat
-    L, C = T.LINE, JOINT_CURVE
+    L, C, R = T.LINE, JOINT_CURVE, TAN.HEAD_CURVE
+    z1h = W.HF - 0.031
+    zh0 = z1h - TAN.HEAD_H
+    lo, hi = sorted((e, e + sd * R * L))
+    _cushion_parts(k, yf, [[(0, lo, -1)], [(0, hi, 1)]])
+
+    def ins(x):
+        return (C - math.sqrt(max(0.0, C * C - (C - x) ** 2))) * PZ
+
+    def part(u0, u1, r):
+        u0, u1 = sorted((u0, u1))
+        prism(k, "y", yf, u0, u1, [(0.0, zh0 + r), (TAN.HEAD_D, zh0 + r), (TAN.HEAD_D, z1h - r), (0.0, z1h - r)],
+              TAN.FACE, 3, cols=[False, None, "fTS0", False], cap=TAN.HEAD_END)
+        flat(k, "y", yf, u0, u1, z1h - r - PZ, z1h - r, TAN.HEAD_D + T.PAINT, "fTS1")
+    for i in range(2 * C):                              # (half px slices, curved in)
+        part(e + sd * i * L / 2, e + sd * (i + 1) * L / 2, ins((i + 0.5) / 2))
+    if R > C:
+        part(e + sd * C * L, e + sd * R * L, 0.0)
+
+
+def _joints(k, x0, x1, yf):
+    """The header cushion split at each shoulder's ends (a 1 px gap, the face behind it and the curves dark, as tan's
+    joints), every cushion end there and at the tile's edges by the posts curved in over JOINT_CURVE px; and the
+    slope's start, back on the post: the cushion there cut up along it."""
+    from .faction.parts import flat
+    L = T.LINE
     z1h = W.HF - 0.031
     zh0 = z1h - TAN.HEAD_H
     zg = zh0 - TAN._hid(TAN.HEAD_D)
     ba, bb = _arch_bends(x0, x1)
-    js = ([x0 - (JOINT_BACK + 0.5) * L, ba + L / 2] if x0 > -0.5 else []) + \
-         ([x1 + (JOINT_BACK + 0.5) * L, bb - L / 2] if x1 < 0.5 else [])
-    for jx in js:
-        w0, w1 = jx - L / 2 - C * L, jx + L / 2 + C * L
-        for m in (k.m, k.ns):                           # (the cushion's parts there out: its block, its bands)
-            if m is None:
-                continue
-            out = []
-            for f in m.f:
-                pts = [m.v[i] for i in f[0]]
-                xs, zs = [p[0] for p in pts], [p[2] for p in pts]
-                if max(abs(p[1]) for p in pts) < yf + TAN.HEAD_D / 2 or min(zs) < zh0 - 1e-3 or \
-                        max(zs) > z1h + 1e-3 or max(xs) <= w0 + 1e-9 or min(xs) >= w1 - 1e-9:
-                    out.append(f)
-                    continue
-                for r in ([(0, w0, -1)], [(0, w1, 1)]):
-                    q = _clip(pts, r)
-                    if len(q) >= 3:
-                        base = len(m.v)
-                        m.v += [tuple(p) for p in q]
-                        out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
-            m.f = out
-        flat(k, "y", yf, w0, w1, zg, z1h, T.PAINT, TAN.OUTER)      # (the face behind the gap and the curves: dark)
-
-        def ins(x):
-            return (C - math.sqrt(max(0.0, C * C - (C - x) ** 2))) * PZ
-        for i in range(2 * C):                          # the two ends' slices, curved in
-            r = ins((i + 0.5) / 2)
-            for u0, u1 in ((jx - L / 2 - (i + 1) * L / 2, jx - L / 2 - i * L / 2),
-                           (jx + L / 2 + i * L / 2, jx + L / 2 + (i + 1) * L / 2)):
-                prism(k, "y", yf, u0, u1, [(0.0, zh0 + r), (TAN.HEAD_D, zh0 + r), (TAN.HEAD_D, z1h - r),
-                                           (0.0, z1h - r)], TAN.FACE, 3, cols=[False, None, "fTS0", False],
-                      cap=TAN.HEAD_END)
-                flat(k, "y", yf, u0, u1, z1h - r - PZ, z1h - r, TAN.HEAD_D + T.PAINT, "fTS1")
+    s0, s1 = _slope_starts(x0, x1)
+    g = ARCH_CUT / _arch_runs()[0]
+    for xp, sd, on, jx, xb, ss in ((x0, 1, x0 > -0.5, x0 - (JOINT_BACK + 0.5) * L, ba + L / 2, s0),
+                                   (x1, -1, x1 < 0.5, x1 + (JOINT_BACK + 0.5) * L, bb - L / 2, s1)):
+        if not on:
+            continue
+        for j in (jx, xb):
+            _cushion_parts(k, yf, [[(0, j - L / 2, -1)], [(0, j + L / 2, 1)]])
+            flat(k, "y", yf, j - L / 2 - L, j + L / 2 + L, zg, z1h, T.PAINT, TAN.OUTER)   # (behind gap, curves)
+            _cushion_end(k, yf, j - L / 2, -1)
+            _cushion_end(k, yf, j + L / 2, 1)
+        _cushion_end(k, yf, -0.5 * sd + sd * L / 2, sd)     # (the end cushion's other end, at the tile's edge)
+        lo, hi = sorted((ss, xp))                           # the slope's start on the post: the cushion cut up
+        n, c = ((-g, 0.0, 1.0), zh0 - g * ss) if sd > 0 else ((g, 0.0, 1.0), zh0 + g * ss)
+        _cushion_parts(k, yf, [[(0, lo, -1)], [(0, hi, 1)], [(0, lo, 1), (0, hi, -1), (n, c)]])
 
 
 def _posts(k, x0, x1, yb, yf, z0):
