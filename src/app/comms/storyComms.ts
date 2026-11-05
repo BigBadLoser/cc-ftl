@@ -27,7 +27,8 @@ export interface CommsInput {
   signal: SceneSpec | null;
   /** Which remote actions are done, and the choice ids that raise them (null: none). */
   done: { hail: boolean; scan: boolean };
-  remotes: { hail: string | null; scan: string | null };
+  /** `scan` is the next sensor action still to take (a scan, then a probe if the event offers one), and `scanKind` what it is: it stays reachable after a scan. */
+  remotes: { hail: string | null; scan: string | null; scanKind: 'scan' | 'probe' | null };
   /** The scan's readings so far (null: not scanned), what the hail said, and the lead ship's goods and wallet. */
   scanRows: { label: string; value: string }[] | null;
   hailQuote: string | null;
@@ -44,7 +45,7 @@ export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
   const hailed = done.hail && !!ship;
   const scanned = done.scan;
   const factionName = (id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
-  const base = { hailed, scanned, hailChoice: remotes.hail, scanChoice: remotes.scan, goods, ...(credits !== undefined ? { credits } : {}) };
+  const base = { hailed, scanned, hailChoice: remotes.hail, scanChoice: remotes.scan, scanKind: remotes.scanKind, goods, ...(credits !== undefined ? { credits } : {}) };
   if (!ship) {
     const rows = scanView(scanRows ?? []);
     return {

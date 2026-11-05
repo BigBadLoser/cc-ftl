@@ -70,7 +70,9 @@ export function buildStory(sim: Sim): UiStory {
   const lastDef = last && sim.content.events?.[last.event];
   const signal = sim.galaxy.signal?.event === active?.event ? sim.galaxy.signal : null;
   const intel = def ? intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote) : [];
-  const remoteChoice = (...r: string[]): string | null => def?.choices?.find((c) => c.remote !== undefined && r.includes(c.remote) && !done.includes(c.id) && unmetReasons(sim, c).length === 0)?.id ?? null;
+  /** The first remote action of these kinds still to take (not done, requirements met): its id and kind. */
+  const remoteLeft = (...r: string[]) => def?.choices?.find((c) => c.remote !== undefined && r.includes(c.remote) && !done.includes(c.id) && unmetReasons(sim, c).length === 0);
+  const remoteChoice = (...r: string[]): string | null => remoteLeft(...r)?.id ?? null;
   const didRemote = (...r: string[]): boolean => done.some((id) => { const x = def?.choices?.find((c) => c.id === id)?.remote; return x !== undefined && r.includes(x); });
   const wares = def?.comms?.showWares !== false;
   const scan = intel.find((i) => i.kind === 'scan');
@@ -83,7 +85,7 @@ export function buildStory(sim: Sim): UiStory {
           text: def.text,
           intel,
           comms: def && commsOf(sim, {
-            text: def.text, signal, done: { hail: didRemote('hail'), scan: didRemote('scan', 'probe') }, remotes: { hail: remoteChoice('hail'), scan: remoteChoice('scan', 'probe') },
+            text: def.text, signal, done: { hail: didRemote('hail'), scan: didRemote('scan', 'probe') }, remotes: { hail: remoteChoice('hail'), scan: remoteChoice('scan', 'probe'), scanKind: remoteLeft('scan', 'probe')?.remote === 'probe' ? 'probe' : remoteLeft('scan', 'probe') ? 'scan' : null },
             scanRows: scan ? scan.rows : null, hailQuote: hail?.quote ?? null, goods: wares ? hail?.stock ?? [] : [], credits: wares ? hail?.credits : undefined,
           }),
           choices: (def.choices ?? []).map((c) => {

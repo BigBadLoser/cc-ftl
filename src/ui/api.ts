@@ -541,6 +541,8 @@ export interface UiComms {
   /** The remote choices that raise them (null: this signal has none, or it was done). */
   hailChoice: string | null;
   scanChoice: string | null;
+  /** What the next sensor action is ('scan', or 'probe' once scanned): the sensor header's button label. */
+  scanKind: 'scan' | 'probe' | null;
   transcript: CommsLine[];
   hint: string | null;
   goods: { item: string; name: string; count: number }[];

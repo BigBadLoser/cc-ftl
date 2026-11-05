@@ -49,8 +49,8 @@
   <div class="row big"><FlickerText value="Tam" alt="Ren" /> <FlickerText value="Tam" alt="Ren" force /> <FlickerText value="SC-4471" alt="SC-0912" force /> <FlickerText value="never" /></div>
   <h3>CallerCard <small>before hail / after / name flicker held</small></h3>
   <div class="row"><div class="box w"><CallerCard caller={before} /></div><div class="box w"><CallerCard caller={after} /></div><div class="box w"><CallerCard caller={after} force /></div></div>
-  <h3>PaneHeader <small>action / done / plain</small></h3>
-  <div class="row"><div class="box w0"><PaneHeader label="Video" action={{ label: 'HAIL', key: 'H', onclick: noop }} /></div><div class="box w0"><PaneHeader label="Video" done="CONNECTED" /></div><div class="box w0"><PaneHeader label="Comms" /></div></div>
+  <h3>PaneHeader <small>action / done / plain / done with a further action</small></h3>
+  <div class="row"><div class="box w0"><PaneHeader label="Video" action={{ label: 'HAIL', key: 'H', onclick: noop }} /></div><div class="box w0"><PaneHeader label="Video" done="CONNECTED" /></div><div class="box w0"><PaneHeader label="Comms" /></div><div class="box w0" style="width:340px"><PaneHeader label="Sensors" done="SCANNED" action={{ label: 'PROBE', key: 'S', onclick: noop }} /></div></div>
   <h3>Transcript <small>before hail (with hint) / after / speaker flicker held</small></h3>
   <div class="row"><div class="box w2"><Transcript lines={lines.slice(0, 2)} hint="Hail to hear more from the caller." /></div><div class="box w2"><Transcript lines={lines} /></div><div class="box w2"><Transcript lines={lines} force /></div></div>
   <h3>SensorPanel <small>no scan / resolving / scanned / readout flicker held</small></h3>

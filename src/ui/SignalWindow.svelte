@@ -100,7 +100,7 @@
   </div>
 {/snippet}
 {#snippet sensorsCol()}
-  <PaneHeader label="Sensors" done={c.scanned ? 'SCANNED' : undefined} action={c.scanChoice ? { label: 'SCAN', key: keyLabel(binds, 'ui.scan'), onclick: () => pick(c.scanChoice!), disabled: busy } : undefined} testId="signal-scan" />
+  <PaneHeader label="Sensors" done={c.scanned ? 'SCANNED' : undefined} action={c.scanChoice ? { label: (c.scanKind ?? 'scan').toUpperCase(), key: keyLabel(binds, 'ui.scan'), onclick: () => pick(c.scanChoice!), disabled: busy } : undefined} testId="signal-scan" />
   <SensorPanel scanned={c.scanned} {holo} pending={!!c.holo && !holoDone} title={c.hullTitle ?? undefined} callouts={pinned.out} {readout} hint={c.scanHint} />
 {/snippet}
 {#snippet decisionBar()}
