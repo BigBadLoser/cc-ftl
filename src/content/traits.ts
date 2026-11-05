@@ -28,20 +28,20 @@ export const traits = {
     excludes: ['trait.loner'], effects: { stressBy: { grief: 1.25 }, breakBy: { isolation: 0.5 }, company: 'social' },
   },
   'trait.hot_headed': {
-    name: 'Hot-headed', flavour: 'Takes it personally.', kind: 'behaviour', weight: 10, rollable: false,
+    name: 'Hot-headed', flavour: 'Takes it personally.', kind: 'behaviour', weight: 10, rollable: true,
     short: 'Rivalries form fast', effect: 'Rivalries form twice as fast; shouting matches with rivals when unhappy. Throws tantrums three times as often when it breaks.',
     excludes: ['trait.peacemaker'],
     effects: { breakBy: { tantrum: 3 }, bondLoss: 2 },
   },
   'trait.peacemaker': {
-    name: 'Peacemaker', flavour: "Everyone's favourite.", kind: 'behaviour', weight: 5, rollable: false,
+    name: 'Peacemaker', flavour: "Everyone's favourite.", kind: 'behaviour', weight: 5, rollable: true,
     short: 'Friendships form fast', effect: 'Friendships form 1.5x as fast; rivals nearby feel half the rival penalty.',
     excludes: ['trait.hot_headed'],
     effects: { bondGain: 1.5, peacemaker: true },
   },
   'trait.protective': {
-    name: 'Protective', flavour: 'Nobody touches my people.', kind: 'behaviour', weight: 5, rollable: false,
-    short: '+1 fighting near a friend', effect: 'Bonds twice as fast in shared danger; +1 gunnery and melee fighting near a friend; grieves harder. Combat stress halved with a friend within 6 tiles.',
+    name: 'Protective', flavour: 'Nobody touches my people.', kind: 'behaviour', weight: 5, rollable: true,
+    short: 'Bonds fast in danger · grieves harder', effect: 'Bonds twice as fast in shared danger; grieves harder. Combat stress halved with a friend within 6 tiles.',
     effects: { protective: true, dangerBond: 2 },
   },
   'trait.workaholic': {

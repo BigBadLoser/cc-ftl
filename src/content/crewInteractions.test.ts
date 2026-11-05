@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from './index';
-import { CarriedC, CrewC, DownedC, FighterC, PositionC, TICK_HZ, TraitsC, newGame, type Sim, type SimEvent } from '../sim';
+import { AssignmentC, CarriedC, CrewC, DownedC, FighterC, PositionC, TICK_HZ, TraitsC, newGame, stat, type Sim, type SimEvent } from '../sim';
 import { startBreak } from '../sim/systems/breakdown';
 import { relationshipSystem } from '../sim/systems/relationship';
 import { bondBoth, bondTo, ensurePerson, friendsOf, opinionOf, personOf } from '../sim/crew/bonds';
@@ -117,5 +117,21 @@ describe('shared danger and tantrums', () => {
     startBreak(sim, a, { kind: 'tantrum', tier: 'moderate', context: 'lowMood', ticks: 20 * TICK_HZ });
     expect(opinionOf(sim, personOf(sim, b), personOf(sim, a))!.score).toBe(BOND_TANTRUM);
     expect(friendsOf(sim, personOf(sim, b))).toHaveLength(0);
+  });
+});
+
+describe('working beside a friend', () => {
+  it('work speed is x1.05 beside a working friend, and not with a stranger, an idle friend or a far one', () => {
+    const { sim, a, b } = pair();
+    sim.world.add(a, AssignmentC, { jobId: 1 });
+    sim.world.add(b, AssignmentC, { jobId: 2 });
+    const base = stat(sim, a, 'workSpeed');
+    bondBoth(sim, a, b, 60, 'chat');
+    expect(stat(sim, a, 'workSpeed')).toBeCloseTo(base * 1.05, 5);
+    sim.world.remove(b, AssignmentC);
+    expect(stat(sim, a, 'workSpeed')).toBeCloseTo(base, 5);
+    sim.world.add(b, AssignmentC, { jobId: 2 });
+    sim.world.get(b, PositionC)!.x += 10;
+    expect(stat(sim, a, 'workSpeed')).toBeCloseTo(base, 5);
   });
 });

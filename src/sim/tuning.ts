@@ -568,3 +568,6 @@ export const BOND_TANTRUM = -4;
 /** Friends pick the spot a friend is at, rivals the farthest one: the tiles around a break spot sampled, and the distance a rival is felt at. */
 export const BOND_SPOT_SAMPLES = 4;
 export const BOND_RIVAL_SPACE = 4;
+/** Working within BOND_FRIEND_WORK_RADIUS tiles of a friend who is working too: work speed x BOND_FRIEND_WORK_MULT. */
+export const BOND_FRIEND_WORK_RADIUS = 3;
+export const BOND_FRIEND_WORK_MULT = 1.05;
