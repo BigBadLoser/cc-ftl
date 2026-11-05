@@ -30,9 +30,9 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 ARCH_CUT = 5 * PZ       # the arch: the opening up into the header cushion (its front 11 px) by about half of it,
-ARCH_SLOPE = (0.5, 0.5)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x post,
-                        # the +x one: mirrored (the +x one a clean 45 on screen, the wall falling half a px per px)
-PANE_EDGE = "fTS6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
+ARCH_SLOPE = (5 / 7, 5 / 7)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x
+                        # post, the +x one: mirrored, over 7 px
+PANE_EDGE = "fTX6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
 PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
 PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
 HEAD_SEAM = "fTS4"      # a seam up the cushion's front at each shoulder's ends (the post's edge, its top)
@@ -295,7 +295,8 @@ def hook(k, sp, own=True):
     for xp, xb, sd, on in ((x0, ba, 1, x0 > -0.5), (x1, bb, -1, x1 < 0.5)):     # (on the post's side of its edge,
         if not on:                                                               # the crown's of the bend)
             continue
-        for ua, ub in ((xp - sd * LINE_W, xp), (xb, xb + sd * LINE_W)):
+        for ua, ub in ((xp - sd * 3 * LINE_W, xp - sd * 2 * LINE_W), (xb, xb + sd * LINE_W)):   # (the post's 2 px
+                                                                                               # back from its edge)
             pts = [(ua, yc, _top(ua, x0, x1)), (ub, yc, _top(ub, x0, x1)), (ub, yc, zc), (ua, yc, zc)]
             _quad(k, pts, (0, 1, 0), HEAD_SEAM)
     if CLOSE and own and x1 > 0.5:
@@ -332,11 +333,11 @@ def hook(k, sp, own=True):
 
 def _posts(k, x0, x1, yb, yf, z0):
     """Each post: on its front a groove up its middle from the lip to the header (as the face's grooves), its half
-    nearest the window plain (the slats gone) but for the seam over the lip and one across at half height; the lip
+    nearest the window plain (the slats gone) but for the seam over the lip and two across it in thirds; the lip
     wrapped round onto its side in the opening (its front there LIP_END, its foot's dark line on round), and the seam
-    over it and the half-height one carried round that side too."""
+    over it and the thirds' carried round that side too."""
     zl1, zt = z0 + TAN.LIP_TOP, W.HF - 0.031 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D) - 3 * PZ   # (lip top; face's plain
-    zm = zl1 + round((zt - zl1) / 2 / PZ) * PZ                                           # top under the shadow)
+    zms = [zl1 + round((zt - zl1) * f / PZ) * PZ for f in (1 / 3, 2 / 3)]                # top under the shadow)
     P, D = T.PAINT, TAN.LIP_D
     zs0 = zt + 3 * PZ
 
@@ -356,9 +357,11 @@ def _posts(k, x0, x1, yb, yf, z0):
         g0, g1 = col(n)
         front(g0, g1, zl1, zs0, 4 * P, "fTS4")                      # the groove up its middle
         ha, hb = (col(n)[1], xp) if sd > 0 else (xp, col(n)[0])
-        front(ha, hb, zm, zm + PZ, 4 * P, "fTS4")                   # the seam across at half height
+        for zm in zms:                                              # the seams across it in thirds
+            front(ha, hb, zm, zm + PZ, 4 * P, "fTS4")
         xs = xp + sd * P
-        side(xs, sd, yb, yf, zm, zm + PZ, "fTS4")                   # (round onto the side: it, the seam over the
+        for zm in zms:                                              # (round onto the side: they, the seam over the
+            side(xs, sd, yb, yf, zm, zm + PZ, "fTS4")
         side(xs, sd, yb, yf, zl1, zl1 + PZ, "fTS4")                 # lip)
         xl = xp + sd * D                                            # the lip round the corner: its front facing the
         side(xl, sd, yb, yf + D, z0, zl1, LIP_END)                  # opening, its top, the corner's front, the dark
