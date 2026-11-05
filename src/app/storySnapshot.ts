@@ -72,6 +72,7 @@ export function buildStory(sim: Sim): UiStory {
   const intel = def ? intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote) : [];
   const remoteChoice = (...r: string[]): string | null => def?.choices?.find((c) => c.remote !== undefined && r.includes(c.remote) && !done.includes(c.id) && unmetReasons(sim, c).length === 0)?.id ?? null;
   const didRemote = (...r: string[]): boolean => done.some((id) => { const x = def?.choices?.find((c) => c.id === id)?.remote; return x !== undefined && r.includes(x); });
+  const wares = def?.comms?.showWares !== false;
   const scan = intel.find((i) => i.kind === 'scan');
   const hail = intel.find((i) => i.kind === 'hail');
   return {
@@ -83,7 +84,7 @@ export function buildStory(sim: Sim): UiStory {
           intel,
           comms: def && commsOf(sim, {
             text: def.text, signal, done: { hail: didRemote('hail'), scan: didRemote('scan', 'probe') }, remotes: { hail: remoteChoice('hail'), scan: remoteChoice('scan', 'probe') },
-            scanRows: scan ? scan.rows : null, hailQuote: hail?.quote ?? null, goods: hail?.stock ?? [], credits: hail?.credits,
+            scanRows: scan ? scan.rows : null, hailQuote: hail?.quote ?? null, goods: wares ? hail?.stock ?? [] : [], credits: wares ? hail?.credits : undefined,
           }),
           choices: (def.choices ?? []).map((c) => {
             const taken = done.includes(c.id);

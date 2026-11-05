@@ -62,8 +62,8 @@ export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
   const tellName = ship.ambush?.trap === true && ship.ambush.tell === 'name';
   const caller: CallerInfo = hailed
     ? {
-        name: sp.name, ...(tellName ? { alt: sp.altName } : {}), role: 'Captain of the', ship: `${family ? `${family} ` : ''}${sp.tag}`.trim() || undefined,
-        faction: `${factionName(c.faction)}${family ? ` · ${family} ${noun}` : ''}`, swatch: FACTION_COLOUR[kind ?? ''] ?? 'var(--dim)', status: STANCE[ship.stance],
+        name: sp.name, ...(tellName ? { alt: sp.altName } : {}), role: 'Captain of the', ship: c.name ?? (`${family ? `${family} ` : ''}${sp.tag}`.trim() || undefined),
+        faction: `${factionName(c.faction)}${family ? ` · ${family} ${noun}` : ''}${sp.tag ? ` · ${sp.tag}` : ''}`, swatch: FACTION_COLOUR[kind ?? ''] ?? 'var(--dim)', status: STANCE[ship.stance],
       } as CallerInfo
     : { name: `Unknown ${noun}`, faction: `${factionName(c.faction)} transponder`, status: { label: 'Unknown', tone: 'dim' } };
   const opening = transcriptOf(text, { name: cap(noun) }, sp.name);

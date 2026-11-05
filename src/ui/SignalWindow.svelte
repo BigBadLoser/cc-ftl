@@ -13,6 +13,7 @@
   import DecisionBar from './comms/DecisionBar.svelte';
   import type { Callout, DecisionOption, ReadoutRow, UiHolo } from './comms/types';
   import { isTypingTarget } from './keys';
+  import { keymap, keyLabel } from './keymap';
 
   /**
    * The incoming-signal window: the comms pieces (src/ui/comms) composed for a story signal. It only wires the story's data to them: the hail and
@@ -67,18 +68,19 @@
 
   function keydown(e: KeyboardEvent) {
     if (busy || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e)) return;
-    const k = e.key.toLowerCase();
-    if (k === 'h' && c.hailChoice) { e.preventDefault(); pick(c.hailChoice); }
-    else if (k === 's' && c.scanChoice) { e.preventDefault(); pick(c.scanChoice); }
+    if (keymap.matches(e, 'ui.hail') && c.hailChoice) { e.preventDefault(); pick(c.hailChoice); }
+    else if (keymap.matches(e, 'ui.scan') && c.scanChoice) { e.preventDefault(); pick(c.scanChoice); }
   }
+  let binds = $state(keymap.get());
   onMount(() => {
     window.addEventListener('keydown', keydown);
-    return () => window.removeEventListener('keydown', keydown);
+    const off = keymap.subscribe((b) => (binds = b));
+    return () => { window.removeEventListener('keydown', keydown); off(); };
   });
 </script>
 
 {#snippet videoCol()}
-  <PaneHeader label="Video" done={c.hailed ? 'CONNECTED' : undefined} action={c.hailChoice ? { label: 'HAIL', key: 'H', onclick: () => pick(c.hailChoice!), disabled: busy } : undefined} testId="signal-hail" />
+  <PaneHeader label="Video" done={c.hailed ? 'CONNECTED' : undefined} action={c.hailChoice ? { label: 'HAIL', key: keyLabel(binds, 'ui.hail'), onclick: () => pick(c.hailChoice!), disabled: busy } : undefined} testId="signal-hail" />
   <div class="col">
     <VideoFeed src={c.hailed ? face : null} stutter={c.stutter} />
     {#if c.caller}<CallerCard caller={c.caller} />{/if}
@@ -98,7 +100,7 @@
   </div>
 {/snippet}
 {#snippet sensorsCol()}
-  <PaneHeader label="Sensors" done={c.scanned ? 'SCANNED' : undefined} action={c.scanChoice ? { label: 'SCAN', key: 'S', onclick: () => pick(c.scanChoice!), disabled: busy } : undefined} testId="signal-scan" />
+  <PaneHeader label="Sensors" done={c.scanned ? 'SCANNED' : undefined} action={c.scanChoice ? { label: 'SCAN', key: keyLabel(binds, 'ui.scan'), onclick: () => pick(c.scanChoice!), disabled: busy } : undefined} testId="signal-scan" />
   <SensorPanel scanned={c.scanned} {holo} pending={!!c.holo && !holoDone} title={c.hullTitle ?? undefined} callouts={pinned.out} {readout} hint={c.scanHint} />
 {/snippet}
 {#snippet decisionBar()}

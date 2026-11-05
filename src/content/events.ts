@@ -112,6 +112,7 @@ export const events = {
    */
   'event.pirate_returns': {
     title: 'The pirate you spared',
+    comms: { showWares: false },
     text: 'A skiff you know hails you off the lane. "You let me go back there. I haven\'t forgotten. I owe you, and I mean to pay."',
     mode: 'decision',
     triggers: [{ kind: 'flag', flag: 'spared_pirate', delaySec: 240 }],
