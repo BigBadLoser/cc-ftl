@@ -5,6 +5,7 @@ import CrewOverview from './CrewOverview.svelte';
 import StatusTab from './StatusTab.svelte';
 import SkillsTab from './SkillsTab.svelte';
 import GearTab from './GearTab.svelte';
+import SocialTab from './SocialTab.svelte';
 
 /** What every crew tab component gets. `d` is the detail snapshot (null for a moment after the selection changes). */
 export type CrewTabProps = { api: UiApi; c: UiCrew; d: UiCrewDetail | null; onPriorities: () => void };
@@ -15,4 +16,5 @@ export const crewTabs: InspectorTab<CrewTabProps>[] = [
   { id: 'status', label: 'Status', icon: 'heart', component: StatusTab, width: 380 },
   { id: 'skills', label: 'Skills', icon: 'list', component: SkillsTab, width: 380 },
   { id: 'gear', label: 'Gear', icon: 'stock', component: GearTab, width: 480 },
+  { id: 'social', label: 'Social', icon: 'smile', component: SocialTab, width: 380 },
 ];

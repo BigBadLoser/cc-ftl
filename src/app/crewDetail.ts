@@ -7,6 +7,7 @@ import { CarryingC } from '../sim/items/components';
 import { TICK_HZ } from '../sim/time';
 import { breakNow } from './breakText';
 import { buildBonds } from './bondSnapshot';
+import { buildSocial } from './socialSnapshot';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
 import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
@@ -161,5 +162,6 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
     gear: gearOf(sim, id),
     cards: cardsOf(sim, id),
     bonds: buildBonds(sim, id),
+    social: sim.world.has(id, MoodC) ? buildSocial(sim, id) : null,
   };
 }

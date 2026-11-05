@@ -112,7 +112,7 @@
   .bonds { margin: 0 0 10px; display: grid; gap: 2px; font-size: 13px; }
   .bonds p { margin: 0; display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
   .bonds .k { color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; min-width: 52px; }
-  .bonds .friend .who { color: var(--cyan); }
+  .bonds .friend .who { color: var(--green); }
   .bonds .rival .who { color: #ff9a9a; }
   .weapon { margin: -4px 0 10px; }
   .wl { display: flex; gap: 6px; align-items: center; font-size: 13px; white-space: nowrap; overflow: hidden; }

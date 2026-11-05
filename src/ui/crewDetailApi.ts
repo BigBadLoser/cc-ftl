@@ -81,6 +81,8 @@ export interface UiCrewDetail {
   cards: Record<string, UiItemCard>;
   /** Friends and rivals (docs/TRAITS.md section 6); empty for crew without moods. */
   bonds: UiBonds;
+  /** The Social tab (null for crew without moods). */
+  social: UiSocial | null;
 }
 
 /** What one crew member thinks of another, for the card and the hover line. */
@@ -103,4 +105,44 @@ export interface UiBonds {
 /** The line shown over a crewmate the pointer is on while another is selected: what the selected one thinks of them. */
 export interface UiOpinionHover extends UiBond {
   tone: 'good' | 'bad' | 'plain';
+}
+
+/** One line of a bond's merged history: `who` is whose opinion it moved ("both" when one event moved both). */
+export interface UiHistoryLine {
+  who: 'me' | 'them' | 'both';
+  text: string;
+  good: boolean;
+  /** Game seconds ago, when the snapshot was taken. */
+  agoSec: number;
+}
+
+/** One crewmate in the Social tab, from the inspected crew member's side. */
+export interface UiSocialRow {
+  id: number;
+  name: string;
+  myName: string;
+  section: 'friends' | 'rivals' | 'crew';
+  /** What the inspected one thinks of them, and the other way, -100..100. */
+  mine: number;
+  theirs: number;
+  tag: 'mutual' | 'one-sided' | null;
+  summary: string;
+  history: UiHistoryLine[];
+  effects: { text: string; good: boolean }[];
+  /** Real behaviours the bond changes (meal, break and bed choice). */
+  behaviours: UiBehaviour[];
+}
+
+export interface UiBehaviour {
+  icon: 'food' | 'cup' | 'sleep';
+  text: string;
+}
+
+export interface UiSocial {
+  friends: UiSocialRow[];
+  rivals: UiSocialRow[];
+  crew: UiSocialRow[];
+  caps: { friends: number; rivals: number };
+  /** The live mood from people nearby: who, and the mood it adds. */
+  moodLine: { who: string; value: number }[];
 }
