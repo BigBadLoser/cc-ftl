@@ -11,6 +11,7 @@
 
 <div data-testid="recruit-list">
   {#if !partner.recruits.length}<p class="none">Nobody here is looking for a berth.</p>{/if}
+  {#if partner.recruits.length && (busy || partner.hireError)}<p class="block" data-testid="recruit-blocked">{busy ? 'The station has a run open' : (REASONS[partner.hireError] ?? partner.hireError)}: hiring waits.</p>{/if}
   <ul>
     {#each partner.recruits as r (r.key)}
       {@const poor = r.cost > credits}
@@ -21,9 +22,7 @@
           <div class="way" data-testid="recruit-coming">On the way: {deal?.status ?? 'shuttle fetching them'}</div>
           {#if deal?.cancellable}<button data-testid="recruit-cancel" onclick={() => api.dispatch({ type: 'trade.cancel', id: deal.id })}>Call off</button>{/if}
         {:else}
-          {#if poor}<div class="warn">Not enough credits</div>
-          {:else if busy}<div class="warn">The station has a run open</div>
-          {:else if partner.hireError}<div class="warn">{REASONS[partner.hireError] ?? partner.hireError}</div>{/if}
+          {#if poor}<div class="warn">Not enough credits</div>{/if}
           <button class="commit" data-testid="recruit-hire" disabled={poor || busy || !!partner.hireError} onclick={() => api.dispatch({ type: 'crew.hire', key: r.key })}>Hire</button>
         {/if}
       </li>
@@ -39,11 +38,13 @@
   .t { display: flex; justify-content: space-between; gap: 8px; }
   .t b { color: var(--text); font-weight: 600; }
   .shady { margin-left: 6px; padding: 0 5px; border: 1px solid var(--amber); color: var(--amber); font-size: 11px; font-weight: 600; text-transform: uppercase; }
-  .pay { color: #ffd77a; font-weight: 600; white-space: nowrap; }
+  .pay { color: var(--gold); font-weight: 600; white-space: nowrap; }
   .d { color: var(--dim); font-size: 12px; }
-  .warn { color: var(--red); font-size: 12px; }
+  .warn, .block { color: var(--amber); font-size: 12px; }
+  .block { margin: 0 0 6px; }
   .way { color: var(--ink-accent); font-size: 12px; }
   li button { justify-self: end; min-height: 30px; padding: 0 12px; }
+  li button:disabled { opacity: 0.4; border-color: var(--line); color: var(--dim); background: transparent; cursor: default; }
   .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
   .note { margin-top: 8px; }
 </style>

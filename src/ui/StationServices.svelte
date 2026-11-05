@@ -9,7 +9,7 @@
 <PaneHeader label="SERVICES" />
 <div class="list">
   {#each services as s (s.id)}
-    <button class:on={s.id === active} data-testid="station-tab-{s.id}" aria-selected={s.id === active} onclick={() => onpick(s.id)}>
+    <button class:on={s.id === active} data-testid="station-tab-{s.id}" aria-pressed={s.id === active} onclick={() => onpick(s.id)}>
       <span class="l">{s.label}{s.opens ? ' ↗' : ''}</span><small>{s.note}</small>
     </button>
   {/each}

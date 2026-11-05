@@ -9,7 +9,7 @@
   import RecruitList from './RecruitList.svelte';
   import PaneHeader from './comms/PaneHeader.svelte';
   import Transcript from './comms/Transcript.svelte';
-  import StationInfo from './StationInfo.svelte';
+  import StationDock from './StationDock.svelte';
   import StationServices from './StationServices.svelte';
   import StationSensors from './StationSensors.svelte';
   import StationVideo from './StationVideo.svelte';
@@ -62,7 +62,7 @@
         <PaneHeader label="COMMS" />
         <div class="body">
           <Transcript {lines} />
-          {#if shown === 'station' && p.info}<StationInfo info={p.info} />
+          {#if shown === 'station' && p.info}<StationDock info={p.info} />
           {:else if shown === 'jobs'}
             {#if jobs.here === null}<p class="note">Jobs cannot be taken now.</p>{/if}
             {#if jobs.handIn.length}<JobCards {api} {jobs} list="handIn" />{/if}
@@ -74,7 +74,7 @@
         </div>
       </div>
       <div class="pane sensors">
-        {#if p.info}<StationSensors name={p.name} info={p.info} />{/if}
+        {#if p.info}<StationSensors {api} name={p.name} info={p.info} />{/if}
         <StationServices {services} active={shown} onpick={pick} />
       </div>
     </div>

@@ -334,7 +334,7 @@
   <PriorityGrid {api} onClose={() => (priorities = false)} />
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
-{:else}
+{:else if stationOpen === null}
   <SelectionPanel {api} onResearch={() => (researchOpen = true)} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
