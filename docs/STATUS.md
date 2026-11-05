@@ -46,7 +46,7 @@ Last updated: 2026-11-03.
 - **Relationships (#239) built on `crew/relationships-239`, not yet a PR** (waits on the user's review of the crew card and the placeholder bubbles); see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
 - **Designed, not started:** weapon upgrades and flak (#317); new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
-- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239, designed 2026-11-04 in [TRAITS.md](TRAITS.md) section 6).
+- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330; its Social tab (approved mock, `ui/social-tab-239`) is being built.
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
   landing in a bay that breaks on approach.

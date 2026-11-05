@@ -16,7 +16,6 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Next
 
-- **Crew relationships.** Crew form bonds and grudges, which feed into mood, breaks and the new traits. Next; designed in TRAITS.md section 6. ([#239](https://github.com/BigBadLoser/cc-ftl/issues/239))
 
 ## Later: major features
 
