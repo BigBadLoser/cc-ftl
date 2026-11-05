@@ -317,6 +317,30 @@ describe('a break in play', () => {
     expect(auditReservations(sim).problems).toEqual([]);
   });
 
+  it('orders that would wipe a panicking crew member\'s path are rejected: an attack, a move, un-drafting', () => {
+    const { sim, c } = quiet();
+    sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+    run(sim, 2);
+    const p = sim.world.get(c, PositionC)!;
+    startBreak(sim, c, { ...pick('panic', 'fire'), ticks: 60 * TICK_HZ, src: { x: Math.round(p.x) + 1, y: Math.round(p.y) } });
+    run(sim, 3);
+    expect(sim.world.get(c, TaskC)?.state).toBe('Flee');
+    const steps = sim.world.get(c, PathC)!.steps.length;
+    expect(steps).toBeGreaterThan(0);
+    const foe = sim.world.query(CrewC).find((o) => o !== c)!;
+    sim.events.drain();
+    sim.enqueue({ type: 'crew.attack', id: c, target: foe });
+    sim.enqueue({ type: 'crew.moveTo', id: c, x: Math.round(p.x), y: Math.round(p.y) });
+    sim.enqueue({ type: 'crew.draft', id: c, drafted: false });
+    sim.step();
+    const rej = sim.events.drain().filter((e) => e.type === 'command.rejected');
+    expect(rej.map((e) => (e as { command: string; reason: string }).command)).toEqual(['crew.attack', 'crew.moveTo', 'crew.draft']);
+    expect(rej.every((e) => (e as { reason: string }).reason === 'breaking')).toBe(true);
+    expect(sim.world.has(c, DraftedC)).toBe(true);
+    expect(sim.world.get(c, PathC)!.steps.length).toBeGreaterThan(0);
+    expect(sim.world.get(c, TaskC)?.state).toBe('Flee');
+  });
+
   it('keeps its own copy of the stressor position', () => {
     const { sim, c } = quiet();
     const live = sim.world.get(c, PositionC)!;

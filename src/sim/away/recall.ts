@@ -1,6 +1,6 @@
 import { abortTask } from '../ai/task';
 import { CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
-import { isIncapacitated } from '../crew/helpers';
+import { isBreaking, isIncapacitated } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC } from './components';
@@ -26,6 +26,7 @@ export function notRecallable(sim: Sim, c: number): string | null {
   const away = sim.world.get(c, AwayC);
   if (!away || !siteUnderFoot(sim, c)) return 'notAboard';
   if (isIncapacitated(sim, c)) return 'incapacitated';
+  if (isBreaking(sim, c)) return 'breaking';
   const v = sim.world.get(away.vehicle, VehicleC);
   return !v || wayHome(sim, away.vehicle, v) ? null : 'noHome'; // a lost shuttle counts: another takes over
 }
