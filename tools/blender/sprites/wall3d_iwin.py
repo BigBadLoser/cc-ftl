@@ -35,6 +35,7 @@ ARCH_SLOPE = (1.5, 0.5)  # from the cushion's foot at each post's edge, rising (
 PANE_EDGE = "fTS6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
 PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
 PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
+HEAD_SEAM = "fTS4"      # a seam up the cushion's front at each shoulder's ends (the post's edge, its top)
 HEAD_EDGE = "fTS7"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
 POST_SEAM = (5, 26)     # the posts' fronts: a groove up each one's middle, lip to header (px columns: left post's,
 POST_PLAIN = "fTS3"     # right's), the slats gone from its half nearest the window (the face's plain tan)
@@ -289,6 +290,14 @@ def hook(k, sp, own=True):
             _quad(k, q, (0, 0, -1), uc)
         ye = yh + T.PAINT                                                         # (the cushion's cut foot: a
         _quad(k, [(u0, ye, t0), (u1, ye, t1), (u1, ye, t1 + PZ), (u0, ye, t0 + PZ)], (0, 1, 0), HEAD_EDGE)  # brown edge)
+    zc, yc = W.HF - 0.031, yf + TAN.HEAD_D + 2 * T.PAINT                       # the shoulders' seams: up the
+    ba, bb = _arch_bends(x0, x1)                                                 # cushion's front from its foot
+    for xp, xb, sd, on in ((x0, ba, 1, x0 > -0.5), (x1, bb, -1, x1 < 0.5)):     # (on the post's side of its edge,
+        if not on:                                                               # the crown's of the bend)
+            continue
+        for ua, ub in ((xp - sd * LINE_W, xp), (xb, xb + sd * LINE_W)):
+            pts = [(ua, yc, _top(ua, x0, x1)), (ub, yc, _top(ub, x0, x1)), (ub, yc, zc), (ua, yc, zc)]
+            _quad(k, pts, (0, 1, 0), HEAD_SEAM)
     if CLOSE and own and x1 > 0.5:
         _close(k, yf, _sill(0.5, x0, x1), z1)
     zt = max(v[2] for v in k.m.v) + 0.002                # the pane's top edges on the beam's top
