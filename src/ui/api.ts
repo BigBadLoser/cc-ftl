@@ -945,6 +945,14 @@ export interface UiStationInfo {
   alarm: string | null;
   /** The shipyard this station runs (hull expansion), or null. */
   yard: UiYardService | null;
+  /** Its sensors: ships near it and a short log of the deals running with it. */
+  traffic?: UiStationTraffic;
+}
+
+/** What a station's sensors show: contacts (positions in tiles from the station) and the newest deal lines. */
+export interface UiStationTraffic {
+  contacts: { id: number; kind: 'you' | 'shuttle' | 'ship'; dx: number; dy: number; label: string }[];
+  log: { who: string; what: string }[];
 }
 
 /** What a station's shipyard offers. `price` is per tile now (the node's danger and the tier's multiplier included). */

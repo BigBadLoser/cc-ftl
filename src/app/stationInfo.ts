@@ -6,6 +6,7 @@ import type { UiBlueprint, UiStationInfo } from '../ui/api';
 import { marketAt, pricesAt } from './marketSnapshot';
 import { portHints } from './stockHints';
 import { yardOf } from './yardSnapshot';
+import { stationTraffic } from './stationTraffic';
 
 /** Plain names of the structure services worth telling a player about. */
 const SERVICE: Record<string, string> = { trade: 'Trade', fuel: 'Fuel', repair: 'Repair', blueprints: 'Blueprints' };
@@ -72,5 +73,6 @@ export function stationInfo(sim: Sim, station: number, portId: string | undefine
     docks: h?.docks ?? 0, guns: h?.guns ?? 0, shields: sim.world.get(station, CombatC)?.shield.max ?? 0,
     alarm: alarm?.state === 'alarm' ? alarm.reason || 'alarm' : null,
     yard: yardOf(sim, station),
+    traffic: stationTraffic(sim, station),
   };
 }
