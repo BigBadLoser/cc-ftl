@@ -28,24 +28,33 @@ const valueOf = (lines: readonly UiTradeLine[], draft: Draft, skip: string, side
     return n + Math.abs(q) * (side === 'buy' ? l.sell : l.buy);
   }, 0);
 
+export interface Limits {
+  /** Hard caps: what the partner has in stock and what the player holds (both free of promises to queued deals). */
+  up: number;
+  down: number;
+  /** The same capped by cash (the player's credits, the partner's purse) once the rest of the draft is counted in: where Alt stops. */
+  cashUp: number;
+  cashDown: number;
+}
+
 /**
- * The most that can be bought (`up`, a positive count) and sold (`down`, a positive count) of one line given the rest of the draft:
- * what the partner has in stock and the player holds (free of promises to queued deals), what the player's credits cover once the other
- * lines' sales are counted in, and what the partner's purse can pay once their other purchases are.
+ * The most that can be bought (`up`, a positive count) and sold (`down`) of one line given the rest of the draft. Stock and hold are hard
+ * caps. Cash is soft: a swap that pays for itself (selling X funds buying Y) must be buildable from empty wallets, so the pickers may go
+ * past `cashUp` / `cashDown` and the slip then names the shortfall and refuses to propose. Alt stops at the cash-aware cap.
  */
-export function limits(l: UiTradeLine, p: UiTradePartner, draft: Draft, credits: number): { up: number; down: number } {
+export function limits(l: UiTradeLine, p: UiTradePartner, draft: Draft, credits: number): Limits {
   const lines = p.lines;
   const buys = valueOf(lines, draft, l.item, 'buy');
   const sells = valueOf(lines, draft, l.item, 'sell');
-  const byStock = l.theirsFree ?? l.theirs;
-  const byCash = l.sell > 0 ? Math.floor(Math.max(0, credits + sells - buys) / l.sell) : byStock;
-  const byHold = sellable(l, p) ? (l.mineFree ?? l.mine) : 0;
-  const byPurse = l.buy > 0 ? Math.floor(Math.max(0, (p.walletFree ?? p.wallet) + buys - sells) / l.buy) : byHold;
-  return { up: Math.max(0, Math.min(byStock, byCash)), down: Math.max(0, Math.min(byHold, byPurse)) };
+  const up = l.theirsFree ?? l.theirs;
+  const down = sellable(l, p) ? (l.mineFree ?? l.mine) : 0;
+  const byCash = l.sell > 0 ? Math.floor(Math.max(0, credits + sells - buys) / l.sell) : up;
+  const byPurse = l.buy > 0 ? Math.floor(Math.max(0, (p.walletFree ?? p.wallet) + buys - sells) / l.buy) : down;
+  return { up: Math.max(0, up), down: Math.max(0, down), cashUp: Math.max(0, Math.min(up, byCash)), cashDown: Math.max(0, Math.min(down, byPurse)) };
 }
 
 /** Clamp a wanted signed amount to what the limits allow. */
-export function clampQty(want: number, lim: { up: number; down: number }): number {
+export function clampQty(want: number, lim: Pick<Limits, 'up' | 'down'>): number {
   if (!Number.isFinite(want)) return 0;
   const n = Math.trunc(want);
   return n >= 0 ? Math.min(n, lim.up) : -Math.min(-n, lim.down);

@@ -15,7 +15,7 @@
     const m = lim(l);
     const cur = draft[l.item] ?? 0;
     // From a buy of 5, a minus click walks it down through zero into selling.
-    set(l.item, clampQty(e.altKey ? (dir > 0 ? m.up : -m.down) : cur + dir * stepOf(e), m));
+    set(l.item, clampQty(e.altKey ? (dir > 0 ? m.cashUp : -m.cashDown) : cur + dir * stepOf(e), m));
   }
   function typed(e: Event, l: UiTradeLine) {
     const el = e.currentTarget as HTMLInputElement;

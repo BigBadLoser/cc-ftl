@@ -16,8 +16,8 @@
   };
   const problem = $derived.by(() => {
     if (empty) return 'Pick something to trade';
-    if (s.balance > trade.credits) return 'Not enough credits';
-    if (s.balance < 0 && -s.balance > p.wallet) return 'They cannot afford to pay that';
+    if (s.balance > (trade.free ?? trade.credits)) return 'Not enough credits';
+    if (s.balance < 0 && -s.balance > (p.walletFree ?? p.wallet)) return 'They cannot afford to pay that';
     if (route.error) return REASONS[route.error] ?? route.error;
     if (route.cap > 0 && trips > MAX_TRIPS) return `Too much: at most ${MAX_TRIPS} trips of ${route.cap} units`;
     return '';

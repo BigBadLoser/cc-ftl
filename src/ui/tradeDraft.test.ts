@@ -14,8 +14,8 @@ describe('trade draft', () => {
   it('clamps buys to stock and credits, sells to what is held', () => {
     const l = line({});
     const p = partner([l]);
-    expect(limits(l, p, {}, 55)).toEqual({ up: 5, down: 10 });
-    expect(limits(l, p, {}, 5000).up).toBe(40);
+    expect(limits(l, p, {}, 55)).toMatchObject({ up: 40, down: 10, cashUp: 5, cashDown: 10 }); // cash only limits Alt, not the picker
+    expect(limits(l, p, {}, 5000).cashUp).toBe(40);
     expect(clampQty(99, { up: 5, down: 10 })).toBe(5);
     expect(clampQty(-99, { up: 5, down: 10 })).toBe(-10);
     expect(clampQty(Number.NaN, { up: 5, down: 10 })).toBe(0);
@@ -23,8 +23,20 @@ describe('trade draft', () => {
   it('counts other lines sales toward what can be bought', () => {
     const a = line({ item: 'a' });
     const b = line({ item: 'b', mine: 20, buy: 30 });
-    expect(limits(a, partner([a, b]), { b: -20 }, 0).up).toBe(40); // 600 credits from b buys up to the 40 in stock
-    expect(limits(a, partner([a, b]), { b: -2 }, 0).up).toBe(6);
+    expect(limits(a, partner([a, b]), { b: -20 }, 0).cashUp).toBe(40); // 600 credits from b buys up to the 40 in stock
+    expect(limits(a, partner([a, b]), { b: -2 }, 0).cashUp).toBe(6);
+  });
+  it('lets a swap that pays for itself be built from empty wallets', () => {
+    const a = line({ item: 'a', theirs: 10, mine: 0, sell: 10, buy: 6 });
+    const b = line({ item: 'b', theirs: 0, mine: 5, sell: 20, buy: 10 });
+    const p = partner([a, b], { wallet: 0 });
+    const lim = limits(a, p, {}, 0);
+    expect(lim.cashUp).toBe(0); // Alt will not overspend
+    expect(clampQty(5, lim)).toBe(5); // but the picker can be raised
+    expect(limits(b, p, {}, 0).down).toBe(5);
+    const s = summarize([a, b], { a: 5, b: -5 });
+    expect(s.balance).toBe(0); // 50 spent, 50 received: nothing short, so it can be proposed
+    expect(limits(a, p, { b: -5 }, 0).cashUp).toBe(5);
   });
   it('only a black market takes contraband', () => {
     const c = line({ contraband: true });
@@ -33,7 +45,7 @@ describe('trade draft', () => {
   });
   it('limits by queued promises and the partner purse', () => {
     const l = line({ theirsFree: 3, mineFree: 2 });
-    expect(limits(l, partner([l], { walletFree: 6 }), {}, 1000)).toEqual({ up: 3, down: 1 });
+    expect(limits(l, partner([l], { walletFree: 6 }), {}, 1000)).toMatchObject({ up: 3, down: 2, cashDown: 1 });
   });
   it('sums a slip and its trips', () => {
     const a = line({ item: 'a', name: 'Rations' });
