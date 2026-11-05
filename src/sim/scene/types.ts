@@ -79,6 +79,8 @@ export interface Ambush {
   springAt?: number;
   /** An honest party is on its way back to the shuttle, and the tick the shuttle is home (it may leave then). */
   leaving?: true;
+  /** The tick the visit first found no usable airlock to dock or board at (it gives up after `AMBUSH_NO_DOCK_SEC`). */
+  stuckSince?: number;
   home?: true;
 }
 

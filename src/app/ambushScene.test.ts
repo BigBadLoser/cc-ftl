@@ -3,6 +3,8 @@ import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playe
 import { AllegianceC } from '../sim/fight/components';
 import { DownedC, PositionC } from '../sim/crew/components';
 import { shipIdOf } from '../sim/regions';
+import { AirlockC } from '../sim/modules/airlock';
+import { ModuleC } from '../sim';
 import { hostileAct } from '../sim/combat/provoke';
 import { killCrew } from '../sim/crew/death';
 import { applyEffect, giveItems } from '../sim/story/effects';
@@ -78,6 +80,16 @@ const floorMissiles = (sim: Sim): number => sim.world.query(ItemStackC).reduce((
 const untilSent = (sim: Sim, skiff: number): void => {
   for (let i = 0; i < 20 * 20 && !(sim.world.get(skiff, BoarderC)?.crew.length ?? 0); i++) step(sim);
 };
+/** Switch every airlock of the player's ship off or on (an outage). */
+const airlocks = (sim: Sim, on: boolean): void => {
+  const me = playerShip(sim);
+  for (const id of sim.world.query(ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    if (m && sim.world.has(id, AirlockC) && shipIdOf(sim, m) === me) m.enabled = on;
+  }
+};
+const partyOnPlayer = (sim: Sim, skiff: number): boolean =>
+  (sim.world.get(skiff, BoarderC)?.crew ?? []).some((c) => { const p = sim.world.get(c, PositionC); return !!p && shipIdOf(sim, p) === playerShip(sim); });
 const ambushOf = (sim: Sim) => sim.galaxy.event?.scene.ships[0]?.ambush;
 const observed = (out: { type: string }[]) => out.filter((e): e is { type: 'scene.observed'; rule: string; text: string } & typeof e => e.type === 'scene.observed');
 /** Step until the request is open (a few seconds' worth after the player is deployed). */
@@ -327,6 +339,37 @@ describe('the returning pirate: in its pocket', () => {
       expect(ambushOf(sim)?.visit).toBe(trap ? 'sprung' : 'refused');
       expect(leaveBlocker(sim)).not.toBe('visitors');
     }
+  });
+
+  it('an airlock outage as their shuttle is sent: restored, they dock and the visit completes', () => {
+    for (const trap of [true, false]) {
+      const { sim, skiff } = inScene(3, trap);
+      untilAsked(sim);
+      sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+      for (let i = 0; i < 20 * 60 && sim.world.get(skiff, BoarderC)?.state !== 'loading'; i++) step(sim);
+      airlocks(sim, false); // the outage hits as the shuttle is about to be sent
+      step(sim, 20 * 12);
+      expect(['granted']).toContain(ambushOf(sim)?.visit); // stuck while it is down (it has not given up yet)
+      airlocks(sim, true);
+      for (let i = 0; i < 20 * 120 && !['aboard', 'delivered', 'sprung'].includes(ambushOf(sim)?.visit ?? ''); i++) step(sim);
+      expect(['aboard', 'delivered', 'sprung']).toContain(ambushOf(sim)?.visit);
+      expect(partyOnPlayer(sim, skiff)).toBe(true);
+    }
+  });
+
+  it('an outage when the honest party heads home: restored, they embark and leave', () => {
+    const { sim, skiff } = inScene(3, false);
+    untilAsked(sim);
+    sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
+    for (let i = 0; i < 20 * 150 && ambushOf(sim)?.visit !== 'delivered'; i++) step(sim);
+    airlocks(sim, false);
+    step(sim, 20 * 30);
+    expect(ambushOf(sim)?.home).toBeUndefined();
+    expect(leaveBlocker(sim)).toBe('visitors'); // they are still aboard
+    airlocks(sim, true);
+    for (let i = 0; i < 20 * 120 && !ambushOf(sim)?.home; i++) step(sim);
+    expect(ambushOf(sim)?.home).toBe(true);
+    expect(leaveBlocker(sim)).toBeNull();
   });
 
   it('boarders killed cost standing with pirates; the skiff destroyed sets a flag', () => {

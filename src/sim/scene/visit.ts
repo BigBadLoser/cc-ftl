@@ -4,13 +4,13 @@ import { turnCrew } from '../combat/turn';
 import { hostileAct } from '../combat/provoke';
 import { ShipC } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
-import { startParty } from '../boarding/party';
+import { pickAirlock, startParty } from '../boarding/party';
 import { playerShipInfo } from '../galaxy/arrivals';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { AMBUSH_SPRING_SEC, HONEST_STAY_SEC } from '../tuning';
-import { AboardC, BoarderC, VehicleC } from '../vehicles/components';
+import { AMBUSH_NO_DOCK_SEC, AMBUSH_SPRING_SEC, HONEST_STAY_SEC, VISIT_RETRY_TICKS } from '../tuning';
+import { AboardC, BoarderC, EmbarkOrderC, VehicleC, type Boarder } from '../vehicles/components';
 import type { Ambush, SceneShip, SceneSpec } from './types';
 
 /**
@@ -81,6 +81,59 @@ function settleLost(sim: Sim, s: SceneShip, a: Ambush): void {
   s.dismissed = true;
 }
 
+/** True when the skiff's party member is alive and up (not dead, not downed). */
+const able = (sim: Sim, c: number): boolean => sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC);
+
+/**
+ * Reconcile a granted visit with what is really in play, once a second: the shuttle stranded by an airlock that went down (the boarding system gave up
+ * on it) is sent at a usable airlock again, a docked shuttle whose party never stepped out is told to unload. With no usable airlock for
+ * AMBUSH_NO_DOCK_SEC the visit gives up (true; the shuttle is sent home): a trap turns on the player where it is, an honest skiff cancels.
+ */
+function reconcileGranted(sim: Sim, a: Ambush, b: Boarder): boolean {
+  const v = b.vehicle ? sim.world.get(b.vehicle, VehicleC) : undefined;
+  const lost = b.state === 'done' && (b.crew.length === 0 || !v);
+  if (lost) return true;
+  if (b.state !== 'done' || !v) return false;
+  if (v.state === 'docked') {
+    if (sim.tick % VISIT_RETRY_TICKS === 0 && b.crew.some((c) => sim.world.has(c, AboardC))) {
+      sim.enqueue({ type: 'vehicle.disembark', vehicle: b.vehicle });
+      if (v.pilot) sim.enqueue({ type: 'vehicle.disembark', vehicle: b.vehicle, crew: v.pilot });
+    }
+    return false;
+  }
+  if (pickAirlock(sim, b.vehicle) !== 0) {
+    delete a.stuckSince;
+    b.state = v.state === 'flying' ? 'sent' : 'loading'; // the boarding system docks it again
+    return false;
+  }
+  a.stuckSince ??= sim.tick;
+  if (sim.tick - a.stuckSince < AMBUSH_NO_DOCK_SEC * TICK_HZ) return false;
+  if (v.state !== 'stowed') sim.enqueue({ type: 'vehicle.return', vehicle: b.vehicle });
+  return true;
+}
+
+/**
+ * Reconcile an honest party's way home, once a second: members not yet in the shuttle are (re)sent to it every VISIT_RETRY_TICKS (an order rejected
+ * while the airlock was down is simply tried again); once all are seated the shuttle undocks and returns, and a shuttle that stopped short is told to
+ * return again. True when the shuttle is home or gone. With no usable airlock the party waits aboard (the airlock is the player's to repair; the leave
+ * blocker names them meanwhile).
+ */
+function reconcileHome(sim: Sim, a: Ambush, b: Boarder): boolean {
+  const v = sim.world.get(b.vehicle, VehicleC);
+  if (!v || v.state === 'stowed') return true;
+  const retry = sim.tick % VISIT_RETRY_TICKS === 0;
+  const waiting = b.crew.filter((c) => able(sim, c) && !sim.world.has(c, AboardC));
+  if (waiting.length > 0) {
+    if (retry) for (const crew of waiting) if (!sim.world.has(crew, EmbarkOrderC)) sim.enqueue({ type: 'vehicle.embark', crew, vehicle: b.vehicle });
+    return false;
+  }
+  if (v.state === 'docked') {
+    sim.enqueue({ type: 'vehicle.undock', vehicle: b.vehicle });
+    sim.enqueue({ type: 'vehicle.return', vehicle: b.vehicle });
+  } else if (retry && v.state === 'flying' && !v.dest) sim.enqueue({ type: 'vehicle.return', vehicle: b.vehicle });
+  return false;
+}
+
 /** Let the skiff move on: it is no longer held, and its business here is done now. */
 function dismiss(sim: Sim, s: SceneShip): void {
   delete s.hailed;
@@ -131,11 +184,12 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
       if (b?.state === 'idle') startParty(sim, id, b); // also while no airlock is free: try again
       if (partyAboard(sim, id)) {
         a.visit = 'aboard';
+        delete a.stuckSince;
         a.springAt = sim.tick + Math.round(AMBUSH_SPRING_SEC * TICK_HZ);
         changed = true;
-      } else if (b?.state === 'done' && !partyAboard(sim, id) && (b.crew.length === 0 || !b.vehicle || !sim.world.has(b.vehicle, VehicleC) || sim.world.get(b.vehicle, VehicleC)?.state === 'stowed')) {
-        // nobody could be sent, or the shuttle was lost or never left
-        if (a.trap) turn(sim, a, id); // nobody could be sent
+      } else if (b && reconcileGranted(sim, a, b)) {
+        // nobody could be sent, the shuttle was lost, or no airlock came back in time: the visit gives up
+        if (a.trap) turn(sim, a, id);
         else {
           a.visit = 'refused';
           dismiss(sim, s);
@@ -150,20 +204,11 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
       }
       changed = true;
     } else if (a.visit === 'delivered' && b) {
-      if (!a.leaving && a.springAt !== undefined && sim.tick >= a.springAt) {
-        a.leaving = true;
-        for (const crew of b.crew) if (!sim.world.has(crew, DeadC)) sim.enqueue({ type: 'vehicle.embark', crew, vehicle: b.vehicle });
-      } else if (a.leaving) {
-        const v = sim.world.get(b.vehicle, VehicleC);
-        const seated = b.crew.every((c) => sim.world.has(c, DeadC) || sim.world.has(c, AboardC));
-        if (v?.state === 'docked' && seated) {
-          sim.enqueue({ type: 'vehicle.undock', vehicle: b.vehicle });
-          sim.enqueue({ type: 'vehicle.return', vehicle: b.vehicle });
-        } else if (!v || v.state === 'stowed') {
-          a.home = true;
-          dismiss(sim, s);
-          changed = true;
-        }
+      if (!a.leaving && a.springAt !== undefined && sim.tick >= a.springAt) a.leaving = true;
+      else if (a.leaving && reconcileHome(sim, a, b)) {
+        a.home = true;
+        dismiss(sim, s);
+        changed = true;
       }
     }
   }
