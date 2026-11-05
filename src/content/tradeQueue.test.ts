@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC, TraderC, newGame, playerItems, type Sim } from '../sim';
 import { isLive } from '../sim/trade/deals';
+import { commitments } from '../sim/trade/commit';
+import { cargoAdd } from '../sim/vehicles/cargo';
 import { content } from './index';
 
 /** A started game with a hailed trading outpost. */
@@ -172,5 +174,24 @@ describe('queued deals', () => {
     expect(['failed', 'dispatch']).toContain(small.phase);
     if (small.phase === 'failed') expect(small.reason).toBe('noFunds');
     expect(sim.trade.credits).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('goods promised to a loading deal', () => {
+  it('count only what the shuttle has not yet taken aboard', () => {
+    const { sim, st } = setup();
+    sim.enqueue({ type: 'debug.giveItems', item: 'item.metal', count: 30 });
+    step(sim);
+    const have = playerItems(sim, 'item.metal');
+    const deal = agree(sim, st, [{ item: 'item.metal', count: 20 }], [])!;
+    expect(deal.phase).not.toBe('queued');
+    for (let i = 0; i < 6000 && deal.phase !== 'load'; i++) step(sim);
+    expect(deal.phase).toBe('load');
+    // Nothing loaded yet: the whole sale is promised.
+    expect(commitments(sim).items.get('item.metal')).toBe(20);
+    // Ten crates aboard the shuttle: ten are still promised.
+    cargoAdd(sim, deal.vehicle, 'item.metal', 10);
+    expect(commitments(sim).items.get('item.metal')).toBe(10);
+    expect(have).toBeGreaterThanOrEqual(30);
   });
 });

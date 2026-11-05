@@ -64,8 +64,8 @@
       if (o.get.length === 1 && o.get[0]?.item === FUEL && o.give.length === 0) api.dispatch({ type: 'trade.accept', offer: o.id });
     }
   });
-  const refuelOff = $derived(!refuel || refuel.n <= 0 || refuel.cost > (trade.free ?? trade.credits) || !!p.offer || (!!p.in.error && p.in.error !== 'courierBusy'));
-  const refuelTip = $derived(!refuel ? '' : refuel.n <= 0 ? 'Tanks are full enough' : p.offer ? 'Answer the offer on the table first' : refuel.cost > (trade.free ?? trade.credits) ? 'Not enough credits' : p.in.error && p.in.error !== 'courierBusy' ? (REASONS[p.in.error] ?? p.in.error) : `You hold ${fuelLine?.mine ?? 0}. The shuttle brings it over.`);
+  const refuelOff = $derived(!refuel || refuel.n <= 0 || refuel.cost > (trade.free ?? trade.credits) || !!p.offer || !!p.in.error);
+  const refuelTip = $derived(!refuel ? '' : refuel.n <= 0 ? 'Tanks are full enough' : p.offer ? 'Answer the offer on the table first' : refuel.cost > (trade.free ?? trade.credits) ? 'Not enough credits' : p.in.error ? (REASONS[p.in.error] ?? p.in.error) : `You hold ${fuelLine?.mine ?? 0}. The shuttle brings it over.`);
 
   function propose() {
     const toLines = (a: { item: string; count: number }[]) => a.map(({ item, count }) => ({ item, count }));

@@ -1,4 +1,5 @@
 import type { Sim } from '../sim';
+import { cargoOf } from '../vehicles/cargo';
 import { peakFunding } from './trips';
 import type { Deal, Trip } from './types';
 
@@ -35,8 +36,9 @@ export function commitments(sim: Sim): Commitments {
       for (const l of t.give) add(c.items, l.item, l.count);
       for (const l of t.get) add(c.stock, `${d.ship}:${l.item}`, l.count);
     }
-    // The running trip's own goods are still in the holds until the shuttle has loaded them.
-    if (d.phase === 'dispatch' || d.phase === 'load') for (const l of d.give) add(c.items, l.item, l.count);
+    // The running trip's own goods are still in the holds until the shuttle has loaded them: what crew have already put aboard has left
+    // the storage (playerItems no longer counts it), so only the rest is still promised.
+    if (d.phase === 'dispatch' || d.phase === 'load') for (const l of d.give) add(c.items, l.item, Math.max(0, l.count - (d.vehicle ? cargoOf(sim, d.vehicle, l.item) : 0)));
     const peak = peakFunding(trips, d.barter);
     c.credits += peak.player;
     if (peak.trader > 0) add(c.theirs, d.ship, peak.trader);
